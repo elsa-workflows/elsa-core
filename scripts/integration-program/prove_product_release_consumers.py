@@ -2,7 +2,7 @@
 """Package-only Studio 3.8 consumers of exact reviewed selected archives.
 
 Every selected applicable framework is a separate cold restore/compile cell.
-Original hashed planning assets pin transitive versions and content hashes.
+Original hashed planning assets bound the allowed external versions and hashes.
 """
 from __future__ import annotations
 
@@ -19,6 +19,9 @@ import plan_product_release as planner
 import product_release_metadata as metadata
 import prove_product_release_artifacts as producer
 import prove_consolidated_package_consumers as consumers
+import prove_consolidated_packages as archives
+import selected_product_consumer_metadata as resolution
+from selected_product_consumer_metadata import nearest_group
 from product_artifact_execution import local_execution, validate_local_execution
 from prove_consolidated_packages import archive_names, dependency_groups, metadata as nuspec, require
 
@@ -123,92 +126,6 @@ def load_snapshots(plan: dict, plan_hash: str, folder: Path) -> dict:
     return result
 
 
-def nearest_group(groups: list[dict], framework: str, semantics: planner.Semantics) -> dict:
-    if not groups:
-        return {'framework': 'any', 'dependencies': []}
-    choice = semantics.call('frameworks', values=[{'consumer': framework,
-                'candidates': [row['framework'] for row in groups]}])[0]
-    require(choice['compatible'], 'consumer_dependency_framework')
-    return next(row for row in groups if row['framework'] == choice['nearest'])
-
-
-def closure(root_id: str, framework: str, source_assets: dict, selected: dict, version: str,
-            semantics: planner.Semantics) -> dict:
-    """Traverse published selected edges and original external restore edges."""
-    def available(assets):
-        result = {}
-        for key, item in assets['targets'][framework].items():
-            identifier, resolved = key.rsplit('/', 1)
-            folded = identifier.casefold()
-            require(folded not in result, 'consumer_snapshot_duplicate_package')
-            result[folded] = (identifier, resolved, item, assets['libraries'][key])
-        return result
-
-    root_available = available(source_assets)
-    result, pending = {}, [(root_id.casefold(), source_assets)]
-    while pending:
-        folded, context = pending.pop()
-        if folded in selected:
-            if folded in result:
-                continue
-            package = selected[folded]
-            identifier = package['id']
-            dependencies = {row['id']: row['version'] for row in nearest_group(
-                package['dependency_groups'], framework, semantics)['dependencies']}
-            resolved, content_hash = version, package['content_hash']
-            context = package.get('original_assets', source_assets)
-        else:
-            candidates = root_available if folded in root_available else available(context)
-            require(folded in candidates, 'consumer_snapshot_missing_dependency')
-            identifier, resolved, item, library = candidates[folded]
-            require(item['type'] == 'package' and library['type'] == 'package', 'consumer_external_project_fallback')
-            dependencies = item.get('dependencies', {})
-            content_hash = library.get('sha512')
-            require(isinstance(content_hash, str) and re.fullmatch(r'[A-Za-z0-9+/]{86}==', content_hash) is not None,
-                    'consumer_external_content_hash')
-            if folded in result:
-                require((resolved, content_hash, dependencies) == (result[folded]['version'], result[folded]['content_hash'],
-                        result[folded]['dependencies']), 'consumer_external_snapshot_ambiguity')
-                continue
-            if folded in root_available:
-                context = source_assets
-        require(planner.ID.fullmatch(identifier) is not None and consumers.VERSION_PATTERN.fullmatch(resolved) is not None,
-                'consumer_package_id_version')
-        result[folded] = {'id': identifier, 'version': resolved, 'content_hash': content_hash,
-                          'dependencies': dependencies, 'selected': folded in selected}
-        pending.extend((name.casefold(), context) for name in dependencies)
-    ranges = [{'range': value, 'version': result[name.casefold()]['version']} for row in result.values()
-              for name, value in row['dependencies'].items()]
-    require(all(row['satisfies'] for row in semantics.call('ranges', values=ranges)), 'consumer_dependency_range_conflict')
-
-    return result
-
-
-def lock_document(root_id: str, framework: str, graph: dict, version: str) -> dict:
-    dependencies = {}
-    for folded, row in sorted(graph.items()):
-        value = {'type': 'Direct' if folded == root_id.casefold() else 'Transitive', 'resolved': row['version'],
-                 'contentHash': row['content_hash']}
-        if folded == root_id.casefold():
-            value['requested'] = f'[{version}, {version}]'
-        if row['dependencies']:
-            value['dependencies'] = row['dependencies']
-        dependencies[row['id']] = value
-    return {'version': 1, 'dependencies': {framework: dependencies}}
-
-
-def feed_policy(config: Path, graph: dict, semantics: planner.Semantics) -> dict:
-    policy = semantics.call('feeds', config=str(config), ids=sorted(row['id'] for row in graph.values()))
-    sources = {row['name']: row['url'] for row in policy['sources']}
-    require(sources and all(value in planner.FEED_BASES for value in sources.values()), 'consumer_feed_origin')
-    mapping = {row['id'].casefold(): row['sources'] for row in policy['packages']}
-    require(set(mapping) == set(graph), 'consumer_feed_inventory')
-    for folded, row in graph.items():
-        if not row['selected']:
-            require(mapping[folded] and all(name in sources for name in mapping[folded]), 'consumer_external_feed_mapping')
-    return {'sources': sources, 'mapping': mapping}
-
-
 def render_config(artifacts: Path, graph: dict, policy: dict) -> str:
     root = ET.Element('configuration')
     sources = ET.SubElement(root, 'packageSources')
@@ -247,7 +164,8 @@ def validate_restored(assets: dict, framework: str, graph: dict, root: Path, cac
             not restore.get('fallbackFolders'), 'consumer_restore_isolation')
 
 
-def verify_cache(graph: dict, policy: dict, cache: Path, artifacts: Path, selected: dict) -> list[dict]:
+def verify_cache(graph: dict, policy: dict, cache: Path, artifacts: Path, selected: dict,
+                 restored: dict, inspector: Path, catalog: dict) -> list[dict]:
     records = []
     for folded, row in sorted(graph.items()):
         folder = cache / folded / row['version']
@@ -259,14 +177,19 @@ def verify_cache(graph: dict, policy: dict, cache: Path, artifacts: Path, select
             require(archive.is_file() and not any(part.is_symlink() for part in (archive, *archive.parents)),
                     'consumer_external_archive_path')
             content = archive.read_bytes()
-            require(consumers.base64_sha512(content) == row['content_hash'], 'consumer_external_archive_hash')
+            expected = catalog[(folded, row['version'])]
+            _, verified = archives.restored_archive(restored, row['id'], row['version'],
+                                                     cache={'archive_inspector': inspector})
+            require(verified['archive_sha256'] == expected['archive_sha256'] and
+                    verified['nuget_content_hash'] == row['content_hash'], 'consumer_external_archive_hash')
             cache_metadata = planner.read_json((folder / '.nupkg.metadata').read_bytes())
             allowed = {policy['sources'][name] for name in policy['mapping'][folded]}
             require(cache_metadata.get('source') in allowed, 'consumer_external_cache_source')
             sha512 = folder / f"{folded}.{row['version']}.nupkg.sha512"
-            require(sha512.read_text().strip() == row['content_hash'], 'consumer_external_cache_hash')
+            require(sha512.read_text().strip() == consumers.base64_sha512(content), 'consumer_external_cache_hash')
             record = {'id': row['id'], 'version': row['version'], 'source': cache_metadata['source'],
-                      'sha256': metadata.sha256(content), 'sha512': hashlib.sha512(content).hexdigest()}
+                      'sha256': verified['archive_sha256'], 'archive_sha512': hashlib.sha512(content).hexdigest(),
+                      'nuget_content_hash': verified['nuget_content_hash'], 'signed': verified['signed']}
         records.append(record)
     return records
 
@@ -292,12 +215,12 @@ def verify_asset_payloads(assets: dict, framework: str, graph: dict, cache: Path
     return evidence
 
 
-def render_project(identifier: str, version: str, framework: str, references: list[str], *, executable: bool, managed: bool) -> str:
+def render_project(identifier: str, version: str, framework: str, references: list[str], *, executable: bool, managed: bool, locked: bool = True) -> str:
     project = ET.Element('Project', Sdk='Microsoft.NET.Sdk')
     properties = ET.SubElement(project, 'PropertyGroup')
     for name, value in {'TargetFramework': framework, 'OutputType': 'Exe' if executable else 'Library',
                         'ImplicitUsings': 'enable', 'Nullable': 'enable', 'RestorePackagesWithLockFile': 'true',
-                        'RestoreLockedMode': 'true', 'NuGetAudit': 'false'}.items():
+                        'RestoreLockedMode': str(locked).lower(), 'NuGetAudit': 'false'}.items():
         ET.SubElement(properties, name).text = value
     group = ET.SubElement(project, 'ItemGroup')
     package = ET.SubElement(group, 'PackageReference', Include=identifier, Version=f'[{version}]')
@@ -320,21 +243,7 @@ def retain_runtime_rows(verified: list[dict]) -> list[dict]:
             'package_id', 'package_version', 'package_asset')} for row in verified]
 
 
-def cell(plan: dict, package: dict, framework: str, assets: dict, selected: dict, artifacts: Path,
-         config: Path, semantics: planner.Semantics, output: Path, *, runtime: bool = False) -> dict:
-    output.mkdir()
-    isolation = consumers.prepare_isolation(output, metadata.SDK)
-    graph = closure(package['id'], framework, assets, selected, plan['requested_version'], semantics)
-    policy = feed_policy(config, graph, semantics)
-    (output / 'NuGet.Config').write_text(render_config(artifacts, graph, policy))
-    project = output / 'Consumer.csproj'
-    output_policy = package['policy']['metadata']['original_output_policy'][framework]
-    managed = output_policy['IncludeBuildOutput'].lower() != 'false'
-    references = nearest_group(package['policy']['metadata']['framework_reference_groups'], framework, semantics).get('references', [])
-    project.write_text(render_project(package['id'], plan['requested_version'], framework, references, executable=runtime, managed=managed))
-    (output / 'packages.lock.json').write_text(json.dumps(lock_document(package['id'], framework, graph, plan['requested_version']), indent=2))
-    (output / 'Program.cs').write_text(FIXTURE.read_text() if runtime else
-        ('extern alias selected;\n' if managed else '') + 'public class CompileContract {}\n')
+def cold_environment(output: Path) -> tuple[Path, dict]:
     cache, home = output / 'packages', output / 'home'
     require(not cache.exists(), 'consumer_cache_not_empty')
     home.mkdir()
@@ -343,13 +252,65 @@ def cell(plan: dict, package: dict, framework: str, assets: dict, selected: dict
                        NUGET_PLUGINS_CACHE_PATH=str(output / 'plugins-cache'), DOTNET_CLI_HOME=str(home),
                        DOTNET_CLI_DO_NOT_USE_MSBUILD_SERVER='1', MSBUILDDISABLENODEREUSE='1',
                        DOTNET_CLI_TELEMETRY_OPTOUT='1', DOTNET_NOLOGO='1')
+    return cache, environment
+
+
+def discover(plan: dict, package: dict, framework: str, selected: dict, artifacts: Path,
+             semantics: planner.Semantics, catalog: dict, original_policy: dict, output: Path,
+             references: list[str], *, runtime: bool, managed: bool) -> tuple[dict, dict, bytes]:
+    output.mkdir()
+    consumers.prepare_isolation(output, metadata.SDK)
+    universe = {folded: {'id': row['id'], 'selected': True} for folded, row in selected.items()}
+    universe.update({folded: {'id': row['id'], 'selected': False} for (folded, _), row in catalog.items()})
+    policy = {'sources': original_policy['mirrors'], 'mapping': original_policy['mapping']}
+    (output / 'NuGet.Config').write_text(render_config(artifacts, universe, policy))
+    project = output / 'Consumer.csproj'
+    project.write_text(render_project(package['id'], plan['requested_version'], framework, references,
+                                     executable=runtime, managed=managed, locked=False))
+    cache, environment = cold_environment(output)
+    inputs = {path.name: metadata.sha256(path.read_bytes()) for path in output.iterdir() if path.is_file()}
+    consumers._run_command(['dotnet', 'restore', str(project), '--configfile', str(output / 'NuGet.Config'),
+        '--packages', str(cache), '--no-cache', '--nologo'], output, environment, output / 'restore.log', 1200)
+    require(all(metadata.sha256((output / name).read_bytes()) == digest for name, digest in inputs.items()),
+            'consumer_discovery_inputs_changed')
+    assets = planner.read_json((output / 'obj/project.assets.json').read_bytes())
+    lock = (output / 'packages.lock.json').read_bytes()
+    graph = resolution.audit_native_graph(assets, planner.read_json(lock), package['id'], framework,
+                                         selected, catalog, plan['requested_version'], semantics)
+    # Discovery uses finite original mirrors, and remains distinct from proof.
+    validate_restored(assets, framework, graph, output, cache, artifacts, policy)
+    proof_policy = {'sources': original_policy['sources'],
+                    'mapping': {folded: original_policy['mapping'][folded] for folded in graph}}
+    return graph, proof_policy, lock
+
+
+def cell(plan: dict, package: dict, framework: str, selected: dict, artifacts: Path,
+         semantics: planner.Semantics, output: Path, *, catalog: dict,
+         original_policy: dict, inspector: Path, runtime: bool = False) -> dict:
+    output.mkdir()
+    isolation = consumers.prepare_isolation(output, metadata.SDK)
+    project = output / 'Consumer.csproj'
+    output_policy = package['policy']['metadata']['original_output_policy'][framework]
+    managed = output_policy['IncludeBuildOutput'].lower() != 'false'
+    references = nearest_group(package['policy']['metadata']['framework_reference_groups'], framework, semantics).get('references', [])
+    graph, policy, lock_bytes = discover(plan, package, framework, selected, artifacts, semantics, catalog,
+        original_policy, output / 'discovery', references, runtime=runtime, managed=managed)
+    (output / 'NuGet.Config').write_text(render_config(artifacts, graph, policy))
+    project.write_text(render_project(package['id'], plan['requested_version'], framework, references, executable=runtime, managed=managed))
+    (output / 'packages.lock.json').write_bytes(lock_bytes)
+    (output / 'Program.cs').write_text(FIXTURE.read_text() if runtime else
+        ('extern alias selected;\n' if managed else '') + 'public class CompileContract {}\n')
+    cache, environment = cold_environment(output)
     inputs = {path.name: metadata.sha256(path.read_bytes()) for path in output.iterdir() if path.is_file()}
     commands = []
     commands.append(consumers._run_command(['dotnet', 'restore', str(project), '--locked-mode', '--configfile', str(output / 'NuGet.Config'),
         '--packages', str(cache), '--no-cache', '--nologo'], output, environment, output / 'restore.log', 1200))
     restored = planner.read_json((output / 'obj/project.assets.json').read_bytes())
     validate_restored(restored, framework, graph, output, cache, artifacts, policy)
-    cached = verify_cache(graph, policy, cache, artifacts, selected)
+    require((output / 'packages.lock.json').read_bytes() == lock_bytes, 'consumer_locked_document_changed')
+    resolution.audit_native_graph(restored, planner.read_json(lock_bytes), package['id'], framework,
+                                  selected, catalog, plan['requested_version'], semantics)
+    cached = verify_cache(graph, policy, cache, artifacts, selected, restored, inspector, catalog)
     payloads = verify_asset_payloads(restored, framework, graph, cache, artifacts, selected)
     commands.append(consumers._run_command(['dotnet', 'build', str(project), '-c', 'Release', '--no-restore', '--disable-build-servers',
         '--nologo'], output, environment, output / 'build.log', 1200))
@@ -357,7 +318,8 @@ def cell(plan: dict, package: dict, framework: str, assets: dict, selected: dict
     result = {'id': package['id'], 'framework': framework, 'success': True, 'fresh_cache': True, 'package_reference_only': True,
               'accounting': 'managed-reference-compile' if managed else 'output-content-only-restore-build',
               'original_output_policy': output_policy, 'restored_payloads': payloads,
-              'archive_sha256': package['nupkg_sha256'], 'restored': cached, 'isolation': isolation, 'input_sha256': inputs}
+              'discovery_scope': 'offline-original-archive-metadata-only',
+              'native_lock_sha256': metadata.sha256(lock_bytes), 'archive_sha256': package['nupkg_sha256'], 'restored': cached, 'isolation': isolation, 'input_sha256': inputs}
     if runtime:
         consumers._run_command(['dotnet', 'run', '--project', str(project), '--no-restore', '--no-build', '-c', 'Release',
                                '--framework', framework], output, environment, output / 'runtime.log', 300)
@@ -382,8 +344,6 @@ def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, rec
     receipt = planner.read_json(read_bound(receipt_path, receipt_hash))
     selected = admit_artifacts(plan, plan_hash, receipt, artifacts, root)
     originals = load_snapshots(plan, plan_hash, snapshots)
-    for package in selected.values():
-        package['original_assets'] = originals[package['policy']['project']]
     for path, expected in STUDIO38_CONTRACT_SOURCE.items():
         require(metadata.sha256(producer.maintenance.git_bytes(root, plan['source']['commit'], path)) == expected,
                 'consumer_runtime_source_contract')
@@ -405,21 +365,29 @@ def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, rec
         helper = private / 'semantics'
         helper.mkdir()
         semantics = planner.build_helper(helper)
+        result['stage'] = 'original-external-archive-catalog'
+        inspector = resolution.build_inspector(root, private / 'archive-inspector')
+        resolution.validate_native_tools(plan, semantics, inspector)
+        catalog, original_policy = resolution.archive_catalog(originals, selected, config, semantics,
+                                                              inspector, private / 'original-external-catalog')
+        result['external_catalog_sha256'] = metadata.sha256(
+            (private / 'original-external-catalog/catalog.private.json').read_bytes())
         for package in selected.values():
             for framework in package['policy']['frameworks']:
                 result['stage'] = 'selected-restore-compile'
                 result['focus'] = {'id': package['id'], 'framework': framework}
                 name = metadata.sha256((package['id'] + '/' + framework).encode())[:16]
-                result['coverage'].append(cell(plan, package, framework, originals[package['policy']['project']], selected,
-                    artifacts, config, semantics, private / name))
+                result['coverage'].append(cell(plan, package, framework, selected, artifacts, semantics,
+                    private / name, catalog=catalog, original_policy=original_policy, inspector=inspector))
         validate_ledger(plan, result['coverage'])
         result['stage'] = 'studio-runtime-contract'
         require('elsa.studio.core' in selected, 'consumer_studio_representative_missing')
         package = selected['elsa.studio.core']
         for framework in package['policy']['frameworks']:
             result['focus'] = {'id': package['id'], 'framework': framework}
-            result['runtime'].append(cell(plan, package, framework, originals[package['policy']['project']], selected,
-                artifacts, config, semantics, private / ('runtime-' + framework), runtime=True))
+            result['runtime'].append(cell(plan, package, framework, selected, artifacts, semantics,
+                private / ('runtime-' + framework), catalog=catalog, original_policy=original_policy,
+                inspector=inspector, runtime=True))
         result.pop('focus', None)
         result.update(success=True, stage='complete', limitations=[
             'Complete selected restore/compile coverage is distinct from representative runtime behavior.',

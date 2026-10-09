@@ -18,7 +18,9 @@ from product_artifact_execution import local_execution
 class Semantics:
     def call(self, operation, **values):
         if operation == 'ranges':
-            return [{'satisfies': True} for _ in values['values']]
+            return [{'satisfies': True, 'normalized': item['range']} for item in values['values']]
+        if operation == 'identity':
+            return []
         if operation == 'frameworks':
             return [{'compatible': True, 'nearest': item['candidates'][0]} for item in values['values']]
         raise AssertionError(operation)
@@ -166,46 +168,49 @@ class SelectedProductConsumerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'consumer_input_path'):
             proof.load_snapshots(self.plan, self.hash, folder)
 
-    def closure(self):
+    def native_graph(self):
         selected = {'example': {'id': 'Example', 'content_hash': self.graph['example']['content_hash'],
-                    'dependency_groups': [{'framework': 'net8.0', 'dependencies': [{'id': 'External', 'version': '[1.2.3, )'}]}]}}
-        assets = {'targets': {'net8.0': {'External/1.2.3': {'type': 'package', 'dependencies': {'Transitive': '2.0.0'}},
-                   'Transitive/2.0.0': {'type': 'package'}, 'Private.Compiler/9.0.0': {'type': 'package'}}},
-                  'libraries': {'External/1.2.3': {'type': 'package', 'sha512': 'B' * 86 + '=='},
-                   'Transitive/2.0.0': {'type': 'package', 'sha512': 'C' * 86 + '=='},
-                   'Private.Compiler/9.0.0': {'type': 'package', 'sha512': 'D' * 86 + '=='}}}
-        return selected, assets
+            'dependency_groups': [{'framework': 'net8.0', 'dependencies': [{'id': 'External', 'version': '[1.2.3, )'}]}]}}
+        catalog = {('external', '1.2.3'): {'id': 'External', 'content_hash': self.graph['external']['content_hash'],
+                    'groups': [{'framework': 'net8.0', 'dependencies': []}]}}
+        targets, libraries, locked = {}, {}, {}
+        for folded, row in self.graph.items():
+            deps = {'External': '[1.2.3, )'} if folded == 'example' else {}
+            key = row['id'] + '/' + row['version']
+            targets[key] = {'type': 'package', 'dependencies': deps}
+            libraries[key] = {'type': 'package', 'sha512': row['content_hash']}
+            locked[row['id']] = {'resolved': row['version'], 'contentHash': row['content_hash'],
+                'type': 'Direct' if folded == 'example' else 'Transitive', 'dependencies': deps}
+        locked['Example']['requested'] = '[3.8.999, 3.8.999]'
+        return selected, catalog, {'targets': {'net8.0': targets}, 'libraries': libraries}, {
+            'version': 1, 'dependencies': {'net8.0': locked}}
 
-    def test_published_closure_pins_transitives_excludes_private_compiler(self):
-        selected, assets = self.closure()
-        graph = proof.closure('Example', 'net8.0', assets, selected, '3.8.999', Semantics())
-        self.assertEqual({'example', 'external', 'transitive'}, set(graph))
-        self.assertEqual('2.0.0', graph['transitive']['version'])
-        self.assertEqual('C' * 86 + '==', graph['transitive']['content_hash'])
+    def test_native_graph_uses_full_nuspec_edges_and_one_exact_direct_root(self):
+        selected, catalog, assets, lock = self.native_graph()
+        graph = proof.resolution.audit_native_graph(assets, lock, 'Example', 'net8.0', selected,
+                                                     catalog, '3.8.999', Semantics())
+        self.assertEqual({'example', 'external'}, set(graph))
+        self.assertEqual({'External': '[1.2.3, )'}, graph['example']['dependencies'])
 
-    def test_external_project_and_missing_transitive_snapshot_rejected(self):
-        selected, assets = self.closure()
-        assets['targets']['net8.0']['Transitive/2.0.0']['type'] = 'project'
-        with self.assertRaisesRegex(ValueError, 'consumer_external_project_fallback'):
-            proof.closure('Example', 'net8.0', assets, selected, '3.8.999', Semantics())
-        del assets['targets']['net8.0']['Transitive/2.0.0']
-        with self.assertRaisesRegex(ValueError, 'consumer_snapshot_missing_dependency'):
-            proof.closure('Example', 'net8.0', assets, selected, '3.8.999', Semantics())
-
-    def test_package_edge_missing_from_root_uses_reached_selected_original_snapshot(self):
-        selected, assets = self.closure()
-        selected['example']['original_assets'] = deepcopy(assets)
-        del assets['targets']['net8.0']['External/1.2.3']
-        del assets['targets']['net8.0']['Transitive/2.0.0']
-        graph = proof.closure('Example', 'net8.0', assets, selected, '3.8.999', Semantics())
-        self.assertEqual({'example', 'external', 'transitive'}, set(graph))
-        self.assertEqual('2.0.0', graph['transitive']['version'])
-
-    def test_lock_keeps_one_direct_reference_and_pins_exact_transitive_hashes(self):
-        lock = proof.lock_document('Example', 'net8.0', self.graph, '3.8.999')['dependencies']['net8.0']
-        self.assertEqual('[3.8.999, 3.8.999]', lock['Example']['requested'])
-        self.assertEqual('Transitive', lock['External']['type'])
-        self.assertEqual('B' * 86 + '==', lock['External']['contentHash'])
+    def test_native_graph_rejects_unreviewed_versions_hashes_missing_edges_and_extra_directs(self):
+        selected, catalog, original, original_lock = self.native_graph()
+        for mutate, code in (
+                (lambda a, l: a['targets']['net8.0'].update({'External/9.9.9': {'type': 'package'}}), 'consumer_native'),
+                (lambda a, l: a['libraries']['External/1.2.3'].update(sha512='changed'), 'consumer_native_content_hash'),
+                (lambda a, l: a['targets']['net8.0']['Example/3.8.999']['dependencies'].clear(), 'consumer_native_declared_edges'),
+                (lambda a, l: l['dependencies']['net8.0']['External'].update(type='Direct'), 'consumer_native_lock_identity'),
+                (lambda a, l: l['dependencies']['net8.0']['Example'].update(requested='[3.8.999, )'), 'consumer_native_root_range')):
+            assets, lock = deepcopy(original), deepcopy(original_lock)
+            mutate(assets, lock)
+            with self.subTest(code=code), self.assertRaises((ValueError, KeyError)):
+                proof.resolution.audit_native_graph(assets, lock, 'Example', 'net8.0', selected,
+                                                     catalog, '3.8.999', Semantics())
+        with patch.object(Semantics, 'call', side_effect=lambda op, **kw:
+                [{'normalized': '[3.8.999, 3.8.999]', 'satisfies': False}] if op == 'ranges' else
+                [{'compatible': True, 'nearest': item['candidates'][0]} for item in kw['values']]):
+            with self.assertRaisesRegex(ValueError, 'consumer_dependency_range_conflict'):
+                proof.resolution.audit_native_graph(original, original_lock, 'Example', 'net8.0', selected,
+                                                     catalog, '3.8.999', Semantics())
 
     def test_remote_mapping_never_contains_selected_ids_or_wildcard(self):
         config = ET.fromstring(proof.render_config(self.artifacts, self.graph, self.feeds))
@@ -253,33 +258,127 @@ class SelectedProductConsumerTests(unittest.TestCase):
         archive.with_suffix('.nupkg.sha512').write_text(selected['example']['content_hash'])
         metadata_path = folder / '.nupkg.metadata'
         metadata_path.write_text(json.dumps({'source': str(self.artifacts)}))
-        proof.verify_cache(graph, self.feeds, cache, self.artifacts, selected)
+        proof.verify_cache(graph, self.feeds, cache, self.artifacts, selected, {}, self.root / "inspector.dll", {})
         metadata_path.write_text(json.dumps({'source': proof.planner.NUGET_INDEX}))
         with self.assertRaisesRegex(RuntimeError, 'Unexpected package source'):
-            proof.verify_cache(graph, self.feeds, cache, self.artifacts, selected)
+            proof.verify_cache(graph, self.feeds, cache, self.artifacts, selected, {}, self.root / "inspector.dll", {})
         metadata_path.write_text(json.dumps({'source': str(self.artifacts)}))
         archive.write_bytes(b'wrong bytes')
         with self.assertRaisesRegex(RuntimeError, 'exact verified nupkg'):
-            proof.verify_cache(graph, self.feeds, cache, self.artifacts, selected)
+            proof.verify_cache(graph, self.feeds, cache, self.artifacts, selected, {}, self.root / "inspector.dll", {})
 
-    def test_external_cache_requires_original_hash_and_mapped_source(self):
+    def test_signed_external_native_content_hash_is_separate_from_raw_archive_hash(self):
         cache = self.root / 'external-cache'
         folder = cache / 'external/1.2.3'
         folder.mkdir(parents=True)
         archive = folder / 'external.1.2.3.nupkg'
-        archive.write_bytes(b'exact original externally restored archive')
-        digest = proof.consumers.base64_sha512(archive.read_bytes())
-        graph = {'external': self.graph['external'] | {'content_hash': digest}}
-        (folder / 'external.1.2.3.nupkg.sha512').write_text(digest)
+        with zipfile.ZipFile(archive, 'w') as package:
+            package.writestr('.signature.p7s', b'synthetic signature; native inspector is mocked')
+            package.writestr('External.nuspec', b'original metadata')
+        raw_hash = metadata.sha256(archive.read_bytes())
+        native_hash = self.graph['external']['content_hash']
+        (folder / 'external.1.2.3.nupkg.sha512').write_text(proof.consumers.base64_sha512(archive.read_bytes()))
         cache_metadata = folder / '.nupkg.metadata'
         cache_metadata.write_text(json.dumps({'source': proof.planner.NUGET_INDEX}))
-        proof.verify_cache(graph, self.feeds, cache, self.artifacts, {})
-        cache_metadata.write_text(json.dumps({'source': 'https://wrong.invalid/'}))
-        with self.assertRaisesRegex(ValueError, 'consumer_external_cache_source'):
-            proof.verify_cache(graph, self.feeds, cache, self.artifacts, {})
-        archive.write_bytes(b'different remote archive at same ID/version')
-        with self.assertRaisesRegex(ValueError, 'consumer_external_archive_hash'):
-            proof.verify_cache(graph, self.feeds, cache, self.artifacts, {})
+        graph = {'external': self.graph['external']}
+        assets = {'libraries': {'External/1.2.3': {'type': 'package', 'sha512': native_hash}}, 'packageFolders': {str(cache): {}}}
+        catalog = {('external', '1.2.3'): {'archive_sha256': raw_hash}}
+        def inspect(*args, **kwargs):
+            self.assertEqual(['dotnet', str(self.root / 'inspector.dll'), '--inspect-archive', str(archive)], args[0])
+            return json.dumps({'signed': True, 'content_hash': native_hash, 'archive_sha256': raw_hash})
+        with patch.object(proof.archives, 'run', side_effect=inspect):
+            result = proof.verify_cache(graph, self.feeds, cache, self.artifacts, {}, assets, self.root / 'inspector.dll', catalog)
+            self.assertEqual(native_hash, result[0]['nuget_content_hash'])
+            self.assertNotEqual(native_hash, proof.consumers.base64_sha512(archive.read_bytes()))
+            cache_metadata.write_text(json.dumps({'source': 'https://wrong.invalid/'}))
+            with self.assertRaisesRegex(ValueError, 'consumer_external_cache_source'):
+                proof.verify_cache(graph, self.feeds, cache, self.artifacts, {}, assets, self.root / 'inspector.dll', catalog)
+            catalog[('external', '1.2.3')]['archive_sha256'] = 'f' * 64
+            with self.assertRaisesRegex(ValueError, 'consumer_external_archive_hash'):
+                proof.verify_cache(graph, self.feeds, cache, self.artifacts, {}, assets, self.root / 'inspector.dll', catalog)
+        with patch.object(proof.archives, 'run', return_value=json.dumps({'signed': True, 'content_hash': 'wrong', 'archive_sha256': raw_hash})):
+            with self.assertRaisesRegex(ValueError, 'differs from restored dependency hash'):
+                proof.verify_cache(graph, self.feeds, cache, self.artifacts, {}, assets, self.root / 'inspector.dll', catalog)
+
+    def catalog_inputs(self):
+        cache = self.root / 'original-cache'
+        archive = cache / 'external/1.2.3/external.1.2.3.nupkg'
+        archive.parent.mkdir(parents=True)
+        with zipfile.ZipFile(archive, 'w') as package:
+            package.writestr('External.nuspec', '<package><metadata><id>External</id><version>1.2.3</version></metadata></package>')
+        assets = {'targets': {'net8.0': {'External/1.2.3': {'type': 'package'}}},
+            'libraries': {'External/1.2.3': {'type': 'package',
+            'sha512': proof.consumers.base64_sha512(archive.read_bytes())}}, 'packageFolders': {str(cache): {}}}
+        native = {'id': 'External', 'version': '1.2.3', 'groups': []}
+        feeds = {'sources': [{'name': 'original', 'url': proof.planner.NUGET_INDEX}],
+                 'packages': [{'id': 'External', 'sources': ['original']}]}
+        semantics = Semantics()
+        semantics.call = lambda op, **kw: [native] if op == 'nuspecs' else feeds
+        return archive, assets, semantics, feeds
+
+    def test_offline_catalog_freezes_original_bytes_and_preserves_original_source_mapping(self):
+        archive, assets, semantics, _ = self.catalog_inputs()
+        restored_archive = proof.archives.restored_archive
+        def verify_frozen(frozen, *args, **kwargs):
+            self.assertEqual({str(self.root / 'catalog/archives')}, set(frozen['packageFolders']))
+            return restored_archive(frozen, *args, **kwargs)
+        with patch.object(proof.archives, 'run', side_effect=AssertionError('process forbidden for unsigned metadata')), \
+                patch.object(proof.archives, 'restored_archive', side_effect=verify_frozen):
+            catalog, policy = proof.resolution.archive_catalog({'project': assets}, {}, self.root / 'config',
+                semantics, self.root / 'inspector.dll', self.root / 'catalog')
+        row = catalog[('external', '1.2.3')]
+        self.assertEqual(metadata.sha256(archive.read_bytes()), row['archive_sha256'])
+        self.assertEqual(archive.read_bytes(), row['archive'].read_bytes())
+        self.assertEqual({'original': proof.planner.NUGET_INDEX}, policy['sources'])
+        self.assertEqual(archive.read_bytes(), (Path(policy['mirrors']['original']) / archive.name).read_bytes())
+        archive.write_bytes(b'ambient cache changed after freeze')
+        self.assertNotEqual(archive.read_bytes(), row['archive'].read_bytes())
+
+    def test_offline_catalog_rejects_changed_original_bytes_and_unmapped_source(self):
+        archive, assets, semantics, feeds = self.catalog_inputs()
+        original = archive.read_bytes()
+        with zipfile.ZipFile(archive, 'a') as package:
+            package.writestr('changed', b'changed original bytes')
+        with self.assertRaisesRegex(ValueError, 'differs from restored dependency hash'):
+            proof.resolution.archive_catalog({'project': assets}, {}, self.root / 'config',
+                semantics, self.root / 'inspector.dll', self.root / 'changed-catalog')
+        archive.write_bytes(original)
+        feeds['packages'][0]['sources'] = []
+        with self.assertRaisesRegex(ValueError, 'consumer_external_feed_mapping'):
+            proof.resolution.archive_catalog({'project': assets}, {}, self.root / 'config',
+                semantics, self.root / 'inspector.dll', self.root / 'unmapped-catalog')
+
+    def test_original_archive_candidates_and_conflicting_context_hashes_fail_closed(self):
+        archive, assets, semantics, _ = self.catalog_inputs()
+        extra = self.root / 'other-cache'
+        duplicate = extra / 'external/1.2.3' / archive.name
+        duplicate.parent.mkdir(parents=True)
+        duplicate.write_bytes(archive.read_bytes())
+        assets['packageFolders'][str(extra)] = {}
+        with self.assertRaisesRegex(ValueError, 'consumer_original_archive_candidates'):
+            proof.resolution.archive_catalog({'project': assets}, {}, self.root / 'config',
+                semantics, self.root / 'inspector.dll', self.root / 'ambiguous-catalog')
+        del assets['packageFolders'][str(extra)]
+        conflicting = deepcopy(assets)
+        conflicting['libraries']['External/1.2.3']['sha512'] = 'different original context hash'
+        with self.assertRaisesRegex(ValueError, 'consumer_original_archive_ambiguity'):
+            proof.resolution.archive_catalog({'first': assets, 'second': conflicting}, {}, self.root / 'config',
+                semantics, self.root / 'inspector.dll', self.root / 'conflicting-catalog')
+
+    def test_native_semantics_and_inspector_runtime_are_plan_bound(self):
+        assembly = self.root / 'NuGet.Packaging.dll'
+        assembly.write_bytes(b'exact original SDK assembly')
+        identity = [{'name': 'NuGet.Packaging', 'sha256': metadata.sha256(assembly.read_bytes())}]
+        plan = {'semantics': {'sdk_version': metadata.SDK, 'assemblies': identity}}
+        semantics = Semantics()
+        semantics.call = lambda operation: identity
+        proof.resolution.validate_native_tools(plan, semantics, self.root / 'inspector.dll')
+        assembly.write_bytes(b'changed SDK assembly')
+        with self.assertRaisesRegex(ValueError, 'consumer_native_inspector_identity'):
+            proof.resolution.validate_native_tools(plan, semantics, self.root / 'inspector.dll')
+        semantics.call = lambda operation: []
+        with self.assertRaisesRegex(ValueError, 'consumer_native_semantics_identity'):
+            proof.resolution.validate_native_tools(plan, semantics, self.root / 'inspector.dll')
 
     def test_extracted_compile_content_and_runtime_payloads_join_archive_bytes(self):
         archive = self.artifacts / 'Example.3.8.999.nupkg'
@@ -305,6 +404,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         self.policy['metadata'].update(original_output_policy={'net8.0': {'IncludeBuildOutput': 'true'}},
                                        framework_reference_groups=[])
         self.plan['expected_artifacts'] = ['Elsa.Studio.Core.3.8.999.nupkg']
+        self.plan['semantics'] = {'sdk_version': metadata.SDK, 'assemblies': []}
         self.plan['consumer_feed_policy'] = {'config_sha256': metadata.sha256(b'original config')}
         plan_path = self.root / 'plan.json'
         plan_path.write_text(json.dumps(self.plan))
@@ -331,10 +431,14 @@ class SelectedProductConsumerTests(unittest.TestCase):
                     'libraries': {'Elsa.Studio.Core/3.8.999': {'type': 'package',
                         'sha512': proof.consumers.base64_sha512(source.read_bytes())}},
                     'packageFolders': {str(cwd / 'packages'): {}}, 'project': {'restore': {
-                        'sources': {str(self.artifacts): {}, proof.planner.NUGET_INDEX: {}},
+                        'sources': {item.get('value'): {} for item in ET.parse(cwd / 'NuGet.Config').findall('packageSources/add')},
                         'configFilePaths': [str(cwd / 'NuGet.Config')]}}}
                 (cwd / 'obj').mkdir()
                 (cwd / 'obj/project.assets.json').write_text(json.dumps(assets))
+                if not (cwd / 'packages.lock.json').exists():
+                    (cwd / 'packages.lock.json').write_text(json.dumps({'version': 1, 'dependencies': {'net8.0': {'Elsa.Studio.Core': {
+                        'type': 'Direct', 'requested': '[3.8.999, 3.8.999]', 'resolved': '3.8.999',
+                        'contentHash': proof.consumers.base64_sha512(source.read_bytes())}}}}))
             elif args[1] == 'run':
                 location = cwd / 'bin/Release/net8.0/Elsa.Studio.Core.dll'
                 location.parent.mkdir(parents=True)
@@ -351,13 +455,20 @@ class SelectedProductConsumerTests(unittest.TestCase):
         def git_bytes(root, commit, path):
             return b'original config' if path == 'NuGet.Config' else real_git_bytes(root, commit, path)
 
+        def catalog(*args):
+            args[-1].mkdir()
+            (args[-1] / 'catalog.private.json').write_text('{}')
+            return {}, {'sources': self.feeds['sources'], 'mapping': {'elsa.studio.core': []},
+                        'mirrors': {'original': str(self.root / 'original-mirror')}}
+
         with patch.object(proof.producer, 'admit', return_value=self.plan), \
                 patch.object(proof.producer, 'verify_controller', return_value={'commit': 'f' * 40, 'tree': 'e' * 40}), \
                 patch.object(proof.producer.maintenance, 'git_bytes', side_effect=git_bytes), \
                 patch.object(proof, 'load_snapshots', return_value={self.policy['project']: {'targets': {'net8.0': {}}, 'libraries': {}}}), \
                 patch.dict(proof.STUDIO38_CONTRACT_SOURCE, {}, clear=True), \
                 patch.object(proof.planner, 'build_helper', return_value=Semantics()), \
-                patch.object(proof, 'feed_policy', return_value={'sources': self.feeds['sources'], 'mapping': {'elsa.studio.core': []}}), \
+                patch.object(proof.resolution, 'build_inspector', return_value=self.root / 'inspector.dll'), \
+                patch.object(proof.resolution, 'archive_catalog', side_effect=catalog), \
                 patch.object(proof.consumers, '_run_command', side_effect=command):
             proof.execute(self.controller_root, plan_path, self.hash, receipt_path,
                           metadata.sha256(receipt_path.read_bytes()), self.artifacts, self.root / 'unused', output)
