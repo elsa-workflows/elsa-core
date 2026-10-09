@@ -663,8 +663,10 @@ def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version:
                                 source, env=build_environment()))
                             details = inspection['details']
                             require(details['assembly_name'] == policy['assembly_name'], 'Packaged assembly identity mismatch')
-                            require(row.get('source_kind') != 'core' or
-                                    details.get('informational_version') == version + '+' + row['commit'],
+                            # Original Extensions NUKE applies --version only when packing, not compiling.
+                            informational_prefix = {'studio': version, 'extensions': '1.0.0'}.get(row['product'])
+                            require(row.get('source_kind') != 'core' or informational_prefix is not None and
+                                    details.get('informational_version') == informational_prefix + '+' + row['commit'],
                                     'Core assembly commit mismatch')
                             source_evidence = {'documents': verify_documents(details, source, row, policy,
                                 name.split('/')[1], producer_cache)}

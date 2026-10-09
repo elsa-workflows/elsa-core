@@ -905,9 +905,9 @@ class MaintenanceContracts(unittest.TestCase):
                         maintenance.verify_artifacts(artifacts, [selected], self.row, '3.8.4-proof.42.1',
                                                      maintenance.ROOT, Path('/unused'), self.root)
 
-    def sdk_dependency_fixture(self):
+    def sdk_dependency_fixture(self, dependency='3.8.4'):
         groups = [{'framework': 'net8.0', 'dependencies': [
-            {'id': 'Elsa.Api.Client', 'version': '3.8.4', 'include': '', 'exclude': ''}]}]
+            {'id': 'Elsa.Api.Client', 'version': dependency, 'include': '', 'exclude': ''}]}]
         return {'expected_dependency_groups': groups, 'sdk_nuspec_sha256': 'a' * 64,
                 'expected_symbol_dependency_groups': groups, 'sdk_symbol_nuspec_sha256': 'b' * 64,
                 'expected_framework_reference_groups': [], 'expected_symbol_framework_reference_groups': []}
@@ -1115,44 +1115,62 @@ class MaintenanceContracts(unittest.TestCase):
             self.assertNotIn('/private/runner-host', json.dumps(receipt))
 
 
-    def test_core_package_and_assembly_metadata_bind_exact_selected_commit(self):
-        candidate = maintenance.load_candidates()['candidates'][0]
-        self.row = maintenance.selection(self.register, candidate['product'], candidate['line'], candidate['commit'],
-                                         '3.8.4-proof.42.1', 'core')
-        artifacts = self.write_package_fixture(frameworks=['net8.0'])
-        version = '3.8.4-proof.42.1'
-        policy = [{'id': 'Elsa.Studio.Fixture', 'assembly_name': 'Elsa.Studio.Fixture', 'frameworks': ['net8.0'],
-                   'include_build_output': True, 'symbols': True, 'satellites': [], **self.sdk_dependency_fixture()}]
-        prefix = f"https://raw.githubusercontent.com/{self.row['source_repository']}/{self.row['commit']}/"
-        details = {'assembly_name': 'Elsa.Studio.Fixture', 'assembly_version': '3.8.4.0',
-            'informational_version': version + '+' + self.row['commit'],
-            'source_link': {'documents': {'/_/*': prefix + '*'}}, 'documents': [],
-            'executable_method_bodies': 0, 'nonabstract_methods_without_body': 0,
-            'native_or_external_methods': 0, 'nonmodule_types': 1, 'reference_assembly': False}
-        inspection = {'details': details, 'symbol': dict.fromkeys(('key', 'pdb_name', 'guid', 'stamp',
-            'checksum_algorithm', 'declared_checksum', 'normalized_checksum', 'pdb_sha256', 'pdb_size'), 'fixture')}
-        with patch.object(maintenance, 'run', side_effect=lambda *_args, **_kwargs: json.dumps(inspection)):
-            receipt = maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT,
-                                                  Path('/inspector'), self.root)
-            self.assertEqual(receipt[0]['repository']['commit'], self.row['commit'])
-            details['informational_version'] = version + '+' + 'a' * 40
-            with self.assertRaisesRegex(ValueError, 'Core assembly commit mismatch'):
-                maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT,
-                                             Path('/inspector'), self.root)
-            details['informational_version'] = version + '+' + self.row['commit']
-            for symbols in (False, True):
-                self.write_package_fixture(frameworks=['net8.0'])
-                path = artifacts / ('fixture.snupkg' if symbols else 'fixture.nupkg')
-                with zipfile.ZipFile(path) as archive:
-                    entries = {name: archive.read(name) for name in archive.namelist()}
-                entries['fixture.nuspec'] = entries['fixture.nuspec'].replace(
-                    self.row['commit'].encode(), b'a' * 40)
-                with zipfile.ZipFile(path, 'w') as archive:
-                    for name, data in entries.items():
-                        archive.writestr(name, data)
-                with self.assertRaisesRegex(ValueError, 'repository provenance|Symbol metadata'):
-                    maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT,
-                                                 Path('/inspector'), self.root)
+    def test_core_package_and_assembly_metadata_bind_preserved_recipe_and_exact_selected_commit(self):
+        for candidate in maintenance.load_candidates()['candidates']:
+            with self.subTest(product=candidate['product'], line=candidate['line']):
+                original = next(row for row in self.register['sources'] if row['commit'] == candidate['original_commit'])
+                version = original['dependency_version'] + '-proof.42.1'
+                self.row = maintenance.selection(self.register, candidate['product'], candidate['line'],
+                                                 candidate['commit'], version, 'core')
+                def packages():
+                    return self.write_package_fixture(dependency=self.row['dependency_version'],
+                                                      packed_version=version, frameworks=['net8.0'])
+                artifacts = packages()
+                policy = [{'id': 'Elsa.Studio.Fixture', 'assembly_name': 'Elsa.Studio.Fixture', 'frameworks': ['net8.0'],
+                           'include_build_output': True, 'symbols': True, 'satellites': [],
+                           **self.sdk_dependency_fixture(self.row['dependency_version'])}]
+                prefix = f"https://raw.githubusercontent.com/{self.row['source_repository']}/{self.row['commit']}/"
+                informational_prefix = version if candidate['product'] == 'studio' else '1.0.0'
+                details = {'assembly_name': 'Elsa.Studio.Fixture', 'assembly_version': '1.0.0.0',
+                    'informational_version': informational_prefix + '+' + self.row['commit'],
+                    'source_link': {'documents': {'/_/*': prefix + '*'}}, 'documents': [],
+                    'executable_method_bodies': 0, 'nonabstract_methods_without_body': 0,
+                    'native_or_external_methods': 0, 'nonmodule_types': 1, 'reference_assembly': False}
+                inspection = {'details': details, 'symbol': dict.fromkeys(('key', 'pdb_name', 'guid', 'stamp',
+                    'checksum_algorithm', 'declared_checksum', 'normalized_checksum', 'pdb_sha256', 'pdb_size'), 'fixture')}
+                with patch.object(maintenance, 'run', side_effect=lambda *_args, **_kwargs: json.dumps(inspection)):
+                    receipt = maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT,
+                                                          Path('/inspector'), self.root)
+                    self.assertEqual(receipt[0]['repository']['commit'], self.row['commit'])
+                    self.assertEqual(receipt[0]['version'], version)
+                    self.assertEqual(receipt[0]['symbols'][0]['informational_version'],
+                                     informational_prefix + '+' + self.row['commit'])
+                    wrong_prefixes = ['unexpected', '1.0.0' if candidate['product'] == 'studio' else version]
+                    for invalid in [informational_prefix + '+' + 'a' * 40,
+                                    *[value + '+' + self.row['commit'] for value in wrong_prefixes],
+                                    'unexpected+' + informational_prefix + '+' + self.row['commit']]:
+                        with self.subTest(informational_version=invalid), \
+                                self.assertRaisesRegex(ValueError, 'Core assembly commit mismatch'):
+                            details['informational_version'] = invalid
+                            maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT,
+                                                         Path('/inspector'), self.root)
+                    details['informational_version'] = informational_prefix + '+' + self.row['commit']
+                    for symbols in (False, True):
+                        for field in ('commit', 'version'):
+                            packages()
+                            path = artifacts / ('fixture.snupkg' if symbols else 'fixture.nupkg')
+                            with zipfile.ZipFile(path) as archive:
+                                entries = {name: archive.read(name) for name in archive.namelist()}
+                            before = self.row['commit'] if field == 'commit' else version
+                            after = 'a' * 40 if field == 'commit' else '99.0.0-proof.42.1'
+                            entries['fixture.nuspec'] = entries['fixture.nuspec'].replace(before.encode(), after.encode())
+                            with zipfile.ZipFile(path, 'w') as archive:
+                                for name, data in entries.items():
+                                    archive.writestr(name, data)
+                            with self.subTest(symbols=symbols, field=field), \
+                                    self.assertRaisesRegex(ValueError, 'repository provenance|Symbol metadata|Packed version|Symbol identity'):
+                                maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT,
+                                                             Path('/inspector'), self.root)
 
 
 class CoreCandidateContracts(unittest.TestCase):
