@@ -312,6 +312,10 @@ def verify_maintenance_delta(root: Path, row: dict, parent: dict, register: dict
                     git_bytes(root, row['commit'], path) == old.replace(token,
                         f'<PackageProjectUrl>https://github.com/{CORE_REPOSITORY}</PackageProjectUrl>'.encode()),
                     'Core candidate metadata mismatch')
+        elif path == 'src/wrappers/wrappers/react-wrapper/package.json':
+            from historical_studio_npm_continuation import verify_delta
+            verify_delta(row, parent, change, git_bytes(root, parent['commit'], path),
+                         git_bytes(root, row['commit'], path))
         else:
             require(maintenance_editable_path(path) and path not in placeholders,
                     'Core candidate protected control mismatch')
@@ -408,6 +412,8 @@ VERIFICATION_REASONS = {
     'Core candidate graph mismatch': 'candidate-graph-invalid',
     'Core candidate parent chain mismatch': 'candidate-parent-chain-invalid',
     'Core candidate protected control mismatch': 'candidate-protected-control-invalid',
+    'Studio inline lifecycle delta mismatch': 'studio-inline-lifecycle-delta-invalid',
+    'Studio inline lifecycle source mismatch': 'studio-inline-lifecycle-source-invalid',
     'Core candidate metadata mismatch': 'candidate-metadata-invalid',
     'Core candidate source delta mismatch': 'candidate-source-delta-invalid',
     'Core assembly commit mismatch': 'assembly-commit-mismatch',

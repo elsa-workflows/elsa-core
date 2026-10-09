@@ -1,7 +1,7 @@
 """Original historical Studio npm recipe and a clean local-archive consumer.
 
-Keep original inline lifecycle and dist-only packaging. Their actual execution,
-not a requirement for today's helper/ownership ledger, decides functionality.
+Keep the admitted inline lifecycle and dist-only packaging. The two registered
+copy-script continuations retain original postinstall and build entry points.
 """
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from pathlib import Path
 import shutil
 
 import prove_studio_npm_pair as npm
+import historical_studio_npm_continuation as lifecycle
 from product_artifact_execution import validate_local_execution
 
 HOST = Path('src/hosts/Elsa.Studio.Host.CustomElements')
@@ -25,6 +26,33 @@ def stage_version(path: Path, name: str, version: str, *, dependency: str | None
         package['dependencies'][npm.WASM] = dependency
     npm.write_json(path, package)
     return package
+
+
+def wasm_copy_inventory(wasm: dict, prefix: str) -> dict:
+    inventory = wasm['inventory']
+    npm.require('appsettings.json' in inventory and all(any(path.startswith(root + '/') for path in inventory)
+                for root in ('_content', '_framework')), 'historical-copy-assets-missing')
+    return {prefix + path: record for path, record in inventory.items()
+            if path.startswith(('_content/', '_framework/')) or path == 'appsettings.json'}
+
+
+def verify_installed(consumer: Path, archives: dict) -> dict:
+    npm.require(set(archives) == {npm.WASM, npm.REACT}, 'historical-consumer-package-set')
+    wasm = archives[npm.WASM][1]
+    generated = wasm_copy_inventory(wasm, 'public/')
+    for name, (_, report) in archives.items():
+        expected = dict(report['inventory'])
+        if name == npm.REACT:
+            npm.require(not set(expected) & set(generated), 'historical-consumer-copy-collision')
+            expected.update(generated)
+        installed = consumer / 'node_modules' / name
+        npm.require(installed.is_dir() and not any(path.is_symlink() for path in (installed, *installed.parents)),
+                    'historical-consumer-installed-path')
+        npm.require(npm.files(installed) == expected, 'historical-consumer-installed-bytes')
+    return {'package': npm.REACT, 'source_package': npm.WASM, 'source_version': wasm['version'],
+            'source_sha512_integrity': wasm['sha512_integrity'],
+            'assets': [{'path': path, 'source_path': path.removeprefix('public/'), **record}
+                       for path, record in sorted(generated.items())]}
 
 
 def verify(path: Path, name: str, version: str, original: dict, wasm: dict | None = None) -> dict:
@@ -44,9 +72,8 @@ def verify(path: Path, name: str, version: str, original: dict, wasm: dict | Non
     else:
         npm.require(wasm is not None and package['dependencies'][npm.WASM] == version, 'historical-paired-dependency')
         npm.require(all(members.get('package/' + entry) for entry in npm.entrypoints(package)), 'historical-entrypoint')
-        wanted = {path: record for path, record in wasm['inventory'].items()
-                  if path.startswith(('_content/', '_framework/')) or path == 'appsettings.json'}
-        npm.require(all(inventory.get('dist/' + path) == record for path, record in wanted.items()), 'historical-dist-assets')
+        wanted = wasm_copy_inventory(wasm, 'dist/')
+        npm.require(all(inventory.get(path) == record for path, record in wanted.items()), 'historical-dist-assets')
     return archive | {'inventory': inventory, 'package_metadata_sha256': npm.sha256(members['package/package.json'])}
 
 
@@ -79,8 +106,7 @@ def consume(runner: npm.Runner, private: Path, archives: dict, workspace: Path) 
         npm.require(all(npm.sha256((consumer / name).read_bytes()) == digest for name, digest in inputs.items()),
                     'historical-consumer-inputs-changed')
     npm.verify_local_lock(json.loads((consumer / 'package-lock.json').read_text()), archives, consumer)
-    for name, (_, report) in archives.items():
-        npm.require(npm.files(consumer / 'node_modules' / name) == report['inventory'], 'historical-consumer-installed-bytes')
+    copied = verify_installed(consumer, archives)
     npm.module_smoke_scripts(consumer)
     clean_runner.run('historical-consumer-esm', ['node', 'imports.mjs'], consumer)
     clean_runner.run('historical-consumer-commonjs', ['node', 'require.cjs'], consumer)
@@ -88,7 +114,7 @@ def consume(runner: npm.Runner, private: Path, archives: dict, workspace: Path) 
     (consumer / 'src.js').write_text(f"import {{ WorkflowDefinitionEditor }} from '{npm.REACT}'; console.log(WorkflowDefinitionEditor);\n")
     clean_runner.run('historical-consumer-vite', ['npm', 'exec', '--offline', '--', 'vite', 'build'], consumer)
     return {'local_archives': local, 'empty_install_cache': True, 'normal_lifecycle': True,
-            'esm': True, 'commonjs': True, 'vite': True, 'input_sha256': inputs}
+            'esm': True, 'commonjs': True, 'vite': True, 'input_sha256': inputs, 'lifecycle_generated_assets': copied}
 
 
 def prove(source: Path, private: Path, retained: Path, plan: dict, execution: dict, framework: str) -> dict:
@@ -101,6 +127,12 @@ def prove(source: Path, private: Path, retained: Path, plan: dict, execution: di
                'version': plan['requested_version'], 'execution': execution,
                'framework': framework, 'commands': [], 'success': False, 'published': False,
                'historical_workflow_executed': False, 'original_lifecycle_preserved': True}
+    correction = next((row for row in lifecycle.CONTINUATIONS.values() if row['commit'] == plan['source']['commit']), None)
+    receipt['inline_postinstall_preserved'] = True
+    if correction:
+        receipt['original_lifecycle_preserved'] = False
+        receipt['lifecycle_correction'] = correction | {'path': lifecycle.PATH,
+            'before_blob': lifecycle.BEFORE_BLOB, 'after_blob': lifecycle.AFTER_BLOB, 'scope': 'inline-copy-script-only'}
     runner = npm.Runner(private, receipt)
     version = plan['requested_version']
     try:

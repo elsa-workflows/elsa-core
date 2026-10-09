@@ -73,12 +73,15 @@ jobs:
       - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
           dotnet-version: '10.0.300'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
       - name: Test native planner and unchanged source/unit/npm contracts
         env:
           PYTHONPATH: scripts/integration-program
         run: |
-          python3 -m unittest test_plan_product_release test_release_unit_manifest test_package_impact test_prepare_maintenance_build test_prove_studio_npm_pair test_prove_product_release_artifacts test_prove_product_release_consumers test_selected_extensions_contract
-          python3 -O -m unittest test_plan_product_release test_release_unit_manifest test_package_impact test_prepare_maintenance_build test_prove_studio_npm_pair test_prove_product_release_artifacts test_prove_product_release_consumers test_selected_extensions_contract
+          python3 -m unittest test_plan_product_release test_release_unit_manifest test_package_impact test_prepare_maintenance_build test_prove_studio_npm_pair test_prove_product_release_artifacts test_prove_product_release_consumers test_selected_extensions_contract test_historical_studio_npm_continuation
+          python3 -O -m unittest test_plan_product_release test_release_unit_manifest test_package_impact test_prepare_maintenance_build test_prove_studio_npm_pair test_prove_product_release_artifacts test_prove_product_release_consumers test_selected_extensions_contract test_historical_studio_npm_continuation
 
   plan:
     needs: select

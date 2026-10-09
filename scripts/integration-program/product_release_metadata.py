@@ -16,8 +16,8 @@ ROOT = Path(__file__).resolve().parents[2]
 SDK = '10.0.300'
 CORE_REFS = {'3.8': 'refs/heads/release/3.8.4', '3.9': 'refs/heads/release/3.9.0'}
 DESCENDANTS = {
-    ('studio', '3.8'): '41ed15db7bfce7af5be2d362001518e8e692c22e',
-    ('studio', '3.9'): 'e7cf096bc117d970dc0bbc11e26dabd2ea2e1b00',
+    ('studio', '3.8'): 'da2dec10ba36c65e376138ee45e1c34525e45e49',
+    ('studio', '3.9'): '98a3f23d9c3c67080f3926eeb584036c49855b72',
     ('extensions', '3.8'): '92c27a3dd2c7f1dc107cba34749dd293a5d77743',
     ('extensions', '3.9'): 'bd7b846efae7e93676c6c3a594e682a5a958b766',
 }
