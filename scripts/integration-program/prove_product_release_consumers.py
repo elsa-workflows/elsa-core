@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Package-only Studio 3.8 consumers of exact reviewed selected archives.
+"""Package-only Studio and Extensions 3.8 consumers of exact reviewed selected archives.
 
 Every selected applicable framework is a separate cold restore/compile cell.
 Original hashed planning assets bound the allowed external versions and hashes.
@@ -22,6 +22,7 @@ import prove_product_release_artifacts as producer
 import prove_consolidated_package_consumers as consumers
 import prove_consolidated_packages as archives
 import selected_product_consumer_metadata as resolution
+import selected_extensions_contract as extensions
 from selected_product_consumer_metadata import nearest_group
 from product_artifact_execution import local_execution, validate_local_execution
 from prove_consolidated_packages import archive_names, dependency_groups, framework_reference_groups, metadata as nuspec, require
@@ -34,6 +35,19 @@ STUDIO38_CONTRACT_SOURCE = {
     'src/framework/Elsa.Studio.Core/Options/BackendOptions.cs': 'd640f27152eb46631bc157733c4e8284cae845923d717f6fdb9df9235466c538',
     'src/framework/Elsa.Studio.Core/Models/RemoteBackend.cs': 'c96cacf7fc3d755cff76861d2e837fc35aa359b2779137ee6cae99253a33f1e4',
 }
+
+
+def runtime_contract(plan: dict) -> dict:
+    if plan['product'] == 'extensions':
+        return {'package': 'elsa.io.http', 'fixture': ROOT / 'scripts/integration-program/selected-extensions-consumer/Program.cs',
+                'checks': {'httpFactoryRegistered': True, 'urlContentResolved': True, 'networkRequests': 0},
+                'required_packages': ('Elsa.IO.Http', 'Elsa.IO'), 'assembly_release_version': '1.0.0',
+                'description': 'Extensions38 HTTP shell registration and URL binary content with fake handler',
+                'limitation': 'HTTP API probe does not certify full shell composition, marker features or all product functionality.'}
+    return {'package': 'elsa.studio.core', 'fixture': FIXTURE, 'checks': {'backendUriPreserved': True},
+            'required_packages': ('Elsa.Studio.Core',), 'assembly_release_version': plan['requested_version'],
+            'description': 'Studio38 backend-options accessor preserves configured URI',
+            'limitation': 'Backend accessor contract does not certify Studio browser/deployed behavior or all package functionality.'}
 
 
 def read_bound(path: Path, digest: str) -> bytes:
@@ -323,8 +337,10 @@ def cell(plan: dict, package: dict, framework: str, selected: dict, artifacts: P
     (output / 'NuGet.Config').write_text(render_config(artifacts, graph, policy))
     project.write_text(render_project(package['id'], plan['requested_version'], framework, references, executable=runtime, managed=managed))
     (output / 'packages.lock.json').write_bytes(lock_bytes)
-    (output / 'Program.cs').write_text(FIXTURE.read_text() if runtime else
+    (output / 'Program.cs').write_text(runtime_contract(plan)['fixture'].read_text() if runtime else
         ('extern alias selected;\n' if managed else '') + 'public class CompileContract {}\n')
+    if runtime:
+        (output / 'AssemblyProof.cs').write_bytes((ROOT / 'scripts/integration-program/selected-consumer/AssemblyProof.cs').read_bytes())
     cache, environment = cold_environment(output)
     inputs = {path.name: metadata.sha256(path.read_bytes()) for path in output.iterdir() if path.is_file()}
     commands = []
@@ -352,11 +368,14 @@ def cell(plan: dict, package: dict, framework: str, selected: dict, artifacts: P
                  if line.startswith('SELECTED_CONSUMER_PROOF=')]
         require(len(lines) == 1, 'consumer_runtime_receipt')
         proof = planner.read_json(lines[0].encode())
-        require(proof['backendUriPreserved'] is True, 'consumer_runtime_contract')
-        result['runtime'] = {'contract': 'Studio38 backend-options accessor preserves configured URI',
+        contract = runtime_contract(plan)
+        require(all(type(proof.get(key)) is type(value) and proof[key] == value for key, value in contract['checks'].items()),
+                'consumer_runtime_contract')
+        result['runtime'] = {'contract': contract['description'],
             'loaded_assemblies': retain_runtime_rows(consumers.verify_loaded_assemblies(proof, restored, framework, output,
                 cache, artifacts, selected, plan['requested_version'], plan['source']['commit'],
-                required_packages=('Elsa.Studio.Core',)))}
+                required_packages=contract['required_packages'],
+                assembly_release_version=contract['assembly_release_version']))}
     return result
 
 
@@ -364,14 +383,17 @@ def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, rec
             artifacts: Path, snapshots: Path, output: Path) -> dict:
     plan, receipt, historical_admission = admit_producer_stage(read_bound(plan_path, plan_hash), plan_hash,
         read_bound(receipt_path, receipt_hash), receipt_hash)
-    require(plan['product'] == 'studio' and plan['line'] == '3.8', 'consumer_control_not_implemented')
+    require(plan['product'] in ('studio', 'extensions') and plan['line'] == '3.8', 'consumer_control_not_implemented')
     execution = local_execution()
     controller = producer.verify_controller(root, plan)
     selected = admit_artifacts(plan, plan_hash, receipt, artifacts, root)
     originals = load_snapshots(plan, plan_hash, snapshots)
-    for path, expected in STUDIO38_CONTRACT_SOURCE.items():
-        require(metadata.sha256(producer.maintenance.git_bytes(root, plan['source']['commit'], path)) == expected,
-                'consumer_runtime_source_contract')
+    if plan['product'] == 'extensions':
+        extensions.verify_source(root, plan['source']['commit'])
+    else:
+        for path, expected in STUDIO38_CONTRACT_SOURCE.items():
+            require(metadata.sha256(producer.maintenance.git_bytes(root, plan['source']['commit'], path)) == expected,
+                    'consumer_runtime_source_contract')
     require(not output.exists() and not output.resolve().is_relative_to(root.resolve()) and
             not any(part.is_symlink() for part in (output, *output.parents)), 'consumer_output_location')
     output.mkdir(parents=True)
@@ -384,7 +406,7 @@ def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, rec
               'producer_plan_admission': historical_admission,
               'current_consumer_admission': {'eligible': False, 'scope': 'current-complete-selected-product-prerequisites'},
               'success': False, 'published': False, 'coverage': [], 'runtime': [], 'stage': 'consumer-setup',
-              'runtime_contract_source': STUDIO38_CONTRACT_SOURCE}
+              'runtime_contract_source': extensions.SOURCE_BLOBS if plan['product'] == 'extensions' else STUDIO38_CONTRACT_SOURCE}
     try:
         config = private / 'NuGet.Config'
         config.write_bytes(producer.maintenance.git_bytes(root, plan['source']['commit'], 'NuGet.Config'))
@@ -421,9 +443,10 @@ def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, rec
                 result['coverage'].append(cell(plan, package, framework, selected, artifacts, semantics,
                     private / name, catalog=catalog, original_policy=original_policy, inspector=inspector))
         validate_ledger(plan, result['coverage'])
-        result['stage'] = 'studio-runtime-contract'
-        require('elsa.studio.core' in selected, 'consumer_studio_representative_missing')
-        package = selected['elsa.studio.core']
+        result['stage'] = plan['product'] + '-runtime-contract'
+        contract = runtime_contract(plan)
+        require(contract['package'] in selected, 'consumer_representative_missing')
+        package = selected[contract['package']]
         for framework in package['policy']['frameworks']:
             result['focus'] = {'id': package['id'], 'framework': framework}
             result['runtime'].append(cell(plan, package, framework, selected, artifacts, semantics,
@@ -432,7 +455,7 @@ def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, rec
         result.pop('focus', None)
         result.update(success=True, stage='complete', limitations=[
             'Complete selected restore/compile coverage is distinct from representative runtime behavior.',
-            'Backend accessor contract does not certify Studio browser/deployed behavior or all package functionality.'])
+            contract['limitation']])
         return result
     except Exception:
         result['failure_code'] = result['stage'] + '-failed'

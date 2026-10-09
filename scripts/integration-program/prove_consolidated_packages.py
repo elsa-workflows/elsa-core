@@ -443,6 +443,9 @@ def verify_package_manifest(archive: zipfile.ZipFile, row: dict, version: str, *
     required = any(properties["manifest_required"] for properties in row["framework_properties"].values())
     paths = {properties["manifest_path"] for properties in row["framework_properties"].values() if properties["manifest_required"]}
     catalog_required = require_sdk_metadata and row["id"] in ADMISSION_SHELL_FEATURES
+    expectation = row.get("manifest_expectation")
+    if expectation:
+        require(required, "Source-pinned package manifest is required")
     if catalog_required and ADMISSION_SHELL_FEATURES[row["id"]]:
         require(required, "Selectable Admission package manifest is required")
     require(len(paths) <= 1, f"Frameworks disagree on package manifest location: {row['id']}")
@@ -459,6 +462,27 @@ def verify_package_manifest(archive: zipfile.ZipFile, row: dict, version: str, *
     require(data.get("extensions", {}).get("repositoryUrl", "").rstrip("/") == CORE_URL,
             f"Generated package manifest repository mismatch: {row['id']}")
     catalog = verify_admission_catalog(data, row) if catalog_required else {}
+    if expectation:
+        require(data.get("schemaVersion") == "1.0" and
+                data.get("compatibility", {}).get("runtimeKinds") == ["elsa.server"],
+                "Source-pinned manifest schema/runtime mismatch")
+        features = data.get("features")
+        require(type(features) is list and len(features) == 1 and type(features[0]) is dict,
+                "Source-pinned manifest feature inventory mismatch")
+        feature = features[0]
+        require(all(feature.get(key) == value for key, value in expectation.items()),
+                "Source-pinned manifest feature mismatch")
+        require(type(feature.get("id")) is str and feature["id"].startswith(row["id"] + ".") and
+                feature["id"] != row["id"] + ".", "Source-pinned manifest feature identity mismatch")
+        dependencies = feature.get("dependencies")
+        require(type(dependencies) is list and all(type(item) is dict and set(item) <= {"packageId", "versionRange", "featureId"} and item.get("packageId") is None and
+                item.get("versionRange") is None for item in dependencies) and
+                [item.get("featureId") for item in dependencies] == row["manifest_dependency_features"],
+                "Source-pinned manifest dependencies mismatch")
+        compatibility = feature.get("compatibility")
+        require(compatibility is None or compatibility.get("runtimeKinds") == ["elsa.server"],
+                "Source-pinned manifest feature runtime mismatch")
+        catalog = {"selectable_features": [expectation], "runtime_kinds": ["elsa.server"]}
     return {"path": path, "sha256": hashlib.sha256(archive.read(path)).hexdigest(),
             "id": row["id"], "version": version, "frameworks": row["frameworks"], **catalog}
 

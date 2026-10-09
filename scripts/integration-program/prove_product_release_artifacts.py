@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-"""Admit one reviewed maintenance plan and run its private Studio vertical control.
+"""Admit one reviewed maintenance plan and run its private maintenance vertical control.
 
-No publisher, allocation or historical workflow is invoked. Other products are
-admitted structurally but deliberately have no producer adapter yet.
+No publisher, allocation or historical workflow is invoked. Studio and Extensions 3.8 have bounded producer adapters.
 """
 from __future__ import annotations
 
@@ -17,6 +16,7 @@ import zipfile
 import plan_product_release as planner
 import product_release_metadata as metadata
 import prepare_maintenance_build as maintenance
+import selected_extensions_contract as extensions
 from prove_consolidated_packages import archive_names, dependency_groups, framework_reference_groups, metadata as nuspec, require, run
 import prove_historical_studio_npm_pair as historical
 from product_artifact_execution import local_execution
@@ -193,14 +193,20 @@ def preflight(source: Path, plan: dict, private: Path) -> dict:
         log.write_text(json.dumps(command) + '\n' + output)
         return output.strip()
 
-    node = inspect('node', ['node', '--version'])
-    require(re.fullmatch(r'v22\.[0-9]+\.[0-9]+', node) is not None, 'artifact_node_version')
-    npm_version = inspect('npm', ['npm', '--version'])
-    require(re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', npm_version) is not None and
-            int(npm_version.split('.')[0]) >= 9, 'artifact_npm_version')
+    tools = {'product_work_executed': False}
+    if plan.get('product', 'studio') == 'studio':
+        node = inspect('node', ['node', '--version'])
+        require(re.fullmatch(r'v22\.[0-9]+\.[0-9]+', node) is not None, 'artifact_node_version')
+        npm_version = inspect('npm', ['npm', '--version'])
+        require(re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', npm_version) is not None and
+                int(npm_version.split('.')[0]) >= 9, 'artifact_npm_version')
+        tools.update(node=node, npm=npm_version)
     sdks = inspect('sdks', ['dotnet', '--list-sdks'])
     require(any(line.startswith(metadata.SDK + ' ') for line in sdks.splitlines()), 'artifact_sdk_unavailable')
     require(inspect('sdk-selection', ['dotnet', '--version']) == metadata.SDK, 'artifact_sdk_selection')
+    tools['sdk'] = metadata.SDK
+    if plan.get('product', 'studio') == 'extensions':
+        return tools
     workflow = source / plan['npm']['workflow']['path']
     require(metadata.sha256(workflow.read_bytes()) == plan['npm']['workflow']['sha256'], 'artifact_host_recipe_identity')
     frameworks = re.findall(r'^\s*run: dotnet publish \./src/hosts/Elsa\.Studio\.Host\.CustomElements .* -f (net[0-9.]+)\s*$',
@@ -211,7 +217,7 @@ def preflight(source: Path, plan: dict, private: Path) -> dict:
                                   '-getProperty:TargetFrameworks,TargetFramework']))['Properties']
     supported = (properties.get('TargetFrameworks') or properties.get('TargetFramework', '')).split(';')
     require(frameworks[0] in supported, 'artifact_host_unsupported_framework')
-    return {'node': node, 'npm': npm_version, 'sdk': metadata.SDK, 'host_framework': frameworks[0],
+    return tools | {'host_framework': frameworks[0],
             'host_supported_frameworks': supported, 'original_workflow_sha256': metadata.sha256(workflow.read_bytes()),
             'host_project_sha256': metadata.sha256((source / host).read_bytes()),
             'product_work_executed': False}
@@ -224,7 +230,7 @@ def execute(root: Path, data: bytes, digest: str, output: Path, *, setup_only: b
             not any(part.is_symlink() for part in (output, *output.parents)), 'artifact_output_location')
     controller = verify_controller(root, plan)
     # Explicit supported interface until its first source-faithful control settles.
-    require(plan['product'] == 'studio' and plan['line'] == '3.8', 'artifact_control_not_implemented')
+    require(plan['product'] in ('studio', 'extensions') and plan['line'] == '3.8', 'artifact_control_not_implemented')
     output.mkdir(parents=True)
     private, retained = output / 'private', output / 'retained'
     private.mkdir()
@@ -237,6 +243,8 @@ def execute(root: Path, data: bytes, digest: str, output: Path, *, setup_only: b
     try:
         source = private / 'admitted-source'
         metadata.checkout_source(root, plan['source'], source)
+        if plan['product'] == 'extensions':
+            extensions.verify_source(root, plan['source']['commit'])
         inventory = plan['inventory']
         for path, expected in ((inventory['release_recipe']['solution'], inventory['release_recipe']['sha256']),
                                (inventory['release_recipe']['workflow'], inventory['release_recipe']['workflow_sha256'])):
@@ -259,9 +267,14 @@ def execute(root: Path, data: bytes, digest: str, output: Path, *, setup_only: b
         require(producer['success'] is True, 'artifact_producer_failed')
         receipt['product_tests'] = producer['tests']
         receipt['packages'] = retain_selected(plan, private / 'producer/artifacts', retained / 'nuget')
-        receipt['stage'] = 'historical-studio-npm'
-        receipt['npm'] = historical.prove(private / 'producer/source', private / 'npm', retained / 'npm', plan, execution,
-                                          receipt['preflight']['host_framework'])
+        if plan['product'] == 'extensions':
+            selected = {row['id'].casefold() for row in plan['inventory']['selected']}
+            receipt['manifest_verification'] = [{key: row[key] for key in ('id', 'package_manifest', 'sdk_assets')}
+                for row in producer['packages'] if row['id'].casefold() in selected]
+        if plan['product'] == 'studio':
+            receipt['stage'] = 'historical-studio-npm'
+            receipt['npm'] = historical.prove(private / 'producer/source', private / 'npm', retained / 'npm', plan, execution,
+                                              receipt['preflight']['host_framework'])
         receipt.update(success=True, stage='complete', artifact_proof=True)
         return receipt
     except Exception:

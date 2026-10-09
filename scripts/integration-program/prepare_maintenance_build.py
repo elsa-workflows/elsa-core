@@ -15,9 +15,9 @@ import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
 
-from prove_consolidated_packages import (archive_names, capture_compiler_evidence, dependency_groups, framework_reference_groups,
+from prove_consolidated_packages import (archive_names, capture_sdk_assets, capture_compiler_evidence, dependency_groups, framework_reference_groups,
     generated_family, metadata, only_abstract_methods, read_staged_nuspecs, require, restored_archive, restored_assets,
-    run, source_url, verify_external_document, verify_generator_identity, verify_tracked_document)
+    run, source_url, verify_package_manifest, verify_sdk_assets, verify_external_document, verify_generator_identity, verify_tracked_document)
 
 ROOT = Path(__file__).resolve().parents[2]
 REGISTER = ROOT / 'docs/integration-program/maintenance-source-register.json'
@@ -594,7 +594,8 @@ def stage_maintenance_metadata(source: Path, row: dict, inventory: list[dict], v
                           source_commit=row['commit'], restore_assets=[], framework_properties={})
             read_staged_nuspecs(destination, policy)
             for framework in policy['frameworks']:
-                properties = 'MSBuildToolsPath,NETCoreSdkVersion,NetCoreRoot,RuntimeIdentifier,ProjectAssetsFile'
+                properties = ('MSBuildToolsPath,NETCoreSdkVersion,NetCoreRoot,RuntimeIdentifier,ProjectAssetsFile,'
+                              'GenerateElsaPackageManifest,ElsaPackageManifestIncludeInPackage,ElsaPackageManifestPackagePath')
                 targets = 'ResolveReferences'
                 if ET.parse(source / policy['project']).getroot().get('Sdk') == 'Microsoft.NET.Sdk.Razor':
                     targets += ';_PrepareRazorSourceGenerators'
@@ -610,7 +611,15 @@ def stage_maintenance_metadata(source: Path, row: dict, inventory: list[dict], v
                     'path': assets.relative_to(source).as_posix(), 'sha256': digest(assets.read_bytes())})
                 evidence = capture_compiler_evidence(source, policy, framework, resolved, cache,
                                                     physical_families=physical_families(row, policy))
-                policy['framework_properties'][framework] = {'compiler_evidence': evidence}
+                policy['framework_properties'][framework] = {'compiler_evidence': evidence,
+                    'manifest_required': resolved['Properties']['GenerateElsaPackageManifest'].lower() == 'true' and
+                        resolved['Properties']['ElsaPackageManifestIncludeInPackage'].lower() == 'true',
+                    'manifest_path': resolved['Properties']['ElsaPackageManifestPackagePath']}
+            if row['product'] == 'extensions':
+                from selected_extensions_contract import bind_manifest_contract
+                bind_manifest_contract(source, row, policy)
+                policy['expected_sdk_assets'] = capture_sdk_assets(source, policy,
+                    (destination / (policy['nupkg'].removesuffix('.nupkg') + '.nuspec')).read_bytes())
 
 
 def public_inventory(inventory: list[dict]) -> list[dict]:
@@ -762,6 +771,10 @@ def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version:
                             target = version if dependency['id'].casefold() in produced else row['dependency_version']
                             require(dependency['version'] in (target, f'[{target}]', f'[{target}, )', f'[{target},)'),
                                     f"Unexpected Elsa dependency: {identifier} -> {dependency}")
+                manifest = None
+                if row['product'] == 'extensions':
+                    verify_sdk_assets(package, policy, required=True)
+                    manifest = verify_package_manifest(package, policy, version, require_sdk_metadata=True)
                 names = archive_names(package)
                 assemblies = sorted(n for n in names if n.startswith('lib/') and n.endswith('.dll'))
                 frameworks = sorted({name.split('/')[1] for name in assemblies})
@@ -821,6 +834,8 @@ def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version:
                     'assembly_name': policy['assembly_name'], 'include_build_output': policy['include_build_output'],
                     'satellites': policy['satellites'],
                     'dependencies': dependencies, 'repository': dict(repository.attrib), 'symbols': symbols,
+                    'package_manifest': manifest, 'sdk_assets': [{key: asset[key] for key in ('path', 'sha256')}
+                        for asset in policy.get('expected_sdk_assets', [])],
                     'files': [{'name': p.name, 'sha256': digest(p.read_bytes()), 'size': p.stat().st_size}
                               for p in (path, symbols_path) if p.exists()]})
     require(found == produced, 'Missing evaluated packages')
@@ -977,6 +992,14 @@ def verify_tests(output: Path, row: dict, context: dict | None = None) -> dict:
     return {'executions': results, 'inherited_skipped_placeholders': evidence['inherited_skipped_placeholders']}
 
 
+def inspect_toolchain(source: Path, row: dict) -> dict:
+    tools = {'dotnet': ['dotnet', '--list-sdks']}
+    if row['product'] == 'studio':
+        tools.update(node=['node', '--version'], npm=['npm', '--version'])
+    return {tool: [line.split()[0] for line in run(command, source, env=build_environment()).splitlines()]
+            for tool, command in tools.items()}
+
+
 def prepare(root: Path, row: dict, version: str, output: Path) -> dict:
     require(not output.exists(), 'Output must be new; retain prior evidence')
     require(not output.is_relative_to(root), 'Output must be outside the controller checkout')
@@ -1001,8 +1024,7 @@ def prepare(root: Path, row: dict, version: str, output: Path) -> dict:
         receipt['source_policy_files'] = {name: digest((source / name).read_bytes())
             for name in ('Directory.Build.props', 'Directory.Packages.props') if (source / name).is_file()}
         receipt['stage'] = 'toolchain'
-        receipt['toolchain'] = {tool: [line.split()[0] for line in run(command, source, env=build_environment()).splitlines()] for tool, command in {
-            'dotnet': ['dotnet', '--list-sdks'], 'node': ['node', '--version'], 'npm': ['npm', '--version']}.items()}
+        receipt['toolchain'] = inspect_toolchain(source, row)
         (output / 'artifacts').mkdir()
         for index, (directory, command) in enumerate(recipes(row, version, output)):
             log = output / f'command-{index:02}.log'

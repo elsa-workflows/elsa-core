@@ -404,7 +404,8 @@ class MaintenanceContracts(unittest.TestCase):
                         '<frameworkReferences><group targetFramework="net8.0">'
                         '<frameworkReference name="Microsoft.AspNetCore.App" /></group></frameworkReferences></metadata></package>')
                 return ''
-            return json.dumps({'Properties': {'ProjectAssetsFile': str(assets)}, 'Items': {}})
+            return json.dumps({'Properties': {'ProjectAssetsFile': str(assets), 'GenerateElsaPackageManifest': '',
+                'ElsaPackageManifestIncludeInPackage': '', 'ElsaPackageManifestPackagePath': ''}, 'Items': {}})
         with patch.dict(os.environ, {'GH_TOKEN': 'private-secret'}), patch.object(maintenance, 'run', side_effect=execute), \
              patch.object(maintenance, 'capture_compiler_evidence', return_value=evidence) as captured:
             maintenance.stage_maintenance_metadata(source, self.row, [policy], '3.8.4-proof.42.1', Path('/inspector'))
@@ -1128,6 +1129,9 @@ class MaintenanceContracts(unittest.TestCase):
                 artifacts = packages()
                 policy = [{'id': 'Elsa.Studio.Fixture', 'assembly_name': 'Elsa.Studio.Fixture', 'frameworks': ['net8.0'],
                            'include_build_output': True, 'symbols': True, 'satellites': [],
+                           'expected_sdk_assets': [{'path': 'build/Fixture.targets', 'source_path': 'Fixture.targets',
+                               'sha256': hashlib.sha256(b'<Project/>').hexdigest()}], 'framework_properties': {
+                               'net8.0': {'manifest_required': False, 'manifest_path': ''}},
                            **self.sdk_dependency_fixture(self.row['dependency_version'])}]
                 prefix = f"https://raw.githubusercontent.com/{self.row['source_repository']}/{self.row['commit']}/"
                 informational_prefix = version if candidate['product'] == 'studio' else '1.0.0'

@@ -432,7 +432,9 @@ def verify_restore_isolation(assets: dict, root: Path, cache: Path, artifacts: P
 
 def verify_loaded_assemblies(result: dict, assets: dict, framework: str, root: Path,
                              cache: Path, artifacts: Path, by_id: dict, version: str, source: str,
-                             required_packages: tuple[str, ...] = REQUIRED_PACKAGES) -> list[dict]:
+                             required_packages: tuple[str, ...] = REQUIRED_PACKAGES, *,
+                             assembly_release_version: str | None = None) -> list[dict]:
+    release_version = assembly_release_version or version
     expected = {}
     for key, library in assets["targets"][framework].items():
         package_id, package_version = key.split("/")
@@ -468,7 +470,7 @@ def verify_loaded_assemblies(result: dict, assets: dict, framework: str, root: P
             raise RuntimeError("Loaded assembly file differs from exact package asset")
         if not row.get("fullName", "").startswith(row["name"] + ", Version=" + str(row.get("version")) + ",") or not row.get("informationalVersion"):
             raise RuntimeError("Incomplete loaded assembly identity")
-        if asset["internal"] and (row["version"] != version.split("+", 1)[0].split("-", 1)[0] + ".0" or row["informationalVersion"] != f"{version}+{source}"):
+        if asset["internal"] and (row["version"] != release_version.split("+", 1)[0].split("-", 1)[0] + ".0" or row["informationalVersion"] != f"{release_version}+{source}"):
             raise RuntimeError("Loaded internal assembly release/source identity mismatch")
         records.append({**row, "package_id": asset["id"], "package_version": asset["version"], "package_asset": asset["asset"]})
     return records
