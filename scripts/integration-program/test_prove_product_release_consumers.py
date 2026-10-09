@@ -15,6 +15,7 @@ import product_release_metadata as metadata
 import test_prove_product_release_artifacts as artifact_contracts
 import prove_product_release_consumers as proof
 from product_artifact_execution import local_execution
+from selected_maintenance_test_support import patch_offline_local_execution
 
 
 class Semantics:
@@ -31,6 +32,11 @@ class Semantics:
 class SelectedProductConsumerTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        super().setUpClass()
+        local_execution_patch = patch_offline_local_execution(proof)
+        local_execution_patch.start()
+        cls.addClassCleanup(local_execution_patch.stop)
+
         temporary = tempfile.TemporaryDirectory()
         cls.addClassCleanup(temporary.cleanup)
         cls.controller_root = Path(temporary.name).resolve()

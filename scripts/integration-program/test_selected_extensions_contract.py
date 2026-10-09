@@ -12,9 +12,17 @@ import prove_consolidated_package_consumers as consumers
 import prove_product_release_artifacts as artifacts
 import prove_product_release_consumers as proof
 import selected_extensions_contract as contract
+from selected_maintenance_test_support import patch_offline_local_execution
 
 
 class ExtensionsControlTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        local_execution_patch = patch_offline_local_execution(artifacts)
+        local_execution_patch.start()
+        cls.addClassCleanup(local_execution_patch.stop)
+
     def test_contract_is_bound_to_exact_original_source_and_all_blobs(self):
         contract.verify_source(artifacts.ROOT, contract.SOURCE)
         with self.assertRaisesRegex(ValueError, 'extensions_contract_source'):

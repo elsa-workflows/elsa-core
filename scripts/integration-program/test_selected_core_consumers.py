@@ -10,10 +10,18 @@ import zipfile
 import product_release_metadata as metadata
 import prove_product_release_consumers as proof
 import selected_core_consumer as core
+from selected_maintenance_test_support import patch_offline_local_execution
 import test_selected_core_producer as producer_tests
 
 
 class CoreConsumerContracts(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        local_execution_patch = patch_offline_local_execution(proof)
+        local_execution_patch.start()
+        cls.addClassCleanup(local_execution_patch.stop)
+
     def setUp(self):
         fixture = producer_tests.OriginalCoreProducerContracts(); fixture.setUp()
         self.fixture = fixture
