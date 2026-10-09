@@ -15,7 +15,9 @@ import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
 
-from prove_consolidated_packages import archive_names, dependency_groups, metadata, only_abstract_methods, require, run, source_url
+from prove_consolidated_packages import (archive_names, capture_compiler_evidence, dependency_groups,
+    generated_family, metadata, only_abstract_methods, read_staged_nuspecs, require, restored_archive, restored_assets,
+    run, source_url, verify_external_document, verify_generator_identity)
 
 ROOT = Path(__file__).resolve().parents[2]
 REGISTER = ROOT / 'docs/integration-program/maintenance-source-register.json'
@@ -133,6 +135,9 @@ VERIFICATION_REASONS = {
     'Missing/failed tests': 'test-counts-invalid',
     'Unknown test project/framework identity': 'test-identity-unknown',
     'Missing/duplicate test project-framework results': 'test-cells-incomplete-or-duplicate',
+    'SDK dependency metadata missing': 'sdk-dependency-metadata-missing',
+    'SDK dependency groups disagree with package': 'sdk-dependency-groups-mismatch',
+    'Source producer evidence rejected': 'source-producer-unverified',
 }
 
 
@@ -249,11 +254,146 @@ def evaluate_inventory(source: Path, row: dict, version: str, output: Path) -> l
     require(bool(inventory) and len({p['id'].casefold() for p in inventory}) == len(inventory), 'Empty/duplicate package inventory')
     require(bool(tests), 'No evaluated test projects')
     write_json(output / 'test-inventory.json', tests)
-    write_json(output / 'evaluated-inventory.json', inventory)
     return inventory
 
 
-def verify_documents(details: dict, source: Path, row: dict) -> list[dict]:
+def physical_families(row: dict, policy: dict) -> tuple:
+    if row['product'] != 'extensions':
+        return ()
+    project = policy['project']
+    if (policy['id'], project) == ('Elsa.Caching.Distributed.ProtoActor',
+            'src/modules/caching/Elsa.Caching.Distributed.ProtoActor/Elsa.Caching.Distributed.ProtoActor.csproj'):
+        return ((r'Proto/LocalCacheMessages\.cs', 'grpc'),) + (
+            ((r'protopotato/LocalCache-[0-9A-F]{32}\.cs', 'protograin'),) if row['line'] == '3.8' else ())
+    if (policy['id'], project) == ('Elsa.Workflows.Runtime.ProtoActor',
+            'src/modules/runtimes/Elsa.Workflows.Runtime.ProtoActor/Elsa.Workflows.Runtime.ProtoActor.csproj'):
+        return ((r'Proto/(Shared|WorkflowInstanceMessages)\.cs', 'grpc'),
+                (r'protopotato/WorkflowInstance-[0-9A-F]{32}\.cs', 'protograin'))
+    return ()
+
+
+def maintenance_family(row: dict, policy: dict, framework: str, path: str) -> str | None:
+    family = generated_family(policy, framework, path)
+    prefix = f"{Path(policy['project']).parent.as_posix()}/obj/Release/{framework}/"
+    if family is None and path.startswith(prefix):
+        family = next((kind for pattern, kind in physical_families(row, policy)
+                       if re.fullmatch(pattern, path[len(prefix):])), None)
+    return family
+
+
+def public_producer(evidence: dict) -> dict:
+    # Explicit projection: compiler paths, restored assets and task paths are private.
+    keys = ('kind', 'sdk_version', 'compiler_sha256', 'package_id', 'package_version',
+            'archive_sha256', 'restore_sha512', 'nuget_content_hash', 'signed', 'archive_entry',
+            'content_sha256', 'targeting_pack', 'checked_archive_contents', 'source_emitting_targets_sha256')
+    result = {key: evidence[key] for key in keys if key in evidence}
+    if 'frameworks' in evidence:
+        result['frameworks'] = [{key: pack[key] for key in ('Identity', 'TargetingPackName', 'TargetingPackVersion')}
+                                for pack in evidence['frameworks']]
+    return result
+
+
+def metadata_command(project: str, version: str) -> list[str]:
+    return ['dotnet', 'msbuild', project, '-nologo', '-p:Configuration=Release', f'-p:Version={version}',
+            *[f'-p:{key}={value}' for key, value in PROOF_BUILD_PROPERTIES.items()]]
+
+
+def stage_maintenance_metadata(source: Path, row: dict, inventory: list[dict], version: str,
+                               inspector: Path) -> None:
+    source = source.resolve()
+    cache = {'archive_inspector': inspector, 'source_commit': row['commit']}
+    # This directory is inside the unretained source checkout. Never upload raw SDK metadata.
+    with tempfile.TemporaryDirectory(prefix='maintenance-metadata-', dir=source) as temporary:
+        for index, policy in enumerate(inventory):
+            destination = Path(temporary) / str(index)
+            destination.mkdir()
+            command = metadata_command(policy['project'], version)
+            assets_name = run(command + ['-getProperty:ProjectAssetsFile'], source, env=build_environment()).strip()
+            stage_assets = (source / assets_name).resolve()
+            require(stage_assets.is_relative_to(source.resolve()) and stage_assets.is_file() and not stage_assets.is_symlink(),
+                    'Invalid restored metadata input')
+            stage_assets_hash = digest(stage_assets.read_bytes())
+            run(command + ['-target:_GetRestoreProjectStyle;GenerateNuspec', '-p:NoBuild=true',
+                '-p:ContinuePackingAfterGeneratingNuspec=false', f'-p:NuspecOutputPath={destination}',
+                f"-p:PackageOutputPath={destination / 'forbidden-packages'}"], source, env=build_environment())
+            policy.update(nupkg=f"{policy['id']}.{version}.nupkg",
+                          snupkg=f"{policy['id']}.{version}.snupkg" if policy['symbols'] else None,
+                          source_commit=row['commit'], restore_assets=[], framework_properties={})
+            read_staged_nuspecs(destination, policy)
+            for framework in policy['frameworks']:
+                properties = 'MSBuildToolsPath,NETCoreSdkVersion,NetCoreRoot,RuntimeIdentifier,ProjectAssetsFile'
+                targets = 'ResolveReferences'
+                if ET.parse(source / policy['project']).getroot().get('Sdk') == 'Microsoft.NET.Sdk.Razor':
+                    targets += ';_PrepareRazorSourceGenerators'
+                resolved = json.loads(run(command + [f'-p:TargetFramework={framework}', '-p:BuildProjectReferences=false',
+                    f'-target:{targets}', f'-getProperty:{properties}', '-getItem:Analyzer,ResolvedFrameworkReference,Compile'],
+                    source, env=build_environment()))
+                assets = (source / resolved['Properties']['ProjectAssetsFile']).resolve()
+                require(assets.is_relative_to(source.resolve()) and assets.is_file() and not assets.is_symlink(),
+                        'Invalid restored metadata input')
+                require(assets == stage_assets and digest(assets.read_bytes()) == stage_assets_hash,
+                        'Restored metadata input changed')
+                policy['restore_assets'].append({'framework': framework,
+                    'path': assets.relative_to(source).as_posix(), 'sha256': digest(assets.read_bytes())})
+                evidence = capture_compiler_evidence(source, policy, framework, resolved, cache,
+                                                    physical_families=physical_families(row, policy))
+                policy['framework_properties'][framework] = {'compiler_evidence': evidence}
+
+
+def public_inventory(inventory: list[dict]) -> list[dict]:
+    keys = ('id', 'project', 'assembly_name', 'include_build_output', 'frameworks', 'symbols', 'satellites',
+            'source_commit', 'expected_dependency_groups', 'expected_symbol_dependency_groups',
+            'sdk_nuspec_sha256', 'sdk_symbol_nuspec_sha256')
+    return [{**{key: policy[key] for key in keys if key in policy},
+             'restore_inputs': [{'framework': item['framework'], 'sha256': item['sha256']}
+                                for item in policy['restore_assets']],
+             'producers': {framework: {'sdk_version': evidence['sdk_version'],
+                 'compiler_sha256': evidence['compiler_sha256'],
+                 'tools': {family: public_producer(tool) for family, tool in evidence['tools'].items()}}
+                 for framework, properties in policy['framework_properties'].items()
+                 for evidence in [properties['compiler_evidence']]}}
+            for policy in inventory]
+
+
+def verify_non_git_document(document: dict, path: str | None, source: Path, row: dict,
+                            policy: dict | None, framework: str | None, cache: dict) -> dict:
+    try:
+        require(policy is not None and policy.get('source_commit') == row['commit'] and
+                framework in policy['frameworks'] and framework in policy['framework_properties'], 'Missing source context')
+        require(document.get('embedded_checksum') == document['checksum'], 'Missing matching embedded bytes')
+        if path is None:
+            # Only this reviewed original package-content family can be unmapped.
+            require(row['product'] == 'extensions' and
+                    '/elsa.platform.packagemanifest.generator/0.0.1-preview.50/' in document['path'], 'Unknown external family')
+            external = verify_external_document(source, policy, framework, document, cache)
+            require(external is not None, 'Unknown external family')
+            assets = restored_assets(source, policy, framework)
+            entry = external['archive_entry']
+            archive, archive_identity = restored_archive(assets, 'Elsa.Platform.PackageManifest.Generator',
+                                                        '0.0.1-preview.50', cache=cache)
+            require(archive_identity['archive_sha256'] == external['archive_sha256'], 'External archive identity changed')
+            extracted = archive.parent / entry
+            require(extracted.is_file() and not extracted.is_symlink() and
+                    hashlib.new(document['algorithm'], extracted.read_bytes()).hexdigest() == document['checksum'],
+                    'External compiler input bytes changed')
+            inputs = policy['framework_properties'][framework]['compiler_evidence']['compile_inputs']
+            actual = extracted.resolve()
+            locator = actual.relative_to(source.resolve()).as_posix() if actual.is_relative_to(source.resolve()) else actual.as_posix()
+            require(any(item['path'] == locator for item in inputs), 'External source is not a compiler input')
+            return {'family': 'manifest-hints', 'producer': {key: external[key] for key in
+                    ('external_package', 'archive_entry', 'archive_sha256', 'feed')} | {
+                    'restore_sha512': archive_identity['restore_sha512']}}
+        family = maintenance_family(row, policy, framework, path)
+        require(family is not None, 'Unknown generated family')
+        producer = verify_generator_identity(source, policy, framework, family, cache)
+        return {'family': family, 'producer': public_producer(producer)}
+    except (ValueError, KeyError, OSError, TypeError):
+        raise ValueError('Source producer evidence rejected') from None
+
+
+def verify_documents(details: dict, source: Path, row: dict, policy: dict | None = None,
+                     framework: str | None = None, cache: dict | None = None) -> list[dict]:
+    cache = cache if cache is not None else {}
     maps = details['source_link']['documents']
     prefix = f"https://raw.githubusercontent.com/{row['source_repository']}/{row['commit']}/"
     require(bool(maps) and all(value.startswith(prefix) for value in maps.values()), 'Unexpected SourceLink repository/commit')
@@ -262,6 +402,7 @@ def verify_documents(details: dict, source: Path, row: dict) -> list[dict]:
         checksum = document['checksum']
         require(document['algorithm'] in ('sha1', 'sha256'), 'Unsupported document hash')
         url = source_url(document['path'], maps)
+        path = None
         if url is not None:
             require(url.startswith(prefix), 'Foreign SourceLink document')
             path = url[len(prefix):]
@@ -277,8 +418,8 @@ def verify_documents(details: dict, source: Path, row: dict) -> list[dict]:
             require(hashlib.new(document['algorithm'], data).hexdigest() == checksum, 'Tracked source checksum mismatch')
             evidence = {'path': path, 'source': 'original-git', 'url': url}
         else:
-            require(document.get('embedded_checksum') == checksum, 'Unmapped source document is not verified embedded content')
-            evidence = {'path': f'[embedded]/document-{index + 1}', 'source': 'embedded'}
+            origin = verify_non_git_document(document, path, source, row, policy, framework, cache)
+            evidence = {'path': f'[embedded]/document-{index + 1}', 'source': 'embedded', **origin}
         documents.append(evidence | {'algorithm': document['algorithm'], 'checksum': checksum})
     if not documents:
         require(only_abstract_methods(details) and type(details.get('nonmodule_types')) is int and
@@ -287,12 +428,22 @@ def verify_documents(details: dict, source: Path, row: dict) -> list[dict]:
     return documents
 
 
+def verify_sdk_dependencies(nuspec: ET.Element, policy: dict, *, symbols: bool = False) -> None:
+    suffix = 'symbol_' if symbols else ''
+    groups = policy.get(f'expected_{suffix}dependency_groups')
+    checksum = policy.get(f'sdk_{suffix}nuspec_sha256')
+    require(isinstance(groups, list) and isinstance(checksum, str) and
+            re.fullmatch(r'[0-9a-f]{64}', checksum) is not None, 'SDK dependency metadata missing')
+    require(dependency_groups(nuspec) == groups, 'SDK dependency groups disagree with package')
+
+
 def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version: str, source: Path,
                      inspector: Path, output: Path, context: dict | None = None) -> list[dict]:
     expected = {p['id'].casefold(): p for p in inventory}
     produced = set(expected)
     found = set()
     receipts = []
+    producer_cache = {'archive_inspector': inspector, 'source_commit': row['commit']}
     with tempfile.TemporaryDirectory(prefix='maintenance-symbols-') as temporary:
         for path in sorted(artifacts.glob('*.nupkg')):
             with zipfile.ZipFile(path) as package:
@@ -309,6 +460,7 @@ def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version:
                     repository.get('url', '').removesuffix('.git').rstrip('/') == 'https://github.com/' + row['source_repository'],
                     'Packed repository provenance mismatch')
                 dependencies = dependency_groups(nuspec)
+                verify_sdk_dependencies(nuspec, policy)
                 for group in dependencies:
                     for dependency in group['dependencies']:
                         if dependency['id'].casefold().startswith('elsa'):
@@ -335,6 +487,7 @@ def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version:
                 if symbols_path.is_file():
                     with zipfile.ZipFile(symbols_path) as symbol_package:
                         symbol_metadata = metadata(symbol_package)
+                        verify_sdk_dependencies(symbol_metadata, policy, symbols=True)
                         require(symbol_metadata.findtext('id') == identifier and symbol_metadata.findtext('version') == version,
                                 'Symbol identity mismatch')
                         symbol_repository = symbol_metadata.find('repository')
@@ -352,7 +505,8 @@ def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version:
                                 source, env=build_environment()))
                             details = inspection['details']
                             require(details['assembly_name'] == policy['assembly_name'], 'Packaged assembly identity mismatch')
-                            source_evidence = {'documents': verify_documents(details, source, row)}
+                            source_evidence = {'documents': verify_documents(details, source, row, policy,
+                                name.split('/')[1], producer_cache)}
                             if not source_evidence['documents']:
                                 source_evidence['source_applicability'] = {
                                     'classification': 'no-documents-no-executable-method-bodies', 'document_count': 0,
@@ -568,6 +722,9 @@ def prepare(root: Path, row: dict, version: str, output: Path) -> dict:
         inspector_out = output / 'symbol-verifier'
         run(['dotnet', 'build', str(helper / 'VerifyPackageSymbolPair.csproj'), '--configuration', 'Release',
              '--output', str(inspector_out)], root, log=output / 'symbol-verifier.log', timeout=600, env=build_environment())
+        receipt['stage'] = 'sdk-metadata'
+        stage_maintenance_metadata(source, row, inventory, version, inspector_out / 'VerifyPackageSymbolPair.dll')
+        write_json(output / 'evaluated-inventory.json', public_inventory(inventory))
         receipt['stage'] = 'package-verification'
         receipt['focus'] = {}
         receipt['packages'] = verify_artifacts(output / 'artifacts', inventory, row, version, source,
