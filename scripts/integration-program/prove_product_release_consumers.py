@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Package-only Studio and Extensions 3.8 consumers of exact reviewed selected archives.
+"""Package-only bounded Core, Studio and Extensions consumers of selected archives.
 
 Every selected applicable framework is a separate cold restore/compile cell.
 Original hashed planning assets bound the allowed external versions and hashes.
@@ -23,6 +23,7 @@ import prove_consolidated_package_consumers as consumers
 import prove_consolidated_packages as archives
 import selected_product_consumer_metadata as resolution
 import selected_extensions_contract as extensions
+import selected_core_consumer as core
 from selected_product_consumer_metadata import nearest_group
 from product_artifact_execution import local_execution, validate_local_execution
 from prove_consolidated_packages import archive_names, dependency_groups, framework_reference_groups, metadata as nuspec, require
@@ -38,12 +39,16 @@ STUDIO38_CONTRACT_SOURCE = {
 
 
 def runtime_contract(plan: dict) -> dict:
+    if plan['product'] == 'core':
+        core.validate_plan(plan)
+        return core.runtime_contract()
     if plan['product'] == 'extensions':
         return {'package': 'elsa.io.http', 'fixture': ROOT / 'scripts/integration-program/selected-extensions-consumer/Program.cs',
                 'checks': {'httpFactoryRegistered': True, 'urlContentResolved': True, 'networkRequests': 0},
                 'required_packages': ('Elsa.IO.Http', 'Elsa.IO'), 'assembly_release_version': '1.0.0',
                 'description': 'Extensions38 HTTP shell registration and URL binary content with fake handler',
                 'limitation': 'HTTP API probe does not certify full shell composition, marker features or all product functionality.'}
+    require(plan['product'] == 'studio', 'consumer_control_not_implemented')
     return {'package': 'elsa.studio.core', 'fixture': FIXTURE, 'checks': {'backendUriPreserved': True},
             'required_packages': ('Elsa.Studio.Core',), 'assembly_release_version': plan['requested_version'],
             'description': 'Studio38 backend-options accessor preserves configured URI',
@@ -137,6 +142,12 @@ def admit_artifacts(plan: dict, plan_hash: str, receipt: dict, artifacts: Path, 
                     'nupkg_sha512': hashlib.sha512(data).hexdigest(), 'content_hash': consumers.base64_sha512(data),
                     'dependency_groups': dependency_groups(package), 'inventory': inventory, 'policy': policy}
     require(set(result) == set(selected), 'consumer_selected_inventory')
+    if plan['product'] == 'core':
+        for item in result.values():
+            item['artifact_files'] = [{'name': row['file'], 'sha256': row['sha256'], 'size': row['size']}
+                                      for row in records if row['id'] == item['id']]
+        core.bind_assemblies(plan, receipt, result)
+        core.validate_runtime(result)
     return result
 
 
@@ -375,7 +386,8 @@ def cell(plan: dict, package: dict, framework: str, selected: dict, artifacts: P
             'loaded_assemblies': retain_runtime_rows(consumers.verify_loaded_assemblies(proof, restored, framework, output,
                 cache, artifacts, selected, plan['requested_version'], plan['source']['commit'],
                 required_packages=contract['required_packages'],
-                assembly_release_version=contract['assembly_release_version']))}
+                assembly_release_version=contract['assembly_release_version'],
+                original_assembly_policies=plan['product'] == 'core'))}
     return result
 
 
@@ -383,12 +395,17 @@ def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, rec
             artifacts: Path, snapshots: Path, output: Path) -> dict:
     plan, receipt, historical_admission = admit_producer_stage(read_bound(plan_path, plan_hash), plan_hash,
         read_bound(receipt_path, receipt_hash), receipt_hash)
-    require(plan['product'] in ('studio', 'extensions') and plan['line'] == '3.8', 'consumer_control_not_implemented')
+    if plan['product'] == 'core':
+        core.validate_plan(plan)
+    else:
+        require(plan['product'] in ('studio', 'extensions') and plan['line'] == '3.8', 'consumer_control_not_implemented')
     execution = local_execution()
     controller = producer.verify_controller(root, plan)
     selected = admit_artifacts(plan, plan_hash, receipt, artifacts, root)
     originals = load_snapshots(plan, plan_hash, snapshots)
-    if plan['product'] == 'extensions':
+    if plan['product'] == 'core':
+        core.verify_source(root, plan)
+    elif plan['product'] == 'extensions':
         extensions.verify_source(root, plan['source']['commit'])
     else:
         for path, expected in STUDIO38_CONTRACT_SOURCE.items():
@@ -406,7 +423,8 @@ def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, rec
               'producer_plan_admission': historical_admission,
               'current_consumer_admission': {'eligible': False, 'scope': 'current-complete-selected-product-prerequisites'},
               'success': False, 'published': False, 'coverage': [], 'runtime': [], 'stage': 'consumer-setup',
-              'runtime_contract_source': extensions.SOURCE_BLOBS if plan['product'] == 'extensions' else STUDIO38_CONTRACT_SOURCE}
+              'runtime_contract_source': (core.source_contract(plan) if plan['product'] == 'core' else
+                  extensions.SOURCE_BLOBS if plan['product'] == 'extensions' else STUDIO38_CONTRACT_SOURCE)}
     try:
         config = private / 'NuGet.Config'
         config.write_bytes(producer.maintenance.git_bytes(root, plan['source']['commit'], 'NuGet.Config'))
