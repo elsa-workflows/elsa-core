@@ -22,6 +22,7 @@ WORKSPACE = Path('studio/src/wrappers')
 WRAPPER = Path('wrappers/react-wrapper')
 PROOF = 'elsa-proof.json'
 ASSETS = ('_framework', '_content', 'appsettings.json', 'Elsa.Studio.Host.CustomElements.styles.css')
+OWNERSHIP = '.elsa-studio-wasm-assets.json'
 EXPORTS = ('BackendProvider', 'WorkflowDefinitionEditor', 'WorkflowInstanceViewer', 'WorkflowDefinitionList')
 MAX_BYTES = 512 * 1024 * 1024
 
@@ -299,9 +300,19 @@ def installed_assets(consumer: Path, wasm: dict) -> dict:
     for folder in roots.values():
         observed = files(folder)
         require(all(observed.get(path) == metadata for path, metadata in wanted.items()), 'installed-assets')
-        require({path for path in observed if any(path == asset or path.startswith(asset + '/') for asset in ASSETS)} == set(wanted),
-                'installed-assets')
-    return {'verified_files_per_location': len(wanted), 'locations': list(roots), 'lifecycle_scripts_enabled': True}
+        if folder == roots['wasm']:
+            require({path for path in observed if any(path == asset or path.startswith(asset + '/') for asset in ASSETS)} == set(wanted),
+                    'installed-assets')
+    ownership = roots['consumer_public'] / OWNERSHIP
+    regular(ownership)
+    try:
+        ledger = json.loads(ownership.read_text())
+    except (OSError, ValueError):
+        raise ProofError('installed-ownership') from None
+    require(ledger == {'schema': 1, 'package': WASM, 'files': [
+        {'path': path, 'sha256': metadata['sha256']} for path, metadata in sorted(wanted.items())]}, 'installed-ownership')
+    return {'verified_files_per_location': len(wanted), 'locations': list(roots), 'lifecycle_scripts_enabled': True,
+            'ownership_manifest': {'file': OWNERSHIP, 'sha256': sha256(ownership.read_bytes()), 'owned_files': len(wanted)}}
 
 
 def module_smoke_scripts(consumer: Path) -> None:
@@ -355,12 +366,23 @@ def consume(runner: Runner, private: Path, artifacts: dict[str, tuple[Path, dict
     wasm = artifacts[WASM][1]
     assets = installed_assets(consumer, wasm)
     stale = consumer / 'public/_framework/stale-from-previous-package.js'
-    stale.write_text('stale')
+    stale.write_bytes(b'previously owned asset')
+    ownership_path = consumer / 'public' / OWNERSHIP
+    previous_ownership = json.loads(ownership_path.read_text())
+    previous_ownership['files'].append({'path': '_framework/' + stale.name, 'sha256': sha256(stale.read_bytes())})
+    write_json(ownership_path, previous_ownership)
+    unmanaged = {'_framework/consumer-owned.js': b'consumer runtime',
+                 '_content/consumer/consumer-owned.js': b'consumer content'}
+    for path, data in unmanaged.items():
+        target = consumer / 'public' / path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(data)
     runner.run('consumer-lifecycle-refresh', ['npm', 'run', 'copy:elsa-studio-wasm', '--prefix',
                str(consumer / 'node_modules' / REACT)], consumer)
     require(not stale.exists(), 'lifecycle-stale-assets')
-    installed_assets(consumer, wasm)
-    assets['stale_assets_removed'] = True
+    assets = installed_assets(consumer, wasm)
+    require(all((consumer / 'public' / path).read_bytes() == data for path, data in unmanaged.items()), 'lifecycle-unmanaged-assets')
+    assets.update(stale_assets_removed=True, unmanaged_files_preserved=True)
     installed_versions = {}
     for name in ('react', 'react-dom', 'vite', 'uuid'):
         metadata_path = consumer / 'node_modules' / name / 'package.json'
@@ -383,6 +405,8 @@ def consume(runner: Runner, private: Path, artifacts: dict[str, tuple[Path, dict
     runner.run('consumer-vite', ['node', 'node_modules/vite/bin/vite.js', 'build'], consumer)
     built = files(consumer / 'dist')
     verify_vite_assets(built, wasm)
+    require(all(built.get(path) == {'size': len(data), 'sha256': sha256(data)} for path, data in unmanaged.items()),
+            'consumer-vite-unmanaged-assets')
     require(all(sha256((consumer / filename).read_bytes()) == record['sha256']
                 for filename, record in retained_inputs.items()), 'consumer-inputs-changed')
     for name, (path, report) in artifacts.items():

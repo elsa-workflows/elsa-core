@@ -67,8 +67,22 @@ The wrapper lifecycle now resolves WASM relative to the installed package. For
 normal nested installation it copies `_framework`, `_content`, appsettings and
 the host stylesheet into the invoking consumer's `public/` via npm's `INIT_CWD`.
 Source-workspace invocation retains wrapper-local `public/` for Vite/Storybook.
-Copies replace old trees rather than merging. Consumer checks compare every
-copied asset byte with the archive and exercise stale-file removal. The actual
+The package-specific `public/.elsa-studio-wasm-assets.json` ledger records only
+safe relative asset-file paths and their SHA-256 hashes. Before changing any
+asset, the helper reads the full incoming payload and checks the ledger, target
+path types, every existing owned file and all incoming destinations. Malformed
+ownership, links on a target path, modified owned files and unmanaged collisions
+fail before writes. Existing files without a ledger are not adopted, even when
+their bytes match; reconcile those conflicts before retrying. Unmanaged sibling
+files and shared directories are preserved. Only previously owned, unchanged
+files can be replaced or removed as stale; a missing owned file can be restored.
+The ledger is replaced atomically after a successful serial refresh. The whole
+copy is not a filesystem transaction: interruption or I/O failure may require
+reconciling owned files with the previous ledger before retrying. No automatic
+rollback, concurrent-writer guarantee or forced overwrite is claimed.
+Consumer checks compare every copied asset byte and the ownership ledger with
+the archive, exercise removal of a fixture explicitly recorded as previously
+owned, and verify unmanaged files in both shared asset folders survive. The actual
 host's asset references are carried into a small React/Vite consumer with root
 public URLs. All four existing exports must import as callable ESM and CommonJS
 values, and Vite must build while retaining the exact public asset payload.

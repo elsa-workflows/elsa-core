@@ -65,6 +65,26 @@ class PairContracts(unittest.TestCase):
         result[key] = json.dumps(value).encode()
         return result
 
+    def copy_fixture(self, name, installed=True):
+        app = self.root / name
+        wrapper = app / ('node_modules/' + pair.REACT if installed else 'wrappers/react-wrapper')
+        wasm = app / 'node_modules' / pair.WASM
+        (wrapper / 'scripts').mkdir(parents=True)
+        wasm.mkdir(parents=True)
+        shutil.copyfile(pair.ROOT / pair.WORKSPACE / pair.WRAPPER / 'scripts/copy-elsa-studio-wasm.js',
+                        wrapper / 'scripts/copy-elsa-studio-wasm.js')
+        pair.write_json(wrapper / 'package.json', {'type': 'module'})
+        for path, data in self.payload().items():
+            target = wasm / path.removeprefix('package/')
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+        return app, wrapper, wasm, (app if installed else wrapper) / 'public'
+
+    def refresh_copy(self, app, wrapper, *, success=True):
+        result = subprocess.run(['node', str(wrapper / 'scripts/copy-elsa-studio-wasm.js')], cwd=wrapper,
+                                env=os.environ | {'INIT_CWD': str(app)}, capture_output=True)
+        self.assertEqual(success, result.returncode == 0, result.stderr.decode())
+
     def test_valid_pair_and_original_integrity(self):
         for name in (pair.WASM, pair.REACT):
             with self.subTest(name=name):
@@ -259,6 +279,63 @@ class PairContracts(unittest.TestCase):
         self.assertEqual('1.2.3', json.loads((consumer / 'node_modules/fixture-third/package.json').read_text())['version'])
         self.assertFalse((consumer / 'node_modules/producer-only-sentinel').exists())
         pair.verify_local_lock(json.loads((consumer / 'package-lock.json').read_text()), archives, consumer)
+        refresh = ['npm', 'run', 'copy:elsa-studio-wasm', '--prefix', str(consumer / 'node_modules' / pair.REACT)]
+        wasm_folder = consumer / 'node_modules' / pair.WASM
+        public = consumer / 'public'
+        stale = '_framework/previously-owned.js'
+        (wasm_folder / stale).write_bytes(b'old owned asset')
+        runner.run('record-owned-fixture', refresh, consumer)
+        self.assertTrue((public / stale).exists())
+        (wasm_folder / stale).unlink()
+        unmanaged = {'_framework/consumer.js': b'consumer framework', '_content/consumer/data.txt': b'consumer content',
+                     'notes.txt': b'consumer notes'}
+        for path, data in unmanaged.items():
+            target = public / path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+        runner.run('refresh-owned-fixture', refresh, consumer)
+        self.assertFalse((public / stale).exists())
+        self.assertTrue(pair.installed_assets(consumer, wasm)['lifecycle_scripts_enabled'])
+        for path, data in unmanaged.items():
+            self.assertEqual(data, (public / path).read_bytes())
+        before = pair.files(public)
+        runner.run('repeat-owned-fixture', refresh, consumer)
+        self.assertEqual(before, pair.files(public))
+
+        # Both conflicts are exercised through actual normal npm lifecycle.
+        # A valid owned-file update must not happen before a later conflict fails.
+        conflict = '_framework/z-new-conflict.js'
+        (wasm_folder / conflict).write_bytes(b'new package asset')
+        (public / conflict).write_bytes(b'unmanaged consumer asset')
+        settings = wasm_folder / 'appsettings.json'
+        settings.write_bytes(b'new package settings')
+        content = wasm_folder / '_content/shell/asset.js'
+        content.write_bytes(b'new package content')
+        before = pair.files(public)
+        with self.assertRaisesRegex(pair.ProofError, 'command-failed'):
+            runner.run('unmanaged-conflict-fixture', refresh, consumer)
+        self.assertEqual(before, pair.files(public))
+        (wasm_folder / conflict).unlink()
+        settings.write_bytes(b'{}')
+        content.write_bytes(b'asset')
+        (public / 'appsettings.json').write_bytes(b'consumer edited owned settings')
+        before = pair.files(public)
+        with self.assertRaisesRegex(pair.ProofError, 'command-failed'):
+            runner.run('modified-owned-fixture', refresh, consumer)
+        self.assertEqual(before, pair.files(public))
+        (public / 'appsettings.json').write_bytes(b'{}')
+        ownership = public / pair.OWNERSHIP
+        original_ownership = ownership.read_bytes()
+        ledger = json.loads(original_ownership)
+        ledger['files'].append({'path': '../../outside', 'sha256': 'a' * 64})
+        pair.write_json(ownership, ledger)
+        before = pair.files(public)
+        with self.assertRaisesRegex(pair.ProofError, 'command-failed'):
+            runner.run('invalid-ownership-fixture', refresh, consumer)
+        self.assertEqual(before, pair.files(public))
+        ownership.write_bytes(original_ownership)
+        runner.run('recovered-ownership-fixture', refresh, consumer)
+        self.assertEqual(b'unmanaged consumer asset', (public / conflict).read_bytes())
 
     def test_real_workspace_install_uses_staged_exact_local_wasm_archive(self):
         workspace = self.root / 'workspace'
@@ -366,6 +443,8 @@ class PairContracts(unittest.TestCase):
                 target = folder / relative
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes(data)
+        pair.write_json(self.root / 'public' / pair.OWNERSHIP, {'schema': 1, 'package': pair.WASM,
+            'files': [{'path': path, 'sha256': value['sha256']} for path, value in sorted(pair.asset_inventory(report).items())]})
         self.assertTrue(pair.installed_assets(self.root, report)['lifecycle_scripts_enabled'])
         asset = self.root / 'public/appsettings.json'
         asset.write_text('wrong')
@@ -376,32 +455,109 @@ class PairContracts(unittest.TestCase):
             pair.installed_assets(self.root, report)
 
     def test_real_copy_helper_nested_install_and_workspace_preserve_bytes_remove_stale(self):
-        script = pair.ROOT / pair.WORKSPACE / pair.WRAPPER / 'scripts/copy-elsa-studio-wasm.js'
         for installed in (True, False):
             with self.subTest(installed=installed):
-                app = self.root / str(installed)
-                wrapper = app / ('node_modules/' + pair.REACT if installed else 'wrappers/react-wrapper')
-                wasm = app / 'node_modules' / pair.WASM
-                (wrapper / 'scripts').mkdir(parents=True)
-                wasm.mkdir(parents=True)
-                shutil.copyfile(script, wrapper / 'scripts/copy-elsa-studio-wasm.js')
-                pair.write_json(wrapper / 'package.json', {'type': 'module'})
-                pair.write_json(wasm / 'package.json', {'name': pair.WASM})
-                for path, data in self.payload().items():
-                    target = wasm / path.removeprefix('package/')
-                    target.parent.mkdir(parents=True, exist_ok=True)
-                    target.write_bytes(data)
-                destination = (app if installed else wrapper) / 'public'
-                stale = destination / '_framework/stale.js'
-                stale.parent.mkdir(parents=True)
-                stale.write_text('stale')
-                subprocess.run(['node', str(wrapper / 'scripts/copy-elsa-studio-wasm.js')], cwd=wrapper,
-                               env=os.environ | {'INIT_CWD': str(app)}, check=True, capture_output=True)
-                self.assertFalse(stale.exists())
+                app, wrapper, wasm, destination = self.copy_fixture(str(installed), installed)
+                stale = wasm / '_framework/stale.js'
+                stale.write_bytes(b'old package asset')
+                unmanaged = destination / '_framework/consumer-owned.js'
+                unmanaged.parent.mkdir(parents=True)
+                unmanaged.write_bytes(b'unmanaged')
+                self.refresh_copy(app, wrapper)
+                self.assertTrue((destination / '_framework/stale.js').exists())
+                stale.unlink()
+                (wasm / 'appsettings.json').write_bytes(b'updated settings')
+                self.refresh_copy(app, wrapper)
+                self.assertFalse((destination / '_framework/stale.js').exists())
+                self.assertEqual(b'unmanaged', unmanaged.read_bytes())
                 for asset in pair.ASSETS:
-                    left = pair.files(wasm / asset) if (wasm / asset).is_dir() else (wasm / asset).read_bytes()
-                    right = pair.files(destination / asset) if (destination / asset).is_dir() else (destination / asset).read_bytes()
-                    self.assertEqual(left, right)
+                    if (wasm / asset).is_dir():
+                        for path, metadata in pair.files(wasm / asset).items():
+                            data = (destination / asset / path).read_bytes()
+                            self.assertEqual(metadata, {'size': len(data), 'sha256': pair.sha256(data)})
+                    else:
+                        self.assertEqual((wasm / asset).read_bytes(), (destination / asset).read_bytes())
+                before = pair.files(destination)
+                self.refresh_copy(app, wrapper)
+                self.assertEqual(before, pair.files(destination))
+
+    def test_copy_preflight_preserves_unmanaged_collision_and_modified_stale_owned_file(self):
+        for scenario in ('first-install-conflict', 'modified-stale-owned'):
+            with self.subTest(scenario=scenario):
+                app, wrapper, wasm, public = self.copy_fixture(scenario)
+                public.mkdir()
+                sentinel = public / 'consumer-notes.txt'
+                sentinel.write_bytes(b'unrelated')
+                if scenario == 'first-install-conflict':
+                    (public / 'appsettings.json').write_bytes(b'{}')
+                else:
+                    stale = wasm / '_framework/previous.js'
+                    stale.write_bytes(b'package old bytes')
+                    self.refresh_copy(app, wrapper)
+                    stale.unlink()
+                    (public / '_framework/previous.js').write_bytes(b'consumer modified bytes')
+                    (wasm / 'appsettings.json').write_bytes(b'package new bytes')
+                before = pair.files(public)
+                self.refresh_copy(app, wrapper, success=False)
+                self.assertEqual(before, pair.files(public))
+
+    def test_copy_ownership_rejects_malformed_unsafe_duplicate_and_aliased_records(self):
+        app, wrapper, wasm, public = self.copy_fixture('malformed')
+        self.refresh_copy(app, wrapper)
+        ownership = public / pair.OWNERSHIP
+        original = ownership.read_bytes()
+        ledger = json.loads(original)
+        mutations = [lambda p: p.update(schema=2), lambda p: p.update(package='other'),
+            lambda p: p.update(unrecognized=True), lambda p: p.update(files={}),
+            lambda p: p['files'].append(copy.deepcopy(p['files'][0])),
+            lambda p: p['files'].append({'path': '../../outside', 'sha256': 'a' * 64}),
+            lambda p: p['files'].append({'path': '_framework/../outside', 'sha256': 'a' * 64}),
+            lambda p: p['files'].append({'path': '_framework\\outside', 'sha256': 'a' * 64}),
+            lambda p: p['files'][0].update(sha256='invalid'),
+            lambda p: p['files'].append({'path': '_content/SHELL/asset.js',
+                                          'sha256': pair.sha256(b'asset')})]
+        for mutate in mutations:
+            with self.subTest(mutate=mutate):
+                changed = copy.deepcopy(ledger)
+                mutate(changed)
+                pair.write_json(ownership, changed)
+                before = pair.files(public)
+                self.refresh_copy(app, wrapper, success=False)
+                self.assertEqual(before, pair.files(public))
+        ownership.write_bytes(b'not JSON')
+        before = pair.files(public)
+        self.refresh_copy(app, wrapper, success=False)
+        self.assertEqual(before, pair.files(public))
+        ownership.write_bytes(original)
+        self.refresh_copy(app, wrapper)
+
+    def test_copy_rejects_target_links_but_preserves_unmanaged_sibling_links(self):
+        app, wrapper, wasm, public = self.copy_fixture('links')
+        self.refresh_copy(app, wrapper)
+        outside = app / 'unrelated.txt'
+        outside.write_bytes(b'unrelated')
+        unmanaged = public / '_content/unmanaged-link'
+        unmanaged.symlink_to(outside)
+        self.refresh_copy(app, wrapper)
+        self.assertTrue(unmanaged.is_symlink())
+        self.assertEqual(b'unrelated', outside.read_bytes())
+        target = public / '_framework/dotnet.js'
+        target.unlink()
+        target.symlink_to(outside)
+        ownership = (public / pair.OWNERSHIP).read_bytes()
+        self.refresh_copy(app, wrapper, success=False)
+        self.assertTrue(target.is_symlink())
+        self.assertEqual(ownership, (public / pair.OWNERSHIP).read_bytes())
+        self.assertEqual(b'unrelated', outside.read_bytes())
+        target.unlink()
+        target.write_bytes(b'runtime')
+        hardlinked = app / 'consumer-hardlinked-runtime.js'
+        os.link(target, hardlinked)
+        (wasm / '_framework/dotnet.js').write_bytes(b'new package runtime')
+        self.refresh_copy(app, wrapper, success=False)
+        self.assertEqual(b'runtime', hardlinked.read_bytes())
+        self.assertEqual(b'runtime', target.read_bytes())
+        self.assertEqual(ownership, (public / pair.OWNERSHIP).read_bytes())
 
     def test_runner_strips_authority_and_retains_only_closed_process_result(self):
         private = self.root / 'private'
