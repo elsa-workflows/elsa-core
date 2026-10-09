@@ -132,11 +132,12 @@ def refresh_remote(plan: dict, source: Path, semantics: planner.Semantics) -> No
     feeds = planner.FeedMetadata(source / 'NuGet.Config', ids + [row['id'] for row in edges], semantics, observations)
     require(feeds.policy == plan['consumer_feed_policy'], 'artifact_feed_policy_changed')
     feeds.prefetch(ids, edges)
+    npm_histories = [(identifier, observations.get(planner.history_url(identifier, True)))
+                     for identifier in planner.NPM_IDS] if plan['npm'] else []
     checked = planner.now()
     histories = [feeds.history(identifier, plan['requested_version'], plan['line'], semantics, checked) for identifier in ids]
-    if plan['npm']:
-        histories += [planner.check_history(identifier, plan['requested_version'], plan['line'],
-            observations.get(planner.history_url(identifier, True)), semantics, checked, npm=True) for identifier in planner.NPM_IDS]
+    histories += [planner.check_history(identifier, plan['requested_version'], plan['line'],
+        observation, semantics, checked, npm=True) for identifier, observation in npm_histories]
     prerequisites = [feeds.prerequisite(edge, semantics, checked) for edge in edges]
     require(all(row['eligible'] is True for row in histories + prerequisites), 'artifact_fresh_prerequisite_failed')
     # New history observations may grow; requested version must still be eligible.

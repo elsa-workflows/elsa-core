@@ -134,6 +134,52 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertTrue(any(fnmatch.fnmatch(path, pattern) for pattern in filters))
 
+    def refresh_remote(self, *, status='observed', age=0):
+        clock = datetime(2026, 10, 9, 20, 0, tzinfo=timezone.utc)
+        checked = []
+        body = json.dumps({'name': planner.NPM_IDS[0], 'versions': {'3.8.4': {}},
+                           'time': {'3.8.4': clock.isoformat()}}).encode()
+
+        class Observations:
+            def get(inner, url):
+                nonlocal clock
+                clock += timedelta(seconds=1)
+                identifier = next(value for value in planner.NPM_IDS if planner.history_url(value, True) == url)
+                data = body.replace(planner.NPM_IDS[0].encode(), identifier.encode())
+                return {'url': url, 'observed_at': (clock - timedelta(seconds=age)).isoformat(),
+                        'status': status, 'sha256': metadata.sha256(data), 'bytes': len(data), '_body': data}
+
+        class Feeds:
+            def __init__(inner, *args):
+                inner.policy = {}
+
+            def prefetch(inner, *args):
+                pass
+
+            def history(inner, identifier, version, line, semantics, when):
+                checked.append(when)
+                return {'eligible': True}
+
+        class Semantics:
+            def call(inner, operation, **values):
+                self.assertEqual('history', operation)
+                return {'duplicate': False, 'reused': False, 'monotonic': True}
+
+        plan = self.plan | {'consumer_feed_policy': {}}
+        with patch.object(planner, 'Observations', Observations), patch.object(planner, 'FeedMetadata', Feeds), \
+                patch.object(planner, 'now', side_effect=lambda: clock.isoformat()):
+            artifacts.refresh_remote(plan, Path('/unused'), Semantics())
+        return checked, clock
+
+    def test_remote_refresh_checks_after_both_npm_observations(self):
+        checked, clock = self.refresh_remote()
+        self.assertEqual([clock.isoformat()], checked)
+
+    def test_remote_refresh_rejects_unavailable_and_stale_npm(self):
+        for status, age in (('unavailable', 0), ('observed', planner.MAX_AGE_SECONDS + 1)):
+            with self.subTest(status=status, age=age), self.assertRaisesRegex(ValueError, 'artifact_fresh_prerequisite_failed'):
+                self.refresh_remote(status=status, age=age)
+
     def test_selected_retention_rejects_missing_unknown_and_wrong_dependency_archives(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
