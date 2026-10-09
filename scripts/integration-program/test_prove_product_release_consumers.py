@@ -68,13 +68,13 @@ class SelectedProductConsumerTests(unittest.TestCase):
         self.feeds = {'sources': {'original': proof.planner.NUGET_INDEX},
                       'mapping': {'example': ['original'], 'external': ['original']}}
 
-    def artifact_receipt(self, entries=None):
+    def artifact_receipt(self, entries=None, *, framework_references=''):
         path = self.artifacts / self.plan['expected_artifacts'][0]
         identifier = self.policy['id']
         with zipfile.ZipFile(path, 'w') as archive:
             archive.writestr(identifier + '.nuspec', '<package><metadata><id>' + identifier + '</id><version>3.8.999</version>'
                 '<repository commit="' + self.source['commit'] + '"/><dependencies><group targetFramework="net8.0"/>'
-                '</dependencies></metadata></package>')
+                '</dependencies>' + framework_references + '</metadata></package>')
             for name, data in (entries or {}).items():
                 archive.writestr(name, data)
         with zipfile.ZipFile(path) as archive:
@@ -148,6 +148,26 @@ class SelectedProductConsumerTests(unittest.TestCase):
     def test_exact_archive_receipt_admitted(self):
         result = proof.admit_artifacts(self.plan, self.hash, self.artifact_receipt(), self.artifacts, self.controller_root)
         self.assertEqual({'example'}, set(result))
+
+    def test_native_framework_references_must_match_plan_before_fixture_can_supply_them(self):
+        self.policy['metadata']['framework_reference_groups'] = [
+            {'framework': 'net8.0', 'references': ['Microsoft.AspNetCore.App']}]
+        valid = ('<frameworkReferences><group targetFramework="net8.0">'
+                 '<frameworkReference name="Microsoft.AspNetCore.App"/></group></frameworkReferences>')
+        receipt = self.artifact_receipt(framework_references=valid)
+        self.assertEqual({'example'}, set(proof.admit_artifacts(
+            self.plan, self.hash, receipt, self.artifacts, self.controller_root)))
+        for actual in ('', valid.replace('net8.0', 'net9.0'),
+                       valid.replace('Microsoft.AspNetCore.App', 'Microsoft.NETCore.App'),
+                       valid.replace('</frameworkReferences>', '<group targetFramework="net9.0">'
+                           '<frameworkReference name="Microsoft.AspNetCore.App"/></group></frameworkReferences>')):
+            receipt = self.artifact_receipt(framework_references=actual)
+            with self.subTest(actual=actual), self.assertRaisesRegex(ValueError, 'consumer_archive_framework_references'):
+                proof.admit_artifacts(self.plan, self.hash, receipt, self.artifacts, self.controller_root)
+        self.policy['metadata']['framework_reference_groups'] = []
+        receipt = self.artifact_receipt(framework_references=valid)
+        with self.assertRaisesRegex(ValueError, 'consumer_archive_framework_references'):
+            proof.admit_artifacts(self.plan, self.hash, receipt, self.artifacts, self.controller_root)
 
     def test_producer_controller_git_objects_and_planner_inputs_bound(self):
         original = self.artifact_receipt()

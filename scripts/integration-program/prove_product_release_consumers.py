@@ -24,7 +24,7 @@ import prove_consolidated_packages as archives
 import selected_product_consumer_metadata as resolution
 from selected_product_consumer_metadata import nearest_group
 from product_artifact_execution import local_execution, validate_local_execution
-from prove_consolidated_packages import archive_names, dependency_groups, metadata as nuspec, require
+from prove_consolidated_packages import archive_names, dependency_groups, framework_reference_groups, metadata as nuspec, require
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / 'scripts/integration-program/selected-studio-consumer/Program.cs'
@@ -116,6 +116,8 @@ def admit_artifacts(plan: dict, plan_hash: str, receipt: dict, artifacts: Path, 
                     repository is not None and repository.get('commit') == plan['source']['commit'], 'consumer_archive_provenance')
             policy = selected[row['id'].casefold()]
             require(dependency_groups(package) == policy['metadata']['dependency_groups'], 'consumer_archive_dependencies')
+            require(framework_reference_groups(package) == policy['metadata'].get('framework_reference_groups', []),
+                    'consumer_archive_framework_references')
             if name.endswith('.nupkg'):
                 result[row['id'].casefold()] = {'id': row['id'], 'nupkg': name, 'nupkg_sha256': row['sha256'],
                     'nupkg_sha512': hashlib.sha512(data).hexdigest(), 'content_hash': consumers.base64_sha512(data),
