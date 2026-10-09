@@ -61,7 +61,9 @@ class HistoricalLifecycleContracts(unittest.TestCase):
                 row, parent = candidates[selected['commit']], candidates[selected['parent']]
                 self.assertEqual(self.manifest(line), lifecycle.corrected_manifest(self.manifest(line, original=True)))
                 lifecycle.verify_delta(row, parent, row['delta'][0], self.manifest(line, original=True), self.manifest(line))
-                maintenance.verify_core_candidate(maintenance.ROOT, row)
+                admitted = next(item for item in maintenance.registered_core_candidates(maintenance.load_register())
+                                if item['commit'] == row['commit'])
+                maintenance.verify_core_candidate(maintenance.ROOT, admitted)
                 self.assertEqual(selected['commit'], metadata.DESCENDANTS[('studio', line)])
                 self.assertEqual(0, subprocess.run(['git', 'merge-base', '--is-ancestor', selected['commit'], 'HEAD'],
                     cwd=maintenance.ROOT, capture_output=True).returncode)
@@ -128,12 +130,16 @@ class HistoricalLifecycleContracts(unittest.TestCase):
                 shutil.rmtree(target) if target.is_dir() else target.unlink()
                 self.run_copy(wrapper, success=False)
 
-    def test_original_inline_script_reproduces_missing_public_in_tiny_workspace(self):
-        _, wrapper, _, _ = self.layout('original workspace', workspace=True)
+    def test_original_inline_script_cannot_produce_required_nested_assets_without_public(self):
+        _, wrapper, wasm, _ = self.layout('original workspace', workspace=True)
         (wrapper / 'package.json').write_bytes(self.manifest(original=True))
         self.assertFalse((wrapper / 'public').exists())
-        self.run_copy(wrapper, success=False)
-        self.assertFalse((wrapper / 'public').exists())
+        script = json.loads(self.manifest(original=True))['scripts']['copy:elsa-studio-wasm']
+        subprocess.run(script, cwd=wrapper, shell=True, capture_output=True, timeout=15)
+        # BSD cp fails at the missing destination; GNU cp can create a flattened
+        # directory instead. Neither outcome has the three intended families.
+        expected = {path: record for path, record in npm.files(wasm).items() if path != 'package.json'}
+        self.assertNotEqual(expected, npm.files(wrapper / 'public'))
 
     def test_exact_installed_tar_bytes_plus_only_three_wasm_families(self):
         root, wrapper, wasm, _ = self.layout('valid')
