@@ -86,6 +86,17 @@ class PairContracts(unittest.TestCase):
                                 env=os.environ | {'INIT_CWD': str(app)}, capture_output=True)
         self.assertEqual(success, result.returncode == 0, result.stderr.decode())
 
+    def cli(self, root, output, commit=None):
+        return subprocess.run([sys.executable, str(pair.ROOT / 'scripts/integration-program/prove_studio_npm_pair.py'),
+            '--root', str(root), '--output', str(output), '--commit', commit or self.proof['source_commit'],
+            '--version', self.proof['version'], '--run-id', '12', '--run-attempt', '1'],
+            cwd=self.root, capture_output=True, text=True, timeout=20)
+
+    def assert_cli_failure(self, result, code):
+        self.assertEqual(1, result.returncode)
+        self.assertEqual('', result.stderr)
+        self.assertEqual({'success': False, 'failure_code': code}, json.loads(result.stdout))
+
     def test_valid_pair_and_original_integrity(self):
         for name in (pair.WASM, pair.REACT):
             with self.subTest(name=name):
@@ -116,15 +127,51 @@ class PairContracts(unittest.TestCase):
                     root.write_bytes(b'consumer-owned file')
                 output = self.root / ('output-' + kind)
                 before = pair.files(self.root)
-                result = subprocess.run([sys.executable, str(pair.ROOT / 'scripts/integration-program/prove_studio_npm_pair.py'),
-                    '--root', str(root), '--output', str(output), '--commit', self.proof['source_commit'],
-                    '--version', self.proof['version'], '--run-id', '12', '--run-attempt', '1'],
-                    cwd=self.root, capture_output=True, text=True, timeout=20)
-                self.assertEqual(1, result.returncode)
-                self.assertEqual('', result.stderr)
-                self.assertEqual({'success': False, 'failure_code': 'source-status-unavailable'}, json.loads(result.stdout))
+                self.assert_cli_failure(self.cli(root, output), 'source-status-unavailable')
                 self.assertFalse(output.exists())
                 self.assertEqual(before, pair.files(self.root))
+
+    def test_actual_cli_rejects_output_file_parent_with_closed_json_and_no_writes(self):
+        source = self.root / 'source'
+        source.mkdir()
+        (source / 'tracked.txt').write_bytes(b'original source')
+        for args in (('init', '--quiet'), ('add', 'tracked.txt'),
+                     ('-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid',
+                      'commit', '--quiet', '-m', 'fixture')):
+            subprocess.run(['git', *args], cwd=source, check=True, capture_output=True)
+        commit = pair.git(source, 'rev-parse', 'HEAD')
+        parent = self.root / 'regular-file-parent'
+        parent.write_bytes(b'consumer-owned sentinel')
+        output = parent / 'output'
+        before = pair.files(self.root)
+        self.assert_cli_failure(self.cli(source, output, commit), 'unexpected-failure')
+        self.assertFalse(output.exists())
+        self.assertEqual(before, pair.files(self.root))
+
+    def test_actual_cli_rejects_path_cycles_with_closed_json_and_no_writes(self):
+        sentinel = self.root / 'sentinel.txt'
+        sentinel.write_bytes(b'consumer-owned sentinel')
+        cycle = self.root / 'cycle'
+        cycle.symlink_to(cycle.name)
+        before = sorted(path.name for path in self.root.iterdir())
+        for argument in ('root', 'output'):
+            with self.subTest(argument=argument):
+                root = cycle if argument == 'root' else pair.ROOT
+                output = self.root / 'output' if argument == 'root' else cycle / 'output'
+                # Older Python versions may reject a cycle during resolve;
+                # newer strict=False resolution can defer it to admission.
+                try:
+                    root.resolve()
+                    output.resolve()
+                except (OSError, RuntimeError):
+                    code = 'unexpected-failure'
+                else:
+                    code = 'source-status-unavailable' if argument == 'root' else 'output-exists'
+                self.assert_cli_failure(self.cli(root, output), code)
+                self.assertFalse(output.exists())
+                self.assertEqual(before, sorted(path.name for path in self.root.iterdir()))
+                self.assertEqual(Path('cycle'), cycle.readlink())
+                self.assertEqual(b'consumer-owned sentinel', sentinel.read_bytes())
 
     def test_identity_source_and_manifest_mutations_fail(self):
         original = self.payload()

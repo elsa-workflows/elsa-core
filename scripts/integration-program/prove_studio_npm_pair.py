@@ -518,6 +518,9 @@ def main() -> int:
     except ProofError as error:
         print(json.dumps({'success': False, 'failure_code': str(error)}))
         return 1
+    except Exception:
+        print(json.dumps({'success': False, 'failure_code': 'unexpected-failure'}))
+        return 1
 
 
 if __name__ == '__main__':
