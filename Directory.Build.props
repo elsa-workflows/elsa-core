@@ -4,7 +4,7 @@
         <Copyright>2025</Copyright>
 
         <PackageProjectUrl>https://github.com/elsa-workflows/elsa-extensions</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/elsa-workflows/elsa-extensions</RepositoryUrl>
+        <RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
 
         <LangVersion>latest</LangVersion>
