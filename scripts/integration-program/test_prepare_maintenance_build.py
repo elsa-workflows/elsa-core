@@ -1,17 +1,22 @@
 from contextlib import ExitStack
 import hashlib
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import io
 import json
 import os
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
+from threading import Thread
 import unittest
+import urllib.error
 from unittest.mock import patch
 import xml.etree.ElementTree as ET
 import zipfile
 
 import prepare_maintenance_build as maintenance
+import prove_consolidated_packages as consolidated
 
 
 class SelectionTests(unittest.TestCase):
@@ -752,7 +757,7 @@ class MaintenanceContracts(unittest.TestCase):
         artifacts = self.root / 'artifacts'; artifacts.mkdir(exist_ok=True)
         groups = groups if groups is not None else f'<group targetFramework="net8.0"><dependency id="Elsa.Api.Client" version="{dependency}" /></group>'
         nuspec = f'''<package><metadata><id>Elsa.Studio.Fixture</id><version>{packed_version}</version>
-          <repository type="git" url="https://github.com/elsa-workflows/elsa-studio" commit="{self.row['commit']}" />
+          <repository type="git" url="https://github.com/{self.row['source_repository']}" commit="{self.row['commit']}" />
           <dependencies>{groups}</dependencies>
           </metadata></package>'''
         path = artifacts / 'fixture.nupkg'
@@ -900,9 +905,9 @@ class MaintenanceContracts(unittest.TestCase):
                         maintenance.verify_artifacts(artifacts, [selected], self.row, '3.8.4-proof.42.1',
                                                      maintenance.ROOT, Path('/unused'), self.root)
 
-    def sdk_dependency_fixture(self):
+    def sdk_dependency_fixture(self, dependency='3.8.4'):
         groups = [{'framework': 'net8.0', 'dependencies': [
-            {'id': 'Elsa.Api.Client', 'version': '3.8.4', 'include': '', 'exclude': ''}]}]
+            {'id': 'Elsa.Api.Client', 'version': dependency, 'include': '', 'exclude': ''}]}]
         return {'expected_dependency_groups': groups, 'sdk_nuspec_sha256': 'a' * 64,
                 'expected_symbol_dependency_groups': groups, 'sdk_symbol_nuspec_sha256': 'b' * 64,
                 'expected_framework_reference_groups': [], 'expected_symbol_framework_reference_groups': []}
@@ -1108,3 +1113,617 @@ class MaintenanceContracts(unittest.TestCase):
             self.assertEqual(receipt['error']['reason'], expected)
             self.assertNotIn(message, json.dumps(receipt))
             self.assertNotIn('/private/runner-host', json.dumps(receipt))
+
+
+    def test_core_package_and_assembly_metadata_bind_preserved_recipe_and_exact_selected_commit(self):
+        for candidate in maintenance.load_candidates()['candidates']:
+            with self.subTest(product=candidate['product'], line=candidate['line']):
+                original = next(row for row in self.register['sources'] if row['commit'] == candidate['original_commit'])
+                version = original['dependency_version'] + '-proof.42.1'
+                self.row = maintenance.selection(self.register, candidate['product'], candidate['line'],
+                                                 candidate['commit'], version, 'core')
+                def packages():
+                    return self.write_package_fixture(dependency=self.row['dependency_version'],
+                                                      packed_version=version, frameworks=['net8.0'])
+                artifacts = packages()
+                policy = [{'id': 'Elsa.Studio.Fixture', 'assembly_name': 'Elsa.Studio.Fixture', 'frameworks': ['net8.0'],
+                           'include_build_output': True, 'symbols': True, 'satellites': [],
+                           **self.sdk_dependency_fixture(self.row['dependency_version'])}]
+                prefix = f"https://raw.githubusercontent.com/{self.row['source_repository']}/{self.row['commit']}/"
+                informational_prefix = version if candidate['product'] == 'studio' else '1.0.0'
+                details = {'assembly_name': 'Elsa.Studio.Fixture', 'assembly_version': '1.0.0.0',
+                    'informational_version': informational_prefix + '+' + self.row['commit'],
+                    'source_link': {'documents': {'/_/*': prefix + '*'}}, 'documents': [],
+                    'executable_method_bodies': 0, 'nonabstract_methods_without_body': 0,
+                    'native_or_external_methods': 0, 'nonmodule_types': 1, 'reference_assembly': False}
+                inspection = {'details': details, 'symbol': dict.fromkeys(('key', 'pdb_name', 'guid', 'stamp',
+                    'checksum_algorithm', 'declared_checksum', 'normalized_checksum', 'pdb_sha256', 'pdb_size'), 'fixture')}
+                with patch.object(maintenance, 'run', side_effect=lambda *_args, **_kwargs: json.dumps(inspection)):
+                    receipt = maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT,
+                                                          Path('/inspector'), self.root)
+                    self.assertEqual(receipt[0]['repository']['commit'], self.row['commit'])
+                    self.assertEqual(receipt[0]['version'], version)
+                    self.assertEqual(receipt[0]['symbols'][0]['informational_version'],
+                                     informational_prefix + '+' + self.row['commit'])
+                    wrong_prefixes = ['unexpected', '1.0.0' if candidate['product'] == 'studio' else version]
+                    for invalid in [informational_prefix + '+' + 'a' * 40,
+                                    *[value + '+' + self.row['commit'] for value in wrong_prefixes],
+                                    'unexpected+' + informational_prefix + '+' + self.row['commit']]:
+                        with self.subTest(informational_version=invalid), \
+                                self.assertRaisesRegex(ValueError, 'Core assembly commit mismatch'):
+                            details['informational_version'] = invalid
+                            maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT,
+                                                         Path('/inspector'), self.root)
+                    details['informational_version'] = informational_prefix + '+' + self.row['commit']
+                    for symbols in (False, True):
+                        for field in ('commit', 'version'):
+                            packages()
+                            path = artifacts / ('fixture.snupkg' if symbols else 'fixture.nupkg')
+                            with zipfile.ZipFile(path) as archive:
+                                entries = {name: archive.read(name) for name in archive.namelist()}
+                            before = self.row['commit'] if field == 'commit' else version
+                            after = 'a' * 40 if field == 'commit' else '99.0.0-proof.42.1'
+                            entries['fixture.nuspec'] = entries['fixture.nuspec'].replace(before.encode(), after.encode())
+                            with zipfile.ZipFile(path, 'w') as archive:
+                                for name, data in entries.items():
+                                    archive.writestr(name, data)
+                            with self.subTest(symbols=symbols, field=field), \
+                                    self.assertRaisesRegex(ValueError, 'repository provenance|Symbol metadata|Packed version|Symbol identity'):
+                                maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT,
+                                                             Path('/inspector'), self.root)
+
+
+class CoreCandidateContracts(unittest.TestCase):
+    def setUp(self):
+        self.register = maintenance.load_register()
+        self.candidates = maintenance.load_candidates()
+        self.bridges = [row for row in self.candidates['candidates'] if row['kind'] == 'metadata-bridge']
+        self.candidate = self.bridges[0]
+        self.row = self.select(self.candidate)
+
+    def select(self, candidate):
+        return maintenance.selection(self.register, candidate['product'], candidate['line'], candidate['commit'],
+                                     candidate['line'] + '.0-proof.42.1', 'core')
+
+    def candidate_object(self, updates=None, parents=None):
+        candidate = dict(self.candidate)
+        with tempfile.TemporaryDirectory() as temporary:
+            env = maintenance.build_environment() | {'GIT_INDEX_FILE': str(Path(temporary) / 'index'),
+                'GIT_AUTHOR_NAME': 'Test', 'GIT_AUTHOR_EMAIL': 'test@example.invalid',
+                'GIT_COMMITTER_NAME': 'Test', 'GIT_COMMITTER_EMAIL': 'test@example.invalid',
+                'GIT_AUTHOR_DATE': '2026-10-09T01:00:00Z', 'GIT_COMMITTER_DATE': '2026-10-09T01:00:00Z'}
+            maintenance.git(maintenance.ROOT, 'read-tree', candidate['commit'], env=env)
+            for path, data in (updates or {}).items():
+                blob = subprocess.run(['git', 'hash-object', '-w', '--stdin'], cwd=maintenance.ROOT,
+                    input=data, capture_output=True, check=True).stdout.decode().strip()
+                maintenance.git(maintenance.ROOT, 'update-index', '--add', '--cacheinfo',
+                                f'100644,{blob},{path}', env=env)
+            candidate['tree'] = maintenance.git(maintenance.ROOT, 'write-tree', env=env)
+            candidate['parents'] = parents if parents is not None else candidate['parents']
+            candidate['commit'] = maintenance.git(maintenance.ROOT, 'commit-tree', candidate['tree'],
+                *[arg for parent in candidate['parents'] for arg in ('-p', parent)], '-m', 'Rejected fixture', env=env)
+        return candidate
+
+    def verify_registered(self, candidate):
+        candidates = self.candidates | {'candidates': [candidate]}
+        with patch.object(maintenance, 'load_candidates', return_value=candidates):
+            maintenance.verify_core_candidate(maintenance.ROOT, self.select(candidate))
+
+    def test_four_exact_bridges_and_full_original_merge_parents_are_bound(self):
+        for candidate in self.bridges:
+            with self.subTest(product=candidate['product'], line=candidate['line']):
+                maintenance.verify_core_candidate(maintenance.ROOT, self.select(candidate))
+                self.assertEqual(len(candidate['original_parents']), 2 if candidate['line'] == '3.9' else 1)
+                with self.assertRaises(ValueError):
+                    maintenance.selection(self.register, candidate['product'], candidate['line'],
+                                          candidate['commit'], candidate['line'] + '.0-proof.42.1')
+        for original in self.register['sources']:
+            self.assertEqual(maintenance.selection(self.register, original['product'], original['line'],
+                original['commit'], original['dependency_version'] + '-proof.42.1'), original)
+
+    def test_all_four_registered_descendants_retain_exact_one_property_delta(self):
+        descendants = [row for row in self.candidates['candidates'] if row['kind'] == 'maintenance']
+        self.assertEqual(len(descendants), 4)
+        for candidate in descendants:
+            with self.subTest(product=candidate['product'], line=candidate['line']):
+                maintenance.verify_core_candidate(maintenance.ROOT, self.select(candidate))
+                self.assertEqual([change['path'] for change in candidate['delta']], ['Directory.Build.props'])
+                props = maintenance.git_bytes(maintenance.ROOT, candidate['commit'], 'Directory.Build.props')
+                self.assertIn(b'<RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>', props)
+                self.assertIn(b'<PackageProjectUrl>https://github.com/elsa-workflows/elsa-core</PackageProjectUrl>', props)
+
+    def test_unknown_cross_cell_kind_and_duplicate_candidates_fail(self):
+        for product, line, commit in [('extensions', '3.8', self.row['commit']),
+                                      ('studio', '3.9', self.row['commit']), ('studio', '3.8', 'a' * 40)]:
+            with self.subTest(product=product, line=line), self.assertRaises(ValueError):
+                maintenance.selection(self.register, product, line, commit, line + '.0-proof.42.1', 'core')
+        mutations = [dict(self.candidate, original_commit='a' * 40),
+                     dict(self.candidate, source_repository='other/repository'),
+                     dict(self.candidate, kind='arbitrary-descendant'),
+                     dict(self.candidate, dependency_version='99.0.0')]
+        for candidate in mutations:
+            with self.subTest(candidate=candidate), self.assertRaises(ValueError):
+                self.verify_registered(candidate)
+        duplicate = {'schema': 1, 'candidates': [self.candidate, dict(self.candidate, product='extensions')]}
+        with patch.object(maintenance, 'load_candidates', return_value=duplicate), self.assertRaises(ValueError):
+            self.select(self.candidate)
+
+    def test_registered_wrong_graph_and_metadata_identities_fail(self):
+        for key, value in [('tree', 'a' * 40), ('contained_commit', 'a' * 40),
+                           ('contained_tree', 'a' * 40), ('original_parents', ['a' * 40]),
+                           ('parents', [self.candidate['original_commit']])]:
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                self.verify_registered(dict(self.candidate, **{key: value}))
+        for parents in [[self.candidate['original_commit']],
+                        [self.candidate['contained_commit'], self.candidates['candidates'][1]['contained_commit']]]:
+            with self.subTest(parents=parents), self.assertRaises(ValueError):
+                self.verify_registered(self.candidate_object(parents=parents))
+        props = maintenance.git_bytes(maintenance.ROOT, self.row['commit'], 'Directory.Build.props')
+        for updates in [{'Directory.Build.props': props + b'<!-- extra metadata -->'},
+                        {'Directory.Build.props': props.replace(b'<PackageProjectUrl>', b'<ChangedProjectUrl>')},
+                        {'Directory.Packages.props': b'changed pins'},
+                        {'.github/workflows/new.yml': b'on: push'},
+                        {'.github/maintenance-inert-workflows/packages.yml.source': b'changed workflow'},
+                        {'src/Changed.cs': b'class Changed {}'}]:
+            with self.subTest(paths=list(updates)), self.assertRaises(ValueError):
+                self.verify_registered(self.candidate_object(updates))
+
+    def test_parent_admission_does_not_admit_unregistered_descendant(self):
+        descendant = self.candidate_object(parents=[self.candidate['commit']])
+        with self.assertRaises(ValueError):
+            self.select(descendant)
+        # A separate controller can see the Git object without containing it in its ancestry.
+        with tempfile.TemporaryDirectory() as temporary:
+            controller = Path(temporary)
+            subprocess.run(['git', 'init', '-q', str(controller)], check=True)
+            objects = maintenance.git(maintenance.ROOT, 'rev-parse', '--path-format=absolute', '--git-path', 'objects')
+            (controller / '.git/objects/info/alternates').write_text(objects + '\n')
+            maintenance.git(controller, 'update-ref', 'HEAD', self.candidate['original_commit'])
+            with self.assertRaises(ValueError):
+                maintenance.verify_source(controller, self.row)
+
+    def details(self, row=None):
+        row = row or self.row
+        path = 'Directory.Build.props'
+        data = maintenance.git_bytes(maintenance.ROOT, row['commit'], path)
+        url = f"https://raw.githubusercontent.com/{row['source_repository']}/{row['commit']}/{path}"
+        return {'source_link': {'documents': {'/_/*': url.rsplit('/', 1)[0] + '/*'}}, 'documents': [
+            {'path': '/_/' + path, 'algorithm': 'sha256', 'checksum': hashlib.sha256(data).hexdigest(),
+             'embedded_checksum': None}]}, data, url
+
+    def response(self, data, url):
+        response = io.BytesIO(data)
+        response.geturl = lambda: url
+        return response
+
+    def test_core_fetches_immutable_bytes_and_reuses_only_strict_exact_url_cache(self):
+        details, data, url = self.details()
+        cache = {('remote', url): b'untrusted permissive cache'}
+        with patch('prove_consolidated_packages.urllib.request.OpenerDirector.open',
+                   side_effect=lambda *_args, **_kwargs: self.response(data, url)) as fetch:
+            for _ in range(2):
+                verified = maintenance.verify_documents(details, maintenance.ROOT, self.row, cache=cache)
+                self.assertEqual(verified[0]['source'], 'core-git')
+                self.assertTrue(verified[0]['remote_fetched'])
+            self.assertEqual(fetch.call_count, 1)
+            self.assertEqual(fetch.call_args.args[0], url)
+        wrong = json.loads(json.dumps(details)); wrong['documents'][0]['checksum'] = '0' * 64
+        with patch('prove_consolidated_packages.urllib.request.OpenerDirector.open') as fetch, self.assertRaises(ValueError):
+            maintenance.verify_documents(wrong, maintenance.ROOT, self.row)
+        fetch.assert_not_called()
+
+    def test_core_missing_wrong_foreign_redirect_and_duplicate_documents_fail(self):
+        details, data, url = self.details()
+        for payload, returned_url in [(b'wrong bytes', url), (data, 'https://foreign.invalid/private-secret')]:
+            with patch('prove_consolidated_packages.urllib.request.OpenerDirector.open',
+                       return_value=self.response(payload, returned_url)), self.assertRaisesRegex(ValueError, 'Core remote source mismatch'):
+                maintenance.verify_documents(details, maintenance.ROOT, self.row)
+        error = urllib.error.HTTPError(url, 404, 'private-secret', {}, None)
+        self.addCleanup(error.close)
+        with patch('prove_consolidated_packages.urllib.request.OpenerDirector.open', side_effect=error), \
+                self.assertRaisesRegex(ValueError, 'Core remote source unavailable'):
+            maintenance.verify_documents(details, maintenance.ROOT, self.row)
+        foreign = json.loads(json.dumps(details)); foreign['source_link']['documents'] = {'/_/*': 'https://foreign.invalid/*'}
+        with self.assertRaisesRegex(ValueError, 'SourceLink repository'):
+            maintenance.verify_documents(foreign, maintenance.ROOT, self.row)
+        with self.assertRaisesRegex(ValueError, 'Duplicate PDB document'):
+            maintenance.verify_documents(dict(details, documents=details['documents'] * 2), maintenance.ROOT,
+                self.row, cache={('remote-strict', url): data})
+
+    def test_original_mode_never_fetches_and_core_placeholder_uses_original_anchor(self):
+        original = self.register['sources'][0]
+        details, _, _ = self.details(original)
+        with patch('prove_consolidated_packages.urllib.request.urlopen') as fetch:
+            maintenance.verify_documents(details, maintenance.ROOT, original)
+        fetch.assert_not_called()
+        for candidate in [row for row in self.candidates['candidates'] if row['product'] == 'extensions']:
+            row = self.select(candidate)
+            policies = maintenance.placeholder_policies(maintenance.ROOT, row)
+            self.assertEqual(len(policies), 2)
+            self.assertTrue(all(policy['source_commit'] == row['commit'] for policy in policies.values()))
+            changed = dict(row, commit=self.candidate_object({
+                self.register['inherited_skipped_placeholders'][0]['source_file']: b'changed placeholder'})['commit'])
+            with self.assertRaises(ValueError):
+                maintenance.placeholder_policies(maintenance.ROOT, changed)
+
+
+    def test_remote_failure_receipt_keeps_closed_reason_and_no_private_error(self):
+        details, _, url = self.details()
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / 'proof'
+            def reject(*_args):
+                return maintenance.verify_documents(details, maintenance.ROOT, self.row)
+            with patch.object(maintenance, 'verify_source', side_effect=reject), \
+                    patch('prove_consolidated_packages.urllib.request.OpenerDirector.open',
+                          side_effect=OSError('private-secret /private/runner-host HTTP response')), \
+                    self.assertRaises(ValueError):
+                maintenance.prepare(maintenance.ROOT, self.row, '3.8.4-proof.42.1', output)
+            receipt = json.loads((output / 'receipt.json').read_text())
+            self.assertFalse(receipt['success'])
+            self.assertEqual(receipt['error']['reason'], 'source-remote-unavailable')
+            self.assertEqual(receipt['candidates_sha256'], maintenance.digest(maintenance.CANDIDATES.read_bytes()))
+            for private in ('private-secret', '/private/runner-host', str(output)):
+                self.assertNotIn(private, json.dumps(receipt))
+
+    def test_strict_redirect_is_rejected_before_target_request_and_default_still_follows(self):
+        details, data, _ = self.details()
+        requests = []
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                requests.append(self.path)
+                if self.path == '/redirect':
+                    self.send_response(302)
+                    self.send_header('Location', '/source')
+                    self.end_headers()
+                else:
+                    self.send_response(200)
+                    self.end_headers()
+                    self.wfile.write(data)
+            def log_message(self, *_args):
+                pass
+        server = HTTPServer(('127.0.0.1', 0), Handler)
+        thread = Thread(target=lambda: server.serve_forever(poll_interval=0.01), daemon=True)
+        thread.start()
+        def stop():
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
+        self.addCleanup(stop)
+        url = f'http://127.0.0.1:{server.server_port}/redirect'
+        document = details['documents'][0]
+        with self.assertRaisesRegex(ValueError, 'Remote source redirected'):
+            consolidated.verify_tracked_document(maintenance.ROOT, self.row['commit'], 'Directory.Build.props',
+                document, url, True, {}, reject_redirects=True)
+        self.assertEqual(requests, ['/redirect'])
+        record = consolidated.verify_tracked_document(maintenance.ROOT, self.row['commit'], 'Directory.Build.props',
+            document, url, True, {})
+        self.assertTrue(record['remote_fetched'])
+        self.assertEqual(requests, ['/redirect', '/redirect', '/source'])
+
+    def test_strict_response_read_is_bounded_and_rejects_short_wrong_and_oversized_bytes(self):
+        details, data, url = self.details()
+        for payload in (data[:-1], b'x' * len(data), data + b'oversized' * 1000):
+            response = self.response(payload, url)
+            with patch.object(response, 'read', wraps=response.read) as read, \
+                    patch('prove_consolidated_packages.urllib.request.OpenerDirector.open', return_value=response), \
+                    self.assertRaisesRegex(ValueError, 'Core remote source mismatch'):
+                maintenance.verify_documents(details, maintenance.ROOT, self.row)
+            read.assert_called_once_with(len(data) + 1)
+        response = self.response(data, url)
+        with patch.object(response, 'read', wraps=response.read) as read, \
+                patch('prove_consolidated_packages.urllib.request.OpenerDirector.open', return_value=response):
+            maintenance.verify_documents(details, maintenance.ROOT, self.row)
+        read.assert_called_once_with(len(data) + 1)
+
+
+class MaintenanceWorkflowSelectionContracts(unittest.TestCase):
+    def setUp(self):
+        self.register = maintenance.load_register()
+        self.environment = {'EVENT': 'push', 'REF': 'refs/heads/codex/elsa-integration-maintenance-candidates-8683',
+                            'GITHUB_RUN_ID': '8683', 'GITHUB_RUN_ATTEMPT': '2'}
+
+    def test_exact_core_branch_selects_only_eight_explicit_registered_shas_through_admission(self):
+        with patch.object(maintenance, 'selection', wraps=maintenance.selection) as admit:
+            rows = maintenance.workflow_selections(self.register, self.environment)
+        candidates = maintenance.load_candidates()['rehearsal_sources']
+        self.assertEqual([(row['product'], row['line'], row['commit']) for row in rows],
+                         [(row['product'], row['line'], row['commit']) for row in candidates])
+        self.assertEqual(admit.call_count, 8)
+        self.assertTrue(all(call.args[-1] == 'core' for call in admit.call_args_list))
+        for row in rows:
+            self.assertEqual(row['source_repository'], maintenance.CORE_REPOSITORY)
+            self.assertEqual(row['version'], row['dependency_version'] + '-proof.8683.2')
+
+    def test_missing_duplicate_wrong_cell_unknown_and_extra_rehearsal_fields_fail(self):
+        catalog = maintenance.load_candidates()
+        valid = catalog['rehearsal_sources']
+        mutations = [valid[:-1], valid + [valid[0]], [valid[0], valid[0], *valid[2:]],
+                     [dict(valid[0], commit='a' * 40), *valid[1:]],
+                     [dict(valid[0], product='extensions'), *valid[1:]],
+                     [dict(valid[0], line='3.9'), *valid[1:]],
+                     [dict(valid[0], source_kind='core'), *valid[1:]]]
+        for sources in mutations:
+            with self.subTest(sources=sources), patch.object(maintenance, 'load_candidates',
+                    return_value=catalog | {'rehearsal_sources': sources}), \
+                    self.assertRaisesRegex(ValueError, 'Incomplete maintenance rehearsal cells'):
+                maintenance.workflow_selections(self.register, self.environment)
+        # Registry order never selects a latest tip or changes the explicit B+D checkpoint.
+        with patch.object(maintenance, 'load_candidates', return_value=catalog | {
+                'candidates': list(reversed(catalog['candidates']))}):
+            rows = maintenance.workflow_selections(self.register, self.environment)
+        self.assertEqual([row['commit'] for row in rows], [row['commit'] for row in valid])
+        self.assertEqual([row['kind'] for row in rows].count('maintenance'), 4)
+        self.assertEqual([row['kind'] for row in rows].count('metadata-bridge'), 4)
+        extra = dict(catalog['candidates'][-1], commit='a' * 40,
+                     parents=[catalog['candidates'][-1]['commit']])
+        with patch.object(maintenance, 'load_candidates', return_value=catalog | {
+                'candidates': [*catalog['candidates'], extra]}):
+            rows = maintenance.workflow_selections(self.register, self.environment)
+            self.assertEqual([row['commit'] for row in rows], [row['commit'] for row in valid])
+            with self.assertRaisesRegex(ValueError, 'Unregistered maintenance rehearsal selection'):
+                maintenance.build_selection(self.register, dict(extra, version='3.9.0-proof.8683.1'), self.environment)
+
+    def test_cached_selector_rerun_uses_actual_build_attempt_for_both_push_branches(self):
+        for ref in ('refs/heads/codex/maintenance-builds-8677', self.environment['REF']):
+            cached_environment = self.environment | {'REF': ref, 'GITHUB_RUN_ATTEMPT': '1'}
+            cached = maintenance.workflow_selections(self.register, cached_environment)
+            for selected in cached:
+                actual = maintenance.build_selection(self.register, selected | {'dependency_version': '99.0.0'},
+                    cached_environment | {'GITHUB_RUN_ATTEMPT': '2'})
+                self.assertEqual(actual['commit'], selected['commit'])
+                self.assertEqual(actual['version'], selected['dependency_version'] + '-proof.8683.2')
+                self.assertNotEqual(actual['version'], selected['version'])
+            with self.assertRaises(ValueError):
+                maintenance.build_selection(self.register, cached[0], cached_environment | {'GITHUB_RUN_ATTEMPT': '01'})
+            for environment in ({'EVENT': 'push', 'REF': 'refs/heads/main'},
+                                {'EVENT': 'pull_request'}, {'REF': ref + '-foreign'}):
+                with self.subTest(environment=environment), self.assertRaises(ValueError):
+                    maintenance.build_selection(self.register, cached[0], cached_environment | environment)
+
+    def test_manual_build_keeps_explicit_main_version_despite_different_actual_attempt(self):
+        for candidate in (self.register['sources'][0], maintenance.load_candidates()['candidates'][-1]):
+            selected = dict(candidate, version=candidate['line'] + '.99-proof.123.1')
+            environment = self.environment | {'EVENT': 'workflow_dispatch', 'REF': 'refs/heads/main'}
+            actual = maintenance.build_selection(self.register, selected, environment)
+            self.assertEqual(actual['version'], selected['version'])
+            self.assertEqual(actual['commit'], selected['commit'])
+            with self.assertRaisesRegex(ValueError, 'requires main'):
+                maintenance.build_selection(self.register, selected, environment | {'REF': self.environment['REF']})
+
+    def test_original_branch_retains_exact_original_matrix_and_ignores_push_inputs(self):
+        environment = self.environment | {'REF': 'refs/heads/codex/maintenance-builds-8677', 'SOURCE_KIND': 'core'}
+        with patch.object(maintenance, 'load_candidates', side_effect=AssertionError('Original path must stay independent')):
+            rows = maintenance.workflow_selections(self.register, environment)
+        self.assertEqual(rows, [dict(row, version=row['dependency_version'] + '-proof.8683.2')
+                                for row in self.register['sources']])
+
+    def test_other_event_ref_combinations_and_invalid_run_identity_fail_closed(self):
+        for event, ref in [('push', 'refs/heads/main'), ('push', 'refs/heads/codex/elsa-integration-maintenance-candidates-86830'),
+                           ('push', 'refs/tags/codex/elsa-integration-maintenance-candidates-8683'),
+                           ('pull_request', self.environment['REF']), ('workflow_dispatch', self.environment['REF'])]:
+            with self.subTest(event=event, ref=ref), self.assertRaises(ValueError):
+                maintenance.workflow_selections(self.register, self.environment | {'EVENT': event, 'REF': ref})
+        for run in ('0', '01', 'private-secret'):
+            with self.subTest(run=run), self.assertRaises(ValueError):
+                maintenance.workflow_selections(self.register, self.environment | {'GITHUB_RUN_ID': run})
+        candidates = maintenance.load_candidates()
+        with patch.object(maintenance, 'load_candidates', return_value=candidates | {'candidates': candidates['candidates'][:-1]}), \
+                self.assertRaisesRegex(ValueError, 'Incomplete maintenance rehearsal cells'):
+            maintenance.workflow_selections(self.register, self.environment)
+
+    def test_manual_main_selects_only_requested_exact_original_or_core_commit(self):
+        for kind, candidates in [('original', self.register['sources']),
+                                 ('core', maintenance.load_candidates()['candidates'])]:
+            row = candidates[-1]
+            environment = {'EVENT': 'workflow_dispatch', 'REF': 'refs/heads/main', 'PRODUCT': row['product'],
+                           'LINE': row['line'], 'SOURCE_COMMIT': row['commit'], 'SOURCE_KIND': kind,
+                           'PROOF_VERSION': row['line'] + '.0-proof.8683.2'}
+            selected = maintenance.workflow_selections(self.register, environment)
+            self.assertEqual(len(selected), 1)
+            self.assertEqual(selected[0]['commit'], row['commit'])
+            for changes in ({'SOURCE_COMMIT': 'a' * 40}, {'PROOF_VERSION': '3.8.4'}, {'SOURCE_KIND': 'publisher'}):
+                with self.subTest(kind=kind, changes=changes), self.assertRaises(ValueError):
+                    maintenance.workflow_selections(self.register, environment | changes)
+
+
+class ContinuingCandidateContracts(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name) / 'git'
+        self.root.mkdir()
+        maintenance.git(self.root, 'init', '-q')
+        self.env = maintenance.build_environment() | {
+            'GIT_AUTHOR_NAME': 'Test', 'GIT_AUTHOR_EMAIL': 'test@example.invalid',
+            'GIT_COMMITTER_NAME': 'Test', 'GIT_COMMITTER_EMAIL': 'test@example.invalid',
+            'GIT_INDEX_FILE': str(Path(temporary.name) / 'index')}
+        self.props = (b'<Project><RepositoryUrl>https://github.com/elsa-workflows/elsa-studio</RepositoryUrl>'
+                      b'<PackageProjectUrl>https://github.com/elsa-workflows/elsa-studio</PackageProjectUrl></Project>')
+        files = {'Directory.Build.props': self.props, 'Directory.Packages.props': b'pinned',
+                 '.github/workflows/packages.yml': b'on: push', '.github/actions/publish/action.yml': b'publisher',
+                 'Elsa.Studio.sln': b'original layout', 'src/Fixture/Fixture.csproj': b'project',
+                 'src/Fixture/Existing.csproj': b'existing project',
+                 'src/Fixture/Existing.csproj.user': (
+                     b'<Project><PropertyGroup><BuildProjectReferences>false</BuildProjectReferences>'
+                     b'</PropertyGroup></Project>'),
+                 'src/Fixture/Feature.cs': b'class Feature { public int Value() => 1; }',
+                 'test/Placeholder.cs': b'unchanged placeholder', 'docs/obsolete.md': b'old documentation',
+                 'src/Fixture/ClientLib/package.json': b'{"scripts":{"build":"webpack"}}',
+                 'src/Fixture/ClientLib/webpack.config.js': b'build policy'}
+        base = self.object(None, files)
+        original = self.object(base['commit'], {'docs/README.md': b'release'})
+        self.original = dict(maintenance.load_register()['sources'][0], **original,
+                             parent=base['commit'], workflows=['.github/workflows/packages.yml'])
+        self.original.pop('parents'); self.original.pop('delta')
+        maintenance.git(self.root, 'update-ref', 'HEAD', original['commit'])
+        self.register = {'sources': [self.original], 'inherited_skipped_placeholders': [
+            {'product': 'studio', 'commits': [original['commit']], 'source_file': 'test/Placeholder.cs'}]}
+        contained = maintenance.prepare_containment(self.root, Path(temporary.name) / 'contained', self.register)
+        containment = Path(temporary.name) / 'containment.json'
+        maintenance.write_json(containment, contained)
+        k = contained['sources'][0]
+        bridge = self.object(k['commit'], {'Directory.Build.props': self.props.replace(
+            b'<RepositoryUrl>https://github.com/elsa-workflows/elsa-studio</RepositoryUrl>',
+            b'<RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>')})
+        bridge.pop('delta')
+        self.bridge = dict(bridge, product='studio', line='3.8', source_kind='core', kind='metadata-bridge',
+            source_repository=maintenance.CORE_REPOSITORY, original_commit=original['commit'],
+            original_parents=[base['commit']], contained_commit=k['commit'], contained_tree=k['tree'])
+        self.catalog = {'schema': 2, 'candidates': [self.bridge], 'rehearsal_sources': [],
+                        'published': False, 'maintenance_refs_activated': False}
+        for name, value in [('load_register', self.register), ('load_candidates', self.catalog)]:
+            mock = patch.object(maintenance, name, return_value=value)
+            mock.start(); self.addCleanup(mock.stop)
+        mock = patch.object(maintenance, 'CONTAINMENT', containment)
+        mock.start(); self.addCleanup(mock.stop)
+
+    def object(self, parent, updates, parents=None):
+        maintenance.git(self.root, 'read-tree', parent if parent else '--empty', env=self.env)
+        for path, value in updates.items():
+            if value is None:
+                maintenance.git(self.root, 'update-index', '--force-remove', '--', path, env=self.env)
+            else:
+                mode, data = value if isinstance(value, tuple) else ('100644', value)
+                blob = subprocess.run(['git', 'hash-object', '-w', '--stdin'], cwd=self.root, input=data,
+                                      check=True, capture_output=True).stdout.decode().strip()
+                maintenance.git(self.root, 'update-index', '--add', '--cacheinfo', f'{mode},{blob},{path}', env=self.env)
+        tree = maintenance.git(self.root, 'write-tree', env=self.env)
+        parents = parents if parents is not None else [parent] if parent else []
+        commit = maintenance.git(self.root, 'commit-tree', tree,
+            *[arg for p in parents for arg in ('-p', p)], '-m', 'Temporary candidate fixture', env=self.env)
+        before = maintenance.tree_entries(self.root, parent) if parent else {}
+        return {'commit': commit, 'tree': tree, 'parents': parents,
+                'delta': maintenance.candidate_tree_delta(before, maintenance.tree_entries(self.root, commit))}
+
+    def descendant(self, updates=None, parent=None, parents=None, register=True):
+        parent = parent or self.bridge
+        row = dict(parent, **self.object(parent['commit'], updates or {
+            'src/Fixture/Feature.cs': b'class Feature { public int Value() => 2; }'}, parents), kind='maintenance')
+        if register:
+            self.catalog['candidates'].append(row)
+        return row
+
+    def select(self, row):
+        return maintenance.selection(self.register, row['product'], row['line'], row['commit'], '3.8.4-proof.1.1', 'core')
+
+    def verify(self, row):
+        maintenance.verify_core_candidate(self.root, self.select(row))
+
+    def test_reviewed_source_and_tests_add_modify_delete_then_registered_continuation(self):
+        d = self.descendant({'src/Fixture/Feature.cs': b'class Feature { public int Value() => 2; }',
+            'test/Regression.cs': b'class Regression { void Runs() { Assert.Equal(2, new Feature().Value()); } }',
+            'docs/obsolete.md': None, 'src/Fixture/Data.txt': ('100755', b'fixture data')})
+        self.verify(d)
+        e = self.descendant({'src/Fixture/Feature.cs': b'class Feature { public int Value() => 3; }'}, parent=d, register=False)
+        with self.assertRaisesRegex(ValueError, 'Unregistered'):
+            self.select(e)
+        self.catalog['candidates'].append(e)
+        self.verify(e)
+        with self.assertRaises(ValueError):
+            maintenance.verify_source(self.root, self.select(e))
+        maintenance.git(self.root, 'update-ref', 'HEAD', e['commit'])
+        maintenance.verify_source(self.root, self.select(e))
+
+    def test_clientlib_source_and_test_fixture_formats_remain_reviewable(self):
+        paths = {'src/Fixture/ClientLib/src/feature.ts': b'export const value = 2;',
+                 'src/Fixture/ClientLib/src/view.vue': b'<template>changed</template>',
+                 'src/Fixture/ClientLib/src/theme.css': b'body { color: red; }',
+                 'src/Fixture/ClientLib/src/__fixtures__/activity.json': b'{"value":2}',
+                 'tests/browser/feature.spec.ts': b'expect(value).toBe(2)',
+                 'test/fixtures/data.xml': b'<value>2</value>', 'docs/example.yaml': b'example: 2'}
+        self.verify(self.descendant(paths))
+
+    def test_metadata_followup_only_replaces_exact_project_url_and_keeps_core_repository(self):
+        props = maintenance.git_bytes(self.root, self.bridge['commit'], 'Directory.Build.props')
+        d = self.descendant({'Directory.Build.props': props.replace(
+            b'<PackageProjectUrl>https://github.com/elsa-workflows/elsa-studio</PackageProjectUrl>',
+            b'<PackageProjectUrl>https://github.com/elsa-workflows/elsa-core</PackageProjectUrl>')})
+        self.verify(d)
+        self.verify(self.descendant(parent=d))
+        e = self.descendant({'Directory.Build.props': props}, parent=d)
+        with self.assertRaisesRegex(ValueError, 'metadata mismatch'):
+            self.verify(e)
+
+    def test_registered_parent_required_with_same_cell_anchor_and_contained_binding(self):
+        for field, value in [('parents', ['a' * 40]), ('original_parents', ['a' * 40]),
+                             ('contained_commit', 'a' * 40), ('contained_tree', 'a' * 40)]:
+            d = self.descendant(register=False)
+            d[field] = value
+            self.catalog['candidates'].append(d)
+            with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'parent chain'):
+                self.select(d)
+            self.catalog['candidates'].pop()
+        d = self.descendant(register=False)
+        d['line'] = '3.9'
+        with self.assertRaises(ValueError):
+            self.select(d)
+
+    def test_cycles_hidden_merge_parents_and_wrong_actual_tree_or_parent_fail(self):
+        d = self.descendant()
+        saved = dict(d)
+        d['parents'] = [d['commit']]
+        with self.assertRaisesRegex(ValueError, 'parent chain'):
+            self.select(d)
+        d.update(saved)
+        d['tree'] = 'a' * 40
+        with self.assertRaisesRegex(ValueError, 'graph mismatch'):
+            self.verify(d)
+        d.update(saved)
+        d['parents'] = [self.bridge['commit'], self.bridge['contained_commit']]
+        with self.assertRaises(ValueError):
+            self.select(d)
+        d.update(saved)
+        hidden = self.descendant(parents=[self.bridge['commit'], self.original['commit']], register=False)
+        hidden['parents'] = [self.bridge['commit']]
+        self.catalog['candidates'].append(hidden)
+        with self.assertRaisesRegex(ValueError, 'graph mismatch'):
+            self.verify(hidden)
+
+    def test_complete_exact_delta_rejects_omitted_blob_mode_noop_and_path_aliases(self):
+        d = self.descendant({'src/Fixture/Feature.cs': b'changed', 'test/Regression.cs': b'regression'})
+        valid = json.loads(json.dumps(d['delta']))
+        mutations = [valid[:-1], valid[::-1], valid + [valid[-1]],
+                     [dict(valid[0], before=None), valid[1]],
+                     [dict(valid[0], after=valid[0]['before']), valid[1]]]
+        for key, value in [('blob', 'a' * 40), ('mode', '100755'), ('type', 'commit')]:
+            mutation = json.loads(json.dumps(valid)); mutation[0]['after'][key] = value; mutations.append(mutation)
+        for path in ('../escape.cs', '/absolute.cs', 'src/./Fixture.cs', 'src\\Fixture.cs', 'src/evil\n.cs', 'src/file%20.cs'):
+            mutations.append([dict(valid[0], path=path), valid[1]])
+        for delta in mutations:
+            d['delta'] = delta
+            with self.subTest(delta=delta), self.assertRaisesRegex(ValueError, 'delta mismatch'):
+                self.verify(d)
+        d['delta'] = valid
+        self.verify(d)
+
+    def test_declared_control_changes_additions_and_placeholder_drift_still_reject(self):
+        paths = ('Directory.Packages.props', 'Elsa.Studio.sln', 'src/Fixture/Fixture.csproj',
+                 'src/Fixture/Fixture.csproj.user', 'src/Fixture/Existing.csproj.user',
+                 'src/Fixture/Imported.targets', 'src/Fixture/Directory.Build.props',
+                 'src/Fixture/ClientLib/package.json', 'src/Fixture/ClientLib/package-lock.json',
+                 'src/Fixture/ClientLib/webpack.config.js', 'src/Fixture/ClientLib/tsconfig.json',
+                 'src/Fixture/ClientLib/scripts/generate.js', 'src/Fixture/global.json',
+                 'src/Fixture/NuGet.Config', 'build/Build.cs', 'build.sh',
+                 '.github/workflows/new.yml', '.github/maintenance-inert-workflows/packages.yml.source',
+                 '.github/actions/publish/action.yml', 'test/Placeholder.cs', 'core/src/Moved.cs')
+        for path in paths:
+            d = self.descendant({path: b'changed'}, register=False)
+            self.catalog['candidates'].append(d)
+            with self.subTest(path=path), self.assertRaisesRegex(ValueError, 'protected control'):
+                self.verify(d)
+            self.catalog['candidates'].pop()
+
+    def test_regular_blob_only_rejects_symlink_and_closed_fields_forbid_dependency_override(self):
+        d = self.descendant({'src/Fixture/link': ('120000', b'../private')})
+        with self.assertRaisesRegex(ValueError, 'delta mismatch'):
+            self.select(d)
+        self.catalog['candidates'].pop()
+        d = self.descendant()
+        for key, value in [('dependency_version', '99.0.0'), ('unexpected', True)]:
+            d[key] = value
+            with self.subTest(key=key), self.assertRaisesRegex(ValueError, 'identity mismatch'):
+                self.select(d)
+            d.pop(key)
+        self.catalog['extra'] = True
+        with self.assertRaisesRegex(ValueError, 'identity mismatch'):
+            self.select(d)

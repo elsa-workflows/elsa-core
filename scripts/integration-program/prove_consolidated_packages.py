@@ -931,6 +931,43 @@ def verify_external_document(root: Path, row: dict, framework: str, document: di
             "feed": GENERATOR_FEED, "embedded": True, "remote_fetched": False}
 
 
+class RejectSourceRedirects(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        fp.close()
+        raise ValueError('Remote source redirected')
+
+
+def verify_tracked_document(root: Path, commit: str, relative: str, document: dict, url: str,
+                            remote: bool, cache: dict, *, reject_redirects: bool = False) -> dict | None:
+    """Shared exact Git/PDB/remote byte check; callers own product and generated-source policy."""
+    algorithm, checksum = document['algorithm'], document['checksum']
+    require(algorithm in ('sha1', 'sha256') and bool(re.fullmatch(r'[0-9a-f]+', checksum)), 'Invalid document checksum')
+    embedded = document.get('embedded_checksum')
+    require(embedded is None or embedded == checksum, f'Embedded source checksum mismatch: {relative}')
+    blob_key = ('blob', commit, relative)
+    if blob_key not in cache:
+        blob = subprocess.run(['git', 'show', f'{commit}:{relative}'], cwd=root, capture_output=True)
+        cache[blob_key] = blob.stdout if blob.returncode == 0 else None
+    blob_bytes = cache[blob_key]
+    if blob_bytes is None:
+        return None
+    require(hashlib.new(algorithm, blob_bytes).hexdigest() == checksum, f'Tracked source differs from exact Git blob: {relative}')
+    if remote:
+        # A stricter call must not reuse bytes fetched under permissive redirect policy.
+        remote_key = ('remote-strict' if reject_redirects else 'remote', url)
+        if remote_key not in cache:
+            open_source = (urllib.request.build_opener(RejectSourceRedirects()).open
+                           if reject_redirects else urllib.request.urlopen)
+            with open_source(url, timeout=45) as response:
+                require(not reject_redirects or response.geturl() == url, 'Remote source redirected')
+                data = response.read(len(blob_bytes) + 1) if reject_redirects else response.read()
+            cache[remote_key] = data
+        require(cache[remote_key] == blob_bytes and hashlib.new(algorithm, cache[remote_key]).hexdigest() == checksum,
+                f'Remote source checksum mismatch: {url}')
+    return {'path': relative, 'checksum': checksum, 'algorithm': algorithm,
+            'embedded': embedded is not None, 'remote_fetched': remote}
+
+
 def verify_documents(root: Path, row: dict, framework: str, inspection: dict,
                      commit: str, remote: bool, cache: dict | None = None) -> dict:
     cache = cache if cache is not None else {}
@@ -970,25 +1007,14 @@ def verify_documents(root: Path, row: dict, framework: str, inspection: dict,
         relative = url[len(prefix):]
         require(not PurePosixPath(relative).is_absolute() and ".." not in PurePosixPath(relative).parts and "\\" not in relative,
                 f"Unsafe source document path: {relative}")
-        blob_key = ("blob", commit, relative)
-        if blob_key not in cache:
-            blob = subprocess.run(["git", "show", f"{commit}:{relative}"], cwd=root, capture_output=True)
-            cache[blob_key] = blob.stdout if blob.returncode == 0 else None
-        blob_bytes = cache[blob_key]
-        if blob_bytes is not None:
-            require(hashlib.new(algorithm, blob_bytes).hexdigest() == checksum, f"Tracked source differs from exact Git blob: {relative}")
+        tracked = verify_tracked_document(root, commit, relative, document, url, remote, cache)
+        if tracked is not None:
             counts["tracked_documents"] += 1
             if embedded is not None:
                 counts["embedded_tracked_documents"] += 1
             if remote:
-                remote_key = ("remote", url)
-                if remote_key not in cache:
-                    with urllib.request.urlopen(url, timeout=45) as response:
-                        cache[remote_key] = response.read()
-                require(hashlib.new(algorithm, cache[remote_key]).hexdigest() == checksum, f"Remote source checksum mismatch: {url}")
                 counts["remote_documents"] += 1
-            records.append({"path": relative, "checksum": checksum, "algorithm": algorithm,
-                            "embedded": embedded is not None, "remote_fetched": remote})
+            records.append(tracked)
         else:
             family = generated_family(row, framework, relative)
             require(family is not None and embedded is not None,

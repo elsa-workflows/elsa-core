@@ -143,7 +143,9 @@ def _start_postgres(name: str, password: str, log: Path, owned: dict) -> tuple[s
     require(re.fullmatch(r"127\.0\.0\.1:[0-9]{1,5}", port) is not None, "container_loopback")
     deadline = time.monotonic() + 60
     while True:
-        ready = subprocess.run(["docker", "exec", container_id, "pg_isready", "-U", "postgres", "-d", "postgres"],
+        # The image's temporary initialization server accepts only Unix sockets.
+        ready = subprocess.run(["docker", "exec", container_id, "pg_isready", "-h", "127.0.0.1", "-p", "5432",
+                                "-U", "postgres", "-d", "postgres"],
                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=10)
         if ready.returncode == 0:
             break
