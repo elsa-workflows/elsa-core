@@ -4,11 +4,10 @@ on:
   pull_request:
     paths:
       - '.github/workflows/product-release-plan.yml'
-      - 'scripts/integration-program/plan_product_release.py'
-      - 'scripts/integration-program/product_release_metadata.py'
-      - 'scripts/integration-program/ProductReleaseSemantics/**'
-      - 'scripts/integration-program/test_plan_product_release.py'
-      - 'docs/integration-program/product-release-plans.md'
+      # Runtime imports, native helpers, contract fixtures and governed source inputs.
+      - 'scripts/integration-program/**'
+      - '.agents/skills/elsa-release/scripts/**'
+      - 'docs/integration-program/**'
   workflow_dispatch:
     inputs:
       product:
@@ -78,8 +77,8 @@ jobs:
         env:
           PYTHONPATH: scripts/integration-program
         run: |
-          python3 -m unittest test_plan_product_release test_release_unit_manifest test_package_impact test_prepare_maintenance_build test_prove_studio_npm_pair
-          python3 -O -m unittest test_plan_product_release test_release_unit_manifest test_package_impact test_prepare_maintenance_build test_prove_studio_npm_pair
+          python3 -m unittest test_plan_product_release test_release_unit_manifest test_package_impact test_prepare_maintenance_build test_prove_studio_npm_pair test_prove_product_release_artifacts
+          python3 -O -m unittest test_plan_product_release test_release_unit_manifest test_package_impact test_prepare_maintenance_build test_prove_studio_npm_pair test_prove_product_release_artifacts
 
   plan:
     needs: select
