@@ -73,9 +73,185 @@
       "source_kind": "core",
       "source_repository": "elsa-workflows/elsa-core",
       "tree": "19b9c03ad02ea56d9208cb1ba8046ef06a374bc1"
+    },
+    {
+      "commit": "41ed15db7bfce7af5be2d362001518e8e692c22e",
+      "contained_commit": "971a8ac372866b0a8deccd42d9cae33a972a7bf9",
+      "contained_tree": "8fcf35d27f7281c3db412b0dfdc1dfe7f71de55a",
+      "delta": [
+        {
+          "after": {
+            "blob": "66a2bc6aac8f022690df16cf969630957265d323",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "before": {
+            "blob": "aaf17f6dce4a16e7e2225e567b04acb158ce4818",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "path": "Directory.Build.props"
+        }
+      ],
+      "kind": "maintenance",
+      "line": "3.8",
+      "original_commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+      "original_parents": [
+        "1c72dc02c837919059b60efe5df2ed57ff2db2d9"
+      ],
+      "parents": [
+        "7d4976dc0a69ad6f68bbe3c547730dc3f49795dd"
+      ],
+      "product": "studio",
+      "source_kind": "core",
+      "source_repository": "elsa-workflows/elsa-core",
+      "tree": "a3603b9d2c46e984f193dc648734aef64fe015e5"
+    },
+    {
+      "commit": "e7cf096bc117d970dc0bbc11e26dabd2ea2e1b00",
+      "contained_commit": "27fbf412cae3a8f0f4ebf8513bc98aa3cc179638",
+      "contained_tree": "1986aac411a9263192540fb8495272c811780e74",
+      "delta": [
+        {
+          "after": {
+            "blob": "4df5aaa164abed93797a5a5ffa751ed64d6ddc77",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "before": {
+            "blob": "98c49d2c7b3e15195c009ed5acf7273a55993c71",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "path": "Directory.Build.props"
+        }
+      ],
+      "kind": "maintenance",
+      "line": "3.9",
+      "original_commit": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+      "original_parents": [
+        "0ad1874859fdd5beabfdac980ab13ee7f9b372af",
+        "199b9a346dc5cb75031f2135374373ee413c2cd7"
+      ],
+      "parents": [
+        "246bdeae309defbb1a643749d0b5914855ca3d3b"
+      ],
+      "product": "studio",
+      "source_kind": "core",
+      "source_repository": "elsa-workflows/elsa-core",
+      "tree": "1a82cf94f45bb9e4c6603dfb0344ca39f196ba0c"
+    },
+    {
+      "commit": "92c27a3dd2c7f1dc107cba34749dd293a5d77743",
+      "contained_commit": "b2ccd4f8a4b024732f263bc76d9be0a2418cd03e",
+      "contained_tree": "76b2cc6e8d0ac598f110def75e2a4b174bae70ac",
+      "delta": [
+        {
+          "after": {
+            "blob": "cd8f89825d56e1649a1a240d98ab39f7f4161e84",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "before": {
+            "blob": "da1ccd62df9a0213466c550697b89659486ba1a2",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "path": "Directory.Build.props"
+        }
+      ],
+      "kind": "maintenance",
+      "line": "3.8",
+      "original_commit": "154ba15fb4da85b4bebecfbe43639579cbda1d0d",
+      "original_parents": [
+        "e7d05ef930dfde2aa85bf9dcaf841e5a6ede0a1e"
+      ],
+      "parents": [
+        "d294722a044226ef93bf70ebb1db25218aa90ccc"
+      ],
+      "product": "extensions",
+      "source_kind": "core",
+      "source_repository": "elsa-workflows/elsa-core",
+      "tree": "6b7627924e64d4a6548ff5689000eff2f08561eb"
+    },
+    {
+      "commit": "bd7b846efae7e93676c6c3a594e682a5a958b766",
+      "contained_commit": "09ab8cefe2a3b24bfe66a6b3e53db95ae91c172d",
+      "contained_tree": "a1341034483e455124ce7c646d35cc8e3452bc95",
+      "delta": [
+        {
+          "after": {
+            "blob": "fa8ad931c1e4b967d3b45e9f37b86fe13ee165d6",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "before": {
+            "blob": "404a63d933cf4192eeec569ee95e3acf4cb1432e",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "path": "Directory.Build.props"
+        }
+      ],
+      "kind": "maintenance",
+      "line": "3.9",
+      "original_commit": "89d4eb9b739ae135604aac2a1de18653a289bdb0",
+      "original_parents": [
+        "b59773982b0a6a2dfecab3312f53dbcc3533c079",
+        "75308d9548cb8e0920b17985d69f8e35c82003fc"
+      ],
+      "parents": [
+        "ad27d260fd62904870303a728527477d208404b6"
+      ],
+      "product": "extensions",
+      "source_kind": "core",
+      "source_repository": "elsa-workflows/elsa-core",
+      "tree": "f86b6eef467b947864f43c2a56f4a65e65e1d22e"
     }
   ],
   "maintenance_refs_activated": false,
   "published": false,
-  "schema": 1
+  "rehearsal_sources": [
+    {
+      "commit": "7d4976dc0a69ad6f68bbe3c547730dc3f49795dd",
+      "line": "3.8",
+      "product": "studio"
+    },
+    {
+      "commit": "246bdeae309defbb1a643749d0b5914855ca3d3b",
+      "line": "3.9",
+      "product": "studio"
+    },
+    {
+      "commit": "d294722a044226ef93bf70ebb1db25218aa90ccc",
+      "line": "3.8",
+      "product": "extensions"
+    },
+    {
+      "commit": "ad27d260fd62904870303a728527477d208404b6",
+      "line": "3.9",
+      "product": "extensions"
+    },
+    {
+      "commit": "41ed15db7bfce7af5be2d362001518e8e692c22e",
+      "line": "3.8",
+      "product": "studio"
+    },
+    {
+      "commit": "e7cf096bc117d970dc0bbc11e26dabd2ea2e1b00",
+      "line": "3.9",
+      "product": "studio"
+    },
+    {
+      "commit": "92c27a3dd2c7f1dc107cba34749dd293a5d77743",
+      "line": "3.8",
+      "product": "extensions"
+    },
+    {
+      "commit": "bd7b846efae7e93676c6c3a594e682a5a958b766",
+      "line": "3.9",
+      "product": "extensions"
+    }
+  ],
+  "schema": 2
 }

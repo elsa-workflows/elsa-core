@@ -6,7 +6,7 @@ import argparse
 import hashlib
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 import shutil
 import subprocess
@@ -24,6 +24,8 @@ REGISTER = ROOT / 'docs/integration-program/maintenance-source-register.json'
 CANDIDATES = ROOT / 'docs/integration-program/maintenance-core-candidates.json'
 CONTAINMENT = ROOT / 'docs/integration-program/maintenance-containment.json'
 CORE_REPOSITORY = 'elsa-workflows/elsa-core'
+REHEARSAL_BRANCHES = {'refs/heads/codex/maintenance-builds-8677': 'original',
+                      'refs/heads/codex/elsa-integration-maintenance-candidates-8683': 'core'}
 PROOF_BUILD_PROPERTIES = {'EmbedUntrackedSources': 'true'}
 TRX_COUNTERS = ('total', 'executed', 'passed', 'failed', 'error', 'timeout', 'aborted', 'inconclusive',
                 'passedButRunAborted', 'notRunnable', 'notExecuted', 'disconnected', 'warning', 'completed', 'inProgress', 'pending')
@@ -37,36 +39,78 @@ def load_candidates() -> dict:
     return json.loads(CANDIDATES.read_text())
 
 
+def validate_candidate_delta(delta: object) -> None:
+    require(isinstance(delta, list) and bool(delta), 'Core candidate source delta mismatch')
+    paths = []
+    for change in delta:
+        require(isinstance(change, dict) and set(change) == {'path', 'before', 'after'},
+                'Core candidate source delta mismatch')
+        path = change['path']
+        require(isinstance(path, str) and bool(path) and not PurePosixPath(path).is_absolute() and
+                '..' not in PurePosixPath(path).parts and PurePosixPath(path).as_posix() == path and
+                not any(ord(char) < 32 or ord(char) == 127 or char in '\\?#%' for char in path),
+                'Core candidate source delta mismatch')
+        paths.append(path)
+        require(change['before'] != change['after'], 'Core candidate source delta mismatch')
+        for entry in (change['before'], change['after']):
+            require(entry is None or isinstance(entry, dict) and set(entry) == {'mode', 'type', 'blob'} and
+                    entry['mode'] in ('100644', '100755') and entry['type'] == 'blob' and
+                    isinstance(entry['blob'], str) and re.fullmatch(r'[a-f0-9]{40}', entry['blob']) is not None,
+                    'Core candidate source delta mismatch')
+    require(paths == sorted(set(paths)), 'Core candidate source delta mismatch')
+
+
+def registered_core_candidates(register: dict) -> list[dict]:
+    candidates = load_candidates()
+    require(set(candidates) == {'schema', 'candidates', 'rehearsal_sources', 'published', 'maintenance_refs_activated'} and
+            candidates['schema'] == 2 and candidates['published'] is False and
+            candidates['maintenance_refs_activated'] is False and isinstance(candidates['candidates'], list),
+            'Core candidate register identity mismatch')
+    rows = []
+    common = {'product', 'line', 'source_kind', 'kind', 'source_repository', 'commit', 'tree', 'parents',
+              'original_commit', 'original_parents', 'contained_commit', 'contained_tree'}
+    for candidate in candidates['candidates']:
+        require(isinstance(candidate, dict) and candidate.get('kind') in ('metadata-bridge', 'maintenance') and
+                set(candidate) == common | ({'delta'} if candidate['kind'] == 'maintenance' else set()) and
+                all(isinstance(candidate[key], str) and re.fullmatch(r'[a-f0-9]{40}', candidate[key])
+                    for key in ('commit', 'tree', 'original_commit', 'contained_commit', 'contained_tree')) and
+                all(isinstance(candidate[key], list) and candidate[key] and
+                    all(isinstance(value, str) and re.fullmatch(r'[a-f0-9]{40}', value) for value in candidate[key])
+                    for key in ('parents', 'original_parents')) and len(candidate['parents']) == 1,
+                'Core candidate register identity mismatch')
+        originals = [row for row in register['sources'] if
+            (row['product'], row['line'], row['commit']) ==
+            (candidate['product'], candidate['line'], candidate['original_commit'])]
+        require(len(originals) == 1 and candidate['source_kind'] == 'core' and
+                candidate['source_repository'] == CORE_REPOSITORY, 'Core candidate register identity mismatch')
+        if candidate['kind'] == 'maintenance':
+            validate_candidate_delta(candidate['delta'])
+        original = originals[0]
+        rows.append({**original, **candidate, 'workflows': [],
+                     'original_source_repository': original['source_repository'],
+                     'original_source_ref': original['source_ref']})
+        rows[-1].pop('source_ref')
+        rows[-1].pop('parent')
+    by_commit = {row['commit']: row for row in rows}
+    require(len(by_commit) == len(rows), 'Core candidate register identity mismatch')
+    binding = ('product', 'line', 'source_repository', 'original_commit', 'original_parents',
+               'contained_commit', 'contained_tree')
+    for row in rows:
+        seen = set()
+        while row['kind'] == 'maintenance':
+            require(row['commit'] not in seen, 'Core candidate parent chain mismatch')
+            seen.add(row['commit'])
+            parent = by_commit.get(row['parents'][0])
+            require(parent is not None and all(parent[key] == row[key] for key in binding),
+                    'Core candidate parent chain mismatch')
+            row = parent
+    return rows
+
+
 def selection(register: dict, product: str, line: str, commit: str, version: str,
               source_kind: str = 'original') -> dict:
     require(source_kind in ('original', 'core'), 'Unknown source kind')
-    rows = register['sources']
-    if source_kind == 'core':
-        candidates = load_candidates()
-        require(candidates['schema'] == 1 and
-                len({row['commit'] for row in candidates['candidates']}) == len(candidates['candidates']),
-                'Core candidate register identity mismatch')
-        rows = []
-        for candidate in candidates['candidates']:
-            require(set(candidate) == {'product', 'line', 'source_kind', 'kind', 'source_repository', 'commit',
-                    'tree', 'parents', 'original_commit', 'original_parents', 'contained_commit', 'contained_tree'} and
-                    all(isinstance(candidate[key], str) and re.fullmatch(r'[a-f0-9]{40}', candidate[key])
-                        for key in ('commit', 'tree', 'original_commit', 'contained_commit', 'contained_tree')) and
-                    all(isinstance(candidate[key], list) and candidate[key] and
-                        all(isinstance(value, str) and re.fullmatch(r'[a-f0-9]{40}', value) for value in candidate[key])
-                        for key in ('parents', 'original_parents')), 'Core candidate register identity mismatch')
-            originals = [row for row in register['sources'] if
-                (row['product'], row['line'], row['commit']) ==
-                (candidate['product'], candidate['line'], candidate['original_commit'])]
-            require(len(originals) == 1 and candidate['source_kind'] == 'core' and
-                    candidate['source_repository'] == CORE_REPOSITORY and
-                    candidate['kind'] == 'metadata-bridge', 'Core candidate register identity mismatch')
-            original = originals[0]
-            rows.append({**original, **candidate, 'workflows': [],
-                         'original_source_repository': original['source_repository'],
-                         'original_source_ref': original['source_ref']})
-            rows[-1].pop('source_ref')
-            rows[-1].pop('parent')
+    rows = registered_core_candidates(register) if source_kind == 'core' else register['sources']
     matches = [row for row in rows
                if (row['product'], row['line'], row['commit']) == (product, line, commit)]
     require(len(matches) == 1 and re.fullmatch(r'[a-f0-9]{40}', commit), 'Unregistered product/line/source commit')
@@ -84,14 +128,35 @@ def workflow_selections(register: dict, environment: dict[str, str]) -> list[dic
         row = selection(register, environment['PRODUCT'], environment['LINE'], environment['SOURCE_COMMIT'],
                         environment['PROOF_VERSION'], environment['SOURCE_KIND'])
         return [dict(row, version=environment['PROOF_VERSION'])]
-    branches = {'refs/heads/codex/maintenance-builds-8677': 'original',
-                'refs/heads/codex/elsa-integration-maintenance-candidates-8683': 'core'}
-    require(event == 'push' and ref in branches, 'Unregistered maintenance rehearsal event/ref')
-    source_kind = branches[ref]
-    candidates = load_candidates()['candidates'] if source_kind == 'core' else register['sources']
-    require(len(candidates) == len(register['sources']) and
-            {(row['product'], row['line']) for row in candidates} ==
-            {(row['product'], row['line']) for row in register['sources']}, 'Incomplete maintenance rehearsal cells')
+    require(event == 'push' and ref in REHEARSAL_BRANCHES, 'Unregistered maintenance rehearsal event/ref')
+    source_kind = REHEARSAL_BRANCHES[ref]
+    if source_kind == 'core':
+        admitted = registered_core_candidates(register)
+        candidates = load_candidates()['rehearsal_sources']
+        require(isinstance(candidates, list) and all(isinstance(row, dict) and
+                set(row) == {'product', 'line', 'commit'} and isinstance(row['commit'], str) and
+                re.fullmatch(r'[a-f0-9]{40}', row['commit']) is not None for row in candidates) and
+                len({row['commit'] for row in candidates}) == len(candidates), 'Incomplete maintenance rehearsal cells')
+        selected = []
+        for candidate in candidates:
+            matches = [row for row in admitted if all(row[key] == candidate[key] for key in candidate)]
+            require(len(matches) == 1, 'Incomplete maintenance rehearsal cells')
+            selected.append(matches[0])
+        candidates = selected
+    else:
+        candidates = register['sources']
+    expected_cells = {(row['product'], row['line']) for row in register['sources']}
+    if source_kind == 'core':
+        # Deliberate eight-source B+D checkpoint; never infer tips or build the registry.
+        expected = {(product, line, kind) for product, line in expected_cells
+                    for kind in ('metadata-bridge', 'maintenance')}
+        require(len(candidates) == len(expected) and
+                {(row['product'], row['line'], row['kind']) for row in candidates} == expected,
+                'Incomplete maintenance rehearsal cells')
+    else:
+        require(len(candidates) == len(expected_cells) and
+                {(row['product'], row['line']) for row in candidates} == expected_cells,
+                'Incomplete maintenance rehearsal cells')
     rows = []
     for candidate in candidates:
         original_commit = candidate['original_commit'] if source_kind == 'core' else candidate['commit']
@@ -102,6 +167,20 @@ def workflow_selections(register: dict, environment: dict[str, str]) -> list[dic
         row = selection(register, candidate['product'], candidate['line'], candidate['commit'], version, source_kind)
         rows.append(dict(row, version=version))
     return rows
+
+
+def build_selection(register: dict, selected: dict, environment: dict[str, str]) -> dict:
+    """Re-admit a cached matrix row using the actual build attempt's version."""
+    kind = selected.get('source_kind', 'original')
+    if environment['EVENT'] == 'workflow_dispatch':
+        require(environment['REF'] == 'refs/heads/main', 'Manual maintenance proof requires main')
+        row = selection(register, selected['product'], selected['line'], selected['commit'], selected['version'], kind)
+        return dict(row, version=selected['version'])
+    matches = [row for row in workflow_selections(register, environment)
+               if (row['product'], row['line'], row['commit'], row.get('source_kind', 'original')) ==
+               (selected['product'], selected['line'], selected['commit'], kind)]
+    require(len(matches) == 1, 'Unregistered maintenance rehearsal selection')
+    return matches[0]
 
 
 def build_environment() -> dict[str, str]:
@@ -132,8 +211,9 @@ def git_bytes(root: Path, commit: str, path: str) -> bytes:
 
 
 def tree_entries(root: Path, commit: str) -> dict:
-    entries = git(root, 'ls-tree', '-r', commit).splitlines()
-    return {path: tuple(identity.split()) for entry in entries for identity, path in [entry.split('\t', 1)]}
+    entries = git(root, 'ls-tree', '-rz', commit).split('\0')
+    return {path: tuple(identity.split()) for entry in entries if entry
+            for identity, path in [entry.split('\t', 1)]}
 
 
 def verify_core_candidate(root: Path, row: dict) -> None:
@@ -142,6 +222,13 @@ def verify_core_candidate(root: Path, row: dict) -> None:
     admitted = selection(register, row['product'], row['line'], row['commit'],
                          row['dependency_version'] + '-proof.1.1', 'core')
     require(row == admitted, 'Core candidate register identity mismatch')
+    by_commit = {item['commit']: item for item in registered_core_candidates(register)}
+    while row['kind'] == 'maintenance':
+        require(git(root, 'show', '-s', '--format=%P', row['commit']).split() == row['parents'] and
+                git(root, 'rev-parse', row['commit'] + '^{tree}') == row['tree'], 'Core candidate graph mismatch')
+        parent = by_commit[row['parents'][0]]
+        verify_maintenance_delta(root, row, parent, register)
+        row = parent
     original = next(item for item in register['sources'] if item['commit'] == row['original_commit'])
     require(git(root, 'rev-parse', original['commit'] + '^{tree}') == original['tree'] and
             git(root, 'show', '-s', '--format=%P', original['commit']).split() == row['original_parents'],
@@ -180,6 +267,54 @@ def verify_core_candidate(root: Path, row: dict) -> None:
     expected[properties] = actual[properties]
     require(actual == expected and not any(path.startswith('.github/workflows/') for path in actual),
             'Core candidate source delta mismatch')
+
+
+def candidate_tree_delta(before: dict, after: dict) -> list[dict]:
+    def identity(entry):
+        return dict(zip(('mode', 'type', 'blob'), entry)) if entry is not None else None
+    return [{'path': path, 'before': identity(before.get(path)), 'after': identity(after.get(path))}
+            for path in sorted(set(before) | set(after)) if before.get(path) != after.get(path)]
+
+
+def maintenance_editable_path(path: str) -> bool:
+    # Ordinary source/test/fixture/docs formats stay usable. Build, inventory,
+    # dependency, toolchain and authority controls require a coordinated slice.
+    parts = PurePosixPath(path).parts
+    name = parts[-1].casefold()
+    if parts[0] not in ('src', 'test', 'tests', 'docs') and path != 'README.md':
+        return False
+    if any(part.startswith('.') or part.casefold() in
+           ('build', 'scripts', 'obj', 'bin', 'node_modules', 'packages') for part in parts):
+        return False
+    controls = {'global.json', 'nuget.config', 'package.json', 'package-lock.json', 'npm-shrinkwrap.json',
+                'yarn.lock', 'pnpm-lock.yaml', 'bun.lock', 'bun.lockb', 'deno.json', 'deno.jsonc',
+                'packages.lock.json', 'packages.config', 'build.cs', 'makefile', 'cmakelists.txt'}
+    return not (name in controls or name.startswith(('directory.', 'dockerfile', 'tsconfig', 'jsconfig')) or
+                (PurePosixPath(name).suffix in ('.json', '.js', '.ts', '.mjs', '.cjs', '.yaml', '.yml') and
+                 re.search(r'(^|\.)(config|settings)\.', name)) or
+                PurePosixPath(name).suffix in ('.csproj', '.fsproj', '.vbproj', '.proj', '.sln', '.slnf', '.slnx',
+                    '.props', '.targets', '.nuspec', '.config', '.lock', '.lockb', '.runsettings', '.ruleset',
+                    '.rsp', '.sh', '.ps1', '.cmd', '.bat'))
+
+
+def verify_maintenance_delta(root: Path, row: dict, parent: dict, register: dict) -> None:
+    before, after = tree_entries(root, parent['commit']), tree_entries(root, row['commit'])
+    require(candidate_tree_delta(before, after) == row['delta'], 'Core candidate source delta mismatch')
+    placeholders = {item['source_file'] for item in register['inherited_skipped_placeholders']
+                    if item['product'] == row['product'] and row['original_commit'] in item['commits']}
+    for change in row['delta']:
+        path = change['path']
+        if path == 'Directory.Build.props':
+            token = f"<PackageProjectUrl>https://github.com/{row['original_source_repository']}</PackageProjectUrl>".encode()
+            old = git_bytes(root, parent['commit'], path)
+            require(old.count(token) == 1 and change['before'] is not None and change['after'] is not None and
+                    before[path][:2] == after[path][:2] and
+                    git_bytes(root, row['commit'], path) == old.replace(token,
+                        f'<PackageProjectUrl>https://github.com/{CORE_REPOSITORY}</PackageProjectUrl>'.encode()),
+                    'Core candidate metadata mismatch')
+        else:
+            require(maintenance_editable_path(path) and path not in placeholders,
+                    'Core candidate protected control mismatch')
 
 
 def prepare_containment(root: Path, output: Path, register: dict) -> dict:
@@ -271,6 +406,8 @@ VERIFICATION_REASONS = {
     'Core candidate original graph mismatch': 'candidate-original-graph-invalid',
     'Core candidate containment mismatch': 'candidate-containment-invalid',
     'Core candidate graph mismatch': 'candidate-graph-invalid',
+    'Core candidate parent chain mismatch': 'candidate-parent-chain-invalid',
+    'Core candidate protected control mismatch': 'candidate-protected-control-invalid',
     'Core candidate metadata mismatch': 'candidate-metadata-invalid',
     'Core candidate source delta mismatch': 'candidate-source-delta-invalid',
     'Core assembly commit mismatch': 'assembly-commit-mismatch',
@@ -918,15 +1055,23 @@ def main() -> None:
     parser.add_argument('--version')
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--prepare-containment', action='store_true')
+    parser.add_argument('--workflow-build', action='store_true')
     args = parser.parse_args()
     try:
         register = load_register()
         if args.prepare_containment:
-            require(not any((args.product, args.line, args.commit, args.version)), 'Containment takes no build selection')
+            require(not any((args.product, args.line, args.commit, args.version, args.workflow_build)), 'Containment takes no build selection')
             prepare_containment(ROOT, args.output.resolve(), register)
         else:
-            row = selection(register, args.product, args.line, args.commit, args.version, args.source_kind)
-            prepare(ROOT, row, args.version, args.output.resolve())
+            if args.workflow_build:
+                selected = build_selection(register, {'product': args.product, 'line': args.line, 'commit': args.commit,
+                    'source_kind': args.source_kind, 'version': args.version}, dict(os.environ))
+                version = selected.pop('version')
+                row = selected
+            else:
+                version = args.version
+                row = selection(register, args.product, args.line, args.commit, version, args.source_kind)
+            prepare(ROOT, row, version, args.output.resolve())
     except Exception:
         # Raw build outputs/tracebacks stay private on the runner. The retained
         # receipt identifies the closed stage and safe package/framework focus.

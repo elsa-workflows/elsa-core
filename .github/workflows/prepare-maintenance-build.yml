@@ -93,7 +93,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.select.outputs.matrix) }}
-    name: ${{ matrix.product }} ${{ matrix.line }} ${{ matrix.source_kind || 'original' }} source proof
+    name: ${{ matrix.product }} ${{ matrix.line }} ${{ matrix.kind || 'original' }} source proof
     runs-on: ubuntu-latest
     timeout-minutes: 180
     steps:
@@ -116,6 +116,8 @@ jobs:
           python-version: '3.12'
       - name: Build, test, pack and verify original-source artifacts without publication
         env:
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
           PRODUCT: ${{ matrix.product }}
           LINE: ${{ matrix.line }}
           SOURCE_COMMIT: ${{ matrix.commit }}
@@ -123,7 +125,7 @@ jobs:
           PROOF_VERSION: ${{ matrix.version }}
         run: |
           python scripts/integration-program/prepare_maintenance_build.py \
-            --product "$PRODUCT" --line "$LINE" --commit "$SOURCE_COMMIT" --source-kind "$SOURCE_KIND" \
+            --workflow-build --product "$PRODUCT" --line "$LINE" --commit "$SOURCE_COMMIT" --source-kind "$SOURCE_KIND" \
             --version "$PROOF_VERSION" --output "$RUNNER_TEMP/maintenance-proof"
       - name: Retain original artifacts and sanitized structured receipts
         if: always()
