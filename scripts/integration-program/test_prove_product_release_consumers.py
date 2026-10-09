@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from datetime import datetime, timedelta, timezone
 import json
 import subprocess
 from pathlib import Path
@@ -11,6 +12,7 @@ import zipfile
 from unittest.mock import patch
 
 import product_release_metadata as metadata
+import test_prove_product_release_artifacts as artifact_contracts
 import prove_product_release_consumers as proof
 from product_artifact_execution import local_execution
 
@@ -56,7 +58,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         self.source = {'commit': 'b' * 40, 'tree': 'c' * 40}
         self.policy = {'id': 'Example', 'project': 'src/Example.csproj', 'frameworks': ['net8.0', 'net10.0'],
                        'metadata': {'dependency_groups': [{'framework': 'net8.0', 'dependencies': []}]}}
-        self.plan = {'source': self.source, 'controller': deepcopy(self.planner_controller), 'product': 'studio', 'line': '3.8',
+        self.plan = {'observed_at': proof.planner.now(), 'source': self.source, 'controller': deepcopy(self.planner_controller), 'product': 'studio', 'line': '3.8',
                      'requested_version': '3.8.999', 'inventory': {'selected': [self.policy]},
                      'expected_artifacts': ['Example.3.8.999.nupkg']}
         self.graph = {'example': {'id': 'Example', 'version': '3.8.999', 'content_hash': 'A' * 86 + '==',
@@ -78,12 +80,70 @@ class SelectedProductConsumerTests(unittest.TestCase):
         with zipfile.ZipFile(path) as archive:
             inventory = [{'path': name, 'size': len(archive.read(name)), 'sha256': metadata.sha256(archive.read(name))}
                          for name in sorted(archive.namelist())]
-        return {'success': True, 'artifact_proof': True, 'published': False, 'plan_sha256': self.hash,
+        return {'schema': 1, 'mode': 'selected-product-artifact-control', 'stage': 'complete',
+                'version_allocated': False, 'tag_created': False, 'success': True, 'artifact_proof': True, 'published': False, 'plan_sha256': self.hash,
                 'source': self.source, 'product': 'studio', 'line': '3.8', 'version': '3.8.999',
                 'execution': local_execution({}), 'planner_controller': deepcopy(self.planner_controller),
                 'artifact_controller': deepcopy(self.artifact_controller), 'packages': {'selected': [{'file': path.name, 'id': identifier,
                 'version': '3.8.999', 'sha256': metadata.sha256(path.read_bytes()), 'size': path.stat().st_size,
                 'inventory': inventory}]}}
+
+    def historical_inputs(self):
+        fixture = artifact_contracts.ProductArtifactAdmissionTests()
+        fixture.setUp()
+        plan = fixture.plan
+        observed = datetime.now(timezone.utc) - timedelta(hours=2)
+        plan['observed_at'] = observed.isoformat()
+        for row in plan['histories']:
+            row['observation']['observed_at'] = observed.isoformat()
+        data = json.dumps(plan).encode()
+        digest = metadata.sha256(data)
+        receipt = self.artifact_receipt()
+        receipt.update(source=plan['source'], planner_controller=plan['controller'],
+                       plan_sha256=digest, version=plan['requested_version'])
+        receipt['execution']['started_at'] = (observed + timedelta(minutes=5)).isoformat()
+        return data, digest, receipt
+
+    def stage(self, data, digest, receipt, receipt_hash=None):
+        raw = json.dumps(receipt).encode()
+        return proof.admit_producer_stage(data, digest, raw, receipt_hash or metadata.sha256(raw))
+
+    def test_expired_plan_is_historical_only_at_bound_successful_producer_start(self):
+        data, digest, receipt = self.historical_inputs()
+        with self.assertRaisesRegex(ValueError, 'plan_observation_stale'):
+            proof.producer.admit(data, digest)
+        plan, bound, admission = self.stage(data, digest, receipt)
+        self.assertEqual(receipt, bound)
+        self.assertEqual(json.loads(data), plan)
+        self.assertEqual('historical-producer-start-only', admission['scope'])
+        self.assertEqual(receipt['execution']['started_at'], admission['producer_started_at'])
+        self.assertNotIn('fresh_now', admission)
+
+    def test_producer_start_cannot_be_future_invalid_stale_or_before_plan(self):
+        data, digest, original = self.historical_inputs()
+        observed = datetime.fromisoformat(json.loads(data)['observed_at'])
+        for started in ((datetime.now(timezone.utc) + timedelta(minutes=1)).isoformat(), 'invalid',
+                        (observed + timedelta(seconds=proof.planner.MAX_AGE_SECONDS + 1)).isoformat(),
+                        (observed - timedelta(seconds=1)).isoformat(), observed.replace(tzinfo=None).isoformat()):
+            receipt = deepcopy(original)
+            receipt['execution']['started_at'] = started
+            with self.subTest(started=started), self.assertRaises(ValueError):
+                self.stage(data, digest, receipt)
+
+    def test_historical_stage_requires_unchanged_successful_receipt_identity(self):
+        data, digest, original = self.historical_inputs()
+        receipt_hash = metadata.sha256(json.dumps(original).encode())
+        altered = deepcopy(original)
+        altered['execution']['started_at'] = proof.planner.now()
+        with self.assertRaisesRegex(ValueError, 'consumer_input_hash'):
+            self.stage(data, digest, altered, receipt_hash)
+        for mutate in (lambda p: p.update(success=False), lambda p: p.update(stage='setup-complete'),
+                       lambda p: p.update(plan_sha256='f' * 64), lambda p: p.update(source={'commit': 'f' * 40}),
+                       lambda p: p.update(planner_controller={'commit': 'f' * 40}), lambda p: p.update(version_allocated=True)):
+            receipt = deepcopy(original)
+            mutate(receipt)
+            with self.assertRaises(ValueError):
+                self.stage(data, digest, receipt)
 
     def test_exact_archive_receipt_admitted(self):
         result = proof.admit_artifacts(self.plan, self.hash, self.artifact_receipt(), self.artifacts, self.controller_root)
@@ -399,7 +459,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'consumer_input_hash'):
             proof.verify_asset_payloads(assets, 'net8.0', self.graph, cache, self.artifacts, selected)
 
-    def test_full_retained_receipt_excludes_private_runtime_and_archive_paths(self):
+    def run_private_consumer(self, freshness_error=None):
         self.policy.update(id='Elsa.Studio.Core', frameworks=['net8.0'])
         self.policy['metadata'].update(original_output_policy={'net8.0': {'IncludeBuildOutput': 'true'}},
                                        framework_reference_groups=[])
@@ -415,7 +475,9 @@ class SelectedProductConsumerTests(unittest.TestCase):
         receipt_path.write_text(json.dumps(receipt))
         output = self.root / 'proof'
 
+        commands = []
         def command(args, cwd, environment, log, timeout):
+            commands.append(args[1])
             if args[1] == 'restore':
                 cache = cwd / 'packages/elsa.studio.core/3.8.999'
                 cache.mkdir(parents=True)
@@ -467,15 +529,44 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 patch.object(proof, 'load_snapshots', return_value={self.policy['project']: {'targets': {'net8.0': {}}, 'libraries': {}}}), \
                 patch.dict(proof.STUDIO38_CONTRACT_SOURCE, {}, clear=True), \
                 patch.object(proof.planner, 'build_helper', return_value=Semantics()), \
-                patch.object(proof.resolution, 'build_inspector', return_value=self.root / 'inspector.dll'), \
-                patch.object(proof.resolution, 'archive_catalog', side_effect=catalog), \
+                patch.object(proof.producer, 'refresh_remote', side_effect=freshness_error, return_value={
+                    'checked_at': proof.planner.now(), 'eligible': True, 'histories': [{'eligible': True}], 'prerequisites': []}), \
+                patch.object(proof.resolution, 'build_inspector', return_value=self.root / 'inspector.dll') as inspector_mock, \
+                patch.object(proof.resolution, 'archive_catalog', side_effect=catalog) as catalog_mock, \
                 patch.object(proof.consumers, '_run_command', side_effect=command):
-            proof.execute(self.controller_root, plan_path, self.hash, receipt_path,
-                          metadata.sha256(receipt_path.read_bytes()), self.artifacts, self.root / 'unused', output)
+            def execute():
+                return proof.execute(self.controller_root, plan_path, self.hash, receipt_path,
+                    metadata.sha256(receipt_path.read_bytes()), self.artifacts, self.root / 'unused', output)
+            if freshness_error:
+                with self.assertRaisesRegex(ValueError, str(freshness_error)):
+                    execute()
+                self.assertFalse(inspector_mock.called)
+                self.assertFalse(catalog_mock.called)
+                self.assertEqual([], commands)
+            else:
+                execute()
         data = (output / 'retained/receipt.json').read_text()
-        retained = json.loads(data)
+        return json.loads(data), data, output, dll
+
+    def test_current_ineligible_prerequisites_block_all_consumer_and_inspector_work(self):
+        receipt, _, _, _ = self.run_private_consumer(ValueError('artifact_fresh_prerequisite_failed'))
+        self.assertFalse(receipt['success'])
+        self.assertFalse(receipt['current_consumer_admission']['eligible'])
+        self.assertEqual('current-consumer-prerequisites', receipt['stage'])
+
+    def test_current_prerequisite_metadata_drift_blocks_consumer_work(self):
+        receipt, _, _, _ = self.run_private_consumer(ValueError('artifact_prerequisite_metadata_changed'))
+        self.assertFalse(receipt['success'])
+        self.assertFalse(receipt['current_consumer_admission']['eligible'])
+        self.assertEqual('current-consumer-prerequisites', receipt['stage'])
+
+    def test_full_retained_receipt_excludes_private_runtime_and_archive_paths(self):
+        retained, data, output, dll = self.run_private_consumer()
         self.assertTrue(retained['success'])
-        self.assertEqual(receipt['artifact_controller'], retained['artifact_controller'])
+        self.assertEqual('historical-producer-start-only', retained['producer_plan_admission']['scope'])
+        self.assertTrue(retained['current_consumer_admission']['eligible'])
+        self.assertEqual('current-complete-selected-product-prerequisites', retained['current_consumer_admission']['scope'])
+        self.assertEqual(self.artifact_controller, retained['artifact_controller'])
         self.assertNotIn(str(self.root), data)
         self.assertNotIn('location', data)
         self.assertNotIn('unexpectedPrivatePath', data)

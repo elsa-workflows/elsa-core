@@ -7,6 +7,7 @@ Original hashed planning assets bound the allowed external versions and hashes.
 from __future__ import annotations
 
 import argparse
+from datetime import datetime
 import hashlib
 import json
 import os
@@ -47,6 +48,28 @@ def safe_relative(value: str) -> str:
     require(value and path.as_posix() == value and not path.is_absolute() and '..' not in path.parts and
             '\\' not in value, 'consumer_relative_path')
     return value
+
+
+def admit_producer_stage(plan_bytes: bytes, plan_hash: str, receipt_bytes: bytes, receipt_hash: str) -> tuple[dict, dict, dict]:
+    """Historical admission derives its clock only from the reviewed successful receipt."""
+    require(metadata.sha256(receipt_bytes) == receipt_hash, 'consumer_input_hash')
+    receipt = planner.read_json(receipt_bytes)
+    require(receipt['schema'] == 1 and receipt['mode'] == 'selected-product-artifact-control' and
+            receipt['stage'] == 'complete' and receipt['success'] is True and receipt['artifact_proof'] is True and
+            all(receipt[key] is False for key in ('published', 'version_allocated', 'tag_created')),
+            'consumer_producer_stage_incomplete')
+    validate_local_execution(receipt['execution'])
+    started = receipt['execution']['started_at']
+    require(datetime.fromisoformat(started) <= datetime.fromisoformat(planner.now()), 'consumer_producer_start_future')
+    plan = producer.admit(plan_bytes, plan_hash, checked_at=started)
+    require(receipt['plan_sha256'] == plan_hash and receipt['source'] == plan['source'] and
+            receipt['planner_controller'] == plan['controller'] and
+            all(receipt[key] == plan[key] for key in ('product', 'line')) and
+            receipt['version'] == plan['requested_version'], 'consumer_producer_identity')
+    admission = {'scope': 'historical-producer-start-only', 'eligible_at_producer_start': True,
+                 'plan_observed_at': plan['observed_at'], 'producer_started_at': started,
+                 'producer_execution_id': receipt['execution']['id'], 'artifact_receipt_sha256': receipt_hash}
+    return plan, receipt, admission
 
 
 def verify_producer_controllers(root: Path, plan: dict, receipt: dict) -> None:
@@ -337,11 +360,11 @@ def cell(plan: dict, package: dict, framework: str, selected: dict, artifacts: P
 
 def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, receipt_hash: str,
             artifacts: Path, snapshots: Path, output: Path) -> dict:
-    plan = producer.admit(read_bound(plan_path, plan_hash), plan_hash)
+    plan, receipt, historical_admission = admit_producer_stage(read_bound(plan_path, plan_hash), plan_hash,
+        read_bound(receipt_path, receipt_hash), receipt_hash)
     require(plan['product'] == 'studio' and plan['line'] == '3.8', 'consumer_control_not_implemented')
     execution = local_execution()
     controller = producer.verify_controller(root, plan)
-    receipt = planner.read_json(read_bound(receipt_path, receipt_hash))
     selected = admit_artifacts(plan, plan_hash, receipt, artifacts, root)
     originals = load_snapshots(plan, plan_hash, snapshots)
     for path, expected in STUDIO38_CONTRACT_SOURCE.items():
@@ -356,15 +379,31 @@ def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, rec
     result = {'schema': 1, 'mode': 'selected-product-consumers', 'plan_sha256': plan_hash, 'artifact_receipt_sha256': receipt_hash,
               'source': plan['source'], 'controller': controller, 'execution': execution, 'producer_execution': receipt['execution'],
               'planner_controller': receipt['planner_controller'], 'artifact_controller': receipt['artifact_controller'],
+              'producer_plan_admission': historical_admission,
+              'current_consumer_admission': {'eligible': False, 'scope': 'current-complete-selected-product-prerequisites'},
               'success': False, 'published': False, 'coverage': [], 'runtime': [], 'stage': 'consumer-setup',
               'runtime_contract_source': STUDIO38_CONTRACT_SOURCE}
     try:
-        config = private / 'original.NuGet.Config'
+        config = private / 'NuGet.Config'
         config.write_bytes(producer.maintenance.git_bytes(root, plan['source']['commit'], 'NuGet.Config'))
         require(metadata.sha256(config.read_bytes()) == plan['consumer_feed_policy']['config_sha256'], 'consumer_original_feed_config')
         helper = private / 'semantics'
         helper.mkdir()
+        # Tool-only preflight matches the producer; no product/consumer restore runs here.
+        result['stage'] = 'consumer-semantics-preflight'
         semantics = planner.build_helper(helper)
+        require(plan['semantics']['sdk_version'] == metadata.SDK and
+                semantics.call('identity') == plan['semantics']['assemblies'], 'consumer_native_semantics_identity')
+        result['preflight'] = {'scope': 'standalone-semantics-utility-only', 'sdk_version': metadata.SDK,
+                               'native_assemblies': plan['semantics']['assemblies']}
+        result['stage'] = 'current-consumer-prerequisites'
+        current = producer.refresh_remote(plan, private, semantics)
+        require(current['eligible'] is True, 'consumer_current_prerequisites_ineligible')
+        current_bytes = json.dumps(current, indent=2, sort_keys=True).encode()
+        (private / 'current-consumer-admission.private.json').write_bytes(current_bytes)
+        result['current_consumer_admission'].update(eligible=True, checked_at=current['checked_at'],
+            histories=len(current['histories']), prerequisites=len(current['prerequisites']),
+            observations_sha256=metadata.sha256(current_bytes))
         result['stage'] = 'original-external-archive-catalog'
         inspector = resolution.build_inspector(root, private / 'archive-inspector')
         resolution.validate_native_tools(plan, semantics, inspector)

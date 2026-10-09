@@ -123,7 +123,7 @@ def verify_controller(root: Path, plan: dict) -> dict:
     return controller
 
 
-def refresh_remote(plan: dict, source: Path, semantics: planner.Semantics) -> None:
+def refresh_remote(plan: dict, source: Path, semantics: planner.Semantics) -> dict:
     """GET-only preflight using the reviewed exact edges and original mapping."""
     observations = planner.Observations()
     ids = [row['id'] for row in plan['inventory']['selected']]
@@ -145,6 +145,7 @@ def refresh_remote(plan: dict, source: Path, semantics: planner.Semantics) -> No
         before = {row['observation']['sha256'] for row in old['feeds'] if row['eligible']}
         after = {row['observation']['sha256'] for row in current['feeds'] if row['eligible']}
         require(before == after, 'artifact_prerequisite_metadata_changed')
+    return {'checked_at': checked, 'eligible': True, 'histories': histories, 'prerequisites': prerequisites}
 
 
 def retain_selected(plan: dict, artifacts: Path, destination: Path) -> dict:
