@@ -3,7 +3,7 @@ name: Preserved maintenance build rehearsal
 on:
   # Temporary reviewed rehearsal branch; no historical source refs are activated.
   push:
-    branches: ['codex/maintenance-builds-8677']
+    branches: ['codex/maintenance-builds-8677', 'codex/elsa-integration-maintenance-candidates-8683']
   workflow_dispatch:
     inputs:
       product:
@@ -39,7 +39,8 @@ env:
 jobs:
   select:
     if: >-
-      (github.event_name == 'push' && github.ref == 'refs/heads/codex/maintenance-builds-8677') ||
+      (github.event_name == 'push' && (github.ref == 'refs/heads/codex/maintenance-builds-8677' ||
+        github.ref == 'refs/heads/codex/elsa-integration-maintenance-candidates-8683')) ||
       (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     permissions:
       contents: read
@@ -65,6 +66,7 @@ jobs:
         id: select
         env:
           EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
           PRODUCT: ${{ inputs.product }}
           LINE: ${{ inputs.line }}
           SOURCE_COMMIT: ${{ inputs.commit }}
@@ -78,13 +80,7 @@ jobs:
           sys.path.insert(0, 'scripts/integration-program')
           import prepare_maintenance_build as maintenance
           register = maintenance.load_register()
-          if os.environ['EVENT'] == 'workflow_dispatch':
-              row = maintenance.selection(register, os.environ['PRODUCT'], os.environ['LINE'],
-                  os.environ['SOURCE_COMMIT'], os.environ['PROOF_VERSION'], os.environ['SOURCE_KIND'])
-              rows = [dict(row, version=os.environ['PROOF_VERSION'])]
-          else:
-              rows = [dict(row, version=f"{row['dependency_version']}-proof.{os.environ['GITHUB_RUN_ID']}.{os.environ['GITHUB_RUN_ATTEMPT']}")
-                      for row in register['sources']]
+          rows = maintenance.workflow_selections(register, dict(os.environ))
           with open(os.environ['GITHUB_OUTPUT'], 'a') as stream:
               stream.write('matrix=' + json.dumps({'include': rows}, separators=(',', ':')) + '\n')
           PY

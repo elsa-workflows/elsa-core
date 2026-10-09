@@ -931,6 +931,12 @@ def verify_external_document(root: Path, row: dict, framework: str, document: di
             "feed": GENERATOR_FEED, "embedded": True, "remote_fetched": False}
 
 
+class RejectSourceRedirects(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        fp.close()
+        raise ValueError('Remote source redirected')
+
+
 def verify_tracked_document(root: Path, commit: str, relative: str, document: dict, url: str,
                             remote: bool, cache: dict, *, reject_redirects: bool = False) -> dict | None:
     """Shared exact Git/PDB/remote byte check; callers own product and generated-source policy."""
@@ -950,9 +956,11 @@ def verify_tracked_document(root: Path, commit: str, relative: str, document: di
         # A stricter call must not reuse bytes fetched under permissive redirect policy.
         remote_key = ('remote-strict' if reject_redirects else 'remote', url)
         if remote_key not in cache:
-            with urllib.request.urlopen(url, timeout=45) as response:
+            open_source = (urllib.request.build_opener(RejectSourceRedirects()).open
+                           if reject_redirects else urllib.request.urlopen)
+            with open_source(url, timeout=45) as response:
                 require(not reject_redirects or response.geturl() == url, 'Remote source redirected')
-                data = response.read()
+                data = response.read(len(blob_bytes) + 1) if reject_redirects else response.read()
             cache[remote_key] = data
         require(cache[remote_key] == blob_bytes and hashlib.new(algorithm, cache[remote_key]).hexdigest() == checksum,
                 f'Remote source checksum mismatch: {url}')

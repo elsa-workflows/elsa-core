@@ -1,5 +1,6 @@
 from contextlib import ExitStack
 import hashlib
+from http.server import BaseHTTPRequestHandler, HTTPServer
 import io
 import json
 import os
@@ -7,6 +8,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+from threading import Thread
 import unittest
 import urllib.error
 from unittest.mock import patch
@@ -14,6 +16,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 
 import prepare_maintenance_build as maintenance
+import prove_consolidated_packages as consolidated
 
 
 class SelectionTests(unittest.TestCase):
@@ -1266,7 +1269,7 @@ class CoreCandidateContracts(unittest.TestCase):
     def test_core_fetches_immutable_bytes_and_reuses_only_strict_exact_url_cache(self):
         details, data, url = self.details()
         cache = {('remote', url): b'untrusted permissive cache'}
-        with patch('prove_consolidated_packages.urllib.request.urlopen',
+        with patch('prove_consolidated_packages.urllib.request.OpenerDirector.open',
                    side_effect=lambda *_args, **_kwargs: self.response(data, url)) as fetch:
             for _ in range(2):
                 verified = maintenance.verify_documents(details, maintenance.ROOT, self.row, cache=cache)
@@ -1275,18 +1278,20 @@ class CoreCandidateContracts(unittest.TestCase):
             self.assertEqual(fetch.call_count, 1)
             self.assertEqual(fetch.call_args.args[0], url)
         wrong = json.loads(json.dumps(details)); wrong['documents'][0]['checksum'] = '0' * 64
-        with patch('prove_consolidated_packages.urllib.request.urlopen') as fetch, self.assertRaises(ValueError):
+        with patch('prove_consolidated_packages.urllib.request.OpenerDirector.open') as fetch, self.assertRaises(ValueError):
             maintenance.verify_documents(wrong, maintenance.ROOT, self.row)
         fetch.assert_not_called()
 
     def test_core_missing_wrong_foreign_redirect_and_duplicate_documents_fail(self):
         details, data, url = self.details()
         for payload, returned_url in [(b'wrong bytes', url), (data, 'https://foreign.invalid/private-secret')]:
-            with patch('prove_consolidated_packages.urllib.request.urlopen',
+            with patch('prove_consolidated_packages.urllib.request.OpenerDirector.open',
                        return_value=self.response(payload, returned_url)), self.assertRaisesRegex(ValueError, 'Core remote source mismatch'):
                 maintenance.verify_documents(details, maintenance.ROOT, self.row)
-        with patch('prove_consolidated_packages.urllib.request.urlopen',
-                   side_effect=urllib.error.HTTPError(url, 404, 'private-secret', {}, None)),                 self.assertRaisesRegex(ValueError, 'Core remote source unavailable'):
+        error = urllib.error.HTTPError(url, 404, 'private-secret', {}, None)
+        self.addCleanup(error.close)
+        with patch('prove_consolidated_packages.urllib.request.OpenerDirector.open', side_effect=error), \
+                self.assertRaisesRegex(ValueError, 'Core remote source unavailable'):
             maintenance.verify_documents(details, maintenance.ROOT, self.row)
         foreign = json.loads(json.dumps(details)); foreign['source_link']['documents'] = {'/_/*': 'https://foreign.invalid/*'}
         with self.assertRaisesRegex(ValueError, 'SourceLink repository'):
@@ -1319,7 +1324,7 @@ class CoreCandidateContracts(unittest.TestCase):
             def reject(*_args):
                 return maintenance.verify_documents(details, maintenance.ROOT, self.row)
             with patch.object(maintenance, 'verify_source', side_effect=reject), \
-                    patch('prove_consolidated_packages.urllib.request.urlopen',
+                    patch('prove_consolidated_packages.urllib.request.OpenerDirector.open',
                           side_effect=OSError('private-secret /private/runner-host HTTP response')), \
                     self.assertRaises(ValueError):
                 maintenance.prepare(maintenance.ROOT, self.row, '3.8.4-proof.42.1', output)
@@ -1329,3 +1334,107 @@ class CoreCandidateContracts(unittest.TestCase):
             self.assertEqual(receipt['candidates_sha256'], maintenance.digest(maintenance.CANDIDATES.read_bytes()))
             for private in ('private-secret', '/private/runner-host', str(output)):
                 self.assertNotIn(private, json.dumps(receipt))
+
+    def test_strict_redirect_is_rejected_before_target_request_and_default_still_follows(self):
+        details, data, _ = self.details()
+        requests = []
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                requests.append(self.path)
+                if self.path == '/redirect':
+                    self.send_response(302)
+                    self.send_header('Location', '/source')
+                    self.end_headers()
+                else:
+                    self.send_response(200)
+                    self.end_headers()
+                    self.wfile.write(data)
+            def log_message(self, *_args):
+                pass
+        server = HTTPServer(('127.0.0.1', 0), Handler)
+        thread = Thread(target=lambda: server.serve_forever(poll_interval=0.01), daemon=True)
+        thread.start()
+        def stop():
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=2)
+        self.addCleanup(stop)
+        url = f'http://127.0.0.1:{server.server_port}/redirect'
+        document = details['documents'][0]
+        with self.assertRaisesRegex(ValueError, 'Remote source redirected'):
+            consolidated.verify_tracked_document(maintenance.ROOT, self.row['commit'], 'Directory.Build.props',
+                document, url, True, {}, reject_redirects=True)
+        self.assertEqual(requests, ['/redirect'])
+        record = consolidated.verify_tracked_document(maintenance.ROOT, self.row['commit'], 'Directory.Build.props',
+            document, url, True, {})
+        self.assertTrue(record['remote_fetched'])
+        self.assertEqual(requests, ['/redirect', '/redirect', '/source'])
+
+    def test_strict_response_read_is_bounded_and_rejects_short_wrong_and_oversized_bytes(self):
+        details, data, url = self.details()
+        for payload in (data[:-1], b'x' * len(data), data + b'oversized' * 1000):
+            response = self.response(payload, url)
+            with patch.object(response, 'read', wraps=response.read) as read, \
+                    patch('prove_consolidated_packages.urllib.request.OpenerDirector.open', return_value=response), \
+                    self.assertRaisesRegex(ValueError, 'Core remote source mismatch'):
+                maintenance.verify_documents(details, maintenance.ROOT, self.row)
+            read.assert_called_once_with(len(data) + 1)
+        response = self.response(data, url)
+        with patch.object(response, 'read', wraps=response.read) as read, \
+                patch('prove_consolidated_packages.urllib.request.OpenerDirector.open', return_value=response):
+            maintenance.verify_documents(details, maintenance.ROOT, self.row)
+        read.assert_called_once_with(len(data) + 1)
+
+
+class MaintenanceWorkflowSelectionContracts(unittest.TestCase):
+    def setUp(self):
+        self.register = maintenance.load_register()
+        self.environment = {'EVENT': 'push', 'REF': 'refs/heads/codex/elsa-integration-maintenance-candidates-8683',
+                            'GITHUB_RUN_ID': '8683', 'GITHUB_RUN_ATTEMPT': '2'}
+
+    def test_exact_core_branch_selects_all_four_registered_core_bridges_through_admission(self):
+        with patch.object(maintenance, 'selection', wraps=maintenance.selection) as admit:
+            rows = maintenance.workflow_selections(self.register, self.environment)
+        candidates = maintenance.load_candidates()['candidates']
+        self.assertEqual([(row['product'], row['line'], row['commit']) for row in rows],
+                         [(row['product'], row['line'], row['commit']) for row in candidates])
+        self.assertEqual(admit.call_count, 4)
+        self.assertTrue(all(call.args[-1] == 'core' for call in admit.call_args_list))
+        for row in rows:
+            self.assertEqual(row['source_repository'], maintenance.CORE_REPOSITORY)
+            self.assertEqual(row['version'], row['dependency_version'] + '-proof.8683.2')
+
+    def test_original_branch_retains_exact_original_matrix_and_ignores_push_inputs(self):
+        environment = self.environment | {'REF': 'refs/heads/codex/maintenance-builds-8677', 'SOURCE_KIND': 'core'}
+        with patch.object(maintenance, 'load_candidates', side_effect=AssertionError('Original path must stay independent')):
+            rows = maintenance.workflow_selections(self.register, environment)
+        self.assertEqual(rows, [dict(row, version=row['dependency_version'] + '-proof.8683.2')
+                                for row in self.register['sources']])
+
+    def test_other_event_ref_combinations_and_invalid_run_identity_fail_closed(self):
+        for event, ref in [('push', 'refs/heads/main'), ('push', 'refs/heads/codex/elsa-integration-maintenance-candidates-86830'),
+                           ('push', 'refs/tags/codex/elsa-integration-maintenance-candidates-8683'),
+                           ('pull_request', self.environment['REF']), ('workflow_dispatch', self.environment['REF'])]:
+            with self.subTest(event=event, ref=ref), self.assertRaises(ValueError):
+                maintenance.workflow_selections(self.register, self.environment | {'EVENT': event, 'REF': ref})
+        for run in ('0', '01', 'private-secret'):
+            with self.subTest(run=run), self.assertRaises(ValueError):
+                maintenance.workflow_selections(self.register, self.environment | {'GITHUB_RUN_ID': run})
+        candidates = maintenance.load_candidates()
+        with patch.object(maintenance, 'load_candidates', return_value=candidates | {'candidates': candidates['candidates'][:-1]}), \
+                self.assertRaisesRegex(ValueError, 'Incomplete maintenance rehearsal cells'):
+            maintenance.workflow_selections(self.register, self.environment)
+
+    def test_manual_main_selects_only_requested_exact_original_or_core_commit(self):
+        for kind, candidates in [('original', self.register['sources']),
+                                 ('core', maintenance.load_candidates()['candidates'])]:
+            row = candidates[0]
+            environment = {'EVENT': 'workflow_dispatch', 'REF': 'refs/heads/main', 'PRODUCT': row['product'],
+                           'LINE': row['line'], 'SOURCE_COMMIT': row['commit'], 'SOURCE_KIND': kind,
+                           'PROOF_VERSION': row['line'] + '.0-proof.8683.2'}
+            selected = maintenance.workflow_selections(self.register, environment)
+            self.assertEqual(len(selected), 1)
+            self.assertEqual(selected[0]['commit'], row['commit'])
+            for changes in ({'SOURCE_COMMIT': 'a' * 40}, {'PROOF_VERSION': '3.8.4'}, {'SOURCE_KIND': 'publisher'}):
+                with self.subTest(kind=kind, changes=changes), self.assertRaises(ValueError):
+                    maintenance.workflow_selections(self.register, environment | changes)

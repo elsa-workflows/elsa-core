@@ -76,6 +76,34 @@ def selection(register: dict, product: str, line: str, commit: str, version: str
     return matches[0]
 
 
+def workflow_selections(register: dict, environment: dict[str, str]) -> list[dict]:
+    """Select exact nonpublishing rehearsals; manual selections remain main-only."""
+    event, ref = environment['EVENT'], environment['REF']
+    if event == 'workflow_dispatch':
+        require(ref == 'refs/heads/main', 'Manual maintenance proof requires main')
+        row = selection(register, environment['PRODUCT'], environment['LINE'], environment['SOURCE_COMMIT'],
+                        environment['PROOF_VERSION'], environment['SOURCE_KIND'])
+        return [dict(row, version=environment['PROOF_VERSION'])]
+    branches = {'refs/heads/codex/maintenance-builds-8677': 'original',
+                'refs/heads/codex/elsa-integration-maintenance-candidates-8683': 'core'}
+    require(event == 'push' and ref in branches, 'Unregistered maintenance rehearsal event/ref')
+    source_kind = branches[ref]
+    candidates = load_candidates()['candidates'] if source_kind == 'core' else register['sources']
+    require(len(candidates) == len(register['sources']) and
+            {(row['product'], row['line']) for row in candidates} ==
+            {(row['product'], row['line']) for row in register['sources']}, 'Incomplete maintenance rehearsal cells')
+    rows = []
+    for candidate in candidates:
+        original_commit = candidate['original_commit'] if source_kind == 'core' else candidate['commit']
+        originals = [row for row in register['sources'] if (row['product'], row['line'], row['commit']) ==
+                     (candidate['product'], candidate['line'], original_commit)]
+        require(len(originals) == 1, 'Core candidate register identity mismatch')
+        version = f"{originals[0]['dependency_version']}-proof.{environment['GITHUB_RUN_ID']}.{environment['GITHUB_RUN_ATTEMPT']}"
+        row = selection(register, candidate['product'], candidate['line'], candidate['commit'], version, source_kind)
+        rows.append(dict(row, version=version))
+    return rows
+
+
 def build_environment() -> dict[str, str]:
     # Old build/npm lifecycle code receives no repository or registry authority.
     names = {'PATH', 'HOME', 'TMPDIR', 'DOTNET_ROOT', 'DOTNET_ROOT_X64', 'RUNNER_TEMP',
