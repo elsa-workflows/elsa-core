@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <!-- Match the selected SDK's actual restore/version/framework semantics. -->
+  <ItemGroup>
+    <Reference Include="NuGet.Versioning" HintPath="$(MSBuildBinPath)/NuGet.Versioning.dll" />
+    <Reference Include="NuGet.Frameworks" HintPath="$(MSBuildBinPath)/NuGet.Frameworks.dll" />
+    <Reference Include="NuGet.Packaging" HintPath="$(MSBuildBinPath)/NuGet.Packaging.dll" />
+    <Reference Include="NuGet.Common" HintPath="$(MSBuildBinPath)/NuGet.Common.dll" />
+    <Reference Include="NuGet.Configuration" HintPath="$(MSBuildBinPath)/NuGet.Configuration.dll" />
+  </ItemGroup>
+</Project>
