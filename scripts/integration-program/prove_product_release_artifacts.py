@@ -183,9 +183,13 @@ def preflight(source: Path, plan: dict, private: Path) -> dict:
     """Read-only tool/evaluation commands; no restore, compile, test or pack."""
     def inspect(label: str, command: list[str]) -> str:
         log = private / ('preflight-' + label + '.log')
-        run(command, source, timeout=60, env=maintenance.build_environment(), log=log)
-        # The shared runner writes its command JSON as the first private line.
-        return '\n'.join(log.read_text().splitlines()[1:]).strip()
+        try:
+            output = run(command, source, timeout=60, env=maintenance.build_environment())
+        except Exception as error:
+            log.write_text(json.dumps(command) + '\n' + str(error) + '\n')
+            raise
+        log.write_text(json.dumps(command) + '\n' + output)
+        return output.strip()
 
     node = inspect('node', ['node', '--version'])
     require(re.fullmatch(r'v22\.[0-9]+\.[0-9]+', node) is not None, 'artifact_node_version')

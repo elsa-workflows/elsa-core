@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 import fnmatch
 import json
 from pathlib import Path
+import sys
 import tempfile
 import unittest
 import zipfile
@@ -183,12 +184,19 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
         values = iter(outputs or ['v22.23.3', '10.9.4', '10.0.300 [/sdk]', '10.0.300',
                                   '{"Properties":{"TargetFrameworks":"net8.0;net9.0;net10.0","TargetFramework":""}}'])
         commands = []
+        shared_run = artifacts.run
         def run(command, cwd, **kwargs):
             commands.append(command)
-            kwargs['log'].write_text(json.dumps(command) + '\n' + next(values) + '\n')
+            self.assertNotIn('log', kwargs)
+            output = next(values)
+            stderr = ('[dotnet-build-slots] waiting for a build slot (2 in use, waited 0s).\n'
+                      '[dotnet-build-slots] got slot 0 after 6s\n'
+                      if command[:2] == ['dotnet', 'msbuild'] else '')
+            script = 'import sys; sys.stdout.write(' + repr(output) + '); sys.stderr.write(' + repr(stderr) + ')'
+            return shared_run([sys.executable, '-c', script], cwd, timeout=kwargs['timeout'], env=kwargs['env'])
         with patch.object(artifacts, 'run', side_effect=run):
             result = artifacts.preflight(source, plan, private)
-        return result, commands
+        return result, commands, (private / 'preflight-host-frameworks.log').read_text()
 
     def test_failed_tool_preflight_stops_before_helper_or_product_recipe(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -220,12 +228,16 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
             self.assertEqual('tool-preflight-failed', receipt['failure_code'])
 
     def test_tool_preflight_only_evaluates_source_supported_recipe(self):
-        result, commands = self.preflight()
+        result, commands, framework_log = self.preflight()
         self.assertFalse(result['product_work_executed'])
         self.assertEqual('net10.0', result['host_framework'])
         self.assertEqual(5, len(commands))
         self.assertTrue(all(not any(value in command for value in ('restore', 'build', 'pack', 'publish', 'test'))
                             for command in commands))
+        self.assertEqual(json.dumps(commands[-1]) + '\n' +
+                         '{"Properties":{"TargetFrameworks":"net8.0;net9.0;net10.0","TargetFramework":""}}',
+                         framework_log)
+        self.assertNotIn('[dotnet-build-slots]', framework_log)
 
     def test_incompatible_tool_or_host_recipe_fails_preflight(self):
         defaults = ['v22.23.3', '10.9.4', '10.0.300 [/sdk]', '10.0.300',
@@ -236,6 +248,12 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
             values = list(defaults)
             values[index] = value
             with self.subTest(reason=reason), self.assertRaisesRegex(ValueError, reason):
+                self.preflight(values)
+        for stdout in ('MSBuild error: project file not found',
+                       'unexpected host output\n{"Properties":{"TargetFrameworks":"net10.0"}}'):
+            values = list(defaults)
+            values[4] = stdout
+            with self.subTest(stdout=stdout), self.assertRaises(json.JSONDecodeError):
                 self.preflight(values)
         with self.assertRaisesRegex(ValueError, 'artifact_host_recipe_framework'):
             self.preflight(recipe_framework='net9.0')
