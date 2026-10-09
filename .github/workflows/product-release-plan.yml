@@ -77,8 +77,8 @@ jobs:
         env:
           PYTHONPATH: scripts/integration-program
         run: |
-          python3 -m unittest test_plan_product_release test_release_unit_manifest test_package_impact test_prepare_maintenance_build test_prove_studio_npm_pair test_prove_product_release_artifacts
-          python3 -O -m unittest test_plan_product_release test_release_unit_manifest test_package_impact test_prepare_maintenance_build test_prove_studio_npm_pair test_prove_product_release_artifacts
+          python3 -m unittest test_plan_product_release test_release_unit_manifest test_package_impact test_prepare_maintenance_build test_prove_studio_npm_pair test_prove_product_release_artifacts test_prove_product_release_consumers
+          python3 -O -m unittest test_plan_product_release test_release_unit_manifest test_package_impact test_prepare_maintenance_build test_prove_studio_npm_pair test_prove_product_release_artifacts test_prove_product_release_consumers
 
   plan:
     needs: select
