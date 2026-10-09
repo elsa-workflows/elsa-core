@@ -24,4 +24,3 @@ def local_execution(environment: dict | None = None) -> dict:
     execution = {'kind': 'local-control', 'id': str(uuid4()), 'started_at': datetime.now(timezone.utc).isoformat()}
     validate_local_execution(execution)
     return execution
-
