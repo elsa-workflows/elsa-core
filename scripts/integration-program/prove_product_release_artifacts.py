@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Admit one reviewed maintenance plan and run its private maintenance vertical control.
 
-No publisher, allocation or historical workflow is invoked. Studio and Extensions 3.8 have bounded producer adapters.
+No publisher, allocation or historical workflow is invoked. Studio and Extensions 3.8 and pinned original Core 3.8/3.9 have bounded producer adapters.
 """
 from __future__ import annotations
 
@@ -17,6 +17,7 @@ import plan_product_release as planner
 import product_release_metadata as metadata
 import prepare_maintenance_build as maintenance
 import selected_extensions_contract as extensions
+import selected_core_producer as core
 from prove_consolidated_packages import archive_names, dependency_groups, framework_reference_groups, metadata as nuspec, require, run
 import prove_historical_studio_npm_pair as historical
 from product_artifact_execution import local_execution
@@ -205,7 +206,7 @@ def preflight(source: Path, plan: dict, private: Path) -> dict:
     require(any(line.startswith(metadata.SDK + ' ') for line in sdks.splitlines()), 'artifact_sdk_unavailable')
     require(inspect('sdk-selection', ['dotnet', '--version']) == metadata.SDK, 'artifact_sdk_selection')
     tools['sdk'] = metadata.SDK
-    if plan.get('product', 'studio') == 'extensions':
+    if plan.get('product', 'studio') in ('extensions', 'core'):
         return tools
     workflow = source / plan['npm']['workflow']['path']
     require(metadata.sha256(workflow.read_bytes()) == plan['npm']['workflow']['sha256'], 'artifact_host_recipe_identity')
@@ -230,7 +231,11 @@ def execute(root: Path, data: bytes, digest: str, output: Path, *, setup_only: b
             not any(part.is_symlink() for part in (output, *output.parents)), 'artifact_output_location')
     controller = verify_controller(root, plan)
     # Explicit supported interface until its first source-faithful control settles.
-    require(plan['product'] in ('studio', 'extensions') and plan['line'] == '3.8', 'artifact_control_not_implemented')
+    require(plan['product'] in ('studio', 'extensions') and plan['line'] == '3.8' or
+            plan['product'] == 'core' and plan['line'] in ('3.8', '3.9'), 'artifact_control_not_implemented')
+    if plan['product'] == 'core':
+        core.validate_plan(plan)
+        core.verify_source(root, plan['source'])
     output.mkdir(parents=True)
     private, retained = output / 'private', output / 'retained'
     private.mkdir()
@@ -260,12 +265,18 @@ def execute(root: Path, data: bytes, digest: str, output: Path, *, setup_only: b
             receipt.update(stage='setup-complete', setup_complete=True, artifact_proof=False)
             return receipt
         receipt['stage'] = 'original-product-recipe'
-        rows = [row for row in maintenance.registered_core_candidates(maintenance.load_register())
-                if row['commit'] == plan['source']['commit'] and row['kind'] == 'maintenance']
-        require(len(rows) == 1, 'artifact_registered_recipe')
-        producer = maintenance.prepare(root, rows[0], plan['requested_version'], private / 'producer')
+        if plan['product'] == 'core':
+            producer = maintenance.prepare(root, plan['source'] | {'source_repository': maintenance.CORE_REPOSITORY},
+                                           plan['requested_version'], private / 'producer', plan=plan)
+        else:
+            rows = [row for row in maintenance.registered_core_candidates(maintenance.load_register())
+                    if row['commit'] == plan['source']['commit'] and row['kind'] == 'maintenance']
+            require(len(rows) == 1, 'artifact_registered_recipe')
+            producer = maintenance.prepare(root, rows[0], plan['requested_version'], private / 'producer')
         require(producer['success'] is True, 'artifact_producer_failed')
         receipt['product_tests'] = producer['tests']
+        if plan['product'] == 'core':
+            receipt['package_verification'] = producer['packages']
         receipt['packages'] = retain_selected(plan, private / 'producer/artifacts', retained / 'nuget')
         if plan['product'] == 'extensions':
             selected = {row['id'].casefold() for row in plan['inventory']['selected']}
