@@ -14,6 +14,7 @@ import plan_product_release as planner
 import product_release_metadata as metadata
 import prove_product_release_artifacts as artifacts
 import prove_historical_studio_npm_pair as historical
+import product_artifact_execution as execution
 
 
 class ProductArtifactAdmissionTests(unittest.TestCase):
@@ -116,7 +117,7 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
             output = Path(directory) / 'proof'
             with patch.object(artifacts, 'verify_controller', side_effect=AssertionError('controller touched')):
                 with self.assertRaises(ValueError):
-                    artifacts.execute(Path(directory), b'{}', 'f' * 64, output, '1', '1')
+                    artifacts.execute(Path(directory), b'{}', 'f' * 64, output)
             self.assertFalse(output.exists())
 
     def test_release_plan_trigger_covers_consumed_runtime_tests_helpers_and_documents(self):
@@ -148,6 +149,96 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
                         '</id><version>3.8.99</version>' + dependency + '</metadata></package>')
                 with self.subTest(identity=identity, dependency=dependency), self.assertRaises(ValueError):
                     artifacts.retain_selected(self.plan, source, root / ('retained-' + str(index)))
+
+    def test_local_execution_is_uuid_utc_and_has_no_hosted_numeric_fields(self):
+        local = execution.local_execution({})
+        execution.validate_local_execution(local)
+        self.assertEqual({'kind', 'id', 'started_at'}, set(local))
+        self.assertEqual('local-control', local['kind'])
+        self.assertTrue(local['started_at'].endswith('+00:00'))
+        self.assertNotEqual(local['id'], execution.local_execution({})['id'])
+
+    def test_hosted_execution_context_and_envelope_rejected(self):
+        for environment in ({'GITHUB_ACTIONS': 'true'}, {'GITHUB_RUN_ID': '123'}, {'GITHUB_RUN_ATTEMPT': '1'}):
+            with self.subTest(environment=environment), self.assertRaisesRegex(ValueError, 'hosted_control_not_supported'):
+                execution.local_execution(environment)
+        for change in ({'kind': 'github-actions'}, {'run_id': '123'}, {'id': '123'}, {'started_at': '2026-10-09T12:00:00'}):
+            candidate = execution.local_execution({}) | change
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                execution.validate_local_execution(candidate)
+
+    def preflight(self, outputs=None, *, recipe_framework='net10.0'):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        source = Path(temporary.name)
+        private = source / 'private'
+        private.mkdir()
+        workflow = source / 'packages.source'
+        workflow.write_text('        run: dotnet publish ./src/hosts/Elsa.Studio.Host.CustomElements --configuration Release '
+                            '-o ./packages/wasm /p:Version=${VERSION} -f ' + recipe_framework + '\n')
+        host = source / historical.HOST / 'Elsa.Studio.Host.CustomElements.csproj'
+        host.parent.mkdir(parents=True)
+        host.write_text('<Project/>')
+        plan = {'npm': {'workflow': {'path': 'packages.source', 'sha256': metadata.sha256(workflow.read_bytes())}}}
+        values = iter(outputs or ['v22.23.3', '10.9.4', '10.0.300 [/sdk]', '10.0.300',
+                                  '{"Properties":{"TargetFrameworks":"net8.0;net9.0;net10.0","TargetFramework":""}}'])
+        commands = []
+        def run(command, cwd, **kwargs):
+            commands.append(command)
+            kwargs['log'].write_text(json.dumps(command) + '\n' + next(values) + '\n')
+        with patch.object(artifacts, 'run', side_effect=run):
+            result = artifacts.preflight(source, plan, private)
+        return result, commands
+
+    def test_failed_tool_preflight_stops_before_helper_or_product_recipe(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            controller = root / 'controller'
+            controller.mkdir()
+            output = root / 'proof'
+            plan = deepcopy(self.plan)
+            plan['inventory']['release_recipe'].update(solution='Elsa.Studio.sln', sha256=metadata.sha256(b'solution'),
+                                                      workflow='packages.source', workflow_sha256=metadata.sha256(b'workflow'))
+            plan['inventory']['sha256'] = metadata.canonical_hash(metadata.public_inventory(plan['inventory']))
+            data = json.dumps(plan).encode()
+            def checkout(controller, binding, source):
+                source.mkdir()
+                (source / 'Elsa.Studio.sln').write_bytes(b'solution')
+                (source / 'packages.source').write_bytes(b'workflow')
+            with patch.object(artifacts, 'verify_controller', return_value=plan['controller']), \
+                    patch.object(artifacts, 'local_execution', return_value=execution.local_execution({})), \
+                    patch.object(metadata, 'checkout_source', side_effect=checkout), \
+                    patch.object(planner, 'npm_intent', return_value=plan['npm']), \
+                    patch.object(artifacts, 'preflight', side_effect=ValueError('artifact_node_version')), \
+                    patch.object(planner, 'build_helper') as helper, patch.object(artifacts.maintenance, 'prepare') as producer:
+                with self.assertRaisesRegex(ValueError, 'artifact_node_version'):
+                    artifacts.execute(controller, data, metadata.sha256(data), output)
+                helper.assert_not_called()
+                producer.assert_not_called()
+            receipt = json.loads((output / 'retained/receipt.json').read_text())
+            self.assertFalse(receipt['success'])
+            self.assertEqual('tool-preflight-failed', receipt['failure_code'])
+
+    def test_tool_preflight_only_evaluates_source_supported_recipe(self):
+        result, commands = self.preflight()
+        self.assertFalse(result['product_work_executed'])
+        self.assertEqual('net10.0', result['host_framework'])
+        self.assertEqual(5, len(commands))
+        self.assertTrue(all(not any(value in command for value in ('restore', 'build', 'pack', 'publish', 'test'))
+                            for command in commands))
+
+    def test_incompatible_tool_or_host_recipe_fails_preflight(self):
+        defaults = ['v22.23.3', '10.9.4', '10.0.300 [/sdk]', '10.0.300',
+                    '{"Properties":{"TargetFrameworks":"net8.0;net9.0;net10.0","TargetFramework":""}}']
+        for index, value, reason in ((0, 'v25.8.0', 'artifact_node_version'), (1, '8.1.0', 'artifact_npm_version'),
+                (2, '10.0.101 [/sdk]', 'artifact_sdk_unavailable'), (3, '10.0.101', 'artifact_sdk_selection'),
+                (4, '{"Properties":{"TargetFramework":"net8.0"}}', 'artifact_host_unsupported_framework')):
+            values = list(defaults)
+            values[index] = value
+            with self.subTest(reason=reason), self.assertRaisesRegex(ValueError, reason):
+                self.preflight(values)
+        with self.assertRaisesRegex(ValueError, 'artifact_host_recipe_framework'):
+            self.preflight(recipe_framework='net9.0')
 
     def test_staging_historical_version_preserves_lifecycle_and_files(self):
         with tempfile.TemporaryDirectory() as directory:

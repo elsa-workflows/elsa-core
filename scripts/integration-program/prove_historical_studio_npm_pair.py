@@ -11,6 +11,7 @@ from pathlib import Path
 import shutil
 
 import prove_studio_npm_pair as npm
+from product_artifact_execution import validate_local_execution
 
 HOST = Path('src/hosts/Elsa.Studio.Host.CustomElements')
 WORKSPACE = Path('src/wrappers')
@@ -90,19 +91,22 @@ def consume(runner: npm.Runner, private: Path, archives: dict, workspace: Path) 
             'esm': True, 'commonjs': True, 'vite': True, 'input_sha256': inputs}
 
 
-def prove(source: Path, private: Path, retained: Path, plan: dict, run: str, attempt: str) -> dict:
+def prove(source: Path, private: Path, retained: Path, plan: dict, execution: dict, framework: str) -> dict:
+    # The selected controller admits this local envelope before any product work.
+    validate_local_execution(execution)
+    npm.require(framework == 'net10.0', 'historical-host-framework')
     private.mkdir()
     retained.mkdir()
     receipt = {'source_commit': plan['source']['commit'], 'source_tree': plan['source']['tree'],
-               'version': plan['requested_version'], 'run_id': run, 'run_attempt': attempt,
-               'framework': 'net10.0', 'commands': [], 'success': False, 'published': False,
+               'version': plan['requested_version'], 'execution': execution,
+               'framework': framework, 'commands': [], 'success': False, 'published': False,
                'historical_workflow_executed': False, 'original_lifecycle_preserved': True}
     runner = npm.Runner(private, receipt)
     version = plan['requested_version']
     try:
         npm.require(runner.run('node-version', ['node', '--version'], source).strip().startswith('v22.'), 'node-version')
         publish = private / 'publish'
-        runner.run('historical-host-publish', ['dotnet', 'publish', str(HOST), '-c', 'Release', '-f', 'net10.0',
+        runner.run('historical-host-publish', ['dotnet', 'publish', str(HOST), '-c', 'Release', '-f', framework,
                    '-o', str(publish), '/p:Version=' + version], source, timeout=3600)
         stage = private / 'wasm'
         shutil.copytree(publish / 'wwwroot', stage)

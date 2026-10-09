@@ -17,8 +17,9 @@ import zipfile
 import plan_product_release as planner
 import product_release_metadata as metadata
 import prepare_maintenance_build as maintenance
-from prove_consolidated_packages import archive_names, dependency_groups, framework_reference_groups, metadata as nuspec, require
+from prove_consolidated_packages import archive_names, dependency_groups, framework_reference_groups, metadata as nuspec, require, run
 import prove_historical_studio_npm_pair as historical
+from product_artifact_execution import local_execution
 
 ROOT = Path(__file__).resolve().parents[2]
 PLANNER_INPUTS = {
@@ -178,9 +179,41 @@ def retain_selected(plan: dict, artifacts: Path, destination: Path) -> dict:
     return {'selected': receipts, 'private_recipe_only_outputs': private_outputs}
 
 
-def execute(root: Path, data: bytes, digest: str, output: Path, run: str, attempt: str, *, setup_only: bool = False) -> dict:
+def preflight(source: Path, plan: dict, private: Path) -> dict:
+    """Read-only tool/evaluation commands; no restore, compile, test or pack."""
+    def inspect(label: str, command: list[str]) -> str:
+        log = private / ('preflight-' + label + '.log')
+        run(command, source, timeout=60, env=maintenance.build_environment(), log=log)
+        # The shared runner writes its command JSON as the first private line.
+        return '\n'.join(log.read_text().splitlines()[1:]).strip()
+
+    node = inspect('node', ['node', '--version'])
+    require(re.fullmatch(r'v22\.[0-9]+\.[0-9]+', node) is not None, 'artifact_node_version')
+    npm_version = inspect('npm', ['npm', '--version'])
+    require(re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', npm_version) is not None and
+            int(npm_version.split('.')[0]) >= 9, 'artifact_npm_version')
+    sdks = inspect('sdks', ['dotnet', '--list-sdks'])
+    require(any(line.startswith(metadata.SDK + ' ') for line in sdks.splitlines()), 'artifact_sdk_unavailable')
+    require(inspect('sdk-selection', ['dotnet', '--version']) == metadata.SDK, 'artifact_sdk_selection')
+    workflow = source / plan['npm']['workflow']['path']
+    require(metadata.sha256(workflow.read_bytes()) == plan['npm']['workflow']['sha256'], 'artifact_host_recipe_identity')
+    frameworks = re.findall(r'^\s*run: dotnet publish \./src/hosts/Elsa\.Studio\.Host\.CustomElements .* -f (net[0-9.]+)\s*$',
+                            workflow.read_text(), re.MULTILINE)
+    require(frameworks == ['net10.0'], 'artifact_host_recipe_framework')
+    host = historical.HOST / 'Elsa.Studio.Host.CustomElements.csproj'
+    properties = json.loads(inspect('host-frameworks', ['dotnet', 'msbuild', str(host), '-nologo',
+                                  '-getProperty:TargetFrameworks,TargetFramework']))['Properties']
+    supported = (properties.get('TargetFrameworks') or properties.get('TargetFramework', '')).split(';')
+    require(frameworks[0] in supported, 'artifact_host_unsupported_framework')
+    return {'node': node, 'npm': npm_version, 'sdk': metadata.SDK, 'host_framework': frameworks[0],
+            'host_supported_frameworks': supported, 'original_workflow_sha256': metadata.sha256(workflow.read_bytes()),
+            'host_project_sha256': metadata.sha256((source / host).read_bytes()),
+            'product_work_executed': False}
+
+
+def execute(root: Path, data: bytes, digest: str, output: Path, *, setup_only: bool = False) -> dict:
     plan = admit(data, digest)
-    require(re.fullmatch('[1-9][0-9]*', run) is not None and re.fullmatch('[1-9][0-9]*', attempt) is not None, 'artifact_run_identity')
+    execution = local_execution()
     require(not output.exists() and not output.resolve().is_relative_to(root.resolve()) and
             not any(part.is_symlink() for part in (output, *output.parents)), 'artifact_output_location')
     controller = verify_controller(root, plan)
@@ -193,7 +226,7 @@ def execute(root: Path, data: bytes, digest: str, output: Path, run: str, attemp
     receipt = {'schema': 1, 'mode': 'selected-product-artifact-control', 'plan_sha256': digest,
                'planner_controller': plan['controller'], 'artifact_controller': controller, 'source': plan['source'],
                'product': plan['product'], 'line': plan['line'], 'version': plan['requested_version'],
-               'run_id': run, 'run_attempt': attempt, 'success': False, 'published': False,
+               'execution': execution, 'success': False, 'published': False,
                'version_allocated': False, 'tag_created': False, 'stage': 'source-setup'}
     try:
         source = private / 'admitted-source'
@@ -203,8 +236,11 @@ def execute(root: Path, data: bytes, digest: str, output: Path, run: str, attemp
                                (inventory['release_recipe']['workflow'], inventory['release_recipe']['workflow_sha256'])):
             require(metadata.sha256((source / path).read_bytes()) == expected, 'artifact_recipe_identity')
         require(planner.npm_intent(source, plan['source'], plan['requested_version']) == plan['npm'], 'artifact_npm_intent')
+        receipt['stage'] = 'tool-preflight'
+        receipt['preflight'] = preflight(source, plan, private)
         receipt['stage'] = 'fresh-prerequisites'
-        helper = private / 'semantics'; helper.mkdir()
+        helper = private / 'semantics'
+        helper.mkdir()
         refresh_remote(plan, source, planner.build_helper(helper))
         if setup_only:
             receipt.update(stage='setup-complete', setup_complete=True, artifact_proof=False)
@@ -218,7 +254,8 @@ def execute(root: Path, data: bytes, digest: str, output: Path, run: str, attemp
         receipt['product_tests'] = producer['tests']
         receipt['packages'] = retain_selected(plan, private / 'producer/artifacts', retained / 'nuget')
         receipt['stage'] = 'historical-studio-npm'
-        receipt['npm'] = historical.prove(private / 'producer/source', private / 'npm', retained / 'npm', plan, run, attempt)
+        receipt['npm'] = historical.prove(private / 'producer/source', private / 'npm', retained / 'npm', plan, execution,
+                                          receipt['preflight']['host_framework'])
         receipt.update(success=True, stage='complete', artifact_proof=True)
         return receipt
     except Exception:
@@ -232,13 +269,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--plan', type=Path, required=True)
     parser.add_argument('--plan-sha256', required=True)
-    parser.add_argument('--run-id', required=True)
-    parser.add_argument('--run-attempt', required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--setup-only', action='store_true')
     args = parser.parse_args()
     try:
-        execute(ROOT, args.plan.read_bytes(), args.plan_sha256, args.output, args.run_id, args.run_attempt, setup_only=args.setup_only)
+        execute(ROOT, args.plan.read_bytes(), args.plan_sha256, args.output, setup_only=args.setup_only)
         return 0
     except Exception:
         print('Selected artifact control failed; retained receipt records the stage, raw diagnostics remain private.')
