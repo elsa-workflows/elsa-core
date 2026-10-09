@@ -346,11 +346,11 @@ def public_inventory(inventory: list[dict]) -> list[dict]:
             'sdk_nuspec_sha256', 'sdk_symbol_nuspec_sha256')
     return [{**{key: policy[key] for key in keys if key in policy},
              'restore_inputs': [{'framework': item['framework'], 'sha256': item['sha256']}
-                                for item in policy['restore_assets']],
+                                for item in policy.get('restore_assets', [])],
              'producers': {framework: {'sdk_version': evidence['sdk_version'],
                  'compiler_sha256': evidence['compiler_sha256'],
                  'tools': {family: public_producer(tool) for family, tool in evidence['tools'].items()}}
-                 for framework, properties in policy['framework_properties'].items()
+                 for framework, properties in policy.get('framework_properties', {}).items()
                  for evidence in [properties['compiler_evidence']]}}
             for policy in inventory]
 
@@ -713,6 +713,7 @@ def prepare(root: Path, row: dict, version: str, output: Path) -> dict:
                 shutil.copyfile(path, output / 'artifacts' / path.name)
         receipt['stage'] = 'inventory'
         inventory = evaluate_inventory(source, row, version, output)
+        write_json(output / 'evaluated-inventory.json', public_inventory(inventory))
         receipt['stage'] = 'test-evidence'
         receipt.pop('focus', None)
         receipt['test_evidence'] = {}

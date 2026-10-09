@@ -1,3 +1,4 @@
+from contextlib import ExitStack
 import hashlib
 import json
 import os
@@ -162,6 +163,73 @@ class MaintenanceContracts(unittest.TestCase):
         self.assertEqual(receipt['error'], {'code': 'source-verification-failed', 'reason': 'unknown-check-failure'})
         self.assertNotIn('source changed', json.dumps(receipt))
         self.assertNotIn(str(self.root), json.dumps(receipt))
+
+    def prepare_inventory_fixture(self, failure=None):
+        output = self.root / ('proof-' + (failure or 'success'))
+        policy = {'id': 'Fixture', 'project': 'src/Fixture.csproj', 'assembly_name': 'Fixture',
+                  'frameworks': ['net8.0'], 'symbols': True, 'include_build_output': True, 'satellites': [],
+                  'private_context': '/private-secret/context'}
+        def tests(*_args):
+            if failure == 'test-evidence':
+                raise ValueError('Test evidence rejected')
+            return {'executions': []}
+        def execute(command, *_args, **_kwargs):
+            if command[:2] == ['dotnet', 'build'] and failure == 'symbol-inspector':
+                raise ValueError('/private-secret/helper failure')
+            return '10.0.300'
+        def stage(*_args):
+            policy.update(expected_dependency_groups=[], sdk_nuspec_sha256='a' * 64,
+                restore_assets=[{'framework': 'net8.0', 'path': '/private-secret/restore', 'sha256': 'b' * 64}],
+                framework_properties={'net8.0': {'compiler_evidence': {'sdk_version': '10.0.300',
+                    'sdk_root': '/private-secret/sdk', 'compiler_sha256': 'c' * 64, 'tools': {}}}})
+            if failure == 'sdk-metadata':
+                raise ValueError('/private-secret/metadata failure')
+        with ExitStack() as stack:
+            for name, options in {
+                'git': {'return_value': 'd' * 40}, 'verify_source': {'return_value': None},
+                'recipes': {'return_value': []}, 'run': {'side_effect': execute},
+                'evaluate_inventory': {'return_value': [policy]}, 'verify_tests': {'side_effect': tests},
+                'stage_maintenance_metadata': {'side_effect': stage}, 'verify_artifacts': {'return_value': []},
+            }.items():
+                stack.enter_context(patch.object(maintenance, name, **options))
+            if failure:
+                with self.assertRaises(ValueError):
+                    maintenance.prepare(maintenance.ROOT, self.row, '3.8.4-proof.42.1', output)
+            else:
+                maintenance.prepare(maintenance.ROOT, self.row, '3.8.4-proof.42.1', output)
+        return output
+
+    def test_post_evaluation_failures_retain_safe_base_inventory_and_failed_receipt(self):
+        expected = [{'id': 'Fixture', 'project': 'src/Fixture.csproj', 'assembly_name': 'Fixture',
+                     'frameworks': ['net8.0'], 'symbols': True, 'include_build_output': True, 'satellites': [],
+                     'restore_inputs': [], 'producers': {}}]
+        for stage in ['test-evidence', 'symbol-inspector', 'sdk-metadata']:
+            with self.subTest(stage=stage):
+                output = self.prepare_inventory_fixture(stage)
+                inventory = json.loads((output / 'evaluated-inventory.json').read_text())
+                self.assertEqual(inventory, expected)
+                receipt = json.loads((output / 'receipt.json').read_text())
+                self.assertFalse(receipt['success'])
+                self.assertFalse(receipt['published'])
+                self.assertFalse(receipt['maintenance_refs_activated'])
+                self.assertEqual(receipt['error']['code'], stage + '-failed')
+                self.assertNotIn('private-secret', json.dumps(inventory) + json.dumps(receipt))
+
+    def test_success_replaces_base_inventory_with_safe_enriched_evidence(self):
+        output = self.prepare_inventory_fixture()
+        inventory = json.loads((output / 'evaluated-inventory.json').read_text())
+        self.assertEqual(inventory[0]['id'], 'Fixture')
+        self.assertEqual(inventory[0]['expected_dependency_groups'], [])
+        self.assertEqual(inventory[0]['sdk_nuspec_sha256'], 'a' * 64)
+        self.assertEqual(inventory[0]['restore_inputs'], [{'framework': 'net8.0', 'sha256': 'b' * 64}])
+        self.assertEqual(inventory[0]['producers'], {'net8.0': {'sdk_version': '10.0.300',
+                         'compiler_sha256': 'c' * 64, 'tools': {}}})
+        receipt = json.loads((output / 'receipt.json').read_text())
+        self.assertTrue(receipt['success'])
+        self.assertEqual(receipt['stage'], 'complete')
+        self.assertFalse(receipt['published'])
+        self.assertFalse(receipt['maintenance_refs_activated'])
+        self.assertNotIn('private-secret', json.dumps(inventory) + json.dumps(receipt))
 
     def test_missing_tests_cannot_be_reported_as_success(self):
         with self.assertRaises(ValueError):
