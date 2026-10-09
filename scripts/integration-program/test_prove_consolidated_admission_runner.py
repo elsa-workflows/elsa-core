@@ -222,6 +222,43 @@ class AdmissionRunnerBoundaryTests(unittest.TestCase):
             self.assertIn(result.stdout + result.stderr, log.read_bytes())
         self.assertNotIn(b'private-password', log.read_bytes())
 
+    def test_postgres_waits_for_final_tcp_server_or_times_out_despite_ready_socket(self):
+        identifier = 'a' * 64
+        image_id = 'sha256:' + 'b' * 64
+        for final_tcp_ready in (True, False):
+            with self.subTest(final_tcp_ready=final_tcp_ready):
+                owned = {}
+                tcp_results = iter((2, 0 if final_tcp_ready else 2))
+
+                def probe(command, **kwargs):
+                    self.assertEqual(['docker', 'exec', identifier, 'pg_isready'], command[:4])
+                    self.assertEqual(subprocess.DEVNULL, kwargs['stdout'])
+                    self.assertEqual(subprocess.DEVNULL, kwargs['stderr'])
+                    self.assertEqual(10, kwargs['timeout'])
+                    # The image's temporary initialization server accepts sockets
+                    # throughout this model, but not TCP on the final server port.
+                    tcp = ('-h' in command and command[command.index('-h') + 1] == '127.0.0.1'
+                           and '-p' in command and command[command.index('-p') + 1] == '5432')
+                    return subprocess.CompletedProcess(command, next(tcp_results) if tcp else 0)
+
+                with patch.object(runner, '_capture', side_effect=[identifier, image_id, '127.0.0.1:54321']), \
+                        patch.object(runner, 'image_identity', return_value={'id': image_id}), \
+                        patch.object(runner.subprocess, 'run', side_effect=probe) as execute, \
+                        patch.object(runner.time, 'monotonic', side_effect=[0, 1, 60]), \
+                        patch.object(runner.time, 'sleep') as sleep:
+                    if final_tcp_ready:
+                        connection, service = runner._start_postgres('owned', 'private-password', self.root / 'docker.log', owned)
+                        self.assertIs(service, owned)
+                        self.assertEqual({'id': image_id}, service['image'])
+                        self.assertIn('Host=127.0.0.1;Port=54321;', connection)
+                    else:
+                        with self.assertRaisesRegex(runner.ProofError, '^postgres_start_timeout$'):
+                            runner._start_postgres('owned', 'private-password', self.root / 'docker.log', owned)
+                    self.assertEqual(2, execute.call_count)
+                    sleep.assert_called_once_with(0.5)
+                # A timed-out startup retains the exact owned identity for cleanup.
+                self.assertEqual(identifier, owned['containerId'])
+
     def test_postgres_contaminated_stdout_is_not_parsed_as_a_container_id(self):
         identifier = 'a' * 64
         for index, stdout in enumerate(('pull diagnostic\n' + identifier, identifier + '\npull diagnostic')):
