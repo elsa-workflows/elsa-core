@@ -1,0 +1,71 @@
+name: Studio paired npm artifact proof
+
+on:
+  push:
+    branches: ['codex/elsa-integration-studio-npm-8679']
+  workflow_dispatch:
+    inputs:
+      expected_head:
+        description: Exact reviewed Core source SHA (must equal this main workflow head)
+        type: string
+        required: true
+
+permissions: {}
+
+concurrency:
+  group: studio-npm-pair-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  paired-proof:
+    if: >-
+      (github.event_name == 'push' && github.ref == 'refs/heads/codex/elsa-integration-studio-npm-8679') ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    permissions:
+      contents: read
+      actions: none
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_NOLOGO: '1'
+      EXPECTED_HEAD: ${{ github.event_name == 'workflow_dispatch' && inputs.expected_head || github.sha }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: '10.0.300'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - name: Focused pair and lifecycle contracts
+        run: |
+          python -m unittest discover -s scripts/integration-program -p test_prove_studio_npm_pair.py
+          python -O -m unittest discover -s scripts/integration-program -p test_prove_studio_npm_pair.py
+      - name: Build, pack and consume both exact local archives
+        run: |
+          python scripts/integration-program/prove_studio_npm_pair.py \
+            --commit "$EXPECTED_HEAD" \
+            --version "0.0.0-proof.$GITHUB_RUN_ID.$GITHUB_RUN_ATTEMPT" \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --output "$RUNNER_TEMP/studio-npm-pair"
+      - name: Verify reviewed checkout remained unchanged
+        if: always()
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          test -z "$(git status --porcelain)"
+      - name: Retain original archives and sanitized receipt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: studio-npm-pair-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/studio-npm-pair/retained/
+          if-no-files-found: error
+          retention-days: 30
