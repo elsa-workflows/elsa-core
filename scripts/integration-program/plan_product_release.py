@@ -33,6 +33,18 @@ FEED_BASES = {NUGET_INDEX: NUGET, **{
         'elsa-workflows/elsa-3', 'sfmskywalker/cshells', 'valence-works/consolelogstream',
         'valence-works/loom', 'personal/webhooks-core')}}
 NPM_IDS = ('@elsa-workflows/elsa-studio-wasm', '@elsa-workflows/elsa-studio-wasm-react')
+STUDIO_NPM_RECIPES = {
+    '3.8': {'sha256': '31eccc049c03c6c90fc5e9bf354e5a49ecd1d17b7474457a0c7a6f004bee6fa1',
+        'tokens': (b'npm version $VERSION --allow-same-version',
+            b'WASM_TGZ="${GITHUB_WORKSPACE}/packages/wasm/wwwroot/elsa-workflows-elsa-studio-wasm-${VERSION}.tgz"',
+            b'npm install "$WASM_TGZ" --workspace=@elsa-workflows/elsa-studio-wasm-react',
+            b'npm pkg set "version=${VERSION}"',
+            b'npm pkg set "dependencies.@elsa-workflows/elsa-studio-wasm=${VERSION}"')},
+    '3.9': {'sha256': 'cd6f1d8bb7809784420385b7683a8d811ad07972eb5836d4bb9d3aa7aeec2a48',
+        'tokens': (b'npm version $VERSION --allow-same-version',
+            b'npm pkg set "version=$VERSION" "dependencies.@elsa-workflows/elsa-studio-wasm=$VERSION" --workspace wrappers/react-wrapper',
+            b'npm install --force --no-save --package-lock=false "../../packages/wasm/wwwroot/elsa-workflows-elsa-studio-wasm-$VERSION.tgz"')},
+}
 MAX_AGE_SECONDS = 3600
 ID = re.compile(r'[A-Za-z0-9_][A-Za-z0-9_.-]*\Z')
 
@@ -358,9 +370,9 @@ def npm_intent(source: Path, binding: dict, version: str) -> dict | None:
             NPM_IDS[0] in manifests[1].get('dependencies', {}), 'npm_source_identity')
     workflow = '.github/maintenance-inert-workflows/packages.yml.source'
     data = (source / workflow).read_bytes()
-    require(all(token in data for token in (b'npm version $VERSION', b'npm install "$WASM_TGZ"',
-            b'--workspace=@elsa-workflows/elsa-studio-wasm-react', b'npm pkg set "version=${VERSION}"',
-            b'npm pkg set "dependencies.@elsa-workflows/elsa-studio-wasm=${VERSION}"')), 'npm_workflow_identity')
+    recipe = STUDIO_NPM_RECIPES.get(binding['line'])
+    require(recipe is not None and sha256(data) == recipe['sha256'] and
+            all(token in data for token in recipe['tokens']), 'npm_workflow_identity')
     return {'atomic': True, 'line': binding['line'], 'source_commit': binding['commit'], 'source_tree': binding['tree'],
             'workflow': {'path': workflow, 'sha256': sha256(data)},
             'manifests': [{'path': path, 'sha256': sha256((source / path).read_bytes()),

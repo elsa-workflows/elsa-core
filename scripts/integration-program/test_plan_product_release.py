@@ -423,6 +423,148 @@ class ProductReleasePlanTests(unittest.TestCase):
         self.assertEqual('aligned_baseline_pending', result['reasons'][0]['category'])
 
 
+class ProductReleaseMetadataProjectionTests(unittest.TestCase):
+    def setUp(self):
+        self.directory = Path(self.enterContext(tempfile.TemporaryDirectory(prefix='metadata-projection-contract-')))
+        self.source = self.directory / 'source'
+        self.source.mkdir()
+        (self.source / 'NuGet.Config').write_text('<configuration/>')
+        self.project_path = 'src/Example/Example.csproj'
+        path = self.source / self.project_path
+        path.parent.mkdir(parents=True)
+        path.write_text('<Project Sdk="Microsoft.NET.Sdk.Razor"/>')
+        self.project = {'path': self.project_path, 'package_id': 'Example', 'is_packable': True,
+                        'target_frameworks': ['net8.0']}
+
+    def test_three_file_collection_projections_retain_original_policy_and_sdk_groups(self):
+        sdk = self.directory / 'dotnet/sdk/10.0.300'
+        sdk.mkdir(parents=True)
+        (sdk / 'NuGet.Build.Tasks.Pack.targets').write_text('sdk-target-identity')
+        properties = {key: 'true' for key in ('IncludeBuildOutput', 'IncludeContentInPack', 'IncludeSymbols',
+            'GenerateElsaPackageManifest', 'ElsaPackageManifestIncludeInPackage')}
+        properties.update(PackageId='Example', PackageVersion='3.8.5', SymbolPackageFormat='snupkg',
+                          ElsaPackageManifestPackagePath='manifest.json', MSBuildToolsPath=str(sdk))
+        destination = self.directory / 'metadata'
+        xml = '<package><metadata><id>Example</id><version>3.8.5</version><dependencies><group targetFramework="net8.0"><dependency id="Other" version="[1.0]"/></group></dependencies></metadata></package>'
+        commands = []
+        def sdk_metadata(command, source, **kwargs):
+            commands.append(command)
+            if '-restore' in command:
+                (destination / 'Example.nuspec').write_text(xml)
+                assets = self.source / 'src/Example/obj/project.assets.json'
+                assets.parent.mkdir()
+                assets.write_text(json.dumps({'project': {'restore': {'configFilePaths': [str(self.source / 'NuGet.Config')],
+                    'sources': {planner.NUGET_INDEX: {}}}}, 'libraries': {}}))
+                return ''
+            return json.dumps({'Properties': properties})
+        with patch.object(metadata, 'run', side_effect=sdk_metadata), \
+             patch.object(metadata, 'evaluate_project', return_value={**self.project, 'properties': properties}):
+            result = metadata.stage_project(self.source, self.project, '3.8.5', destination)
+        self.assertEqual('observed', result['status'])
+        self.assertEqual([{'framework': 'net8.0', 'dependencies': [
+            {'id': 'Other', 'version': '[1.0]', 'include': '', 'exclude': ''}]}], result['dependency_groups'])
+        for name in ('IncludeBuildOutput', 'IncludeContentInPack', 'ElsaPackageManifestIncludeInPackage'):
+            self.assertIn('-p:' + name + '=false', commands[0])
+            self.assertFalse(result['projection'][name])
+            self.assertEqual('true', result['original_output_policy']['net8.0'][name])
+        self.assertEqual(metadata.sha256((self.source / self.project_path).read_bytes()), result['original_content_project_sha256'])
+        self.assertFalse((self.source / 'src/Example/wwwroot').exists())
+
+    def test_unavailable_metadata_retains_closed_stage_and_category_without_private_error(self):
+        for error, category in ((ValueError('Command failed (1): /private/command'), 'command_failed'),
+                (OSError('/private/file'), 'metadata_io_failed'),
+                (subprocess.TimeoutExpired('/private/command', 300), 'command_timeout')):
+            with self.subTest(category=category), patch.object(metadata, 'run', side_effect=error):
+                result = metadata.stage_project(self.source, self.project, '3.8.5', self.directory / category)
+                self.assertEqual({'status': 'unavailable', 'reason': 'source_metadata_unavailable',
+                    'failure_stage': 'generate_nuspec', 'failure_category': category}, result)
+                self.assertNotIn('/private/', json.dumps(result))
+
+    def test_nuspec_identity_failure_is_distinct_from_command_failure(self):
+        destination = self.directory / 'metadata'
+        def wrong_identity(*args, **kwargs):
+            (destination / 'wrong.nuspec').write_text('<package><metadata><id>Wrong</id><version>3.8.5</version></metadata></package>')
+        with patch.object(metadata, 'run', side_effect=wrong_identity):
+            result = metadata.stage_project(self.source, self.project, '3.8.5', destination)
+        self.assertEqual('nuspec_metadata', result['failure_stage'])
+        self.assertEqual('metadata_contract_failed', result['failure_category'])
+
+
+class HistoricalStudioNpmIntentTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.temporary = tempfile.TemporaryDirectory(prefix='historical-studio-intent-')
+        cls.addClassCleanup(cls.temporary.cleanup)
+        cls.workflow = '.github/maintenance-inert-workflows/packages.yml.source'
+        cls.sources, cls.bindings = {}, {}
+        paths = (cls.workflow, 'src/hosts/Elsa.Studio.Host.CustomElements/npm/package.json',
+                 'src/wrappers/wrappers/react-wrapper/package.json')
+        for line in ('3.8', '3.9'):
+            commit = metadata.DESCENDANTS[('studio', line)]
+            source = Path(cls.temporary.name) / line
+            for relative in paths:
+                path = source / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(subprocess.check_output(['git', 'show', commit + ':' + relative], cwd=metadata.ROOT))
+            cls.sources[line] = source
+            cls.bindings[line] = {'product': 'studio', 'line': line, 'commit': commit,
+                                 'tree': metadata.git(metadata.ROOT, 'rev-parse', commit + '^{tree}')}
+
+    def test_both_immutable_historical_workflows_plan_the_atomic_same_version_pair(self):
+        for line in ('3.8', '3.9'):
+            with self.subTest(line=line):
+                version = line + '.5'
+                intent = planner.npm_intent(self.sources[line], self.bindings[line], version)
+                self.assertTrue(intent['atomic'])
+                self.assertEqual([{'id': identifier, 'version': version,
+                    'expected_tarball': identifier[1:].replace('/', '-') + '-' + version + '.tgz'}
+                    for identifier in planner.NPM_IDS], intent['packages'])
+                self.assertEqual({planner.NPM_IDS[0]: version}, intent['wrapper_dependency_intent'])
+                self.assertFalse(intent['historical_workflow_executed'])
+
+    def test_wrong_line_or_changed_workflow_hash_rejected(self):
+        binding = {**self.bindings['3.9'], 'line': '3.8'}
+        with self.assertRaisesRegex(ValueError, 'npm_workflow_identity'):
+            planner.npm_intent(self.sources['3.9'], binding, '3.8.5')
+        path = self.sources['3.9'] / self.workflow
+        data = path.read_bytes()
+        self.addCleanup(path.write_bytes, data)
+        path.write_bytes(data + b'\n# drift\n')
+        with self.assertRaisesRegex(ValueError, 'npm_workflow_identity'):
+            planner.npm_intent(self.sources['3.9'], self.bindings['3.9'], '3.9.5')
+
+    def test_each_line_rejects_missing_pair_version_or_nonlocal_tarball_intent(self):
+        for line in ('3.8', '3.9'):
+            path = self.sources[line] / self.workflow
+            original = path.read_bytes()
+            recipe = planner.STUDIO_NPM_RECIPES[line]
+            pair = next(token for token in recipe['tokens'] if b'dependencies.' in token)
+            tarball = next(token for token in recipe['tokens'] if b'.tgz' in token)
+            for token in (pair, tarball):
+                with self.subTest(line=line, removed_intent='pair' if token == pair else 'tarball'):
+                    data = original.replace(token, b'# removed required intent')
+                    self.assertNotEqual(original, data)
+                    path.write_bytes(data)
+                    try:
+                        # Isolate semantic validation from the independently tested hash guard.
+                        with patch.dict(planner.STUDIO_NPM_RECIPES,
+                                {line: {**recipe, 'sha256': metadata.sha256(data)}}):
+                            with self.assertRaisesRegex(ValueError, 'npm_workflow_identity'):
+                                planner.npm_intent(self.sources[line], self.bindings[line], line + '.5')
+                    finally:
+                        path.write_bytes(original)
+
+    def test_missing_pair_manifest_member_is_rejected(self):
+        path = self.sources['3.9'] / 'src/wrappers/wrappers/react-wrapper/package.json'
+        original = path.read_bytes()
+        self.addCleanup(path.write_bytes, original)
+        manifest = json.loads(original)
+        del manifest['dependencies'][planner.NPM_IDS[0]]
+        path.write_text(json.dumps(manifest))
+        with self.assertRaisesRegex(ValueError, 'npm_source_identity'):
+            planner.npm_intent(self.sources['3.9'], self.bindings['3.9'], '3.9.5')
+
+
 class ProductReleaseCliFailureTests(unittest.TestCase):
     def test_failure_receipt_io_is_path_free_and_preserves_sentinel_without_build(self):
         for regular_file_parent in (True, False):

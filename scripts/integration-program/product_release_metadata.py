@@ -29,7 +29,7 @@ CANONICAL_OWNERS = {
        for suffix in ('', '.postgresql', '.sqlserver', '.sqlite')},
 }
 PROPERTIES = ('IsPackable,IsTestProject,PackageId,PackageVersion,AssemblyName,TargetFrameworks,TargetFramework,'
-              'IncludeSymbols,SymbolPackageFormat,IncludeBuildOutput,RepositoryUrl,PackageProjectUrl,NETCoreSdkVersion,'
+              'IncludeSymbols,SymbolPackageFormat,IncludeBuildOutput,IncludeContentInPack,RepositoryUrl,PackageProjectUrl,NETCoreSdkVersion,'
               'GenerateElsaPackageManifest,ElsaPackageManifestIncludeInPackage,ElsaPackageManifestPackagePath,MSBuildToolsPath')
 
 
@@ -168,11 +168,13 @@ def stage_project(source: Path, project: dict, version: str, destination: Path) 
     destination.mkdir(parents=True)
     command = metadata_command(project['path'], version) + ['-restore',
         '-target:_GetRestoreProjectStyle;GenerateNuspec', '-p:IncludeBuildOutput=false',
-        '-p:ElsaPackageManifestIncludeInPackage=false',
+        '-p:ElsaPackageManifestIncludeInPackage=false', '-p:IncludeContentInPack=false',
         f'-p:RestoreConfigFile={source / "NuGet.Config"}', f'-p:NuspecOutputPath={destination}',
         f'-p:PackageOutputPath={destination / "forbidden-packages"}']
+    stage = 'generate_nuspec'
     try:
         run(command, source, env=maintenance.build_environment(), timeout=300, log=destination / 'command.private.log')
+        stage = 'nuspec_metadata'
         files = list(destination.glob('*.nuspec'))
         main = [path for path in files if not path.name.endswith('.symbols.nuspec')]
         require(len(main) == 1 and not list(destination.rglob('*.nupkg')), 'metadata_output_identity')
@@ -180,8 +182,12 @@ def stage_project(source: Path, project: dict, version: str, destination: Path) 
         metadata = parse_metadata(data)
         require(metadata.findtext('id') == project['package_id'] and metadata.findtext('version') == version,
                 'metadata_package_identity')
+        dependencies, framework_references = dependency_groups(metadata), framework_reference_groups(metadata)
+        stage = 'restore_assets'
         assets = source / Path(project['path']).parent / 'obj/project.assets.json'
         require(assets.is_file() and not assets.is_symlink(), 'metadata_restore_identity')
+        restored = json.loads(assets.read_text())
+        stage = 'original_output_policy'
         original = evaluate_project(source, project['path'], version)
         require(all(original[key] == project[key] for key in ('path', 'package_id', 'is_packable', 'target_frameworks')),
                 'restored_project_identity')
@@ -192,24 +198,33 @@ def stage_project(source: Path, project: dict, version: str, destination: Path) 
                 env=maintenance.build_environment()))['Properties']
             require(properties['PackageId'] == project['package_id'] and properties['PackageVersion'] == version,
                     'restored_project_identity')
-            original_policies[framework] = {key: properties[key] for key in ('IncludeBuildOutput', 'IncludeSymbols',
+            original_policies[framework] = {key: properties[key] for key in ('IncludeBuildOutput', 'IncludeContentInPack', 'IncludeSymbols',
                 'SymbolPackageFormat', 'GenerateElsaPackageManifest', 'ElsaPackageManifestIncludeInPackage',
                 'ElsaPackageManifestPackagePath')}
-        restored = json.loads(assets.read_text())
+        stage = 'restore_config_scope'
+        scope = restore_scope(source, restored, original['properties']['MSBuildToolsPath'])
+        stage = 'manifest_target_identity'
+        targets = manifest_target_identity(restored)
+        stage = 'sdk_pack_target_identity'
+        sdk_targets_hash = sha256((Path(original['properties']['MSBuildToolsPath']) / 'NuGet.Build.Tasks.Pack.targets').read_bytes())
         return {'status': 'observed', 'nuspec_sha256': sha256(data),
-                'dependency_groups': dependency_groups(metadata),
-                'framework_reference_groups': framework_reference_groups(metadata),
+                'dependency_groups': dependencies,
+                'framework_reference_groups': framework_references,
                 'restore_assets_sha256': sha256(assets.read_bytes()),
-                'restore_scope': restore_scope(source, restored, original['properties']['MSBuildToolsPath']),
+                'restore_scope': scope,
                 'original_output_policy': original_policies,
-                'manifest_content_targets': manifest_target_identity(restored),
-                'sdk_pack_targets_sha256': sha256((Path(original['properties']['MSBuildToolsPath']) /
-                                                   'NuGet.Build.Tasks.Pack.targets').read_bytes()),
+                'original_content_project_sha256': sha256((source / project['path']).read_bytes()),
+                'manifest_content_targets': targets,
+                'sdk_pack_targets_sha256': sdk_targets_hash,
                 'projection': {'NoBuild': True, 'ContinuePackingAfterGeneratingNuspec': False, 'IncludeBuildOutput': False,
-                               'ElsaPackageManifestIncludeInPackage': False},
+                               'ElsaPackageManifestIncludeInPackage': False, 'IncludeContentInPack': False},
                 '_assets': restored}
-    except (ValueError, OSError, subprocess.TimeoutExpired):
-        return {'status': 'unavailable', 'reason': 'source_metadata_unavailable'}
+    except (ValueError, OSError, subprocess.TimeoutExpired) as error:
+        category = ('command_timeout' if isinstance(error, subprocess.TimeoutExpired) else
+                    'metadata_io_failed' if isinstance(error, OSError) else
+                    'command_failed' if str(error).startswith('Command failed (') else 'metadata_contract_failed')
+        return {'status': 'unavailable', 'reason': 'source_metadata_unavailable',
+                'failure_stage': stage, 'failure_category': category}
 
 
 def evaluate_inventory(source: Path, binding: dict, version: str, private: Path, *, workers: int = 4) -> dict:
