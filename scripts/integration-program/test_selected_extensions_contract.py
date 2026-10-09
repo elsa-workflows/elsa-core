@@ -94,12 +94,15 @@ class ExtensionsControlTests(unittest.TestCase):
             commands = []
             def run(command, cwd, **kwargs):
                 commands.append(command)
-                value = '10.0.300 [/sdk]' if command[-1] == '--list-sdks' else '10.0.300'
-                kwargs['log'].write_text(json.dumps(command) + '\n' + value)
+                return '10.0.300 [/sdk]' if command[-1] == '--list-sdks' else '10.0.300'
             with patch.object(artifacts, 'run', side_effect=run):
                 result = artifacts.preflight(source, {'product': 'extensions', 'npm': None}, source)
             self.assertEqual([['dotnet', '--list-sdks'], ['dotnet', '--version']], commands)
             self.assertEqual({'sdk': '10.0.300', 'product_work_executed': False}, result)
+            self.assertEqual('["dotnet", "--list-sdks"]\n10.0.300 [/sdk]',
+                (source / 'preflight-sdks.log').read_text())
+            self.assertEqual('["dotnet", "--version"]\n10.0.300',
+                (source / 'preflight-sdk-selection.log').read_text())
             with patch.object(artifacts.maintenance, 'run', return_value='10.0.300 [/sdk]') as inspect:
                 self.assertEqual({'dotnet': ['10.0.300']},
                     artifacts.maintenance.inspect_toolchain(source, {'product': 'extensions'}))
