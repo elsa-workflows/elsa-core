@@ -1,5 +1,6 @@
 from contextlib import ExitStack
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
@@ -7,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import urllib.error
 from unittest.mock import patch
 import xml.etree.ElementTree as ET
 import zipfile
@@ -752,7 +754,7 @@ class MaintenanceContracts(unittest.TestCase):
         artifacts = self.root / 'artifacts'; artifacts.mkdir(exist_ok=True)
         groups = groups if groups is not None else f'<group targetFramework="net8.0"><dependency id="Elsa.Api.Client" version="{dependency}" /></group>'
         nuspec = f'''<package><metadata><id>Elsa.Studio.Fixture</id><version>{packed_version}</version>
-          <repository type="git" url="https://github.com/elsa-workflows/elsa-studio" commit="{self.row['commit']}" />
+          <repository type="git" url="https://github.com/{self.row['source_repository']}" commit="{self.row['commit']}" />
           <dependencies>{groups}</dependencies>
           </metadata></package>'''
         path = artifacts / 'fixture.nupkg'
@@ -1108,3 +1110,222 @@ class MaintenanceContracts(unittest.TestCase):
             self.assertEqual(receipt['error']['reason'], expected)
             self.assertNotIn(message, json.dumps(receipt))
             self.assertNotIn('/private/runner-host', json.dumps(receipt))
+
+
+    def test_core_package_and_assembly_metadata_bind_exact_selected_commit(self):
+        candidate = maintenance.load_candidates()['candidates'][0]
+        self.row = maintenance.selection(self.register, candidate['product'], candidate['line'], candidate['commit'],
+                                         '3.8.4-proof.42.1', 'core')
+        artifacts = self.write_package_fixture(frameworks=['net8.0'])
+        version = '3.8.4-proof.42.1'
+        policy = [{'id': 'Elsa.Studio.Fixture', 'assembly_name': 'Elsa.Studio.Fixture', 'frameworks': ['net8.0'],
+                   'include_build_output': True, 'symbols': True, 'satellites': [], **self.sdk_dependency_fixture()}]
+        prefix = f"https://raw.githubusercontent.com/{self.row['source_repository']}/{self.row['commit']}/"
+        details = {'assembly_name': 'Elsa.Studio.Fixture', 'assembly_version': '3.8.4.0',
+            'informational_version': version + '+' + self.row['commit'],
+            'source_link': {'documents': {'/_/*': prefix + '*'}}, 'documents': [],
+            'executable_method_bodies': 0, 'nonabstract_methods_without_body': 0,
+            'native_or_external_methods': 0, 'nonmodule_types': 1, 'reference_assembly': False}
+        inspection = {'details': details, 'symbol': dict.fromkeys(('key', 'pdb_name', 'guid', 'stamp',
+            'checksum_algorithm', 'declared_checksum', 'normalized_checksum', 'pdb_sha256', 'pdb_size'), 'fixture')}
+        with patch.object(maintenance, 'run', side_effect=lambda *_args, **_kwargs: json.dumps(inspection)):
+            receipt = maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT,
+                                                  Path('/inspector'), self.root)
+            self.assertEqual(receipt[0]['repository']['commit'], self.row['commit'])
+            details['informational_version'] = version + '+' + 'a' * 40
+            with self.assertRaisesRegex(ValueError, 'Core assembly commit mismatch'):
+                maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT,
+                                             Path('/inspector'), self.root)
+            details['informational_version'] = version + '+' + self.row['commit']
+            for symbols in (False, True):
+                self.write_package_fixture(frameworks=['net8.0'])
+                path = artifacts / ('fixture.snupkg' if symbols else 'fixture.nupkg')
+                with zipfile.ZipFile(path) as archive:
+                    entries = {name: archive.read(name) for name in archive.namelist()}
+                entries['fixture.nuspec'] = entries['fixture.nuspec'].replace(
+                    self.row['commit'].encode(), b'a' * 40)
+                with zipfile.ZipFile(path, 'w') as archive:
+                    for name, data in entries.items():
+                        archive.writestr(name, data)
+                with self.assertRaisesRegex(ValueError, 'repository provenance|Symbol metadata'):
+                    maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT,
+                                                 Path('/inspector'), self.root)
+
+
+class CoreCandidateContracts(unittest.TestCase):
+    def setUp(self):
+        self.register = maintenance.load_register()
+        self.candidates = maintenance.load_candidates()
+        self.candidate = self.candidates['candidates'][0]
+        self.row = self.select(self.candidate)
+
+    def select(self, candidate):
+        return maintenance.selection(self.register, candidate['product'], candidate['line'], candidate['commit'],
+                                     candidate['line'] + '.0-proof.42.1', 'core')
+
+    def candidate_object(self, updates=None, parents=None):
+        candidate = dict(self.candidate)
+        with tempfile.TemporaryDirectory() as temporary:
+            env = maintenance.build_environment() | {'GIT_INDEX_FILE': str(Path(temporary) / 'index'),
+                'GIT_AUTHOR_NAME': 'Test', 'GIT_AUTHOR_EMAIL': 'test@example.invalid',
+                'GIT_COMMITTER_NAME': 'Test', 'GIT_COMMITTER_EMAIL': 'test@example.invalid',
+                'GIT_AUTHOR_DATE': '2026-10-09T01:00:00Z', 'GIT_COMMITTER_DATE': '2026-10-09T01:00:00Z'}
+            maintenance.git(maintenance.ROOT, 'read-tree', candidate['commit'], env=env)
+            for path, data in (updates or {}).items():
+                blob = subprocess.run(['git', 'hash-object', '-w', '--stdin'], cwd=maintenance.ROOT,
+                    input=data, capture_output=True, check=True).stdout.decode().strip()
+                maintenance.git(maintenance.ROOT, 'update-index', '--add', '--cacheinfo',
+                                f'100644,{blob},{path}', env=env)
+            candidate['tree'] = maintenance.git(maintenance.ROOT, 'write-tree', env=env)
+            candidate['parents'] = parents if parents is not None else candidate['parents']
+            candidate['commit'] = maintenance.git(maintenance.ROOT, 'commit-tree', candidate['tree'],
+                *[arg for parent in candidate['parents'] for arg in ('-p', parent)], '-m', 'Rejected fixture', env=env)
+        return candidate
+
+    def verify_registered(self, candidate):
+        candidates = {'schema': 1, 'candidates': [candidate]}
+        with patch.object(maintenance, 'load_candidates', return_value=candidates):
+            maintenance.verify_core_candidate(maintenance.ROOT, self.select(candidate))
+
+    def test_four_exact_bridges_and_full_original_merge_parents_are_bound(self):
+        for candidate in self.candidates['candidates']:
+            with self.subTest(product=candidate['product'], line=candidate['line']):
+                maintenance.verify_core_candidate(maintenance.ROOT, self.select(candidate))
+                self.assertEqual(len(candidate['original_parents']), 2 if candidate['line'] == '3.9' else 1)
+                with self.assertRaises(ValueError):
+                    maintenance.selection(self.register, candidate['product'], candidate['line'],
+                                          candidate['commit'], candidate['line'] + '.0-proof.42.1')
+        for original in self.register['sources']:
+            self.assertEqual(maintenance.selection(self.register, original['product'], original['line'],
+                original['commit'], original['dependency_version'] + '-proof.42.1'), original)
+
+    def test_unknown_cross_cell_kind_and_duplicate_candidates_fail(self):
+        for product, line, commit in [('extensions', '3.8', self.row['commit']),
+                                      ('studio', '3.9', self.row['commit']), ('studio', '3.8', 'a' * 40)]:
+            with self.subTest(product=product, line=line), self.assertRaises(ValueError):
+                maintenance.selection(self.register, product, line, commit, line + '.0-proof.42.1', 'core')
+        mutations = [dict(self.candidate, original_commit='a' * 40),
+                     dict(self.candidate, source_repository='other/repository'),
+                     dict(self.candidate, kind='arbitrary-descendant'),
+                     dict(self.candidate, dependency_version='99.0.0')]
+        for candidate in mutations:
+            with self.subTest(candidate=candidate), self.assertRaises(ValueError):
+                self.verify_registered(candidate)
+        duplicate = {'schema': 1, 'candidates': [self.candidate, dict(self.candidate, product='extensions')]}
+        with patch.object(maintenance, 'load_candidates', return_value=duplicate), self.assertRaises(ValueError):
+            self.select(self.candidate)
+
+    def test_registered_wrong_graph_and_metadata_identities_fail(self):
+        for key, value in [('tree', 'a' * 40), ('contained_commit', 'a' * 40),
+                           ('contained_tree', 'a' * 40), ('original_parents', ['a' * 40]),
+                           ('parents', [self.candidate['original_commit']])]:
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                self.verify_registered(dict(self.candidate, **{key: value}))
+        for parents in [[self.candidate['original_commit']],
+                        [self.candidate['contained_commit'], self.candidates['candidates'][1]['contained_commit']]]:
+            with self.subTest(parents=parents), self.assertRaises(ValueError):
+                self.verify_registered(self.candidate_object(parents=parents))
+        props = maintenance.git_bytes(maintenance.ROOT, self.row['commit'], 'Directory.Build.props')
+        for updates in [{'Directory.Build.props': props + b'<!-- extra metadata -->'},
+                        {'Directory.Build.props': props.replace(b'<PackageProjectUrl>', b'<ChangedProjectUrl>')},
+                        {'Directory.Packages.props': b'changed pins'},
+                        {'.github/workflows/new.yml': b'on: push'},
+                        {'.github/maintenance-inert-workflows/packages.yml.source': b'changed workflow'},
+                        {'src/Changed.cs': b'class Changed {}'}]:
+            with self.subTest(paths=list(updates)), self.assertRaises(ValueError):
+                self.verify_registered(self.candidate_object(updates))
+
+    def test_parent_admission_does_not_admit_unregistered_descendant(self):
+        descendant = self.candidate_object(parents=[self.candidate['commit']])
+        with self.assertRaises(ValueError):
+            self.select(descendant)
+        # A separate controller can see the Git object without containing it in its ancestry.
+        with tempfile.TemporaryDirectory() as temporary:
+            controller = Path(temporary)
+            subprocess.run(['git', 'init', '-q', str(controller)], check=True)
+            objects = maintenance.git(maintenance.ROOT, 'rev-parse', '--path-format=absolute', '--git-path', 'objects')
+            (controller / '.git/objects/info/alternates').write_text(objects + '\n')
+            maintenance.git(controller, 'update-ref', 'HEAD', self.candidate['original_commit'])
+            with self.assertRaises(ValueError):
+                maintenance.verify_source(controller, self.row)
+
+    def details(self, row=None):
+        row = row or self.row
+        path = 'Directory.Build.props'
+        data = maintenance.git_bytes(maintenance.ROOT, row['commit'], path)
+        url = f"https://raw.githubusercontent.com/{row['source_repository']}/{row['commit']}/{path}"
+        return {'source_link': {'documents': {'/_/*': url.rsplit('/', 1)[0] + '/*'}}, 'documents': [
+            {'path': '/_/' + path, 'algorithm': 'sha256', 'checksum': hashlib.sha256(data).hexdigest(),
+             'embedded_checksum': None}]}, data, url
+
+    def response(self, data, url):
+        response = io.BytesIO(data)
+        response.geturl = lambda: url
+        return response
+
+    def test_core_fetches_immutable_bytes_and_reuses_only_strict_exact_url_cache(self):
+        details, data, url = self.details()
+        cache = {('remote', url): b'untrusted permissive cache'}
+        with patch('prove_consolidated_packages.urllib.request.urlopen',
+                   side_effect=lambda *_args, **_kwargs: self.response(data, url)) as fetch:
+            for _ in range(2):
+                verified = maintenance.verify_documents(details, maintenance.ROOT, self.row, cache=cache)
+                self.assertEqual(verified[0]['source'], 'core-git')
+                self.assertTrue(verified[0]['remote_fetched'])
+            self.assertEqual(fetch.call_count, 1)
+            self.assertEqual(fetch.call_args.args[0], url)
+        wrong = json.loads(json.dumps(details)); wrong['documents'][0]['checksum'] = '0' * 64
+        with patch('prove_consolidated_packages.urllib.request.urlopen') as fetch, self.assertRaises(ValueError):
+            maintenance.verify_documents(wrong, maintenance.ROOT, self.row)
+        fetch.assert_not_called()
+
+    def test_core_missing_wrong_foreign_redirect_and_duplicate_documents_fail(self):
+        details, data, url = self.details()
+        for payload, returned_url in [(b'wrong bytes', url), (data, 'https://foreign.invalid/private-secret')]:
+            with patch('prove_consolidated_packages.urllib.request.urlopen',
+                       return_value=self.response(payload, returned_url)), self.assertRaisesRegex(ValueError, 'Core remote source mismatch'):
+                maintenance.verify_documents(details, maintenance.ROOT, self.row)
+        with patch('prove_consolidated_packages.urllib.request.urlopen',
+                   side_effect=urllib.error.HTTPError(url, 404, 'private-secret', {}, None)),                 self.assertRaisesRegex(ValueError, 'Core remote source unavailable'):
+            maintenance.verify_documents(details, maintenance.ROOT, self.row)
+        foreign = json.loads(json.dumps(details)); foreign['source_link']['documents'] = {'/_/*': 'https://foreign.invalid/*'}
+        with self.assertRaisesRegex(ValueError, 'SourceLink repository'):
+            maintenance.verify_documents(foreign, maintenance.ROOT, self.row)
+        with self.assertRaisesRegex(ValueError, 'Duplicate PDB document'):
+            maintenance.verify_documents(dict(details, documents=details['documents'] * 2), maintenance.ROOT,
+                self.row, cache={('remote-strict', url): data})
+
+    def test_original_mode_never_fetches_and_core_placeholder_uses_original_anchor(self):
+        original = self.register['sources'][0]
+        details, _, _ = self.details(original)
+        with patch('prove_consolidated_packages.urllib.request.urlopen') as fetch:
+            maintenance.verify_documents(details, maintenance.ROOT, original)
+        fetch.assert_not_called()
+        for candidate in self.candidates['candidates'][2:]:
+            row = self.select(candidate)
+            policies = maintenance.placeholder_policies(maintenance.ROOT, row)
+            self.assertEqual(len(policies), 2)
+            self.assertTrue(all(policy['source_commit'] == row['commit'] for policy in policies.values()))
+            changed = dict(row, commit=self.candidate_object({
+                self.register['inherited_skipped_placeholders'][0]['source_file']: b'changed placeholder'})['commit'])
+            with self.assertRaises(ValueError):
+                maintenance.placeholder_policies(maintenance.ROOT, changed)
+
+
+    def test_remote_failure_receipt_keeps_closed_reason_and_no_private_error(self):
+        details, _, url = self.details()
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / 'proof'
+            def reject(*_args):
+                return maintenance.verify_documents(details, maintenance.ROOT, self.row)
+            with patch.object(maintenance, 'verify_source', side_effect=reject), \
+                    patch('prove_consolidated_packages.urllib.request.urlopen',
+                          side_effect=OSError('private-secret /private/runner-host HTTP response')), \
+                    self.assertRaises(ValueError):
+                maintenance.prepare(maintenance.ROOT, self.row, '3.8.4-proof.42.1', output)
+            receipt = json.loads((output / 'receipt.json').read_text())
+            self.assertFalse(receipt['success'])
+            self.assertEqual(receipt['error']['reason'], 'source-remote-unavailable')
+            self.assertEqual(receipt['candidates_sha256'], maintenance.digest(maintenance.CANDIDATES.read_bytes()))
+            for private in ('private-secret', '/private/runner-host', str(output)):
+                self.assertNotIn(private, json.dumps(receipt))

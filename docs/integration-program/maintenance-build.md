@@ -68,7 +68,29 @@ These commit objects are not assumed to survive Git garbage collection. The exac
 
 A contained new tip does not disable historical workflow dispatch/release/rerun paths or revoke broad Core repository/organization Feedz aliases. Remote maintenance ref creation requires the separate reviewed authority handoff, historical-path review, protection configuration and accounting for credentials already loaded into queued/running jobs. Stop on unknown authority or changed evidence. Local cleanup requires no rollback of remote refs because none were created. Publication recovery and source archival are outside this rehearsal.
 
-Future Core-created maintenance commits require a separately verified admission/provenance adaptation: accurate Core repository metadata, remotely reachable Core SourceLink and dependency compatibility. Original-source proof does not establish that adaptation, a completed publisher handoff, npm ownership implementation, or full 3.10 acceptance.
+## Explicit Core metadata candidates
+
+The separate [Core candidate register](maintenance-core-candidates.json) retains four exact local metadata bridges. Original register rows and the default `original` selection mode are unchanged. `--source-kind core` admits only an exact registered product/line/SHA; neither a ref nor an admitted parent authorizes another commit. This initial register accepts `metadata-bridge` only. Subsequent maintenance descendants require a separate reviewed schema/verification extension and their own exact registration and proof; four bridges do not establish that continuing capability.
+
+Each candidate binds its full parent array, tree, original anchor and complete original parent array, and the exact existing containment commit/tree. In particular, both original 3.9 merge parents survive. Verification reconstructs the containment file/mode/blob map from the immutable original and the registered workflow moves. The bridge has exactly one parent, that containment commit. Its entire tree must equal the contained tree except for the exact existing root `Directory.Build.props` RepositoryUrl element value changing to `https://github.com/elsa-workflows/elsa-core`. PackageProjectUrl, dependency pins, layout, tests, inert workflow copies and file modes remain unchanged. Extra candidate fields cannot override inherited dependency policy.
+
+Local object verification (`verify_core_candidate`) is separate from proof admission (`verify_source`), which also requires the selected commit to be an ancestor of the reviewed controller. These objects are local preparation only: no permanent ref, publisher or remote reachability is implied. Before exposing ancestry, reviewers must inspect all original/contained/bridge parent arrays, trees and complete bridge deltas even when a controller tree diff hides them. Any ancestry-only exposure merge must have ordered parents `[preceding_controller, bridge]` and exactly the preceding controller tree. The lead must freeze and verify the actual merged graph. Git objects without refs can be pruned; preserve their exact graph/delta review packet before proceeding.
+
+Core mode uses Core origin, requires package and symbol repository metadata and SourceLink URLs to name the exact selected Core commit, and fetches every tracked document. The shared narrow source-byte primitive compares immutable Git bytes, the PDB checksum and the actual remote response bytes. Core rejects foreign response URLs/redirects, missing or changed responses and foreign maps. Its stricter cache is distinct from permissive consolidated retrieval. Generated-source producer policy, empty-document applicability, SDK dependency/framework-reference checks in both archives and private diagnostic handling retain the existing maintenance rules. Candidate and containment register hashes join the private-output-safe receipt. Raw exceptions, compiler paths, HTTP error text and source response bytes are never projected into receipts.
+
+Inherited skipped placeholders use the candidate's registered original anchor and must still match the exact original source blob/declaration at the selected commit and the existing sole linked runtime representation. They remain skips. A changed placeholder requires a separately reviewed test policy; it cannot inherit this exception merely through ancestry.
+
+For a candidate proof, select its exact registered SHA and a fresh same-line unpublished proof version:
+
+```sh
+python scripts/integration-program/prepare_maintenance_build.py \
+  --source-kind core --product studio --line 3.8 --commit EXACT_REGISTERED_SHA \
+  --version 3.8.4-proof.RUN.ATTEMPT --output /absolute/new/proof-directory
+```
+
+The hosted workflow offers the same explicit source-kind input. Its existing original rehearsal trigger remains unchanged. No candidate hosted proof or successful raw bridge fetch is recorded by adding this capability. First validate the tiny real SDK/PDB seam, then review the concrete local graph before authorized exposure. Afterwards observe actual bridge URLs and execute all four original-layout product/TFM proofs and continuing-descendant admission/proofs. Changed source or dependency declarations require a new reviewed exact candidate, compatibility evidence under the coordinated-update policy and fresh proof; do not mutate an accepted candidate or weaken pin checks.
+
+Remaining operations are separately governed under #8216/#8220: exact permanent refs/tips/protections, artifact-only publisher admission, old authority retirement and queued/running-job quiescence, recovery and archive packet. Production version/tag/dependency selection remains #8217. This nonpublishing checkpoint grants no writable-home or publishing authority and does not establish full later 3.10 acceptance.
 
 ## Focused contracts
 

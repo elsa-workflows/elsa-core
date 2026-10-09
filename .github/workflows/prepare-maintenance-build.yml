@@ -15,8 +15,14 @@ on:
         options: ['3.8', '3.9']
         required: true
       commit:
-        description: Exact registered original source commit (40 hexadecimal characters)
+        description: Exact registered source commit (40 hexadecimal characters)
         type: string
+        required: true
+      source_kind:
+        description: Original rehearsal or explicitly registered Core candidate
+        type: choice
+        options: [original, core]
+        default: original
         required: true
       version:
         description: Same-line unpublished MAJOR.MINOR.PATCH-proof.RUN.ATTEMPT
@@ -55,7 +61,7 @@ jobs:
         run: |
           python -m unittest discover -s scripts/integration-program -p test_prepare_maintenance_build.py
           python -O -m unittest discover -s scripts/integration-program -p test_prepare_maintenance_build.py
-      - name: Admit explicit original-source selections
+      - name: Admit explicit exact-source selections
         id: select
         env:
           EVENT: ${{ github.event_name }}
@@ -63,6 +69,7 @@ jobs:
           LINE: ${{ inputs.line }}
           SOURCE_COMMIT: ${{ inputs.commit }}
           PROOF_VERSION: ${{ inputs.version }}
+          SOURCE_KIND: ${{ inputs.source_kind }}
         shell: bash
         run: |
           set -euo pipefail
@@ -73,7 +80,7 @@ jobs:
           register = maintenance.load_register()
           if os.environ['EVENT'] == 'workflow_dispatch':
               row = maintenance.selection(register, os.environ['PRODUCT'], os.environ['LINE'],
-                  os.environ['SOURCE_COMMIT'], os.environ['PROOF_VERSION'])
+                  os.environ['SOURCE_COMMIT'], os.environ['PROOF_VERSION'], os.environ['SOURCE_KIND'])
               rows = [dict(row, version=os.environ['PROOF_VERSION'])]
           else:
               rows = [dict(row, version=f"{row['dependency_version']}-proof.{os.environ['GITHUB_RUN_ID']}.{os.environ['GITHUB_RUN_ATTEMPT']}")
@@ -90,7 +97,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJSON(needs.select.outputs.matrix) }}
-    name: ${{ matrix.product }} ${{ matrix.line }} original-source proof
+    name: ${{ matrix.product }} ${{ matrix.line }} ${{ matrix.source_kind || 'original' }} source proof
     runs-on: ubuntu-latest
     timeout-minutes: 180
     steps:
@@ -116,10 +123,11 @@ jobs:
           PRODUCT: ${{ matrix.product }}
           LINE: ${{ matrix.line }}
           SOURCE_COMMIT: ${{ matrix.commit }}
+          SOURCE_KIND: ${{ matrix.source_kind || 'original' }}
           PROOF_VERSION: ${{ matrix.version }}
         run: |
           python scripts/integration-program/prepare_maintenance_build.py \
-            --product "$PRODUCT" --line "$LINE" --commit "$SOURCE_COMMIT" \
+            --product "$PRODUCT" --line "$LINE" --commit "$SOURCE_COMMIT" --source-kind "$SOURCE_KIND" \
             --version "$PROOF_VERSION" --output "$RUNNER_TEMP/maintenance-proof"
       - name: Retain original artifacts and sanitized structured receipts
         if: always()
