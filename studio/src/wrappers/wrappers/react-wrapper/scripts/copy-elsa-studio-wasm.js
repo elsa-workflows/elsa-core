@@ -98,6 +98,7 @@ ensure(incoming.size <= 10000 && Buffer.byteLength(serialized) <= 2 * 1024 * 102
 
 // Complete preflight first. An unowned collision is rejected even when its
 // bytes happen to match: silently adopting it could delete it on a later update.
+const stale = [];
 for (const relative of new Set([...previous.keys(), ...incoming.keys()])) {
     const target = join(destination, relative);
     checkDirectories(dirname(target));
@@ -106,6 +107,7 @@ for (const relative of new Set([...previous.keys(), ...incoming.keys()])) {
     ensure(info.isFile() && !info.isSymbolicLink() && info.nlink === 1, 'unsafe-target');
     ensure(previous.has(relative), 'unmanaged-conflict');
     ensure(hash(readFileSync(target)) === previous.get(relative), 'modified-owned-file');
+    if (!incoming.has(relative)) stale.push(target);
 }
 
 // Only files recorded as ours are replaced/deleted. Shared directories and all
@@ -116,9 +118,7 @@ for (const [relative, file] of incoming) {
     mkdirSync(dirname(target), {recursive: true});
     writeFileSync(target, file.bytes);
 }
-for (const relative of previous.keys()) {
-    if (!incoming.has(relative) && stat(join(destination, relative))) unlinkSync(join(destination, relative));
-}
+for (const target of stale) unlinkSync(target);
 const temporary = `${ownershipPath}.${randomUUID()}.tmp`;
 let staged = false;
 try {

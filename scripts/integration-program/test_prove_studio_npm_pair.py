@@ -337,6 +337,40 @@ class PairContracts(unittest.TestCase):
         runner.run('recovered-ownership-fixture', refresh, consumer)
         self.assertEqual(b'unmanaged consumer asset', (public / conflict).read_bytes())
 
+    def test_real_npm_refresh_missing_owned_parent_becomes_directory_and_retries(self):
+        app, wrapper, wasm, public = self.copy_fixture('missing-owned-parent')
+        pair.write_json(wrapper / 'package.json', {'type': 'module', 'scripts': {
+            'postinstall': 'node scripts/copy-elsa-studio-wasm.js'}})
+        old = '_content/widget'
+        (wasm / old).write_bytes(b'previous owned file')
+        unmanaged = public / '_content/consumer.txt'
+        unmanaged.parent.mkdir(parents=True)
+        unmanaged.write_bytes(b'unmanaged sibling')
+        private = self.root / 'private'
+        private.mkdir()
+        runner = pair.Runner(private, {'commands': []})
+        refresh = ['npm', 'run', 'postinstall', '--prefix', str(wrapper)]
+        runner.run('install-old-parent-fixture', refresh, app)
+        (wasm / old).unlink()
+        (wasm / old).mkdir()
+        child = old + '/index.js'
+        (wasm / child).write_bytes(b'new nested asset')
+        (wasm / 'appsettings.json').write_bytes(b'new settings')
+        before = pair.files(public)
+        with self.assertRaisesRegex(pair.ProofError, 'command-failed'):
+            runner.run('existing-owned-parent-fixture', refresh, app)
+        self.assertEqual(before, pair.files(public))
+        (public / old).unlink()
+        runner.run('missing-owned-parent-fixture', refresh, app)
+        self.assertEqual(b'new nested asset', (public / child).read_bytes())
+        self.assertEqual(b'unmanaged sibling', unmanaged.read_bytes())
+        owned = json.loads((public / pair.OWNERSHIP).read_text())['files']
+        self.assertNotIn(old, [entry['path'] for entry in owned])
+        self.assertIn({'path': child, 'sha256': pair.sha256(b'new nested asset')}, owned)
+        before = pair.files(public)
+        runner.run('retry-missing-owned-parent-fixture', refresh, app)
+        self.assertEqual(before, pair.files(public))
+
     def test_real_workspace_install_uses_staged_exact_local_wasm_archive(self):
         workspace = self.root / 'workspace'
         wrapper = workspace / pair.WRAPPER
