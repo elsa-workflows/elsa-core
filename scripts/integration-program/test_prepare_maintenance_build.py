@@ -1542,6 +1542,10 @@ class ContinuingCandidateContracts(unittest.TestCase):
         files = {'Directory.Build.props': self.props, 'Directory.Packages.props': b'pinned',
                  '.github/workflows/packages.yml': b'on: push', '.github/actions/publish/action.yml': b'publisher',
                  'Elsa.Studio.sln': b'original layout', 'src/Fixture/Fixture.csproj': b'project',
+                 'src/Fixture/Existing.csproj': b'existing project',
+                 'src/Fixture/Existing.csproj.user': (
+                     b'<Project><PropertyGroup><BuildProjectReferences>false</BuildProjectReferences>'
+                     b'</PropertyGroup></Project>'),
                  'src/Fixture/Feature.cs': b'class Feature { public int Value() => 1; }',
                  'test/Placeholder.cs': b'unchanged placeholder', 'docs/obsolete.md': b'old documentation',
                  'src/Fixture/ClientLib/package.json': b'{"scripts":{"build":"webpack"}}',
@@ -1694,6 +1698,7 @@ class ContinuingCandidateContracts(unittest.TestCase):
 
     def test_declared_control_changes_additions_and_placeholder_drift_still_reject(self):
         paths = ('Directory.Packages.props', 'Elsa.Studio.sln', 'src/Fixture/Fixture.csproj',
+                 'src/Fixture/Fixture.csproj.user', 'src/Fixture/Existing.csproj.user',
                  'src/Fixture/Imported.targets', 'src/Fixture/Directory.Build.props',
                  'src/Fixture/ClientLib/package.json', 'src/Fixture/ClientLib/package-lock.json',
                  'src/Fixture/ClientLib/webpack.config.js', 'src/Fixture/ClientLib/tsconfig.json',

@@ -294,7 +294,7 @@ def maintenance_editable_path(path: str) -> bool:
                  re.search(r'(^|\.)(config|settings)\.', name)) or
                 PurePosixPath(name).suffix in ('.csproj', '.fsproj', '.vbproj', '.proj', '.sln', '.slnf', '.slnx',
                     '.props', '.targets', '.nuspec', '.config', '.lock', '.lockb', '.runsettings', '.ruleset',
-                    '.rsp', '.sh', '.ps1', '.cmd', '.bat'))
+                    '.rsp', '.sh', '.ps1', '.cmd', '.bat', '.user'))
 
 
 def verify_maintenance_delta(root: Path, row: dict, parent: dict, register: dict) -> None:
