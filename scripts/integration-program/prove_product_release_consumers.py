@@ -46,12 +46,27 @@ def safe_relative(value: str) -> str:
     return value
 
 
-def admit_artifacts(plan: dict, plan_hash: str, receipt: dict, artifacts: Path) -> dict:
+def verify_producer_controllers(root: Path, plan: dict, receipt: dict) -> None:
+    require(receipt.get('planner_controller') == plan['controller'], 'consumer_planner_controller_identity')
+    artifact = receipt.get('artifact_controller', {})
+    require(isinstance(artifact, dict) and set(artifact) == {'commit', 'tree'} and
+            all(isinstance(artifact[key], str) and re.fullmatch(r'[a-f0-9]{40}', artifact[key]) for key in artifact),
+            'consumer_artifact_controller_identity')
+    for controller in (plan['controller'], artifact):
+        require(metadata.git(root, 'rev-parse', controller['commit'] + '^{tree}') == controller['tree'],
+                'consumer_producer_controller_tree')
+        for path, expected in plan['controller']['input_sha256'].items():
+            require(metadata.sha256(producer.maintenance.git_bytes(root, controller['commit'], path)) == expected,
+                    'consumer_producer_planner_inputs')
+
+
+def admit_artifacts(plan: dict, plan_hash: str, receipt: dict, artifacts: Path, root: Path) -> dict:
     require(receipt['success'] is True and receipt['artifact_proof'] is True and receipt['published'] is False and
             receipt['plan_sha256'] == plan_hash and receipt['source'] == plan['source'] and
             all(receipt[key] == plan[key] for key in ('product', 'line')) and
             receipt['version'] == plan['requested_version'], 'consumer_producer_identity')
     validate_local_execution(receipt['execution'])
+    verify_producer_controllers(root, plan, receipt)
     selected = {row['id'].casefold(): row for row in plan['inventory']['selected']}
     expected = {name for name in plan['expected_artifacts'] if name.endswith(('.nupkg', '.snupkg'))}
     records = receipt['packages']['selected']
@@ -238,6 +253,7 @@ def verify_cache(graph: dict, policy: dict, cache: Path, artifacts: Path, select
         folder = cache / folded / row['version']
         if row['selected']:
             record = consumers.verify_cached_package(row['id'], row['version'], artifacts / selected[folded]['nupkg'], cache, artifacts)
+            record['source'] = LOCAL
         else:
             archive = folder / f"{folded}.{row['version']}.nupkg"
             require(archive.is_file() and not any(part.is_symlink() for part in (archive, *archive.parents)),
@@ -299,6 +315,11 @@ def validate_ledger(plan: dict, ledger: list[dict]) -> None:
             'consumer_coverage_ledger')
 
 
+def retain_runtime_rows(verified: list[dict]) -> list[dict]:
+    return [{key: row[key] for key in ('name', 'version', 'informationalVersion', 'sha256',
+            'package_id', 'package_version', 'package_asset')} for row in verified]
+
+
 def cell(plan: dict, package: dict, framework: str, assets: dict, selected: dict, artifacts: Path,
          config: Path, semantics: planner.Semantics, output: Path, *, runtime: bool = False) -> dict:
     output.mkdir()
@@ -346,8 +367,9 @@ def cell(plan: dict, package: dict, framework: str, assets: dict, selected: dict
         proof = planner.read_json(lines[0].encode())
         require(proof['backendUriPreserved'] is True, 'consumer_runtime_contract')
         result['runtime'] = {'contract': 'Studio38 backend-options accessor preserves configured URI',
-            'loaded_assemblies': consumers.verify_loaded_assemblies(proof, restored, framework, output, cache, artifacts,
-                selected, plan['requested_version'], plan['source']['commit'], required_packages=('Elsa.Studio.Core',))}
+            'loaded_assemblies': retain_runtime_rows(consumers.verify_loaded_assemblies(proof, restored, framework, output,
+                cache, artifacts, selected, plan['requested_version'], plan['source']['commit'],
+                required_packages=('Elsa.Studio.Core',)))}
     return result
 
 
@@ -358,7 +380,7 @@ def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, rec
     execution = local_execution()
     controller = producer.verify_controller(root, plan)
     receipt = planner.read_json(read_bound(receipt_path, receipt_hash))
-    selected = admit_artifacts(plan, plan_hash, receipt, artifacts)
+    selected = admit_artifacts(plan, plan_hash, receipt, artifacts, root)
     originals = load_snapshots(plan, plan_hash, snapshots)
     for package in selected.values():
         package['original_assets'] = originals[package['policy']['project']]
@@ -373,6 +395,7 @@ def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, rec
     retained.mkdir()
     result = {'schema': 1, 'mode': 'selected-product-consumers', 'plan_sha256': plan_hash, 'artifact_receipt_sha256': receipt_hash,
               'source': plan['source'], 'controller': controller, 'execution': execution, 'producer_execution': receipt['execution'],
+              'planner_controller': receipt['planner_controller'], 'artifact_controller': receipt['artifact_controller'],
               'success': False, 'published': False, 'coverage': [], 'runtime': [], 'stage': 'consumer-setup',
               'runtime_contract_source': STUDIO38_CONTRACT_SOURCE}
     try:

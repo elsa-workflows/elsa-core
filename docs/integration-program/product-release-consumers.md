@@ -2,6 +2,8 @@
 
 Task #8693's selected consumer adapter accepts one exact reviewed eligible plan, one successful matching artifact receipt with its reviewed digest, the original retained NuGet archives, and original hash-bound planning assets. The implemented control is Studio 3.8. It has no independent product, line, version, source, framework or feed selector. Other products and original Extensions assembly policies remain separate adapter work.
 
+The producer receipt must carry the exact reviewed planner controller and an artifact controller whose commit/tree resolves to immutable local Git objects. Both controllers must contain the exact plan-bound planner inputs. The consumer controller may differ; the retained receipt carries all three identities separately. Loaded assembly locations remain in private runtime logs after archive/cache/output byte verification. Retained runtime rows contain only allowlisted assembly/package identities and hashes, and selected cache origins use the logical local-archive source name.
+
 The private planning snapshot uses the existing `receipt.private.json` schema with mode `private-original-planning-assets-snapshot`, exact plan/controller/full-source identity and selected `id/project/frameworks/sha256/bytes/file` entries. Raw assets bytes must match the plan's original `restore_assets_sha256`; derived `resolved_targets` are ignored. Missing, changed, stale, symbolic or mismatched inputs fail before consumer work. Preserve these original snapshots before product commands overwrite source obj files.
 
 ```sh
@@ -29,3 +31,5 @@ PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=scripts/integration-program \
 ```
 
 This implementation has not yet executed a live product restore, compile or runtime consumer. The first authorized Studio 3.8 consumer control must validate the original archives, manually constructed NuGet lock interface and framework-pack source behavior before broader execution. A genuine restore/compile/runtime failure stays a failure with a private diagnostic and closed public stage. A source defect requires separately reviewed maintenance continuation; no source helper, dependency or version substitution is permitted.
+
+Offline examination found context-dependent external versions in the original source assets and a distinction between signed NuGet content hashes and raw archive hashes. The current closure/lock and external hash interfaces therefore remain blocked for live use pending the separately reviewed native resolution adapter. These controller/privacy corrections do not claim that consumer admission or restore has passed.
