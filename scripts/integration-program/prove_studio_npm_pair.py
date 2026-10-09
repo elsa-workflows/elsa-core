@@ -420,7 +420,11 @@ def consume(runner: Runner, private: Path, artifacts: dict[str, tuple[Path, dict
 
 
 def git(root: Path, *args: str) -> str:
-    return subprocess.check_output(['git', '--no-optional-locks', *args], cwd=root, text=True).strip()
+    try:
+        return subprocess.check_output(['git', '--no-optional-locks', *args], cwd=root,
+                                       text=True, stderr=subprocess.PIPE).strip()
+    except (OSError, subprocess.CalledProcessError):
+        raise ProofError('source-status-unavailable') from None
 
 
 def prove(root: Path, output: Path, commit: str, version: str, run: str, attempt: str) -> dict:

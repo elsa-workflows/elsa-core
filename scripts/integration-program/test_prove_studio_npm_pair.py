@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
 import unittest
@@ -104,6 +105,26 @@ class PairContracts(unittest.TestCase):
                 args[index] = wrong
                 with self.assertRaises(pair.ProofError):
                     pair.identity(*args)
+
+    def test_actual_cli_rejects_invalid_root_with_closed_json_and_no_output(self):
+        for kind in ('missing', 'not-git', 'file'):
+            with self.subTest(kind=kind):
+                root = self.root / kind
+                if kind == 'not-git':
+                    root.mkdir()
+                elif kind == 'file':
+                    root.write_bytes(b'consumer-owned file')
+                output = self.root / ('output-' + kind)
+                before = pair.files(self.root)
+                result = subprocess.run([sys.executable, str(pair.ROOT / 'scripts/integration-program/prove_studio_npm_pair.py'),
+                    '--root', str(root), '--output', str(output), '--commit', self.proof['source_commit'],
+                    '--version', self.proof['version'], '--run-id', '12', '--run-attempt', '1'],
+                    cwd=self.root, capture_output=True, text=True, timeout=20)
+                self.assertEqual(1, result.returncode)
+                self.assertEqual('', result.stderr)
+                self.assertEqual({'success': False, 'failure_code': 'source-status-unavailable'}, json.loads(result.stdout))
+                self.assertFalse(output.exists())
+                self.assertEqual(before, pair.files(self.root))
 
     def test_identity_source_and_manifest_mutations_fail(self):
         original = self.payload()
