@@ -1,0 +1,121 @@
+name: Individual product release plans
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/product-release-plan.yml'
+      - 'scripts/integration-program/plan_product_release.py'
+      - 'scripts/integration-program/product_release_metadata.py'
+      - 'scripts/integration-program/ProductReleaseSemantics/**'
+      - 'scripts/integration-program/test_plan_product_release.py'
+      - 'docs/integration-program/product-release-plans.md'
+  workflow_dispatch:
+    inputs:
+      product:
+        type: choice
+        options: [core, studio, extensions]
+        required: true
+      line:
+        type: choice
+        options: ['3.8', '3.9', '3.10']
+        required: true
+      version:
+        description: Explicit hypothetical requested version; this allocates nothing
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: product-release-plan-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  DOTNET_NOLOGO: '1'
+
+jobs:
+  select:
+    runs-on: ubuntu-24.04
+    if: github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    outputs:
+      matrix: ${{ steps.cells.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - id: cells
+        env:
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          PRODUCT: ${{ inputs.product }}
+          LINE: ${{ inputs.line }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os, sys
+          sys.path.insert(0, 'scripts/integration-program')
+          from plan_product_release import workflow_cells
+          print('matrix=' + json.dumps({'include': workflow_cells(dict(os.environ))}))
+          PY
+
+  contracts:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: '10.0.300'
+      - name: Test native planner and unchanged source/unit/npm contracts
+        env:
+          PYTHONPATH: scripts/integration-program
+        run: |
+          python3 -m unittest test_plan_product_release test_release_unit_manifest test_package_impact test_prepare_maintenance_build test_prove_studio_npm_pair
+          python3 -O -m unittest test_plan_product_release test_release_unit_manifest test_package_impact test_prepare_maintenance_build test_prove_studio_npm_pair
+
+  plan:
+    needs: select
+    name: Plan ${{ matrix.product }} ${{ matrix.line }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.select.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: '10.0.300'
+      - name: Generate SDK metadata and GET-only prerequisite/history observations
+        env:
+          EXPECTED_HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          PRODUCT: ${{ matrix.product }}
+          LINE: ${{ matrix.line }}
+          VERSION: ${{ matrix.version }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          python3 scripts/integration-program/plan_product_release.py \
+            --product "$PRODUCT" --line "$LINE" --version "$VERSION" \
+            --output "$RUNNER_TEMP/product-release-plan"
+      - name: Retain only the public planning receipt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: product-release-plan-${{ matrix.product }}-${{ matrix.line }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/product-release-plan/plan.json
+          if-no-files-found: error
+          retention-days: 14
