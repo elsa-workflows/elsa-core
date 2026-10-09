@@ -207,3 +207,28 @@ class OriginalCoreProducerContracts(unittest.TestCase):
     def test_core_contract_module_is_in_both_workflow_modes(self):
         workflow = (artifacts.ROOT / '.github/workflows/product-release-plan.yml').read_text()
         self.assertEqual(2, workflow.count(' test_selected_core_producer '))
+
+    def test_core_tests_outside_solution_are_evaluated_without_widening_pack_scope(self):
+        row = self.rows[0]
+        projects = ['src/Package.csproj', 'test/unit/Inside/Inside.csproj', 'test/unit/Outside/Outside.csproj']
+        with tempfile.TemporaryDirectory() as temp:
+            source = Path(temp); output = source / 'output'; output.mkdir()
+            (source / 'Elsa.sln').write_text('\n'.join('Project("guid") = "name", "' + p + '", "id"' for p in projects[:2]))
+            extra_is_test = True
+            def run(command, *_args, **kwargs):
+                self.assertEqual('3.8.99', kwargs['env']['VERSION'])
+                self.assertFalse(any(arg.startswith('-p:Version=') for arg in command))
+                project = command[2]
+                return json.dumps({'Properties': {'IsPackable': 'true', 'IsTestProject': str(project != projects[0] and (project != projects[2] or extra_is_test)).lower(),
+                    'AssemblyName': Path(project).stem, 'PackageId': Path(project).stem, 'PackageVersion': '3.8.99',
+                    'TargetFrameworks': '', 'TargetFramework': 'net10.0', 'IncludeSymbols': 'true', 'IncludeBuildOutput': 'false'}})
+            with patch.object(core, 'policy', return_value={'test_projects': projects[1:]}), \
+                    patch.object(maintenance, 'run', side_effect=run):
+                inventory = maintenance.evaluate_inventory(source, row, '3.8.99', output)
+            self.assertEqual(projects[:2], [item['project'] for item in inventory])
+            self.assertEqual(set(projects[1:]), {item['project'] for item in json.loads((output / 'test-inventory.json').read_text())})
+            extra_is_test = False
+            with patch.object(core, 'policy', return_value={'test_projects': projects[1:]}), \
+                    patch.object(maintenance, 'run', side_effect=run), \
+                    self.assertRaisesRegex(ValueError, 'Core original extra test project'):
+                maintenance.evaluate_inventory(source, row, '3.8.99', output)

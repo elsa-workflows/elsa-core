@@ -530,6 +530,10 @@ def evaluate_inventory(source: Path, row: dict, version: str, output: Path) -> l
     solution = source / {'core': 'Elsa.sln', 'studio': 'Elsa.Studio.sln', 'extensions': 'Elsa.Extensions.sln'}[row['product']]
     projects = re.findall(r'^Project\([^\n]+?= "[^"]+", "([^"]+\.csproj)"', solution.read_text(encoding='utf-8-sig'), re.M)
     require(bool(projects), 'No solution projects')
+    recipe_projects = {project.replace('\\', '/') for project in projects}
+    if original_core(row):
+        from selected_core_producer import policy as core_policy
+        projects += sorted(set(core_policy(row)['test_projects']) - recipe_projects)
     properties = 'IsPackable,IsTestProject,AssemblyName,PackageId,PackageVersion,TargetFrameworks,TargetFramework,IncludeSymbols,IncludeBuildOutput'
     inventory, tests = [], []
     for project in projects:
@@ -540,6 +544,9 @@ def evaluate_inventory(source: Path, row: dict, version: str, output: Path) -> l
         frameworks = (values['TargetFrameworks'] or values['TargetFramework']).split(';')
         if values['IsTestProject'].lower() == 'true':
             tests.append({'project': project, 'assembly_name': values['AssemblyName'], 'frameworks': frameworks})
+        if project not in recipe_projects:
+            require(original_core(row) and values['IsTestProject'].lower() == 'true', 'Core original extra test project')
+            continue
         if values['IsPackable'].lower() != 'true':
             continue
         require(values['PackageVersion'] == version, f'Unexpected evaluated version: {project}')
