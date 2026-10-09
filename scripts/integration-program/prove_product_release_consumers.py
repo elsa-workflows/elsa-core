@@ -24,6 +24,7 @@ import prove_consolidated_packages as archives
 import selected_product_consumer_metadata as resolution
 import selected_extensions_contract as extensions
 import selected_core_consumer as core
+import selected_maintenance_39 as maintenance39
 from selected_product_consumer_metadata import nearest_group
 from product_artifact_execution import local_execution, validate_local_execution
 from prove_consolidated_packages import archive_names, dependency_groups, framework_reference_groups, metadata as nuspec, require
@@ -39,6 +40,8 @@ STUDIO38_CONTRACT_SOURCE = {
 
 
 def runtime_contract(plan: dict) -> dict:
+    if plan['product'] in ('studio', 'extensions') and plan.get('line') == '3.9':
+        maintenance39.validate_plan(plan)
     if plan['product'] == 'core':
         core.validate_plan(plan)
         return core.runtime_contract()
@@ -46,12 +49,14 @@ def runtime_contract(plan: dict) -> dict:
         return {'package': 'elsa.io.http', 'fixture': ROOT / 'scripts/integration-program/selected-extensions-consumer/Program.cs',
                 'checks': {'httpFactoryRegistered': True, 'urlContentResolved': True, 'networkRequests': 0},
                 'required_packages': ('Elsa.IO.Http', 'Elsa.IO'), 'assembly_release_version': '1.0.0',
-                'description': 'Extensions38 HTTP shell registration and URL binary content with fake handler',
+                'description': ('Extensions39' if plan.get('line') == '3.9' else 'Extensions38') +
+                    ' HTTP shell registration and URL binary content with fake handler',
                 'limitation': 'HTTP API probe does not certify full shell composition, marker features or all product functionality.'}
     require(plan['product'] == 'studio', 'consumer_control_not_implemented')
     return {'package': 'elsa.studio.core', 'fixture': FIXTURE, 'checks': {'backendUriPreserved': True},
             'required_packages': ('Elsa.Studio.Core',), 'assembly_release_version': plan['requested_version'],
-            'description': 'Studio38 backend-options accessor preserves configured URI',
+            'description': ('Studio39' if plan.get('line') == '3.9' else 'Studio38') +
+                ' backend-options accessor preserves configured URI',
             'limitation': 'Backend accessor contract does not certify Studio browser/deployed behavior or all package functionality.'}
 
 
@@ -398,13 +403,15 @@ def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, rec
     if plan['product'] == 'core':
         core.validate_plan(plan)
     else:
-        require(plan['product'] in ('studio', 'extensions') and plan['line'] == '3.8', 'consumer_control_not_implemented')
+        require(plan['product'] in ('studio', 'extensions') and plan['line'] in ('3.8', '3.9'), 'consumer_control_not_implemented')
     execution = local_execution()
     controller = producer.verify_controller(root, plan)
     selected = admit_artifacts(plan, plan_hash, receipt, artifacts, root)
     originals = load_snapshots(plan, plan_hash, snapshots)
     if plan['product'] == 'core':
         core.verify_source(root, plan)
+    elif plan['line'] == '3.9':
+        maintenance39.verify_source(root, plan)
     elif plan['product'] == 'extensions':
         extensions.verify_source(root, plan['source']['commit'])
     else:
@@ -424,6 +431,7 @@ def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, rec
               'current_consumer_admission': {'eligible': False, 'scope': 'current-complete-selected-product-prerequisites'},
               'success': False, 'published': False, 'coverage': [], 'runtime': [], 'stage': 'consumer-setup',
               'runtime_contract_source': (core.source_contract(plan) if plan['product'] == 'core' else
+                  maintenance39.contract(plan['product'])['files'] if plan['line'] == '3.9' else
                   extensions.SOURCE_BLOBS if plan['product'] == 'extensions' else STUDIO38_CONTRACT_SOURCE)}
     try:
         config = private / 'NuGet.Config'

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Admit one reviewed maintenance plan and run its private maintenance vertical control.
 
-No publisher, allocation or historical workflow is invoked. Studio and Extensions 3.8 and pinned original Core 3.8/3.9 have bounded producer adapters.
+No publisher, allocation or historical workflow is invoked. All six supported product/line interfaces have bounded source adapters; actual proof remains separate.
 """
 from __future__ import annotations
 
@@ -18,6 +18,7 @@ import product_release_metadata as metadata
 import prepare_maintenance_build as maintenance
 import selected_extensions_contract as extensions
 import selected_core_producer as core
+import selected_maintenance_39 as maintenance39
 from prove_consolidated_packages import archive_names, dependency_groups, framework_reference_groups, metadata as nuspec, require, run
 import prove_historical_studio_npm_pair as historical
 from product_artifact_execution import local_execution
@@ -230,12 +231,14 @@ def execute(root: Path, data: bytes, digest: str, output: Path, *, setup_only: b
     require(not output.exists() and not output.resolve().is_relative_to(root.resolve()) and
             not any(part.is_symlink() for part in (output, *output.parents)), 'artifact_output_location')
     controller = verify_controller(root, plan)
-    # Explicit supported interface until its first source-faithful control settles.
-    require(plan['product'] in ('studio', 'extensions') and plan['line'] == '3.8' or
+    # Adapter admission does not certify any actual product control.
+    require(plan['product'] in ('studio', 'extensions') and plan['line'] in ('3.8', '3.9') or
             plan['product'] == 'core' and plan['line'] in ('3.8', '3.9'), 'artifact_control_not_implemented')
     if plan['product'] == 'core':
         core.validate_plan(plan)
         core.verify_source(root, plan['source'])
+    elif plan['line'] == '3.9':
+        maintenance39.verify_source(root, plan)
     output.mkdir(parents=True)
     private, retained = output / 'private', output / 'retained'
     private.mkdir()

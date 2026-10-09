@@ -1,0 +1,233 @@
+{
+  "line": "3.9",
+  "schema": 1,
+  "sources": {
+    "extensions": {
+      "commit": "bd7b846efae7e93676c6c3a594e682a5a958b766",
+      "excluded_canonical": [
+        {
+          "id": "Elsa.Secrets.Persistence.EFCore.PostgreSql",
+          "project": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.PostgreSql/Elsa.Secrets.Persistence.EFCore.PostgreSql.csproj",
+          "reason": "canonical_owner_core"
+        },
+        {
+          "id": "Elsa.Secrets.Persistence.EFCore.SqlServer",
+          "project": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.SqlServer/Elsa.Secrets.Persistence.EFCore.SqlServer.csproj",
+          "reason": "canonical_owner_core"
+        },
+        {
+          "id": "Elsa.Secrets.Persistence.EFCore.Sqlite",
+          "project": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore.Sqlite/Elsa.Secrets.Persistence.EFCore.Sqlite.csproj",
+          "reason": "canonical_owner_core"
+        },
+        {
+          "id": "Elsa.Secrets.Persistence.EFCore",
+          "project": "src/modules/secrets/Elsa.Secrets.Persistence.EFCore/Elsa.Secrets.Persistence.EFCore.csproj",
+          "reason": "canonical_owner_core"
+        },
+        {
+          "id": "Elsa.Studio.Secrets",
+          "project": "src/modules/secrets/Elsa.Studio.Secrets/Elsa.Studio.Secrets.csproj",
+          "reason": "canonical_owner_studio"
+        }
+      ],
+      "files": {
+        ".github/maintenance-inert-workflows/packages.yml.source": "b51de385b4b80ed2c32e54c0da6b1a179a6ea364",
+        ".nuke/parameters.json": "95ed63cfb3bc8768fbecd0d2f42eccf1e5ff4ab8",
+        "Directory.Build.props": "fa8ad931c1e4b967d3b45e9f37b86fe13ee165d6",
+        "Directory.Build.targets": "143bfd8dc2fef88c095179b0a28bfdcee92ad123",
+        "Directory.Packages.props": "ae4204b424431a7521f078f9f62be373612ecc4c",
+        "Elsa.Extensions.sln": "42aace26dfd34157a608d8ec1ec8fe8570a21506",
+        "NuGet.Config": "e3f020ab738262a079598ac58a5d22d6429db064",
+        "build/Build.CI.GitHubActions.cs": "e88af9df5c6005a0a014f14b2575cefdded26bb1",
+        "build/Build.cs": "b39a758717f88096e9b0226ff63a17ebfa58277d",
+        "build/_build.csproj": "24319083da5c04240f5da58037d5a4895bc70196",
+        "src/modules/Directory.Build.props": "c457c8e6daaa2de2f66f84dac7b27d281dcc8cf1",
+        "src/modules/PackageManifestHints.cs": "63d76de64a93ad3f0d0bc763795de15bafe6c088",
+        "src/modules/io/Elsa.IO.Compression/ShellFeatures/CompressionIOShellFeature.cs": "2edbe74770544c427d9c95f7a3617376dc337425",
+        "src/modules/io/Elsa.IO.Http/Elsa.IO.Http.csproj": "2d5c62ea65e85f218d5fd719a5f33901fca7f7ab",
+        "src/modules/io/Elsa.IO.Http/Features/IOHttpFeature.cs": "f33ae57a76da1c5c8ab191fa39340e489b20efae",
+        "src/modules/io/Elsa.IO.Http/Services/Strategies/UrlContentStrategy.cs": "2803403d35e37d8a86f8103fa6faa9216aa80cfa",
+        "src/modules/io/Elsa.IO.Http/ShellFeatures/HttpIOShellFeature.cs": "1965ee72d03e97160c7e490008828c21d23e6f99",
+        "src/modules/io/Elsa.IO/Models/BinaryContent.cs": "e84f6cfe937947444e5a6915fa1eb59d53e75df5",
+        "src/modules/io/Elsa.IO/ShellFeatures/IOShellFeature.cs": "5e4d8041cac9a94c50959fbbc36edc32bcec634f",
+        "test/modules/Directory.Build.props": "4a2b02b9aa2d2eb2f4b450f420e8cb44dd9c21bf",
+        "test/modules/actors/Elsa.Actors.ProtoActor.UnitTests/Elsa.Actors.ProtoActor.UnitTests.csproj": "2f047e0e7712ce2d9faac3a94f066b6dc7a2bd08",
+        "test/modules/caching/Elsa.Caching.Distributed.ProtoActor.IntegrationTests/Elsa.Caching.Distributed.ProtoActor.IntegrationTests.csproj": "4509e14509a4a0128a24ec2710a59d4c4636713c",
+        "test/modules/diagnostics/Elsa.Logging.Core.IntegrationTests/Elsa.Logging.Core.IntegrationTests.csproj": "7e18e96afc6d43e472a4670b525c5c4ef14d0ff1",
+        "test/modules/diagnostics/Elsa.Logging.Core.UnitTests/Elsa.Logging.Core.UnitTests.csproj": "72ee30cba7ba3fc86c9f2d35cd8c33d329bea0f9",
+        "test/modules/ldap/Elsa.Ldap.UnitTests/Elsa.Ldap.UnitTests.csproj": "9f3f6bd7a0865890d91c365781dcee047f77f689",
+        "test/modules/mqtt/Elsa.Mqtt.UnitTests/Elsa.Mqtt.UnitTests.csproj": "eb51cfd18b92c08dac252dad0940544c0dadeada",
+        "test/modules/persistence/Elsa.Dapper.UnitTests/Elsa.Dapper.UnitTests.csproj": "c13424f6a29ac65286b6935c681a08ec140aca32",
+        "test/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj": "dfe25758d6028ea04e03fe35b0205bb97974035e",
+        "test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj": "47666a7386af2263631c9e21f19b864838e00953",
+        "test/modules/runtimes/Elsa.Workflows.Runtime.ProtoActor.UnitTests/Elsa.Workflows.Runtime.ProtoActor.UnitTests.csproj": "70aa95d482c7b0dcf286479dffcc86d2019acc2e",
+        "test/modules/scheduling/Elsa.Scheduling.Hangfire.UnitTests/Elsa.Scheduling.Hangfire.UnitTests.csproj": "97f0a64499935a11471074d89add6bd1e31c4943",
+        "test/modules/scheduling/Elsa.Scheduling.Quartz.ComponentTests/Elsa.Scheduling.Quartz.ComponentTests.csproj": "84e47791463686b27a51094701f7bb098dee76f1",
+        "test/modules/scheduling/Elsa.Scheduling.Quartz.UnitTests/Elsa.Scheduling.Quartz.UnitTests.csproj": "c3e2a940cafb365081040df0f6c96112a134bee7",
+        "test/modules/secrets/Elsa.Secrets.Management.UnitTests/Elsa.Secrets.Management.UnitTests.csproj": "27c3fa9c74228beecde4c1686ec800744ba4530b",
+        "test/modules/servicebus/Elsa.ServiceBus.AzureServiceBus.ComponentTests/Elsa.ServiceBus.AzureServiceBus.ComponentTests.csproj": "b6d7ad4617eae3da87a8f5e65a9ea5b18684cf5e",
+        "test/modules/servicebus/Elsa.ServiceBus.MassTransit.UnitTests/Elsa.ServiceBus.MassTransit.UnitTests.csproj": "2a79dad0b1a4da020b0c10f9bebf758062d0a75a",
+        "test/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj": "4fa5dc5c42ca914ef9b5066dfe090c45b89b4f7e"
+      },
+      "fixture": {
+        "path": "scripts/integration-program/selected-extensions-consumer/Program.cs",
+        "sha256": "9aae81f09558f01d906dadb8ae44acfde918a4302973dde37bf3235a534f7266"
+      },
+      "solution": "Elsa.Extensions.sln",
+      "test_projects": {
+        "test/modules/actors/Elsa.Actors.ProtoActor.UnitTests/Elsa.Actors.ProtoActor.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/caching/Elsa.Caching.Distributed.ProtoActor.IntegrationTests/Elsa.Caching.Distributed.ProtoActor.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/diagnostics/Elsa.Logging.Core.IntegrationTests/Elsa.Logging.Core.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/diagnostics/Elsa.Logging.Core.UnitTests/Elsa.Logging.Core.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/ldap/Elsa.Ldap.UnitTests/Elsa.Ldap.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/mqtt/Elsa.Mqtt.UnitTests/Elsa.Mqtt.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/persistence/Elsa.Dapper.UnitTests/Elsa.Dapper.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/runtimes/Elsa.Workflows.Runtime.ProtoActor.UnitTests/Elsa.Workflows.Runtime.ProtoActor.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/scheduling/Elsa.Scheduling.Hangfire.UnitTests/Elsa.Scheduling.Hangfire.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/scheduling/Elsa.Scheduling.Quartz.ComponentTests/Elsa.Scheduling.Quartz.ComponentTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/scheduling/Elsa.Scheduling.Quartz.UnitTests/Elsa.Scheduling.Quartz.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/secrets/Elsa.Secrets.Management.UnitTests/Elsa.Secrets.Management.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/servicebus/Elsa.ServiceBus.AzureServiceBus.ComponentTests/Elsa.ServiceBus.AzureServiceBus.ComponentTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/servicebus/Elsa.ServiceBus.MassTransit.UnitTests/Elsa.ServiceBus.MassTransit.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj": [
+          "net10.0"
+        ]
+      },
+      "tree": "f86b6eef467b947864f43c2a56f4a65e65e1d22e",
+      "workflow": ".github/maintenance-inert-workflows/packages.yml.source"
+    },
+    "studio": {
+      "commit": "98a3f23d9c3c67080f3926eeb584036c49855b72",
+      "excluded_canonical": [],
+      "files": {
+        ".github/maintenance-inert-workflows/packages.yml.source": "24bc4df9c60c0a750b97383fcbddbc4b9c810e9c",
+        "Directory.Build.props": "4df5aaa164abed93797a5a5ffa751ed64d6ddc77",
+        "Directory.Packages.props": "af5cdc6030c99cca120e027936bfd44d5f6d93b1",
+        "Elsa.Studio.sln": "521903b6370a6b9e585892b0c3f3f062cb7953f1",
+        "NuGet.Config": "9d34ddc36d733ad34aa9fe605e8783632c0562c0",
+        "src/Directory.Build.props": "f75b7aad63918ef6b8eda1cac8a34045cd9c9daf",
+        "src/framework/Elsa.Studio.Core.Tests/Elsa.Studio.Core.Tests.csproj": "e3018d9a7f3bdc1de9cb9993b76fd8a5986fbca7",
+        "src/framework/Elsa.Studio.Core/Models/RemoteBackend.cs": "321d11db16f72868a07967aa02e68e8e587729aa",
+        "src/framework/Elsa.Studio.Core/Options/BackendOptions.cs": "e20d9c074bdfdd57dd43b9885d1f1576087d9bf8",
+        "src/framework/Elsa.Studio.Core/Services/DefaultRemoteBackendAccessor.cs": "70600f53526a7c63a95488dea0a28d65f634e931",
+        "src/framework/Elsa.Studio.DomInterop/ClientLib/package.json": "e9d2c85820fea8d23359a8eeae5436a57cfe2eae",
+        "src/hosts/Elsa.Studio.Host.CustomElements/Elsa.Studio.Host.CustomElements.csproj": "c9f3f667e8c3c54f0924166aebedeb3f64be7b1d",
+        "src/modules/Elsa.Studio.AI.Tests/Elsa.Studio.AI.Tests.csproj": "78ea8c2d7e01502a49247879876bf9689dee11e3",
+        "src/modules/Elsa.Studio.Administration.Tests/Elsa.Studio.Administration.Tests.csproj": "f36b48c2442383df89c99a241cf95024090e4714",
+        "src/modules/Elsa.Studio.Authentication.UI.Tests/Elsa.Studio.Authentication.UI.Tests.csproj": "61536d630d542008f0a22cce20afe226874c2c7c",
+        "src/modules/Elsa.Studio.Dashboard.Tests/Elsa.Studio.Dashboard.Tests.csproj": "2cf8bf044eabf525178ec79c04963fe9f6d18c04",
+        "src/modules/Elsa.Studio.Diagnostics.ConsoleLogs.Tests/Elsa.Studio.Diagnostics.ConsoleLogs.Tests.csproj": "91dea993a9013f4093579654f4c3f7ddd14d9bd9",
+        "src/modules/Elsa.Studio.Diagnostics.OpenTelemetry.Tests/Elsa.Studio.Diagnostics.OpenTelemetry.Tests.csproj": "f9b0c5612b4af5551bb2cdb7643bcea9a93614e0",
+        "src/modules/Elsa.Studio.Diagnostics.StructuredLogs.Tests/Elsa.Studio.Diagnostics.StructuredLogs.Tests.csproj": "0adcb970cd82af874e9db13017851989d8652481",
+        "src/modules/Elsa.Studio.Environments.Tests/Elsa.Studio.Environments.Tests.csproj": "e281c73f25d30dfd8e29856f1e4efbe64267b545",
+        "src/modules/Elsa.Studio.ExternalAuthentication.Tests/Elsa.Studio.ExternalAuthentication.Tests.csproj": "fee32aa583d3812bc0df5f3e1396b22775c87f94",
+        "src/modules/Elsa.Studio.Localization.Tests/Elsa.Studio.Localization.Tests.csproj": "3de456bb7d07eb3527c36e7c8bdd177888a90c43",
+        "src/modules/Elsa.Studio.PlatformIntegration.Tests/Elsa.Studio.PlatformIntegration.Tests.csproj": "6c7350e14e3c83fe3e3ec6740c583d1671781ed5",
+        "src/modules/Elsa.Studio.Security.Tests/Elsa.Studio.Security.Tests.csproj": "9d5bd3c078564800e38fdd23a7a66f45e0181df9",
+        "src/modules/Elsa.Studio.UserTasks.Tests/Elsa.Studio.UserTasks.Tests.csproj": "e168cafbd7af5aa42167da0008ae0d2e8df7ed92",
+        "src/modules/Elsa.Studio.Workflows.Designer.Tests/Elsa.Studio.Workflows.Designer.Tests.csproj": "a39351b2d6eb12caed6bf723a7c20a477adc26a5",
+        "src/modules/Elsa.Studio.Workflows.Designer/ClientLib/package.json": "9d1aa9c33680f090c9fdb5bb834d070b3d526444",
+        "src/modules/Elsa.Studio.Workflows.Designer/ClientLib/scripts/generate-bpmn-types.js": "f27811577f2346659b86ce2c8fdc8bd369bbe9a8",
+        "src/modules/Elsa.Studio.Workflows.Tests/Elsa.Studio.Workflows.Tests.csproj": "abab2711f39005cad79d4add073fe913631db7a8",
+        "src/wrappers/package-lock.json": "f64d902eb08c32c2ffe350b269ac6ea61375100e",
+        "src/wrappers/package.json": "b28b5f6b08d9f208c7edb4ca0e0a043057c585f5",
+        "src/wrappers/wrappers/react-wrapper/package.json": "8ee363cd0af1242a2152bf8399b3bd4c2a20e973",
+        "src/wrappers/wrappers/react-wrapper/vite.config.js": "d8392c7751722c4d75378d9c85a434d8a87d98d3"
+      },
+      "fixture": {
+        "path": "scripts/integration-program/selected-studio-consumer/Program.cs",
+        "sha256": "2780472e6dada09bb95bb6870b38d5299d008c354bc7e0303af0340b5ca218a4"
+      },
+      "solution": "Elsa.Studio.sln",
+      "test_projects": {
+        "src/framework/Elsa.Studio.Core.Tests/Elsa.Studio.Core.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.AI.Tests/Elsa.Studio.AI.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Administration.Tests/Elsa.Studio.Administration.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Authentication.UI.Tests/Elsa.Studio.Authentication.UI.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Dashboard.Tests/Elsa.Studio.Dashboard.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Diagnostics.ConsoleLogs.Tests/Elsa.Studio.Diagnostics.ConsoleLogs.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Diagnostics.OpenTelemetry.Tests/Elsa.Studio.Diagnostics.OpenTelemetry.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Diagnostics.StructuredLogs.Tests/Elsa.Studio.Diagnostics.StructuredLogs.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Environments.Tests/Elsa.Studio.Environments.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.ExternalAuthentication.Tests/Elsa.Studio.ExternalAuthentication.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Localization.Tests/Elsa.Studio.Localization.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.PlatformIntegration.Tests/Elsa.Studio.PlatformIntegration.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Security.Tests/Elsa.Studio.Security.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.UserTasks.Tests/Elsa.Studio.UserTasks.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Workflows.Designer.Tests/Elsa.Studio.Workflows.Designer.Tests.csproj": [
+          "net8.0",
+          "net9.0",
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Workflows.Tests/Elsa.Studio.Workflows.Tests.csproj": [
+          "net10.0"
+        ]
+      },
+      "tree": "de330a0c1284c41a85c5fb0dd7c4af2ab0b1168e",
+      "workflow": ".github/maintenance-inert-workflows/packages.yml.source"
+    }
+  }
+}
