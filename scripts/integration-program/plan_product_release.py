@@ -527,8 +527,12 @@ def main() -> int:
                 'requested_version_input': args.version, 'observed_at': now(), 'eligible': False,
                 'category': 'plan_input_or_metadata_unavailable', 'published': False,
                 'version_allocated': False, 'tag_created': False}
-            args.output.mkdir(parents=True, exist_ok=True)
-            (args.output / 'plan.json').write_text(json.dumps(failure, indent=2) + '\n')
+            try:
+                args.output.mkdir(parents=True, exist_ok=True)
+                (args.output / 'plan.json').write_text(json.dumps(failure, indent=2) + '\n')
+            except OSError:
+                # Receipt persistence cannot escape the path-free diagnostic boundary.
+                pass
             print(json.dumps({'status': 'incomplete', 'category': failure['category'], 'published': False}))
             return 1
     print(json.dumps({'eligible': plan['eligible'], 'published': False}))

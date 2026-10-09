@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 import io
 import json
 from pathlib import Path
@@ -421,6 +421,34 @@ class ProductReleasePlanTests(unittest.TestCase):
             result = planner.execute(metadata.ROOT, 'studio', '3.10', '3.10.0', Path(self.temporary.name) / '310', self.semantics)
         self.assertFalse(result['eligible'])
         self.assertEqual('aligned_baseline_pending', result['reasons'][0]['category'])
+
+
+class ProductReleaseCliFailureTests(unittest.TestCase):
+    def test_failure_receipt_io_is_path_free_and_preserves_sentinel_without_build(self):
+        for regular_file_parent in (True, False):
+            with self.subTest(regular_file_parent=regular_file_parent), tempfile.TemporaryDirectory() as directory:
+                parent = Path(directory) / 'parent'
+                if regular_file_parent:
+                    parent.write_text('retained')
+                    sentinel = parent
+                else:
+                    parent.mkdir()
+                    sentinel = parent / 'sentinel.txt'
+                    sentinel.write_text('retained')
+                output = parent / 'output'
+                stdout, stderr = io.StringIO(), io.StringIO()
+                with patch('sys.argv', ['planner', '--product', 'extensions', '--line', '3.8',
+                                       '--version', '3.8.5', '--output', str(output)]), \
+                     patch.object(planner, 'build_helper', side_effect=OSError(str(parent))), \
+                     patch.object(Path, 'write_text', side_effect=PermissionError(str(parent))), \
+                     redirect_stdout(stdout), redirect_stderr(stderr):
+                    self.assertEqual(1, planner.main())
+                self.assertEqual({'status': 'incomplete', 'category': 'plan_input_or_metadata_unavailable',
+                                  'published': False}, json.loads(stdout.getvalue()))
+                self.assertNotIn(directory, stdout.getvalue())
+                self.assertEqual('', stderr.getvalue())
+                self.assertEqual('retained', sentinel.read_text())
+                self.assertFalse((output / 'plan.json').exists())
 
 
 if __name__ == '__main__':
