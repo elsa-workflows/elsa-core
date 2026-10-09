@@ -1,10 +1,11 @@
-"""One immutable Extensions 3.8 generator/runtime contract; no product selectors."""
+"""Two immutable Extensions generator/runtime contracts; no independent selectors."""
 from __future__ import annotations
 
 from pathlib import Path
 
 from prove_consolidated_packages import require
 import product_release_metadata as metadata
+import selected_maintenance_39 as maintenance39
 
 SOURCE = '92c27a3dd2c7f1dc107cba34749dd293a5d77743'
 SOURCE_BLOBS = {
@@ -26,6 +27,9 @@ MANIFEST_FEATURE = {'typeName': 'Elsa.IO.Http.ShellFeatures.HttpIOShellFeature',
 
 
 def verify_source(root: Path, commit: str) -> None:
+    if commit == maintenance39.contract('extensions')['commit']:
+        maintenance39.verify_git(root, 'extensions', commit)
+        return
     require(commit == SOURCE, 'extensions_contract_source')
     for path, blob in SOURCE_BLOBS.items():
         require(metadata.git(root, 'rev-parse', commit + ':' + path) == blob, 'extensions_contract_blob')
@@ -33,7 +37,7 @@ def verify_source(root: Path, commit: str) -> None:
 
 def bind_manifest_contract(source: Path, row: dict, policy: dict) -> None:
     # Other maintenance controls retain generic generated-output verification.
-    if policy['id'] != 'Elsa.IO.Http' or row['commit'] != SOURCE:
+    if policy['id'] != 'Elsa.IO.Http' or row['commit'] not in (SOURCE, maintenance39.contract('extensions')['commit']):
         return
     verify_source(source, row['commit'])
     policy['manifest_expectation'] = MANIFEST_FEATURE
