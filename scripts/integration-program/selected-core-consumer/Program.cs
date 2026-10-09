@@ -6,7 +6,6 @@ using Elsa.Workflows.Memory;
 using Elsa.Workflows.Runtime;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
 using var standardOutput = new StringWriter();
 var services = new ServiceCollection();
@@ -24,17 +23,25 @@ var outputLines = new List<string>();
 using (var reader = new StringReader(standardOutput.ToString()))
 {
     while (reader.ReadLine() is { } line)
+    {
         outputLines.Add(line);
+    }
 }
 
 if (!outputLines.SequenceEqual(new[] { "Sequence Value" }))
+{
     throw new InvalidOperationException($"Expected exactly one standard-output line, 'Sequence Value'; received {JsonSerializer.Serialize(outputLines)}.");
+}
 
 if (result.WorkflowState.Status != WorkflowStatus.Finished || result.WorkflowState.SubStatus != WorkflowSubStatus.Finished)
+{
     throw new InvalidOperationException($"Expected a finished workflow; received status {result.WorkflowState.Status} and sub-status {result.WorkflowState.SubStatus}.");
+}
 
 if (result.WorkflowState.Incidents.Count != 0)
+{
     throw new InvalidOperationException($"Expected no workflow incidents; received {result.WorkflowState.Incidents.Count}.");
+}
 
 var loadedAssemblies = SelectedAssemblyProof.Snapshot();
 Console.WriteLine("SELECTED_CONSUMER_PROOF=" + JsonSerializer.Serialize(new
