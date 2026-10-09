@@ -9,7 +9,8 @@
   "description": "React wrapper for Elsa Studio, exposing the Blazor WebAssembly workflow designer as React components.",
   "license": "MIT",
   "files": [
-    "dist"
+    "dist",
+    "scripts/copy-elsa-studio-wasm.js"
   ],
   "main": "./dist/elsa-studio-wasm-react.umd.cjs",
   "module": "./dist/elsa-studio-wasm-react.js",
@@ -26,8 +27,8 @@
     "preview": "vite preview",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "postinstall": "npm run copy:elsa-studio-wasm",
-    "copy:elsa-studio-wasm": "cp -r ../../node_modules/@elsa-workflows/elsa-studio-wasm/_content public/ && cp -r ../../node_modules/@elsa-workflows/elsa-studio-wasm/_framework public/ && cp -r ../../node_modules/@elsa-workflows/elsa-studio-wasm/appsettings.json public/"
+    "postinstall": "node scripts/copy-elsa-studio-wasm.js",
+    "copy:elsa-studio-wasm": "node scripts/copy-elsa-studio-wasm.js"
   },
   "dependencies": {
     "@elsa-workflows/elsa-studio-wasm": "^3.4.0-rc1",
