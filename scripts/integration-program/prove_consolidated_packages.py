@@ -741,7 +741,8 @@ def package_tool(assets: dict, identifier: str, version: str, entry: str, *, tar
             "checked_archive_contents": checked}
 
 
-def capture_compiler_evidence(root: Path, row: dict, framework: str, resolved: dict, cache: dict | None = None) -> dict:
+def capture_compiler_evidence(root: Path, row: dict, framework: str, resolved: dict, cache: dict | None = None,
+                              *, physical_families: tuple | None = None) -> dict:
     cache = cache if cache is not None else {}
     properties = resolved["Properties"]
     sdk = Path(properties["MSBuildToolsPath"]).resolve()
@@ -799,7 +800,8 @@ def capture_compiler_evidence(root: Path, row: dict, framework: str, resolved: d
                 record = {"kind": "framework", "package_id": identifier, "package_version": version,
                           "tool_path": str(path), "content_sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
         evidence["tools"][family] = record
-    for _, family in PHYSICAL_GENERATED_PROJECTS.get((row["id"], row["project"]), ()):
+    families = PHYSICAL_GENERATED_PROJECTS.get((row["id"], row["project"]), ()) if physical_families is None else physical_families
+    for family in dict.fromkeys(family for _, family in families):
         identifier, entry = PHYSICAL_GENERATORS[family]
         require("RuntimeIdentifier" in properties, "Missing resolved RuntimeIdentifier for physical generator target selection")
         target_key = framework + (f"/{properties['RuntimeIdentifier']}" if properties["RuntimeIdentifier"] else "")
