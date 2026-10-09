@@ -179,6 +179,8 @@ class MaintenanceContracts(unittest.TestCase):
             return '10.0.300'
         def stage(*_args):
             policy.update(expected_dependency_groups=[], sdk_nuspec_sha256='a' * 64,
+                expected_framework_reference_groups=[{'framework': 'net8.0', 'references': ['Microsoft.AspNetCore.App']}],
+                expected_symbol_framework_reference_groups=[],
                 restore_assets=[{'framework': 'net8.0', 'path': '/private-secret/restore', 'sha256': 'b' * 64}],
                 framework_properties={'net8.0': {'compiler_evidence': {'sdk_version': '10.0.300',
                     'sdk_root': '/private-secret/sdk', 'compiler_sha256': 'c' * 64, 'tools': {}}}})
@@ -220,6 +222,9 @@ class MaintenanceContracts(unittest.TestCase):
         inventory = json.loads((output / 'evaluated-inventory.json').read_text())
         self.assertEqual(inventory[0]['id'], 'Fixture')
         self.assertEqual(inventory[0]['expected_dependency_groups'], [])
+        self.assertEqual(inventory[0]['expected_framework_reference_groups'],
+                         [{'framework': 'net8.0', 'references': ['Microsoft.AspNetCore.App']}])
+        self.assertEqual(inventory[0]['expected_symbol_framework_reference_groups'], [])
         self.assertEqual(inventory[0]['sdk_nuspec_sha256'], 'a' * 64)
         self.assertEqual(inventory[0]['restore_inputs'], [{'framework': 'net8.0', 'sha256': 'b' * 64}])
         self.assertEqual(inventory[0]['producers'], {'net8.0': {'sdk_version': '10.0.300',
@@ -390,7 +395,9 @@ class MaintenanceContracts(unittest.TestCase):
                 destination = Path(next(arg.split('=', 1)[1] for arg in command if arg.startswith('-p:NuspecOutputPath=')))
                 for suffix in ['', '.symbols']:
                     (destination / ('Fixture.3.8.4-proof.42.1' + suffix + '.nuspec')).write_text(
-                        '<package><metadata><id>Fixture</id><dependencies><group targetFramework="net8.0" /></dependencies></metadata></package>')
+                        '<package><metadata><id>Fixture</id><dependencies><group targetFramework="net8.0" /></dependencies>'
+                        '<frameworkReferences><group targetFramework="net8.0">'
+                        '<frameworkReference name="Microsoft.AspNetCore.App" /></group></frameworkReferences></metadata></package>')
                 return ''
             return json.dumps({'Properties': {'ProjectAssetsFile': str(assets)}, 'Items': {}})
         with patch.dict(os.environ, {'GH_TOKEN': 'private-secret'}), patch.object(maintenance, 'run', side_effect=execute), \
@@ -403,6 +410,8 @@ class MaintenanceContracts(unittest.TestCase):
         self.assertEqual(captured.call_args.kwargs['physical_families'], ())
         retained = maintenance.public_inventory([policy])
         self.assertEqual(retained[0]['expected_symbol_dependency_groups'], [{'framework': 'net8.0', 'dependencies': []}])
+        for key in ['expected_framework_reference_groups', 'expected_symbol_framework_reference_groups']:
+            self.assertEqual(retained[0][key], [{'framework': 'net8.0', 'references': ['Microsoft.AspNetCore.App']}])
         self.assertEqual(retained[0]['restore_inputs'][0]['sha256'], hashlib.sha256(b'{}').hexdigest())
         self.assertNotIn('private-secret', json.dumps(retained))
         self.assertNotIn(str(source), json.dumps(retained))
@@ -738,7 +747,8 @@ class MaintenanceContracts(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'not evaluated'):
                 maintenance.evaluate_inventory(source, self.row, '3.8.4-proof.42.1', self.root)
 
-    def write_package_fixture(self, dependency='3.8.4', packed_version='3.8.4-proof.42.1', frameworks=(), groups=None):
+    def write_package_fixture(self, dependency='3.8.4', packed_version='3.8.4-proof.42.1', frameworks=(), groups=None,
+                              references='', symbol_references=None):
         artifacts = self.root / 'artifacts'; artifacts.mkdir(exist_ok=True)
         groups = groups if groups is not None else f'<group targetFramework="net8.0"><dependency id="Elsa.Api.Client" version="{dependency}" /></group>'
         nuspec = f'''<package><metadata><id>Elsa.Studio.Fixture</id><version>{packed_version}</version>
@@ -747,16 +757,106 @@ class MaintenanceContracts(unittest.TestCase):
           </metadata></package>'''
         path = artifacts / 'fixture.nupkg'
         with zipfile.ZipFile(path, 'w') as zipped:
-            zipped.writestr('fixture.nuspec', nuspec)
+            zipped.writestr('fixture.nuspec', nuspec.replace('</metadata>', references + '</metadata>'))
             zipped.writestr('build/Fixture.targets', '<Project/>')
             for framework in frameworks:
                 zipped.writestr(f'lib/{framework}/Elsa.Studio.Fixture.dll', f'assembly-{framework}')
-        if frameworks:
+        if frameworks or symbol_references is not None:
             with zipfile.ZipFile(path.with_suffix('.snupkg'), 'w') as zipped:
-                zipped.writestr('fixture.nuspec', nuspec)
+                selected = references if symbol_references is None else symbol_references
+                zipped.writestr('fixture.nuspec', nuspec.replace('</metadata>', selected + '</metadata>'))
                 for framework in frameworks:
                     zipped.writestr(f'lib/{framework}/Elsa.Studio.Fixture.pdb', f'symbols-{framework}')
         return artifacts
+
+    def framework_reference_policy_fixture(self, **overrides):
+        return {'id': 'Elsa.Studio.Fixture', 'assembly_name': 'Elsa.Studio.Fixture', 'frameworks': ['net8.0'],
+                'include_build_output': False, 'symbols': True, 'satellites': [],
+                **self.sdk_dependency_fixture(), **overrides}
+
+    def test_sdk_framework_reference_groups_reject_archive_tampering_in_either_or_both_packages(self):
+        baseline = ('<frameworkReferences><group targetFramework="net8.0">'
+                    '<frameworkReference name="Microsoft.AspNetCore.App" /></group></frameworkReferences>')
+        expected = [{'framework': 'net8.0', 'references': ['Microsoft.AspNetCore.App']}]
+        policy = self.framework_reference_policy_fixture(expected_framework_reference_groups=expected,
+                                                        expected_symbol_framework_reference_groups=expected)
+        for target in ['main', 'symbols', 'both']:
+            for mutation in ['matching', 'removed', 'changed', 'added-reference', 'changed-framework', 'added-group']:
+                altered = baseline
+                if mutation == 'removed':
+                    altered = ''
+                elif mutation == 'changed':
+                    altered = baseline.replace('Microsoft.AspNetCore.App', 'Unexpected.Framework')
+                elif mutation == 'added-reference':
+                    altered = baseline.replace('</group>', '<frameworkReference name="Unexpected.Framework" /></group>')
+                elif mutation == 'changed-framework':
+                    altered = baseline.replace('net8.0', 'net9.0')
+                elif mutation == 'added-group':
+                    altered = baseline.replace('</frameworkReferences>', '<group targetFramework="net9.0" /></frameworkReferences>')
+                artifacts = self.write_package_fixture(references=altered if target in ['main', 'both'] else baseline,
+                    symbol_references=altered if target in ['symbols', 'both'] else baseline)
+                with self.subTest(target=target, mutation=mutation):
+                    if mutation == 'matching':
+                        maintenance.verify_artifacts(artifacts, [policy], self.row, '3.8.4-proof.42.1',
+                                                     maintenance.ROOT, Path('/unused'), self.root)
+                    else:
+                        with self.assertRaisesRegex(ValueError, '^SDK framework reference groups disagree with package$') as error:
+                            maintenance.verify_artifacts(artifacts, [policy], self.row, '3.8.4-proof.42.1',
+                                                         maintenance.ROOT, Path('/unused'), self.root)
+                        self.assertEqual(maintenance.verification_reason(str(error.exception)),
+                                         'sdk-framework-reference-groups-mismatch')
+
+    def test_sdk_framework_reference_expectations_are_required_lists_in_both_packages(self):
+        artifacts = self.write_package_fixture(symbol_references='')
+        policy = self.framework_reference_policy_fixture()
+        for key in ['expected_framework_reference_groups', 'expected_symbol_framework_reference_groups']:
+            for value in ['missing', None, {}]:
+                selected = dict(policy)
+                if value == 'missing':
+                    selected.pop(key)
+                else:
+                    selected[key] = value
+                with self.subTest(key=key, value=value):
+                    with self.assertRaisesRegex(ValueError, '^SDK framework reference metadata missing$') as error:
+                        maintenance.verify_artifacts(artifacts, [selected], self.row, '3.8.4-proof.42.1',
+                                                     maintenance.ROOT, Path('/unused'), self.root)
+                    self.assertEqual(maintenance.verification_reason(str(error.exception)),
+                                     'sdk-framework-reference-metadata-missing')
+
+    def test_empty_framework_reference_expectations_preserve_empty_groups(self):
+        policy = self.framework_reference_policy_fixture()
+        for references, expected in [('', []), ('<frameworkReferences />', []),
+                ('<frameworkReferences><group targetFramework="net8.0" /></frameworkReferences>',
+                 [{'framework': 'net8.0', 'references': []}])]:
+            selected = dict(policy, expected_framework_reference_groups=expected,
+                            expected_symbol_framework_reference_groups=expected)
+            artifacts = self.write_package_fixture(references=references, symbol_references=references)
+            with self.subTest(references=references):
+                maintenance.verify_artifacts(artifacts, [selected], self.row, '3.8.4-proof.42.1',
+                                             maintenance.ROOT, Path('/unused'), self.root)
+                if expected:
+                    for key in ['expected_framework_reference_groups', 'expected_symbol_framework_reference_groups']:
+                        with self.subTest(key=key), self.assertRaisesRegex(ValueError, 'SDK framework reference groups'):
+                            maintenance.verify_artifacts(artifacts, [dict(selected, **{key: []})], self.row,
+                                '3.8.4-proof.42.1', maintenance.ROOT, Path('/unused'), self.root)
+
+    def test_matching_framework_references_cannot_target_unevaluated_frameworks(self):
+        policy = self.framework_reference_policy_fixture()
+        for target in ['main', 'symbols', 'both']:
+            selected = dict(policy)
+            references = {}
+            for package, key in [('main', 'expected_framework_reference_groups'),
+                                 ('symbols', 'expected_symbol_framework_reference_groups')]:
+                framework = 'net9.0' if target in [package, 'both'] else 'net8.0'
+                selected[key] = [{'framework': framework, 'references': []}]
+                references[package] = f'<frameworkReferences><group targetFramework="{framework}" /></frameworkReferences>'
+            artifacts = self.write_package_fixture(references=references['main'], symbol_references=references['symbols'])
+            with self.subTest(target=target):
+                with self.assertRaisesRegex(ValueError, '^SDK framework reference framework unsupported$') as error:
+                    maintenance.verify_artifacts(artifacts, [selected], self.row, '3.8.4-proof.42.1',
+                                                 maintenance.ROOT, Path('/unused'), self.root)
+                self.assertEqual(maintenance.verification_reason(str(error.exception)),
+                                 'sdk-framework-reference-framework-unsupported')
 
     def test_complete_sdk_dependency_groups_are_required_even_when_archives_agree(self):
         expected = [{'framework': 'net8.0', 'dependencies': [
@@ -769,7 +869,8 @@ class MaintenanceContracts(unittest.TestCase):
         policy = {'id': 'Elsa.Studio.Fixture', 'assembly_name': 'Elsa.Studio.Fixture',
                   'frameworks': ['net8.0', 'net9.0'], 'include_build_output': False, 'symbols': True, 'satellites': [],
                   'expected_dependency_groups': expected, 'sdk_nuspec_sha256': 'a' * 64,
-                  'expected_symbol_dependency_groups': expected, 'sdk_symbol_nuspec_sha256': 'b' * 64}
+                  'expected_symbol_dependency_groups': expected, 'sdk_symbol_nuspec_sha256': 'b' * 64,
+                  'expected_framework_reference_groups': [], 'expected_symbol_framework_reference_groups': []}
         for mutation in ['baseline', 'missing-Elsa', 'missing-framework', 'third-party-version', 'asset-metadata',
                          'missing-expected', 'missing-symbol-expected', 'changed-symbol-expected']:
             groups = baseline
@@ -803,7 +904,8 @@ class MaintenanceContracts(unittest.TestCase):
         groups = [{'framework': 'net8.0', 'dependencies': [
             {'id': 'Elsa.Api.Client', 'version': '3.8.4', 'include': '', 'exclude': ''}]}]
         return {'expected_dependency_groups': groups, 'sdk_nuspec_sha256': 'a' * 64,
-                'expected_symbol_dependency_groups': groups, 'sdk_symbol_nuspec_sha256': 'b' * 64}
+                'expected_symbol_dependency_groups': groups, 'sdk_symbol_nuspec_sha256': 'b' * 64,
+                'expected_framework_reference_groups': [], 'expected_symbol_framework_reference_groups': []}
 
     def test_package_identity_dependencies_and_complete_inventory_are_verified(self):
         policy = [{'id': 'Elsa.Studio.Fixture', 'assembly_name': 'Elsa.Studio.Fixture',

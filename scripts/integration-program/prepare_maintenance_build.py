@@ -15,7 +15,7 @@ import tempfile
 import xml.etree.ElementTree as ET
 import zipfile
 
-from prove_consolidated_packages import (archive_names, capture_compiler_evidence, dependency_groups,
+from prove_consolidated_packages import (archive_names, capture_compiler_evidence, dependency_groups, framework_reference_groups,
     generated_family, metadata, only_abstract_methods, read_staged_nuspecs, require, restored_archive, restored_assets,
     run, source_url, verify_external_document, verify_generator_identity)
 
@@ -137,6 +137,9 @@ VERIFICATION_REASONS = {
     'Missing/duplicate test project-framework results': 'test-cells-incomplete-or-duplicate',
     'SDK dependency metadata missing': 'sdk-dependency-metadata-missing',
     'SDK dependency groups disagree with package': 'sdk-dependency-groups-mismatch',
+    'SDK framework reference metadata missing': 'sdk-framework-reference-metadata-missing',
+    'SDK framework reference groups disagree with package': 'sdk-framework-reference-groups-mismatch',
+    'SDK framework reference framework unsupported': 'sdk-framework-reference-framework-unsupported',
     'Source producer evidence rejected': 'source-producer-unverified',
 }
 
@@ -343,6 +346,7 @@ def stage_maintenance_metadata(source: Path, row: dict, inventory: list[dict], v
 def public_inventory(inventory: list[dict]) -> list[dict]:
     keys = ('id', 'project', 'assembly_name', 'include_build_output', 'frameworks', 'symbols', 'satellites',
             'source_commit', 'expected_dependency_groups', 'expected_symbol_dependency_groups',
+            'expected_framework_reference_groups', 'expected_symbol_framework_reference_groups',
             'sdk_nuspec_sha256', 'sdk_symbol_nuspec_sha256')
     return [{**{key: policy[key] for key in keys if key in policy},
              'restore_inputs': [{'framework': item['framework'], 'sha256': item['sha256']}
@@ -435,6 +439,11 @@ def verify_sdk_dependencies(nuspec: ET.Element, policy: dict, *, symbols: bool =
     require(isinstance(groups, list) and isinstance(checksum, str) and
             re.fullmatch(r'[0-9a-f]{64}', checksum) is not None, 'SDK dependency metadata missing')
     require(dependency_groups(nuspec) == groups, 'SDK dependency groups disagree with package')
+    references = policy.get(f'expected_{suffix}framework_reference_groups')
+    require(isinstance(references, list), 'SDK framework reference metadata missing')
+    require(framework_reference_groups(nuspec) == references, 'SDK framework reference groups disagree with package')
+    require(all(group['framework'] in policy['frameworks'] for group in references),
+            'SDK framework reference framework unsupported')
 
 
 def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version: str, source: Path,
