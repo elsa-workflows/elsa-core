@@ -28,7 +28,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: product-release-plan-${{ github.ref }}
+  group: product-release-plan-${{ github.ref }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || 'pull-request' }}
   cancel-in-progress: true
 
 env:
@@ -39,7 +39,6 @@ env:
 jobs:
   select:
     runs-on: ubuntu-24.04
-    if: github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main'
     outputs:
       matrix: ${{ steps.cells.outputs.matrix }}
     steps:

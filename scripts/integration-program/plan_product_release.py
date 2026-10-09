@@ -534,7 +534,7 @@ def main() -> int:
         try:
             semantics = build_helper(Path(temporary))
             plan = execute(args.controller.resolve(), args.product, args.line, args.version, args.output.resolve(), semantics)
-        except (ValueError, OSError, KeyError, subprocess.TimeoutExpired):
+        except (ValueError, OSError, KeyError, subprocess.TimeoutExpired, subprocess.CalledProcessError):
             failure = {'schema': 1, 'status': 'incomplete', 'product': args.product, 'line': args.line,
                 'requested_version_input': args.version, 'observed_at': now(), 'eligible': False,
                 'category': 'plan_input_or_metadata_unavailable', 'published': False,

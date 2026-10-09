@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 import subprocess
 import tempfile
+import threading
 import unittest
 from unittest.mock import patch
 
@@ -215,10 +216,43 @@ class ProductReleasePlanTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'untracked_project_reference'):
             self.plan()
 
+    def test_conditional_framework_references_are_retained_unioned_and_validated(self):
+        with tempfile.TemporaryDirectory(dir=self.temporary.name) as directory:
+            source = Path(directory)
+            project = source / 'Example.csproj'
+            project.write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup>'
+                '<TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks></PropertyGroup>'
+                '<ItemGroup><PackageReference Include="Shared" Version="1.0"/></ItemGroup>'
+                '<ItemGroup Condition="\'$(TargetFramework)\' != \'net10.0\'">'
+                '<PackageReference Include="Conditional" Version="2.0" PrivateAssets="all"/>'
+                '<ProjectReference Include="Missing.csproj"/></ItemGroup></Project>')
+            result = metadata.evaluate_project(source, project.name, '3.8.5')
+            self.assertEqual([{'id': 'Conditional'}, {'id': 'Shared'}], result['package_references'])
+            self.assertEqual([{'target_project': 'Missing.csproj'}], result['project_references'])
+            for framework in ('net8.0', 'net9.0'):
+                refs = result['references_by_framework'][framework]
+                self.assertEqual(['Conditional', 'Shared'], [row['id'] for row in refs['package_references']])
+                self.assertEqual('all', refs['package_references'][0]['PrivateAssets'])
+            self.assertEqual(['Shared'], [row['id'] for row in result['references_by_framework']['net10.0']['package_references']])
+            self.assertEqual([], result['references_by_framework']['net10.0']['project_references'])
+            with self.assertRaisesRegex(ValueError, 'untracked_project_reference'):
+                metadata.validate_project_references([result])
+            self.assertFalse(list(source.rglob('*.dll')))
+
+    def test_same_framework_casefold_duplicate_reference_is_ambiguous(self):
+        with tempfile.TemporaryDirectory(dir=self.temporary.name) as directory:
+            source = Path(directory)
+            project = source / 'Example.csproj'
+            project.write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net8.0</TargetFramework>'
+                '</PropertyGroup><ItemGroup><PackageReference Include="Shared" Version="1.0"/>'
+                '<PackageReference Include="shared" Version="2.0"/></ItemGroup></Project>')
+            with self.assertRaisesRegex(ValueError, 'metadata_duplicate_package_reference'):
+                metadata.evaluate_project(source, project.name, '3.8.5')
+
     def test_full_inventory_retains_ownership_exclusions_and_strips_private_state(self):
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory)
-            identifiers = list(metadata.CANONICAL_OWNERS) + ['Elsa.Secrets.Api']
+            identifiers = list(metadata.CANONICAL_OWNERS) + ['Elsa.Secrets.Api', 'Elsa.Secrets.Core']
             projects = [{**self.project, 'path': f'src/P{index}/P{index}.csproj', 'package_id': identifier,
                 'properties': {'PackageVersion': '3.8.5', 'IncludeBuildOutput': 'true', 'IncludeSymbols': 'true',
                     'SymbolPackageFormat': 'snupkg', 'RepositoryUrl': 'https://github.com/elsa-workflows/elsa-core',
@@ -235,13 +269,19 @@ class ProductReleasePlanTests(unittest.TestCase):
             workflow = source / '.github/maintenance-inert-workflows/packages.yml.source'
             workflow.parent.mkdir(parents=True)
             workflow.write_text('Compile+Test+Pack')
+            staged, writer_thread = [], threading.get_ident()
+            def stage(root, project, version, destination):
+                self.assertEqual(writer_thread, threading.get_ident())
+                staged.append(project['path'])
+                return {'status': 'observed', '_assets': {'private': '/private/assets'}}
             with patch.object(metadata, 'git', return_value='\n'.join(row['path'] for row in projects)), \
                  patch.object(metadata, 'evaluate_project', side_effect=lambda root, path, version: next(row for row in projects if row['path'] == path)), \
-                 patch.object(metadata, 'stage_project', return_value={'status': 'observed', '_assets': {'private': '/private/assets'}}):
-                inventory = metadata.evaluate_inventory(source, self.binding, '3.8.5', source / 'private', workers=1)
-            self.assertEqual(6, len(inventory['projects']))
+                 patch.object(metadata, 'stage_project', side_effect=stage):
+                inventory = metadata.evaluate_inventory(source, self.binding, '3.8.5', source / 'private', workers=4)
+            self.assertEqual(7, len(inventory['projects']))
             self.assertEqual(5, len(inventory['excluded']))
-            self.assertEqual(['Elsa.Secrets.Api'], [row['id'] for row in inventory['selected']])
+            self.assertEqual(['Elsa.Secrets.Api', 'Elsa.Secrets.Core'], [row['id'] for row in inventory['selected']])
+            self.assertEqual([row['project'] for row in inventory['selected']], staged)
             public = metadata.public_inventory(inventory)
             self.assertNotIn('/private/', json.dumps(public))
             self.assertNotIn('properties', public['projects'][0])
@@ -566,6 +606,28 @@ class HistoricalStudioNpmIntentTests(unittest.TestCase):
 
 
 class ProductReleaseCliFailureTests(unittest.TestCase):
+    def test_git_called_process_error_produces_path_free_incomplete_receipt_without_build(self):
+        with tempfile.TemporaryDirectory() as directory:
+            parent = Path(directory)
+            sentinel = parent / 'sentinel.txt'
+            sentinel.write_text('retained')
+            output = parent / 'output'
+            stdout, stderr = io.StringIO(), io.StringIO()
+            failure = subprocess.CalledProcessError(128, ['git', '-C', '/private/source', 'rev-parse'],
+                output='/private/output', stderr='/private/stderr')
+            with patch('sys.argv', ['planner', '--product', 'core', '--line', '3.8', '--version', '3.8.5',
+                                   '--output', str(output)]), patch.object(planner, 'build_helper', return_value=object()), \
+                 patch.object(metadata.maintenance, 'git', side_effect=failure), \
+                 redirect_stdout(stdout), redirect_stderr(stderr):
+                self.assertEqual(1, planner.main())
+            self.assertEqual('', stderr.getvalue())
+            self.assertNotIn('/private/', stdout.getvalue())
+            receipt = json.loads((output / 'plan.json').read_text())
+            self.assertEqual('incomplete', receipt['status'])
+            self.assertFalse(receipt['eligible'])
+            self.assertNotIn('/private/', json.dumps(receipt))
+            self.assertEqual('retained', sentinel.read_text())
+
     def test_failure_receipt_io_is_path_free_and_preserves_sentinel_without_build(self):
         for regular_file_parent in (True, False):
             with self.subTest(regular_file_parent=regular_file_parent), tempfile.TemporaryDirectory() as directory:

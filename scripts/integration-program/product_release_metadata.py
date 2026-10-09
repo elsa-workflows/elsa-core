@@ -124,22 +124,43 @@ def metadata_command(project: str, version: str) -> list[str]:
 
 def evaluate_project(source: Path, project: str, version: str) -> dict:
     values = json.loads(run(metadata_command(project, version) +
-        ['-getProperty:' + PROPERTIES, '-getItem:ProjectReference,PackageReference'], source,
+        ['-getProperty:' + PROPERTIES], source,
         env=maintenance.build_environment()))
     properties = values['Properties']
     require(properties['NETCoreSdkVersion'] == SDK, 'metadata_sdk_identity')
     frameworks = (properties['TargetFrameworks'] or properties['TargetFramework']).split(';')
     require(all(frameworks) and len(set(frameworks)) == len(frameworks), 'metadata_framework_identity')
-    references = []
-    for item in values['Items']['ProjectReference']:
-        target = (source / project).parent / item['Identity'].replace('\\', '/')
-        require(target.resolve().is_relative_to(source.resolve()), 'metadata_project_reference')
-        references.append({'target_project': target.resolve().relative_to(source.resolve()).as_posix()})
+    by_framework = {}
+    project_union, package_union = {}, {}
+    for framework in frameworks:
+        inner = json.loads(run(metadata_command(project, version) + [f'-p:TargetFramework={framework}',
+            '-getProperty:PackageId,TargetFramework,NETCoreSdkVersion', '-getItem:ProjectReference,PackageReference'],
+            source, env=maintenance.build_environment()))
+        require(inner['Properties'] == {'PackageId': properties['PackageId'], 'TargetFramework': framework,
+                                       'NETCoreSdkVersion': SDK}, 'metadata_framework_identity')
+        references, packages = {}, {}
+        for item in inner['Items']['ProjectReference']:
+            target = (source / project).parent / item['Identity'].replace('\\', '/')
+            require(target.resolve().is_relative_to(source.resolve()), 'metadata_project_reference')
+            relative = target.resolve().relative_to(source.resolve()).as_posix()
+            require(relative not in references, 'metadata_duplicate_project_reference')
+            references[relative] = {'target_project': relative}
+        for item in inner['Items']['PackageReference']:
+            identifier = item['Identity']
+            require(identifier.casefold() not in packages, 'metadata_duplicate_package_reference')
+            packages[identifier.casefold()] = {'id': identifier,
+                **{name: item.get(name, '') for name in ('Version', 'VersionOverride', 'PrivateAssets', 'IncludeAssets', 'ExcludeAssets')}}
+        by_framework[framework] = {'project_references': [references[key] for key in sorted(references)],
+                                  'package_references': [packages[key] for key in sorted(packages)]}
+        project_union.update(references)
+        for key, package in packages.items():
+            package_union.setdefault(key, {'id': package['id']})
     return {'path': project, 'package_id': properties['PackageId'],
             'is_packable': properties['IsPackable'].lower() == 'true',
             'is_test_project': properties['IsTestProject'].lower() == 'true',
-            'target_frameworks': frameworks, 'project_references': references,
-            'package_references': [{'id': item['Identity']} for item in values['Items']['PackageReference']],
+            'target_frameworks': frameworks, 'references_by_framework': by_framework,
+            'project_references': [project_union[key] for key in sorted(project_union)],
+            'package_references': [package_union[key] for key in sorted(package_union)],
             'properties': properties}
 
 
@@ -262,11 +283,10 @@ def evaluate_inventory(source: Path, binding: dict, version: str, private: Path,
                 'repository_url': values['RepositoryUrl'], 'project_url': values['PackageProjectUrl']})
     require(selected and len({row['id'].casefold() for row in selected}) == len(selected), 'inventory_package_identity')
     by_path = {row['path']: row for row in projects}
-    with ThreadPoolExecutor(max_workers=workers) as pool:
-        staged = list(pool.map(lambda row: stage_project(source, by_path[row['project']], version,
-                           private / sha256(row['project'].encode())[:16]), selected))
-    for row, metadata in zip(selected, staged):
-        row['metadata'] = metadata
+    # Recursive restores share referenced projects' obj outputs; stage one at a time.
+    for row in selected:
+        row['metadata'] = stage_project(source, by_path[row['project']], version,
+                                       private / sha256(row['project'].encode())[:16])
     graph = InventoryGraph({'repositories': {'source': {'slug': 'source'}}, 'project_inventory': {'source': projects}})
     closure = graph.affected_tests([('source', row['project']) for row in selected])
     require(not list(source.glob('**/bin/**/*.dll')) and not list(source.glob('**/*.nupkg')), 'product_build_forbidden')

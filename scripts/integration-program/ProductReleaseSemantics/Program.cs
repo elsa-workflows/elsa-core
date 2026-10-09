@@ -48,7 +48,9 @@ static object Feeds(JsonElement request)
     var settings = Settings.LoadSpecificSettings(Path.GetDirectoryName(config)!, Path.GetFileName(config));
     var sources = new PackageSourceProvider(settings).LoadPackageSources().Where(source => source.IsEnabled).ToArray();
     if (sources.Select(source => source.Name.ToLowerInvariant()).Distinct().Count() != sources.Length)
+    {
         throw new InvalidDataException("Duplicate source identity");
+    }
     var mapping = PackageSourceMapping.GetPackageSourceMapping(settings);
     return new { sources = sources.Select(source => new { name = source.Name, url = source.Source }).ToArray(),
         mapping_enabled = mapping.IsEnabled,
@@ -70,7 +72,9 @@ static object History(JsonElement request)
     var requested = NuGetVersion.Parse(request.GetProperty("requested").GetString()!);
     var line = request.GetProperty("line").GetString()!;
     if ($"{requested.Major}.{requested.Minor}" != line)
+    {
         throw new InvalidDataException("Wrong line");
+    }
     var observed = request.GetProperty("versions").EnumerateArray().Select(value => NuGetVersion.Parse(value.GetString()!)).ToArray();
     var comparer = VersionComparer.VersionRelease;
     var duplicate = observed.Distinct(comparer).Count() != observed.Length;
@@ -96,7 +100,9 @@ static object Framework(JsonElement value)
     var consumer = ParseFramework(value.GetProperty("consumer").GetString()!);
     var candidates = value.GetProperty("candidates").EnumerateArray().Select(item => ParseFramework(item.GetString()!)).ToArray();
     if (consumer.IsUnsupported || candidates.Any(item => item.IsUnsupported) || candidates.Distinct().Count() != candidates.Length)
+    {
         throw new InvalidDataException("Invalid or duplicate framework");
+    }
     var nearest = new FrameworkReducer().GetNearest(consumer, candidates);
     return new { consumer = consumer.GetShortFolderName(), nearest = nearest?.GetShortFolderName(),
         compatible = nearest is not null && DefaultCompatibilityProvider.Instance.IsCompatible(consumer, nearest) };
@@ -111,26 +117,34 @@ static object Nuspec(JsonElement value)
     var metadata = document.Root!.Elements().Single(element => element.Name.LocalName == "metadata");
     var containers = metadata.Elements().Where(element => element.Name.LocalName == "dependencies").ToArray();
     if (containers.Length > 1)
+    {
         throw new InvalidDataException("Duplicate dependency container");
+    }
     var rawGroups = containers.SelectMany(element => element.Elements().Where(child => child.Name.LocalName == "group")).ToArray();
     var flat = containers.SelectMany(element => element.Elements().Where(child => child.Name.LocalName == "dependency")).ToArray();
     if (rawGroups.Length > 0 && flat.Length > 0 ||
         flat.Select(dependency => ((string?)dependency.Attribute("id") ?? "").ToLowerInvariant()).Distinct().Count() != flat.Length ||
         containers.Any(container => container.Elements().Any(child => child.Name.LocalName is not ("group" or "dependency"))))
+    {
         throw new InvalidDataException("Ambiguous dependency structure");
+    }
     // NuspecReader can merge groups/dependencies. Reject ambiguity before that normalization.
     if (rawGroups.Select(group => ParseFramework((string?)group.Attribute("targetFramework") ?? "")).Distinct().Count() != rawGroups.Length ||
         rawGroups.Any(group => group.Elements().Any(child => child.Name.LocalName != "dependency") ||
             group.Elements().Select(dependency => ((string?)dependency.Attribute("id") ?? "").ToLowerInvariant())
             .Distinct().Count() != group.Elements().Count()))
+    {
         throw new InvalidDataException("Duplicate dependency identity");
+    }
     using var stream = new MemoryStream(Encoding.UTF8.GetBytes(xml));
     var reader = new NuspecReader(stream);
     var groups = reader.GetDependencyGroups(true).ToArray();
     if (groups.Select(group => group.TargetFramework).Distinct().Count() != groups.Length ||
         groups.Any(group => group.TargetFramework.IsUnsupported ||
             group.Packages.Select(package => package.Id.ToLowerInvariant()).Distinct().Count() != group.Packages.Count()))
+    {
         throw new InvalidDataException("Duplicate dependency identity");
+    }
     return new { id = reader.GetId(), version = reader.GetVersion().ToNormalizedString(),
         groups = groups.Select(group => new { framework = group.TargetFramework.GetShortFolderName(),
             dependencies = group.Packages.Select(package => new { id = package.Id,
