@@ -1,0 +1,120 @@
+{
+  "remote_refs_created": false,
+  "schema": 1,
+  "sources": [
+    {
+      "commit": "971a8ac372866b0a8deccd42d9cae33a972a7bf9",
+      "line": "3.8",
+      "moves": [
+        {
+          "blob": "f5f80a5d39a33f5cc3cb7bf84a29e40af01c1e7c",
+          "from": ".github/workflows/copilot-setup-steps.yml.yml",
+          "mode": "100644",
+          "to": ".github/maintenance-inert-workflows/copilot-setup-steps.yml.yml.source"
+        },
+        {
+          "blob": "336d1f0ccda1152645331adb30940bf80f3c2d1a",
+          "from": ".github/workflows/packages.yml",
+          "mode": "100644",
+          "to": ".github/maintenance-inert-workflows/packages.yml.source"
+        }
+      ],
+      "original_tree": "778d557aaf1c601e17aaab189d371fee0f2c7f32",
+      "parent": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+      "patch": "maintenance-containment/studio-3.8.patch",
+      "patch_sha256": "7bbd7ff86eda3b0e5af4c9b3df62c0d7654ecb133d80b3db37911143fb6885f4",
+      "product": "studio",
+      "tree": "8fcf35d27f7281c3db412b0dfdc1dfe7f71de55a"
+    },
+    {
+      "commit": "27fbf412cae3a8f0f4ebf8513bc98aa3cc179638",
+      "line": "3.9",
+      "moves": [
+        {
+          "blob": "f5f80a5d39a33f5cc3cb7bf84a29e40af01c1e7c",
+          "from": ".github/workflows/copilot-setup-steps.yml.yml",
+          "mode": "100644",
+          "to": ".github/maintenance-inert-workflows/copilot-setup-steps.yml.yml.source"
+        },
+        {
+          "blob": "24bc4df9c60c0a750b97383fcbddbc4b9c810e9c",
+          "from": ".github/workflows/packages.yml",
+          "mode": "100644",
+          "to": ".github/maintenance-inert-workflows/packages.yml.source"
+        },
+        {
+          "blob": "9661694232b819dfad9af03ba0769b73c55136c8",
+          "from": ".github/workflows/pr.yml",
+          "mode": "100644",
+          "to": ".github/maintenance-inert-workflows/pr.yml.source"
+        }
+      ],
+      "original_tree": "3d6f0dddbb1296c50755b051fced4f34eb915dab",
+      "parent": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+      "patch": "maintenance-containment/studio-3.9.patch",
+      "patch_sha256": "c912537d2503b9f170bb5bc75142e341190899b5cf34d6455b48a854e64f5b1d",
+      "product": "studio",
+      "tree": "1986aac411a9263192540fb8495272c811780e74"
+    },
+    {
+      "commit": "b2ccd4f8a4b024732f263bc76d9be0a2418cd03e",
+      "line": "3.8",
+      "moves": [
+        {
+          "blob": "d76e7229e523afa8da884cfe7003a72999e7f128",
+          "from": ".github/workflows/copilot-setup-steps.yml.yml",
+          "mode": "100644",
+          "to": ".github/maintenance-inert-workflows/copilot-setup-steps.yml.yml.source"
+        },
+        {
+          "blob": "d103321434de117dab20ec0b497007a14fc204a4",
+          "from": ".github/workflows/packages.yml",
+          "mode": "100644",
+          "to": ".github/maintenance-inert-workflows/packages.yml.source"
+        },
+        {
+          "blob": "743b29cd2cbe47815f61ccfa2ee55ba0405870aa",
+          "from": ".github/workflows/pr.yml",
+          "mode": "100644",
+          "to": ".github/maintenance-inert-workflows/pr.yml.source"
+        }
+      ],
+      "original_tree": "5671b100c24afca1b36c787301072f38cb7bf6d3",
+      "parent": "154ba15fb4da85b4bebecfbe43639579cbda1d0d",
+      "patch": "maintenance-containment/extensions-3.8.patch",
+      "patch_sha256": "c912537d2503b9f170bb5bc75142e341190899b5cf34d6455b48a854e64f5b1d",
+      "product": "extensions",
+      "tree": "76b2cc6e8d0ac598f110def75e2a4b174bae70ac"
+    },
+    {
+      "commit": "09ab8cefe2a3b24bfe66a6b3e53db95ae91c172d",
+      "line": "3.9",
+      "moves": [
+        {
+          "blob": "d76e7229e523afa8da884cfe7003a72999e7f128",
+          "from": ".github/workflows/copilot-setup-steps.yml.yml",
+          "mode": "100644",
+          "to": ".github/maintenance-inert-workflows/copilot-setup-steps.yml.yml.source"
+        },
+        {
+          "blob": "b51de385b4b80ed2c32e54c0da6b1a179a6ea364",
+          "from": ".github/workflows/packages.yml",
+          "mode": "100644",
+          "to": ".github/maintenance-inert-workflows/packages.yml.source"
+        },
+        {
+          "blob": "ce378bb87e76671696098c1cc81eb4a4394161df",
+          "from": ".github/workflows/pr.yml",
+          "mode": "100644",
+          "to": ".github/maintenance-inert-workflows/pr.yml.source"
+        }
+      ],
+      "original_tree": "31e682e6b257772cddae6d71bb9375bb98b94322",
+      "parent": "89d4eb9b739ae135604aac2a1de18653a289bdb0",
+      "patch": "maintenance-containment/extensions-3.9.patch",
+      "patch_sha256": "c912537d2503b9f170bb5bc75142e341190899b5cf34d6455b48a854e64f5b1d",
+      "product": "extensions",
+      "tree": "a1341034483e455124ce7c646d35cc8e3452bc95"
+    }
+  ]
+}

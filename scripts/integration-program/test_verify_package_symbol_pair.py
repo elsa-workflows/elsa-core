@@ -6,6 +6,7 @@ opt-in, discovery skips SDK work so the cheap local contracts stay lightweight.
 import hashlib
 import json
 import os
+import shutil
 from pathlib import Path
 import struct
 import subprocess
@@ -51,6 +52,15 @@ class RealSymbolInspectorTests(unittest.TestCase):
         cls.assembly = cls.root / "output/Fixture.dll"
         cls.symbols = cls.root / "output/Fixture.pdb"
         cls.pdb = cls.symbols.read_bytes()
+        cls.interface_root = cls.root / "interface"
+        cls.interface_root.mkdir()
+        (cls.interface_root / "Fixture.cs").write_text("public interface IFixture { void Run(); }\n")
+        (cls.interface_root / "Fixture.csproj").write_text(project.read_text().replace(
+            "<EmbedAllSources>true</EmbedAllSources>", "<EmbedAllSources>false</EmbedAllSources>"))
+        shutil.copyfile(cls.root / "sourcelink.json", cls.interface_root / "sourcelink.json")
+        subprocess.run(["dotnet", "build", str(cls.interface_root / "Fixture.csproj"), "--configuration", "Release",
+                        "--output", str(cls.interface_root / "output"), "--nologo"], cwd=cls.interface_root,
+                       env=cls.environment, check=True, capture_output=True, timeout=120)
         # Read the compiler's metadata ID as an independent field oracle.
         version_size = struct.unpack_from("<I", cls.pdb, 12)[0]
         position = (16 + version_size + 3) & ~3
@@ -93,6 +103,10 @@ class RealSymbolInspectorTests(unittest.TestCase):
         self.assertNotEqual(symbol["pdb_sha256"], checksum)
         details = value["details"]
         self.assertEqual(details["source_link"], {"documents": {"/_/*": "https://example.invalid/fixture/*"}})
+        self.assertEqual(details["executable_method_bodies"], 1)
+        self.assertEqual(details["nonabstract_methods_without_body"], 0)
+        self.assertEqual(details["native_or_external_methods"], 0)
+        self.assertIs(details["reference_assembly"], False)
         document = next(row for row in details["documents"] if row["path"] == "/_/Fixture.cs")
         self.assertEqual(document["checksum"], hashlib.sha256(self.source).hexdigest())
         self.assertEqual(document["embedded_checksum"], document["checksum"])
@@ -100,6 +114,27 @@ class RealSymbolInspectorTests(unittest.TestCase):
         self.assertEqual(legacy.returncode, 0, legacy.stderr)
         self.assertEqual(json.loads(legacy.stdout), details)
         self.assertEqual(self.inspect(mode=None).returncode, 0)
+
+    def test_real_interface_pair_reports_no_executable_bodies(self):
+        directory = self.interface_root / "output"
+        result = subprocess.run(["dotnet", str(self.helper), str(directory / "Fixture.dll"),
+                                 str(directory / "Fixture.pdb"), "--inspect-symbols"], cwd=self.interface_root,
+                                env=self.environment, capture_output=True, text=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        value = json.loads(result.stdout)
+        details = value["details"]
+        # This SDK emits a declaration document even without executable bodies;
+        # the retained original DropIns pairs exercise the empty-document case.
+        self.assertEqual(details["documents"], [{
+            "path": "/_/Fixture.cs", "algorithm": "sha256",
+            "checksum": hashlib.sha256((self.interface_root / "Fixture.cs").read_bytes()).hexdigest(),
+            "embedded_checksum": None}])
+        self.assertEqual(details["executable_method_bodies"], 0)
+        self.assertEqual(details["nonabstract_methods_without_body"], 0)
+        self.assertEqual(details["native_or_external_methods"], 0)
+        self.assertGreater(details["nonmodule_types"], 0)
+        self.assertIs(details["reference_assembly"], False)
+        self.assertEqual(value["symbol"]["declared_checksum"], value["symbol"]["normalized_checksum"])
 
     def test_altered_pdb_is_rejected_by_real_checksum_verification(self):
         directory = self.root / "altered"

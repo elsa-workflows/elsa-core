@@ -45,15 +45,22 @@ def require(condition: bool, message: str) -> None:
 
 
 def run(command: list[str], cwd: Path, *, timeout: int = 300, log: Path | None = None,
-        env: dict | None = None) -> str:
+        env: dict | None = None, outcome: dict | None = None) -> str:
     def execute(stream=None):
-        process = subprocess.Popen(command, cwd=cwd, env=env, text=True,
-                                   stdout=stream if stream else subprocess.PIPE,
-                                   stderr=subprocess.STDOUT if stream else subprocess.PIPE,
-                                   start_new_session=os.name == "posix")
+        if outcome is not None:
+            outcome.update(status="starting", exit_code=None)
+        try:
+            process = subprocess.Popen(command, cwd=cwd, env=env, text=True,
+                                       stdout=stream if stream else subprocess.PIPE,
+                                       stderr=subprocess.STDOUT if stream else subprocess.PIPE,
+                                       start_new_session=os.name == "posix")
+        except OSError:
+            if outcome is not None:
+                outcome.update(status="start-failed")
+            raise
         try:
             stdout, stderr = process.communicate(timeout=timeout)
-        except BaseException:
+        except BaseException as error:
             if process.poll() is None:
                 if os.name == "posix":
                     try:
@@ -63,7 +70,12 @@ def run(command: list[str], cwd: Path, *, timeout: int = 300, log: Path | None =
                 else:
                     process.kill()
                 process.communicate()
+            if outcome is not None:
+                outcome.update(status="timed-out" if isinstance(error, subprocess.TimeoutExpired) else "interrupted",
+                               exit_code=process.returncode)
             raise
+        if outcome is not None:
+            outcome.update(status="exited", exit_code=process.returncode)
         require(process.returncode == 0,
                 f"Command failed ({process.returncode}): {command!r}\n" +
                 (f"See {log}" if stream else f"{stdout}\n{stderr}"))
@@ -729,7 +741,8 @@ def package_tool(assets: dict, identifier: str, version: str, entry: str, *, tar
             "checked_archive_contents": checked}
 
 
-def capture_compiler_evidence(root: Path, row: dict, framework: str, resolved: dict, cache: dict | None = None) -> dict:
+def capture_compiler_evidence(root: Path, row: dict, framework: str, resolved: dict, cache: dict | None = None,
+                              *, physical_families: tuple | None = None) -> dict:
     cache = cache if cache is not None else {}
     properties = resolved["Properties"]
     sdk = Path(properties["MSBuildToolsPath"]).resolve()
@@ -787,7 +800,8 @@ def capture_compiler_evidence(root: Path, row: dict, framework: str, resolved: d
                 record = {"kind": "framework", "package_id": identifier, "package_version": version,
                           "tool_path": str(path), "content_sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
         evidence["tools"][family] = record
-    for _, family in PHYSICAL_GENERATED_PROJECTS.get((row["id"], row["project"]), ()):
+    families = PHYSICAL_GENERATED_PROJECTS.get((row["id"], row["project"]), ()) if physical_families is None else physical_families
+    for family in dict.fromkeys(family for _, family in families):
         identifier, entry = PHYSICAL_GENERATORS[family]
         require("RuntimeIdentifier" in properties, "Missing resolved RuntimeIdentifier for physical generator target selection")
         target_key = framework + (f"/{properties['RuntimeIdentifier']}" if properties["RuntimeIdentifier"] else "")
