@@ -27,7 +27,7 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "postinstall": "npm run copy:elsa-studio-wasm",
-    "copy:elsa-studio-wasm": "cp -r ../../node_modules/@elsa-workflows/elsa-studio-wasm/_content public/ && cp -r ../../node_modules/@elsa-workflows/elsa-studio-wasm/_framework public/ && cp -r ../../node_modules/@elsa-workflows/elsa-studio-wasm/appsettings.json public/"
+    "copy:elsa-studio-wasm": "node -e \"const fs=require('node:fs'),path=require('node:path'),source=path.dirname(require.resolve('@elsa-workflows/elsa-studio-wasm/package.json'));fs.mkdirSync('public',{recursive:true});for(const name of ['_content','_framework','appsettings.json'])fs.cpSync(path.join(source,name),path.join('public',name),{recursive:true});\""
   },
   "dependencies": {
     "@elsa-workflows/elsa-studio-wasm": "^3.4.0-rc1",
