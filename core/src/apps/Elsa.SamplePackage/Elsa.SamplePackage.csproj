@@ -6,7 +6,8 @@
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <Version>1.0.1</Version>
+        <Version>$([System.Environment]::GetEnvironmentVariable('VERSION'))</Version>
+        <Version Condition="'$(Version)' == ''">1.0.1</Version>
         <IsPackable>true</IsPackable>
     </PropertyGroup>
 
