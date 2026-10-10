@@ -64,15 +64,20 @@ You keep a veto at every release step. Nothing ships until a veto window has pas
 | **Triage** | every 6h, ≤30 issues per run, oldest untriaged first | labels, milestones, one triage comment per issue, closures with evidence | code, branches, tags, workflows |
 | **Deliver** | every 2h, while no claim is active; one issue per run | branch, PR, merge behind the machine merge gate (§8) | milestone scope, releases |
 | **Readiness** | daily | control-issue report, release proposals, honoring `/hold` | code, issue labels |
-| **Release-train** | an accepted proposal whose veto window has expired | tags, `release/<minor>` branches, the version-bump PR, workflow dispatches, the GitHub release body | issue and PR bodies, except through the isolated notes step (§9) |
+| **Release-train** | an accepted proposal whose veto window has expired | tags, `release/<minor>` branches, the version-bump PR, `packages.yml` dispatches (see below), the GitHub release body | issue and PR bodies, except through the isolated notes step (§9) |
 
-**Control issue.** One pinned issue titled "Auto-evolve control" acts as ledger, lock and veto channel.
+**Control issue.** One pinned issue titled "Auto-evolve control" acts as ledger and veto channel. Locks do not live there, because editing an issue body is not atomic.
 
-**Locking.**
-- A routine claims a concern by editing a fenced JSON block in the control issue's body. The block holds `{concern, routine, runner, runId, expiresAt}`.
-- After editing, the routine re-reads the body. If its claim is not the one present, it backs off.
-- A claim expires after 3h.
-- Every routine reads the control issue before any write.
+**Locking.** Each concern has one lock ref, `refs/heads/auto-evolve/locks/<concern>`. The ref points to an empty-tree commit whose message holds `{concern, routine, runner, runId, expiresAt}`. GitHub's ref API provides the atomicity:
+- **Acquire** creates the ref. Creation fails with 422 when the ref already exists, so only one run can win.
+- **Take over an expired lock** with a fast-forward-only update (`force: false`) to a new commit whose parent is the expired lock commit. Two contenders both build on the same parent, so only the first update fast-forwards; the second is rejected as non-fast-forward.
+- **Renew** works the same way, from the owner's current commit.
+- **Release** fast-forwards to a commit marked `released`. The ref is never deleted, because an unconditional delete could remove a lock that someone else has just taken over.
+- A lock expires after 3h.
+- Before every externally visible write, the owner checks that the ref still points to its own commit and that at least 10 minutes of the lease remain. If either check fails, it stops writing and exits.
+- `scripts/auto_evolve/lock.py` implements all of this, with tests that model concurrent contenders.
+
+**Package dispatch contract.** Release-train dispatches `packages.yml` on the release tag ref, never on a branch. 3.10.x tags set `publish_preview_feedz: true`, as long as the Feedz-only gate for 3.10.x stands. Every other release tag sets `publish_nuget: true`. Lifting the 3.10.x gate in Phase 0 updates `docs/integration-program/consolidation/package-publisher-gates.md` and the lockstep ADR in the same PR.
 
 **Reuse:**
 - **Deliver** ports the deliver-issue pipeline and the board-* agents into the repo as neutral roles (§5).
@@ -148,9 +153,10 @@ No routine logic may be added to a shim. A change in behavior is a PR to the ski
 
 **Assignment rules:**
 - Compatible, well-scoped work goes to the current minor while it has fewer than 60 open issues. Overflow goes to the next minor.
-- A `breaking` change goes to a minor and needs migration notes in the PR before merge.
+- A `breaking` change (removing or changing a public API, or a destructive data migration) is not allowed in 3.x, per principle 6 in `.github/quality/PRINCIPLES.md`. Triage puts it in `Backlog` with `needs-decision` for the next major. Within 3.x, the replacement API is added and the old one deprecated instead.
+- Triage never moves an open `release-blocker` or `severity:critical/high` bug out of the current milestone. Only you can, with a comment that gives the reason.
 - A `severity:critical/high` bug that exists on the latest release line also gets `backport:<latest>`.
-- An unverified security report gets no public detail. Triage moves it to a private advisory and notifies you.
+- Triage does not handle security reports. When a public issue looks like an undisclosed vulnerability, Triage writes no comment, adds no label that describes it, and notifies you only through the runner's private notification channel, never on the control issue. You then move it into GitHub private vulnerability reporting, which needs advisory permission the App does not have, and redact or delete the public issue, including its edit history. The App never gets `Repository security advisories: write`.
 
 **Closure (D7).** Triage closes an issue only for one of these reasons, and always with a comment citing the evidence:
 - fixed by a linked merged PR or commit;
@@ -161,15 +167,15 @@ No routine logic may be added to a shim. A change in behavior is a PR to the ski
 ## 7. Readiness rubric
 
 **Hard gates.** All must hold:
-1. No open `release-blocker` or `severity:critical/high` bug in the milestone.
-2. The last 3 `packages.yml` runs on `main` are green. Quarantined flaky tests are excluded, but each needs a linked issue.
-3. The public API diff against the previous release has been computed, and every break is covered by a merged `breaking` PR with migration notes.
+1. No open `release-blocker` or `severity:critical/high` bug in the milestone. This includes any such bug that was moved out of the milestone since the previous release without your comment.
+2. A `packages.yml` run on the exact commit to be tagged has succeeded, and so have the 2 runs on its branch before it. Quarantined flaky tests are excluded, but each needs a linked issue.
+3. The public API diff against the previous release has been computed and shows no removed or changed public API. Additions and deprecations are allowed.
 4. Every closed `schema change` issue has migrations for each persistence provider.
-5. Images built from the candidate pass the container smoke suite on amd64 and arm64.
+5. Images built from the exact commit to be tagged pass the container smoke suite on amd64 and arm64. The receipt records that commit.
 6. Templates and samples compile against the candidate.
 7. No Deliver claim is active on an issue in the milestone.
 
-**Window.** At least 3 weeks since the last minor. At 8 weeks, Readiness proposes a cut regardless of the value score. Unfinished issues move to the next minor.
+**Window.** At least 3 weeks since the last minor. At 8 weeks, Readiness proposes a cut regardless of the value score. Unfinished issues move to the next minor, except open `release-blocker` and `severity:critical/high` bugs. Those stay, so gate 1 still blocks the cut until they are resolved, and Readiness escalates on the control issue.
 
 **Value score.** A sum over the milestone's closed issues:
 
@@ -187,7 +193,7 @@ The initial threshold is 40. Phase 4 recalibrates it by backtesting against 3.8.
 1. **Proposal.** Readiness posts the proposal to the control issue (for example, "Cutting 3.11.0-rc.1 at <UTC time>") and sends you a notification.
 2. **Veto window, 48h.** A `/hold` comment from you pauses the release until you comment `/resume`. Release-train also runs behind a GitHub environment with a 48h wait timer. That timer is the native backstop: cancelling the run is the veto.
 3. **RC soak, 7 days.** If no new `severity:high+` issue is filed against the RC, Readiness proposes the stable release, with another 48h window.
-4. **Patch releases.** A merged fix labeled `backport:<latest>` is cherry-picked to `release/<latest>`. Gates 1, 2 and 5 apply, with a 24h window and no RC.
+4. **Patch releases.** A merged fix labeled `backport:<latest>` is cherry-picked to `release/<latest>`. Gates 1, 2 and 5 apply to the exact cherry-picked commit on `release/<latest>`, not to `main`, with a 24h window and no RC.
 
 **Rollback.** A scripted runbook does four things:
 1. Unlists the affected NuGet versions.
@@ -203,14 +209,16 @@ A PR from Deliver merges only when all of the following hold:
 - CI is green on its head.
 - Two fresh subagents from the `reviewer` role, one per axis (Standards and Spec), report no must-fix findings on that head.
 - Greptile scores it 5/5 on that head.
-- A PR labeled `breaking` or `schema change` also carries migration notes.
+- A PR labeled `schema change` carries migrations for every persistence provider, with no destructive steps.
+- Deliver never merges a PR labeled `breaking` (§6).
 
 PRs from outside contributors keep the existing human gate. Deliver never merges them.
 
 ## 9. Prompt-injection boundary
 
-Issue bodies, comments and PR text are untrusted. The boundary has four rules:
+Issue bodies, comments and PR text are untrusted. The boundary has five rules:
 - **Triage** reads them, but its App permissions are limited to issues: no contents or workflow access.
+- **Deliver** passes issue and PR text to its subagents as quoted data, separate from the role instructions. The implementer and fixer roles get a tool allowlist: read and edit inside the worktree, plus build and test commands. They cannot push, merge, release, change permissions or settings, or widen their own access. Only the Deliver orchestrator pushes and merges, and its merge decision uses only structured results: check conclusions, reviewer verdicts and the Greptile score.
 - **Release-train** decides only from structured state: milestone membership, labels, check conclusions and tags.
 - **Release notes** are generated in a separate step with no tools and no write access. Its output is plain text that Release-train inserts into the release body. It is never executed.
 - **Secrets** are used only inside GitHub workflows through OIDC or environments. They never enter agent context.
