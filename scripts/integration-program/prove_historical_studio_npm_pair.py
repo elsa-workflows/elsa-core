@@ -12,7 +12,7 @@ import shutil
 
 import prove_studio_npm_pair as npm
 import historical_studio_npm_continuation as lifecycle
-from product_artifact_execution import validate_local_execution
+from product_artifact_execution import validate_selected_execution
 
 HOST = Path('src/hosts/Elsa.Studio.Host.CustomElements')
 WORKSPACE = Path('src/wrappers')
@@ -117,9 +117,10 @@ def consume(runner: npm.Runner, private: Path, archives: dict, workspace: Path) 
             'esm': True, 'commonjs': True, 'vite': True, 'input_sha256': inputs, 'lifecycle_generated_assets': copied}
 
 
-def prove(source: Path, private: Path, retained: Path, plan: dict, execution: dict, framework: str) -> dict:
-    # The selected controller admits this local envelope before any product work.
-    validate_local_execution(execution)
+def prove(source: Path, private: Path, retained: Path, plan: dict, execution: dict, framework: str,
+          controller: dict, plan_hash: str) -> dict:
+    # Inherit the producer's exact envelope; this is not provider verification.
+    validate_selected_execution(execution, 'artifact', controller, plan, plan_hash)
     npm.require(framework == 'net10.0', 'historical-host-framework')
     private.mkdir()
     retained.mkdir()

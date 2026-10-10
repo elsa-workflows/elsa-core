@@ -260,7 +260,7 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
                 (source / 'Elsa.Studio.sln').write_bytes(b'solution')
                 (source / 'packages.source').write_bytes(b'workflow')
             with patch.object(artifacts, 'verify_controller', return_value=plan['controller']), \
-                    patch.object(artifacts, 'local_execution', return_value=execution.local_execution({})), \
+                    patch.object(artifacts, 'selected_execution', return_value=execution.local_execution({})), \
                     patch.object(metadata, 'checkout_source', side_effect=checkout), \
                     patch.object(planner, 'npm_intent', return_value=plan['npm']), \
                     patch.object(artifacts, 'preflight', side_effect=ValueError('artifact_node_version')), \

@@ -21,7 +21,7 @@ import selected_core_producer as core
 import selected_maintenance_39 as maintenance39
 from prove_consolidated_packages import archive_names, dependency_groups, framework_reference_groups, metadata as nuspec, require, run
 import prove_historical_studio_npm_pair as historical
-from product_artifact_execution import local_execution
+from product_artifact_execution import selected_execution
 
 ROOT = Path(__file__).resolve().parents[2]
 PLANNER_INPUTS = {
@@ -227,10 +227,10 @@ def preflight(source: Path, plan: dict, private: Path) -> dict:
 
 def execute(root: Path, data: bytes, digest: str, output: Path, *, setup_only: bool = False) -> dict:
     plan = admit(data, digest)
-    execution = local_execution()
     require(not output.exists() and not output.resolve().is_relative_to(root.resolve()) and
             not any(part.is_symlink() for part in (output, *output.parents)), 'artifact_output_location')
     controller = verify_controller(root, plan)
+    execution = selected_execution('artifact', controller, plan, digest)
     # Adapter admission does not certify any actual product control.
     require(plan['product'] in ('studio', 'extensions') and plan['line'] in ('3.8', '3.9') or
             plan['product'] == 'core' and plan['line'] in ('3.8', '3.9'), 'artifact_control_not_implemented')
@@ -288,7 +288,7 @@ def execute(root: Path, data: bytes, digest: str, output: Path, *, setup_only: b
         if plan['product'] == 'studio':
             receipt['stage'] = 'historical-studio-npm'
             receipt['npm'] = historical.prove(private / 'producer/source', private / 'npm', retained / 'npm', plan, execution,
-                                              receipt['preflight']['host_framework'])
+                                              receipt['preflight']['host_framework'], controller, digest)
         receipt.update(success=True, stage='complete', artifact_proof=True)
         return receipt
     except Exception:

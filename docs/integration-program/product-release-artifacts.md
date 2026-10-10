@@ -2,7 +2,7 @@
 
 Task [#8693](https://github.com/elsa-workflows/elsa-core/issues/8693) consumes the exact bytes of an eligible [product release plan](product-release-plans.md). This is a nonpublishing adapter, with no independent product, line, source or version selector. Bounded producer and consumer adapters cover all six Core/Studio/Extensions × 3.8/3.9 source interfaces. Interface availability is source-only evidence: successful actual Studio 3.8 then generator-bearing Extensions 3.8 vertical controls remain required before the full six-cell proof. Actual live compatibility and hosted archive sealing remain pending.
 
-Generate a fresh plan at the reviewed artifact controller, inspect its complete eligible receipt and record its SHA-256. A plan older than one hour, unavailable prerequisites/history, malformed selection or the wrong reviewed hash fails before product work. The planner and artifact controller identities remain separate. Each local invocation generates one UUID and UTC start time in an explicit `local-control` execution envelope shared with the npm receipt. No GitHub run ID or attempt is claimed. Hosted execution contexts and the former numeric run CLI flags are rejected until a real hosted workflow and independent provider binding exist. Admission rebinds the registered source and original ownership policy; setup compares original solution/workflow/npm intents and refreshes prerequisite/history eligibility using GET-only requests and the original feed mapping. A changed prerequisite metadata hash requires a new reviewed plan.
+Generate a fresh plan at the reviewed artifact controller, inspect its complete eligible receipt and record its SHA-256. A plan older than one hour, unavailable prerequisites/history, malformed selection or the wrong reviewed hash fails before product work. The planner and artifact controller identities remain separate. Each local invocation generates one UUID and UTC start time in an explicit `local-control` execution envelope shared with the npm receipt. No GitHub run ID or attempt is claimed. The former numeric run CLI flags remain unsupported. The bounded hosted identity seam below accepts only its exact trusted future workflow context; provider-verified hosted proof remains pending. Admission rebinds the registered source and original ownership policy; setup compares original solution/workflow/npm intents and refreshes prerequisite/history eligibility using GET-only requests and the original feed mapping. A changed prerequisite metadata hash requires a new reviewed plan.
 
 ```sh
 python3 scripts/integration-program/prove_product_release_artifacts.py \
@@ -65,3 +65,39 @@ Studio 3.9 is bound to registered continuation `98a3f23d9c3c67080f3926eeb584036c
 Extensions 3.9 is bound to `bd7b846efae7e93676c6c3a594e682a5a958b766`, tree `f86b6eef467b947864f43c2a56f4a65e65e1d22e`. Its original `Compile+Test+Pack --version VERSION --analyseCode true` recipe, build-component/compiler policy, module imports, preview.50 generator reference, manifest hints, HTTP API/marker source files and seventeen original net10.0 test projects are pinned. Full-recipe outputs remain private; the five canonical Core/Studio Secrets copies must be excluded from retained selection. Historical planning expects 76 selected IDs/228 package-TFM cells. Requested NuGet and generated manifest versions remain exact, while original compiled DLL policy remains `1.0.0+sourceSHA`. A genuine original manifest compile-version mismatch remains a failed control; no source fix or waiver is introduced.
 
 The 3.9 adapter contract binds the source/test/TFM/recipe/npm/exclusion policies before tool bootstrap. Its new offline contracts and source pin checks are not native build, archive, generator execution or live consumer evidence. The existing source-bound legitimate skip policy remains unchanged; product test failures and unlisted skips still fail.
+
+## Hosted identity and private snapshot stage
+
+The selected controllers now have a bounded hosted execution identity seam for
+`elsa-workflows/elsa-core` (repository ID `151148482`), push events on
+`refs/heads/codex/selected-product-hosted-controls-8693`, and the future workflow
+`.github/workflows/selected-product-release-control.yml`. The exact controller,
+workflow/head SHA, plan hash, source, role, job, run and attempt must agree.
+These are runner-environment assertions labeled provider-unverified. The local
+UUID/UTC schema and local hosted-environment rejection remain unchanged; neither
+local receipts nor arbitrary run numbers become hosted proof. Manual-main hosted
+policy is not implemented.
+
+This is source-only stage 1. No hosted workflow, upload seal, provider ZIP retrieval
+or independent readback is implemented yet, and this seam supplies no actual
+hosted proof. Actual controls remain Studio3.8, then generator-bearing Extensions3.8,
+then the full six-cell matrix. Historical producer admission remains bound to its
+validated actual start; current complete consumer prerequisite checks still run
+before consumer restore/build. Existing full producer SourceLink checks remain.
+
+Preserve original planning assets immediately after a fresh eligible plan:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 -B scripts/integration-program/snapshot_product_planning_assets.py \
+  --plan "$PLAN/plan.json" --plan-sha256 "$PLAN_SHA256" \
+  --output "$PRIVATE/planning-assets"
+```
+
+The snapshot uses the existing `private-original-planning-assets-snapshot` schema,
+exact raw asset hashes and original absolute source/cache paths. It validates the
+selected project/framework partition before output and rejects missing/ambiguous
+assets, symlink paths and overlapping/existing destinations. Keep its raw JSON,
+receipt and original planning package cache private and available until the consumer
+freezes/verifies its original external archive catalog. Derived `resolved_targets`
+are advisory; consumers parse the original hash-bound bytes. Nothing from this
+snapshot is a public artifact or consumer execution receipt.

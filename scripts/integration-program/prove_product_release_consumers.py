@@ -26,7 +26,7 @@ import selected_extensions_contract as extensions
 import selected_core_consumer as core
 import selected_maintenance_39 as maintenance39
 from selected_product_consumer_metadata import nearest_group
-from product_artifact_execution import local_execution, validate_local_execution
+from product_artifact_execution import local_execution, selected_execution, validate_selected_execution
 from prove_consolidated_packages import archive_names, dependency_groups, framework_reference_groups, metadata as nuspec, require
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -82,7 +82,8 @@ def admit_producer_stage(plan_bytes: bytes, plan_hash: str, receipt_bytes: bytes
             receipt['stage'] == 'complete' and receipt['success'] is True and receipt['artifact_proof'] is True and
             all(receipt[key] is False for key in ('published', 'version_allocated', 'tag_created')),
             'consumer_producer_stage_incomplete')
-    validate_local_execution(receipt['execution'])
+    validate_selected_execution(receipt['execution'], 'artifact', receipt.get('artifact_controller', {}),
+                                planner.read_json(plan_bytes), plan_hash)
     started = receipt['execution']['started_at']
     require(datetime.fromisoformat(started) <= datetime.fromisoformat(planner.now()), 'consumer_producer_start_future')
     plan = producer.admit(plan_bytes, plan_hash, checked_at=started)
@@ -115,7 +116,7 @@ def admit_artifacts(plan: dict, plan_hash: str, receipt: dict, artifacts: Path, 
             receipt['plan_sha256'] == plan_hash and receipt['source'] == plan['source'] and
             all(receipt[key] == plan[key] for key in ('product', 'line')) and
             receipt['version'] == plan['requested_version'], 'consumer_producer_identity')
-    validate_local_execution(receipt['execution'])
+    validate_selected_execution(receipt['execution'], 'artifact', receipt.get('artifact_controller', {}), plan, plan_hash)
     verify_producer_controllers(root, plan, receipt)
     selected = {row['id'].casefold(): row for row in plan['inventory']['selected']}
     expected = {name for name in plan['expected_artifacts'] if name.endswith(('.nupkg', '.snupkg'))}
@@ -404,8 +405,9 @@ def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, rec
         core.validate_plan(plan)
     else:
         require(plan['product'] in ('studio', 'extensions') and plan['line'] in ('3.8', '3.9'), 'consumer_control_not_implemented')
-    execution = local_execution()
     controller = producer.verify_controller(root, plan)
+    execution = selected_execution('consumer', controller, plan, plan_hash)
+    require(execution.get('kind') == receipt['execution'].get('kind'), 'consumer_execution_stage_kind')
     selected = admit_artifacts(plan, plan_hash, receipt, artifacts, root)
     originals = load_snapshots(plan, plan_hash, snapshots)
     if plan['product'] == 'core':

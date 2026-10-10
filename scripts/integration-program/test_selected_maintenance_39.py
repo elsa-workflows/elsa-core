@@ -94,7 +94,7 @@ class Maintenance39Contracts(unittest.TestCase):
                 row = {'commit': plan['source']['commit'], 'kind': 'maintenance'}
                 package = {'id': plan['inventory']['selected'][0]['id'], 'package_manifest': {}, 'sdk_assets': []}
                 with patch.object(artifacts, 'admit', return_value=plan), \
-                        patch.object(artifacts, 'local_execution', return_value={'id': 'offline-fixture'}), \
+                        patch.object(artifacts, 'selected_execution', return_value={'id': 'offline-fixture'}), \
                         patch.object(artifacts, 'verify_controller', return_value=plan['controller']), \
                         patch.object(selected, 'verify_source') as bound, \
                         patch.object(extensions, 'verify_source'), \
@@ -142,7 +142,7 @@ class Maintenance39Contracts(unittest.TestCase):
                 calls.append(('runtime' if kwargs.get('runtime') else 'compile', args[2]))
                 return {'id': args[1]['id'], 'framework': args[2], 'success': True}
             with patch.object(consumers, 'admit_producer_stage', return_value=(plan, receipt, {'scope':'historical-producer-start-only'})), \
-                    patch.object(consumers, 'local_execution', return_value={'id':'offline-fixture'}), \
+                    patch.object(consumers, 'selected_execution', return_value={'id':'offline-fixture'}), \
                     patch.object(consumers.producer, 'verify_controller', return_value={}), \
                     patch.object(consumers, 'admit_artifacts', return_value=selected_packages), \
                     patch.object(consumers, 'load_snapshots', return_value={}), \

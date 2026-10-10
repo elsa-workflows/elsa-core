@@ -31,7 +31,7 @@ Each cell first performs an offline native NuGet restore against that finite ori
 
 A second restore uses a new empty cache and HOME, the exact frozen lock, the original configured external HTTPS feed mapping and selected IDs exclusively mapped to local same-run archives. No wildcard remains in the isolated mapping. The graph, lock, cache archives, original external raw archive hashes and native content hashes, local selected bytes and extracted compile/runtime/content/build assets must all agree before compilation. Discovery mirror/cache bytes are not proof caches.
 
-Each cell has new HOME, NuGet global-package/HTTP/plugin caches, explicit config and empty central MSBuild files. Product source and ProjectReference fallback, selected registry resolution, unintended external versions/feeds, altered archives/cache payloads and private excluded package admission fail. Local UUID/UTC execution is explicit; hosted claims are rejected until a real workflow/provider binding exists. Raw source snapshots, inputs and logs remain under `private/`; only the allowlisted `retained/receipt.json` is intended for review.
+Each cell has new HOME, NuGet global-package/HTTP/plugin caches, explicit config and empty central MSBuild files. Product source and ProjectReference fallback, selected registry resolution, unintended external versions/feeds, altered archives/cache payloads and private excluded package admission fail. Local UUID/UTC execution is explicit; provider-verified hosted claims remain unavailable until the workflow and independent provider readback are implemented. Raw source snapshots, inputs and logs remain under `private/`; only the allowlisted `retained/receipt.json` is intended for review.
 
 Cheap contracts:
 
@@ -51,3 +51,16 @@ Current consumer eligibility is a separate gate. A standalone SDK-pinned NuGet s
 The retained receipt separates `producer_plan_admission` with scope `historical-producer-start-only` from `current_consumer_admission` with current checked time, complete check counts and a digest of private observation diagnostics. A failed current gate remains unsuccessful with `eligible=false`; historical producer admission alone never authorizes consumer work. Original producer bytes, plan/receipt digests and execution/controllers remain unchanged, and no publication allocation or authority is granted.
 
 Studio 3.9 and Extensions 3.9 reuse their respective reviewed runtime fixtures only after exact registered commit/tree, recipe/compiler/test/runtime source-blob and fixture-hash admission. The consumer records the 3.9 source pin catalog separately from 3.8. Their single direct roots remain `Elsa.Studio.Core` and `Elsa.IO.Http`, with only archive-derived transitive dependencies/framework references. Every selected applicable TFM still receives the same cold native graph/cache/archive proof and compile ledger; representative runtime is additional bounded proof. Studio loaded DLLs retain requested-version/source identity, and Extensions retain original `1.0.0+sourceSHA` identity. The original preview.50 HTTP manifest type/display/runtime-kind and package-qualified `Elsa.IO.Http.I/O` dependency checks also apply to the exact Extensions 3.9 source. Actual 3.9 build/restore/runtime, full shell composition and generator compatibility remain unproven.
+
+## Hosted identity and private snapshot stage
+
+The [artifact controller stage-1 boundary](product-release-artifacts.md#hosted-identity-and-private-snapshot-stage)
+describes the new runner-environment identity seam and the private
+`snapshot_product_planning_assets.py` command. Hosted producer admission checks
+the exact role/controller/plan/source and same trusted workflow job/run/attempt.
+Local receipt schemas and local guard checks remain unchanged. Historical
+producer-start admission and the separate current complete consumer prerequisite
+gate retain their existing semantics. Keep original snapshot bytes and their
+planning cache private until external catalog freezing; derived target summaries
+are never closure authority. This is source-only availability: hosted workflow,
+sealing, provider retrieval and independent ZIP readback remain unimplemented.
