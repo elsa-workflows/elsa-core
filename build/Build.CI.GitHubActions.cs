@@ -10,6 +10,7 @@ using Nuke.Components;
         GitHubActionsImage.UbuntuLatest,
         OnPullRequestBranches = ["main", "patch/*", "develop/*", "release/*", "codex/elsa-integration-program"],
         OnPullRequestIncludePaths = ["**/*"],
+        OnPullRequestExcludePaths = ["docs/**", "**/*.md", ".agents/**", ".claude/**", ".specify/**"],
         PublishArtifacts = false,
         InvokedTargets = [nameof(ICompile.Compile), nameof(ITest.Test)],
         CacheKeyFiles = [],
