@@ -12,6 +12,7 @@ import gzip
 import hashlib
 import io
 import json
+import math
 from pathlib import Path
 import re
 import stat
@@ -83,8 +84,13 @@ def strict_json(data: bytes, maximum: int = MAX_RECEIPT_BYTES) -> dict:
         return result
     def reject_constant(_):
         raise ValueError('selected_transport_json_constant')
+    def finite_float(value):
+        number = float(value)
+        require(math.isfinite(number), 'selected_transport_json_nonfinite')
+        return number
     try:
-        result = json.loads(data.decode('utf-8'), object_pairs_hook=object_pairs, parse_constant=reject_constant)
+        result = json.loads(data.decode('utf-8'), object_pairs_hook=object_pairs,
+                            parse_constant=reject_constant, parse_float=finite_float)
     except (UnicodeError, json.JSONDecodeError, RecursionError):
         raise ValueError('selected_transport_json') from None
     require(type(result) is dict, 'selected_transport_json_object')

@@ -309,7 +309,7 @@ class ArchiveSafetyContracts(unittest.TestCase):
                 transport.zip_members(data, leaf=True)
 
     def test_strict_json_duplicates_constants_unicode_and_nonobjects(self):
-        for data in (b'{"a":1,"a":2}', b'{"a":{"b":1,"b":2}}', b'{"a":NaN}', b'{"a":Infinity}',
+        for data in (b'{"a":1,"a":2}', b'{"a":{"b":1,"b":2}}', b'{"a":NaN}', b'{"a":Infinity}', b'{"a":1e999}', b'{"a":-1e999}',
                      b'\xff', b'[]', b'null', b'{'):
             with self.subTest(data=data), self.assertRaises(ValueError):
                 transport.strict_json(data)
