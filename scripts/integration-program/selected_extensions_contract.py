@@ -7,11 +7,11 @@ from prove_consolidated_packages import require
 import product_release_metadata as metadata
 import selected_maintenance_39 as maintenance39
 
-SOURCE = '92c27a3dd2c7f1dc107cba34749dd293a5d77743'
+SOURCE = '984009a61c786a9f585ee0ce6304a1281f367dff'
 SOURCE_BLOBS = {
     'Directory.Build.props': 'cd8f89825d56e1649a1a240d98ab39f7f4161e84',
     'Directory.Packages.props': '1dcfbe635534098a37d33eddb367a34f82e080f9',
-    'build/Build.cs': 'b39a758717f88096e9b0226ff63a17ebfa58277d',
+    'build/Build.cs': '1abe2f2dc4a50206fa30958a508d00279d0508a7',
     'src/modules/Directory.Build.props': 'c457c8e6daaa2de2f66f84dac7b27d281dcc8cf1',
     'src/modules/PackageManifestHints.cs': '63d76de64a93ad3f0d0bc763795de15bafe6c088',
     'src/modules/io/Elsa.IO.Http/Elsa.IO.Http.csproj': '2d5c62ea65e85f218d5fd719a5f33901fca7f7ab',
@@ -40,6 +40,12 @@ def bind_manifest_contract(source: Path, row: dict, policy: dict) -> None:
     if policy['id'] != 'Elsa.IO.Http' or row['commit'] not in (SOURCE, maintenance39.contract('extensions')['commit']):
         return
     verify_source(source, row['commit'])
+    apply_manifest_contract(policy, row['commit'])
+
+
+def apply_manifest_contract(policy: dict, commit: str) -> None:
+    # Pure seal calls this only after its exact registered-source admission.
+    policy['source_commit'] = commit
     policy['manifest_expectation'] = MANIFEST_FEATURE
-    # preview.50 FeatureDiscoveryService qualifies CShells dependencies with this package ID.
     policy['manifest_dependency_features'] = ['Elsa.IO.Http.I/O']
+    policy['manifest_dependency_generator'] = '0.0.1-preview.50'

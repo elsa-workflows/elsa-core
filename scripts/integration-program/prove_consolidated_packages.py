@@ -475,10 +475,23 @@ def verify_package_manifest(archive: zipfile.ZipFile, row: dict, version: str, *
         require(type(feature.get("id")) is str and feature["id"].startswith(row["id"] + ".") and
                 feature["id"] != row["id"] + ".", "Source-pinned manifest feature identity mismatch")
         dependencies = feature.get("dependencies")
-        require(type(dependencies) is list and all(type(item) is dict and set(item) <= {"packageId", "versionRange", "featureId"} and item.get("packageId") is None and
-                item.get("versionRange") is None for item in dependencies) and
-                [item.get("featureId") for item in dependencies] == row["manifest_dependency_features"],
-                "Source-pinned manifest dependencies mismatch")
+        if row.get("manifest_dependency_generator") is not None:
+            from extensions_manifest_continuation import CONTINUATIONS
+            require(row["id"] == "Elsa.IO.Http" and row["manifest_dependency_generator"] == "0.0.1-preview.50" and
+                    row.get("source_commit") in {item["commit"] for item in CONTINUATIONS.values()},
+                    "Source-pinned manifest generator mismatch")
+            # Exact preview.50 output retains false/default objects; NULL fields are omitted.
+            require(type(dependencies) is list and all(type(item) is dict and
+                    set(item) == {"featureId", "optional", "extensions"} and item["optional"] is False and
+                    type(item["extensions"]) is dict and not item["extensions"] for item in dependencies) and
+                    [item["featureId"] for item in dependencies] == row["manifest_dependency_features"],
+                    "Source-pinned manifest dependencies mismatch")
+        else:
+            require(type(dependencies) is list and all(type(item) is dict and
+                    set(item) <= {"packageId", "versionRange", "featureId"} and item.get("packageId") is None and
+                    item.get("versionRange") is None for item in dependencies) and
+                    [item.get("featureId") for item in dependencies] == row["manifest_dependency_features"],
+                    "Source-pinned manifest dependencies mismatch")
         compatibility = feature.get("compatibility")
         require(compatibility is None or compatibility.get("runtimeKinds") == ["elsa.server"],
                 "Source-pinned manifest feature runtime mismatch")

@@ -3,7 +3,7 @@
   "schema": 1,
   "sources": {
     "extensions": {
-      "commit": "bd7b846efae7e93676c6c3a594e682a5a958b766",
+      "commit": "25d70474c6326a430b7f5c8701dc5e416295549a",
       "excluded_canonical": [
         {
           "id": "Elsa.Secrets.Persistence.EFCore.PostgreSql",
@@ -40,7 +40,7 @@
         "Elsa.Extensions.sln": "42aace26dfd34157a608d8ec1ec8fe8570a21506",
         "NuGet.Config": "e3f020ab738262a079598ac58a5d22d6429db064",
         "build/Build.CI.GitHubActions.cs": "e88af9df5c6005a0a014f14b2575cefdded26bb1",
-        "build/Build.cs": "b39a758717f88096e9b0226ff63a17ebfa58277d",
+        "build/Build.cs": "1abe2f2dc4a50206fa30958a508d00279d0508a7",
         "build/_build.csproj": "24319083da5c04240f5da58037d5a4895bc70196",
         "src/modules/Directory.Build.props": "c457c8e6daaa2de2f66f84dac7b27d281dcc8cf1",
         "src/modules/PackageManifestHints.cs": "63d76de64a93ad3f0d0bc763795de15bafe6c088",
@@ -128,7 +128,7 @@
           "net10.0"
         ]
       },
-      "tree": "f86b6eef467b947864f43c2a56f4a65e65e1d22e",
+      "tree": "6274c04fdcdc05f12dc38a6ae4bba982abf45b80",
       "workflow": ".github/maintenance-inert-workflows/packages.yml.source"
     },
     "studio": {

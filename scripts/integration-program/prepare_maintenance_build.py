@@ -313,6 +313,10 @@ def verify_maintenance_delta(root: Path, row: dict, parent: dict, register: dict
                     git_bytes(root, row['commit'], path) == old.replace(token,
                         f'<PackageProjectUrl>https://github.com/{CORE_REPOSITORY}</PackageProjectUrl>'.encode()),
                     'Core candidate metadata mismatch')
+        elif path == 'build/Build.cs':
+            from extensions_manifest_continuation import verify_delta
+            verify_delta(row, parent, change, git_bytes(root, parent['commit'], path),
+                         git_bytes(root, row['commit'], path))
         elif path == 'src/wrappers/wrappers/react-wrapper/package.json':
             from historical_studio_npm_continuation import verify_delta
             verify_delta(row, parent, change, git_bytes(root, parent['commit'], path),

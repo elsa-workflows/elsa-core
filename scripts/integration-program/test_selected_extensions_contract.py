@@ -43,7 +43,7 @@ class ExtensionsControlTests(unittest.TestCase):
                 'compatibility': {'runtimeKinds': ['elsa.server']},
                 'extensions': {'targetFrameworks': ['net8.0', 'net9.0', 'net10.0'], 'repositoryUrl': packages.CORE_URL},
                 'features': [dict(contract.MANIFEST_FEATURE, id='Elsa.IO.Http.HttpIO',
-                    dependencies=[{'featureId': 'Elsa.IO.Http.I/O'}])]}
+                    dependencies=[{'featureId': 'Elsa.IO.Http.I/O', 'optional': False, 'extensions': {}}])]}
 
     def check_manifest(self, folder, data, policy=None):
         path = folder / 'manifest.nupkg'
@@ -66,6 +66,12 @@ class ExtensionsControlTests(unittest.TestCase):
                 lambda d: d['features'][0].update(dependencies=[{'featureId': 'I/O'}]),
                 lambda d: d['features'][0]['dependencies'][0].update(packageId='Unknown'),
                 lambda d: d['features'][0]['dependencies'][0].update(unknown='Hidden dependency'),
+                lambda d: d['features'][0]['dependencies'][0].update(optional=True),
+                lambda d: d['features'][0]['dependencies'][0].update(optional=0),
+                lambda d: d['features'][0]['dependencies'][0].update(extensions={'hidden': True}),
+                lambda d: d['features'][0]['dependencies'][0].update(extensions=[]),
+                lambda d: d['features'][0]['dependencies'][0].pop('optional'),
+                lambda d: d['features'][0]['dependencies'][0].update(versionRange='[1.0.0,)'),
                 lambda d: d['extensions'].update(targetFrameworks=['net10.0']),
                 lambda d: d['package'].update(version='1.0.0')]
             for mutate in mutations:
@@ -77,6 +83,16 @@ class ExtensionsControlTests(unittest.TestCase):
                 properties['manifest_required'] = False
             with self.assertRaisesRegex(ValueError, 'manifest is required'):
                 self.check_manifest(folder, None, policy)
+
+    def test_native_dependency_defaults_are_bound_to_source_generator_and_schema(self):
+        with tempfile.TemporaryDirectory() as directory:
+            for key, value in (('source_commit', 'f' * 40), ('manifest_dependency_generator', '0.0.1-preview.51')):
+                policy = self.policy(); policy[key] = value
+                with self.subTest(key=key), self.assertRaisesRegex(ValueError, 'generator mismatch'):
+                    self.check_manifest(Path(directory), self.manifest(), policy)
+            policy = self.policy(); policy.pop('manifest_dependency_generator')
+            with self.assertRaisesRegex(ValueError, 'dependencies mismatch'):
+                self.check_manifest(Path(directory), self.manifest(), policy)
 
     def test_sdk_manifest_and_build_assets_require_exact_emitted_bytes(self):
         with tempfile.TemporaryDirectory() as directory:

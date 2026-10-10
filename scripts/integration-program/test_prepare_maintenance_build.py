@@ -1292,14 +1292,15 @@ class CoreCandidateContracts(unittest.TestCase):
             self.assertEqual(maintenance.selection(self.register, original['product'], original['line'],
                 original['commit'], original['dependency_version'] + '-proof.42.1'), original)
 
-    def test_four_metadata_descendants_and_two_inline_continuations_remain_exact(self):
+    def test_four_metadata_descendants_and_four_exact_continuations_remain_exact(self):
         from historical_studio_npm_continuation import CONTINUATIONS
+        from extensions_manifest_continuation import CONTINUATIONS as EXTENSIONS
         descendants = [row for row in self.candidates['candidates'] if row['kind'] == 'maintenance']
-        self.assertEqual(len(descendants), 6)
+        self.assertEqual(len(descendants), 8)
         metadata = [row for row in descendants if [change['path'] for change in row['delta']] == ['Directory.Build.props']]
         self.assertEqual(len(metadata), 4)
         self.assertEqual({row['commit'] for row in descendants if row not in metadata},
-                         {row['commit'] for row in CONTINUATIONS.values()})
+                         {row['commit'] for row in (*CONTINUATIONS.values(), *EXTENSIONS.values())})
         for candidate in metadata:
             with self.subTest(product=candidate['product'], line=candidate['line']):
                 maintenance.verify_core_candidate(maintenance.ROOT, self.select(candidate))

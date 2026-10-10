@@ -215,7 +215,7 @@ class Maintenance39Contracts(unittest.TestCase):
         manifest = {'schemaVersion': '1.0', 'package': {'id': 'Elsa.IO.Http', 'version': '3.9.999'},
             'compatibility': {'runtimeKinds': ['elsa.server']},
             'extensions': {'targetFrameworks': policy['frameworks'], 'repositoryUrl': archives.CORE_URL},
-            'features': [dict(extensions.MANIFEST_FEATURE, id='Elsa.IO.Http.HttpIO', dependencies=[{'featureId':'Elsa.IO.Http.I/O'}])]}
+            'features': [dict(extensions.MANIFEST_FEATURE, id='Elsa.IO.Http.HttpIO', dependencies=[{'featureId':'Elsa.IO.Http.I/O', 'optional': False, 'extensions': {}}])]}
         with tempfile.TemporaryDirectory() as temporary:
             archive = Path(temporary) / 'manifest.nupkg'
             for version in ('3.9.999', '1.0.0'):

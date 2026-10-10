@@ -18,8 +18,8 @@ CORE_REFS = {'3.8': 'refs/heads/release/3.8.4', '3.9': 'refs/heads/release/3.9.0
 DESCENDANTS = {
     ('studio', '3.8'): 'da2dec10ba36c65e376138ee45e1c34525e45e49',
     ('studio', '3.9'): '98a3f23d9c3c67080f3926eeb584036c49855b72',
-    ('extensions', '3.8'): '92c27a3dd2c7f1dc107cba34749dd293a5d77743',
-    ('extensions', '3.9'): 'bd7b846efae7e93676c6c3a594e682a5a958b766',
+    ('extensions', '3.8'): '984009a61c786a9f585ee0ce6304a1281f367dff',
+    ('extensions', '3.9'): '25d70474c6326a430b7f5c8701dc5e416295549a',
 }
 OWNERSHIP_DOCUMENT = 'docs/integration-program/consolidation/secrets-legacy-package-disposition.md'
 OWNERSHIP_SHA256 = '1796509a72de4bd6d3831765df9453da773fb41069cb1202166505fb695b5958'

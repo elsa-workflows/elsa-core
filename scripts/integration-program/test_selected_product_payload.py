@@ -30,6 +30,12 @@ def fixture(product, line, *, source_mutation=None):
     contracts = payload.load_contracts()
     historic = json.loads(SHAPES.read_bytes())['cells'][product + '-' + line]
     source = deepcopy(historic['source'])
+    if product == 'extensions':
+        # Historical shape bytes remain immutable; this is a synthetic current continuation.
+        row = next(r for r in contracts['candidates']['candidates']
+                   if r['commit'] == metadata.DESCENDANTS[(product, line)])
+        source.update({k: row[k] for k in ('commit', 'tree', 'parents')})
+        source['candidate_register_sha256'] = contracts['candidate_register_sha256']
     if product == 'core':
         # A synthetic current observation retains the original source/ref/tag shape.
         source['observation']['observed_at'] = plan['observed_at']
@@ -60,7 +66,7 @@ def fixture(product, line, *, source_mutation=None):
                     'compatibility': {'runtimeKinds': ['elsa.server']}, 'extensions': {'targetFrameworks': policy['frameworks'],
                     'repositoryUrl': 'https://github.com/elsa-workflows/elsa-core'}, 'features': [
                     {'id': 'Elsa.IO.Http.HTTP', **payload.extensions.MANIFEST_FEATURE,
-                     'dependencies': [{'featureId': 'Elsa.IO.Http.I/O'}]}]})
+                     'dependencies': [{'featureId': 'Elsa.IO.Http.I/O', 'optional': False, 'extensions': {}}]}]})
             spec = (f'<package><metadata><id>{identifier}</id><version>{version}</version>'
                 f'<repository type="git" url="https://github.com/elsa-workflows/elsa-core" commit="{source["commit"]}" />'
                 '</metadata></package>').encode()
@@ -462,7 +468,8 @@ class SelectedProductPayloadTests(unittest.TestCase):
             with self.subTest(mutation=mutation), self.assertRaises(ValueError): self.validate(values)
 
     def test_malformed_extensions_schemas_reach_generic_cli_rejection(self):
-        for mutation in ('package_id', 'package_object', 'extensions_object', 'runtime_object', 'feature_runtime_object'):
+        for mutation in ('package_id', 'package_object', 'extensions_object', 'runtime_object', 'feature_runtime_object',
+                         'optional_true', 'optional_zero', 'extensions_nonempty', 'dependency_extra', 'dependency_missing'):
             values = fixture('extensions', '3.8')
             files, context, _ = values
             receipt = json.loads(files['producer/receipt.json'])
@@ -481,15 +488,23 @@ class SelectedProductPayloadTests(unittest.TestCase):
                     manifest['extensions'] = []
                 elif mutation == 'runtime_object':
                     manifest['compatibility'] = []
-                else:
+                elif mutation == 'feature_runtime_object':
                     manifest['features'][0]['compatibility'] = []
+                else:
+                    dependency = manifest['features'][0]['dependencies'][0]
+                    if mutation == 'optional_true': dependency['optional'] = True
+                    elif mutation == 'optional_zero': dependency['optional'] = 0
+                    elif mutation == 'extensions_nonempty': dependency['extensions'] = {'extra': True}
+                    elif mutation == 'dependency_extra': dependency['unknown'] = False
+                    else: dependency.pop('extensions')
                 members['elsa-package.json'] = encoded(manifest)
                 files[name] = zipped(list(members.items()))
                 record.update(sha256=metadata.sha256(files[name]), size=len(files[name]), inventory=transport.inventory(members))
                 manifest_hash = metadata.sha256(members['elsa-package.json'])
                 manifest_row['package_manifest']['sha256'] = manifest_hash
                 manifest_row['sdk_assets'][0]['sha256'] = manifest_hash
-                expected_error = 'extensions_payload_manifest_schema'
+                expected_error = ('Source-pinned manifest dependencies mismatch' if mutation.startswith(('optional_', 'dependency_'))
+                                  or mutation == 'extensions_nonempty' else 'extensions_payload_manifest_schema')
             files['producer/receipt.json'] = encoded(receipt)
             # Rehashed archive/manifest/receipt projections reach the intended
             # schema boundary before downstream consumer receipt admission.

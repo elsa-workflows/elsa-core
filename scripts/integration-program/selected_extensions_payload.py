@@ -38,8 +38,7 @@ def validate_specialization(plan: dict, producer: dict, selected: dict) -> None:
         required = {p['manifest_path'] for p in projection['framework_properties'].values() if p['manifest_required']}
         require(len(required) <= 1, 'extensions_payload_manifest_policy')
         if policy['id'] == 'Elsa.IO.Http':
-            projection.update(manifest_expectation=source.MANIFEST_FEATURE,
-                              manifest_dependency_features=['Elsa.IO.Http.I/O'])
+            source.apply_manifest_contract(projection, plan['source']['commit'])
         for path in required:
             transport.safe_name(path)
             require(path in item['members'], 'extensions_payload_manifest_missing')
