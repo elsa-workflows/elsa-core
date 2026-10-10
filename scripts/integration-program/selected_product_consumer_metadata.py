@@ -1,8 +1,10 @@
 """Finite original archive catalog and native discovered graph validation."""
 from __future__ import annotations
 
+from collections.abc import Iterable
 import json
 from pathlib import Path
+import re
 import shutil
 import zipfile
 
@@ -12,6 +14,101 @@ import prove_consolidated_packages as archives
 import selected_consumer_sdk as sdk
 
 require = metadata.require
+RANGE_FAILURE_CODE = 'consumer_dependency_range_conflict'
+MAX_RANGE_FAILURES = 8
+DIAGNOSTIC_VERSION = re.compile(r'[0-9]{1,9}(?:\.[0-9]{1,9}){0,3}'
+    r'(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?(?:\+[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?\Z')
+
+
+def diagnostic_range(value: object) -> bool:
+    if type(value) is not str or not 1 <= len(value) <= 256 or any(ord(char) < 32 or ord(char) > 126 for char in value):
+        return False
+    if DIAGNOSTIC_VERSION.fullmatch(value):
+        return True
+    if value[0] not in '[(' or value[-1] not in '])':
+        return False
+    bounds = [part.strip() for part in value[1:-1].split(',')]
+    return (len(bounds) == 2 and any(bounds) and
+        all(not part or DIAGNOSTIC_VERSION.fullmatch(part) for part in bounds)) or (
+        len(bounds) == 1 and value[0] == '[' and value[-1] == ']' and
+        DIAGNOSTIC_VERSION.fullmatch(bounds[0]) is not None)
+
+
+def validate_range_failure(value: dict) -> dict:
+    """Closed, bounded projection only; never pass through arbitrary diagnostic fields."""
+    require(type(value) is dict, 'diagnostic_invalid')
+    base = {'root_id', 'framework', 'phase', 'reason', 'requested_checks', 'returned_checks'}
+    require(base <= set(value), 'diagnostic_invalid')
+    require(type(value['root_id']) is str and 1 <= len(value['root_id']) <= 100 and
+        planner.ID.fullmatch(value['root_id']) is not None and
+        type(value['framework']) is str and value['framework'] in ('net8.0', 'net9.0', 'net10.0') and
+        type(value['phase']) is str and value['phase'] in ('discovery', 'locked-proof') and
+        all(type(value[key]) is int and 0 <= value[key] < 2 ** 31
+            for key in ('requested_checks', 'returned_checks')) and
+        value['requested_checks'] % 3 == 0, 'diagnostic_invalid')
+    result = {key: value[key] for key in base}
+    if value['reason'] == 'count-mismatch':
+        require(value['requested_checks'] != value['returned_checks'], 'diagnostic_invalid')
+    else:
+        require(value['reason'] == 'unsatisfied-range' and
+            set(value) == base | {'unsatisfied_checks', 'ranges'} and
+            value['requested_checks'] == value['returned_checks'] and
+            type(value['unsatisfied_checks']) is int and
+            1 <= value['unsatisfied_checks'] <= value['returned_checks'] and
+            type(value['ranges']) is list and
+            len(value['ranges']) == min(value['unsatisfied_checks'], MAX_RANGE_FAILURES), 'diagnostic_invalid')
+        samples = []
+        for row in value['ranges']:
+            require(type(row) is dict and set(row) == {'from_id', 'to_id', 'requested_range',
+                'resolved_version', 'source_kind'}, 'diagnostic_invalid')
+            require(all(type(row[key]) is str and 1 <= len(row[key]) <= 100 and
+                planner.ID.fullmatch(row[key]) is not None for key in ('from_id', 'to_id')) and
+                type(row['resolved_version']) is str and 1 <= len(row['resolved_version']) <= 100 and
+                DIAGNOSTIC_VERSION.fullmatch(row['resolved_version']) is not None and
+                diagnostic_range(row['requested_range']) and type(row['source_kind']) is str and
+                row['source_kind'] in ('selected-nuspec', 'original-nuspec', 'assets', 'lock'), 'diagnostic_invalid')
+            samples.append(dict(row))
+        result.update(unsatisfied_checks=value['unsatisfied_checks'], ranges=samples)
+    require(set(value) == set(result), 'diagnostic_invalid')
+    return result
+
+
+def public_range_failure(error: Exception) -> dict:
+    """Malformed optional details cannot replace the original control failure."""
+    if type(error) is not ValueError or error.args != (RANGE_FAILURE_CODE,):
+        return {}
+    try:
+        return {'dependency_range_failure': validate_range_failure(error.consumer_range_failure)}
+    except Exception:
+        return {}
+
+
+def attach_range_failure(error: ValueError, root_id: str, framework: str, phase: str | None,
+                         edges: Iterable[tuple[str, str, bool]], ranges: list, checks: list) -> None:
+    try:
+        detail = {'root_id': root_id, 'framework': framework, 'phase': phase,
+            'reason': 'count-mismatch', 'requested_checks': len(ranges), 'returned_checks': len(checks)}
+        if len(checks) == len(ranges):
+            # A malformed native response is not an admitted unsatisfied-range diagnostic.
+            require(all(type(row) is dict and type(row.get('satisfies')) is bool for row in checks),
+                'diagnostic_invalid')
+            edges = iter(edges)
+            failed, samples = 0, []
+            for index, row in enumerate(checks):
+                if index % 3 == 0:
+                    source, target, selected = next(edges)
+                if row['satisfies'] is not False:
+                    continue
+                failed += 1
+                if len(samples) == MAX_RANGE_FAILURES:
+                    continue
+                samples.append({'from_id': source, 'to_id': target,
+                    'requested_range': ranges[index]['range'], 'resolved_version': ranges[index]['version'],
+                    'source_kind': (('selected-nuspec' if selected else 'original-nuspec'), 'assets', 'lock')[index % 3]})
+            detail.update(reason='unsatisfied-range', unsatisfied_checks=failed, ranges=samples)
+        error.consumer_range_failure = validate_range_failure(detail)
+    except Exception:
+        pass
 
 
 def nearest_group(groups: list[dict], framework: str, semantics: planner.Semantics) -> dict:
@@ -130,7 +227,7 @@ def validate_native_tools(plan: dict, semantics: planner.Semantics, inspector: P
 
 def audit_native_graph(assets: dict, lock: dict, root_id: str, framework: str, selected: dict,
                        catalog: dict, version: str, semantics: planner.Semantics, *, sdk_policy: dict | None = None,
-                       pruned_edges: list | None = None) -> dict:
+                       pruned_edges: list | None = None, phase: str | None = None) -> dict:
     require(set(assets['targets']) == {framework} and lock.get('version') == 1 and
             set(lock['dependencies']) == {framework}, 'consumer_native_graph_framework')
     require(set(assets['libraries']) == set(assets['targets'][framework]), 'consumer_native_library_partition')
@@ -190,7 +287,12 @@ def audit_native_graph(assets: dict, lock: dict, root_id: str, framework: str, s
             ranges.extend({'range': value, 'version': resolved} for value in
                 (dependency_range, native_edges[identifier.casefold()], lock_edges[identifier.casefold()]))
     checks = semantics.call('ranges', values=ranges)
-    require(len(checks) == len(ranges) and all(row['satisfies'] for row in checks), 'consumer_dependency_range_conflict')
+    try:
+        require(len(checks) == len(ranges) and all(row['satisfies'] for row in checks), RANGE_FAILURE_CODE)
+    except ValueError as error:
+        edges = ((row['id'], identifier, row['selected']) for row in graph.values() for identifier in row['dependencies'])
+        attach_range_failure(error, root_id, framework, phase, edges, ranges, checks)
+        raise
     require(all(len({row['normalized'] for row in checks[index:index + 3]}) == 1
                 for index in range(0, len(checks), 3)), 'consumer_native_dependency_range_changed')
     # Only nodes reachable through full actual nuspec edges may enter the proof.

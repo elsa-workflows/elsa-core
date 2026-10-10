@@ -642,7 +642,8 @@ def discover(plan: dict, package: dict, framework: str, selected: dict, artifact
     assets = planner.read_json((output / 'obj/project.assets.json').read_bytes())
     lock = (output / 'packages.lock.json').read_bytes()
     graph = resolution.audit_native_graph(assets, planner.read_json(lock), package['id'], framework,
-                                         selected, catalog, plan['requested_version'], semantics, sdk_policy=sdk_policy)
+                                         selected, catalog, plan['requested_version'], semantics,
+                                         sdk_policy=sdk_policy, phase='discovery')
     resolution.sdk.verify_downloads(assets, framework, sdk_policy, original_policy['sdk_downloads'], cache,
         policy['sources'], policy['mapping'], original_policy['inspector'], proof=False)
     # Discovery uses finite original mirrors, and remains distinct from proof.
@@ -688,7 +689,8 @@ def cell(plan: dict, package: dict, framework: str, selected: dict, artifacts: P
     require((output / 'packages.lock.json').read_bytes() == lock_bytes, 'consumer_locked_document_changed')
     pruned_edges = []
     resolution.audit_native_graph(restored, planner.read_json(lock_bytes), package['id'], framework,
-                                  selected, catalog, plan['requested_version'], semantics, sdk_policy=sdk_policy, pruned_edges=pruned_edges)
+                                  selected, catalog, plan['requested_version'], semantics, sdk_policy=sdk_policy,
+                                  pruned_edges=pruned_edges, phase='locked-proof')
     sdk_downloads = resolution.sdk.verify_downloads(restored, framework, sdk_policy, original_policy['sdk_downloads'],
         cache, policy['sources'], policy['mapping'], inspector, proof=True)
     cached = verify_cache(graph, policy, cache, artifacts, selected, restored, inspector, catalog)
@@ -824,8 +826,9 @@ def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, rec
             'Complete selected restore/compile coverage is distinct from representative runtime behavior.',
             contract['limitation']])
         return result
-    except Exception:
+    except Exception as error:
         result['failure_code'] = result['stage'] + '-failed'
+        result.update(resolution.public_range_failure(error))
         raise
     finally:
         (retained / 'receipt.json').write_text(json.dumps(result, indent=2, sort_keys=True) + '\n')
@@ -851,7 +854,7 @@ def main() -> int:
         receipt_created, stage = producer.failure_receipt_status(args.output, output_existed,
             mode='selected-product-consumers', stages=PUBLIC_FAILURE_STAGES)
         print(json.dumps({'success': False, 'failure_code': code, 'failure_stage': stage,
-            'retained_receipt_created': receipt_created}))
+            'retained_receipt_created': receipt_created} | resolution.public_range_failure(error)))
         return 1
 
 
