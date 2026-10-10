@@ -38,6 +38,8 @@ EMPTY_CONTENT_METADATA = {'buildAction': 'None', 'codeLanguage': 'any', 'copyToO
 EMPTY_CONTENT_ACCOUNTING = 'native-synthetic-excluded-content'
 EMPTY_BUILD_ACCOUNTING = 'native-synthetic-excluded-build'
 EMPTY_BUILD_ORIGIN = 'selected-root-nuspec-build-exclusion'
+ORIGINAL_EXCLUDED_BUILD_ACCOUNTING = 'native-original-excluded-flat-build'
+ORIGINAL_EXCLUDED_BUILD_ORIGIN = 'original-excluded-flat-build'
 STUDIO38_CONTRACT_SOURCE = {
     'src/framework/Elsa.Studio.Core/Services/DefaultRemoteBackendAccessor.cs': '2818998450af0126555755dec8f2ff45fe582c6558ac09c064c5053e761bb909',
     'src/framework/Elsa.Studio.Core/Options/BackendOptions.cs': 'd640f27152eb46631bc157733c4e8284cae845923d717f6fdb9df9235466c538',
@@ -390,6 +392,84 @@ def synthetic_build_marker(assets: dict, original: dict, framework: str, key: st
             'archive_sha256': record['archive_sha256'], 'origin': EMPTY_BUILD_ORIGIN}
 
 
+
+def original_excluded_build_marker(assets: dict, original: dict, framework: str, key: str, kind: str,
+                                   package: zipfile.ZipFile, names: list[str], folder: Path, catalog: dict,
+                                   graph: dict, selected: dict) -> dict:
+    """Inherit an identical admitted original native exclusion, not a route-flags solver."""
+    identifier, version = key.rsplit('/', 1)
+    marker = kind + '/_._'
+    require(kind in ('build', 'buildMultiTargeting') and type(original) is dict,
+            'consumer_original_build_origin')
+    targets = assets['targets'][framework]
+    original_targets = original.get('targets', {}).get(framework, {})
+    current_target, original_target = targets[key], original_targets.get(key, {})
+    require(original_target.get('type') == 'package' and
+        current_target.get(kind) == original_target.get(kind) == {marker: {}} and
+        not current_target.get('buildTransitive') and not original_target.get('buildTransitive'),
+        'consumer_original_build_group')
+    direct = assets.get('project', {}).get('frameworks', {}).get(framework, {}).get('dependencies', {})
+    require(type(direct) is dict and len(direct) == 1, 'consumer_original_build_boundary')
+    root, dependency = next(iter(direct.items()))
+    folded_root = root.casefold()
+    require(folded_root in selected and folded_root in graph and graph[folded_root]['selected'] is True and
+        type(dependency) is dict and set(dependency) <= {'target', 'version', 'aliases'} and
+        dependency.get('target') == 'Package' and dependency.get('version') ==
+        '[{0}, {0}]'.format(graph[folded_root]['version']) and dependency.get('aliases', 'selected') == 'selected' and
+        assets.get('projectFileDependencyGroups') == {
+            framework: [root + ' >= ' + graph[folded_root]['version'] + ' <= ' + graph[folded_root]['version']]},
+        'consumer_original_build_boundary')
+    policy = selected[folded_root]['policy']
+    original_path = original.get('project', {}).get('restore', {}).get('projectPath')
+    require(type(original_path) is str and original_path.endswith('/' + policy['project']),
+            'consumer_original_build_project')
+    original_hash = policy['metadata']['restore_assets_sha256']
+    require(type(original_hash) is str and re.fullmatch(r'[0-9a-f]{64}', original_hash),
+            'consumer_original_build_assets_hash')
+    require(len(targets) == len(graph) and {name.rsplit('/', 1)[0].casefold() for name in targets} == set(graph) and
+        all(target.get('type') == 'package' for target in targets.values()), 'consumer_original_build_graph')
+    incoming = []
+    for values in (targets, original_targets):
+        edges = []
+        for name, target in values.items():
+            dependencies = target.get('dependencies', {})
+            require(type(dependencies) is dict and all(type(edge) is str for edge in dependencies) and
+                len({edge.casefold() for edge in dependencies}) == len(dependencies), 'consumer_original_build_incoming')
+            edges.extend((name, value) for edge, value in dependencies.items() if edge.casefold() == identifier.casefold())
+        require(len(edges) == 1 and edges[0][0] != key, 'consumer_original_build_incoming')
+        incoming.append(edges[0])
+    require(incoming[0] == incoming[1], 'consumer_original_build_incoming')
+    original_direct = original.get('project', {}).get('frameworks', {}).get(framework, {}).get('dependencies', {})
+    require(type(original_direct) is dict and not any(name.casefold() == identifier.casefold() for name in original_direct),
+            'consumer_original_build_original_boundary')
+    record = catalog.get((identifier.casefold(), version))
+    before, current = original.get('libraries', {}).get(key, {}), assets['libraries'][key]
+    require(record is not None and before.get('type') == current.get('type') == 'package' and
+        before.get('sha512') == current.get('sha512') == record['content_hash'] and
+        metadata.sha256(Path(package.filename).read_bytes()) == record['archive_sha256'],
+        'consumer_original_build_archive')
+    real = [name for name in names if name.startswith(kind + '/') and name.endswith(('.props', '.targets'))]
+    require(real and not any(name.casefold().startswith('buildtransitive/') for name in names),
+            'consumer_original_build_real_group')
+    for entry in real:
+        require(entry.isascii() and entry.rsplit('/', 1)[0] == kind and
+            Path(entry).name.casefold() in {identifier.casefold() + '.props', identifier.casefold() + '.targets'} and
+            entry in before.get('files', []) and entry in current.get('files', []),
+            'consumer_original_build_real_member')
+        read_bound(folder / entry, metadata.sha256(package.read(entry)))
+    # Native ClearIfExists uses the character offset of the last slash, then
+    # OrdinalIgnoreCase path; flat ASCII props/targets make that order explicit.
+    first = sorted(real, key=lambda entry: (entry.rfind('/'), entry.casefold()))[0]
+    require(first.rsplit('/', 1)[0] + '/_._' == marker and
+        not any(name.casefold() == marker.casefold() for name in names), 'consumer_original_build_collision')
+    path = folder / marker
+    require(not path.exists() and not any(part.is_symlink() for part in (path, *path.parents)) and
+        not any(entry.relative_to(folder).as_posix().casefold() == marker.casefold() for entry in folder.rglob('*')),
+            'consumer_original_build_cache')
+    return {'path': marker, 'kind': kind, 'accounting': ORIGINAL_EXCLUDED_BUILD_ACCOUNTING, 'metadata': {},
+            'archive_sha256': record['archive_sha256'], 'origin': ORIGINAL_EXCLUDED_BUILD_ORIGIN,
+            'original_assets_sha256': original_hash}
+
 def verify_asset_payloads(assets: dict, framework: str, graph: dict, cache: Path, artifacts: Path, selected: dict,
                           *, catalog: dict | None = None, original_assets: dict | None = None) -> list[dict]:
     evidence = []
@@ -414,6 +494,11 @@ def verify_asset_payloads(assets: dict, framework: str, graph: dict, cache: Path
                     if kind == 'build' and entry == f'build/{framework}/_._' and entry not in names:
                         require(not graph[folded]['selected'], 'consumer_synthetic_build_selected')
                         payloads.append(synthetic_build_marker(assets, original_assets, framework, key,
+                            package, names, folder, catalog or {}, graph, selected))
+                        continue
+                    if kind in ('build', 'buildMultiTargeting') and entry == kind + '/_._' and entry not in names:
+                        require(not graph[folded]['selected'], 'consumer_original_build_selected')
+                        payloads.append(original_excluded_build_marker(assets, original_assets, framework, key, kind,
                             package, names, folder, catalog or {}, graph, selected))
                         continue
                     require(entry in names, 'consumer_asset_archive_member')

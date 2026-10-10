@@ -349,11 +349,20 @@ def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, ru
         seen = set()
         for asset in sequence(row['payloads']):
             if type(asset) is dict and 'accounting' in asset:
-                transport.closed(asset, {'path', 'kind', 'accounting', 'metadata', 'archive_sha256', 'origin'},
+                original_build = asset.get('origin') == consumer.ORIGINAL_EXCLUDED_BUILD_ORIGIN
+                keys = {'path', 'kind', 'accounting', 'metadata', 'archive_sha256', 'origin'}
+                transport.closed(asset, keys | ({'original_assets_sha256'} if original_build else set()),
                                  'selected_payload_synthetic_content')
                 require(folded not in selected and asset['archive_sha256'] == restored[folded]['sha256'] and
                     (asset['path'], asset['kind']) not in seen, 'selected_payload_synthetic_content_identity')
-                if asset['accounting'] == consumer.EMPTY_BUILD_ACCOUNTING:
+                if original_build:
+                    require(asset['accounting'] == consumer.ORIGINAL_EXCLUDED_BUILD_ACCOUNTING and
+                        asset['kind'] in ('build', 'buildMultiTargeting') and asset['path'] == asset['kind'] + '/_._' and
+                        type(asset['metadata']) is dict and asset['metadata'] == {} and
+                        asset['original_assets_sha256'] == item['policy']['metadata']['restore_assets_sha256'],
+                        'selected_payload_original_build_identity')
+                    transport.digest(asset['original_assets_sha256'])
+                elif asset['accounting'] == consumer.EMPTY_BUILD_ACCOUNTING:
                     require(asset['path'] == f'build/{framework}/_._' and asset['kind'] == 'build' and
                         asset['origin'] == consumer.EMPTY_BUILD_ORIGIN and type(asset['metadata']) is dict and
                         asset['metadata'] == {}, 'selected_payload_synthetic_build_identity')
@@ -391,9 +400,10 @@ def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, ru
         content = [item for item in row['payloads'] if item['kind'] == 'contentFiles']
         require(not any('accounting' in item for item in content) or len(content) == 1,
                 'selected_payload_synthetic_content_group')
-        build = [item for item in row['payloads'] if item['kind'] == 'build']
-        require(not any('accounting' in item for item in build) or len(build) == 1,
-                'selected_payload_synthetic_build_group')
+        for kind in ('build', 'buildMultiTargeting'):
+            build = [item for item in row['payloads'] if item['kind'] == kind]
+            require(not any('accounting' in item for item in build) or len(build) == 1,
+                    'selected_payload_synthetic_build_group')
     require(set(payload_rows) == set(restored), 'selected_payload_restored_payload_bijection')
     if runtime:
         evidence = transport.closed(cell['runtime'], {'contract', 'loaded_assemblies'}, 'selected_payload_runtime')

@@ -653,6 +653,139 @@ class SelectedProductConsumerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'consumer_input_hash'):
             proof.verify_asset_payloads(assets, 'net8.0', self.graph, cache, self.artifacts, selected)
 
+    def original_flat_build_fixture(self):
+        """Exact HTTP/net10 native group shape: one Swagger and two NSwag sentinels."""
+        temporary = tempfile.TemporaryDirectory(dir=self.root)
+        self.addCleanup(temporary.cleanup)
+        values = {'cache': Path(temporary.name).resolve()}
+        root, version, framework = 'Elsa.IO.Http', '3.8.999', 'net10.0'
+        root_key = root + '/' + version
+        root_archive = self.artifacts / (root_key.replace('/', '.') + '.nupkg')
+        with zipfile.ZipFile(root_archive, 'w') as archive: archive.writestr('a.nuspec', b'<package />')
+        targets = {root_key: {'type': 'package', 'dependencies': {'Elsa.Api.Common': '3.8.4'}}}
+        libraries, catalog, graph = {}, {}, {root.lower(): {'selected': True, 'version': version}}
+        for identifier, package_version, groups, dependency in (
+            ('Elsa.Api.Common', '3.8.4', (), {'FastEndpoints.Swagger': '8.2.0'}),
+            ('FastEndpoints.Swagger', '8.2.0', ('build',), {'NSwag.AspNetCore': '14.7.1'}),
+            ('NSwag.AspNetCore', '14.7.1', ('build', 'buildMultiTargeting'), {})):
+            key = identifier + '/' + package_version
+            folder = values['cache'] / identifier.lower() / package_version
+            folder.mkdir(parents=True)
+            entries = {group + '/' + identifier + '.targets': b'<Project />' for group in groups}
+            entries['lib/net10.0/' + identifier + '.dll'] = b'external DLL'
+            archive = folder / (identifier.lower() + '.' + package_version + '.nupkg')
+            with zipfile.ZipFile(archive, 'w') as package:
+                for name, data in entries.items(): package.writestr(name, data)
+            for name, data in entries.items():
+                path = folder / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
+            targets[key] = {'type': 'package', 'dependencies': dependency,
+                'compile': {'lib/net10.0/' + identifier + '.dll': {}},
+                **{group: {group + '/_._': {}} for group in groups}}
+            libraries[key] = {'type': 'package', 'sha512': 'native-' + identifier, 'files': list(entries)}
+            catalog[(identifier.lower(), package_version)] = {'archive_sha256': metadata.sha256(archive.read_bytes()),
+                'content_hash': 'native-' + identifier}
+            graph[identifier.lower()] = {'selected': False, 'version': package_version}
+        assets = {'targets': {framework: targets}, 'libraries': libraries,
+            'project': {'frameworks': {framework: {'dependencies': {
+                root: {'target': 'Package', 'version': '[3.8.999, 3.8.999]'}}}}},
+            'projectFileDependencyGroups': {framework: [root + ' >= 3.8.999 <= 3.8.999']}}
+        original = deepcopy(assets)
+        original['project']['restore'] = {'projectPath': '/owned/source/src/Elsa.IO.Http.csproj'}
+        selected = {root.lower(): {'nupkg': root_archive.name,
+            'policy': {'project': 'src/Elsa.IO.Http.csproj', 'metadata': {'restore_assets_sha256': 'a' * 64}}}}
+        values.update(assets=assets, original_assets=original, selected=selected, catalog=catalog, graph=graph,
+            framework=framework, key='FastEndpoints.Swagger/8.2.0', root_key=root_key)
+        return values
+
+    def test_original_flat_build_and_multitargeting_markers_are_inert(self):
+        values = self.original_flat_build_fixture()
+        rows = self.verify_empty_build(values)
+        markers = [item for row in rows for item in row['payloads'] if 'accounting' in item]
+        self.assertEqual([(item['kind'], item['path']) for item in markers],
+            [('build', 'build/_._'), ('build', 'build/_._'), ('buildMultiTargeting', 'buildMultiTargeting/_._')])
+        for item in markers:
+            self.assertEqual(item['origin'], proof.ORIGINAL_EXCLUDED_BUILD_ORIGIN)
+            self.assertEqual(item['accounting'], proof.ORIGINAL_EXCLUDED_BUILD_ACCOUNTING)
+            self.assertEqual(item['original_assets_sha256'], 'a' * 64)
+            self.assertNotIn('size', item)
+            self.assertNotIn('sha256', item)
+
+    def test_original_flat_build_requires_same_original_context_and_native_graph(self):
+        for change in ('missing_snapshot', 'framework', 'version', 'native_hash', 'archive_hash', 'original_inventory',
+                       'current_inventory', 'project', 'original_metadata', 'current_metadata', 'original_mixed',
+                       'current_mixed', 'current_mixed_reversed', 'missing_original_group', 'build_transitive',
+                       'external_direct', 'original_external_direct', 'direct_flags', 'project_group',
+                       'extra_incoming', 'original_incoming', 'duplicate_incoming', 'nonpackage', 'original_nonpackage', 'selected'):
+            values = self.original_flat_build_fixture()
+            assets, original = values['assets'], values['original_assets']
+            key, framework = values['key'], values['framework']
+            target, before = assets['targets'][framework][key], original['targets'][framework][key]
+            if change == 'missing_snapshot': values['original_assets'] = None
+            elif change == 'framework': original['targets']['net9.0'] = original['targets'].pop(framework)
+            elif change == 'version': original['libraries'].pop(key)
+            elif change == 'native_hash': original['libraries'][key]['sha512'] = 'wrong'
+            elif change == 'archive_hash': values['catalog'][('fastendpoints.swagger', '8.2.0')]['archive_sha256'] = 'f' * 64
+            elif change == 'original_inventory': original['libraries'][key]['files'] = []
+            elif change == 'current_inventory': assets['libraries'][key]['files'] = []
+            elif change == 'project': original['project']['restore']['projectPath'] = '/foreign/source/Wrong.csproj'
+            elif change == 'original_metadata': before['build']['build/_._'] = {'copyToOutput': False}
+            elif change == 'current_metadata': target['build']['build/_._'] = {'unexpected': False}
+            elif change == 'original_mixed': before['build']['build/FastEndpoints.Swagger.targets'] = {}
+            elif change in ('current_mixed', 'current_mixed_reversed'):
+                target['build']['build/FastEndpoints.Swagger.targets'] = {}
+                if change.endswith('reversed'): target['build'] = dict(reversed(list(target['build'].items())))
+            elif change == 'missing_original_group': before.pop('build')
+            elif change == 'build_transitive': before['buildTransitive'] = {'buildTransitive/Example.props': {}}
+            elif change == 'original_external_direct': original['project']['frameworks'][framework]['dependencies']['FastEndpoints.Swagger'] = {'target': 'Package'}
+            elif change == 'external_direct': assets['project']['frameworks'][framework]['dependencies']['FastEndpoints.Swagger'] = {'target': 'Package'}
+            elif change == 'direct_flags': assets['project']['frameworks'][framework]['dependencies']['Elsa.IO.Http']['include'] = 'All'
+            elif change == 'project_group': assets['projectFileDependencyGroups'][framework].append('FastEndpoints.Swagger >= 8.2.0')
+            elif change == 'extra_incoming': assets['targets'][framework][values['root_key']]['dependencies']['FastEndpoints.Swagger'] = '8.2.0'
+            elif change == 'original_incoming': original['targets'][framework]['Elsa.Api.Common/3.8.4']['dependencies']['FastEndpoints.Swagger'] = '[8.2.0]'
+            elif change == 'duplicate_incoming': assets['targets'][framework]['Elsa.Api.Common/3.8.4']['dependencies']['fastendpoints.swagger'] = '8.2.0'
+            elif change == 'original_nonpackage': before['type'] = 'project'
+            elif change == 'selected':
+                values['graph']['fastendpoints.swagger']['selected'] = True
+                archive = values['cache'] / 'fastendpoints.swagger/8.2.0/fastendpoints.swagger.8.2.0.nupkg'
+                values['selected']['fastendpoints.swagger'] = {'nupkg': archive.name}
+                (self.artifacts / archive.name).write_bytes(archive.read_bytes())
+            else: target['type'] = 'project'
+            with self.subTest(change=change), self.assertRaisesRegex(ValueError, 'consumer_original_build_'):
+                self.verify_empty_build(values)
+
+    def test_original_flat_build_never_skips_physical_archive_or_cache_markers(self):
+        for change in ('cache', 'case_cache', 'symlink', 'case_archive', 'real_archive', 'missing_real_member', 'archive_transitive', 'wrong_directory', 'real_member_symlink', 'real_member_changed'):
+            values = self.original_flat_build_fixture()
+            folder = values['cache'] / 'fastendpoints.swagger/8.2.0'
+            archive = folder / 'fastendpoints.swagger.8.2.0.nupkg'
+            path = folder / 'build/_._'
+            if change == 'cache': path.write_bytes(b'physical')
+            elif change == 'case_cache':
+                collision = folder / 'BUILD/_._'; collision.parent.mkdir(exist_ok=True); collision.write_bytes(b'physical')
+            elif change == 'symlink': path.symlink_to(folder / 'lib/net10.0/FastEndpoints.Swagger.dll')
+            elif change == 'real_member_symlink':
+                member = folder / 'build/FastEndpoints.Swagger.targets'
+                member.unlink(); member.symlink_to(folder / 'lib/net10.0/FastEndpoints.Swagger.dll')
+            elif change == 'real_member_changed': (folder / 'build/FastEndpoints.Swagger.targets').write_bytes(b'changed')
+            else:
+                with zipfile.ZipFile(archive) as package: entries = {name: package.read(name) for name in package.namelist()}
+                if change == 'missing_real_member': entries.pop('build/FastEndpoints.Swagger.targets')
+                elif change == 'archive_transitive': entries['buildTransitive/FastEndpoints.Swagger.targets'] = b'<Project />'
+                elif change == 'wrong_directory': entries['build/net10.0/FastEndpoints.Swagger.targets'] = entries.pop('build/FastEndpoints.Swagger.targets')
+                else: entries['build/_._' if change == 'real_archive' else 'BUILD/_._'] = b'physical'
+                with zipfile.ZipFile(archive, 'w') as package:
+                    for name, data in entries.items(): package.writestr(name, data)
+                values['catalog'][('fastendpoints.swagger', '8.2.0')]['archive_sha256'] = metadata.sha256(archive.read_bytes())
+            with self.subTest(change=change), self.assertRaises(ValueError): self.verify_empty_build(values)
+            if change == 'real_archive':
+                path.write_bytes(b'physical')
+                rows = self.verify_empty_build(values)
+                actual = next(row for row in rows if row['id'] == 'FastEndpoints.Swagger')['payloads'][-1]
+                self.assertEqual(actual['sha256'], metadata.sha256(b'physical'))
+                self.assertNotIn('accounting', actual)
+                path.write_bytes(b'changed')
+                with self.assertRaisesRegex(ValueError, 'consumer_input_hash'): self.verify_empty_build(values)
+
     def empty_build_fixture(self, framework='net8.0'):
         version = {'net8.0': '8.0.24', 'net9.0': '9.0.13', 'net10.0': '10.0.3'}[framework]
         identifier, root = 'Microsoft.AspNetCore.Components.WebAssembly', 'Elsa.Studio.Localization.BlazorWasm'

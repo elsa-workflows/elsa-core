@@ -243,6 +243,24 @@ def excluded_build_fixture(line='3.8', framework='net8.0', *, exclude='Build,Ana
     return files, expected, now
 
 
+def original_flat_build_fixture():
+    files, expected, now = fixture('extensions', '3.8')
+    plan, receipt = (json.loads(files[name]) for name in ('plan.json', 'consumer/receipt.json'))
+    cell = next(row for row in receipt['coverage'] if row['framework'] == 'net10.0')
+    policy = next(row for row in plan['inventory']['selected'] if row['id'] == cell['id'])
+    for identifier, version, groups in (('FastEndpoints.Swagger', '8.2.0', ('build',)),
+                                       ('NSwag.AspNetCore', '14.7.1', ('build', 'buildMultiTargeting'))):
+        external = {'id': identifier, 'version': version, 'source': 'https://api.nuget.org/v3/index.json',
+            'sha256': 'a' * 64, 'archive_sha512': 'b' * 128, 'nuget_content_hash': 'A' * 86 + '==', 'signed': True}
+        cell['restored'].append(external)
+        cell['restored_payloads'].append({'id': identifier, 'version': version, 'payloads': [
+            {'path': kind + '/_._', 'kind': kind, 'accounting': payload.consumer.ORIGINAL_EXCLUDED_BUILD_ACCOUNTING,
+             'metadata': {}, 'archive_sha256': external['sha256'], 'origin': payload.consumer.ORIGINAL_EXCLUDED_BUILD_ORIGIN,
+             'original_assets_sha256': policy['metadata']['restore_assets_sha256']} for kind in groups]})
+    files['consumer/receipt.json'] = encoded(receipt)
+    return files, expected, now
+
+
 class SelectedProductPayloadTests(unittest.TestCase):
     def validate(self, values):
         files, expected, now = values
@@ -416,6 +434,40 @@ class SelectedProductPayloadTests(unittest.TestCase):
             error = ('selected_payload_synthetic_build_group' if change.startswith('mixed') else
                 'selected_payload_synthetic_build_prerequisite' if change == 'version' else '.')
             with self.subTest(change=change), self.assertRaisesRegex(ValueError, error): self.validate(values)
+            self.files, self.context = values[:2]
+            seal_tests.SealContracts.assert_cli_rejected(self)
+
+    def test_original_flat_build_accounting_seals_all_three_inherited_groups(self):
+        values = original_flat_build_fixture()
+        self.validate(values)
+        seal.stage(values[0], values[1], tuple(metadata.sha256(values[0][name]) for name in
+            ('plan.json', 'producer/receipt.json', 'consumer/receipt.json')), contracts=payload.load_contracts(), now=values[2])
+
+    def test_rehashed_original_flat_build_groups_are_closed_and_source_bound(self):
+        for change in ('original_hash', 'missing_hash', 'kind', 'path', 'metadata', 'archive_hash', 'origin',
+                       'fake_bytes', 'selected', 'old_accounting', 'new_accounting_old_origin', 'mixed_build', 'mixed_build_reversed', 'mixed_multitargeting',
+                       'mixed_multitargeting_reversed', 'duplicate_build', 'duplicate_multitargeting'):
+            values = original_flat_build_fixture(); receipt = json.loads(values[0]['consumer/receipt.json'])
+            cell = next(row for row in receipt['coverage'] if row['framework'] == 'net10.0')
+            row = cell['restored_payloads'][-1]; marker = row['payloads'][0]
+            if change == 'original_hash': marker['original_assets_sha256'] = 'f' * 64
+            elif change == 'missing_hash': marker.pop('original_assets_sha256')
+            elif change == 'kind': marker['kind'] = 'compile'
+            elif change == 'path': marker['path'] = 'build/arbitrary_._'
+            elif change == 'metadata': marker['metadata']['unexpected'] = False
+            elif change == 'archive_hash': marker['archive_sha256'] = 'f' * 64
+            elif change in ('origin', 'new_accounting_old_origin'): marker['origin'] = payload.consumer.EMPTY_BUILD_ORIGIN
+            elif change == 'old_accounting': marker['accounting'] = payload.consumer.EMPTY_BUILD_ACCOUNTING
+            elif change == 'fake_bytes': marker.update(size=0, sha256=metadata.sha256(b''))
+            elif change == 'selected': cell['restored_payloads'][0]['payloads'].append(marker)
+            elif change.startswith('duplicate'): row['payloads'].append(deepcopy(row['payloads'][1 if 'multitargeting' in change else 0]))
+            else:
+                kind = 'buildMultiTargeting' if 'multitargeting' in change else 'build'
+                row['payloads'].append({'path': kind + '/NSwag.AspNetCore.targets', 'kind': kind,
+                    'sha256': 'd' * 64, 'size': 10})
+                if change.endswith('reversed'): row['payloads'].reverse()
+            values[0]['consumer/receipt.json'] = encoded(receipt)
+            with self.subTest(change=change), self.assertRaises(ValueError): self.validate(values)
             self.files, self.context = values[:2]
             seal_tests.SealContracts.assert_cli_rejected(self)
 
