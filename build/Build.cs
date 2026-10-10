@@ -70,7 +70,8 @@ partial class Build : NukeBuild, ITest, IPack
         // ensure we don't generate too much output in CI run
         // 0  Turns off emission of all warning messages
         // 1  Displays severe warning messages
-        .SetWarningLevel(IsServerBuild ? 0 : 1);
+        .SetWarningLevel(IsServerBuild ? 0 : 1)
+        .When(_ => !string.IsNullOrWhiteSpace(Version), settings => settings.SetProperty("PackageVersion", Version));
 
     public Configure<DotNetPackSettings> PackSettings => settings =>
         string.IsNullOrWhiteSpace(Version) ? settings : settings.SetVersion(Version);
