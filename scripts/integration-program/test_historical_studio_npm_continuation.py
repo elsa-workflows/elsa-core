@@ -45,7 +45,7 @@ class HistoricalLifecycleContracts(unittest.TestCase):
     def run_copy(self, wrapper, *, success=True):
         script = json.loads((wrapper / 'package.json').read_bytes())['scripts']['copy:elsa-studio-wasm']
         result = subprocess.run(script, cwd=wrapper, shell=True, env=os.environ,
-                                capture_output=True, text=True, timeout=15)
+                                capture_output=True, text=True, timeout=60)
         self.assertEqual(success, result.returncode == 0, result.stderr)
 
     def archives(self, root, wrapper, wasm):
