@@ -95,6 +95,7 @@ def git(root: Path, *args: str) -> str:
 
 
 def bind_source(controller: Path, product: str, line: str, commit: str, observation: dict | None = None) -> dict:
+    """Verify an admitted maintenance source and return its immutable selection binding."""
     require(product in ('core', 'studio', 'extensions') and line in ('3.8', '3.9'), 'source_selection')
     require(re.fullmatch(r'[a-f0-9]{40}', commit) is not None, 'source_selection')
     if product == 'core':
@@ -134,6 +135,7 @@ def checkout_source(controller: Path, binding: dict, destination: Path) -> None:
 
 
 def metadata_command(project: str, version: str, binding: dict | None = None) -> list[str]:
+    """Build a metadata-only MSBuild command preserving the selected version policy."""
     versions = maintenance.version_arguments(binding or {}, version)
     if binding is None or not maintenance.original_core(binding):
         versions.append(f'-p:PackageVersion={version}')
@@ -143,11 +145,13 @@ def metadata_command(project: str, version: str, binding: dict | None = None) ->
 
 
 def metadata_environment(source: Path, binding: dict, version: str) -> dict:
+    """Select the isolated metadata environment, retaining original Core recipe inputs."""
     return (maintenance.recipe_environment(binding, version, source) if maintenance.original_core(binding)
             else maintenance.build_environment())
 
 
 def evaluate_project(source: Path, project: str, version: str, *, binding: dict) -> dict:
+    """Evaluate project properties and references separately for each target framework."""
     environment = metadata_environment(source, binding, version)
     values = json.loads(run(metadata_command(project, version, binding) +
         ['-getProperty:' + PROPERTIES], source,
@@ -276,6 +280,7 @@ def stage_project(source: Path, project: dict, version: str, destination: Path, 
 
 
 def evaluate_inventory(source: Path, binding: dict, version: str, private: Path, *, workers: int = 4) -> dict:
+    """Evaluate the source project universe and hash its public release inventory."""
     paths = git(source, 'ls-files', '*.csproj').splitlines()
     require(paths and len(paths) == len(set(paths)) and all(not Path(path).is_absolute() and '..' not in Path(path).parts
             and (source / path).is_file() and not (source / path).is_symlink() for path in paths), 'source_project_universe')

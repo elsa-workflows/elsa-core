@@ -20,11 +20,13 @@ validate_plan = original.validate_plan
 
 
 def source_contract(plan: dict) -> dict:
+    """Return the pinned Core consumer source contract for the plan's release line."""
     original.policy(plan['source'])
     return json.loads(CONTRACT.read_text())['sources'][plan['line']]
 
 
 def verify_source(root: Path, plan: dict) -> None:
+    """Verify the Core producer source, consumer source blobs, and runtime fixture hash."""
     original.verify_source(root, plan['source'])
     for path, expected in source_contract(plan).items():
         require(metadata.sha256(original.maintenance.git_bytes(root, plan['source']['commit'], path)) == expected,
@@ -37,6 +39,7 @@ def verify_source(root: Path, plan: dict) -> None:
 
 
 def runtime_contract() -> dict:
+    """Return the representative Core workflow fixture and its required runtime checks."""
     return {'package': 'elsa', 'fixture': FIXTURE,
             'checks': {'variableNearestScope': True, 'outputLines': ['Sequence Value'],
                        'status': 'Finished', 'subStatus': 'Finished', 'incidents': 0},
@@ -46,6 +49,7 @@ def runtime_contract() -> dict:
 
 
 def validate_runtime(selected: dict) -> None:
+    """Require the representative Core packages and all three supported frameworks."""
     require({name.casefold() for name in REQUIRED_ASSEMBLIES} <= set(selected), 'core_consumer_runtime_packages')
     frameworks = selected['elsa']['policy']['frameworks']
     require(len(frameworks) == len(FRAMEWORKS) and set(frameworks) == set(FRAMEWORKS),

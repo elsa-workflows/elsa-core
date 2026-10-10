@@ -15,12 +15,14 @@ import prove_product_release_artifacts as artifacts
 
 class OriginalCoreProducerContracts(unittest.TestCase):
     def setUp(self):
+        """Load pinned Core producer contracts and construct original release-source rows."""
         self.contract = json.loads(core.CONTRACT.read_text())
         self.rows = [{key: value for key, value in source.items() if key in ('commit', 'tree')} |
                      {'product': 'core', 'line': line, 'kind': 'observed-core-release-branch'}
                      for line, source in self.contract['sources'].items()]
 
     def plan(self, row):
+        """Create a minimal Core plan retaining the selected source's recipe and test census."""
         policy = core.policy(row)
         return {'product': 'core', 'line': row['line'], 'source': row, 'npm': None,
                 'inventory': {'release_recipe': {'solution': 'Elsa.sln', 'workflow': '.github/workflows/packages.yml'},
@@ -28,6 +30,7 @@ class OriginalCoreProducerContracts(unittest.TestCase):
                               'selected': [{'id': 'Example', 'project': 'src/Example/Example.csproj', 'symbols': True}]}}
 
     def test_exact_original_pins_and_full_test_census_without_build(self):
+        """Verify exact original pins and full test census without build."""
         for row, count in zip(self.rows, (44, 61)):
             with self.subTest(line=row['line']):
                 self.assertEqual(count, len(core.policy(row)['test_projects']))
@@ -35,6 +38,7 @@ class OriginalCoreProducerContracts(unittest.TestCase):
                 core.validate_plan(self.plan(row))
 
     def test_source_kind_line_hash_and_no_npm_plan_are_closed(self):
+        """Verify source kind line hash and no npm plan are closed."""
         for change in ({'kind': 'maintenance'}, {'product': 'studio'}, {'line': '3.10'}, {'commit': 'a' * 40}, {'tree': 'b' * 40}):
             with self.subTest(change=change), self.assertRaises(ValueError):
                 core.policy(self.rows[0] | change)
@@ -46,6 +50,7 @@ class OriginalCoreProducerContracts(unittest.TestCase):
             core.validate_plan(plan)
 
     def test_original_recipe_has_exported_version_release_and_all_net10_test_lanes(self):
+        """Verify original recipe has exported version release and all net10 test lanes."""
         for row, count in zip(self.rows, (44, 61)):
             commands = core.recipes(row, '3.8.99' if row['line'] == '3.8' else '3.9.99', Path('/private/proof'))
             self.assertEqual(1 + count * 2, len(commands))
@@ -64,6 +69,7 @@ class OriginalCoreProducerContracts(unittest.TestCase):
             self.assertFalse(any('/performance/' in cmd[2] for cmd in tests))
 
     def test_environment_preserves_configured_provider_without_authority_or_server_claim(self):
+        """Verify environment preserves configured provider without authority or server claim."""
         gate = core.PROVIDER_GATES[0]
         with patch.dict('os.environ', {'PATH': '/bin', 'CI': 'true', 'GITHUB_ACTIONS': 'true',
                                       'GITHUB_TOKEN': 'credential', gate: 'private-connection'}, clear=True):
@@ -74,6 +80,7 @@ class OriginalCoreProducerContracts(unittest.TestCase):
         self.assertIn('-p:Version=3.8.99', maintenance.metadata_command('Example.csproj', '3.8.99', {'product': 'studio'}))
 
     def test_no_symbol_exception_is_exact_project_and_plan_policy(self):
+        """Verify no symbol exception is exact project and plan policy."""
         plan = self.plan(self.rows[0]); plan['inventory']['selected'][0]['symbols'] = False
         with self.assertRaisesRegex(ValueError, 'core_original_symbols_policy'):
             core.validate_plan(plan)
@@ -90,6 +97,7 @@ class OriginalCoreProducerContracts(unittest.TestCase):
             with self.assertRaises(ValueError): core.private_symbols(source, item, 'net10.0', b'actual')
 
     def test_core_assembly_policy_is_captured_not_a_global_version_default(self):
+        """Verify Core assembly policy is captured not a global version default."""
         row = self.rows[0]
         item = {'framework_properties': {'net10.0': {'assembly_policy':
                 {'AssemblyVersion': '1.0.1.0', 'InformationalVersion': '1.0.1+' + row['commit']}}}}
@@ -100,6 +108,7 @@ class OriginalCoreProducerContracts(unittest.TestCase):
                 core.verify_assembly(details | change, item, 'net10.0', row)
 
     def test_exact_declared_and_provider_skip_sets_preserve_configured_gate(self):
+        """Verify exact declared and provider skip sets preserve configured gate."""
         self.assertEqual(3, len(core.expected_skips(self.rows[0], {})))
         self.assertEqual(146, len(core.expected_skips(self.rows[1], {})))
         self.assertEqual(98, len(core.expected_skips(self.rows[1], {core.PROVIDER_GATES[0]: 'configured'})))
@@ -109,6 +118,9 @@ class OriginalCoreProducerContracts(unittest.TestCase):
         self.assertEqual(1, sum(item['attribute'] == 'ConformanceTheory' for item in methods))
 
     def outcomes(self, row, project, env=None):
+        """Create passing and permitted-skipped TRX outcomes for a project and provider
+        environment.
+        """
         env = env or {}
         allowed = core.expected_skips(row, env)
         prefix = Path(project).stem + '.'
@@ -124,6 +136,7 @@ class OriginalCoreProducerContracts(unittest.TestCase):
         return definitions, outcomes, counters
 
     def test_skip_identity_reason_counts_and_provider_theory_fail_closed(self):
+        """Verify skip identity reason counts and provider theory fail closed."""
         for row, project in [(self.rows[0], 'test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj'),
                              (self.rows[1], 'test/unit/Elsa.UserTasks.Persistence.ConformanceTests/Elsa.UserTasks.Persistence.ConformanceTests.csproj')]:
             values = self.outcomes(row, project)
@@ -143,17 +156,20 @@ class OriginalCoreProducerContracts(unittest.TestCase):
                                  'test/unit/Elsa.UserTasks.Persistence.ConformanceTests/Elsa.UserTasks.Persistence.ConformanceTests.csproj')
 
     def test_other_core_conformance_projects_do_not_inherit_user_task_skips(self):
+        """Verify other Core conformance projects do not inherit user task skips."""
         values = self.outcomes(self.rows[1], 'test/integration/Elsa.Workflows.Persistence.ConformanceTests/Elsa.Workflows.Persistence.ConformanceTests.csproj')
         self.assertEqual([], core.verify_outcomes(*values, self.rows[1], {},
             'test/integration/Elsa.Workflows.Persistence.ConformanceTests/Elsa.Workflows.Persistence.ConformanceTests.csproj'))
 
     def test_unknown_product_cannot_fall_through_to_studio_recipe(self):
+        """Verify unknown product cannot fall through to Studio recipe."""
         with self.assertRaisesRegex(ValueError, 'Unsupported producer product'):
             maintenance.recipes({'product': 'unknown'}, '3.8.99', Path('/private/proof'))
         with self.assertRaises(ValueError):
             maintenance.recipes({'product': 'core', 'kind': 'wrong'}, '3.8.99', Path('/private/proof'))
 
     def test_core_preflight_uses_only_sdk_and_never_npm_or_host(self):
+        """Verify Core preflight uses only SDK and never npm or host."""
         with tempfile.TemporaryDirectory() as temp:
             source = Path(temp); private = source / 'private'; private.mkdir()
             commands = []
@@ -166,6 +182,7 @@ class OriginalCoreProducerContracts(unittest.TestCase):
             self.assertEqual({'product_work_executed': False, 'sdk': '10.0.300'}, value)
 
     def test_unbound_core_prepare_rejects_before_source_or_build(self):
+        """Verify unbound Core prepare rejects before source or build."""
         with tempfile.TemporaryDirectory() as temp:
             output = Path(temp) / 'producer'
             with patch.object(maintenance, 'run_build_command', side_effect=AssertionError('build forbidden')):
@@ -177,6 +194,7 @@ class OriginalCoreProducerContracts(unittest.TestCase):
             self.assertFalse((output / 'source').exists())
 
     def test_full_core_trx_joins_linkage_and_keeps_skips_separate(self):
+        """Verify full Core TRX joins linkage and keeps skips separate."""
         row = self.rows[0]
         project = 'test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj'
         with tempfile.TemporaryDirectory() as temp:
@@ -205,10 +223,12 @@ class OriginalCoreProducerContracts(unittest.TestCase):
                 maintenance.verify_tests(output, row, environment={})
 
     def test_core_contract_module_is_in_both_workflow_modes(self):
+        """Verify Core contract module is in both workflow modes."""
         workflow = (artifacts.ROOT / '.github/workflows/product-release-plan.yml').read_text()
         self.assertEqual(2, workflow.count(' test_selected_core_producer '))
 
     def test_core_tests_outside_solution_are_evaluated_without_widening_pack_scope(self):
+        """Verify Core tests outside solution are evaluated without widening pack scope."""
         row = self.rows[0]
         projects = ['src/Package.csproj', 'test/unit/Inside/Inside.csproj', 'test/unit/Outside/Outside.csproj']
         with tempfile.TemporaryDirectory() as temp:

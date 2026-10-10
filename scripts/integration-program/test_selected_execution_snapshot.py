@@ -18,6 +18,7 @@ import snapshot_product_planning_assets as snapshots
 
 class SelectedExecutionTests(unittest.TestCase):
     def setUp(self):
+        """Install a synthetic hosted environment and matching controller/plan identities."""
         self.controller = {'commit': 'a' * 40, 'tree': 'b' * 40}
         self.hash = 'c' * 64
         self.environment = {'GITHUB_ACTIONS': 'true', 'GITHUB_REPOSITORY': execution.REPOSITORY,
@@ -34,12 +35,15 @@ class SelectedExecutionTests(unittest.TestCase):
         self.addCleanup(environment.stop)
 
     def create(self, role='artifact'):
+        """Create a selected execution identity using the fixture's controller and plan."""
         return execution.selected_execution(role, self.controller, self.plan, self.hash)
 
     def validate(self, value, role='artifact'):
+        """Validate an execution record against the fixture's expected role and plan."""
         execution.validate_selected_execution(value, role, self.controller, self.plan, self.hash)
 
     def test_hosted_roles_bind_same_job_and_plan_without_provider_claim(self):
+        """Verify hosted roles bind same job and plan without provider claim."""
         artifact, consumer = self.create(), self.create('consumer')
         self.validate(artifact)
         self.validate(consumer, 'consumer')
@@ -54,6 +58,7 @@ class SelectedExecutionTests(unittest.TestCase):
             execution.local_execution()
 
     def test_partial_fork_pr_manual_wrong_workflow_ref_and_head_are_rejected(self):
+        """Reject partial hosted context, forks, PRs, manual runs, and wrong workflow identities."""
         for key in self.environment:
             with self.subTest(missing=key), patch.dict(os.environ, self.environment, clear=True):
                 del os.environ[key]
@@ -70,6 +75,7 @@ class SelectedExecutionTests(unittest.TestCase):
                 self.create()
 
     def test_schema_clock_role_source_controller_plan_and_context_fail_closed(self):
+        """Reject changes to execution schema, clock, role, source, controller, plan, or context."""
         original = self.create()
         mutations = [lambda x: x.update(extra=True), lambda x: x.pop('context'),
             lambda x: x.update(kind='hosted'), lambda x: x.update(id='invalid'),
@@ -94,6 +100,7 @@ class SelectedExecutionTests(unittest.TestCase):
             self.validate(original)
 
     def test_historical_hosted_producer_admission_uses_validated_actual_start(self):
+        """Verify historical hosted producer admission uses validated actual start."""
         value = self.create()
         receipt = {'schema': 1, 'mode': 'selected-product-artifact-control', 'stage': 'complete',
                    'success': True, 'artifact_proof': True, 'published': False, 'version_allocated': False,
@@ -115,6 +122,7 @@ class SelectedExecutionTests(unittest.TestCase):
         admit.assert_not_called()
 
     def test_historical_npm_checks_exact_artifact_envelope_before_any_command(self):
+        """Verify historical npm checks exact artifact envelope before any command."""
         value = self.create()
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
@@ -131,6 +139,7 @@ class SelectedExecutionTests(unittest.TestCase):
                 self.assertFalse((root / 'private').exists())
 
     def test_hosted_consumer_cannot_promote_local_producer_receipt(self):
+        """Verify hosted consumer cannot promote local producer receipt."""
         receipt = {'execution': execution.local_execution({})}
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
@@ -147,6 +156,7 @@ class SelectedExecutionTests(unittest.TestCase):
                 self.assertFalse((root / 'output').exists())
 
     def test_local_schema_remains_unchanged_and_partial_hosted_env_is_not_cleared(self):
+        """Verify local schema remains unchanged and partial hosted env is not cleared."""
         with patch.dict(os.environ, {}, clear=True):
             value = self.create()
             self.assertEqual({'kind', 'id', 'started_at'}, set(value))
@@ -159,6 +169,7 @@ class SelectedExecutionTests(unittest.TestCase):
 
 class PrivateSnapshotTests(unittest.TestCase):
     def setUp(self):
+        """Create private original-assets files and mock plan admission for snapshot tests."""
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name).resolve()
@@ -188,14 +199,17 @@ class PrivateSnapshotTests(unittest.TestCase):
         self.addCleanup(admission.stop)
 
     def refresh_assets(self):
+        """Rewrite fixture asset bytes and update their digest in the selected package policy."""
         self.raw = json.dumps(self.assets, indent=3).encode() + b'\n'
         self.assets_path.write_bytes(self.raw)
         self.policy['metadata']['restore_assets_sha256'] = metadata.sha256(self.raw)
 
     def run_snapshot(self):
+        """Run snapshot preservation using the fixture plan hash and destination."""
         return snapshots.snapshot(self.plan_path, self.hash, self.output)
 
     def test_tiny_actual_snapshot_preserves_raw_paths_and_consumer_schema(self):
+        """Preserve original asset bytes and paths in a consumer-compatible private snapshot."""
         receipt = self.run_snapshot()
         row = receipt['selected'][0]
         self.assertEqual(self.raw, (self.output / row['file']).read_bytes())
@@ -209,12 +223,14 @@ class PrivateSnapshotTests(unittest.TestCase):
             self.run_snapshot()
 
     def test_wrong_plan_hash_is_admitted_before_any_output(self):
+        """Verify a mismatched plan hash is rejected before any output is created."""
         with patch.object(snapshots.artifacts, 'admit', side_effect=ValueError('plan_hash')):
             with self.assertRaisesRegex(ValueError, 'plan_hash'):
                 self.run_snapshot()
         self.assertFalse(self.output.exists())
 
     def test_wrong_missing_duplicate_assets_and_partition_fail_before_writes(self):
+        """Reject changed, missing, duplicate, or mispartitioned assets before writing files."""
         for mode in ('wrong', 'missing', 'duplicate', 'partition'):
             with self.subTest(mode=mode):
                 self.refresh_assets()
@@ -239,6 +255,7 @@ class PrivateSnapshotTests(unittest.TestCase):
                     self.plan['inventory']['selected'] = [self.policy]
 
     def test_source_and_framework_joins_reject_foreign_relative_or_missing_project(self):
+        """Verify source and framework joins reject foreign relative or missing project."""
         for change in ('foreign', 'relative', 'framework', 'target', 'missing-project'):
             self.assets['project']['restore']['projectPath'] = str(self.project)
             self.assets['project']['frameworks'] = {'net8.0': {}, 'net10.0': {}}
@@ -259,6 +276,7 @@ class PrivateSnapshotTests(unittest.TestCase):
             self.assertFalse(self.output.exists())
 
     def test_symlink_input_output_or_source_component_is_rejected(self):
+        """Reject symlinks in snapshot input, output, or source paths."""
         link = self.root / 'link'
         link.symlink_to(self.planning, target_is_directory=True)
         with self.assertRaisesRegex(ValueError, 'snapshot_path'):

@@ -22,6 +22,7 @@ import product_artifact_execution as execution
 
 class ProductArtifactAdmissionTests(unittest.TestCase):
     def setUp(self):
+        """Create a recent synthetic Studio release plan with package and npm expectations."""
         self.time = datetime.now(timezone.utc).isoformat()
         source = {'product': 'studio', 'line': '3.8', 'commit': 'a' * 40, 'tree': 'b' * 40}
         project = {'path': 'src/Example/Example.csproj', 'package_id': 'Example', 'is_packable': True,
@@ -47,31 +48,38 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
             row['expected_tarball'] for row in self.plan['npm']['packages']]
 
     def observation(self):
+        """Return a recent synthetic successful public observation."""
         return {'status': 'observed', 'observed_at': self.time, 'sha256': 'e' * 64, 'bytes': 100}
 
     def admit(self, plan=None):
+        """Encode a plan and admit it using its matching SHA-256 and fixture clock."""
         data = json.dumps(plan or self.plan).encode()
         return artifacts.admit(data, metadata.sha256(data), checked_at=self.time)
 
     def test_exact_reviewed_plan_admitted_without_process_or_network(self):
+        """Verify exact reviewed plan admitted without process or network."""
         with patch.object(artifacts.metadata, 'git', side_effect=AssertionError('process forbidden')):
             self.assertEqual(self.plan, self.admit())
 
     def test_incomplete_controller_inputs_rejected(self):
+        """Verify incomplete controller inputs rejected."""
         self.plan['controller']['input_sha256'].pop(next(iter(artifacts.PLANNER_INPUTS)))
         with self.assertRaisesRegex(ValueError, 'plan_controller_inputs'):
             self.admit()
 
     def test_wrong_hash_rejected(self):
+        """Verify wrong hash rejected."""
         with self.assertRaisesRegex(ValueError, 'plan_hash'):
             artifacts.admit(json.dumps(self.plan).encode(), 'f' * 64)
 
     def test_duplicate_json_key_rejected(self):
+        """Verify duplicate JSON key rejected."""
         data = b'{"schema":1,"schema":1}'
         with self.assertRaises(ValueError):
             artifacts.admit(data, metadata.sha256(data))
 
     def test_stale_future_missing_and_ineligible_observations_rejected(self):
+        """Verify stale future missing and ineligible observations rejected."""
         for changes in ({'observed_at': (datetime.fromisoformat(self.time) - timedelta(hours=2)).isoformat()},
                         {'observed_at': (datetime.fromisoformat(self.time) + timedelta(seconds=1)).isoformat()},
                         {'status': 'unavailable'}, {'sha256': 'invalid'}, {'bytes': 0}):
@@ -80,6 +88,7 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
                 self.admit(plan)
 
     def test_wrong_selection_and_ineligible_plan_rejected(self):
+        """Verify wrong selection and ineligible plan rejected."""
         for key, value in (('product', 'core'), ('line', '3.9'), ('requested_version', '3.9.99'),
                            ('eligible', False), ('published', True), ('version_allocated', True), ('tag_created', True)):
             plan = deepcopy(self.plan); plan[key] = value
@@ -87,6 +96,7 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
                 self.admit(plan)
 
     def test_inventory_hash_and_partition_rejected(self):
+        """Verify inventory hash and partition rejected."""
         for mutate in (lambda p: p['inventory']['selected'].clear(),
                        lambda p: p['inventory']['excluded'].append({'project': 'unknown', 'id': 'Unknown', 'reason': 'test'}),
                        lambda p: p['expected_artifacts'].append('Unselected.3.8.99.nupkg'),
@@ -96,6 +106,7 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
                 self.admit(plan)
 
     def test_eligible_prerequisite_can_be_missing_on_one_mapped_feed(self):
+        """Verify eligible prerequisite can be missing on one mapped feed."""
         present = {'eligible': True, 'reason': None, 'observation': self.observation()}
         missing = {'eligible': False, 'reason': 'prerequisite_missing',
                    'observation': {'status': 'missing', 'observed_at': self.time}}
@@ -104,18 +115,21 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
         self.assertEqual(self.plan, self.admit())
 
     def test_prerequisites_cannot_widen_selected_scope(self):
+        """Verify prerequisites cannot widen selected scope."""
         self.plan['prerequisites'] = [{'id': 'Example', 'eligible': True, 'reason': None, 'observation': self.observation()}]
         self.plan['prerequisites_excluded_from_publication'] = ['Example']
         with self.assertRaisesRegex(ValueError, 'plan_prerequisite_scope'):
             self.admit()
 
     def test_pair_requires_exact_same_source_version_and_names(self):
+        """Verify pair requires exact same source version and names."""
         for key, value in (('source_commit', 'f' * 40), ('atomic', False), ('line', '3.9')):
             plan = deepcopy(self.plan); plan['npm'][key] = value
             with self.subTest(key=key), self.assertRaisesRegex(ValueError, 'plan_npm_identity'):
                 self.admit(plan)
 
     def test_failed_admission_has_no_directory_or_controller_side_effect(self):
+        """Verify failed admission has no directory or controller side effect."""
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / 'proof'
             with patch.object(artifacts, 'verify_controller', side_effect=AssertionError('controller touched')):
@@ -124,6 +138,7 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
             self.assertFalse(output.exists())
 
     def test_release_plan_trigger_covers_consumed_runtime_tests_helpers_and_documents(self):
+        """Verify release plan trigger covers consumed runtime tests helpers and documents."""
         workflow = (artifacts.ROOT / '.github/workflows/product-release-plan.yml').read_text()
         filters = [line.split("'")[1] for line in workflow.splitlines() if line.strip().startswith("- '")]
         paths = ['scripts/integration-program/prove_product_release_artifacts.py',
@@ -137,6 +152,7 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
                 self.assertTrue(any(fnmatch.fnmatch(path, pattern) for pattern in filters))
 
     def refresh_remote(self, *, status='observed', age=0):
+        """Refresh prerequisites through mocked feeds and return requests with the fixed clock."""
         clock = datetime(2026, 10, 9, 20, 0, tzinfo=timezone.utc)
         checked = []
         body = json.dumps({'name': planner.NPM_IDS[0], 'versions': {'3.8.4': {}},
@@ -174,15 +190,18 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
         return checked, clock
 
     def test_remote_refresh_checks_after_both_npm_observations(self):
+        """Verify remote refresh checks after both npm observations."""
         checked, clock = self.refresh_remote()
         self.assertEqual([clock.isoformat()], checked)
 
     def test_remote_refresh_rejects_unavailable_and_stale_npm(self):
+        """Verify remote refresh rejects unavailable and stale npm."""
         for status, age in (('unavailable', 0), ('observed', planner.MAX_AGE_SECONDS + 1)):
             with self.subTest(status=status, age=age), self.assertRaisesRegex(ValueError, 'artifact_fresh_prerequisite_failed'):
                 self.refresh_remote(status=status, age=age)
 
     def test_selected_retention_rejects_missing_unknown_and_wrong_dependency_archives(self):
+        """Verify selected retention rejects missing unknown and wrong dependency archives."""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             source = root / 'archives'
@@ -200,6 +219,7 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
                     artifacts.retain_selected(self.plan, source, root / ('retained-' + str(index)))
 
     def test_local_execution_is_uuid_utc_and_has_no_hosted_numeric_fields(self):
+        """Verify local execution is UUID utc and has no hosted numeric fields."""
         local = execution.local_execution({})
         execution.validate_local_execution(local)
         self.assertEqual({'kind', 'id', 'started_at'}, set(local))
@@ -208,6 +228,7 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
         self.assertNotEqual(local['id'], execution.local_execution({})['id'])
 
     def test_hosted_execution_context_and_envelope_rejected(self):
+        """Verify hosted execution context and envelope rejected."""
         for environment in ({'GITHUB_ACTIONS': 'true'}, {'GITHUB_RUN_ID': '123'}, {'GITHUB_RUN_ATTEMPT': '1'}):
             with self.subTest(environment=environment), self.assertRaisesRegex(ValueError, 'hosted_control_not_supported'):
                 execution.local_execution(environment)
@@ -217,6 +238,7 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
                 execution.validate_local_execution(candidate)
 
     def preflight(self, outputs=None, *, recipe_framework='net10.0'):
+        """Run product toolchain preflight against mocked native commands and capture its log."""
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         source = Path(temporary.name)
@@ -247,6 +269,7 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
         return result, commands, (private / 'preflight-host-frameworks.log').read_text()
 
     def test_failed_tool_preflight_stops_before_helper_or_product_recipe(self):
+        """Verify failed tool preflight stops before helper or product recipe."""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
             controller = root / 'controller'
@@ -286,6 +309,7 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
             self.assertEqual('tool-preflight-failed', receipt['failure_code'])
 
     def test_tool_preflight_only_evaluates_source_supported_recipe(self):
+        """Verify tool preflight only evaluates source supported recipe."""
         result, commands, framework_log = self.preflight()
         self.assertFalse(result['product_work_executed'])
         self.assertEqual('net10.0', result['host_framework'])
@@ -298,6 +322,7 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
         self.assertNotIn('[dotnet-build-slots]', framework_log)
 
     def test_incompatible_tool_or_host_recipe_fails_preflight(self):
+        """Verify incompatible tool or host recipe fails preflight."""
         defaults = ['v22.23.3', '10.9.4', '10.0.300 [/sdk]', '10.0.300',
                     '{"Properties":{"TargetFrameworks":"net8.0;net9.0;net10.0","TargetFramework":""}}']
         for index, value, reason in ((0, 'v25.8.0', 'artifact_node_version'), (1, '8.1.0', 'artifact_npm_version'),
@@ -317,6 +342,7 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
             self.preflight(recipe_framework='net9.0')
 
     def test_staging_historical_version_preserves_lifecycle_and_files(self):
+        """Verify staging historical version preserves lifecycle and files."""
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'package.json'
             original = {'name': planner.NPM_IDS[1], 'version': '0.0.0', 'files': ['dist'],
@@ -331,6 +357,7 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
 
 class ArtifactCliDiagnosticsTests(unittest.TestCase):
     def setUp(self):
+        """Create an isolated plan file and destination for artifact CLI failure tests."""
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name).resolve()
@@ -339,6 +366,7 @@ class ArtifactCliDiagnosticsTests(unittest.TestCase):
         self.output = self.root / 'output'
 
     def invoke(self, *, digest=None):
+        """Run the failing artifact CLI and parse its public JSON diagnostic."""
         argv = ['proof', '--plan', str(self.plan), '--plan-sha256',
             digest or metadata.sha256(self.plan.read_bytes()), '--output', str(self.output)]
         stdout = io.StringIO()
@@ -348,11 +376,13 @@ class ArtifactCliDiagnosticsTests(unittest.TestCase):
         return json.loads(stdout.getvalue())
 
     def test_genuine_early_hash_failure_reports_closed_code_without_receipt(self):
+        """Verify genuine early hash failure reports closed code without receipt."""
         result = self.invoke(digest='f' * 64)
         self.assertEqual(result, {'success': False, 'failure_code': 'plan_hash', 'failure_stage': 'unclassified', 'retained_receipt_created': False})
         self.assertFalse(self.output.exists())
 
     def test_unexpected_arbitrary_error_and_malformed_json_remain_generic(self):
+        """Verify unexpected arbitrary error and malformed JSON remain generic."""
         self.plan.write_bytes(b'not-json')
         result = self.invoke()
         self.assertEqual(result, {'success': False, 'failure_code': 'artifact_control_failed', 'failure_stage': 'unclassified', 'retained_receipt_created': False})
@@ -363,6 +393,7 @@ class ArtifactCliDiagnosticsTests(unittest.TestCase):
                 self.assertEqual(self.invoke(), result)
 
     def test_existing_receipt_is_not_reported_created_by_failed_attempt(self):
+        """Verify existing receipt is not reported created by failed attempt."""
         retained = self.output / 'retained'; retained.mkdir(parents=True)
         receipt = retained / 'receipt.json'; receipt.write_bytes(b'previous private receipt')
         result = self.invoke(digest='f' * 64)
@@ -370,6 +401,7 @@ class ArtifactCliDiagnosticsTests(unittest.TestCase):
         self.assertEqual(receipt.read_bytes(), b'previous private receipt')
 
     def test_new_regular_receipt_is_reported_without_reading_its_private_fields(self):
+        """Verify new regular receipt is reported without reading its private fields."""
         def fail(*args, **kwargs):
             retained = self.output / 'retained'; retained.mkdir(parents=True)
             (retained / 'receipt.json').write_bytes(b'private secret raw diagnostics, not JSON')
@@ -379,6 +411,7 @@ class ArtifactCliDiagnosticsTests(unittest.TestCase):
                 'failure_stage': 'unclassified', 'retained_receipt_created': True})
 
     def test_symlink_receipt_never_counts_as_created(self):
+        """Verify symlink receipt never counts as created."""
         target = self.root / 'foreign'; target.write_bytes(b'secret')
         def fail(*args, **kwargs):
             retained = self.output / 'retained'; retained.mkdir(parents=True)
@@ -388,6 +421,7 @@ class ArtifactCliDiagnosticsTests(unittest.TestCase):
             self.assertFalse(self.invoke()['retained_receipt_created'])
 
     def test_new_failed_receipt_reports_only_fixed_producer_stage(self):
+        """Verify new failed receipt reports only fixed producer stage."""
         def fail(*args, **kwargs):
             retained = self.output / 'retained'; retained.mkdir(parents=True)
             (retained / 'receipt.json').write_text(json.dumps({'schema': 1,
@@ -399,6 +433,7 @@ class ArtifactCliDiagnosticsTests(unittest.TestCase):
                 'failure_stage': 'tool-preflight', 'retained_receipt_created': True})
 
     def test_producer_stage_rejects_complete_setup_complete_and_raw_receipt_values(self):
+        """Verify producer stage rejects complete setup complete and raw receipt values."""
         for index, stage in enumerate(('complete', 'setup-complete', 'tool-preflight /private/token')):
             self.output = self.root / str(index)
             def fail(*args, **kwargs):
@@ -414,6 +449,7 @@ class ArtifactCliDiagnosticsTests(unittest.TestCase):
 
 class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
     def setUp(self):
+        """Prepare a bound Core plan and private recipe-failure diagnostics fixture."""
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name).resolve()
@@ -443,6 +479,7 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
         self.failure = RuntimeError('/private/secret original failure')
 
     def invoke(self, mutate=None, *, direct=False, producer_complete=False):
+        """Inject a Core recipe failure and return public and retained diagnostic evidence."""
         def checkout(controller, binding, source):
             source.mkdir()
             (source / 'Elsa.sln').write_bytes(b'solution')
@@ -483,6 +520,7 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
                 json.loads((self.output / 'retained/receipt.json').read_text()))
 
     def test_nested_failed_native_receipt_reaches_cli_without_raw_fields_or_proof(self):
+        """Verify nested failed native receipt reaches CLI without raw fields or proof."""
         result, receipt = self.invoke()
         self.assertEqual(result['failure_stage'], 'original-product-recipe')
         self.assertEqual(result['failure_code'], 'artifact_control_failed')
@@ -502,6 +540,7 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
         self.assertNotIn('/private/secret', json.dumps(receipt))
 
     def test_all_inner_verification_stages_report_only_closed_reason(self):
+        """Verify all inner verification stages report only closed reason."""
         for stage in ('source-verification', 'toolchain', 'inventory', 'test-evidence',
                       'symbol-inspector', 'sdk-metadata', 'package-verification'):
             with self.subTest(stage=stage):
@@ -516,11 +555,15 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
                 self.assertNotIn('/private/secret', json.dumps(result))
 
     def source_producer_failure(self):
+        """Change the private fixture to a package source-provenance verification failure."""
         self.inner.update(stage='package-verification', focus={'package': 'Elsa.Example', 'framework': 'net8.0'},
             error={'code': 'package-verification-failed', 'reason': 'source-producer-unverified',
                    'source_producer_check': 'embedded-checksum-mismatch'})
 
     def test_source_producer_failure_reaches_cli_with_plan_bound_package_framework_and_check(self):
+        """Verify source producer failure reaches CLI with plan bound package framework and
+        check.
+        """
         self.source_producer_failure()
         result, receipt = self.invoke()
         expected = {'package': 'Elsa.Example', 'framework': 'net8.0', 'check': 'embedded-checksum-mismatch'}
@@ -530,6 +573,9 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
         self.assertFalse(receipt['success'])
 
     def test_source_producer_detail_rejects_unplanned_or_private_fields_and_wrong_provenance(self):
+        """Verify source producer detail rejects unplanned or private fields and wrong
+        provenance.
+        """
         self.source_producer_failure()
         original = deepcopy(self.inner)
         mutations = [
@@ -553,6 +599,7 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
                 self.assertNotIn('Private.ValidIdentifier', json.dumps(result))
 
     def test_outer_source_producer_projection_requires_same_plan_and_catalog_membership(self):
+        """Verify outer source producer projection requires same plan and catalog membership."""
         self.source_producer_failure()
         _, receipt = self.invoke()
         plan_bytes = (self.root / 'plan.json').read_bytes()
@@ -579,6 +626,7 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
                 self.assertNotIn('Private.ValidIdentifier', json.dumps(result))
 
     def test_identity_and_closed_field_mutations_are_unavailable(self):
+        """Verify identity and closed field mutations are unavailable."""
         mutations = [
             {'schema': True}, {'success': True}, {'published': True}, {'maintenance_refs_activated': True},
             {'selection': self.inner['selection'] | {'commit': 'f' * 40}},
@@ -615,6 +663,9 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
                 self.assertNotIn('/private/secret', json.dumps(result))
 
     def test_missing_symlink_malformed_and_oversized_diagnostics_preserve_original_exception(self):
+        """Verify missing symlink malformed and oversized diagnostics preserve original
+        exception.
+        """
         def symlink(receipt):
             target = self.root / 'foreign.json'
             target.write_text(json.dumps(self.inner))
@@ -638,6 +689,7 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
                 self.assertEqual(receipt['failure_code'], 'original-product-recipe-failed')
 
     def test_hosted_receipt_requires_matching_run_and_attempt(self):
+        """Verify hosted receipt requires matching run and attempt."""
         self.execution = {'context': {'run_id': '123', 'run_attempt': '2'}}
         self.inner.update(run_id='123', run_attempt='2')
         result, _ = self.invoke()
@@ -648,6 +700,7 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
         self.assertEqual(result['product_recipe_failure'], {'status': 'unavailable'})
 
     def test_failure_after_successful_producer_has_no_nested_failure_summary(self):
+        """Verify failure after successful producer has no nested failure summary."""
         self.inner['success'] = True
         result, receipt = self.invoke(producer_complete=True)
         self.assertEqual(result['failure_stage'], 'original-product-recipe')
@@ -655,6 +708,7 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
         self.assertNotIn('product_recipe_failure', receipt)
 
     def test_cli_revalidates_projection_and_ignores_preexisting_receipt(self):
+        """Verify CLI revalidates projection and ignores preexisting receipt."""
         _, receipt = self.invoke()
         path = self.output / 'retained/receipt.json'
         receipt['product_recipe_failure']['reason'] = '/private/secret'

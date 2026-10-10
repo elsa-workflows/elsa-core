@@ -40,17 +40,20 @@ STEPS = ('node-version', 'historical-host-publish', 'pack-wasm', 'historical-wra
 
 
 def sequence(value) -> list:
+    """Require a list bounded by the transport member limit."""
     require(type(value) is list and len(value) <= transport.MAX_MEMBERS, 'selected_payload_array')
     return value
 
 
 def hashes(value, keys: set[str]) -> None:
+    """Require exactly the expected hash fields and validate each SHA-256 digest."""
     transport.closed(value, keys, 'selected_payload_hashes')
     for item in value.values():
         transport.digest(item)
 
 
 def text(value: object) -> str:
+    """Require bounded public text without control characters or absolute-path syntax."""
     require(type(value) is str and value and len(value) <= 4096 and
             not any(ord(char) < 32 for char in value) and not value.startswith(('/', '\\')) and ':' not in value,
             'selected_payload_text')
@@ -58,11 +61,13 @@ def text(value: object) -> str:
 
 
 def package_id(value):
+    """Require a package identifier using the admitted NuGet character set."""
     require(type(value) is str and re.fullmatch(r'[A-Za-z0-9_][A-Za-z0-9_.-]*', value), 'selected_payload_package_id')
     return value
 
 
 def inventory(rows: list[dict]) -> dict:
+    """Index a bounded archive inventory after validating paths, sizes, and digests."""
     result = {}
     for row in sequence(rows):
         transport.closed(row, {'path', 'size', 'sha256'}, 'selected_payload_inventory')
@@ -77,6 +82,7 @@ def inventory(rows: list[dict]) -> dict:
 
 
 def archive_record(row: dict, plan: dict, *, selected: bool = True) -> None:
+    """Validate package archive identity and inventory against the requested release version."""
     transport.closed(row, {'file', 'id', 'version', 'sha256', 'size', 'inventory'}, 'selected_payload_archive')
     package_id(row['id'])
     transport.safe_name(row['file'])
@@ -91,6 +97,7 @@ def archive_record(row: dict, plan: dict, *, selected: bool = True) -> None:
 
 
 def validate_packages(plan: dict, receipt: dict, files: dict[str, bytes]) -> dict:
+    """Verify selected archive bytes and keep excluded recipe outputs outside the payload."""
     transport.closed(receipt['packages'], {'selected', 'private_recipe_only_outputs'}, 'selected_payload_packages')
     selected = {row['id'].casefold(): row for row in plan['inventory']['selected']}
     expected = {name for name in plan['expected_artifacts'] if name.endswith(('.nupkg', '.snupkg'))}
@@ -132,6 +139,7 @@ def validate_packages(plan: dict, receipt: dict, files: dict[str, bytes]) -> dic
 
 
 def validate_tests(plan: dict, receipt: dict, contracts: dict) -> None:
+    """Require the planned test cells and only the registered inherited skip placeholders."""
     result = transport.closed(receipt['product_tests'], {'executions', 'inherited_skipped_placeholders'}, 'selected_payload_tests')
     projects = {row['path']: row for row in plan['inventory']['projects']}
     expected = {(project, framework) for project in plan['inventory']['applicable_tests']
@@ -167,6 +175,7 @@ def validate_tests(plan: dict, receipt: dict, contracts: dict) -> None:
 
 
 def validate_npm(plan: dict, receipt: dict, files: dict[str, bytes], contract: dict) -> None:
+    """Verify paired Studio tarballs, lifecycle-generated assets, and the separate npm receipt."""
     report = transport.closed(receipt['npm'], NPM_KEYS, 'selected_payload_npm')
     require(report['source_commit'] == plan['source']['commit'] and report['source_tree'] == plan['source']['tree'] and
             report['version'] == plan['requested_version'] and report['execution'] == receipt['execution'] and
@@ -239,6 +248,7 @@ def validate_npm(plan: dict, receipt: dict, files: dict[str, bytes], contract: d
 
 def validate_sdk_restore(plan: dict, value: dict, selected: dict, framework: str, restored: dict,
                          original_assets_sha256: str) -> None:
+    """Validate SDK pruning and download evidence bound to the original restore assets."""
     transport.closed(value, {'sdk_version', 'original_assets_sha256', 'pruning_enabled', 'pruning_sha256', 'pruned_edges', 'downloads',
         'toolchain_hash_scope'}, 'selected_payload_sdk_restore')
     require(value['sdk_version'] == metadata.SDK and type(value['pruning_enabled']) is bool and
@@ -280,6 +290,7 @@ def validate_sdk_restore(plan: dict, value: dict, selected: dict, framework: str
 
 
 def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, runtime: bool) -> None:
+    """Validate a consumer cell's restored package evidence and optional runtime checks."""
     transport.closed(cell, CELL_KEYS | ({'runtime'} if runtime else set()), 'selected_payload_cell')
     require(cell['id'].casefold() in selected and cell['id'] == selected[cell['id'].casefold()]['record']['id'],
             'selected_payload_cell_package')
@@ -433,6 +444,7 @@ def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, ru
 
 
 def validate_consumers(plan: dict, receipt: dict, result: dict, selected: dict, receipt_hash: str, contracts: dict, *, now: datetime) -> None:
+    """Join consumer identity and execution evidence to complete compile and runtime coverage."""
     transport.closed(result, CONSUMER_KEYS, 'selected_payload_consumer')
     require(type(result['schema']) is int and result['schema'] == 1 and result['mode'] == 'selected-product-consumers' and
             result['success'] is True and result['published'] is False and result['stage'] == 'complete' and
@@ -550,6 +562,7 @@ def runtime_policy(plan: dict, contracts: dict) -> dict:
 
 
 def runtime_source(plan: dict, contracts: dict) -> dict:
+    """Return the pinned runtime source blobs for the plan's product and release line."""
     if plan['product'] == 'core':
         return contracts['core']['consumer']['sources'][plan['line']]
     if plan['line'] == '3.9':

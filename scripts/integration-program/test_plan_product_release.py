@@ -217,6 +217,7 @@ class ProductReleasePlanTests(unittest.TestCase):
             self.plan()
 
     def test_conditional_framework_references_are_retained_unioned_and_validated(self):
+        """Verify conditional framework references are retained unioned and validated."""
         with tempfile.TemporaryDirectory(dir=self.temporary.name) as directory:
             source = Path(directory)
             project = source / 'Example.csproj'
@@ -240,6 +241,7 @@ class ProductReleasePlanTests(unittest.TestCase):
             self.assertFalse(list(source.rglob('*.dll')))
 
     def test_same_framework_casefold_duplicate_reference_is_ambiguous(self):
+        """Verify same framework case-insensitive duplicate reference is ambiguous."""
         with tempfile.TemporaryDirectory(dir=self.temporary.name) as directory:
             source = Path(directory)
             project = source / 'Example.csproj'
@@ -250,6 +252,7 @@ class ProductReleasePlanTests(unittest.TestCase):
                 metadata.evaluate_project(source, project.name, '3.8.5', binding=self.binding)
 
     def test_full_inventory_retains_ownership_exclusions_and_strips_private_state(self):
+        """Verify full inventory retains ownership exclusions and strips private state."""
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory)
             identifiers = list(metadata.CANONICAL_OWNERS) + ['Elsa.Secrets.Api', 'Elsa.Secrets.Core']
@@ -465,6 +468,7 @@ class ProductReleasePlanTests(unittest.TestCase):
 
 class OriginalCoreMetadataInputsTests(unittest.TestCase):
     def setUp(self):
+        """Create original Core metadata inputs and a command capture ledger."""
         self.source = Path(self.enterContext(tempfile.TemporaryDirectory(prefix='original-core-metadata-')))
         self.binding = {'product': 'core', 'line': '3.9', 'kind': 'observed-core-release-branch',
                         'commit': '5d3582b6309a2fd8ea33ebdb8c39fb040bfdc514',
@@ -486,6 +490,7 @@ class OriginalCoreMetadataInputsTests(unittest.TestCase):
         self.calls = []
 
     def sdk_evaluation(self, command, source, **kwargs):
+        """Emulate framework-specific MSBuild properties while recording command environments."""
         self.calls.append((command, kwargs['env']))
         framework = next((arg.split('=', 1)[1] for arg in command if arg.startswith('-p:TargetFramework=')), None)
         if '-getItem:ProjectReference,PackageReference' in command:
@@ -503,6 +508,9 @@ class OriginalCoreMetadataInputsTests(unittest.TestCase):
             'RepositoryUrl': '', 'PackageProjectUrl': ''}})
 
     def assert_inputs(self, command, environment, binding):
+        """Assert that metadata commands preserve Core or non-Core version and environment
+        policy.
+        """
         if binding['product'] == 'core':
             self.assertFalse(any(arg.startswith(('-p:Version=', '-p:PackageVersion=')) for arg in command))
             self.assertEqual('3.9.1', environment['VERSION'])
@@ -521,6 +529,7 @@ class OriginalCoreMetadataInputsTests(unittest.TestCase):
         self.assertIn('-p:BuildProjectReferences=false', command)
 
     def test_outer_and_each_framework_preserve_original_core_and_other_product_inputs(self):
+        """Verify outer and each framework preserve original Core and other product inputs."""
         with patch.dict('os.environ', {'CI': 'true', 'GITHUB_ACTIONS': 'true',
                                       'VERSION': 'PRIVATE_SENTINEL', 'GITHUB_TOKEN': 'PRIVATE_SENTINEL'}, clear=True):
             for binding in (self.binding, {'product': 'studio'}, {'product': 'extensions'}):
@@ -532,6 +541,7 @@ class OriginalCoreMetadataInputsTests(unittest.TestCase):
                     self.assert_inputs(command, environment, binding)
 
     def test_stage_and_restored_policy_keep_recipe_inputs_across_all_evaluations(self):
+        """Verify stage and restored policy keep recipe inputs across all evaluations."""
         sdk = self.source / 'sdk'
         sdk.mkdir()
         (sdk / 'NuGet.Build.Tasks.Pack.targets').write_text('sdk-target')
@@ -569,6 +579,7 @@ class OriginalCoreMetadataInputsTests(unittest.TestCase):
                     self.assertEqual({'net8.0', 'net10.0'}, set(result['original_output_policy']))
 
     def test_project_version_override_rejects_requested_version_before_restore_or_stage(self):
+        """Verify project version override rejects requested version before restore or stage."""
         with patch.object(metadata, 'git', return_value=self.project_path), \
              patch.object(metadata, 'run', side_effect=self.sdk_evaluation), \
              patch.object(metadata, 'stage_project', return_value={'status': 'observed'}) as stage:
@@ -580,6 +591,7 @@ class OriginalCoreMetadataInputsTests(unittest.TestCase):
 
 class ProductReleaseMetadataProjectionTests(unittest.TestCase):
     def setUp(self):
+        """Create isolated source and package policy fixtures for metadata projection."""
         self.directory = Path(self.enterContext(tempfile.TemporaryDirectory(prefix='metadata-projection-contract-')))
         self.source = self.directory / 'source'
         self.source.mkdir()
@@ -593,6 +605,7 @@ class ProductReleaseMetadataProjectionTests(unittest.TestCase):
         self.binding = {'product': 'extensions'}
 
     def test_three_file_collection_projections_retain_original_policy_and_sdk_groups(self):
+        """Verify three file collection projections retain original policy and SDK groups."""
         sdk = self.directory / 'dotnet/sdk/10.0.300'
         sdk.mkdir(parents=True)
         (sdk / 'NuGet.Build.Tasks.Pack.targets').write_text('sdk-target-identity')
@@ -627,6 +640,7 @@ class ProductReleaseMetadataProjectionTests(unittest.TestCase):
         self.assertFalse((self.source / 'src/Example/wwwroot').exists())
 
     def test_unavailable_metadata_retains_closed_stage_and_category_without_private_error(self):
+        """Verify unavailable metadata retains closed stage and category without private error."""
         for error, category in ((ValueError('Command failed (1): /private/command'), 'command_failed'),
                 (OSError('/private/file'), 'metadata_io_failed'),
                 (subprocess.TimeoutExpired('/private/command', 300), 'command_timeout')):
@@ -637,6 +651,7 @@ class ProductReleaseMetadataProjectionTests(unittest.TestCase):
                 self.assertNotIn('/private/', json.dumps(result))
 
     def test_nuspec_identity_failure_is_distinct_from_command_failure(self):
+        """Verify nuspec identity failure is distinct from command failure."""
         destination = self.directory / 'metadata'
         def wrong_identity(*args, **kwargs):
             (destination / 'wrong.nuspec').write_text('<package><metadata><id>Wrong</id><version>3.8.5</version></metadata></package>')
@@ -723,6 +738,7 @@ class HistoricalStudioNpmIntentTests(unittest.TestCase):
 
 class ProductReleaseCliDiagnosticsTests(unittest.TestCase):
     def setUp(self):
+        """Configure an isolated planner CLI invocation and captured output streams."""
         parent = Path(self.enterContext(tempfile.TemporaryDirectory(prefix='plan-diagnostic-contract-')))
         self.output = parent / 'output'
         self.stdout, self.stderr = io.StringIO(), io.StringIO()
@@ -730,6 +746,9 @@ class ProductReleaseCliDiagnosticsTests(unittest.TestCase):
             '--version', '3.8.5', '--output', str(self.output)]))
 
     def failed_main(self):
+        """Run a failing planner CLI and return diagnostics after checking private data stays
+        hidden.
+        """
         with redirect_stdout(self.stdout), redirect_stderr(self.stderr):
             self.assertEqual(1, planner.main())
         self.assertEqual('', self.stderr.getvalue())
@@ -745,11 +764,13 @@ class ProductReleaseCliDiagnosticsTests(unittest.TestCase):
         return public['diagnostic']
 
     def test_bootstrap_failure_identifies_exception_without_exposing_message(self):
+        """Verify bootstrap failure identifies exception without exposing message."""
         with patch.object(planner, 'build_helper', side_effect=PermissionError('/PRIVATE_SENTINEL/key')):
             diagnostic = self.failed_main()
         self.assertEqual({'phase': 'helper_bootstrap', 'exception_class': 'PermissionError'}, diagnostic)
 
     def failed_helper_build(self, body):
+        """Inject native helper-build output and return the resulting public CLI diagnostic."""
         def native(command, cwd, **kwargs):
             if command == ['dotnet', '--version']:
                 return metadata.SDK
@@ -760,17 +781,20 @@ class ProductReleaseCliDiagnosticsTests(unittest.TestCase):
             return self.failed_main()
 
     def test_failed_helper_build_retains_native_exit_and_codes_without_output(self):
+        """Verify failed helper build retains native exit and codes without output."""
         diagnostic = self.failed_helper_build(b'/PRIVATE_SENTINEL/key: error MSB1008: secret\n' +
             b'error NETSDK1045: PRIVATE_SENTINEL\nerror MSB1008: repeated\n')
         self.assertEqual({'phase': 'helper_build', 'exception_class': 'ValueError',
             'native': {'status': 'exited', 'exit_code': 1, 'codes': ['MSB1008', 'NETSDK1045']}}, diagnostic)
 
     def test_helper_log_limit_counts_bytes_and_excludes_private_argv(self):
+        """Verify helper log limit counts bytes and excludes private argv."""
         diagnostic = self.failed_helper_build(('\u20ac' * (planner.NATIVE_DIAGNOSTIC_BYTES // 3 + 1)).encode() +
             b'\nerror CS0001: outside byte limit PRIVATE_SENTINEL')
         self.assertEqual([], diagnostic['native']['codes'])
 
     def test_semantics_failure_retains_exit_status_without_payload_or_output(self):
+        """Verify semantics failure retains exit status without payload or output."""
         semantics = planner.Semantics(Path('/PRIVATE_SENTINEL/helper.dll'))
         result = subprocess.CompletedProcess(['PRIVATE_SENTINEL'], -9,
             stdout='error CS1001: PRIVATE_SENTINEL', stderr='error NU1301: PRIVATE_SENTINEL')
@@ -782,6 +806,7 @@ class ProductReleaseCliDiagnosticsTests(unittest.TestCase):
             'native': {'status': 'exited', 'exit_code': -9, 'codes': ['CS1001', 'NU1301']}}, diagnostic)
 
     def test_native_start_timeout_and_invalid_json_stay_closed_failures(self):
+        """Verify native start timeout and invalid JSON stay closed failures."""
         failures = (
             (FileNotFoundError('/PRIVATE_SENTINEL/host'), 'FileNotFoundError', 'start-failed', None),
             (subprocess.TimeoutExpired(['PRIVATE_SENTINEL'], 60,
@@ -806,6 +831,7 @@ class ProductReleaseCliDiagnosticsTests(unittest.TestCase):
                     'native': {'status': status, 'exit_code': exit_code, 'codes': []}}, diagnostic)
 
     def test_semantics_timeout_projects_partial_codes_without_partial_output(self):
+        """Verify semantics timeout projects partial codes without partial output."""
         error = subprocess.TimeoutExpired(['PRIVATE_SENTINEL'], 60,
             output=b'error CS1001: PRIVATE_SENTINEL', stderr=b'warning NU1301: PRIVATE_SENTINEL')
         with patch.object(planner, 'build_helper', return_value=planner.Semantics(Path('/PRIVATE_SENTINEL/helper.dll'))), \
@@ -816,6 +842,7 @@ class ProductReleaseCliDiagnosticsTests(unittest.TestCase):
             'native': {'status': 'timed-out', 'exit_code': None, 'codes': ['CS1001', 'NU1301']}}, diagnostic)
 
     def test_history_and_prerequisite_preserve_original_native_exception_policy(self):
+        """Verify history and prerequisite preserve original native exception policy."""
         def observation(url, body):
             return {'url': url, 'status': 'observed', 'observed_at': planner.now(),
                 '_body': body, 'sha256': metadata.sha256(body), 'bytes': len(body)}
@@ -841,6 +868,7 @@ class ProductReleaseCliDiagnosticsTests(unittest.TestCase):
                     self.assertEqual(reason, check()['reason'])
 
     def test_selected_planning_error_never_emits_an_arbitrary_exception_class_or_message(self):
+        """Verify selected planning error never emits an arbitrary exception class or message."""
         class PRIVATE_SENTINEL(ValueError):
             pass
         with patch.object(planner, 'build_helper', return_value=object()), \
@@ -849,6 +877,7 @@ class ProductReleaseCliDiagnosticsTests(unittest.TestCase):
         self.assertEqual({'phase': 'selected_source_planning', 'exception_class': 'ValueError'}, diagnostic)
 
     def test_called_process_error_projects_codes_not_command_or_message(self):
+        """Verify called process error projects codes not command or message."""
         error = subprocess.CalledProcessError(128, ['PRIVATE_SENTINEL'], output=b'error MSB1008: PRIVATE_SENTINEL',
             stderr='error PRIVATE_SENTINEL1000: secret')
         with patch.object(planner, 'build_helper', return_value=object()), \
@@ -858,6 +887,7 @@ class ProductReleaseCliDiagnosticsTests(unittest.TestCase):
             'native': {'status': 'exited', 'exit_code': 128, 'codes': ['MSB1008']}}, diagnostic)
 
     def test_native_code_projection_is_bounded_normalized_and_deduplicated(self):
+        """Verify native code projection is bounded normalized and deduplicated."""
         text = '\n'.join(f'error NU{value:04}: PRIVATE_SENTINEL' for value in range(1000, 1050))
         text += '\nwarning nu1000: duplicate\nerror CS10001: invalid\nerror MSB1008_private: invalid'
         text += 'x' * planner.NATIVE_DIAGNOSTIC_BYTES + '\nerror CS0001: outside bound'
@@ -869,6 +899,7 @@ class ProductReleaseCliDiagnosticsTests(unittest.TestCase):
         self.assertEqual([f'NU{value}' for value in range(1000, 1032)], diagnostic['native']['codes'])
 
     def test_malformed_native_metadata_cannot_become_public_values(self):
+        """Verify malformed native metadata cannot become public values."""
         for status in ('PRIVATE_SENTINEL', True, None):
             for exit_code in (True, 'PRIVATE_SENTINEL', 2 ** 31, -2 ** 31 - 1):
                 with self.subTest(status=status, exit_code=exit_code):
@@ -883,6 +914,7 @@ class ProductReleaseCliDiagnosticsTests(unittest.TestCase):
             planner.failure_diagnostic(error, 'helper_bootstrap'))
 
     def test_wrong_sdk_identity_is_a_failure_before_build_or_execution(self):
+        """Verify wrong SDK identity is a failure before build or execution."""
         def wrong_sdk(command, cwd, **kwargs):
             self.assertEqual(['dotnet', '--version'], command)
             kwargs['outcome'].update(status='exited', exit_code=0)
@@ -894,6 +926,7 @@ class ProductReleaseCliDiagnosticsTests(unittest.TestCase):
             'native': {'status': 'exited', 'exit_code': 0, 'codes': []}}, diagnostic)
 
     def test_successful_ineligible_plan_keeps_existing_success_output(self):
+        """Verify successful ineligible plan keeps existing success output."""
         with patch.object(planner, 'build_helper', return_value=object()), \
              patch.object(planner, 'execute', return_value={'eligible': False}), \
              redirect_stdout(self.stdout), redirect_stderr(self.stderr):
@@ -926,6 +959,7 @@ class ProductReleaseCliFailureTests(unittest.TestCase):
             self.assertEqual('retained', sentinel.read_text())
 
     def test_failure_receipt_io_is_path_free_and_preserves_sentinel_without_build(self):
+        """Verify failure receipt I/O is path free and preserves sentinel without build."""
         for regular_file_parent in (True, False):
             with self.subTest(regular_file_parent=regular_file_parent), tempfile.TemporaryDirectory() as directory:
                 parent = Path(directory) / 'parent'

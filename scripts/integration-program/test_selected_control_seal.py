@@ -19,6 +19,7 @@ from test_selected_studio_payload import fixture, encoded
 
 class SealContracts(unittest.TestCase):
     def setUp(self):
+        """Create a complete sealed Studio payload and matching synthetic provider metadata."""
         self.files, self.context, self.now = fixture()
         self.contracts = payload.load_contracts()
         self.hashes = tuple(metadata.sha256(self.files[name]) for name in
@@ -38,6 +39,7 @@ class SealContracts(unittest.TestCase):
             'retrieved_at': (self.now - timedelta(minutes=1)).isoformat()}
 
     def archive(self, sealed=None):
+        """Encode sealed files as a ZIP and rebind its size and hashes in provider evidence."""
         sealed = self.sealed if sealed is None else sealed
         data = zipped(list(sealed.items()))
         self.expected['manifest_sha256'] = self.provider['manifest_sha256'] = metadata.sha256(sealed[transport.MANIFEST])
@@ -45,9 +47,13 @@ class SealContracts(unittest.TestCase):
         return data
 
     def readback(self, data):
+        """Validate supplied ZIP bytes using the fixture's provider, expected identity, and
+        clock.
+        """
         return seal.readback(data, self.provider, self.expected, contracts=self.contracts, now=self.now)
 
     def test_studio_vertical_original_zip_in_independent_job(self):
+        """Verify Studio vertical original ZIP in independent job."""
         original = self.archive()
         with patch.dict('os.environ', {'GITHUB_JOB': 'readback', 'GITHUB_RUN_ID': 'different'}):
             result = self.readback(original)
@@ -59,6 +65,7 @@ class SealContracts(unittest.TestCase):
         self.assertEqual(self.sealed['producer/receipt.json'], self.files['producer/receipt.json'])
 
     def test_transport_only_manifest_cannot_authorize_control(self):
+        """Verify transport only manifest cannot authorize control."""
         changed = dict(self.sealed)
         manifest = json.loads(changed[transport.MANIFEST])
         manifest['scope'] = transport.TRANSPORT_SCOPE
@@ -67,6 +74,7 @@ class SealContracts(unittest.TestCase):
             self.readback(self.archive(changed))
 
     def test_full_closure_and_semantic_joins_rechecked_after_outer_rehash(self):
+        """Verify full closure and semantic joins rechecked after outer rehash."""
         for kind in ('extra', 'missing', 'private', 'runtime', 'npm', 'source', 'execution'):
             changed = dict(self.sealed)
             manifest = json.loads(changed[transport.MANIFEST])
@@ -89,6 +97,7 @@ class SealContracts(unittest.TestCase):
             with self.subTest(kind=kind), self.assertRaises(ValueError): self.readback(self.archive(changed))
 
     def test_provider_identity_and_time_are_rechecked(self):
+        """Verify provider identity and time are rechecked."""
         data = self.archive()
         cases = {'run_attempt': '99', 'head_sha': 'f' * 40, 'event': 'pull_request', 'artifact_id': 0,
                  'artifact_name': 'latest', 'archive_size': len(data) + 1, 'archive_sha256': 'f' * 64,
@@ -101,6 +110,7 @@ class SealContracts(unittest.TestCase):
             self.provider = deepcopy(original)
 
     def test_freeze_exact_safe_retained_files_preserves_bytes(self):
+        """Verify freeze exact safe retained files preserves bytes."""
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve()
             paths = {name: root / name for name in self.files}
@@ -122,6 +132,7 @@ class SealContracts(unittest.TestCase):
                                    paths['consumer/receipt.json'], self.hashes[2])
 
     def test_malformed_nuspec_cli_rejects_generically_before_output(self):
+        """Verify malformed nuspec CLI rejects generically before output."""
         receipt = json.loads(self.files['producer/receipt.json'])
         row = receipt['packages']['selected'][0]
         name = 'producer/nuget/' + row['file']
@@ -133,6 +144,7 @@ class SealContracts(unittest.TestCase):
         self.assert_cli_rejected()
 
     def test_malformed_gzip_cli_rejects_generically_before_output(self):
+        """Verify malformed gzip CLI rejects generically before output."""
         receipt = json.loads(self.files['producer/receipt.json'])
         wasm = receipt['npm']['wasm']
         self.files['producer/npm/' + wasm['file']] = MALFORMED_GZIP
@@ -142,6 +154,7 @@ class SealContracts(unittest.TestCase):
         self.assert_cli_rejected()
 
     def assert_cli_rejected(self):
+        """Require malformed sealed input to fail the CLI without output or private diagnostics."""
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve()
             inputs, output = root / 'inputs', root / 'output'
@@ -165,6 +178,7 @@ class SealContracts(unittest.TestCase):
             self.assertNotIn('malformed private input', printed.getvalue())
 
     def test_retained_symlink_and_rejected_write_leave_no_output(self):
+        """Verify retained symlink and rejected write leave no output."""
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve()
             retained = root / 'producer'

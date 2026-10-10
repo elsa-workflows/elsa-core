@@ -110,6 +110,7 @@ class MaintenanceContracts(unittest.TestCase):
             self.assertEqual(maintenance.build_environment(), {'PATH': '/safe', 'EmbedUntrackedSources': 'true'})
 
     def test_recipe_restore_config_comes_only_from_source_and_preserves_core_environment(self):
+        """Verify recipe restore config comes only from source and preserves Core environment."""
         config = self.root / 'NuGet.Config'; config.write_text('<configuration />')
         gate = 'ELSA_POSTGRES_DB'
         for product in ('studio', 'extensions', 'core'):
@@ -130,6 +131,7 @@ class MaintenanceContracts(unittest.TestCase):
             self.assertNotIn('RestoreConfigFile', maintenance.build_environment())
 
     def test_recipe_restore_config_missing_directory_or_symlink_fails(self):
+        """Verify recipe restore config missing directory or symlink fails."""
         config = self.root / 'NuGet.Config'
         for kind in ('missing', 'directory', 'symlink'):
             if kind == 'directory':
@@ -142,6 +144,9 @@ class MaintenanceContracts(unittest.TestCase):
                 maintenance.recipe_environment(self.row, '3.8.999', self.root)
 
     def test_prepare_passes_bound_environment_and_rejects_changed_source_config_before_tools(self):
+        """Verify prepare passes bound environment and rejects changed source config before
+        tools.
+        """
         original = b'<configuration />'
         for product, changed in (('studio', False), ('extensions', False), ('extensions', True), ('extensions', 'plan')):
             row = next(row for row in self.register['sources'] if row['product'] == product)
@@ -231,6 +236,7 @@ class MaintenanceContracts(unittest.TestCase):
         self.assertNotIn(str(self.root), json.dumps(receipt))
 
     def prepare_inventory_fixture(self, failure=None, metadata_stage=None):
+        """Run a mocked maintenance recipe with optional inventory or metadata-stage failures."""
         output = self.root / ('proof-' + (failure or 'success'))
         policy = {'id': 'Fixture', 'project': 'src/Fixture.csproj', 'assembly_name': 'Fixture',
                   'frameworks': ['net8.0'], 'symbols': True, 'include_build_output': True, 'satellites': [],
@@ -384,6 +390,7 @@ class MaintenanceContracts(unittest.TestCase):
             maintenance.verify_documents(dict(details, documents=[tracked]), maintenance.ROOT, self.row, policy, 'net8.0')
 
     def test_non_git_failure_keeps_closed_check_without_private_message(self):
+        """Verify non Git failure keeps closed check without private message."""
         policy = {'source_commit': self.row['commit'], 'frameworks': ['net8.0'],
                   'framework_properties': {'net8.0': {}}}
         document = {'path': '/private/secret.cs', 'checksum': 'a' * 64, 'embedded_checksum': None}
@@ -393,6 +400,7 @@ class MaintenanceContracts(unittest.TestCase):
         self.assertNotIn('/private/secret', str(caught.exception))
 
     def test_generator_failures_keep_only_closed_checks_and_unknown_fails_closed(self):
+        """Verify generator failures keep only closed checks and unknown fails closed."""
         policy = {'source_commit': self.row['commit'], 'frameworks': ['net8.0'],
                   'framework_properties': {'net8.0': {}}}
         document = {'path': '/private/secret.cs', 'checksum': 'a' * 64, 'embedded_checksum': 'a' * 64}
@@ -413,6 +421,7 @@ class MaintenanceContracts(unittest.TestCase):
                 self.assertNotIn('/private/secret', str(caught.exception))
 
     def test_package_verification_receipt_retains_closed_source_check(self):
+        """Verify package verification receipt retains closed source check."""
         output = self.prepare_inventory_fixture('package-verification')
         receipt = json.loads((output / 'receipt.json').read_text())
         self.assertEqual(receipt['error'], {'code': 'package-verification-failed',
@@ -423,6 +432,7 @@ class MaintenanceContracts(unittest.TestCase):
 
     def restored_hint_fixture(self, version='0.0.1-preview.50', framework='net10.0', row=None,
                               entry_name='ManifestExtensionAttribute.cs'):
+        """Create a restored generator archive, assets, and embedded document checksum fixture."""
         root = self.root.resolve() / f'hints-{len(list(self.root.iterdir()))}'
         root.mkdir()
         identifier = 'elsa.platform.packagemanifest.generator'
@@ -457,6 +467,7 @@ class MaintenanceContracts(unittest.TestCase):
         return source, row, policy, document, archive, assets
 
     def core_hint_sources(self):
+        """Return original and reviewed-continuation source bindings for both Core lines."""
         originals = json.loads(core.CONTRACT.read_bytes())['sources']
         shapes = json.loads(Path(__file__).with_name('selected_product_plan_shapes.json').read_bytes())['cells']
         return [row for line, original in originals.items() for row in (
@@ -465,6 +476,9 @@ class MaintenanceContracts(unittest.TestCase):
             continuation.bind(line, shapes['core-' + line]['source']['observation'], continuation.load_contract()))]
 
     def test_original_core_preview53_hints_are_restore_and_compile_bound_for_all_frameworks(self):
+        """Verify original Core preview.53 hints are restore and compile bound for all
+        frameworks.
+        """
         version = '0.0.1-preview.53'
         for row in self.core_hint_sources():
             for framework in ('net8.0', 'net9.0', 'net10.0'):
@@ -482,6 +496,7 @@ class MaintenanceContracts(unittest.TestCase):
                         self.assertNotIn(root.as_posix(), json.dumps(actual))
 
     def test_preview53_route_requires_exact_admitted_core_source_and_product_version_pair(self):
+        """Verify preview.53 route requires exact admitted Core source and product version pair."""
         admitted = self.core_hint_sources()[1]
         invalid = (
             ('0.0.1-preview.50', admitted),
@@ -501,6 +516,7 @@ class MaintenanceContracts(unittest.TestCase):
                     maintenance.verify_non_git_document(document, None, root, row, policy, 'net10.0', {})
 
     def test_actual_restored_manifest_hint_path_is_archive_and_compile_bound(self):
+        """Verify actual restored manifest hint path is archive and compile bound."""
         root, row, policy, document, archive, _ = self.restored_hint_fixture()
         with patch.dict(consolidated.GENERATOR_SOURCE_PINS,
                         {'0.0.1-preview.50': maintenance.digest(archive.read_bytes())}):
@@ -521,6 +537,7 @@ class MaintenanceContracts(unittest.TestCase):
             self.assertIsNone(consolidated.verify_external_document(root, policy, 'net10.0', document, {}))
 
     def test_restored_manifest_hint_rejects_unbound_paths_bytes_and_context(self):
+        """Verify restored manifest hint rejects unbound paths bytes and context."""
         for version, row in (('0.0.1-preview.50', None), ('0.0.1-preview.53', self.core_hint_sources()[1])):
             for mutation in ('foreign-root', 'version', 'member', 'traversal', 'normalization', 'membership',
                              'bytes', 'archive', 'restore-hash', 'assets-bytes', 'embedded', 'missing-embedded', 'checksum',
@@ -531,6 +548,7 @@ class MaintenanceContracts(unittest.TestCase):
                     self.reject_restored_hint_mutation(mutation, version, row)
 
     def reject_restored_hint_mutation(self, mutation, version, row):
+        """Mutate restored hint evidence and require a generic source-producer rejection."""
         root, row, policy, document, archive, assets = self.restored_hint_fixture(version=version, row=row)
         pinned = maintenance.digest(archive.read_bytes())
         extracted = Path(document['path'])
@@ -627,6 +645,7 @@ class MaintenanceContracts(unittest.TestCase):
                 self.assertEqual(verifier.call_args.args[3], family)
 
     def metadata_stage_fixture(self):
+        """Create isolated package metadata and a mock MSBuild executor that records inputs."""
         source = self.root / 'source'; source.mkdir()
         (source / 'NuGet.Config').write_text('<configuration />')
         (source / 'Fixture.csproj').write_text('<Project Sdk="Microsoft.NET.Sdk" />')
@@ -656,6 +675,7 @@ class MaintenanceContracts(unittest.TestCase):
         return source, policy, evidence, commands, execute
 
     def test_metadata_stage_binds_restore_and_retains_only_public_projection(self):
+        """Verify metadata stage binds restore and retains only public projection."""
         source, policy, evidence, commands, execute = self.metadata_stage_fixture()
         with patch.dict(os.environ, {'GH_TOKEN': 'private-secret'}), patch.object(maintenance, 'run', side_effect=execute), \
              patch.object(maintenance, 'capture_compiler_evidence', return_value=evidence) as captured:
@@ -675,6 +695,7 @@ class MaintenanceContracts(unittest.TestCase):
         self.assertEqual(list(source.glob('maintenance-metadata-*')), [])
 
     def test_metadata_json_failure_is_private_and_cleans_original_stage(self):
+        """Verify metadata JSON failure is private and cleans original stage."""
         source, policy, evidence, commands, execute = self.metadata_stage_fixture()
         diagnostics = self.root / 'proof-sdk-metadata/sdk-metadata-diagnostics'
         actual_stage = maintenance.stage_maintenance_metadata
@@ -712,6 +733,7 @@ class MaintenanceContracts(unittest.TestCase):
         self.assertEqual(list(output.glob('*.txt')), [])
 
     def test_metadata_cleanup_failure_is_recorded_without_bypassing_cleanup(self):
+        """Verify metadata cleanup failure is recorded without bypassing cleanup."""
         source, policy, evidence, commands, execute = self.metadata_stage_fixture()
         diagnostics = self.root / 'sdk-diagnostics'
         original = tempfile.TemporaryDirectory
@@ -738,6 +760,7 @@ class MaintenanceContracts(unittest.TestCase):
         self.assertEqual(maintenance.verification_reason(str(error)), 'unknown-check-failure')
 
     def test_metadata_diagnostic_copy_rejects_symlink_and_preserves_command_failure(self):
+        """Verify metadata diagnostic copy rejects symlink and preserves command failure."""
         source, policy, evidence, commands, execute = self.metadata_stage_fixture()
         secret = self.root / 'outside.nuspec'; secret.write_text('outside-private-secret')
         error = ValueError('/private-secret/original-command-failure')
@@ -764,6 +787,7 @@ class MaintenanceContracts(unittest.TestCase):
                 self.assertEqual(list(source.glob('maintenance-metadata-*')), [])
 
     def test_metadata_failure_record_io_cannot_replace_original_exception(self):
+        """Verify metadata failure record I/O cannot replace original exception."""
         source, policy, evidence, commands, execute = self.metadata_stage_fixture()
         diagnostics = self.root / 'sdk-diagnostics'
         error = ValueError('/private-secret/original-command-failure')
@@ -781,6 +805,7 @@ class MaintenanceContracts(unittest.TestCase):
         self.assertEqual(maintenance.verification_reason(str(error)), 'unknown-check-failure')
 
     def test_metadata_package_advance_clears_previous_framework(self):
+        """Verify metadata package advance clears previous framework."""
         source, policy, evidence, commands, execute = self.metadata_stage_fixture()
         diagnostics = self.root / 'sdk-diagnostics'
         error = ValueError('/private-secret/next-package-failure')
@@ -1111,6 +1136,7 @@ class MaintenanceContracts(unittest.TestCase):
                 maintenance.verify_documents(details | {'source_link': {'documents': maps}}, maintenance.ROOT, self.row)
 
     def test_inventory_records_explicit_source_build_output_and_assembly_identity(self):
+        """Verify inventory records explicit source build output and assembly identity."""
         source = self.root / 'source'; source.mkdir()
         (source / 'NuGet.Config').write_text('<configuration />')
         (source / 'Elsa.Studio.sln').write_text('Project("{fixture}") = "Fixture", "Fixture.csproj", "{fixture}"\n')
@@ -1133,6 +1159,7 @@ class MaintenanceContracts(unittest.TestCase):
                 maintenance.evaluate_inventory(source, self.row, '3.8.4-proof.42.1', self.root)
 
     def test_manifest_failure_focus_clears_previous_package_framework_and_reason_is_closed(self):
+        """Verify manifest failure focus clears previous package framework and reason is closed."""
         artifacts = self.write_package_fixture()
         policy = self.framework_reference_policy_fixture()
         policy['framework_properties'] = {'net8.0': {'manifest_required': True, 'manifest_path': 'elsa-package.json'}}
@@ -1329,6 +1356,7 @@ class MaintenanceContracts(unittest.TestCase):
             maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT, Path('/unused'), self.root)
 
     def test_every_evaluated_framework_requires_its_named_assembly_and_verified_symbols(self):
+        """Verify every evaluated framework requires its named assembly and verified symbols."""
         frameworks = ['net8.0', 'net9.0']
         artifacts = self.write_package_fixture(frameworks=frameworks)
         version = '3.8.4-proof.42.1'
@@ -1491,6 +1519,9 @@ class MaintenanceContracts(unittest.TestCase):
         self.assertEqual(outcome, {'status': 'start-failed', 'exit_code': None})
 
     def test_verification_receipt_maps_only_known_static_reasons_and_hides_private_exceptions(self):
+        """Verify verification receipt maps only known static reasons and hides private
+        exceptions.
+        """
         for index, (message, expected) in enumerate([
                 ('Packed repository provenance mismatch', 'package-repository-mismatch'),
                 ('Tracked source checksum mismatch', 'source-checksum-mismatch'),
@@ -1513,6 +1544,9 @@ class MaintenanceContracts(unittest.TestCase):
 
 
     def test_core_package_and_assembly_metadata_bind_preserved_recipe_and_exact_selected_commit(self):
+        """Verify Core package and assembly metadata bind preserved recipe and exact selected
+        commit.
+        """
         for candidate in maintenance.load_candidates()['candidates']:
             with self.subTest(product=candidate['product'], line=candidate['line']):
                 original = next(row for row in self.register['sources'] if row['commit'] == candidate['original_commit'])
@@ -1622,6 +1656,7 @@ class CoreCandidateContracts(unittest.TestCase):
                 original['commit'], original['dependency_version'] + '-proof.42.1'), original)
 
     def test_four_metadata_descendants_and_four_exact_continuations_remain_exact(self):
+        """Verify four metadata descendants and four exact continuations remain exact."""
         from historical_studio_npm_continuation import CONTINUATIONS
         from extensions_manifest_continuation import CONTINUATIONS as EXTENSIONS
         descendants = [row for row in self.candidates['candidates'] if row['kind'] == 'maintenance']

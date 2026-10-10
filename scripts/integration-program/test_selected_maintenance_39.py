@@ -16,6 +16,7 @@ import selected_maintenance_39 as selected
 
 class Maintenance39Contracts(unittest.TestCase):
     def plan(self, product):
+        """Create a 3.9 product plan from its registered source, recipe, and test contract."""
         policy = selected.contract(product)
         identifier = 'Elsa.Studio.Core' if product == 'studio' else 'Elsa.IO.Http'
         return {'product': product, 'line': '3.9', 'requested_version': '3.9.999',
@@ -31,6 +32,7 @@ class Maintenance39Contracts(unittest.TestCase):
                 'excluded': deepcopy(policy['excluded_canonical'])}}
 
     def test_exact_git_runtime_recipe_compiler_and_test_pins_for_both_sources(self):
+        """Verify exact Git runtime recipe compiler and test pins for both sources."""
         for product, count, cells in [('studio', 16, 18), ('extensions', 17, 17)]:
             plan = self.plan(product)
             selected.verify_source(artifacts.ROOT, plan)
@@ -39,6 +41,7 @@ class Maintenance39Contracts(unittest.TestCase):
         extensions.verify_source(artifacts.ROOT, selected.contract('extensions')['commit'])
 
     def test_wrong_product_line_source_tree_kind_test_scope_recipe_and_npm_fail_closed(self):
+        """Verify wrong product line source tree kind test scope recipe and npm fail closed."""
         for product in ('studio', 'extensions'):
             original = self.plan(product)
             for mutate in (lambda p: p.update(line='3.8'), lambda p: p.update(product='core'),
@@ -57,6 +60,7 @@ class Maintenance39Contracts(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'maintenance39_canonical_exclusion'): selected.validate_plan(plan)
 
     def test_changed_source_blob_or_runtime_fixture_rejected_without_tool_bootstrap(self):
+        """Verify changed source blob or runtime fixture rejected without tool bootstrap."""
         with patch.object(selected.metadata, 'git', return_value='a'*40):
             with self.assertRaisesRegex(ValueError, 'maintenance39_source'):
                 selected.verify_source(artifacts.ROOT, self.plan('studio'))
@@ -71,6 +75,7 @@ class Maintenance39Contracts(unittest.TestCase):
                 selected.verify_source(artifacts.ROOT, self.plan('studio'))
 
     def test_original_39_recipes_keep_designer_gates_full_solution_and_extensions_nuke(self):
+        """Verify original 39 recipes keep designer gates full solution and Extensions nuke."""
         rows = artifacts.maintenance.registered_core_candidates(artifacts.maintenance.load_register())
         for product in ('studio', 'extensions'):
             row = next(row for row in rows if row['commit'] == selected.contract(product)['commit'])
@@ -86,6 +91,7 @@ class Maintenance39Contracts(unittest.TestCase):
                 self.assertEqual(['build', 'test', 'pack'], [command[1] for command in names if command[:1] == ['dotnet']][1:])
 
     def test_producer_dispatch_39_original_recipe_and_conditional_studio_npm(self):
+        """Verify producer dispatch 39 original recipe and conditional Studio npm."""
         for product in ('studio', 'extensions'):
             with self.subTest(product=product), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary).resolve(); plan = self.plan(product); output = root / 'control'
@@ -113,6 +119,7 @@ class Maintenance39Contracts(unittest.TestCase):
                 self.assertEqual(product == 'studio', npm.called)
 
     def test_runtime_39_reuses_exact_fixtures_and_original_version_policies(self):
+        """Verify runtime 39 reuses exact fixtures and original version policies."""
         for product in ('studio', 'extensions'):
             plan = self.plan(product); contract = consumers.runtime_contract(plan)
             self.assertIn('39', contract['description'])
@@ -122,6 +129,7 @@ class Maintenance39Contracts(unittest.TestCase):
             self.assertEqual(1, project.count('<PackageReference ')); self.assertNotIn('ProjectReference', project)
 
     def run_consumer_dispatch(self, product, freshness_error=None):
+        """Run a mocked 3.9 consumer flow and return dispatched cells and retained results."""
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve(); plan = self.plan(product)
             plan.update(semantics={'sdk_version': metadata.SDK, 'assemblies': []},
@@ -168,6 +176,9 @@ class Maintenance39Contracts(unittest.TestCase):
             return calls, result
 
     def test_consumer39_dispatch_all_applicable_tfms_and_runtime_after_current_gate(self):
+        """Verify 3.9 consumer dispatch all applicable target frameworks and runtime after
+        current gate.
+        """
         for product in ('studio', 'extensions'):
             calls, receipt = self.run_consumer_dispatch(product)
             self.assertEqual(['current-gate', 'catalog'] + [(kind, tfm) for kind in ('compile','runtime')
@@ -176,6 +187,7 @@ class Maintenance39Contracts(unittest.TestCase):
             self.assertEqual(selected.contract(product)['files'], receipt['runtime_contract_source'])
 
     def test_consumer39_fresh_ineligibility_or_metadata_drift_prevents_all_consumer_work(self):
+        """Verify 3.9 consumer fresh ineligibility or metadata drift prevents all consumer work."""
         for product in ('studio', 'extensions'):
             for error in ('artifact_fresh_prerequisite_failed', 'artifact_prerequisite_metadata_changed'):
                 calls, receipt = self.run_consumer_dispatch(product, error)
@@ -184,6 +196,9 @@ class Maintenance39Contracts(unittest.TestCase):
                 self.assertEqual('current-consumer-prerequisites', receipt['stage'])
 
     def test_both39_loaded_assembly_version_and_source_policies_join_exact_archive_bytes(self):
+        """Verify both 3.9 products loaded assembly version and source policies join exact
+        archive bytes.
+        """
         for product in ('studio', 'extensions'):
             with tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary).resolve(); cache = root / 'cache'; packages = root / 'archives'; packages.mkdir()
@@ -205,6 +220,9 @@ class Maintenance39Contracts(unittest.TestCase):
                     with self.assertRaises(RuntimeError): verify(row | change)
 
     def test_generated_extensions39_manifest_keeps_qualified_dependency_and_requested_version(self):
+        """Verify generated extensions39 manifest keeps qualified dependency and requested
+        version.
+        """
         plan = self.plan('extensions'); source = plan['source']['commit']
         policy = {'id': 'Elsa.IO.Http', 'frameworks': ['net8.0', 'net9.0', 'net10.0'],
             'framework_properties': {tfm: {'manifest_required': True, 'manifest_path': 'elsa-package.json'}

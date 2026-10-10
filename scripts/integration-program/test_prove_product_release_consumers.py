@@ -23,6 +23,7 @@ from selected_maintenance_test_support import patch_offline_local_execution
 
 class Semantics:
     def call(self, operation, **values):
+        """Emulate range and framework semantics for deterministic consumer graph tests."""
         if operation == 'ranges':
             return [{'satisfies': True, 'normalized': item['range']} for item in values['values']]
         if operation == 'identity':
@@ -35,6 +36,7 @@ class Semantics:
 class SelectedProductConsumerTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        """Create committed controller fixtures and isolate tests from hosted execution identity."""
         super().setUpClass()
         local_execution_patch = patch_offline_local_execution(proof)
         local_execution_patch.start()
@@ -58,6 +60,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         cls.artifact_controller = {'commit': git('rev-parse', 'HEAD'), 'tree': git('rev-parse', 'HEAD^{tree}')}
 
     def setUp(self):
+        """Create isolated selected-package archives, dependency graph, and feed policy fixtures."""
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name).resolve()
@@ -79,6 +82,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
                       'mapping': {'example': ['original'], 'external': ['original']}}
 
     def artifact_receipt(self, entries=None, *, framework_references=''):
+        """Create a producer receipt bound to the fixture's exact package archive bytes."""
         path = self.artifacts / self.plan['expected_artifacts'][0]
         identifier = self.policy['id']
         with zipfile.ZipFile(path, 'w') as archive:
@@ -99,6 +103,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 'inventory': inventory}]}}
 
     def historical_inputs(self):
+        """Create an admitted producer plan whose execution predates the current consumer check."""
         fixture = artifact_contracts.ProductArtifactAdmissionTests()
         fixture.setUp()
         plan = fixture.plan
@@ -115,10 +120,14 @@ class SelectedProductConsumerTests(unittest.TestCase):
         return data, digest, receipt
 
     def stage(self, data, digest, receipt, receipt_hash=None):
+        """Encode producer evidence and exercise historical stage admission with its receipt
+        hash.
+        """
         raw = json.dumps(receipt).encode()
         return proof.admit_producer_stage(data, digest, raw, receipt_hash or metadata.sha256(raw))
 
     def test_expired_plan_is_historical_only_at_bound_successful_producer_start(self):
+        """Verify expired plan is historical only at bound successful producer start."""
         data, digest, receipt = self.historical_inputs()
         with self.assertRaisesRegex(ValueError, 'plan_observation_stale'):
             proof.producer.admit(data, digest)
@@ -130,6 +139,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         self.assertNotIn('fresh_now', admission)
 
     def test_producer_start_cannot_be_future_invalid_stale_or_before_plan(self):
+        """Verify producer start cannot be future invalid stale or before plan."""
         data, digest, original = self.historical_inputs()
         observed = datetime.fromisoformat(json.loads(data)['observed_at'])
         for started in ((datetime.now(timezone.utc) + timedelta(minutes=1)).isoformat(), 'invalid',
@@ -141,6 +151,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 self.stage(data, digest, receipt)
 
     def test_historical_stage_requires_unchanged_successful_receipt_identity(self):
+        """Verify historical stage requires unchanged successful receipt identity."""
         data, digest, original = self.historical_inputs()
         receipt_hash = metadata.sha256(json.dumps(original).encode())
         altered = deepcopy(original)
@@ -156,10 +167,12 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 self.stage(data, digest, receipt)
 
     def test_exact_archive_receipt_admitted(self):
+        """Verify exact archive receipt admitted."""
         result = proof.admit_artifacts(self.plan, self.hash, self.artifact_receipt(), self.artifacts, self.controller_root)
         self.assertEqual({'example'}, set(result))
 
     def test_native_framework_references_must_match_plan_before_fixture_can_supply_them(self):
+        """Verify native framework references must match plan before fixture can supply them."""
         self.policy['metadata']['framework_reference_groups'] = [
             {'framework': 'net8.0', 'references': ['Microsoft.AspNetCore.App']}]
         valid = ('<frameworkReferences><group targetFramework="net8.0">'
@@ -180,6 +193,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
             proof.admit_artifacts(self.plan, self.hash, receipt, self.artifacts, self.controller_root)
 
     def test_producer_controller_git_objects_and_planner_inputs_bound(self):
+        """Verify producer controller Git objects and planner inputs bound."""
         original = self.artifact_receipt()
         proof.verify_producer_controllers(self.controller_root, self.plan, original)
         self.assertNotEqual(original['planner_controller']['commit'], original['artifact_controller']['commit'])
@@ -197,6 +211,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 proof.admit_artifacts(self.plan, self.hash, original, self.artifacts, self.controller_root)
 
     def test_changed_archive_and_wrong_source_receipt_rejected(self):
+        """Verify changed archive and wrong source receipt rejected."""
         receipt = self.artifact_receipt()
         path = self.artifacts / self.plan['expected_artifacts'][0]
         path.write_bytes(path.read_bytes() + b'changed')
@@ -207,6 +222,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
             proof.admit_artifacts(self.plan, self.hash, receipt, self.artifacts, self.controller_root)
 
     def test_private_or_duplicate_archives_cannot_enter_selection(self):
+        """Verify private or duplicate archives cannot enter selection."""
         receipt = self.artifact_receipt()
         (self.artifacts / 'Excluded.3.8.999.nupkg').write_bytes(b'excluded')
         with self.assertRaisesRegex(ValueError, 'consumer_artifact_bijection'):
@@ -216,6 +232,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
             proof.admit_artifacts(self.plan, self.hash, receipt, self.artifacts, self.controller_root)
 
     def snapshot(self):
+        """Write original planning-assets fixtures and their bound private snapshot receipt."""
         folder = self.root / 'snapshots'
         folder.mkdir()
         raw = json.dumps({'targets': {'net8.0': {}, 'net10.0': {}},
@@ -234,11 +251,13 @@ class SelectedProductConsumerTests(unittest.TestCase):
         return folder, receipt
 
     def test_snapshot_uses_raw_hash_and_ignores_derived_targets(self):
+        """Verify snapshot uses raw hash and ignores derived targets."""
         folder, _ = self.snapshot()
         result = proof.load_snapshots(self.plan, self.hash, folder)
         self.assertEqual({'net8.0': {}, 'net10.0': {}}, result[self.policy['project']]['targets'])
 
     def test_wrong_snapshot_hash_identity_path_and_partition_rejected(self):
+        """Verify wrong snapshot hash identity path and partition rejected."""
         folder, original = self.snapshot()
         for mutate in (lambda p: p.update(plan_sha256='f' * 64), lambda p: p['selected'][0].update(project='wrong'),
                        lambda p: p['selected'][0].update(file='../escape.json'), lambda p: p['selected'].clear(),
@@ -250,6 +269,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 proof.load_snapshots(self.plan, self.hash, folder)
 
     def test_symbolic_snapshot_file_rejected(self):
+        """Verify symbolic snapshot file rejected."""
         folder, receipt = self.snapshot()
         row = receipt['selected'][0]
         original = folder / row['file']
@@ -260,6 +280,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
             proof.load_snapshots(self.plan, self.hash, folder)
 
     def native_graph(self, root_id='Example'):
+        """Build matching assets, lockfile, selected-package, and external catalog fixtures."""
         selected = {'example': {'id': 'Example', 'content_hash': self.graph['example']['content_hash'],
             'dependency_groups': [{'framework': 'net8.0', 'dependencies': [{'id': 'External', 'version': '[1.2.3, )'}]}]}}
         catalog = {('external', '1.2.3'): {'id': 'External', 'content_hash': self.graph['external']['content_hash'],
@@ -283,6 +304,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
             'version': 1, 'dependencies': {'net8.0': locked}}
 
     def test_original_sdk_pruning_and_download_policy_reaches_generated_project(self):
+        """Verify original SDK pruning and download policy reaches generated project."""
         assets = {'project': {'frameworks': {'net8.0': {
             'packagesToPrune': {'System.Threading.Channels': '(,8.0.32767]'},
             'downloadDependencies': [{'name': 'Microsoft.NETCore.App.Ref', 'version': '[8.0.27, 8.0.27]'}]}}}}
@@ -296,6 +318,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
                          project.find('PropertyGroup/NetCoreTargetingPackRoot').text)
 
     def test_original_sdk_pruned_external_edge_requires_exact_original_effective_evidence(self):
+        """Verify original SDK pruned external edge requires exact original effective evidence."""
         selected, catalog, assets, lock = self.native_graph()
         catalog[('external', '1.2.3')]['groups'][0]['dependencies'] = [
             {'id': 'System.Threading.Channels', 'range': '[8.0.0, )'}]
@@ -317,6 +340,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
                     original_catalog, '3.8.999', Semantics(), sdk_policy=policy)
 
     def sdk_archive_inputs(self):
+        """Create an SDK reference archive and matching original restore-assets fixture."""
         cache = self.root / 'sdk-original-cache'
         identifier, version = 'Microsoft.NETCore.App.Ref', '8.0.27'
         archive = cache / identifier.lower() / version / (identifier.lower() + '.' + version + '.nupkg')
@@ -331,6 +355,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         return archive, assets, semantics
 
     def test_sdk_download_catalog_is_new_frozen_evidence_and_cold_https_bytes_are_separate(self):
+        """Verify SDK download catalog is new frozen evidence and cold https bytes are separate."""
         archive, original, semantics = self.sdk_archive_inputs()
         sdk = proof.resolution.sdk
         catalog = sdk.freeze_downloads({'original': original}, self.root / 'inspector', self.root / 'frozen', semantics)
@@ -362,6 +387,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'consumer_sdk_download_bytes'): verify()
 
     def test_sdk_download_candidate_ambiguity_symlink_and_unbound_identity_fail(self):
+        """Verify SDK download candidate ambiguity symlink and unbound identity fail."""
         archive, original, semantics = self.sdk_archive_inputs()
         sdk = proof.resolution.sdk
         other = self.root / 'second-sdk-cache'
@@ -381,6 +407,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'consumer_sdk_original_download'): sdk.original_policy(original, 'net8.0')
 
     def test_signed_sdk_download_hashes_remain_native_and_raw_distinct(self):
+        """Verify signed SDK download hashes remain native and raw distinct."""
         archive, original, semantics = self.sdk_archive_inputs()
         with zipfile.ZipFile(archive, 'a') as package: package.writestr('.signature.p7s', b'synthetic signed-fixture marker')
         archive.with_suffix('.nupkg.sha512').write_text(proof.consumers.base64_sha512(archive.read_bytes()))
@@ -395,6 +422,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         self.assertEqual(self.root/'frozen/microsoft.netcore.app.ref/8.0.27'/archive.name, Path(inspect.call_args.args[0][-1]))
 
     def test_selected_identity_cannot_be_pruned_even_with_original_omission(self):
+        """Verify selected identity cannot be pruned even with original omission."""
         selected, catalog, assets, lock = self.native_graph()
         selected['external'] = {'id': 'External'}
         policy = {'pruning': {'External': '(,8.0.32767]'}, 'downloads': []}
@@ -409,6 +437,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 '3.8.999', Semantics(), sdk_policy=policy)
 
     def test_pruning_uses_native_range_satisfaction_at_sdk_maximum_not_minimum_guess(self):
+        """Verify pruning uses native range satisfaction at SDK maximum not minimum guess."""
         sdk = proof.resolution.sdk
         policy = {'pruning': {'System.Threading.Channels': '(,8.0.32767]'}, 'downloads': []}
         package = {'effective_contexts': [{'framework': 'net8.0', 'dependencies': {}, 'packages_to_prune': policy['pruning']}]}
@@ -425,6 +454,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         self.assertFalse(sdk.pruned_edge(package, 'net8.0', 'System.Threading.Channels', '[8.0.0, )', policy, semantics))
 
     def test_native_graph_uses_full_nuspec_edges_and_one_exact_direct_root(self):
+        """Verify native graph uses full nuspec edges and one exact direct root."""
         selected, catalog, assets, lock = self.native_graph()
         graph = proof.resolution.audit_native_graph(assets, lock, 'Example', 'net8.0', selected,
                                                      catalog, '3.8.999', Semantics())
@@ -432,6 +462,9 @@ class SelectedProductConsumerTests(unittest.TestCase):
         self.assertEqual({'External': '[1.2.3, )'}, graph['example']['dependencies'])
 
     def range_failure(self, phase='discovery', *, count_mismatch=False, root_id='Example'):
+        """Inject an unsatisfied native dependency range and return the resulting diagnostic
+        error.
+        """
         selected, catalog, assets, lock = self.native_graph(root_id)
         semantics = Semantics()
         original_call = semantics.call
@@ -458,6 +491,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         return error
 
     def test_native_range_failure_keeps_exception_identity_and_closed_edge_source(self):
+        """Verify native range failure keeps exception identity and closed edge source."""
         detail = proof.resolution.public_range_failure(self.range_failure())['dependency_range_failure']
         self.assertEqual(detail, {'root_id': 'Example', 'framework': 'net8.0', 'phase': 'discovery',
             'reason': 'unsatisfied-range', 'requested_checks': 3, 'returned_checks': 3,
@@ -465,11 +499,13 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 'requested_range': '[1.2.3, )', 'resolved_version': '1.2.3', 'source_kind': 'selected-nuspec'}]})
 
     def test_native_range_count_mismatch_exposes_no_unbound_edges(self):
+        """Verify native range count mismatch exposes no unbound edges."""
         detail = proof.resolution.public_range_failure(self.range_failure('locked-proof', count_mismatch=True))
         self.assertEqual(detail, {'dependency_range_failure': {'root_id': 'Example', 'framework': 'net8.0',
             'phase': 'locked-proof', 'reason': 'count-mismatch', 'requested_checks': 3, 'returned_checks': 1}})
 
     def assert_cli_range_phase(self, phase):
+        """Require the consumer CLI to retain the failing range phase without private paths."""
         error = self.range_failure(phase, root_id='Elsa.Studio.Core')
         audit = proof.resolution.audit_native_graph
         phases = []
@@ -491,12 +527,17 @@ class SelectedProductConsumerTests(unittest.TestCase):
         self.assertNotIn(str(self.root), data)
 
     def test_cli_projects_native_range_failure_through_discovery(self):
+        """Verify CLI projects native range failure through discovery."""
         self.assert_cli_range_phase('discovery')
 
     def test_cli_projects_native_range_failure_through_locked_proof(self):
+        """Verify CLI projects native range failure through locked proof."""
         self.assert_cli_range_phase('locked-proof')
 
     def test_native_graph_rejects_unreviewed_versions_hashes_missing_edges_and_extra_directs(self):
+        """Verify native graph rejects unreviewed versions hashes missing edges and extra
+        directs.
+        """
         selected, catalog, original, original_lock = self.native_graph()
         for mutate, code in (
                 (lambda a, l: a['targets']['net8.0'].update({'External/9.9.9': {'type': 'package'}}), 'consumer_native'),
@@ -517,6 +558,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
                                                      catalog, '3.8.999', Semantics())
 
     def test_remote_mapping_never_contains_selected_ids_or_wildcard(self):
+        """Verify remote mapping never contains selected ids or wildcard."""
         config = ET.fromstring(proof.render_config(self.artifacts, self.graph, self.feeds))
         groups = {row.get('key'): [item.get('pattern') for item in row] for row in config.find('packageSourceMapping')}
         self.assertEqual(['Example'], groups[proof.LOCAL])
@@ -524,6 +566,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         self.assertNotIn('*', str(groups))
 
     def test_unused_original_sources_remain_configured_without_empty_mapping_groups(self):
+        """Verify unused original sources remain configured without empty mapping groups."""
         feeds = deepcopy(self.feeds)
         feeds['sources'].update({
             'elsa3.feedz.io': 'https://f.feedz.io/elsa-workflows/elsa/nuget/index.json',
@@ -548,6 +591,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
                     self.assertTrue(all(groups.values()))
 
     def restored(self):
+        """Build an isolated restored-assets fixture with exact sources and package folders."""
         root = self.root / 'consumer'
         cache = root / 'packages'
         assets = {'targets': {'net8.0': {row['id'] + '/' + row['version']: {'type': 'package'} for row in self.graph.values()}},
@@ -558,10 +602,12 @@ class SelectedProductConsumerTests(unittest.TestCase):
         return root, cache, assets
 
     def test_exact_restored_closure_accepted(self):
+        """Verify exact restored closure accepted."""
         root, cache, assets = self.restored()
         proof.validate_restored(assets, 'net8.0', self.graph, root, cache, self.artifacts, self.feeds)
 
     def test_restore_rejects_wrong_version_project_fallback_and_inherited_sources(self):
+        """Verify restore rejects wrong version project fallback and inherited sources."""
         root, cache, original = self.restored()
         for mutate in (lambda p: p['targets']['net8.0']['Example/3.8.999'].update(type='project'),
                        lambda p: p['targets']['net8.0'].update({'External/9.9.9': {'type': 'package'}}),
@@ -574,6 +620,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 proof.validate_restored(assets, 'net8.0', self.graph, root, cache, self.artifacts, self.feeds)
 
     def test_cache_requires_selected_original_archive_and_local_origin(self):
+        """Verify cache requires selected original archive and local origin."""
         receipt = self.artifact_receipt()
         selected = proof.admit_artifacts(self.plan, self.hash, receipt, self.artifacts, self.controller_root)
         source = self.artifacts / self.plan['expected_artifacts'][0]
@@ -596,6 +643,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
             proof.verify_cache(graph, self.feeds, cache, self.artifacts, selected, {}, self.root / "inspector.dll", {})
 
     def test_signed_external_native_content_hash_is_separate_from_raw_archive_hash(self):
+        """Verify signed external native content hash is separate from raw archive hash."""
         cache = self.root / 'external-cache'
         folder = cache / 'external/1.2.3'
         folder.mkdir(parents=True)
@@ -629,6 +677,9 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 proof.verify_cache(graph, self.feeds, cache, self.artifacts, {}, assets, self.root / 'inspector.dll', catalog)
 
     def catalog_inputs(self):
+        """Create an original external archive, restored assets, and mocked native catalog
+        inputs.
+        """
         cache = self.root / 'original-cache'
         archive = cache / 'external/1.2.3/external.1.2.3.nupkg'
         archive.parent.mkdir(parents=True)
@@ -645,6 +696,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         return archive, assets, semantics, feeds
 
     def test_offline_catalog_freezes_original_bytes_and_preserves_original_source_mapping(self):
+        """Verify offline catalog freezes original bytes and preserves original source mapping."""
         archive, assets, semantics, _ = self.catalog_inputs()
         restored_archive = proof.archives.restored_archive
         def verify_frozen(frozen, *args, **kwargs):
@@ -663,6 +715,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         self.assertNotEqual(archive.read_bytes(), row['archive'].read_bytes())
 
     def test_offline_catalog_rejects_changed_original_bytes_and_unmapped_source(self):
+        """Verify offline catalog rejects changed original bytes and unmapped source."""
         archive, assets, semantics, feeds = self.catalog_inputs()
         original = archive.read_bytes()
         with zipfile.ZipFile(archive, 'a') as package:
@@ -677,6 +730,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 semantics, self.root / 'inspector.dll', self.root / 'unmapped-catalog')
 
     def test_original_archive_candidates_and_conflicting_context_hashes_fail_closed(self):
+        """Verify original archive candidates and conflicting context hashes fail closed."""
         archive, assets, semantics, _ = self.catalog_inputs()
         extra = self.root / 'other-cache'
         duplicate = extra / 'external/1.2.3' / archive.name
@@ -694,6 +748,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 semantics, self.root / 'inspector.dll', self.root / 'conflicting-catalog')
 
     def test_native_semantics_and_inspector_runtime_are_plan_bound(self):
+        """Verify native semantics and inspector runtime are plan bound."""
         assembly = self.root / 'NuGet.Packaging.dll'
         assembly.write_bytes(b'exact original SDK assembly')
         identity = [{'name': 'NuGet.Packaging', 'sha256': metadata.sha256(assembly.read_bytes())}]
@@ -709,6 +764,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
             proof.resolution.validate_native_tools(plan, semantics, self.root / 'inspector.dll')
 
     def test_extracted_compile_content_and_runtime_payloads_join_archive_bytes(self):
+        """Verify extracted compile content and runtime payloads join archive bytes."""
         archive = self.artifacts / 'Example.3.8.999.nupkg'
         entries = {'lib/net8.0/Example.dll': b'genuine assembly', 'contentFiles/any/any/site.css': b'genuine content'}
         with zipfile.ZipFile(archive, 'w') as package:
@@ -776,6 +832,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
     def test_original_flat_build_allows_archive_bound_unselected_helpers(self):
         # Grpc.Tools has flat package-named entrypoints plus nested _grpc and
         # _protobuf helpers; Proto.Cluster.CodeGen also has flat helper props.
+        """Verify original flat build allows archive bound unselected helpers."""
         values = self.original_flat_build_fixture(helper_members=(
             'build/_grpc/_Grpc.Tools.props', 'build/_protobuf/Google.Protobuf.Tools.targets',
             'build/ProtoGrainGenerator.props', 'Build/_grpc/Other.PROPS'))
@@ -785,6 +842,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         self.assertEqual(markers[0]['path'], 'build/_._')
 
     def test_original_flat_build_helpers_keep_inventory_and_cache_byte_checks(self):
+        """Verify original flat build helpers keep inventory and cache byte checks."""
         for member in ('build/_grpc/_Grpc.Tools.props', 'build/_grpc/Other.PROPS', 'Build/_grpc/Other.TARGETS'):
             for change in ('original_inventory', 'current_inventory', 'cache_bytes', 'cache_symlink'):
                 values = self.original_flat_build_fixture(helper_members=(member,))
@@ -800,12 +858,14 @@ class SelectedProductConsumerTests(unittest.TestCase):
                     self.verify_empty_build(values)
 
     def test_original_flat_build_rejects_nonflat_package_named_entrypoint(self):
+        """Verify original flat build rejects nonflat package named entrypoint."""
         values = self.original_flat_build_fixture(helper_members=(
             'build/net10.0/FastEndpoints.Swagger.props',))
         with self.assertRaisesRegex(ValueError, 'consumer_original_build_real_member'):
             self.verify_empty_build(values)
 
     def test_original_flat_build_and_multitargeting_markers_are_inert(self):
+        """Verify original flat build and multitargeting markers are inert."""
         values = self.original_flat_build_fixture()
         rows = self.verify_empty_build(values)
         markers = [item for row in rows for item in row['payloads'] if 'accounting' in item]
@@ -819,6 +879,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
             self.assertNotIn('sha256', item)
 
     def test_original_flat_build_requires_same_original_context_and_native_graph(self):
+        """Verify original flat build requires same original context and native graph."""
         for change in ('missing_snapshot', 'framework', 'version', 'native_hash', 'archive_hash', 'original_inventory',
                        'current_inventory', 'project', 'original_metadata', 'current_metadata', 'original_mixed',
                        'current_mixed', 'current_mixed_reversed', 'missing_original_group', 'build_transitive',
@@ -862,6 +923,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 self.verify_empty_build(values)
 
     def test_original_flat_build_never_skips_physical_archive_or_cache_markers(self):
+        """Verify original flat build never skips physical archive or cache markers."""
         for change in ('cache', 'case_cache', 'symlink', 'case_archive', 'real_archive', 'missing_real_member', 'archive_transitive', 'wrong_directory', 'real_member_symlink', 'real_member_changed'):
             values = self.original_flat_build_fixture()
             folder = values['cache'] / 'fastendpoints.swagger/8.2.0'
@@ -895,6 +957,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'consumer_input_hash'): self.verify_empty_build(values)
 
     def empty_build_fixture(self, framework='net8.0'):
+        """Create source-bound package and restore evidence for an excluded build marker."""
         version = {'net8.0': '8.0.24', 'net9.0': '9.0.13', 'net10.0': '10.0.3'}[framework]
         identifier, root = 'Microsoft.AspNetCore.Components.WebAssembly', 'Elsa.Studio.Localization.BlazorWasm'
         key, root_key = identifier + '/' + version, root + '/3.8.999'
@@ -937,10 +1000,12 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 'framework': framework, 'key': key, 'root_key': root_key, 'props': props, 'dll': dll}
 
     def verify_empty_build(self, values):
+        """Verify restored payloads using the build-marker fixture's original assets and catalog."""
         return proof.verify_asset_payloads(values['assets'], values['framework'], values['graph'], values['cache'],
             self.artifacts, values['selected'], catalog=values['catalog'], original_assets=values['original_assets'])
 
     def test_source_derived_build_exclusion_is_inert_for_each_supported_framework(self):
+        """Verify source derived build exclusion is inert for each supported framework."""
         for framework in ('net8.0', 'net9.0', 'net10.0'):
             values = self.empty_build_fixture(framework)
             marker = self.verify_empty_build(values)[-1]['payloads'][-1]
@@ -952,6 +1017,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 self.assertNotIn('sha256', marker)
 
     def test_build_marker_requires_unique_excluding_actual_root_edge_and_default_flags(self):
+        """Verify build marker requires unique excluding actual root edge and default flags."""
         values = self.empty_build_fixture()
         for change in ('include_without_exclude', 'unknown_include', 'unknown_exclude', 'direct_flags', 'extra_direct',
                        'wrong_root_version', 'nonpackage_root', 'second_incoming', 'duplicate_edge', 'edge_range',
@@ -992,6 +1058,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         self.verify_empty_build(values)
 
     def test_build_marker_rejects_wrong_origin_bytes_groups_and_metadata(self):
+        """Verify build marker rejects wrong origin bytes groups and metadata."""
         values = self.empty_build_fixture()
         for change in ('snapshot', 'framework', 'version', 'native_hash', 'archive_hash', 'inventory',
                        'original_missing', 'original_marker', 'metadata', 'mixed', 'mixed-reversed', 'path', 'selected'):
@@ -1021,6 +1088,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'consumer_input_hash'): self.verify_empty_build(values)
 
     def test_build_marker_physical_members_and_cache_collisions_remain_byte_checked(self):
+        """Verify build marker physical members and cache collisions remain byte checked."""
         for change in ('cache', 'case_cache', 'symlink', 'case_archive', 'real_archive'):
             values = self.empty_build_fixture(); path = values['folder'] / 'build/net8.0/_._'
             if change == 'cache': path.write_bytes(b'not synthetic')
@@ -1042,6 +1110,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'consumer_input_hash'): self.verify_empty_build(values)
 
     def empty_content_fixture(self):
+        """Create archive and restore evidence for an original excluded content marker."""
         identifier, version = 'Microsoft.AspNetCore.Components.CustomElements', '9.0.13'
         folded, key = identifier.lower(), identifier + '/' + version
         cache = self.root / 'marker-cache'
@@ -1069,12 +1138,14 @@ class SelectedProductConsumerTests(unittest.TestCase):
         return assets, deepcopy(assets), catalog, cache, folder, archive, graph, key
 
     def verify_empty_content(self, values):
+        """Verify restored payloads against the original content-marker fixture."""
         assets, original, catalog, cache, folder, archive, graph, _ = values
         selected = {key: {'nupkg': archive.name} for key, row in graph.items() if row['selected'] and key == values[-1].split('/')[0].lower()}
         return proof.verify_asset_payloads(assets, 'net9.0', graph, cache, folder if selected else self.artifacts, selected,
                                           catalog=catalog, original_assets=original)
 
     def test_original_native_excluded_content_marker_is_accounted_without_fake_bytes(self):
+        """Verify original native excluded content marker is accounted without fake bytes."""
         values = self.empty_content_fixture()
         rows = self.verify_empty_content(values)
         marker = next(row for row in rows[0]['payloads'] if row['path'] == proof.EMPTY_CONTENT)
@@ -1088,6 +1159,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
             self.verify_empty_content(values)
 
     def test_original_direct_real_content_can_be_excluded_at_the_package_only_boundary(self):
+        """Verify original direct real content can be excluded at the package only boundary."""
         values = self.empty_content_fixture()
         original = values[1]['targets']['net9.0'][values[-1]]
         original['contentFiles'] = {'contentFiles/any/net9.0/js/package.json':
@@ -1107,6 +1179,9 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 self.verify_empty_content((assets, source, *values[2:]))
 
     def test_synthetic_marker_requires_exact_original_root_context_archive_and_native_metadata(self):
+        """Verify synthetic marker requires exact original root context archive and native
+        metadata.
+        """
         values = self.empty_content_fixture()
         baseline_assets, baseline_original, baseline_catalog = deepcopy(values[:3])
         for change in ('original', 'framework', 'version', 'content_hash', 'archive_hash', 'inventory',
@@ -1131,6 +1206,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 self.verify_empty_content((assets, original, catalog, *values[3:6], graph, key))
 
     def test_synthetic_marker_rejects_cache_entries_symlinks_and_archive_case_collisions(self):
+        """Verify synthetic marker rejects cache entries symlinks and archive case collisions."""
         values = self.empty_content_fixture(); marker = values[4] / proof.EMPTY_CONTENT
         marker.parent.mkdir(parents=True)
         for symlink in (False, True):
@@ -1146,6 +1222,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
             self.verify_empty_content(values)
 
     def test_real_archive_empty_marker_still_requires_extracted_byte_identity(self):
+        """Verify real archive empty marker still requires extracted byte identity."""
         values = self.empty_content_fixture()
         with zipfile.ZipFile(values[5], 'a') as package:
             package.writestr(proof.EMPTY_CONTENT, b'physical marker')
@@ -1160,6 +1237,9 @@ class SelectedProductConsumerTests(unittest.TestCase):
             self.verify_empty_content(values)
 
     def run_private_consumer(self, freshness_error=None, *, retire_caches=False, command_error=None, cli=False):
+        """Run a mocked consumer flow with optional prerequisite, command, or cache-retirement
+        failures.
+        """
         self.policy.update(id='Elsa.Studio.Core', frameworks=['net8.0'])
         self.policy['metadata'].update(original_output_policy={'net8.0': {'IncludeBuildOutput': 'true'}},
                                        framework_reference_groups=[])
@@ -1268,30 +1348,35 @@ class SelectedProductConsumerTests(unittest.TestCase):
         return json.loads(data), data, output, dll
 
     def test_current_ineligible_prerequisites_block_all_consumer_and_inspector_work(self):
+        """Verify current ineligible prerequisites block all consumer and inspector work."""
         receipt, _, _, _ = self.run_private_consumer(ValueError('artifact_fresh_prerequisite_failed'))
         self.assertFalse(receipt['success'])
         self.assertFalse(receipt['current_consumer_admission']['eligible'])
         self.assertEqual('current-consumer-prerequisites', receipt['stage'])
 
     def test_cli_reports_real_execute_failure_stage_before_inspector_or_cell_work(self):
+        """Verify CLI reports real execute failure stage before inspector or cell work."""
         receipt, _, _, _ = self.run_private_consumer(ValueError('artifact_fresh_prerequisite_failed'), cli=True)
         self.assertFalse(receipt['success'])
         self.assertEqual(self.cli_diagnostic, {'success': False, 'failure_code': 'artifact_fresh_prerequisite_failed',
             'failure_stage': 'current-consumer-prerequisites', 'retained_receipt_created': True})
 
     def test_cli_reports_fixed_cell_stage_for_unclassified_command_failure(self):
+        """Verify CLI reports fixed cell stage for unclassified command failure."""
         receipt, _, _, _ = self.run_private_consumer(command_error='build', cli=True)
         self.assertFalse(receipt['success'])
         self.assertEqual(self.cli_diagnostic, {'success': False, 'failure_code': 'consumer_control_failed',
             'failure_stage': 'selected-restore-compile', 'retained_receipt_created': True})
 
     def test_current_prerequisite_metadata_drift_blocks_consumer_work(self):
+        """Verify current prerequisite metadata drift blocks consumer work."""
         receipt, _, _, _ = self.run_private_consumer(ValueError('artifact_prerequisite_metadata_changed'))
         self.assertFalse(receipt['success'])
         self.assertFalse(receipt['current_consumer_admission']['eligible'])
         self.assertEqual('current-consumer-prerequisites', receipt['stage'])
 
     def test_full_retained_receipt_excludes_private_runtime_and_archive_paths(self):
+        """Verify full retained receipt excludes private runtime and archive paths."""
         retained, data, output, dll = self.run_private_consumer()
         self.assertTrue(retained['success'])
         self.assertEqual('historical-producer-start-only', retained['producer_plan_admission']['scope'])
@@ -1311,6 +1396,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 self.assertFalse((cell / 'cell-proof.private.json').exists())
 
     def test_opt_in_retires_only_after_compile_and_runtime_proof(self):
+        """Verify opt in retires only after compile and runtime proof."""
         receipt, _, output, _ = self.run_private_consumer(retire_caches=True)
         self.assertTrue(receipt['success'])
         for completed in receipt['coverage'] + receipt['runtime']:
@@ -1329,6 +1415,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         self.assertTrue(next(self.artifacts.glob('*.nupkg')).is_file())
 
     def test_failed_build_never_retires_its_caches_or_saves_completed_proof(self):
+        """Verify failed build never retires its caches or saves completed proof."""
         receipt, _, output, _ = self.run_private_consumer(retire_caches=True, command_error='build')
         self.assertFalse(receipt['success'])
         self.assertEqual([], receipt['coverage'])
@@ -1339,6 +1426,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         self.assertFalse((cell / 'cell-proof.private.json').exists())
 
     def test_failed_runtime_never_retires_its_caches(self):
+        """Verify failed runtime never retires its caches."""
         receipt, _, output, _ = self.run_private_consumer(retire_caches=True, command_error='run')
         self.assertFalse(receipt['success'])
         self.assertEqual([], receipt['runtime'])
@@ -1348,6 +1436,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         self.assertFalse((cell / 'cell-proof.private.json').exists())
 
     def test_retirement_failure_cannot_report_complete_acceptance(self):
+        """Verify retirement failure cannot report complete acceptance."""
         with patch.object(proof, 'retire_successful_cell_caches', side_effect=ValueError('injected_retirement')):
             receipt, _, _, _ = self.run_private_consumer(retire_caches=True, command_error='retirement')
         self.assertFalse(receipt['success'])
@@ -1355,6 +1444,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         self.assertEqual('selected-restore-compile-failed', receipt['failure_code'])
 
     def test_cli_cache_retirement_is_explicitly_opt_in(self):
+        """Verify CLI cache retirement is explicitly opt in."""
         arguments = ['consumer', '--plan', 'plan', '--plan-sha256', 'a'*64, '--artifact-receipt', 'receipt',
                      '--artifact-receipt-sha256', 'b'*64, '--artifacts', 'archives', '--planning-assets', 'snapshots',
                      '--output', 'output']
@@ -1365,6 +1455,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 self.assertIs(enabled, execute.call_args.kwargs['retire_caches'])
 
     def test_coverage_ledger_requires_every_selected_tfm_once_and_success(self):
+        """Verify coverage ledger requires every selected target framework once and success."""
         valid = [{'id': 'Example', 'framework': framework, 'success': True} for framework in self.policy['frameworks']]
         proof.validate_ledger(self.plan, valid)
         for invalid in (valid[:1], valid + valid[:1], [valid[0], valid[1] | {'success': False}]):
@@ -1372,6 +1463,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 proof.validate_ledger(self.plan, invalid)
 
     def test_compile_witness_has_exact_single_package_and_no_projectreference(self):
+        """Verify compile witness has exact single package and no ProjectReference."""
         project = ET.fromstring(proof.render_project('Example', '3.8.999', 'net8.0', ['Microsoft.AspNetCore.App'], executable=False, managed=True))
         packages = project.findall('ItemGroup/PackageReference')
         self.assertEqual(1, len(packages))
@@ -1382,6 +1474,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
 
 class ConsumerCliDiagnosticsTests(unittest.TestCase):
     def setUp(self):
+        """Create isolated input and output paths for consumer CLI diagnostic tests."""
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name).resolve()
@@ -1390,6 +1483,7 @@ class ConsumerCliDiagnosticsTests(unittest.TestCase):
         self.output = self.root / 'output'
 
     def invoke(self):
+        """Run the failing consumer CLI and parse its public JSON diagnostic."""
         arguments = ['consumer', '--plan', str(self.plan), '--plan-sha256', 'f' * 64,
             '--artifact-receipt', str(self.root / 'producer.json'), '--artifact-receipt-sha256', 'e' * 64,
             '--artifacts', str(self.root / 'artifacts'), '--planning-assets', str(self.root / 'snapshots'),
@@ -1401,11 +1495,15 @@ class ConsumerCliDiagnosticsTests(unittest.TestCase):
         return json.loads(stdout.getvalue())
 
     def test_genuine_early_input_hash_failure_has_closed_code_and_no_receipt(self):
+        """Verify genuine early input hash failure has closed code and no receipt."""
         self.assertEqual(self.invoke(), {'success': False, 'failure_code': 'consumer_input_hash',
             'failure_stage': 'unclassified', 'retained_receipt_created': False})
         self.assertFalse(self.output.exists())
 
     def failed_receipt(self, error, *, changes=None, data=None):
+        """Return a callback that writes a synthetic failed receipt before raising the supplied
+        error.
+        """
         def fail(*args, **kwargs):
             retained = self.output / 'retained'
             retained.mkdir(parents=True)
@@ -1418,17 +1516,22 @@ class ConsumerCliDiagnosticsTests(unittest.TestCase):
         return fail
 
     def test_new_failed_receipt_reports_only_fixed_stage_and_literal_exception_code(self):
+        """Verify new failed receipt reports only fixed stage and literal exception code."""
         with patch.object(proof, 'execute', side_effect=self.failed_receipt(ValueError('artifact_fresh_prerequisite_failed'))):
             self.assertEqual(self.invoke(), {'success': False, 'failure_code': 'artifact_fresh_prerequisite_failed',
                 'failure_stage': 'current-consumer-prerequisites', 'retained_receipt_created': True})
 
     def test_native_sdk_and_retirement_literal_codes_are_public_without_raw_details(self):
+        """Verify native SDK and retirement literal codes are public without raw details."""
         for code in ('consumer_native_content_hash', 'consumer_sdk_download_bytes', 'consumer_cache_retirement_path'):
             with self.subTest(code=code), patch.object(proof, 'execute', side_effect=ValueError(code)):
                 self.assertEqual(self.invoke(), {'success': False, 'failure_code': code,
                     'failure_stage': 'unclassified', 'retained_receipt_created': False})
 
     def bounded_range_error(self):
+        """Create a dependency-range error with enough rejected edges to exercise diagnostic
+        limits.
+        """
         error = ValueError('consumer_dependency_range_conflict')
         ranges = [{'range': '[9.0.0, 9.0.999]', 'version': '10.0.9'}] * 15
         edges = [('Pomelo.EntityFrameworkCore.MySql', 'Microsoft.EntityFrameworkCore.Relational', False)] * 5
@@ -1437,6 +1540,7 @@ class ConsumerCliDiagnosticsTests(unittest.TestCase):
         return error
 
     def test_range_samples_are_bounded_and_never_include_private_exception_attributes(self):
+        """Verify range samples are bounded and never include private exception attributes."""
         error = self.bounded_range_error()
         error.private = '/private/token'
         with patch.object(proof, 'execute', side_effect=error):
@@ -1448,6 +1552,7 @@ class ConsumerCliDiagnosticsTests(unittest.TestCase):
         self.assertNotIn('/private/token', json.dumps(result))
 
     def test_malformed_range_details_are_omitted_without_changing_original_failure(self):
+        """Verify malformed range details are omitted without changing original failure."""
         valid = self.bounded_range_error().consumer_range_failure
         changes = ({'root_id': '/private/token'}, {'root_id': 'x' * 101}, {'framework': 'net10.0 /private/token'},
             {'phase': 'restore --secret'}, {'reason': 'private-token'}, {'requested_checks': True},
@@ -1469,6 +1574,7 @@ class ConsumerCliDiagnosticsTests(unittest.TestCase):
                     'failure_stage': 'unclassified', 'retained_receipt_created': False})
 
     def test_range_details_on_wrong_exception_types_or_codes_stay_private(self):
+        """Verify range details on wrong exception types or codes stay private."""
         class SpecificError(ValueError):
             pass
         detail = self.bounded_range_error().consumer_range_failure
@@ -1479,6 +1585,7 @@ class ConsumerCliDiagnosticsTests(unittest.TestCase):
                 self.assertNotIn('dependency_range_failure', self.invoke())
 
     def test_arbitrary_exception_strings_and_valueerror_subclasses_stay_generic(self):
+        """Verify arbitrary exception strings and valueerror subclasses stay generic."""
         class SpecificError(ValueError):
             pass
         for error in (ValueError('consumer_input_hash /private/token'), RuntimeError('consumer_input_hash'),
@@ -1488,6 +1595,7 @@ class ConsumerCliDiagnosticsTests(unittest.TestCase):
                     'failure_stage': 'unclassified', 'retained_receipt_created': False})
 
     def test_malformed_or_unreviewed_receipt_fields_never_become_public_stages(self):
+        """Verify malformed or unreviewed receipt fields never become public stages."""
         changes = ({'stage': 'selected-restore-compile /private/token'}, {'stage': 'complete'}, {'stage': []},
             {'schema': True}, {'mode': 'selected-product-artifact-control'}, {'success': True},
             {'failure_code': 'current-consumer-prerequisites-failed /private/token'})
@@ -1502,6 +1610,7 @@ class ConsumerCliDiagnosticsTests(unittest.TestCase):
             self.assertEqual(self.invoke()['failure_stage'], 'unclassified')
 
     def test_oversized_receipt_is_not_parsed_or_reflected(self):
+        """Verify oversized receipt is not parsed or reflected."""
         def fail(*args, **kwargs):
             retained = self.output / 'retained'; retained.mkdir(parents=True)
             with (retained / 'receipt.json').open('wb') as receipt:
@@ -1512,6 +1621,7 @@ class ConsumerCliDiagnosticsTests(unittest.TestCase):
                 'failure_stage': 'unclassified', 'retained_receipt_created': True})
 
     def test_previous_output_and_symlink_receipts_or_ancestors_are_not_new_receipts(self):
+        """Verify previous output and symlink receipts or ancestors are not new receipts."""
         for kind in ('previous', 'receipt', 'retained', 'output', 'parent', 'dangling'):
             self.output = self.root / kind
             foreign = self.root / (kind + '-foreign'); foreign.mkdir()

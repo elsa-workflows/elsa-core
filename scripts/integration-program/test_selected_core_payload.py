@@ -11,6 +11,7 @@ import selected_core_payload as core
 
 
 def archive_record(identifier, version, suffix, members):
+    """Create package ZIP bytes and their exact archive inventory record."""
     stream = io.BytesIO()
     with zipfile.ZipFile(stream, 'w') as archive:
         for path, payload in members.items():
@@ -22,6 +23,7 @@ def archive_record(identifier, version, suffix, members):
 
 
 def fixture(line='3.8', *, conditional_skips=True):
+    """Build synthetic Core plan, producer, consumer, and archive evidence for a release line."""
     contracts = core.load_contracts()
     contract = contracts['producer']['sources'][line]
     source = {'product': 'core', 'line': line, 'kind': 'observed-core-release-branch',
@@ -101,16 +103,19 @@ def fixture(line='3.8', *, conditional_skips=True):
 
 class CorePayloadTests(unittest.TestCase):
     def validate(self, values):
+        """Run pure Core specialization validation on the supplied fixture components."""
         plan, producer, consumer, selected, contracts = values
         core.validate_specialization(plan, producer, consumer, selected, contracts=contracts)
 
     def rejected(self, mutate, *, line='3.8'):
+        """Mutate a fresh Core payload fixture and require validation to reject it."""
         values = fixture(line)
         mutate(*values)
         with self.assertRaises(ValueError):
             self.validate(values)
 
     def test_both_complete_source_test_censuses_and_provider_gate_states(self):
+        """Verify both complete source test censuses and provider gate states."""
         for line, count in (('3.8', 44), ('3.9', 61)):
             for skips in (True, False):
                 values = fixture(line, conditional_skips=skips)
@@ -118,12 +123,14 @@ class CorePayloadTests(unittest.TestCase):
                 self.validate(values)
 
     def test_pure_validation_does_not_load_files_or_environment(self):
+        """Verify pure validation does not load files or environment."""
         values = fixture()
         with patch('pathlib.Path.read_bytes', side_effect=AssertionError('file read')), \
                 patch.dict('os.environ', {'ELSA_USERTASKS_TEST_SQLSERVER': 'not-consulted'}, clear=True):
             self.validate(values)
 
     def test_source_plan_and_partition_tampering(self):
+        """Verify source plan and partition tampering."""
         mutations = [lambda p, *_: p['source'].update(kind='maintenance'),
             lambda p, *_: p['source'].update(commit='0'*40), lambda p, *_: p.update(npm={}),
             lambda p, *_: p['inventory']['projects'].pop(),
@@ -136,6 +143,7 @@ class CorePayloadTests(unittest.TestCase):
             with self.subTest(mutation=mutate): self.rejected(mutate)
 
     def test_plan_bound_excluded_output_metadata_is_preserved_without_archive_bytes(self):
+        """Verify plan bound excluded output metadata is preserved without archive bytes."""
         for line in ('3.8', '3.9'):
             values = fixture(line); plan, producer, _, selected, _ = values
             identifier, version = plan['inventory']['excluded'][0]['id'], plan['requested_version']
@@ -155,6 +163,7 @@ class CorePayloadTests(unittest.TestCase):
             self.validate(values)
 
     def test_excluded_metadata_rejects_unknown_identity_private_paths_and_bytes(self):
+        """Verify excluded metadata rejects unknown identity private paths and bytes."""
         values = fixture(); plan, producer, _, _, _ = values
         record, _ = archive_record(plan['inventory']['excluded'][0]['id'], plan['requested_version'], 'nupkg',
                                    {'output.nuspec': b'<package />'})
@@ -190,6 +199,7 @@ class CorePayloadTests(unittest.TestCase):
         with self.assertRaises(ValueError): self.validate(leaked)
 
     def test_closed_nested_native_and_symbol_schema(self):
+        """Verify closed nested native and symbol schema."""
         mutations = [lambda n: n.update(private_path='/tmp/secret'), lambda n: n['files'][0].update(argv=[]),
             lambda n: n['symbols'][0].update(extra=True), lambda n: n['symbols'][0]['symbol'].update(extra=True),
             lambda n: n['symbols'][0]['documents'][0].update(extra=True),
@@ -205,6 +215,7 @@ class CorePayloadTests(unittest.TestCase):
             with self.subTest(mutation=mutate): self.rejected(lambda p, r, *_: mutate(r['package_verification'][0]))
 
     def test_missing_duplicate_dll_files_and_pdb_join(self):
+        """Verify missing duplicate DLL files and PDB join."""
         mutations = [lambda n: n['symbols'].pop(), lambda n: n['symbols'].append(deepcopy(n['symbols'][0])),
             lambda n: n['symbols'][0].update(pdb_sha256='0'*64), lambda n: n['files'][0].update(size=999),
             lambda n: n.update(repository=n['repository'] | {'commit': '0'*40}),
@@ -214,12 +225,14 @@ class CorePayloadTests(unittest.TestCase):
         self.rejected(lambda p, r, c, s, _: s['elsa']['members'].update({'lib/net10.0/Extra.dll': b'extra'}))
 
     def test_private_pdb_exception_is_exact_and_inherited(self):
+        """Verify private PDB exception is exact and inherited."""
         values = fixture(); self.validate(values)
         self.rejected(lambda p, r, *_: r['package_verification'][-1]['symbols'][0].pop('symbol_package'))
         self.rejected(lambda p, r, *_: r['package_verification'][-1]['symbols'][0].update(symbol_package=True))
         self.rejected(lambda p, *_: p['inventory']['selected'][-1].update(project='src/Fake.csproj'))
 
     def test_no_documents_branch_has_exact_native_counts(self):
+        """Verify no documents branch has exact native counts."""
         values = fixture()
         symbol = values[1]['package_verification'][0]['symbols'][0]
         symbol['documents'] = []
@@ -232,6 +245,7 @@ class CorePayloadTests(unittest.TestCase):
             with self.subTest(key=key), self.assertRaises(ValueError): self.validate(changed)
 
     def test_embedded_sdk_document_branch_is_closed(self):
+        """Verify embedded SDK document branch is closed."""
         values = fixture()
         doc = {'path': '[embedded]/document-2', 'source': 'embedded', 'family': 'sdk', 'algorithm': 'sha256', 'checksum': 'f'*64,
             'producer': {'kind': 'sdk', 'sdk_version': '10.0.100', 'compiler_sha256': 'a'*64,
@@ -242,6 +256,7 @@ class CorePayloadTests(unittest.TestCase):
         with self.assertRaises(ValueError): self.validate(values)
 
     def test_generated_framework_nuget_and_razor_producer_branches(self):
+        """Verify generated framework NuGet and razor producer branches."""
         common = {'kind': 'framework', 'package_id': 'Microsoft.NETCore.App.Ref',
             'package_version': '10.0.0', 'content_sha256': 'a'*64}
         nuget = common | {'kind': 'nuget', 'archive_sha256': 'b'*64,
@@ -262,6 +277,7 @@ class CorePayloadTests(unittest.TestCase):
         with self.assertRaises(ValueError): core._producer(nuget)
 
     def test_manifest_and_sdk_assets_bind_exact_archive_members(self):
+        """Verify manifest and SDK assets bind exact archive members."""
         values = fixture(); plan, producer, _, selected, _ = values
         policy, native, members = plan['inventory']['selected'][0], producer['package_verification'][0], selected['elsa']['members']
         for output in policy['metadata']['original_output_policy'].values():
@@ -285,6 +301,7 @@ class CorePayloadTests(unittest.TestCase):
             with self.subTest(mutation=mutate), self.assertRaises(ValueError): self.validate(changed)
 
     def test_admission_manifest_conditional_catalog_and_empty_base(self):
+        """Verify admission manifest conditional catalog and empty base."""
         import json
         for identifier, expected_types in core.archives.ADMISSION_SHELL_FEATURES.items():
             policy = {'id': identifier, 'frameworks': ['net10.0'], 'metadata': {'original_output_policy': {'net10.0': {
@@ -304,6 +321,7 @@ class CorePayloadTests(unittest.TestCase):
             with self.assertRaises(ValueError): core._manifest(native, policy, members, '3.9.999')
 
     def test_output_only_package_keeps_archive_without_native_assembly(self):
+        """Verify output only package keeps archive without native assembly."""
         values = fixture(); plan, producer, _, selected, _ = values
         policy = plan['inventory']['selected'][-1]; native = producer['package_verification'][-1]; item = selected['elsa.samplepackage']
         policy['include_build_output'] = False
@@ -315,6 +333,7 @@ class CorePayloadTests(unittest.TestCase):
         with self.assertRaises(ValueError): self.validate(values)
 
     def test_satellite_exact_archive_join_and_safe_source_path(self):
+        """Verify satellite exact archive join and safe source path."""
         values = fixture(); native = values[1]['package_verification'][0]; members = values[3]['elsa']['members']
         path = 'lib/net10.0/nl/Elsa.resources.dll'; members[path] = b'satellite'
         satellite = {'framework': 'net10.0', 'culture': 'nl', 'target_path': 'nl/Elsa.resources.dll',
@@ -326,6 +345,7 @@ class CorePayloadTests(unittest.TestCase):
             with self.subTest(key=key), self.assertRaises(ValueError): self.validate(changed)
 
     def test_source_bound_skips_counters_and_full_cells(self):
+        """Verify source bound skips counters and full cells."""
         mutations = [lambda t: t['executions'].pop(), lambda t: t['executions'].append(deepcopy(t['executions'][0])),
             lambda t: t['executions'][0]['counters'].update(failed=1), lambda t: t['executions'][0]['counters'].update(passed=True),
             lambda t: t['executions'][0]['expected_skips'][0].update(reason='changed'),
@@ -340,6 +360,7 @@ class CorePayloadTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'conditional_skip_gate'): self.validate(values)
 
     def test_loaded_asset_framework_comes_from_native_restored_selection(self):
+        """Verify loaded asset framework comes from native restored selection."""
         values = fixture(); row = values[2]['runtime'][-1]
         loaded = next(r for r in row['runtime']['loaded_assemblies'] if r['name'] == 'Elsa.Workflows.Runtime')
         asset = 'lib/net9.0/Elsa.Workflows.Runtime.dll'
@@ -349,6 +370,7 @@ class CorePayloadTests(unittest.TestCase):
         self.validate(values)
 
     def test_runtime_source_asset_native_identity_and_closed_shape(self):
+        """Verify runtime source asset native identity and closed shape."""
         mutations = [lambda c: c.update(runtime_contract_source={}), lambda c: c['runtime'].pop(),
             lambda c: c['runtime'][0]['runtime'].update(contract='different workflow'),
             lambda c: c['runtime'][0]['runtime'].update(outputLines=['invented']),

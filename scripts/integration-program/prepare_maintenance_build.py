@@ -301,6 +301,7 @@ def maintenance_editable_path(path: str) -> bool:
 
 
 def verify_maintenance_delta(root: Path, row: dict, parent: dict, register: dict) -> None:
+    """Verify the registered tree delta and reject edits to protected source controls."""
     before, after = tree_entries(root, parent['commit']), tree_entries(root, row['commit'])
     require(candidate_tree_delta(before, after) == row['delta'], 'Core candidate source delta mismatch')
     placeholders = {item['source_file'] for item in register['inherited_skipped_placeholders']
@@ -431,6 +432,7 @@ VERIFICATION_REASONS = {
 
 
 def verification_reason(message: str) -> str:
+    """Map a verification message to an allowed public reason or the unknown fallback."""
     if message in VERIFICATION_REASONS:
         return VERIFICATION_REASONS[message]
     for key in ('Unexpected evaluated version', 'Unexpected Elsa dependency',
@@ -463,6 +465,7 @@ def closed_diagnostics(log: Path) -> dict:
 
 
 def run_build_command(command: list[str], cwd: Path, log: Path, record: dict, *, environment: dict | None = None) -> None:
+    """Run a recipe command and retain process status and bounded log diagnostics."""
     try:
         run(command, cwd, timeout=7200, log=log, env=environment or build_environment(), outcome=record.setdefault('process', {}))
         record['success'] = True
@@ -471,11 +474,13 @@ def run_build_command(command: list[str], cwd: Path, log: Path, record: dict, *,
 
 
 def original_core(row: dict) -> bool:
+    """Return whether the selection uses the admitted original Core producer policy."""
     from selected_core_producer import original
     return original(row)
 
 
 def recipe_environment(row: dict, version: str, source: Path) -> dict:
+    """Create the product recipe environment bound to its source NuGet.Config."""
     config = source / 'NuGet.Config'
     require(config.is_file() and not config.is_symlink(), 'Original restore config must be a regular file')
     if original_core(row):
@@ -489,10 +494,12 @@ def recipe_environment(row: dict, version: str, source: Path) -> dict:
 
 
 def version_arguments(row: dict, version: str) -> list[str]:
+    """Return version overrides only for recipes that do not use Core's environment."""
     return [] if original_core(row) else [f'-p:Version={version}']
 
 
 def recipes(row: dict, version: str, output: Path) -> list[tuple[str, list[str]]]:
+    """Return the original product build, test, and packaging commands."""
     if original_core(row):
         from selected_core_producer import recipes as core_recipes
         return core_recipes(row, version, output)
@@ -522,6 +529,7 @@ def recipes(row: dict, version: str, output: Path) -> list[tuple[str, list[str]]
 
 
 def evaluate_satellites(source: Path, project: str, framework: str, assembly: str, version: str, row: dict | None = None) -> list[dict]:
+    """Evaluate satellite outputs and return their source paths and package hashes."""
     row = row or {}
     result = json.loads(run(['dotnet', 'msbuild', project, '-nologo', '-p:Configuration=Release',
         *version_arguments(row, version), f'-p:TargetFramework={framework}', '-target:SatelliteDllsProjectOutputGroup',
@@ -543,6 +551,7 @@ def evaluate_satellites(source: Path, project: str, framework: str, assembly: st
 
 
 def evaluate_inventory(source: Path, row: dict, version: str, output: Path) -> list[dict]:
+    """Evaluate recipe package policies and persist the applicable test inventory."""
     require(row['product'] in ('core', 'studio', 'extensions'), 'Unsupported producer product')
     solution = source / {'core': 'Elsa.sln', 'studio': 'Elsa.Studio.sln', 'extensions': 'Elsa.Extensions.sln'}[row['product']]
     projects = re.findall(r'^Project\([^\n]+?= "[^"]+", "([^"]+\.csproj)"', solution.read_text(encoding='utf-8-sig'), re.M)
@@ -620,12 +629,14 @@ def public_producer(evidence: dict) -> dict:
 
 
 def metadata_command(project: str, version: str, row: dict | None = None) -> list[str]:
+    """Build an MSBuild metadata command using the original recipe's version policy."""
     return ['dotnet', 'msbuild', project, '-nologo', '-p:Configuration=Release', *version_arguments(row or {}, version),
             *[f'-p:{key}={value}' for key, value in PROOF_BUILD_PROPERTIES.items()]]
 
 
 def stage_maintenance_metadata(source: Path, row: dict, inventory: list[dict], version: str,
                                inspector: Path, *, diagnostics: Path | None = None) -> None:
+    """Stage original package metadata privately and retain optional failure diagnostics."""
     source = source.resolve()
     cache = {'archive_inspector': inspector, 'source_commit': row['commit']}
     context = {'package': None, 'project': None, 'framework': None, 'operation': 'temporary-stage'}
@@ -634,6 +645,7 @@ def stage_maintenance_metadata(source: Path, row: dict, inventory: list[dict], v
         diagnostics.mkdir()
 
     def execute(command: list[str]) -> str:
+        """Run a metadata command in the recipe environment, optionally retaining its output."""
         nonlocal command_index
         command_index += 1
         record = None if diagnostics is None else diagnostics / f'command-{command_index:04d}.txt'
@@ -646,6 +658,7 @@ def stage_maintenance_metadata(source: Path, row: dict, inventory: list[dict], v
         return stdout
 
     def retain_nuspecs(destination: Path) -> None:
+        """Copy safe staged nuspec bytes into the optional private diagnostics directory."""
         if diagnostics is None:
             return
         for path in sorted(destination.glob('*.nuspec')):
@@ -810,12 +823,14 @@ SOURCE_PRODUCER_CHECKS = frozenset(SOURCE_PRODUCER_ERRORS.values()) | {
 
 class SourceProducerVerificationError(ValueError):
     def __init__(self, check: str):
+        """Store the source verification check while keeping exception text generic."""
         super().__init__('Source producer evidence rejected')
         self.check = check
 
 
 def verify_non_git_document(document: dict, path: str | None, source: Path, row: dict,
                             policy: dict | None, framework: str | None, cache: dict) -> dict:
+    """Verify embedded or generated source provenance and report a bounded failure check."""
     check = 'source-context-invalid'
     try:
         require(policy is not None and policy.get('source_commit') == row['commit'] and
@@ -924,6 +939,7 @@ def verify_sdk_dependencies(nuspec: ET.Element, policy: dict, *, symbols: bool =
 
 def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version: str, source: Path,
                      inspector: Path, output: Path, context: dict | None = None) -> list[dict]:
+    """Validate the complete package and symbol inventory and persist artifact receipts."""
     expected = {p['id'].casefold(): p for p in inventory}
     produced = set(expected)
     found = set()
@@ -1065,6 +1081,7 @@ def placeholder_policies(source: Path, row: dict) -> dict:
 
 
 def verify_tests(output: Path, row: dict, context: dict | None = None, *, environment: dict | None = None) -> dict:
+    """Validate TRX evidence against every expected test cell and allowed skip policy."""
     require(not original_core(row) or environment is not None, 'Core test environment missing')
     tests = json.loads((output / 'test-inventory.json').read_text())
     source = output / 'source'
@@ -1202,6 +1219,7 @@ def verify_tests(output: Path, row: dict, context: dict | None = None, *, enviro
 
 
 def inspect_toolchain(source: Path, row: dict) -> dict:
+    """Report installed SDKs and the additional Node/npm tools required for Studio."""
     tools = {'dotnet': ['dotnet', '--list-sdks']}
     if row['product'] == 'studio':
         tools.update(node=['node', '--version'], npm=['npm', '--version'])
@@ -1210,6 +1228,7 @@ def inspect_toolchain(source: Path, row: dict) -> dict:
 
 
 def prepare(root: Path, row: dict, version: str, output: Path, *, plan: dict | None = None) -> dict:
+    """Run the admitted maintenance recipe and persist success or failure evidence."""
     require(not output.exists(), 'Output must be new; retain prior evidence')
     require(not output.is_relative_to(root), 'Output must be outside the controller checkout')
     output.mkdir(parents=True)

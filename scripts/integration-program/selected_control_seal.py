@@ -30,14 +30,17 @@ MANIFEST_KEYS = {'schema', 'scope', 'context', 'controller', 'product', 'line', 
 
 
 def inherited_judgments(product: str) -> list[str]:
+    """Return producer judgments inherited by the selected product's seal."""
     return INHERITED if product == 'studio' else INHERITED[:-1]
 
 
 def encoded(value: dict) -> bytes:
+    """Encode sorted, indented JSON bytes while rejecting nonfinite values."""
     return (json.dumps(value, indent=2, sort_keys=True, allow_nan=False) + '\n').encode()
 
 
 def absolute(path: Path) -> Path:
+    """Return an absolute path after rejecting traversal and symlink components."""
     require('..' not in path.parts, 'selected_seal_path')
     result = Path(os.path.abspath(path))
     require(not any(part.is_symlink() for part in (result, *result.parents)), 'selected_seal_path')
@@ -45,6 +48,7 @@ def absolute(path: Path) -> Path:
 
 
 def output_location(output: Path, inputs: list[Path]) -> Path:
+    """Require a new seal destination disjoint from the controller and all input paths."""
     output = absolute(output)
     require(not output.exists() and not output.is_relative_to(producer.ROOT) and
             not producer.ROOT.is_relative_to(output) and all(not output.is_relative_to(path) and
@@ -53,6 +57,7 @@ def output_location(output: Path, inputs: list[Path]) -> Path:
 
 
 def retained_files(folder: Path) -> set[str]:
+    """Inventory safe retained files and reject symlinks and name collisions."""
     folder = absolute(folder)
     require(folder.is_dir(), 'selected_seal_retained_folder')
     files = set()
@@ -108,6 +113,7 @@ def freeze_inputs(plan_path: Path, plan_hash: str, retained: Path, producer_hash
 
 
 def make_manifest(files: dict[str, bytes], expected: dict, result: dict) -> dict:
+    """Build a manifest binding the admitted files, executions, plan, and inherited judgments."""
     return {'schema': 1, 'scope': SCOPE, **expected, 'source': result['plan']['source'],
         'version': result['plan']['requested_version'], 'plan_sha256': metadata.sha256(files['plan.json']),
         'producer_receipt_sha256': metadata.sha256(files['producer/receipt.json']),
@@ -144,6 +150,7 @@ def write_new(output: Path, files: dict[str, bytes]) -> None:
 
 def seal(plan_path: Path, plan_hash: str, retained: Path, producer_hash: str,
          consumer_path: Path, consumer_hash: str, output: Path) -> dict:
+    """Freeze inputs, validate their complete control evidence, and write a new sealed payload."""
     output = output_location(output, [absolute(plan_path).parent, absolute(retained), absolute(consumer_path).parent])
     files, originals = freeze_inputs(plan_path, plan_hash, retained, producer_hash, consumer_path, consumer_hash)
     plan = transport.strict_json(files['plan.json'], transport.MAX_PLAN_BYTES)
@@ -185,6 +192,7 @@ def readback(data: bytes, provider: dict, expected: dict, *, contracts: dict,
 
 
 def main() -> int:
+    """Run seal or independent readback and return a generic rejection on invalid inputs."""
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest='command', required=True)
     sealing = commands.add_parser('seal')

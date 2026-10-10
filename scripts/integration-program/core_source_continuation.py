@@ -22,14 +22,17 @@ REFS = {'3.8': 'refs/heads/release/3.8.4', '3.9': 'refs/heads/release/3.9.0'}
 
 
 def load_contract() -> dict:
+    """Load the controller's fixed Core continuation catalog."""
     return json.loads(CONTRACT.read_bytes())
 
 
 def contract_hash(contract: dict) -> str:
+    """Return the SHA-256 of the contract's canonical JSON encoding."""
     return hashlib.sha256(json.dumps(contract, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
 
 def candidate(line: str, contract: dict) -> dict:
+    """Return the release line's candidate after validating the catalog scope."""
     require(contract.get('schema') == 1 and contract.get('scope') == 'fixed-reviewed-core-maintenance-continuations' and
             set(contract.get('sources', {})) == set(REFS) and line in REFS, 'core_continuation_catalog')
     return contract['sources'][line]
@@ -65,6 +68,7 @@ def validate_tag_history(line: str, history: object) -> None:
 
 
 def bind(line: str, observation: dict, contract: dict) -> dict:
+    """Bind a reviewed candidate to its exact original branch observation."""
     row = candidate(line, contract)
     require(type(observation) is dict and
             (observation.get('ref'), observation.get('commit'), observation.get('tree')) ==
@@ -101,6 +105,7 @@ def verify_source(root: Path, source: dict, original: dict, contract: dict) -> N
     row = candidate(source['line'], contract)
 
     def git(*args):
+        """Run a Git query against the controller repository."""
         return maintenance.git(root, *args)
 
     require(git('rev-parse', row['original_commit'] + '^{tree}') == row['original_tree'],

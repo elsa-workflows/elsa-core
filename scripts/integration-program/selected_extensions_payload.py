@@ -16,6 +16,7 @@ from prove_consolidated_packages import require
 
 
 def validate_specialization(plan: dict, producer: dict, selected: dict) -> None:
+    """Validate Extensions manifest and SDK evidence against admitted archive bytes."""
     require(plan['product'] == 'extensions' and plan['line'] in ('3.8', '3.9') and
             'npm' not in producer and 'package_verification' not in producer, 'extensions_payload_scope')
     rows = producer['manifest_verification']

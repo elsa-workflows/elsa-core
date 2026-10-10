@@ -19,10 +19,12 @@ import tarfile
 
 
 def encoded(value):
+    """Encode fixture JSON deterministically with indentation and a trailing newline."""
     return (json.dumps(value, indent=2, sort_keys=True) + '\n').encode()
 
 
 def fixture(line="3.8"):
+    """Create complete synthetic Studio archives, receipts, plan, and hosted execution evidence."""
     now = datetime.now(timezone.utc)
     stamp = lambda minutes: (now - timedelta(minutes=minutes)).isoformat()
     contract = payload.load_contracts()["studio" if line == "3.8" else "studio39"]
@@ -204,23 +206,28 @@ def fixture(line="3.8"):
 
 class StudioPayloadContracts(unittest.TestCase):
     def setUp(self):
+        """Create a fresh Studio payload and matching expected identity and clock."""
         self.files, self.expected, self.now = fixture()
 
     def validate(self):
+        """Validate fixture payload bytes against their exact plan and receipt hashes."""
         return payload.validate(self.files, self.expected, *(metadata.sha256(self.files[name]) for name in
             ('plan.json', 'producer/receipt.json', 'consumer/receipt.json')), contracts=payload.load_contracts(), now=self.now)
 
     def mutate(self, name, action):
+        """Apply a mutation to one JSON fixture file and replace its encoded bytes."""
         value = json.loads(self.files[name])
         action(value)
         self.files[name] = encoded(value)
 
     def test_full_synthetic_source_bound_vertical_bytes(self):
+        """Verify full synthetic source bound vertical bytes."""
         result = self.validate()
         self.assertEqual(len(result['consumer']['coverage']), 3)
         self.assertEqual(len(result['consumer']['runtime']), 3)
 
     def test_unknown_private_receipt_keys(self):
+        """Verify unknown private receipt keys."""
         for name in ('plan.json', 'producer/receipt.json', 'consumer/receipt.json', 'producer/npm/receipt.json'):
             original = self.files[name]
             self.mutate(name, lambda value: value.update(private_path='/private/tmp/raw.log'))
@@ -228,6 +235,7 @@ class StudioPayloadContracts(unittest.TestCase):
             self.files[name] = original
 
     def test_archive_bytes_and_file_partition(self):
+        """Verify archive bytes and file partition."""
         for change in ('tamper', 'extra', 'missing'):
             original = dict(self.files)
             name = next(name for name in self.files if name.endswith('.nupkg'))
@@ -238,6 +246,7 @@ class StudioPayloadContracts(unittest.TestCase):
             self.files = original
 
     def test_native_runtime_and_tfm_mismatches(self):
+        """Verify native runtime and target framework mismatches."""
         changes = [lambda value: value['coverage'].pop(),
             lambda value: value['coverage'].append(deepcopy(value['coverage'][0])),
             lambda value: value['runtime'][0]['runtime']['loaded_assemblies'][0].update(sha256='f' * 64),
@@ -254,10 +263,12 @@ class StudioPayloadContracts(unittest.TestCase):
             self.files['consumer/receipt.json'] = original
 
     def test_no_embedded_historical_manifest_or_success_flag_only(self):
+        """Verify no embedded historical manifest or success flag only."""
         self.mutate('producer/receipt.json', lambda value: value['npm']['wasm'].update(manifest={'claimed': True}))
         with self.assertRaises(ValueError): self.validate()
 
     def test_unused_configured_feed_does_not_invent_service_observation(self):
+        """Verify unused configured feed does not invent service observation."""
         import selected_studio_plan_schema as schema
         plan = json.loads(self.files['plan.json'])
         plan['consumer_feed_policy']['sources'].append({'name': 'original-unused', 'url': 'https://f.feedz.io/personal/webhooks-core/nuget/index.json'})
@@ -274,6 +285,7 @@ class StudioPayloadContracts(unittest.TestCase):
             schema.validate(plan, payload.load_contracts(), now=self.now)
 
     def test_native_nuspec_identity_and_dependency_groups_are_byte_bound(self):
+        """Verify native nuspec identity and dependency groups are byte bound."""
         plan, receipt = (json.loads(self.files[name]) for name in ('plan.json', 'producer/receipt.json'))
         original = dict(self.files)
         for before, after in ((b'<id>Elsa.Studio.Core</id>', b'<id>Elsa.Studio.Other</id>'),
@@ -290,6 +302,7 @@ class StudioPayloadContracts(unittest.TestCase):
             self.files = dict(original)
 
     def test_unlisted_skips_fail_and_pass_counts_do_not_absorb_them(self):
+        """Verify unlisted skips fail and pass counts do not absorb them."""
         plan, receipt = (json.loads(self.files[name]) for name in ('plan.json', 'producer/receipt.json'))
         receipt['product_tests']['executions'][0]['counters'].update(passed=0, executed=0)
         with self.assertRaisesRegex(ValueError, 'failed_or_skipped'):
@@ -299,6 +312,7 @@ class StudioPayloadContracts(unittest.TestCase):
         with self.assertRaises(ValueError): payload.validate_tests(plan, receipt, payload.load_contracts())
 
     def test_private_recipe_metadata_is_accounted_without_uploading_archive(self):
+        """Verify private recipe metadata is accounted without uploading archive."""
         plan, receipt = (json.loads(self.files[name]) for name in ('plan.json', 'producer/receipt.json'))
         row = deepcopy(receipt['packages']['selected'][0])
         row.update(id='Elsa.Studio.Core.Tests', file='original-recipe-private-output.nupkg')
@@ -311,6 +325,7 @@ class StudioPayloadContracts(unittest.TestCase):
         with self.assertRaises(ValueError): payload.validate_packages(plan, receipt, self.files)
 
     def test_actual_historical_npm_metadata_and_generated_lifecycle_joins(self):
+        """Verify actual historical npm metadata and generated lifecycle joins."""
         plan, receipt = (json.loads(self.files[name]) for name in ('plan.json', 'producer/receipt.json'))
         for change in (lambda value: value['npm']['commands'][0].update(exit_code=1),
                        lambda value: value['npm']['consumer']['lifecycle_generated_assets']['assets'][0].update(sha256='f' * 64),
@@ -322,6 +337,7 @@ class StudioPayloadContracts(unittest.TestCase):
             with self.assertRaises(ValueError): payload.validate_npm(plan, altered, self.files, payload.load_contracts()['studio'])
 
     def test_rehashed_react_tar_cannot_prepopulate_generated_public_assets(self):
+        """Verify rehashed react tar cannot prepopulate generated public assets."""
         plan, receipt = (json.loads(self.files[name]) for name in ('plan.json', 'producer/receipt.json'))
         report = receipt['npm']
         name = 'producer/npm/' + report['react']['file']
@@ -339,6 +355,7 @@ class StudioPayloadContracts(unittest.TestCase):
             payload.validate_npm(plan, receipt, self.files, payload.load_contracts()['studio'])
 
     def test_execution_bindings_and_historical_clock_are_not_optional(self):
+        """Verify execution bindings and historical clock are not optional."""
         original = self.files['producer/receipt.json']
         for change in (lambda value: value['execution']['controller'].update(tree='f' * 40),
                        lambda value: value['execution']['source'].update(commit='f' * 40),
@@ -350,6 +367,7 @@ class StudioPayloadContracts(unittest.TestCase):
             self.files['producer/receipt.json'] = original
 
     def test_expected_cell_cannot_relabel_another_source(self):
+        """Verify expected cell cannot relabel another source."""
         for product, line in (('studio', '3.9'), ('core', '3.8'), ('extensions', '3.8')):
             self.expected.update(product=product, line=line)
             with self.assertRaisesRegex(ValueError, 'expected_context'): self.validate()

@@ -15,6 +15,7 @@ CONTINUATIONS = {
 
 
 def corrected_build(original: bytes) -> bytes:
+    """Apply the single admitted Compile PackageVersion correction to source bytes."""
     before = b'        .SetWarningLevel(IsServerBuild ? 0 : 1);'
     after = (b'        .SetWarningLevel(IsServerBuild ? 0 : 1)\n'
              b'        .When(_ => !string.IsNullOrWhiteSpace(Version), settings => settings.SetProperty("PackageVersion", Version));')
@@ -23,6 +24,7 @@ def corrected_build(original: bytes) -> bytes:
 
 
 def verify_delta(row: dict, parent: dict, change: dict, before: bytes, after: bytes) -> None:
+    """Require the registered Extensions ancestry, blob pins, and exact build edit."""
     expected = CONTINUATIONS.get(row['line'], {})
     require(row['product'] == 'extensions' and row.get('source_kind') == 'core' and
             row['commit'] == expected.get('commit') and row['tree'] == expected.get('tree') and

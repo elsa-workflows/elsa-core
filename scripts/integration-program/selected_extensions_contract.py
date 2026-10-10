@@ -27,6 +27,7 @@ MANIFEST_FEATURE = {'typeName': 'Elsa.IO.Http.ShellFeatures.HttpIOShellFeature',
 
 
 def verify_source(root: Path, commit: str) -> None:
+    """Verify the exact admitted Extensions commit and its source contract blobs."""
     if commit == maintenance39.contract('extensions')['commit']:
         maintenance39.verify_git(root, 'extensions', commit)
         return
@@ -37,6 +38,7 @@ def verify_source(root: Path, commit: str) -> None:
 
 def bind_manifest_contract(source: Path, row: dict, policy: dict) -> None:
     # Other maintenance controls retain generic generated-output verification.
+    """Attach the HTTP manifest contract only for the registered Extensions sources."""
     if policy['id'] != 'Elsa.IO.Http' or row['commit'] not in (SOURCE, maintenance39.contract('extensions')['commit']):
         return
     verify_source(source, row['commit'])
@@ -45,6 +47,7 @@ def bind_manifest_contract(source: Path, row: dict, policy: dict) -> None:
 
 def apply_manifest_contract(policy: dict, commit: str) -> None:
     # Pure seal calls this only after its exact registered-source admission.
+    """Add the source-specific HTTP feature and generator expectations to package policy."""
     policy['source_commit'] = commit
     policy['manifest_expectation'] = MANIFEST_FEATURE
     policy['manifest_dependency_features'] = ['Elsa.IO.Http.I/O']

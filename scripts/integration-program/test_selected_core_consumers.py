@@ -17,12 +17,14 @@ import test_selected_core_producer as producer_tests
 class CoreConsumerContracts(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        """Force offline local execution identities for Core consumer contract tests."""
         super().setUpClass()
         local_execution_patch = patch_offline_local_execution(proof)
         local_execution_patch.start()
         cls.addClassCleanup(local_execution_patch.stop)
 
     def setUp(self):
+        """Create an original Core plan and per-framework package output policy fixture."""
         fixture = producer_tests.OriginalCoreProducerContracts(); fixture.setUp()
         self.fixture = fixture
         self.rows = fixture.rows
@@ -34,12 +36,14 @@ class CoreConsumerContracts(unittest.TestCase):
             framework: {'IncludeBuildOutput': 'true'} for framework in core.FRAMEWORKS}}
 
     def plan_for(self, row):
+        """Bind the fixture's selected package inventory and version to another Core source row."""
         plan = self.fixture.plan(row)
         plan['requested_version'] = self.plan['requested_version']
         plan['inventory']['selected'] = deepcopy(self.plan['inventory']['selected'])
         return plan
 
     def selected(self):
+        """Return synthetic Core archive inventory and per-framework DLL hashes."""
         inventory = [{'path': f'lib/{framework}/Elsa.dll', 'sha256': metadata.sha256(framework.encode())}
                      for framework in core.FRAMEWORKS]
         return {'elsa': {'id': 'Elsa', 'nupkg': 'Elsa.3.8.999.nupkg', 'nupkg_sha256': 'c' * 64,
@@ -47,6 +51,7 @@ class CoreConsumerContracts(unittest.TestCase):
                          'artifact_files': [{'name': 'Elsa.3.8.999.nupkg', 'sha256': 'c'*64, 'size': 4}]}}
 
     def native_receipt(self, selected):
+        """Build matching native package and assembly evidence for the selected Core fixture."""
         item = selected['elsa']
         return {'package_verification': [{'id': 'Elsa', 'version': self.plan['requested_version'],
             'assembly_name': 'Elsa', 'frameworks': list(core.FRAMEWORKS), 'include_build_output': True, 'satellites': [],
@@ -56,6 +61,7 @@ class CoreConsumerContracts(unittest.TestCase):
                 for entry in item['inventory']]}]}
 
     def test_source_and_fixture_pins_both_original_lines_without_native_execution(self):
+        """Verify source and fixture pins both original lines without native execution."""
         for row in self.rows:
             plan = self.plan_for(row)
             core.validate_plan(plan)
@@ -68,6 +74,7 @@ class CoreConsumerContracts(unittest.TestCase):
                 core.verify_source(proof.ROOT, self.plan)
 
     def test_only_original_core_source_kind_and_both_lines_admitted(self):
+        """Verify only original Core source kind and both lines admitted."""
         for change in ({'kind': 'maintenance'}, {'commit': 'a' * 40}, {'tree': 'b' * 40}, {'line': '3.10'}):
             plan = deepcopy(self.plan); plan['source'].update(change)
             with self.subTest(change=change), self.assertRaises(ValueError):
@@ -76,6 +83,9 @@ class CoreConsumerContracts(unittest.TestCase):
             proof.runtime_contract({'product': 'unknown'})
 
     def test_runtime_real_workflow_checks_and_exact_single_root_for_all_three_tfms(self):
+        """Verify runtime real workflow checks and exact single root for all three target
+        frameworks.
+        """
         for row in self.rows:
             contract = proof.runtime_contract(self.plan_for(row))
             self.assertEqual('elsa', contract['package'])
@@ -97,6 +107,7 @@ class CoreConsumerContracts(unittest.TestCase):
                 core.validate_runtime(selected)
 
     def test_native_packaged_identity_is_per_asset_and_not_requested_version_default(self):
+        """Verify native packaged identity is per asset and not requested version default."""
         selected = self.selected(); receipt = self.native_receipt(selected)
         core.bind_assemblies(self.plan, receipt, selected)
         self.assertEqual('1.0.1.0', selected['elsa']['assembly_policies']['lib/net8.0/Elsa.dll']['assembly_version'])
@@ -116,6 +127,7 @@ class CoreConsumerContracts(unittest.TestCase):
                 core.bind_assemblies(self.plan, changed, self.selected())
 
     def test_missing_runtime_root_or_output_only_native_policy_cannot_fabricate_dll_proof(self):
+        """Verify missing runtime root or output only native policy cannot fabricate DLL proof."""
         with self.assertRaisesRegex(ValueError, 'core_consumer_runtime_packages'):
             core.validate_runtime(self.selected())
         selected = self.selected()
@@ -132,6 +144,9 @@ class CoreConsumerContracts(unittest.TestCase):
         self.assertEqual({}, selected['elsa']['assembly_policies'])
 
     def test_full_cli_dispatch_keeps_current_gate_before_all_selected_and_runtime_tfms(self):
+        """Verify full CLI dispatch keeps current gate before all selected and runtime target
+        frameworks.
+        """
         with tempfile.TemporaryDirectory() as temporary:
             folder = Path(temporary).resolve()
             plan_bytes, receipt_bytes = b'bound plan', b'bound producer'
@@ -177,6 +192,7 @@ class CoreConsumerContracts(unittest.TestCase):
             self.assertEqual(core.source_contract(plan), result['runtime_contract_source'])
 
     def test_loaded_core_dll_joins_native_policy_archive_cache_and_output_without_fallback(self):
+        """Verify loaded Core DLL joins native policy archive cache and output without fallback."""
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve(); cache = root / 'cache'; archives = root / 'archives'; archives.mkdir()
             entry = 'lib/net8.0/Elsa.dll'; data = b'exact genuine archived DLL'; digest = metadata.sha256(data)

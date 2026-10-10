@@ -13,6 +13,7 @@ from prove_consolidated_packages import require
 
 
 def safe_path(path: Path) -> Path:
+    """Return an absolute snapshot path after rejecting traversal and symlink components."""
     require('..' not in path.parts, 'snapshot_path')
     absolute = Path(os.path.abspath(path))
     require(not any(part.is_symlink() for part in (absolute, *absolute.parents)), 'snapshot_path')
@@ -20,6 +21,7 @@ def safe_path(path: Path) -> Path:
 
 
 def snapshot(plan_path: Path, plan_hash: str, output: Path) -> dict:
+    """Preserve exact original restore assets privately after validating all plan joins."""
     plan_path, output = safe_path(plan_path), safe_path(output)
     require(plan_path.is_file(), 'snapshot_plan_path')
     plan = artifacts.admit(plan_path.read_bytes(), plan_hash)
@@ -80,6 +82,7 @@ def snapshot(plan_path: Path, plan_hash: str, output: Path) -> dict:
 
 
 def main() -> int:
+    """Run private snapshot creation and report counts or a generic failure status."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--plan', type=Path, required=True)
     parser.add_argument('--plan-sha256', required=True)

@@ -12,15 +12,20 @@ import selected_maintenance_39 as maintenance39
 
 class ExtensionsManifestContinuationTests(unittest.TestCase):
     def rows(self, line):
+        """Return the registered Extensions continuation and parent rows for a release line."""
         expected = continuation.CONTINUATIONS[line]
         catalog = maintenance.load_candidates()
         rows = {row['commit']: row for row in catalog['candidates']}
         return rows[expected['commit']], rows[expected['parent']]
 
     def bytes(self, row):
+        """Read the registered build-script bytes directly from the selected Git commit."""
         return maintenance.git_bytes(maintenance.ROOT, row['commit'], continuation.PATH)
 
     def test_two_single_file_continuations_bind_entire_delta_ancestry_and_eight_rehearsal_cells(self):
+        """Verify two single file continuations bind entire delta ancestry and eight rehearsal
+        cells.
+        """
         catalog = maintenance.load_candidates()
         for line, expected in continuation.CONTINUATIONS.items():
             with self.subTest(line=line):
@@ -43,6 +48,9 @@ class ExtensionsManifestContinuationTests(unittest.TestCase):
                           r['commit'] in {x['commit'] for x in continuation.CONTINUATIONS.values()}})
 
     def test_exact_conditional_package_property_preserves_no_version_pack_and_assembly_source(self):
+        """Verify exact conditional package property preserves no version pack and assembly
+        source.
+        """
         for line in continuation.CONTINUATIONS:
             row, parent = self.rows(line)
             before, after = self.bytes(parent), self.bytes(row)
@@ -58,6 +66,9 @@ class ExtensionsManifestContinuationTests(unittest.TestCase):
         self.assertEqual(continuation.AFTER_BLOB, maintenance39.contract('extensions')['files'][continuation.PATH])
 
     def test_protected_control_exception_rejects_foreign_identity_modes_paths_and_other_edits(self):
+        """Verify protected control exception rejects foreign identity modes paths and other
+        edits.
+        """
         row, parent = self.rows('3.8'); before, after = self.bytes(parent), self.bytes(row)
         mutations = [lambda r: r.update(product='studio'), lambda r: r.update(line='3.9'),
                      lambda r: r.update(commit=parent['commit']), lambda r: r.update(tree='f'*40),
@@ -78,6 +89,7 @@ class ExtensionsManifestContinuationTests(unittest.TestCase):
         self.assertFalse(maintenance.maintenance_editable_path(continuation.PATH))
 
     def test_workflow_runs_contract_in_both_modes_and_filters_consumed_inputs(self):
+        """Verify workflow runs contract in both modes and filters consumed inputs."""
         workflow = (maintenance.ROOT / '.github/workflows/product-release-plan.yml').read_text()
         for prefix in ('python3 -m unittest ', 'python3 -O -m unittest '):
             command = next(line for line in workflow.splitlines() if line.strip().startswith(prefix))

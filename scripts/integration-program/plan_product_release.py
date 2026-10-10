@@ -69,6 +69,7 @@ def failure_diagnostic(error: Exception, phase: str) -> dict:
 
 
 def native_diagnostic(process: dict, *outputs: str | bytes | None) -> dict:
+    """Project bounded process status and compiler codes without exposing raw output."""
     status, code = process.get('status'), process.get('exit_code')
     status = status if status in ('exited', 'timed-out', 'interrupted', 'start-failed') else 'unavailable'
     code = code if type(code) is int and -2 ** 31 <= code < 2 ** 31 else None
@@ -84,6 +85,7 @@ def native_diagnostic(process: dict, *outputs: str | bytes | None) -> dict:
 class NativeFailureDiagnostic:
     """Retain a closed projection before private native output is discarded."""
     def __init__(self, error: Exception, phase: str, process: dict, *outputs: str | bytes | None):
+        """Capture the public failure category and bounded native process diagnostics."""
         self.diagnostic = failure_diagnostic(error, phase)
         self.diagnostic['native'] = native_diagnostic(process, *outputs)
 
@@ -151,6 +153,7 @@ class Semantics:
         self.cache = {}
 
     def call(self, operation: str, **request):
+        """Invoke the NuGet semantics helper, caching successful responses by request."""
         payload = json.dumps({'operation': operation, **request}, sort_keys=True)
         if payload in self.cache:
             return self.cache[payload]
@@ -503,6 +506,7 @@ def observe_core(controller: Path, line: str, observations: Observations) -> dic
 
 
 def build_helper(output: Path) -> Semantics:
+    """Build the pinned semantics helper and attach bounded diagnostics on failure."""
     output.mkdir(parents=True, exist_ok=True)
     (output / 'global.json').write_text(json.dumps({'sdk': {'version': SDK, 'rollForward': 'disable'}}))
     project = output / 'tooling-source'
@@ -537,6 +541,7 @@ def build_helper(output: Path) -> Semantics:
 
 
 def execute(controller: Path, product: str, line: str, requested: str, output: Path, semantics: Semantics) -> dict:
+    """Observe source and prerequisites, then write the selected product release plan."""
     controller_identity = {'commit': metadata.git(controller, 'rev-parse', 'HEAD'),
                            'tree': metadata.git(controller, 'rev-parse', 'HEAD^{tree}'),
                            'execution': {key.removeprefix('GITHUB_').lower(): os.environ[key] for key in
@@ -587,6 +592,7 @@ def execute(controller: Path, product: str, line: str, requested: str, output: P
 
 
 def main() -> int:
+    """Run release planning and return a CLI status with bounded public diagnostics."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--controller', type=Path, default=ROOT)
     parser.add_argument('--product', choices=('core', 'studio', 'extensions'), required=True)
