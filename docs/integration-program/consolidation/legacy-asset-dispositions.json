@@ -121,19 +121,19 @@
       "category": "dependency_update_policy",
       "owning_workstream": "Central dependency maintenance",
       "proposed_disposition": "Merge product-specific package ecosystems and directories into the root Dependabot configuration; avoid duplicate root configurations.",
-      "evidence_or_gate": "PR #8495 merged the product policies into the root .github/dependabot.yml, and #8544 added the Feedz registries the Core root entry lacked. The earlier /src/extensions run 36503465765 returned green Actions status, but empty product discovery does not establish credential/feed resolution or product central-version acceptance. PR #8640 corrects recursive product project-directory discovery and pins the current active configuration; hosted project evaluation, product central versions and feed acceptance remain pending under Task #8636.",
+      "evidence_or_gate": "PR #8495 merged the product policies into the root .github/dependabot.yml, and #8544 added the Feedz registries the Core root entry lacked. The earlier /src/extensions run 36503465765 returned green Actions status, but empty product discovery does not establish credential/feed resolution or product central-version acceptance. PR #8640 corrects recursive product project-directory discovery and pins the current active configuration; hosted project evaluation, product central versions and feed acceptance remain pending under Task #8636. Task #8636 adopts the October 8 coordinated-proposal decision and selects the root solution plus the retained non-solution testing project; current native/hosted acceptance is not inferred from static coverage or Studio dependency PR #8673.",
       "status": "represented_in_core",
       "completion": {
         "decision_path": "doc/integration-program/consolidation/legacy-dependabot-disposition.md",
         "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8495",
         "merge_commit": "dd3903fab232f8cf3255e8b4f0a953e2a081c3c9",
         "active_path": ".github/dependabot.yml",
-        "active_blob": "7971b16b5b839323ef24761c6d2a2fa9ced13df2",
+        "active_blob": "2085329d5ee1564dff42a77fad0b8bc9586f2c99",
         "active_mode": "100644",
         "representation": "expanded",
         "active_update": {
           "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8640",
-          "reason": "Corrected recursive product selectors to /src/extensions/**/Elsa.* and /src/studio/**/Elsa.* after hosted discovery missed nested projects. Tracked-project selector coverage is verified locally; hosted project evaluation, central versions and feed acceptance remain pending under Task #8636."
+          "reason": "Corrected recursive product selectors to /src/extensions/**/Elsa.* and /src/studio/**/Elsa.* after hosted discovery missed nested projects. Tracked-project selector coverage is verified locally; hosted project evaluation, central versions and feed acceptance remain pending under Task #8636. Task #8636 subsequently replaces the three directory scans with one coordinated solution job plus the retained testing project. This candidate blob is pinned for review; the active_update PR URL remains the historical #8640 correction until the new corrective PR is recorded. Native and hosted inventory, central-version and feed acceptance remain pending."
         }
       }
     },
@@ -2190,19 +2190,19 @@
       "category": "dependency_update_policy",
       "owning_workstream": "Central dependency maintenance",
       "proposed_disposition": "Merge product-specific package ecosystems and directories into the root Dependabot configuration; avoid duplicate root configurations.",
-      "evidence_or_gate": "PR #8495 merged the product policies into the root .github/dependabot.yml, and #8544 added the Feedz registries the Core root entry lacked. The earlier /src/studio run 36503465892 returned green Actions status, but empty product discovery does not establish credential/feed resolution or product central-version acceptance. PR #8640 corrects recursive product project-directory discovery and pins the current active configuration; hosted project evaluation, product central versions and feed acceptance remain pending under Task #8636.",
+      "evidence_or_gate": "PR #8495 merged the product policies into the root .github/dependabot.yml, and #8544 added the Feedz registries the Core root entry lacked. The earlier /src/studio run 36503465892 returned green Actions status, but empty product discovery does not establish credential/feed resolution or product central-version acceptance. PR #8640 corrects recursive product project-directory discovery and pins the current active configuration; hosted project evaluation, product central versions and feed acceptance remain pending under Task #8636. Task #8636 adopts the October 8 coordinated-proposal decision and selects the root solution plus the retained non-solution testing project; current native/hosted acceptance is not inferred from static coverage or Studio dependency PR #8673.",
       "status": "represented_in_core",
       "completion": {
         "decision_path": "doc/integration-program/consolidation/legacy-dependabot-disposition.md",
         "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8495",
         "merge_commit": "dd3903fab232f8cf3255e8b4f0a953e2a081c3c9",
         "active_path": ".github/dependabot.yml",
-        "active_blob": "7971b16b5b839323ef24761c6d2a2fa9ced13df2",
+        "active_blob": "2085329d5ee1564dff42a77fad0b8bc9586f2c99",
         "active_mode": "100644",
         "representation": "expanded",
         "active_update": {
           "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8640",
-          "reason": "Corrected recursive product selectors to /src/extensions/**/Elsa.* and /src/studio/**/Elsa.* after hosted discovery missed nested projects. Tracked-project selector coverage is verified locally; hosted project evaluation, central versions and feed acceptance remain pending under Task #8636."
+          "reason": "Corrected recursive product selectors to /src/extensions/**/Elsa.* and /src/studio/**/Elsa.* after hosted discovery missed nested projects. Tracked-project selector coverage is verified locally; hosted project evaluation, central versions and feed acceptance remain pending under Task #8636. Task #8636 subsequently replaces the three directory scans with one coordinated solution job plus the retained testing project. This candidate blob is pinned for review; the active_update PR URL remains the historical #8640 correction until the new corrective PR is recorded. Native and hosted inventory, central-version and feed acceptance remain pending."
         }
       }
     },
