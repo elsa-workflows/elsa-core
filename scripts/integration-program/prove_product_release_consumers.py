@@ -779,13 +779,14 @@ def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, rec
         result['stage'] = 'original-external-archive-catalog'
         inspector = resolution.build_inspector(root, private / 'archive-inspector')
         resolution.validate_native_tools(plan, semantics, inspector)
+        source_downloads = resolution.sdk.bind_source_downloads(root, plan, originals, private / 'source-downloads', semantics)
         catalog, original_policy = resolution.archive_catalog(originals, selected, config, semantics,
-                                                              inspector, private / 'original-external-catalog')
+            inspector, private / 'original-external-catalog', source_downloads=source_downloads)
         original_policy['inspector'] = inspector
         for package in selected.values():
-            package['effective_contexts'] = [context for assets in originals.values()
+            package['effective_contexts'] = [context for project, assets in originals.items()
                 for key in assets['libraries'] if key.casefold() == (package['id'] + '/' + plan['requested_version']).casefold()
-                for context in resolution.sdk.effective_contexts(assets, key)]
+                for context in resolution.sdk.effective_contexts(assets, key, original_policy['sdk_projects'][project])]
         result['external_catalog_sha256'] = metadata.sha256(
             (private / 'original-external-catalog/catalog.private.json').read_bytes())
 

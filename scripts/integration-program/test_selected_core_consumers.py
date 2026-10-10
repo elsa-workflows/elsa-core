@@ -145,7 +145,7 @@ class CoreConsumerContracts(unittest.TestCase):
             def refresh(*args):
                 calls.append('current-gate')
                 return {'eligible': True, 'checked_at': proof.planner.now(), 'histories': [], 'prerequisites': []}
-            def catalog(*args):
+            def catalog(*args, **kwargs):
                 calls.append('catalog'); args[-1].mkdir()
                 (args[-1] / 'catalog.private.json').write_text('{}')
                 return {}, {}
