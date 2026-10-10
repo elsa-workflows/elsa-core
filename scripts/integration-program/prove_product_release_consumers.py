@@ -25,6 +25,7 @@ import selected_product_consumer_metadata as resolution
 import selected_extensions_contract as extensions
 import selected_core_consumer as core
 import selected_maintenance_39 as maintenance39
+from selected_consumer_cache_retirement import retire_successful_cell_caches
 from selected_product_consumer_metadata import nearest_group
 from product_artifact_execution import local_execution, selected_execution, validate_selected_execution
 from prove_consolidated_packages import archive_names, dependency_groups, framework_reference_groups, metadata as nuspec, require
@@ -483,7 +484,7 @@ def cell(plan: dict, package: dict, framework: str, selected: dict, artifacts: P
 
 
 def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, receipt_hash: str,
-            artifacts: Path, snapshots: Path, output: Path) -> dict:
+            artifacts: Path, snapshots: Path, output: Path, *, retire_caches: bool = False) -> dict:
     plan, receipt, historical_admission = admit_producer_stage(read_bound(plan_path, plan_hash), plan_hash,
         read_bound(receipt_path, receipt_hash), receipt_hash)
     if plan['product'] == 'core':
@@ -553,13 +554,21 @@ def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, rec
                 for context in resolution.sdk.effective_contexts(assets, key)]
         result['external_catalog_sha256'] = metadata.sha256(
             (private / 'original-external-catalog/catalog.private.json').read_bytes())
+
+        def prove_cell(package: dict, framework: str, name: str, *, runtime: bool = False) -> dict:
+            cell_output = private / name
+            completed = cell(plan, package, framework, selected, artifacts, semantics, cell_output,
+                catalog=catalog, original_policy=original_policy, inspector=inspector, runtime=runtime)
+            if retire_caches:
+                retire_successful_cell_caches(private, cell_output, completed)
+            return completed
+
         for package in selected.values():
             for framework in package['policy']['frameworks']:
                 result['stage'] = 'selected-restore-compile'
                 result['focus'] = {'id': package['id'], 'framework': framework}
                 name = metadata.sha256((package['id'] + '/' + framework).encode())[:16]
-                result['coverage'].append(cell(plan, package, framework, selected, artifacts, semantics,
-                    private / name, catalog=catalog, original_policy=original_policy, inspector=inspector))
+                result['coverage'].append(prove_cell(package, framework, name))
         validate_ledger(plan, result['coverage'])
         result['stage'] = plan['product'] + '-runtime-contract'
         contract = runtime_contract(plan)
@@ -567,9 +576,7 @@ def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, rec
         package = selected[contract['package']]
         for framework in package['policy']['frameworks']:
             result['focus'] = {'id': package['id'], 'framework': framework}
-            result['runtime'].append(cell(plan, package, framework, selected, artifacts, semantics,
-                private / ('runtime-' + framework), catalog=catalog, original_policy=original_policy,
-                inspector=inspector, runtime=True))
+            result['runtime'].append(prove_cell(package, framework, 'runtime-' + framework, runtime=True))
         result.pop('focus', None)
         result.update(success=True, stage='complete', limitations=[
             'Complete selected restore/compile coverage is distinct from representative runtime behavior.',
@@ -588,10 +595,12 @@ def main() -> int:
         parser.add_argument('--' + name, type=Path, required=True)
     parser.add_argument('--plan-sha256', required=True)
     parser.add_argument('--artifact-receipt-sha256', required=True)
+    parser.add_argument('--retire-successful-cell-caches', action='store_true',
+        help='Persist successful private cell proofs, then retire only their two owned NuGet caches.')
     args = parser.parse_args()
     try:
         execute(ROOT, args.plan, args.plan_sha256, args.artifact_receipt, args.artifact_receipt_sha256,
-                args.artifacts, args.planning_assets, args.output)
+                args.artifacts, args.planning_assets, args.output, retire_caches=args.retire_successful_cell_caches)
         return 0
     except Exception:
         print('Selected consumer control failed; raw diagnostics remain private.')
