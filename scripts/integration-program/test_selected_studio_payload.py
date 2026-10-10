@@ -312,6 +312,23 @@ class StudioPayloadContracts(unittest.TestCase):
             change(altered)
             with self.assertRaises(ValueError): payload.validate_npm(plan, altered, self.files, payload.load_contracts()['studio'])
 
+    def test_rehashed_react_tar_cannot_prepopulate_generated_public_assets(self):
+        plan, receipt = (json.loads(self.files[name]) for name in ('plan.json', 'producer/receipt.json'))
+        report = receipt['npm']
+        name = 'producer/npm/' + report['react']['file']
+        members = transport.tar_members(self.files[name])
+        generated = report['consumer']['lifecycle_generated_assets']['assets'][0]
+        wasm = transport.tar_members(self.files['producer/npm/' + report['wasm']['file']])
+        members[generated['path']] = wasm[generated['source_path']]
+        changed = tarred([('package/' + path, data, tarfile.REGTYPE) for path, data in members.items()])
+        self.files[name] = changed
+        report['react'].update(sha512_integrity=transport.sha512_integrity(changed), inventory={
+            row['path']: {'size': row['size'], 'sha256': row['sha256']} for row in transport.inventory(members)})
+        report['consumer']['local_archives'][npm.REACT]['sha512_integrity'] = report['react']['sha512_integrity']
+        self.files['producer/npm/receipt.json'] = encoded(report)
+        with self.assertRaisesRegex(ValueError, 'npm_generated_collision'):
+            payload.validate_npm(plan, receipt, self.files, payload.load_contracts()['studio'])
+
     def test_execution_bindings_and_historical_clock_are_not_optional(self):
         original = self.files['producer/receipt.json']
         for change in (lambda value: value['execution']['controller'].update(tree='f' * 40),
