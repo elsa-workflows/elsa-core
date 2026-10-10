@@ -177,7 +177,8 @@ def load_snapshots(plan: dict, plan_hash: str, folder: Path) -> dict:
         data = read_bound(folder / safe_relative(row['file']), row['sha256'])
         require(len(data) == row['bytes'], 'consumer_snapshot_bytes')
         assets = planner.read_json(data)
-        require(all(framework in assets['targets'] for framework in policy['frameworks']), 'consumer_snapshot_frameworks')
+        require(all(framework in assets['targets'] and framework in assets.get('project', {}).get('frameworks', {})
+                    for framework in policy['frameworks']), 'consumer_snapshot_frameworks')
         result[row['project']] = assets
     return result
 
@@ -274,13 +275,18 @@ def verify_asset_payloads(assets: dict, framework: str, graph: dict, cache: Path
     return evidence
 
 
-def render_project(identifier: str, version: str, framework: str, references: list[str], *, executable: bool, managed: bool, locked: bool = True) -> str:
+def render_project(identifier: str, version: str, framework: str, references: list[str], *, executable: bool, managed: bool, locked: bool = True, sdk_policy: dict | None = None) -> str:
     project = ET.Element('Project', Sdk='Microsoft.NET.Sdk')
     properties = ET.SubElement(project, 'PropertyGroup')
     for name, value in {'TargetFramework': framework, 'OutputType': 'Exe' if executable else 'Library',
                         'ImplicitUsings': 'enable', 'Nullable': 'enable', 'RestorePackagesWithLockFile': 'true',
-                        'RestoreLockedMode': str(locked).lower(), 'NuGetAudit': 'false'}.items():
+                        'RestoreLockedMode': str(locked).lower(), 'NuGetAudit': 'false',
+                        'RestoreEnablePackagePruning': str(bool(sdk_policy and sdk_policy['pruning'])).lower(),
+                        'DisableImplicitLibraryPacksFolder': 'true', 'DisableImplicitNuGetFallbackFolder': 'true',
+                        'UseAppHost': 'false'}.items():
         ET.SubElement(properties, name).text = value
+    if sdk_policy and sdk_policy['downloads']:
+        ET.SubElement(properties, 'NetCoreTargetingPackRoot').text = '$(MSBuildThisFileDirectory)targeting-packs'
     group = ET.SubElement(project, 'ItemGroup')
     package = ET.SubElement(group, 'PackageReference', Include=identifier, Version=f'[{version}]')
     if managed and not executable:
@@ -319,13 +325,17 @@ def discover(plan: dict, package: dict, framework: str, selected: dict, artifact
              references: list[str], *, runtime: bool, managed: bool) -> tuple[dict, dict, bytes]:
     output.mkdir()
     consumers.prepare_isolation(output, metadata.SDK)
+    sdk_policy = original_policy['sdk_projects'][package['policy']['project']][framework]
     universe = {folded: {'id': row['id'], 'selected': True} for folded, row in selected.items()}
     universe.update({folded: {'id': row['id'], 'selected': False} for (folded, _), row in catalog.items()})
+    universe.update({folded: {'id': row['id'], 'selected': False}
+        for (folded, _), row in original_policy['sdk_downloads'].items()
+        if {'id': row['id'], 'version': row['version']} in sdk_policy['downloads']})
     policy = {'sources': original_policy['mirrors'], 'mapping': original_policy['mapping']}
     (output / 'NuGet.Config').write_text(render_config(artifacts, universe, policy))
     project = output / 'Consumer.csproj'
     project.write_text(render_project(package['id'], plan['requested_version'], framework, references,
-                                     executable=runtime, managed=managed, locked=False))
+                                     executable=runtime, managed=managed, locked=False, sdk_policy=sdk_policy))
     cache, environment = cold_environment(output)
     inputs = {path.name: metadata.sha256(path.read_bytes()) for path in output.iterdir() if path.is_file()}
     consumers._run_command(['dotnet', 'restore', str(project), '--configfile', str(output / 'NuGet.Config'),
@@ -335,11 +345,16 @@ def discover(plan: dict, package: dict, framework: str, selected: dict, artifact
     assets = planner.read_json((output / 'obj/project.assets.json').read_bytes())
     lock = (output / 'packages.lock.json').read_bytes()
     graph = resolution.audit_native_graph(assets, planner.read_json(lock), package['id'], framework,
-                                         selected, catalog, plan['requested_version'], semantics)
+                                         selected, catalog, plan['requested_version'], semantics, sdk_policy=sdk_policy)
+    resolution.sdk.verify_downloads(assets, framework, sdk_policy, original_policy['sdk_downloads'], cache,
+        policy['sources'], policy['mapping'], original_policy['inspector'], proof=False)
     # Discovery uses finite original mirrors, and remains distinct from proof.
+    require(not (output / 'targeting-packs').exists() and not (output / 'targeting-packs').is_symlink(),
+            'consumer_sdk_ambient_targeting_root')
     validate_restored(assets, framework, graph, output, cache, artifacts, policy)
     proof_policy = {'sources': original_policy['sources'],
-                    'mapping': {folded: original_policy['mapping'][folded] for folded in graph}}
+                    'mapping': {folded: original_policy['mapping'][folded] for folded in
+                        set(graph) | {row['id'].casefold() for row in sdk_policy['downloads']}}}
     return graph, proof_policy, lock
 
 
@@ -354,8 +369,11 @@ def cell(plan: dict, package: dict, framework: str, selected: dict, artifacts: P
     references = nearest_group(package['policy']['metadata']['framework_reference_groups'], framework, semantics).get('references', [])
     graph, policy, lock_bytes = discover(plan, package, framework, selected, artifacts, semantics, catalog,
         original_policy, output / 'discovery', references, runtime=runtime, managed=managed)
-    (output / 'NuGet.Config').write_text(render_config(artifacts, graph, policy))
-    project.write_text(render_project(package['id'], plan['requested_version'], framework, references, executable=runtime, managed=managed))
+    sdk_policy = original_policy['sdk_projects'][package['policy']['project']][framework]
+    proof_nodes = dict(graph)
+    proof_nodes.update({row['id'].casefold(): {'id': row['id'], 'selected': False} for row in sdk_policy['downloads']})
+    (output / 'NuGet.Config').write_text(render_config(artifacts, proof_nodes, policy))
+    project.write_text(render_project(package['id'], plan['requested_version'], framework, references, executable=runtime, managed=managed, sdk_policy=sdk_policy))
     (output / 'packages.lock.json').write_bytes(lock_bytes)
     (output / 'Program.cs').write_text(runtime_contract(plan)['fixture'].read_text() if runtime else
         ('extern alias selected;\n' if managed else '') + 'public class CompileContract {}\n')
@@ -367,18 +385,25 @@ def cell(plan: dict, package: dict, framework: str, selected: dict, artifacts: P
     commands.append(consumers._run_command(['dotnet', 'restore', str(project), '--locked-mode', '--configfile', str(output / 'NuGet.Config'),
         '--packages', str(cache), '--no-cache', '--nologo'], output, environment, output / 'restore.log', 1200))
     restored = planner.read_json((output / 'obj/project.assets.json').read_bytes())
+    require(not (output / 'targeting-packs').exists() and not (output / 'targeting-packs').is_symlink(),
+            'consumer_sdk_ambient_targeting_root')
     validate_restored(restored, framework, graph, output, cache, artifacts, policy)
     require((output / 'packages.lock.json').read_bytes() == lock_bytes, 'consumer_locked_document_changed')
+    pruned_edges = []
     resolution.audit_native_graph(restored, planner.read_json(lock_bytes), package['id'], framework,
-                                  selected, catalog, plan['requested_version'], semantics)
+                                  selected, catalog, plan['requested_version'], semantics, sdk_policy=sdk_policy, pruned_edges=pruned_edges)
+    sdk_downloads = resolution.sdk.verify_downloads(restored, framework, sdk_policy, original_policy['sdk_downloads'],
+        cache, policy['sources'], policy['mapping'], inspector, proof=True)
     cached = verify_cache(graph, policy, cache, artifacts, selected, restored, inspector, catalog)
     payloads = verify_asset_payloads(restored, framework, graph, cache, artifacts, selected)
     commands.append(consumers._run_command(['dotnet', 'build', str(project), '-c', 'Release', '--no-restore', '--disable-build-servers',
         '--nologo'], output, environment, output / 'build.log', 1200))
-    require(all(metadata.sha256((output / name).read_bytes()) == digest for name, digest in inputs.items()), 'consumer_inputs_changed')
+    require(all(metadata.sha256((output / name).read_bytes()) == digest for name, digest in inputs.items()) and
+            not (output / 'targeting-packs').exists() and not (output / 'targeting-packs').is_symlink(), 'consumer_inputs_changed')
     result = {'id': package['id'], 'framework': framework, 'success': True, 'fresh_cache': True, 'package_reference_only': True,
               'accounting': 'managed-reference-compile' if managed else 'output-content-only-restore-build',
               'original_output_policy': output_policy, 'restored_payloads': payloads,
+              'sdk_restore': resolution.sdk.retained_policy(sdk_policy, pruned_edges, sdk_downloads),
               'discovery_scope': 'offline-original-archive-metadata-only',
               'native_lock_sha256': metadata.sha256(lock_bytes), 'archive_sha256': package['nupkg_sha256'], 'restored': cached, 'isolation': isolation, 'input_sha256': inputs}
     if runtime:
@@ -464,6 +489,11 @@ def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, rec
         resolution.validate_native_tools(plan, semantics, inspector)
         catalog, original_policy = resolution.archive_catalog(originals, selected, config, semantics,
                                                               inspector, private / 'original-external-catalog')
+        original_policy['inspector'] = inspector
+        for package in selected.values():
+            package['effective_contexts'] = [context for assets in originals.values()
+                for key in assets['libraries'] if key.casefold() == (package['id'] + '/' + plan['requested_version']).casefold()
+                for context in resolution.sdk.effective_contexts(assets, key)]
         result['external_catalog_sha256'] = metadata.sha256(
             (private / 'original-external-catalog/catalog.private.json').read_bytes())
         for package in selected.values():

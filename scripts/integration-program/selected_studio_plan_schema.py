@@ -178,6 +178,8 @@ def validate(plan: dict, contracts: dict, *, now: datetime) -> None:
         require((observation['ref'], observation['commit'], observation['tree']) ==
                 (metadata.CORE_REFS[line], source['commit'], source['tree']) and
                 observation['tag_scope'] == 'bounded-matching-ref-snapshot-not-complete-version-authority' and
+                observation['branch_observation']['status'] == 'observed' and
+                observation['tag_observation']['status'] == 'observed' and
                 observation['branch_observation']['url'] ==
                 'https://api.github.com/repos/elsa-workflows/elsa-core/git/ref/' + metadata.CORE_REFS[line].removeprefix('refs/') and
                 observation['tag_observation']['url'] ==

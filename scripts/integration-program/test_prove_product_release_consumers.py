@@ -214,7 +214,8 @@ class SelectedProductConsumerTests(unittest.TestCase):
     def snapshot(self):
         folder = self.root / 'snapshots'
         folder.mkdir()
-        raw = json.dumps({'targets': {'net8.0': {}, 'net10.0': {}}}).encode()
+        raw = json.dumps({'targets': {'net8.0': {}, 'net10.0': {}},
+                          'project': {'frameworks': {'net8.0': {}, 'net10.0': {}}}}).encode()
         digest = metadata.sha256(raw)
         self.policy['metadata']['restore_assets_sha256'] = digest
         (folder / (digest + '.json')).write_bytes(raw)
@@ -270,6 +271,148 @@ class SelectedProductConsumerTests(unittest.TestCase):
         locked['Example']['requested'] = '[3.8.999, 3.8.999]'
         return selected, catalog, {'targets': {'net8.0': targets}, 'libraries': libraries}, {
             'version': 1, 'dependencies': {'net8.0': locked}}
+
+    def test_original_sdk_pruning_and_download_policy_reaches_generated_project(self):
+        assets = {'project': {'frameworks': {'net8.0': {
+            'packagesToPrune': {'System.Threading.Channels': '(,8.0.32767]'},
+            'downloadDependencies': [{'name': 'Microsoft.NETCore.App.Ref', 'version': '[8.0.27, 8.0.27]'}]}}}}
+        policy = proof.resolution.sdk.original_policy(assets, 'net8.0')
+        project = ET.fromstring(proof.render_project('Example', '3.8.999', 'net8.0', [],
+            executable=True, managed=True, sdk_policy=policy))
+        for name, value in {'RestoreEnablePackagePruning': 'true', 'DisableImplicitLibraryPacksFolder': 'true',
+                            'DisableImplicitNuGetFallbackFolder': 'true', 'UseAppHost': 'false'}.items():
+            self.assertEqual(value, project.find('PropertyGroup/' + name).text)
+        self.assertEqual('$(MSBuildThisFileDirectory)targeting-packs',
+                         project.find('PropertyGroup/NetCoreTargetingPackRoot').text)
+
+    def test_original_sdk_pruned_external_edge_requires_exact_original_effective_evidence(self):
+        selected, catalog, assets, lock = self.native_graph()
+        catalog[('external', '1.2.3')]['groups'][0]['dependencies'] = [
+            {'id': 'System.Threading.Channels', 'range': '[8.0.0, )'}]
+        catalog[('external', '1.2.3')]['effective_contexts'] = [{'framework': 'net8.0', 'dependencies': {},
+            'packages_to_prune': {'System.Threading.Channels': '(,8.0.32767]'}}]
+        policy = {'pruning': {'System.Threading.Channels': '(,8.0.32767]'}, 'downloads': []}
+        assets['project'] = {'frameworks': {'net8.0': {'packagesToPrune': dict(policy['pruning'])}}}
+        graph = proof.resolution.audit_native_graph(assets, lock, 'Example', 'net8.0', selected,
+            catalog, '3.8.999', Semantics(), sdk_policy=policy)
+        self.assertEqual({}, graph['external']['dependencies'])
+        for change in ('threshold', 'context', 'selected', 'effective-range'):
+            actual, original_catalog, original_selected = deepcopy(assets), deepcopy(catalog), deepcopy(selected)
+            if change == 'threshold': actual['project']['frameworks']['net8.0']['packagesToPrune']['System.Threading.Channels'] = '(,99.0]'
+            elif change == 'context': original_catalog[('external', '1.2.3')]['effective_contexts'] = []
+            elif change == 'effective-range': original_catalog[('external', '1.2.3')]['effective_contexts'][0]['dependencies']['System.Threading.Channels'] = '8.0.0'
+            else: original_selected['example']['dependency_groups'][0]['dependencies'].append({'id':'System.Threading.Channels','version':'[8.0.0, )'})
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                proof.resolution.audit_native_graph(actual, lock, 'Example', 'net8.0', original_selected,
+                    original_catalog, '3.8.999', Semantics(), sdk_policy=policy)
+
+    def sdk_archive_inputs(self):
+        cache = self.root / 'sdk-original-cache'
+        identifier, version = 'Microsoft.NETCore.App.Ref', '8.0.27'
+        archive = cache / identifier.lower() / version / (identifier.lower() + '.' + version + '.nupkg')
+        archive.parent.mkdir(parents=True)
+        with zipfile.ZipFile(archive, 'w') as package:
+            package.writestr(identifier + '.nuspec', '<package><metadata><id>' + identifier + '</id><version>' + version + '</version></metadata></package>')
+        archive.with_suffix('.nupkg.sha512').write_text(proof.consumers.base64_sha512(archive.read_bytes()))
+        assets = {'packageFolders': {str(cache): {}}, 'project': {'frameworks': {'net8.0': {
+            'downloadDependencies': [{'name': identifier, 'version': '[8.0.27, 8.0.27]'}]}}}}
+        semantics = Semantics()
+        semantics.call = lambda op, **kw: [{'id': identifier, 'version': version}] if op == 'nuspecs' else []
+        return archive, assets, semantics
+
+    def test_sdk_download_catalog_is_new_frozen_evidence_and_cold_https_bytes_are_separate(self):
+        archive, original, semantics = self.sdk_archive_inputs()
+        sdk = proof.resolution.sdk
+        catalog = sdk.freeze_downloads({'original': original}, self.root / 'inspector', self.root / 'frozen', semantics)
+        row = catalog[('microsoft.netcore.app.ref', '8.0.27')]
+        self.assertNotEqual(archive, row['archive'])
+        cache = self.root / 'sdk-cold-proof'
+        destination = cache / archive.relative_to(self.root / 'sdk-original-cache')
+        destination.parent.mkdir(parents=True)
+        destination.write_bytes(row['archive'].read_bytes())
+        destination.with_suffix('.nupkg.sha512').write_text(proof.consumers.base64_sha512(destination.read_bytes()))
+        metadata_path = destination.parent / '.nupkg.metadata'
+        metadata_path.write_text(json.dumps({'source': proof.planner.NUGET_INDEX}))
+        restored = deepcopy(original); restored['packageFolders'] = {str(cache): {}}
+        policy = sdk.original_policy(original, 'net8.0')
+        def verify():
+            return sdk.verify_downloads(restored, 'net8.0', policy, catalog, cache,
+                {'nuget': proof.planner.NUGET_INDEX}, {'microsoft.netcore.app.ref': ['nuget']}, self.root / 'inspector', proof=True)
+        records = verify()
+        self.assertEqual([{'id': 'Microsoft.NETCore.App.Ref', 'version': '8.0.27'}], policy['downloads'])
+        self.assertEqual(row['archive_sha256'], records[0]['sha256'])
+        self.assertNotIn('archive', records[0])
+        archive.write_bytes(b'ambient cache changed')
+        self.assertEqual(records, verify())
+        metadata_path.write_text(json.dumps({'source': 'https://unreviewed.invalid/index.json'}))
+        with self.assertRaisesRegex(ValueError, 'consumer_sdk_download_source'): verify()
+        metadata_path.write_text(json.dumps({'source': proof.planner.NUGET_INDEX}))
+        with zipfile.ZipFile(destination, 'a') as package: package.writestr('changed', b'x')
+        destination.with_suffix('.nupkg.sha512').write_text(proof.consumers.base64_sha512(destination.read_bytes()))
+        with self.assertRaisesRegex(ValueError, 'consumer_sdk_download_bytes'): verify()
+
+    def test_sdk_download_candidate_ambiguity_symlink_and_unbound_identity_fail(self):
+        archive, original, semantics = self.sdk_archive_inputs()
+        sdk = proof.resolution.sdk
+        other = self.root / 'second-sdk-cache'
+        copy = other / archive.relative_to(self.root / 'sdk-original-cache')
+        copy.parent.mkdir(parents=True); copy.write_bytes(archive.read_bytes())
+        ambiguous = deepcopy(original); ambiguous['packageFolders'][str(other)] = {}
+        with self.assertRaisesRegex(ValueError, 'consumer_sdk_archive_candidates'):
+            sdk.freeze_downloads({'project': ambiguous}, self.root / 'inspector', self.root / 'unused', semantics)
+        sidecar = archive.with_suffix('.nupkg.sha512'); original_sidecar = sidecar.read_bytes()
+        sidecar.unlink(); target = self.root / 'sidecar'; target.write_bytes(original_sidecar); sidecar.symlink_to(target)
+        with self.assertRaisesRegex(ValueError, 'consumer_sdk_archive_path'):
+            sdk.freeze_downloads({'project': original}, self.root / 'inspector', self.root / 'unused', semantics)
+        for value in ('[8.0.27, )', '[8.0.27, 8.0.28]'):
+            malformed = deepcopy(original); malformed['project']['frameworks']['net8.0']['downloadDependencies'][0]['version'] = value
+            with self.assertRaisesRegex(ValueError, 'consumer_sdk_original_download'): sdk.original_policy(malformed, 'net8.0')
+        original['project']['frameworks']['net8.0']['downloadDependencies'][0]['name'] = 'Unreviewed'
+        with self.assertRaisesRegex(ValueError, 'consumer_sdk_original_download'): sdk.original_policy(original, 'net8.0')
+
+    def test_signed_sdk_download_hashes_remain_native_and_raw_distinct(self):
+        archive, original, semantics = self.sdk_archive_inputs()
+        with zipfile.ZipFile(archive, 'a') as package: package.writestr('.signature.p7s', b'synthetic signed-fixture marker')
+        archive.with_suffix('.nupkg.sha512').write_text(proof.consumers.base64_sha512(archive.read_bytes()))
+        native_hash = 'A'*86+'=='
+        with patch.object(proof.archives, 'run', return_value=json.dumps({'signed': True,
+                'archive_sha256': metadata.sha256(archive.read_bytes()), 'content_hash': native_hash})) as inspect:
+            catalog = proof.resolution.sdk.freeze_downloads({'original': original}, self.root/'inspector', self.root/'frozen', semantics)
+        record = next(iter(catalog.values()))
+        self.assertEqual(native_hash, record['nuget_content_hash'])
+        self.assertNotEqual(proof.consumers.base64_sha512(archive.read_bytes()), native_hash)
+        self.assertEqual(metadata.sha256(archive.read_bytes()), record['archive_sha256'])
+        self.assertEqual(self.root/'frozen/microsoft.netcore.app.ref/8.0.27'/archive.name, Path(inspect.call_args.args[0][-1]))
+
+    def test_selected_identity_cannot_be_pruned_even_with_original_omission(self):
+        selected, catalog, assets, lock = self.native_graph()
+        selected['external'] = {'id': 'External'}
+        policy = {'pruning': {'External': '(,8.0.32767]'}, 'downloads': []}
+        selected['example']['effective_contexts'] = [{'framework': 'net8.0', 'dependencies': {},
+            'packages_to_prune': policy['pruning']}]
+        assets['project'] = {'frameworks': {'net8.0': {'packagesToPrune': policy['pruning']}}}
+        assets['targets']['net8.0']['Example/3.8.999']['dependencies'] = {}
+        assets['targets']['net8.0'].pop('External/1.2.3'); assets['libraries'].pop('External/1.2.3')
+        lock['dependencies']['net8.0']['Example']['dependencies'] = {}; lock['dependencies']['net8.0'].pop('External')
+        with self.assertRaisesRegex(ValueError, 'consumer_native_declared_edges'):
+            proof.resolution.audit_native_graph(assets, lock, 'Example', 'net8.0', selected, catalog,
+                '3.8.999', Semantics(), sdk_policy=policy)
+
+    def test_pruning_uses_native_range_satisfaction_at_sdk_maximum_not_minimum_guess(self):
+        sdk = proof.resolution.sdk
+        policy = {'pruning': {'System.Threading.Channels': '(,8.0.32767]'}, 'downloads': []}
+        package = {'effective_contexts': [{'framework': 'net8.0', 'dependencies': {}, 'packages_to_prune': policy['pruning']}]}
+        for dependency, expected in (('[8.0.0, )', True), ('[8.0.0, 8.0.0]', False),
+                ('[8.0.0, 8.0.32767)', False), ('[8.0.32768, )', False)):
+            calls = []
+            semantics = Semantics()
+            def ranges(op, **kw):
+                calls.extend(kw['values']); return [{'satisfies': expected}]
+            semantics.call = ranges
+            self.assertEqual(expected, sdk.pruned_edge(package, 'net8.0', 'System.Threading.Channels', dependency, policy, semantics))
+            self.assertEqual([{'range': dependency, 'version': '8.0.32767'}], calls)
+        package['effective_contexts'][0]['packages_to_prune'] = dict(policy['pruning'], Extra='(,1.0.0]')
+        self.assertFalse(sdk.pruned_edge(package, 'net8.0', 'System.Threading.Channels', '[8.0.0, )', policy, semantics))
 
     def test_native_graph_uses_full_nuspec_edges_and_one_exact_direct_root(self):
         selected, catalog, assets, lock = self.native_graph()
@@ -571,7 +714,8 @@ class SelectedProductConsumerTests(unittest.TestCase):
             args[-1].mkdir()
             (args[-1] / 'catalog.private.json').write_text('{}')
             return {}, {'sources': self.feeds['sources'], 'mapping': {'elsa.studio.core': []},
-                        'mirrors': {'original': str(self.root / 'original-mirror')}}
+                        'mirrors': {'original': str(self.root / 'original-mirror')}, 'sdk_downloads': {},
+                        'sdk_projects': {self.policy['project']: {'net8.0': {'pruning': {}, 'downloads': []}}}}
 
         with patch.object(proof.producer, 'admit', return_value=self.plan), \
                 patch.object(proof.producer, 'verify_controller', return_value={'commit': 'f' * 40, 'tree': 'e' * 40}), \

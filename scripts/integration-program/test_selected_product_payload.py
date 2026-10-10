@@ -21,7 +21,7 @@ from test_selected_control_transport import zipped, Fixture as ProviderFixture
 SHAPES = Path(__file__).with_name('selected_product_plan_shapes.json')
 
 
-def fixture(product, line):
+def fixture(product, line, *, source_mutation=None):
     if product == 'studio':
         return studio_fixture(line)
     files, expected, now = studio_fixture()
@@ -34,6 +34,8 @@ def fixture(product, line):
         source['observation']['observed_at'] = plan['observed_at']
         for key in ('branch_observation', 'tag_observation'):
             source['observation'][key]['observed_at'] = plan['observed_at']
+    if source_mutation is not None:
+        source_mutation(source)
     version = line + '.999'
     selected, native = {}, None
     template = deepcopy(plan['inventory']['selected'][0])
@@ -212,6 +214,47 @@ class SelectedProductPayloadTests(unittest.TestCase):
                         contracts=payload.load_contracts(), now=values[2])
                     self.assertTrue(result['success'])
                     self.assertFalse(result['product_code_executed_during_readback'])
+
+    def test_core_missing_branch_or_tag_observation_rehashed_payload_is_rejected(self):
+        for line in ('3.8', '3.9'):
+            for key in ('branch_observation', 'tag_observation'):
+                def missing(source):
+                    row = source['observation'][key]
+                    row['status'] = 'missing'; row.pop('bytes'); row.pop('sha256')
+                values = fixture('core', line, source_mutation=missing)
+                with self.subTest(line=line, key=key), self.assertRaisesRegex(ValueError, 'selected_plan_core_observation'):
+                    self.validate(values)
+                self.files, self.context = values[:2]
+                seal_tests.SealContracts.assert_cli_rejected(self)
+
+    def test_separate_sdk_download_ledger_is_typed_and_never_product_closure(self):
+        def download():
+            return {'id': 'Microsoft.NETCore.App.Ref', 'version': '8.0.27',
+                'source': 'https://api.nuget.org/v3/index.json', 'sha256': 'a'*64, 'archive_sha512': 'b'*128,
+                'nuget_content_hash': 'A'*86+'==', 'signed': True}
+        values = fixture('studio', '3.8'); files = values[0]
+        receipt = json.loads(files['consumer/receipt.json'])
+        cell = receipt['coverage'][0]
+        cell['sdk_restore']['downloads'] = [download()]
+        files['consumer/receipt.json'] = encoded(receipt)
+        self.validate(values)
+        baseline = deepcopy(receipt)
+        for change in ('version', 'source', 'duplicate', 'hash', 'extra', 'pruned_selected', 'pruned_parent'):
+            receipt = deepcopy(baseline); sdk = receipt['coverage'][0]['sdk_restore']
+            if change == 'version': sdk['downloads'][0]['version'] = '8.0.0'
+            elif change == 'source': sdk['downloads'][0]['source'] = '/private/cache'
+            elif change == 'duplicate': sdk['downloads'].append(download())
+            elif change == 'hash': sdk['downloads'][0]['nuget_content_hash'] = 'invalid'
+            elif change == 'extra': sdk['downloads'][0]['path'] = '/private/cache'
+            else:
+                sdk['pruning_enabled'] = True
+                sdk['pruned_edges'] = [{'from_id': cell['id'] if change == 'pruned_selected' else 'Unknown',
+                    'from_version': '3.8.999', 'id': cell['id'] if change == 'pruned_selected' else 'System.Threading.Channels',
+                    'range': '[8.0.0, )', 'prune_range': '(,8.0.32767]'}]
+            files['consumer/receipt.json'] = encoded(receipt)
+            with self.subTest(change=change), self.assertRaises(ValueError): self.validate(values)
+            self.files, self.context = values[:2]
+            seal_tests.SealContracts.assert_cli_rejected(self)
 
     def test_frozen_retained_file_closure_is_conditional_on_product(self):
         for product in ('core', 'studio', 'extensions'):

@@ -32,7 +32,7 @@ from prove_consolidated_packages import require
 CONTRACT = Path(__file__).with_name('selected_studio38_payload_contract.json')
 PRODUCER_KEYS = set('schema mode plan_sha256 planner_controller artifact_controller source product line version execution success published version_allocated tag_created stage preflight product_tests packages artifact_proof npm'.split())
 CONSUMER_KEYS = set('schema mode plan_sha256 artifact_receipt_sha256 source controller execution producer_execution planner_controller artifact_controller producer_plan_admission current_consumer_admission success published coverage runtime stage runtime_contract_source preflight external_catalog_sha256 limitations'.split())
-CELL_KEYS = set('id framework success fresh_cache package_reference_only accounting original_output_policy restored_payloads discovery_scope native_lock_sha256 archive_sha256 restored isolation input_sha256'.split())
+CELL_KEYS = set('id framework success fresh_cache package_reference_only accounting original_output_policy restored_payloads discovery_scope native_lock_sha256 archive_sha256 restored isolation input_sha256 sdk_restore'.split())
 NPM_KEYS = set('source_commit source_tree version execution framework commands success published historical_workflow_executed original_lifecycle_preserved inline_postinstall_preserved stage wasm react consumer lifecycle_correction'.split())
 STEPS = ('node-version', 'historical-host-publish', 'pack-wasm', 'historical-wrapper-install',
          'historical-wrapper-copy', 'historical-wrapper-build', 'pack-react', 'historical-consumer-lock',
@@ -237,6 +237,45 @@ def validate_npm(plan: dict, receipt: dict, files: dict[str, bytes], contract: d
     require(transport.strict_json(files['producer/npm/receipt.json']) == report, 'selected_payload_npm_separate_receipt')
 
 
+def validate_sdk_restore(plan: dict, value: dict, selected: dict, framework: str, restored: dict) -> None:
+    transport.closed(value, {'sdk_version', 'pruning_enabled', 'pruning_sha256', 'pruned_edges', 'downloads',
+        'toolchain_hash_scope'}, 'selected_payload_sdk_restore')
+    require(value['sdk_version'] == metadata.SDK and type(value['pruning_enabled']) is bool and
+        value['toolchain_hash_scope'] == 'new-frozen-bootstrap-catalog-joined-to-fresh-original-feed-bytes',
+        'selected_payload_sdk_restore_scope')
+    transport.digest(value['pruning_sha256'])
+    seen = set()
+    for row in sequence(value['pruned_edges']):
+        transport.closed(row, {'from_id', 'from_version', 'id', 'range', 'prune_range'}, 'selected_payload_sdk_pruned_edge')
+        parent, identifier = package_id(row['from_id']), package_id(row['id'])
+        require(value['pruning_enabled'] and identifier.casefold() not in selected and
+            (parent.casefold(), identifier.casefold()) not in seen, 'selected_payload_sdk_pruned_scope')
+        require(parent.casefold() in restored and row['from_version'] == restored[parent.casefold()]['version'],
+                'selected_payload_sdk_pruned_parent')
+        seen.add((parent.casefold(), identifier.casefold()))
+        text(row['from_version']); text(row['range'])
+        require(type(row['prune_range']) is str and re.fullmatch(r'\(,\d+\.\d+\.\d+\]', row['prune_range']),
+                'selected_payload_sdk_prune_range')
+    seen = set()
+    sources = {row['url'] for row in plan['consumer_feed_policy']['sources']}
+    for row in sequence(value['downloads']):
+        transport.closed(row, {'id', 'version', 'source', 'sha256', 'archive_sha512', 'nuget_content_hash', 'signed'},
+                         'selected_payload_sdk_download')
+        require(row['id'] in {'Microsoft.NETCore.App.Ref', 'Microsoft.AspNetCore.App.Ref'} and
+            row['id'].casefold() not in selected and row['id'] not in seen and row['source'] in sources and
+            type(row['signed']) is bool, 'selected_payload_sdk_download_identity')
+        require(row['id'].casefold() not in restored and row['version'] ==
+            consumer.resolution.sdk.DOWNLOAD_VERSIONS.get(framework), 'selected_payload_sdk_download_version')
+        seen.add(row['id']); text(row['version'])
+        transport.digest(row['sha256']); transport.digest(row['archive_sha512'], 128)
+        try:
+            decoded = base64.b64decode(row['nuget_content_hash'], validate=True)
+        except (ValueError, TypeError):
+            raise ValueError('selected_payload_sdk_content_hash') from None
+        require(len(decoded) == 64 and base64.b64encode(decoded).decode() == row['nuget_content_hash'],
+                'selected_payload_sdk_content_hash')
+
+
 def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, runtime: bool) -> None:
     transport.closed(cell, CELL_KEYS | ({'runtime'} if runtime else set()), 'selected_payload_cell')
     require(cell['id'].casefold() in selected and cell['id'] == selected[cell['id'].casefold()]['record']['id'],
@@ -295,6 +334,7 @@ def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, ru
                     'selected_payload_native_content_hash')
         restored[folded] = row
     require(cell['id'].casefold() in restored, 'selected_payload_restored_root')
+    validate_sdk_restore(plan, cell['sdk_restore'], selected, framework, restored)
     payload_rows, payloads = {}, {}
     for row in sequence(cell['restored_payloads']):
         transport.closed(row, {'id', 'version', 'payloads'}, 'selected_payload_restored_payloads')

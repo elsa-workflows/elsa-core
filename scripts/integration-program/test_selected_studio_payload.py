@@ -170,6 +170,9 @@ def fixture(line="3.8"):
         asset = f'lib/{framework}/{identifier}.dll'
         row = {'id': identifier, 'framework': framework, 'success': True, 'fresh_cache': True, 'package_reference_only': True,
             'accounting': 'managed-reference-compile', 'original_output_policy': output, 'discovery_scope': 'offline-original-archive-metadata-only',
+            'sdk_restore': {'sdk_version': '10.0.300', 'pruning_enabled': False,
+                'pruning_sha256': metadata.sha256(b'{}'), 'pruned_edges': [], 'downloads': [],
+                'toolchain_hash_scope': 'new-frozen-bootstrap-catalog-joined-to-fresh-original-feed-bytes'},
             'native_lock_sha256': '3' * 64, 'archive_sha256': records[0]['sha256'], 'isolation': isolation, 'input_sha256': inputs,
             'restored': [{'id': identifier, 'version': version, 'assets_type': 'package', 'source': 'selected-local-archives',
                 'sha256': records[0]['sha256'], 'sha512': hashlib.sha512(files['producer/nuget/' + records[0]['file']]).hexdigest()}],
