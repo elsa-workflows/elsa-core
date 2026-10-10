@@ -13,7 +13,7 @@ import product_release_metadata as metadata
 import selected_control_seal as seal
 import selected_control_transport as transport
 import selected_studio_payload as payload
-from test_selected_control_transport import zipped
+from test_selected_control_transport import MALFORMED_GZIP, zipped
 from test_selected_studio_payload import fixture, encoded
 
 
@@ -130,6 +130,18 @@ class SealContracts(unittest.TestCase):
         self.files[name] = zipped(list(members.items()))
         row.update(sha256=metadata.sha256(self.files[name]), size=len(self.files[name]), inventory=transport.inventory(members))
         self.files['producer/receipt.json'] = encoded(receipt)
+        self.assert_cli_rejected()
+
+    def test_malformed_gzip_cli_rejects_generically_before_output(self):
+        receipt = json.loads(self.files['producer/receipt.json'])
+        wasm = receipt['npm']['wasm']
+        self.files['producer/npm/' + wasm['file']] = MALFORMED_GZIP
+        wasm['sha512_integrity'] = transport.sha512_integrity(MALFORMED_GZIP)
+        self.files['producer/npm/receipt.json'] = encoded(receipt['npm'])
+        self.files['producer/receipt.json'] = encoded(receipt)
+        self.assert_cli_rejected()
+
+    def assert_cli_rejected(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve()
             inputs, output = root / 'inputs', root / 'output'
@@ -144,7 +156,7 @@ class SealContracts(unittest.TestCase):
                 '--consumer-receipt-sha256', metadata.sha256(self.files['consumer/receipt.json']), '--output', str(output)]
             printed = io.StringIO()
             # Only trusted runner/Git identity boundaries are stubbed. Real frozen
-            # ZIP bytes and the actual nuspec parser reach the CLI failure guard.
+            # archive bytes reach the actual parser and CLI failure guard.
             with patch('sys.argv', args), patch.object(seal.producer, 'verify_controller', return_value=self.context['controller']), \
                  patch.object(seal, 'hosted_context', return_value=self.context['context']), redirect_stdout(printed):
                 self.assertEqual(seal.main(), 1)

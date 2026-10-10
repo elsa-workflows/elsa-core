@@ -18,6 +18,7 @@ import zipfile
 import selected_control_transport as transport
 
 NOW = datetime(2026, 10, 10, 12, tzinfo=timezone.utc)
+MALFORMED_GZIP = bytes.fromhex('1f8b0800000000000203') + b'\x07' + b'\0' * 8
 
 
 def encode(value):
@@ -204,6 +205,17 @@ class OriginalZipContracts(Fixture):
 
 
 class ArchiveSafetyContracts(unittest.TestCase):
+    def test_malformed_deflate_zip_uses_fixed_rejection(self):
+        data = bytearray(zipped([('payload', b'private archive content')]))
+        name_size, extra_size = struct.unpack_from('<HH', data, 26)
+        data[30 + name_size + extra_size] = 0x06
+        with self.assertRaisesRegex(ValueError, '^selected_transport_zip$'):
+            transport.zip_members(bytes(data), leaf=True)
+
+    def test_malformed_deflate_gzip_uses_fixed_rejection(self):
+        with self.assertRaisesRegex(ValueError, '^selected_transport_tar$'):
+            transport.tar_members(MALFORMED_GZIP)
+
     def test_safe_path_aliases_controls_and_traversal(self):
         for name in ('/private/tmp/file', '../file', 'dir/../file', 'dir//file', './file', 'file/',
                      'C:/file', 'dir\\file', 'dir\x00file', 'dir\nfile', '\ud800', ''):

@@ -19,6 +19,7 @@ import stat
 import tarfile
 from uuid import UUID
 import zipfile
+import zlib
 
 from product_artifact_execution import HOSTED_REF, REPOSITORY, REPOSITORY_ID, WORKFLOW
 from prove_consolidated_packages import require
@@ -164,7 +165,7 @@ def zip_members(data: bytes, *, leaf: bool = False) -> dict[str, bytes]:
                     result[item.filename] = _bounded_read(stream, item.file_size,
                         MAX_PACKAGE_BYTES if leaf else file_limit(item.filename))
             return result
-    except (zipfile.BadZipFile, OSError, RuntimeError, EOFError):
+    except (zipfile.BadZipFile, OSError, RuntimeError, EOFError, zlib.error):
         raise ValueError('selected_transport_zip') from None
 
 
@@ -194,7 +195,7 @@ def tar_members(data: bytes) -> dict[str, bytes]:
         require(result and 'package.json' in result, 'selected_transport_npm_metadata')
         strict_json(result['package.json'])
         return result
-    except (tarfile.TarError, OSError, EOFError):
+    except (tarfile.TarError, OSError, EOFError, zlib.error):
         raise ValueError('selected_transport_tar') from None
 
 
