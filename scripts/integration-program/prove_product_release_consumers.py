@@ -508,14 +508,20 @@ def original_excluded_build_marker(assets: dict, original: dict, framework: str,
     require(real and not any(name.casefold().startswith('buildtransitive/') for name in names),
             'consumer_original_build_real_group')
     for entry in real:
-        require(entry.isascii() and entry.rsplit('/', 1)[0] == kind and
-            Path(entry).name.casefold() in {identifier.casefold() + '.props', identifier.casefold() + '.targets'} and
+        require(entry.isascii() and
             entry in before.get('files', []) and entry in current.get('files', []),
             'consumer_original_build_real_member')
         read_bound(folder / entry, metadata.sha256(package.read(entry)))
+    # GetBuildItemsForPackageId selects package-named entrypoints, not every
+    # helper props/targets file shipped beside or below them. Keep all helper
+    # inventories and cache bytes checked without treating them as entrypoints.
+    entrypoints = [entry for entry in real if Path(entry).name.casefold() in
+                   {identifier.casefold() + '.props', identifier.casefold() + '.targets'}]
+    require(entrypoints and all(entry.rsplit('/', 1)[0] == kind for entry in entrypoints),
+            'consumer_original_build_real_member')
     # Native ClearIfExists uses the character offset of the last slash, then
     # OrdinalIgnoreCase path; flat ASCII props/targets make that order explicit.
-    first = sorted(real, key=lambda entry: (entry.rfind('/'), entry.casefold()))[0]
+    first = sorted(entrypoints, key=lambda entry: (entry.rfind('/'), entry.casefold()))[0]
     require(first.rsplit('/', 1)[0] + '/_._' == marker and
         not any(name.casefold() == marker.casefold() for name in names), 'consumer_original_build_collision')
     path = folder / marker

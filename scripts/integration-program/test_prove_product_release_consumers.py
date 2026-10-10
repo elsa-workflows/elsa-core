@@ -656,7 +656,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'consumer_input_hash'):
             proof.verify_asset_payloads(assets, 'net8.0', self.graph, cache, self.artifacts, selected)
 
-    def original_flat_build_fixture(self):
+    def original_flat_build_fixture(self, *, helper_members=()):
         """Exact HTTP/net10 native group shape: one Swagger and two NSwag sentinels."""
         temporary = tempfile.TemporaryDirectory(dir=self.root)
         self.addCleanup(temporary.cleanup)
@@ -675,6 +675,8 @@ class SelectedProductConsumerTests(unittest.TestCase):
             folder = values['cache'] / identifier.lower() / package_version
             folder.mkdir(parents=True)
             entries = {group + '/' + identifier + '.targets': b'<Project />' for group in groups}
+            if identifier == 'FastEndpoints.Swagger':
+                entries.update({name: b'<Project />' for name in helper_members})
             entries['lib/net10.0/' + identifier + '.dll'] = b'external DLL'
             archive = folder / (identifier.lower() + '.' + package_version + '.nupkg')
             with zipfile.ZipFile(archive, 'w') as package:
@@ -699,6 +701,38 @@ class SelectedProductConsumerTests(unittest.TestCase):
         values.update(assets=assets, original_assets=original, selected=selected, catalog=catalog, graph=graph,
             framework=framework, key='FastEndpoints.Swagger/8.2.0', root_key=root_key)
         return values
+
+    def test_original_flat_build_allows_archive_bound_unselected_helpers(self):
+        # Grpc.Tools has flat package-named entrypoints plus nested _grpc and
+        # _protobuf helpers; Proto.Cluster.CodeGen also has flat helper props.
+        values = self.original_flat_build_fixture(helper_members=(
+            'build/_grpc/_Grpc.Tools.props', 'build/_protobuf/Google.Protobuf.Tools.targets',
+            'build/ProtoGrainGenerator.props'))
+        rows = self.verify_empty_build(values)
+        markers = [item for row in rows for item in row['payloads'] if 'accounting' in item]
+        self.assertEqual(len(markers), 3)
+        self.assertEqual(markers[0]['path'], 'build/_._')
+
+    def test_original_flat_build_helpers_keep_inventory_and_cache_byte_checks(self):
+        member = 'build/_grpc/_Grpc.Tools.props'
+        for change in ('original_inventory', 'current_inventory', 'cache_bytes', 'cache_symlink'):
+            values = self.original_flat_build_fixture(helper_members=(member,))
+            folder = values['cache'] / 'fastendpoints.swagger/8.2.0'
+            key = values['key']
+            if change == 'original_inventory': values['original_assets']['libraries'][key]['files'].remove(member)
+            elif change == 'current_inventory': values['assets']['libraries'][key]['files'].remove(member)
+            elif change == 'cache_bytes': (folder / member).write_bytes(b'changed helper')
+            else:
+                (folder / member).unlink()
+                (folder / member).symlink_to(folder / 'build/FastEndpoints.Swagger.targets')
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                self.verify_empty_build(values)
+
+    def test_original_flat_build_rejects_nonflat_package_named_entrypoint(self):
+        values = self.original_flat_build_fixture(helper_members=(
+            'build/net10.0/FastEndpoints.Swagger.props',))
+        with self.assertRaisesRegex(ValueError, 'consumer_original_build_real_member'):
+            self.verify_empty_build(values)
 
     def test_original_flat_build_and_multitargeting_markers_are_inert(self):
         values = self.original_flat_build_fixture()
