@@ -253,7 +253,10 @@ def _documents(row: dict, commit: str, policy: dict) -> None:
 
 
 def _symbols(row: dict, policy: dict, members: dict, symbol_inventory: dict, commit: str) -> None:
-    """Join assembly and PDB evidence to archive bytes and validate document provenance."""
+    """Validate assembly and packaged-PDB joins plus source metadata.
+
+    Private-PDB and source-document checksum-content judgments remain inherited.
+    """
     private = policy['symbols'] is False
     keys = SYMBOL_KEYS | ({'source_applicability'} if not row.get('documents') else set()) | ({'symbol_package'} if private else set())
     closed(row, keys, 'core_payload_symbol')
@@ -352,7 +355,7 @@ def _excluded_outputs(plan: dict, producer: dict, selected: dict) -> None:
 
 
 def _native(plan: dict, producer: dict, selected: dict) -> dict:
-    """Validate Core package, assembly, symbol, and manifest receipts against admitted bytes."""
+    """Validate Core package receipts against admitted bytes and apply the selected assembly, symbol, and source-metadata checks."""
     _excluded_outputs(plan, producer, selected)
     rows = _rows(producer['package_verification'], 'core_payload_native_rows')
     require(len(rows) == len(selected), 'core_payload_native_inventory')
