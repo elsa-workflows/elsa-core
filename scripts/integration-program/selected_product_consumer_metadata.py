@@ -111,6 +111,7 @@ def archive_catalog(originals: dict, selected: dict, config: Path, semantics: pl
                             for row in catalog.values()]}
     (output / 'catalog.private.json').write_text(json.dumps(receipt, indent=2, sort_keys=True))
     return catalog, {'sources': sources, 'mapping': mapping, 'mirrors': mirrors, 'sdk_downloads': downloads,
+        'original_assets': originals,
         'sdk_projects': {project: {framework: sdk.original_policy(assets, framework)
             for framework in assets.get('project', {}).get('frameworks', {})} for project, assets in originals.items()}}
 

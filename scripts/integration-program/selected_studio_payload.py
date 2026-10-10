@@ -348,6 +348,19 @@ def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, ru
         payload_rows[folded] = row
         seen = set()
         for asset in sequence(row['payloads']):
+            if type(asset) is dict and 'accounting' in asset:
+                transport.closed(asset, {'path', 'kind', 'accounting', 'metadata', 'archive_sha256', 'origin'},
+                                 'selected_payload_synthetic_content')
+                require(folded not in selected and asset['path'] == consumer.EMPTY_CONTENT and
+                    asset['kind'] == 'contentFiles' and asset['accounting'] == consumer.EMPTY_CONTENT_ACCOUNTING and
+                    asset['origin'] in ('original-excluded-content', 'package-reference-transitive-content-exclusion') and
+                    type(asset['metadata']) is dict and asset['metadata'] == consumer.EMPTY_CONTENT_METADATA and
+                    type(asset['metadata'].get('copyToOutput')) is bool and
+                    asset['archive_sha256'] == restored[folded]['sha256'] and
+                    (asset['path'], asset['kind']) not in seen, 'selected_payload_synthetic_content_identity')
+                transport.digest(asset['archive_sha256'])
+                seen.add((asset['path'], asset['kind']))
+                continue
             transport.closed(asset, {'path', 'kind', 'sha256', 'size'}, 'selected_payload_asset')
             path = transport.safe_name(asset['path'])
             require(asset['kind'] in {'compile', 'runtime', 'contentFiles', 'build', 'buildMultiTargeting', 'native', 'runtimeTargets', 'resource'} and

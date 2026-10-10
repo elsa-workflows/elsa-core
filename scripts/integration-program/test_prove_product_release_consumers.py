@@ -653,6 +653,124 @@ class SelectedProductConsumerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'consumer_input_hash'):
             proof.verify_asset_payloads(assets, 'net8.0', self.graph, cache, self.artifacts, selected)
 
+    def empty_content_fixture(self):
+        identifier, version = 'Microsoft.AspNetCore.Components.CustomElements', '9.0.13'
+        folded, key = identifier.lower(), identifier + '/' + version
+        cache = self.root / 'marker-cache'
+        folder = cache / folded / version
+        folder.mkdir(parents=True)
+        archive = folder / (folded + '.' + version + '.nupkg')
+        entries = {'contentFiles/any/net9.0/js/package.json': b'{"name":"original-content"}',
+                   'lib/net9.0/CustomElements.dll': b'genuine assembly'}
+        with zipfile.ZipFile(archive, 'w') as package:
+            for name, data in entries.items():
+                package.writestr(name, data)
+        for name, data in entries.items():
+            path = folder / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(data)
+        assets = {'targets': {'net9.0': {key: {'type': 'package',
+            'contentFiles': {proof.EMPTY_CONTENT: dict(proof.EMPTY_CONTENT_METADATA)},
+            'compile': {'lib/net9.0/CustomElements.dll': {}}}}},
+            'libraries': {key: {'type': 'package', 'sha512': 'original-native-content-hash', 'files': list(entries)}},
+            'project': {'frameworks': {'net9.0': {'dependencies': {
+                'Elsa.Studio.Core': {'target': 'Package', 'version': '[3.8.999, 3.8.999]'}}}}}}
+        catalog = {(folded, version): {'archive_sha256': metadata.sha256(archive.read_bytes()),
+                                     'content_hash': 'original-native-content-hash'}}
+        graph = {folded: {'selected': False}, 'elsa.studio.core': {'selected': True, 'version': '3.8.999'}}
+        return assets, deepcopy(assets), catalog, cache, folder, archive, graph, key
+
+    def verify_empty_content(self, values):
+        assets, original, catalog, cache, folder, archive, graph, _ = values
+        selected = {key: {'nupkg': archive.name} for key, row in graph.items() if row['selected'] and key == values[-1].split('/')[0].lower()}
+        return proof.verify_asset_payloads(assets, 'net9.0', graph, cache, folder if selected else self.artifacts, selected,
+                                          catalog=catalog, original_assets=original)
+
+    def test_original_native_excluded_content_marker_is_accounted_without_fake_bytes(self):
+        values = self.empty_content_fixture()
+        rows = self.verify_empty_content(values)
+        marker = next(row for row in rows[0]['payloads'] if row['path'] == proof.EMPTY_CONTENT)
+        self.assertEqual(marker, {'path': proof.EMPTY_CONTENT, 'kind': 'contentFiles',
+            'accounting': proof.EMPTY_CONTENT_ACCOUNTING, 'metadata': proof.EMPTY_CONTENT_METADATA,
+            'archive_sha256': metadata.sha256(values[5].read_bytes()), 'origin': 'original-excluded-content'})
+        self.assertNotIn('size', marker)
+        self.assertNotIn('sha256', marker)
+        (values[4] / 'lib/net9.0/CustomElements.dll').write_bytes(b'changed')
+        with self.assertRaisesRegex(ValueError, 'consumer_input_hash'):
+            self.verify_empty_content(values)
+
+    def test_original_direct_real_content_can_be_excluded_at_the_package_only_boundary(self):
+        values = self.empty_content_fixture()
+        original = values[1]['targets']['net9.0'][values[-1]]
+        original['contentFiles'] = {'contentFiles/any/net9.0/js/package.json':
+            {'buildAction': 'Content', 'codeLanguage': 'any', 'copyToOutput': False}}
+        rows = self.verify_empty_content(values)
+        marker = next(row for row in rows[0]['payloads'] if 'accounting' in row)
+        self.assertEqual(marker['origin'], 'package-reference-transitive-content-exclusion')
+        for change in ('missing_member', 'direct_external', 'extra_direct', 'flags', 'version'):
+            assets = deepcopy(values[0]); source = deepcopy(values[1])
+            dependencies = assets['project']['frameworks']['net9.0']['dependencies']
+            if change == 'missing_member': source['targets']['net9.0'][values[-1]]['contentFiles']['contentFiles/any/net9.0/missing.js'] = dict(proof.EMPTY_CONTENT_METADATA)
+            elif change == 'direct_external': dependencies.clear(); dependencies[values[-1].split('/')[0]] = {'target': 'Package', 'version': '[9.0.13, 9.0.13]'}
+            elif change == 'extra_direct': dependencies['Extra'] = {'target': 'Package', 'version': '[1.0.0, 1.0.0]'}
+            elif change == 'flags': dependencies['Elsa.Studio.Core']['include'] = 'all'
+            else: dependencies['Elsa.Studio.Core']['version'] = '[3.8.998, 3.8.998]'
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                self.verify_empty_content((assets, source, *values[2:]))
+
+    def test_synthetic_marker_requires_exact_original_root_context_archive_and_native_metadata(self):
+        values = self.empty_content_fixture()
+        baseline_assets, baseline_original, baseline_catalog = deepcopy(values[:3])
+        for change in ('original', 'framework', 'version', 'content_hash', 'archive_hash', 'inventory',
+                       'action', 'copy', 'copy_integer', 'extra', 'path', 'kind', 'selected'):
+            assets, original, catalog = deepcopy((baseline_assets, baseline_original, baseline_catalog))
+            key = values[-1]; target = assets['targets']['net9.0'][key]
+            graph = deepcopy(values[-2])
+            if change == 'original': original['targets']['net9.0'][key]['contentFiles'] = {}
+            elif change == 'framework': original['targets']['net8.0'] = original['targets'].pop('net9.0')
+            elif change == 'version': original['targets']['net9.0']['Microsoft.AspNetCore.Components.CustomElements/9.0.14'] = original['targets']['net9.0'].pop(key)
+            elif change == 'content_hash': original['libraries'][key]['sha512'] = 'changed'
+            elif change == 'archive_hash': next(iter(catalog.values()))['archive_sha256'] = '0' * 64
+            elif change == 'inventory': original['libraries'][key]['files'] = []
+            elif change == 'action': target['contentFiles'][proof.EMPTY_CONTENT]['buildAction'] = 'Content'
+            elif change == 'copy': target['contentFiles'][proof.EMPTY_CONTENT]['copyToOutput'] = True
+            elif change == 'copy_integer': target['contentFiles'][proof.EMPTY_CONTENT]['copyToOutput'] = 0
+            elif change == 'extra': target['contentFiles'][proof.EMPTY_CONTENT]['outputPath'] = 'output'
+            elif change == 'path': target['contentFiles']['contentFiles/any/any/arbitrary_._'] = target['contentFiles'].pop(proof.EMPTY_CONTENT)
+            elif change == 'kind': target['runtime'] = target.pop('contentFiles')
+            else: graph[next(iter(graph))]['selected'] = True
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                self.verify_empty_content((assets, original, catalog, *values[3:6], graph, key))
+
+    def test_synthetic_marker_rejects_cache_entries_symlinks_and_archive_case_collisions(self):
+        values = self.empty_content_fixture(); marker = values[4] / proof.EMPTY_CONTENT
+        marker.parent.mkdir(parents=True)
+        for symlink in (False, True):
+            if symlink: marker.symlink_to(self.root / 'nonexistent')
+            else: marker.write_bytes(b'not synthetic')
+            with self.subTest(symlink=symlink), self.assertRaisesRegex(ValueError, 'consumer_synthetic_content_cache'):
+                self.verify_empty_content(values)
+            marker.unlink()
+        with zipfile.ZipFile(values[5], 'a') as package:
+            package.writestr(proof.EMPTY_CONTENT.upper(), b'collision')
+        next(iter(values[2].values()))['archive_sha256'] = metadata.sha256(values[5].read_bytes())
+        with self.assertRaisesRegex(ValueError, 'consumer_synthetic_content_collision'):
+            self.verify_empty_content(values)
+
+    def test_real_archive_empty_marker_still_requires_extracted_byte_identity(self):
+        values = self.empty_content_fixture()
+        with zipfile.ZipFile(values[5], 'a') as package:
+            package.writestr(proof.EMPTY_CONTENT, b'physical marker')
+        with self.assertRaisesRegex(ValueError, 'consumer_input_path'):
+            self.verify_empty_content(values)
+        marker = values[4] / proof.EMPTY_CONTENT
+        marker.parent.mkdir(parents=True, exist_ok=True); marker.write_bytes(b'physical marker')
+        row = self.verify_empty_content(values)[0]['payloads'][1]
+        self.assertNotIn('accounting', row)
+        marker.write_bytes(b'changed')
+        with self.assertRaisesRegex(ValueError, 'consumer_input_hash'):
+            self.verify_empty_content(values)
+
     def run_private_consumer(self, freshness_error=None):
         self.policy.update(id='Elsa.Studio.Core', frameworks=['net8.0'])
         self.policy['metadata'].update(original_output_policy={'net8.0': {'IncludeBuildOutput': 'true'}},
@@ -716,6 +834,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
             (args[-1] / 'catalog.private.json').write_text('{}')
             return {}, {'sources': self.feeds['sources'], 'mapping': {'elsa.studio.core': []},
                         'mirrors': {'original': str(self.root / 'original-mirror')}, 'sdk_downloads': {},
+                        'original_assets': args[0],
                         'sdk_projects': {self.policy['project']: {'net8.0': {'pruning': {}, 'downloads': []}}}}
 
         with patch.object(proof.producer, 'admit', return_value=self.plan), \

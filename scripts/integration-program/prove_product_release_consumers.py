@@ -32,6 +32,9 @@ from prove_consolidated_packages import archive_names, dependency_groups, framew
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = ROOT / 'scripts/integration-program/selected-studio-consumer/Program.cs'
 LOCAL = 'selected-local-archives'
+EMPTY_CONTENT = 'contentFiles/any/any/_._'
+EMPTY_CONTENT_METADATA = {'buildAction': 'None', 'codeLanguage': 'any', 'copyToOutput': False}
+EMPTY_CONTENT_ACCOUNTING = 'native-synthetic-excluded-content'
 STUDIO38_CONTRACT_SOURCE = {
     'src/framework/Elsa.Studio.Core/Services/DefaultRemoteBackendAccessor.cs': '2818998450af0126555755dec8f2ff45fe582c6558ac09c064c5053e761bb909',
     'src/framework/Elsa.Studio.Core/Options/BackendOptions.cs': 'd640f27152eb46631bc157733c4e8284cae845923d717f6fdb9df9235466c538',
@@ -254,19 +257,71 @@ def verify_cache(graph: dict, policy: dict, cache: Path, artifacts: Path, select
     return records
 
 
-def verify_asset_payloads(assets: dict, framework: str, graph: dict, cache: Path, artifacts: Path, selected: dict) -> list[dict]:
+def synthetic_content_marker(assets: dict, original: dict, framework: str, key: str,
+                             package: zipfile.ZipFile, names: list[str], folder: Path, catalog: dict,
+                             graph: dict) -> dict:
+    """Account for NuGet's excluded-content sentinel, never as archived bytes."""
+    identifier, version = key.rsplit('/', 1)
+    record = catalog.get((identifier.casefold(), version))
+    expected = {EMPTY_CONTENT: EMPTY_CONTENT_METADATA}
+    require(record is not None and original is not None and
+        assets['targets'][framework][key]['contentFiles'] == expected and
+        type(assets['targets'][framework][key]['contentFiles'][EMPTY_CONTENT]['copyToOutput']) is bool,
+        'consumer_synthetic_content_origin')
+    direct = assets.get('project', {}).get('frameworks', {}).get(framework, {}).get('dependencies', {})
+    require(type(direct) is dict and len(direct) == 1, 'consumer_synthetic_content_boundary')
+    root, dependency = next(iter(direct.items()))
+    require(root.casefold() in graph and graph[root.casefold()]['selected'] and
+        type(dependency) is dict and set(dependency) <= {'target', 'version', 'aliases'} and
+        dependency.get('target') == 'Package' and dependency.get('version') ==
+        '[{0}, {0}]'.format(graph[root.casefold()]['version']) and
+        dependency.get('aliases', 'selected') == 'selected', 'consumer_synthetic_content_boundary')
+    before, current = original.get('libraries', {}).get(key, {}), assets['libraries'][key]
+    require(before.get('type') == current.get('type') == 'package' and
+        before.get('sha512') == current.get('sha512') == record['content_hash'] and
+        metadata.sha256(Path(package.filename).read_bytes()) == record['archive_sha256'],
+        'consumer_synthetic_content_archive')
+    require(not any(name.casefold() == EMPTY_CONTENT.casefold() for name in names),
+            'consumer_synthetic_content_collision')
+    content = {name for name in names if name.startswith('contentFiles/') and not name.endswith('/_._')}
+    require(content and content <= set(before.get('files', [])), 'consumer_synthetic_content_inventory')
+    group = original.get('targets', {}).get(framework, {}).get(key, {}).get('contentFiles', {})
+    if group == expected and type(group[EMPTY_CONTENT]['copyToOutput']) is bool:
+        origin = 'original-excluded-content'
+    else:
+        require(type(group) is dict and group and set(group) <= content and
+            all(type(value) is dict and type(value.get('copyToOutput')) is bool and
+                type(value.get('buildAction')) is str and type(value.get('codeLanguage')) is str
+                for value in group.values()), 'consumer_synthetic_content_origin')
+        origin = 'package-reference-transitive-content-exclusion'
+    path = folder / EMPTY_CONTENT
+    require(not path.exists() and not any(part.is_symlink() for part in (path, *path.parents)),
+            'consumer_synthetic_content_cache')
+    return {'path': EMPTY_CONTENT, 'kind': 'contentFiles', 'accounting': EMPTY_CONTENT_ACCOUNTING,
+            'metadata': dict(EMPTY_CONTENT_METADATA), 'archive_sha256': record['archive_sha256'], 'origin': origin}
+
+
+def verify_asset_payloads(assets: dict, framework: str, graph: dict, cache: Path, artifacts: Path, selected: dict,
+                          *, catalog: dict | None = None, original_assets: dict | None = None) -> list[dict]:
     evidence = []
     for key, library in assets['targets'][framework].items():
         identifier, version = key.rsplit('/', 1)
         folded = identifier.casefold()
         folder = cache / folded / version
         archive = artifacts / selected[folded]['nupkg'] if graph[folded]['selected'] else folder / f'{folded}.{version}.nupkg'
+        require(archive.is_file() and not any(part.is_symlink() for part in (archive, *archive.parents)),
+                'consumer_asset_archive_path')
         payloads = []
         with zipfile.ZipFile(archive) as package:
             names = archive_names(package)
             for kind in ('compile', 'runtime', 'contentFiles', 'build', 'buildMultiTargeting', 'native', 'runtimeTargets', 'resource'):
                 for entry in library.get(kind, {}):
                     safe_relative(entry)
+                    if kind == 'contentFiles' and entry == EMPTY_CONTENT and entry not in names:
+                        require(not graph[folded]['selected'], 'consumer_synthetic_content_selected')
+                        payloads.append(synthetic_content_marker(assets, original_assets, framework, key,
+                                                                package, names, folder, catalog or {}, graph))
+                        continue
                     require(entry in names, 'consumer_asset_archive_member')
                     content = package.read(entry)
                     read_bound(folder / entry, metadata.sha256(content))
@@ -395,7 +450,8 @@ def cell(plan: dict, package: dict, framework: str, selected: dict, artifacts: P
     sdk_downloads = resolution.sdk.verify_downloads(restored, framework, sdk_policy, original_policy['sdk_downloads'],
         cache, policy['sources'], policy['mapping'], inspector, proof=True)
     cached = verify_cache(graph, policy, cache, artifacts, selected, restored, inspector, catalog)
-    payloads = verify_asset_payloads(restored, framework, graph, cache, artifacts, selected)
+    payloads = verify_asset_payloads(restored, framework, graph, cache, artifacts, selected, catalog=catalog,
+        original_assets=original_policy['original_assets'][package['policy']['project']])
     commands.append(consumers._run_command(['dotnet', 'build', str(project), '-c', 'Release', '--no-restore', '--disable-build-servers',
         '--nologo'], output, environment, output / 'build.log', 1200))
     require(all(metadata.sha256((output / name).read_bytes()) == digest for name, digest in inputs.items()) and

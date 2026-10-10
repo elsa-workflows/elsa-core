@@ -271,6 +271,39 @@ class SelectedProductPayloadTests(unittest.TestCase):
                 self.files, self.context = values[:2]
                 seal_tests.SealContracts.assert_cli_rejected(self)
 
+    def test_synthetic_content_accounting_is_closed_external_only_and_not_payload_bytes(self):
+        values = fixture('studio', '3.8'); files = values[0]
+        receipt = json.loads(files['consumer/receipt.json']); cell = receipt['coverage'][0]
+        identifier = 'Microsoft.AspNetCore.Components.CustomElements'
+        external = {'id': identifier, 'version': '9.0.13', 'source': 'https://api.nuget.org/v3/index.json',
+            'sha256': 'a' * 64, 'archive_sha512': 'b' * 128, 'nuget_content_hash': 'A' * 86 + '==', 'signed': True}
+        marker = {'path': payload.consumer.EMPTY_CONTENT, 'kind': 'contentFiles',
+            'accounting': payload.consumer.EMPTY_CONTENT_ACCOUNTING,
+            'metadata': dict(payload.consumer.EMPTY_CONTENT_METADATA), 'archive_sha256': external['sha256'],
+            'origin': 'original-excluded-content'}
+        cell['restored'].append(external)
+        cell['restored_payloads'].append({'id': identifier, 'version': external['version'], 'payloads': [marker]})
+        files['consumer/receipt.json'] = encoded(receipt); self.validate(values)
+        baseline = deepcopy(receipt)
+        for change in ('path', 'kind', 'metadata', 'copy_integer', 'fake_bytes', 'hash', 'duplicate', 'selected', 'origin'):
+            receipt = deepcopy(baseline); cell = receipt['coverage'][0]
+            row = cell['restored_payloads'][-1]; marker = row['payloads'][0]
+            if change == 'path': marker['path'] = 'contentFiles/any/any/arbitrary_._'
+            elif change == 'kind': marker['kind'] = 'runtime'
+            elif change == 'metadata': marker['metadata']['copyToOutput'] = True
+            elif change == 'copy_integer': marker['metadata']['copyToOutput'] = 0
+            elif change == 'fake_bytes': marker.update(size=0, sha256=metadata.sha256(b''))
+            elif change == 'hash': marker['archive_sha256'] = 'f' * 64
+            elif change == 'duplicate': row['payloads'].append(deepcopy(marker))
+            elif change == 'origin': marker['origin'] = 'unbound'
+            else:
+                cell['restored_payloads'][0]['payloads'].append(marker)
+                cell['restored_payloads'].pop(); cell['restored'].pop()
+            files['consumer/receipt.json'] = encoded(receipt)
+            with self.subTest(change=change), self.assertRaises(ValueError): self.validate(values)
+            self.files, self.context = values[:2]
+            seal_tests.SealContracts.assert_cli_rejected(self)
+
     def test_frozen_retained_file_closure_is_conditional_on_product(self):
         for product in ('core', 'studio', 'extensions'):
             files, _, _ = fixture(product, '3.9')
