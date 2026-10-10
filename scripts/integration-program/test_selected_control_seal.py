@@ -1,6 +1,8 @@
 """Real synthetic ZIP readback and safe staging, without product/provider work."""
 from copy import deepcopy
+from contextlib import redirect_stdout
 from datetime import timedelta
+import io
 import json
 from pathlib import Path
 import tempfile
@@ -118,6 +120,37 @@ class SealContracts(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'closure'):
                 seal.freeze_inputs(paths['plan.json'], self.hashes[0], root / 'producer', self.hashes[1],
                                    paths['consumer/receipt.json'], self.hashes[2])
+
+    def test_malformed_nuspec_cli_rejects_generically_before_output(self):
+        receipt = json.loads(self.files['producer/receipt.json'])
+        row = receipt['packages']['selected'][0]
+        name = 'producer/nuget/' + row['file']
+        members = transport.zip_members(self.files[name], leaf=True)
+        members['a.nuspec'] = b'<package><metadata>malformed private input'
+        self.files[name] = zipped(list(members.items()))
+        row.update(sha256=metadata.sha256(self.files[name]), size=len(self.files[name]), inventory=transport.inventory(members))
+        self.files['producer/receipt.json'] = encoded(receipt)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            inputs, output = root / 'inputs', root / 'output'
+            for path, data in self.files.items():
+                target = inputs / path
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(data)
+            args = ['selected_control_seal.py', 'seal', '--plan', str(inputs / 'plan.json'),
+                '--plan-sha256', metadata.sha256(self.files['plan.json']), '--producer-retained', str(inputs / 'producer'),
+                '--producer-receipt-sha256', metadata.sha256(self.files['producer/receipt.json']),
+                '--consumer-receipt', str(inputs / 'consumer/receipt.json'),
+                '--consumer-receipt-sha256', metadata.sha256(self.files['consumer/receipt.json']), '--output', str(output)]
+            printed = io.StringIO()
+            # Only trusted runner/Git identity boundaries are stubbed. Real frozen
+            # ZIP bytes and the actual nuspec parser reach the CLI failure guard.
+            with patch('sys.argv', args), patch.object(seal.producer, 'verify_controller', return_value=self.context['controller']), \
+                 patch.object(seal, 'hosted_context', return_value=self.context['context']), redirect_stdout(printed):
+                self.assertEqual(seal.main(), 1)
+            self.assertEqual(printed.getvalue(), 'Selected seal/readback rejected inputs; no selected control acceptance emitted.\n')
+            self.assertFalse(output.exists())
+            self.assertNotIn('malformed private input', printed.getvalue())
 
     def test_retained_symlink_and_rejected_write_leave_no_output(self):
         with tempfile.TemporaryDirectory() as temporary:

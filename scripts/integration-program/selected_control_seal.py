@@ -12,6 +12,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import xml.etree.ElementTree as ET
 
 import product_release_metadata as metadata
 from product_artifact_execution import hosted_context
@@ -211,7 +212,7 @@ def main() -> int:
             write_new(output, {'readback.json': encoded(result)})
         print(json.dumps(result if args.command == 'seal' else {'success': True, 'scope': result['scope']}, sort_keys=True))
         return 0
-    except (ValueError, KeyError, TypeError, OSError):
+    except (ValueError, KeyError, TypeError, OSError, ET.ParseError):
         print('Selected seal/readback rejected inputs; no selected control acceptance emitted.')
         return 1
 

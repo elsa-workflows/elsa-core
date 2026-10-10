@@ -228,6 +228,7 @@ def validate_npm(plan: dict, receipt: dict, files: dict[str, bytes], contract: d
         'source_sha512_integrity': reports[npm.WASM]['sha512_integrity'], 'assets': [
         {'path': 'public/' + path, 'source_path': path, 'size': len(value), 'sha256': metadata.sha256(value)}
         for path, value in sorted(copied.items())]}
+    require(not set(react) & {row['path'] for row in generated['assets']}, 'selected_payload_npm_generated_collision')
     require(downstream['lifecycle_generated_assets'] == generated, 'selected_payload_npm_generated_bytes')
     require(transport.strict_json(files['producer/npm/receipt.json']) == report, 'selected_payload_npm_separate_receipt')
 
