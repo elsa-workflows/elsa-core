@@ -933,6 +933,12 @@ def verify_external_document(root: Path, row: dict, framework: str, document: di
     if match is None:
         return None
     version, entry = match.groups()
+    return verify_external_entry(root, row, framework, document, version, entry, cache)
+
+
+def verify_external_entry(root: Path, row: dict, framework: str, document: dict,
+                          version: str, entry: str, cache: dict) -> dict:
+    """Audit a decoded hint entry; callers separately bind their supported PDB pathname layout."""
     require(version in GENERATOR_SOURCE_PINS, f"Unreviewed external source package version: {version}")
     record = next((item for item in row["restore_assets"] if item["framework"] == framework), None)
     require(record is not None, f"Missing restored dependency evidence for external source: {row['id']}")

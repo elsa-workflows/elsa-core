@@ -19,7 +19,8 @@ import zipfile
 
 from prove_consolidated_packages import (archive_names, capture_sdk_assets, capture_compiler_evidence, dependency_groups, framework_reference_groups,
     generated_family, metadata, only_abstract_methods, read_staged_nuspecs, require, restored_archive, restored_assets,
-    run, source_url, verify_package_manifest, verify_sdk_assets, verify_external_document, verify_generator_identity, verify_tracked_document)
+    run, source_url, verify_package_manifest, verify_sdk_assets, verify_external_document, verify_external_entry,
+    verify_generator_identity, verify_tracked_document)
 
 ROOT = Path(__file__).resolve().parents[2]
 REGISTER = ROOT / 'docs/integration-program/maintenance-source-register.json'
@@ -747,6 +748,47 @@ def public_inventory(inventory: list[dict]) -> list[dict]:
             for policy in inventory]
 
 
+def verify_restored_manifest_hint(source: Path, policy: dict, framework: str,
+                                  document: dict, cache: dict) -> tuple[dict, dict]:
+    """Bind original preview.50 hints to their actual restored cache, without rewriting PDB paths."""
+    identifier, version = 'Elsa.Platform.PackageManifest.Generator', '0.0.1-preview.50'
+    assets = restored_assets(source, policy, framework)
+    relative = identifier.lower() + '/' + version
+    library = assets.get('libraries', {}).get(identifier + '/' + version, {})
+    require(library.get('path', relative) == relative, 'Unexpected external package cache layout')
+    candidates = []
+    for folder in assets.get('packageFolders', {}):
+        root = Path(folder)
+        require(root.is_absolute() and root.as_posix() == folder and '..' not in root.parts,
+                'Non-canonical external cache root')
+        candidate = root / relative / f'{identifier.lower()}.{version}.nupkg'
+        require(not any(path.is_symlink() for path in (candidate, *candidate.parents)),
+                'Symlinked external archive path')
+        if candidate.exists():
+            require(candidate.is_file(), 'External archive is not a regular file')
+            candidates.append(candidate)
+    require(len(candidates) == 1, 'Missing or ambiguous restored external archive')
+    archive, identity = restored_archive(assets, identifier, version, cache=cache)
+    require(archive == candidates[0], 'External archive selection changed')
+    external = verify_external_document(source, policy, framework, document, cache)
+    if external is None:
+        actual = Path(document['path'])
+        require(actual.is_absolute() and actual.as_posix() == document['path'] and '..' not in actual.parts and
+                actual.is_relative_to(archive.parent), 'External document is outside its restored package')
+        entry = actual.relative_to(archive.parent).as_posix()
+        external = verify_external_entry(source, policy, framework, document, version, entry, cache)
+    require(identity['archive_sha256'] == external['archive_sha256'], 'External archive identity changed')
+    extracted = archive.parent / external['archive_entry']
+    require(not any(path.is_symlink() for path in (extracted, *extracted.parents)) and extracted.is_file() and
+            hashlib.new(document['algorithm'], extracted.read_bytes()).hexdigest() == document['checksum'],
+            'External compiler input bytes changed')
+    inputs = policy['framework_properties'][framework]['compiler_evidence']['compile_inputs']
+    actual = extracted.resolve()
+    locator = actual.relative_to(source.resolve()).as_posix() if actual.is_relative_to(source.resolve()) else actual.as_posix()
+    require(any(item['path'] == locator for item in inputs), 'External source is not a compiler input')
+    return external, identity
+
+
 def verify_non_git_document(document: dict, path: str | None, source: Path, row: dict,
                             policy: dict | None, framework: str | None, cache: dict) -> dict:
     try:
@@ -757,21 +799,7 @@ def verify_non_git_document(document: dict, path: str | None, source: Path, row:
             # Only this reviewed original package-content family can be unmapped.
             require(row['product'] == 'extensions' and
                     '/elsa.platform.packagemanifest.generator/0.0.1-preview.50/' in document['path'], 'Unknown external family')
-            external = verify_external_document(source, policy, framework, document, cache)
-            require(external is not None, 'Unknown external family')
-            assets = restored_assets(source, policy, framework)
-            entry = external['archive_entry']
-            archive, archive_identity = restored_archive(assets, 'Elsa.Platform.PackageManifest.Generator',
-                                                        '0.0.1-preview.50', cache=cache)
-            require(archive_identity['archive_sha256'] == external['archive_sha256'], 'External archive identity changed')
-            extracted = archive.parent / entry
-            require(extracted.is_file() and not extracted.is_symlink() and
-                    hashlib.new(document['algorithm'], extracted.read_bytes()).hexdigest() == document['checksum'],
-                    'External compiler input bytes changed')
-            inputs = policy['framework_properties'][framework]['compiler_evidence']['compile_inputs']
-            actual = extracted.resolve()
-            locator = actual.relative_to(source.resolve()).as_posix() if actual.is_relative_to(source.resolve()) else actual.as_posix()
-            require(any(item['path'] == locator for item in inputs), 'External source is not a compiler input')
+            external, archive_identity = verify_restored_manifest_hint(source, policy, framework, document, cache)
             return {'family': 'manifest-hints', 'producer': {key: external[key] for key in
                     ('external_package', 'archive_entry', 'archive_sha256', 'feed')} | {
                     'restore_sha512': archive_identity['restore_sha512']}}
