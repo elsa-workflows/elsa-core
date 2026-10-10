@@ -36,6 +36,8 @@ LOCAL = 'selected-local-archives'
 EMPTY_CONTENT = 'contentFiles/any/any/_._'
 EMPTY_CONTENT_METADATA = {'buildAction': 'None', 'codeLanguage': 'any', 'copyToOutput': False}
 EMPTY_CONTENT_ACCOUNTING = 'native-synthetic-excluded-content'
+EMPTY_BUILD_ACCOUNTING = 'native-synthetic-excluded-build'
+EMPTY_BUILD_ORIGIN = 'selected-root-nuspec-build-exclusion'
 STUDIO38_CONTRACT_SOURCE = {
     'src/framework/Elsa.Studio.Core/Services/DefaultRemoteBackendAccessor.cs': '2818998450af0126555755dec8f2ff45fe582c6558ac09c064c5053e761bb909',
     'src/framework/Elsa.Studio.Core/Options/BackendOptions.cs': 'd640f27152eb46631bc157733c4e8284cae845923d717f6fdb9df9235466c538',
@@ -302,6 +304,92 @@ def synthetic_content_marker(assets: dict, original: dict, framework: str, key: 
             'metadata': dict(EMPTY_CONTENT_METADATA), 'archive_sha256': record['archive_sha256'], 'origin': origin}
 
 
+def build_exclusion_edge(groups: list[dict], framework: str, identifier: str) -> dict:
+    """Bound the explicit selected-root nuspec edge; do not solve include flags."""
+    matching = [group for group in groups if group['framework'] == framework]
+    require(len(matching) == 1, 'consumer_synthetic_build_dependency_group')
+    edges = [edge for edge in matching[0]['dependencies'] if edge['id'].casefold() == identifier.casefold()]
+    require(len(edges) == 1 and all(type(edges[0].get(key)) is str for key in ('id', 'version', 'include', 'exclude')),
+            'consumer_synthetic_build_dependency')
+    supported = {'all', 'none', 'runtime', 'compile', 'build', 'buildtransitive', 'contentfiles', 'native', 'analyzers'}
+    flags = {field: {value.strip().casefold() for value in edges[0][field].split(',') if value.strip()}
+             for field in ('include', 'exclude')}
+    require(all(value <= supported for value in flags.values()) and
+        bool(flags['exclude'] & {'build', 'buildtransitive', 'all'}), 'consumer_synthetic_build_flags')
+    return edges[0]
+
+
+def synthetic_build_marker(assets: dict, original: dict, framework: str, key: str,
+                           package: zipfile.ZipFile, names: list[str], folder: Path, catalog: dict,
+                           graph: dict, selected: dict) -> dict:
+    """Narrow ClearIfExists proof: one default root, one excluding edge, real original build group."""
+    identifier, version = key.rsplit('/', 1)
+    record = catalog.get((identifier.casefold(), version))
+    marker = f'build/{framework}/_._'
+    require(record is not None and type(original) is dict and
+        assets['targets'][framework][key].get('build') == {marker: {}}, 'consumer_synthetic_build_origin')
+    direct = assets.get('project', {}).get('frameworks', {}).get(framework, {}).get('dependencies', {})
+    require(type(direct) is dict and len(direct) == 1, 'consumer_synthetic_build_boundary')
+    root, dependency = next(iter(direct.items()))
+    root_key = root.casefold()
+    require(root_key in selected and root_key in graph and graph[root_key]['selected'] is True and
+        type(dependency) is dict and set(dependency) <= {'target', 'version', 'aliases'} and
+        dependency.get('target') == 'Package' and dependency.get('version') ==
+        '[{0}, {0}]'.format(graph[root_key]['version']) and dependency.get('aliases', 'selected') == 'selected',
+        'consumer_synthetic_build_boundary')
+    require(assets.get('projectFileDependencyGroups') == {
+        framework: [root + ' >= ' + graph[root_key]['version'] + ' <= ' + graph[root_key]['version']]},
+        'consumer_synthetic_build_boundary')
+    targets = assets['targets'][framework]
+    require(len(targets) == len(graph) and {name.rsplit('/', 1)[0].casefold() for name in targets} == set(graph) and
+        all(target.get('type') == 'package' for target in targets.values()), 'consumer_synthetic_build_graph')
+    incoming = []
+    for name, target in targets.items():
+        dependencies = target.get('dependencies', {})
+        require(type(dependencies) is dict and all(type(edge) is str for edge in dependencies) and
+            len({edge.casefold() for edge in dependencies}) == len(dependencies), 'consumer_synthetic_build_incoming')
+        incoming.extend((name, value) for edge, value in dependencies.items() if edge.casefold() == identifier.casefold())
+    require(len(incoming) == 1 and incoming[0][0] == root + '/' + graph[root_key]['version'],
+            'consumer_synthetic_build_incoming')
+    edge = build_exclusion_edge(selected[root_key]['dependency_groups'], framework, identifier)
+    require(incoming[0][1] == edge['version'], 'consumer_synthetic_build_dependency')
+    before, current = original.get('libraries', {}).get(key, {}), assets['libraries'][key]
+    require(before.get('type') == current.get('type') == 'package' and
+        before.get('sha512') == current.get('sha512') == record['content_hash'] and
+        metadata.sha256(Path(package.filename).read_bytes()) == record['archive_sha256'],
+        'consumer_synthetic_build_archive')
+    original_direct = original.get('project', {}).get('frameworks', {}).get(framework, {}).get('dependencies', {})
+    original_edge = original_direct.get(identifier, {})
+    require(type(original_edge) is dict and original_edge.get('target') == 'Package' and
+        set(original_edge) <= {'target', 'version', 'versionCentrallyManaged'} and
+        original_edge.get('version') == '[' + version + ', )' and
+        identifier + ' >= ' + version in original.get('projectFileDependencyGroups', {}).get(framework, []),
+        'consumer_synthetic_build_original_flags')
+    original_target = original.get('targets', {}).get(framework, {}).get(key, {})
+    group = original_target.get('build', {})
+    require(not original_target.get('buildTransitive') and not original_target.get('buildMultiTargeting'),
+        'consumer_synthetic_build_original_group')
+    require(type(group) is dict and group and all(type(value) is dict and value == {} for value in group.values()),
+            'consumer_synthetic_build_original_group')
+    for entry in group:
+        safe_relative(entry)
+        require(entry.isascii() and entry in names and entry in before.get('files', []) and
+            entry.rsplit('/', 1)[0] == f'build/{framework}' and
+            Path(entry).name.casefold() in {identifier.casefold() + '.props', identifier.casefold() + '.targets'},
+            'consumer_synthetic_build_original_member')
+    # Default original direct flags retain BuildTransitive; no such selected item
+    # in this group proves the ClearIfExists branch even when that flag survives.
+    first = sorted(group, key=lambda entry: (entry.rfind('/'), entry.casefold()))[0]
+    require(first.rsplit('/', 1)[0] + '/_._' == marker and
+        not any(name.casefold() == marker.casefold() for name in names), 'consumer_synthetic_build_collision')
+    path = folder / marker
+    require(not path.exists() and not any(part.is_symlink() for part in (path, *path.parents)) and
+        not any(entry.relative_to(folder).as_posix().casefold() == marker.casefold() for entry in folder.rglob('*')),
+            'consumer_synthetic_build_cache')
+    return {'path': marker, 'kind': 'build', 'accounting': EMPTY_BUILD_ACCOUNTING, 'metadata': {},
+            'archive_sha256': record['archive_sha256'], 'origin': EMPTY_BUILD_ORIGIN}
+
+
 def verify_asset_payloads(assets: dict, framework: str, graph: dict, cache: Path, artifacts: Path, selected: dict,
                           *, catalog: dict | None = None, original_assets: dict | None = None) -> list[dict]:
     evidence = []
@@ -322,6 +410,11 @@ def verify_asset_payloads(assets: dict, framework: str, graph: dict, cache: Path
                         require(not graph[folded]['selected'], 'consumer_synthetic_content_selected')
                         payloads.append(synthetic_content_marker(assets, original_assets, framework, key,
                                                                 package, names, folder, catalog or {}, graph))
+                        continue
+                    if kind == 'build' and entry == f'build/{framework}/_._' and entry not in names:
+                        require(not graph[folded]['selected'], 'consumer_synthetic_build_selected')
+                        payloads.append(synthetic_build_marker(assets, original_assets, framework, key,
+                            package, names, folder, catalog or {}, graph, selected))
                         continue
                     require(entry in names, 'consumer_asset_archive_member')
                     content = package.read(entry)

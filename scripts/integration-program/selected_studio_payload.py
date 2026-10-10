@@ -351,13 +351,25 @@ def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, ru
             if type(asset) is dict and 'accounting' in asset:
                 transport.closed(asset, {'path', 'kind', 'accounting', 'metadata', 'archive_sha256', 'origin'},
                                  'selected_payload_synthetic_content')
-                require(folded not in selected and asset['path'] == consumer.EMPTY_CONTENT and
-                    asset['kind'] == 'contentFiles' and asset['accounting'] == consumer.EMPTY_CONTENT_ACCOUNTING and
-                    asset['origin'] in ('original-excluded-content', 'package-reference-transitive-content-exclusion') and
-                    type(asset['metadata']) is dict and asset['metadata'] == consumer.EMPTY_CONTENT_METADATA and
-                    type(asset['metadata'].get('copyToOutput')) is bool and
-                    asset['archive_sha256'] == restored[folded]['sha256'] and
+                require(folded not in selected and asset['archive_sha256'] == restored[folded]['sha256'] and
                     (asset['path'], asset['kind']) not in seen, 'selected_payload_synthetic_content_identity')
+                if asset['accounting'] == consumer.EMPTY_BUILD_ACCOUNTING:
+                    require(asset['path'] == f'build/{framework}/_._' and asset['kind'] == 'build' and
+                        asset['origin'] == consumer.EMPTY_BUILD_ORIGIN and type(asset['metadata']) is dict and
+                        asset['metadata'] == {}, 'selected_payload_synthetic_build_identity')
+                    edge = consumer.build_exclusion_edge(item['policy']['metadata']['dependency_groups'], framework, row['id'])
+                    prerequisites = [entry for entry in plan['prerequisites'] if
+                        entry['consumer'] == cell['id'] and entry['project'] == item['policy']['project'] and
+                        entry['framework'] == framework and entry['id'].casefold() == folded]
+                    require(len(prerequisites) == 1 and prerequisites[0]['eligible'] is True and
+                        prerequisites[0]['version'] == row['version'] and prerequisites[0]['range'] == edge['version'],
+                        'selected_payload_synthetic_build_prerequisite')
+                else:
+                    require(asset['path'] == consumer.EMPTY_CONTENT and asset['kind'] == 'contentFiles' and
+                        asset['accounting'] == consumer.EMPTY_CONTENT_ACCOUNTING and
+                        asset['origin'] in ('original-excluded-content', 'package-reference-transitive-content-exclusion') and
+                        type(asset['metadata']) is dict and asset['metadata'] == consumer.EMPTY_CONTENT_METADATA and
+                        type(asset['metadata'].get('copyToOutput')) is bool, 'selected_payload_synthetic_content_identity')
                 transport.digest(asset['archive_sha256'])
                 seen.add((asset['path'], asset['kind']))
                 continue
@@ -379,6 +391,9 @@ def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, ru
         content = [item for item in row['payloads'] if item['kind'] == 'contentFiles']
         require(not any('accounting' in item for item in content) or len(content) == 1,
                 'selected_payload_synthetic_content_group')
+        build = [item for item in row['payloads'] if item['kind'] == 'build']
+        require(not any('accounting' in item for item in build) or len(build) == 1,
+                'selected_payload_synthetic_build_group')
     require(set(payload_rows) == set(restored), 'selected_payload_restored_payload_bijection')
     if runtime:
         evidence = transport.closed(cell['runtime'], {'contract', 'loaded_assemblies'}, 'selected_payload_runtime')

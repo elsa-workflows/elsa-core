@@ -653,6 +653,153 @@ class SelectedProductConsumerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'consumer_input_hash'):
             proof.verify_asset_payloads(assets, 'net8.0', self.graph, cache, self.artifacts, selected)
 
+    def empty_build_fixture(self, framework='net8.0'):
+        version = {'net8.0': '8.0.24', 'net9.0': '9.0.13', 'net10.0': '10.0.3'}[framework]
+        identifier, root = 'Microsoft.AspNetCore.Components.WebAssembly', 'Elsa.Studio.Localization.BlazorWasm'
+        key, root_key = identifier + '/' + version, root + '/3.8.999'
+        temporary = tempfile.TemporaryDirectory(dir=self.root)
+        self.addCleanup(temporary.cleanup)
+        cache = Path(temporary.name).resolve()
+        folder = cache / identifier.lower() / version
+        folder.mkdir(parents=True)
+        archive = folder / (identifier.lower() + '.' + version + '.nupkg')
+        props = f'build/{framework}/{identifier}.props'
+        dll = f'lib/{framework}/{identifier}.dll'
+        entries = {props: b'<Project />', dll: b'original external DLL', f'build/{framework}/blazor.webassembly.js': b'js'}
+        with zipfile.ZipFile(archive, 'w') as package:
+            for name, data in entries.items(): package.writestr(name, data)
+        for name, data in entries.items():
+            path = folder / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(data)
+        root_archive = self.artifacts / (root + '.3.8.999.nupkg')
+        with zipfile.ZipFile(root_archive, 'w') as package: package.writestr('a.nuspec', b'<package />')
+        assets = {'targets': {framework: {
+            root_key: {'type': 'package', 'dependencies': {identifier: version}},
+            key: {'type': 'package', 'compile': {dll: {}}, 'build': {f'build/{framework}/_._': {}}}}},
+            'libraries': {key: {'type': 'package', 'sha512': 'original-native-content-hash', 'files': list(entries)}},
+            'project': {'frameworks': {framework: {'dependencies': {
+                root: {'target': 'Package', 'version': '[3.8.999, 3.8.999]', 'aliases': 'selected'}}}}}}
+        original = deepcopy(assets)
+        assets['projectFileDependencyGroups'] = {framework: [root + ' >= 3.8.999 <= 3.8.999']}
+        original['projectFileDependencyGroups'] = {framework: [identifier + ' >= ' + version]}
+        original['targets'][framework][key]['build'] = {props: {}}
+        original['project']['frameworks'][framework]['dependencies'] = {
+            identifier: {'target': 'Package', 'version': '[' + version + ', )', 'versionCentrallyManaged': True}}
+        graph = {identifier.lower(): {'selected': False, 'version': version}, root.lower(): {'selected': True, 'version': '3.8.999'}}
+        selected = {root.lower(): {'nupkg': root_archive.name, 'dependency_groups': [{'framework': framework,
+            'dependencies': [{'id': identifier, 'version': version, 'include': '', 'exclude': 'Build,Analyzers'}]}]}}
+        catalog = {(identifier.lower(), version): {'archive_sha256': metadata.sha256(archive.read_bytes()),
+                                                  'content_hash': 'original-native-content-hash'}}
+        return {'assets': assets, 'original_assets': original, 'catalog': catalog, 'cache': cache,
+                'folder': folder, 'archive': archive, 'graph': graph, 'selected': selected,
+                'framework': framework, 'key': key, 'root_key': root_key, 'props': props, 'dll': dll}
+
+    def verify_empty_build(self, values):
+        return proof.verify_asset_payloads(values['assets'], values['framework'], values['graph'], values['cache'],
+            self.artifacts, values['selected'], catalog=values['catalog'], original_assets=values['original_assets'])
+
+    def test_source_derived_build_exclusion_is_inert_for_each_supported_framework(self):
+        for framework in ('net8.0', 'net9.0', 'net10.0'):
+            values = self.empty_build_fixture(framework)
+            marker = self.verify_empty_build(values)[-1]['payloads'][-1]
+            with self.subTest(framework=framework):
+                self.assertEqual(marker, {'path': f'build/{framework}/_._', 'kind': 'build',
+                    'accounting': proof.EMPTY_BUILD_ACCOUNTING, 'metadata': {},
+                    'archive_sha256': metadata.sha256(values['archive'].read_bytes()), 'origin': proof.EMPTY_BUILD_ORIGIN})
+                self.assertNotIn('size', marker)
+                self.assertNotIn('sha256', marker)
+
+    def test_build_marker_requires_unique_excluding_actual_root_edge_and_default_flags(self):
+        values = self.empty_build_fixture()
+        for change in ('include_without_exclude', 'unknown_include', 'unknown_exclude', 'direct_flags', 'extra_direct',
+                       'wrong_root_version', 'nonpackage_root', 'second_incoming', 'duplicate_edge', 'edge_range',
+                       'wrong_group', 'original_flags', 'original_transitive', 'original_buildtransitive',
+                       'original_multitargeting', 'original_transitive_group', 'dependency_group', 'external_direct',
+                       'original_dependency_group'):
+            changed = deepcopy(values)
+            assets, original = changed['assets'], changed['original_assets']
+            root = changed['root_key'].rsplit('/', 1)[0]
+            edge = next(iter(changed['selected'].values()))['dependency_groups'][0]['dependencies'][0]
+            direct = assets['project']['frameworks']['net8.0']['dependencies']
+            target = assets['targets']['net8.0'][changed['root_key']]
+            if change == 'include_without_exclude': edge.update(include='All', exclude='Analyzers')
+            elif change == 'unknown_include': edge['include'] = 'Unknown'
+            elif change == 'unknown_exclude': edge['exclude'] += ',Unknown'
+            elif change == 'direct_flags': direct[root]['include'] = 'All'
+            elif change == 'extra_direct': direct['Extra'] = {'target': 'Package', 'version': '[1.0.0, 1.0.0]'}
+            elif change == 'external_direct': direct[edge['id']] = {'target': 'Package', 'version': '[8.0.24, 8.0.24]'}
+            elif change == 'dependency_group': assets['projectFileDependencyGroups']['net8.0'].append(edge['id'] + ' >= 8.0.24')
+            elif change == 'original_dependency_group': original['projectFileDependencyGroups']['net8.0'] = []
+            elif change == 'wrong_root_version': direct[root]['version'] = '[3.8.998, 3.8.998]'
+            elif change == 'nonpackage_root': target['type'] = 'project'
+            elif change == 'second_incoming':
+                assets['targets']['net8.0']['Other/1.0.0'] = {'type': 'package', 'dependencies': {edge['id']: edge['version']}}
+                changed['graph']['other'] = {'selected': False, 'version': '1.0.0'}
+            elif change == 'duplicate_edge': target['dependencies'][edge['id'].lower()] = edge['version']
+            elif change == 'edge_range': target['dependencies'][edge['id']] = '[8.0.24]'
+            elif change == 'wrong_group': next(iter(changed['selected'].values()))['dependency_groups'][0]['framework'] = 'net9.0'
+            elif change == 'original_flags': original['project']['frameworks']['net8.0']['dependencies'][edge['id']]['exclude'] = 'BuildTransitive'
+            elif change == 'original_transitive': original['project']['frameworks']['net8.0']['dependencies'].clear()
+            elif change == 'original_multitargeting': original['targets']['net8.0'][changed['key']]['buildMultiTargeting'] = {'buildMultiTargeting/Example.props': {}}
+            elif change == 'original_transitive_group': original['targets']['net8.0'][changed['key']]['buildTransitive'] = {'buildTransitive/Example.props': {}}
+            else: original['targets']['net8.0'][changed['key']]['build']['buildTransitive/Example.props'] = {}
+            with self.subTest(change=change), self.assertRaisesRegex(ValueError, 'consumer_synthetic_build_'):
+                self.verify_empty_build(changed)
+        # Native subtracts exclude after include; explicit All cannot undo excluded Build.
+        values['selected'][root.lower()]['dependency_groups'][0]['dependencies'][0]['include'] = 'All'
+        self.verify_empty_build(values)
+
+    def test_build_marker_rejects_wrong_origin_bytes_groups_and_metadata(self):
+        values = self.empty_build_fixture()
+        for change in ('snapshot', 'framework', 'version', 'native_hash', 'archive_hash', 'inventory',
+                       'original_missing', 'original_marker', 'metadata', 'mixed', 'mixed-reversed', 'path', 'selected'):
+            changed = deepcopy(values)
+            original = changed['original_assets']; target = changed['assets']['targets']['net8.0'][changed['key']]
+            group = original['targets']['net8.0'][changed['key']]['build']
+            if change == 'snapshot': changed['original_assets'] = None
+            elif change == 'framework': original['targets']['net9.0'] = original['targets'].pop('net8.0')
+            elif change == 'version': original['libraries'].clear()
+            elif change == 'native_hash': original['libraries'][changed['key']]['sha512'] = 'wrong'
+            elif change == 'archive_hash': next(iter(changed['catalog'].values()))['archive_sha256'] = 'f' * 64
+            elif change == 'inventory': original['libraries'][changed['key']]['files'] = []
+            elif change == 'original_missing': group['build/net8.0/Missing.props'] = {}
+            elif change == 'original_marker': group.clear(); group['build/net8.0/_._'] = {}
+            elif change == 'metadata': target['build']['build/net8.0/_._']['unexpected'] = False
+            elif change.startswith('mixed'):
+                target['build'][changed['props']] = {}
+                if change == 'mixed-reversed': target['build'] = dict(reversed(list(target['build'].items())))
+            elif change == 'path': target['build'] = {'build/net8.0/arbitrary_._': {}}
+            else:
+                folded = changed['key'].rsplit('/', 1)[0].lower()
+                changed['graph'][folded]['selected'] = True
+                changed['selected'][folded] = {'nupkg': changed['archive'].name}
+                (self.artifacts / changed['archive'].name).write_bytes(changed['archive'].read_bytes())
+            with self.subTest(change=change), self.assertRaises(ValueError): self.verify_empty_build(changed)
+        (values['folder'] / values['dll']).write_bytes(b'changed DLL')
+        with self.assertRaisesRegex(ValueError, 'consumer_input_hash'): self.verify_empty_build(values)
+
+    def test_build_marker_physical_members_and_cache_collisions_remain_byte_checked(self):
+        for change in ('cache', 'case_cache', 'symlink', 'case_archive', 'real_archive'):
+            values = self.empty_build_fixture(); path = values['folder'] / 'build/net8.0/_._'
+            if change == 'cache': path.write_bytes(b'not synthetic')
+            elif change == 'case_cache':
+                path = values['folder'] / 'BUILD/net8.0/_._'
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(b'case-folded physical marker')
+            elif change == 'symlink': path.symlink_to(values['folder'] / values['props'])
+            else:
+                name = 'build/net8.0/_._' if change == 'real_archive' else 'BUILD/NET8.0/_._'
+                with zipfile.ZipFile(values['archive'], 'a') as package: package.writestr(name, b'physical marker')
+                next(iter(values['catalog'].values()))['archive_sha256'] = metadata.sha256(values['archive'].read_bytes())
+            with self.subTest(change=change), self.assertRaises(ValueError): self.verify_empty_build(values)
+            if change == 'real_archive':
+                path.write_bytes(b'physical marker'); rows = self.verify_empty_build(values)
+                self.assertEqual(rows[-1]['payloads'][-1]['sha256'], metadata.sha256(b'physical marker'))
+                self.assertNotIn('accounting', rows[-1]['payloads'][-1])
+                path.write_bytes(b'changed physical marker')
+                with self.assertRaisesRegex(ValueError, 'consumer_input_hash'): self.verify_empty_build(values)
+
     def empty_content_fixture(self):
         identifier, version = 'Microsoft.AspNetCore.Components.CustomElements', '9.0.13'
         folded, key = identifier.lower(), identifier + '/' + version

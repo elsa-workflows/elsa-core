@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+import xml.etree.ElementTree as ET
 from unittest.mock import patch
 
 import product_release_metadata as metadata
@@ -185,6 +186,57 @@ def fixture(product, line, *, source_mutation=None):
     return files, expected, now
 
 
+def excluded_build_fixture(line='3.8', framework='net8.0', *, exclude='Build,Analyzers', include=''):
+    """Rehash all original archive/plan/execution joins before testing the marker guard."""
+    files, expected, now = studio_fixture(line)
+    plan, producer, consumer = (json.loads(files[name]) for name in ('plan.json', 'producer/receipt.json', 'consumer/receipt.json'))
+    identifier = 'Microsoft.AspNetCore.Components.WebAssembly'
+    version = {'net8.0': '8.0.24', 'net9.0': '9.0.13', 'net10.0': '10.0.3'}[framework]
+    policy = plan['inventory']['selected'][0]
+    group = next(row for row in policy['metadata']['dependency_groups'] if row['framework'] == framework)
+    group['dependencies'] = [{'id': identifier, 'version': version, 'include': include, 'exclude': exclude}]
+    plan['prerequisites'] = [{'consumer': policy['id'], 'project': policy['project'], 'framework': framework,
+        'id': identifier, 'range': version, 'version': version, 'feeds': [], 'eligible': True,
+        'reason': None, 'compatibility_scope': 'dependency-metadata-only'}]
+    observation = deepcopy(plan['histories'][0]['feeds'][0]['observation'])
+    observation['url'] = 'https://api.nuget.org/v3-flatcontainer/' + identifier.lower() + '/' + version + '/' + identifier.lower() + '.nuspec'
+    plan['prerequisites'][0]['feeds'] = [{key: value for key, value in plan['prerequisites'][0].items()
+        if key not in ('feeds', 'compatibility_scope')} | {'feed': 'https://api.nuget.org/v3/index.json', 'observation': observation}]
+    plan['prerequisites_excluded_from_publication'] = [identifier]
+    plan['inventory']['sha256'] = metadata.canonical_hash(metadata.public_inventory(plan['inventory']))
+    files['plan.json'] = encoded(plan); plan_hash = metadata.sha256(files['plan.json'])
+    for record in producer['packages']['selected']:
+        name = 'producer/nuget/' + record['file']; members = transport.zip_members(files[name], leaf=True)
+        spec = ET.fromstring(members['a.nuspec'])
+        node = next(node for node in spec.findall('metadata/dependencies/group') if node.get('targetFramework') == framework)
+        ET.SubElement(node, 'dependency', id=identifier, version=version, include=include, exclude=exclude)
+        members['a.nuspec'] = ET.tostring(spec)
+        data = zipped(list(members.items())); files[name] = data
+        record.update(sha256=metadata.sha256(data), size=len(data), inventory=transport.inventory(members))
+        if record['file'].endswith('.nupkg'): main_data = data
+    for execution in (producer['execution'], producer['npm']['execution'], consumer['execution'], consumer['producer_execution']):
+        execution['plan_sha256'] = plan_hash
+    producer['plan_sha256'] = plan_hash
+    files['producer/npm/receipt.json'] = encoded(producer['npm'])
+    files['producer/receipt.json'] = encoded(producer); producer_hash = metadata.sha256(files['producer/receipt.json'])
+    consumer.update(plan_sha256=plan_hash, artifact_receipt_sha256=producer_hash)
+    consumer['current_consumer_admission']['prerequisites'] = 1
+    consumer['producer_plan_admission']['artifact_receipt_sha256'] = producer_hash
+    for cell in consumer['coverage'] + consumer['runtime']:
+        cell['archive_sha256'] = metadata.sha256(main_data)
+        for row in cell['restored']: row.update(sha256=metadata.sha256(main_data), sha512=hashlib.sha512(main_data).hexdigest())
+    cell = next(row for row in consumer['coverage'] if row['framework'] == framework)
+    external = {'id': identifier, 'version': version, 'source': 'https://api.nuget.org/v3/index.json',
+        'sha256': 'a' * 64, 'archive_sha512': 'b' * 128, 'nuget_content_hash': 'A' * 86 + '==', 'signed': True}
+    marker = {'path': f'build/{framework}/_._', 'kind': 'build', 'accounting': payload.consumer.EMPTY_BUILD_ACCOUNTING,
+        'metadata': {}, 'archive_sha256': external['sha256'], 'origin': payload.consumer.EMPTY_BUILD_ORIGIN}
+    cell['restored'].append(external)
+    cell['restored_payloads'].append({'id': identifier, 'version': version, 'payloads': [marker,
+        {'path': f'lib/{framework}/{identifier}.dll', 'kind': 'runtime', 'sha256': 'c' * 64, 'size': 10}]})
+    files['consumer/receipt.json'] = encoded(consumer)
+    return files, expected, now
+
+
 class SelectedProductPayloadTests(unittest.TestCase):
     def validate(self, values):
         files, expected, now = values
@@ -312,6 +364,51 @@ class SelectedProductPayloadTests(unittest.TestCase):
                 cell['restored_payloads'].pop(); cell['restored'].pop()
             files['consumer/receipt.json'] = encoded(receipt)
             error = 'selected_payload_synthetic_content_group' if change.startswith('mixed') else '.'
+            with self.subTest(change=change), self.assertRaisesRegex(ValueError, error): self.validate(values)
+            self.files, self.context = values[:2]
+            seal_tests.SealContracts.assert_cli_rejected(self)
+
+    def test_source_bound_excluded_build_marker_seals_both_lines_and_each_framework(self):
+        for line in ('3.8', '3.9'):
+            for framework in ('net8.0', 'net9.0', 'net10.0'):
+                values = excluded_build_fixture(line, framework)
+                with self.subTest(line=line, framework=framework):
+                    self.validate(values)
+                    seal.stage(values[0], values[1], tuple(metadata.sha256(values[0][name]) for name in
+                        ('plan.json', 'producer/receipt.json', 'consumer/receipt.json')),
+                        contracts=payload.load_contracts(), now=values[2])
+
+    def test_rehashed_build_marker_requires_actual_plan_archive_exclusion(self):
+        for include, exclude in (('All', 'Analyzers'), ('Unknown', 'Build'), ('', 'Unknown')):
+            values = excluded_build_fixture(include=include, exclude=exclude)
+            with self.subTest(include=include, exclude=exclude), self.assertRaisesRegex(ValueError, 'consumer_synthetic_build_flags'):
+                self.validate(values)
+            self.files, self.context = values[:2]
+            seal_tests.SealContracts.assert_cli_rejected(self)
+
+    def test_rehashed_build_marker_is_closed_and_build_group_is_singleton_in_both_orders(self):
+        values = excluded_build_fixture(); baseline = json.loads(values[0]['consumer/receipt.json'])
+        for change in ('path', 'metadata', 'kind', 'origin', 'hash', 'fake_bytes', 'selected', 'version', 'mixed', 'mixed-reversed'):
+            receipt = deepcopy(baseline); cell = receipt['coverage'][0]
+            row = cell['restored_payloads'][-1]; marker = row['payloads'][0]
+            if change == 'path': marker['path'] = 'build/net8.0/arbitrary_._'
+            elif change == 'metadata': marker['metadata']['unexpected'] = False
+            elif change == 'kind': marker['kind'] = 'runtime'
+            elif change == 'origin': marker['origin'] = 'original-excluded-content'
+            elif change == 'hash': marker['archive_sha256'] = 'f' * 64
+            elif change == 'fake_bytes': marker.update(size=0, sha256=metadata.sha256(b''))
+            elif change == 'version':
+                row['version'] = cell['restored'][-1]['version'] = '8.0.1'
+            elif change == 'selected':
+                cell['restored_payloads'][0]['payloads'].append(marker)
+                cell['restored_payloads'].pop(); cell['restored'].pop()
+            else:
+                row['payloads'].append({'path': 'build/net8.0/Microsoft.AspNetCore.Components.WebAssembly.props',
+                    'kind': 'build', 'sha256': 'd' * 64, 'size': 10})
+                if change == 'mixed-reversed': row['payloads'].reverse()
+            values[0]['consumer/receipt.json'] = encoded(receipt)
+            error = ('selected_payload_synthetic_build_group' if change.startswith('mixed') else
+                'selected_payload_synthetic_build_prerequisite' if change == 'version' else '.')
             with self.subTest(change=change), self.assertRaisesRegex(ValueError, error): self.validate(values)
             self.files, self.context = values[:2]
             seal_tests.SealContracts.assert_cli_rejected(self)
