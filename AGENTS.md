@@ -91,6 +91,7 @@ Before handing off changes, verify the following when applicable:
 - Public API or behavior changes are documented.
 - New code follows nullable annotations and existing style.
 - No unrelated files were changed.
+- The change follows `.github/quality/PRINCIPLES.md`, which is the bar for public API, simplicity, domain language, tests, CI and docs. In particular, public API changes in 3.x deprecate rather than break (principle 6). `.github/quality/README.md` explains the audit and fix loop and its labels.
 
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
