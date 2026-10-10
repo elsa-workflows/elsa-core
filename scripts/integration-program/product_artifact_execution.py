@@ -10,6 +10,7 @@ from prove_consolidated_packages import require
 
 
 def validate_local_execution(execution: dict) -> None:
+    """Require a closed local execution record with a canonical UUID and UTC time."""
     require(set(execution) == {'kind', 'id', 'started_at'} and execution['kind'] == 'local-control',
             'artifact_execution_kind')
     identity = UUID(execution['id'])
@@ -19,6 +20,7 @@ def validate_local_execution(execution: dict) -> None:
 
 
 def local_execution(environment: dict | None = None) -> dict:
+    """Create a local execution identity only when no hosted run is asserted."""
     environment = os.environ if environment is None else environment
     require(environment.get('GITHUB_ACTIONS') != 'true' and not any(
         environment.get(key) for key in ('GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT')), 'hosted_control_not_supported')
@@ -82,6 +84,7 @@ def validate_selected_execution(execution: dict, role: str, controller: dict, pl
 
 
 def selected_execution(role: str, controller: dict, plan: dict, plan_hash: str) -> dict:
+    """Create and validate a local or hosted identity bound to the selected stage."""
     hosted_fields = ('GITHUB_ACTIONS', 'GITHUB_HEAD_REF', 'GITHUB_BASE_REF', *HOSTED_FIELDS.values())
     if not any(os.environ.get(key) for key in hosted_fields):
         return local_execution()

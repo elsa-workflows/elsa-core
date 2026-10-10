@@ -440,6 +440,7 @@ def verify_admission_catalog(data: dict, row: dict) -> dict:
 
 
 def verify_package_manifest(archive: zipfile.ZipFile, row: dict, version: str, *, require_sdk_metadata: bool = False) -> dict | None:
+    """Validate an archive's generated manifest against package and source policy."""
     required = any(properties["manifest_required"] for properties in row["framework_properties"].values())
     paths = {properties["manifest_path"] for properties in row["framework_properties"].values() if properties["manifest_required"]}
     catalog_required = require_sdk_metadata and row["id"] in ADMISSION_SHELL_FEATURES
@@ -929,6 +930,7 @@ def generated_family(row: dict, framework: str, relative: str) -> str | None:
 
 
 def verify_external_document(root: Path, row: dict, framework: str, document: dict, cache: dict) -> dict | None:
+    """Verify a recognized generator source document, or return None for other paths."""
     match = GENERATOR_SOURCE.fullmatch(document["path"])
     if match is None:
         return None

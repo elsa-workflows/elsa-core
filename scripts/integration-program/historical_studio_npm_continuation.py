@@ -18,6 +18,7 @@ COPY_SCRIPT = '''node -e "const fs=require('node:fs'),path=require('node:path'),
 
 
 def corrected_manifest(original: bytes) -> bytes:
+    """Replace the unique original WASM copy script with the reviewed lifecycle."""
     old = json.loads(original)['scripts']['copy:elsa-studio-wasm']
     encoded = json.dumps(old).encode()
     require(original.count(encoded) == 1, 'Studio inline lifecycle source mismatch')
@@ -25,6 +26,7 @@ def corrected_manifest(original: bytes) -> bytes:
 
 
 def verify_delta(row: dict, parent: dict, change: dict, before: bytes, after: bytes) -> None:
+    """Require the registered Studio ancestry, blob pins, and exact lifecycle edit."""
     expected = CONTINUATIONS.get(row['line'], {})
     require(row['product'] == 'studio' and row.get('source_kind') == 'core' and
             row['commit'] == expected.get('commit') and row['tree'] == expected.get('tree') and

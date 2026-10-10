@@ -160,6 +160,7 @@ def recipe_failure_diagnostics(output: Path, plan: dict, controller: dict, execu
 
 def public_recipe_failure(output: Path, output_existed: bool, stage: str, *,
                           plan_bytes: bytes | None = None, plan_sha256: str | None = None) -> dict:
+    """Expose validated diagnostics only from a newly created original-recipe failure."""
     if output_existed or stage != 'original-product-recipe':
         return {}
     try:
@@ -210,6 +211,7 @@ def failure_receipt_status(output: Path, output_existed: bool, *, mode: str, sta
 
 
 def fresh_public(observation: dict, checked_at: str) -> None:
+    """Require a recent public observation with valid identity metadata when present."""
     require(observation.get('status') in ('observed', 'missing'), 'plan_observation_unavailable')
     observed, checked = (datetime.fromisoformat(value) for value in (observation['observed_at'], checked_at))
     require(observed.tzinfo is not None and checked.tzinfo is not None and
@@ -292,6 +294,7 @@ def admit(data: bytes, expected_sha256: str, *, checked_at: str | None = None) -
 
 
 def verify_controller(root: Path, plan: dict) -> dict:
+    """Verify clean controller trees, planner input hashes, and the admitted source binding."""
     require(not metadata.git(root, 'status', '--porcelain'), 'artifact_controller_dirty')
     controller = {'commit': metadata.git(root, 'rev-parse', 'HEAD'), 'tree': metadata.git(root, 'rev-parse', 'HEAD^{tree}')}
     planner_identity = plan['controller']
@@ -375,6 +378,7 @@ def preflight(source: Path, plan: dict, private: Path) -> dict:
             'artifact_extensions_recipe_configuration')
 
     def inspect(label: str, command: list[str]) -> str:
+        """Run a toolchain probe and retain its command and output in a private log."""
         log = private / ('preflight-' + label + '.log')
         try:
             output = run(command, source, timeout=60, env=maintenance.build_environment())
@@ -415,6 +419,7 @@ def preflight(source: Path, plan: dict, private: Path) -> dict:
 
 
 def execute(root: Path, data: bytes, digest: str, output: Path, *, setup_only: bool = False) -> dict:
+    """Admit a plan, run its selected artifact recipe, and persist the stage receipt."""
     plan = admit(data, digest)
     require(not output.exists() and not output.resolve().is_relative_to(root.resolve()) and
             not any(part.is_symlink() for part in (output, *output.parents)), 'artifact_output_location')
@@ -493,6 +498,7 @@ def execute(root: Path, data: bytes, digest: str, output: Path, *, setup_only: b
 
 
 def main() -> int:
+    """Run the artifact CLI and report success or bounded failure diagnostics."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--plan', type=Path, required=True)
     parser.add_argument('--plan-sha256', required=True)

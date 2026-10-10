@@ -37,21 +37,25 @@ def load_contracts() -> dict:
 
 
 def _rows(value: object, label: str) -> list:
+    """Require a list of evidence rows using the supplied failure label."""
     require(type(value) is list, label)
     return value
 
 
 def _text(value: object) -> str:
+    """Require nonempty text without control characters."""
     require(type(value) is str and bool(value) and not any(ord(c) < 32 or ord(c) == 127 for c in value),
             'core_payload_text')
     return value
 
 
 def _hash(data: bytes) -> str:
+    """Return the SHA-256 digest of payload bytes."""
     return hashlib.sha256(data).hexdigest()
 
 
 def _member(members: dict, path: str, expected: str) -> bytes:
+    """Return a safe archive member only if its bytes match the expected digest."""
     safe_name(path)
     digest(expected)
     require(path in members and type(members[path]) is bytes and _hash(members[path]) == expected,
@@ -60,6 +64,7 @@ def _member(members: dict, path: str, expected: str) -> bytes:
 
 
 def _source(plan: dict, contracts: dict) -> dict:
+    """Validate the selected Core source and derive its admitted producer policy."""
     closed(contracts, {'producer', 'consumer', 'continuation'}, 'core_payload_contracts')
     source = plan['source']
     value = contracts['producer']['sources'].get(plan['line'])
@@ -98,6 +103,7 @@ def _skip_groups(contract: dict) -> list[dict[str, str]]:
 
 
 def _tests(value: dict, contract: dict) -> None:
+    """Validate the complete Core test census, counters, and source-bound skip sets."""
     closed(value, {'executions', 'inherited_skipped_placeholders'}, 'core_payload_tests')
     require(value['inherited_skipped_placeholders'] == [], 'core_payload_test_placeholders')
     seen, skipped = set(), {}
@@ -138,6 +144,7 @@ def _tests(value: dict, contract: dict) -> None:
 
 
 def _producer(value: dict) -> None:
+    """Validate the closed schema and hashes for SDK or generator provenance evidence."""
     kind = value.get('kind')
     if kind == 'sdk' and 'compiler_sha256' in value:
         closed(value, {'kind', 'sdk_version', 'compiler_sha256', 'frameworks'}, 'core_payload_sdk_producer')
@@ -205,6 +212,7 @@ def _manifest_hint_producer(value: dict, policy: dict) -> None:
 
 
 def _documents(row: dict, commit: str, policy: dict) -> None:
+    """Validate source document provenance or the explicit no-documents applicability branch."""
     documents = _rows(row['documents'], 'core_payload_documents')
     seen = set()
     for document in documents:
@@ -245,6 +253,7 @@ def _documents(row: dict, commit: str, policy: dict) -> None:
 
 
 def _symbols(row: dict, policy: dict, members: dict, symbol_inventory: dict, commit: str) -> None:
+    """Join assembly and PDB evidence to archive bytes and validate document provenance."""
     private = policy['symbols'] is False
     keys = SYMBOL_KEYS | ({'source_applicability'} if not row.get('documents') else set()) | ({'symbol_package'} if private else set())
     closed(row, keys, 'core_payload_symbol')
@@ -279,6 +288,7 @@ def _symbols(row: dict, policy: dict, members: dict, symbol_inventory: dict, com
 
 
 def _manifest(native: dict, policy: dict, members: dict, version: str) -> None:
+    """Validate generated manifest and SDK asset evidence against original package policy."""
     policies = policy['metadata']['original_output_policy']
     required = {p['ElsaPackageManifestPackagePath'] for p in policies.values() if
                 p['GenerateElsaPackageManifest'].lower() == p['ElsaPackageManifestIncludeInPackage'].lower() == 'true'}
@@ -342,6 +352,7 @@ def _excluded_outputs(plan: dict, producer: dict, selected: dict) -> None:
 
 
 def _native(plan: dict, producer: dict, selected: dict) -> dict:
+    """Validate Core package, assembly, symbol, and manifest receipts against admitted bytes."""
     _excluded_outputs(plan, producer, selected)
     rows = _rows(producer['package_verification'], 'core_payload_native_rows')
     require(len(rows) == len(selected), 'core_payload_native_inventory')
@@ -403,6 +414,7 @@ def _native(plan: dict, producer: dict, selected: dict) -> dict:
 
 
 def _runtime(plan: dict, consumer: dict, selected: dict, native: dict, contracts: dict) -> None:
+    """Join loaded Core assembly evidence to native policy and restored runtime assets."""
     require(consumer['runtime_contract_source'] == contracts['consumer']['sources'][plan['line']], 'core_payload_runtime_source')
     require({n.casefold() for n in REQUIRED_ASSEMBLIES} <= set(selected) and
             len(selected['elsa']['policy']['frameworks']) == 3 and set(selected['elsa']['policy']['frameworks']) == set(FRAMEWORKS),

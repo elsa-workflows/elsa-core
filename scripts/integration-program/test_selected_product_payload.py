@@ -23,6 +23,9 @@ SHAPES = Path(__file__).with_name('selected_product_plan_shapes.json')
 
 
 def fixture(product, line, *, source_mutation=None):
+    """Create complete synthetic payload bytes and expected identity for one product/release
+    cell.
+    """
     if product == 'studio':
         return studio_fixture(line)
     files, expected, now = studio_fixture()
@@ -244,6 +247,7 @@ def excluded_build_fixture(line='3.8', framework='net8.0', *, exclude='Build,Ana
 
 
 def original_flat_build_fixture():
+    """Add original flat-build accounting evidence to an Extensions payload fixture."""
     files, expected, now = fixture('extensions', '3.8')
     plan, receipt = (json.loads(files[name]) for name in ('plan.json', 'consumer/receipt.json'))
     cell = next(row for row in receipt['coverage'] if row['framework'] == 'net10.0')
@@ -263,11 +267,13 @@ def original_flat_build_fixture():
 
 class SelectedProductPayloadTests(unittest.TestCase):
     def validate(self, values):
+        """Run pure payload validation with exact plan and receipt hashes and loaded contracts."""
         files, expected, now = values
         return payload.validate(files, expected, *(metadata.sha256(files[name]) for name in
             ('plan.json', 'producer/receipt.json', 'consumer/receipt.json')), contracts=payload.load_contracts(), now=now)
 
     def test_full_six_cell_byte_dispatch(self):
+        """Verify full six cell byte dispatch."""
         for product in ('core', 'studio', 'extensions'):
             for line in ('3.8', '3.9'):
                 with self.subTest(product=product, line=line):
@@ -293,6 +299,7 @@ class SelectedProductPayloadTests(unittest.TestCase):
                     self.assertFalse(result['product_code_executed_during_readback'])
 
     def test_core_missing_branch_or_tag_observation_rehashed_payload_is_rejected(self):
+        """Verify Core missing branch or tag observation rehashed payload is rejected."""
         for line in ('3.8', '3.9'):
             for key in ('branch_observation', 'tag_observation'):
                 def missing(source):
@@ -305,6 +312,7 @@ class SelectedProductPayloadTests(unittest.TestCase):
                 seal_tests.SealContracts.assert_cli_rejected(self)
 
     def test_separate_sdk_download_ledger_is_typed_and_never_product_closure(self):
+        """Verify separate SDK download ledger is typed and never product closure."""
         def download():
             return {'id': 'Microsoft.NETCore.App.Ref', 'version': '8.0.27',
                 'source': 'https://api.nuget.org/v3/index.json', 'sha256': 'a'*64, 'archive_sha512': 'b'*128,
@@ -334,6 +342,7 @@ class SelectedProductPayloadTests(unittest.TestCase):
             seal_tests.SealContracts.assert_cli_rejected(self)
 
     def test_sdk_ledger_binds_original_assets_for_every_selected_cell(self):
+        """Verify SDK ledger binds original assets for every selected cell."""
         for product in ('core', 'studio', 'extensions'):
             for line in ('3.8', '3.9'):
                 values = fixture(product, line)
@@ -348,6 +357,7 @@ class SelectedProductPayloadTests(unittest.TestCase):
                 seal_tests.SealContracts.assert_cli_rejected(self)
 
     def test_synthetic_content_accounting_is_closed_external_only_and_not_payload_bytes(self):
+        """Verify synthetic content accounting is closed external only and not payload bytes."""
         values = fixture('studio', '3.8'); files = values[0]
         receipt = json.loads(files['consumer/receipt.json']); cell = receipt['coverage'][0]
         identifier = 'Microsoft.AspNetCore.Components.CustomElements'
@@ -393,6 +403,7 @@ class SelectedProductPayloadTests(unittest.TestCase):
             seal_tests.SealContracts.assert_cli_rejected(self)
 
     def test_source_bound_excluded_build_marker_seals_both_lines_and_each_framework(self):
+        """Verify source bound excluded build marker seals both lines and each framework."""
         for line in ('3.8', '3.9'):
             for framework in ('net8.0', 'net9.0', 'net10.0'):
                 values = excluded_build_fixture(line, framework)
@@ -403,6 +414,7 @@ class SelectedProductPayloadTests(unittest.TestCase):
                         contracts=payload.load_contracts(), now=values[2])
 
     def test_rehashed_build_marker_requires_actual_plan_archive_exclusion(self):
+        """Verify rehashed build marker requires actual plan archive exclusion."""
         for include, exclude in (('All', 'Analyzers'), ('Unknown', 'Build'), ('', 'Unknown')):
             values = excluded_build_fixture(include=include, exclude=exclude)
             with self.subTest(include=include, exclude=exclude), self.assertRaisesRegex(ValueError, 'consumer_synthetic_build_flags'):
@@ -411,6 +423,7 @@ class SelectedProductPayloadTests(unittest.TestCase):
             seal_tests.SealContracts.assert_cli_rejected(self)
 
     def test_rehashed_build_marker_is_closed_and_build_group_is_singleton_in_both_orders(self):
+        """Verify rehashed build marker is closed and build group is singleton in both orders."""
         values = excluded_build_fixture(); baseline = json.loads(values[0]['consumer/receipt.json'])
         for change in ('path', 'metadata', 'kind', 'origin', 'hash', 'fake_bytes', 'selected', 'version', 'mixed', 'mixed-reversed'):
             receipt = deepcopy(baseline); cell = receipt['coverage'][0]
@@ -438,12 +451,14 @@ class SelectedProductPayloadTests(unittest.TestCase):
             seal_tests.SealContracts.assert_cli_rejected(self)
 
     def test_original_flat_build_accounting_seals_all_three_inherited_groups(self):
+        """Verify original flat build accounting seals all three inherited groups."""
         values = original_flat_build_fixture()
         self.validate(values)
         seal.stage(values[0], values[1], tuple(metadata.sha256(values[0][name]) for name in
             ('plan.json', 'producer/receipt.json', 'consumer/receipt.json')), contracts=payload.load_contracts(), now=values[2])
 
     def test_rehashed_original_flat_build_groups_are_closed_and_source_bound(self):
+        """Verify rehashed original flat build groups are closed and source bound."""
         for change in ('original_hash', 'missing_hash', 'kind', 'path', 'metadata', 'archive_hash', 'origin',
                        'fake_bytes', 'selected', 'old_accounting', 'new_accounting_old_origin', 'mixed_build', 'mixed_build_reversed', 'mixed_multitargeting',
                        'mixed_multitargeting_reversed', 'duplicate_build', 'duplicate_multitargeting'):
@@ -472,6 +487,7 @@ class SelectedProductPayloadTests(unittest.TestCase):
             seal_tests.SealContracts.assert_cli_rejected(self)
 
     def test_frozen_retained_file_closure_is_conditional_on_product(self):
+        """Verify frozen retained file closure is conditional on product."""
         for product in ('core', 'studio', 'extensions'):
             files, _, _ = fixture(product, '3.9')
             with self.subTest(product=product), tempfile.TemporaryDirectory() as folder:
@@ -488,6 +504,7 @@ class SelectedProductPayloadTests(unittest.TestCase):
                     seal.freeze_inputs(root/'plan.json', hashes[0], root/'producer', hashes[1], root/'consumer/receipt.json', hashes[2])
 
     def test_excluded_metadata_cannot_alias_selected_archive(self):
+        """Verify excluded metadata cannot alias selected archive."""
         values = fixture('extensions', '3.9')
         files = values[0]
         receipt = json.loads(files['producer/receipt.json'])
@@ -499,6 +516,7 @@ class SelectedProductPayloadTests(unittest.TestCase):
             self.validate(values)
 
     def test_cross_product_native_schema_cannot_be_relabelled(self):
+        """Verify cross product native schema cannot be relabelled."""
         for product in ('core', 'extensions'):
             values = fixture(product, '3.8'); files = values[0]
             receipt = json.loads(files['producer/receipt.json'])
@@ -507,6 +525,7 @@ class SelectedProductPayloadTests(unittest.TestCase):
             with self.subTest(product=product), self.assertRaisesRegex(ValueError, 'producer'): self.validate(values)
 
     def test_extensions_manifest_and_assembly_policy_stay_strict(self):
+        """Verify Extensions manifest and assembly policy stay strict."""
         for mutation in ('manifest', 'native', 'assembly', 'placeholder'):
             values = fixture('extensions','3.9'); files = values[0]
             if mutation == 'assembly':
@@ -520,6 +539,7 @@ class SelectedProductPayloadTests(unittest.TestCase):
             with self.subTest(mutation=mutation), self.assertRaises(ValueError): self.validate(values)
 
     def test_malformed_extensions_schemas_reach_generic_cli_rejection(self):
+        """Verify malformed Extensions schemas reach generic CLI rejection."""
         for mutation in ('package_id', 'package_object', 'extensions_object', 'runtime_object', 'feature_runtime_object',
                          'optional_true', 'optional_zero', 'extensions_nonempty', 'dependency_extra', 'dependency_missing'):
             values = fixture('extensions', '3.8')
@@ -566,16 +586,19 @@ class SelectedProductPayloadTests(unittest.TestCase):
             seal_tests.SealContracts.assert_cli_rejected(self)
 
     def test_core_per_asset_native_policy_has_no_studio_version_fallback(self):
+        """Verify Core per asset native policy has no Studio version fallback."""
         values=fixture('core','3.9');files=values[0];r=json.loads(files['consumer/receipt.json'])
         r['runtime'][0]['runtime']['loaded_assemblies'][0]['version']='3.9.999.0';files['consumer/receipt.json']=encoded(r)
         with self.assertRaisesRegex(ValueError,'native_identity'):self.validate(values)
 
     def test_pure_common_and_specializations_do_not_read_paths(self):
+        """Verify pure common and specializations do not read paths."""
         values=fixture('extensions','3.8');files,expected,now=values;contracts=payload.load_contracts()
         with patch('pathlib.Path.read_bytes', side_effect=AssertionError('pure validator file IO')):
             payload.validate(files,expected,*(metadata.sha256(files[n]) for n in ('plan.json','producer/receipt.json','consumer/receipt.json')),contracts=contracts,now=now)
 
     def test_core_shape_exceptions_do_not_widen_other_products(self):
+        """Verify Core shape exceptions do not widen other products."""
         files, _, now = studio_fixture()
         contracts = payload.load_contracts()
         for mutation in ('empty_url', 'net7'):
@@ -588,6 +611,7 @@ class SelectedProductPayloadTests(unittest.TestCase):
                 schema.validate(plan, contracts, now=now)
 
     def test_actual_pinned_public_plan_object_shapes_are_closed(self):
+        """Verify actual pinned public plan object shapes are closed."""
         snapshot = json.loads(SHAPES.read_bytes())
         fixtures = snapshot['cells']
         self.assertEqual(set(fixtures), {p + '-' + l for p in ('core', 'studio', 'extensions') for l in ('3.8', '3.9')})

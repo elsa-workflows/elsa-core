@@ -19,6 +19,7 @@ WORKSPACE = Path('src/wrappers')
 
 
 def stage_version(path: Path, name: str, version: str, *, dependency: str | None = None) -> dict:
+    """Update the expected package's version and optional paired WASM dependency on disk."""
     package = json.loads(path.read_text())
     npm.require(package['name'] == name, 'historical-package-identity')
     package['version'] = version
@@ -29,6 +30,7 @@ def stage_version(path: Path, name: str, version: str, *, dependency: str | None
 
 
 def wasm_copy_inventory(wasm: dict, prefix: str) -> dict:
+    """Return the required WASM asset families under the requested destination prefix."""
     inventory = wasm['inventory']
     npm.require('appsettings.json' in inventory and all(any(path.startswith(root + '/') for path in inventory)
                 for root in ('_content', '_framework')), 'historical-copy-assets-missing')
@@ -37,6 +39,7 @@ def wasm_copy_inventory(wasm: dict, prefix: str) -> dict:
 
 
 def verify_installed(consumer: Path, archives: dict) -> dict:
+    """Verify installed tarball bytes and return the exact lifecycle-generated assets."""
     npm.require(set(archives) == {npm.WASM, npm.REACT}, 'historical-consumer-package-set')
     wasm = archives[npm.WASM][1]
     generated = wasm_copy_inventory(wasm, 'public/')
@@ -56,6 +59,7 @@ def verify_installed(consumer: Path, archives: dict) -> dict:
 
 
 def verify(path: Path, name: str, version: str, original: dict, wasm: dict | None = None) -> dict:
+    """Validate historical npm archive metadata, entrypoints, and paired WASM payloads."""
     archive, members = npm.read_archive(path)
     npm.require(archive['name'] == name and archive['version'] == version, 'historical-archive-identity')
     package = json.loads(members['package/package.json'])
@@ -78,6 +82,7 @@ def verify(path: Path, name: str, version: str, original: dict, wasm: dict | Non
 
 
 def consume(runner: npm.Runner, private: Path, archives: dict, workspace: Path) -> dict:
+    """Install local archives in a clean consumer and prove module imports and Vite build."""
     consumer = private / 'consumer'
     consumer.mkdir()
     producer = json.loads((workspace / 'package-lock.json').read_text())
@@ -120,6 +125,7 @@ def consume(runner: npm.Runner, private: Path, archives: dict, workspace: Path) 
 def prove(source: Path, private: Path, retained: Path, plan: dict, execution: dict, framework: str,
           controller: dict, plan_hash: str) -> dict:
     # Inherit the producer's exact envelope; this is not provider verification.
+    """Run the historical Studio npm recipe and retain its archive and consumer receipt."""
     validate_selected_execution(execution, 'artifact', controller, plan, plan_hash)
     npm.require(framework == 'net10.0', 'historical-host-framework')
     private.mkdir()

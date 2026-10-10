@@ -21,6 +21,7 @@ PRUNE_RANGE = re.compile(r'^\(,(\d+\.\d+\.\d+)\]$')
 
 
 def original_policy(assets: dict, framework: str, *, source_downloads: list[dict] | None = None) -> dict:
+    """Extract and validate original SDK pruning and download policy for one framework."""
     frame = assets.get('project', {}).get('frameworks', {}).get(framework, {})
     pruning = frame.get('packagesToPrune', {})
     require(type(pruning) is dict and all(type(k) is str and planner.ID.fullmatch(k) and
@@ -121,6 +122,7 @@ def bind_source_downloads(root: Path, plan: dict, originals: dict, output: Path,
 
 
 def effective_contexts(assets: dict, key: str, policies: dict | None = None) -> list[dict]:
+    """Return each restored occurrence's dependencies and applicable SDK pruning policy."""
     return [{'framework': framework, 'dependencies': target[key].get('dependencies', {}),
              'packages_to_prune': (policies.get(framework, {'pruning': {}}) if policies is not None else
                                   original_policy(assets, framework))['pruning']}
@@ -128,12 +130,14 @@ def effective_contexts(assets: dict, key: str, policies: dict | None = None) -> 
 
 
 def validate_projection(assets: dict, framework: str, policy: dict) -> None:
+    """Require restored SDK policy to match the original framework projection."""
     actual = original_policy(assets, framework)
     require(actual == policy, 'consumer_sdk_restore_policy_changed')
 
 
 def pruned_edge(package: dict, framework: str, identifier: str, dependency_range: str,
                 policy: dict, semantics: planner.Semantics) -> bool:
+    """Return whether native range semantics and original contexts justify pruning an edge."""
     threshold = policy['pruning'].get(identifier)
     if not threshold:
         return False
@@ -190,6 +194,7 @@ def freeze_downloads(originals: dict, inspector: Path, pool: Path, semantics: pl
 
 def verify_downloads(assets: dict, framework: str, policy: dict, catalog: dict, cache: Path,
                      sources: dict, mapping: dict, inspector: Path, *, proof: bool) -> list[dict]:
+    """Verify SDK downloads against original feed, catalog, and optional cache evidence."""
     validate_projection(assets, framework, policy)
     records = []
     for row in policy['downloads']:
@@ -218,6 +223,7 @@ def verify_downloads(assets: dict, framework: str, policy: dict, catalog: dict, 
 
 
 def retained_policy(policy: dict, pruned: list[dict], downloads: list[dict], original_assets_sha256: str) -> dict:
+    """Project SDK restore evidence with pruning and original-assets hashes."""
     return {'sdk_version': metadata.SDK, 'original_assets_sha256': original_assets_sha256,
         'pruning_enabled': bool(policy['pruning']),
         'pruning_sha256': metadata.sha256(json.dumps(policy['pruning'], sort_keys=True).encode()),

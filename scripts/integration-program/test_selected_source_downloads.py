@@ -15,6 +15,7 @@ import selected_consumer_sdk as sdk
 
 class Semantics:
     def call(self, operation, **values):
+        """Emulate the native version and feed operations used by source-download tests."""
         if operation == 'versions':
             return [{'normalized': value} for value in values['values']]
         if operation == 'feeds':
@@ -24,6 +25,7 @@ class Semantics:
 
 class SourceDownloadTests(unittest.TestCase):
     def setUp(self):
+        """Create isolated original project assets and per-framework PackageDownload evaluations."""
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name).resolve()
@@ -43,6 +45,7 @@ class SourceDownloadTests(unittest.TestCase):
                 {'Identity': 'Bpmn.Model', 'Version': '[0.2.0]'}]}} for framework in self.frameworks}
 
     def bind(self, *, plan=None, assets=None, evaluated=None, check_evaluation=None):
+        """Bind source downloads using mocked checkout and native metadata evaluation."""
         plan, assets = plan or self.plan, assets or self.assets
         evaluated = evaluated or self.evaluated
         temporary = tempfile.TemporaryDirectory(dir=self.root)
@@ -72,6 +75,7 @@ class SourceDownloadTests(unittest.TestCase):
         return result, source.call_count, native.call_count
 
     def test_admitted_source_version_policy_preserves_cold_isolation(self):
+        """Verify admitted source version policy preserves cold isolation."""
         cells = json.loads(Path(__file__).with_name('selected_product_plan_shapes.json').read_bytes())['cells']
         catalog = continuation.load_contract()
         ambient = {key: 'untrusted-ambient' for key in ('VERSION', 'RestoreConfigFile', 'HOME', 'DOTNET_CLI_HOME',
@@ -119,6 +123,9 @@ class SourceDownloadTests(unittest.TestCase):
                         self.assertEqual((binding, plan['requested_version']), recipe.call_args.args[1:])
 
     def test_source_downloads_bind_all_selected_tfms_and_never_enter_sdk_projection(self):
+        """Verify source downloads bind all selected target frameworks and never enter SDK
+        projection.
+        """
         binding, checkouts, evaluations = self.bind()
         self.assertEqual((1, 3), (checkouts, evaluations))
         self.assertEqual(self.plan['source'], binding['source'])
@@ -140,6 +147,7 @@ class SourceDownloadTests(unittest.TestCase):
                 sdk.validate_projection(self.assets, framework, policy)
 
     def test_unbound_source_rows_and_source_original_disagreement_fail_closed(self):
+        """Verify unbound source rows and source original disagreement fail closed."""
         with self.assertRaisesRegex(ValueError, 'consumer_sdk_original_download'):
             sdk.original_policy(self.assets, 'net8.0')
         for change in ('missing', 'extra', 'wrong-version', 'duplicate', 'range', 'wrong-project', 'wrong-tfm', 'wrong-sdk'):
@@ -157,6 +165,7 @@ class SourceDownloadTests(unittest.TestCase):
                 self.bind(evaluated=evaluated)
 
     def test_missing_original_tfm_row_and_changed_project_hash_fail_closed(self):
+        """Verify missing original target framework row and changed project hash fail closed."""
         assets = deepcopy(self.assets)
         assets['project']['frameworks']['net9.0']['downloadDependencies'].clear()
         with self.assertRaises(ValueError): self.bind(assets=assets)
@@ -165,6 +174,7 @@ class SourceDownloadTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'consumer_source_download_project_hash'): self.bind(plan=plan)
 
     def test_sdk_only_snapshots_do_not_evaluate_source(self):
+        """Verify SDK only snapshots do not evaluate source."""
         assets = deepcopy(self.assets)
         for frame in assets['project']['frameworks'].values(): frame['downloadDependencies'].pop(0)
         with patch.object(metadata, 'metadata_environment', side_effect=AssertionError('SDK-only source evaluation')):
@@ -173,6 +183,7 @@ class SourceDownloadTests(unittest.TestCase):
         self.assertEqual((0, 0), (checkouts, evaluations))
 
     def test_source_only_original_rows_stay_private_and_outside_frozen_sdk_catalog(self):
+        """Verify source only original rows stay private and outside frozen SDK catalog."""
         binding, _, _ = self.bind()
         assets = deepcopy(self.assets)
         assets['project']['frameworks'] = {'net10.0': assets['project']['frameworks']['net10.0']}
@@ -188,6 +199,7 @@ class SourceDownloadTests(unittest.TestCase):
         self.assertEqual([], private['toolchain_downloads'])
 
     def test_source_binding_cannot_override_sdk_pack_case_or_version(self):
+        """Verify source binding cannot override SDK pack case or version."""
         for identifier in ('Microsoft.NETCore.App.Ref', 'microsoft.netcore.app.ref'):
             with self.subTest(identifier=identifier), self.assertRaisesRegex(ValueError, 'consumer_source_download_declarations'):
                 sdk.original_policy(self.assets, 'net8.0', source_downloads=[{'id': identifier, 'version': '99.0.0'}])

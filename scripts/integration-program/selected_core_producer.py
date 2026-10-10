@@ -21,6 +21,7 @@ def original(row: dict) -> bool:
 
 def source_binding(row: dict) -> dict:
     # prepare() adds a clone origin after the plan's closed source binding.
+    """Remove the optional repository field after requiring the canonical Core repository."""
     if 'source_repository' not in row:
         return row
     require(row['source_repository'] == 'elsa-workflows/elsa-core', 'core_source_repository')
@@ -28,6 +29,7 @@ def source_binding(row: dict) -> dict:
 
 
 def policy(row: dict) -> dict:
+    """Return the pinned original or reviewed-continuation Core source policy."""
     row = source_binding(row)
     require(original(row), 'core_original_selection')
     value = json.loads(CONTRACT.read_text())['sources'].get(row.get('line'))
@@ -40,6 +42,7 @@ def policy(row: dict) -> dict:
 
 
 def verify_source(root: Path, row: dict) -> None:
+    """Verify the selected Core tree, source blobs, and any admitted continuation ancestry."""
     row = source_binding(row)
     value = policy(row)
     if row.get('kind') == continuation.KIND:
@@ -51,6 +54,7 @@ def verify_source(root: Path, row: dict) -> None:
 
 
 def validate_plan(plan: dict) -> None:
+    """Require the Core plan's source, recipe, test inventory, and symbol policy to agree."""
     if plan['source'].get('kind') == continuation.KIND:
         require(set(plan['source']) == continuation.SOURCE_KEYS, 'core_continuation_source_shape')
     value = policy(plan['source'])
@@ -68,6 +72,7 @@ def validate_plan(plan: dict) -> None:
 
 
 def environment(row: dict, version: str, supplied: dict | None = None) -> dict:
+    """Create the original Core recipe environment with version and supplied provider gates."""
     policy(row)
     supplied = os.environ if supplied is None else supplied
     result = maintenance.build_environment()
@@ -82,6 +87,7 @@ def environment(row: dict, version: str, supplied: dict | None = None) -> dict:
 
 
 def recipes(row: dict, version: str, output: Path) -> list[tuple[str, list[str]]]:
+    """Return the original Core build/pack command and every required test lane."""
     value = policy(row)
     commands = [('.', ['./build.sh', 'Compile+Pack', '--version', version, '--analyseCode', 'true',
                        '--configuration', 'Release'])]
@@ -99,6 +105,7 @@ def recipes(row: dict, version: str, output: Path) -> list[tuple[str, list[str]]
 
 
 def expected_skips(row: dict, supplied: dict) -> dict[str, str]:
+    """Derive exact declared and provider-dependent skips from the source policy."""
     value = policy(row)
     result = {case['display_identity']: case['reason'] for case in value['declared_skips']}
     conditional = value['conditional']
@@ -120,6 +127,7 @@ def expected_skips(row: dict, supplied: dict) -> dict[str, str]:
 
 def verify_outcomes(definitions: list, outcomes: list, counters: dict, row: dict, supplied: dict,
                     project: str) -> list[dict]:
+    """Require complete test outcomes, exact allowed skips, and consistent TRX counters."""
     allowed = expected_skips(row, supplied)
     prefix = 'Elsa.UserTasks.Persistence.ConformanceTests.' if Path(project).stem == 'Elsa.UserTasks.Persistence.ConformanceTests' else None
     required = {key for key in allowed if (prefix and key.startswith(prefix)) or
@@ -149,6 +157,7 @@ def verify_outcomes(definitions: list, outcomes: list, counters: dict, row: dict
 
 
 def verify_assembly(details: dict, package: dict, framework: str, row: dict) -> None:
+    """Require assembly versions to match original per-framework policy and source commit."""
     policy(row)
     expected = package['framework_properties'][framework]['assembly_policy']
     require(details['assembly_version'] == expected['AssemblyVersion'] and
@@ -157,6 +166,7 @@ def verify_assembly(details: dict, package: dict, framework: str, row: dict) -> 
 
 
 def private_symbols(source: Path, package: dict, framework: str, payload: bytes) -> Path:
+    """Return the private sample-package PDB after verifying its DLL and safe source location."""
     require((package['id'], package['project'], package['symbols']) ==
             ('Elsa.SamplePackage', SAMPLE_PROJECT, False), 'core_original_symbols_policy')
     folder = source / Path(package['project']).parent / 'bin/Release' / framework

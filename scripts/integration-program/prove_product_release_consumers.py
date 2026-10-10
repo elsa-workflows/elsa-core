@@ -104,6 +104,7 @@ PUBLIC_FAILURE_STAGES = frozenset(('consumer-setup', 'consumer-semantics-preflig
 
 
 def runtime_contract(plan: dict) -> dict:
+    """Return the product's representative runtime fixture, checks, and assembly policy."""
     if plan['product'] in ('studio', 'extensions') and plan.get('line') == '3.9':
         maintenance39.validate_plan(plan)
     if plan['product'] == 'core':
@@ -125,6 +126,7 @@ def runtime_contract(plan: dict) -> dict:
 
 
 def read_bound(path: Path, digest: str) -> bytes:
+    """Read a regular input file only if its path is symlink-free and its digest matches."""
     require(path.is_file() and not any(part.is_symlink() for part in (path, *path.parents)), 'consumer_input_path')
     data = path.read_bytes()
     require(metadata.sha256(data) == digest, 'consumer_input_hash')
@@ -132,6 +134,7 @@ def read_bound(path: Path, digest: str) -> bytes:
 
 
 def safe_relative(value: str) -> str:
+    """Require a canonical relative POSIX path without traversal or backslashes."""
     path = PurePosixPath(value)
     require(value and path.as_posix() == value and not path.is_absolute() and '..' not in path.parts and
             '\\' not in value, 'consumer_relative_path')
@@ -162,6 +165,7 @@ def admit_producer_stage(plan_bytes: bytes, plan_hash: str, receipt_bytes: bytes
 
 
 def verify_producer_controllers(root: Path, plan: dict, receipt: dict) -> None:
+    """Verify producer controller trees and the planner inputs committed in each tree."""
     require(receipt.get('planner_controller') == plan['controller'], 'consumer_planner_controller_identity')
     artifact = receipt.get('artifact_controller', {})
     require(isinstance(artifact, dict) and set(artifact) == {'commit', 'tree'} and
@@ -176,6 +180,7 @@ def verify_producer_controllers(root: Path, plan: dict, receipt: dict) -> None:
 
 
 def admit_artifacts(plan: dict, plan_hash: str, receipt: dict, artifacts: Path, root: Path) -> dict:
+    """Bind successful producer evidence and exact archive bytes to the selected plan."""
     require(receipt['success'] is True and receipt['artifact_proof'] is True and receipt['published'] is False and
             receipt['plan_sha256'] == plan_hash and receipt['source'] == plan['source'] and
             all(receipt[key] == plan[key] for key in ('product', 'line')) and
@@ -222,6 +227,7 @@ def admit_artifacts(plan: dict, plan_hash: str, receipt: dict, artifacts: Path, 
 
 
 def load_snapshots(plan: dict, plan_hash: str, folder: Path) -> dict:
+    """Load original restore assets after verifying their receipt, hashes, and framework joins."""
     path = folder / 'receipt.private.json'
     require(path.is_file() and not any(part.is_symlink() for part in (path, *path.parents)), 'consumer_snapshot_path')
     receipt = planner.read_json(path.read_bytes())
@@ -248,6 +254,7 @@ def load_snapshots(plan: dict, plan_hash: str, folder: Path) -> dict:
 
 
 def render_config(artifacts: Path, graph: dict, policy: dict) -> str:
+    """Render an isolated NuGet configuration with sources mapped to the admitted graph."""
     root = ET.Element('configuration')
     sources = ET.SubElement(root, 'packageSources')
     ET.SubElement(sources, 'clear')
@@ -270,6 +277,7 @@ def render_config(artifacts: Path, graph: dict, policy: dict) -> str:
 
 def validate_restored(assets: dict, framework: str, graph: dict, root: Path, cache: Path, artifacts: Path,
                       policy: dict) -> None:
+    """Require the expected restored graph, sources, configuration, and exclusive cache."""
     require(set(assets['targets']) == {framework}, 'consumer_restore_framework')
     actual = {}
     for key, item in assets['targets'][framework].items():
@@ -290,6 +298,7 @@ def validate_restored(assets: dict, framework: str, graph: dict, root: Path, cac
 
 def verify_cache(graph: dict, policy: dict, cache: Path, artifacts: Path, selected: dict,
                  restored: dict, inspector: Path, catalog: dict) -> list[dict]:
+    """Verify cached packages against selected archives or the original external catalog."""
     records = []
     for folded, row in sorted(graph.items()):
         folder = cache / folded / row['version']
@@ -535,6 +544,7 @@ def original_excluded_build_marker(assets: dict, original: dict, framework: str,
 
 def verify_asset_payloads(assets: dict, framework: str, graph: dict, cache: Path, artifacts: Path, selected: dict,
                           *, catalog: dict | None = None, original_assets: dict | None = None) -> list[dict]:
+    """Join restored payload bytes and permitted empty markers to archive evidence."""
     evidence = []
     for key, library in assets['targets'][framework].items():
         identifier, version = key.rsplit('/', 1)
@@ -573,6 +583,7 @@ def verify_asset_payloads(assets: dict, framework: str, graph: dict, cache: Path
 
 
 def render_project(identifier: str, version: str, framework: str, references: list[str], *, executable: bool, managed: bool, locked: bool = True, sdk_policy: dict | None = None) -> str:
+    """Render a consumer project with one exact package reference and the required SDK policy."""
     project = ET.Element('Project', Sdk='Microsoft.NET.Sdk')
     properties = ET.SubElement(project, 'PropertyGroup')
     for name, value in {'TargetFramework': framework, 'OutputType': 'Exe' if executable else 'Library',
@@ -594,6 +605,7 @@ def render_project(identifier: str, version: str, framework: str, references: li
 
 
 def validate_ledger(plan: dict, ledger: list[dict]) -> None:
+    """Require exactly one successful compile cell for every selected package and framework."""
     expected = {(row['id'], framework) for row in plan['inventory']['selected'] for framework in row['frameworks']}
     actual = [(row['id'], row['framework']) for row in ledger]
     require(len(actual) == len(expected) and set(actual) == expected and all(row['success'] is True for row in ledger),
@@ -601,11 +613,13 @@ def validate_ledger(plan: dict, ledger: list[dict]) -> None:
 
 
 def retain_runtime_rows(verified: list[dict]) -> list[dict]:
+    """Project verified assembly identities and hashes without private runtime paths."""
     return [{key: row[key] for key in ('name', 'version', 'informationalVersion', 'sha256',
             'package_id', 'package_version', 'package_asset')} for row in verified]
 
 
 def cold_environment(output: Path) -> tuple[Path, dict]:
+    """Create an isolated consumer environment with a new package cache and CLI home."""
     cache, home = output / 'packages', output / 'home'
     require(not cache.exists(), 'consumer_cache_not_empty')
     home.mkdir()
@@ -620,6 +634,7 @@ def cold_environment(output: Path) -> tuple[Path, dict]:
 def discover(plan: dict, package: dict, framework: str, selected: dict, artifacts: Path,
              semantics: planner.Semantics, catalog: dict, original_policy: dict, output: Path,
              references: list[str], *, runtime: bool, managed: bool) -> tuple[dict, dict, bytes]:
+    """Restore an isolated discovery project and return its audited graph, feed policy, and lock."""
     output.mkdir()
     consumers.prepare_isolation(output, metadata.SDK)
     sdk_policy = original_policy['sdk_projects'][package['policy']['project']][framework]
@@ -659,6 +674,9 @@ def discover(plan: dict, package: dict, framework: str, selected: dict, artifact
 def cell(plan: dict, package: dict, framework: str, selected: dict, artifacts: Path,
          semantics: planner.Semantics, output: Path, *, catalog: dict,
          original_policy: dict, inspector: Path, runtime: bool = False) -> dict:
+    """Prove one package/framework restore and compile, optionally exercising its runtime
+    fixture.
+    """
     output.mkdir()
     isolation = consumers.prepare_isolation(output, metadata.SDK)
     project = output / 'Consumer.csproj'
@@ -728,6 +746,7 @@ def cell(plan: dict, package: dict, framework: str, selected: dict, artifacts: P
 
 def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, receipt_hash: str,
             artifacts: Path, snapshots: Path, output: Path, *, retire_caches: bool = False) -> dict:
+    """Admit producer evidence, refresh prerequisites, and retain complete consumer results."""
     plan, receipt, historical_admission = admit_producer_stage(read_bound(plan_path, plan_hash), plan_hash,
         read_bound(receipt_path, receipt_hash), receipt_hash)
     if plan['product'] == 'core':
@@ -800,6 +819,7 @@ def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, rec
             (private / 'original-external-catalog/catalog.private.json').read_bytes())
 
         def prove_cell(package: dict, framework: str, name: str, *, runtime: bool = False) -> dict:
+            """Prove one consumer cell and optionally retire its caches after success."""
             cell_output = private / name
             completed = cell(plan, package, framework, selected, artifacts, semantics, cell_output,
                 catalog=catalog, original_policy=original_policy, inspector=inspector, runtime=runtime)
@@ -835,6 +855,7 @@ def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, rec
 
 
 def main() -> int:
+    """Run the consumer CLI and report bounded stage and dependency-range failures."""
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('plan', 'artifact-receipt', 'artifacts', 'planning-assets', 'output'):
         parser.add_argument('--' + name, type=Path, required=True)

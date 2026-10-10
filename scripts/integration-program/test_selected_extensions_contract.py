@@ -18,12 +18,14 @@ from selected_maintenance_test_support import patch_offline_local_execution
 class ExtensionsControlTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        """Force offline local execution identities for Extensions artifact contract tests."""
         super().setUpClass()
         local_execution_patch = patch_offline_local_execution(artifacts)
         local_execution_patch.start()
         cls.addClassCleanup(local_execution_patch.stop)
 
     def test_contract_is_bound_to_exact_original_source_and_all_blobs(self):
+        """Verify contract is bound to exact original source and all blobs."""
         contract.verify_source(artifacts.ROOT, contract.SOURCE)
         with self.assertRaisesRegex(ValueError, 'extensions_contract_source'):
             contract.verify_source(artifacts.ROOT, 'f' * 40)
@@ -32,6 +34,7 @@ class ExtensionsControlTests(unittest.TestCase):
                 contract.verify_source(artifacts.ROOT, contract.SOURCE)
 
     def policy(self):
+        """Create the source-bound HTTP package manifest policy for all three frameworks."""
         policy = {'id': 'Elsa.IO.Http', 'frameworks': ['net8.0', 'net9.0', 'net10.0'],
                   'framework_properties': {tfm: {'manifest_required': True, 'manifest_path': 'elsa-package.json'}
                                            for tfm in ('net8.0', 'net9.0', 'net10.0')}}
@@ -39,6 +42,7 @@ class ExtensionsControlTests(unittest.TestCase):
         return policy
 
     def manifest(self):
+        """Return a synthetic HTTP manifest with the pinned feature and dependency identities."""
         return {'schemaVersion': '1.0', 'package': {'id': 'Elsa.IO.Http', 'version': '3.8.999'},
                 'compatibility': {'runtimeKinds': ['elsa.server']},
                 'extensions': {'targetFrameworks': ['net8.0', 'net9.0', 'net10.0'], 'repositoryUrl': packages.CORE_URL},
@@ -46,6 +50,7 @@ class ExtensionsControlTests(unittest.TestCase):
                     dependencies=[{'featureId': 'Elsa.IO.Http.I/O', 'optional': False, 'extensions': {}}])]}
 
     def check_manifest(self, folder, data, policy=None):
+        """Write fixture manifest bytes into an archive and validate the expected SDK metadata."""
         path = folder / 'manifest.nupkg'
         with zipfile.ZipFile(path, 'w') as archive:
             if data is not None:
@@ -54,6 +59,7 @@ class ExtensionsControlTests(unittest.TestCase):
             return packages.verify_package_manifest(archive, policy or self.policy(), '3.8.999', require_sdk_metadata=True)
 
     def test_generated_http_manifest_checks_original_schema_feature_and_dependency(self):
+        """Verify generated http manifest checks original schema feature and dependency."""
         with tempfile.TemporaryDirectory() as directory:
             folder = Path(directory)
             result = self.check_manifest(folder, self.manifest())
@@ -85,6 +91,7 @@ class ExtensionsControlTests(unittest.TestCase):
                 self.check_manifest(folder, None, policy)
 
     def test_native_dependency_defaults_are_bound_to_source_generator_and_schema(self):
+        """Verify native dependency defaults are bound to source generator and schema."""
         with tempfile.TemporaryDirectory() as directory:
             for key, value in (('source_commit', 'f' * 40), ('manifest_dependency_generator', '0.0.1-preview.51')):
                 policy = self.policy(); policy[key] = value
@@ -95,6 +102,7 @@ class ExtensionsControlTests(unittest.TestCase):
                 self.check_manifest(Path(directory), self.manifest(), policy)
 
     def test_sdk_manifest_and_build_assets_require_exact_emitted_bytes(self):
+        """Verify SDK manifest and build assets require exact emitted bytes."""
         with tempfile.TemporaryDirectory() as directory:
             folder = Path(directory).resolve()
             emitted = folder / 'obj/elsa-package.json'; emitted.parent.mkdir(); emitted.write_text(json.dumps(self.manifest()))
@@ -113,6 +121,7 @@ class ExtensionsControlTests(unittest.TestCase):
                             packages.verify_sdk_assets(archive, policy, required=True)
 
     def test_extensions_preflight_never_requires_node_npm_or_a_studio_host(self):
+        """Verify Extensions preflight never requires node npm or a Studio host."""
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory)
             commands = []
@@ -134,6 +143,7 @@ class ExtensionsControlTests(unittest.TestCase):
                 self.assertEqual(['dotnet', '--list-sdks'], inspect.call_args.args[0])
 
     def test_extensions_original_recipe_explicitly_selects_release_for_both_lines(self):
+        """Verify Extensions original recipe explicitly selects release for both lines."""
         candidates = artifacts.maintenance.registered_core_candidates(artifacts.maintenance.load_register())
         for line in ('3.8', '3.9'):
             row = next(row for row in candidates if row['product'] == 'extensions' and row['line'] == line and
@@ -144,6 +154,9 @@ class ExtensionsControlTests(unittest.TestCase):
                      '--analyseCode', 'true'])])
 
     def test_extensions_preflight_rejects_missing_debug_or_duplicate_configuration_before_processes(self):
+        """Verify Extensions preflight rejects missing debug or duplicate configuration before
+        processes.
+        """
         command = ['./build.sh', 'Compile+Test+Pack', '--configuration', 'Release', '--version', '3.8.999',
                    '--analyseCode', 'true']
         malformed = [command[:2] + command[4:], command[:3] + ['Debug'] + command[4:],
@@ -160,6 +173,7 @@ class ExtensionsControlTests(unittest.TestCase):
                     run.assert_not_called()
 
     def test_extensions_adapter_runs_original_recipe_and_skips_studio_npm(self):
+        """Verify Extensions adapter runs original recipe and skips Studio npm."""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve(); controller = root / 'controller'; controller.mkdir()
             output = root / 'control'
@@ -194,6 +208,7 @@ class ExtensionsControlTests(unittest.TestCase):
             self.assertNotIn('npm', result)
 
     def test_runtime_uses_only_selected_http_root_and_distinct_assembly_policy(self):
+        """Verify runtime uses only selected http root and distinct assembly policy."""
         plan = {'product': 'extensions', 'requested_version': '3.8.999'}
         chosen = proof.runtime_contract(plan)
         self.assertEqual('elsa.io.http', chosen['package'])
@@ -208,6 +223,7 @@ class ExtensionsControlTests(unittest.TestCase):
         self.assertNotIn('new CompressionIOShellFeature', fixture)
 
     def test_extensions_loaded_archive_bytes_keep_package_and_assembly_versions_separate(self):
+        """Verify Extensions loaded archive bytes keep package and assembly versions separate."""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve(); cache = root / 'packages'; archives = root / 'archives'; archives.mkdir()
             entry = 'lib/net9.0/Elsa.IO.Http.dll'; data = b'exact DLL bytes'

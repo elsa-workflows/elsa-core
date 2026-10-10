@@ -85,6 +85,7 @@ URL_FIELDS = {'url', 'feed', 'base', 'project_url', 'repository_url'}
 
 
 def public_url(value: str) -> None:
+    """Require HTTPS on an allowed public host without credentials, query, or fragment."""
     parts = urlsplit(value)
     require(parts.scheme == 'https' and not parts.username and not parts.password and not parts.fragment and
             not parts.query and parts.netloc in {'github.com', 'raw.githubusercontent.com', 'api.nuget.org',
@@ -92,6 +93,7 @@ def public_url(value: str) -> None:
 
 
 def _walk(value, path='', *, now: datetime):
+    """Recursively enforce the public plan schema, scalar bounds, hashes, and timestamps."""
     key = path.rsplit('.', 1)[-1]
     if value is None and path == 'npm':
         return
@@ -153,6 +155,7 @@ def _walk(value, path='', *, now: datetime):
 
 
 def validate(plan: dict, contracts: dict, *, now: datetime) -> None:
+    """Validate the closed plan shape and its source, toolchain, and inventory relationships."""
     _walk(plan, now=now)
     require(plan['semantics']['sdk_version'] == metadata.SDK and
             sorted(row['name'] for row in plan['semantics']['assemblies']) ==

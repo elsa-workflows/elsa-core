@@ -22,10 +22,12 @@ MALFORMED_GZIP = bytes.fromhex('1f8b0800000000000203') + b'\x07' + b'\0' * 8
 
 
 def encode(value):
+    """Encode fixture JSON with sorted keys and a trailing newline."""
     return (json.dumps(value, sort_keys=True) + '\n').encode()
 
 
 def zipped(entries):
+    """Create in-memory ZIP bytes from fixture entries, preserving supplied member metadata."""
     output = io.BytesIO()
     with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED) as archive:
         for name, data in entries:
@@ -36,6 +38,7 @@ def zipped(entries):
 
 
 def tarred(entries):
+    """Create in-memory gzipped tar bytes from fixture entries and supplied member metadata."""
     output = io.BytesIO()
     with tarfile.open(fileobj=output, mode='w:gz', format=tarfile.PAX_FORMAT) as archive:
         for name, data, kind in entries:
@@ -49,6 +52,9 @@ def tarred(entries):
 
 class Fixture(unittest.TestCase):
     def setUp(self):
+        """Create synthetic hosted context, plan, manifest, and provider records for transport
+        tests.
+        """
         self.controller = {'commit': 'a' * 40, 'tree': 'b' * 40}
         self.context = {'repository': transport.REPOSITORY, 'repository_id': transport.REPOSITORY_ID,
             'event': 'push', 'ref': transport.HOSTED_REF, 'head_sha': 'a' * 40,
@@ -77,6 +83,7 @@ class Fixture(unittest.TestCase):
             'expires_at': '2026-11-10T10:00:00Z', 'expired': False, 'retrieved_at': '2026-10-10T11:00:00Z'}
 
     def archive(self, entries=None, manifest=None):
+        """Create a fixture ZIP and rebind manifest and archive hashes in the expected evidence."""
         raw = encode(self.manifest if manifest is None else manifest)
         self.expected['manifest_sha256'] = self.provider['manifest_sha256'] = hashlib.sha256(raw).hexdigest()
         data = zipped(list((self.files if entries is None else entries).items()) + [(transport.MANIFEST, raw)])
@@ -84,21 +91,25 @@ class Fixture(unittest.TestCase):
         return data
 
     def readback(self, data):
+        """Exercise transport readback with fixture metadata and the fixed test clock."""
         return transport.readback_transport(data, self.provider, self.expected, now=NOW)
 
     def execution(self, role):
+        """Return a synthetic hosted execution identity for the requested stage role."""
         return {'kind': 'github-actions-selected-control', 'id': str(uuid4()), 'started_at': '2026-10-10T09:00:00Z',
             'role': role, 'controller': self.controller, 'plan_sha256': self.plan_hash, 'product': 'studio',
             'line': '3.8', 'source': self.plan['source'], 'context': self.context,
             'authority': 'runner-environment-only-provider-unverified'}
 
     def pair(self, artifact, consumer):
+        """Validate the fixture's producer and consumer execution pair against one plan."""
         transport.validate_execution_pair(self.plan, self.plan_hash, artifact, consumer,
                                            self.controller, self.controller, now=NOW)
 
 
 class OriginalZipContracts(Fixture):
     def test_transport_only_original_bytes_with_other_readback_environment(self):
+        """Preserve original transport bytes independently of the readback job's environment."""
         data = self.archive()
         with patch.dict('os.environ', {'GITHUB_JOB': 'readback', 'GITHUB_RUN_ID': '999'}):
             result = self.readback(data)
@@ -108,6 +119,7 @@ class OriginalZipContracts(Fixture):
         self.assertFalse(hasattr(transport, 'verify_and_extract'))
 
     def test_explicit_six_transport_cells(self):
+        """Accept each registered product and release-line combination in transport evidence."""
         for product in ('core', 'studio', 'extensions'):
             for line in ('3.8', '3.9'):
                 with self.subTest(product=product, line=line):
@@ -117,6 +129,7 @@ class OriginalZipContracts(Fixture):
                     self.assertIn('plan.json', self.readback(self.archive()))
 
     def test_outer_size_digest(self):
+        """Reject an outer archive whose size or SHA-256 differs from provider evidence."""
         data = self.archive()
         for key, value in (('archive_sha256', 'f' * 64), ('archive_size', len(data) + 1)):
             original = self.provider[key]
@@ -126,6 +139,7 @@ class OriginalZipContracts(Fixture):
             self.provider[key] = original
 
     def test_provider_identity_clock_and_artifact_tampering(self):
+        """Reject altered provider identities, artifact metadata, and invalid timestamps."""
         data = self.archive()
         changes = {'repository': 'fork/core', 'repository_id': '999', 'run_id': '124', 'run_attempt': '3',
             'head_sha': 'f' * 40, 'head_branch': 'main', 'event': 'pull_request', 'workflow_path': 'other',
@@ -141,6 +155,7 @@ class OriginalZipContracts(Fixture):
             self.provider[key] = original
 
     def test_closed_provider_and_expected(self):
+        """Reject unknown fields in provider and expected-identity records."""
         data = self.archive()
         for target in (self.provider, self.expected):
             target['download_url'] = 'https://untrusted.invalid/private'
@@ -149,6 +164,7 @@ class OriginalZipContracts(Fixture):
             del target['download_url']
 
     def test_run_status_conclusion(self):
+        """Accept only supported run states and a successful conclusion for completed runs."""
         data = self.archive()
         for status, conclusion in (('completed', 'failure'), ('queued', None), ('in_progress', 'success')):
             self.provider.update(run_status=status, run_conclusion=conclusion)
@@ -158,6 +174,7 @@ class OriginalZipContracts(Fixture):
         self.assertIn('plan.json', self.readback(data))
 
     def test_nested_manifest_context_unknownkeys_and_scope(self):
+        """Reject manifest scope, schema, or identity changes even with a matching outer hash."""
         for key, value in (('context', self.context | {'run_attempt': '3'}), ('product', 'core'),
                            ('controller', self.controller | {'tree': 'f' * 40}), ('scope', 'control-accepted'),
                            ('schema', True), ('private_path', '/private/tmp/log')):
@@ -167,6 +184,7 @@ class OriginalZipContracts(Fixture):
                 self.readback(self.archive(manifest=manifest))
 
     def test_missing_extra_changed_members(self):
+        """Reject ZIP members that differ from the complete manifest inventory."""
         for entries in ({key: value for key, value in self.files.items() if key != 'plan.json'},
                         self.files | {'producer/nuget/extra.1.0.nupkg': b'extra'},
                         self.files | {'consumer/receipt.json': b'changed'}):
@@ -174,6 +192,7 @@ class OriginalZipContracts(Fixture):
                 self.readback(self.archive(entries=entries))
 
     def test_manifest_entry_unknown_changed_missing_size_or_digest(self):
+        """Reject unknown inventory fields and invalid or missing member sizes and hashes."""
         for mutate in (lambda row: row.update(log='/private/tmp/log'), lambda row: row.update(size=True),
                        lambda row: row.update(size=1), lambda row: row.update(sha256='f' * 64),
                        lambda row: row.pop('sha256')):
@@ -183,6 +202,7 @@ class OriginalZipContracts(Fixture):
                 self.readback(self.archive(manifest=manifest))
 
     def test_manifest_circular_duplicate_casefold_private_paths(self):
+        """Reject self-referential manifests, path aliases, and private or unlisted members."""
         for path in (transport.MANIFEST, 'PLAN.json', '/private/tmp/assets.json', '../secret',
                      'producer/private/raw.log', 'producer/nuget/../secret.nupkg'):
             manifest = deepcopy(self.manifest)
@@ -191,12 +211,14 @@ class OriginalZipContracts(Fixture):
                 self.readback(self.archive(manifest=manifest))
 
     def test_manifest_digest_checked_before_json(self):
+        """Reject a manifest hash mismatch before parsing its JSON."""
         data = self.archive()
         self.expected['manifest_sha256'] = self.provider['manifest_sha256'] = 'f' * 64
         with self.assertRaisesRegex(ValueError, 'manifest_bytes'):
             self.readback(data)
 
     def test_limits_fail_without_autoexpansion(self):
+        """Enforce configured archive, expanded-size, receipt, plan, and member-count limits."""
         data = self.archive()
         for key, value in (('MAX_ARCHIVE_BYTES', len(data) - 1), ('MAX_EXPANDED_BYTES', 1),
                            ('MAX_PLAN_BYTES', 1), ('MAX_RECEIPT_BYTES', 1), ('MAX_MEMBERS', 1)):
@@ -206,6 +228,7 @@ class OriginalZipContracts(Fixture):
 
 class ArchiveSafetyContracts(unittest.TestCase):
     def test_malformed_deflate_zip_uses_fixed_rejection(self):
+        """Verify malformed deflate ZIP uses fixed rejection."""
         data = bytearray(zipped([('payload', b'private archive content')]))
         name_size, extra_size = struct.unpack_from('<HH', data, 26)
         data[30 + name_size + extra_size] = 0x06
@@ -213,27 +236,32 @@ class ArchiveSafetyContracts(unittest.TestCase):
             transport.zip_members(bytes(data), leaf=True)
 
     def test_malformed_deflate_gzip_uses_fixed_rejection(self):
+        """Verify malformed deflate gzip uses fixed rejection."""
         with self.assertRaisesRegex(ValueError, '^selected_transport_tar$'):
             transport.tar_members(MALFORMED_GZIP)
 
     def test_safe_path_aliases_controls_and_traversal(self):
+        """Reject path aliases, control characters, malformed Unicode, and traversal."""
         for name in ('/private/tmp/file', '../file', 'dir/../file', 'dir//file', './file', 'file/',
                      'C:/file', 'dir\\file', 'dir\x00file', 'dir\nfile', '\ud800', ''):
             with self.subTest(name=name), self.assertRaises(ValueError):
                 transport.safe_name(name)
 
     def test_exact_full_zip_inventory(self):
+        """Return the exact path, size, and SHA-256 for every ZIP member."""
         data = zipped([('a.nuspec', b'<package/>'), ('lib/net8.0/A.dll', b'compiled')])
         self.assertEqual(transport.archive_inventory(data), [
             {'path': 'a.nuspec', 'size': 10, 'sha256': hashlib.sha256(b'<package/>').hexdigest()},
             {'path': 'lib/net8.0/A.dll', 'size': 8, 'sha256': hashlib.sha256(b'compiled').hexdigest()}])
 
     def test_zip_duplicate_casefold_file_directory_collision(self):
+        """Reject duplicate ZIP paths, case aliases, and file/directory prefix collisions."""
         for names in (['a', 'a'], ['a', 'A'], ['a', 'a/b'], ['A', 'a/b']):
             with self.subTest(names=names), self.assertRaises(ValueError):
                 transport.zip_members(zipped([(name, b'x') for name in names]), leaf=True)
 
     def test_zip_and_tar_reject_unsafe_resolved_member_paths(self):
+        """Verify ZIP and tar reject unsafe resolved member paths."""
         for name in ('../escape', '/private/tmp/escape', 'C:/escape', 'dir\\escape', 'dir//escape'):
             with self.subTest(name=name), self.assertRaises(ValueError):
                 transport.zip_members(zipped([(name, b'x')]), leaf=True)
@@ -245,6 +273,7 @@ class ArchiveSafetyContracts(unittest.TestCase):
             transport.tar_members(data)
 
     def test_zip_symlink_special_and_directory_members(self):
+        """Reject ZIP symlinks, special files, and directory entries on Unix and DOS."""
         for mode in (stat.S_IFLNK, stat.S_IFIFO, stat.S_IFSOCK, stat.S_IFCHR, stat.S_IFDIR):
             item = zipfile.ZipInfo('unsafe')
             item.create_system = 3
@@ -260,6 +289,7 @@ class ArchiveSafetyContracts(unittest.TestCase):
             transport.zip_members(zipped([(item, b'')]), leaf=True)
 
     def test_zip_declared_expansion_bomb_precedes_read(self):
+        """Reject oversized declared ZIP members before reading their expanded bytes."""
         data = bytearray(zipped([('payload', b'x')]))
         offset = data.index(b'PK\x01\x02')
         struct.pack_into('<I', data, offset + 24, transport.MAX_PACKAGE_BYTES + 1)
@@ -267,11 +297,13 @@ class ArchiveSafetyContracts(unittest.TestCase):
             transport.zip_members(bytes(data), leaf=True)
 
     def test_zip_nul_original_filename_is_not_silently_truncated(self):
+        """Reject NUL-containing ZIP names instead of accepting their truncated aliases."""
         data = zipped([('payload', b'x')]).replace(b'payload', b'pay\x00oad')
         with self.assertRaisesRegex(ValueError, 'path'):
             transport.zip_members(data, leaf=True)
 
     def test_zip_encryption_and_unsupported_compression(self):
+        """Reject encrypted ZIP members and unsupported compression methods."""
         for field, value in ((8, 1), (10, 99)):
             data = bytearray(zipped([('payload', b'x')]))
             offset = data.index(b'PK\x01\x02')
@@ -280,6 +312,7 @@ class ArchiveSafetyContracts(unittest.TestCase):
                 transport.zip_members(bytes(data), leaf=True)
 
     def test_npm_real_tar_inventory_and_typed_integrity(self):
+        """Inventory npm tar members and return integrity in the typed SHA-512 format."""
         data = tarred([('package/package.json', b'{"name":"@elsa/pkg"}', tarfile.REGTYPE),
                        ('package/dist/index.js', b'export {}', tarfile.REGTYPE)])
         self.assertEqual([row['path'] for row in transport.archive_inventory(data, npm=True)],
@@ -288,6 +321,7 @@ class ArchiveSafetyContracts(unittest.TestCase):
         self.assertNotEqual(transport.sha512_integrity(data), hashlib.sha512(data).hexdigest())
 
     def test_npm_links_special_directory_and_paths(self):
+        """Reject npm tar links, directories, special files, and unsafe paths."""
         for name, kind in (('package/link', tarfile.SYMTYPE), ('package/link', tarfile.LNKTYPE),
                            ('package/dir', tarfile.DIRTYPE), ('package/fifo', tarfile.FIFOTYPE),
                            ('package/../secret', tarfile.REGTYPE), ('/private/tmp/file', tarfile.REGTYPE)):
@@ -296,6 +330,7 @@ class ArchiveSafetyContracts(unittest.TestCase):
                 transport.tar_members(data)
 
     def test_npm_casefold_prefix_collision(self):
+        """Reject case aliases and file/directory prefix collisions in npm tar members."""
         for names in (['a', 'A'], ['a', 'a/b']):
             data = tarred([('package/package.json', b'{}', tarfile.REGTYPE)] +
                           [('package/' + name, b'x', tarfile.REGTYPE) for name in names])
@@ -303,6 +338,7 @@ class ArchiveSafetyContracts(unittest.TestCase):
                 transport.tar_members(data)
 
     def test_tar_hidden_members_after_end_marker_are_rejected(self):
+        """Verify tar hidden members after end marker are rejected."""
         first = tarred([('package/package.json', b'{}', tarfile.REGTYPE)])
         second = tarred([('package/hidden.log', b'private', tarfile.REGTYPE)])
         for data in (gzip.compress(gzip.decompress(first) + gzip.decompress(second)), first + second):
@@ -310,6 +346,7 @@ class ArchiveSafetyContracts(unittest.TestCase):
                 transport.tar_members(data)
 
     def test_npm_expansion_limit_malformed_archives(self):
+        """Reject oversized expanded npm payloads and malformed tar or ZIP bytes."""
         data = tarred([('package/package.json', b'{}', tarfile.REGTYPE),
                        ('package/large', b'x' * 1024, tarfile.REGTYPE)])
         with patch.object(transport, 'MAX_PACKAGE_BYTES', len(data) + 1), self.assertRaises(ValueError):
@@ -321,12 +358,14 @@ class ArchiveSafetyContracts(unittest.TestCase):
                 transport.zip_members(data, leaf=True)
 
     def test_strict_json_duplicates_constants_unicode_and_nonobjects(self):
+        """Reject duplicate JSON keys, nonfinite numbers, invalid encoding, and nonobjects."""
         for data in (b'{"a":1,"a":2}', b'{"a":{"b":1,"b":2}}', b'{"a":NaN}', b'{"a":Infinity}', b'{"a":1e999}', b'{"a":-1e999}',
                      b'\xff', b'[]', b'null', b'{'):
             with self.subTest(data=data), self.assertRaises(ValueError):
                 transport.strict_json(data)
 
     def test_exact_bound_file_and_symlink_ancestors(self):
+        """Preserve exact bound file bytes while rejecting hash, size, and symlink mismatches."""
         with tempfile.TemporaryDirectory() as raw:
             directory = Path(raw).resolve()
             path = directory / 'receipt.json'
@@ -349,17 +388,20 @@ class ArchiveSafetyContracts(unittest.TestCase):
 
 class ImmutableIdentityContracts(Fixture):
     def test_same_job_distinct_roles_independent_environment(self):
+        """Validate distinct stage identities in one job independently of reader environment."""
         artifact, consumer = self.execution('artifact'), self.execution('consumer')
         consumer['started_at'] = '2026-10-10T09:01:00Z'
         with patch.dict('os.environ', {'GITHUB_JOB': 'readback', 'GITHUB_RUN_ATTEMPT': '999'}):
             self.pair(artifact, consumer)
 
     def test_no_local_promotion(self):
+        """Reject attempts to use a local execution as hosted producer evidence."""
         artifact = {key: self.execution('artifact')[key] for key in ('id', 'started_at')} | {'kind': 'local-control'}
         with self.assertRaises(ValueError):
             self.pair(artifact, self.execution('consumer'))
 
     def test_execution_source_controller_role_cell_clock(self):
+        """Reject altered execution source, controller, role, cell, timestamp, or identity."""
         changes = {'source': {'commit': 'f' * 40}, 'controller': self.controller | {'tree': 'f' * 40},
             'role': 'consumer', 'product': 'core', 'line': '3.9', 'plan_sha256': 'f' * 64,
             'authority': 'provider-verified', 'started_at': '2026-10-10T13:00:00Z', 'id': 'not-uuid'}
@@ -370,6 +412,7 @@ class ImmutableIdentityContracts(Fixture):
                 self.pair(artifact, self.execution('consumer'))
 
     def test_equal_uuid_reversed_clock_or_job(self):
+        """Reject shared execution IDs, reversed stage timestamps, and different control jobs."""
         for key, value in (('id', None), ('started_at', '2026-10-10T08:00:00Z'),
                            ('context', self.context | {'job': 'another_control'})):
             artifact, consumer = self.execution('artifact'), self.execution('consumer')
@@ -378,6 +421,7 @@ class ImmutableIdentityContracts(Fixture):
                 self.pair(artifact, consumer)
 
     def test_context_fork_pr_partial_attempt_workflow_head(self):
+        """Reject forks, PR contexts, missing run fields, and invalid workflow identities."""
         for key, value in (('repository', 'fork/core'), ('repository_id', '999'), ('event', 'pull_request'),
             ('run_attempt', '0'), ('workflow_sha', 'f' * 40), ('workflow_path', 'other'), ('job', '../job')):
             with self.subTest(key=key), self.assertRaises(ValueError):
@@ -388,11 +432,13 @@ class ImmutableIdentityContracts(Fixture):
             transport.validate_context(context, self.controller)
 
     def test_planner_context_join(self):
+        """Reject planner execution context that differs from the producer/consumer run."""
         self.plan['controller']['execution']['run_attempt'] = '1'
         with self.assertRaises(ValueError):
             self.pair(self.execution('artifact'), self.execution('consumer'))
 
     def test_utc_future_and_naive_clock_rejected(self):
+        """Reject non-UTC or future timestamps and timezone-naive validation clocks."""
         for value in ('2026-10-10T12:00:00', '2026-10-10T12:00:00+01:00', 'tomorrow', '2026-10-10T13:00:00Z'):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 transport.utc(value, now=NOW)

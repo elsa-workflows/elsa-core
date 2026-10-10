@@ -27,11 +27,13 @@ from test_selected_studio_payload import encoded
 
 class CoreSourceContinuationContracts(unittest.TestCase):
     def setUp(self):
+        """Load the original Core policies, continuation catalog, and frozen plan observations."""
         self.contract = continuation.load_contract()
         self.originals = json.loads(core.CONTRACT.read_bytes())['sources']
         self.history = json.loads(Path(__file__).with_name('selected_product_plan_shapes.json').read_bytes())['cells']
 
     def source(self, line='3.8', *, contract=None):
+        """Bind a test source to the original observation for the requested release line."""
         observation = deepcopy(self.history['core-' + line]['source']['observation'])
         return continuation.bind(line, observation, contract or self.contract)
 
@@ -61,6 +63,9 @@ class CoreSourceContinuationContracts(unittest.TestCase):
         return contract, git, entries, data
 
     def verify(self, line='3.8', mutation=None):
+        """Exercise continuation source verification against optionally mutated synthetic Git
+        evidence.
+        """
         contract, git, entries, data = self.source_git(line)
         if mutation:
             mutation(contract['sources'][line])
@@ -71,6 +76,7 @@ class CoreSourceContinuationContracts(unittest.TestCase):
             continuation.verify_source(Path('/unused'), source, self.originals[line], contract)
 
     def test_fixed_candidate_identities_and_preserved_original_policies(self):
+        """Verify fixed candidate identities and preserved original policies."""
         expected = {'3.8': ('7e5e6bcf97791e4f7f7165e15579abae18ec7203', 'd5c10535cee3524d91f5ae54b5cecb967c26b606', 4, 3, 44),
                     '3.9': ('86fffea6da3cfe67c0279f552c2a32940ef75ae2', '8beb9e093091c098f542a08e82e43625a3b8e520', 1, 1, 61)}
         for line, (commit, tree, chain, delta, tests) in expected.items():
@@ -87,6 +93,7 @@ class CoreSourceContinuationContracts(unittest.TestCase):
                 self.verify(line)
 
     def test_closed_source_identity_rejects_untrusted_selections(self):
+        """Verify closed source identity rejects untrusted selections."""
         changes = ({'kind': 'maintenance'}, {'product': 'studio'}, {'line': '3.10'}, {'commit': 'a' * 40},
                    {'tree': 'b' * 40}, {'parents': []}, {'original_commit': 'c' * 40}, {'original_tree': 'd' * 40},
                    {'continuation_contract_sha256': 'e' * 64}, {'pr': 8696})
@@ -99,6 +106,7 @@ class CoreSourceContinuationContracts(unittest.TestCase):
                 continuation.policy(source, self.originals['3.8'], self.contract)
 
     def test_candidate_never_impersonates_release_branch_observation(self):
+        """Verify candidate never impersonates release branch observation."""
         for change in ({'commit': self.source()['commit'], 'tree': self.source()['tree']},
                        {'ref': 'refs/heads/release/3.9.0'}, {'commit': 'f' * 40}, {'tree': 'f' * 40}):
             source = self.source(); source['observation'].update(change)
@@ -111,6 +119,7 @@ class CoreSourceContinuationContracts(unittest.TestCase):
             verify.assert_called_once()
 
     def test_complete_ancestry_and_delta_are_verified_against_independent_git(self):
+        """Verify complete ancestry and delta are verified against independent Git."""
         mutations = [lambda r: r['chain'].pop(0),
                      lambda r: r['chain'][0].update(parents=['a' * 40]),
                      lambda r: r['chain'][0].update(tree='a' * 40),
@@ -126,6 +135,7 @@ class CoreSourceContinuationContracts(unittest.TestCase):
                 self.verify(mutation=mutation)
 
     def test_original_version_recipe_and_all_native_lanes_remain_required(self):
+        """Verify original version recipe and all native lanes remain required."""
         for line, count in (('3.8', 44), ('3.9', 61)):
             source = self.source(line); version = line + '.999'
             commands = maintenance.recipes(source, version, Path('/proof'))
@@ -142,6 +152,7 @@ class CoreSourceContinuationContracts(unittest.TestCase):
             self.assertEqual(core.expected_skips(self.history['core-' + line]['source'], {}), core.expected_skips(source, {}))
 
     def test_internal_clone_origin_does_not_change_closed_public_source(self):
+        """Verify internal clone origin does not change closed public source."""
         source = self.source()
         internal = source | {'source_repository': 'elsa-workflows/elsa-core'}
         self.assertEqual(source, core.source_binding(internal))
@@ -163,6 +174,7 @@ class CoreSourceContinuationContracts(unittest.TestCase):
             core.validate_plan(plan)
 
     def candidate_plan(self, line):
+        """Build a candidate plan with source and inventory hashes rebound to reviewed changes."""
         files, expected, now = product_fixture('core', line)
         plan = json.loads(files['plan.json']); source = continuation.bind(line, plan['source']['observation'], self.contract)
         plan['source'] = source
@@ -174,6 +186,7 @@ class CoreSourceContinuationContracts(unittest.TestCase):
         return plan, files, expected, now
 
     def test_candidate_plan_uses_true_baseline_observation_and_actual_project_hash(self):
+        """Verify candidate plan uses true baseline observation and actual project hash."""
         contracts = payload.load_contracts()
         for line in ('3.8', '3.9'):
             plan, _, _, now = self.candidate_plan(line)
@@ -188,6 +201,7 @@ class CoreSourceContinuationContracts(unittest.TestCase):
             with self.assertRaises(ValueError): schema.validate(changed, contracts, now=now)
 
     def test_missing_stale_ambiguous_and_candidate_as_baseline_observations_rejected(self):
+        """Verify missing stale ambiguous and candidate as baseline observations rejected."""
         contracts = payload.load_contracts(); plan, _, _, now = self.candidate_plan('3.8')
         changes = ('missing', 'stale', 'duplicate', 'empty_tags', 'candidate')
         for change in changes:
@@ -207,6 +221,7 @@ class CoreSourceContinuationContracts(unittest.TestCase):
                 schema.admit(changed, metadata.sha256(data), data, now.isoformat(), contracts)
 
     def test_original_and_candidate_tag_snapshots_pass_early_artifact_admission(self):
+        """Verify original and candidate tag snapshots pass early artifact admission."""
         contracts = payload.load_contracts(); object_types = set()
         for line in ('3.8', '3.9'):
             original_files, _, now = product_fixture('core', line)
@@ -224,6 +239,7 @@ class CoreSourceContinuationContracts(unittest.TestCase):
         self.assertEqual({'tag', 'commit'}, object_types)
 
     def test_git_valid_tag_ref_boundaries_remain_pure(self):
+        """Verify Git valid tag ref boundaries remain pure."""
         tag = self.history['core-3.8']['source']['observation']['tag_history'][0]
         for suffix in ('/nested/tag', '/valid./child', '/file.locked', '/café', '/at@name', '/percent%2fpath'):
             ref = tag['ref'] + suffix
@@ -235,6 +251,7 @@ class CoreSourceContinuationContracts(unittest.TestCase):
                     'https://api.github.com/repos/elsa-workflows/elsa-core/git/' + ref}])
 
     def test_malformed_tag_snapshots_fail_before_any_artifact_work(self):
+        """Verify malformed tag snapshots fail before any artifact work."""
         contracts = payload.load_contracts()
         for line in ('3.8', '3.9'):
             original_files, _, now = product_fixture('core', line)
@@ -284,6 +301,7 @@ class CoreSourceContinuationContracts(unittest.TestCase):
                             self.assertFalse(output.exists())
 
     def test_new_planner_inputs_are_bound_and_stale_or_unbound_inputs_rejected(self):
+        """Verify new planner inputs are bound and stale or unbound inputs rejected."""
         self.assertIs(metadata.PLANNER_INPUTS, artifacts.PLANNER_INPUTS)
         self.assertTrue({'scripts/integration-program/core_source_continuation.py',
                          'scripts/integration-program/core_source_continuation_contract.json',
@@ -339,6 +357,7 @@ class CoreSourceContinuationContracts(unittest.TestCase):
         return files, expected, now
 
     def test_pure_candidate_seal_and_independent_readback_bind_complete_source(self):
+        """Verify pure candidate seal and independent readback bind complete source."""
         contracts = payload.load_contracts()
         for line in ('3.8', '3.9'):
             files, context, now = self.candidate_files(line)
@@ -360,6 +379,7 @@ class CoreSourceContinuationContracts(unittest.TestCase):
                 self.assertFalse(result['product_code_executed_during_readback'])
 
     def test_pure_seal_rejects_source_swaps_even_after_outer_hashes_are_recomputed(self):
+        """Verify pure seal rejects source swaps even after outer hashes are recomputed."""
         contracts = payload.load_contracts()
         for line in ('3.8', '3.9'):
             files, expected, now = self.candidate_files(line)

@@ -17,21 +17,25 @@ import prove_studio_npm_pair as npm
 
 class HistoricalLifecycleContracts(unittest.TestCase):
     def setUp(self):
+        """Create an isolated npm fixture directory whose path contains spaces."""
         self.temporary = tempfile.TemporaryDirectory(prefix='historical npm fixture ')
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name).resolve()
 
     def manifest(self, line='3.8', *, original=False):
+        """Read the original or corrected Studio package manifest from its registered commit."""
         row = lifecycle.CONTINUATIONS[line]
         return maintenance.git_bytes(maintenance.ROOT, row['parent' if original else 'commit'], lifecycle.PATH)
 
     def write(self, root, payload):
+        """Materialize a mapping of relative paths to fixture bytes."""
         for name, data in payload.items():
             target = root / name
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(data)
 
     def layout(self, name, *, workspace=False, nested=False):
+        """Create a wrapper/WASM fixture with optional workspace and nested dependency layouts."""
         root = self.root / name
         wrapper = root / ('wrappers/react-wrapper' if workspace else 'node_modules/' + npm.REACT)
         wasm = (wrapper if nested else root) / 'node_modules' / npm.WASM
@@ -43,17 +47,20 @@ class HistoricalLifecycleContracts(unittest.TestCase):
         return root, wrapper, wasm, payload
 
     def run_copy(self, wrapper, *, success=True):
+        """Run the manifest's copy lifecycle and assert its expected exit status."""
         script = json.loads((wrapper / 'package.json').read_bytes())['scripts']['copy:elsa-studio-wasm']
         result = subprocess.run(script, cwd=wrapper, shell=True, env=os.environ,
                                 capture_output=True, text=True, timeout=60)
         self.assertEqual(success, result.returncode == 0, result.stderr)
 
     def archives(self, root, wrapper, wasm):
+        """Return synthetic archive reports from the installed wrapper and WASM inventories."""
         return {npm.WASM: (root / 'wasm.tgz', {'inventory': npm.files(wasm), 'version': '3.8.999',
                     'sha512_integrity': 'sha512-fixture'}),
                 npm.REACT: (root / 'react.tgz', {'inventory': npm.files(wrapper)})}
 
     def test_exact_two_registered_source_deltas_and_eight_explicit_cells(self):
+        """Verify exact two registered source deltas and eight explicit cells."""
         catalog = maintenance.load_candidates()
         candidates = {row['commit']: row for row in catalog['candidates']}
         for line, selected in lifecycle.CONTINUATIONS.items():
@@ -73,6 +80,7 @@ class HistoricalLifecycleContracts(unittest.TestCase):
                           if row['product'] == 'studio' and candidates[row['commit']]['kind'] == 'maintenance'})
 
     def test_protected_path_exception_rejects_other_identity_and_payload_changes(self):
+        """Verify protected path exception rejects other identity and payload changes."""
         candidates = {row['commit']: row for row in maintenance.load_candidates()['candidates']}
         selected = lifecycle.CONTINUATIONS['3.8']
         row, parent = candidates[selected['commit']], candidates[selected['parent']]
@@ -95,10 +103,12 @@ class HistoricalLifecycleContracts(unittest.TestCase):
                 lifecycle.verify_delta(row, parent, row['delta'][0], before, json.dumps(package).encode())
 
     def test_node22_is_the_fixture_runtime(self):
+        """Verify Node 22 is the fixture runtime."""
         result = subprocess.run(['node', '--version'], check=True, capture_output=True, text=True)
         self.assertTrue(result.stdout.startswith('v22.'), result.stdout)
 
     def test_workflow_runs_offline_contracts_with_node22_in_both_modes(self):
+        """Verify workflow runs offline contracts with Node 22 in both modes."""
         workflow = (maintenance.ROOT / '.github/workflows/product-release-plan.yml').read_text()
         self.assertIn("node-version: '22'", workflow)
         for prefix in ('python3 -m unittest ', 'python3 -O -m unittest '):
@@ -106,6 +116,7 @@ class HistoricalLifecycleContracts(unittest.TestCase):
             self.assertIn('test_historical_studio_npm_continuation', command)
 
     def test_hoisted_scoped_nested_spaces_missing_public_and_idempotence(self):
+        """Verify hoisted scoped nested spaces missing public and idempotence."""
         for name, options in [('hoisted workspace with spaces', {'workspace': True}),
                               ('scoped installed with spaces', {}), ('nested installed', {'nested': True})]:
             with self.subTest(name=name):
@@ -123,6 +134,7 @@ class HistoricalLifecycleContracts(unittest.TestCase):
                 self.assertEqual(before, npm.files(wasm))
 
     def test_missing_dependency_or_required_payload_fails(self):
+        """Verify missing dependency or required payload fails."""
         for missing in ('dependency', '_content', '_framework', 'appsettings.json'):
             with self.subTest(missing=missing):
                 _, wrapper, wasm, _ = self.layout('missing ' + missing.replace('/', '-'))
@@ -131,6 +143,7 @@ class HistoricalLifecycleContracts(unittest.TestCase):
                 self.run_copy(wrapper, success=False)
 
     def test_original_inline_script_cannot_produce_required_nested_assets_without_public(self):
+        """Verify original inline script cannot produce required nested assets without public."""
         _, wrapper, wasm, _ = self.layout('original workspace', workspace=True)
         (wrapper / 'package.json').write_bytes(self.manifest(original=True))
         self.assertFalse((wrapper / 'public').exists())
@@ -142,6 +155,7 @@ class HistoricalLifecycleContracts(unittest.TestCase):
         self.assertNotEqual(expected, npm.files(wrapper / 'public'))
 
     def test_exact_installed_tar_bytes_plus_only_three_wasm_families(self):
+        """Verify exact installed tar bytes plus only three WASM families."""
         root, wrapper, wasm, _ = self.layout('valid')
         archives = self.archives(root, wrapper, wasm)
         self.run_copy(wrapper)
@@ -152,6 +166,7 @@ class HistoricalLifecycleContracts(unittest.TestCase):
                          {'public/_content/fixture/asset.js', 'public/_framework/runtime.wasm', 'public/appsettings.json'})
 
     def test_installed_extra_changed_missing_symlink_and_wasm_mutation_fail(self):
+        """Verify installed extra changed missing symlink and WASM mutation fail."""
         for mutation in ('extra', 'changed', 'missing', 'symlink-file', 'symlink-public', 'symlink-package', 'wasm'):
             with self.subTest(mutation=mutation):
                 root, wrapper, wasm, _ = self.layout(mutation)
@@ -175,6 +190,7 @@ class HistoricalLifecycleContracts(unittest.TestCase):
                     historical.verify_installed(root, archives)
 
     def test_missing_copy_family_or_tar_copy_collision_fails(self):
+        """Verify missing copy family or tar copy collision fails."""
         for mutation in ('_content', '_framework', 'appsettings.json', 'collision'):
             with self.subTest(mutation=mutation):
                 root, wrapper, wasm, _ = self.layout('inventory ' + mutation)

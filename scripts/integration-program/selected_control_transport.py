@@ -35,23 +35,27 @@ TRANSPORT_SCOPE = 'transport-only-not-selected-control-acceptance'
 
 
 def closed(value: object, keys: set[str], label: str) -> dict:
+    """Require an ordinary dictionary with exactly the allowed keys."""
     require(type(value) is dict and set(value) == keys, label + '_schema')
     return value
 
 
 def digest(value: object, length: int = 64) -> str:
+    """Require a lowercase hexadecimal digest of the specified length."""
     require(type(value) is str and re.fullmatch('[a-f0-9]{' + str(length) + '}', value) is not None,
             'selected_transport_digest')
     return value
 
 
 def integer(value: object, maximum: int, *, positive: bool = False) -> int:
+    """Require a bounded integer size, optionally excluding zero."""
     require(type(value) is int and (value > 0 if positive else value >= 0) and value <= maximum,
             'selected_transport_size')
     return value
 
 
 def safe_name(value: object) -> str:
+    """Require a bounded canonical relative archive path without unsafe characters."""
     require(type(value) is str, 'selected_transport_path')
     try:
         length = len(value.encode('utf-8'))
@@ -66,6 +70,7 @@ def safe_name(value: object) -> str:
 
 
 def unique_names(names: list[str]) -> None:
+    """Reject excessive members, case-insensitive duplicates, and file/directory collisions."""
     require(len(names) <= MAX_MEMBERS and len({safe_name(name).casefold() for name in names}) == len(names),
             'selected_transport_duplicate')
     # Reject a file used as another member's directory, including case variants.
@@ -76,16 +81,20 @@ def unique_names(names: list[str]) -> None:
 
 
 def strict_json(data: bytes, maximum: int = MAX_RECEIPT_BYTES) -> dict:
+    """Parse a bounded JSON object, rejecting duplicate keys and nonfinite numbers."""
     require(type(data) is bytes and len(data) <= maximum, 'selected_transport_json_size')
     def object_pairs(pairs):
+        """Construct a JSON object while rejecting duplicate keys."""
         result = {}
         for key, value in pairs:
             require(key not in result, 'selected_transport_json_duplicate')
             result[key] = value
         return result
     def reject_constant(_):
+        """Reject nonstandard JSON numeric constants."""
         raise ValueError('selected_transport_json_constant')
     def finite_float(value):
+        """Parse a JSON float and reject overflow to a nonfinite value."""
         number = float(value)
         require(math.isfinite(number), 'selected_transport_json_nonfinite')
         return number
@@ -99,6 +108,7 @@ def strict_json(data: bytes, maximum: int = MAX_RECEIPT_BYTES) -> dict:
 
 
 def utc(value: object, *, now: datetime) -> datetime:
+    """Parse an explicit UTC timestamp and reject times after the supplied clock."""
     require(isinstance(now, datetime) and now.tzinfo is not None and
             now.utcoffset().total_seconds() == 0, 'selected_transport_clock')
     require(type(value) is str and value.endswith(('Z', '+00:00')), 'selected_transport_time')
@@ -112,6 +122,7 @@ def utc(value: object, *, now: datetime) -> datetime:
 
 
 def safe_file(path: Path) -> Path:
+    """Require an absolute regular file path without traversal or symlink components."""
     require(path.is_absolute() and '..' not in path.parts and
             not any(part.is_symlink() for part in (path, *path.parents)) and path.is_file(),
             'selected_transport_file')
@@ -119,6 +130,7 @@ def safe_file(path: Path) -> Path:
 
 
 def read_bound(path: Path, expected_hash: str, maximum: int) -> bytes:
+    """Read bounded file bytes and require their SHA-256 to match the expected digest."""
     safe_file(path)
     digest(expected_hash)
     integer(path.stat().st_size, maximum)
@@ -130,6 +142,7 @@ def read_bound(path: Path, expected_hash: str, maximum: int) -> bytes:
 
 
 def _bounded_read(stream, expected: int, maximum: int) -> bytes:
+    """Read exactly the declared member size within the configured limit."""
     integer(expected, maximum)
     data = stream.read(expected + 1)
     require(len(data) == expected, 'selected_transport_member_size')
@@ -200,6 +213,7 @@ def tar_members(data: bytes) -> dict[str, bytes]:
 
 
 def file_limit(name: str) -> int:
+    """Return the size limit for an allowed retained payload path."""
     safe_name(name)
     if name == 'plan.json':
         return MAX_PLAN_BYTES
@@ -213,16 +227,19 @@ def file_limit(name: str) -> int:
 
 
 def inventory(files: dict[str, bytes]) -> list[dict]:
+    """Return sorted member names, sizes, and SHA-256 hashes after validating names."""
     unique_names(list(files))
     return [{'path': name, 'size': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
             for name, data in sorted(files.items())]
 
 
 def archive_inventory(data: bytes, *, npm: bool = False) -> list[dict]:
+    """Inventory safe npm tar or package ZIP members from the supplied archive bytes."""
     return inventory(tar_members(data) if npm else zip_members(data, leaf=True))
 
 
 def sha512_integrity(data: bytes) -> str:
+    """Return the npm-compatible SHA-512 integrity string for archive bytes."""
     return 'sha512-' + base64.b64encode(hashlib.sha512(data).digest()).decode('ascii')
 
 
@@ -244,6 +261,7 @@ def validate_context(context: dict, controller: dict) -> None:
 
 def validate_execution(execution: dict, role: str, controller: dict, plan: dict, plan_hash: str,
                        *, now: datetime) -> None:
+    """Validate a hosted stage identity and join it to the controller, plan, and clock."""
     closed(execution, {'kind', 'id', 'started_at', 'role', 'controller', 'plan_sha256', 'product', 'line',
                        'source', 'context', 'authority'}, 'selected_transport_execution')
     try:

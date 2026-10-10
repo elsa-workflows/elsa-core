@@ -21,6 +21,7 @@ DIAGNOSTIC_VERSION = re.compile(r'[0-9]{1,9}(?:\.[0-9]{1,9}){0,3}'
 
 
 def diagnostic_range(value: object) -> bool:
+    """Return whether a value is a bounded version or range safe for public diagnostics."""
     if type(value) is not str or not 1 <= len(value) <= 256 or any(ord(char) < 32 or ord(char) > 126 for char in value):
         return False
     if DIAGNOSTIC_VERSION.fullmatch(value):
@@ -85,6 +86,7 @@ def public_range_failure(error: Exception) -> dict:
 
 def attach_range_failure(error: ValueError, root_id: str, framework: str, phase: str | None,
                          edges: Iterable[tuple[str, str, bool]], ranges: list, checks: list) -> None:
+    """Attach validated bounded range diagnostics without replacing the original error."""
     try:
         detail = {'root_id': root_id, 'framework': framework, 'phase': phase,
             'reason': 'count-mismatch', 'requested_checks': len(ranges), 'returned_checks': len(checks)}
@@ -112,6 +114,7 @@ def attach_range_failure(error: ValueError, root_id: str, framework: str, phase:
 
 
 def nearest_group(groups: list[dict], framework: str, semantics: planner.Semantics) -> dict:
+    """Select the nearest compatible dependency group through native NuGet semantics."""
     if not groups:
         return {'framework': 'any', 'dependencies': []}
     choice = semantics.call('frameworks', values=[{'consumer': framework,
@@ -218,6 +221,7 @@ def archive_catalog(originals: dict, selected: dict, config: Path, semantics: pl
 
 
 def validate_native_tools(plan: dict, semantics: planner.Semantics, inspector: Path) -> None:
+    """Require the active semantics helper and inspector assemblies to match the plan."""
     require(plan['semantics']['sdk_version'] == metadata.SDK and
             semantics.call('identity') == plan['semantics']['assemblies'], 'consumer_native_semantics_identity')
     for row in plan['semantics']['assemblies']:
@@ -228,6 +232,7 @@ def validate_native_tools(plan: dict, semantics: planner.Semantics, inspector: P
 def audit_native_graph(assets: dict, lock: dict, root_id: str, framework: str, selected: dict,
                        catalog: dict, version: str, semantics: planner.Semantics, *, sdk_policy: dict | None = None,
                        pruned_edges: list | None = None, phase: str | None = None) -> dict:
+    """Join assets, lockfile, and nuspec evidence into a reachable version-consistent graph."""
     require(set(assets['targets']) == {framework} and lock.get('version') == 1 and
             set(lock['dependencies']) == {framework}, 'consumer_native_graph_framework')
     require(set(assets['libraries']) == set(assets['targets'][framework]), 'consumer_native_library_partition')

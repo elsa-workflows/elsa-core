@@ -435,6 +435,7 @@ def verify_loaded_assemblies(result: dict, assets: dict, framework: str, root: P
                              required_packages: tuple[str, ...] = REQUIRED_PACKAGES, *,
                              assembly_release_version: str | None = None,
                              original_assembly_policies: bool = False) -> list[dict]:
+    """Join loaded assembly bytes and identities to restored package assets and policy."""
     release_version = assembly_release_version or version
     expected = {}
     for key, library in assets["targets"][framework].items():

@@ -12,12 +12,14 @@ CONTRACT = Path(__file__).with_name('selected_maintenance_39_contract.json')
 
 
 def contract(product: str) -> dict:
+    """Load the registered Studio or Extensions 3.9 source contract."""
     value = json.loads(CONTRACT.read_text())['sources'].get(product)
     require(value is not None, 'maintenance39_product')
     return value
 
 
 def validate_plan(plan: dict) -> dict:
+    """Require the 3.9 source, recipe, tests, exclusions, and npm scope to match policy."""
     value = contract(plan['product'])
     source = plan['source']
     require(plan['line'] == source['line'] == '3.9' and source['product'] == plan['product'] and
@@ -36,6 +38,7 @@ def validate_plan(plan: dict) -> dict:
 
 
 def verify_git(root: Path, product: str, commit: str) -> dict:
+    """Verify the registered 3.9 tree, source blobs, and local runtime fixture bytes."""
     value = contract(product)
     require(commit == value['commit'] and metadata.git(root, 'rev-parse', commit + '^{tree}') == value['tree'],
             'maintenance39_source')
@@ -48,5 +51,6 @@ def verify_git(root: Path, product: str, commit: str) -> dict:
 
 
 def verify_source(root: Path, plan: dict) -> None:
+    """Validate the 3.9 plan and verify its source against the Git contract."""
     validate_plan(plan)
     verify_git(root, plan['product'], plan['source']['commit'])

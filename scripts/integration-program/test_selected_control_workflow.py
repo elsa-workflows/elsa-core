@@ -28,10 +28,12 @@ CELLS = {f'{product}-{line}': (product, line, f'control_{product}_{line.replace(
 
 
 def python_script(step, terminator='PY'):
+    """Extract an embedded Python heredoc from a workflow step."""
     return step['run'].split("<<'" + terminator + "'\n", 1)[1].rsplit('\n' + terminator, 1)[0]
 
 
 def encoded(value):
+    """Encode synthetic workflow JSON with sorted keys and a trailing newline."""
     return (json.dumps(value, sort_keys=True) + '\n').encode()
 
 
@@ -42,6 +44,7 @@ class Response(io.BytesIO):
 class HostedWorkflowContracts(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        """Load the hosted workflow and action, then extract scripts for offline execution."""
         cls.workflow = yaml.safe_load(WORKFLOW.read_text())
         cls.action = yaml.safe_load(ACTION.read_text())
         cls.jobs = cls.workflow['jobs']
@@ -50,6 +53,7 @@ class HostedWorkflowContracts(unittest.TestCase):
         cls.readback = python_script(cls.jobs['readback']['steps'][3])
 
     def test_exact_six_cells_and_token_role_boundaries(self):
+        """Verify exact six cells and token role boundaries."""
         trigger = self.workflow.get('on', self.workflow.get(True))
         self.assertEqual(trigger, {'push': {'branches': [transport.HOSTED_REF.removeprefix('refs/heads/')]}})
         self.assertEqual(self.workflow['permissions'], {})
@@ -93,6 +97,7 @@ class HostedWorkflowContracts(unittest.TestCase):
             if 'run' in step: self.assertEqual(step['shell'], 'bash')
 
     def test_private_ordered_action_and_trigger_coverage(self):
+        """Verify private ordered action and trigger coverage."""
         self.assertEqual(self.action['runs']['using'], 'composite')
         self.assertEqual(set(self.action['inputs']), {'product', 'line', 'version'})
         steps = self.action['runs']['steps']
@@ -119,6 +124,7 @@ class HostedWorkflowContracts(unittest.TestCase):
         self.assertIn('test_selected_control_workflow', optimized.split())
 
     def test_ineligible_plan_reports_only_closed_reason_categories_before_snapshot(self):
+        """Verify ineligible plan reports only closed reason categories before snapshot."""
         steps = self.action['runs']['steps']
         diagnostic = next(step for step in steps if step.get('name') == 'Reject ineligible plan with safe policy categories')
         diagnostic_index = steps.index(diagnostic)
@@ -171,6 +177,7 @@ class HostedWorkflowContracts(unittest.TestCase):
         self.assertEqual(eligible.stdout + eligible.stderr, '')
 
     def test_exact_transfer_and_readback_allowlists_and_capacity_order(self):
+        """Verify exact transfer and readback allowlists and capacity order."""
         transfer = self.jobs['retrieve']['steps'][1]['with']
         self.assertEqual(set(transfer['path'].splitlines()), {
             '${{ runner.temp }}/selected-transport/' + cell + '/' + name
@@ -185,6 +192,7 @@ class HostedWorkflowContracts(unittest.TestCase):
             '${{ runner.temp }}/selected-readback/' + cell + '/readback.json' for cell in CELLS})
 
     def fixture(self, root):
+        """Create synthetic six-cell job, artifact, archive, and environment data for retrieval."""
         now = datetime.now(timezone.utc)
         sha, repo, ref, workflow = 'a' * 40, transport.REPOSITORY, transport.HOSTED_REF, transport.WORKFLOW
         env = {'GITHUB_REPOSITORY': repo, 'GITHUB_REPOSITORY_ID': transport.REPOSITORY_ID,
@@ -219,6 +227,7 @@ class HostedWorkflowContracts(unittest.TestCase):
 
     def execute_retrieval(self, root, *, modify=None, location='https://fixture.blob.core.windows.net/original',
                           second_redirect=False, disk_free=2 ** 50):
+        """Run the workflow retrieval script against mocked provider responses and disk capacity."""
         data = self.fixture(root)
         if modify: modify(data)
         for cell, (_, _, job_id) in CELLS.items():
@@ -250,6 +259,7 @@ class HostedWorkflowContracts(unittest.TestCase):
         return data
 
     def test_six_original_downloads_preserve_bytes_and_credentials(self):
+        """Verify six original downloads preserve bytes and credentials."""
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve(); data = self.execute_retrieval(root)
             self.assertEqual({p.name for p in (root/'selected-transport').iterdir()}, set(CELLS))
@@ -272,6 +282,7 @@ class HostedWorkflowContracts(unittest.TestCase):
             self.assertEqual(set(json.loads(output.splitlines()[0].split('=', 1)[1])), set(CELLS))
 
     def test_all_metadata_and_aggregate_capacity_fail_before_zip_download(self):
+        """Verify all metadata and aggregate capacity fail before ZIP download."""
         def bad_last(data): data['artifacts']['461']['digest'] = 'sha256:' + 'f' * 64
         for modify, capacity in ((bad_last, 2 ** 50), (None, 1)):
             with self.subTest(capacity=capacity), tempfile.TemporaryDirectory() as temporary:
@@ -282,6 +293,7 @@ class HostedWorkflowContracts(unittest.TestCase):
                 self.assertFalse((root/'output').exists())
 
     def test_capacity_uses_all_six_sizes_and_allows_exact_sufficient_disk(self):
+        """Verify capacity uses all six sizes and allows exact sufficient disk."""
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve(); data = self.fixture(root)
             needed = 3 * sum(a['size_in_bytes'] for a in data['artifacts'].values()) + 6 * 64 * 1024**2 + 18 * 4096
@@ -292,6 +304,7 @@ class HostedWorkflowContracts(unittest.TestCase):
             self.assertEqual(int(outputs['required-bytes']), needed)
 
     def test_bad_provider_metadata_and_redirects_fail_closed(self):
+        """Verify bad provider metadata and redirects fail closed."""
         changes = [lambda d: d['run'].update(run_attempt=3), lambda d: d['run'].update(event='pull_request'),
             lambda d: d['run']['head_repository'].update(id=1), lambda d: d['run'].update(head_sha='f'*40),
             lambda d: d['run'].update(path='foreign.yml'), lambda d: d['jobs']['jobs'][0].update(conclusion='failure'),
@@ -314,6 +327,7 @@ class HostedWorkflowContracts(unittest.TestCase):
             with self.assertRaises(SystemExit): self.execute_retrieval(Path(temporary).resolve(), second_redirect=True)
 
     def test_changed_last_download_never_emits_complete_batch_outputs(self):
+        """Verify changed last download never emits complete batch outputs."""
         def changed(data): data['archives']['461'] = b'changed last original archive'
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve()
@@ -322,6 +336,7 @@ class HostedWorkflowContracts(unittest.TestCase):
             self.assertFalse((root/'selected-transport/extensions-3.9/provider.json').exists())
 
     def test_cross_cell_and_rehashed_expected_tuple_negatives(self):
+        """Verify cross cell and rehashed expected tuple negatives."""
         def expected_change(data, change):
             values = data['tuples']['core-3.8']; expected = json.loads(base64.b64decode(values['expected']))
             change(expected); raw = encoded(expected)
@@ -340,6 +355,7 @@ class HostedWorkflowContracts(unittest.TestCase):
                 self.assertFalse(any(request.full_url.endswith('/zip') for _, request in self.calls))
 
     def readback_fixture(self, root):
+        """Stage retrieved fixture archives as inputs to the independent readback job."""
         data = self.execute_retrieval(root)
         shutil.move(root/'selected-transport', root/'selected-readback-input')
         values = dict(line.split('=', 1) for line in (root/'output').read_text().splitlines())
@@ -349,12 +365,16 @@ class HostedWorkflowContracts(unittest.TestCase):
         return data, env
 
     def execute_readback(self, env):
+        """Run the workflow readback script and capture subprocess calls without native
+        execution.
+        """
         with patch.dict(os.environ, env, clear=True), patch.object(subprocess, 'run') as run, patch('sys.stderr', new_callable=io.StringIO):
             try: exec(compile(self.readback, str(WORKFLOW), 'exec'), {})
             finally: self.readback_calls = run.call_args_list
         return self.readback_calls
 
     def test_readback_hashes_all_cells_before_fixed_cli_invocations(self):
+        """Verify readback hashes all cells before fixed CLI invocations."""
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve(); data, env = self.readback_fixture(root)
             calls = self.execute_readback(env)
@@ -367,6 +387,7 @@ class HostedWorkflowContracts(unittest.TestCase):
                 self.assertEqual(call.kwargs, {'check': True})
 
     def test_all_six_rebound_real_zip_semantics_use_their_distinct_control_job(self):
+        """Verify all six rebound real ZIP semantics use their distinct control job."""
         import selected_control_seal as seal
         import selected_studio_payload as payload
         from test_selected_control_transport import zipped
@@ -418,6 +439,7 @@ class HostedWorkflowContracts(unittest.TestCase):
                 r['context']['job'] == CELLS[r['product']+'-'+r['line']][2] for r in results))
 
     def test_readback_missing_extra_changed_symlink_and_mapping_fail_before_any_cli(self):
+        """Verify readback missing extra changed symlink and mapping fail before any CLI."""
         for kind in ('missing', 'extra', 'directory', 'case', 'symlink', 'bytes', 'providers', 'swap'):
             with self.subTest(kind=kind), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary).resolve(); _, env = self.readback_fixture(root)
@@ -437,6 +459,7 @@ class HostedWorkflowContracts(unittest.TestCase):
                 self.assertFalse(self.readback_calls)
 
     def test_readback_capacity_precedes_download_and_one_cli_failure_stops_batch(self):
+        """Verify readback capacity precedes download and one CLI failure stops batch."""
         for value, free in (('invalid', 2**50), ('100', 99)):
             with self.subTest(value=value), patch.dict(os.environ, {'REQUIRED_BYTES': value, 'RUNNER_TEMP': '/fixture'}, clear=True), \
                     patch.object(shutil, 'disk_usage', return_value=SimpleNamespace(free=free)), self.assertRaises(SystemExit):
@@ -449,6 +472,7 @@ class HostedWorkflowContracts(unittest.TestCase):
             self.assertEqual(run.call_count, 1)
 
     def test_source_availability_uses_fixed_common_file_with_exact_tree_and_bytes(self):
+        """Verify source availability uses fixed common file with exact tree and bytes."""
         step = next(s for s in self.action['runs']['steps'] if s.get('name') == 'Cheap exact source commit availability preflight')
         script = python_script(step, 'PY_SOURCE')
         for correct in (True, False):
