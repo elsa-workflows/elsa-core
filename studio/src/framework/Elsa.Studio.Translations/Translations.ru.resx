@@ -1025,7 +1025,7 @@
     <value />
   </data>
   <data name="The type of the service." xml:space="preserve">
-    <value />
+    <value>Тип сервиса.</value>
   </data>
   <data name="A dropdown list" xml:space="preserve">
     <value />
@@ -1115,7 +1115,7 @@
     <value />
   </data>
   <data name="There are currently no inputs defined." xml:space="preserve">
-    <value />
+    <value>Входы в данный момент не определены.</value>
   </data>
   <data name="String7" xml:space="preserve">
     <value />
@@ -1151,7 +1151,7 @@
     <value />
   </data>
   <data name="There are currently no outputs defined." xml:space="preserve">
-    <value />
+    <value>Выходу в данный момент не определены.</value>
   </data>
   <data name="UpdatedAt" xml:space="preserve">
     <value />
@@ -1199,7 +1199,7 @@
     <value />
   </data>
   <data name="There are currently no variables defined." xml:space="preserve">
-    <value />
+    <value>Переменные в данный момент не определены.</value>
   </data>
   <data name="This input is an array" xml:space="preserve">
     <value />
@@ -1358,7 +1358,7 @@
     <value />
   </data>
   <data name="The name of the function that the agent will execute." xml:space="preserve">
-    <value />
+    <value>Имя функции, которую выполнит агент</value>
   </data>
   <data name="The user-friendly name of this input." xml:space="preserve">
     <value />
@@ -1373,7 +1373,7 @@
     <value />
   </data>
   <data name="The name of the new secret." xml:space="preserve">
-    <value />
+    <value>Имя нового секрета.</value>
   </data>
   <data name="Delete selected variable?" xml:space="preserve">
     <value />
@@ -1472,19 +1472,19 @@
     <value />
   </data>
   <data name="The name of the new agent." xml:space="preserve">
-    <value />
+    <value>Имя нового агента.</value>
   </data>
   <data name="The default key to use for the input name when sending the current item to the dispatched workflow. Will not be used if the Items field contain a list of dictionaries" xml:space="preserve">
     <value />
   </data>
   <data name="The temperature of the model" xml:space="preserve">
-    <value />
+    <value>Температура модели. Большие значения приведут к тому, что предложения модели будут более рискованными. Попробуй 0.1 для получения результатов, на которые обучалась модель. Попробуй 0.9 для очень креативных результатов.</value>
   </data>
   <data name="Used to define the initial instructions" xml:space="preserve">
     <value />
   </data>
   <data name="The value of the API key." xml:space="preserve">
-    <value />
+    <value>Значение API ключа.</value>
   </data>
   <data name="{0} consuming workflow(s) updated" xml:space="preserve">
     <value />
