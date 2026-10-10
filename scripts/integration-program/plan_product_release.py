@@ -159,7 +159,8 @@ class Semantics:
                 text=True, capture_output=True, timeout=60, env=metadata.maintenance.build_environment())
         except (OSError, subprocess.TimeoutExpired) as error:
             process = {'status': 'timed-out' if isinstance(error, subprocess.TimeoutExpired) else 'start-failed'}
-            error._product_release_diagnostic = NativeFailureDiagnostic(error, 'native_semantics', process)
+            outputs = (error.stdout, error.stderr) if isinstance(error, subprocess.TimeoutExpired) else ()
+            error._product_release_diagnostic = NativeFailureDiagnostic(error, 'native_semantics', process, *outputs)
             raise
         process = {'status': 'exited', 'exit_code': result.returncode}
         try:

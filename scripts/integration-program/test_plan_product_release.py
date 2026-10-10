@@ -689,6 +689,16 @@ class ProductReleaseCliDiagnosticsTests(unittest.TestCase):
                 self.assertEqual({'phase': 'native_semantics', 'exception_class': exception_class,
                     'native': {'status': status, 'exit_code': exit_code, 'codes': []}}, diagnostic)
 
+    def test_semantics_timeout_projects_partial_codes_without_partial_output(self):
+        error = subprocess.TimeoutExpired(['PRIVATE_SENTINEL'], 60,
+            output=b'error CS1001: PRIVATE_SENTINEL', stderr=b'warning NU1301: PRIVATE_SENTINEL')
+        with patch.object(planner, 'build_helper', return_value=planner.Semantics(Path('/PRIVATE_SENTINEL/helper.dll'))), \
+             patch.object(metadata, 'git', side_effect=lambda root, *args: '' if args[0] == 'status' else 'a' * 40), \
+             patch.object(planner.subprocess, 'run', side_effect=error):
+            diagnostic = self.failed_main()
+        self.assertEqual({'phase': 'native_semantics', 'exception_class': 'TimeoutExpired',
+            'native': {'status': 'timed-out', 'exit_code': None, 'codes': ['CS1001', 'NU1301']}}, diagnostic)
+
     def test_history_and_prerequisite_preserve_original_native_exception_policy(self):
         def observation(url, body):
             return {'url': url, 'status': 'observed', 'observed_at': planner.now(),
