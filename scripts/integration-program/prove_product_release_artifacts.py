@@ -268,6 +268,7 @@ def execute(root: Path, data: bytes, digest: str, output: Path, *, setup_only: b
     elif plan['line'] == '3.9':
         maintenance39.verify_source(root, plan)
     output.mkdir(parents=True)
+    (output / 'global.json').write_text(json.dumps({'sdk': {'version': metadata.SDK, 'rollForward': 'disable'}}))
     private, retained = output / 'private', output / 'retained'
     private.mkdir()
     retained.mkdir()

@@ -261,11 +261,16 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
                 source.mkdir()
                 (source / 'Elsa.Studio.sln').write_bytes(b'solution')
                 (source / 'packages.source').write_bytes(b'workflow')
+            def failed_preflight(source, admitted, private):
+                self.assertEqual(json.loads((output / 'global.json').read_text()),
+                    {'sdk': {'version': metadata.SDK, 'rollForward': 'disable'}})
+                self.assertFalse((source / 'global.json').exists())
+                raise ValueError('artifact_node_version')
             with patch.object(artifacts, 'verify_controller', return_value=plan['controller']), \
                     patch.object(artifacts, 'selected_execution', return_value=execution.local_execution({})), \
                     patch.object(metadata, 'checkout_source', side_effect=checkout), \
                     patch.object(planner, 'npm_intent', return_value=plan['npm']), \
-                    patch.object(artifacts, 'preflight', side_effect=ValueError('artifact_node_version')), \
+                    patch.object(artifacts, 'preflight', side_effect=failed_preflight), \
                     patch.object(planner, 'build_helper') as helper, patch.object(artifacts.maintenance, 'prepare') as producer:
                 with self.assertRaisesRegex(ValueError, 'artifact_node_version'):
                     artifacts.execute(controller, data, metadata.sha256(data), output)
