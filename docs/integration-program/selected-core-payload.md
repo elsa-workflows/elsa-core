@@ -55,6 +55,18 @@ documents retain the closed SDK, framework or NuGet producer branch and source
 family. An empty document list requires the exact native no-executable-method-body
 applicability counts; it is not an unexplained source-evidence omission.
 
+The embedded `manifest-hints` family has its own closed producer with exactly
+`external_package`, `archive_entry`, `archive_sha256`, `feed` and `restore_sha512`.
+Only `Elsa.Platform.PackageManifest.Generator/0.0.1-preview.53` is admitted, using
+the existing official archive pin, Feedz URL and version-specific hint-entry
+allowlist. Its canonical base64 SHA-512 restore hash must match the selected
+package's single `metadata.manifest_content_targets` row for that generator
+version and build target. The surrounding Core source, plan and emitted-framework
+joins still apply. The regression passes real retained-document writer output
+from synthetic restored archives through seal and readback for both original and
+reviewed-continuation sources, both maintenance lines and all three frameworks
+(12 cells); this does not establish native execution or hosted control acceptance.
+
 The retained Core test projection must contain exactly the source-pinned 44 (3.8)
 or 61 (3.9) project/net10.0 cells, no inherited placeholder rows, all 16 integer
 counters, positive passed counts and exact fixed skip identities/reasons.

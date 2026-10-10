@@ -179,7 +179,32 @@ def _producer(value: dict) -> None:
         _text(value['sdk_version'])
 
 
-def _documents(row: dict, commit: str) -> None:
+def _manifest_hint_producer(value: dict, policy: dict) -> None:
+    """Admit only Core's pinned hint sources, joined to the selected plan's restore."""
+    closed(value, {'external_package', 'archive_entry', 'archive_sha256', 'feed', 'restore_sha512'},
+           'core_payload_manifest_hint_producer')
+    identifier, version = 'Elsa.Platform.PackageManifest.Generator', '0.0.1-preview.53'
+    require(value['external_package'] == identifier + '/' + version and
+            value['archive_sha256'] == archives.GENERATOR_SOURCE_PINS[version] and
+            value['feed'] == archives.GENERATOR_FEED and
+            value['archive_entry'] in archives.GENERATOR_SOURCE_ENTRIES[version], 'core_payload_manifest_hint_identity')
+    checksum = value['restore_sha512']
+    require(type(checksum) is str, 'core_payload_manifest_hint_restore')
+    decoded = base64.b64decode(checksum, validate=True)
+    require(len(decoded) == 64 and base64.b64encode(decoded).decode() == checksum,
+            'core_payload_manifest_hint_restore')
+    targets = _rows(policy['metadata']['manifest_content_targets'], 'core_payload_manifest_hint_targets')
+    require(len(targets) == 1, 'core_payload_manifest_hint_targets')
+    target = closed(targets[0], {'id', 'version', 'restore_sha512', 'entry', 'sha256'},
+                    'core_payload_manifest_hint_target')
+    require(_text(target['id']).casefold() == identifier.casefold() and target['version'] == version and
+            target['restore_sha512'] == checksum and
+            target['entry'] == 'build/Elsa.Platform.PackageManifest.Generator.targets',
+            'core_payload_manifest_hint_plan_restore')
+    digest(target['sha256'])
+
+
+def _documents(row: dict, commit: str, policy: dict) -> None:
     documents = _rows(row['documents'], 'core_payload_documents')
     seen = set()
     for document in documents:
@@ -193,15 +218,18 @@ def _documents(row: dict, commit: str) -> None:
         else:
             closed(document, {'path', 'source', 'family', 'producer', 'algorithm', 'checksum'}, 'core_payload_embedded_document')
             require(source == 'embedded' and re.fullmatch(r'\[embedded\]/document-[1-9][0-9]*', document['path']) is not None and
-                    document['family'] in {'sdk', *archives.GENERATOR_TOOLS}, 'core_payload_embedded_family')
-            _producer(document['producer'])
+                    document['family'] in {'sdk', 'manifest-hints', *archives.GENERATOR_TOOLS}, 'core_payload_embedded_family')
             family, producer = document['family'], document['producer']
-            require((family == 'sdk') == ('compiler_sha256' in producer), 'core_payload_embedded_producer')
-            if family == 'razor':
-                require(producer['kind'] == 'sdk' and 'content_sha256' in producer, 'core_payload_embedded_producer')
-            elif family != 'sdk':
-                require(producer['kind'] in ('framework', 'nuget') and
-                        producer['package_id'] in archives.GENERATOR_TOOLS[family][1], 'core_payload_embedded_producer')
+            if family == 'manifest-hints':
+                _manifest_hint_producer(producer, policy)
+            else:
+                _producer(producer)
+                require((family == 'sdk') == ('compiler_sha256' in producer), 'core_payload_embedded_producer')
+                if family == 'razor':
+                    require(producer['kind'] == 'sdk' and 'content_sha256' in producer, 'core_payload_embedded_producer')
+                elif family != 'sdk':
+                    require(producer['kind'] in ('framework', 'nuget') and
+                            producer['package_id'] in archives.GENERATOR_TOOLS[family][1], 'core_payload_embedded_producer')
         require(document['path'] not in seen and document['algorithm'] in ('sha1', 'sha256'), 'core_payload_document_identity')
         seen.add(document['path'])
         digest(document['checksum'], 40 if document['algorithm'] == 'sha1' else 64)
@@ -247,7 +275,7 @@ def _symbols(row: dict, policy: dict, members: dict, symbol_inventory: dict, com
     digest(symbol['declared_checksum'], 40 if symbol['checksum_algorithm'] == 'SHA1' else 64)
     if not private:
         require(symbol['pdb_size'] == symbol_inventory[row['pdb']]['size'], 'core_payload_pdb_size')
-    _documents(row, commit)
+    _documents(row, commit, policy)
 
 
 def _manifest(native: dict, policy: dict, members: dict, version: str) -> None:
