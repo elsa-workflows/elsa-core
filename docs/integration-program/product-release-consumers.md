@@ -50,7 +50,7 @@ PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=scripts/integration-program \
   python3 -O -m unittest test_prove_product_release_consumers test_selected_extensions_contract
 ```
 
-This implementation has no successful live consumer restore, compile or runtime proof. The first authorized Studio3.8 control must validate native lock representation, original archive availability and framework-pack/pruning behavior before broader execution. Missing full nuspec edges or unexpected framework pruning fail closed for review. A genuine restore/compile/runtime failure stays a failure with private diagnostics and a closed public stage. A source defect requires separately reviewed maintenance continuation; no source helper, dependency or version substitution is permitted.
+Actual bounded Studio 3.8 controls at `666ce4d` and `77a3419` passed native discovery and cold locked restore/build for Elsa.Studio net8/net9 plus Elsa.Studio.Core net9 runtime; the latter also exercised successful-cell cache retirement. The later Localization.BlazorWasm control at `9c47c52` passed compile checks across net8/net9/net10. These controls provide only their recorded selected-cell evidence. The preserved full Studio 3.8 consumer attempt (150 required selected package/TFM cells) remains failed after 102 compile cells and no runtime cells, and no complete six-cell native/hosted proof is accepted. See the [artifact status](product-release-artifacts.md) for producer and registered-source boundaries. Missing full nuspec edges or unexpected framework pruning fail closed for review. A genuine restore/compile/runtime failure stays a failure with private diagnostics and a closed public stage. A source defect requires separately reviewed maintenance continuation; no source helper, dependency or version substitution is permitted.
 
 The producer's default plan freshness gate is unchanged. Consumer admission first requires the exact reviewed successful complete producer receipt, its original execution identity, unchanged plan bytes and immutable controller/source bindings. The original plan must have been eligible and fresh at the producer's validated actual UTC start. This historical check derives its timestamp only from the hash-bound receipt; there is no caller clock or as-of option. Invalid, future, pre-plan, stale-at-start or altered producer identities fail. A long producer run does not extend the plan's expiry or make its old observations current.
 
@@ -62,8 +62,8 @@ Studio 3.9 and Extensions 3.9 reuse their respective reviewed runtime fixtures o
 
 ## Hosted identity and private snapshot stage
 
-The [artifact controller stage-1 boundary](product-release-artifacts.md#hosted-identity-and-private-snapshot-stage)
-describes the new runner-environment identity seam and the private
+The [artifact controller hosted boundary](product-release-artifacts.md#hosted-identity-and-private-snapshot-stage)
+describes runner-environment identity and the private
 `snapshot_product_planning_assets.py` command. Hosted producer admission checks
 the exact role/controller/plan/source and same trusted workflow job/run/attempt.
 Local receipt schemas and local guard checks remain unchanged. Historical
@@ -71,8 +71,12 @@ producer-start admission and the separate current complete consumer prerequisite
 gate retain their existing semantics. Keep original snapshot bytes and their
 planning cache private until external catalog freezing; derived target summaries
 are never closure authority. The selected seal, provider retrieval and independent
-ZIP readback are implemented at source level, and the hosted workflow currently
-selects Studio 3.8 only. Actual six-cell hosted proof remains unverified.
+ZIP readback are implemented at source level. The [hosted workflow](../../.github/workflows/selected-product-release-control.yml)
+selects six explicit Core/Studio/Extensions × 3.8/3.9 control jobs, followed by
+retrieval and readback; its composite action explicitly opts into successful-cell
+cache retirement. Actual complete six-cell hosted proof remains unverified. The
+Studio 3.8 → Extensions 3.8 → full-matrix sequence is the required validation
+sequence, not a dependency chain among those six workflow control jobs.
 
 ## Original SDK pruning and targeting downloads
 
@@ -80,7 +84,7 @@ Generated single-TFM consumers explicitly preserve the admitted original per-pro
 
 `selected_consumer_sdk.py` separately freezes exact original `downloadDependencies` targeting-pack candidates, raw SHA512 sidecars and native signature-integrity/content hashes. Original snapshots authorize only their IDs/versions/TFMs; candidate hashes are **new bootstrap evidence**, never original snapshot hash authority. Exactly mapped original feeds supply finite discovery mirrors and a new cold HTTPS proof must reproduce the frozen bytes, native hashes and original source mapping. SDK downloads stay outside product libraries, lock graph, publication scope and selected runtime byte joins. The safe `sdk_restore` cell ledger joins `original_assets_sha256` to that selected project’s plan-bound raw snapshot hash and records this separate evidence; raw archives/catalogs remain private.
 
-Generated projects suppress implicit SDK library-pack/fallback sources and set `UseAppHost=false` for portable managed probes. TFMs with original SDK downloads use an empty cell-local targeting-pack root, preventing ambient installed packs from suppressing the verified download lane; the root must remain absent. The original net10 installed-SDK lane is unchanged. SDK10.0.300 original net8/net9 reference-pack versions are 8.0.27/9.0.16; new versions, roots, feeds and wildcard mappings are rejected. These changes are offline source-ready only until reviewed actual net8/net9 discovery, cold locked restore/build and runtime checks pass.
+Generated projects suppress implicit SDK library-pack/fallback sources and set `UseAppHost=false` for portable managed probes. TFMs with original SDK downloads use an empty cell-local targeting-pack root, preventing ambient installed packs from suppressing the verified download lane; the root must remain absent. The original net10 installed-SDK lane is unchanged. SDK10.0.300 original net8/net9 reference-pack versions are 8.0.27/9.0.16; new versions, roots, feeds and wildcard mappings are rejected. The bounded Studio 3.8 controls above exercised this lane with actual net8/net9 discovery, cold locked restore/build and net9 runtime. That evidence does not certify every selected TFM/package, another source line or the complete matrix.
 
 ## Native excluded-content markers
 
@@ -96,4 +100,4 @@ A separate closed inert record, `native-synthetic-excluded-build`, accounts for 
 
 The same-root original raw snapshot must join the exact external package/version/TFM/native content hash and frozen archive. Its original default direct PackageReference and project dependency-group projection must agree, with a nonempty real archive-present `.props`/`.targets` Build group and no BuildTransitive or BuildMultiTargeting group. Native `ClearIfExists` sorts by the character index of the last slash, then ordinal case-insensitive path, and replaces that group with one marker while copying its empty properties. This adapter admits only matching `build/<TFM>` directories and empty properties. Mixed real/marker groups, selected synthetic markers, physical or case-colliding archive/cache markers and symlinks reject. Real archive markers continue through ordinary cache-byte verification.
 
-The fixed origin is `selected-root-nuspec-build-exclusion`. The inert record has an archive hash and no invented file hash or size; it cannot provide runtime bytes. The seal repeats the available plan-edge, unique eligible original prerequisite/version/range, typed archive-hash and singleton-group checks. Exact native graph uniqueness and private original snapshot judgments remain inherited through the bound controller/receipt and `sdk_restore.original_assets_sha256`, rather than a claim of independent flag-graph resolution. The source basis is pinned [LockFileUtils](https://github.com/dotnet/dotnet/blob/caa81fa4971f74880cdab61990cb1b11420939ec/src/nuget-client/src/NuGet.Core/NuGet.Commands/RestoreCommand/Utility/LockFileUtils.cs#L823-L858) and its [Build exclusion branch](https://github.com/dotnet/dotnet/blob/caa81fa4971f74880cdab61990cb1b11420939ec/src/nuget-client/src/NuGet.Core/NuGet.Commands/RestoreCommand/Utility/LockFileUtils.cs#L1050-L1095). This correction has offline contract evidence only; the preserved full Studio3.8 run remains failed until a new reviewed control succeeds.
+The fixed origin is `selected-root-nuspec-build-exclusion`. The inert record has an archive hash and no invented file hash or size; it cannot provide runtime bytes. The seal repeats the available plan-edge, unique eligible original prerequisite/version/range, typed archive-hash and singleton-group checks. Exact native graph uniqueness and private original snapshot judgments remain inherited through the bound controller/receipt and `sdk_restore.original_assets_sha256`, rather than a claim of independent flag-graph resolution. The source basis is pinned [LockFileUtils](https://github.com/dotnet/dotnet/blob/caa81fa4971f74880cdab61990cb1b11420939ec/src/nuget-client/src/NuGet.Core/NuGet.Commands/RestoreCommand/Utility/LockFileUtils.cs#L823-L858) and its [Build exclusion branch](https://github.com/dotnet/dotnet/blob/caa81fa4971f74880cdab61990cb1b11420939ec/src/nuget-client/src/NuGet.Core/NuGet.Commands/RestoreCommand/Utility/LockFileUtils.cs#L1050-L1095). The later Localization.BlazorWasm three-TFM control exercised this narrow accounting with native restore/build evidence. The preserved full Studio 3.8 run remains failed; that targeted control does not replace a complete successful matrix.

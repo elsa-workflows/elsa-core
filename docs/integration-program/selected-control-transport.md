@@ -1,10 +1,13 @@
 # Selected control transport prerequisite
 
 `selected_control_transport.py` is an offline byte-validation prerequisite for
-Task #8693 hosted controls. It has **no seal, staging, extraction or command-line
-entry point** and is not called by a producer, consumer or workflow. It cannot
-admit a selected control or authorize an upload. The complete six-cell semantic
-validator and hosted workflow remain required.
+Task #8693 hosted controls. The helper itself has **no seal, staging, extraction
+or command-line entry point**. Its byte/identity checks are used by the implemented
+[semantic seal and readback](selected-control-seal.md) and the
+[six-cell hosted workflow](../../.github/workflows/selected-product-release-control.yml).
+Transport validation alone cannot admit a selected control or authorize an upload.
+Actual complete six-cell native controls and hosted provider ZIP proof remain
+unverified; source implementation does not establish that acceptance.
 
 The module validates strict UTF-8 JSON, bounded original ZIP bytes, complete
 manifest/file hash closure, safe casefold-unique paths and regular members. It
@@ -23,7 +26,7 @@ bytes. Allowed transport path patterns are `plan.json`, `producer/receipt.json`,
 `consumer/receipt.json`, `producer/nuget/*.nupkg`, `producer/nuget/*.snupkg`,
 `producer/npm/*.tgz`, `producer/npm/receipt.json` and
 `preupload-manifest.json`. These patterns are **not the plan-selected file
-allowlist**: that exact allowlist is a still-required semantic check. Tests
+allowlist**: the implemented semantic validator derives that exact allowlist. Tests
 intentionally demonstrate that transporting arbitrary receipt bytes is distinct
 from admitting those receipts.
 
@@ -40,65 +43,78 @@ The closed provider projection contains `schema`, `repository`, `repository_id`,
 `expires_at`, `expired` and `retrieved_at`. It binds the reviewed repository,
 workflow, trusted push ref, exact controller and upstream successful control.
 A run may be in progress while readback executes; a completed run must have
-succeeded. A future fixed retrieval job must derive this projection from actual
-GitHub run/artifact responses and trusted upstream outputs. Accepting a projection
-in this pure function does not prove it came from GitHub. No provider request has
-been implemented or run. Availability is a retrieval snapshot; acceptance needs
-a later current-provider recheck.
+succeeded. The workflow's implemented fixed retrieval job derives this projection
+from GitHub run/artifact responses and trusted upstream outputs, validating all
+six metadata tuples before downloading original ZIP bytes. Its API redirect is
+handled explicitly; the token is not forwarded to object storage. Accepting a
+projection in this pure helper does not prove it came from GitHub. Retrieval
+implementation is separate from actual successful six-cell provider evidence.
+Availability is a retrieval snapshot; acceptance needs a later current-provider
+recheck.
 
 Resource ceilings are fixed: 2 GiB outer compressed bytes, 8 GiB outer expanded
 bytes, 10,000 members, 512 MiB compressed and expanded per leaf package/tarball,
 64 MiB per receipt/manifest and 32 MiB per plan. Exceeding a ceiling fails; nothing
-truncates or automatically expands a budget. No successful product output or
-provider artifact has been used to claim compatibility with these limits.
+truncates or automatically expands a budget. Bounded vertical results do not
+establish compatibility of every selected output/provider artifact with these
+limits; the complete six-cell proof remains required.
 
-## Required next semantic work
+## Implemented semantic boundary and remaining proof
 
-The next bounded implementation should first close the Studio vertical payload,
-then add Core and Extensions specializations, and only then expose the final
-seal/stage/readback interface after every six-cell schema is supported. The
-transport-only manifest is not a substitute for that final control manifest.
+The seal/stage/readback interface supports all six Core/Studio/Extensions × 3.8/3.9
+schemas with source-bound specializations. The workflow has six explicit control
+jobs, then fixed retrieval and independent readback. Successful actual Studio 3.8
+and generator-bearing Extensions 3.8 verticals remain the required validation
+sequence before complete matrix acceptance, not a workflow job dependency chain.
+The transport-only manifest is not a substitute for the final semantic control
+manifest. The implemented checks below repeat public byte/receipt joins; native,
+compiler, test and runtime execution judgments remain inherited from the exact
+successful source-bound receipts.
 
-- Plan: close the concrete public plan/inventory/metadata/history/feed schemas;
-  admit the original plan hash at actual producer start; bind exact controller
+- Plan: closes the concrete public plan/inventory/metadata/history/feed schemas;
+  admits the original plan hash at actual producer start and binds exact controller
   input hashes, original source policies, selected identities, expected archive
-  names, output/symbol policies and dependency/framework groups. Reuse the pure
+  names, output/symbol policies and dependency/framework groups. It reuses the pure
   `prove_product_release_artifacts.admit` and exact source contracts, without
   process, environment, Git or network calls in independent readback.
-- Producer: close the successful conditional writer, test counters and exact
-  source-bound skip rows. Join every selected package file/inventory/hash/size to
+- Producer: closes the successful conditional writer, test counters and exact
+  source-bound skip rows. It joins every selected package file/inventory/hash/size to
   actual ZIP bytes and nuspec ID/version/repository/dependency/framework metadata.
-  Explicitly account for `packages.private_recipe_only_outputs`: only excluded
+  It explicitly accounts for `packages.private_recipe_only_outputs`: only excluded
   plan IDs, exact version and safe relative inventories/hashes/sizes are allowed;
-  excluded archive bytes are never staged. Preserve original receipt bytes.
+  excluded archive bytes are never staged. Original receipt bytes are preserved.
 - Studio npm: the concrete historical writer has no embedded proof manifest or
-  toolchain receipt. Reject invented fields. Close its actual outer source,
-  execution, command and lifecycle-correction schemas; recompute both tarballs,
-  package metadata hashes, names/versions, exact React-to-WASM dependency and SRI;
-  join normal consumer local archive evidence and all three generated public
-  asset families to WASM and wrapper bytes. Reuse the source-bound historical
+  toolchain receipt. Invented fields are rejected. Its actual outer source,
+  execution, command and lifecycle-correction schemas are closed. Checks recompute
+  tarball inventories, package metadata hashes and SRI, validate names/versions
+  and the exact React-to-WASM dependency, and join normal consumer local archive
+  evidence and all three generated public
+  asset families to WASM and wrapper bytes. They reuse the source-bound historical
   continuation contract; do not transplant the current Studio proof helper.
-- Consumer: close historical and complete current admissions separately, including
-  checked time, exact counts and observation digest. Validate complete selected
+- Consumer: closes historical and complete current admissions separately, including
+  checked time, exact counts and observation digest. It validates complete selected
   package/TFM bijection, output-only accounting, restore/input/isolation ledgers,
-  raw versus native content hashes and original feed evidence. Join every
+  raw versus native content hashes and original feed evidence. It joins every
   selected restored payload and runtime loaded asset to exact archive inventory
-  bytes. Validate representative runtime source/API pins and all applicable TFMs.
-- Core: close native per-asset assembly/PDB/symbol/document/satellite/SDK evidence,
-  reuse `selected_core_consumer.bind_assemblies`, preserve the exact SamplePackage
-  no-symbol exception and original conditional skip policies. Never derive Core
+  bytes and validates representative runtime source/API pins and all applicable TFMs.
+- Core: closes native per-asset assembly/PDB/symbol/document/satellite/SDK evidence
+  against fixed trusted source contracts, preserving the exact SamplePackage
+  no-symbol exception and original conditional skip policies. It never derives Core
   assembly versions from the requested NuGet version.
-- Extensions: close manifest/native SDK evidence, pin the generator/HTTP I/O
-  representative policy and preserve original DLL `1.0.0+sourceSHA` separately
+- Extensions: closes manifest/native SDK evidence, pins the generator/HTTP I/O
+  representative policy and preserves original DLL `1.0.0+sourceSHA` separately
   from requested package version. Original manifest version conflicts remain
   failures. Native, compiler, SourceLink, runtime and test judgments are inherited
   from exact successful source-bound receipts, not rerun by Python.
-- Final interface: build the exact conditional file allowlist and final control
-  manifest only after all semantic checks; preserve canonical input bytes. On
-  provider ZIP readback, repeat every semantic/hash/content join before any
-  optional no-overwrite extraction. Implement fixed retrieval/workflow separately.
+- Final interface: builds the exact conditional file allowlist and final control
+  manifest only after all semantic checks, preserving canonical input bytes. On
+  original provider ZIP readback, it repeats every available semantic/hash/content
+  join before writing the new readback receipt. The seal CLI and fixed workflow
+  supply staging, retrieval and readback; this transport helper does not extract
+  archives or perform provider requests.
 
 The accepted architecture remains same-job private planning snapshot, producer
 and cold consumer execution, followed by independent original provider-ZIP
-readback. This does not claim a consumer executed after retrieval. Raw planning
+readback. Actual complete six-cell acceptance remains unverified. This does not
+claim a consumer executed after retrieval. Raw planning
 assets, logs, TRX, caches, source trees and private paths remain outside uploads.
