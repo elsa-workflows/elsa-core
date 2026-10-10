@@ -11,6 +11,8 @@ using NSubstitute;
 
 namespace Elsa.Shells.Api.Tests;
 
+// Serialize fixture users because they mutate the shared static EndpointSecurityOptions state.
+[Collection(nameof(ShellsApiTestBase))]
 public abstract class ShellsApiTestBase : IAsyncLifetime
 {
     private WebApplication? _app;

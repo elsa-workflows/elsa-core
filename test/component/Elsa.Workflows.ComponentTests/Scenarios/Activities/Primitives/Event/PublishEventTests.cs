@@ -20,6 +20,7 @@ public class PublishEventTests : AppComponentTest
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly IWorkflowRuntime _workflowRuntime;
     private readonly WorkflowEvents _workflowEvents;
+    private static readonly JsonSerializerOptions CaseInsensitive = new() { PropertyNameCaseInsensitive = true };
 
     public PublishEventTests(App app) : base(app)
     {
@@ -72,16 +73,25 @@ public class PublishEventTests : AppComponentTest
         Assert.True(consumerInstance.WorkflowState.Output.TryGetValue("ReceivedPayload", out var receivedPayload), "Consumer workflow should have ReceivedPayload output");
         Assert.NotNull(receivedPayload);
 
-        // Verify the payload structure and content
-        using var payloadDocument = JsonDocument.Parse(JsonSerializer.Serialize(receivedPayload));
-        Assert.True(payloadDocument.RootElement.TryGetProperty("Status", out var status), "Received payload should contain a Status property");
-        Assert.Equal("Shipped", status.GetString());
+        // The stored payload has been through the workflow state serializer, whose naming policy camelCases
+        // its keys. Match the CLR property name case-insensitively when verifying the persisted content.
+        var payload = JsonSerializer.Deserialize<ReceivedEventPayload>(JsonSerializer.Serialize(receivedPayload), CaseInsensitive);
+        Assert.Equal("Shipped", payload?.Status);
     }
+
+    private record ReceivedEventPayload(string? Status);
 
     private async Task<WorkflowInstance> GetSingleWorkflowInstanceAsync(string definitionId, string correlationId, int timeoutMs = 5000)
     {
         var tcs = new TaskCompletionSource<WorkflowInstance>();
         var cts = new CancellationTokenSource(timeoutMs);
+
+        async Task<List<WorkflowInstance>> FindFinishedInstancesAsync() => (await _workflowInstanceStore.FindManyAsync(new()
+        {
+            DefinitionId = definitionId,
+            CorrelationId = correlationId,
+            WorkflowStatus = WorkflowStatus.Finished
+        }, cts.Token)).ToList();
 
         // Register cancellation to fail the task on timeout
         cts.Token.Register(() => tcs.TrySetException(new TimeoutException($"Workflow instance with DefinitionId '{definitionId}' and CorrelationId '{correlationId}' was not saved within {timeoutMs}ms")));
@@ -89,7 +99,7 @@ public class PublishEventTests : AppComponentTest
         // Subscribe to the WorkflowInstanceSaved event
         void OnWorkflowInstanceSaved(object? sender, WorkflowInstanceSavedEventArgs args)
         {
-            if (args.WorkflowInstance.DefinitionId == definitionId && args.WorkflowInstance.CorrelationId == correlationId)
+            if (args.WorkflowInstance.DefinitionId == definitionId && args.WorkflowInstance.CorrelationId == correlationId && args.WorkflowInstance.Status == WorkflowStatus.Finished)
             {
                 tcs.TrySetResult(args.WorkflowInstance);
             }
@@ -100,17 +110,14 @@ public class PublishEventTests : AppComponentTest
         try
         {
             // Check if the instance already exists in the database
-            var existingInstances = (await _workflowInstanceStore.FindManyAsync(new()
-            {
-                DefinitionId = definitionId,
-                CorrelationId = correlationId
-            }, cts.Token)).ToList();
+            var existingInstances = await FindFinishedInstancesAsync();
 
             if (existingInstances.Any())
                 return Assert.Single(existingInstances);
 
-            // Wait for the event to be raised
-            return await tcs.Task;
+            // The saved notification follows persistence; reload instead of returning its in-memory payload.
+            await tcs.Task;
+            return Assert.Single(await FindFinishedInstancesAsync());
         }
         finally
         {
