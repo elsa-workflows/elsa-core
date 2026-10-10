@@ -71,7 +71,7 @@ class CoreSourceContinuationContracts(unittest.TestCase):
             continuation.verify_source(Path('/unused'), source, self.originals[line], contract)
 
     def test_fixed_candidate_identities_and_preserved_original_policies(self):
-        expected = {'3.8': ('098cdacdc291ee1e0f27a2a08acaba80cfa8604f', '089266b439e3bdfbfd82e0d28b85cc2d13218686', 3, 2, 44),
+        expected = {'3.8': ('7e5e6bcf97791e4f7f7165e15579abae18ec7203', 'd5c10535cee3524d91f5ae54b5cecb967c26b606', 4, 3, 44),
                     '3.9': ('86fffea6da3cfe67c0279f552c2a32940ef75ae2', '8beb9e093091c098f542a08e82e43625a3b8e520', 1, 1, 61)}
         for line, (commit, tree, chain, delta, tests) in expected.items():
             with self.subTest(line=line):

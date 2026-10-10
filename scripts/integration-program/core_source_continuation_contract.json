@@ -4,10 +4,10 @@
   "sources": {
     "3.8": {
       "pr": 8696,
-      "commit": "098cdacdc291ee1e0f27a2a08acaba80cfa8604f",
-      "tree": "089266b439e3bdfbfd82e0d28b85cc2d13218686",
+      "commit": "7e5e6bcf97791e4f7f7165e15579abae18ec7203",
+      "tree": "d5c10535cee3524d91f5ae54b5cecb967c26b606",
       "parents": [
-        "bdf0310ece3265c73e6c4c4a32f7183724e04f80"
+        "098cdacdc291ee1e0f27a2a08acaba80cfa8604f"
       ],
       "original_commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
       "original_tree": "7ab70135ea43fc6e93c6cb26b9d0df2d91b20b85",
@@ -31,6 +31,13 @@
           "tree": "089266b439e3bdfbfd82e0d28b85cc2d13218686",
           "parents": [
             "bdf0310ece3265c73e6c4c4a32f7183724e04f80"
+          ]
+        },
+        {
+          "commit": "7e5e6bcf97791e4f7f7165e15579abae18ec7203",
+          "tree": "d5c10535cee3524d91f5ae54b5cecb967c26b606",
+          "parents": [
+            "098cdacdc291ee1e0f27a2a08acaba80cfa8604f"
           ]
         }
       ],
@@ -67,6 +74,23 @@
             "blob": "1cb2295e055723e46e2e45337428aebc6ec2270c",
             "bytes": 5843,
             "sha256": "8682f0699d08af1cc67293a76a2c8db5100b2c806e8337bec1e20891082ddcab"
+          }
+        },
+        {
+          "path": "test/unit/Elsa.Shells.Api.Tests/ShellsApiTestBase.cs",
+          "before": {
+            "mode": "100644",
+            "type": "blob",
+            "blob": "74cec649f74a13df920854ddbc915df8a21af6ee",
+            "bytes": 2664,
+            "sha256": "62dbf3c5109077f2ec49562b0f8630e31323adf6667eb6adbe73624e94304104"
+          },
+          "after": {
+            "mode": "100644",
+            "type": "blob",
+            "blob": "49f8f48634296e9f57ddd62154411ed3cdb87177",
+            "bytes": 2800,
+            "sha256": "2057aa84ccde0a225ebce86604d97768a2c0f729616cac89e471a47fc8ec39f2"
           }
         }
       ]

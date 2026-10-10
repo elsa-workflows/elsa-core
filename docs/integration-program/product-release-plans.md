@@ -54,7 +54,7 @@ After independent exact-head receipt review, the remaining #8217 deliverables ar
 
 The selected Core policy also supports the closed `reviewed-core-maintenance-continuation`
 kind. The tracked `core_source_continuation_contract.json` contains exactly two candidate
-identities: Core 3.8 `098cdacdc291ee1e0f27a2a08acaba80cfa8604f` and Core 3.9
+identities: Core 3.8 `7e5e6bcf97791e4f7f7165e15579abae18ec7203` and Core 3.9
 `86fffea6da3cfe67c0279f552c2a32940ef75ae2`. These are candidate commits, not observed
 release-branch heads. Fresh branch and tag observations still describe the immutable
 original release baseline. The source binding retains both original commit/tree and
