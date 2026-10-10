@@ -305,6 +305,30 @@ class SelectedProductConsumerTests(unittest.TestCase):
         self.assertEqual(['External'], groups['original'])
         self.assertNotIn('*', str(groups))
 
+    def test_unused_original_sources_remain_configured_without_empty_mapping_groups(self):
+        feeds = deepcopy(self.feeds)
+        feeds['sources'].update({
+            'elsa3.feedz.io': 'https://f.feedz.io/elsa-workflows/elsa/nuget/index.json',
+            'webhooks-core.feedz.io': 'https://f.feedz.io/personal/webhooks-core/nuget/index.json'})
+        feeds['mapping']['external'] = ['original', 'elsa3.feedz.io']
+        feeds['mapping']['example'] = list(feeds['sources'])
+        for discovery in (False, True):
+            policy = deepcopy(feeds)
+            if discovery:
+                policy['sources'] = {name: str(self.root / 'finite-mirrors' / name) for name in policy['sources']}
+            for selected_only in (False, True):
+                graph = {'example': self.graph['example']} if selected_only else self.graph
+                with self.subTest(discovery=discovery, selected_only=selected_only):
+                    config = ET.fromstring(proof.render_config(self.artifacts, graph, policy))
+                    sources = {row.get('key'): row.get('value') for row in config.find('packageSources') if row.tag == 'add'}
+                    self.assertEqual(policy['sources'] | {proof.LOCAL: str(self.artifacts.resolve())}, sources)
+                    groups = {row.get('key'): [item.get('pattern') for item in row] for row in config.find('packageSourceMapping')}
+                    expected = {proof.LOCAL: ['Example']}
+                    if not selected_only:
+                        expected.update({'original': ['External'], 'elsa3.feedz.io': ['External']})
+                    self.assertEqual(expected, groups)
+                    self.assertTrue(all(groups.values()))
+
     def restored(self):
         root = self.root / 'consumer'
         cache = root / 'packages'
