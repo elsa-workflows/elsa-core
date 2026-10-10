@@ -159,6 +159,7 @@ def fixture(product, line, *, source_mutation=None):
     def cell(policy, target, runtime=False):
         row = deepcopy(template_cell); item = selected[policy['id'].casefold()]
         row.update(id=policy['id'], framework=target, archive_sha256=item['record']['sha256'], original_output_policy=policy['metadata']['original_output_policy'][target])
+        row['sdk_restore']['original_assets_sha256'] = policy['metadata']['restore_assets_sha256']
         row['input_sha256']['Program.cs'] = metadata.sha256(contracts['fixtures'][product] if runtime else b'extern alias selected;\npublic class CompileContract {}\n')
         admitted = list(selected.values()) if runtime else [item]
         row['restored'] = [{'id': x['policy']['id'], 'version': version, 'assets_type': 'package', 'source': 'selected-local-archives',
@@ -255,6 +256,20 @@ class SelectedProductPayloadTests(unittest.TestCase):
             with self.subTest(change=change), self.assertRaises(ValueError): self.validate(values)
             self.files, self.context = values[:2]
             seal_tests.SealContracts.assert_cli_rejected(self)
+
+    def test_sdk_ledger_binds_original_assets_for_every_selected_cell(self):
+        for product in ('core', 'studio', 'extensions'):
+            for line in ('3.8', '3.9'):
+                values = fixture(product, line)
+                self.validate(values)
+                receipt = json.loads(values[0]['consumer/receipt.json'])
+                receipt['coverage'][0]['sdk_restore']['original_assets_sha256'] = 'f' * 64
+                values[0]['consumer/receipt.json'] = encoded(receipt)
+                with self.subTest(product=product, line=line), self.assertRaisesRegex(
+                        ValueError, 'selected_payload_sdk_original_assets'):
+                    self.validate(values)
+                self.files, self.context = values[:2]
+                seal_tests.SealContracts.assert_cli_rejected(self)
 
     def test_frozen_retained_file_closure_is_conditional_on_product(self):
         for product in ('core', 'studio', 'extensions'):

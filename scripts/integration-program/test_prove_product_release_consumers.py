@@ -63,7 +63,8 @@ class SelectedProductConsumerTests(unittest.TestCase):
         self.hash = 'a' * 64
         self.source = {'commit': 'b' * 40, 'tree': 'c' * 40}
         self.policy = {'id': 'Example', 'project': 'src/Example.csproj', 'frameworks': ['net8.0', 'net10.0'],
-                       'metadata': {'dependency_groups': [{'framework': 'net8.0', 'dependencies': []}]}}
+                       'metadata': {'restore_assets_sha256': '7' * 64,
+                                    'dependency_groups': [{'framework': 'net8.0', 'dependencies': []}]}}
         self.plan = {'observed_at': proof.planner.now(), 'source': self.source, 'controller': deepcopy(self.planner_controller), 'product': 'studio', 'line': '3.8',
                      'requested_version': '3.8.999', 'inventory': {'selected': [self.policy]},
                      'expected_artifacts': ['Example.3.8.999.nupkg']}

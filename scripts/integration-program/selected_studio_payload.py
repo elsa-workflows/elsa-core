@@ -237,12 +237,15 @@ def validate_npm(plan: dict, receipt: dict, files: dict[str, bytes], contract: d
     require(transport.strict_json(files['producer/npm/receipt.json']) == report, 'selected_payload_npm_separate_receipt')
 
 
-def validate_sdk_restore(plan: dict, value: dict, selected: dict, framework: str, restored: dict) -> None:
-    transport.closed(value, {'sdk_version', 'pruning_enabled', 'pruning_sha256', 'pruned_edges', 'downloads',
+def validate_sdk_restore(plan: dict, value: dict, selected: dict, framework: str, restored: dict,
+                         original_assets_sha256: str) -> None:
+    transport.closed(value, {'sdk_version', 'original_assets_sha256', 'pruning_enabled', 'pruning_sha256', 'pruned_edges', 'downloads',
         'toolchain_hash_scope'}, 'selected_payload_sdk_restore')
     require(value['sdk_version'] == metadata.SDK and type(value['pruning_enabled']) is bool and
         value['toolchain_hash_scope'] == 'new-frozen-bootstrap-catalog-joined-to-fresh-original-feed-bytes',
         'selected_payload_sdk_restore_scope')
+    transport.digest(value['original_assets_sha256'])
+    require(value['original_assets_sha256'] == original_assets_sha256, 'selected_payload_sdk_original_assets')
     transport.digest(value['pruning_sha256'])
     seen = set()
     for row in sequence(value['pruned_edges']):
@@ -334,7 +337,8 @@ def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, ru
                     'selected_payload_native_content_hash')
         restored[folded] = row
     require(cell['id'].casefold() in restored, 'selected_payload_restored_root')
-    validate_sdk_restore(plan, cell['sdk_restore'], selected, framework, restored)
+    validate_sdk_restore(plan, cell['sdk_restore'], selected, framework, restored,
+                         item['policy']['metadata']['restore_assets_sha256'])
     payload_rows, payloads = {}, {}
     for row in sequence(cell['restored_payloads']):
         transport.closed(row, {'id', 'version', 'payloads'}, 'selected_payload_restored_payloads')

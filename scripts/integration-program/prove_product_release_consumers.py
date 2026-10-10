@@ -403,7 +403,8 @@ def cell(plan: dict, package: dict, framework: str, selected: dict, artifacts: P
     result = {'id': package['id'], 'framework': framework, 'success': True, 'fresh_cache': True, 'package_reference_only': True,
               'accounting': 'managed-reference-compile' if managed else 'output-content-only-restore-build',
               'original_output_policy': output_policy, 'restored_payloads': payloads,
-              'sdk_restore': resolution.sdk.retained_policy(sdk_policy, pruned_edges, sdk_downloads),
+              'sdk_restore': resolution.sdk.retained_policy(sdk_policy, pruned_edges, sdk_downloads,
+                  package['policy']['metadata']['restore_assets_sha256']),
               'discovery_scope': 'offline-original-archive-metadata-only',
               'native_lock_sha256': metadata.sha256(lock_bytes), 'archive_sha256': package['nupkg_sha256'], 'restored': cached, 'isolation': isolation, 'input_sha256': inputs}
     if runtime:

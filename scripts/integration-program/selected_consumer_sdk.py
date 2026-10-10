@@ -131,8 +131,9 @@ def verify_downloads(assets: dict, framework: str, policy: dict, catalog: dict, 
     return records
 
 
-def retained_policy(policy: dict, pruned: list[dict], downloads: list[dict]) -> dict:
-    return {'sdk_version': metadata.SDK, 'pruning_enabled': bool(policy['pruning']),
+def retained_policy(policy: dict, pruned: list[dict], downloads: list[dict], original_assets_sha256: str) -> dict:
+    return {'sdk_version': metadata.SDK, 'original_assets_sha256': original_assets_sha256,
+        'pruning_enabled': bool(policy['pruning']),
         'pruning_sha256': metadata.sha256(json.dumps(policy['pruning'], sort_keys=True).encode()),
         'pruned_edges': pruned, 'downloads': downloads,
         'toolchain_hash_scope': 'new-frozen-bootstrap-catalog-joined-to-fresh-original-feed-bytes'}
