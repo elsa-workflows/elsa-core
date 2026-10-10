@@ -771,7 +771,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'consumer_input_hash'):
             self.verify_empty_content(values)
 
-    def run_private_consumer(self, freshness_error=None):
+    def run_private_consumer(self, freshness_error=None, *, retire_caches=False, command_error=None):
         self.policy.update(id='Elsa.Studio.Core', frameworks=['net8.0'])
         self.policy['metadata'].update(original_output_policy={'net8.0': {'IncludeBuildOutput': 'true'}},
                                        framework_reference_groups=[])
@@ -790,6 +790,8 @@ class SelectedProductConsumerTests(unittest.TestCase):
         commands = []
         def command(args, cwd, environment, log, timeout):
             commands.append(args[1])
+            if args[1] == command_error:
+                raise ValueError('injected_' + command_error)
             if args[1] == 'restore':
                 cache = cwd / 'packages/elsa.studio.core/3.8.999'
                 cache.mkdir(parents=True)
@@ -850,13 +852,17 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 patch.object(proof.consumers, '_run_command', side_effect=command):
             def execute():
                 return proof.execute(self.controller_root, plan_path, self.hash, receipt_path,
-                    metadata.sha256(receipt_path.read_bytes()), self.artifacts, self.root / 'unused', output)
+                    metadata.sha256(receipt_path.read_bytes()), self.artifacts, self.root / 'unused', output,
+                    retire_caches=retire_caches)
             if freshness_error:
                 with self.assertRaisesRegex(ValueError, str(freshness_error)):
                     execute()
                 self.assertFalse(inspector_mock.called)
                 self.assertFalse(catalog_mock.called)
                 self.assertEqual([], commands)
+            elif command_error:
+                with self.assertRaisesRegex(ValueError, 'injected_' + command_error):
+                    execute()
             else:
                 execute()
         data = (output / 'retained/receipt.json').read_text()
@@ -887,6 +893,65 @@ class SelectedProductConsumerTests(unittest.TestCase):
         self.assertEqual(proof.LOCAL, retained['coverage'][0]['restored'][0]['source'])
         self.assertEqual(metadata.sha256(dll), retained['runtime'][0]['runtime']['loaded_assemblies'][0]['sha256'])
         self.assertIn(str(output), (output / 'private/runtime-net8.0/runtime.log').read_text())
+        for cell in (output / 'private').iterdir():
+            if (cell / 'Consumer.csproj').exists():
+                self.assertTrue((cell / 'packages').is_dir())
+                self.assertTrue((cell / 'discovery/packages').is_dir())
+                self.assertFalse((cell / 'cell-proof.private.json').exists())
+
+    def test_opt_in_retires_only_after_compile_and_runtime_proof(self):
+        receipt, _, output, _ = self.run_private_consumer(retire_caches=True)
+        self.assertTrue(receipt['success'])
+        for completed in receipt['coverage'] + receipt['runtime']:
+            name = ('runtime-' + completed['framework'] if 'runtime' in completed else
+                    metadata.sha256((completed['id'] + '/' + completed['framework']).encode())[:16])
+            cell = output / 'private' / name
+            self.assertEqual(completed, json.loads((cell / 'cell-proof.private.json').read_text()))
+            self.assertFalse((cell / 'packages').exists())
+            self.assertFalse((cell / 'discovery/packages').exists())
+            for path in ('Consumer.csproj', 'NuGet.Config', 'packages.lock.json', 'obj/project.assets.json',
+                         'discovery/obj/project.assets.json', 'discovery/packages.lock.json'):
+                self.assertTrue((cell / path).is_file(), path)
+        self.assertTrue((output / 'private/runtime-net8.0/runtime.log').is_file())
+        self.assertTrue((output / 'private/runtime-net8.0/bin/Release/net8.0/Elsa.Studio.Core.dll').is_file())
+        self.assertTrue((output / 'private/original-external-catalog/catalog.private.json').is_file())
+        self.assertTrue(next(self.artifacts.glob('*.nupkg')).is_file())
+
+    def test_failed_build_never_retires_its_caches_or_saves_completed_proof(self):
+        receipt, _, output, _ = self.run_private_consumer(retire_caches=True, command_error='build')
+        self.assertFalse(receipt['success'])
+        self.assertEqual([], receipt['coverage'])
+        name = metadata.sha256(b'Elsa.Studio.Core/net8.0')[:16]
+        cell = output / 'private' / name
+        self.assertTrue((cell / 'packages').is_dir())
+        self.assertTrue((cell / 'discovery/packages').is_dir())
+        self.assertFalse((cell / 'cell-proof.private.json').exists())
+
+    def test_failed_runtime_never_retires_its_caches(self):
+        receipt, _, output, _ = self.run_private_consumer(retire_caches=True, command_error='run')
+        self.assertFalse(receipt['success'])
+        self.assertEqual([], receipt['runtime'])
+        cell = output / 'private/runtime-net8.0'
+        self.assertTrue((cell / 'packages').is_dir())
+        self.assertTrue((cell / 'discovery/packages').is_dir())
+        self.assertFalse((cell / 'cell-proof.private.json').exists())
+
+    def test_retirement_failure_cannot_report_complete_acceptance(self):
+        with patch.object(proof, 'retire_successful_cell_caches', side_effect=ValueError('injected_retirement')):
+            receipt, _, _, _ = self.run_private_consumer(retire_caches=True, command_error='retirement')
+        self.assertFalse(receipt['success'])
+        self.assertEqual([], receipt['coverage'])
+        self.assertEqual('selected-restore-compile-failed', receipt['failure_code'])
+
+    def test_cli_cache_retirement_is_explicitly_opt_in(self):
+        arguments = ['consumer', '--plan', 'plan', '--plan-sha256', 'a'*64, '--artifact-receipt', 'receipt',
+                     '--artifact-receipt-sha256', 'b'*64, '--artifacts', 'archives', '--planning-assets', 'snapshots',
+                     '--output', 'output']
+        for enabled in (False, True):
+            with self.subTest(enabled=enabled), patch('sys.argv', arguments +
+                    (['--retire-successful-cell-caches'] if enabled else [])), patch.object(proof, 'execute') as execute:
+                self.assertEqual(0, proof.main())
+                self.assertIs(enabled, execute.call_args.kwargs['retire_caches'])
 
     def test_coverage_ledger_requires_every_selected_tfm_once_and_success(self):
         valid = [{'id': 'Example', 'framework': framework, 'success': True} for framework in self.policy['frameworks']]
