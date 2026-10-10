@@ -20,6 +20,7 @@ public class PublishEventTests : AppComponentTest
     private readonly IWorkflowInstanceStore _workflowInstanceStore;
     private readonly IWorkflowRuntime _workflowRuntime;
     private readonly WorkflowEvents _workflowEvents;
+    private static readonly JsonSerializerOptions CaseInsensitive = new() { PropertyNameCaseInsensitive = true };
 
     public PublishEventTests(App app) : base(app)
     {
@@ -72,11 +73,16 @@ public class PublishEventTests : AppComponentTest
         Assert.True(consumerInstance.WorkflowState.Output.TryGetValue("ReceivedPayload", out var receivedPayload), "Consumer workflow should have ReceivedPayload output");
         Assert.NotNull(receivedPayload);
 
-        // Verify the payload structure and content
-        using var payloadDocument = JsonDocument.Parse(JsonSerializer.Serialize(receivedPayload));
-        Assert.True(payloadDocument.RootElement.TryGetProperty("Status", out var status), "Received payload should contain a Status property");
-        Assert.Equal("Shipped", status.GetString());
+        // Verify the payload content. The payload's runtime representation is not stable: while it is still the
+        // original CLR object its properties are PascalCase, but once it has been through the workflow state
+        // serializer it is an ExpandoObject whose keys have been camelCased by that serializer's naming policy.
+        // Which one this test observes depends on whether the instance was read back from the store, so match
+        // the property name case-insensitively rather than asserting one of the two representations.
+        var payload = JsonSerializer.Deserialize<ReceivedEventPayload>(JsonSerializer.Serialize(receivedPayload), CaseInsensitive);
+        Assert.Equal("Shipped", payload?.Status);
     }
+
+    private record ReceivedEventPayload(string? Status);
 
     private async Task<WorkflowInstance> GetSingleWorkflowInstanceAsync(string definitionId, string correlationId, int timeoutMs = 5000)
     {
