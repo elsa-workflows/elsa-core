@@ -47,6 +47,45 @@ STUDIO_NPM_RECIPES = {
 }
 MAX_AGE_SECONDS = 3600
 ID = re.compile(r'[A-Za-z0-9_][A-Za-z0-9_.-]*\Z')
+PLAN_FAILURES = (ValueError, OSError, KeyError, subprocess.TimeoutExpired, subprocess.CalledProcessError)
+FAILURE_PHASES = frozenset(('helper_bootstrap', 'helper_sdk_identity', 'helper_build',
+    'selected_source_planning', 'native_semantics'))
+NATIVE_DIAGNOSTIC_BYTES = 4 * 1024 ** 2
+
+
+def failure_diagnostic(error: Exception, phase: str) -> dict:
+    """Select fixed names only; exception messages and arbitrary class names stay private."""
+    native = getattr(error, '_product_release_diagnostic', None)
+    if isinstance(native, NativeFailureDiagnostic):
+        return native.diagnostic
+    classes = (subprocess.TimeoutExpired, subprocess.CalledProcessError, FileNotFoundError,
+        PermissionError, OSError, KeyError, json.JSONDecodeError, ValueError)
+    result = {'phase': phase if phase in FAILURE_PHASES else 'unclassified',
+              'exception_class': next((kind.__name__ for kind in classes if isinstance(error, kind)), 'unclassified')}
+    if isinstance(error, subprocess.CalledProcessError):
+        result['native'] = native_diagnostic({'status': 'exited', 'exit_code': error.returncode},
+            error.stdout, error.stderr)
+    return result
+
+
+def native_diagnostic(process: dict, *outputs: str | bytes | None) -> dict:
+    status, code = process.get('status'), process.get('exit_code')
+    status = status if status in ('exited', 'timed-out', 'interrupted', 'start-failed') else 'unavailable'
+    code = code if type(code) is int and -2 ** 31 <= code < 2 ** 31 else None
+    output = b'\n'.join(value[:NATIVE_DIAGNOSTIC_BYTES].encode(errors='replace') if isinstance(value, str)
+        else value[:NATIVE_DIAGNOSTIC_BYTES] for value in outputs if isinstance(value, (str, bytes)))
+    output = output[:NATIVE_DIAGNOSTIC_BYTES].decode(errors='replace')
+    # Same compiler/SDK vocabulary as maintenance diagnostics, without message text.
+    codes = sorted({value.upper() for value in re.findall(
+        r'\b(?:error|warning)\s+((?:CS|NU|MSB|NETSDK)[0-9]{4})\b', output, re.I)})[:32]
+    return {'status': status, 'exit_code': code, 'codes': codes}
+
+
+class NativeFailureDiagnostic:
+    """Retain a closed projection before private native output is discarded."""
+    def __init__(self, error: Exception, phase: str, process: dict, *outputs: str | bytes | None):
+        self.diagnostic = failure_diagnostic(error, phase)
+        self.diagnostic['native'] = native_diagnostic(process, *outputs)
 
 
 def workflow_cells(environment: dict) -> list[dict]:
@@ -115,10 +154,21 @@ class Semantics:
         payload = json.dumps({'operation': operation, **request}, sort_keys=True)
         if payload in self.cache:
             return self.cache[payload]
-        result = subprocess.run(['dotnet', str(self.assembly)], input=payload,
-            text=True, capture_output=True, timeout=60, env=metadata.maintenance.build_environment())
-        require(result.returncode == 0, 'invalid_nuget_semantics_input')
-        self.cache[payload] = json.loads(result.stdout)
+        try:
+            result = subprocess.run(['dotnet', str(self.assembly)], input=payload,
+                text=True, capture_output=True, timeout=60, env=metadata.maintenance.build_environment())
+        except (OSError, subprocess.TimeoutExpired) as error:
+            process = {'status': 'timed-out' if isinstance(error, subprocess.TimeoutExpired) else 'start-failed'}
+            error._product_release_diagnostic = NativeFailureDiagnostic(error, 'native_semantics', process)
+            raise
+        process = {'status': 'exited', 'exit_code': result.returncode}
+        try:
+            require(result.returncode == 0, 'invalid_nuget_semantics_input')
+            self.cache[payload] = json.loads(result.stdout)
+        except ValueError as error:
+            error._product_release_diagnostic = NativeFailureDiagnostic(error, 'native_semantics', process,
+                result.stdout, result.stderr)
+            raise
         return self.cache[payload]
 
 
@@ -458,10 +508,30 @@ def build_helper(output: Path) -> Semantics:
     project.mkdir()
     for name in ('ProductReleaseSemantics.csproj', 'Program.cs'):
         shutil.copyfile(ROOT / 'scripts/integration-program/ProductReleaseSemantics' / name, project / name)
-    require(run(['dotnet', '--version'], output).strip() == SDK, 'metadata_sdk_identity')
+    process = {}
+    try:
+        require(run(['dotnet', '--version'], output, outcome=process).strip() == SDK, 'metadata_sdk_identity')
+    except PLAN_FAILURES as error:
+        error._product_release_diagnostic = NativeFailureDiagnostic(error, 'helper_sdk_identity', process)
+        raise
     binaries = output / 'binaries'
-    run(['dotnet', 'build', str(project / 'ProductReleaseSemantics.csproj'),
-         '--nologo', '-o', str(binaries)], output, env=metadata.maintenance.build_environment())
+    process = {}
+    log = output / 'helper-build.private.log'
+    try:
+        run(['dotnet', 'build', str(project / 'ProductReleaseSemantics.csproj'),
+             '--nologo', '-o', str(binaries)], output, env=metadata.maintenance.build_environment(),
+             log=log, outcome=process)
+    except PLAN_FAILURES as error:
+        native_output = b''
+        try:
+            with log.open('rb') as stream:
+                # The private argv JSON must end before any process output is inspected.
+                if stream.readline(NATIVE_DIAGNOSTIC_BYTES + 1).endswith(b'\n'):
+                    native_output = stream.read(NATIVE_DIAGNOSTIC_BYTES)
+        except OSError:
+            pass
+        error._product_release_diagnostic = NativeFailureDiagnostic(error, 'helper_build', process, native_output)
+        raise
     return Semantics(binaries / 'ProductReleaseSemantics.dll')
 
 
@@ -531,21 +601,25 @@ def main() -> int:
         return 1
     # Raw logs/checkouts/nuspec file paths stay private; only plan.json is a public artifact.
     with tempfile.TemporaryDirectory(prefix='product-release-semantics-') as temporary:
+        phase = 'helper_bootstrap'
         try:
             semantics = build_helper(Path(temporary))
+            phase = 'selected_source_planning'
             plan = execute(args.controller.resolve(), args.product, args.line, args.version, args.output.resolve(), semantics)
-        except (ValueError, OSError, KeyError, subprocess.TimeoutExpired, subprocess.CalledProcessError):
+        except PLAN_FAILURES as error:
+            diagnostic = failure_diagnostic(error, phase)
             failure = {'schema': 1, 'status': 'incomplete', 'product': args.product, 'line': args.line,
                 'requested_version_input': args.version, 'observed_at': now(), 'eligible': False,
                 'category': 'plan_input_or_metadata_unavailable', 'published': False,
-                'version_allocated': False, 'tag_created': False}
+                'version_allocated': False, 'tag_created': False, 'diagnostic': diagnostic}
             try:
                 args.output.mkdir(parents=True, exist_ok=True)
                 (args.output / 'plan.json').write_text(json.dumps(failure, indent=2) + '\n')
             except OSError:
                 # Receipt persistence cannot escape the path-free diagnostic boundary.
                 pass
-            print(json.dumps({'status': 'incomplete', 'category': failure['category'], 'published': False}))
+            print(json.dumps({'status': 'incomplete', 'category': failure['category'], 'published': False,
+                'diagnostic': diagnostic}))
             return 1
     print(json.dumps({'eligible': plan['eligible'], 'published': False}))
     return 0

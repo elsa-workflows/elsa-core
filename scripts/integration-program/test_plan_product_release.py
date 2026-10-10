@@ -605,6 +605,177 @@ class HistoricalStudioNpmIntentTests(unittest.TestCase):
             planner.npm_intent(self.sources['3.9'], self.bindings['3.9'], '3.9.5')
 
 
+class ProductReleaseCliDiagnosticsTests(unittest.TestCase):
+    def setUp(self):
+        parent = Path(self.enterContext(tempfile.TemporaryDirectory(prefix='plan-diagnostic-contract-')))
+        self.output = parent / 'output'
+        self.stdout, self.stderr = io.StringIO(), io.StringIO()
+        self.enterContext(patch('sys.argv', ['planner', '--product', 'core', '--line', '3.8',
+            '--version', '3.8.5', '--output', str(self.output)]))
+
+    def failed_main(self):
+        with redirect_stdout(self.stdout), redirect_stderr(self.stderr):
+            self.assertEqual(1, planner.main())
+        self.assertEqual('', self.stderr.getvalue())
+        public = json.loads(self.stdout.getvalue())
+        receipt = json.loads((self.output / 'plan.json').read_text())
+        self.assertEqual('incomplete', public['status'])
+        self.assertEqual('plan_input_or_metadata_unavailable', public['category'])
+        self.assertFalse(receipt['eligible'])
+        for flag in ('published', 'version_allocated', 'tag_created'):
+            self.assertFalse(receipt[flag])
+        self.assertEqual(public['diagnostic'], receipt['diagnostic'])
+        self.assertNotIn('PRIVATE_SENTINEL', self.stdout.getvalue() + json.dumps(receipt))
+        return public['diagnostic']
+
+    def test_bootstrap_failure_identifies_exception_without_exposing_message(self):
+        with patch.object(planner, 'build_helper', side_effect=PermissionError('/PRIVATE_SENTINEL/key')):
+            diagnostic = self.failed_main()
+        self.assertEqual({'phase': 'helper_bootstrap', 'exception_class': 'PermissionError'}, diagnostic)
+
+    def failed_helper_build(self, body):
+        def native(command, cwd, **kwargs):
+            if command == ['dotnet', '--version']:
+                return metadata.SDK
+            kwargs['log'].write_bytes(b'["PRIVATE_SENTINEL error CS0999"]\n' + body)
+            kwargs['outcome'].update(status='exited', exit_code=1)
+            raise ValueError('PRIVATE_SENTINEL env=secret argv=private stderr=private')
+        with patch.object(planner, 'run', side_effect=native):
+            return self.failed_main()
+
+    def test_failed_helper_build_retains_native_exit_and_codes_without_output(self):
+        diagnostic = self.failed_helper_build(b'/PRIVATE_SENTINEL/key: error MSB1008: secret\n' +
+            b'error NETSDK1045: PRIVATE_SENTINEL\nerror MSB1008: repeated\n')
+        self.assertEqual({'phase': 'helper_build', 'exception_class': 'ValueError',
+            'native': {'status': 'exited', 'exit_code': 1, 'codes': ['MSB1008', 'NETSDK1045']}}, diagnostic)
+
+    def test_helper_log_limit_counts_bytes_and_excludes_private_argv(self):
+        diagnostic = self.failed_helper_build(('\u20ac' * (planner.NATIVE_DIAGNOSTIC_BYTES // 3 + 1)).encode() +
+            b'\nerror CS0001: outside byte limit PRIVATE_SENTINEL')
+        self.assertEqual([], diagnostic['native']['codes'])
+
+    def test_semantics_failure_retains_exit_status_without_payload_or_output(self):
+        semantics = planner.Semantics(Path('/PRIVATE_SENTINEL/helper.dll'))
+        result = subprocess.CompletedProcess(['PRIVATE_SENTINEL'], -9,
+            stdout='error CS1001: PRIVATE_SENTINEL', stderr='error NU1301: PRIVATE_SENTINEL')
+        with patch.object(planner, 'build_helper', return_value=semantics), \
+             patch.object(metadata, 'git', side_effect=lambda root, *args: '' if args[0] == 'status' else 'a' * 40), \
+             patch.object(planner.subprocess, 'run', return_value=result):
+            diagnostic = self.failed_main()
+        self.assertEqual({'phase': 'native_semantics', 'exception_class': 'ValueError',
+            'native': {'status': 'exited', 'exit_code': -9, 'codes': ['CS1001', 'NU1301']}}, diagnostic)
+
+    def test_native_start_timeout_and_invalid_json_stay_closed_failures(self):
+        failures = (
+            (FileNotFoundError('/PRIVATE_SENTINEL/host'), 'FileNotFoundError', 'start-failed', None),
+            (subprocess.TimeoutExpired(['PRIVATE_SENTINEL'], 60,
+                output=b'PRIVATE_SENTINEL', stderr=b'PRIVATE_SENTINEL'), 'TimeoutExpired', 'timed-out', None),
+            (subprocess.CompletedProcess(['PRIVATE_SENTINEL'], 0, 'PRIVATE_SENTINEL invalid JSON', ''),
+                'JSONDecodeError', 'exited', 0),
+        )
+        for failure, exception_class, status, exit_code in failures:
+            with self.subTest(exception_class=exception_class):
+                self.stdout.seek(0)
+                self.stdout.truncate()
+                (self.output / 'plan.json').unlink(missing_ok=True)
+                if self.output.exists():
+                    self.output.rmdir()
+                semantics = planner.Semantics(Path('/PRIVATE_SENTINEL/helper.dll'))
+                native = {'side_effect': failure} if isinstance(failure, Exception) else {'return_value': failure}
+                with patch.object(planner, 'build_helper', return_value=semantics), \
+                     patch.object(metadata, 'git', side_effect=lambda root, *args: '' if args[0] == 'status' else 'a' * 40), \
+                     patch.object(planner.subprocess, 'run', **native):
+                    diagnostic = self.failed_main()
+                self.assertEqual({'phase': 'native_semantics', 'exception_class': exception_class,
+                    'native': {'status': status, 'exit_code': exit_code, 'codes': []}}, diagnostic)
+
+    def test_history_and_prerequisite_preserve_original_native_exception_policy(self):
+        def observation(url, body):
+            return {'url': url, 'status': 'observed', 'observed_at': planner.now(),
+                '_body': body, 'sha256': metadata.sha256(body), 'bytes': len(body)}
+        semantics = planner.Semantics(Path('/PRIVATE_SENTINEL/helper.dll'))
+        history = observation(planner.history_url('Example'), b'{"versions": ["3.8.4"]}')
+        edge = {'id': 'Example', 'version': '3.8.4', 'range': '[3.8.4]', 'framework': 'net8.0'}
+        prerequisite = observation(planner.nuspec_url('Example', '3.8.4'), b'<package/>')
+        checks = (
+            ('history_malformed', lambda: planner.check_history('Example', '3.8.5', '3.8', history, semantics, planner.now())),
+            ('prerequisite_malformed', lambda: planner.check_prerequisite(edge, prerequisite, semantics, planner.now())),
+        )
+        for reason, check in checks:
+            for error in (OSError('PRIVATE_SENTINEL'), subprocess.TimeoutExpired(['PRIVATE_SENTINEL'], 60)):
+                with self.subTest(reason=reason, exception_class=type(error).__name__), \
+                     patch.object(planner.subprocess, 'run', side_effect=error):
+                    with self.assertRaises(type(error)) as caught:
+                        check()
+                    self.assertIs(error, caught.exception)
+            for result in (subprocess.CompletedProcess(['PRIVATE_SENTINEL'], 1, '', 'PRIVATE_SENTINEL'),
+                           subprocess.CompletedProcess(['PRIVATE_SENTINEL'], 0, 'PRIVATE_SENTINEL', '')):
+                with self.subTest(reason=reason, exit_code=result.returncode), \
+                     patch.object(planner.subprocess, 'run', return_value=result):
+                    self.assertEqual(reason, check()['reason'])
+
+    def test_selected_planning_error_never_emits_an_arbitrary_exception_class_or_message(self):
+        class PRIVATE_SENTINEL(ValueError):
+            pass
+        with patch.object(planner, 'build_helper', return_value=object()), \
+             patch.object(planner, 'execute', side_effect=PRIVATE_SENTINEL('PRIVATE_SENTINEL env=secret')):
+            diagnostic = self.failed_main()
+        self.assertEqual({'phase': 'selected_source_planning', 'exception_class': 'ValueError'}, diagnostic)
+
+    def test_called_process_error_projects_codes_not_command_or_message(self):
+        error = subprocess.CalledProcessError(128, ['PRIVATE_SENTINEL'], output=b'error MSB1008: PRIVATE_SENTINEL',
+            stderr='error PRIVATE_SENTINEL1000: secret')
+        with patch.object(planner, 'build_helper', return_value=object()), \
+             patch.object(planner, 'execute', side_effect=error):
+            diagnostic = self.failed_main()
+        self.assertEqual({'phase': 'selected_source_planning', 'exception_class': 'CalledProcessError',
+            'native': {'status': 'exited', 'exit_code': 128, 'codes': ['MSB1008']}}, diagnostic)
+
+    def test_native_code_projection_is_bounded_normalized_and_deduplicated(self):
+        text = '\n'.join(f'error NU{value:04}: PRIVATE_SENTINEL' for value in range(1000, 1050))
+        text += '\nwarning nu1000: duplicate\nerror CS10001: invalid\nerror MSB1008_private: invalid'
+        text += 'x' * planner.NATIVE_DIAGNOSTIC_BYTES + '\nerror CS0001: outside bound'
+        result = subprocess.CompletedProcess(['PRIVATE_SENTINEL'], 1, text, 'PRIVATE_SENTINEL')
+        with patch.object(planner, 'build_helper', return_value=planner.Semantics(Path('/PRIVATE_SENTINEL/helper.dll'))), \
+             patch.object(metadata, 'git', side_effect=lambda root, *args: '' if args[0] == 'status' else 'a' * 40), \
+             patch.object(planner.subprocess, 'run', return_value=result):
+            diagnostic = self.failed_main()
+        self.assertEqual([f'NU{value}' for value in range(1000, 1032)], diagnostic['native']['codes'])
+
+    def test_malformed_native_metadata_cannot_become_public_values(self):
+        for status in ('PRIVATE_SENTINEL', True, None):
+            for exit_code in (True, 'PRIVATE_SENTINEL', 2 ** 31, -2 ** 31 - 1):
+                with self.subTest(status=status, exit_code=exit_code):
+                    self.assertEqual({'status': 'unavailable', 'exit_code': None, 'codes': []},
+                        planner.native_diagnostic({'status': status, 'exit_code': exit_code},
+                            'PRIVATE_SENTINEL\ud800', object()))
+        self.assertEqual({'phase': 'unclassified', 'exception_class': 'ValueError'},
+            planner.failure_diagnostic(ValueError('PRIVATE_SENTINEL'), 'PRIVATE_SENTINEL'))
+        error = ValueError('PRIVATE_SENTINEL')
+        error._product_release_diagnostic = {'phase': 'PRIVATE_SENTINEL', 'native': 'PRIVATE_SENTINEL'}
+        self.assertEqual({'phase': 'helper_bootstrap', 'exception_class': 'ValueError'},
+            planner.failure_diagnostic(error, 'helper_bootstrap'))
+
+    def test_wrong_sdk_identity_is_a_failure_before_build_or_execution(self):
+        def wrong_sdk(command, cwd, **kwargs):
+            self.assertEqual(['dotnet', '--version'], command)
+            kwargs['outcome'].update(status='exited', exit_code=0)
+            return '10.0.101 PRIVATE_SENTINEL'
+        with patch.object(planner, 'run', side_effect=wrong_sdk), \
+             patch.object(planner, 'execute', side_effect=AssertionError('execution forbidden')):
+            diagnostic = self.failed_main()
+        self.assertEqual({'phase': 'helper_sdk_identity', 'exception_class': 'ValueError',
+            'native': {'status': 'exited', 'exit_code': 0, 'codes': []}}, diagnostic)
+
+    def test_successful_ineligible_plan_keeps_existing_success_output(self):
+        with patch.object(planner, 'build_helper', return_value=object()), \
+             patch.object(planner, 'execute', return_value={'eligible': False}), \
+             redirect_stdout(self.stdout), redirect_stderr(self.stderr):
+            self.assertEqual(0, planner.main())
+        self.assertEqual({'eligible': False, 'published': False}, json.loads(self.stdout.getvalue()))
+        self.assertEqual('', self.stderr.getvalue())
+
+
 class ProductReleaseCliFailureTests(unittest.TestCase):
     def test_git_called_process_error_produces_path_free_incomplete_receipt_without_build(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -648,7 +819,8 @@ class ProductReleaseCliFailureTests(unittest.TestCase):
                      redirect_stdout(stdout), redirect_stderr(stderr):
                     self.assertEqual(1, planner.main())
                 self.assertEqual({'status': 'incomplete', 'category': 'plan_input_or_metadata_unavailable',
-                                  'published': False}, json.loads(stdout.getvalue()))
+                                  'published': False, 'diagnostic': {'phase': 'helper_bootstrap',
+                                      'exception_class': 'OSError'}}, json.loads(stdout.getvalue()))
                 self.assertNotIn(directory, stdout.getvalue())
                 self.assertEqual('', stderr.getvalue())
                 self.assertEqual('retained', sentinel.read_text())
