@@ -1,0 +1,137 @@
+{
+  "schema": 1,
+  "scope": "fixed-reviewed-core-maintenance-continuations",
+  "sources": {
+    "3.8": {
+      "pr": 8696,
+      "commit": "7e5e6bcf97791e4f7f7165e15579abae18ec7203",
+      "tree": "d5c10535cee3524d91f5ae54b5cecb967c26b606",
+      "parents": [
+        "098cdacdc291ee1e0f27a2a08acaba80cfa8604f"
+      ],
+      "original_commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+      "original_tree": "7ab70135ea43fc6e93c6cb26b9d0df2d91b20b85",
+      "chain": [
+        {
+          "commit": "91604a9e0d68dc4a7545d9215f7ad5f643788760",
+          "tree": "83428abfa2d56068d90c9239b2005b905e7656ce",
+          "parents": [
+            "33181ae3048f628f591a0155b5665a8e4d1bcea2"
+          ]
+        },
+        {
+          "commit": "bdf0310ece3265c73e6c4c4a32f7183724e04f80",
+          "tree": "2eda08258e68a9adc84718e0bb429ffa415b1fa2",
+          "parents": [
+            "91604a9e0d68dc4a7545d9215f7ad5f643788760"
+          ]
+        },
+        {
+          "commit": "098cdacdc291ee1e0f27a2a08acaba80cfa8604f",
+          "tree": "089266b439e3bdfbfd82e0d28b85cc2d13218686",
+          "parents": [
+            "bdf0310ece3265c73e6c4c4a32f7183724e04f80"
+          ]
+        },
+        {
+          "commit": "7e5e6bcf97791e4f7f7165e15579abae18ec7203",
+          "tree": "d5c10535cee3524d91f5ae54b5cecb967c26b606",
+          "parents": [
+            "098cdacdc291ee1e0f27a2a08acaba80cfa8604f"
+          ]
+        }
+      ],
+      "delta": [
+        {
+          "path": "src/apps/Elsa.SamplePackage/Elsa.SamplePackage.csproj",
+          "before": {
+            "mode": "100644",
+            "type": "blob",
+            "blob": "81a9869262934c9a03e0b9e5efc97844e0245c42",
+            "bytes": 624,
+            "sha256": "21634aad4ef801c9c87bbdd7bfc4f8b40d49a1789eff74e825b239d787b89e23"
+          },
+          "after": {
+            "mode": "100644",
+            "type": "blob",
+            "blob": "b036ab2bd01d064cfbada4bd56534dfa20f02edd",
+            "bytes": 741,
+            "sha256": "11ceee308f493807582eb79279532725afa5048c63e50c824ce5773d25dd335d"
+          }
+        },
+        {
+          "path": "test/component/Elsa.Workflows.ComponentTests/Scenarios/Activities/Primitives/Event/PublishEventTests.cs",
+          "before": {
+            "mode": "100644",
+            "type": "blob",
+            "blob": "b1390b5104e7b9a5dd4e0627a5c9b55591f29e5a",
+            "bytes": 5287,
+            "sha256": "de3c4d88804b57c15af0b20531febfd666706d407b31ce1901001d12eccf5d4f"
+          },
+          "after": {
+            "mode": "100644",
+            "type": "blob",
+            "blob": "1cb2295e055723e46e2e45337428aebc6ec2270c",
+            "bytes": 5843,
+            "sha256": "8682f0699d08af1cc67293a76a2c8db5100b2c806e8337bec1e20891082ddcab"
+          }
+        },
+        {
+          "path": "test/unit/Elsa.Shells.Api.Tests/ShellsApiTestBase.cs",
+          "before": {
+            "mode": "100644",
+            "type": "blob",
+            "blob": "74cec649f74a13df920854ddbc915df8a21af6ee",
+            "bytes": 2664,
+            "sha256": "62dbf3c5109077f2ec49562b0f8630e31323adf6667eb6adbe73624e94304104"
+          },
+          "after": {
+            "mode": "100644",
+            "type": "blob",
+            "blob": "49f8f48634296e9f57ddd62154411ed3cdb87177",
+            "bytes": 2800,
+            "sha256": "2057aa84ccde0a225ebce86604d97768a2c0f729616cac89e471a47fc8ec39f2"
+          }
+        }
+      ]
+    },
+    "3.9": {
+      "pr": 8697,
+      "commit": "86fffea6da3cfe67c0279f552c2a32940ef75ae2",
+      "tree": "8beb9e093091c098f542a08e82e43625a3b8e520",
+      "parents": [
+        "5d3582b6309a2fd8ea33ebdb8c39fb040bfdc514"
+      ],
+      "original_commit": "5d3582b6309a2fd8ea33ebdb8c39fb040bfdc514",
+      "original_tree": "59d5cf6d6f2ce378c4b3fd888238abe2a9541561",
+      "chain": [
+        {
+          "commit": "86fffea6da3cfe67c0279f552c2a32940ef75ae2",
+          "tree": "8beb9e093091c098f542a08e82e43625a3b8e520",
+          "parents": [
+            "5d3582b6309a2fd8ea33ebdb8c39fb040bfdc514"
+          ]
+        }
+      ],
+      "delta": [
+        {
+          "path": "src/apps/Elsa.SamplePackage/Elsa.SamplePackage.csproj",
+          "before": {
+            "mode": "100644",
+            "type": "blob",
+            "blob": "81a9869262934c9a03e0b9e5efc97844e0245c42",
+            "bytes": 624,
+            "sha256": "21634aad4ef801c9c87bbdd7bfc4f8b40d49a1789eff74e825b239d787b89e23"
+          },
+          "after": {
+            "mode": "100644",
+            "type": "blob",
+            "blob": "b036ab2bd01d064cfbada4bd56534dfa20f02edd",
+            "bytes": 741,
+            "sha256": "11ceee308f493807582eb79279532725afa5048c63e50c824ce5773d25dd335d"
+          }
+        }
+      ]
+    }
+  }
+}

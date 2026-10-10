@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import nullcontext
 import hashlib
 import json
 import os
@@ -12,12 +13,14 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import traceback
 import xml.etree.ElementTree as ET
 import zipfile
 
-from prove_consolidated_packages import (archive_names, capture_compiler_evidence, dependency_groups, framework_reference_groups,
+from prove_consolidated_packages import (archive_names, capture_sdk_assets, capture_compiler_evidence, dependency_groups, framework_reference_groups,
     generated_family, metadata, only_abstract_methods, read_staged_nuspecs, require, restored_archive, restored_assets,
-    run, source_url, verify_external_document, verify_generator_identity, verify_tracked_document)
+    run, source_url, verify_package_manifest, verify_sdk_assets, verify_external_document, verify_external_entry,
+    verify_generator_identity, verify_tracked_document)
 
 ROOT = Path(__file__).resolve().parents[2]
 REGISTER = ROOT / 'docs/integration-program/maintenance-source-register.json'
@@ -298,6 +301,7 @@ def maintenance_editable_path(path: str) -> bool:
 
 
 def verify_maintenance_delta(root: Path, row: dict, parent: dict, register: dict) -> None:
+    """Verify the registered tree delta and reject edits to protected source controls."""
     before, after = tree_entries(root, parent['commit']), tree_entries(root, row['commit'])
     require(candidate_tree_delta(before, after) == row['delta'], 'Core candidate source delta mismatch')
     placeholders = {item['source_file'] for item in register['inherited_skipped_placeholders']
@@ -312,6 +316,16 @@ def verify_maintenance_delta(root: Path, row: dict, parent: dict, register: dict
                     git_bytes(root, row['commit'], path) == old.replace(token,
                         f'<PackageProjectUrl>https://github.com/{CORE_REPOSITORY}</PackageProjectUrl>'.encode()),
                     'Core candidate metadata mismatch')
+        elif path == 'build/Build.cs':
+            from extensions_manifest_continuation import CONTINUATIONS, verify_delta
+            require(row['product'] == 'extensions' and row['commit'] in
+                    {item['commit'] for item in CONTINUATIONS.values()}, 'Core candidate protected control mismatch')
+            verify_delta(row, parent, change, git_bytes(root, parent['commit'], path),
+                         git_bytes(root, row['commit'], path))
+        elif path == 'src/wrappers/wrappers/react-wrapper/package.json':
+            from historical_studio_npm_continuation import verify_delta
+            verify_delta(row, parent, change, git_bytes(root, parent['commit'], path),
+                         git_bytes(root, row['commit'], path))
         else:
             require(maintenance_editable_path(path) and path not in placeholders,
                     'Core candidate protected control mismatch')
@@ -408,16 +422,21 @@ VERIFICATION_REASONS = {
     'Core candidate graph mismatch': 'candidate-graph-invalid',
     'Core candidate parent chain mismatch': 'candidate-parent-chain-invalid',
     'Core candidate protected control mismatch': 'candidate-protected-control-invalid',
+    'Studio inline lifecycle delta mismatch': 'studio-inline-lifecycle-delta-invalid',
+    'Studio inline lifecycle source mismatch': 'studio-inline-lifecycle-source-invalid',
     'Core candidate metadata mismatch': 'candidate-metadata-invalid',
     'Core candidate source delta mismatch': 'candidate-source-delta-invalid',
     'Core assembly commit mismatch': 'assembly-commit-mismatch',
+    'Generated package manifest identity/version mismatch': 'package-manifest-identity-version-mismatch',
 }
 
 
 def verification_reason(message: str) -> str:
+    """Map a verification message to an allowed public reason or the unknown fallback."""
     if message in VERIFICATION_REASONS:
         return VERIFICATION_REASONS[message]
-    for key in ('Unexpected evaluated version', 'Unexpected Elsa dependency'):
+    for key in ('Unexpected evaluated version', 'Unexpected Elsa dependency',
+                'Generated package manifest identity/version mismatch'):
         if message.startswith(key + ':'):
             return VERIFICATION_REASONS[key]
     return 'unknown-check-failure'
@@ -445,17 +464,49 @@ def closed_diagnostics(log: Path) -> dict:
     return diagnostics
 
 
-def run_build_command(command: list[str], cwd: Path, log: Path, record: dict) -> None:
+def run_build_command(command: list[str], cwd: Path, log: Path, record: dict, *, environment: dict | None = None) -> None:
+    """Run a recipe command and retain process status and bounded log diagnostics."""
     try:
-        run(command, cwd, timeout=7200, log=log, env=build_environment(), outcome=record.setdefault('process', {}))
+        run(command, cwd, timeout=7200, log=log, env=environment or build_environment(), outcome=record.setdefault('process', {}))
         record['success'] = True
     finally:
         record['diagnostics'] = closed_diagnostics(log)
 
 
+def original_core(row: dict) -> bool:
+    """Return whether the selection uses the admitted original Core producer policy."""
+    from selected_core_producer import original
+    return original(row)
+
+
+def recipe_environment(row: dict, version: str, source: Path) -> dict:
+    """Create the product recipe environment bound to its source NuGet.Config."""
+    config = source / 'NuGet.Config'
+    require(config.is_file() and not config.is_symlink(), 'Original restore config must be a regular file')
+    if original_core(row):
+        from selected_core_producer import environment
+        result = environment(row, version)
+    else:
+        result = build_environment()
+    # Use the admitted source's config exclusively, including NUKE's child
+    # restore and later SDK evaluations. Never inherit this authority from HOME.
+    return result | {'RestoreConfigFile': str(config.resolve())}
+
+
+def version_arguments(row: dict, version: str) -> list[str]:
+    """Return version overrides only for recipes that do not use Core's environment."""
+    return [] if original_core(row) else [f'-p:Version={version}']
+
+
 def recipes(row: dict, version: str, output: Path) -> list[tuple[str, list[str]]]:
+    """Return the original product build, test, and packaging commands."""
+    if original_core(row):
+        from selected_core_producer import recipes as core_recipes
+        return core_recipes(row, version, output)
+    require(row['product'] in ('studio', 'extensions'), 'Unsupported producer product')
     if row['product'] == 'extensions':
-        return [('.', ['./build.sh', 'Compile+Test+Pack', '--version', version, '--analyseCode', 'true'])]
+        return [('.', ['./build.sh', 'Compile+Test+Pack', '--configuration', 'Release',
+                       '--version', version, '--analyseCode', 'true'])]
     designer = 'src/modules/Elsa.Studio.Workflows.Designer/ClientLib'
     dom = 'src/framework/Elsa.Studio.DomInterop/ClientLib'
     commands = []
@@ -477,10 +528,12 @@ def recipes(row: dict, version: str, output: Path) -> list[tuple[str, list[str]]
     return commands
 
 
-def evaluate_satellites(source: Path, project: str, framework: str, assembly: str, version: str) -> list[dict]:
+def evaluate_satellites(source: Path, project: str, framework: str, assembly: str, version: str, row: dict | None = None) -> list[dict]:
+    """Evaluate satellite outputs and return their source paths and package hashes."""
+    row = row or {}
     result = json.loads(run(['dotnet', 'msbuild', project, '-nologo', '-p:Configuration=Release',
-        f'-p:Version={version}', f'-p:TargetFramework={framework}', '-target:SatelliteDllsProjectOutputGroup',
-        '-getItem:SatelliteDllsProjectOutputGroupOutput'], source, env=build_environment()))
+        *version_arguments(row, version), f'-p:TargetFramework={framework}', '-target:SatelliteDllsProjectOutputGroup',
+        '-getItem:SatelliteDllsProjectOutputGroupOutput'], source, env=recipe_environment(row, version, source)))
     satellites = []
     for item in result['Items']['SatelliteDllsProjectOutputGroupOutput']:
         culture, target = item['Culture'], item['TargetPath'].replace('\\', '/')
@@ -498,19 +551,28 @@ def evaluate_satellites(source: Path, project: str, framework: str, assembly: st
 
 
 def evaluate_inventory(source: Path, row: dict, version: str, output: Path) -> list[dict]:
-    solution = source / ('Elsa.Studio.sln' if row['product'] == 'studio' else 'Elsa.Extensions.sln')
+    """Evaluate recipe package policies and persist the applicable test inventory."""
+    require(row['product'] in ('core', 'studio', 'extensions'), 'Unsupported producer product')
+    solution = source / {'core': 'Elsa.sln', 'studio': 'Elsa.Studio.sln', 'extensions': 'Elsa.Extensions.sln'}[row['product']]
     projects = re.findall(r'^Project\([^\n]+?= "[^"]+", "([^"]+\.csproj)"', solution.read_text(encoding='utf-8-sig'), re.M)
     require(bool(projects), 'No solution projects')
+    recipe_projects = {project.replace('\\', '/') for project in projects}
+    if original_core(row):
+        from selected_core_producer import policy as core_policy
+        projects += sorted(set(core_policy(row)['test_projects']) - recipe_projects)
     properties = 'IsPackable,IsTestProject,AssemblyName,PackageId,PackageVersion,TargetFrameworks,TargetFramework,IncludeSymbols,IncludeBuildOutput'
     inventory, tests = [], []
     for project in projects:
         project = project.replace('\\', '/')
         require(not Path(project).is_absolute() and '..' not in Path(project).parts, 'Unsafe solution project')
         values = json.loads(run(['dotnet', 'msbuild', project, '-nologo', '-p:Configuration=Release',
-            f'-p:Version={version}', f'-getProperty:{properties}'], source, env=build_environment()))['Properties']
+            *version_arguments(row, version), f'-getProperty:{properties}'], source, env=recipe_environment(row, version, source)))['Properties']
         frameworks = (values['TargetFrameworks'] or values['TargetFramework']).split(';')
         if values['IsTestProject'].lower() == 'true':
             tests.append({'project': project, 'assembly_name': values['AssemblyName'], 'frameworks': frameworks})
+        if project not in recipe_projects:
+            require(original_core(row) and values['IsTestProject'].lower() == 'true', 'Core original extra test project')
+            continue
         if values['IsPackable'].lower() != 'true':
             continue
         require(values['PackageVersion'] == version, f'Unexpected evaluated version: {project}')
@@ -522,7 +584,7 @@ def evaluate_inventory(source: Path, row: dict, version: str, output: Path) -> l
             'frameworks': frameworks,
             'symbols': values['IncludeSymbols'].lower() == 'true',
             'satellites': [satellite for framework in frameworks for satellite in
-                evaluate_satellites(source, project, framework, values['AssemblyName'], version)]
+                evaluate_satellites(source, project, framework, values['AssemblyName'], version, row)]
                 if values['IncludeBuildOutput'].lower() == 'true' else []})
     require(bool(inventory) and len({p['id'].casefold() for p in inventory}) == len(inventory), 'Empty/duplicate package inventory')
     require(bool(tests), 'No evaluated test projects')
@@ -566,51 +628,121 @@ def public_producer(evidence: dict) -> dict:
     return result
 
 
-def metadata_command(project: str, version: str) -> list[str]:
-    return ['dotnet', 'msbuild', project, '-nologo', '-p:Configuration=Release', f'-p:Version={version}',
+def metadata_command(project: str, version: str, row: dict | None = None) -> list[str]:
+    """Build an MSBuild metadata command using the original recipe's version policy."""
+    return ['dotnet', 'msbuild', project, '-nologo', '-p:Configuration=Release', *version_arguments(row or {}, version),
             *[f'-p:{key}={value}' for key, value in PROOF_BUILD_PROPERTIES.items()]]
 
 
 def stage_maintenance_metadata(source: Path, row: dict, inventory: list[dict], version: str,
-                               inspector: Path) -> None:
+                               inspector: Path, *, diagnostics: Path | None = None) -> None:
+    """Stage original package metadata privately and retain optional failure diagnostics."""
     source = source.resolve()
     cache = {'archive_inspector': inspector, 'source_commit': row['commit']}
-    # This directory is inside the unretained source checkout. Never upload raw SDK metadata.
-    with tempfile.TemporaryDirectory(prefix='maintenance-metadata-', dir=source) as temporary:
-        for index, policy in enumerate(inventory):
-            destination = Path(temporary) / str(index)
-            destination.mkdir()
-            command = metadata_command(policy['project'], version)
-            assets_name = run(command + ['-getProperty:ProjectAssetsFile'], source, env=build_environment()).strip()
-            stage_assets = (source / assets_name).resolve()
-            require(stage_assets.is_relative_to(source.resolve()) and stage_assets.is_file() and not stage_assets.is_symlink(),
-                    'Invalid restored metadata input')
-            stage_assets_hash = digest(stage_assets.read_bytes())
-            run(command + ['-target:_GetRestoreProjectStyle;GenerateNuspec', '-p:NoBuild=true',
-                '-p:ContinuePackingAfterGeneratingNuspec=false', f'-p:NuspecOutputPath={destination}',
-                f"-p:PackageOutputPath={destination / 'forbidden-packages'}"], source, env=build_environment())
-            policy.update(nupkg=f"{policy['id']}.{version}.nupkg",
-                          snupkg=f"{policy['id']}.{version}.snupkg" if policy['symbols'] else None,
-                          source_commit=row['commit'], restore_assets=[], framework_properties={})
-            read_staged_nuspecs(destination, policy)
-            for framework in policy['frameworks']:
-                properties = 'MSBuildToolsPath,NETCoreSdkVersion,NetCoreRoot,RuntimeIdentifier,ProjectAssetsFile'
-                targets = 'ResolveReferences'
-                if ET.parse(source / policy['project']).getroot().get('Sdk') == 'Microsoft.NET.Sdk.Razor':
-                    targets += ';_PrepareRazorSourceGenerators'
-                resolved = json.loads(run(command + [f'-p:TargetFramework={framework}', '-p:BuildProjectReferences=false',
-                    f'-target:{targets}', f'-getProperty:{properties}', '-getItem:Analyzer,ResolvedFrameworkReference,Compile'],
-                    source, env=build_environment()))
-                assets = (source / resolved['Properties']['ProjectAssetsFile']).resolve()
-                require(assets.is_relative_to(source.resolve()) and assets.is_file() and not assets.is_symlink(),
+    context = {'package': None, 'project': None, 'framework': None, 'operation': 'temporary-stage'}
+    command_index = 0
+    if diagnostics is not None:
+        diagnostics.mkdir()
+
+    def execute(command: list[str]) -> str:
+        """Run a metadata command in the recipe environment, optionally retaining its output."""
+        nonlocal command_index
+        command_index += 1
+        record = None if diagnostics is None else diagnostics / f'command-{command_index:04d}.txt'
+        if record is not None:
+            record.write_text(json.dumps({'context': context, 'argv': command}, indent=2) + '\nstdout:\n')
+        stdout = run(command, source, env=recipe_environment(row, version, source))
+        if record is not None:
+            with record.open('a') as stream:
+                stream.write(stdout)
+        return stdout
+
+    def retain_nuspecs(destination: Path) -> None:
+        """Copy safe staged nuspec bytes into the optional private diagnostics directory."""
+        if diagnostics is None:
+            return
+        for path in sorted(destination.glob('*.nuspec')):
+            require(not destination.is_symlink() and not path.is_symlink() and path.is_file() and
+                    path.resolve().is_relative_to(Path(temporary)),
+                    'Invalid staged nuspec diagnostic input')
+            target = diagnostics / destination.name
+            target.mkdir(exist_ok=True)
+            (target / (path.name + '.txt')).write_bytes(path.read_bytes())
+
+    try:
+        # This directory is inside the unretained source checkout. Never upload raw SDK metadata.
+        with tempfile.TemporaryDirectory(prefix='maintenance-metadata-', dir=source) as temporary:
+            for index, policy in enumerate(inventory):
+                context.update(package=policy['id'], project=policy['project'], framework=None, operation='package')
+                destination = Path(temporary) / str(index)
+                destination.mkdir()
+                command = metadata_command(policy['project'], version, row)
+                context['operation'] = 'restore-input'
+                assets_name = execute(command + ['-getProperty:ProjectAssetsFile']).strip()
+                stage_assets = (source / assets_name).resolve()
+                require(stage_assets.is_relative_to(source.resolve()) and stage_assets.is_file() and not stage_assets.is_symlink(),
                         'Invalid restored metadata input')
-                require(assets == stage_assets and digest(assets.read_bytes()) == stage_assets_hash,
-                        'Restored metadata input changed')
-                policy['restore_assets'].append({'framework': framework,
-                    'path': assets.relative_to(source).as_posix(), 'sha256': digest(assets.read_bytes())})
-                evidence = capture_compiler_evidence(source, policy, framework, resolved, cache,
-                                                    physical_families=physical_families(row, policy))
-                policy['framework_properties'][framework] = {'compiler_evidence': evidence}
+                stage_assets_hash = digest(stage_assets.read_bytes())
+                context['operation'] = 'nuspec'
+                try:
+                    execute(command + ['-target:_GetRestoreProjectStyle;GenerateNuspec', '-p:NoBuild=true',
+                        '-p:ContinuePackingAfterGeneratingNuspec=false', f'-p:NuspecOutputPath={destination}',
+                        f"-p:PackageOutputPath={destination / 'forbidden-packages'}"])
+                except Exception:
+                    try:
+                        retain_nuspecs(destination)
+                    except (OSError, ValueError):
+                        pass  # Diagnostic failure must not replace the original command failure.
+                    raise
+                else:
+                    retain_nuspecs(destination)
+                policy.update(nupkg=f"{policy['id']}.{version}.nupkg",
+                              snupkg=f"{policy['id']}.{version}.snupkg" if policy['symbols'] else None,
+                              source_commit=row['commit'], restore_assets=[], framework_properties={})
+                read_staged_nuspecs(destination, policy)
+                for framework in policy['frameworks']:
+                    context.update(framework=framework, operation='compiler-metadata')
+                    properties = ('MSBuildToolsPath,NETCoreSdkVersion,NetCoreRoot,RuntimeIdentifier,ProjectAssetsFile,'
+                                  'GenerateElsaPackageManifest,ElsaPackageManifestIncludeInPackage,ElsaPackageManifestPackagePath' +
+                                  (',AssemblyVersion,InformationalVersion' if original_core(row) else ''))
+                    targets = 'ResolveReferences' + (';GetAssemblyAttributes' if original_core(row) else '')
+                    if ET.parse(source / policy['project']).getroot().get('Sdk') == 'Microsoft.NET.Sdk.Razor':
+                        targets += ';_PrepareRazorSourceGenerators'
+                    resolved = json.loads(execute(command + [f'-p:TargetFramework={framework}', '-p:BuildProjectReferences=false',
+                        f'-target:{targets}', f'-getProperty:{properties}', '-getItem:Analyzer,ResolvedFrameworkReference,Compile']))
+                    assets = (source / resolved['Properties']['ProjectAssetsFile']).resolve()
+                    require(assets.is_relative_to(source.resolve()) and assets.is_file() and not assets.is_symlink(),
+                            'Invalid restored metadata input')
+                    require(assets == stage_assets and digest(assets.read_bytes()) == stage_assets_hash,
+                            'Restored metadata input changed')
+                    policy['restore_assets'].append({'framework': framework,
+                        'path': assets.relative_to(source).as_posix(), 'sha256': digest(assets.read_bytes())})
+                    evidence = capture_compiler_evidence(source, policy, framework, resolved, cache,
+                                                        physical_families=physical_families(row, policy))
+                    policy['framework_properties'][framework] = {'compiler_evidence': evidence,
+                        'manifest_required': resolved['Properties']['GenerateElsaPackageManifest'].lower() == 'true' and
+                            resolved['Properties']['ElsaPackageManifestIncludeInPackage'].lower() == 'true',
+                        'manifest_path': resolved['Properties']['ElsaPackageManifestPackagePath']}
+                    if original_core(row):
+                        policy['framework_properties'][framework]['assembly_policy'] = {key: resolved['Properties'][key]
+                            for key in ('AssemblyVersion', 'InformationalVersion')}
+                context.update(framework=None, operation='manifest-contract')
+                if row['product'] == 'extensions':
+                    from selected_extensions_contract import bind_manifest_contract
+                    bind_manifest_contract(source, row, policy)
+                context['operation'] = 'sdk-assets'
+                if row['product'] == 'extensions' or original_core(row):
+                    policy['expected_sdk_assets'] = capture_sdk_assets(source, policy,
+                        (destination / (policy['nupkg'].removesuffix('.nupkg') + '.nuspec')).read_bytes())
+
+            context['operation'] = 'temporary-cleanup'
+    except Exception:
+        if diagnostics is not None:
+            try:
+                (diagnostics / 'failure.txt').write_text(json.dumps(context, indent=2) + '\n' + traceback.format_exc())
+            except OSError:
+                pass  # Preserve the original validation or temporary-directory cleanup exception.
+        raise
 
 
 def public_inventory(inventory: list[dict]) -> list[dict]:
@@ -629,40 +761,113 @@ def public_inventory(inventory: list[dict]) -> list[dict]:
             for policy in inventory]
 
 
+def verify_restored_manifest_hint(source: Path, policy: dict, framework: str,
+                                  document: dict, cache: dict, *, version: str) -> tuple[dict, dict]:
+    """Bind the caller's reviewed hint version to its actual restored compiler input."""
+    identifier = 'Elsa.Platform.PackageManifest.Generator'
+    assets = restored_assets(source, policy, framework)
+    relative = identifier.lower() + '/' + version
+    library = assets.get('libraries', {}).get(identifier + '/' + version, {})
+    require(library.get('path', relative) == relative, 'Unexpected external package cache layout')
+    candidates = []
+    for folder in assets.get('packageFolders', {}):
+        root = Path(folder)
+        require(root.is_absolute() and folder in (root.as_posix(), root.as_posix() + '/') and '..' not in root.parts,
+                'Non-canonical external cache root')
+        candidate = root / relative / f'{identifier.lower()}.{version}.nupkg'
+        require(not any(path.is_symlink() for path in (candidate, *candidate.parents)),
+                'Symlinked external archive path')
+        if candidate.exists():
+            require(candidate.is_file(), 'External archive is not a regular file')
+            candidates.append(candidate)
+    require(len(candidates) == 1, 'Missing or ambiguous restored external archive')
+    archive, identity = restored_archive(assets, identifier, version, cache=cache)
+    require(archive == candidates[0], 'External archive selection changed')
+    external = verify_external_document(source, policy, framework, document, cache)
+    if external is None:
+        actual = Path(document['path'])
+        require(actual.is_absolute() and actual.as_posix() == document['path'] and '..' not in actual.parts and
+                actual.is_relative_to(archive.parent), 'External document is outside its restored package')
+        entry = actual.relative_to(archive.parent).as_posix()
+        external = verify_external_entry(source, policy, framework, document, version, entry, cache)
+    require(identity['archive_sha256'] == external['archive_sha256'], 'External archive identity changed')
+    extracted = archive.parent / external['archive_entry']
+    require(not any(path.is_symlink() for path in (extracted, *extracted.parents)) and extracted.is_file() and
+            hashlib.new(document['algorithm'], extracted.read_bytes()).hexdigest() == document['checksum'],
+            'External compiler input bytes changed')
+    inputs = policy['framework_properties'][framework]['compiler_evidence']['compile_inputs']
+    actual = extracted.resolve()
+    locator = actual.relative_to(source.resolve()).as_posix() if actual.is_relative_to(source.resolve()) else actual.as_posix()
+    require(any(item['path'] == locator for item in inputs), 'External source is not a compiler input')
+    return external, identity
+
+
+SOURCE_PRODUCER_ERRORS = {
+    'Missing resolved SDK/framework evidence': 'producer-context-missing',
+    'Pinned SDK compiler content changed': 'sdk-compiler-changed',
+    'Missing actual resolved generator evidence:': 'generator-evidence-missing',
+    'Resolved generator content changed:': 'generator-content-changed',
+    'Resolved generator archive/identity changed:': 'generator-archive-changed',
+    'Generator does not belong to pinned SDK': 'generator-sdk-mismatch',
+    'SDK source-emitting targets changed': 'generator-targets-changed',
+    'Generator does not belong to resolved framework': 'generator-framework-mismatch',
+    'Missing restored dependency evidence:': 'restore-evidence-missing',
+    'Restored dependency evidence changed': 'restore-evidence-changed',
+}
+SOURCE_PRODUCER_CHECKS = frozenset(SOURCE_PRODUCER_ERRORS.values()) | {
+    'source-context-invalid', 'embedded-checksum-mismatch', 'unmapped-family-unsupported',
+    'restored-hint-unverified', 'generated-family-unknown', 'producer-file-unavailable',
+    'producer-context-invalid', 'unknown-check-failure',
+}
+
+
+class SourceProducerVerificationError(ValueError):
+    def __init__(self, check: str):
+        """Store the source verification check while keeping exception text generic."""
+        super().__init__('Source producer evidence rejected')
+        self.check = check
+
+
 def verify_non_git_document(document: dict, path: str | None, source: Path, row: dict,
                             policy: dict | None, framework: str | None, cache: dict) -> dict:
+    """Verify embedded or generated source provenance and report a bounded failure check."""
+    check = 'source-context-invalid'
     try:
         require(policy is not None and policy.get('source_commit') == row['commit'] and
                 framework in policy['frameworks'] and framework in policy['framework_properties'], 'Missing source context')
+        check = 'embedded-checksum-mismatch'
         require(document.get('embedded_checksum') == document['checksum'], 'Missing matching embedded bytes')
         if path is None:
             # Only this reviewed original package-content family can be unmapped.
-            require(row['product'] == 'extensions' and
-                    '/elsa.platform.packagemanifest.generator/0.0.1-preview.50/' in document['path'], 'Unknown external family')
-            external = verify_external_document(source, policy, framework, document, cache)
-            require(external is not None, 'Unknown external family')
-            assets = restored_assets(source, policy, framework)
-            entry = external['archive_entry']
-            archive, archive_identity = restored_archive(assets, 'Elsa.Platform.PackageManifest.Generator',
-                                                        '0.0.1-preview.50', cache=cache)
-            require(archive_identity['archive_sha256'] == external['archive_sha256'], 'External archive identity changed')
-            extracted = archive.parent / entry
-            require(extracted.is_file() and not extracted.is_symlink() and
-                    hashlib.new(document['algorithm'], extracted.read_bytes()).hexdigest() == document['checksum'],
-                    'External compiler input bytes changed')
-            inputs = policy['framework_properties'][framework]['compiler_evidence']['compile_inputs']
-            actual = extracted.resolve()
-            locator = actual.relative_to(source.resolve()).as_posix() if actual.is_relative_to(source.resolve()) else actual.as_posix()
-            require(any(item['path'] == locator for item in inputs), 'External source is not a compiler input')
+            check = 'unmapped-family-unsupported'
+            version = '0.0.1-preview.50' if row['product'] == 'extensions' else None
+            if original_core(row):
+                from selected_core_producer import policy as core_policy
+                core_policy(row)  # Admit the exact original source or reviewed continuation, not merely its kind.
+                version = '0.0.1-preview.53'
+            require(version is not None and
+                    f'/elsa.platform.packagemanifest.generator/{version}/' in document['path'], 'Unknown external family')
+            check = 'restored-hint-unverified'
+            external, archive_identity = verify_restored_manifest_hint(source, policy, framework, document, cache, version=version)
             return {'family': 'manifest-hints', 'producer': {key: external[key] for key in
                     ('external_package', 'archive_entry', 'archive_sha256', 'feed')} | {
                     'restore_sha512': archive_identity['restore_sha512']}}
+        check = 'generated-family-unknown'
         family = maintenance_family(row, policy, framework, path)
         require(family is not None, 'Unknown generated family')
+        check = 'unknown-check-failure'
         producer = verify_generator_identity(source, policy, framework, family, cache)
         return {'family': family, 'producer': public_producer(producer)}
-    except (ValueError, KeyError, OSError, TypeError):
-        raise ValueError('Source producer evidence rejected') from None
+    except (ValueError, KeyError, OSError, TypeError) as error:
+        if check == 'unknown-check-failure':
+            if isinstance(error, OSError):
+                check = 'producer-file-unavailable'
+            elif isinstance(error, (KeyError, TypeError)):
+                check = 'producer-context-invalid'
+            else:
+                check = next((code for message, code in SOURCE_PRODUCER_ERRORS.items()
+                              if str(error).startswith(message)), check)
+        raise SourceProducerVerificationError(check) from None
 
 
 def verify_documents(details: dict, source: Path, row: dict, policy: dict | None = None,
@@ -734,6 +939,7 @@ def verify_sdk_dependencies(nuspec: ET.Element, policy: dict, *, symbols: bool =
 
 def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version: str, source: Path,
                      inspector: Path, output: Path, context: dict | None = None) -> list[dict]:
+    """Validate the complete package and symbol inventory and persist artifact receipts."""
     expected = {p['id'].casefold(): p for p in inventory}
     produced = set(expected)
     found = set()
@@ -748,6 +954,7 @@ def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version:
                 found.add(identifier.casefold())
                 policy = expected[identifier.casefold()]
                 if context is not None:
+                    context.pop('framework', None)
                     context.update(package=policy['id'])
                 require(nuspec.findtext('version') == version, 'Packed version mismatch')
                 repository = nuspec.find('repository')
@@ -758,10 +965,14 @@ def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version:
                 verify_sdk_dependencies(nuspec, policy)
                 for group in dependencies:
                     for dependency in group['dependencies']:
-                        if dependency['id'].casefold().startswith('elsa'):
+                        if dependency['id'].casefold().startswith('elsa') and not original_core(row):
                             target = version if dependency['id'].casefold() in produced else row['dependency_version']
                             require(dependency['version'] in (target, f'[{target}]', f'[{target}, )', f'[{target},)'),
                                     f"Unexpected Elsa dependency: {identifier} -> {dependency}")
+                manifest = None
+                if row['product'] == 'extensions' or original_core(row):
+                    verify_sdk_assets(package, policy, required=True)
+                    manifest = verify_package_manifest(package, policy, version, require_sdk_metadata=True)
                 names = archive_names(package)
                 assemblies = sorted(n for n in names if n.startswith('lib/') and n.endswith('.dll'))
                 frameworks = sorted({name.split('/')[1] for name in assemblies})
@@ -777,29 +988,44 @@ def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version:
                     require(digest(emitted_bytes) == satellite['sha256'] and
                             package.read(satellite['package_path']) == emitted_bytes, 'Packaged satellite bytes differ from emitted output')
                 symbols_path = path.with_suffix('.snupkg')
-                require(not expected_assemblies or policy['symbols'] and symbols_path.is_file(), 'Symbol package missing')
+                require(not expected_assemblies or policy['symbols'] and symbols_path.is_file() or
+                        original_core(row) and (policy['id'], policy['project'], policy['symbols']) ==
+                        ('Elsa.SamplePackage', 'src/apps/Elsa.SamplePackage/Elsa.SamplePackage.csproj', False),
+                        'Symbol package missing')
+                if original_core(row):
+                    require(symbols_path.is_file() == policy['symbols'], 'Core symbol output policy mismatch')
                 symbols = []
-                if symbols_path.is_file():
-                    with zipfile.ZipFile(symbols_path) as symbol_package:
-                        symbol_metadata = metadata(symbol_package)
-                        verify_sdk_dependencies(symbol_metadata, policy, symbols=True)
-                        require(symbol_metadata.findtext('id') == identifier and symbol_metadata.findtext('version') == version,
-                                'Symbol identity mismatch')
-                        symbol_repository = symbol_metadata.find('repository')
-                        require(symbol_repository is not None and symbol_repository.attrib == repository.attrib and
-                                dependency_groups(symbol_metadata) == dependencies, 'Symbol metadata disagrees with package')
-                        symbol_names = archive_names(symbol_package)
+                if symbols_path.is_file() or original_core(row) and expected_assemblies:
+                    with (zipfile.ZipFile(symbols_path) if symbols_path.is_file() else nullcontext(None)) as symbol_package:
+                        symbol_names = []
+                        if symbol_package is not None:
+                            symbol_metadata = metadata(symbol_package)
+                            verify_sdk_dependencies(symbol_metadata, policy, symbols=True)
+                            require(symbol_metadata.findtext('id') == identifier and symbol_metadata.findtext('version') == version,
+                                    'Symbol identity mismatch')
+                            symbol_repository = symbol_metadata.find('repository')
+                            require(symbol_repository is not None and symbol_repository.attrib == repository.attrib and
+                                    dependency_groups(symbol_metadata) == dependencies, 'Symbol metadata disagrees with package')
+                            symbol_names = archive_names(symbol_package)
                         for name in expected_assemblies:
                             if context is not None:
                                 context.update(framework=name.split('/')[1])
                             pdb_name = name[:-4] + '.pdb'
-                            require(pdb_name in symbol_names, 'Framework PDB missing')
+                            require(symbol_package is None or pdb_name in symbol_names, 'Framework PDB missing')
                             dll, pdb = Path(temporary) / Path(name).name, Path(temporary) / Path(pdb_name).name
-                            dll.write_bytes(package.read(name)); pdb.write_bytes(symbol_package.read(pdb_name))
+                            dll.write_bytes(package.read(name))
+                            if symbol_package is None:
+                                from selected_core_producer import private_symbols
+                                pdb.write_bytes(private_symbols(source, policy, name.split('/')[1], package.read(name)).read_bytes())
+                            else:
+                                pdb.write_bytes(symbol_package.read(pdb_name))
                             inspection = json.loads(run(['dotnet', str(inspector), str(dll), str(pdb), '--inspect-symbols'],
                                 source, env=build_environment()))
                             details = inspection['details']
                             require(details['assembly_name'] == policy['assembly_name'], 'Packaged assembly identity mismatch')
+                            if original_core(row):
+                                from selected_core_producer import verify_assembly
+                                verify_assembly(details, policy, name.split('/')[1], row)
                             # Original Extensions NUKE applies --version only when packing, not compiling.
                             informational_prefix = {'studio': version, 'extensions': '1.0.0'}.get(row['product'])
                             require(row.get('source_kind') != 'core' or informational_prefix is not None and
@@ -816,11 +1042,13 @@ def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version:
                                 'pdb': pdb_name, 'pdb_sha256': digest(pdb.read_bytes()), 'symbol': {key: inspection['symbol'][key] for key in ('key', 'pdb_name', 'guid', 'stamp',
                                     'checksum_algorithm', 'declared_checksum', 'normalized_checksum', 'pdb_sha256', 'pdb_size')}, 'assembly_version': details['assembly_version'],
                                 'informational_version': details['informational_version'],
-                                **source_evidence})
+                                **source_evidence, **({'symbol_package': False} if symbol_package is None else {})})
                 receipts.append({'id': identifier, 'version': version, 'frameworks': frameworks,
                     'assembly_name': policy['assembly_name'], 'include_build_output': policy['include_build_output'],
                     'satellites': policy['satellites'],
                     'dependencies': dependencies, 'repository': dict(repository.attrib), 'symbols': symbols,
+                    'package_manifest': manifest, 'sdk_assets': [{key: asset[key] for key in ('path', 'sha256')}
+                        for asset in policy.get('expected_sdk_assets', [])],
                     'files': [{'name': p.name, 'sha256': digest(p.read_bytes()), 'size': p.stat().st_size}
                               for p in (path, symbols_path) if p.exists()]})
     require(found == produced, 'Missing evaluated packages')
@@ -852,7 +1080,9 @@ def placeholder_policies(source: Path, row: dict) -> dict:
     return policies
 
 
-def verify_tests(output: Path, row: dict, context: dict | None = None) -> dict:
+def verify_tests(output: Path, row: dict, context: dict | None = None, *, environment: dict | None = None) -> dict:
+    """Validate TRX evidence against every expected test cell and allowed skip policy."""
+    require(not original_core(row) or environment is not None, 'Core test environment missing')
     tests = json.loads((output / 'test-inventory.json').read_text())
     source = output / 'source'
     expected = {str((source / Path(test['project']).parent / 'bin/Release' / framework /
@@ -865,12 +1095,12 @@ def verify_tests(output: Path, row: dict, context: dict | None = None) -> dict:
     evidence.update(expected_cells=list(expected.values()), admitted_observed_cells=[], unknown_path_count=0,
                     duplicate_cell_count=0, positive_summary_count=0, summary_count=0,
                     cells=[], failure_reasons=[], unknown_test_identity_count=0, inherited_skipped_placeholders=[])
-    policies = placeholder_policies(source, row)
+    policies = {} if original_core(row) else placeholder_policies(source, row)
     require(set(policies) <= {(cell['project'], cell['framework']) for cell in expected.values()},
             'Inherited placeholder inventory mismatch')
     cells, results, failures = [], [], set()
     # Original NUKE adds TRX and its AnalyseCode=true recipe writes here.
-    results_directory = output / 'test-results' if row['product'] == 'studio' else source / 'testresults'
+    results_directory = output / 'test-results' if row['product'] == 'studio' or original_core(row) else source / 'testresults'
     for path in sorted(results_directory.glob('*.trx')):
         evidence['summary_count'] += 1
         cell, assemblies = None, set()
@@ -952,6 +1182,17 @@ def verify_tests(output: Path, row: dict, context: dict | None = None) -> dict:
                 evidence['inherited_skipped_placeholders'].append(receipt | policy)
             else:
                 failures.add('placeholder-result-invalid')
+        elif original_core(row):
+            from selected_core_producer import verify_outcomes
+            try:
+                require(linked and completed, 'core_test_linkage_or_summary')
+                skipped = verify_outcomes(definitions, outcomes, counters, row, environment or {}, cell['project'])
+                diagnostic['status'] = 'passed-with-source-bound-skips' if skipped else 'passed'
+                receipt['expected_skips'] = skipped
+                evidence['positive_summary_count'] += 1
+                results.append(receipt)
+            except ValueError:
+                failures.add('core-test-counts-outcomes-or-skips-invalid')
         else:
             valid = linked and completed and counters['total'] == counters['executed'] == counters['passed'] == len(outcomes) > 0 and \
                 all(counters[name] == 0 for name in TRX_COUNTERS if name not in ('total', 'executed', 'passed')) and \
@@ -977,7 +1218,17 @@ def verify_tests(output: Path, row: dict, context: dict | None = None) -> dict:
     return {'executions': results, 'inherited_skipped_placeholders': evidence['inherited_skipped_placeholders']}
 
 
-def prepare(root: Path, row: dict, version: str, output: Path) -> dict:
+def inspect_toolchain(source: Path, row: dict) -> dict:
+    """Report installed SDKs and the additional Node/npm tools required for Studio."""
+    tools = {'dotnet': ['dotnet', '--list-sdks']}
+    if row['product'] == 'studio':
+        tools.update(node=['node', '--version'], npm=['npm', '--version'])
+    return {tool: [line.split()[0] for line in run(command, source, env=build_environment()).splitlines()]
+            for tool, command in tools.items()}
+
+
+def prepare(root: Path, row: dict, version: str, output: Path, *, plan: dict | None = None) -> dict:
+    """Run the admitted maintenance recipe and persist success or failure evidence."""
     require(not output.exists(), 'Output must be new; retain prior evidence')
     require(not output.is_relative_to(root), 'Output must be outside the controller checkout')
     output.mkdir(parents=True)
@@ -992,17 +1243,32 @@ def prepare(root: Path, row: dict, version: str, output: Path) -> dict:
     source = output / 'source'
     try:
         receipt['stage'] = 'source-verification'
-        verify_source(root, row)
+        if original_core(row):
+            from selected_core_producer import verify_source as verify_original_source, validate_plan
+            require(plan is not None and plan['source'] == {key: value for key, value in row.items()
+                    if key != 'source_repository'}, 'core_original_plan_binding')
+            validate_plan(plan)
+            verify_original_source(root, row)
+        else:
+            require(row['product'] in ('studio', 'extensions'), 'Unsupported producer product')
+            verify_source(root, row)
         source.mkdir()
         git(source, 'init', '--quiet')
         git(source, 'fetch', '--no-tags', str(root), row['commit'])
         git(source, 'checkout', '--detach', '--quiet', row['commit'])
         git(source, 'remote', 'add', 'origin', 'https://github.com/' + row['source_repository'] + '.git')
+        config = source / 'NuGet.Config'
+        require(config.is_file() and not config.is_symlink() and
+                config.read_bytes() == git_bytes(root, row['commit'], 'NuGet.Config'),
+                'Original restore config differs from source')
+        if plan is not None:
+            require(digest(config.read_bytes()) == plan['consumer_feed_policy']['config_sha256'],
+                    'Original restore config differs from plan')
         receipt['source_policy_files'] = {name: digest((source / name).read_bytes())
             for name in ('Directory.Build.props', 'Directory.Packages.props') if (source / name).is_file()}
         receipt['stage'] = 'toolchain'
-        receipt['toolchain'] = {tool: [line.split()[0] for line in run(command, source, env=build_environment()).splitlines()] for tool, command in {
-            'dotnet': ['dotnet', '--list-sdks'], 'node': ['node', '--version'], 'npm': ['npm', '--version']}.items()}
+        receipt['toolchain'] = inspect_toolchain(source, row)
+        environment = recipe_environment(row, version, source)
         (output / 'artifacts').mkdir()
         for index, (directory, command) in enumerate(recipes(row, version, output)):
             log = output / f'command-{index:02}.log'
@@ -1010,24 +1276,37 @@ def prepare(root: Path, row: dict, version: str, output: Path) -> dict:
             receipt['focus'] = {'step': index + 1, 'directory': directory}
             record = {'cwd': directory, 'argv': [arg.replace(str(output), '$OUTPUT') for arg in command], 'success': False}
             receipt['commands'].append(record)
-            run_build_command(command, source / directory, log, record)
-        if row['product'] == 'extensions':
+            run_build_command(command, source / directory, log, record, environment=environment)
+        if row['product'] == 'extensions' or original_core(row):
             for path in (source / 'packages').glob('*nupkg'):
                 shutil.copyfile(path, output / 'artifacts' / path.name)
         receipt['stage'] = 'inventory'
         inventory = evaluate_inventory(source, row, version, output)
+        if original_core(row):
+            from selected_core_producer import policy as core_policy
+            tests = json.loads((output / 'test-inventory.json').read_text())
+            require({item['project'] for item in tests} == set(core_policy(row)['test_projects']) and
+                    all(item['frameworks'] == ['net10.0'] for item in tests), 'core_original_test_inventory')
+            selected = {item['id']: item for item in plan['inventory']['selected']}
+            require({item['id'] for item in inventory} == set(selected), 'core_original_package_inventory')
+            require(all(item['project'] == selected[item['id']]['project'] and
+                        item['frameworks'] == selected[item['id']]['frameworks'] and
+                        item['symbols'] == selected[item['id']]['symbols'] for item in inventory),
+                    'core_original_package_policy')
         write_json(output / 'evaluated-inventory.json', public_inventory(inventory))
         receipt['stage'] = 'test-evidence'
         receipt.pop('focus', None)
         receipt['test_evidence'] = {}
-        receipt['tests'] = verify_tests(output, row, receipt['test_evidence'])
+        receipt['tests'] = (verify_tests(output, row, receipt['test_evidence'], environment=environment)
+                            if original_core(row) else verify_tests(output, row, receipt['test_evidence']))
         receipt['stage'] = 'symbol-inspector'
         helper = root / 'scripts/integration-program/VerifyPackageSymbolPair'
         inspector_out = output / 'symbol-verifier'
         run(['dotnet', 'build', str(helper / 'VerifyPackageSymbolPair.csproj'), '--configuration', 'Release',
              '--output', str(inspector_out)], root, log=output / 'symbol-verifier.log', timeout=600, env=build_environment())
         receipt['stage'] = 'sdk-metadata'
-        stage_maintenance_metadata(source, row, inventory, version, inspector_out / 'VerifyPackageSymbolPair.dll')
+        stage_maintenance_metadata(source, row, inventory, version, inspector_out / 'VerifyPackageSymbolPair.dll',
+                                   diagnostics=output / 'sdk-metadata-diagnostics')
         write_json(output / 'evaluated-inventory.json', public_inventory(inventory))
         receipt['stage'] = 'package-verification'
         receipt['focus'] = {}
@@ -1040,6 +1319,8 @@ def prepare(root: Path, row: dict, version: str, output: Path) -> dict:
     except Exception as error:
         receipt['error'] = {'code': receipt['stage'] + '-failed',
                             'reason': verification_reason(str(error))}
+        if receipt['stage'] == 'package-verification' and isinstance(error, SourceProducerVerificationError):
+            receipt['error']['source_producer_check'] = error.check
         raise
     finally:
         receipt['logs'] = [{'name': p.name, 'sha256': digest(p.read_bytes())} for p in sorted(output.glob('*.log'))]

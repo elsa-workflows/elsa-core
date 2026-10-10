@@ -1,0 +1,181 @@
+name: Selected product control
+description: Fresh private planning, original producer/consumers and exact allowlisted seal
+inputs:
+  product:
+    description: Explicit hypothetical planner product request
+    required: true
+  line:
+    description: Explicit hypothetical planner source line request
+    required: true
+  version:
+    description: Explicit hypothetical requested version; allocates nothing
+    required: true
+outputs:
+  artifact-id:
+    value: ${{ steps.upload.outputs.artifact-id }}
+    description: Exact immutable selected artifact ID
+  archive-digest:
+    value: ${{ steps.upload.outputs.artifact-digest }}
+    description: Original provider ZIP SHA256
+  expected:
+    value: ${{ steps.seal.outputs.expected }}
+    description: Bound preupload expected envelope
+  expected-sha256:
+    value: ${{ steps.seal.outputs.expected-sha256 }}
+    description: Exact expected envelope SHA256
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+      with:
+        dotnet-version: |
+          8.0.x
+          9.0.x
+          10.0.300
+    - if: inputs.product == 'studio'
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      with:
+        node-version: '22'
+    - name: Fresh selected plan
+      env:
+        NUGET_PACKAGES: ${{ runner.temp }}/selected-planning-cache
+        EXPECTED_HEAD: ${{ github.sha }}
+        PRODUCT: ${{ inputs.product }}
+        LINE: ${{ inputs.line }}
+        VERSION: ${{ inputs.version }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+        test -z "$(git status --porcelain)"
+        python3 -B scripts/integration-program/plan_product_release.py \
+          --product "$PRODUCT" --line "$LINE" --version "$VERSION" --output "$RUNNER_TEMP/selected-plan"
+
+    - name: Reject ineligible plan with safe policy categories
+      env:
+        PLAN_PATH: ${{ runner.temp }}/selected-plan/plan.json
+      shell: bash
+      run: |
+        python3 -B - "$PLAN_PATH" <<'PY_DIAGNOSTIC'
+        import json, sys
+        from pathlib import Path
+
+        CATEGORIES = {
+            # Closed planner decision reasons; never emit fields copied from the plan.
+            'aligned_baseline_pending',
+            'feed_endpoint_identity', 'feed_malformed', 'feed_mapping_unavailable', 'feed_missing',
+            'feed_stale', 'feed_unavailable',
+            'history_ambiguous', 'history_malformed', 'history_missing', 'history_partial',
+            'history_stale', 'history_unavailable',
+            'prerequisite_feed_ambiguity', 'prerequisite_incompatible_framework', 'prerequisite_malformed',
+            'prerequisite_missing', 'prerequisite_missing_from_applicable_feeds', 'prerequisite_stale',
+            'prerequisite_unavailable', 'prerequisite_wrong_version',
+            'selected_dependency_version_incompatible', 'source_metadata_unavailable',
+            'version_not_monotonic', 'version_reused',
+        }
+
+        def reject(categories):
+            print(json.dumps({'status': 'plan_ineligible', 'reason_categories': categories}, sort_keys=True),
+                  file=sys.stderr)
+            raise SystemExit(1)
+
+        try:
+            plan = json.loads(Path(sys.argv[1]).read_bytes())
+        except (OSError, ValueError, TypeError, RecursionError):
+            reject(['unclassified'])
+
+        if type(plan) is not dict or type(plan.get('eligible')) is not bool:
+            reject(['unclassified'])
+        if plan['eligible']:
+            raise SystemExit(0)
+
+        reasons = plan.get('reasons')
+        if type(reasons) is not list or not reasons:
+            reject(['unclassified'])
+        categories = []
+        for reason in reasons:
+            category = reason.get('category') if type(reason) is dict else None
+            if type(category) is not str or category not in CATEGORIES:
+                reject(['unclassified'])
+            categories.append(category)
+        reject(sorted(set(categories)))
+        PY_DIAGNOSTIC
+
+    - name: Snapshot private original planning assets
+      env:
+        PLAN_PATH: ${{ runner.temp }}/selected-plan/plan.json
+        SNAPSHOT_PATH: ${{ runner.temp }}/selected-planning-assets-private
+      shell: bash
+      run: |
+        plan_sha=$(sha256sum "$RUNNER_TEMP/selected-plan/plan.json" | cut -d ' ' -f 1)
+        python3 -B scripts/integration-program/snapshot_product_planning_assets.py \
+          --plan "$PLAN_PATH" --plan-sha256 "$plan_sha" --output "$SNAPSHOT_PATH"
+    - name: Cheap exact source commit availability preflight
+      shell: bash
+      run: |
+        python3 -B - <<'PY_SOURCE'
+        import json, os, re, subprocess, sys, urllib.request
+        from pathlib import Path
+        try:
+            plan = json.loads((Path(os.environ['RUNNER_TEMP']) / 'selected-plan/plan.json').read_bytes())
+            source = plan['source']
+            if not all(type(source[key]) is str and re.fullmatch('[a-f0-9]{40}', source[key]) for key in ('commit', 'tree')):
+                raise ValueError('source identity')
+            if subprocess.check_output(['git', 'rev-parse', source['commit'] + '^{tree}'], text=True).strip() != source['tree']:
+                raise ValueError('source tree')
+            original = subprocess.check_output(['git', 'show', source['commit'] + ':Directory.Build.props'])
+            url = 'https://raw.githubusercontent.com/elsa-workflows/elsa-core/' + source['commit'] + '/Directory.Build.props'
+            with urllib.request.urlopen(url, timeout=60) as response:
+                data = response.read(1024 * 1024 + 1)
+                if response.status != 200 or len(data) > 1024 * 1024 or data != original:
+                    raise ValueError('source availability/checksum')
+        except Exception:
+            print('Exact selected source commit unavailable; no product recipe started.', file=sys.stderr)
+            sys.exit(1)
+        PY_SOURCE
+    - name: Original producer and cold selected consumers
+      env:
+        NUGET_PACKAGES: ${{ runner.temp }}/selected-producer-cache
+      shell: bash
+      run: |
+        set -euo pipefail
+        plan_sha=$(sha256sum "$RUNNER_TEMP/selected-plan/plan.json" | cut -d ' ' -f 1)
+        python3 -B scripts/integration-program/prove_product_release_artifacts.py \
+          --plan "$RUNNER_TEMP/selected-plan/plan.json" --plan-sha256 "$plan_sha" \
+          --output "$RUNNER_TEMP/selected-producer"
+        producer_sha=$(sha256sum "$RUNNER_TEMP/selected-producer/retained/receipt.json" | cut -d ' ' -f 1)
+        python3 -B scripts/integration-program/prove_product_release_consumers.py \
+          --plan "$RUNNER_TEMP/selected-plan/plan.json" --plan-sha256 "$plan_sha" \
+          --artifact-receipt "$RUNNER_TEMP/selected-producer/retained/receipt.json" \
+          --artifact-receipt-sha256 "$producer_sha" --artifacts "$RUNNER_TEMP/selected-producer/retained/nuget" \
+          --planning-assets "$RUNNER_TEMP/selected-planning-assets-private" --retire-successful-cell-caches \
+          --output "$RUNNER_TEMP/selected-consumer"
+    - name: Validate and seal the complete allowlisted control
+      id: seal
+      shell: bash
+      run: |
+        set -euo pipefail
+        plan_sha=$(sha256sum "$RUNNER_TEMP/selected-plan/plan.json" | cut -d ' ' -f 1)
+        producer_sha=$(sha256sum "$RUNNER_TEMP/selected-producer/retained/receipt.json" | cut -d ' ' -f 1)
+        consumer_sha=$(sha256sum "$RUNNER_TEMP/selected-consumer/retained/receipt.json" | cut -d ' ' -f 1)
+        python3 -B scripts/integration-program/selected_control_seal.py seal \
+          --plan "$RUNNER_TEMP/selected-plan/plan.json" --plan-sha256 "$plan_sha" \
+          --producer-retained "$RUNNER_TEMP/selected-producer/retained" --producer-receipt-sha256 "$producer_sha" \
+          --consumer-receipt "$RUNNER_TEMP/selected-consumer/retained/receipt.json" --consumer-receipt-sha256 "$consumer_sha" \
+          --output "$RUNNER_TEMP/selected-upload" > "$RUNNER_TEMP/selected-expected.json"
+        python3 -B - <<'PY' >> "$GITHUB_OUTPUT"
+        import base64, hashlib, os
+        from pathlib import Path
+        data = (Path(os.environ['RUNNER_TEMP']) / 'selected-expected.json').read_bytes()
+        print('expected=' + base64.b64encode(data).decode())
+        print('expected-sha256=' + hashlib.sha256(data).hexdigest())
+        PY
+    - name: Upload only the new validated canonical staging folder
+      id: upload
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      with:
+        name: selected-control-${{ inputs.product }}-${{ inputs.line }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+        path: ${{ runner.temp }}/selected-upload/
+        if-no-files-found: error
+        retention-days: 14
+        compression-level: 0

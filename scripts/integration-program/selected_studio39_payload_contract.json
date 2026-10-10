@@ -1,0 +1,111 @@
+{
+  "schema": 1,
+  "source_commit": "98a3f23d9c3c67080f3926eeb584036c49855b72",
+  "source_tree": "de330a0c1284c41a85c5fb0dd7c4af2ab0b1168e",
+  "files": [
+    {
+      "path": "src/hosts/Elsa.Studio.Host.CustomElements/npm/package.json",
+      "blob": "81c392806724f0b71a24c912ef35f99774bf95f1",
+      "sha256": "1724c6e7270ad5b0db3cf973ee545116c5742ef4ddd9515d59d14efaa57deba9",
+      "package": {
+        "name": "@elsa-workflows/elsa-studio-wasm",
+        "version": "3.0.0-preview.1",
+        "repository": {
+          "type": "git",
+          "url": "git+https://github.com/elsa-workflows/elsa-studio.git"
+        },
+        "description": "Provides Elsa Studio Blazor components wrapped as custom elements.",
+        "scripts": {
+          "test": "echo \"Error: no test specified\" && exit 1"
+        },
+        "keywords": [
+          "elsa workflows",
+          "blazor"
+        ],
+        "author": "Sipke Schoorstra",
+        "license": "MIT",
+        "files": [
+          "_framework/*",
+          "_content/*",
+          "index.html",
+          "appsettings.json",
+          "Elsa.Studio.Host.CustomElements.styles.css"
+        ]
+      }
+    },
+    {
+      "path": "src/wrappers/wrappers/react-wrapper/package.json",
+      "blob": "8ee363cd0af1242a2152bf8399b3bd4c2a20e973",
+      "sha256": "78e2b68199c7e15808f86ff06848cc1eebde56c58f7b53d385c55a5b0189514b",
+      "package": {
+        "name": "@elsa-workflows/elsa-studio-wasm-react",
+        "version": "0.0.0",
+        "repository": {
+          "type": "git",
+          "url": "git+https://github.com/elsa-workflows/elsa-studio.git"
+        },
+        "type": "module",
+        "description": "React wrapper for Elsa Studio, exposing the Blazor WebAssembly workflow designer as React components.",
+        "license": "MIT",
+        "files": [
+          "dist"
+        ],
+        "main": "./dist/elsa-studio-wasm-react.umd.cjs",
+        "module": "./dist/elsa-studio-wasm-react.js",
+        "exports": {
+          ".": {
+            "import": "./dist/elsa-studio-wasm-react.js",
+            "require": "./dist/elsa-studio-wasm-react.umd.cjs"
+          }
+        },
+        "scripts": {
+          "dev": "vite",
+          "build": "vite build",
+          "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+          "preview": "vite preview",
+          "storybook": "storybook dev -p 6006",
+          "build-storybook": "storybook build",
+          "postinstall": "npm run copy:elsa-studio-wasm",
+          "copy:elsa-studio-wasm": "node -e \"const fs=require('node:fs'),path=require('node:path'),source=path.dirname(require.resolve('@elsa-workflows/elsa-studio-wasm/package.json'));fs.mkdirSync('public',{recursive:true});for(const name of ['_content','_framework','appsettings.json'])fs.cpSync(path.join(source,name),path.join('public',name),{recursive:true});\""
+        },
+        "dependencies": {
+          "@elsa-workflows/elsa-studio-wasm": "^3.4.0-rc1",
+          "react": "^19.1.0",
+          "react-dom": "^19.1.0",
+          "uuid": "^14.0.0"
+        },
+        "devDependencies": {
+          "@storybook/addon-essentials": "^8.6.11",
+          "@storybook/addon-interactions": "^8.6.11",
+          "@storybook/addon-links": "^8.6.11",
+          "@storybook/addon-onboarding": "^8.6.11",
+          "@storybook/blocks": "^8.6.11",
+          "@storybook/react": "^8.6.11",
+          "@storybook/react-vite": "^8.6.11",
+          "@storybook/testing-library": "^0.2.2",
+          "@types/react": "^19.0.12",
+          "@types/react-dom": "^19.0.4",
+          "@vitejs/plugin-react": "^4.3.4",
+          "eslint": "^9.23.0",
+          "eslint-plugin-react": "^7.37.4",
+          "eslint-plugin-react-hooks": "^5.2.0",
+          "eslint-plugin-react-refresh": "^0.4.19",
+          "eslint-plugin-storybook": "^0.12.0",
+          "prop-types": "^15.8.1",
+          "storybook": "^8.6.17",
+          "vite": "^6.4.2"
+        }
+      }
+    },
+    {
+      "path": "src/hosts/Elsa.Studio.Host.CustomElements/Elsa.Studio.Host.CustomElements.csproj",
+      "blob": "c9f3f667e8c3c54f0924166aebedeb3f64be7b1d",
+      "sha256": "65db221b7621910b5621126343c03f8c1808052d0c7c3981d65d7fe70de613fa"
+    },
+    {
+      "path": ".github/maintenance-inert-workflows/packages.yml.source",
+      "blob": "24bc4df9c60c0a750b97383fcbddbc4b9c810e9c",
+      "sha256": "cd6f1d8bb7809784420385b7683a8d811ad07972eb5836d4bb9d3aa7aeec2a48"
+    }
+  ]
+}

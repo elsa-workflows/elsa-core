@@ -1,0 +1,53 @@
+{
+  "fixtures": {
+    "scripts/integration-program/selected-core-consumer/Program.cs": "52c62e934e12c386c57a65359debb873b1e20b2c3f8879f1e39bf00b8dddf50c",
+    "scripts/integration-program/selected-core-consumer/README.md": "77c27149f3e0787e83d7b8cf88d43f0d35c53aa0514464fc0619bff03bac3c7c"
+  },
+  "schema": 1,
+  "sources": {
+    "3.8": {
+      "src/common/Elsa.Testing.Shared.Integration/TestApplicationBuilder.cs": "6c220ee0c20273ff921cbd550d740ce556935607da3d03b871bd6054f7500bc0",
+      "src/modules/Elsa.Workflows.Core/Activities/Sequence.cs": "affdaec21bf2ac3be3b87a91d72854c927bbd2654795de40bffd360d96319e60",
+      "src/modules/Elsa.Workflows.Core/Activities/SetVariable.cs": "d1ca1cda71094760040f5784720d10c70bc4cff597e6c6bb2262ace0779cdb55",
+      "src/modules/Elsa.Workflows.Core/Activities/WriteLine.cs": "6a0f007ed79ee65394741a9e8e17423bc13fe760627310c52d567c9dde15a259",
+      "src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs": "3ed51591aef360b85a821269d7dac57471a9903a615e1485b78d534b342dcbd1",
+      "src/modules/Elsa.Workflows.Core/Enums/WorkflowStatus.cs": "9311e1e120dd1e4c2ee2957189ab7ccf2503ee6fc7efa2a19864706103346d63",
+      "src/modules/Elsa.Workflows.Core/Enums/WorkflowSubStatus.cs": "68efabd65b210c2285f080b28d232347a31dc65a67a9b118e1c642da63d952ba",
+      "src/modules/Elsa.Workflows.Core/Extensions/ModuleExtensions.cs": "4c9ec1e23224f70a5208d9524b642ad003e16a248bf80b902f1fb15088fff338",
+      "src/modules/Elsa.Workflows.Core/Features/WorkflowsFeature.cs": "a4febee9ec8774012bbec66e75c30a7daddcdb920af6ce158b6d4974e92ccc59",
+      "src/modules/Elsa.Workflows.Core/Models/RunWorkflowResult.cs": "174e82941596842ddac448c8264b56ce763832523844661a08e4b9dd47a717b7",
+      "src/modules/Elsa.Workflows.Core/Services/StandardOutStreamProvider.cs": "58b0d8e8d824b13afd6df1aada201cf56e5d018dead3c4ba0b45d87c36f03bd0",
+      "src/modules/Elsa.Workflows.Core/Services/WorkflowRunner.cs": "1267671e11b85a9df8f4578fc86ad6ea876cd20765466bc81418f8a721ccc92b",
+      "src/modules/Elsa.Workflows.Core/State/WorkflowState.cs": "6866e083d088e56c48407e51a945b669d0fdc183d565ef0bf226ed2660a16d71",
+      "src/modules/Elsa.Workflows.Runtime/Contracts/IRegistriesPopulator.cs": "35e52f4f4aa9cda0fb62b7f172ca1a36a1e84c797a8d04abb0ad2e436b77e02f",
+      "src/modules/Elsa.Workflows.Runtime/Services/DefaultRegistriesPopulator.cs": "02c3ba903b697b47d6b7218d9ff63fc7168d2fea4c434e4cd914d44150d1771b",
+      "src/modules/Elsa/Elsa.csproj": "2a52ee37a72f0977cd263ff5224d8f543526b34247bd202a4894981c52948fd6",
+      "src/modules/Elsa/Extensions/DependencyInjectionExtensions.cs": "07f29c98ec6243be2f708f8a8a3903707571050a2aa8c25005dc86163e958a6b",
+      "src/modules/Elsa/Features/AppFeature.cs": "d79da230a7f27317d65a9a22218e125aa3f9a363c27af830ed2a66ee4fb80371",
+      "src/modules/Elsa/Features/ElsaFeature.cs": "601dcb26030777bfebcc0c06ad6324d20cd19ddc153ff45f2e1604e577fc5427",
+      "test/integration/Elsa.Activities.IntegrationTests/SetVariableTests.cs": "fbf4e0706f60036f1b0430b7026b681847631533ff64dc9fa271ab5c6f9bfbe5"
+    },
+    "3.9": {
+      "src/common/Elsa.Testing.Shared.Integration/TestApplicationBuilder.cs": "6c220ee0c20273ff921cbd550d740ce556935607da3d03b871bd6054f7500bc0",
+      "src/modules/Elsa.Workflows.Core/Activities/Sequence.cs": "9a6a3cfc7e3934e854262d4d651a3c1f273d8cc4904b90e409bfb829d1d61702",
+      "src/modules/Elsa.Workflows.Core/Activities/SetVariable.cs": "d1ca1cda71094760040f5784720d10c70bc4cff597e6c6bb2262ace0779cdb55",
+      "src/modules/Elsa.Workflows.Core/Activities/WriteLine.cs": "6a0f007ed79ee65394741a9e8e17423bc13fe760627310c52d567c9dde15a259",
+      "src/modules/Elsa.Workflows.Core/Contracts/IWorkflowRunner.cs": "3ed51591aef360b85a821269d7dac57471a9903a615e1485b78d534b342dcbd1",
+      "src/modules/Elsa.Workflows.Core/Enums/WorkflowStatus.cs": "9311e1e120dd1e4c2ee2957189ab7ccf2503ee6fc7efa2a19864706103346d63",
+      "src/modules/Elsa.Workflows.Core/Enums/WorkflowSubStatus.cs": "68efabd65b210c2285f080b28d232347a31dc65a67a9b118e1c642da63d952ba",
+      "src/modules/Elsa.Workflows.Core/Extensions/ModuleExtensions.cs": "4c9ec1e23224f70a5208d9524b642ad003e16a248bf80b902f1fb15088fff338",
+      "src/modules/Elsa.Workflows.Core/Features/WorkflowsFeature.cs": "a4febee9ec8774012bbec66e75c30a7daddcdb920af6ce158b6d4974e92ccc59",
+      "src/modules/Elsa.Workflows.Core/Models/RunWorkflowResult.cs": "174e82941596842ddac448c8264b56ce763832523844661a08e4b9dd47a717b7",
+      "src/modules/Elsa.Workflows.Core/Services/StandardOutStreamProvider.cs": "58b0d8e8d824b13afd6df1aada201cf56e5d018dead3c4ba0b45d87c36f03bd0",
+      "src/modules/Elsa.Workflows.Core/Services/WorkflowRunner.cs": "1267671e11b85a9df8f4578fc86ad6ea876cd20765466bc81418f8a721ccc92b",
+      "src/modules/Elsa.Workflows.Core/State/WorkflowState.cs": "6866e083d088e56c48407e51a945b669d0fdc183d565ef0bf226ed2660a16d71",
+      "src/modules/Elsa.Workflows.Runtime/Contracts/IRegistriesPopulator.cs": "35e52f4f4aa9cda0fb62b7f172ca1a36a1e84c797a8d04abb0ad2e436b77e02f",
+      "src/modules/Elsa.Workflows.Runtime/Services/DefaultRegistriesPopulator.cs": "02c3ba903b697b47d6b7218d9ff63fc7168d2fea4c434e4cd914d44150d1771b",
+      "src/modules/Elsa/Elsa.csproj": "2a52ee37a72f0977cd263ff5224d8f543526b34247bd202a4894981c52948fd6",
+      "src/modules/Elsa/Extensions/DependencyInjectionExtensions.cs": "07f29c98ec6243be2f708f8a8a3903707571050a2aa8c25005dc86163e958a6b",
+      "src/modules/Elsa/Features/AppFeature.cs": "d79da230a7f27317d65a9a22218e125aa3f9a363c27af830ed2a66ee4fb80371",
+      "src/modules/Elsa/Features/ElsaFeature.cs": "601dcb26030777bfebcc0c06ad6324d20cd19ddc153ff45f2e1604e577fc5427",
+      "test/integration/Elsa.Activities.IntegrationTests/SetVariableTests.cs": "fbf4e0706f60036f1b0430b7026b681847631533ff64dc9fa271ab5c6f9bfbe5"
+    }
+  }
+}

@@ -4,11 +4,12 @@ on:
   pull_request:
     paths:
       - '.github/workflows/product-release-plan.yml'
-      - 'scripts/integration-program/plan_product_release.py'
-      - 'scripts/integration-program/product_release_metadata.py'
-      - 'scripts/integration-program/ProductReleaseSemantics/**'
-      - 'scripts/integration-program/test_plan_product_release.py'
-      - 'docs/integration-program/product-release-plans.md'
+      - '.github/workflows/selected-product-release-control.yml'
+      - '.github/actions/selected-product-control/**'
+      # Runtime imports, native helpers, contract fixtures and governed source inputs.
+      - 'scripts/integration-program/**'
+      - '.agents/skills/elsa-release/scripts/**'
+      - 'docs/integration-program/**'
   workflow_dispatch:
     inputs:
       product:
@@ -74,12 +75,15 @@ jobs:
       - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
           dotnet-version: '10.0.300'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
       - name: Test native planner and unchanged source/unit/npm contracts
         env:
           PYTHONPATH: scripts/integration-program
         run: |
-          python3 -m unittest test_plan_product_release test_release_unit_manifest test_package_impact test_prepare_maintenance_build test_prove_studio_npm_pair
-          python3 -O -m unittest test_plan_product_release test_release_unit_manifest test_package_impact test_prepare_maintenance_build test_prove_studio_npm_pair
+          python3 -m unittest test_core_source_continuation test_plan_product_release test_release_unit_manifest test_package_impact test_prepare_maintenance_build test_prove_studio_npm_pair test_prove_product_release_artifacts test_prove_product_release_consumers test_selected_extensions_contract test_selected_core_producer test_selected_core_consumers test_selected_maintenance_39 test_selected_execution_snapshot test_selected_core_payload test_selected_control_transport test_selected_studio_payload test_selected_product_payload test_selected_control_seal test_selected_control_workflow test_historical_studio_npm_continuation test_extensions_manifest_continuation
+          python3 -O -m unittest test_core_source_continuation test_plan_product_release test_release_unit_manifest test_package_impact test_prepare_maintenance_build test_prove_studio_npm_pair test_prove_product_release_artifacts test_prove_product_release_consumers test_selected_extensions_contract test_selected_core_producer test_selected_core_consumers test_selected_maintenance_39 test_selected_execution_snapshot test_selected_core_payload test_selected_control_transport test_selected_studio_payload test_selected_product_payload test_selected_control_seal test_selected_control_workflow test_historical_studio_npm_continuation test_extensions_manifest_continuation
 
   plan:
     needs: select
