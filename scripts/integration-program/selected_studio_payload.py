@@ -376,6 +376,9 @@ def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, ru
                 data = selected[folded]['members'].get(path)
                 require(data is not None and len(data) == asset['size'] and metadata.sha256(data) == asset['sha256'],
                         'selected_payload_asset_bytes')
+        content = [item for item in row['payloads'] if item['kind'] == 'contentFiles']
+        require(not any('accounting' in item for item in content) or len(content) == 1,
+                'selected_payload_synthetic_content_group')
     require(set(payload_rows) == set(restored), 'selected_payload_restored_payload_bijection')
     if runtime:
         evidence = transport.closed(cell['runtime'], {'contract', 'loaded_assemblies'}, 'selected_payload_runtime')

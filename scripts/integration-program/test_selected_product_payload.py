@@ -285,7 +285,14 @@ class SelectedProductPayloadTests(unittest.TestCase):
         cell['restored_payloads'].append({'id': identifier, 'version': external['version'], 'payloads': [marker]})
         files['consumer/receipt.json'] = encoded(receipt); self.validate(values)
         baseline = deepcopy(receipt)
-        for change in ('path', 'kind', 'metadata', 'copy_integer', 'fake_bytes', 'hash', 'duplicate', 'selected', 'origin'):
+        for origin in ('original-excluded-content', 'package-reference-transitive-content-exclusion'):
+            receipt = deepcopy(baseline); row = receipt['coverage'][0]['restored_payloads'][-1]
+            row['payloads'][0]['origin'] = origin
+            row['payloads'].append({'path': 'lib/net9.0/external.dll', 'kind': 'runtime',
+                'sha256': 'c' * 64, 'size': 10})
+            files['consumer/receipt.json'] = encoded(receipt)
+            with self.subTest(origin=origin): self.validate(values)
+        for change in ('path', 'kind', 'metadata', 'copy_integer', 'fake_bytes', 'hash', 'duplicate', 'selected', 'origin', 'mixed', 'mixed-reversed'):
             receipt = deepcopy(baseline); cell = receipt['coverage'][0]
             row = cell['restored_payloads'][-1]; marker = row['payloads'][0]
             if change == 'path': marker['path'] = 'contentFiles/any/any/arbitrary_._'
@@ -296,11 +303,16 @@ class SelectedProductPayloadTests(unittest.TestCase):
             elif change == 'hash': marker['archive_sha256'] = 'f' * 64
             elif change == 'duplicate': row['payloads'].append(deepcopy(marker))
             elif change == 'origin': marker['origin'] = 'unbound'
+            elif change in ('mixed', 'mixed-reversed'):
+                row['payloads'].append({'path': 'contentFiles/any/net9.0/js/package.json',
+                    'kind': 'contentFiles', 'sha256': 'c' * 64, 'size': 10})
+                if change == 'mixed-reversed': row['payloads'].reverse()
             else:
                 cell['restored_payloads'][0]['payloads'].append(marker)
                 cell['restored_payloads'].pop(); cell['restored'].pop()
             files['consumer/receipt.json'] = encoded(receipt)
-            with self.subTest(change=change), self.assertRaises(ValueError): self.validate(values)
+            error = 'selected_payload_synthetic_content_group' if change.startswith('mixed') else '.'
+            with self.subTest(change=change), self.assertRaisesRegex(ValueError, error): self.validate(values)
             self.files, self.context = values[:2]
             seal_tests.SealContracts.assert_cli_rejected(self)
 
