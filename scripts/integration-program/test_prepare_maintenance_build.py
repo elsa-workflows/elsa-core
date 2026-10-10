@@ -227,7 +227,7 @@ class MaintenanceContracts(unittest.TestCase):
         self.assertNotIn('source changed', json.dumps(receipt))
         self.assertNotIn(str(self.root), json.dumps(receipt))
 
-    def prepare_inventory_fixture(self, failure=None):
+    def prepare_inventory_fixture(self, failure=None, metadata_stage=None):
         output = self.root / ('proof-' + (failure or 'success'))
         policy = {'id': 'Fixture', 'project': 'src/Fixture.csproj', 'assembly_name': 'Fixture',
                   'frameworks': ['net8.0'], 'symbols': True, 'include_build_output': True, 'satellites': [],
@@ -245,7 +245,10 @@ class MaintenanceContracts(unittest.TestCase):
             if command[:2] == ['dotnet', 'build'] and failure == 'symbol-inspector':
                 raise ValueError('/private-secret/helper failure')
             return '10.0.300'
-        def stage(*_args):
+        def stage(*_args, **_kwargs):
+            self.assertEqual(_kwargs['diagnostics'], output / 'sdk-metadata-diagnostics')
+            if metadata_stage is not None:
+                return metadata_stage()
             policy.update(expected_dependency_groups=[], sdk_nuspec_sha256='a' * 64,
                 expected_framework_reference_groups=[{'framework': 'net8.0', 'references': ['Microsoft.AspNetCore.App']}],
                 expected_symbol_framework_reference_groups=[],
@@ -444,7 +447,7 @@ class MaintenanceContracts(unittest.TestCase):
                 self.assertEqual(result['family'], family)
                 self.assertEqual(verifier.call_args.args[3], family)
 
-    def test_metadata_stage_binds_restore_and_retains_only_public_projection(self):
+    def metadata_stage_fixture(self):
         source = self.root / 'source'; source.mkdir()
         (source / 'NuGet.Config').write_text('<configuration />')
         (source / 'Fixture.csproj').write_text('<Project Sdk="Microsoft.NET.Sdk" />')
@@ -471,6 +474,10 @@ class MaintenanceContracts(unittest.TestCase):
                 return ''
             return json.dumps({'Properties': {'ProjectAssetsFile': str(assets), 'GenerateElsaPackageManifest': '',
                 'ElsaPackageManifestIncludeInPackage': '', 'ElsaPackageManifestPackagePath': ''}, 'Items': {}})
+        return source, policy, evidence, commands, execute
+
+    def test_metadata_stage_binds_restore_and_retains_only_public_projection(self):
+        source, policy, evidence, commands, execute = self.metadata_stage_fixture()
         with patch.dict(os.environ, {'GH_TOKEN': 'private-secret'}), patch.object(maintenance, 'run', side_effect=execute), \
              patch.object(maintenance, 'capture_compiler_evidence', return_value=evidence) as captured:
             maintenance.stage_maintenance_metadata(source, self.row, [policy], '3.8.4-proof.42.1', Path('/inspector'))
@@ -486,6 +493,133 @@ class MaintenanceContracts(unittest.TestCase):
         self.assertEqual(retained[0]['restore_inputs'][0]['sha256'], hashlib.sha256(b'{}').hexdigest())
         self.assertNotIn('private-secret', json.dumps(retained))
         self.assertNotIn(str(source), json.dumps(retained))
+        self.assertEqual(list(source.glob('maintenance-metadata-*')), [])
+
+    def test_metadata_json_failure_is_private_and_cleans_original_stage(self):
+        source, policy, evidence, commands, execute = self.metadata_stage_fixture()
+        diagnostics = self.root / 'proof-sdk-metadata/sdk-metadata-diagnostics'
+        actual_stage = maintenance.stage_maintenance_metadata
+        private = '/private-secret/sdk-output token=secret-value'
+        nuspecs = {}
+        def malformed(command, *args, **kwargs):
+            if '-getItem:Analyzer,ResolvedFrameworkReference,Compile' in command:
+                return private
+            stdout = execute(command, *args, **kwargs)
+            if '-target:_GetRestoreProjectStyle;GenerateNuspec' in command:
+                destination = Path(next(arg.split('=', 1)[1] for arg in command if arg.startswith('-p:NuspecOutputPath=')))
+                nuspecs.update({path.name + '.txt': path.read_bytes() for path in destination.glob('*.nuspec')})
+            return stdout
+        def stage():
+            with patch.object(maintenance, 'run', side_effect=malformed):
+                actual_stage(source, self.row, [policy], '3.8.4-proof.42.1',
+                    Path('/inspector'), diagnostics=diagnostics)
+        output = self.prepare_inventory_fixture('sdk-metadata', metadata_stage=stage)
+        failure = (diagnostics / 'failure.txt').read_text()
+        command = (diagnostics / 'command-0003.txt').read_text()
+        self.assertIn('JSONDecodeError', failure)
+        self.assertIn('"package": "Fixture"', failure)
+        self.assertIn('"framework": "net8.0"', failure)
+        self.assertIn('"operation": "compiler-metadata"', failure)
+        self.assertIn(private, command)
+        self.assertIn('-p:TargetFramework=net8.0', command)
+        self.assertEqual(len(nuspecs), 2)
+        self.assertEqual({path.name: path.read_bytes() for path in (diagnostics / '0').glob('*.nuspec.txt')}, nuspecs)
+        self.assertEqual(list(source.glob('maintenance-metadata-*')), [])
+        receipt = json.loads((output / 'receipt.json').read_text())
+        self.assertEqual(receipt['error'], {'code': 'sdk-metadata-failed', 'reason': 'unknown-check-failure'})
+        self.assertFalse(receipt['success'])
+        for value in ('private-secret', 'secret-value', 'sdk-metadata-diagnostics'):
+            self.assertNotIn(value, json.dumps(receipt))
+        self.assertEqual(list(output.glob('*.txt')), [])
+
+    def test_metadata_cleanup_failure_is_recorded_without_bypassing_cleanup(self):
+        source, policy, evidence, commands, execute = self.metadata_stage_fixture()
+        diagnostics = self.root / 'sdk-diagnostics'
+        original = tempfile.TemporaryDirectory
+        error = OSError('/private-secret/cleanup-failure')
+        class CleanupFailure:
+            def __init__(self, **kwargs):
+                self.temporary = original(**kwargs)
+            def __enter__(self):
+                return self.temporary.__enter__()
+            def __exit__(self, *args):
+                self.temporary.__exit__(*args)
+                raise error
+        with patch.object(maintenance.tempfile, 'TemporaryDirectory', CleanupFailure), \
+             patch.object(maintenance, 'run', side_effect=execute), \
+             patch.object(maintenance, 'capture_compiler_evidence', return_value=evidence):
+            with self.assertRaises(OSError) as caught:
+                maintenance.stage_maintenance_metadata(source, self.row, [policy], '3.8.4-proof.42.1',
+                    Path('/inspector'), diagnostics=diagnostics)
+        self.assertIs(caught.exception, error)
+        self.assertEqual(list(source.glob('maintenance-metadata-*')), [])
+        failure = (diagnostics / 'failure.txt').read_text()
+        self.assertIn('temporary-cleanup', failure)
+        self.assertIn('/private-secret/cleanup-failure', failure)
+        self.assertEqual(maintenance.verification_reason(str(error)), 'unknown-check-failure')
+
+    def test_metadata_diagnostic_copy_rejects_symlink_and_preserves_command_failure(self):
+        source, policy, evidence, commands, execute = self.metadata_stage_fixture()
+        secret = self.root / 'outside.nuspec'; secret.write_text('outside-private-secret')
+        error = ValueError('/private-secret/original-command-failure')
+        for fails in (False, True):
+            with self.subTest(command_fails=fails):
+                diagnostics = self.root / ('sdk-diagnostics-' + str(fails))
+                def unsafe(command, *args, **kwargs):
+                    if '-target:_GetRestoreProjectStyle;GenerateNuspec' in command:
+                        destination = Path(next(arg.split('=', 1)[1] for arg in command if arg.startswith('-p:NuspecOutputPath=')))
+                        (destination / 'outside.nuspec').symlink_to(secret)
+                        if fails:
+                            raise error
+                        return ''
+                    return execute(command, *args, **kwargs)
+                with patch.object(maintenance, 'run', side_effect=unsafe):
+                    with self.assertRaises(ValueError) as caught:
+                        maintenance.stage_maintenance_metadata(source, self.row, [policy], '3.8.4-proof.42.1',
+                            Path('/inspector'), diagnostics=diagnostics)
+                if fails:
+                    self.assertIs(caught.exception, error)
+                else:
+                    self.assertEqual(str(caught.exception), 'Invalid staged nuspec diagnostic input')
+                self.assertEqual(list(diagnostics.rglob('*.nuspec.txt')), [])
+                self.assertEqual(list(source.glob('maintenance-metadata-*')), [])
+
+    def test_metadata_failure_record_io_cannot_replace_original_exception(self):
+        source, policy, evidence, commands, execute = self.metadata_stage_fixture()
+        diagnostics = self.root / 'sdk-diagnostics'
+        error = ValueError('/private-secret/original-command-failure')
+        original = Path.write_text
+        def write(path, *args, **kwargs):
+            if path.name == 'failure.txt':
+                raise OSError('/private-secret/secondary-diagnostic-failure')
+            return original(path, *args, **kwargs)
+        with patch.object(maintenance, 'run', side_effect=error), patch.object(Path, 'write_text', write):
+            with self.assertRaises(ValueError) as caught:
+                maintenance.stage_maintenance_metadata(source, self.row, [policy], '3.8.4-proof.42.1',
+                    Path('/inspector'), diagnostics=diagnostics)
+        self.assertIs(caught.exception, error)
+        self.assertEqual(list(source.glob('maintenance-metadata-*')), [])
+        self.assertEqual(maintenance.verification_reason(str(error)), 'unknown-check-failure')
+
+    def test_metadata_package_advance_clears_previous_framework(self):
+        source, policy, evidence, commands, execute = self.metadata_stage_fixture()
+        diagnostics = self.root / 'sdk-diagnostics'
+        error = ValueError('/private-secret/next-package-failure')
+        def next_package(command, *args, **kwargs):
+            if '-getProperty:ProjectAssetsFile' in command and len(commands) == 3:
+                raise error
+            return execute(command, *args, **kwargs)
+        second = dict(policy, id='Second')
+        with patch.object(maintenance, 'run', side_effect=next_package), \
+             patch.object(maintenance, 'capture_compiler_evidence', return_value=evidence):
+            with self.assertRaises(ValueError) as caught:
+                maintenance.stage_maintenance_metadata(source, self.row, [policy, second], '3.8.4-proof.42.1',
+                    Path('/inspector'), diagnostics=diagnostics)
+        self.assertIs(caught.exception, error)
+        failure = (diagnostics / 'failure.txt').read_text()
+        self.assertIn('"package": "Second"', failure)
+        self.assertIn('"framework": null', failure)
+        self.assertIn('"operation": "restore-input"', failure)
         self.assertEqual(list(source.glob('maintenance-metadata-*')), [])
 
     def test_proof_embedding_property_is_fixed_in_environment_and_studio_commands(self):

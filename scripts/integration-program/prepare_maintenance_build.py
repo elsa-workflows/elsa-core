@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import traceback
 import xml.etree.ElementTree as ET
 import zipfile
 
@@ -623,59 +624,111 @@ def metadata_command(project: str, version: str, row: dict | None = None) -> lis
 
 
 def stage_maintenance_metadata(source: Path, row: dict, inventory: list[dict], version: str,
-                               inspector: Path) -> None:
+                               inspector: Path, *, diagnostics: Path | None = None) -> None:
     source = source.resolve()
     cache = {'archive_inspector': inspector, 'source_commit': row['commit']}
-    # This directory is inside the unretained source checkout. Never upload raw SDK metadata.
-    with tempfile.TemporaryDirectory(prefix='maintenance-metadata-', dir=source) as temporary:
-        for index, policy in enumerate(inventory):
-            destination = Path(temporary) / str(index)
-            destination.mkdir()
-            command = metadata_command(policy['project'], version, row)
-            assets_name = run(command + ['-getProperty:ProjectAssetsFile'], source, env=recipe_environment(row, version, source)).strip()
-            stage_assets = (source / assets_name).resolve()
-            require(stage_assets.is_relative_to(source.resolve()) and stage_assets.is_file() and not stage_assets.is_symlink(),
-                    'Invalid restored metadata input')
-            stage_assets_hash = digest(stage_assets.read_bytes())
-            run(command + ['-target:_GetRestoreProjectStyle;GenerateNuspec', '-p:NoBuild=true',
-                '-p:ContinuePackingAfterGeneratingNuspec=false', f'-p:NuspecOutputPath={destination}',
-                f"-p:PackageOutputPath={destination / 'forbidden-packages'}"], source, env=recipe_environment(row, version, source))
-            policy.update(nupkg=f"{policy['id']}.{version}.nupkg",
-                          snupkg=f"{policy['id']}.{version}.snupkg" if policy['symbols'] else None,
-                          source_commit=row['commit'], restore_assets=[], framework_properties={})
-            read_staged_nuspecs(destination, policy)
-            for framework in policy['frameworks']:
-                properties = ('MSBuildToolsPath,NETCoreSdkVersion,NetCoreRoot,RuntimeIdentifier,ProjectAssetsFile,'
-                              'GenerateElsaPackageManifest,ElsaPackageManifestIncludeInPackage,ElsaPackageManifestPackagePath' +
-                              (',AssemblyVersion,InformationalVersion' if original_core(row) else ''))
-                targets = 'ResolveReferences' + (';GetAssemblyAttributes' if original_core(row) else '')
-                if ET.parse(source / policy['project']).getroot().get('Sdk') == 'Microsoft.NET.Sdk.Razor':
-                    targets += ';_PrepareRazorSourceGenerators'
-                resolved = json.loads(run(command + [f'-p:TargetFramework={framework}', '-p:BuildProjectReferences=false',
-                    f'-target:{targets}', f'-getProperty:{properties}', '-getItem:Analyzer,ResolvedFrameworkReference,Compile'],
-                    source, env=recipe_environment(row, version, source)))
-                assets = (source / resolved['Properties']['ProjectAssetsFile']).resolve()
-                require(assets.is_relative_to(source.resolve()) and assets.is_file() and not assets.is_symlink(),
+    context = {'package': None, 'project': None, 'framework': None, 'operation': 'temporary-stage'}
+    command_index = 0
+    if diagnostics is not None:
+        diagnostics.mkdir()
+
+    def execute(command: list[str]) -> str:
+        nonlocal command_index
+        command_index += 1
+        record = None if diagnostics is None else diagnostics / f'command-{command_index:04d}.txt'
+        if record is not None:
+            record.write_text(json.dumps({'context': context, 'argv': command}, indent=2) + '\nstdout:\n')
+        stdout = run(command, source, env=recipe_environment(row, version, source))
+        if record is not None:
+            with record.open('a') as stream:
+                stream.write(stdout)
+        return stdout
+
+    def retain_nuspecs(destination: Path) -> None:
+        if diagnostics is None:
+            return
+        for path in sorted(destination.glob('*.nuspec')):
+            require(not destination.is_symlink() and not path.is_symlink() and path.is_file() and
+                    path.resolve().is_relative_to(Path(temporary)),
+                    'Invalid staged nuspec diagnostic input')
+            target = diagnostics / destination.name
+            target.mkdir(exist_ok=True)
+            (target / (path.name + '.txt')).write_bytes(path.read_bytes())
+
+    try:
+        # This directory is inside the unretained source checkout. Never upload raw SDK metadata.
+        with tempfile.TemporaryDirectory(prefix='maintenance-metadata-', dir=source) as temporary:
+            for index, policy in enumerate(inventory):
+                context.update(package=policy['id'], project=policy['project'], framework=None, operation='package')
+                destination = Path(temporary) / str(index)
+                destination.mkdir()
+                command = metadata_command(policy['project'], version, row)
+                context['operation'] = 'restore-input'
+                assets_name = execute(command + ['-getProperty:ProjectAssetsFile']).strip()
+                stage_assets = (source / assets_name).resolve()
+                require(stage_assets.is_relative_to(source.resolve()) and stage_assets.is_file() and not stage_assets.is_symlink(),
                         'Invalid restored metadata input')
-                require(assets == stage_assets and digest(assets.read_bytes()) == stage_assets_hash,
-                        'Restored metadata input changed')
-                policy['restore_assets'].append({'framework': framework,
-                    'path': assets.relative_to(source).as_posix(), 'sha256': digest(assets.read_bytes())})
-                evidence = capture_compiler_evidence(source, policy, framework, resolved, cache,
-                                                    physical_families=physical_families(row, policy))
-                policy['framework_properties'][framework] = {'compiler_evidence': evidence,
-                    'manifest_required': resolved['Properties']['GenerateElsaPackageManifest'].lower() == 'true' and
-                        resolved['Properties']['ElsaPackageManifestIncludeInPackage'].lower() == 'true',
-                    'manifest_path': resolved['Properties']['ElsaPackageManifestPackagePath']}
-                if original_core(row):
-                    policy['framework_properties'][framework]['assembly_policy'] = {key: resolved['Properties'][key]
-                        for key in ('AssemblyVersion', 'InformationalVersion')}
-            if row['product'] == 'extensions':
-                from selected_extensions_contract import bind_manifest_contract
-                bind_manifest_contract(source, row, policy)
-            if row['product'] == 'extensions' or original_core(row):
-                policy['expected_sdk_assets'] = capture_sdk_assets(source, policy,
-                    (destination / (policy['nupkg'].removesuffix('.nupkg') + '.nuspec')).read_bytes())
+                stage_assets_hash = digest(stage_assets.read_bytes())
+                context['operation'] = 'nuspec'
+                try:
+                    execute(command + ['-target:_GetRestoreProjectStyle;GenerateNuspec', '-p:NoBuild=true',
+                        '-p:ContinuePackingAfterGeneratingNuspec=false', f'-p:NuspecOutputPath={destination}',
+                        f"-p:PackageOutputPath={destination / 'forbidden-packages'}"])
+                except Exception:
+                    try:
+                        retain_nuspecs(destination)
+                    except (OSError, ValueError):
+                        pass  # Diagnostic failure must not replace the original command failure.
+                    raise
+                else:
+                    retain_nuspecs(destination)
+                policy.update(nupkg=f"{policy['id']}.{version}.nupkg",
+                              snupkg=f"{policy['id']}.{version}.snupkg" if policy['symbols'] else None,
+                              source_commit=row['commit'], restore_assets=[], framework_properties={})
+                read_staged_nuspecs(destination, policy)
+                for framework in policy['frameworks']:
+                    context.update(framework=framework, operation='compiler-metadata')
+                    properties = ('MSBuildToolsPath,NETCoreSdkVersion,NetCoreRoot,RuntimeIdentifier,ProjectAssetsFile,'
+                                  'GenerateElsaPackageManifest,ElsaPackageManifestIncludeInPackage,ElsaPackageManifestPackagePath' +
+                                  (',AssemblyVersion,InformationalVersion' if original_core(row) else ''))
+                    targets = 'ResolveReferences' + (';GetAssemblyAttributes' if original_core(row) else '')
+                    if ET.parse(source / policy['project']).getroot().get('Sdk') == 'Microsoft.NET.Sdk.Razor':
+                        targets += ';_PrepareRazorSourceGenerators'
+                    resolved = json.loads(execute(command + [f'-p:TargetFramework={framework}', '-p:BuildProjectReferences=false',
+                        f'-target:{targets}', f'-getProperty:{properties}', '-getItem:Analyzer,ResolvedFrameworkReference,Compile']))
+                    assets = (source / resolved['Properties']['ProjectAssetsFile']).resolve()
+                    require(assets.is_relative_to(source.resolve()) and assets.is_file() and not assets.is_symlink(),
+                            'Invalid restored metadata input')
+                    require(assets == stage_assets and digest(assets.read_bytes()) == stage_assets_hash,
+                            'Restored metadata input changed')
+                    policy['restore_assets'].append({'framework': framework,
+                        'path': assets.relative_to(source).as_posix(), 'sha256': digest(assets.read_bytes())})
+                    evidence = capture_compiler_evidence(source, policy, framework, resolved, cache,
+                                                        physical_families=physical_families(row, policy))
+                    policy['framework_properties'][framework] = {'compiler_evidence': evidence,
+                        'manifest_required': resolved['Properties']['GenerateElsaPackageManifest'].lower() == 'true' and
+                            resolved['Properties']['ElsaPackageManifestIncludeInPackage'].lower() == 'true',
+                        'manifest_path': resolved['Properties']['ElsaPackageManifestPackagePath']}
+                    if original_core(row):
+                        policy['framework_properties'][framework]['assembly_policy'] = {key: resolved['Properties'][key]
+                            for key in ('AssemblyVersion', 'InformationalVersion')}
+                context.update(framework=None, operation='manifest-contract')
+                if row['product'] == 'extensions':
+                    from selected_extensions_contract import bind_manifest_contract
+                    bind_manifest_contract(source, row, policy)
+                context['operation'] = 'sdk-assets'
+                if row['product'] == 'extensions' or original_core(row):
+                    policy['expected_sdk_assets'] = capture_sdk_assets(source, policy,
+                        (destination / (policy['nupkg'].removesuffix('.nupkg') + '.nuspec')).read_bytes())
+
+            context['operation'] = 'temporary-cleanup'
+    except Exception:
+        if diagnostics is not None:
+            try:
+                (diagnostics / 'failure.txt').write_text(json.dumps(context, indent=2) + '\n' + traceback.format_exc())
+            except OSError:
+                pass  # Preserve the original validation or temporary-directory cleanup exception.
+        raise
 
 
 def public_inventory(inventory: list[dict]) -> list[dict]:
@@ -1161,7 +1214,8 @@ def prepare(root: Path, row: dict, version: str, output: Path, *, plan: dict | N
         run(['dotnet', 'build', str(helper / 'VerifyPackageSymbolPair.csproj'), '--configuration', 'Release',
              '--output', str(inspector_out)], root, log=output / 'symbol-verifier.log', timeout=600, env=build_environment())
         receipt['stage'] = 'sdk-metadata'
-        stage_maintenance_metadata(source, row, inventory, version, inspector_out / 'VerifyPackageSymbolPair.dll')
+        stage_maintenance_metadata(source, row, inventory, version, inspector_out / 'VerifyPackageSymbolPair.dll',
+                                   diagnostics=output / 'sdk-metadata-diagnostics')
         write_json(output / 'evaluated-inventory.json', public_inventory(inventory))
         receipt['stage'] = 'package-verification'
         receipt['focus'] = {}
