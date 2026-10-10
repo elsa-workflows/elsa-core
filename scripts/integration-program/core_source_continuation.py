@@ -47,8 +47,14 @@ def validate_tag_history(line: str, history: object) -> None:
         require(type(obj) is dict and set(obj) == {'sha', 'type', 'url'} and
                 all(type(value) is str for value in obj.values()), 'selected_plan_core_tag')
         ref = tag['ref']
-        require(not tag['node_id'].startswith(('/', '\\')) and ':' not in tag['node_id'] and
-                not any(c in ref for c in ':?#'), 'selected_plan_core_tag')
+        require(bool(tag['node_id']) and not any(c.isspace() or ord(c) == 127 for c in tag['node_id']) and
+                not tag['node_id'].startswith(('/', '\\')) and ':' not in tag['node_id'],
+                'selected_plan_core_tag')
+        # Git ref syntax, retaining the existing URL-fragment exclusion.
+        require('..' not in ref and '@{' not in ref and not ref.endswith('.') and
+                not any(ord(c) <= 32 or ord(c) == 127 or c in '~^:?*[\\#' for c in ref) and
+                all(part and not part.startswith('.') and not part.endswith('.lock') for part in ref.split('/')),
+                'selected_plan_core_tag')
         require(ref.startswith('refs/tags/' + line + '.') and obj['type'] in ('tag', 'commit') and
                 re.fullmatch('[a-f0-9]{40}', obj['sha']) is not None and
                 tag['url'] == 'https://api.github.com/repos/elsa-workflows/elsa-core/git/' + ref and

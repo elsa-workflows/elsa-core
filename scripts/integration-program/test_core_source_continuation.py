@@ -207,13 +207,32 @@ class CoreSourceContinuationContracts(unittest.TestCase):
                 schema.admit(changed, metadata.sha256(data), data, now.isoformat(), contracts)
 
     def test_original_and_candidate_tag_snapshots_pass_early_artifact_admission(self):
+        contracts = payload.load_contracts(); object_types = set()
         for line in ('3.8', '3.9'):
             original_files, _, now = product_fixture('core', line)
             candidate, _, _, _ = self.candidate_plan(line)
             for kind, plan in (('original', json.loads(original_files['plan.json'])), ('candidate', candidate)):
-                data = encoded(plan)
-                with self.subTest(line=line, kind=kind):
-                    self.assertEqual(plan, artifacts.admit(data, metadata.sha256(data), checked_at=now.isoformat()))
+                # Keep the actual recorded annotated and lightweight GitHub tag rows.
+                examples = {tag['object']['type']: tag for tag in plan['source']['observation']['tag_history']}
+                for object_type, tag in examples.items():
+                    object_types.add(object_type)
+                    selected = deepcopy(plan); selected['source']['observation']['tag_history'] = [tag]
+                    data = encoded(selected); digest = metadata.sha256(data)
+                    with self.subTest(line=line, kind=kind, object_type=object_type):
+                        self.assertEqual(selected, artifacts.admit(data, digest, checked_at=now.isoformat()))
+                        schema.admit(selected, digest, data, now.isoformat(), contracts)
+        self.assertEqual({'tag', 'commit'}, object_types)
+
+    def test_git_valid_tag_ref_boundaries_remain_pure(self):
+        tag = self.history['core-3.8']['source']['observation']['tag_history'][0]
+        for suffix in ('/nested/tag', '/valid./child', '/file.locked', '/café', '/at@name', '/percent%2fpath'):
+            ref = tag['ref'] + suffix
+            with self.subTest(ref=ref), \
+                 patch.object(Path, 'read_bytes', side_effect=AssertionError('filesystem')), \
+                 patch.object(maintenance, 'git', side_effect=AssertionError('Git')), \
+                 patch('urllib.request.urlopen', side_effect=AssertionError('network')):
+                continuation.validate_tag_history('3.8', [tag | {'ref': ref, 'url':
+                    'https://api.github.com/repos/elsa-workflows/elsa-core/git/' + ref}])
 
     def test_malformed_tag_snapshots_fail_before_any_artifact_work(self):
         contracts = payload.load_contracts()
@@ -227,7 +246,11 @@ class CoreSourceContinuationContracts(unittest.TestCase):
                     [tag | {'ref': 'refs/tags/9.9.0'}], [tag | {'node_id': 1}],
                     [tag | {'node_id': '/private'}], [tag | {'node_id': 'private:value'}],
                     [tag | {'url': 'https://example.com/tag'}], [tag | {'object': None}]]
-                for suffix in ('?query', '#fragment', ':private'):
+                snapshots.extend([tag | {'node_id': value}] for value in ('', ' ', '\t', '\n', '\u00a0', 'node id', 'node\x7f'))
+                suffixes = ('?query', '#fragment', ':private', '/../../escape', '..preview', '@{1}',
+                            ' space', '~1', '^1', '*', '[1]', '\\child', '//child', '/', '.',
+                            '/.hidden', '/.', '/name.lock', '/name.lock/child', '/name.lock.lock')
+                for suffix in (*suffixes, *(chr(code) for code in (*range(32), 127))):
                     ref = tag['ref'] + suffix
                     snapshots.append([tag | {'ref': ref, 'url':
                         'https://api.github.com/repos/elsa-workflows/elsa-core/git/' + ref}])
@@ -241,7 +264,10 @@ class CoreSourceContinuationContracts(unittest.TestCase):
                     with self.subTest(line=line, kind=kind, snapshot=index):
                         with self.assertRaisesRegex(ValueError, 'plan_malformed'):
                             artifacts.admit(data, digest, checked_at=now.isoformat())
-                        with self.assertRaises(ValueError):
+                        with patch.object(Path, 'read_bytes', side_effect=AssertionError('filesystem')), \
+                             patch.object(maintenance, 'git', side_effect=AssertionError('Git')), \
+                             patch('urllib.request.urlopen', side_effect=AssertionError('network')), \
+                             self.assertRaises(ValueError):
                             schema.admit(changed, digest, data, now.isoformat(), contracts)
                         with tempfile.TemporaryDirectory() as directory:
                             output = Path(directory) / 'proof'
