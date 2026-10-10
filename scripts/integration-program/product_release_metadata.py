@@ -8,12 +8,22 @@ from pathlib import Path
 import re
 import subprocess
 
+import core_source_continuation as continuation
 import prepare_maintenance_build as maintenance
 from package_impact import InventoryGraph
 from prove_consolidated_packages import dependency_groups, framework_reference_groups, parse_metadata, require, run
 
 ROOT = Path(__file__).resolve().parents[2]
 SDK = '10.0.300'
+PLANNER_INPUTS = frozenset({
+    'scripts/integration-program/plan_product_release.py',
+    'scripts/integration-program/product_release_metadata.py',
+    'scripts/integration-program/ProductReleaseSemantics/Program.cs',
+    'scripts/integration-program/ProductReleaseSemantics/ProductReleaseSemantics.csproj',
+    'scripts/integration-program/core_source_continuation.py',
+    'scripts/integration-program/core_source_continuation_contract.json',
+    'scripts/integration-program/selected_core_contract.json',
+})
 CORE_REFS = {'3.8': 'refs/heads/release/3.8.4', '3.9': 'refs/heads/release/3.9.0'}
 DESCENDANTS = {
     ('studio', '3.8'): 'da2dec10ba36c65e376138ee45e1c34525e45e49',
@@ -88,6 +98,13 @@ def bind_source(controller: Path, product: str, line: str, commit: str, observat
     require(product in ('core', 'studio', 'extensions') and line in ('3.8', '3.9'), 'source_selection')
     require(re.fullmatch(r'[a-f0-9]{40}', commit) is not None, 'source_selection')
     if product == 'core':
+        contract = continuation.load_contract()
+        candidate = contract['sources'][line]
+        if commit == candidate['commit']:
+            binding = continuation.bind(line, observation, contract)
+            original = json.loads(continuation.CONTRACT.with_name('selected_core_contract.json').read_bytes())['sources'][line]
+            continuation.verify_source(controller, binding, original, contract)
+            return binding
         require(observation is not None and observation['ref'] == CORE_REFS[line] and
                 observation['commit'] == commit and observation['tree'] == git(controller, 'rev-parse', commit + '^{tree}'),
                 'source_selection')

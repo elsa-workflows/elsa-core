@@ -88,3 +88,11 @@ test cells. They do not certify either complete 93/103 package release inventory
 real PDBs/TRX files, actual native execution, hosted provider authority, or any of
 the six required selected controls. The root integration and actual controls remain
 responsible for those proof boundaries.
+
+### Fixed Core source continuations
+
+The [fixed Core continuation route](product-release-plans.md#fixed-core-source-continuations)
+adds a trusted continuation catalog alongside the original producer/consumer contracts.
+The pure validator derives the original recipe/test policy plus only the exact delta,
+checks candidate SamplePackage metadata, and preserves native archive, SourceLink,
+assembly and runtime checks. Historical original-source fixtures remain unchanged.

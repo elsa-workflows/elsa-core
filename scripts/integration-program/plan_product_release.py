@@ -542,11 +542,7 @@ def execute(controller: Path, product: str, line: str, requested: str, output: P
                            'execution': {key.removeprefix('GITHUB_').lower(): os.environ[key] for key in
                                ('GITHUB_REPOSITORY', 'GITHUB_EVENT_NAME', 'GITHUB_REF', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT')
                                if key in os.environ},
-                           'input_sha256': {path: sha256((ROOT / path).read_bytes()) for path in (
-                               'scripts/integration-program/plan_product_release.py',
-                               'scripts/integration-program/product_release_metadata.py',
-                               'scripts/integration-program/ProductReleaseSemantics/Program.cs',
-                               'scripts/integration-program/ProductReleaseSemantics/ProductReleaseSemantics.csproj')}}
+                           'input_sha256': {path: sha256((ROOT / path).read_bytes()) for path in metadata.PLANNER_INPUTS}}
     require(not metadata.git(controller, 'status', '--porcelain'), 'controller_not_clean')
     version = semantics.call('versions', values=[requested])[0]
     require(f"{version['major']}.{version['minor']}" == line, 'requested_version_line')
@@ -561,7 +557,8 @@ def execute(controller: Path, product: str, line: str, requested: str, output: P
         return plan
     observations = Observations()
     observation = observe_core(controller, line, observations) if product == 'core' else None
-    commit = observation['commit'] if observation else metadata.DESCENDANTS[(product, line)]
+    commit = (metadata.continuation.load_contract()['sources'][line]['commit'] if observation
+              else metadata.DESCENDANTS[(product, line)])
     binding = metadata.bind_source(controller, product, line, commit, observation)
     source = output / 'source.private'
     metadata.checkout_source(controller, binding, source)

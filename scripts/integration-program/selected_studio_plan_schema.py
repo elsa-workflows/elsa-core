@@ -16,7 +16,8 @@ SHAPES = {
     '': ['schema mode controller source product line requested_version inventory expected_artifacts excluded_artifacts prerequisites_excluded_from_publication prerequisites selected_dependency_intent histories npm eligible reasons published version_allocated tag_created semantics limits requested_version_input observed_at consumer_feed_policy feed_service_observations'],
     'controller': ['commit tree execution input_sha256'],
     'controller.execution': ['repository event_name ref run_id run_attempt'],
-    'source': ['product line kind commit tree parents original_commit original_parents contained_commit contained_tree candidate_register_sha256 original_register_sha256', 'product line kind commit tree observation'],
+    'source': ['product line kind commit tree parents original_commit original_parents contained_commit contained_tree candidate_register_sha256 original_register_sha256', 'product line kind commit tree observation',
+               'product line kind commit tree parents original_commit original_tree observation continuation_contract_sha256'],
     'source.observation': ['ref commit tree observed_at branch_observation tag_history tag_observation tag_scope'],
     'source.observation.tag_history[]': ['ref node_id url object'],
     'source.observation.tag_history[].object': ['sha type url'],
@@ -65,10 +66,7 @@ SHAPES = {
     'feed_service_observations.*': ['base eligible observation'],
 }
 DYNAMIC = {
-    'controller.input_sha256': lambda keys: set(keys) == {
-        'scripts/integration-program/plan_product_release.py', 'scripts/integration-program/product_release_metadata.py',
-        'scripts/integration-program/ProductReleaseSemantics/Program.cs',
-        'scripts/integration-program/ProductReleaseSemantics/ProductReleaseSemantics.csproj'},
+    'controller.input_sha256': lambda keys: set(keys) == metadata.PLANNER_INPUTS,
     'inventory.ownership_policy.canonical_owners': lambda keys: set(keys) == set(metadata.CANONICAL_OWNERS),
     'inventory.selected[].metadata.original_output_policy': lambda keys: bool(keys) and set(keys) <= {'net8.0', 'net9.0', 'net10.0'},
     'inventory.projects[].references_by_framework': lambda keys: bool(keys) and set(keys) <= {'net7.0', 'net8.0', 'net9.0', 'net10.0'},
@@ -147,7 +145,7 @@ def _walk(value, path='', *, now: datetime):
             transport.safe_name(value)
         elif key.endswith('sha256') or path == 'controller.input_sha256.*':
             transport.digest(value)
-        elif key in {'commit', 'tree', 'original_commit', 'contained_commit', 'contained_tree', 'source_commit', 'source_tree', 'sha'} or path.endswith(('.parents[]', '.original_parents[]')):
+        elif key in {'commit', 'tree', 'original_commit', 'original_tree', 'contained_commit', 'contained_tree', 'source_commit', 'source_tree', 'sha'} or path.endswith(('.parents[]', '.original_parents[]')):
             transport.digest(value, 40)
         else:
             require(not value.startswith(('/', '\\')) and ':' not in value and not re.match(r'[A-Za-z]:', value),
@@ -172,11 +170,16 @@ def validate(plan: dict, contracts: dict, *, now: datetime) -> None:
             [{'id': name, 'reason': 'studio_only'} for name in planner.NPM_IDS]), 'selected_plan_artifact_exclusions')
     if product == 'core':
         pinned = contracts['core']['producer']['sources'][line]
-        require(source['kind'] == 'observed-core-release-branch' and
-                (source['commit'], source['tree']) == (pinned['commit'], pinned['tree']), 'selected_plan_source_policy')
+        if source['kind'] == metadata.continuation.KIND:
+            metadata.continuation.policy(source, pinned, contracts['core']['continuation'])
+            metadata.continuation.validate_project_metadata(source, plan['inventory']['selected'],
+                                                          contracts['core']['continuation'])
+        else:
+            require(source['kind'] == 'observed-core-release-branch' and
+                    (source['commit'], source['tree']) == (pinned['commit'], pinned['tree']), 'selected_plan_source_policy')
         observation = source['observation']
         require((observation['ref'], observation['commit'], observation['tree']) ==
-                (metadata.CORE_REFS[line], source['commit'], source['tree']) and
+                (metadata.CORE_REFS[line], pinned['commit'], pinned['tree']) and
                 observation['tag_scope'] == 'bounded-matching-ref-snapshot-not-complete-version-authority' and
                 observation['branch_observation']['status'] == 'observed' and
                 observation['tag_observation']['status'] == 'observed' and
@@ -193,7 +196,7 @@ def validate(plan: dict, contracts: dict, *, now: datetime) -> None:
                     obj['url'] == 'https://api.github.com/repos/elsa-workflows/elsa-core/git/' +
                     ('tags/' if obj['type'] == 'tag' else 'commits/') + obj['sha'], 'selected_plan_core_tag')
             refs.append(ref)
-        require(len(refs) == len(set(refs)), 'selected_plan_core_tag_duplicate')
+        require(bool(refs) and len(refs) == len(set(refs)), 'selected_plan_core_tag_duplicate')
     else:
         rows = [row for row in contracts['candidates']['candidates'] if row['product'] == product and
                 row['line'] == line and row['commit'] == metadata.DESCENDANTS[(product, line)]]

@@ -100,3 +100,12 @@ snapshot is a public artifact or consumer execution receipt.
 The Extensions Compile PackageVersion continuations are registered and byte-bound as documented in [maintenance build](maintenance-build.md). Their new source/controller identities require fresh eligible plans, immediate original planning-assets snapshots and new actual producer/consumer controls. Neither the prior 4966 archives nor old plan receipts certify these children. This source correction does not change the original DLL version policy (1.0.0 plus the selected source SHA), waive requested NuGet/manifest equality, or rewrite an archive.
 
 For the exact admitted Extensions HTTP source and pinned generator `0.0.1-preview.50`, schema 1.0's feature dependency is precisely `{"featureId":"Elsa.IO.Http.I/O","optional":false,"extensions":{}}`. The generator's NULL-only serializer omits packageId/versionRange but retains false and empty objects. The source-bound producer and pure seal accept only the exact dot-qualified dependency, boolean false and empty dictionary, with no extra keys. Wrong optional values, nonempty extensions, version/package claims and unbound generators/sources fail. Other manifest verifier modes retain their existing schema. These are source/schema contracts. The bounded corrected Extensions 3.8 observation above does not establish complete producer acceptance; complete native/archive joins and cold runtime proof remain required for both lines.
+
+### Fixed Core source continuations
+
+The closed [Core continuation policy](product-release-plans.md#fixed-core-source-continuations)
+uses the unchanged original producer recipe/test catalog plus the exact reviewed file
+delta. Source verification checks the complete ancestry and before/after tree pins;
+exported VERSION and all native gates remain required. Candidate artifacts must carry
+the actual candidate commit through repository metadata, SourceLink and assembly
+informational versions. Implementation/mock tests do not establish native success.

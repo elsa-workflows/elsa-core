@@ -115,3 +115,12 @@ The selected artifact and consumer CLIs report failures with a fixed allowlisted
 For a failed Core producer, `original-product-recipe` can additionally report `product_recipe_failure`. Its observed summary binds the private producer receipt hash and reports only a fixed inner stage and allowlisted verification reason after matching the source, version, controller and run attempt. A failed native command also reports its bounded ordinal, process status/exit code, compiler/NuGet/MSBuild diagnostic code counts and fixed NUKE target names. Missing, malformed, oversized, symlinked or mismatched producer diagnostics report `status: unavailable`; a failure after a successful producer has no nested failure summary. The CLI revalidates this closed summary, and raw receipts, arguments, environment values and logs remain private. A closed reason or native code may still be insufficient to establish the exact cause.
 
 Selected artifact controls pin SDK10.0.300 with rollForward disabled in the new owned output's global.json before source/tool preflight. Both original source checkouts inherit that ancestor pin; no tracked original source file is changed. The existing exact SDK selection check still fails if the pinned SDK is unavailable or not selected, independently of other installed SDK versions.
+
+### Fixed Core source continuations
+
+[Core continuations](product-release-plans.md#fixed-core-source-continuations) retain
+all 40 runtime-source hashes and all net8/net9/net10 consumer gates. Raw planning
+snapshots and both receipts bind the complete candidate/original source identity.
+The changed SamplePackage metadata hash must describe candidate bytes; baseline
+assets cannot substitute. Candidate source admission and real execution remain
+separate from implementation/mock contract evidence.

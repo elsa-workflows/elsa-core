@@ -35,3 +35,12 @@ Each consumer cell carries a closed, separate `sdk_restore` ledger whose `origin
 Native excluded external content may be retained as a closed inert marker record (`accounting=native-synthetic-excluded-content`) rather than a payload byte claim. Only the literal NuGet content sentinel, exact metadata, source-bound origin enum and matching restored external archive hash are admitted. Markers cannot supply loaded runtime bytes or impersonate selected archive members. Original-root content exclusion is an inherited native/private-snapshot judgment; the seal does not recompute NuGet's include-flag graph.
 
 Native excluded external Build groups have distinct inert accounting (`native-synthetic-excluded-build`, origin `selected-root-nuspec-build-exclusion`). The seal requires the exact `build/<cell TFM>/_._` path, empty metadata, matching restored external archive hash and the cell root's exact plan-bound dependency edge explicitly excluding Build. A unique eligible prerequisite for that root/project/TFM/external ID must match the restored version and edge range. That package's Build payload group must be singleton, independent of receipt order; other real asset kinds remain byte claims. No selected-package synthetic record, invented size/hash or runtime use is allowed. The original snapshot, actual sole-default-root/unique incoming native graph and no-BuildTransitive branch are inherited source-bound consumer judgments, not re-evaluated from unavailable private files. Physical archive markers retain ordinary byte checks. Offline tests do not establish a successful native or hosted control.
+
+### Fixed Core source continuations
+
+The [Core continuation source binding](product-release-plans.md#fixed-core-source-continuations)
+retains distinct original and candidate identities. Complete source equality is
+required across plan, producer/consumer receipts, execution, manifest and independent
+readback. Pure validators receive the fixed trusted catalog separately and perform
+no Git/network work or artifact-directed file reads. Synthetic seal/readback tests
+are contract evidence and do not establish native or provider execution success.

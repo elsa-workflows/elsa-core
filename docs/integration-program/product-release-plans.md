@@ -49,3 +49,33 @@ An incomplete command retains `plan_input_or_metadata_unavailable` and adds a cl
 The read-only workflow runs six explicit hypothetical requests for Core/Studio/Extensions × 3.8/3.9 on matching pull-request changes. It never infers registry tips or expands a release set. Manual dispatch requires main and selects one product/line/version; a wrong-branch request fails selection. Manual runs have unique concurrency groups, while newer PR runs cancel superseded runs for the same ref. Receipts include actual run/attempt identity; every execution refreshes observations. Contracts run normally and optimized alongside existing source-admission, Slack release-unit/test-closure and npm-pair guards.
 
 After independent exact-head receipt review, the remaining #8217 deliverables are real selected artifact builds, applicable tests, clean consumers, atomic historical Studio npm artifact/consumer proof, and controlled artifact-only publisher/recovery. #8220 retains credential/authority activation, competing-publisher retirement, source archival and operational cutover approvals. The first aligned 3.10 release remains a separate required deliverable. This planner supplies no approval or evidence for those actions.
+
+### Fixed Core source continuations
+
+The selected Core policy also supports the closed `reviewed-core-maintenance-continuation`
+kind. The tracked `core_source_continuation_contract.json` contains exactly two candidate
+identities: Core 3.8 `098cdacdc291ee1e0f27a2a08acaba80cfa8604f` and Core 3.9
+`86fffea6da3cfe67c0279f552c2a32940ef75ae2`. These are candidate commits, not observed
+release-branch heads. Fresh branch and tag observations still describe the immutable
+original release baseline. The source binding retains both original commit/tree and
+candidate commit/tree/parents, together with the trusted continuation contract digest.
+
+The helper checks the complete original-to-candidate parent chain and the entire
+before/after tree delta, including file modes, Git blobs, byte lengths and SHA256.
+The candidate producer policy derives from the unchanged original recipe/test catalog
+plus only that delta. Original exported `VERSION`, configuration, Compile+Pack recipe,
+44/61 test inventories, provider skips, SDK, native archive/assembly/SourceLink checks,
+and all net8/net9/net10 consumer checks remain required. The changed SamplePackage
+project hash must describe candidate bytes; baseline planning assets cannot substitute.
+
+The shared planner input closure includes the continuation helper/catalog and the
+original producer contract. Complete source equality remains required through planning,
+raw asset snapshots, producer and consumer receipts, execution, sealing and independent
+readback. Pure seal validation receives fixed trusted contracts separately and does not
+run Git/network or read artifact-directed paths. Original source catalogs, historical
+plan fixtures and maintenance registers remain unchanged.
+
+This local controller implementation and its mocked tests do not admit source review
+gates, prove a fresh eligible plan, or establish native success. Independent exact-source
+and controller review/root admission remain prerequisites to real execution. No source
+merge, publication, tag, or version allocation is authorized by this route.

@@ -1,10 +1,11 @@
-"""Two pinned original Core producer recipes; no maintenance registration or consumers."""
+"""Original Core producer recipes and exact reviewed maintenance continuations."""
 from __future__ import annotations
 
 import json
 import os
 from pathlib import Path
 
+import core_source_continuation as continuation
 import prepare_maintenance_build as maintenance
 from prove_consolidated_packages import require
 
@@ -14,29 +15,49 @@ SAMPLE_PROJECT = 'src/apps/Elsa.SamplePackage/Elsa.SamplePackage.csproj'
 
 
 def original(row: dict) -> bool:
-    return row.get('product') == 'core' and row.get('kind') == 'observed-core-release-branch'
+    """Sources preserving the original Core recipe and exported VERSION handling."""
+    return row.get('product') == 'core' and row.get('kind') in ('observed-core-release-branch', continuation.KIND)
+
+
+def source_binding(row: dict) -> dict:
+    # prepare() adds a clone origin after the plan's closed source binding.
+    if 'source_repository' not in row:
+        return row
+    require(row['source_repository'] == 'elsa-workflows/elsa-core', 'core_source_repository')
+    return {key: value for key, value in row.items() if key != 'source_repository'}
 
 
 def policy(row: dict) -> dict:
+    row = source_binding(row)
     require(original(row), 'core_original_selection')
     value = json.loads(CONTRACT.read_text())['sources'].get(row.get('line'))
+    if row.get('kind') == continuation.KIND:
+        require(value is not None, 'core_original_source')
+        return continuation.policy(row, value, continuation.load_contract())
     require(value is not None and (row.get('commit'), row.get('tree')) == (value['commit'], value['tree']),
             'core_original_source')
     return value
 
 
 def verify_source(root: Path, row: dict) -> None:
+    row = source_binding(row)
     value = policy(row)
+    if row.get('kind') == continuation.KIND:
+        original = json.loads(CONTRACT.read_bytes())['sources'][row['line']]
+        continuation.verify_source(root, row, original, continuation.load_contract())
     require(maintenance.git(root, 'rev-parse', row['commit'] + '^{tree}') == row['tree'], 'core_original_tree')
     for path, blob in value['files'].items():
         require(maintenance.git(root, 'rev-parse', row['commit'] + ':' + path) == blob, 'core_original_blob')
 
 
 def validate_plan(plan: dict) -> None:
+    if plan['source'].get('kind') == continuation.KIND:
+        require(set(plan['source']) == continuation.SOURCE_KEYS, 'core_continuation_source_shape')
     value = policy(plan['source'])
     require(plan['product'] == 'core' and plan['line'] == plan['source']['line'] and plan['npm'] is None,
             'core_original_plan')
     inventory = plan['inventory']
+    continuation.validate_project_metadata(plan['source'], inventory['selected'], continuation.load_contract())
     require(inventory['release_recipe']['solution'] == 'Elsa.sln' and
             inventory['release_recipe']['workflow'] == '.github/workflows/packages.yml', 'core_original_recipe')
     tests = {row['path'] for row in inventory['projects'] if row['is_test_project']}

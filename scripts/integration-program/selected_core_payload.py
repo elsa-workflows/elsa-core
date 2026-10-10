@@ -12,6 +12,7 @@ from pathlib import Path, PurePosixPath
 import re
 from uuid import UUID
 
+import core_source_continuation as continuation
 import prove_consolidated_packages as archives
 from prove_consolidated_packages import require
 from selected_control_transport import MAX_PACKAGE_BYTES, closed, digest, integer, safe_name, unique_names, strict_json
@@ -31,7 +32,8 @@ SYMBOL_KEYS = {'assembly', 'assembly_sha256', 'pdb', 'pdb_sha256', 'symbol', 'as
 def load_contracts() -> dict:
     """Load trusted controller contracts, separately from the pure validator."""
     return {name: strict_json(Path(__file__).with_name(filename).read_bytes()) for name, filename in
-            (('producer', 'selected_core_contract.json'), ('consumer', 'selected_core_consumer_contract.json'))}
+            (('producer', 'selected_core_contract.json'), ('consumer', 'selected_core_consumer_contract.json'),
+             ('continuation', 'core_source_continuation_contract.json'))}
 
 
 def _rows(value: object, label: str) -> list:
@@ -58,14 +60,18 @@ def _member(members: dict, path: str, expected: str) -> bytes:
 
 
 def _source(plan: dict, contracts: dict) -> dict:
-    closed(contracts, {'producer', 'consumer'}, 'core_payload_contracts')
+    closed(contracts, {'producer', 'consumer', 'continuation'}, 'core_payload_contracts')
     source = plan['source']
     value = contracts['producer']['sources'].get(plan['line'])
+    if source.get('kind') == continuation.KIND:
+        require(value is not None, 'core_payload_original_source')
+        value = continuation.policy(source, value, contracts['continuation'])
     require(value is not None and plan['product'] == source['product'] == 'core' and
-            plan['line'] == source['line'] and source['kind'] == 'observed-core-release-branch' and
+            plan['line'] == source['line'] and source['kind'] in ('observed-core-release-branch', continuation.KIND) and
             (source['commit'], source['tree']) == (value['commit'], value['tree']) and plan['npm'] is None,
             'core_payload_original_source')
     inventory = plan['inventory']
+    continuation.validate_project_metadata(source, inventory['selected'], contracts['continuation'])
     require(inventory['release_recipe']['solution'] == 'Elsa.sln' and
             inventory['release_recipe']['workflow'] == '.github/workflows/packages.yml', 'core_payload_recipe')
     tests = [row['path'] for row in inventory['projects'] if row['is_test_project']]

@@ -26,12 +26,7 @@ import prove_historical_studio_npm_pair as historical
 from product_artifact_execution import selected_execution
 
 ROOT = Path(__file__).resolve().parents[2]
-PLANNER_INPUTS = {
-    'scripts/integration-program/plan_product_release.py',
-    'scripts/integration-program/product_release_metadata.py',
-    'scripts/integration-program/ProductReleaseSemantics/Program.cs',
-    'scripts/integration-program/ProductReleaseSemantics/ProductReleaseSemantics.csproj',
-}
+PLANNER_INPUTS = metadata.PLANNER_INPUTS
 
 # Public diagnostics are a fixed vocabulary, never a projection of raw errors.
 PUBLIC_FAILURE_CODES = frozenset((
@@ -244,7 +239,10 @@ def admit(data: bytes, expected_sha256: str, *, checked_at: str | None = None) -
         checked_at = checked_at or datetime.now(timezone.utc).isoformat()
         fresh_public({'status': 'observed', 'observed_at': plan['observed_at'], 'sha256': expected_sha256,
                       'bytes': len(data)}, checked_at)
-        observations = []
+        if plan['product'] == 'core':
+            core.policy(binding)
+        observations = ([binding['observation'][key] for key in ('branch_observation', 'tag_observation')]
+                        if plan['product'] == 'core' else [])
         for row in plan['histories'] + plan['prerequisites']:
             require(row['eligible'] is True and row['reason'] is None, 'plan_prerequisite_ineligible')
             checks = row.get('feeds', [row])
