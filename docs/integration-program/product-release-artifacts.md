@@ -30,6 +30,8 @@ The output's `private/` directory contains source checkouts, original recipe out
 
 For a failed Core nontracked PDB source check, `product_recipe_failure.source_producer_failure` contains a fixed verifier check code and the package/framework reconstructed from the exact admitted plan's selected inventory. Both receipt projections validate catalog membership, and the CLI also binds the catalog to the input and retained plan hashes. Source/controller/run/attempt identity checks still apply. Unknown verifier errors use `unknown-check-failure`; invalid or unbound diagnostics are unavailable. These fields disclose no document paths, producer paths or exception text. This diagnostic continuation does not fix the actual Core provenance failure or accept any failed run as proof.
 
+The original Core adapter also recognizes restored manifest-hint sources from `Elsa.Platform.PackageManifest.Generator/0.0.1-preview.53` for exact admitted Core release sources and reviewed continuations. Extensions retain their existing preview.50 route. Both versions use the shared official archive pins and exact source-entry allowlists, plus matching embedded checksums, actual restored assets and SHA-512, a unique canonical nonsymlink archive, extracted source bytes and actual compiler-input membership. Physical cache paths and deterministic `/_<number>/` paths receive the same checks. This corrects the demonstrated historical Core preview.53 compatibility gap; it does not establish the unknown package/framework/subcheck of the failed d91 Core jobs. Fresh complete native producer/consumer controls and original provider ZIP readback remain required.
+
 Cheap contracts run without compiling products. Select Node 22 on PATH for the tiny offline copy fixtures:
 
 ```sh

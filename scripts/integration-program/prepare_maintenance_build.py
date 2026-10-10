@@ -749,9 +749,9 @@ def public_inventory(inventory: list[dict]) -> list[dict]:
 
 
 def verify_restored_manifest_hint(source: Path, policy: dict, framework: str,
-                                  document: dict, cache: dict) -> tuple[dict, dict]:
-    """Bind original preview.50 hints to their actual restored cache, without rewriting PDB paths."""
-    identifier, version = 'Elsa.Platform.PackageManifest.Generator', '0.0.1-preview.50'
+                                  document: dict, cache: dict, *, version: str) -> tuple[dict, dict]:
+    """Bind the caller's reviewed hint version to its actual restored compiler input."""
+    identifier = 'Elsa.Platform.PackageManifest.Generator'
     assets = restored_assets(source, policy, framework)
     relative = identifier.lower() + '/' + version
     library = assets.get('libraries', {}).get(identifier + '/' + version, {})
@@ -825,10 +825,15 @@ def verify_non_git_document(document: dict, path: str | None, source: Path, row:
         if path is None:
             # Only this reviewed original package-content family can be unmapped.
             check = 'unmapped-family-unsupported'
-            require(row['product'] == 'extensions' and
-                    '/elsa.platform.packagemanifest.generator/0.0.1-preview.50/' in document['path'], 'Unknown external family')
+            version = '0.0.1-preview.50' if row['product'] == 'extensions' else None
+            if original_core(row):
+                from selected_core_producer import policy as core_policy
+                core_policy(row)  # Admit the exact original source or reviewed continuation, not merely its kind.
+                version = '0.0.1-preview.53'
+            require(version is not None and
+                    f'/elsa.platform.packagemanifest.generator/{version}/' in document['path'], 'Unknown external family')
             check = 'restored-hint-unverified'
-            external, archive_identity = verify_restored_manifest_hint(source, policy, framework, document, cache)
+            external, archive_identity = verify_restored_manifest_hint(source, policy, framework, document, cache, version=version)
             return {'family': 'manifest-hints', 'producer': {key: external[key] for key in
                     ('external_package', 'archive_entry', 'archive_sha256', 'feed')} | {
                     'restore_sha512': archive_identity['restore_sha512']}}

@@ -18,6 +18,8 @@ import zipfile
 
 import prepare_maintenance_build as maintenance
 import prove_consolidated_packages as consolidated
+import core_source_continuation as continuation
+import selected_core_producer as core
 
 
 class SelectionTests(unittest.TestCase):
@@ -419,10 +421,10 @@ class MaintenanceContracts(unittest.TestCase):
         self.assertFalse(receipt['success'])
         self.assertNotIn('/private-secret', json.dumps(receipt))
 
-    def restored_hint_fixture(self):
+    def restored_hint_fixture(self, version='0.0.1-preview.50', framework='net10.0', row=None,
+                              entry_name='ManifestExtensionAttribute.cs'):
         root = self.root.resolve() / f'hints-{len(list(self.root.iterdir()))}'
         root.mkdir()
-        version = '0.0.1-preview.50'
         identifier = 'elsa.platform.packagemanifest.generator'
         folder = root / 'producer-cache'
         package = folder / identifier / version
@@ -434,7 +436,7 @@ class MaintenanceContracts(unittest.TestCase):
                 extracted = package / entry
                 extracted.parent.mkdir(parents=True, exist_ok=True)
                 extracted.write_bytes(b'hints')
-        entry = consolidated.GENERATOR_HINTS_PREFIX + 'ManifestExtensionAttribute.cs'
+        entry = consolidated.GENERATOR_HINTS_PREFIX + entry_name
         assets = {'libraries': {f'Elsa.Platform.PackageManifest.Generator/{version}': {
             'type': 'package', 'path': f'{identifier}/{version}',
             'sha512': base64.b64encode(hashlib.sha512(archive.read_bytes()).digest()).decode()}},
@@ -443,16 +445,60 @@ class MaintenanceContracts(unittest.TestCase):
         source.mkdir()
         assets_file = source / 'project.assets.json'
         assets_file.write_text(json.dumps(assets))
-        row = next(row for row in self.register['sources'] if row['product'] == 'extensions')
+        row = row or next(row for row in self.register['sources'] if row['product'] == 'extensions')
         policy = {'id': 'Fixture', 'source_commit': row['commit'], 'project': 'Fixture.csproj',
-            'frameworks': ['net10.0'], 'restore_assets': [{'framework': 'net10.0',
+            'frameworks': [framework], 'restore_assets': [{'framework': framework,
                 'path': 'project.assets.json', 'sha256': maintenance.digest(assets_file.read_bytes())}],
-            'framework_properties': {'net10.0': {'compiler_evidence': {
+            'framework_properties': {framework: {'compiler_evidence': {
                 'compile_inputs': [{'path': (package / entry).as_posix(), 'tracked': False}]}}}}
         checksum = maintenance.digest(b'hints')
         document = {'path': (package / entry).as_posix(), 'algorithm': 'sha256',
                     'checksum': checksum, 'embedded_checksum': checksum}
         return source, row, policy, document, archive, assets
+
+    def core_hint_sources(self):
+        originals = json.loads(core.CONTRACT.read_bytes())['sources']
+        shapes = json.loads(Path(__file__).with_name('selected_product_plan_shapes.json').read_bytes())['cells']
+        return [row for line, original in originals.items() for row in (
+            {'product': 'core', 'line': line, 'kind': 'observed-core-release-branch',
+             'commit': original['commit'], 'tree': original['tree']},
+            continuation.bind(line, shapes['core-' + line]['source']['observation'], continuation.load_contract()))]
+
+    def test_original_core_preview53_hints_are_restore_and_compile_bound_for_all_frameworks(self):
+        version = '0.0.1-preview.53'
+        for row in self.core_hint_sources():
+            for framework in ('net8.0', 'net9.0', 'net10.0'):
+                with self.subTest(line=row['line'], kind=row['kind'], framework=framework):
+                    root, row, policy, document, archive, _ = self.restored_hint_fixture(
+                        version, framework, row, entry_name='ManifestFeatureCategoryAttribute.cs')
+                    with patch.dict(consolidated.GENERATOR_SOURCE_PINS, {version: maintenance.digest(archive.read_bytes())}):
+                        actual = maintenance.verify_non_git_document(document, None, root, row, policy, framework, {})
+                        entry = actual['producer']['archive_entry']
+                        for prefix in ('/_1/', '/_42/'):
+                            mapped = document | {'path': prefix + 'elsa.platform.packagemanifest.generator/' + version + '/' + entry}
+                            self.assertEqual(maintenance.verify_non_git_document(mapped, None, root, row, policy, framework, {}), actual)
+                        self.assertEqual(actual['family'], 'manifest-hints')
+                        self.assertEqual(actual['producer']['external_package'], 'Elsa.Platform.PackageManifest.Generator/' + version)
+                        self.assertNotIn(root.as_posix(), json.dumps(actual))
+
+    def test_preview53_route_requires_exact_admitted_core_source_and_product_version_pair(self):
+        admitted = self.core_hint_sources()[1]
+        invalid = (
+            ('0.0.1-preview.50', admitted),
+            ('0.0.1-preview.53', None),
+            ('0.0.1-preview.53', admitted | {'product': 'studio'}),
+            ('0.0.1-preview.53', admitted | {'kind': 'metadata-bridge'}),
+            ('0.0.1-preview.53', admitted | {'commit': 'f' * 40}),
+            ('0.0.1-preview.53', admitted | {'tree': 'f' * 40}),
+            ('0.0.1-preview.53', admitted | {'source_repository': 'other/repository'}),
+            ('0.0.1-preview.53', admitted | {'continuation_contract_sha256': 'f' * 64}),
+        )
+        for version, row in invalid:
+            with self.subTest(version=version, row=row):
+                root, row, policy, document, archive, _ = self.restored_hint_fixture(version=version, row=row)
+                with patch.dict(consolidated.GENERATOR_SOURCE_PINS, {version: maintenance.digest(archive.read_bytes())}), \
+                        self.assertRaisesRegex(ValueError, '^Source producer evidence rejected$'):
+                    maintenance.verify_non_git_document(document, None, root, row, policy, 'net10.0', {})
 
     def test_actual_restored_manifest_hint_path_is_archive_and_compile_bound(self):
         root, row, policy, document, archive, _ = self.restored_hint_fixture()
@@ -475,67 +521,76 @@ class MaintenanceContracts(unittest.TestCase):
             self.assertIsNone(consolidated.verify_external_document(root, policy, 'net10.0', document, {}))
 
     def test_restored_manifest_hint_rejects_unbound_paths_bytes_and_context(self):
-        for mutation in ('foreign-root', 'version', 'member', 'traversal', 'normalization', 'membership',
-                         'bytes', 'archive', 'restore-hash', 'assets-bytes', 'embedded', 'missing-embedded', 'checksum',
-                         'file-symlink', 'parent-symlink', 'archive-symlink', 'root-symlink', 'ambiguous',
-                         'library-path', 'framework', 'source', 'product', 'missing-archive'):
-            with self.subTest(mutation=mutation):
-                root, row, policy, document, archive, assets = self.restored_hint_fixture()
-                pinned = maintenance.digest(archive.read_bytes())
-                extracted = Path(document['path'])
-                if mutation == 'foreign-root':
-                    document['path'] = document['path'].replace('producer-cache', 'foreign-cache')
-                elif mutation == 'version':
-                    document['path'] = document['path'].replace('preview.50', 'preview.53')
-                elif mutation == 'member':
-                    document['path'] = document['path'].replace('ManifestExtensionAttribute.cs', 'Unknown.cs')
-                elif mutation == 'traversal':
-                    document['path'] = str(extracted.parent) + '/../Hints/' + extracted.name
-                elif mutation == 'normalization':
-                    document['path'] = str(extracted.parent) + '/./' + extracted.name
-                elif mutation == 'membership':
-                    policy['framework_properties']['net10.0']['compiler_evidence']['compile_inputs'].clear()
-                elif mutation == 'bytes':
-                    extracted.write_bytes(b'changed')
-                elif mutation == 'archive':
-                    archive.write_bytes(b'changed')
-                elif mutation == 'restore-hash':
-                    next(iter(assets['libraries'].values()))['sha512'] = 'changed'
-                elif mutation == 'assets-bytes':
-                    (root / 'project.assets.json').write_text('{}')
-                elif mutation in ('embedded', 'missing-embedded', 'checksum'):
-                    document['embedded_checksum' if mutation != 'checksum' else 'checksum'] = (
-                        None if mutation == 'missing-embedded' else '0' * 64)
-                elif mutation in ('file-symlink', 'archive-symlink'):
-                    target = extracted if mutation == 'file-symlink' else archive
-                    moved = target.with_name(target.name + '.real')
-                    target.rename(moved); target.symlink_to(moved)
-                elif mutation in ('parent-symlink', 'root-symlink'):
-                    target = extracted.parent if mutation == 'parent-symlink' else Path(next(iter(assets['packageFolders'])))
-                    moved = target.with_name(target.name + '.real')
-                    target.rename(moved); target.symlink_to(moved, target_is_directory=True)
-                elif mutation == 'ambiguous':
-                    second = root / 'second-cache'
-                    target = second / archive.relative_to(Path(next(iter(assets['packageFolders']))))
-                    target.parent.mkdir(parents=True); target.write_bytes(archive.read_bytes())
-                    assets['packageFolders'][str(second)] = {}
-                elif mutation == 'library-path':
-                    next(iter(assets['libraries'].values()))['path'] = '../foreign'
-                elif mutation == 'framework':
-                    policy['restore_assets'][0]['framework'] = 'net9.0'
-                elif mutation == 'source':
-                    policy['source_commit'] = '0' * 40
-                elif mutation == 'product':
-                    row = dict(row, product='studio')
-                else:
-                    archive.unlink()
-                if mutation in ('restore-hash', 'ambiguous', 'library-path'):
-                    path = root / 'project.assets.json'
-                    path.write_text(json.dumps(assets))
-                    policy['restore_assets'][0]['sha256'] = maintenance.digest(path.read_bytes())
-                with patch.dict(consolidated.GENERATOR_SOURCE_PINS, {'0.0.1-preview.50': pinned}), \
-                     self.assertRaisesRegex(ValueError, '^Source producer evidence rejected$'):
-                    maintenance.verify_non_git_document(document, None, root, row, policy, 'net10.0', {})
+        for version, row in (('0.0.1-preview.50', None), ('0.0.1-preview.53', self.core_hint_sources()[1])):
+            for mutation in ('foreign-root', 'version', 'member', 'traversal', 'normalization', 'membership',
+                             'bytes', 'archive', 'restore-hash', 'assets-bytes', 'embedded', 'missing-embedded', 'checksum',
+                             'file-symlink', 'parent-symlink', 'archive-symlink', 'root-symlink', 'ambiguous',
+                             'library-path', 'framework', 'source', 'product', 'missing-archive',
+                             'missing-restored-library', 'official-pin'):
+                with self.subTest(version=version, mutation=mutation):
+                    self.reject_restored_hint_mutation(mutation, version, row)
+
+    def reject_restored_hint_mutation(self, mutation, version, row):
+        root, row, policy, document, archive, assets = self.restored_hint_fixture(version=version, row=row)
+        pinned = maintenance.digest(archive.read_bytes())
+        extracted = Path(document['path'])
+        if mutation == 'foreign-root':
+            document['path'] = document['path'].replace('producer-cache', 'foreign-cache')
+        elif mutation == 'version':
+            document['path'] = document['path'].replace(version, '0.0.1-preview.54')
+        elif mutation == 'member':
+            document['path'] = document['path'].replace('ManifestExtensionAttribute.cs', 'Unknown.cs')
+        elif mutation == 'traversal':
+            document['path'] = str(extracted.parent) + '/../Hints/' + extracted.name
+        elif mutation == 'normalization':
+            document['path'] = str(extracted.parent) + '/./' + extracted.name
+        elif mutation == 'membership':
+            policy['framework_properties']['net10.0']['compiler_evidence']['compile_inputs'].clear()
+        elif mutation == 'bytes':
+            extracted.write_bytes(b'changed')
+        elif mutation == 'archive':
+            archive.write_bytes(b'changed')
+        elif mutation == 'restore-hash':
+            next(iter(assets['libraries'].values()))['sha512'] = 'changed'
+        elif mutation == 'assets-bytes':
+            (root / 'project.assets.json').write_text('{}')
+        elif mutation in ('embedded', 'missing-embedded', 'checksum'):
+            document['embedded_checksum' if mutation != 'checksum' else 'checksum'] = (
+                None if mutation == 'missing-embedded' else '0' * 64)
+        elif mutation in ('file-symlink', 'archive-symlink'):
+            target = extracted if mutation == 'file-symlink' else archive
+            moved = target.with_name(target.name + '.real')
+            target.rename(moved); target.symlink_to(moved)
+        elif mutation in ('parent-symlink', 'root-symlink'):
+            target = extracted.parent if mutation == 'parent-symlink' else Path(next(iter(assets['packageFolders'])))
+            moved = target.with_name(target.name + '.real')
+            target.rename(moved); target.symlink_to(moved, target_is_directory=True)
+        elif mutation == 'ambiguous':
+            second = root / 'second-cache'
+            target = second / archive.relative_to(Path(next(iter(assets['packageFolders']))))
+            target.parent.mkdir(parents=True); target.write_bytes(archive.read_bytes())
+            assets['packageFolders'][str(second)] = {}
+        elif mutation == 'missing-restored-library':
+            assets['libraries'].clear()
+        elif mutation == 'official-pin':
+            pinned = '0' * 64
+        elif mutation == 'library-path':
+            next(iter(assets['libraries'].values()))['path'] = '../foreign'
+        elif mutation == 'framework':
+            policy['restore_assets'][0]['framework'] = 'net9.0'
+        elif mutation == 'source':
+            policy['source_commit'] = '0' * 40
+        elif mutation == 'product':
+            row = dict(row, product='studio')
+        else:
+            archive.unlink()
+        if mutation in ('restore-hash', 'ambiguous', 'library-path', 'missing-restored-library'):
+            path = root / 'project.assets.json'
+            path.write_text(json.dumps(assets))
+            policy['restore_assets'][0]['sha256'] = maintenance.digest(path.read_bytes())
+        with patch.dict(consolidated.GENERATOR_SOURCE_PINS, {version: pinned}), \
+             self.assertRaisesRegex(ValueError, '^Source producer evidence rejected$'):
+            maintenance.verify_non_git_document(document, None, root, row, policy, 'net10.0', {})
 
     def test_physical_families_are_original_project_and_release_bound(self):
         row = next(row for row in self.register['sources'] if row['product'] == 'extensions' and row['line'] == '3.8')
