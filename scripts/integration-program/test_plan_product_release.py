@@ -226,7 +226,7 @@ class ProductReleasePlanTests(unittest.TestCase):
                 '<ItemGroup Condition="\'$(TargetFramework)\' != \'net10.0\'">'
                 '<PackageReference Include="Conditional" Version="2.0" PrivateAssets="all"/>'
                 '<ProjectReference Include="Missing.csproj"/></ItemGroup></Project>')
-            result = metadata.evaluate_project(source, project.name, '3.8.5')
+            result = metadata.evaluate_project(source, project.name, '3.8.5', binding=self.binding)
             self.assertEqual([{'id': 'Conditional'}, {'id': 'Shared'}], result['package_references'])
             self.assertEqual([{'target_project': 'Missing.csproj'}], result['project_references'])
             for framework in ('net8.0', 'net9.0'):
@@ -247,7 +247,7 @@ class ProductReleasePlanTests(unittest.TestCase):
                 '</PropertyGroup><ItemGroup><PackageReference Include="Shared" Version="1.0"/>'
                 '<PackageReference Include="shared" Version="2.0"/></ItemGroup></Project>')
             with self.assertRaisesRegex(ValueError, 'metadata_duplicate_package_reference'):
-                metadata.evaluate_project(source, project.name, '3.8.5')
+                metadata.evaluate_project(source, project.name, '3.8.5', binding=self.binding)
 
     def test_full_inventory_retains_ownership_exclusions_and_strips_private_state(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -270,12 +270,12 @@ class ProductReleasePlanTests(unittest.TestCase):
             workflow.parent.mkdir(parents=True)
             workflow.write_text('Compile+Test+Pack')
             staged, writer_thread = [], threading.get_ident()
-            def stage(root, project, version, destination):
+            def stage(root, project, version, destination, *, binding):
                 self.assertEqual(writer_thread, threading.get_ident())
                 staged.append(project['path'])
                 return {'status': 'observed', '_assets': {'private': '/private/assets'}}
             with patch.object(metadata, 'git', return_value='\n'.join(row['path'] for row in projects)), \
-                 patch.object(metadata, 'evaluate_project', side_effect=lambda root, path, version: next(row for row in projects if row['path'] == path)), \
+                 patch.object(metadata, 'evaluate_project', side_effect=lambda root, path, version, *, binding: next(row for row in projects if row['path'] == path)), \
                  patch.object(metadata, 'stage_project', side_effect=stage):
                 inventory = metadata.evaluate_inventory(source, self.binding, '3.8.5', source / 'private', workers=4)
             self.assertEqual(7, len(inventory['projects']))
@@ -463,6 +463,121 @@ class ProductReleasePlanTests(unittest.TestCase):
         self.assertEqual('aligned_baseline_pending', result['reasons'][0]['category'])
 
 
+class OriginalCoreMetadataInputsTests(unittest.TestCase):
+    def setUp(self):
+        self.source = Path(self.enterContext(tempfile.TemporaryDirectory(prefix='original-core-metadata-')))
+        self.binding = {'product': 'core', 'line': '3.9', 'kind': 'observed-core-release-branch',
+                        'commit': '5d3582b6309a2fd8ea33ebdb8c39fb040bfdc514',
+                        'tree': '59d5cf6d6f2ce378c4b3fd888238abe2a9541561'}
+        self.project_path = 'src/apps/Elsa.SamplePackage/Elsa.SamplePackage.csproj'
+        path = self.source / self.project_path
+        path.parent.mkdir(parents=True)
+        path.write_text('<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup>'
+                        '<Version>1.0.1</Version><TargetFrameworks>net8.0;net10.0</TargetFrameworks>'
+                        '<IsPackable>true</IsPackable></PropertyGroup></Project>')
+        (self.source / 'NuGet.Config').write_text('<configuration/>')
+        (self.source / 'Elsa.sln').write_text(
+            f'Project("type") = "Sample", "{self.project_path}", "id"')
+        (self.source / '.nuke').mkdir()
+        (self.source / '.nuke/parameters.json').write_text('{"Solution":"Elsa.sln"}')
+        workflow = self.source / '.github/workflows/packages.yml'
+        workflow.parent.mkdir(parents=True)
+        workflow.write_text('Compile+Pack')
+        self.calls = []
+
+    def sdk_evaluation(self, command, source, **kwargs):
+        self.calls.append((command, kwargs['env']))
+        framework = next((arg.split('=', 1)[1] for arg in command if arg.startswith('-p:TargetFramework=')), None)
+        if '-getItem:ProjectReference,PackageReference' in command:
+            return json.dumps({'Properties': {'PackageId': 'Elsa.SamplePackage', 'TargetFramework': framework,
+                'NETCoreSdkVersion': '10.0.300'}, 'Items': {'ProjectReference': [], 'PackageReference': []}})
+        # Independent source fixture: the explicit project assignment overrides
+        # an environment value, but an MSBuild global property overrides it.
+        overrides = dict(arg[3:].split('=', 1) for arg in command
+                         if arg.startswith(('-p:Version=', '-p:PackageVersion=')))
+        version = overrides.get('PackageVersion', overrides.get('Version', '1.0.1'))
+        return json.dumps({'Properties': {'IsPackable': 'true', 'IsTestProject': 'false',
+            'PackageId': 'Elsa.SamplePackage', 'PackageVersion': version, 'AssemblyName': 'Elsa.SamplePackage',
+            'TargetFrameworks': 'net8.0;net10.0', 'TargetFramework': '', 'NETCoreSdkVersion': '10.0.300',
+            'IncludeBuildOutput': 'true', 'IncludeSymbols': 'false', 'SymbolPackageFormat': 'snupkg',
+            'RepositoryUrl': '', 'PackageProjectUrl': ''}})
+
+    def assert_inputs(self, command, environment, binding):
+        if binding['product'] == 'core':
+            self.assertFalse(any(arg.startswith(('-p:Version=', '-p:PackageVersion=')) for arg in command))
+            self.assertEqual('3.9.1', environment['VERSION'])
+            self.assertEqual(str((self.source / 'NuGet.Config').resolve()), environment['RestoreConfigFile'])
+            self.assertNotIn('CI', environment)
+            self.assertNotIn('GITHUB_ACTIONS', environment)
+        else:
+            self.assertIn('-p:Version=3.9.1', command)
+            self.assertIn('-p:PackageVersion=3.9.1', command)
+            self.assertNotIn('VERSION', environment)
+            self.assertNotIn('RestoreConfigFile', environment)
+            self.assertEqual('true', environment['CI'])
+            self.assertEqual('true', environment['GITHUB_ACTIONS'])
+        self.assertNotIn('GITHUB_TOKEN', environment)
+        self.assertIn('-p:NoBuild=true', command)
+        self.assertIn('-p:BuildProjectReferences=false', command)
+
+    def test_outer_and_each_framework_preserve_original_core_and_other_product_inputs(self):
+        with patch.dict('os.environ', {'CI': 'true', 'GITHUB_ACTIONS': 'true',
+                                      'VERSION': 'PRIVATE_SENTINEL', 'GITHUB_TOKEN': 'PRIVATE_SENTINEL'}, clear=True):
+            for binding in (self.binding, {'product': 'studio'}, {'product': 'extensions'}):
+                self.calls.clear()
+                with self.subTest(product=binding['product']), patch.object(metadata, 'run', side_effect=self.sdk_evaluation):
+                    metadata.evaluate_project(self.source, self.project_path, '3.9.1', binding=binding)
+                self.assertEqual(3, len(self.calls))
+                for command, environment in self.calls:
+                    self.assert_inputs(command, environment, binding)
+
+    def test_stage_and_restored_policy_keep_recipe_inputs_across_all_evaluations(self):
+        sdk = self.source / 'sdk'
+        sdk.mkdir()
+        (sdk / 'NuGet.Build.Tasks.Pack.targets').write_text('sdk-target')
+        properties = json.loads(self.sdk_evaluation([], self.source, env={}))['Properties']
+        properties.update(PackageVersion='3.9.1', IncludeContentInPack='true',
+            GenerateElsaPackageManifest='false', ElsaPackageManifestIncludeInPackage='false',
+            ElsaPackageManifestPackagePath='', MSBuildToolsPath=str(sdk))
+        project = {'path': self.project_path, 'package_id': 'Elsa.SamplePackage',
+                   'is_packable': True, 'target_frameworks': ['net8.0', 'net10.0']}
+        with patch.dict('os.environ', {'CI': 'true', 'GITHUB_ACTIONS': 'true',
+                                      'VERSION': 'PRIVATE_SENTINEL', 'GITHUB_TOKEN': 'PRIVATE_SENTINEL'}, clear=True):
+            for binding in (self.binding, {'product': 'studio'}, {'product': 'extensions'}):
+                self.calls.clear()
+                destination = self.source / ('stage-' + binding['product'])
+                def sdk_metadata(command, source, **kwargs):
+                    self.assert_inputs(command, kwargs['env'], binding)
+                    if '-restore' in command:
+                        self.calls.append((command, kwargs['env']))
+                        (destination / 'sample.nuspec').write_text('<package><metadata><id>Elsa.SamplePackage</id>'
+                            '<version>3.9.1</version></metadata></package>')
+                        assets = self.source / Path(self.project_path).parent / 'obj/project.assets.json'
+                        assets.parent.mkdir(exist_ok=True)
+                        assets.write_text(json.dumps({'project': {'restore': {
+                            'configFilePaths': [str(self.source / 'NuGet.Config')],
+                            'sources': {planner.NUGET_INDEX: {}}}}, 'libraries': {}}))
+                        return ''
+                    result = json.loads(self.sdk_evaluation(command, source, **kwargs))
+                    if '-getItem:ProjectReference,PackageReference' not in command:
+                        result['Properties'] = properties
+                    return json.dumps(result)
+                with self.subTest(product=binding['product']), patch.object(metadata, 'run', side_effect=sdk_metadata):
+                    result = metadata.stage_project(self.source, project, '3.9.1', destination, binding=binding)
+                    self.assertEqual('observed', result['status'])
+                    self.assertEqual(6, len(self.calls))
+                    self.assertEqual({'net8.0', 'net10.0'}, set(result['original_output_policy']))
+
+    def test_project_version_override_rejects_requested_version_before_restore_or_stage(self):
+        with patch.object(metadata, 'git', return_value=self.project_path), \
+             patch.object(metadata, 'run', side_effect=self.sdk_evaluation), \
+             patch.object(metadata, 'stage_project', return_value={'status': 'observed'}) as stage:
+            with self.assertRaisesRegex(ValueError, 'metadata_requested_version'):
+                metadata.evaluate_inventory(self.source, self.binding, '3.9.1', self.source / 'private')
+        stage.assert_not_called()
+        self.assertFalse(any('-restore' in command for command, _ in self.calls))
+
+
 class ProductReleaseMetadataProjectionTests(unittest.TestCase):
     def setUp(self):
         self.directory = Path(self.enterContext(tempfile.TemporaryDirectory(prefix='metadata-projection-contract-')))
@@ -475,6 +590,7 @@ class ProductReleaseMetadataProjectionTests(unittest.TestCase):
         path.write_text('<Project Sdk="Microsoft.NET.Sdk.Razor"/>')
         self.project = {'path': self.project_path, 'package_id': 'Example', 'is_packable': True,
                         'target_frameworks': ['net8.0']}
+        self.binding = {'product': 'extensions'}
 
     def test_three_file_collection_projections_retain_original_policy_and_sdk_groups(self):
         sdk = self.directory / 'dotnet/sdk/10.0.300'
@@ -499,7 +615,7 @@ class ProductReleaseMetadataProjectionTests(unittest.TestCase):
             return json.dumps({'Properties': properties})
         with patch.object(metadata, 'run', side_effect=sdk_metadata), \
              patch.object(metadata, 'evaluate_project', return_value={**self.project, 'properties': properties}):
-            result = metadata.stage_project(self.source, self.project, '3.8.5', destination)
+            result = metadata.stage_project(self.source, self.project, '3.8.5', destination, binding=self.binding)
         self.assertEqual('observed', result['status'])
         self.assertEqual([{'framework': 'net8.0', 'dependencies': [
             {'id': 'Other', 'version': '[1.0]', 'include': '', 'exclude': ''}]}], result['dependency_groups'])
@@ -515,7 +631,7 @@ class ProductReleaseMetadataProjectionTests(unittest.TestCase):
                 (OSError('/private/file'), 'metadata_io_failed'),
                 (subprocess.TimeoutExpired('/private/command', 300), 'command_timeout')):
             with self.subTest(category=category), patch.object(metadata, 'run', side_effect=error):
-                result = metadata.stage_project(self.source, self.project, '3.8.5', self.directory / category)
+                result = metadata.stage_project(self.source, self.project, '3.8.5', self.directory / category, binding=self.binding)
                 self.assertEqual({'status': 'unavailable', 'reason': 'source_metadata_unavailable',
                     'failure_stage': 'generate_nuspec', 'failure_category': category}, result)
                 self.assertNotIn('/private/', json.dumps(result))
@@ -525,7 +641,7 @@ class ProductReleaseMetadataProjectionTests(unittest.TestCase):
         def wrong_identity(*args, **kwargs):
             (destination / 'wrong.nuspec').write_text('<package><metadata><id>Wrong</id><version>3.8.5</version></metadata></package>')
         with patch.object(metadata, 'run', side_effect=wrong_identity):
-            result = metadata.stage_project(self.source, self.project, '3.8.5', destination)
+            result = metadata.stage_project(self.source, self.project, '3.8.5', destination, binding=self.binding)
         self.assertEqual('nuspec_metadata', result['failure_stage'])
         self.assertEqual('metadata_contract_failed', result['failure_category'])
 

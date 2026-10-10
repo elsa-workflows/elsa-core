@@ -116,16 +116,25 @@ def checkout_source(controller: Path, binding: dict, destination: Path) -> None:
             'source_checkout_identity')
 
 
-def metadata_command(project: str, version: str) -> list[str]:
-    return ['dotnet', 'msbuild', project, '-nologo', '-p:Configuration=Release', f'-p:Version={version}',
-            f'-p:PackageVersion={version}', '-p:NoBuild=true', '-p:BuildProjectReferences=false',
+def metadata_command(project: str, version: str, binding: dict | None = None) -> list[str]:
+    versions = maintenance.version_arguments(binding or {}, version)
+    if binding is None or not maintenance.original_core(binding):
+        versions.append(f'-p:PackageVersion={version}')
+    return ['dotnet', 'msbuild', project, '-nologo', '-p:Configuration=Release', *versions,
+            '-p:NoBuild=true', '-p:BuildProjectReferences=false',
             '-p:GeneratePackageOnBuild=false', '-p:ContinuePackingAfterGeneratingNuspec=false']
 
 
-def evaluate_project(source: Path, project: str, version: str) -> dict:
-    values = json.loads(run(metadata_command(project, version) +
+def metadata_environment(source: Path, binding: dict, version: str) -> dict:
+    return (maintenance.recipe_environment(binding, version, source) if maintenance.original_core(binding)
+            else maintenance.build_environment())
+
+
+def evaluate_project(source: Path, project: str, version: str, *, binding: dict) -> dict:
+    environment = metadata_environment(source, binding, version)
+    values = json.loads(run(metadata_command(project, version, binding) +
         ['-getProperty:' + PROPERTIES], source,
-        env=maintenance.build_environment()))
+        env=environment))
     properties = values['Properties']
     require(properties['NETCoreSdkVersion'] == SDK, 'metadata_sdk_identity')
     frameworks = (properties['TargetFrameworks'] or properties['TargetFramework']).split(';')
@@ -133,9 +142,9 @@ def evaluate_project(source: Path, project: str, version: str) -> dict:
     by_framework = {}
     project_union, package_union = {}, {}
     for framework in frameworks:
-        inner = json.loads(run(metadata_command(project, version) + [f'-p:TargetFramework={framework}',
+        inner = json.loads(run(metadata_command(project, version, binding) + [f'-p:TargetFramework={framework}',
             '-getProperty:PackageId,TargetFramework,NETCoreSdkVersion', '-getItem:ProjectReference,PackageReference'],
-            source, env=maintenance.build_environment()))
+            source, env=environment))
         require(inner['Properties'] == {'PackageId': properties['PackageId'], 'TargetFramework': framework,
                                        'NETCoreSdkVersion': SDK}, 'metadata_framework_identity')
         references, packages = {}, {}
@@ -184,17 +193,18 @@ def project_scope(project: dict, product: str, recipe_projects: set[str]) -> str
     return 'canonical_owner_' + owner if owner != product else None
 
 
-def stage_project(source: Path, project: dict, version: str, destination: Path) -> dict:
+def stage_project(source: Path, project: dict, version: str, destination: Path, *, binding: dict) -> dict:
     """Only output-file collection is projected away; SDK groups remain actual."""
     destination.mkdir(parents=True)
-    command = metadata_command(project['path'], version) + ['-restore',
+    command = metadata_command(project['path'], version, binding) + ['-restore',
         '-target:_GetRestoreProjectStyle;GenerateNuspec', '-p:IncludeBuildOutput=false',
         '-p:ElsaPackageManifestIncludeInPackage=false', '-p:IncludeContentInPack=false',
         f'-p:RestoreConfigFile={source / "NuGet.Config"}', f'-p:NuspecOutputPath={destination}',
         f'-p:PackageOutputPath={destination / "forbidden-packages"}']
     stage = 'generate_nuspec'
     try:
-        run(command, source, env=maintenance.build_environment(), timeout=300, log=destination / 'command.private.log')
+        environment = metadata_environment(source, binding, version)
+        run(command, source, env=environment, timeout=300, log=destination / 'command.private.log')
         stage = 'nuspec_metadata'
         files = list(destination.glob('*.nuspec'))
         main = [path for path in files if not path.name.endswith('.symbols.nuspec')]
@@ -209,14 +219,14 @@ def stage_project(source: Path, project: dict, version: str, destination: Path) 
         require(assets.is_file() and not assets.is_symlink(), 'metadata_restore_identity')
         restored = json.loads(assets.read_text())
         stage = 'original_output_policy'
-        original = evaluate_project(source, project['path'], version)
+        original = evaluate_project(source, project['path'], version, binding=binding)
         require(all(original[key] == project[key] for key in ('path', 'package_id', 'is_packable', 'target_frameworks')),
                 'restored_project_identity')
         original_policies = {}
         for framework in project['target_frameworks']:
-            properties = json.loads(run(metadata_command(project['path'], version) +
+            properties = json.loads(run(metadata_command(project['path'], version, binding) +
                 [f'-p:TargetFramework={framework}', '-getProperty:' + PROPERTIES], source,
-                env=maintenance.build_environment()))['Properties']
+                env=environment))['Properties']
             require(properties['PackageId'] == project['package_id'] and properties['PackageVersion'] == version,
                     'restored_project_identity')
             original_policies[framework] = {key: properties[key] for key in ('IncludeBuildOutput', 'IncludeContentInPack', 'IncludeSymbols',
@@ -266,7 +276,7 @@ def evaluate_inventory(source: Path, binding: dict, version: str, private: Path,
         require(b'dotnet pack Elsa.Studio.sln' in (source / workflow).read_bytes(), 'original_recipe_identity')
     owner_policy = ownership_policy()
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        projects = list(pool.map(lambda path: evaluate_project(source, path, version), paths))
+        projects = list(pool.map(lambda path: evaluate_project(source, path, version, binding=binding), paths))
     validate_project_references(projects)
     selected, excluded = [], []
     for project in projects:
@@ -286,7 +296,7 @@ def evaluate_inventory(source: Path, binding: dict, version: str, private: Path,
     # Recursive restores share referenced projects' obj outputs; stage one at a time.
     for row in selected:
         row['metadata'] = stage_project(source, by_path[row['project']], version,
-                                       private / sha256(row['project'].encode())[:16])
+                                       private / sha256(row['project'].encode())[:16], binding=binding)
     graph = InventoryGraph({'repositories': {'source': {'slug': 'source'}}, 'project_inventory': {'source': projects}})
     closure = graph.affected_tests([('source', row['project']) for row in selected])
     require(not list(source.glob('**/bin/**/*.dll')) and not list(source.glob('**/*.nupkg')), 'product_build_forbidden')
