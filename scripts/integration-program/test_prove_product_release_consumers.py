@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from contextlib import redirect_stdout
 from datetime import datetime, timedelta, timezone
+import io
 import json
 import subprocess
 from pathlib import Path
+import sys
 import tempfile
 import unittest
 import xml.etree.ElementTree as ET
@@ -1051,7 +1054,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'consumer_input_hash'):
             self.verify_empty_content(values)
 
-    def run_private_consumer(self, freshness_error=None, *, retire_caches=False, command_error=None):
+    def run_private_consumer(self, freshness_error=None, *, retire_caches=False, command_error=None, cli=False):
         self.policy.update(id='Elsa.Studio.Core', frameworks=['net8.0'])
         self.policy['metadata'].update(original_output_policy={'net8.0': {'IncludeBuildOutput': 'true'}},
                                        framework_reference_groups=[])
@@ -1134,17 +1137,28 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 return proof.execute(self.controller_root, plan_path, self.hash, receipt_path,
                     metadata.sha256(receipt_path.read_bytes()), self.artifacts, self.root / 'unused', output,
                     retire_caches=retire_caches)
-            if freshness_error:
+            if cli:
+                arguments = ['consumer']
+                for name, value in {'plan': plan_path, 'plan-sha256': self.hash, 'artifact-receipt': receipt_path,
+                    'artifact-receipt-sha256': metadata.sha256(receipt_path.read_bytes()), 'artifacts': self.artifacts,
+                    'planning-assets': self.root / 'unused', 'output': output}.items():
+                    arguments.extend(['--' + name, str(value)])
+                stdout = io.StringIO()
+                with patch.object(proof, 'ROOT', self.controller_root), patch.object(sys, 'argv', arguments), redirect_stdout(stdout):
+                    self.assertEqual(1, proof.main())
+                self.cli_diagnostic = json.loads(stdout.getvalue())
+            elif freshness_error:
                 with self.assertRaisesRegex(ValueError, str(freshness_error)):
                     execute()
-                self.assertFalse(inspector_mock.called)
-                self.assertFalse(catalog_mock.called)
-                self.assertEqual([], commands)
             elif command_error:
                 with self.assertRaisesRegex(ValueError, 'injected_' + command_error):
                     execute()
             else:
                 execute()
+            if freshness_error:
+                self.assertFalse(inspector_mock.called)
+                self.assertFalse(catalog_mock.called)
+                self.assertEqual([], commands)
         data = (output / 'retained/receipt.json').read_text()
         return json.loads(data), data, output, dll
 
@@ -1153,6 +1167,18 @@ class SelectedProductConsumerTests(unittest.TestCase):
         self.assertFalse(receipt['success'])
         self.assertFalse(receipt['current_consumer_admission']['eligible'])
         self.assertEqual('current-consumer-prerequisites', receipt['stage'])
+
+    def test_cli_reports_real_execute_failure_stage_before_inspector_or_cell_work(self):
+        receipt, _, _, _ = self.run_private_consumer(ValueError('artifact_fresh_prerequisite_failed'), cli=True)
+        self.assertFalse(receipt['success'])
+        self.assertEqual(self.cli_diagnostic, {'success': False, 'failure_code': 'artifact_fresh_prerequisite_failed',
+            'failure_stage': 'current-consumer-prerequisites', 'retained_receipt_created': True})
+
+    def test_cli_reports_fixed_cell_stage_for_unclassified_command_failure(self):
+        receipt, _, _, _ = self.run_private_consumer(command_error='build', cli=True)
+        self.assertFalse(receipt['success'])
+        self.assertEqual(self.cli_diagnostic, {'success': False, 'failure_code': 'consumer_control_failed',
+            'failure_stage': 'selected-restore-compile', 'retained_receipt_created': True})
 
     def test_current_prerequisite_metadata_drift_blocks_consumer_work(self):
         receipt, _, _, _ = self.run_private_consumer(ValueError('artifact_prerequisite_metadata_changed'))
@@ -1247,6 +1273,116 @@ class SelectedProductConsumerTests(unittest.TestCase):
         self.assertEqual({'Include': 'Example', 'Version': '[3.8.999]', 'Aliases': 'selected'}, packages[0].attrib)
         self.assertEqual([], project.findall('.//ProjectReference'))
         self.assertEqual('true', project.findtext('PropertyGroup/RestoreLockedMode'))
+
+
+class ConsumerCliDiagnosticsTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name).resolve()
+        self.plan = self.root / 'plan.json'
+        self.plan.write_bytes(b'{}')
+        self.output = self.root / 'output'
+
+    def invoke(self):
+        arguments = ['consumer', '--plan', str(self.plan), '--plan-sha256', 'f' * 64,
+            '--artifact-receipt', str(self.root / 'producer.json'), '--artifact-receipt-sha256', 'e' * 64,
+            '--artifacts', str(self.root / 'artifacts'), '--planning-assets', str(self.root / 'snapshots'),
+            '--output', str(self.output)]
+        stdout = io.StringIO()
+        with patch.object(sys, 'argv', arguments), redirect_stdout(stdout):
+            status = proof.main()
+        self.assertEqual(status, 1)
+        return json.loads(stdout.getvalue())
+
+    def test_genuine_early_input_hash_failure_has_closed_code_and_no_receipt(self):
+        self.assertEqual(self.invoke(), {'success': False, 'failure_code': 'consumer_input_hash',
+            'failure_stage': 'unclassified', 'retained_receipt_created': False})
+        self.assertFalse(self.output.exists())
+
+    def failed_receipt(self, error, *, changes=None, data=None):
+        def fail(*args, **kwargs):
+            retained = self.output / 'retained'
+            retained.mkdir(parents=True)
+            receipt = {'schema': 1, 'mode': 'selected-product-consumers', 'success': False,
+                'stage': 'current-consumer-prerequisites', 'failure_code': 'current-consumer-prerequisites-failed',
+                'private': '/private/secret/token'}
+            receipt.update(changes or {})
+            (retained / 'receipt.json').write_bytes(data if data is not None else json.dumps(receipt).encode())
+            raise error
+        return fail
+
+    def test_new_failed_receipt_reports_only_fixed_stage_and_literal_exception_code(self):
+        with patch.object(proof, 'execute', side_effect=self.failed_receipt(ValueError('artifact_fresh_prerequisite_failed'))):
+            self.assertEqual(self.invoke(), {'success': False, 'failure_code': 'artifact_fresh_prerequisite_failed',
+                'failure_stage': 'current-consumer-prerequisites', 'retained_receipt_created': True})
+
+    def test_native_sdk_and_retirement_literal_codes_are_public_without_raw_details(self):
+        for code in ('consumer_native_content_hash', 'consumer_sdk_download_bytes', 'consumer_cache_retirement_path'):
+            with self.subTest(code=code), patch.object(proof, 'execute', side_effect=ValueError(code)):
+                self.assertEqual(self.invoke(), {'success': False, 'failure_code': code,
+                    'failure_stage': 'unclassified', 'retained_receipt_created': False})
+
+    def test_arbitrary_exception_strings_and_valueerror_subclasses_stay_generic(self):
+        class SpecificError(ValueError):
+            pass
+        for error in (ValueError('consumer_input_hash /private/token'), RuntimeError('consumer_input_hash'),
+                      SpecificError('consumer_input_hash'), OSError('/private/token')):
+            with self.subTest(error=error), patch.object(proof, 'execute', side_effect=error):
+                self.assertEqual(self.invoke(), {'success': False, 'failure_code': 'consumer_control_failed',
+                    'failure_stage': 'unclassified', 'retained_receipt_created': False})
+
+    def test_malformed_or_unreviewed_receipt_fields_never_become_public_stages(self):
+        changes = ({'stage': 'selected-restore-compile /private/token'}, {'stage': 'complete'}, {'stage': []},
+            {'schema': True}, {'mode': 'selected-product-artifact-control'}, {'success': True},
+            {'failure_code': 'current-consumer-prerequisites-failed /private/token'})
+        for index, change in enumerate(changes):
+            self.output = self.root / str(index)
+            with self.subTest(change=change), patch.object(proof, 'execute',
+                    side_effect=self.failed_receipt(RuntimeError('/private/token'), changes=change)):
+                self.assertEqual(self.invoke(), {'success': False, 'failure_code': 'consumer_control_failed',
+                    'failure_stage': 'unclassified', 'retained_receipt_created': True})
+        self.output = self.root / 'malformed'
+        with patch.object(proof, 'execute', side_effect=self.failed_receipt(RuntimeError('/private/token'), data=b'private-not-json')):
+            self.assertEqual(self.invoke()['failure_stage'], 'unclassified')
+
+    def test_oversized_receipt_is_not_parsed_or_reflected(self):
+        def fail(*args, **kwargs):
+            retained = self.output / 'retained'; retained.mkdir(parents=True)
+            with (retained / 'receipt.json').open('wb') as receipt:
+                receipt.truncate(64 * 1024 ** 2 + 1)
+            raise RuntimeError('/private/token')
+        with patch.object(proof, 'execute', side_effect=fail):
+            self.assertEqual(self.invoke(), {'success': False, 'failure_code': 'consumer_control_failed',
+                'failure_stage': 'unclassified', 'retained_receipt_created': True})
+
+    def test_previous_output_and_symlink_receipts_or_ancestors_are_not_new_receipts(self):
+        for kind in ('previous', 'receipt', 'retained', 'output', 'parent', 'dangling'):
+            self.output = self.root / kind
+            foreign = self.root / (kind + '-foreign'); foreign.mkdir()
+            if kind == 'previous':
+                self.output.mkdir()
+            elif kind in ('output', 'dangling'):
+                self.output.symlink_to(foreign if kind == 'output' else foreign / 'missing', target_is_directory=True)
+            elif kind == 'parent':
+                parent = self.root / 'linked-parent'; parent.symlink_to(foreign, target_is_directory=True)
+                self.output = parent / 'new'
+            def fail(*args, **kwargs):
+                if kind != 'dangling':
+                    retained = self.output / 'retained'
+                    retained.mkdir(parents=True, exist_ok=True)
+                    if kind == 'retained':
+                        retained.rmdir(); retained.symlink_to(foreign, target_is_directory=True)
+                    target = retained / 'receipt.json'
+                    if kind == 'receipt':
+                        (foreign / 'receipt.json').write_bytes(b'private')
+                        target.symlink_to(foreign / 'receipt.json')
+                    else:
+                        target.write_bytes(b'private')
+                raise ValueError('consumer_input_hash')
+            with self.subTest(kind=kind), patch.object(proof, 'execute', side_effect=fail):
+                self.assertEqual(self.invoke(), {'success': False, 'failure_code': 'consumer_input_hash',
+                    'failure_stage': 'unclassified', 'retained_receipt_created': False})
 
 
 if __name__ == '__main__':

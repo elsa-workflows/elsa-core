@@ -52,6 +52,38 @@ PUBLIC_FAILURE_CODES = frozenset((
 ).split())
 
 
+PUBLIC_FAILURE_STAGES = frozenset(('source-setup', 'tool-preflight', 'fresh-prerequisites',
+    'original-product-recipe', 'historical-studio-npm'))
+
+
+def failure_receipt_status(output: Path, output_existed: bool, *, mode: str, stages: frozenset[str]) -> tuple[bool, str]:
+    """Observe only a new safe receipt and project its fixed failed stage, never private fields."""
+    created, stage = False, 'unclassified'
+    if output_existed:
+        return created, stage
+    receipt = output / 'retained/receipt.json'
+    try:
+        created = receipt.is_file() and not any(part.is_symlink() for part in (receipt, *receipt.parents))
+        if not created:
+            return created, stage
+        maximum = 64 * 1024 ** 2
+        if receipt.stat().st_size > maximum or any(part.is_symlink() for part in (receipt, *receipt.parents)):
+            return created, stage
+        with receipt.open('rb') as stream:
+            data = stream.read(maximum + 1)
+        if len(data) > maximum:
+            return created, stage
+        result = json.loads(data)
+        candidate = result.get('stage') if type(result) is dict else None
+        if type(candidate) is str and candidate in stages and type(result.get('schema')) is int and \
+                result['schema'] == 1 and result.get('mode') == mode and result.get('success') is False and \
+                result.get('failure_code') == candidate + '-failed':
+            stage = candidate
+    except (OSError, ValueError, TypeError, RecursionError):
+        pass
+    return created, stage
+
+
 def fresh_public(observation: dict, checked_at: str) -> None:
     require(observation.get('status') in ('observed', 'missing'), 'plan_observation_unavailable')
     observed, checked = (datetime.fromisoformat(value) for value in (observation['observed_at'], checked_at))
@@ -341,14 +373,10 @@ def main() -> int:
         return 0
     except Exception as error:
         code = str(error) if type(error) is ValueError and str(error) in PUBLIC_FAILURE_CODES else 'artifact_control_failed'
-        receipt_created = False
-        if not output_existed:
-            receipt = args.output / 'retained/receipt.json'
-            try:
-                receipt_created = receipt.is_file() and not any(part.is_symlink() for part in (receipt, *receipt.parents))
-            except OSError:
-                pass
-        print(json.dumps({'success': False, 'failure_code': code, 'retained_receipt_created': receipt_created}))
+        receipt_created, stage = failure_receipt_status(args.output, output_existed,
+            mode='selected-product-artifact-control', stages=PUBLIC_FAILURE_STAGES)
+        print(json.dumps({'success': False, 'failure_code': code, 'failure_stage': stage,
+            'retained_receipt_created': receipt_created}))
         return 1
 
 

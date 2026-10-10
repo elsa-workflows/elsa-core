@@ -46,6 +46,62 @@ STUDIO38_CONTRACT_SOURCE = {
     'src/framework/Elsa.Studio.Core/Models/RemoteBackend.cs': 'c96cacf7fc3d755cff76861d2e837fc35aa359b2779137ee6cae99253a33f1e4',
 }
 
+# Public diagnostics use exact fixed labels, never arbitrary exception text.
+PUBLIC_FAILURE_CODES = producer.PUBLIC_FAILURE_CODES | frozenset((
+    'consumer_archive_dependencies consumer_archive_framework_references consumer_archive_inventory '
+    'consumer_archive_provenance consumer_artifact_bijection consumer_artifact_controller_identity '
+    'consumer_artifact_identity consumer_artifact_name consumer_asset_archive_member consumer_asset_archive_path '
+    'consumer_cache_not_empty consumer_cache_retirement_directory consumer_cache_retirement_failed '
+    'consumer_cache_retirement_file consumer_cache_retirement_identity consumer_cache_retirement_incomplete '
+    'consumer_cache_retirement_ownership consumer_cache_retirement_path consumer_cache_retirement_symlink '
+    'consumer_cache_retirement_unsafe_platform consumer_control_not_implemented consumer_coverage_ledger '
+    'consumer_current_prerequisites_ineligible consumer_dependency_framework consumer_dependency_range_conflict '
+    'consumer_discovery_inputs_changed consumer_execution_stage_kind consumer_external_archive_hash '
+    'consumer_external_archive_path consumer_external_cache_hash consumer_external_cache_source '
+    'consumer_external_catalog_identity consumer_external_feed_mapping consumer_feed_inventory consumer_feed_origin '
+    'consumer_input_hash consumer_input_path consumer_inputs_changed consumer_locked_document_changed '
+    'consumer_mirror_archive_changed consumer_native_content_hash consumer_native_declared_edges '
+    'consumer_native_dependency_range_changed consumer_native_graph_framework consumer_native_inspector_identity '
+    'consumer_native_library_partition consumer_native_lock_duplicate consumer_native_lock_identity '
+    'consumer_native_lock_partition consumer_native_missing_nuspec_edge consumer_native_project_fallback '
+    'consumer_native_pruned_edge_retained consumer_native_root_range consumer_native_selected_version '
+    'consumer_native_semantics_identity consumer_native_unreachable_package consumer_native_unreviewed_external '
+    'consumer_original_archive_ambiguity consumer_original_archive_candidates consumer_original_archive_collision '
+    'consumer_original_archive_path consumer_original_build_archive consumer_original_build_assets_hash '
+    'consumer_original_build_boundary consumer_original_build_cache consumer_original_build_collision '
+    'consumer_original_build_graph consumer_original_build_group consumer_original_build_incoming '
+    'consumer_original_build_origin consumer_original_build_original_boundary consumer_original_build_project '
+    'consumer_original_build_real_group consumer_original_build_real_member consumer_original_build_selected '
+    'consumer_original_feed_config consumer_original_nuspec_identity consumer_original_selected_registry_package '
+    'consumer_output_location consumer_planner_controller_identity consumer_producer_controller_tree '
+    'consumer_producer_identity consumer_producer_planner_inputs consumer_producer_stage_incomplete '
+    'consumer_producer_start_future consumer_project_fallback consumer_relative_path consumer_representative_missing '
+    'consumer_restore_closure consumer_restore_content_hash consumer_restore_framework consumer_restore_isolation '
+    'consumer_restore_version consumer_runtime_contract consumer_runtime_receipt consumer_runtime_source_contract '
+    'consumer_sdk_ambient_targeting_root consumer_sdk_archive_candidates consumer_sdk_archive_collision '
+    'consumer_sdk_archive_identity consumer_sdk_archive_path consumer_sdk_cache_metadata_path consumer_sdk_cache_path '
+    'consumer_sdk_download_bytes consumer_sdk_download_not_https consumer_sdk_download_source '
+    'consumer_sdk_download_version consumer_sdk_duplicate_download consumer_sdk_nuspec_count '
+    'consumer_sdk_original_download consumer_sdk_original_pruning consumer_sdk_prune_range '
+    'consumer_sdk_restore_policy_changed consumer_sdk_unreviewed_download consumer_selected_inventory '
+    'consumer_snapshot_bytes consumer_snapshot_frameworks consumer_snapshot_identity consumer_snapshot_partition '
+    'consumer_snapshot_path consumer_snapshot_project consumer_synthetic_build_archive '
+    'consumer_synthetic_build_boundary consumer_synthetic_build_cache consumer_synthetic_build_collision '
+    'consumer_synthetic_build_dependency consumer_synthetic_build_dependency_group consumer_synthetic_build_flags '
+    'consumer_synthetic_build_graph consumer_synthetic_build_incoming consumer_synthetic_build_origin '
+    'consumer_synthetic_build_original_flags consumer_synthetic_build_original_group '
+    'consumer_synthetic_build_original_member consumer_synthetic_build_selected consumer_synthetic_content_archive '
+    'consumer_synthetic_content_boundary consumer_synthetic_content_cache consumer_synthetic_content_collision '
+    'consumer_synthetic_content_inventory consumer_synthetic_content_origin consumer_synthetic_content_selected '
+    'core_consumer_fixture_hash core_consumer_native_archive core_consumer_native_assembly '
+    'core_consumer_native_assembly_identity core_consumer_native_assembly_inventory '
+    'core_consumer_native_dll_inventory core_consumer_native_frameworks core_consumer_native_inventory '
+    'core_consumer_runtime_frameworks core_consumer_runtime_packages core_consumer_source_contract'
+).split())
+PUBLIC_FAILURE_STAGES = frozenset(('consumer-setup', 'consumer-semantics-preflight', 'current-consumer-prerequisites',
+    'original-external-archive-catalog', 'selected-restore-compile', 'core-runtime-contract',
+    'studio-runtime-contract', 'extensions-runtime-contract'))
+
 
 def runtime_contract(plan: dict) -> dict:
     if plan['product'] in ('studio', 'extensions') and plan.get('line') == '3.9':
@@ -776,12 +832,18 @@ def main() -> int:
     parser.add_argument('--retire-successful-cell-caches', action='store_true',
         help='Persist successful private cell proofs, then retire only their two owned NuGet caches.')
     args = parser.parse_args()
+    output_existed = True
     try:
+        output_existed = args.output.exists() or args.output.is_symlink()
         execute(ROOT, args.plan, args.plan_sha256, args.artifact_receipt, args.artifact_receipt_sha256,
                 args.artifacts, args.planning_assets, args.output, retire_caches=args.retire_successful_cell_caches)
         return 0
-    except Exception:
-        print('Selected consumer control failed; raw diagnostics remain private.')
+    except Exception as error:
+        code = str(error) if type(error) is ValueError and str(error) in PUBLIC_FAILURE_CODES else 'consumer_control_failed'
+        receipt_created, stage = producer.failure_receipt_status(args.output, output_existed,
+            mode='selected-product-consumers', stages=PUBLIC_FAILURE_STAGES)
+        print(json.dumps({'success': False, 'failure_code': code, 'failure_stage': stage,
+            'retained_receipt_created': receipt_created}))
         return 1
 
 

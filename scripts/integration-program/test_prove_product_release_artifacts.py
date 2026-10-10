@@ -266,16 +266,21 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
                     {'sdk': {'version': metadata.SDK, 'rollForward': 'disable'}})
                 self.assertFalse((source / 'global.json').exists())
                 raise ValueError('artifact_node_version')
+            plan_path = root / 'plan.json'; plan_path.write_bytes(data)
+            stdout = io.StringIO()
             with patch.object(artifacts, 'verify_controller', return_value=plan['controller']), \
                     patch.object(artifacts, 'selected_execution', return_value=execution.local_execution({})), \
                     patch.object(metadata, 'checkout_source', side_effect=checkout), \
                     patch.object(planner, 'npm_intent', return_value=plan['npm']), \
                     patch.object(artifacts, 'preflight', side_effect=failed_preflight), \
-                    patch.object(planner, 'build_helper') as helper, patch.object(artifacts.maintenance, 'prepare') as producer:
-                with self.assertRaisesRegex(ValueError, 'artifact_node_version'):
-                    artifacts.execute(controller, data, metadata.sha256(data), output)
+                    patch.object(planner, 'build_helper') as helper, patch.object(artifacts.maintenance, 'prepare') as producer, \
+                    patch.object(artifacts, 'ROOT', controller), patch.object(sys, 'argv', ['proof', '--plan', str(plan_path),
+                        '--plan-sha256', metadata.sha256(data), '--output', str(output)]), redirect_stdout(stdout):
+                self.assertEqual(1, artifacts.main())
                 helper.assert_not_called()
                 producer.assert_not_called()
+            self.assertEqual(json.loads(stdout.getvalue()), {'success': False, 'failure_code': 'artifact_node_version',
+                'failure_stage': 'tool-preflight', 'retained_receipt_created': True})
             receipt = json.loads((output / 'retained/receipt.json').read_text())
             self.assertFalse(receipt['success'])
             self.assertEqual('tool-preflight-failed', receipt['failure_code'])
@@ -344,13 +349,13 @@ class ArtifactCliDiagnosticsTests(unittest.TestCase):
 
     def test_genuine_early_hash_failure_reports_closed_code_without_receipt(self):
         result = self.invoke(digest='f' * 64)
-        self.assertEqual(result, {'success': False, 'failure_code': 'plan_hash', 'retained_receipt_created': False})
+        self.assertEqual(result, {'success': False, 'failure_code': 'plan_hash', 'failure_stage': 'unclassified', 'retained_receipt_created': False})
         self.assertFalse(self.output.exists())
 
     def test_unexpected_arbitrary_error_and_malformed_json_remain_generic(self):
         self.plan.write_bytes(b'not-json')
         result = self.invoke()
-        self.assertEqual(result, {'success': False, 'failure_code': 'artifact_control_failed', 'retained_receipt_created': False})
+        self.assertEqual(result, {'success': False, 'failure_code': 'artifact_control_failed', 'failure_stage': 'unclassified', 'retained_receipt_created': False})
         self.assertFalse(self.output.exists())
         for error in (ValueError('artifact_hosted_context /private/secret/token'),
                       RuntimeError('artifact_hosted_context'), OSError('/private/secret/token')):
@@ -371,7 +376,7 @@ class ArtifactCliDiagnosticsTests(unittest.TestCase):
             raise ValueError('artifact_hosted_context')
         with patch.object(artifacts, 'execute', side_effect=fail):
             self.assertEqual(self.invoke(), {'success': False, 'failure_code': 'artifact_hosted_context',
-                'retained_receipt_created': True})
+                'failure_stage': 'unclassified', 'retained_receipt_created': True})
 
     def test_symlink_receipt_never_counts_as_created(self):
         target = self.root / 'foreign'; target.write_bytes(b'secret')
@@ -381,6 +386,30 @@ class ArtifactCliDiagnosticsTests(unittest.TestCase):
             raise ValueError('artifact_hosted_context')
         with patch.object(artifacts, 'execute', side_effect=fail):
             self.assertFalse(self.invoke()['retained_receipt_created'])
+
+    def test_new_failed_receipt_reports_only_fixed_producer_stage(self):
+        def fail(*args, **kwargs):
+            retained = self.output / 'retained'; retained.mkdir(parents=True)
+            (retained / 'receipt.json').write_text(json.dumps({'schema': 1,
+                'mode': 'selected-product-artifact-control', 'success': False, 'stage': 'tool-preflight',
+                'failure_code': 'tool-preflight-failed', 'private': '/private/token'}))
+            raise RuntimeError('/private/token')
+        with patch.object(artifacts, 'execute', side_effect=fail):
+            self.assertEqual(self.invoke(), {'success': False, 'failure_code': 'artifact_control_failed',
+                'failure_stage': 'tool-preflight', 'retained_receipt_created': True})
+
+    def test_producer_stage_rejects_complete_setup_complete_and_raw_receipt_values(self):
+        for index, stage in enumerate(('complete', 'setup-complete', 'tool-preflight /private/token')):
+            self.output = self.root / str(index)
+            def fail(*args, **kwargs):
+                retained = self.output / 'retained'; retained.mkdir(parents=True)
+                (retained / 'receipt.json').write_text(json.dumps({'schema': 1,
+                    'mode': 'selected-product-artifact-control', 'success': False, 'stage': stage,
+                    'failure_code': stage + '-failed', 'private': '/private/token'}))
+                raise RuntimeError('/private/token')
+            with self.subTest(stage=stage), patch.object(artifacts, 'execute', side_effect=fail):
+                self.assertEqual(self.invoke(), {'success': False, 'failure_code': 'artifact_control_failed',
+                    'failure_stage': 'unclassified', 'retained_receipt_created': True})
 
 
 if __name__ == '__main__':
