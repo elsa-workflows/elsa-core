@@ -23,6 +23,7 @@ def validate_specialization(plan: dict, producer: dict, selected: dict) -> None:
     seen = set()
     for row in rows:
         transport.closed(row, {'id', 'package_manifest', 'sdk_assets'}, 'extensions_payload_manifest_row')
+        require(type(row['id']) is str and bool(row['id']), 'extensions_payload_package_id')
         folded = row['id'].casefold()
         require(folded in selected and folded not in seen and row['id'] == selected[folded]['policy']['id'],
                 'extensions_payload_manifest_inventory')
@@ -42,9 +43,21 @@ def validate_specialization(plan: dict, producer: dict, selected: dict) -> None:
         for path in required:
             transport.safe_name(path)
             require(path in item['members'], 'extensions_payload_manifest_missing')
-            transport.strict_json(item['members'][path])
-        with zipfile.ZipFile(io.BytesIO(item['data'])) as archive:
-            expected = archives.verify_package_manifest(archive, projection, plan['requested_version'], require_sdk_metadata=True)
+            manifest = transport.strict_json(item['members'][path])
+            require(type(manifest.get('package')) is dict and type(manifest.get('extensions')) is dict,
+                    'extensions_payload_manifest_schema')
+            if projection.get('manifest_expectation') or policy['id'] in archives.ADMISSION_SHELL_FEATURES:
+                require(type(manifest.get('compatibility')) is dict, 'extensions_payload_manifest_schema')
+            if projection.get('manifest_expectation'):
+                features = manifest.get('features')
+                require(type(features) is list and all(type(feature) is dict and
+                        (feature.get('compatibility') is None or type(feature['compatibility']) is dict)
+                        for feature in features), 'extensions_payload_manifest_schema')
+        try:
+            with zipfile.ZipFile(io.BytesIO(item['data'])) as archive:
+                expected = archives.verify_package_manifest(archive, projection, plan['requested_version'], require_sdk_metadata=True)
+        except (AttributeError, KeyError, TypeError, IndexError):
+            raise ValueError('extensions_payload_manifest_schema') from None
         require(row['package_manifest'] == expected, 'extensions_payload_manifest_projection')
         assets = row['sdk_assets']
         require(type(assets) is list, 'extensions_payload_sdk_assets')

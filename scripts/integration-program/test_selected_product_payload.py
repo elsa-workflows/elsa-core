@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 import product_release_metadata as metadata
 import selected_control_seal as seal
+import test_selected_control_seal as seal_tests
 import selected_control_transport as transport
 import selected_studio_payload as payload
 import selected_studio_plan_schema as schema
@@ -259,6 +260,43 @@ class SelectedProductPayloadTests(unittest.TestCase):
                 else:r['product_tests']['inherited_skipped_placeholders'][0]['skip_reason']='invented'
                 files['producer/receipt.json']=encoded(r)
             with self.subTest(mutation=mutation), self.assertRaises(ValueError): self.validate(values)
+
+    def test_malformed_extensions_schemas_reach_generic_cli_rejection(self):
+        for mutation in ('package_id', 'package_object', 'extensions_object', 'runtime_object', 'feature_runtime_object'):
+            values = fixture('extensions', '3.8')
+            files, context, _ = values
+            receipt = json.loads(files['producer/receipt.json'])
+            manifest_row = next(row for row in receipt['manifest_verification'] if row['id'] == 'Elsa.IO.Http')
+            if mutation == 'package_id':
+                manifest_row['id'] = 123
+                expected_error = 'extensions_payload_package_id'
+            else:
+                record = next(row for row in receipt['packages']['selected'] if row['id'] == 'Elsa.IO.Http' and row['file'].endswith('.nupkg'))
+                name = 'producer/nuget/' + record['file']
+                members = transport.zip_members(files[name], leaf=True)
+                manifest = json.loads(members['elsa-package.json'])
+                if mutation == 'package_object':
+                    manifest['package'] = []
+                elif mutation == 'extensions_object':
+                    manifest['extensions'] = []
+                elif mutation == 'runtime_object':
+                    manifest['compatibility'] = []
+                else:
+                    manifest['features'][0]['compatibility'] = []
+                members['elsa-package.json'] = encoded(manifest)
+                files[name] = zipped(list(members.items()))
+                record.update(sha256=metadata.sha256(files[name]), size=len(files[name]), inventory=transport.inventory(members))
+                manifest_hash = metadata.sha256(members['elsa-package.json'])
+                manifest_row['package_manifest']['sha256'] = manifest_hash
+                manifest_row['sdk_assets'][0]['sha256'] = manifest_hash
+                expected_error = 'extensions_payload_manifest_schema'
+            files['producer/receipt.json'] = encoded(receipt)
+            # Rehashed archive/manifest/receipt projections reach the intended
+            # schema boundary before downstream consumer receipt admission.
+            with self.subTest(mutation=mutation), self.assertRaisesRegex(ValueError, expected_error):
+                self.validate(values)
+            self.files, self.context = files, context
+            seal_tests.SealContracts.assert_cli_rejected(self)
 
     def test_core_per_asset_native_policy_has_no_studio_version_fallback(self):
         values=fixture('core','3.9');files=values[0];r=json.loads(files['consumer/receipt.json'])
