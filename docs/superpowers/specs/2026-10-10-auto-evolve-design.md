@@ -4,20 +4,21 @@ Status: draft for review · 2026-10-10 · owner: Sipke Schoorstra
 
 ## 1. Goal
 
-A set of Claude cloud routines that keep Elsa 3 moving without a human in the loop:
+A set of scheduled agent routines that keep Elsa 3 moving without a human in the loop. Claude runs them by default; Codex can take over with a single command.
 1. Triage every open issue.
 2. Assign each issue to a release milestone (`3.10`, then `3.11`, …) or close it with evidence.
 3. Implement agent-ready issues.
 4. Decide when a milestone is ready to ship.
 5. Cut and publish the release: packages and container images.
 
-You keep a veto at every release step. Nothing ships without your explicit approval.
+You keep a veto at every release step. Nothing ships until a veto window has passed without you stopping it.
 
 **Success criteria:**
 - Every open issue in elsa-core has a milestone or is closed with an evidence comment within 4 weeks of Triage going live.
 - 3.10.0 ships in shadow mode: the routines propose, you cut. Every later release (3.10.x, 3.11.0, …) ships through the routines. No step needs you unless you use the veto.
 - No release goes out with an open `release-blocker` or `severity:critical/high` bug in its milestone.
 - No two routines ever write the same concern at the same time.
+- Moving every routine from Claude to Codex, or back, takes one `/runner` comment and no other change.
 
 ## 2. Decisions
 
@@ -25,12 +26,13 @@ You keep a veto at every release step. Nothing ships without your explicit appro
 |---|---|---|
 | D1 | **Migrate elsa-apps into elsa-core** as `apps/`, replacing `docker/`. The elsa-apps repo stays for ≤3.9 image maintenance, then is archived. | See §3. |
 | D2 | **Transfer open Studio and Extensions issues to elsa-core** (`gh issue transfer`), except 3.8/3.9-only maintenance. | One repo to triage. Matches the "Contribution routing after consolidation" section in `CONTRIBUTING.md`. |
-| D3 | **Claude cloud routines; GitHub is the only state store.** | Routines run while the Mac sleeps. Cloud runs have no local disk, so ledgers in `~/.claude/issue-runs` or Codex `state.json` are not usable. |
+| D3 | **Claude cloud routines by default; GitHub is the only state store.** | Routines run while the Mac sleeps. Cloud runs have no local disk, so ledgers in `~/.claude/issue-runs` or Codex `state.json` are not usable. |
 | D4 | **Fully autonomous release, protected by machine gates and a veto window.** | Replaces today's human approvals (`.github/reviewers.md`, environment required reviewers). |
 | D5 | **Hybrid cadence for minors:** no sooner than 3 weeks after the previous minor, no later than 8 weeks. Inside that window, cut when the value score passes its threshold and the hard gates hold. | Avoids both trickle releases and stalled trains. |
 | D6 | **Patch releases only for the latest minor.** | Keeps backport cost bounded. 3.8/3.9 lines stay manual in their source repos. |
 | D7 | **Backlog pruning closes only with evidence.** Anything ambiguous goes to `Backlog`. | 766 issues have no milestone and about 350 predate 2024. Silent closure would damage community trust. |
 | D8 | **3.10.0 is a shadow release.** | It is also the publisher cutover, which the lockstep ADR calls a manual maintainer step. |
+| D9 | **Routines are agent-agnostic.** Their logic lives in the repo, and you switch the active runner between Claude and Codex by hand. | When Claude credits run out, Codex continues the same work. A manual switch is predictable and needs no lease logic. See §5. |
 
 ## 3. elsa-apps migration (D1)
 
@@ -60,31 +62,77 @@ You keep a veto at every release step. Nothing ships without your explicit appro
 | Routine | Trigger | May write | Must not touch |
 |---|---|---|---|
 | **Triage** | every 6h, ≤30 issues per run, oldest untriaged first | labels, milestones, one triage comment per issue, closures with evidence | code, branches, tags, workflows |
-| **Deliver** | every 2h, while no claim is active; one issue per run | branch, PR, merge behind the machine merge gate (§7) | milestone scope, releases |
+| **Deliver** | every 2h, while no claim is active; one issue per run | branch, PR, merge behind the machine merge gate (§8) | milestone scope, releases |
 | **Readiness** | daily | control-issue report, release proposals, honoring `/hold` | code, issue labels |
-| **Release-train** | an accepted proposal whose veto window has expired | tags, `release/<minor>` branches, the version-bump PR, workflow dispatches, the GitHub release body | issue and PR bodies, except through the isolated notes step (§8) |
+| **Release-train** | an accepted proposal whose veto window has expired | tags, `release/<minor>` branches, the version-bump PR, workflow dispatches, the GitHub release body | issue and PR bodies, except through the isolated notes step (§9) |
 
 **Control issue.** One pinned issue titled "Auto-evolve control" acts as ledger, lock and veto channel.
 
 **Locking.**
-- A routine claims a concern by editing a fenced JSON block in the control issue's body. The block holds `{concern, routine, runId, expiresAt}`.
+- A routine claims a concern by editing a fenced JSON block in the control issue's body. The block holds `{concern, routine, runner, runId, expiresAt}`.
 - After editing, the routine re-reads the body. If its claim is not the one present, it backs off.
 - A claim expires after 3h.
 - Every routine reads the control issue before any write.
 
 **Reuse:**
-- **Deliver** wraps the deliver-issue pipeline and the board-* agents.
+- **Deliver** ports the deliver-issue pipeline and the board-* agents into the repo as neutral roles (§5).
 - **Release-train** wraps `.agents/skills/elsa-release` (`runbook.md` and `release_train.py`) and the release-notes skill.
 
-**Identity.** All routines act as a dedicated GitHub App installation with the narrowest permissions per routine. They never use your personal access token.
+**Identity.** All routines act as a dedicated GitHub App installation with the narrowest permissions per routine. They never use your personal access token. Both runners use the same App, so the gates never depend on which agent did the work.
 
 **Budget.**
 - Each routine has a per-run token cap and a monthly ceiling.
 - When a routine hits its ceiling, it pauses and posts to the control issue instead of failing silently.
 
-**Paused Codex automations.** Retire `triage-elsa-3-9-milestone`, `deliver-elsa-core-3-9-milestone` and `deliver-elsa-3-9-across-core-studio-and-extensions` before any routine goes live.
+**Paused Codex automations.** Retire `triage-elsa-3-9-milestone`, `deliver-elsa-core-3-9-milestone` and `deliver-elsa-3-9-across-core-studio-and-extensions` before any routine goes live. The new standby Codex automations from §5 replace them.
 
-## 5. Issue state model
+## 5. Agent-agnostic execution (D9)
+
+The routines must behave the same whether Claude or Codex runs them, so nothing that defines their behavior may live in a single agent's private configuration.
+
+**Where the logic lives:**
+
+| Concern | Location | Format |
+|---|---|---|
+| Routine procedures | `.agents/skills/auto-evolve-{triage,deliver,readiness,release}/SKILL.md` | Agent Skills (SKILL.md), which both agents load |
+| Deterministic rules | `scripts/auto_evolve/` with unit tests | Python, matching `release_train.py` and the existing `scripts/` |
+| Subagent roles | `.agents/roles/{implementer-light,implementer,implementer-deep,reviewer,fixer,ci-doctor,triage-parser}.md` | Plain Markdown prompts, ported from `~/.claude/agents/board-*.md` |
+| Model tiers | `.agents/roles/tiers.json` | Maps `light`/`standard`/`deep` to a model and effort per runner |
+| State | GitHub: control issue, labels, milestones, workflow runs | Already agent-neutral (D3) |
+
+**Deterministic rules move into scripts.** That covers:
+- selecting the work queue;
+- claiming, renewing and releasing locks, including the runner check below;
+- validating closures against §6;
+- the readiness gates and the value score from §7;
+- computing versions and tags.
+
+Agents call these scripts and use their judgment only for what scripts can't decide: severity, scope, code and review. The less behavior lives in prose, the less the two runners can diverge.
+
+**Skills reference roles, not agents.** A skill says "dispatch the `reviewer` role at tier `deep`". Each runner uses its own mechanism to spawn the subagent: the Agent tool on Claude, worker threads on Codex. The prompt comes from `.agents/roles/`, and the model comes from `tiers.json`.
+
+**Claude discovery.** `.claude/skills/auto-evolve-*` are symlinks into `.agents/skills/`. A CI check fails if a `.claude/skills` entry for an `auto-evolve-*` skill is a copy instead of a symlink, or points nowhere.
+
+**Scheduler shims.** Each routine is scheduled twice: as a Claude cloud routine and as a Codex automation. Both prompts are the same three lines, apart from the runner name:
+
+```
+Load the auto-evolve-<routine> skill from the elsa-core repository.
+Run it as runner `<claude|codex>`.
+Do nothing else.
+```
+
+No routine logic may be added to a shim. A change in behavior is a PR to the skill or the scripts.
+
+**Runner switch (manual).**
+- The control issue's JSON block carries `"activeRunner": "claude" | "codex"`.
+- The first step of every routine is `scripts/auto_evolve/runner.py check --runner <name>`. If the runner is not active, the script exits with a no-op and the run ends without writing anything.
+- Only you change the runner, by commenting `/runner codex` or `/runner claude` on the control issue. The next run of any routine (it doesn't matter which runner) applies the switch to the JSON block and acknowledges it in a reply. Comments from anyone other than the repository owner are ignored.
+- Claims made by the previous runner stay valid until they expire (3h). The new runner does not take over a claimed concern before then, so work in flight is never duplicated.
+- Both schedules can stay enabled permanently; the inactive one only spends the cost of the check.
+
+**Runtime differences we accept.** Codex automations run locally in a worktree, so they need the Mac to be awake. Claude cloud routines have no local disk. Because state lives only in GitHub, both are fine. Whichever runner made a commit is recorded in its trailer.
+
+## 6. Issue state model
 
 **Milestones:**
 - No milestone = untriaged. This is Triage's work queue.
@@ -110,7 +158,7 @@ You keep a veto at every release step. Nothing ships without your explicit appro
 - Elsa 2-only;
 - `needs-info` with no reporter response for 6 months or more.
 
-## 6. Readiness rubric
+## 7. Readiness rubric
 
 **Hard gates.** All must hold:
 1. No open `release-blocker` or `severity:critical/high` bug in the milestone.
@@ -149,17 +197,17 @@ The initial threshold is 40. Phase 4 recalibrates it by backtesting against 3.8.
 
 Autonomy is not enabled until this script has been exercised once against Feedz.
 
-## 7. Machine merge gate (replaces `.github/reviewers.md` human approval)
+## 8. Machine merge gate (replaces `.github/reviewers.md` human approval)
 
 A PR from Deliver merges only when all of the following hold:
 - CI is green on its head.
-- Two fresh reviewer subagents, one per axis (Standards and Spec), report no must-fix findings on that head.
+- Two fresh subagents from the `reviewer` role, one per axis (Standards and Spec), report no must-fix findings on that head.
 - Greptile scores it 5/5 on that head.
 - A PR labeled `breaking` or `schema change` also carries migration notes.
 
 PRs from outside contributors keep the existing human gate. Deliver never merges them.
 
-## 8. Prompt-injection boundary
+## 9. Prompt-injection boundary
 
 Issue bodies, comments and PR text are untrusted. The boundary has four rules:
 - **Triage** reads them, but its App permissions are limited to issues: no contents or workflow access.
@@ -167,14 +215,14 @@ Issue bodies, comments and PR text are untrusted. The boundary has four rules:
 - **Release notes** are generated in a separate step with no tools and no write access. Its output is plain text that Release-train inserts into the release body. It is never executed.
 - **Secrets** are used only inside GitHub workflows through OIDC or environments. They never enter agent context.
 
-## 9. Rollout
+## 10. Rollout
 
 | Phase | Work | Exit criterion |
 |---|---|---|
 | 0. Bootstrap (with you) | See list below. | Gates script passes. Rollback exercised on Feedz. |
-| 1. Issues | Transfer Studio/Extensions issues; create labels and `Backlog`; Triage in dry-run for 1 week (writes only to the control issue), then live. | ≥95% precision on a 20-issue spot check of proposed closures. |
+| 1. Issues | Transfer Studio/Extensions issues; create labels and `Backlog`; Triage in dry-run for 1 week (writes only to the control issue), then live. Parity run: both runners triage the same 20 issues in dry-run. | ≥95% precision on a 20-issue spot check of proposed closures. Claude and Codex agree on milestone and closure for ≥18 of the 20 issues, and every disagreement has been traced to prose that should move into a script. |
 | 2. elsa-apps | §3 migration PR plus ADR. | Images from the monorepo artifact pass smoke on both architectures. |
-| 3. Deliver | Cloud routine over the 3.10 milestone. | 5 consecutive issues merged with no human intervention and no reverts. |
+| 3. Deliver | Port the board-* agents into `.agents/roles/`; run the routine over the 3.10 milestone. | 5 consecutive issues merged with no human intervention and no reverts, at least 1 of them delivered by Codex after a `/runner codex` switch. |
 | 4. Release shadow | Readiness and Release-train run in verify mode for 3.10.0; you cut. Backtest the rubric. | Proposals and receipts match the manual cut. |
 | 5. Autonomous | Live from 3.10.1 / 3.11.0. Downstream bump PRs (gitbook, templates, samples). Announcement copy is drafted; posting stays manual. | First autonomous release completes with no veto needed. |
 
@@ -186,10 +234,11 @@ Issue bodies, comments and PR text are untrusted. The boundary has four rules:
 - Fix the stale pins in `extensions/src/Directory.Build.props`.
 - Fix #8502 and #8609.
 - Swap environment required reviewers for wait timers.
-- Implement the §7 merge gate.
+- Implement the §8 merge gate.
 - Script the rollback runbook.
+- Create `scripts/auto_evolve/` with `runner.py` and the lock helpers, the `.agents/roles/` skeleton with `tiers.json`, and the CI check for the `.claude/skills` symlinks.
 
-## 10. Out of scope
+## 11. Out of scope
 
 - 3.8/3.9 maintenance releases. These stay with the source repos and are manual.
 - Elsa 4.
