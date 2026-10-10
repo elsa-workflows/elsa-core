@@ -28,6 +28,8 @@ A genuine original lifecycle/package failure stays a failure. Source corrections
 
 The output's `private/` directory contains source checkouts, original recipe outputs, caches and raw diagnostic logs. Share only allowlisted receipts and reviewed archives from `retained/`; producer receipts/raw logs remain private. Failed stage receipts do not disclose arbitrary exception or command output. Preserve failures when iterating with a new output directory.
 
+For a failed Core nontracked PDB source check, `product_recipe_failure.source_producer_failure` contains a fixed verifier check code and the package/framework reconstructed from the exact admitted plan's selected inventory. Both receipt projections validate catalog membership, and the CLI also binds the catalog to the input and retained plan hashes. Source/controller/run/attempt identity checks still apply. Unknown verifier errors use `unknown-check-failure`; invalid or unbound diagnostics are unavailable. These fields disclose no document paths, producer paths or exception text. This diagnostic continuation does not fix the actual Core provenance failure or accept any failed run as proof.
+
 Cheap contracts run without compiling products. Select Node 22 on PATH for the tiny offline copy fixtures:
 
 ```sh

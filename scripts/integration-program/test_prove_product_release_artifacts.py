@@ -425,7 +425,8 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
         self.plan = {'product': 'core', 'line': '3.8', 'requested_version': '3.8.5',
                      'controller': self.identity, 'npm': None,
                      'source': {'product': 'core', 'line': '3.8', 'commit': 'c' * 40, 'tree': 'd' * 40},
-                     'inventory': {'release_recipe': {'solution': 'Elsa.sln', 'sha256': metadata.sha256(b'solution'),
+                     'inventory': {'selected': [{'id': 'Elsa.Example', 'frameworks': ['net8.0', 'net9.0']}],
+                         'release_recipe': {'solution': 'Elsa.sln', 'sha256': metadata.sha256(b'solution'),
                          'workflow': 'packages.yml', 'workflow_sha256': metadata.sha256(b'workflow')}}}
         self.inner = {'schema': 1, 'success': False, 'published': False, 'maintenance_refs_activated': False,
                       'selection': self.plan['source'] | {'source_repository': artifacts.maintenance.CORE_REPOSITORY},
@@ -459,7 +460,7 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
             raise self.failure
 
         plan_path = self.root / 'plan.json'
-        plan_path.write_text('{}')
+        plan_path.write_text(json.dumps(self.plan))
         stdout = io.StringIO()
         with patch.object(artifacts, 'ROOT', self.controller), patch.object(artifacts, 'admit', return_value=self.plan), \
                 patch.object(artifacts, 'verify_controller', return_value=self.identity), \
@@ -470,7 +471,7 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
                 patch.object(planner, 'build_helper'), patch.object(artifacts, 'refresh_remote'), \
                 patch.object(artifacts.maintenance, 'prepare', side_effect=fail), \
                 patch.object(artifacts, 'retain_selected', side_effect=self.failure), \
-                patch.object(sys, 'argv', ['proof', '--plan', str(plan_path), '--plan-sha256', 'e' * 64,
+                patch.object(sys, 'argv', ['proof', '--plan', str(plan_path), '--plan-sha256', metadata.sha256(plan_path.read_bytes()),
                                          '--output', str(self.output)]), redirect_stdout(stdout):
             if direct:
                 with self.assertRaises(RuntimeError) as caught:
@@ -513,6 +514,69 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
                 self.assertEqual(set(summary), {'status', 'stage', 'reason', 'receipt_sha256'})
                 self.assertEqual(summary, receipt['product_recipe_failure'])
                 self.assertNotIn('/private/secret', json.dumps(result))
+
+    def source_producer_failure(self):
+        self.inner.update(stage='package-verification', focus={'package': 'Elsa.Example', 'framework': 'net8.0'},
+            error={'code': 'package-verification-failed', 'reason': 'source-producer-unverified',
+                   'source_producer_check': 'embedded-checksum-mismatch'})
+
+    def test_source_producer_failure_reaches_cli_with_plan_bound_package_framework_and_check(self):
+        self.source_producer_failure()
+        result, receipt = self.invoke()
+        expected = {'package': 'Elsa.Example', 'framework': 'net8.0', 'check': 'embedded-checksum-mismatch'}
+        self.assertEqual(result['product_recipe_failure']['source_producer_failure'], expected)
+        self.assertEqual(receipt['product_recipe_failure']['source_producer_failure'], expected)
+        self.assertNotIn('/private/secret', json.dumps(result))
+        self.assertFalse(receipt['success'])
+
+    def test_source_producer_detail_rejects_unplanned_or_private_fields_and_wrong_provenance(self):
+        self.source_producer_failure()
+        original = deepcopy(self.inner)
+        mutations = [
+            {'focus': {'package': 'Private.ValidIdentifier', 'framework': 'net8.0'}},
+            {'focus': {'package': 'Elsa.Example', 'framework': 'net10.0'}},
+            {'focus': original['focus'] | {'document': '/private/secret'}},
+            {'error': original['error'] | {'source_producer_check': '/private/secret'}},
+            {'error': original['error'] | {'source_producer_check': []}},
+            {'selection': original['selection'] | {'commit': 'f' * 40}},
+            {'controller_commit': 'f' * 40}, {'controller_tree': 'f' * 40},
+            {'controller_sha256': 'f' * 64}, {'run_id': '42'}, {'run_attempt': '2'},
+        ]
+        for index, mutation in enumerate(mutations):
+            with self.subTest(mutation=mutation):
+                self.output = self.root / f'producer-mutation-{index}'
+                self.inner = original | mutation
+                result, receipt = self.invoke()
+                self.assertEqual(result['product_recipe_failure'], {'status': 'unavailable'})
+                self.assertEqual(receipt['product_recipe_failure'], {'status': 'unavailable'})
+                self.assertNotIn('/private/secret', json.dumps(result))
+                self.assertNotIn('Private.ValidIdentifier', json.dumps(result))
+
+    def test_outer_source_producer_projection_requires_same_plan_and_catalog_membership(self):
+        self.source_producer_failure()
+        _, receipt = self.invoke()
+        plan_bytes = (self.root / 'plan.json').read_bytes()
+        plan_hash = metadata.sha256(plan_bytes)
+        path = self.output / 'retained/receipt.json'
+        project = lambda **kwargs: artifacts.public_recipe_failure(
+            self.output, False, 'original-product-recipe', **kwargs)
+        self.assertEqual(project(plan_bytes=plan_bytes, plan_sha256=plan_hash)['product_recipe_failure'],
+                         receipt['product_recipe_failure'])
+        for arguments in ({}, {'plan_bytes': plan_bytes, 'plan_sha256': 'f' * 64},
+                          {'plan_bytes': b'{}', 'plan_sha256': metadata.sha256(b'{}')}):
+            with self.subTest(arguments=arguments):
+                self.assertEqual(project(**arguments), {'product_recipe_failure': {'status': 'unavailable'}})
+        original = deepcopy(receipt)
+        for changes in ({'package': 'Private.ValidIdentifier'}, {'framework': 'net10.0'},
+                        {'check': '/private/secret'}, {'document': '/private/secret'}):
+            with self.subTest(changes=changes):
+                receipt = deepcopy(original)
+                receipt['product_recipe_failure']['source_producer_failure'].update(changes)
+                path.write_text(json.dumps(receipt))
+                result = project(plan_bytes=plan_bytes, plan_sha256=plan_hash)
+                self.assertEqual(result, {'product_recipe_failure': {'status': 'unavailable'}})
+                self.assertNotIn('/private/secret', json.dumps(result))
+                self.assertNotIn('Private.ValidIdentifier', json.dumps(result))
 
     def test_identity_and_closed_field_mutations_are_unavailable(self):
         mutations = [

@@ -258,13 +258,18 @@ class MaintenanceContracts(unittest.TestCase):
                     'sdk_root': '/private-secret/sdk', 'compiler_sha256': 'c' * 64, 'tools': {}}}})
             if failure == 'sdk-metadata':
                 raise ValueError('/private-secret/metadata failure')
+        def artifacts(*args):
+            if failure == 'package-verification':
+                args[-1].update(package='Fixture', framework='net8.0')
+                raise maintenance.SourceProducerVerificationError('generator-content-changed')
+            return []
         with ExitStack() as stack:
             for name, options in {
                 'git': {'side_effect': checkout}, 'git_bytes': {'return_value': config},
                 'verify_source': {'return_value': None},
                 'recipes': {'return_value': []}, 'run': {'side_effect': execute},
                 'evaluate_inventory': {'return_value': [policy]}, 'verify_tests': {'side_effect': tests},
-                'stage_maintenance_metadata': {'side_effect': stage}, 'verify_artifacts': {'return_value': []},
+                'stage_maintenance_metadata': {'side_effect': stage}, 'verify_artifacts': {'side_effect': artifacts},
             }.items():
                 stack.enter_context(patch.object(maintenance, name, **options))
             if failure:
@@ -375,6 +380,44 @@ class MaintenanceContracts(unittest.TestCase):
         tracked = dict(document, path='/_/Directory.Build.props')
         with self.assertRaisesRegex(ValueError, 'Tracked source checksum mismatch'):
             maintenance.verify_documents(dict(details, documents=[tracked]), maintenance.ROOT, self.row, policy, 'net8.0')
+
+    def test_non_git_failure_keeps_closed_check_without_private_message(self):
+        policy = {'source_commit': self.row['commit'], 'frameworks': ['net8.0'],
+                  'framework_properties': {'net8.0': {}}}
+        document = {'path': '/private/secret.cs', 'checksum': 'a' * 64, 'embedded_checksum': None}
+        with self.assertRaisesRegex(ValueError, '^Source producer evidence rejected$') as caught:
+            maintenance.verify_non_git_document(document, None, self.root, self.row, policy, 'net8.0', {})
+        self.assertEqual(caught.exception.check, 'embedded-checksum-mismatch')
+        self.assertNotIn('/private/secret', str(caught.exception))
+
+    def test_generator_failures_keep_only_closed_checks_and_unknown_fails_closed(self):
+        policy = {'source_commit': self.row['commit'], 'frameworks': ['net8.0'],
+                  'framework_properties': {'net8.0': {}}}
+        document = {'path': '/private/secret.cs', 'checksum': 'a' * 64, 'embedded_checksum': 'a' * 64}
+        failures = [(ValueError(message + ' /private/secret'), code)
+                    for message, code in maintenance.SOURCE_PRODUCER_ERRORS.items()]
+        failures += [(ValueError('/private/secret'), 'unknown-check-failure'),
+                     (KeyError('/private/secret'), 'producer-context-invalid'),
+                     (TypeError('/private/secret'), 'producer-context-invalid'),
+                     (OSError('/private/secret'), 'producer-file-unavailable')]
+        for error, expected in failures:
+            with self.subTest(expected=expected), \
+                    patch.object(maintenance, 'maintenance_family', return_value='sdk'), \
+                    patch.object(maintenance, 'verify_generator_identity', side_effect=error):
+                with self.assertRaisesRegex(ValueError, '^Source producer evidence rejected$') as caught:
+                    maintenance.verify_non_git_document(document, 'generated.cs', self.root,
+                                                        self.row, policy, 'net8.0', {})
+                self.assertEqual(caught.exception.check, expected)
+                self.assertNotIn('/private/secret', str(caught.exception))
+
+    def test_package_verification_receipt_retains_closed_source_check(self):
+        output = self.prepare_inventory_fixture('package-verification')
+        receipt = json.loads((output / 'receipt.json').read_text())
+        self.assertEqual(receipt['error'], {'code': 'package-verification-failed',
+            'reason': 'source-producer-unverified', 'source_producer_check': 'generator-content-changed'})
+        self.assertEqual(receipt['focus'], {'package': 'Fixture', 'framework': 'net8.0'})
+        self.assertFalse(receipt['success'])
+        self.assertNotIn('/private-secret', json.dumps(receipt))
 
     def restored_hint_fixture(self):
         root = self.root.resolve() / f'hints-{len(list(self.root.iterdir()))}'

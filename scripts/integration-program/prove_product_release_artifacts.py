@@ -71,7 +71,7 @@ def read_diagnostic_receipt(path: Path) -> tuple[dict, str]:
     return value, metadata.sha256(data)
 
 
-def validate_recipe_failure(value: dict) -> dict:
+def validate_recipe_failure(value: dict, selected: list[dict] | None = None) -> dict:
     """Reconstruct only a fixed vocabulary; receipt fields are never printed wholesale."""
     require(type(value) is dict, 'diagnostic_invalid')
     if value == {'status': 'unavailable'}:
@@ -110,6 +110,18 @@ def validate_recipe_failure(value: dict) -> dict:
         result.update(command_step=step, process={key: process[key] for key in ('status', 'exit_code')},
             diagnostics={'codes': projected_codes, 'nuke_failed_targets': list(targets),
                          'unretained_code_occurrences': overflow})
+    if value['stage'] == 'package-verification' and value['reason'] == 'source-producer-unverified':
+        detail = value['source_producer_failure']
+        require(type(detail) is dict and set(detail) == {'package', 'framework', 'check'} and
+                type(detail['check']) is str and detail['check'] in maintenance.SOURCE_PRODUCER_CHECKS and
+                type(detail['package']) is str and planner.ID.fullmatch(detail['package']) is not None and
+                type(detail['framework']) is str and detail['framework'] in ('net8.0', 'net9.0', 'net10.0') and
+                type(selected) is list, 'diagnostic_invalid')
+        packages = [row for row in selected if row['id'] == detail['package']]
+        require(len(packages) == 1 and detail['framework'] in packages[0]['frameworks'], 'diagnostic_invalid')
+        result['source_producer_failure'] = {'package': packages[0]['id'],
+            'framework': next(framework for framework in packages[0]['frameworks'] if framework == detail['framework']),
+            'check': detail['check']}
     require(set(value) == set(result), 'diagnostic_invalid')
     return result
 
@@ -139,12 +151,15 @@ def recipe_failure_diagnostics(output: Path, plan: dict, controller: dict, execu
                     all(type(command) is dict and command.get('success') is True for command in commands[:-1]) and
                     type(commands[-1]) is dict and commands[-1].get('success') is False, 'diagnostic_invalid')
             result.update(command_step=step, process=commands[-1]['process'], diagnostics=commands[-1]['diagnostics'])
-        return validate_recipe_failure(result)
+        if stage == 'package-verification' and error['reason'] == 'source-producer-unverified':
+            result['source_producer_failure'] = value['focus'] | {'check': error['source_producer_check']}
+        return validate_recipe_failure(result, plan['inventory']['selected'])
     except Exception:
         return {'status': 'unavailable'}
 
 
-def public_recipe_failure(output: Path, output_existed: bool, stage: str) -> dict:
+def public_recipe_failure(output: Path, output_existed: bool, stage: str, *,
+                          plan_bytes: bytes | None = None, plan_sha256: str | None = None) -> dict:
     if output_existed or stage != 'original-product-recipe':
         return {}
     try:
@@ -155,7 +170,13 @@ def public_recipe_failure(output: Path, output_existed: bool, stage: str) -> dic
                 receipt.get('product') != 'core' or receipt.get('line') not in ('3.8', '3.9') or \
                 'product_recipe_failure' not in receipt:
             return {}
-        return {'product_recipe_failure': validate_recipe_failure(receipt['product_recipe_failure'])}
+        selected = None
+        if 'source_producer_failure' in receipt['product_recipe_failure']:
+            require(plan_bytes is not None and metadata.sha256(plan_bytes) == plan_sha256 == receipt['plan_sha256'],
+                    'diagnostic_invalid')
+            plan = planner.read_json(plan_bytes)
+            selected = plan['inventory']['selected']
+        return {'product_recipe_failure': validate_recipe_failure(receipt['product_recipe_failure'], selected)}
     except Exception:
         return {'product_recipe_failure': {'status': 'unavailable'}}
 
@@ -479,16 +500,19 @@ def main() -> int:
     parser.add_argument('--setup-only', action='store_true')
     args = parser.parse_args()
     output_existed = True
+    plan_bytes = None
     try:
         output_existed = args.output.exists() or args.output.is_symlink()
-        execute(ROOT, args.plan.read_bytes(), args.plan_sha256, args.output, setup_only=args.setup_only)
+        plan_bytes = args.plan.read_bytes()
+        execute(ROOT, plan_bytes, args.plan_sha256, args.output, setup_only=args.setup_only)
         return 0
     except Exception as error:
         code = str(error) if type(error) is ValueError and str(error) in PUBLIC_FAILURE_CODES else 'artifact_control_failed'
         receipt_created, stage = failure_receipt_status(args.output, output_existed,
             mode='selected-product-artifact-control', stages=PUBLIC_FAILURE_STAGES)
         print(json.dumps({'success': False, 'failure_code': code, 'failure_stage': stage,
-            'retained_receipt_created': receipt_created} | public_recipe_failure(args.output, output_existed, stage)))
+            'retained_receipt_created': receipt_created} | public_recipe_failure(args.output, output_existed, stage,
+                plan_bytes=plan_bytes, plan_sha256=args.plan_sha256)))
         return 1
 
 

@@ -789,26 +789,65 @@ def verify_restored_manifest_hint(source: Path, policy: dict, framework: str,
     return external, identity
 
 
+SOURCE_PRODUCER_ERRORS = {
+    'Missing resolved SDK/framework evidence': 'producer-context-missing',
+    'Pinned SDK compiler content changed': 'sdk-compiler-changed',
+    'Missing actual resolved generator evidence:': 'generator-evidence-missing',
+    'Resolved generator content changed:': 'generator-content-changed',
+    'Resolved generator archive/identity changed:': 'generator-archive-changed',
+    'Generator does not belong to pinned SDK': 'generator-sdk-mismatch',
+    'SDK source-emitting targets changed': 'generator-targets-changed',
+    'Generator does not belong to resolved framework': 'generator-framework-mismatch',
+    'Missing restored dependency evidence:': 'restore-evidence-missing',
+    'Restored dependency evidence changed': 'restore-evidence-changed',
+}
+SOURCE_PRODUCER_CHECKS = frozenset(SOURCE_PRODUCER_ERRORS.values()) | {
+    'source-context-invalid', 'embedded-checksum-mismatch', 'unmapped-family-unsupported',
+    'restored-hint-unverified', 'generated-family-unknown', 'producer-file-unavailable',
+    'producer-context-invalid', 'unknown-check-failure',
+}
+
+
+class SourceProducerVerificationError(ValueError):
+    def __init__(self, check: str):
+        super().__init__('Source producer evidence rejected')
+        self.check = check
+
+
 def verify_non_git_document(document: dict, path: str | None, source: Path, row: dict,
                             policy: dict | None, framework: str | None, cache: dict) -> dict:
+    check = 'source-context-invalid'
     try:
         require(policy is not None and policy.get('source_commit') == row['commit'] and
                 framework in policy['frameworks'] and framework in policy['framework_properties'], 'Missing source context')
+        check = 'embedded-checksum-mismatch'
         require(document.get('embedded_checksum') == document['checksum'], 'Missing matching embedded bytes')
         if path is None:
             # Only this reviewed original package-content family can be unmapped.
+            check = 'unmapped-family-unsupported'
             require(row['product'] == 'extensions' and
                     '/elsa.platform.packagemanifest.generator/0.0.1-preview.50/' in document['path'], 'Unknown external family')
+            check = 'restored-hint-unverified'
             external, archive_identity = verify_restored_manifest_hint(source, policy, framework, document, cache)
             return {'family': 'manifest-hints', 'producer': {key: external[key] for key in
                     ('external_package', 'archive_entry', 'archive_sha256', 'feed')} | {
                     'restore_sha512': archive_identity['restore_sha512']}}
+        check = 'generated-family-unknown'
         family = maintenance_family(row, policy, framework, path)
         require(family is not None, 'Unknown generated family')
+        check = 'unknown-check-failure'
         producer = verify_generator_identity(source, policy, framework, family, cache)
         return {'family': family, 'producer': public_producer(producer)}
-    except (ValueError, KeyError, OSError, TypeError):
-        raise ValueError('Source producer evidence rejected') from None
+    except (ValueError, KeyError, OSError, TypeError) as error:
+        if check == 'unknown-check-failure':
+            if isinstance(error, OSError):
+                check = 'producer-file-unavailable'
+            elif isinstance(error, (KeyError, TypeError)):
+                check = 'producer-context-invalid'
+            else:
+                check = next((code for message, code in SOURCE_PRODUCER_ERRORS.items()
+                              if str(error).startswith(message)), check)
+        raise SourceProducerVerificationError(check) from None
 
 
 def verify_documents(details: dict, source: Path, row: dict, policy: dict | None = None,
@@ -1256,6 +1295,8 @@ def prepare(root: Path, row: dict, version: str, output: Path, *, plan: dict | N
     except Exception as error:
         receipt['error'] = {'code': receipt['stage'] + '-failed',
                             'reason': verification_reason(str(error))}
+        if receipt['stage'] == 'package-verification' and isinstance(error, SourceProducerVerificationError):
+            receipt['error']['source_producer_check'] = error.check
         raise
     finally:
         receipt['logs'] = [{'name': p.name, 'sha256': digest(p.read_bytes())} for p in sorted(output.glob('*.log'))]
