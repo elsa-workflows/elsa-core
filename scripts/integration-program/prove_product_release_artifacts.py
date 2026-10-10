@@ -8,9 +8,11 @@ from __future__ import annotations
 import argparse
 from datetime import datetime, timezone
 import json
+import os
 from pathlib import Path
 import re
 import shutil
+import stat
 import zipfile
 
 import plan_product_release as planner
@@ -54,6 +56,113 @@ PUBLIC_FAILURE_CODES = frozenset((
 
 PUBLIC_FAILURE_STAGES = frozenset(('source-setup', 'tool-preflight', 'fresh-prerequisites',
     'original-product-recipe', 'historical-studio-npm'))
+RECIPE_FAILURE_STAGES = frozenset(('source-verification', 'toolchain', 'build-command', 'inventory',
+    'test-evidence', 'symbol-inspector', 'sdk-metadata', 'package-verification'))
+RECIPE_FAILURE_REASONS = frozenset(maintenance.VERIFICATION_REASONS.values()) | {'unknown-check-failure'}
+DIAGNOSTIC_LIMIT = 4 * 1024 ** 2
+
+
+def read_diagnostic_receipt(path: Path) -> tuple[dict, str]:
+    """Read bounded regular diagnostic data without following a final symlink."""
+    require(not any(part.is_symlink() for part in (path, *path.parents)), 'diagnostic_invalid')
+    descriptor = os.open(path, os.O_RDONLY | os.O_NONBLOCK | getattr(os, 'O_NOFOLLOW', 0))
+    with os.fdopen(descriptor, 'rb') as stream:
+        info = os.fstat(stream.fileno())
+        require(stat.S_ISREG(info.st_mode) and info.st_size <= DIAGNOSTIC_LIMIT, 'diagnostic_invalid')
+        data = stream.read(DIAGNOSTIC_LIMIT + 1)
+    require(len(data) <= DIAGNOSTIC_LIMIT, 'diagnostic_invalid')
+    value = planner.read_json(data)
+    require(type(value) is dict, 'diagnostic_invalid')
+    return value, metadata.sha256(data)
+
+
+def validate_recipe_failure(value: dict) -> dict:
+    """Reconstruct only a fixed vocabulary; receipt fields are never printed wholesale."""
+    require(type(value) is dict, 'diagnostic_invalid')
+    if value == {'status': 'unavailable'}:
+        return {'status': 'unavailable'}
+    require(value.get('status') == 'observed' and type(value.get('stage')) is str and
+            value['stage'] in RECIPE_FAILURE_STAGES and type(value.get('reason')) is str and
+            value['reason'] in RECIPE_FAILURE_REASONS and type(value.get('receipt_sha256')) is str and
+            re.fullmatch('[a-f0-9]{64}', value['receipt_sha256']), 'diagnostic_invalid')
+    result = {key: value[key] for key in ('status', 'stage', 'reason', 'receipt_sha256')}
+    if value['stage'] == 'build-command':
+        step, process, diagnostics = value['command_step'], value['process'], value['diagnostics']
+        require(type(step) is int and 1 <= step <= 256 and type(process) is dict and
+                set(process) == {'status', 'exit_code'} and type(process['status']) is str and
+                process['status'] in ('exited', 'timed-out', 'interrupted', 'start-failed'), 'diagnostic_invalid')
+        code = process['exit_code']
+        require((process['status'] == 'start-failed' and code is None) or
+                (process['status'] != 'start-failed' and type(code) is int and -2 ** 31 <= code < 2 ** 31 and
+                 (process['status'] != 'exited' or code != 0)), 'diagnostic_invalid')
+        require(type(diagnostics) is dict and set(diagnostics) ==
+                {'codes', 'nuke_failed_targets', 'unretained_code_occurrences'}, 'diagnostic_invalid')
+        codes, targets, overflow = (diagnostics[key] for key in
+            ('codes', 'nuke_failed_targets', 'unretained_code_occurrences'))
+        require(type(codes) is list and len(codes) <= 32 and type(targets) is list and len(targets) <= 4 and
+                all(type(target) is str and target in ('Restore', 'Compile', 'Test', 'Pack') for target in targets) and
+                len(set(targets)) == len(targets) and type(overflow) is int and 0 <= overflow < 2 ** 31,
+                'diagnostic_invalid')
+        projected_codes = []
+        for item in codes:
+            require(type(item) is dict and set(item) == {'severity', 'code', 'count'} and
+                    type(item['severity']) is str and item['severity'] in ('error', 'warning') and
+                    type(item['code']) is str and re.fullmatch('(CS|NU|MSB|NETSDK)[0-9]{4}', item['code']) and
+                    type(item['count']) is int and 1 <= item['count'] < 2 ** 31, 'diagnostic_invalid')
+            projected_codes.append({key: item[key] for key in ('severity', 'code', 'count')})
+        require(len({(item['severity'], item['code']) for item in projected_codes}) == len(projected_codes),
+                'diagnostic_invalid')
+        result.update(command_step=step, process={key: process[key] for key in ('status', 'exit_code')},
+            diagnostics={'codes': projected_codes, 'nuke_failed_targets': list(targets),
+                         'unretained_code_occurrences': overflow})
+    require(set(value) == set(result), 'diagnostic_invalid')
+    return result
+
+
+def recipe_failure_diagnostics(output: Path, plan: dict, controller: dict, execution: dict) -> dict:
+    """Project the current failed Core producer only; diagnostics cannot replace its exception."""
+    try:
+        value, digest = read_diagnostic_receipt(output / 'private/producer/receipt.json')
+        context = execution.get('context', {})
+        require(type(value.get('schema')) is int and value['schema'] == 1 and value.get('success') is False and
+                value.get('published') is False and value.get('maintenance_refs_activated') is False and
+                value.get('selection') == plan['source'] | {'source_repository': maintenance.CORE_REPOSITORY} and
+                value.get('version') == plan['requested_version'] and
+                value.get('controller_commit') == controller['commit'] and
+                value.get('controller_tree') == controller['tree'] and
+                value.get('controller_sha256') == metadata.sha256(Path(maintenance.__file__).read_bytes()) and
+                all(key in value and value[key] == context.get(key) for key in ('run_id', 'run_attempt')),
+                'diagnostic_invalid')
+        stage, error = value['stage'], value['error']
+        require(type(stage) is str and stage in RECIPE_FAILURE_STAGES and type(error) is dict and
+                error.get('code') == stage + '-failed', 'diagnostic_invalid')
+        result = {'status': 'observed', 'stage': stage, 'reason': error['reason'], 'receipt_sha256': digest}
+        if stage == 'build-command':
+            step, commands = value['focus']['step'], value['commands']
+            require(type(step) is int and 1 <= step <= 256 and type(commands) is list and len(commands) == step and
+                    value['focus'] == {'step': step, 'directory': '.'} and
+                    all(type(command) is dict and command.get('success') is True for command in commands[:-1]) and
+                    type(commands[-1]) is dict and commands[-1].get('success') is False, 'diagnostic_invalid')
+            result.update(command_step=step, process=commands[-1]['process'], diagnostics=commands[-1]['diagnostics'])
+        return validate_recipe_failure(result)
+    except Exception:
+        return {'status': 'unavailable'}
+
+
+def public_recipe_failure(output: Path, output_existed: bool, stage: str) -> dict:
+    if output_existed or stage != 'original-product-recipe':
+        return {}
+    try:
+        receipt, _ = read_diagnostic_receipt(output / 'retained/receipt.json')
+        if type(receipt.get('schema')) is not int or receipt['schema'] != 1 or \
+                receipt.get('mode') != 'selected-product-artifact-control' or receipt.get('success') is not False or \
+                receipt.get('stage') != stage or receipt.get('failure_code') != stage + '-failed' or \
+                receipt.get('product') != 'core' or receipt.get('line') not in ('3.8', '3.9') or \
+                'product_recipe_failure' not in receipt:
+            return {}
+        return {'product_recipe_failure': validate_recipe_failure(receipt['product_recipe_failure'])}
+    except Exception:
+        return {'product_recipe_failure': {'status': 'unavailable'}}
 
 
 def failure_receipt_status(output: Path, output_existed: bool, *, mode: str, stages: frozenset[str]) -> tuple[bool, str]:
@@ -309,6 +418,7 @@ def execute(root: Path, data: bytes, digest: str, output: Path, *, setup_only: b
                'product': plan['product'], 'line': plan['line'], 'version': plan['requested_version'],
                'execution': execution, 'success': False, 'published': False,
                'version_allocated': False, 'tag_created': False, 'stage': 'source-setup'}
+    producer_completed = False
     try:
         source = private / 'admitted-source'
         metadata.checkout_source(root, plan['source'], source)
@@ -338,6 +448,7 @@ def execute(root: Path, data: bytes, digest: str, output: Path, *, setup_only: b
             require(len(rows) == 1, 'artifact_registered_recipe')
             producer = maintenance.prepare(root, rows[0], plan['requested_version'], private / 'producer')
         require(producer['success'] is True, 'artifact_producer_failed')
+        producer_completed = True
         receipt['product_tests'] = producer['tests']
         if plan['product'] == 'core':
             receipt['package_verification'] = producer['packages']
@@ -354,6 +465,8 @@ def execute(root: Path, data: bytes, digest: str, output: Path, *, setup_only: b
         return receipt
     except Exception:
         receipt['failure_code'] = receipt['stage'] + '-failed'
+        if plan['product'] == 'core' and receipt['stage'] == 'original-product-recipe' and not producer_completed:
+            receipt['product_recipe_failure'] = recipe_failure_diagnostics(output, plan, controller, execution)
         raise
     finally:
         (retained / 'receipt.json').write_text(json.dumps(receipt, indent=2, sort_keys=True) + '\n')
@@ -376,7 +489,7 @@ def main() -> int:
         receipt_created, stage = failure_receipt_status(args.output, output_existed,
             mode='selected-product-artifact-control', stages=PUBLIC_FAILURE_STAGES)
         print(json.dumps({'success': False, 'failure_code': code, 'failure_stage': stage,
-            'retained_receipt_created': receipt_created}))
+            'retained_receipt_created': receipt_created} | public_recipe_failure(args.output, output_existed, stage)))
         return 1
 
 

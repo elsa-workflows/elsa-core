@@ -412,5 +412,194 @@ class ArtifactCliDiagnosticsTests(unittest.TestCase):
                     'failure_stage': 'unclassified', 'retained_receipt_created': True})
 
 
+class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name).resolve()
+        self.controller = self.root / 'controller'
+        self.controller.mkdir()
+        self.output = self.root / 'proof'
+        self.identity = {'commit': 'a' * 40, 'tree': 'b' * 40}
+        self.execution = execution.local_execution({})
+        self.plan = {'product': 'core', 'line': '3.8', 'requested_version': '3.8.5',
+                     'controller': self.identity, 'npm': None,
+                     'source': {'product': 'core', 'line': '3.8', 'commit': 'c' * 40, 'tree': 'd' * 40},
+                     'inventory': {'release_recipe': {'solution': 'Elsa.sln', 'sha256': metadata.sha256(b'solution'),
+                         'workflow': 'packages.yml', 'workflow_sha256': metadata.sha256(b'workflow')}}}
+        self.inner = {'schema': 1, 'success': False, 'published': False, 'maintenance_refs_activated': False,
+                      'selection': self.plan['source'] | {'source_repository': artifacts.maintenance.CORE_REPOSITORY},
+                      'version': '3.8.5', 'controller_commit': self.identity['commit'],
+                      'controller_tree': self.identity['tree'],
+                      'controller_sha256': metadata.sha256(Path(artifacts.maintenance.__file__).read_bytes()),
+                      'run_id': None, 'run_attempt': None, 'stage': 'build-command',
+                      'error': {'code': 'build-command-failed', 'reason': 'unknown-check-failure'},
+                      'focus': {'step': 1, 'directory': '.'},
+                      'commands': [{'success': False, 'argv': ['/private/secret'], 'cwd': '/private/secret',
+                          'process': {'status': 'exited', 'exit_code': 7},
+                          'diagnostics': {'codes': [{'severity': 'error', 'code': 'NU1101', 'count': 2}],
+                              'nuke_failed_targets': ['Restore'], 'unretained_code_occurrences': 0}}]}
+        self.failure = RuntimeError('/private/secret original failure')
+
+    def invoke(self, mutate=None, *, direct=False, producer_complete=False):
+        def checkout(controller, binding, source):
+            source.mkdir()
+            (source / 'Elsa.sln').write_bytes(b'solution')
+            (source / 'packages.yml').write_bytes(b'workflow')
+
+        def fail(*args, **kwargs):
+            producer = self.output / 'private/producer'
+            producer.mkdir()
+            receipt = producer / 'receipt.json'
+            receipt.write_text(json.dumps(self.inner))
+            if mutate:
+                mutate(receipt)
+            if producer_complete:
+                return {'success': True, 'tests': {}, 'packages': []}
+            raise self.failure
+
+        plan_path = self.root / 'plan.json'
+        plan_path.write_text('{}')
+        stdout = io.StringIO()
+        with patch.object(artifacts, 'ROOT', self.controller), patch.object(artifacts, 'admit', return_value=self.plan), \
+                patch.object(artifacts, 'verify_controller', return_value=self.identity), \
+                patch.object(artifacts, 'selected_execution', return_value=self.execution), \
+                patch.object(artifacts.core, 'validate_plan'), patch.object(artifacts.core, 'verify_source'), \
+                patch.object(metadata, 'checkout_source', side_effect=checkout), \
+                patch.object(planner, 'npm_intent', return_value=None), patch.object(artifacts, 'preflight', return_value={}), \
+                patch.object(planner, 'build_helper'), patch.object(artifacts, 'refresh_remote'), \
+                patch.object(artifacts.maintenance, 'prepare', side_effect=fail), \
+                patch.object(artifacts, 'retain_selected', side_effect=self.failure), \
+                patch.object(sys, 'argv', ['proof', '--plan', str(plan_path), '--plan-sha256', 'e' * 64,
+                                         '--output', str(self.output)]), redirect_stdout(stdout):
+            if direct:
+                with self.assertRaises(RuntimeError) as caught:
+                    artifacts.execute(self.controller, b'{}', 'e' * 64, self.output)
+                self.assertIs(caught.exception, self.failure)
+            else:
+                self.assertEqual(artifacts.main(), 1)
+        return (json.loads(stdout.getvalue()) if not direct else None,
+                json.loads((self.output / 'retained/receipt.json').read_text()))
+
+    def test_nested_failed_native_receipt_reaches_cli_without_raw_fields_or_proof(self):
+        result, receipt = self.invoke()
+        self.assertEqual(result['failure_stage'], 'original-product-recipe')
+        self.assertEqual(result['failure_code'], 'artifact_control_failed')
+        summary = result['product_recipe_failure']
+        self.assertEqual(summary['stage'], 'build-command')
+        self.assertEqual(summary['reason'], 'unknown-check-failure')
+        self.assertEqual(summary['command_step'], 1)
+        self.assertEqual(summary['receipt_sha256'], metadata.sha256(
+            (self.output / 'private/producer/receipt.json').read_bytes()))
+        self.assertEqual(summary['process'], {'status': 'exited', 'exit_code': 7})
+        self.assertEqual(summary['diagnostics'], {'codes': [{'severity': 'error', 'code': 'NU1101', 'count': 2}],
+            'nuke_failed_targets': ['Restore'], 'unretained_code_occurrences': 0})
+        self.assertEqual(summary, receipt['product_recipe_failure'])
+        self.assertFalse(receipt['success'])
+        self.assertNotIn('artifact_proof', receipt)
+        self.assertNotIn('/private/secret', json.dumps(result))
+        self.assertNotIn('/private/secret', json.dumps(receipt))
+
+    def test_all_inner_verification_stages_report_only_closed_reason(self):
+        for stage in ('source-verification', 'toolchain', 'inventory', 'test-evidence',
+                      'symbol-inspector', 'sdk-metadata', 'package-verification'):
+            with self.subTest(stage=stage):
+                self.output = self.root / stage
+                self.inner.update(stage=stage, error={'code': stage + '-failed', 'reason': 'test-evidence-invalid'})
+                result, receipt = self.invoke()
+                summary = result['product_recipe_failure']
+                self.assertEqual(summary['stage'], stage)
+                self.assertEqual(summary['reason'], 'test-evidence-invalid')
+                self.assertEqual(set(summary), {'status', 'stage', 'reason', 'receipt_sha256'})
+                self.assertEqual(summary, receipt['product_recipe_failure'])
+                self.assertNotIn('/private/secret', json.dumps(result))
+
+    def test_identity_and_closed_field_mutations_are_unavailable(self):
+        mutations = [
+            {'schema': True}, {'success': True}, {'published': True}, {'maintenance_refs_activated': True},
+            {'selection': self.inner['selection'] | {'commit': 'f' * 40}},
+            {'selection': self.inner['selection'] | {'source_repository': 'private/secret'}},
+            {'selection': self.inner['selection'] | {'extra': '/private/secret'}},
+            {'version': '3.8.6'}, {'controller_commit': 'f' * 40}, {'controller_tree': 'f' * 40},
+            {'controller_sha256': 'f' * 64}, {'run_id': '42'}, {'run_attempt': '2'},
+            {'stage': '/private/secret'}, {'stage': []},
+            {'error': {'code': 'inventory-failed', 'reason': 'unknown-check-failure'}},
+            {'error': {'code': 'build-command-failed', 'reason': '/private/secret'}},
+            {'error': {'code': 'build-command-failed', 'reason': []}},
+            {'focus': {'step': True, 'directory': '.'}}, {'focus': {'step': 2, 'directory': '.'}},
+            {'focus': {'step': 1, 'directory': '/private/secret'}}, {'commands': []}]
+        command = deepcopy(self.inner['commands'][0])
+        for change in ({'success': True}, {'process': {'status': '/private/secret', 'exit_code': 1}},
+                       {'process': {'status': 'exited', 'exit_code': 0}},
+                       {'process': {'status': 'exited', 'exit_code': True}},
+                       {'process': {'status': 'exited', 'exit_code': 2 ** 31}},
+                       {'diagnostics': {'codes': [], 'nuke_failed_targets': ['/private/secret'],
+                                        'unretained_code_occurrences': 0}},
+                       {'diagnostics': {'codes': [{'severity': 'error', 'code': 'NU1101 /private/secret', 'count': 1}],
+                                        'nuke_failed_targets': [], 'unretained_code_occurrences': 0}},
+                       {'diagnostics': {'codes': [], 'nuke_failed_targets': [], 'unretained_code_occurrences': True}}):
+            mutations.append({'commands': [command | change]})
+        for index, mutation in enumerate(mutations):
+            with self.subTest(mutation=mutation):
+                self.output = self.root / f'mutation-{index}'
+                original = self.inner
+                self.inner = deepcopy(original) | mutation
+                result, receipt = self.invoke()
+                self.inner = original
+                self.assertEqual(result['product_recipe_failure'], {'status': 'unavailable'})
+                self.assertEqual(receipt['product_recipe_failure'], {'status': 'unavailable'})
+                self.assertNotIn('/private/secret', json.dumps(result))
+
+    def test_missing_symlink_malformed_and_oversized_diagnostics_preserve_original_exception(self):
+        def symlink(receipt):
+            target = self.root / 'foreign.json'
+            target.write_text(json.dumps(self.inner))
+            receipt.unlink()
+            receipt.symlink_to(target)
+        def parent_symlink(receipt):
+            target = receipt.parent.with_name('moved')
+            receipt.parent.rename(target)
+            receipt.parent.symlink_to(target, target_is_directory=True)
+        mutations = [lambda receipt: receipt.unlink(), symlink,
+                     parent_symlink, lambda receipt: receipt.write_bytes(b'[]'),
+                     lambda receipt: receipt.write_bytes(b'{"schema":1,"schema":1}'),
+                     lambda receipt: receipt.write_bytes(b'private secret not JSON'),
+                     lambda receipt: receipt.write_bytes(b'[' * 2000 + b']' * 2000),
+                     lambda receipt: receipt.write_bytes(b' ' * (artifacts.DIAGNOSTIC_LIMIT + 1))]
+        for index, mutation in enumerate(mutations):
+            with self.subTest(index=index):
+                self.output = self.root / f'file-{index}'
+                _, receipt = self.invoke(mutation, direct=True)
+                self.assertEqual(receipt['product_recipe_failure'], {'status': 'unavailable'})
+                self.assertEqual(receipt['failure_code'], 'original-product-recipe-failed')
+
+    def test_hosted_receipt_requires_matching_run_and_attempt(self):
+        self.execution = {'context': {'run_id': '123', 'run_attempt': '2'}}
+        self.inner.update(run_id='123', run_attempt='2')
+        result, _ = self.invoke()
+        self.assertEqual(result['product_recipe_failure']['status'], 'observed')
+        self.output = self.root / 'other-attempt'
+        self.inner['run_attempt'] = '1'
+        result, _ = self.invoke()
+        self.assertEqual(result['product_recipe_failure'], {'status': 'unavailable'})
+
+    def test_failure_after_successful_producer_has_no_nested_failure_summary(self):
+        self.inner['success'] = True
+        result, receipt = self.invoke(producer_complete=True)
+        self.assertEqual(result['failure_stage'], 'original-product-recipe')
+        self.assertNotIn('product_recipe_failure', result)
+        self.assertNotIn('product_recipe_failure', receipt)
+
+    def test_cli_revalidates_projection_and_ignores_preexisting_receipt(self):
+        _, receipt = self.invoke()
+        path = self.output / 'retained/receipt.json'
+        receipt['product_recipe_failure']['reason'] = '/private/secret'
+        path.write_text(json.dumps(receipt))
+        self.assertEqual(artifacts.public_recipe_failure(self.output, False, 'original-product-recipe'),
+                         {'product_recipe_failure': {'status': 'unavailable'}})
+        self.assertEqual(artifacts.public_recipe_failure(self.output, True, 'original-product-recipe'), {})
+        self.assertEqual(artifacts.public_recipe_failure(self.output, False, 'tool-preflight'), {})
+
+
 if __name__ == '__main__':
     unittest.main()
