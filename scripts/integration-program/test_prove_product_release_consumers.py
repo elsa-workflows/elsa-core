@@ -707,26 +707,26 @@ class SelectedProductConsumerTests(unittest.TestCase):
         # _protobuf helpers; Proto.Cluster.CodeGen also has flat helper props.
         values = self.original_flat_build_fixture(helper_members=(
             'build/_grpc/_Grpc.Tools.props', 'build/_protobuf/Google.Protobuf.Tools.targets',
-            'build/ProtoGrainGenerator.props'))
+            'build/ProtoGrainGenerator.props', 'Build/_grpc/Other.PROPS'))
         rows = self.verify_empty_build(values)
         markers = [item for row in rows for item in row['payloads'] if 'accounting' in item]
         self.assertEqual(len(markers), 3)
         self.assertEqual(markers[0]['path'], 'build/_._')
 
     def test_original_flat_build_helpers_keep_inventory_and_cache_byte_checks(self):
-        member = 'build/_grpc/_Grpc.Tools.props'
-        for change in ('original_inventory', 'current_inventory', 'cache_bytes', 'cache_symlink'):
-            values = self.original_flat_build_fixture(helper_members=(member,))
-            folder = values['cache'] / 'fastendpoints.swagger/8.2.0'
-            key = values['key']
-            if change == 'original_inventory': values['original_assets']['libraries'][key]['files'].remove(member)
-            elif change == 'current_inventory': values['assets']['libraries'][key]['files'].remove(member)
-            elif change == 'cache_bytes': (folder / member).write_bytes(b'changed helper')
-            else:
-                (folder / member).unlink()
-                (folder / member).symlink_to(folder / 'build/FastEndpoints.Swagger.targets')
-            with self.subTest(change=change), self.assertRaises(ValueError):
-                self.verify_empty_build(values)
+        for member in ('build/_grpc/_Grpc.Tools.props', 'build/_grpc/Other.PROPS', 'Build/_grpc/Other.TARGETS'):
+            for change in ('original_inventory', 'current_inventory', 'cache_bytes', 'cache_symlink'):
+                values = self.original_flat_build_fixture(helper_members=(member,))
+                folder = values['cache'] / 'fastendpoints.swagger/8.2.0'
+                key = values['key']
+                if change == 'original_inventory': values['original_assets']['libraries'][key]['files'].remove(member)
+                elif change == 'current_inventory': values['assets']['libraries'][key]['files'].remove(member)
+                elif change == 'cache_bytes': (folder / member).write_bytes(b'changed helper')
+                else:
+                    (folder / member).unlink()
+                    (folder / member).symlink_to(folder / 'build/FastEndpoints.Swagger.targets')
+                with self.subTest(member=member, change=change), self.assertRaises(ValueError):
+                    self.verify_empty_build(values)
 
     def test_original_flat_build_rejects_nonflat_package_named_entrypoint(self):
         values = self.original_flat_build_fixture(helper_members=(

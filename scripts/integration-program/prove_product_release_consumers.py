@@ -504,7 +504,8 @@ def original_excluded_build_marker(assets: dict, original: dict, framework: str,
         before.get('sha512') == current.get('sha512') == record['content_hash'] and
         metadata.sha256(Path(package.filename).read_bytes()) == record['archive_sha256'],
         'consumer_original_build_archive')
-    real = [name for name in names if name.startswith(kind + '/') and name.endswith(('.props', '.targets'))]
+    real = [name for name in names if name.casefold().startswith(kind.casefold() + '/') and
+            name.casefold().endswith(('.props', '.targets'))]
     require(real and not any(name.casefold().startswith('buildtransitive/') for name in names),
             'consumer_original_build_real_group')
     for entry in real:
