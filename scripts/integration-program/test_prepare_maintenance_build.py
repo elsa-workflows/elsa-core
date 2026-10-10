@@ -819,6 +819,20 @@ class MaintenanceContracts(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'not evaluated'):
                 maintenance.evaluate_inventory(source, self.row, '3.8.4-proof.42.1', self.root)
 
+    def test_manifest_failure_focus_clears_previous_package_framework_and_reason_is_closed(self):
+        artifacts = self.write_package_fixture()
+        policy = self.framework_reference_policy_fixture()
+        policy['framework_properties'] = {'net8.0': {'manifest_required': True, 'manifest_path': 'elsa-package.json'}}
+        with zipfile.ZipFile(artifacts / 'fixture.nupkg', 'a') as archive:
+            archive.writestr('elsa-package.json', json.dumps({'package': {'id': policy['id'], 'version': '1.0.0'}}))
+        context = {'package': 'Previous.Package', 'framework': 'net9.0'}
+        with patch.object(maintenance, 'verify_sdk_dependencies'), patch.object(maintenance, 'verify_sdk_assets'):
+            with self.assertRaisesRegex(ValueError, 'Generated package manifest identity/version mismatch') as failure:
+                maintenance.verify_artifacts(artifacts, [policy], self.row | {'product': 'extensions'},
+                    '3.8.4-proof.42.1', self.root, Path('unused-inspector'), self.root, context=context)
+        self.assertEqual({'package': policy['id']}, context)
+        self.assertEqual('package-manifest-identity-version-mismatch', maintenance.verification_reason(str(failure.exception)))
+
     def write_package_fixture(self, dependency='3.8.4', packed_version='3.8.4-proof.42.1', frameworks=(), groups=None,
                               references='', symbol_references=None):
         artifacts = self.root / 'artifacts'; artifacts.mkdir(exist_ok=True)
@@ -1172,6 +1186,8 @@ class MaintenanceContracts(unittest.TestCase):
                 ('Unexpected Elsa dependency: private-secret /private/runner-host', 'elsa-dependency-mismatch'),
                 ('Unexpected Elsa dependency suffix: private-secret', 'unknown-check-failure'),
                 ('Command failed: Unexpected Elsa dependency: private-secret', 'unknown-check-failure'),
+                ('Generated package manifest identity/version mismatch: private-package-id', 'package-manifest-identity-version-mismatch'),
+                ('Generated package manifest identity/version mismatch suffix: private-secret', 'unknown-check-failure'),
                 ('secret-password /private/runner-host-42', 'unknown-check-failure')]):
             output = self.root / f'proof-{index}'
             with patch.object(maintenance, 'verify_source', side_effect=ValueError(message)):

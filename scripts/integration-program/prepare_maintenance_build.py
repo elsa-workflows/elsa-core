@@ -314,7 +314,9 @@ def verify_maintenance_delta(root: Path, row: dict, parent: dict, register: dict
                         f'<PackageProjectUrl>https://github.com/{CORE_REPOSITORY}</PackageProjectUrl>'.encode()),
                     'Core candidate metadata mismatch')
         elif path == 'build/Build.cs':
-            from extensions_manifest_continuation import verify_delta
+            from extensions_manifest_continuation import CONTINUATIONS, verify_delta
+            require(row['product'] == 'extensions' and row['commit'] in
+                    {item['commit'] for item in CONTINUATIONS.values()}, 'Core candidate protected control mismatch')
             verify_delta(row, parent, change, git_bytes(root, parent['commit'], path),
                          git_bytes(root, row['commit'], path))
         elif path == 'src/wrappers/wrappers/react-wrapper/package.json':
@@ -422,13 +424,15 @@ VERIFICATION_REASONS = {
     'Core candidate metadata mismatch': 'candidate-metadata-invalid',
     'Core candidate source delta mismatch': 'candidate-source-delta-invalid',
     'Core assembly commit mismatch': 'assembly-commit-mismatch',
+    'Generated package manifest identity/version mismatch': 'package-manifest-identity-version-mismatch',
 }
 
 
 def verification_reason(message: str) -> str:
     if message in VERIFICATION_REASONS:
         return VERIFICATION_REASONS[message]
-    for key in ('Unexpected evaluated version', 'Unexpected Elsa dependency'):
+    for key in ('Unexpected evaluated version', 'Unexpected Elsa dependency',
+                'Generated package manifest identity/version mismatch'):
         if message.startswith(key + ':'):
             return VERIFICATION_REASONS[key]
     return 'unknown-check-failure'
@@ -809,6 +813,7 @@ def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version:
                 found.add(identifier.casefold())
                 policy = expected[identifier.casefold()]
                 if context is not None:
+                    context.pop('framework', None)
                     context.update(package=policy['id'])
                 require(nuspec.findtext('version') == version, 'Packed version mismatch')
                 repository = nuspec.find('repository')
