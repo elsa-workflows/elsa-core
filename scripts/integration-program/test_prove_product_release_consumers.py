@@ -259,7 +259,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'consumer_input_path'):
             proof.load_snapshots(self.plan, self.hash, folder)
 
-    def native_graph(self):
+    def native_graph(self, root_id='Example'):
         selected = {'example': {'id': 'Example', 'content_hash': self.graph['example']['content_hash'],
             'dependency_groups': [{'framework': 'net8.0', 'dependencies': [{'id': 'External', 'version': '[1.2.3, )'}]}]}}
         catalog = {('external', '1.2.3'): {'id': 'External', 'content_hash': self.graph['external']['content_hash'],
@@ -273,6 +273,12 @@ class SelectedProductConsumerTests(unittest.TestCase):
             locked[row['id']] = {'resolved': row['version'], 'contentHash': row['content_hash'],
                 'type': 'Direct' if folded == 'example' else 'Transitive', 'dependencies': deps}
         locked['Example']['requested'] = '[3.8.999, 3.8.999]'
+        if root_id != 'Example':
+            selected[root_id.casefold()] = selected.pop('example') | {'id': root_id}
+            key = 'Example/3.8.999'
+            targets[root_id + '/3.8.999'] = targets.pop(key)
+            libraries[root_id + '/3.8.999'] = libraries.pop(key)
+            locked[root_id] = locked.pop('Example')
         return selected, catalog, {'targets': {'net8.0': targets}, 'libraries': libraries}, {
             'version': 1, 'dependencies': {'net8.0': locked}}
 
@@ -424,6 +430,71 @@ class SelectedProductConsumerTests(unittest.TestCase):
                                                      catalog, '3.8.999', Semantics())
         self.assertEqual({'example', 'external'}, set(graph))
         self.assertEqual({'External': '[1.2.3, )'}, graph['example']['dependencies'])
+
+    def range_failure(self, phase='discovery', *, count_mismatch=False, root_id='Example'):
+        selected, catalog, assets, lock = self.native_graph(root_id)
+        semantics = Semantics()
+        original_call = semantics.call
+        def call(operation, **values):
+            result = original_call(operation, **values)
+            if operation == 'ranges' and len(values['values']) == 3:
+                if count_mismatch:
+                    return result[:1]
+                result[0]['satisfies'] = False
+            return result
+        semantics.call = call
+        error = ValueError('consumer_dependency_range_conflict')
+        original_require = proof.resolution.require
+        def require(condition, code):
+            if not condition and code == 'consumer_dependency_range_conflict':
+                raise error
+            original_require(condition, code)
+        with patch.object(proof.resolution, 'require', side_effect=require), self.assertRaises(ValueError) as caught:
+            proof.resolution.audit_native_graph(assets, lock, root_id, 'net8.0', selected,
+                catalog, '3.8.999', semantics, phase=phase)
+        self.assertIs(error, caught.exception)
+        self.assertIs(type(error), ValueError)
+        self.assertEqual(('consumer_dependency_range_conflict',), error.args)
+        return error
+
+    def test_native_range_failure_keeps_exception_identity_and_closed_edge_source(self):
+        detail = proof.resolution.public_range_failure(self.range_failure())['dependency_range_failure']
+        self.assertEqual(detail, {'root_id': 'Example', 'framework': 'net8.0', 'phase': 'discovery',
+            'reason': 'unsatisfied-range', 'requested_checks': 3, 'returned_checks': 3,
+            'unsatisfied_checks': 1, 'ranges': [{'from_id': 'Example', 'to_id': 'External',
+                'requested_range': '[1.2.3, )', 'resolved_version': '1.2.3', 'source_kind': 'selected-nuspec'}]})
+
+    def test_native_range_count_mismatch_exposes_no_unbound_edges(self):
+        detail = proof.resolution.public_range_failure(self.range_failure('locked-proof', count_mismatch=True))
+        self.assertEqual(detail, {'dependency_range_failure': {'root_id': 'Example', 'framework': 'net8.0',
+            'phase': 'locked-proof', 'reason': 'count-mismatch', 'requested_checks': 3, 'returned_checks': 1}})
+
+    def assert_cli_range_phase(self, phase):
+        error = self.range_failure(phase, root_id='Elsa.Studio.Core')
+        audit = proof.resolution.audit_native_graph
+        phases = []
+        def fail(*args, **kwargs):
+            phases.append(kwargs['phase'])
+            if kwargs['phase'] == phase:
+                raise error
+            return audit(*args, **kwargs)
+        with patch.object(proof.resolution, 'audit_native_graph', side_effect=fail):
+            receipt, data, _, _ = self.run_private_consumer(cli=True)
+        expected = proof.resolution.public_range_failure(error)['dependency_range_failure']
+        self.assertEqual(self.cli_diagnostic, {'success': False,
+            'failure_code': 'consumer_dependency_range_conflict', 'failure_stage': 'selected-restore-compile',
+            'retained_receipt_created': True, 'dependency_range_failure': expected})
+        self.assertEqual(['discovery'] if phase == 'discovery' else ['discovery', 'locked-proof'], phases)
+        self.assertEqual(expected, receipt['dependency_range_failure'])
+        self.assertFalse(receipt['success'])
+        self.assertEqual([], receipt['coverage'])
+        self.assertNotIn(str(self.root), data)
+
+    def test_cli_projects_native_range_failure_through_discovery(self):
+        self.assert_cli_range_phase('discovery')
+
+    def test_cli_projects_native_range_failure_through_locked_proof(self):
+        self.assert_cli_range_phase('locked-proof')
 
     def test_native_graph_rejects_unreviewed_versions_hashes_missing_edges_and_extra_directs(self):
         selected, catalog, original, original_lock = self.native_graph()
@@ -1356,6 +1427,56 @@ class ConsumerCliDiagnosticsTests(unittest.TestCase):
             with self.subTest(code=code), patch.object(proof, 'execute', side_effect=ValueError(code)):
                 self.assertEqual(self.invoke(), {'success': False, 'failure_code': code,
                     'failure_stage': 'unclassified', 'retained_receipt_created': False})
+
+    def bounded_range_error(self):
+        error = ValueError('consumer_dependency_range_conflict')
+        ranges = [{'range': '[9.0.0, 9.0.999]', 'version': '10.0.9'}] * 15
+        edges = [('Pomelo.EntityFrameworkCore.MySql', 'Microsoft.EntityFrameworkCore.Relational', False)] * 5
+        proof.resolution.attach_range_failure(error, 'Elsa.Agents.Persistence.EFCore.MySql', 'net10.0',
+            'discovery', edges, ranges, [{'satisfies': False}] * 15)
+        return error
+
+    def test_range_samples_are_bounded_and_never_include_private_exception_attributes(self):
+        error = self.bounded_range_error()
+        error.private = '/private/token'
+        with patch.object(proof, 'execute', side_effect=error):
+            result = self.invoke()
+        detail = result['dependency_range_failure']
+        self.assertEqual(15, detail['unsatisfied_checks'])
+        self.assertEqual(8, len(detail['ranges']))
+        self.assertEqual({'original-nuspec', 'assets', 'lock'}, {row['source_kind'] for row in detail['ranges']})
+        self.assertNotIn('/private/token', json.dumps(result))
+
+    def test_malformed_range_details_are_omitted_without_changing_original_failure(self):
+        valid = self.bounded_range_error().consumer_range_failure
+        changes = ({'root_id': '/private/token'}, {'root_id': 'x' * 101}, {'framework': 'net10.0 /private/token'},
+            {'phase': 'restore --secret'}, {'reason': 'private-token'}, {'requested_checks': True},
+            {'returned_checks': -1}, {'unsatisfied_checks': 16}, {'ranges': valid['ranges'] * 2},
+            {'private': '/private/token'}, {'ranges': None})
+        malformed = [None, [], 'private-token'] + [valid | change for change in changes]
+        for key, value in (('from_id', '/private/token'), ('to_id', 'x' * 101),
+                ('requested_range', '[9.0.0, /private/token]'), ('requested_range', '[9.0.0,\n10.0.0]'),
+                ('requested_range', 'x' * 257), ('resolved_version', '/private/token'),
+                ('source_kind', 'private-cache-path'), ('private', '/private/token')):
+            detail = deepcopy(valid)
+            detail['ranges'][0][key] = value
+            malformed.append(detail)
+        for detail in malformed:
+            error = ValueError('consumer_dependency_range_conflict')
+            error.consumer_range_failure = detail
+            with self.subTest(detail=detail), patch.object(proof, 'execute', side_effect=error):
+                self.assertEqual(self.invoke(), {'success': False, 'failure_code': 'consumer_dependency_range_conflict',
+                    'failure_stage': 'unclassified', 'retained_receipt_created': False})
+
+    def test_range_details_on_wrong_exception_types_or_codes_stay_private(self):
+        class SpecificError(ValueError):
+            pass
+        detail = self.bounded_range_error().consumer_range_failure
+        for error in (SpecificError('consumer_dependency_range_conflict'), RuntimeError('consumer_dependency_range_conflict'),
+                ValueError('consumer_input_hash')):
+            error.consumer_range_failure = detail
+            with self.subTest(error=error), patch.object(proof, 'execute', side_effect=error):
+                self.assertNotIn('dependency_range_failure', self.invoke())
 
     def test_arbitrary_exception_strings_and_valueerror_subclasses_stay_generic(self):
         class SpecificError(ValueError):
