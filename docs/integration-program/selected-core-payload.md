@@ -17,8 +17,9 @@ remain in `producer_receipt.packages.selected`; the common layer checks those
 bytes and inventories too.
 
 The separate `load_contracts()` reads only the fixed, tracked
-`selected_core_contract.json` and `selected_core_consumer_contract.json` beside the
-trusted controller module and returns `{producer, consumer}`. The specialization
+`selected_core_contract.json`, `selected_core_consumer_contract.json` and
+`core_source_continuation_contract.json` beside the trusted controller module and
+returns `{producer, consumer, continuation}`. The specialization
 receives those trusted values explicitly. Validation reads no files or environment,
 launches no processes, and makes no network requests. Artifact-directed paths are
 validated as relative names and never opened.

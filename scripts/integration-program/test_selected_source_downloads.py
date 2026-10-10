@@ -1,11 +1,13 @@
 from copy import deepcopy
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
 import xml.etree.ElementTree as ET
 
+import core_source_continuation as continuation
 import product_release_metadata as metadata
 import prove_product_release_consumers as proof
 import selected_consumer_sdk as sdk
@@ -40,7 +42,7 @@ class SourceDownloadTests(unittest.TestCase):
             'NETCoreSdkVersion': metadata.SDK}, 'Items': {'PackageDownload': [
                 {'Identity': 'Bpmn.Model', 'Version': '[0.2.0]'}]}} for framework in self.frameworks}
 
-    def bind(self, *, plan=None, assets=None, evaluated=None):
+    def bind(self, *, plan=None, assets=None, evaluated=None, check_evaluation=None):
         plan, assets = plan or self.plan, assets or self.assets
         evaluated = evaluated or self.evaluated
         temporary = tempfile.TemporaryDirectory(dir=self.root)
@@ -50,6 +52,7 @@ class SourceDownloadTests(unittest.TestCase):
             path = destination / self.project
             path.parent.mkdir(parents=True)
             path.write_bytes(self.project_bytes)
+            (destination / 'NuGet.Config').write_text('<configuration />')
         def evaluate(command, cwd, **kwargs):
             self.assertEqual('dotnet', command[0])
             self.assertIn('-getItem:PackageDownload', command)
@@ -58,6 +61,8 @@ class SourceDownloadTests(unittest.TestCase):
             self.assertEqual('disable', json.loads((cwd.parent / 'global.json').read_text())['sdk']['rollForward'])
             self.assertTrue(Path(kwargs['env']['HOME']).is_relative_to(output))
             self.assertNotIn('GITHUB_TOKEN', kwargs['env'])
+            if check_evaluation:
+                check_evaluation(command, cwd, kwargs['env'])
             framework = next(arg.split('=', 1)[1] for arg in command if arg.startswith('-p:TargetFramework='))
             return json.dumps(evaluated[framework])
         with patch.object(metadata, 'checkout_source', side_effect=checkout) as source, \
@@ -65,6 +70,53 @@ class SourceDownloadTests(unittest.TestCase):
                 patch.object(metadata, 'run', side_effect=evaluate) as native:
             result = sdk.bind_source_downloads(self.root, plan, {self.project: assets}, output, Semantics())
         return result, source.call_count, native.call_count
+
+    def test_admitted_source_version_policy_preserves_cold_isolation(self):
+        cells = json.loads(Path(__file__).with_name('selected_product_plan_shapes.json').read_bytes())['cells']
+        catalog = continuation.load_contract()
+        ambient = {key: 'untrusted-ambient' for key in ('VERSION', 'RestoreConfigFile', 'HOME', 'DOTNET_CLI_HOME',
+            'NUGET_PACKAGES', 'NUGET_HTTP_CACHE_PATH', 'NUGET_PLUGINS_CACHE_PATH', 'GITHUB_TOKEN', 'GH_TOKEN',
+            'NUGET_AUTH_TOKEN', 'NuGetPackageSourceCredentials_original', 'CI', 'GITHUB_ACTIONS',
+            'ELSA_USERTASKS_TEST_SQLSERVER', 'ELSA_USERTASKS_TEST_POSTGRES', 'ELSA_USERTASKS_TEST_ORACLE')}
+        extra_authority = {key: 'untrusted-recipe' for key in ambient.keys() - {'VERSION', 'RestoreConfigFile'}}
+        metadata_environment = metadata.metadata_environment
+        def recipe_environment(*args):
+            return metadata_environment(*args) | extra_authority
+        for line in ('3.8', '3.9'):
+            for product in ('core', 'studio', 'extensions'):
+                original = cells[product + '-' + line]['source']
+                bindings = [original]
+                if product == 'core':
+                    bindings.append(continuation.bind(line, original['observation'], catalog))
+                for binding in bindings:
+                    plan = deepcopy(self.plan)
+                    plan.update(source=binding, requested_version=line + '.999')
+                    def check(command, source, environment):
+                        version = plan['requested_version']
+                        for name in ('Version', 'PackageVersion'):
+                            self.assertEqual(product != 'core', f'-p:{name}={version}' in command)
+                        if product == 'core':
+                            self.assertFalse(any(arg.startswith(('-p:Version=', '-p:PackageVersion=')) for arg in command))
+                            self.assertEqual(version, environment['VERSION'])
+                            self.assertEqual(str(source / 'NuGet.Config'), environment['RestoreConfigFile'])
+                        else:
+                            self.assertNotIn('VERSION', environment)
+                            self.assertNotIn('RestoreConfigFile', environment)
+                        for name, directory in (('HOME', 'home'), ('DOTNET_CLI_HOME', 'home'),
+                                ('NUGET_PACKAGES', 'packages'), ('NUGET_HTTP_CACHE_PATH', 'http-cache'),
+                                ('NUGET_PLUGINS_CACHE_PATH', 'plugins-cache')):
+                            self.assertEqual(str(source.parent / directory), environment[name])
+                        for name in extra_authority.keys() - {'HOME', 'DOTNET_CLI_HOME', 'NUGET_PACKAGES',
+                                'NUGET_HTTP_CACHE_PATH', 'NUGET_PLUGINS_CACHE_PATH'}:
+                            self.assertNotIn(name, environment)
+                    with self.subTest(product=product, line=line, kind=binding['kind']), \
+                            patch.dict(os.environ, ambient), \
+                            patch.object(metadata, 'metadata_environment', side_effect=recipe_environment) as recipe:
+                        result, checkouts, evaluations = self.bind(plan=plan, check_evaluation=check)
+                        self.assertEqual((1, 3), (checkouts, evaluations))
+                        self.assertEqual(binding, result['source'])
+                        recipe.assert_called_once()
+                        self.assertEqual((binding, plan['requested_version']), recipe.call_args.args[1:])
 
     def test_source_downloads_bind_all_selected_tfms_and_never_enter_sdk_projection(self):
         binding, checkouts, evaluations = self.bind()
@@ -115,7 +167,8 @@ class SourceDownloadTests(unittest.TestCase):
     def test_sdk_only_snapshots_do_not_evaluate_source(self):
         assets = deepcopy(self.assets)
         for frame in assets['project']['frameworks'].values(): frame['downloadDependencies'].pop(0)
-        binding, checkouts, evaluations = self.bind(assets=assets)
+        with patch.object(metadata, 'metadata_environment', side_effect=AssertionError('SDK-only source evaluation')):
+            binding, checkouts, evaluations = self.bind(assets=assets)
         self.assertEqual({}, binding['projects'])
         self.assertEqual((0, 0), (checkouts, evaluations))
 

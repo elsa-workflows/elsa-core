@@ -73,6 +73,9 @@ def bind_source_downloads(root: Path, plan: dict, originals: dict, output: Path,
         DOTNET_CLI_TELEMETRY_OPTOUT='1', DOTNET_NOLOGO='1')
     source = output / 'source'
     metadata.checkout_source(root, plan['source'], source)
+    recipe = metadata.metadata_environment(source, plan['source'], plan['requested_version'])
+    # Import only source recipe values; cold isolation wins without provider credentials or CI authority.
+    environment = {key: value for key, value in recipe.items() if key in {'VERSION', 'RestoreConfigFile'}} | environment
     for project in affected:
         policy = selected[project]
         path = source / project
@@ -83,7 +86,7 @@ def bind_source_downloads(root: Path, plan: dict, originals: dict, output: Path,
         require(digest == policy['metadata']['original_content_project_sha256'], 'consumer_source_download_project_hash')
         frameworks, evaluation_hashes = {}, {}
         for framework in policy['frameworks']:
-            command = metadata.metadata_command(project, plan['requested_version']) + [f'-p:TargetFramework={framework}',
+            command = metadata.metadata_command(project, plan['requested_version'], plan['source']) + [f'-p:TargetFramework={framework}',
                 '-getProperty:PackageId,TargetFramework,NETCoreSdkVersion', '-getItem:PackageDownload']
             raw = metadata.run(command, source, env=environment, timeout=120)
             evaluated = planner.read_json(raw.encode())
