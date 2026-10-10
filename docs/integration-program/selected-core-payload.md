@@ -24,8 +24,17 @@ launches no processes, and makes no network requests. Artifact-directed paths ar
 validated as relative names and never opened.
 
 The Core checks cover both pinned original sources, the original release recipe
-and test census, absence of Core npm fields, and the preserved empty
-`private_recipe_only_outputs` partition. Every native package row is closed and
+and test census, absence of Core npm fields, and the preserved
+`private_recipe_only_outputs` metadata partition. Recipe-only rows are allowed
+only for IDs declared in the exact plan's exclusion inventory and the requested
+version. Closed safe filename/member inventories retain hashes and sizes, while
+excluding archive/member bytes, raw private paths, logs and cache fields. Their
+IDs and files are disjoint from selected archives; paired excluded nupkg/snupkg
+metadata may share an ID. Empty output is valid but is not an invariant inferred
+for either original Core recipe. This metadata is preserved without rewriting it;
+its private archive bytes are not independently available for rehashing. The
+shared layer forbids those excluded bytes in the public staged file set.
+Every native package row is closed and
 joins to the selected archive records, emitted DLLs, satellites, paired PDB
 inventory, manifest bytes and SDK build/manifest assets. Assembly versions come
 from native producer rows rather than being synthesized from the NuGet version.

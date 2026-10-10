@@ -14,7 +14,7 @@ from uuid import UUID
 
 import prove_consolidated_packages as archives
 from prove_consolidated_packages import require
-from selected_control_transport import closed, digest, integer, safe_name, unique_names, strict_json
+from selected_control_transport import MAX_PACKAGE_BYTES, closed, digest, integer, safe_name, unique_names, strict_json
 
 FRAMEWORKS = ('net8.0', 'net9.0', 'net10.0')
 SAMPLE_PROJECT = 'src/apps/Elsa.SamplePackage/Elsa.SamplePackage.csproj'
@@ -278,8 +278,37 @@ def _manifest(native: dict, policy: dict, members: dict, version: str) -> None:
     require(set(paths) == actual, 'core_payload_sdk_inventory')
 
 
+def _excluded_outputs(plan: dict, producer: dict, selected: dict) -> None:
+    """Admit recipe-only metadata without admitting or reading excluded bytes."""
+    allowed = {row['id'].casefold() for row in plan['inventory']['excluded'] if row['id']}
+    records = _rows(producer['packages']['private_recipe_only_outputs'], 'core_payload_private_outputs')
+    selected_files = {record['file'].casefold() for record in producer['packages']['selected']}
+    files = []
+    for record in records:
+        closed(record, {'file', 'id', 'version', 'sha256', 'size', 'inventory'}, 'core_payload_excluded_output')
+        name, identifier = safe_name(record['file']), _text(record['id'])
+        require('/' not in name and name.endswith(('.nupkg', '.snupkg')) and
+                identifier.casefold() in allowed and identifier.casefold() not in selected and
+                name.casefold() not in selected_files and record['version'] == plan['requested_version'],
+                'core_payload_excluded_identity')
+        files.append(name)
+        digest(record['sha256'])
+        integer(record['size'], MAX_PACKAGE_BYTES, positive=True)
+        inventory = _rows(record['inventory'], 'core_payload_excluded_inventory')
+        require(bool(inventory), 'core_payload_excluded_inventory')
+        paths = []
+        for member in inventory:
+            closed(member, {'path', 'size', 'sha256'}, 'core_payload_excluded_member')
+            paths.append(safe_name(member['path']))
+            integer(member['size'], MAX_PACKAGE_BYTES)
+            digest(member['sha256'])
+        unique_names(paths)
+        integer(sum(member['size'] for member in inventory), MAX_PACKAGE_BYTES)
+    unique_names(files)
+
+
 def _native(plan: dict, producer: dict, selected: dict) -> dict:
-    require(producer['packages']['private_recipe_only_outputs'] == [], 'core_payload_private_outputs')
+    _excluded_outputs(plan, producer, selected)
     rows = _rows(producer['package_verification'], 'core_payload_native_rows')
     require(len(rows) == len(selected), 'core_payload_native_inventory')
     native_by_id = {}
@@ -295,7 +324,7 @@ def _native(plan: dict, producer: dict, selected: dict) -> dict:
         files = _rows(native['files'], 'core_payload_native_files')
         for file in files:
             closed(file, {'name', 'sha256', 'size'}, 'core_payload_native_file')
-            safe_name(file['name']); digest(file['sha256']); integer(file['size'], 512 * 1024**2, positive=True)
+            safe_name(file['name']); digest(file['sha256']); integer(file['size'], MAX_PACKAGE_BYTES, positive=True)
         expected = [{'name': r['file'], 'sha256': r['sha256'], 'size': r['size']} for r in records if r['id'] == native['id']]
         require(sorted(files, key=lambda r: r['name']) == sorted(expected, key=lambda r: r['name']), 'core_payload_native_files')
         paired = [r for r in records if r['id'] == native['id'] and r['file'].endswith('.snupkg')]

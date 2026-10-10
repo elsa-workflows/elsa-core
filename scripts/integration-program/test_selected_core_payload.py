@@ -28,7 +28,9 @@ def fixture(line='3.8', *, conditional_skips=True):
               'commit': contract['commit'], 'tree': contract['tree']}
     plan = {'product': 'core', 'line': line, 'source': source, 'npm': None, 'requested_version': line + '.999',
             'inventory': {'release_recipe': {'solution': 'Elsa.sln', 'workflow': '.github/workflows/packages.yml'},
-                'projects': [{'path': p, 'is_test_project': True} for p in contract['test_projects']], 'selected': []}}
+                'projects': [{'path': p, 'is_test_project': True} for p in contract['test_projects']], 'selected': [],
+                'excluded': [{'id': 'Elsa.ModularServer.Web', 'project': 'src/apps/Elsa.ModularServer.Web/Elsa.ModularServer.Web.csproj',
+                              'reason': 'source_nonpackable'}]}}
     producer = {'packages': {'selected': [], 'private_recipe_only_outputs': []}, 'package_verification': [],
                 'product_tests': {'executions': [], 'inherited_skipped_placeholders': []}}
     skipped = {}
@@ -132,6 +134,60 @@ class CorePayloadTests(unittest.TestCase):
             lambda p, r, c, *_: c.update(npm=None)]
         for mutate in mutations:
             with self.subTest(mutation=mutate): self.rejected(mutate)
+
+    def test_plan_bound_excluded_output_metadata_is_preserved_without_archive_bytes(self):
+        for line in ('3.8', '3.9'):
+            values = fixture(line); plan, producer, _, selected, _ = values
+            identifier, version = plan['inventory']['excluded'][0]['id'], plan['requested_version']
+            members = {identifier + '.nuspec': b'<package />', 'lib/net10.0/' + identifier + '.dll': b'recipe-only'}
+            record, _ = archive_record(identifier, version, 'nupkg', members)
+            symbols, _ = archive_record(identifier, version, 'snupkg', {identifier + '.pdb': b'private-pdb'})
+            producer['packages']['private_recipe_only_outputs'] = [record, symbols]
+            before = deepcopy(values)
+            with self.subTest(line=line): self.validate(values)
+            self.assertEqual(before, values)
+            self.assertNotIn(identifier.casefold(), selected)
+            self.assertNotIn('data', record)
+            self.assertNotIn('members', record)
+            # The writer records actual safe filenames; it does not require an
+            # excluded output to have the selected id.version naming convention.
+            record['file'] = 'recipe-only.nupkg'
+            self.validate(values)
+
+    def test_excluded_metadata_rejects_unknown_identity_private_paths_and_bytes(self):
+        values = fixture(); plan, producer, _, _, _ = values
+        record, _ = archive_record(plan['inventory']['excluded'][0]['id'], plan['requested_version'], 'nupkg',
+                                   {'output.nuspec': b'<package />'})
+        producer['packages']['private_recipe_only_outputs'] = [record]
+        mutations = [lambda r: r.update(id='Unknown.Package'), lambda r: r.update(id='Elsa'),
+            lambda r: r.update(version='3.8.1'), lambda r: r.update(file='/tmp/output.nupkg'),
+            lambda r: r.update(file='../output.nupkg'), lambda r: r.update(file='output.log'),
+            lambda r: r.update(file='Elsa.3.8.999.nupkg'),
+            lambda r: r.update(data=b'excluded archive bytes'), lambda r: r.update(log='/tmp/private.log'),
+            lambda r: r.update(cache_path='/tmp/cache'), lambda r: r.update(sha256='bad'),
+            lambda r: r.update(size=True), lambda r: r.update(size=0),
+            lambda r: r.update(size=core.MAX_PACKAGE_BYTES + 1), lambda r: r.update(inventory=[]),
+            lambda r: r['inventory'][0].update(path='/tmp/private.dll'),
+            lambda r: r['inventory'][0].update(path='../private.dll'),
+            lambda r: r['inventory'][0].update(data=b'excluded member bytes'),
+            lambda r: r['inventory'][0].update(size=-1),
+            lambda r: r['inventory'][0].update(sha256='bad'),
+            lambda r: r['inventory'].append(deepcopy(r['inventory'][0]))]
+        for mutate in mutations:
+            changed = deepcopy(values); mutate(changed[1]['packages']['private_recipe_only_outputs'][0])
+            with self.subTest(mutation=mutate), self.assertRaises(ValueError): self.validate(changed)
+        duplicate = deepcopy(values)
+        duplicate[1]['packages']['private_recipe_only_outputs'].append(deepcopy(record))
+        with self.assertRaises(ValueError): self.validate(duplicate)
+        oversized = deepcopy(values)
+        oversized[1]['packages']['private_recipe_only_outputs'][0]['inventory'] = [
+            {'path': name, 'sha256': 'a'*64, 'size': core.MAX_PACKAGE_BYTES // 2 + 1}
+            for name in ('a.nuspec', 'b.dll')]
+        with self.assertRaises(ValueError): self.validate(oversized)
+        leaked = deepcopy(values)
+        leaked[3][record['id'].casefold()] = {'record': record, 'members': {'output.nuspec': b'<package />'},
+                                           'policy': {'id': record['id']}, 'data': b'excluded archive bytes'}
+        with self.assertRaises(ValueError): self.validate(leaked)
 
     def test_closed_nested_native_and_symbol_schema(self):
         mutations = [lambda n: n.update(private_path='/tmp/secret'), lambda n: n['files'][0].update(argv=[]),
