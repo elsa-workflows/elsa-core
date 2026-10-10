@@ -759,7 +759,7 @@ def verify_restored_manifest_hint(source: Path, policy: dict, framework: str,
     candidates = []
     for folder in assets.get('packageFolders', {}):
         root = Path(folder)
-        require(root.is_absolute() and root.as_posix() == folder and '..' not in root.parts,
+        require(root.is_absolute() and folder in (root.as_posix(), root.as_posix() + '/') and '..' not in root.parts,
                 'Non-canonical external cache root')
         candidate = root / relative / f'{identifier.lower()}.{version}.nupkg'
         require(not any(path.is_symlink() for path in (candidate, *candidate.parents)),

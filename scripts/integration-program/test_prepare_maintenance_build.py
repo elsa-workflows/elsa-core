@@ -422,7 +422,7 @@ class MaintenanceContracts(unittest.TestCase):
         self.assertNotIn('/private-secret', json.dumps(receipt))
 
     def restored_hint_fixture(self, version='0.0.1-preview.50', framework='net10.0', row=None,
-                              entry_name='ManifestExtensionAttribute.cs'):
+                              entry_name='ManifestExtensionAttribute.cs', trailing_separator=True):
         root = self.root.resolve() / f'hints-{len(list(self.root.iterdir()))}'
         root.mkdir()
         identifier = 'elsa.platform.packagemanifest.generator'
@@ -440,7 +440,7 @@ class MaintenanceContracts(unittest.TestCase):
         assets = {'libraries': {f'Elsa.Platform.PackageManifest.Generator/{version}': {
             'type': 'package', 'path': f'{identifier}/{version}',
             'sha512': base64.b64encode(hashlib.sha512(archive.read_bytes()).digest()).decode()}},
-            'packageFolders': {folder.as_posix(): {}}}
+            'packageFolders': {folder.as_posix() + ('/' if trailing_separator else ''): {}}}
         source = root / 'source'
         source.mkdir()
         assets_file = source / 'project.assets.json'
@@ -463,6 +463,20 @@ class MaintenanceContracts(unittest.TestCase):
             {'product': 'core', 'line': line, 'kind': 'observed-core-release-branch',
              'commit': original['commit'], 'tree': original['tree']},
             continuation.bind(line, shapes['core-' + line]['source']['observation'], continuation.load_contract()))]
+
+    def test_restored_manifest_hint_accepts_canonical_cache_roots_with_optional_trailing_separator(self):
+        for version, row in (('0.0.1-preview.50', None), ('0.0.1-preview.53', self.core_hint_sources()[1])):
+            for framework in ('net8.0', 'net9.0', 'net10.0'):
+                for trailing_separator in (False, True):
+                    with self.subTest(version=version, framework=framework, trailing_separator=trailing_separator):
+                        root, row, policy, document, archive, _ = self.restored_hint_fixture(
+                            version, framework, row, trailing_separator=trailing_separator)
+                        with patch.dict(consolidated.GENERATOR_SOURCE_PINS, {version: maintenance.digest(archive.read_bytes())}):
+                            actual = maintenance.verify_non_git_document(document, None, root, row, policy, framework, {})
+                            mapped = document | {'path': '/_1/elsa.platform.packagemanifest.generator/' + version + '/' +
+                                                 actual['producer']['archive_entry']}
+                            self.assertEqual(maintenance.verify_non_git_document(mapped, None, root, row, policy, framework, {}), actual)
+                            self.assertEqual(actual['family'], 'manifest-hints')
 
     def test_original_core_preview53_hints_are_restore_and_compile_bound_for_all_frameworks(self):
         version = '0.0.1-preview.53'
@@ -525,6 +539,8 @@ class MaintenanceContracts(unittest.TestCase):
             for mutation in ('foreign-root', 'version', 'member', 'traversal', 'normalization', 'membership',
                              'bytes', 'archive', 'restore-hash', 'assets-bytes', 'embedded', 'missing-embedded', 'checksum',
                              'file-symlink', 'parent-symlink', 'archive-symlink', 'root-symlink', 'ambiguous',
+                             'root-relative', 'root-dot', 'root-traversal', 'root-repeated-separator',
+                             'root-repeated-trailing-separator', 'ambiguous-root-alias',
                              'library-path', 'framework', 'source', 'product', 'missing-archive',
                              'missing-restored-library', 'official-pin'):
                 with self.subTest(version=version, mutation=mutation):
@@ -570,6 +586,18 @@ class MaintenanceContracts(unittest.TestCase):
             target = second / archive.relative_to(Path(next(iter(assets['packageFolders']))))
             target.parent.mkdir(parents=True); target.write_bytes(archive.read_bytes())
             assets['packageFolders'][str(second)] = {}
+        elif mutation.startswith('root-') or mutation == 'ambiguous-root-alias':
+            folder = next(iter(assets['packageFolders']))
+            canonical = Path(folder).as_posix()
+            if mutation == 'ambiguous-root-alias':
+                assets['packageFolders'][canonical] = {}
+            else:
+                malformed = {'root-relative': canonical.lstrip('/'),
+                             'root-dot': canonical + '/./',
+                             'root-traversal': canonical + '/../producer-cache/',
+                             'root-repeated-separator': canonical.replace('/producer-cache', '//producer-cache'),
+                             'root-repeated-trailing-separator': canonical + '//'}[mutation]
+                assets['packageFolders'] = {malformed: {}}
         elif mutation == 'missing-restored-library':
             assets['libraries'].clear()
         elif mutation == 'official-pin':
@@ -584,7 +612,9 @@ class MaintenanceContracts(unittest.TestCase):
             row = dict(row, product='studio')
         else:
             archive.unlink()
-        if mutation in ('restore-hash', 'ambiguous', 'library-path', 'missing-restored-library'):
+        if mutation in ('restore-hash', 'ambiguous', 'library-path', 'missing-restored-library',
+                        'root-relative', 'root-dot', 'root-traversal', 'root-repeated-separator',
+                        'root-repeated-trailing-separator', 'ambiguous-root-alias'):
             path = root / 'project.assets.json'
             path.write_text(json.dumps(assets))
             policy['restore_assets'][0]['sha256'] = maintenance.digest(path.read_bytes())
