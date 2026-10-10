@@ -31,6 +31,26 @@ PLANNER_INPUTS = {
     'scripts/integration-program/ProductReleaseSemantics/ProductReleaseSemantics.csproj',
 }
 
+# Public diagnostics are a fixed vocabulary, never a projection of raw errors.
+PUBLIC_FAILURE_CODES = frozenset((
+    'plan_hash plan_ineligible plan_selection plan_version plan_source_identity plan_controller_inputs '
+    'plan_project_path plan_npm_identity plan_artifact_partition plan_history_inventory plan_prerequisite_ineligible '
+    'plan_feed_inventory plan_feed_ineligible plan_observation_inventory plan_observation_unavailable '
+    'plan_observation_stale plan_observation_identity plan_prerequisite_scope plan_internal_dependencies '
+    'plan_metadata_unavailable plan_malformed artifact_output_location artifact_controller_dirty '
+    'planner_controller_identity planner_controller_input_identity artifact_source_identity '
+    'artifact_execution_kind artifact_execution_identity artifact_execution_time artifact_hosted_context '
+    'artifact_hosted_controller artifact_hosted_workflow artifact_hosted_run artifact_hosted_time '
+    'artifact_hosted_role_controller artifact_hosted_plan artifact_hosted_binding artifact_hosted_planner_controller '
+    'artifact_hosted_planner_execution artifact_control_not_implemented maintenance39_product maintenance39_source '
+    'maintenance39_recipe maintenance39_test_inventory maintenance39_canonical_exclusion maintenance39_npm_scope '
+    'maintenance39_blob maintenance39_runtime_fixture artifact_recipe_identity artifact_npm_intent '
+    'artifact_extensions_recipe_configuration artifact_node_version artifact_npm_version artifact_sdk_unavailable '
+    'artifact_sdk_selection artifact_host_recipe_identity artifact_host_recipe_framework artifact_host_unsupported_framework '
+    'artifact_feed_policy_changed artifact_fresh_prerequisite_failed artifact_prerequisite_metadata_changed '
+    'artifact_registered_recipe artifact_producer_failed'
+).split())
+
 
 def fresh_public(observation: dict, checked_at: str) -> None:
     require(observation.get('status') in ('observed', 'missing'), 'plan_observation_unavailable')
@@ -313,11 +333,21 @@ def main() -> int:
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--setup-only', action='store_true')
     args = parser.parse_args()
+    output_existed = True
     try:
+        output_existed = args.output.exists() or args.output.is_symlink()
         execute(ROOT, args.plan.read_bytes(), args.plan_sha256, args.output, setup_only=args.setup_only)
         return 0
-    except Exception:
-        print('Selected artifact control failed; retained receipt records the stage, raw diagnostics remain private.')
+    except Exception as error:
+        code = str(error) if type(error) is ValueError and str(error) in PUBLIC_FAILURE_CODES else 'artifact_control_failed'
+        receipt_created = False
+        if not output_existed:
+            receipt = args.output / 'retained/receipt.json'
+            try:
+                receipt_created = receipt.is_file() and not any(part.is_symlink() for part in (receipt, *receipt.parents))
+            except OSError:
+                pass
+        print(json.dumps({'success': False, 'failure_code': code, 'retained_receipt_created': receipt_created}))
         return 1
 
 

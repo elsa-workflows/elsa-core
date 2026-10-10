@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from contextlib import redirect_stdout
 from datetime import datetime, timedelta, timezone
 import fnmatch
+import io
 import json
 from pathlib import Path
 import sys
@@ -315,6 +317,65 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
             self.assertEqual(original['files'], staged['files'])
             self.assertEqual(original['scripts'], staged['scripts'])
             self.assertEqual('3.8.99', staged['dependencies'][planner.NPM_IDS[0]])
+
+
+class ArtifactCliDiagnosticsTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name).resolve()
+        self.plan = self.root / 'plan.json'
+        self.plan.write_bytes(b'{"schema":1}')
+        self.output = self.root / 'output'
+
+    def invoke(self, *, digest=None):
+        argv = ['proof', '--plan', str(self.plan), '--plan-sha256',
+            digest or metadata.sha256(self.plan.read_bytes()), '--output', str(self.output)]
+        stdout = io.StringIO()
+        with patch.object(sys, 'argv', argv), redirect_stdout(stdout):
+            status = artifacts.main()
+        self.assertEqual(status, 1)
+        return json.loads(stdout.getvalue())
+
+    def test_genuine_early_hash_failure_reports_closed_code_without_receipt(self):
+        result = self.invoke(digest='f' * 64)
+        self.assertEqual(result, {'success': False, 'failure_code': 'plan_hash', 'retained_receipt_created': False})
+        self.assertFalse(self.output.exists())
+
+    def test_unexpected_arbitrary_error_and_malformed_json_remain_generic(self):
+        self.plan.write_bytes(b'not-json')
+        result = self.invoke()
+        self.assertEqual(result, {'success': False, 'failure_code': 'artifact_control_failed', 'retained_receipt_created': False})
+        self.assertFalse(self.output.exists())
+        for error in (ValueError('artifact_hosted_context /private/secret/token'),
+                      RuntimeError('artifact_hosted_context'), OSError('/private/secret/token')):
+            with self.subTest(error=error), patch.object(artifacts, 'execute', side_effect=error):
+                self.assertEqual(self.invoke(), result)
+
+    def test_existing_receipt_is_not_reported_created_by_failed_attempt(self):
+        retained = self.output / 'retained'; retained.mkdir(parents=True)
+        receipt = retained / 'receipt.json'; receipt.write_bytes(b'previous private receipt')
+        result = self.invoke(digest='f' * 64)
+        self.assertFalse(result['retained_receipt_created'])
+        self.assertEqual(receipt.read_bytes(), b'previous private receipt')
+
+    def test_new_regular_receipt_is_reported_without_reading_its_private_fields(self):
+        def fail(*args, **kwargs):
+            retained = self.output / 'retained'; retained.mkdir(parents=True)
+            (retained / 'receipt.json').write_bytes(b'private secret raw diagnostics, not JSON')
+            raise ValueError('artifact_hosted_context')
+        with patch.object(artifacts, 'execute', side_effect=fail):
+            self.assertEqual(self.invoke(), {'success': False, 'failure_code': 'artifact_hosted_context',
+                'retained_receipt_created': True})
+
+    def test_symlink_receipt_never_counts_as_created(self):
+        target = self.root / 'foreign'; target.write_bytes(b'secret')
+        def fail(*args, **kwargs):
+            retained = self.output / 'retained'; retained.mkdir(parents=True)
+            (retained / 'receipt.json').symlink_to(target)
+            raise ValueError('artifact_hosted_context')
+        with patch.object(artifacts, 'execute', side_effect=fail):
+            self.assertFalse(self.invoke()['retained_receipt_created'])
 
 
 if __name__ == '__main__':
