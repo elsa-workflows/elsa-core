@@ -35,7 +35,7 @@ Each review run covers one **area × focus** cell, plus everything merged since 
 
 The focuses are: `api` (public types, signatures, entry points, developer experience), `language` (domain terms against `CONTEXT.md`), `simplify` (dead code, needless abstractions, duplication), `architecture` (boundaries, dependencies, directory and solution structure), `tests` (redundancy, filler, gaps), `docs`, `ci` (workflows and build) and `product` (a new user's path, core versus niche features).
 
-The cell for ISO week `w` is focus `w % 8` and area `w % 11`, using the orders listed above. Because 8 and 11 have no common factor, every cell is visited once every 88 weeks.
+The cell for a run is focus `w % 8` and area `w % 11`, using the orders listed above. Here `w` is a continuous week number, `$(( $(date +%s) / 604800 ))` (weeks since the Unix epoch), not the ISO week, which resets every year. Because 8 and 11 have no common factor, every cell is visited once every 88 weeks.
 
 ## Throttle
 
