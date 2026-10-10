@@ -16,8 +16,8 @@ env:
   DOTNET_NOLOGO: '1'
 
 jobs:
-  control:
-    name: control
+  control_core_3_8:
+    name: control-core-3.8
     if: github.repository == 'elsa-workflows/elsa-core' && github.repository_id == '151148482'
     permissions:
       contents: read
@@ -25,102 +25,155 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     outputs:
-      artifact-id: ${{ steps.upload.outputs.artifact-id }}
-      archive-digest: ${{ steps.upload.outputs.artifact-digest }}
-      expected: ${{ steps.seal.outputs.expected }}
-      expected-sha256: ${{ steps.seal.outputs.expected-sha256 }}
+      artifact-id: ${{ steps.cell.outputs.artifact-id }}
+      archive-digest: ${{ steps.cell.outputs.archive-digest }}
+      expected: ${{ steps.cell.outputs.expected }}
+      expected-sha256: ${{ steps.cell.outputs.expected-sha256 }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+      - id: cell
+        uses: ./.github/actions/selected-product-control
         with:
-          dotnet-version: |
-            8.0.x
-            9.0.x
-            10.0.300
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+          product: core
+          line: '3.8'
+          version: '3.8.5'
+
+  control_core_3_9:
+    name: control-core-3.9
+    if: github.repository == 'elsa-workflows/elsa-core' && github.repository_id == '151148482'
+    permissions:
+      contents: read
+      actions: none
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    outputs:
+      artifact-id: ${{ steps.cell.outputs.artifact-id }}
+      archive-digest: ${{ steps.cell.outputs.archive-digest }}
+      expected: ${{ steps.cell.outputs.expected }}
+      expected-sha256: ${{ steps.cell.outputs.expected-sha256 }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
-          node-version: '22'
-      - name: Fresh Studio 3.8 plan and private original assets
-        env:
-          NUGET_PACKAGES: ${{ runner.temp }}/selected-planning-cache
-          EXPECTED_HEAD: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
-          test -z "$(git status --porcelain)"
-          python3 -B scripts/integration-program/plan_product_release.py \
-            --product studio --line 3.8 --version 3.8.5 --output "$RUNNER_TEMP/selected-plan"
-          plan_sha=$(sha256sum "$RUNNER_TEMP/selected-plan/plan.json" | cut -d ' ' -f 1)
-          python3 -B scripts/integration-program/snapshot_product_planning_assets.py \
-            --plan "$RUNNER_TEMP/selected-plan/plan.json" --plan-sha256 "$plan_sha" \
-            --output "$RUNNER_TEMP/selected-planning-assets-private"
-      - name: Cheap exact source commit availability preflight
-        run: |
-          python3 -B - <<'PY_SOURCE'
-          import hashlib, json, os, sys, urllib.request
-          from pathlib import Path
-          try:
-              plan = json.loads((Path(os.environ['RUNNER_TEMP']) / 'selected-plan/plan.json').read_bytes())
-              manifest = plan['npm']['manifests'][0]
-              url = 'https://raw.githubusercontent.com/elsa-workflows/elsa-core/' + plan['source']['commit'] + '/' + manifest['path']
-              with urllib.request.urlopen(url, timeout=60) as response:
-                  data = response.read(1024 * 1024 + 1)
-                  if response.status != 200 or len(data) > 1024 * 1024 or hashlib.sha256(data).hexdigest() != manifest['sha256']:
-                      raise ValueError('source availability/checksum')
-          except Exception:
-              print('Exact selected source commit unavailable; no product recipe started.', file=sys.stderr)
-              sys.exit(1)
-          PY_SOURCE
-      - name: Original producer and cold selected consumers
-        env:
-          NUGET_PACKAGES: ${{ runner.temp }}/selected-producer-cache
-        run: |
-          set -euo pipefail
-          plan_sha=$(sha256sum "$RUNNER_TEMP/selected-plan/plan.json" | cut -d ' ' -f 1)
-          python3 -B scripts/integration-program/prove_product_release_artifacts.py \
-            --plan "$RUNNER_TEMP/selected-plan/plan.json" --plan-sha256 "$plan_sha" \
-            --output "$RUNNER_TEMP/selected-producer"
-          producer_sha=$(sha256sum "$RUNNER_TEMP/selected-producer/retained/receipt.json" | cut -d ' ' -f 1)
-          python3 -B scripts/integration-program/prove_product_release_consumers.py \
-            --plan "$RUNNER_TEMP/selected-plan/plan.json" --plan-sha256 "$plan_sha" \
-            --artifact-receipt "$RUNNER_TEMP/selected-producer/retained/receipt.json" \
-            --artifact-receipt-sha256 "$producer_sha" --artifacts "$RUNNER_TEMP/selected-producer/retained/nuget" \
-            --planning-assets "$RUNNER_TEMP/selected-planning-assets-private" --output "$RUNNER_TEMP/selected-consumer"
-      - name: Validate and seal the complete allowlisted control
-        id: seal
-        run: |
-          set -euo pipefail
-          plan_sha=$(sha256sum "$RUNNER_TEMP/selected-plan/plan.json" | cut -d ' ' -f 1)
-          producer_sha=$(sha256sum "$RUNNER_TEMP/selected-producer/retained/receipt.json" | cut -d ' ' -f 1)
-          consumer_sha=$(sha256sum "$RUNNER_TEMP/selected-consumer/retained/receipt.json" | cut -d ' ' -f 1)
-          python3 -B scripts/integration-program/selected_control_seal.py seal \
-            --plan "$RUNNER_TEMP/selected-plan/plan.json" --plan-sha256 "$plan_sha" \
-            --producer-retained "$RUNNER_TEMP/selected-producer/retained" --producer-receipt-sha256 "$producer_sha" \
-            --consumer-receipt "$RUNNER_TEMP/selected-consumer/retained/receipt.json" --consumer-receipt-sha256 "$consumer_sha" \
-            --output "$RUNNER_TEMP/selected-upload" > "$RUNNER_TEMP/selected-expected.json"
-          python3 -B - <<'PY' >> "$GITHUB_OUTPUT"
-          import base64, hashlib, os
-          from pathlib import Path
-          data = (Path(os.environ['RUNNER_TEMP']) / 'selected-expected.json').read_bytes()
-          print('expected=' + base64.b64encode(data).decode())
-          print('expected-sha256=' + hashlib.sha256(data).hexdigest())
-          PY
-      - name: Upload only the new validated canonical staging folder
-        id: upload
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - id: cell
+        uses: ./.github/actions/selected-product-control
         with:
-          name: selected-control-studio-3.8-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/selected-upload/
-          if-no-files-found: error
-          retention-days: 14
-          compression-level: 0
+          product: core
+          line: '3.9'
+          version: '3.9.1'
+
+  control_studio_3_8:
+    name: control-studio-3.8
+    if: github.repository == 'elsa-workflows/elsa-core' && github.repository_id == '151148482'
+    permissions:
+      contents: read
+      actions: none
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    outputs:
+      artifact-id: ${{ steps.cell.outputs.artifact-id }}
+      archive-digest: ${{ steps.cell.outputs.archive-digest }}
+      expected: ${{ steps.cell.outputs.expected }}
+      expected-sha256: ${{ steps.cell.outputs.expected-sha256 }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - id: cell
+        uses: ./.github/actions/selected-product-control
+        with:
+          product: studio
+          line: '3.8'
+          version: '3.8.5'
+
+  control_studio_3_9:
+    name: control-studio-3.9
+    if: github.repository == 'elsa-workflows/elsa-core' && github.repository_id == '151148482'
+    permissions:
+      contents: read
+      actions: none
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    outputs:
+      artifact-id: ${{ steps.cell.outputs.artifact-id }}
+      archive-digest: ${{ steps.cell.outputs.archive-digest }}
+      expected: ${{ steps.cell.outputs.expected }}
+      expected-sha256: ${{ steps.cell.outputs.expected-sha256 }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - id: cell
+        uses: ./.github/actions/selected-product-control
+        with:
+          product: studio
+          line: '3.9'
+          version: '3.9.1'
+
+  control_extensions_3_8:
+    name: control-extensions-3.8
+    if: github.repository == 'elsa-workflows/elsa-core' && github.repository_id == '151148482'
+    permissions:
+      contents: read
+      actions: none
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    outputs:
+      artifact-id: ${{ steps.cell.outputs.artifact-id }}
+      archive-digest: ${{ steps.cell.outputs.archive-digest }}
+      expected: ${{ steps.cell.outputs.expected }}
+      expected-sha256: ${{ steps.cell.outputs.expected-sha256 }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - id: cell
+        uses: ./.github/actions/selected-product-control
+        with:
+          product: extensions
+          line: '3.8'
+          version: '3.8.5'
+
+  control_extensions_3_9:
+    name: control-extensions-3.9
+    if: github.repository == 'elsa-workflows/elsa-core' && github.repository_id == '151148482'
+    permissions:
+      contents: read
+      actions: none
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    outputs:
+      artifact-id: ${{ steps.cell.outputs.artifact-id }}
+      archive-digest: ${{ steps.cell.outputs.archive-digest }}
+      expected: ${{ steps.cell.outputs.expected }}
+      expected-sha256: ${{ steps.cell.outputs.expected-sha256 }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - id: cell
+        uses: ./.github/actions/selected-product-control
+        with:
+          product: extensions
+          line: '3.9'
+          version: '3.9.1'
 
   retrieve:
-    needs: control
+    needs: [control_core_3_8, control_core_3_9, control_studio_3_8, control_studio_3_9, control_extensions_3_8, control_extensions_3_9]
     permissions:
       contents: none
       actions: read
@@ -128,163 +181,220 @@ jobs:
     timeout-minutes: 20
     outputs:
       transport-id: ${{ steps.upload.outputs.artifact-id }}
-      provider-sha256: ${{ steps.retrieve.outputs.provider-sha256 }}
+      provider-hashes: ${{ steps.retrieve.outputs.provider-hashes }}
+      required-bytes: ${{ steps.retrieve.outputs.required-bytes }}
     steps:
-      # Fixed standard-library GETs only. No checkout, repository imports, ZIP
-      # parsing, or product/lifecycle execution in the credential-bearing job.
-      - name: Retrieve the exact original provider ZIP without forwarding credentials
+      # Fixed standard-library GETs only: no checkout/imports/ZIP parsing here.
+      - name: Validate six metadata tuples and disk capacity before original ZIP download
         id: retrieve
         env:
           GH_TOKEN: ${{ github.token }}
-          ARTIFACT_ID: ${{ needs.control.outputs.artifact-id }}
-          ARCHIVE_DIGEST: ${{ needs.control.outputs.archive-digest }}
-          EXPECTED_B64: ${{ needs.control.outputs.expected }}
-          EXPECTED_SHA256: ${{ needs.control.outputs.expected-sha256 }}
+          CONTROL_CORE_3_8: ${{ toJSON(needs.control_core_3_8.outputs) }}
+          CONTROL_CORE_3_9: ${{ toJSON(needs.control_core_3_9.outputs) }}
+          CONTROL_STUDIO_3_8: ${{ toJSON(needs.control_studio_3_8.outputs) }}
+          CONTROL_STUDIO_3_9: ${{ toJSON(needs.control_studio_3_9.outputs) }}
+          CONTROL_EXTENSIONS_3_8: ${{ toJSON(needs.control_extensions_3_8.outputs) }}
+          CONTROL_EXTENSIONS_3_9: ${{ toJSON(needs.control_extensions_3_9.outputs) }}
         run: |
           python3 -B - <<'PY'
-          import base64, hashlib, json, os, re, sys
+          import base64, hashlib, json, math, os, re, shutil, sys
           from datetime import datetime, timezone
           from pathlib import Path
           import urllib.error, urllib.parse, urllib.request
+
           def require(condition):
               if not condition: raise ValueError('fixed selected retrieval rejected provider identity/bytes')
+
           def unique(pairs):
               result = {}
               for key, value in pairs:
                   require(key not in result)
                   result[key] = value
               return result
+
+          def finite(value):
+              result = float(value)
+              require(math.isfinite(result))
+              return result
+
           def read_json(data):
-              return json.loads(data.decode(), object_pairs_hook=unique,
+              return json.loads(data.decode(), object_pairs_hook=unique, parse_float=finite,
                   parse_constant=lambda _: (_ for _ in ()).throw(ValueError('nonfinite')))
+
           class NoRedirect(urllib.request.HTTPRedirectHandler):
               def redirect_request(self, request, fp, code, message, headers, new_url): return None
+
           api = urllib.request.build_opener(NoRedirect())
           clean = urllib.request.build_opener(NoRedirect())
+
           def request(path):
               require(path.startswith('/repos/elsa-workflows/elsa-core/actions/'))
               return urllib.request.Request('https://api.github.com' + path,
                   headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN'], 'Accept': 'application/vnd.github+json',
                       'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'elsa-selected-control-fixed-retrieval'})
+
           def get(path):
               with api.open(request(path), timeout=60) as response:
                   require(response.status == 200)
                   data = response.read(8 * 1024 * 1024 + 1)
                   require(len(data) <= 8 * 1024 * 1024)
                   return read_json(data)
+
           def stamp(value):
               require(type(value) is str and value.endswith(('Z', '+00:00')))
               result = datetime.fromisoformat(value.replace('Z', '+00:00'))
               require(result.tzinfo is not None and result.utcoffset().total_seconds() == 0)
               return result
+
           try:
               env, now = os.environ, datetime.now(timezone.utc)
               repo, repo_id = 'elsa-workflows/elsa-core', '151148482'
               ref, workflow = 'refs/heads/codex/selected-product-hosted-controls-8693', '.github/workflows/selected-product-release-control.yml'
               require(env['GITHUB_REPOSITORY'] == repo and env['GITHUB_REPOSITORY_ID'] == repo_id and
                   env['GITHUB_EVENT_NAME'] == 'push' and env['GITHUB_REF'] == ref and
-                  env['GITHUB_SHA'] == env['GITHUB_WORKFLOW_SHA'] and
+                  re.fullmatch('[a-f0-9]{40}', env['GITHUB_SHA']) and env['GITHUB_SHA'] == env['GITHUB_WORKFLOW_SHA'] and
                   env['GITHUB_WORKFLOW_REF'] == f'{repo}/{workflow}@{ref}')
-              for key in ('GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT', 'ARTIFACT_ID'):
+              for key in ('GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT'):
                   require(re.fullmatch('[1-9][0-9]*', env[key]) is not None)
-              for key in ('ARCHIVE_DIGEST', 'EXPECTED_SHA256'):
-                  require(re.fullmatch('[a-f0-9]{64}', env[key]) is not None)
-              raw = base64.b64decode(env['EXPECTED_B64'], validate=True)
-              require(len(raw) <= 64 * 1024 and hashlib.sha256(raw).hexdigest() == env['EXPECTED_SHA256'])
-              expected = read_json(raw)
-              require(type(expected) is dict and set(expected) == {'context', 'controller', 'product', 'line', 'manifest_sha256'} and
-                  expected['product'] == 'studio' and expected['line'] == '3.8' and
-                  type(expected['controller']) is dict and set(expected['controller']) == {'commit', 'tree'} and
-                  expected['controller']['commit'] == env['GITHUB_SHA'] and
-                  all(re.fullmatch('[a-f0-9]{40}', item) for item in expected['controller'].values()) and
-                  re.fullmatch('[a-f0-9]{64}', expected['manifest_sha256']))
-              context = {'repository': repo, 'repository_id': repo_id, 'event': 'push', 'ref': ref,
-                  'head_sha': env['GITHUB_SHA'], 'workflow_sha': env['GITHUB_SHA'], 'workflow_ref': f'{repo}/{workflow}@{ref}',
-                  'workflow_path': workflow, 'run_id': env['GITHUB_RUN_ID'], 'run_attempt': env['GITHUB_RUN_ATTEMPT'], 'job': 'control'}
-              require(expected['context'] == context)
+              cells = {f'{product}-{line}': (product, line, f'control_{product}_{line.replace(".", "_")}')
+                  for product in ('core', 'studio', 'extensions') for line in ('3.8', '3.9')}
+              tuples = {cell: read_json(env[job.upper()].encode()) for cell, (_, _, job) in cells.items()}
               base = f'/repos/{repo}/actions'
               run = get(base + '/runs/' + env['GITHUB_RUN_ID'])
-              require(run['id'] == int(env['GITHUB_RUN_ID']) and run['run_attempt'] == int(env['GITHUB_RUN_ATTEMPT']) and
+              require(type(run['id']) is int and type(run['run_attempt']) is int and
+                  run['id'] == int(env['GITHUB_RUN_ID']) and run['run_attempt'] == int(env['GITHUB_RUN_ATTEMPT']) and
                   run['head_sha'] == env['GITHUB_SHA'] and run['head_branch'] == ref.removeprefix('refs/heads/') and
                   run['event'] == 'push' and run['path'] == workflow and
                   run['repository']['id'] == run['head_repository']['id'] == int(repo_id) and
                   run['repository']['full_name'] == run['head_repository']['full_name'] == repo and
                   (run['status'], run['conclusion']) in (('in_progress', None), ('completed', 'success')))
               jobs = get(base + f"/runs/{env['GITHUB_RUN_ID']}/attempts/{env['GITHUB_RUN_ATTEMPT']}/jobs?per_page=100")
-              require(type(jobs['total_count']) is int and jobs['total_count'] == len(jobs['jobs']) <= 100)
-              controls = [job for job in jobs['jobs'] if job['name'] == 'control']
-              require(len(controls) == 1 and controls[0]['status'] == 'completed' and controls[0]['conclusion'] == 'success' and
-                  controls[0]['head_sha'] == env['GITHUB_SHA'] and controls[0]['run_id'] == int(env['GITHUB_RUN_ID']) and
-                  controls[0]['run_attempt'] == int(env['GITHUB_RUN_ATTEMPT']))
-              artifact = get(base + '/artifacts/' + env['ARTIFACT_ID'])
-              name = f"selected-control-studio-3.8-{env['GITHUB_SHA']}-{env['GITHUB_RUN_ID']}-{env['GITHUB_RUN_ATTEMPT']}"
-              binding = artifact['workflow_run']
-              require(artifact['id'] == int(env['ARTIFACT_ID']) and artifact['name'] == name and artifact['expired'] is False and
-                  artifact['digest'] == 'sha256:' + env['ARCHIVE_DIGEST'] and
-                  type(artifact['size_in_bytes']) is int and 0 < artifact['size_in_bytes'] <= 2 * 1024 ** 3 and
-                  binding['id'] == int(env['GITHUB_RUN_ID']) and binding['repository_id'] == binding['head_repository_id'] == int(repo_id) and
-                  binding['head_sha'] == env['GITHUB_SHA'] and binding['head_branch'] == ref.removeprefix('refs/heads/') and
-                  stamp(artifact['created_at']) <= now < stamp(artifact['expires_at']))
-              # The API request is deliberately not followed with Authorization.
-              try:
-                  api.open(request(base + '/artifacts/' + env['ARTIFACT_ID'] + '/zip'), timeout=60)
-                  raise ValueError('expected original archive redirect')
-              except urllib.error.HTTPError as response:
-                  require(response.code == 302)
-                  location = response.headers['Location']
-              parsed = urllib.parse.urlsplit(location)
-              require(parsed.scheme == 'https' and not parsed.username and not parsed.password and not parsed.fragment and
-                  parsed.port in (None, 443) and parsed.hostname is not None and
-                  (parsed.hostname.endswith('.blob.core.windows.net') or parsed.hostname.endswith('.actions.githubusercontent.com') or
-                   parsed.hostname == 'objects.githubusercontent.com'))
+              require(type(jobs['total_count']) is int and type(jobs['jobs']) is list and
+                  jobs['total_count'] == len(jobs['jobs']) <= 100)
+              admitted, ids = {}, set()
+              # Complete all six metadata/expected checks before requesting any ZIP.
+              for cell, (product, line, job_id) in cells.items():
+                  values = tuples[cell]
+                  require(type(values) is dict and set(values) == {'artifact-id', 'archive-digest', 'expected', 'expected-sha256'} and
+                      all(type(value) is str for value in values.values()))
+                  require(re.fullmatch('[1-9][0-9]*', values['artifact-id']) is not None and values['artifact-id'] not in ids)
+                  ids.add(values['artifact-id'])
+                  for key in ('archive-digest', 'expected-sha256'):
+                      require(re.fullmatch('[a-f0-9]{64}', values[key]) is not None)
+                  require(len(values['expected']) <= 88 * 1024)
+                  raw = base64.b64decode(values['expected'], validate=True)
+                  require(len(raw) <= 64 * 1024 and hashlib.sha256(raw).hexdigest() == values['expected-sha256'])
+                  expected = read_json(raw)
+                  require(type(expected) is dict and set(expected) == {'context', 'controller', 'product', 'line', 'manifest_sha256'} and
+                      expected['product'] == product and expected['line'] == line and
+                      type(expected['controller']) is dict and set(expected['controller']) == {'commit', 'tree'} and
+                      expected['controller']['commit'] == env['GITHUB_SHA'] and
+                      all(type(value) is str and re.fullmatch('[a-f0-9]{40}', value) for value in expected['controller'].values()) and
+                      type(expected['manifest_sha256']) is str and re.fullmatch('[a-f0-9]{64}', expected['manifest_sha256']))
+                  context = {'repository': repo, 'repository_id': repo_id, 'event': 'push', 'ref': ref,
+                      'head_sha': env['GITHUB_SHA'], 'workflow_sha': env['GITHUB_SHA'], 'workflow_ref': f'{repo}/{workflow}@{ref}',
+                      'workflow_path': workflow, 'run_id': env['GITHUB_RUN_ID'], 'run_attempt': env['GITHUB_RUN_ATTEMPT'], 'job': job_id}
+                  require(expected['context'] == context)
+                  controls = [job for job in jobs['jobs'] if job['name'] == 'control-' + cell]
+                  require(len(controls) == 1 and controls[0]['status'] == 'completed' and controls[0]['conclusion'] == 'success' and
+                      controls[0]['head_sha'] == env['GITHUB_SHA'] and controls[0]['run_id'] == int(env['GITHUB_RUN_ID']) and
+                      controls[0]['run_attempt'] == int(env['GITHUB_RUN_ATTEMPT']))
+                  artifact = get(base + '/artifacts/' + values['artifact-id'])
+                  name = f"selected-control-{cell}-{env['GITHUB_SHA']}-{env['GITHUB_RUN_ID']}-{env['GITHUB_RUN_ATTEMPT']}"
+                  binding = artifact['workflow_run']
+                  require(type(artifact['id']) is int and artifact['id'] == int(values['artifact-id']) and artifact['name'] == name and
+                      artifact['expired'] is False and artifact['digest'] == 'sha256:' + values['archive-digest'] and
+                      type(artifact['size_in_bytes']) is int and 0 < artifact['size_in_bytes'] <= 2 * 1024 ** 3 and
+                      binding['id'] == int(env['GITHUB_RUN_ID']) and binding['repository_id'] == binding['head_repository_id'] == int(repo_id) and
+                      binding['head_sha'] == env['GITHUB_SHA'] and binding['head_branch'] == ref.removeprefix('refs/heads/') and
+                      stamp(artifact['created_at']) <= now < stamp(artifact['expires_at']))
+                  admitted[cell] = (values, raw, expected, artifact, name)
               output = Path(env['RUNNER_TEMP']) / 'selected-transport'
-              require(not output.exists())
+              require(not output.exists() and not output.is_symlink())
+              # Three simultaneous archive copies cover original, artifact transfer ZIP and
+              # readback download/extraction; reserve bounded metadata/receipts/ZIP headers.
+              required_bytes = 3 * sum(row[3]['size_in_bytes'] for row in admitted.values()) + 6 * 64 * 1024 ** 2 + 18 * 4096
+              if shutil.disk_usage(output.parent).free < required_bytes:
+                  print('Insufficient task-local disk for six original ZIPs and transport/readback overhead; no ZIP downloads started.', file=sys.stderr)
+                  raise ValueError('selected transport disk capacity')
               output.mkdir()
-              digest, size = hashlib.sha256(), 0
-              # A distinct opener/request has no Authorization header or token.
-              with clean.open(urllib.request.Request(location), timeout=60) as response, (output / 'original.zip').open('xb') as writer:
-                  require(response.status == 200)
-                  while True:
-                      chunk = response.read(1024 * 1024)
-                      if not chunk: break
-                      size += len(chunk)
-                      require(size <= artifact['size_in_bytes'])
-                      digest.update(chunk)
-                      writer.write(chunk)
-              require(size == artifact['size_in_bytes'] and digest.hexdigest() == env['ARCHIVE_DIGEST'])
-              retrieved = datetime.now(timezone.utc)
-              require(stamp(artifact['created_at']) <= retrieved < stamp(artifact['expires_at']))
-              provider = {'schema': 1, 'repository': repo, 'repository_id': repo_id,
-                  'run_id': env['GITHUB_RUN_ID'], 'run_attempt': env['GITHUB_RUN_ATTEMPT'], 'head_sha': env['GITHUB_SHA'],
-                  'head_branch': run['head_branch'], 'event': run['event'], 'workflow_path': run['path'],
-                  'control_job': 'control', 'control_conclusion': 'success', 'run_status': run['status'], 'run_conclusion': run['conclusion'],
-                  'artifact_id': artifact['id'], 'artifact_name': name, 'archive_sha256': digest.hexdigest(), 'archive_size': size,
-                  'manifest_sha256': expected['manifest_sha256'], 'created_at': artifact['created_at'],
-                  'expires_at': artifact['expires_at'], 'expired': False, 'retrieved_at': retrieved.isoformat()}
-              provider_raw = (json.dumps(provider, sort_keys=True) + '\n').encode()
-              (output / 'provider.json').write_bytes(provider_raw)
-              (output / 'expected.json').write_bytes(raw)
+              provider_hashes = {}
+              for cell, (values, raw, expected, artifact, name) in admitted.items():
+                  require(stamp(artifact['created_at']) <= datetime.now(timezone.utc) < stamp(artifact['expires_at']))
+                  try:
+                      api.open(request(base + '/artifacts/' + values['artifact-id'] + '/zip'), timeout=60)
+                      raise ValueError('expected original archive redirect')
+                  except urllib.error.HTTPError as response:
+                      require(response.code == 302)
+                      location = response.headers['Location']
+                  parsed = urllib.parse.urlsplit(location)
+                  require(parsed.scheme == 'https' and not parsed.username and not parsed.password and not parsed.fragment and
+                      parsed.port in (None, 443) and parsed.hostname is not None and
+                      (parsed.hostname.endswith('.blob.core.windows.net') or parsed.hostname.endswith('.actions.githubusercontent.com') or
+                       parsed.hostname == 'objects.githubusercontent.com'))
+                  folder = output / cell
+                  folder.mkdir()
+                  digest, size = hashlib.sha256(), 0
+                  with clean.open(urllib.request.Request(location), timeout=60) as response, (folder / 'original.zip').open('xb') as writer:
+                      require(response.status == 200)
+                      while True:
+                          chunk = response.read(1024 * 1024)
+                          if not chunk: break
+                          size += len(chunk)
+                          require(size <= artifact['size_in_bytes'])
+                          digest.update(chunk)
+                          writer.write(chunk)
+                  require(size == artifact['size_in_bytes'] and digest.hexdigest() == values['archive-digest'])
+                  retrieved = datetime.now(timezone.utc)
+                  require(stamp(artifact['created_at']) <= retrieved < stamp(artifact['expires_at']))
+                  provider = {'schema': 1, 'repository': repo, 'repository_id': repo_id,
+                      'run_id': env['GITHUB_RUN_ID'], 'run_attempt': env['GITHUB_RUN_ATTEMPT'], 'head_sha': env['GITHUB_SHA'],
+                      'head_branch': run['head_branch'], 'event': run['event'], 'workflow_path': run['path'],
+                      'control_job': cells[cell][2], 'control_conclusion': 'success', 'run_status': run['status'], 'run_conclusion': run['conclusion'],
+                      'artifact_id': artifact['id'], 'artifact_name': name, 'archive_sha256': digest.hexdigest(), 'archive_size': size,
+                      'manifest_sha256': expected['manifest_sha256'], 'created_at': artifact['created_at'],
+                      'expires_at': artifact['expires_at'], 'expired': False, 'retrieved_at': retrieved.isoformat()}
+                  provider_raw = (json.dumps(provider, sort_keys=True) + '\n').encode()
+                  (folder / 'provider.json').write_bytes(provider_raw)
+                  (folder / 'expected.json').write_bytes(raw)
+                  provider_hashes[cell] = hashlib.sha256(provider_raw).hexdigest()
               with open(env['GITHUB_OUTPUT'], 'a') as writer:
-                  writer.write('provider-sha256=' + hashlib.sha256(provider_raw).hexdigest() + '\n')
+                  writer.write('provider-hashes=' + json.dumps(provider_hashes, sort_keys=True) + '\n')
+                  writer.write('required-bytes=' + str(required_bytes) + '\n')
           except Exception:
-              print('Fixed selected retrieval failed; provider identity/bytes not accepted.', file=sys.stderr)
+              print('Fixed selected retrieval failed; six-cell provider identity/bytes not accepted.', file=sys.stderr)
               sys.exit(1)
           PY
-      - name: Transfer unchanged original ZIP and safe projected metadata
+      - name: Transfer exactly six unchanged original ZIPs and safe metadata
         id: upload
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: selected-transport-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: selected-transport-six-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            ${{ runner.temp }}/selected-transport/original.zip
-            ${{ runner.temp }}/selected-transport/provider.json
-            ${{ runner.temp }}/selected-transport/expected.json
+            ${{ runner.temp }}/selected-transport/core-3.8/original.zip
+            ${{ runner.temp }}/selected-transport/core-3.8/provider.json
+            ${{ runner.temp }}/selected-transport/core-3.8/expected.json
+            ${{ runner.temp }}/selected-transport/core-3.9/original.zip
+            ${{ runner.temp }}/selected-transport/core-3.9/provider.json
+            ${{ runner.temp }}/selected-transport/core-3.9/expected.json
+            ${{ runner.temp }}/selected-transport/studio-3.8/original.zip
+            ${{ runner.temp }}/selected-transport/studio-3.8/provider.json
+            ${{ runner.temp }}/selected-transport/studio-3.8/expected.json
+            ${{ runner.temp }}/selected-transport/studio-3.9/original.zip
+            ${{ runner.temp }}/selected-transport/studio-3.9/provider.json
+            ${{ runner.temp }}/selected-transport/studio-3.9/expected.json
+            ${{ runner.temp }}/selected-transport/extensions-3.8/original.zip
+            ${{ runner.temp }}/selected-transport/extensions-3.8/provider.json
+            ${{ runner.temp }}/selected-transport/extensions-3.8/expected.json
+            ${{ runner.temp }}/selected-transport/extensions-3.9/original.zip
+            ${{ runner.temp }}/selected-transport/extensions-3.9/provider.json
+            ${{ runner.temp }}/selected-transport/extensions-3.9/expected.json
           if-no-files-found: error
           retention-days: 1
           compression-level: 0
 
   readback:
-    needs: [control, retrieve]
+    needs: [control_core_3_8, control_core_3_9, control_studio_3_8, control_studio_3_9, control_extensions_3_8, control_extensions_3_9, retrieve]
     permissions:
       contents: read
       actions: none
@@ -296,33 +406,87 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 0
           persist-credentials: false
+      - name: Require task-local capacity before transport download
+        env:
+          REQUIRED_BYTES: ${{ needs.retrieve.outputs.required-bytes }}
+        run: |
+          python3 -B - <<'PY'
+          import os, re, shutil
+          value = os.environ['REQUIRED_BYTES']
+          if not re.fullmatch('[1-9][0-9]*', value) or shutil.disk_usage(os.environ['RUNNER_TEMP']).free < int(value):
+              raise SystemExit('Insufficient task-local disk for complete original ZIP transfer/readback; nothing downloaded.')
+          PY
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           artifact-ids: ${{ needs.retrieve.outputs.transport-id }}
           path: ${{ runner.temp }}/selected-readback-input
           merge-multiple: true
-      - name: Independently verify original ZIP and every selected semantic join
+      - name: Independently verify all six original ZIPs and every semantic join
         env:
-          ARCHIVE_DIGEST: ${{ needs.control.outputs.archive-digest }}
-          EXPECTED_SHA256: ${{ needs.control.outputs.expected-sha256 }}
-          PROVIDER_SHA256: ${{ needs.retrieve.outputs.provider-sha256 }}
+          PROVIDER_HASHES: ${{ needs.retrieve.outputs.provider-hashes }}
+          CONTROL_CORE_3_8: ${{ toJSON(needs.control_core_3_8.outputs) }}
+          CONTROL_CORE_3_9: ${{ toJSON(needs.control_core_3_9.outputs) }}
+          CONTROL_STUDIO_3_8: ${{ toJSON(needs.control_studio_3_8.outputs) }}
+          CONTROL_STUDIO_3_9: ${{ toJSON(needs.control_studio_3_9.outputs) }}
+          CONTROL_EXTENSIONS_3_8: ${{ toJSON(needs.control_extensions_3_8.outputs) }}
+          CONTROL_EXTENSIONS_3_9: ${{ toJSON(needs.control_extensions_3_9.outputs) }}
         run: |
-          set -euo pipefail
           python3 -B - <<'PY'
-          import os
+          import os, subprocess, sys
           from pathlib import Path
-          root = Path(os.environ['RUNNER_TEMP']) / 'selected-readback-input'
-          if {path.name for path in root.iterdir()} != {'original.zip', 'provider.json', 'expected.json'}:
-              raise SystemExit('Unexpected selected transport files')
+          sys.path.insert(0, 'scripts/integration-program')
+          import selected_control_transport as transport
+
+          try:
+              env = os.environ
+              cells = {f'{product}-{line}': f'control_{product}_{line.replace(".", "_")}'
+                  for product in ('core', 'studio', 'extensions') for line in ('3.8', '3.9')}
+              root = Path(env['RUNNER_TEMP']) / 'selected-readback-input'
+              required = set(cells) | {cell + '/' + name for cell in cells for name in ('original.zip', 'provider.json', 'expected.json')}
+              transport.require(not any(path.is_symlink() for path in (root, *root.parents)) and root.is_dir(), 'selected_batch_input')
+              paths = list(root.rglob('*'))
+              transport.require({path.relative_to(root).as_posix() for path in paths} == required and
+                  not any(path.is_symlink() for path in paths), 'selected_batch_closure')
+              providers = transport.strict_json(env['PROVIDER_HASHES'].encode())
+              transport.closed(providers, set(cells), 'selected_batch_provider_hashes')
+              admitted = []
+              for cell, job in cells.items():
+                  values = transport.closed(transport.strict_json(env[job.upper()].encode()),
+                      {'artifact-id', 'archive-digest', 'expected', 'expected-sha256'}, 'selected_batch_tuple')
+                  folder = root / cell
+                  transport.require(folder.is_dir(), 'selected_batch_directory')
+                  for name, digest in (('original.zip', values['archive-digest']), ('expected.json', values['expected-sha256']),
+                                       ('provider.json', providers[cell])):
+                      transport.read_bound(folder / name, digest,
+                          transport.MAX_ARCHIVE_BYTES if name == 'original.zip' else transport.MAX_RECEIPT_BYTES)
+                  expected = transport.strict_json((folder / 'expected.json').read_bytes())
+                  provider = transport.strict_json((folder / 'provider.json').read_bytes())
+                  transport.validate_provider(provider, expected, now=transport.datetime.now(transport.timezone.utc))
+                  transport.require(expected['product'] + '-' + expected['line'] == cell and expected['context']['job'] == job and
+                      type(provider['artifact_id']) is int and str(provider['artifact_id']) == values['artifact-id'] and
+                      provider['archive_sha256'] == values['archive-digest'], 'selected_batch_cell_binding')
+                  admitted.append((cell, values))
+              # Input paths and hashes for ALL six cells have passed before the first CLI.
+              for cell, values in admitted:
+                  folder = root / cell
+                  subprocess.run([sys.executable, '-B', 'scripts/integration-program/selected_control_seal.py', 'readback',
+                      '--original-zip', str(folder / 'original.zip'), '--archive-sha256', values['archive-digest'],
+                      '--provider', str(folder / 'provider.json'), '--provider-sha256', providers[cell],
+                      '--expected', str(folder / 'expected.json'), '--expected-sha256', values['expected-sha256'],
+                      '--output', str(Path(env['RUNNER_TEMP']) / 'selected-readback' / cell)], check=True)
+          except (ValueError, KeyError, TypeError, OSError, subprocess.CalledProcessError):
+              print('Selected six-cell original-ZIP readback failed; no complete hosted acceptance emitted.', file=sys.stderr)
+              sys.exit(1)
           PY
-          python3 -B scripts/integration-program/selected_control_seal.py readback \
-            --original-zip "$RUNNER_TEMP/selected-readback-input/original.zip" --archive-sha256 "$ARCHIVE_DIGEST" \
-            --provider "$RUNNER_TEMP/selected-readback-input/provider.json" --provider-sha256 "$PROVIDER_SHA256" \
-            --expected "$RUNNER_TEMP/selected-readback-input/expected.json" --expected-sha256 "$EXPECTED_SHA256" \
-            --output "$RUNNER_TEMP/selected-readback"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: selected-readback-studio-3.8-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/selected-readback/readback.json
+          name: selected-readback-six-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/selected-readback/core-3.8/readback.json
+            ${{ runner.temp }}/selected-readback/core-3.9/readback.json
+            ${{ runner.temp }}/selected-readback/studio-3.8/readback.json
+            ${{ runner.temp }}/selected-readback/studio-3.9/readback.json
+            ${{ runner.temp }}/selected-readback/extensions-3.8/readback.json
+            ${{ runner.temp }}/selected-readback/extensions-3.9/readback.json
           if-no-files-found: error
           retention-days: 14

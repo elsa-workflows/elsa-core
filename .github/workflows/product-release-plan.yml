@@ -5,6 +5,7 @@ on:
     paths:
       - '.github/workflows/product-release-plan.yml'
       - '.github/workflows/selected-product-release-control.yml'
+      - '.github/actions/selected-product-control/**'
       # Runtime imports, native helpers, contract fixtures and governed source inputs.
       - 'scripts/integration-program/**'
       - '.agents/skills/elsa-release/scripts/**'
