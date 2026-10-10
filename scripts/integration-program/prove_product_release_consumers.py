@@ -197,6 +197,9 @@ def render_config(artifacts: Path, graph: dict, policy: dict) -> str:
         names = [LOCAL] if row['selected'] else policy['mapping'][folded]
         for name in names:
             ET.SubElement(groups[name], 'package', pattern=row['id'])
+    for group in groups.values():
+        if not len(group):
+            mapping.remove(group)
     return ET.tostring(root, encoding='unicode')
 
 

@@ -31,6 +31,8 @@ Each cell first performs an offline native NuGet restore against that finite ori
 
 A second restore uses a new empty cache and HOME, the exact frozen lock, the original configured external HTTPS feed mapping and selected IDs exclusively mapped to local same-run archives. No wildcard remains in the isolated mapping. The graph, lock, cache archives, original external raw archive hashes and native content hashes, local selected bytes and extracted compile/runtime/content/build assets must all agree before compilation. Discovery mirror/cache bytes are not proof caches.
 
+Both discovery and cold-restore configs preserve every configured package source, including feeds unused by that cell. Package-source mapping includes only groups with exact package-ID patterns from the cell graph; empty groups are omitted because NuGet rejects them. Selected IDs remain mapped exclusively to the same-run local archives, and every applicable original external mapping remains unchanged.
+
 Each cell has new HOME, NuGet global-package/HTTP/plugin caches, explicit config and empty central MSBuild files. Product source and ProjectReference fallback, selected registry resolution, unintended external versions/feeds, altered archives/cache payloads and private excluded package admission fail. Local UUID/UTC execution is explicit; provider-verified hosted claims remain unavailable until the workflow and independent provider readback are implemented. Raw source snapshots, inputs and logs remain under `private/`; only the allowlisted `retained/receipt.json` is intended for review.
 
 Cheap contracts:
