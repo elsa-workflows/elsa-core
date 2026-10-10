@@ -9,6 +9,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 from types import SimpleNamespace
 import unittest
@@ -116,6 +117,58 @@ class HostedWorkflowContracts(unittest.TestCase):
         normal, optimized = planner['jobs']['contracts']['steps'][-1]['run'].splitlines()
         self.assertIn('test_selected_control_workflow', normal.split())
         self.assertIn('test_selected_control_workflow', optimized.split())
+
+    def test_ineligible_plan_reports_only_closed_reason_categories_before_snapshot(self):
+        steps = self.action['runs']['steps']
+        diagnostic = next(step for step in steps if step.get('name') == 'Reject ineligible plan with safe policy categories')
+        diagnostic_index = steps.index(diagnostic)
+        snapshot_index = next(index for index, step in enumerate(steps)
+                              if 'snapshot_product_planning_assets.py' in step.get('run', ''))
+        producer_index = next(index for index, step in enumerate(steps)
+                              if 'prove_product_release_artifacts.py' in step.get('run', ''))
+        self.assertLess(diagnostic_index, snapshot_index)
+        self.assertLess(diagnostic_index, producer_index)
+        self.assertNotIn('continue-on-error', diagnostic)
+        self.assertLess(diagnostic_index, next(index for index, step in enumerate(steps)
+                          if step.get('name') == 'Cheap exact source commit availability preflight'))
+        script = python_script(diagnostic, 'PY_DIAGNOSTIC')
+
+        def execute(plan, *, create=True):
+            with tempfile.TemporaryDirectory() as temporary:
+                path = Path(temporary) / 'plan.json'
+                if create:
+                    path.write_text(json.dumps(plan))
+                environment = {**os.environ, 'PLAN_PATH': str(path)}
+                return subprocess.run([sys.executable, '-B', '-c', script, str(path)], env=environment,
+                                      capture_output=True, text=True, check=False)
+
+        private_values = ('private-package-id', '/private/plan/source.csproj',
+                          'https://private.example/observation', 'Raw exception: /private/cache')
+        known = execute({'eligible': False, 'reasons': [
+            {'category': 'version_reused', 'id': private_values[0]},
+            {'category': 'history_missing', 'id': private_values[1]},
+            {'category': 'history_missing', 'id': private_values[2]}]})
+        self.assertEqual(known.returncode, 1)
+        self.assertEqual(json.loads(known.stderr), {
+            'status': 'plan_ineligible', 'reason_categories': ['history_missing', 'version_reused']})
+        self.assertTrue(all(value not in known.stdout + known.stderr for value in private_values))
+
+        for plan, create in (({'eligible': False, 'reasons': [{'category': 'history_missing'},
+                                {'category': 'unreviewed_reason; ' + private_values[3]}]}, True),
+                             ({'eligible': False, 'reasons': [{'category': 'history_missing'}, 'malformed']}, True),
+                             ({'eligible': False, 'reasons': 'malformed'}, True),
+                             ({'eligible': False, 'reasons': []}, True),
+                             (None, False)):
+            with self.subTest(plan=plan, create=create):
+                result = execute(plan, create=create)
+                self.assertEqual(result.returncode, 1)
+                self.assertEqual(json.loads(result.stderr), {
+                    'status': 'plan_ineligible', 'reason_categories': ['unclassified']})
+                self.assertTrue(all(value not in result.stdout + result.stderr for value in private_values))
+
+        eligible = execute({'eligible': True, 'reasons': []})
+        self.assertEqual(eligible.returncode, 0)
+        self.assertEqual(eligible.stdout + eligible.stderr, '')
 
     def test_exact_transfer_and_readback_allowlists_and_capacity_order(self):
         transfer = self.jobs['retrieve']['steps'][1]['with']

@@ -36,7 +36,7 @@ runs:
       uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
       with:
         node-version: '22'
-    - name: Fresh selected plan and private original assets
+    - name: Fresh selected plan
       env:
         NUGET_PACKAGES: ${{ runner.temp }}/selected-planning-cache
         EXPECTED_HEAD: ${{ github.sha }}
@@ -50,10 +50,66 @@ runs:
         test -z "$(git status --porcelain)"
         python3 -B scripts/integration-program/plan_product_release.py \
           --product "$PRODUCT" --line "$LINE" --version "$VERSION" --output "$RUNNER_TEMP/selected-plan"
+
+    - name: Reject ineligible plan with safe policy categories
+      env:
+        PLAN_PATH: ${{ runner.temp }}/selected-plan/plan.json
+      shell: bash
+      run: |
+        python3 -B - "$PLAN_PATH" <<'PY_DIAGNOSTIC'
+        import json, sys
+        from pathlib import Path
+
+        CATEGORIES = {
+            # Closed planner decision reasons; never emit fields copied from the plan.
+            'aligned_baseline_pending',
+            'feed_endpoint_identity', 'feed_malformed', 'feed_mapping_unavailable', 'feed_missing',
+            'feed_stale', 'feed_unavailable',
+            'history_ambiguous', 'history_malformed', 'history_missing', 'history_partial',
+            'history_stale', 'history_unavailable',
+            'prerequisite_feed_ambiguity', 'prerequisite_incompatible_framework', 'prerequisite_malformed',
+            'prerequisite_missing', 'prerequisite_missing_from_applicable_feeds', 'prerequisite_stale',
+            'prerequisite_unavailable', 'prerequisite_wrong_version',
+            'selected_dependency_version_incompatible', 'source_metadata_unavailable',
+            'version_not_monotonic', 'version_reused',
+        }
+
+        def reject(categories):
+            print(json.dumps({'status': 'plan_ineligible', 'reason_categories': categories}, sort_keys=True),
+                  file=sys.stderr)
+            raise SystemExit(1)
+
+        try:
+            plan = json.loads(Path(sys.argv[1]).read_bytes())
+        except (OSError, ValueError, TypeError, RecursionError):
+            reject(['unclassified'])
+
+        if type(plan) is not dict or type(plan.get('eligible')) is not bool:
+            reject(['unclassified'])
+        if plan['eligible']:
+            raise SystemExit(0)
+
+        reasons = plan.get('reasons')
+        if type(reasons) is not list or not reasons:
+            reject(['unclassified'])
+        categories = []
+        for reason in reasons:
+            category = reason.get('category') if type(reason) is dict else None
+            if type(category) is not str or category not in CATEGORIES:
+                reject(['unclassified'])
+            categories.append(category)
+        reject(sorted(set(categories)))
+        PY_DIAGNOSTIC
+
+    - name: Snapshot private original planning assets
+      env:
+        PLAN_PATH: ${{ runner.temp }}/selected-plan/plan.json
+        SNAPSHOT_PATH: ${{ runner.temp }}/selected-planning-assets-private
+      shell: bash
+      run: |
         plan_sha=$(sha256sum "$RUNNER_TEMP/selected-plan/plan.json" | cut -d ' ' -f 1)
         python3 -B scripts/integration-program/snapshot_product_planning_assets.py \
-          --plan "$RUNNER_TEMP/selected-plan/plan.json" --plan-sha256 "$plan_sha" \
-          --output "$RUNNER_TEMP/selected-planning-assets-private"
+          --plan "$PLAN_PATH" --plan-sha256 "$plan_sha" --output "$SNAPSHOT_PATH"
     - name: Cheap exact source commit availability preflight
       shell: bash
       run: |
