@@ -185,6 +185,14 @@ def retain_selected(plan: dict, artifacts: Path, destination: Path) -> dict:
 
 def preflight(source: Path, plan: dict, private: Path) -> dict:
     """Read-only tool/evaluation commands; no restore, compile, test or pack."""
+    if plan.get('product') == 'extensions':
+        recipe = maintenance.recipes(plan['source'], plan['requested_version'], private)
+        require(len(recipe) == 1 and recipe[0][0] == '.', 'artifact_extensions_recipe_configuration')
+        command = recipe[0][1]
+        positions = [index for index, value in enumerate(command) if value.split('=', 1)[0].casefold() == '--configuration']
+        require(len(positions) == 1 and command[positions[0]:positions[0] + 2] == ['--configuration', 'Release'],
+            'artifact_extensions_recipe_configuration')
+
     def inspect(label: str, command: list[str]) -> str:
         log = private / ('preflight-' + label + '.log')
         try:

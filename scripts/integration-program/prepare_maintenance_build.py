@@ -482,7 +482,8 @@ def recipes(row: dict, version: str, output: Path) -> list[tuple[str, list[str]]
         return core_recipes(row, version, output)
     require(row['product'] in ('studio', 'extensions'), 'Unsupported producer product')
     if row['product'] == 'extensions':
-        return [('.', ['./build.sh', 'Compile+Test+Pack', '--version', version, '--analyseCode', 'true'])]
+        return [('.', ['./build.sh', 'Compile+Test+Pack', '--configuration', 'Release',
+                       '--version', version, '--analyseCode', 'true'])]
     designer = 'src/modules/Elsa.Studio.Workflows.Designer/ClientLib'
     dom = 'src/framework/Elsa.Studio.DomInterop/ClientLib'
     commands = []

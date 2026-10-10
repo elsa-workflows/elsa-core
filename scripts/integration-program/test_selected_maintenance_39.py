@@ -76,7 +76,8 @@ class Maintenance39Contracts(unittest.TestCase):
             row = next(row for row in rows if row['commit'] == selected.contract(product)['commit'])
             commands = artifacts.maintenance.recipes(row, '3.9.999', Path('/private/proof'))
             if product == 'extensions':
-                self.assertEqual([('.', ['./build.sh', 'Compile+Test+Pack', '--version', '3.9.999', '--analyseCode', 'true'])], commands)
+                self.assertEqual([('.', ['./build.sh', 'Compile+Test+Pack', '--configuration', 'Release',
+                    '--version', '3.9.999', '--analyseCode', 'true'])], commands)
             else:
                 self.assertEqual(['dotnet', 'restore', 'src/modules/Elsa.Studio.Workflows.Designer/Elsa.Studio.Workflows.Designer.csproj'], commands[0][1])
                 names = [command for _, command in commands]

@@ -104,7 +104,8 @@ class ExtensionsControlTests(unittest.TestCase):
                 commands.append(command)
                 return '10.0.300 [/sdk]' if command[-1] == '--list-sdks' else '10.0.300'
             with patch.object(artifacts, 'run', side_effect=run):
-                result = artifacts.preflight(source, {'product': 'extensions', 'npm': None}, source)
+                result = artifacts.preflight(source, {'product': 'extensions', 'npm': None,
+                    'source': {'product': 'extensions', 'line': '3.8'}, 'requested_version': '3.8.999'}, source)
             self.assertEqual([['dotnet', '--list-sdks'], ['dotnet', '--version']], commands)
             self.assertEqual({'sdk': '10.0.300', 'product_work_executed': False}, result)
             self.assertEqual('["dotnet", "--list-sdks"]\n10.0.300 [/sdk]',
@@ -115,6 +116,32 @@ class ExtensionsControlTests(unittest.TestCase):
                 self.assertEqual({'dotnet': ['10.0.300']},
                     artifacts.maintenance.inspect_toolchain(source, {'product': 'extensions'}))
                 self.assertEqual(['dotnet', '--list-sdks'], inspect.call_args.args[0])
+
+    def test_extensions_original_recipe_explicitly_selects_release_for_both_lines(self):
+        candidates = artifacts.maintenance.registered_core_candidates(artifacts.maintenance.load_register())
+        for line in ('3.8', '3.9'):
+            row = next(row for row in candidates if row['product'] == 'extensions' and row['line'] == line and
+                row['commit'] == metadata.DESCENDANTS[('extensions', line)])
+            with self.subTest(line=line):
+                self.assertEqual(artifacts.maintenance.recipes(row, line + '.999', Path('/unused')), [('.',
+                    ['./build.sh', 'Compile+Test+Pack', '--configuration', 'Release', '--version', line + '.999',
+                     '--analyseCode', 'true'])])
+
+    def test_extensions_preflight_rejects_missing_debug_or_duplicate_configuration_before_processes(self):
+        command = ['./build.sh', 'Compile+Test+Pack', '--configuration', 'Release', '--version', '3.8.999',
+                   '--analyseCode', 'true']
+        malformed = [command[:2] + command[4:], command[:3] + ['Debug'] + command[4:],
+                     command + ['--configuration', 'Debug'], command[:2] + ['--configuration'],
+                     command + ['--configuration=Debug'], command + ['--CONFIGURATION', 'Debug']]
+        plan = {'product': 'extensions', 'npm': None, 'source': {'product': 'extensions', 'line': '3.8'},
+                'requested_version': '3.8.999'}
+        with tempfile.TemporaryDirectory() as directory:
+            for invalid in malformed:
+                with self.subTest(command=invalid), patch.object(artifacts.maintenance, 'recipes', return_value=[('.', invalid)]), \
+                        patch.object(artifacts, 'run', side_effect=AssertionError('process before configuration admission')) as run:
+                    with self.assertRaisesRegex(ValueError, 'artifact_extensions_recipe_configuration'):
+                        artifacts.preflight(Path(directory), plan, Path(directory))
+                    run.assert_not_called()
 
     def test_extensions_adapter_runs_original_recipe_and_skips_studio_npm(self):
         with tempfile.TemporaryDirectory() as directory:
