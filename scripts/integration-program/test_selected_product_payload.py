@@ -1,0 +1,302 @@
+"""Six source-bound synthetic byte controls; no product/native execution evidence."""
+from copy import deepcopy
+from datetime import datetime, timedelta, timezone
+import hashlib
+import json
+from pathlib import Path
+import tempfile
+import unittest
+from unittest.mock import patch
+
+import product_release_metadata as metadata
+import selected_control_seal as seal
+import selected_control_transport as transport
+import selected_studio_payload as payload
+import selected_studio_plan_schema as schema
+from test_selected_studio_payload import fixture as studio_fixture, encoded
+from test_selected_core_payload import fixture as core_fixture
+from test_selected_control_transport import zipped, Fixture as ProviderFixture
+
+SHAPES = Path(__file__).with_name('selected_product_plan_shapes.json')
+
+
+def fixture(product, line):
+    if product == 'studio':
+        return studio_fixture(line)
+    files, expected, now = studio_fixture()
+    plan, producer, consumer = (json.loads(files[name]) for name in ('plan.json', 'producer/receipt.json', 'consumer/receipt.json'))
+    contracts = payload.load_contracts()
+    historic = json.loads(SHAPES.read_bytes())['cells'][product + '-' + line]
+    source = deepcopy(historic['source'])
+    if product == 'core':
+        # A synthetic current observation retains the original source/ref/tag shape.
+        source['observation']['observed_at'] = plan['observed_at']
+        for key in ('branch_observation', 'tag_observation'):
+            source['observation'][key]['observed_at'] = plan['observed_at']
+    version = line + '.999'
+    selected, native = {}, None
+    template = deepcopy(plan['inventory']['selected'][0])
+    if product == 'core':
+        _, core_producer, core_consumer, selected, _ = core_fixture(line)
+        native = core_producer['package_verification']
+        producer['product_tests'] = core_producer['product_tests']
+        records = core_producer['packages']['selected']
+    else:
+        records = []
+        for identifier in ('Elsa.IO.Http', 'Elsa.IO'):
+            policy = deepcopy(template)
+            policy.update(id=identifier, project='src/modules/io/' + identifier + '/' + identifier + '.csproj')
+            policy['metadata']['dependency_groups'] = []
+            entries = {f'lib/{target}/{identifier}.dll': (identifier + target).encode() for target in policy['frameworks']}
+            if identifier == 'Elsa.IO.Http':
+                for values in policy['metadata']['original_output_policy'].values():
+                    values.update(GenerateElsaPackageManifest='true', ElsaPackageManifestIncludeInPackage='true',
+                                  ElsaPackageManifestPackagePath='elsa-package.json')
+                entries['elsa-package.json'] = encoded({'schemaVersion': '1.0', 'package': {'id': identifier, 'version': version},
+                    'compatibility': {'runtimeKinds': ['elsa.server']}, 'extensions': {'targetFrameworks': policy['frameworks'],
+                    'repositoryUrl': 'https://github.com/elsa-workflows/elsa-core'}, 'features': [
+                    {'id': 'Elsa.IO.Http.HTTP', **payload.extensions.MANIFEST_FEATURE,
+                     'dependencies': [{'featureId': 'Elsa.IO.Http.I/O'}]}]})
+            spec = (f'<package><metadata><id>{identifier}</id><version>{version}</version>'
+                f'<repository type="git" url="https://github.com/elsa-workflows/elsa-core" commit="{source["commit"]}" />'
+                '</metadata></package>').encode()
+            entries['a.nuspec'] = spec
+            own = []
+            for suffix, members in (('nupkg', entries), ('snupkg', {'a.nuspec': spec, 'lib/net10.0/' + identifier + '.pdb': b'pdb'})):
+                data = zipped(list(members.items()))
+                record = {'file': f'{identifier}.{version}.{suffix}', 'id': identifier, 'version': version,
+                          'sha256': metadata.sha256(data), 'size': len(data), 'inventory': transport.inventory(members)}
+                records.append(record); own.append((record, data))
+            selected[identifier.casefold()] = {'record': own[0][0], 'members': entries, 'policy': policy, 'data': own[0][1]}
+            for record, data in own:
+                files['producer/nuget/' + record['file']] = data
+    files = {name: data for name, data in files.items() if not name.startswith('producer/npm/') and
+             (not name.startswith('producer/nuget/') or name.split('/')[-1] in {r['file'] for r in records})}
+    if product == 'core':
+        for record in records:
+            if record['file'].endswith('.nupkg'):
+                data = selected[record['id'].casefold()]['data']
+            else:
+                # Core's fixture records bind original PDB bytes; reproduce its exact ZIP order.
+                item = selected[record['id'].casefold()]
+                members = {record['id'] + '.nuspec': item['members'][record['id'] + '.nuspec']} | {
+                    f'lib/{f}/{record["id"]}.pdb': (record['id'] + f + '.pdb').encode() for f in item['policy']['frameworks']}
+                data = zipped(list(members.items()))
+                record.update(sha256=metadata.sha256(data), size=len(data), inventory=transport.inventory(members))
+                next(r for r in native if r['id'] == record['id'])['files'] = [
+                    {'name': r['file'], 'sha256': r['sha256'], 'size': r['size']} for r in records if r['id'] == record['id']]
+            files['producer/nuget/' + record['file']] = data
+        for item in selected.values():
+            policy = item['policy']; old = deepcopy(policy['metadata']['original_output_policy'])
+            policy.update({key: deepcopy(template[key]) for key in ('project_url', 'repository_url', 'symbol_format')})
+            policy['metadata'] = deepcopy(template['metadata']); policy['metadata']['dependency_groups'] = []
+            policy['metadata']['original_output_policy'] = {f: deepcopy(template['metadata']['original_output_policy'][f]) | values for f, values in old.items()}
+    for record in records:
+        record['inventory'].sort(key=lambda row: row['path'])
+    policies = [item['policy'] for item in selected.values()]
+    tests = historic['test_projects']
+    projects = [{'path': r['project'], 'package_id': r['id'], 'is_packable': True, 'is_test_project': False,
+        'target_frameworks': r['frameworks'], 'references_by_framework': {f: {'project_references': [], 'package_references': []} for f in r['frameworks']},
+        'project_references': [], 'package_references': []} for r in policies]
+    projects += [{'path': path, 'package_id': Path(path).stem, 'is_packable': False, 'is_test_project': True,
+        'target_frameworks': targets, 'references_by_framework': {f: {'project_references': [{'target_project': policies[0]['project']}], 'package_references': []} for f in targets},
+        'project_references': [{'target_project': policies[0]['project']}], 'package_references': []} for path, targets in tests.items()]
+    plan.update(product=product, line=line, source=source, requested_version=version, requested_version_input=version, npm=None,
+                expected_artifacts=[r['file'] for r in records], excluded_artifacts=[{'id': name, 'reason': 'studio_only'} for name in payload.producer.planner.NPM_IDS])
+    inventory = plan['inventory']
+    inventory.update(source_commit=source['commit'], source_tree=source['tree'], requested_version=version,
+        projects=projects, selected=policies, excluded=[{'id': r['package_id'], 'project': r['path'], 'reason': 'source_nonpackable'} for r in projects if not r['is_packable']],
+        applicable_tests=sorted(tests), release_recipe=historic['recipe'] | {'projects': [r['path'] for r in projects]})
+    if line == '3.9' and product == 'extensions':
+        for row in contracts['maintenance39']['sources']['extensions']['excluded_canonical']:
+            inventory['excluded'].append(deepcopy(row))
+            r = deepcopy(projects[0]); r.update(path=row['project'], package_id=row['id']); projects.append(r)
+            inventory['release_recipe']['projects'].append(row['project'])
+    inventory['sha256'] = metadata.canonical_hash(metadata.public_inventory(inventory))
+    history = deepcopy(plan['histories'][0]); history['feeds'][0]['decision']['normalized'] = version
+    plan['histories'] = [deepcopy(history) for _ in policies]
+    for row, policy in zip(plan['histories'], policies):
+        row['id'] = row['feeds'][0]['id'] = policy['id']
+    files['plan.json'] = encoded(plan); plan_hash = metadata.sha256(files['plan.json'])
+    producer.update(product=product, line=line, source=source, version=version, plan_sha256=plan_hash,
+        packages={'selected': records, 'private_recipe_only_outputs': []}, preflight={'sdk': metadata.SDK, 'product_work_executed': False})
+    producer.pop('npm')
+    if product == 'core':
+        producer['package_verification'] = native
+    else:
+        producer['manifest_verification'] = []
+        producer['product_tests'] = {'executions': [], 'inherited_skipped_placeholders': []}
+        for path, targets in tests.items():
+            for target in targets:
+                policy = next((r for r in contracts['register']['inherited_skipped_placeholders'] if r['project'] == path), None)
+                row = {'project': path, 'framework': target, 'sha256': '3'*64,
+                    'counters': dict.fromkeys(payload.producer.maintenance.TRX_COUNTERS, 0) | {'total': 1}}
+                if policy:
+                    row.update({k:v for k,v in policy.items() if k not in ('product','commits')}); row.update(source_commit=source['commit'], not_executed_result_count=1)
+                    producer['product_tests']['inherited_skipped_placeholders'].append(row)
+                else:
+                    row['counters'].update(executed=1, passed=1); producer['product_tests']['executions'].append(row)
+        for item in selected.values():
+            members, policy = item['members'], item['policy']; manifest = None
+            if 'elsa-package.json' in members:
+                manifest = {'path': 'elsa-package.json', 'sha256': metadata.sha256(members['elsa-package.json']), 'id': policy['id'],
+                    'version': version, 'frameworks': policy['frameworks'], 'selectable_features': [payload.extensions.MANIFEST_FEATURE], 'runtime_kinds': ['elsa.server']}
+            producer['manifest_verification'].append({'id': policy['id'], 'package_manifest': manifest,
+                'sdk_assets': ([{'path': 'elsa-package.json', 'sha256': metadata.sha256(members['elsa-package.json'])}] if manifest else [])})
+    for execution in (producer['execution'], consumer['execution']):
+        execution.update(product=product, line=line, source=source, plan_sha256=plan_hash)
+    files['producer/receipt.json'] = encoded(producer); producer_hash = metadata.sha256(files['producer/receipt.json'])
+    consumer.update(plan_sha256=plan_hash, artifact_receipt_sha256=producer_hash, source=source, producer_execution=producer['execution'],
+        runtime_contract_source=payload.runtime_source(plan, contracts))
+    consumer['producer_plan_admission'].update(artifact_receipt_sha256=producer_hash)
+    consumer['current_consumer_admission']['histories'] = len(plan['histories'])
+    description = payload.runtime_policy(plan, contracts)
+    consumer['limitations'][1] = description['limitation']
+    template_cell = deepcopy(consumer['coverage'][0])
+    def cell(policy, target, runtime=False):
+        row = deepcopy(template_cell); item = selected[policy['id'].casefold()]
+        row.update(id=policy['id'], framework=target, archive_sha256=item['record']['sha256'], original_output_policy=policy['metadata']['original_output_policy'][target])
+        row['input_sha256']['Program.cs'] = metadata.sha256(contracts['fixtures'][product] if runtime else b'extern alias selected;\npublic class CompileContract {}\n')
+        admitted = list(selected.values()) if runtime else [item]
+        row['restored'] = [{'id': x['policy']['id'], 'version': version, 'assets_type': 'package', 'source': 'selected-local-archives',
+            'sha256': x['record']['sha256'], 'sha512': hashlib.sha512(x['data']).hexdigest()} for x in admitted]
+        row['restored_payloads'] = [{'id': x['policy']['id'], 'version': version, 'payloads': [
+            {'path': path, 'kind': 'runtime', 'sha256': metadata.sha256(data), 'size': len(data)} for path, data in x['members'].items()
+            if path == f'lib/{target}/{x["policy"]["id"]}.dll']} for x in admitted]
+        if runtime:
+            row['input_sha256']['AssemblyProof.cs'] = metadata.sha256(contracts['assembly_proof'])
+            if product == 'core':
+                row['runtime'] = next(x['runtime'] for x in core_consumer['runtime'] if x['framework'] == target)
+            else:
+                row['runtime'] = {'contract': description['description'], 'loaded_assemblies': [
+                    {'name': x['policy']['id'], 'version': '1.0.0.0', 'informationalVersion': '1.0.0+'+source['commit'],
+                    'sha256': metadata.sha256(x['members'][f'lib/{target}/{x["policy"]["id"]}.dll']), 'package_id': x['policy']['id'],
+                    'package_version': version, 'package_asset': f'lib/{target}/{x["policy"]["id"]}.dll'} for x in admitted]}
+        return row
+    consumer['coverage'] = [cell(policy, target) for policy in policies for target in policy['frameworks']]
+    root = selected[description['package']]['policy']
+    consumer['runtime'] = [cell(root, target, True) for target in root['frameworks']]
+    files['consumer/receipt.json'] = encoded(consumer)
+    expected.update(product=product, line=line)
+    return files, expected, now
+
+
+class SelectedProductPayloadTests(unittest.TestCase):
+    def validate(self, values):
+        files, expected, now = values
+        return payload.validate(files, expected, *(metadata.sha256(files[name]) for name in
+            ('plan.json', 'producer/receipt.json', 'consumer/receipt.json')), contracts=payload.load_contracts(), now=now)
+
+    def test_full_six_cell_byte_dispatch(self):
+        for product in ('core', 'studio', 'extensions'):
+            for line in ('3.8', '3.9'):
+                with self.subTest(product=product, line=line):
+                    values = fixture(product, line)
+                    result = self.validate(values)
+                    self.assertEqual(result['plan']['product'], product)
+                    self.assertEqual(len(result['consumer']['runtime']), 3)
+                    sealed = seal.stage(values[0], values[1], tuple(metadata.sha256(values[0][name]) for name in
+                        ('plan.json', 'producer/receipt.json', 'consumer/receipt.json')), contracts=payload.load_contracts(), now=values[2])
+                    self.assertEqual('original npm lifecycle/import/Vite execution' in json.loads(sealed[transport.MANIFEST])['inherited_judgments'], product == 'studio')
+                    provider_fixture = ProviderFixture(); provider_fixture.setUp()
+                    provider = provider_fixture.provider
+                    manifest_hash = metadata.sha256(sealed[transport.MANIFEST])
+                    original_zip = zipped(list(sealed.items()))
+                    context = values[1]['context']
+                    provider.update(artifact_name=f"selected-control-{product}-{line}-{context['head_sha']}-{context['run_id']}-{context['run_attempt']}",
+                        manifest_sha256=manifest_hash, archive_sha256=metadata.sha256(original_zip), archive_size=len(original_zip),
+                        created_at=(values[2]-timedelta(minutes=2)).isoformat(), retrieved_at=(values[2]-timedelta(minutes=1)).isoformat(),
+                        expires_at=(values[2]+timedelta(days=1)).isoformat())
+                    result = seal.readback(original_zip, provider, values[1] | {'manifest_sha256': manifest_hash},
+                        contracts=payload.load_contracts(), now=values[2])
+                    self.assertTrue(result['success'])
+                    self.assertFalse(result['product_code_executed_during_readback'])
+
+    def test_frozen_retained_file_closure_is_conditional_on_product(self):
+        for product in ('core', 'studio', 'extensions'):
+            files, _, _ = fixture(product, '3.9')
+            with self.subTest(product=product), tempfile.TemporaryDirectory() as folder:
+                root = Path(folder).resolve()
+                for name, data in files.items():
+                    path = root / name
+                    path.parent.mkdir(parents=True, exist_ok=True)
+                    path.write_bytes(data)
+                hashes = [metadata.sha256(files[n]) for n in ('plan.json', 'producer/receipt.json', 'consumer/receipt.json')]
+                frozen, _ = seal.freeze_inputs(root/'plan.json', hashes[0], root/'producer', hashes[1], root/'consumer/receipt.json', hashes[2])
+                self.assertEqual(frozen, files)
+                (root/'producer'/'excluded.3.9.999.nupkg').write_bytes(b'private recipe output')
+                with self.assertRaisesRegex(ValueError, 'retained_closure'):
+                    seal.freeze_inputs(root/'plan.json', hashes[0], root/'producer', hashes[1], root/'consumer/receipt.json', hashes[2])
+
+    def test_excluded_metadata_cannot_alias_selected_archive(self):
+        values = fixture('extensions', '3.9')
+        files = values[0]
+        receipt = json.loads(files['producer/receipt.json'])
+        row = deepcopy(receipt['packages']['selected'][0])
+        row['id'] = 'Elsa.Secrets.Persistence.EFCore'
+        receipt['packages']['private_recipe_only_outputs'].append(row)
+        files['producer/receipt.json'] = encoded(receipt)
+        with self.assertRaisesRegex(ValueError, 'private_output_scope'):
+            self.validate(values)
+
+    def test_cross_product_native_schema_cannot_be_relabelled(self):
+        for product in ('core', 'extensions'):
+            values = fixture(product, '3.8'); files = values[0]
+            receipt = json.loads(files['producer/receipt.json'])
+            wrong = 'manifest_verification' if product == 'core' else 'package_verification'
+            receipt[wrong] = []; files['producer/receipt.json'] = encoded(receipt)
+            with self.subTest(product=product), self.assertRaisesRegex(ValueError, 'producer'): self.validate(values)
+
+    def test_extensions_manifest_and_assembly_policy_stay_strict(self):
+        for mutation in ('manifest', 'native', 'assembly', 'placeholder'):
+            values = fixture('extensions','3.9'); files = values[0]
+            if mutation == 'assembly':
+                r=json.loads(files['consumer/receipt.json']);r['runtime'][0]['runtime']['loaded_assemblies'][0]['version']='3.9.999.0';files['consumer/receipt.json']=encoded(r)
+            else:
+                r=json.loads(files['producer/receipt.json'])
+                if mutation=='manifest':r['manifest_verification'][0]['package_manifest']['version']='1.0.0'
+                elif mutation=='native':r['manifest_verification'][0]['compiler_evidence']={}
+                else:r['product_tests']['inherited_skipped_placeholders'][0]['skip_reason']='invented'
+                files['producer/receipt.json']=encoded(r)
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError): self.validate(values)
+
+    def test_core_per_asset_native_policy_has_no_studio_version_fallback(self):
+        values=fixture('core','3.9');files=values[0];r=json.loads(files['consumer/receipt.json'])
+        r['runtime'][0]['runtime']['loaded_assemblies'][0]['version']='3.9.999.0';files['consumer/receipt.json']=encoded(r)
+        with self.assertRaisesRegex(ValueError,'native_identity'):self.validate(values)
+
+    def test_pure_common_and_specializations_do_not_read_paths(self):
+        values=fixture('extensions','3.8');files,expected,now=values;contracts=payload.load_contracts()
+        with patch('pathlib.Path.read_bytes', side_effect=AssertionError('pure validator file IO')):
+            payload.validate(files,expected,*(metadata.sha256(files[n]) for n in ('plan.json','producer/receipt.json','consumer/receipt.json')),contracts=contracts,now=now)
+
+    def test_core_shape_exceptions_do_not_widen_other_products(self):
+        files, _, now = studio_fixture()
+        contracts = payload.load_contracts()
+        for mutation in ('empty_url', 'net7'):
+            plan = json.loads(files['plan.json'])
+            if mutation == 'empty_url':
+                plan['inventory']['selected'][0]['repository_url'] = ''
+            else:
+                plan['inventory']['projects'][0]['target_frameworks'].append('net7.0')
+            with self.subTest(mutation=mutation), self.assertRaisesRegex(ValueError, 'scope'):
+                schema.validate(plan, contracts, now=now)
+
+    def test_actual_pinned_public_plan_object_shapes_are_closed(self):
+        snapshot = json.loads(SHAPES.read_bytes())
+        fixtures = snapshot['cells']
+        self.assertEqual(set(fixtures), {p + '-' + l for p in ('core', 'studio', 'extensions') for l in ('3.8', '3.9')})
+        for cell, value in fixtures.items():
+            transport.digest(value['plan_sha256'])
+            for path, shapes in (snapshot['common_object_shapes'] | value['object_shapes']).items():
+                if path in schema.SHAPES:
+                    for shape in shapes:
+                        with self.subTest(cell=cell, path=path):
+                            self.assertIn(set(shape.split()), [set(s.split()) for s in schema.SHAPES[path]])
+                else:
+                    self.assertTrue(path.endswith(('.observation', '.branch_observation', '.tag_observation')), path)
+            schema._walk(value['source'], 'source', now=datetime.now(timezone.utc))
+
+
+if __name__ == '__main__':
+    unittest.main()

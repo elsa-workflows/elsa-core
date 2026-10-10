@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Seal and independently read back selected Studio 3.8 control bytes.
+"""Seal and independently read back six selected-product control cells.
 
 No package/native/product code executes here. The provider projection is an
 input from the fixed retrieval job; this module does not fetch or invent it.
@@ -27,6 +27,10 @@ INHERITED = ['original compiler and native SDK package checks', 'original produc
 MANIFEST_KEYS = {'schema', 'scope', 'context', 'controller', 'product', 'line', 'source', 'version',
                  'plan_sha256', 'producer_receipt_sha256', 'consumer_receipt_sha256',
                  'artifact_execution', 'consumer_execution', 'files', 'inherited_judgments'}
+
+
+def inherited_judgments(product: str) -> list[str]:
+    return INHERITED if product == 'studio' else INHERITED[:-1]
 
 
 def encoded(value: dict) -> bytes:
@@ -72,13 +76,14 @@ def freeze_inputs(plan_path: Path, plan_hash: str, retained: Path, producer_hash
     producer_data = transport.read_bound(retained / 'receipt.json', producer_hash, transport.MAX_RECEIPT_BYTES)
     consumer_data = transport.read_bound(consumer_path, consumer_hash, transport.MAX_RECEIPT_BYTES)
     plan, receipt = transport.strict_json(plan_data, transport.MAX_PLAN_BYTES), transport.strict_json(producer_data)
-    require(plan.get('product') == 'studio' and plan.get('line') == '3.8', 'selected_payload_cell_not_implemented')
+    require(plan.get('product') in ('core', 'studio', 'extensions') and plan.get('line') in ('3.8', '3.9'),
+            'selected_payload_cell_not_implemented')
     files = {'plan.json': plan_data, 'producer/receipt.json': producer_data, 'consumer/receipt.json': consumer_data}
     originals = {plan_path: plan_data, retained / 'receipt.json': producer_data, consumer_path: consumer_data}
-    expected = {'receipt.json', 'npm/receipt.json'}
+    expected = {'receipt.json'} | ({'npm/receipt.json'} if plan['product'] == 'studio' else set())
     records = receipt['packages']['selected']
     archive_hashes = {'nuget/' + row['file']: row['sha256'] for row in records}
-    for key in ('wasm', 'react'):
+    for key in (('wasm', 'react') if plan['product'] == 'studio' else ()):
         row = receipt['npm'][key]
         name = 'npm/' + transport.safe_name(row['file'])
         require('/' not in row['file'] and name not in archive_hashes, 'selected_seal_archive_name')
@@ -108,7 +113,7 @@ def make_manifest(files: dict[str, bytes], expected: dict, result: dict) -> dict
         'producer_receipt_sha256': metadata.sha256(files['producer/receipt.json']),
         'consumer_receipt_sha256': metadata.sha256(files['consumer/receipt.json']),
         'artifact_execution': result['producer']['execution'], 'consumer_execution': result['consumer']['execution'],
-        'files': transport.inventory(files), 'inherited_judgments': INHERITED}
+        'files': transport.inventory(files), 'inherited_judgments': inherited_judgments(result['plan']['product'])}
 
 
 def stage(files: dict[str, bytes], expected: dict, hashes: tuple[str, str, str], *, contracts: dict,
@@ -175,7 +180,7 @@ def readback(data: bytes, provider: dict, expected: dict, *, contracts: dict,
         'manifest_sha256': expected['manifest_sha256'], 'plan_sha256': hashes[0], 'producer_receipt_sha256': hashes[1],
         'consumer_receipt_sha256': hashes[2], 'artifact_execution_id': result['producer']['execution']['id'],
         'consumer_execution_id': result['consumer']['execution']['id'], 'files': manifest['files'],
-        'inherited_judgments': INHERITED, 'product_code_executed_during_readback': False,
+        'inherited_judgments': inherited_judgments(result['plan']['product']), 'product_code_executed_during_readback': False,
         'current_provider_availability_requires_acceptance_recheck': True}
 
 

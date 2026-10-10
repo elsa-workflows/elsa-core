@@ -22,12 +22,12 @@ def encoded(value):
     return (json.dumps(value, indent=2, sort_keys=True) + '\n').encode()
 
 
-def fixture():
+def fixture(line="3.8"):
     now = datetime.now(timezone.utc)
     stamp = lambda minutes: (now - timedelta(minutes=minutes)).isoformat()
-    contract = json.loads(payload.CONTRACT.read_bytes())
+    contract = payload.load_contracts()["studio" if line == "3.8" else "studio39"]
     candidate = next(row for row in producer.maintenance.load_candidates()['candidates'] if row['commit'] == contract['source_commit'])
-    source = {'product': 'studio', 'line': '3.8', 'kind': 'admitted-maintenance-descendant',
+    source = {'product': 'studio', 'line': line, 'kind': 'admitted-maintenance-descendant',
         **{key: candidate[key] for key in ('commit', 'tree', 'parents', 'original_commit', 'original_parents', 'contained_commit', 'contained_tree')},
         'candidate_register_sha256': metadata.sha256(producer.maintenance.CANDIDATES.read_bytes()),
         'original_register_sha256': metadata.sha256(producer.maintenance.REGISTER.read_bytes())}
@@ -36,7 +36,7 @@ def fixture():
         'event': 'push', 'ref': transport.HOSTED_REF, 'head_sha': 'a' * 40, 'workflow_sha': 'a' * 40,
         'workflow_ref': f'{transport.REPOSITORY}/{transport.WORKFLOW}@{transport.HOSTED_REF}',
         'workflow_path': transport.WORKFLOW, 'run_id': '123', 'run_attempt': '2', 'job': 'control'}
-    version, identifier = '3.8.999', 'Elsa.Studio.Core'
+    version, identifier = line + '.999', 'Elsa.Studio.Core'
     frameworks = ['net8.0', 'net9.0', 'net10.0']
     output = {'IncludeBuildOutput': 'true', 'IncludeContentInPack': 'true', 'IncludeSymbols': 'true',
         'SymbolPackageFormat': 'snupkg', 'GenerateElsaPackageManifest': '',
@@ -60,12 +60,17 @@ def fixture():
          (contract['files'][2]['path'], 'Elsa.Studio.Host.CustomElements', False, frameworks))]
     projects[1]['project_references'] = [{'target_project': path}]
     projects[1]['references_by_framework']['net10.0']['project_references'] = [{'target_project': path}]
+    tests = {test: ['net10.0']} if line == '3.8' else payload.load_contracts()['maintenance39']['sources']['studio']['test_projects']
+    projects = [row for row in projects if not row['is_test_project']] + [
+        {'path': project, 'package_id': Path(project).stem, 'is_packable': False, 'is_test_project': True,
+         'target_frameworks': targets, 'references_by_framework': {target: {'project_references': [{'target_project': path}],
+         'package_references': []} for target in targets}, 'project_references': [{'target_project': path}], 'package_references': []}
+        for project, targets in tests.items()]
     inventory = {'source_commit': source['commit'], 'source_tree': source['tree'], 'requested_version': version,
-        'projects': projects, 'selected': [policy], 'excluded': [{'id': 'Elsa.Studio.Core.Tests', 'project': test, 'reason': 'source_nonpackable'},
-            {'id': 'Elsa.Studio.Host.CustomElements', 'project': contract['files'][2]['path'], 'reason': 'source_nonpackable'}],
-        'release_recipe': {'solution': 'Elsa.Studio.sln', 'sha256': '6' * 64, 'projects': [path, test, contract['files'][2]['path']],
+        'projects': projects, 'selected': [policy], 'excluded': [{'id': row['package_id'], 'project': row['path'], 'reason': 'source_nonpackable'} for row in projects if not row['is_packable']],
+        'release_recipe': {'solution': 'Elsa.Studio.sln', 'sha256': '6' * 64, 'projects': [row['path'] for row in projects],
             'workflow': contract['files'][3]['path'], 'workflow_sha256': contract['files'][3]['sha256']},
-        'applicable_tests': [test], 'ownership_policy': metadata.ownership_policy()}
+        'applicable_tests': sorted(tests), 'ownership_policy': metadata.ownership_policy()}
     inventory['sha256'] = metadata.canonical_hash(metadata.public_inventory(inventory))
     observation = lambda url: {'url': url, 'observed_at': stamp(20), 'status': 'observed', 'sha256': '7' * 64, 'bytes': 1}
     decision = {'duplicate': False, 'latest_in_line': None, 'monotonic': True, 'normalized': version, 'reused': False}
@@ -74,7 +79,7 @@ def fixture():
     nuget_history = history(identifier)
     nuget_history['feed'] = 'https://api.nuget.org/v3/index.json'
     nuget_history['observation']['url'] = 'https://api.nuget.org/v3-flatcontainer/elsa.studio.core/index.json'
-    npm_intent = {'atomic': True, 'line': '3.8', 'source_commit': source['commit'], 'source_tree': source['tree'],
+    npm_intent = {'atomic': True, 'line': line, 'source_commit': source['commit'], 'source_tree': source['tree'],
         'workflow': {'path': contract['files'][3]['path'], 'sha256': contract['files'][3]['sha256']},
         'manifests': [{'path': row['path'], 'sha256': row['sha256'], 'checked_in_version': row['package']['version'],
             'checked_in_dependencies': row['package'].get('dependencies', {}), 'peer_dependencies': row['package'].get('peerDependencies', {})}
@@ -85,7 +90,7 @@ def fixture():
     plan = {'schema': 1, 'mode': 'read-only-product-release-plan', 'controller': controller | {
         'execution': {'repository': transport.REPOSITORY, 'event_name': 'push', 'ref': transport.HOSTED_REF, 'run_id': '123', 'run_attempt': '2'},
         'input_sha256': {name: metadata.sha256((consumer.ROOT / name).read_bytes()) for name in producer.PLANNER_INPUTS}},
-        'source': source, 'product': 'studio', 'line': '3.8', 'requested_version': version, 'inventory': inventory,
+        'source': source, 'product': 'studio', 'line': line, 'requested_version': version, 'inventory': inventory,
         'expected_artifacts': [identifier + '.' + version + suffix for suffix in ('.nupkg', '.snupkg')] +
             [row['expected_tarball'] for row in npm_intent['packages']], 'excluded_artifacts': [],
         'prerequisites_excluded_from_publication': [], 'prerequisites': [], 'selected_dependency_intent': [],
@@ -102,7 +107,7 @@ def fixture():
     plan_hash = metadata.sha256(files['plan.json'])
     def execution(role, minutes):
         return {'kind': 'github-actions-selected-control', 'id': str(uuid4()), 'started_at': stamp(minutes), 'role': role,
-            'controller': controller, 'plan_sha256': plan_hash, 'product': 'studio', 'line': '3.8', 'source': source,
+            'controller': controller, 'plan_sha256': plan_hash, 'product': 'studio', 'line': line, 'source': source,
             'context': context, 'authority': 'runner-environment-only-provider-unverified'}
     artifact_execution, consumer_execution = execution('artifact', 19), execution('consumer', 10)
     groups = ''.join('<group targetFramework="' + item + '" />' for item in sorted(frameworks))
@@ -139,7 +144,7 @@ def fixture():
         'execution': artifact_execution, 'framework': 'net10.0', 'commands': [{'step': step, 'success': True, 'exit_code': 0} for step in payload.STEPS],
         'success': True, 'published': False, 'historical_workflow_executed': False, 'original_lifecycle_preserved': False,
         'inline_postinstall_preserved': True, 'stage': 'complete', **reports,
-        'lifecycle_correction': lifecycle.CONTINUATIONS['3.8'] | {'path': lifecycle.PATH, 'before_blob': lifecycle.BEFORE_BLOB,
+        'lifecycle_correction': lifecycle.CONTINUATIONS[line] | {'path': lifecycle.PATH, 'before_blob': lifecycle.BEFORE_BLOB,
             'after_blob': lifecycle.AFTER_BLOB, 'scope': 'inline-copy-script-only'}, 'consumer': {
             'local_archives': {row['name']: {'version': version, 'sha512_integrity': row['sha512_integrity'], 'resolution': 'same-run-local-archive'} for row in reports.values()},
             'empty_install_cache': True, 'normal_lifecycle': True, 'esm': True, 'commonjs': True, 'vite': True,
@@ -147,13 +152,13 @@ def fixture():
     files['producer/npm/receipt.json'] = encoded(pair)
     artifact = {'schema': 1, 'mode': 'selected-product-artifact-control', 'plan_sha256': plan_hash,
         'planner_controller': plan['controller'], 'artifact_controller': controller, 'source': source,
-        'product': 'studio', 'line': '3.8', 'version': version, 'execution': artifact_execution, 'success': True,
+        'product': 'studio', 'line': line, 'version': version, 'execution': artifact_execution, 'success': True,
         'published': False, 'version_allocated': False, 'tag_created': False, 'stage': 'complete', 'artifact_proof': True,
         'preflight': {'product_work_executed': False, 'node': 'v22.22.1', 'npm': '10.9.0', 'sdk': metadata.SDK,
             'host_framework': 'net10.0', 'host_supported_frameworks': frameworks,
             'original_workflow_sha256': contract['files'][3]['sha256'], 'host_project_sha256': contract['files'][2]['sha256']},
-        'product_tests': {'executions': [{'project': test, 'framework': 'net10.0', 'sha256': '3' * 64,
-            'counters': dict.fromkeys(producer.maintenance.TRX_COUNTERS, 0) | {'total': 1, 'executed': 1, 'passed': 1}}], 'inherited_skipped_placeholders': []},
+        'product_tests': {'executions': [{'project': project, 'framework': target, 'sha256': '3' * 64,
+            'counters': dict.fromkeys(producer.maintenance.TRX_COUNTERS, 0) | {'total': 1, 'executed': 1, 'passed': 1}} for project, targets in tests.items() for target in targets], 'inherited_skipped_placeholders': []},
         'packages': {'selected': records, 'private_recipe_only_outputs': []}, 'npm': pair}
     files['producer/receipt.json'] = encoded(artifact)
     artifact_hash = metadata.sha256(files['producer/receipt.json'])
@@ -185,11 +190,11 @@ def fixture():
         'current_consumer_admission': {'eligible': True, 'scope': 'current-complete-selected-product-prerequisites', 'checked_at': stamp(9),
             'histories': len(plan['histories']), 'prerequisites': 0, 'observations_sha256': '4' * 64},
         'success': True, 'published': False, 'coverage': [cell(item, False) for item in frameworks],
-        'runtime': [cell(item, True) for item in frameworks], 'stage': 'complete', 'runtime_contract_source': consumer.STUDIO38_CONTRACT_SOURCE,
+        'runtime': [cell(item, True) for item in frameworks], 'stage': 'complete', 'runtime_contract_source': payload.runtime_source(plan, payload.load_contracts()),
         'preflight': {'scope': 'standalone-semantics-utility-only', 'sdk_version': metadata.SDK, 'native_assemblies': plan['semantics']['assemblies']},
         'external_catalog_sha256': '5' * 64, 'limitations': ['Complete selected restore/compile coverage is distinct from representative runtime behavior.', consumer.runtime_contract(plan)['limitation']]}
     files['consumer/receipt.json'] = encoded(result)
-    expected = {'context': context, 'controller': controller, 'product': 'studio', 'line': '3.8'}
+    expected = {'context': context, 'controller': controller, 'product': 'studio', 'line': line}
     return files, expected, now
 
 
@@ -340,10 +345,10 @@ class StudioPayloadContracts(unittest.TestCase):
             with self.assertRaises(ValueError): self.validate()
             self.files['producer/receipt.json'] = original
 
-    def test_other_cells_remain_explicitly_unimplemented(self):
+    def test_expected_cell_cannot_relabel_another_source(self):
         for product, line in (('studio', '3.9'), ('core', '3.8'), ('extensions', '3.8')):
             self.expected.update(product=product, line=line)
-            with self.assertRaisesRegex(ValueError, 'not_implemented'): self.validate()
+            with self.assertRaisesRegex(ValueError, 'expected_context'): self.validate()
 
 
 if __name__ == '__main__': unittest.main()

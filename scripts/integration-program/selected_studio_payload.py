@@ -1,4 +1,4 @@
-"""Closed Studio 3.8 selected-control payload validation, without execution.
+"""Closed six-cell selected-control payload validation, without execution.
 
 Native/compiler/test/runtime judgments are inherited from exact successful
 source-bound receipts. This module repeats their public byte/content joins.
@@ -23,6 +23,10 @@ import prove_consolidated_packages as packages
 import prove_studio_npm_pair as npm
 import selected_control_transport as transport
 import selected_studio_plan_schema as plan_schema
+import selected_core_payload as core_payload
+import selected_extensions_payload as extensions_payload
+import selected_maintenance_39 as maintenance39
+import selected_extensions_contract as extensions
 from prove_consolidated_packages import require
 
 CONTRACT = Path(__file__).with_name('selected_studio38_payload_contract.json')
@@ -120,7 +124,7 @@ def validate_packages(plan: dict, receipt: dict, files: dict[str, bytes]) -> dic
     private_names = []
     for row in sequence(receipt['packages']['private_recipe_only_outputs']):
         archive_record(row, plan, selected=False)
-        require(row['id'].casefold() in excluded and row['id'].casefold() not in selected and
+        require(row['id'].casefold() in excluded and row['id'].casefold() not in selected and row['file'].casefold() not in {name.casefold() for name in records} and
                 'producer/nuget/' + row['file'] not in files, 'selected_payload_private_output_scope')
         private_names.append(row['file'])
     transport.unique_names(private_names)
@@ -134,7 +138,7 @@ def validate_tests(plan: dict, receipt: dict, contracts: dict) -> None:
                 for framework in projects[project]['target_frameworks']}
     policies = {}
     for row in contracts['register']['inherited_skipped_placeholders']:
-        if row['product'] == 'studio' and plan['source']['original_commit'] in row['commits']:
+        if row['product'] == plan['product'] and plan['source']['original_commit'] in row['commits']:
             policy = {key: value for key, value in row.items() if key not in ('commits', 'product')}
             policies[(row['project'], row['framework'])] = policy | {'source_commit': plan['source']['commit']}
     require(set(policies) <= expected, 'selected_payload_placeholder_source')
@@ -169,7 +173,7 @@ def validate_npm(plan: dict, receipt: dict, files: dict[str, bytes], contract: d
             report['framework'] == 'net10.0' and report['success'] is True and report['stage'] == 'complete' and
             all(report[key] is False for key in ('published', 'historical_workflow_executed', 'original_lifecycle_preserved')) and
             report['inline_postinstall_preserved'] is True, 'selected_payload_npm_identity')
-    require(report['lifecycle_correction'] == lifecycle.CONTINUATIONS['3.8'] | {'path': lifecycle.PATH,
+    require(report['lifecycle_correction'] == lifecycle.CONTINUATIONS[plan['line']] | {'path': lifecycle.PATH,
         'before_blob': lifecycle.BEFORE_BLOB, 'after_blob': lifecycle.AFTER_BLOB, 'scope': 'inline-copy-script-only'},
         'selected_payload_npm_lifecycle')
     commands = sequence(report['commands'])
@@ -254,7 +258,7 @@ def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, ru
     require(cell['isolation'] == isolation, 'selected_payload_isolation')
     keys = set(isolation) | {'NuGet.Config', 'Consumer.csproj', 'packages.lock.json', 'Program.cs'}
     hashes(cell['input_sha256'], keys | ({'AssemblyProof.cs'} if runtime else set()))
-    program = contracts['fixture'] if runtime else (
+    program = contracts['fixtures'][plan['product']] if runtime else (
         ('extern alias selected;\n' if managed else '') + 'public class CompileContract {}\n').encode()
     require(cell['input_sha256']['Program.cs'] == metadata.sha256(program) and
             cell['input_sha256']['packages.lock.json'] == cell['native_lock_sha256'] and
@@ -318,7 +322,7 @@ def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, ru
     require(set(payload_rows) == set(restored), 'selected_payload_restored_payload_bijection')
     if runtime:
         evidence = transport.closed(cell['runtime'], {'contract', 'loaded_assemblies'}, 'selected_payload_runtime')
-        contract = consumer.runtime_contract(plan)
+        contract = runtime_policy(plan, contracts)
         require(evidence['contract'] == contract['description'], 'selected_payload_runtime_contract')
         names = []
         for row in sequence(evidence['loaded_assemblies']):
@@ -334,9 +338,10 @@ def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, ru
             require(any(item['path'] == asset and item['kind'] == 'runtime' for item in payload_rows[folded]['payloads']),
                     'selected_payload_loaded_runtime_asset')
             names.append(name)
-            if folded in selected:
-                require(version == plan['requested_version'].split('+')[0].split('-')[0] + '.0' and
-                        row['informationalVersion'] == plan['requested_version'] + '+' + plan['source']['commit'],
+            if folded in selected and plan['product'] != 'core':
+                release = plan['requested_version'] if plan['product'] == 'studio' else '1.0.0'
+                require(version == release.split('+')[0].split('-')[0] + '.0' and
+                        row['informationalVersion'] == release + '+' + plan['source']['commit'],
                         'selected_payload_loaded_assembly_policy')
         transport.unique_names(names)
         require(set(contract['required_packages']) <= set(names), 'selected_payload_runtime_representative')
@@ -365,10 +370,10 @@ def validate_consumers(plan: dict, receipt: dict, result: dict, selected: dict, 
             'selected_payload_current_admission')
     transport.digest(current['observations_sha256'])
     require(result['preflight'] == {'scope': 'standalone-semantics-utility-only', 'sdk_version': metadata.SDK,
-        'native_assemblies': plan['semantics']['assemblies']} and result['runtime_contract_source'] == consumer.STUDIO38_CONTRACT_SOURCE,
+        'native_assemblies': plan['semantics']['assemblies']} and result['runtime_contract_source'] == runtime_source(plan, contracts),
         'selected_payload_consumer_source')
     transport.digest(result['external_catalog_sha256'])
-    contract = consumer.runtime_contract(plan)
+    contract = runtime_policy(plan, contracts)
     require(result['limitations'] == ['Complete selected restore/compile coverage is distinct from representative runtime behavior.',
         contract['limitation']], 'selected_payload_consumer_limitations')
     expected = {(row['id'], framework) for row in plan['inventory']['selected'] for framework in row['frameworks']}
@@ -387,7 +392,8 @@ def validate(files: dict[str, bytes], expected: dict, plan_hash: str, producer_h
     """Validate canonical payload bytes; no caller as-of/backdated admission."""
     now = now or datetime.now(timezone.utc)
     transport.closed(expected, {'context', 'controller', 'product', 'line'}, 'selected_payload_expected')
-    require(expected['product'] == 'studio' and expected['line'] == '3.8', 'selected_payload_cell_not_implemented')
+    require(expected['product'] in ('core', 'studio', 'extensions') and expected['line'] in ('3.8', '3.9'),
+            'selected_payload_cell_not_implemented')
     transport.validate_context(expected['context'], expected['controller'])
     transport.unique_names(list(files))
     for name, data in files.items():
@@ -398,10 +404,13 @@ def validate(files: dict[str, bytes], expected: dict, plan_hash: str, producer_h
         require(name in files and metadata.sha256(files[name]) == transport.digest(sha), 'selected_payload_input_hash')
     plan = transport.strict_json(files['plan.json'], transport.MAX_PLAN_BYTES)
     plan_schema.validate(plan, contracts, now=now)
-    receipt = transport.closed(transport.strict_json(files['producer/receipt.json']), PRODUCER_KEYS, 'selected_payload_producer')
+    extra = {'studio': {'npm'}, 'core': {'package_verification'}, 'extensions': {'manifest_verification'}}[plan['product']]
+    receipt = transport.closed(transport.strict_json(files['producer/receipt.json']),
+        (PRODUCER_KEYS - {'npm'}) | extra, 'selected_payload_producer')
     result = transport.strict_json(files['consumer/receipt.json'])
     transport.validate_execution(receipt['execution'], 'artifact', receipt['artifact_controller'], plan, plan_hash, now=now)
-    require(receipt['execution']['context'] == expected['context'] and receipt['artifact_controller'] == expected['controller'],
+    require(receipt['execution']['context'] == expected['context'] and receipt['artifact_controller'] == expected['controller'] and
+            (plan['product'], plan['line']) == (expected['product'], expected['line']),
             'selected_payload_expected_context')
     plan_schema.admit(plan, plan_hash, files['plan.json'], receipt['execution']['started_at'], contracts)
     require( type(receipt['schema']) is int and receipt['schema'] == 1 and
@@ -410,35 +419,80 @@ def validate(files: dict[str, bytes], expected: dict, plan_hash: str, producer_h
             receipt['plan_sha256'] == plan_hash and receipt['planner_controller'] == plan['controller'] and
             receipt['success'] is True and receipt['artifact_proof'] is True and receipt['stage'] == 'complete' and
             all(receipt[key] is False for key in ('published', 'version_allocated', 'tag_created')), 'selected_payload_producer_identity')
-    allowed = {'plan.json', 'producer/receipt.json', 'consumer/receipt.json', 'producer/npm/receipt.json'} | {
+    allowed = {'plan.json', 'producer/receipt.json', 'consumer/receipt.json'} | (
+        {'producer/npm/receipt.json'} if plan['product'] == 'studio' else set()) | {
         'producer/' + ('npm/' if name.endswith('.tgz') else 'nuget/') + name for name in plan['expected_artifacts']}
     require(set(files) == allowed, 'selected_payload_exact_file_set')
-    contract = contracts['studio']
-    require((contract['source_commit'], contract['source_tree']) == (plan['source']['commit'], plan['source']['tree']),
-            'selected_payload_source_contract')
-    preflight = transport.closed(receipt['preflight'], {'product_work_executed', 'node', 'npm', 'sdk', 'host_framework',
-        'host_supported_frameworks', 'original_workflow_sha256', 'host_project_sha256'}, 'selected_payload_preflight')
-    require(preflight['product_work_executed'] is False and preflight['sdk'] == metadata.SDK and
-            type(preflight['node']) is str and re.fullmatch(r'v22\.[0-9]+\.[0-9]+', preflight['node']) and
-            type(preflight['npm']) is str and re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', preflight['npm']) and
-            int(preflight['npm'].split('.')[0]) >= 9 and preflight['host_framework'] == 'net10.0' and
-            preflight['host_supported_frameworks'] == next(row['target_frameworks'] for row in plan['inventory']['projects']
-                if row['path'] == contract['files'][2]['path']) and
-            preflight['original_workflow_sha256'] == contract['files'][3]['sha256'] and
-            preflight['host_project_sha256'] == contract['files'][2]['sha256'], 'selected_payload_preflight')
-    validate_tests(plan, receipt, contracts)
+    if plan['product'] == 'studio':
+        contract = contracts['studio'] if plan['line'] == '3.8' else contracts['studio39']
+        require((contract['source_commit'], contract['source_tree']) == (plan['source']['commit'], plan['source']['tree']),
+                'selected_payload_source_contract')
+        preflight = transport.closed(receipt['preflight'], {'product_work_executed', 'node', 'npm', 'sdk', 'host_framework',
+            'host_supported_frameworks', 'original_workflow_sha256', 'host_project_sha256'}, 'selected_payload_preflight')
+        require(preflight['product_work_executed'] is False and preflight['sdk'] == metadata.SDK and
+                type(preflight['node']) is str and re.fullmatch(r'v22\.[0-9]+\.[0-9]+', preflight['node']) and
+                type(preflight['npm']) is str and re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', preflight['npm']) and
+                int(preflight['npm'].split('.')[0]) >= 9 and preflight['host_framework'] == 'net10.0' and
+                preflight['host_supported_frameworks'] == next(row['target_frameworks'] for row in plan['inventory']['projects']
+                    if row['path'] == contract['files'][2]['path']) and
+                preflight['original_workflow_sha256'] == contract['files'][3]['sha256'] and
+                preflight['host_project_sha256'] == contract['files'][2]['sha256'], 'selected_payload_preflight')
+    else:
+        require(receipt['preflight'] == {'product_work_executed': False, 'sdk': metadata.SDK}, 'selected_payload_preflight')
+    if plan['product'] != 'core':
+        validate_tests(plan, receipt, contracts)
     selected = validate_packages(plan, receipt, files)
-    validate_npm(plan, receipt, files, contract)
+    if plan['product'] == 'studio':
+        validate_npm(plan, receipt, files, contract)
+    elif plan['product'] == 'extensions':
+        extensions_payload.validate_specialization(plan, receipt, selected)
     validate_consumers(plan, receipt, result, selected, producer_hash, contracts, now=now)
+    if plan['product'] == 'core':
+        core_payload.validate_specialization(plan, receipt, result, selected, contracts=contracts['core'])
     return {'plan': plan, 'producer': receipt, 'consumer': result}
+
+
+def runtime_policy(plan: dict, contracts: dict) -> dict:
+    """Fixed source-supported behavior descriptions; no artifact-directed file IO."""
+    contract = contracts['runtime'][plan['product']]
+    if plan['product'] == 'core':
+        return contract
+    prefix = 'Studio' if plan['product'] == 'studio' else 'Extensions'
+    original_prefix = prefix + '38'
+    require(contract['description'].startswith(original_prefix), 'selected_payload_runtime_description')
+    return contract | {'description': prefix + plan['line'].replace('.', '') +
+                       contract['description'][len(original_prefix):]}
+
+
+def runtime_source(plan: dict, contracts: dict) -> dict:
+    if plan['product'] == 'core':
+        return contracts['core']['consumer']['sources'][plan['line']]
+    if plan['line'] == '3.9':
+        return contracts['maintenance39']['sources'][plan['product']]['files']
+    return extensions.SOURCE_BLOBS if plan['product'] == 'extensions' else consumer.STUDIO38_CONTRACT_SOURCE
 
 
 def load_contracts() -> dict:
     """Fixed tracked controller inputs only; never artifact-declared paths."""
     candidates, register = producer.maintenance.CANDIDATES.read_bytes(), producer.maintenance.REGISTER.read_bytes()
-    return {'studio': transport.strict_json(CONTRACT.read_bytes()), 'candidates': transport.strict_json(candidates),
-        'register': transport.strict_json(register), 'candidate_register_sha256': metadata.sha256(candidates),
-        'original_register_sha256': metadata.sha256(register), 'ownership': metadata.ownership_policy(),
+    core = core_payload.load_contracts()
+    fixtures = {product: (consumer.ROOT / ('scripts/integration-program/selected-' + product + '-consumer/Program.cs')).read_bytes()
+                for product in ('studio', 'extensions', 'core')}
+    original39 = transport.strict_json(maintenance39.CONTRACT.read_bytes())
+    for product in ('studio', 'extensions'):
+        require(metadata.sha256(fixtures[product]) == original39['sources'][product]['fixture']['sha256'],
+                'selected_payload_fixture_contract')
+    for path, sha in core['consumer']['fixtures'].items():
+        require(metadata.sha256((consumer.ROOT / path).read_bytes()) == sha, 'selected_payload_core_fixture_contract')
+    return {'studio': transport.strict_json(CONTRACT.read_bytes()),
+        'studio39': transport.strict_json(CONTRACT.with_name('selected_studio39_payload_contract.json').read_bytes()),
+        'core': core, 'maintenance39': original39,
+        'runtime': {'studio': consumer.runtime_contract({'product': 'studio', 'line': '3.8', 'requested_version': ''}),
+                    'extensions': consumer.runtime_contract({'product': 'extensions', 'line': '3.8'}),
+                    'core': consumer.core.runtime_contract()},
+        'candidates': transport.strict_json(candidates), 'register': transport.strict_json(register),
+        'candidate_register_sha256': metadata.sha256(candidates), 'original_register_sha256': metadata.sha256(register),
+        'ownership': metadata.ownership_policy(),
         'planner_inputs': {name: metadata.sha256((consumer.ROOT / name).read_bytes()) for name in producer.PLANNER_INPUTS},
-        'fixture': consumer.FIXTURE.read_bytes(),
+        'fixtures': fixtures, 'fixture': fixtures['studio'],
         'assembly_proof': (consumer.ROOT / 'scripts/integration-program/selected-consumer/AssemblyProof.cs').read_bytes()}
