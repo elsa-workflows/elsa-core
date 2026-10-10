@@ -136,7 +136,7 @@ class Maintenance39Contracts(unittest.TestCase):
                 calls.append('current-gate')
                 if freshness_error: raise ValueError(freshness_error)
                 return {'eligible': True, 'checked_at': consumers.planner.now(), 'histories': [], 'prerequisites': []}
-            def catalog(*args):
+            def catalog(*args, **kwargs):
                 calls.append('catalog'); args[-1].mkdir(); (args[-1] / 'catalog.private.json').write_text('{}')
                 return {}, {}
             def cell(*args, **kwargs):

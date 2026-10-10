@@ -1148,7 +1148,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         def git_bytes(root, commit, path):
             return b'original config' if path == 'NuGet.Config' else real_git_bytes(root, commit, path)
 
-        def catalog(*args):
+        def catalog(*args, **kwargs):
             args[-1].mkdir()
             (args[-1] / 'catalog.private.json').write_text('{}')
             return {}, {'sources': self.feeds['sources'], 'mapping': {'elsa.studio.core': []},

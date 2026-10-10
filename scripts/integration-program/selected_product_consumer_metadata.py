@@ -35,13 +35,17 @@ def build_inspector(root: Path, output: Path) -> Path:
 
 
 def archive_catalog(originals: dict, selected: dict, config: Path, semantics: planner.Semantics,
-                    inspector: Path, output: Path) -> tuple[dict, dict]:
+                    inspector: Path, output: Path, *, source_downloads: dict | None = None) -> tuple[dict, dict]:
     """Freeze original bytes before any discovery; source cache is never a proof cache."""
     output.mkdir()
     pool = output / 'archives'
     pool.mkdir()
     catalog, inspection_cache = {}, {'archive_inspector': inspector}
-    downloads = sdk.freeze_downloads(originals, inspector, pool, semantics)
+    declarations = (source_downloads or {}).get('projects', {})
+    sdk_projects = {project: {framework: sdk.original_policy(assets, framework,
+        source_downloads=declarations.get(project, {}).get('frameworks', {}).get(framework))
+        for framework in assets.get('project', {}).get('frameworks', {})} for project, assets in originals.items()}
+    downloads = sdk.freeze_downloads(originals, inspector, pool, semantics, sdk_projects)
     for project, assets in originals.items():
         for key, library in assets['libraries'].items():
             if library['type'] != 'package':
@@ -56,7 +60,7 @@ def archive_catalog(originals: dict, selected: dict, config: Path, semantics: pl
             if identity in catalog:
                 require(catalog[identity]['content_hash'] == library['sha512'], 'consumer_original_archive_ambiguity')
                 catalog[identity]['original_contexts'].append(context)
-                catalog[identity]['effective_contexts'].extend(sdk.effective_contexts(assets, key))
+                catalog[identity]['effective_contexts'].extend(sdk.effective_contexts(assets, key, sdk_projects[project]))
                 continue
             relative = Path(library.get('path', f'{folded}/{version.lower()}'))
             require(not relative.is_absolute() and '..' not in relative.parts, 'consumer_original_archive_path')
@@ -83,7 +87,7 @@ def archive_catalog(originals: dict, selected: dict, config: Path, semantics: pl
             catalog[identity] = {'id': identifier, 'version': version, 'content_hash': verified['nuget_content_hash'],
                 'archive_sha256': verified['archive_sha256'], 'signed': verified['signed'],
                 'archive': destination, 'nuspec_sha256': metadata.sha256(data), 'groups': native['groups'],
-                'original_contexts': [context], 'effective_contexts': sdk.effective_contexts(assets, key)}
+                'original_contexts': [context], 'effective_contexts': sdk.effective_contexts(assets, key, sdk_projects[project])}
     ids = sorted({row['id'] for row in catalog.values()} | {row['id'] for row in selected.values()} |
                  {row['id'] for row in downloads.values()})
     native = semantics.call('feeds', config=str(config), ids=ids)
@@ -104,6 +108,7 @@ def archive_catalog(originals: dict, selected: dict, config: Path, semantics: pl
             shutil.copyfile(row['archive'], destination)
             require(metadata.sha256(destination.read_bytes()) == row['archive_sha256'], 'consumer_mirror_archive_changed')
     receipt = {'original_sources': sources, 'offline_mirrors': mirrors, 'mapping': mapping,
+               'source_downloads': source_downloads,
                'signature_scope': 'Native signature integrity and content identity; not signer or feed-origin certification',
                'toolchain_downloads': [{key: str(value) if isinstance(value, Path) else value for key, value in row.items()}
                                       for row in downloads.values()],
@@ -112,8 +117,7 @@ def archive_catalog(originals: dict, selected: dict, config: Path, semantics: pl
     (output / 'catalog.private.json').write_text(json.dumps(receipt, indent=2, sort_keys=True))
     return catalog, {'sources': sources, 'mapping': mapping, 'mirrors': mirrors, 'sdk_downloads': downloads,
         'original_assets': originals,
-        'sdk_projects': {project: {framework: sdk.original_policy(assets, framework)
-            for framework in assets.get('project', {}).get('frameworks', {})} for project, assets in originals.items()}}
+        'sdk_projects': sdk_projects}
 
 
 def validate_native_tools(plan: dict, semantics: planner.Semantics, inspector: Path) -> None:
