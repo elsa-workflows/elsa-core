@@ -188,15 +188,7 @@ def validate(plan: dict, contracts: dict, *, now: datetime) -> None:
                 observation['tag_observation']['url'] ==
                 'https://api.github.com/repos/elsa-workflows/elsa-core/git/matching-refs/tags/' + line + '.',
                 'selected_plan_core_observation')
-        refs = []
-        for tag in observation['tag_history']:
-            ref, obj = tag['ref'], tag['object']
-            require(ref.startswith('refs/tags/' + line + '.') and obj['type'] in ('tag', 'commit') and
-                    tag['url'] == 'https://api.github.com/repos/elsa-workflows/elsa-core/git/' + ref and
-                    obj['url'] == 'https://api.github.com/repos/elsa-workflows/elsa-core/git/' +
-                    ('tags/' if obj['type'] == 'tag' else 'commits/') + obj['sha'], 'selected_plan_core_tag')
-            refs.append(ref)
-        require(bool(refs) and len(refs) == len(set(refs)), 'selected_plan_core_tag_duplicate')
+        metadata.continuation.validate_tag_history(line, observation['tag_history'])
     else:
         rows = [row for row in contracts['candidates']['candidates'] if row['product'] == product and
                 row['line'] == line and row['commit'] == metadata.DESCENDANTS[(product, line)]]

@@ -10,6 +10,7 @@ from copy import deepcopy
 import hashlib
 import json
 from pathlib import Path
+import re
 
 from prove_consolidated_packages import require
 
@@ -32,6 +33,29 @@ def candidate(line: str, contract: dict) -> dict:
     require(contract.get('schema') == 1 and contract.get('scope') == 'fixed-reviewed-core-maintenance-continuations' and
             set(contract.get('sources', {})) == set(REFS) and line in REFS, 'core_continuation_catalog')
     return contract['sources'][line]
+
+
+def validate_tag_history(line: str, history: object) -> None:
+    """Validate the closed original tag snapshot before any selected work."""
+    require(type(history) is list and bool(history), 'selected_plan_core_tag_duplicate')
+    refs = set()
+    for tag in history:
+        require(type(tag) is dict and set(tag) == {'ref', 'node_id', 'url', 'object'} and
+                all(type(tag[key]) is str and not any(ord(c) < 32 for c in tag[key])
+                    for key in ('ref', 'node_id', 'url')), 'selected_plan_core_tag')
+        obj = tag['object']
+        require(type(obj) is dict and set(obj) == {'sha', 'type', 'url'} and
+                all(type(value) is str for value in obj.values()), 'selected_plan_core_tag')
+        ref = tag['ref']
+        require(not tag['node_id'].startswith(('/', '\\')) and ':' not in tag['node_id'] and
+                not any(c in ref for c in ':?#'), 'selected_plan_core_tag')
+        require(ref.startswith('refs/tags/' + line + '.') and obj['type'] in ('tag', 'commit') and
+                re.fullmatch('[a-f0-9]{40}', obj['sha']) is not None and
+                tag['url'] == 'https://api.github.com/repos/elsa-workflows/elsa-core/git/' + ref and
+                obj['url'] == 'https://api.github.com/repos/elsa-workflows/elsa-core/git/' +
+                ('tags/' if obj['type'] == 'tag' else 'commits/') + obj['sha'], 'selected_plan_core_tag')
+        require(ref not in refs, 'selected_plan_core_tag_duplicate')
+        refs.add(ref)
 
 
 def bind(line: str, observation: dict, contract: dict) -> dict:

@@ -241,6 +241,7 @@ def admit(data: bytes, expected_sha256: str, *, checked_at: str | None = None) -
                       'bytes': len(data)}, checked_at)
         if plan['product'] == 'core':
             core.policy(binding)
+            metadata.continuation.validate_tag_history(plan['line'], binding['observation']['tag_history'])
         observations = ([binding['observation'][key] for key in ('branch_observation', 'tag_observation')]
                         if plan['product'] == 'core' else [])
         for row in plan['histories'] + plan['prerequisites']:

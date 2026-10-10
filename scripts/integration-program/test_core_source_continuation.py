@@ -3,6 +3,7 @@ from copy import deepcopy
 from datetime import timedelta
 import hashlib
 import json
+import tempfile
 from pathlib import Path
 import unittest
 from unittest.mock import patch
@@ -204,6 +205,57 @@ class CoreSourceContinuationContracts(unittest.TestCase):
             data = encoded(changed)
             with self.subTest(change=change), self.assertRaises(ValueError):
                 schema.admit(changed, metadata.sha256(data), data, now.isoformat(), contracts)
+
+    def test_original_and_candidate_tag_snapshots_pass_early_artifact_admission(self):
+        for line in ('3.8', '3.9'):
+            original_files, _, now = product_fixture('core', line)
+            candidate, _, _, _ = self.candidate_plan(line)
+            for kind, plan in (('original', json.loads(original_files['plan.json'])), ('candidate', candidate)):
+                data = encoded(plan)
+                with self.subTest(line=line, kind=kind):
+                    self.assertEqual(plan, artifacts.admit(data, metadata.sha256(data), checked_at=now.isoformat()))
+
+    def test_malformed_tag_snapshots_fail_before_any_artifact_work(self):
+        contracts = payload.load_contracts()
+        for line in ('3.8', '3.9'):
+            original_files, _, now = product_fixture('core', line)
+            candidate, _, _, _ = self.candidate_plan(line)
+            for kind, plan in (('original', json.loads(original_files['plan.json'])), ('candidate', candidate)):
+                tag = plan['source']['observation']['tag_history'][0]
+                snapshots = [[], [tag, deepcopy(tag)], None, {}, [None],
+                    [{k: v for k, v in tag.items() if k != 'node_id'}], [tag | {'extra': True}],
+                    [tag | {'ref': 'refs/tags/9.9.0'}], [tag | {'node_id': 1}],
+                    [tag | {'node_id': '/private'}], [tag | {'node_id': 'private:value'}],
+                    [tag | {'url': 'https://example.com/tag'}], [tag | {'object': None}]]
+                for suffix in ('?query', '#fragment', ':private'):
+                    ref = tag['ref'] + suffix
+                    snapshots.append([tag | {'ref': ref, 'url':
+                        'https://api.github.com/repos/elsa-workflows/elsa-core/git/' + ref}])
+                for mutation in ({'sha': 'a'}, {'sha': 'a' * 39 + 'G'}, {'sha': 1}, {'type': 'tree'},
+                                 {'url': 'https://example.com/object'}, {'extra': True}):
+                    snapshots.append([tag | {'object': tag['object'] | mutation}])
+                snapshots.append([tag | {'object': {k: v for k, v in tag['object'].items() if k != 'sha'}}])
+                for index, snapshot in enumerate(snapshots):
+                    changed = deepcopy(plan); changed['source']['observation']['tag_history'] = snapshot
+                    data = encoded(changed); digest = metadata.sha256(data)
+                    with self.subTest(line=line, kind=kind, snapshot=index):
+                        with self.assertRaisesRegex(ValueError, 'plan_malformed'):
+                            artifacts.admit(data, digest, checked_at=now.isoformat())
+                        with self.assertRaises(ValueError):
+                            schema.admit(changed, digest, data, now.isoformat(), contracts)
+                        with tempfile.TemporaryDirectory() as directory:
+                            output = Path(directory) / 'proof'
+                            with patch.object(artifacts, 'verify_controller', side_effect=AssertionError('controller touched')), \
+                                 patch.object(metadata, 'checkout_source', side_effect=AssertionError('source setup')), \
+                                 patch.object(core, 'verify_source', side_effect=AssertionError('source verification')), \
+                                 patch.object(artifacts, 'preflight', side_effect=AssertionError('preflight')), \
+                                 patch.object(artifacts, 'refresh_remote', side_effect=AssertionError('remote')), \
+                                 patch.object(maintenance, 'prepare', side_effect=AssertionError('native')), \
+                                 patch.object(maintenance, 'git', side_effect=AssertionError('Git')), \
+                                 patch('urllib.request.urlopen', side_effect=AssertionError('network')):
+                                with self.assertRaisesRegex(ValueError, 'plan_malformed'):
+                                    artifacts.execute(Path(directory), data, digest, output)
+                            self.assertFalse(output.exists())
 
     def test_new_planner_inputs_are_bound_and_stale_or_unbound_inputs_rejected(self):
         self.assertIs(metadata.PLANNER_INPUTS, artifacts.PLANNER_INPUTS)
