@@ -465,11 +465,17 @@ def original_core(row: dict) -> bool:
     return original(row)
 
 
-def recipe_environment(row: dict, version: str) -> dict:
+def recipe_environment(row: dict, version: str, source: Path) -> dict:
+    config = source / 'NuGet.Config'
+    require(config.is_file() and not config.is_symlink(), 'Original restore config must be a regular file')
     if original_core(row):
         from selected_core_producer import environment
-        return environment(row, version)
-    return build_environment()
+        result = environment(row, version)
+    else:
+        result = build_environment()
+    # Use the admitted source's config exclusively, including NUKE's child
+    # restore and later SDK evaluations. Never inherit this authority from HOME.
+    return result | {'RestoreConfigFile': str(config.resolve())}
 
 
 def version_arguments(row: dict, version: str) -> list[str]:
@@ -509,7 +515,7 @@ def evaluate_satellites(source: Path, project: str, framework: str, assembly: st
     row = row or {}
     result = json.loads(run(['dotnet', 'msbuild', project, '-nologo', '-p:Configuration=Release',
         *version_arguments(row, version), f'-p:TargetFramework={framework}', '-target:SatelliteDllsProjectOutputGroup',
-        '-getItem:SatelliteDllsProjectOutputGroupOutput'], source, env=recipe_environment(row, version)))
+        '-getItem:SatelliteDllsProjectOutputGroupOutput'], source, env=recipe_environment(row, version, source)))
     satellites = []
     for item in result['Items']['SatelliteDllsProjectOutputGroupOutput']:
         culture, target = item['Culture'], item['TargetPath'].replace('\\', '/')
@@ -541,7 +547,7 @@ def evaluate_inventory(source: Path, row: dict, version: str, output: Path) -> l
         project = project.replace('\\', '/')
         require(not Path(project).is_absolute() and '..' not in Path(project).parts, 'Unsafe solution project')
         values = json.loads(run(['dotnet', 'msbuild', project, '-nologo', '-p:Configuration=Release',
-            *version_arguments(row, version), f'-getProperty:{properties}'], source, env=recipe_environment(row, version)))['Properties']
+            *version_arguments(row, version), f'-getProperty:{properties}'], source, env=recipe_environment(row, version, source)))['Properties']
         frameworks = (values['TargetFrameworks'] or values['TargetFramework']).split(';')
         if values['IsTestProject'].lower() == 'true':
             tests.append({'project': project, 'assembly_name': values['AssemblyName'], 'frameworks': frameworks})
@@ -618,14 +624,14 @@ def stage_maintenance_metadata(source: Path, row: dict, inventory: list[dict], v
             destination = Path(temporary) / str(index)
             destination.mkdir()
             command = metadata_command(policy['project'], version, row)
-            assets_name = run(command + ['-getProperty:ProjectAssetsFile'], source, env=recipe_environment(row, version)).strip()
+            assets_name = run(command + ['-getProperty:ProjectAssetsFile'], source, env=recipe_environment(row, version, source)).strip()
             stage_assets = (source / assets_name).resolve()
             require(stage_assets.is_relative_to(source.resolve()) and stage_assets.is_file() and not stage_assets.is_symlink(),
                     'Invalid restored metadata input')
             stage_assets_hash = digest(stage_assets.read_bytes())
             run(command + ['-target:_GetRestoreProjectStyle;GenerateNuspec', '-p:NoBuild=true',
                 '-p:ContinuePackingAfterGeneratingNuspec=false', f'-p:NuspecOutputPath={destination}',
-                f"-p:PackageOutputPath={destination / 'forbidden-packages'}"], source, env=recipe_environment(row, version))
+                f"-p:PackageOutputPath={destination / 'forbidden-packages'}"], source, env=recipe_environment(row, version, source))
             policy.update(nupkg=f"{policy['id']}.{version}.nupkg",
                           snupkg=f"{policy['id']}.{version}.snupkg" if policy['symbols'] else None,
                           source_commit=row['commit'], restore_assets=[], framework_properties={})
@@ -639,7 +645,7 @@ def stage_maintenance_metadata(source: Path, row: dict, inventory: list[dict], v
                     targets += ';_PrepareRazorSourceGenerators'
                 resolved = json.loads(run(command + [f'-p:TargetFramework={framework}', '-p:BuildProjectReferences=false',
                     f'-target:{targets}', f'-getProperty:{properties}', '-getItem:Analyzer,ResolvedFrameworkReference,Compile'],
-                    source, env=recipe_environment(row, version)))
+                    source, env=recipe_environment(row, version, source)))
                 assets = (source / resolved['Properties']['ProjectAssetsFile']).resolve()
                 require(assets.is_relative_to(source.resolve()) and assets.is_file() and not assets.is_symlink(),
                         'Invalid restored metadata input')
@@ -1098,11 +1104,18 @@ def prepare(root: Path, row: dict, version: str, output: Path, *, plan: dict | N
         git(source, 'fetch', '--no-tags', str(root), row['commit'])
         git(source, 'checkout', '--detach', '--quiet', row['commit'])
         git(source, 'remote', 'add', 'origin', 'https://github.com/' + row['source_repository'] + '.git')
+        config = source / 'NuGet.Config'
+        require(config.is_file() and not config.is_symlink() and
+                config.read_bytes() == git_bytes(root, row['commit'], 'NuGet.Config'),
+                'Original restore config differs from source')
+        if plan is not None:
+            require(digest(config.read_bytes()) == plan['consumer_feed_policy']['config_sha256'],
+                    'Original restore config differs from plan')
         receipt['source_policy_files'] = {name: digest((source / name).read_bytes())
             for name in ('Directory.Build.props', 'Directory.Packages.props') if (source / name).is_file()}
         receipt['stage'] = 'toolchain'
         receipt['toolchain'] = inspect_toolchain(source, row)
-        environment = recipe_environment(row, version)
+        environment = recipe_environment(row, version, source)
         (output / 'artifacts').mkdir()
         for index, (directory, command) in enumerate(recipes(row, version, output)):
             log = output / f'command-{index:02}.log'
@@ -1110,10 +1123,7 @@ def prepare(root: Path, row: dict, version: str, output: Path, *, plan: dict | N
             receipt['focus'] = {'step': index + 1, 'directory': directory}
             record = {'cwd': directory, 'argv': [arg.replace(str(output), '$OUTPUT') for arg in command], 'success': False}
             receipt['commands'].append(record)
-            if original_core(row):
-                run_build_command(command, source / directory, log, record, environment=environment)
-            else:
-                run_build_command(command, source / directory, log, record)
+            run_build_command(command, source / directory, log, record, environment=environment)
         if row['product'] == 'extensions' or original_core(row):
             for path in (source / 'packages').glob('*nupkg'):
                 shutil.copyfile(path, output / 'artifacts' / path.name)

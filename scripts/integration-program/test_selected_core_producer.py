@@ -213,6 +213,7 @@ class OriginalCoreProducerContracts(unittest.TestCase):
         projects = ['src/Package.csproj', 'test/unit/Inside/Inside.csproj', 'test/unit/Outside/Outside.csproj']
         with tempfile.TemporaryDirectory() as temp:
             source = Path(temp); output = source / 'output'; output.mkdir()
+            (source / 'NuGet.Config').write_text('<configuration />')
             (source / 'Elsa.sln').write_text('\n'.join('Project("guid") = "name", "' + p + '", "id"' for p in projects[:2]))
             extra_is_test = True
             def run(command, *_args, **kwargs):

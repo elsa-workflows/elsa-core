@@ -106,6 +106,64 @@ class MaintenanceContracts(unittest.TestCase):
                                     'PATH': '/safe'}, clear=True):
             self.assertEqual(maintenance.build_environment(), {'PATH': '/safe', 'EmbedUntrackedSources': 'true'})
 
+    def test_recipe_restore_config_comes_only_from_source_and_preserves_core_environment(self):
+        config = self.root / 'NuGet.Config'; config.write_text('<configuration />')
+        gate = 'ELSA_POSTGRES_DB'
+        for product in ('studio', 'extensions', 'core'):
+            with self.subTest(product=product), patch.dict(os.environ,
+                    {'HOME': '/unchanged-home', 'RestoreConfigFile': '/untrusted/config',
+                     'GITHUB_TOKEN': 'secret'}, clear=True), \
+                    patch.object(maintenance, 'original_core', return_value=product == 'core'), \
+                    patch('selected_core_producer.environment', return_value={'VERSION': '3.8.999', gate: 'connection'}):
+                environment = maintenance.recipe_environment({'product': product}, '3.8.999', self.root)
+                self.assertEqual(str(config.resolve()), environment['RestoreConfigFile'])
+                self.assertNotIn('GITHUB_TOKEN', environment)
+                if product == 'core':
+                    self.assertEqual('3.8.999', environment['VERSION'])
+                    self.assertEqual('connection', environment[gate])
+                else:
+                    self.assertEqual('/unchanged-home', environment['HOME'])
+        with patch.dict(os.environ, {'RestoreConfigFile': '/untrusted/config'}, clear=True):
+            self.assertNotIn('RestoreConfigFile', maintenance.build_environment())
+
+    def test_recipe_restore_config_missing_directory_or_symlink_fails(self):
+        config = self.root / 'NuGet.Config'
+        for kind in ('missing', 'directory', 'symlink'):
+            if kind == 'directory':
+                config.mkdir()
+            elif kind == 'symlink':
+                config.rmdir()
+                other = self.root / 'Other.Config'; other.write_text('<configuration />')
+                config.symlink_to(other)
+            with self.subTest(kind=kind), self.assertRaisesRegex(ValueError, 'regular file'):
+                maintenance.recipe_environment(self.row, '3.8.999', self.root)
+
+    def test_prepare_passes_bound_environment_and_rejects_changed_source_config_before_tools(self):
+        original = b'<configuration />'
+        for product, changed in (('studio', False), ('extensions', False), ('extensions', True), ('extensions', 'plan')):
+            row = next(row for row in self.register['sources'] if row['product'] == product)
+            output = self.root / (product + str(changed))
+            def checkout(root, *args, **_kwargs):
+                if args[:1] == ('checkout',):
+                    (root / 'NuGet.Config').write_bytes(b'<changed />' if changed is True else original)
+                return 'd' * 40
+            with self.subTest(product=product, changed=changed), \
+                    patch.object(maintenance, 'git', side_effect=checkout), \
+                    patch.object(maintenance, 'git_bytes', return_value=original), \
+                    patch.object(maintenance, 'verify_source'), \
+                    patch.object(maintenance, 'inspect_toolchain', return_value={}) as tools, \
+                    patch.object(maintenance, 'recipes', return_value=[('.', ['fixture-only'])]), \
+                    patch.object(maintenance, 'run_build_command', side_effect=ValueError('stop-before-build')) as command:
+                with self.assertRaisesRegex(ValueError, 'differs from plan' if changed == 'plan' else
+                        'differs from source' if changed else 'stop-before-build'):
+                    plan = {'consumer_feed_policy': {'config_sha256': '0' * 64}} if changed == 'plan' else None
+                    maintenance.prepare(maintenance.ROOT, row, '3.8.999', output, plan=plan)
+                if changed:
+                    tools.assert_not_called(); command.assert_not_called()
+                else:
+                    self.assertEqual(str((output / 'source/NuGet.Config').resolve()),
+                                     command.call_args.kwargs['environment']['RestoreConfigFile'])
+
     def test_source_tree_parent_and_workflow_inventory_are_verified(self):
         maintenance.verify_source(maintenance.ROOT, self.row)
         for field in ['tree', 'parent']:
@@ -174,6 +232,11 @@ class MaintenanceContracts(unittest.TestCase):
         policy = {'id': 'Fixture', 'project': 'src/Fixture.csproj', 'assembly_name': 'Fixture',
                   'frameworks': ['net8.0'], 'symbols': True, 'include_build_output': True, 'satellites': [],
                   'private_context': '/private-secret/context'}
+        config = b'<configuration />'
+        def checkout(root, *args, **_kwargs):
+            if args[:1] == ('checkout',):
+                (root / 'NuGet.Config').write_bytes(config)
+            return 'd' * 40
         def tests(*_args):
             if failure == 'test-evidence':
                 raise ValueError('Test evidence rejected')
@@ -193,7 +256,8 @@ class MaintenanceContracts(unittest.TestCase):
                 raise ValueError('/private-secret/metadata failure')
         with ExitStack() as stack:
             for name, options in {
-                'git': {'return_value': 'd' * 40}, 'verify_source': {'return_value': None},
+                'git': {'side_effect': checkout}, 'git_bytes': {'return_value': config},
+                'verify_source': {'return_value': None},
                 'recipes': {'return_value': []}, 'run': {'side_effect': execute},
                 'evaluate_inventory': {'return_value': [policy]}, 'verify_tests': {'side_effect': tests},
                 'stage_maintenance_metadata': {'side_effect': stage}, 'verify_artifacts': {'return_value': []},
@@ -382,6 +446,7 @@ class MaintenanceContracts(unittest.TestCase):
 
     def test_metadata_stage_binds_restore_and_retains_only_public_projection(self):
         source = self.root / 'source'; source.mkdir()
+        (source / 'NuGet.Config').write_text('<configuration />')
         (source / 'Fixture.csproj').write_text('<Project Sdk="Microsoft.NET.Sdk" />')
         assets = source / 'obj/project.assets.json'; assets.parent.mkdir(); assets.write_text('{}')
         policy = {'id': 'Fixture', 'project': 'Fixture.csproj', 'symbols': True, 'frameworks': ['net8.0']}
@@ -734,6 +799,7 @@ class MaintenanceContracts(unittest.TestCase):
 
     def test_inventory_records_explicit_source_build_output_and_assembly_identity(self):
         source = self.root / 'source'; source.mkdir()
+        (source / 'NuGet.Config').write_text('<configuration />')
         (source / 'Elsa.Studio.sln').write_text('Project("{fixture}") = "Fixture", "Fixture.csproj", "{fixture}"\n')
         values = {'IsPackable': 'true', 'IsTestProject': 'true', 'AssemblyName': 'Evaluated.Assembly',
                   'PackageId': 'Elsa.Studio.Fixture', 'PackageVersion': '3.8.4-proof.42.1',
@@ -973,6 +1039,7 @@ class MaintenanceContracts(unittest.TestCase):
         self.assertTrue(all(symbol['documents'][0]['source'] == 'original-git' for symbol in receipt[0]['symbols']))
         # SDK-evaluated resource satellites have exact emitted bytes but no primary-style PDB.
         source = self.root / 'source'; source.mkdir()
+        (source / 'NuGet.Config').write_text('<configuration />')
         subprocess.run(['git', 'init', '-q'], cwd=source, check=True)
         objects = Path(maintenance.git(maintenance.ROOT, 'rev-parse', '--path-format=absolute', '--git-common-dir')) / 'objects'
         (source / '.git/objects/info/alternates').write_text(str(objects) + '\n')
