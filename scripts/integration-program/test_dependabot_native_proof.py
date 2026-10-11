@@ -13,7 +13,7 @@ class NativeProofReceiptTests(unittest.TestCase):
                        'Error': {'error-type': 'private_source_authentication_failure',
                                  'error-details': {'message': 'SECRET https://private/token'}},
                        'Projects': [{'FilePath': 'core/A.csproj', 'IsSuccess': True,
-                                     'ImportedFiles': ['Directory.Packages.props'],
+                                     'ImportedFiles': ['../Directory.Packages.props'],
                                      'TargetFrameworks': ['net10.0'],
                                      'Dependencies': [{'Name': 'Known', 'Version': '1.2.3'},
                                                       {'Name': 'SECRET', 'Version': 'https://private'}]}]}]
@@ -38,6 +38,30 @@ class NativeProofReceiptTests(unittest.TestCase):
         self.assertEqual(['observed', 'incomplete_metadata'], [p['status'] for p in result['projects']])
         self.assertFalse(result['complete'])
         self.assertEqual(0, result['projects'][1]['dependency_count'])
+
+    def test_nested_and_retained_project_relative_central_paths(self):
+        cases = [('', 'core/src/modules/Foo/Foo.csproj',
+                  'core/src/modules/Foo/Foo.csproj', 'Directory.Packages.props',
+                  '../../../../Directory.Packages.props'),
+                 ('extensions/src/Elsa.Testing.Extensions', 'Elsa.Testing.Extensions.csproj',
+                  'extensions/src/Elsa.Testing.Extensions/Elsa.Testing.Extensions.csproj',
+                  'extensions/src/Directory.Packages.props', '../Directory.Packages.props')]
+        for workspace, file_path, project, central, relative_central in cases:
+            for special_only in (False, True):
+                with self.subTest(workspace=workspace, special_only=special_only):
+                    native = {'Path': workspace, 'IsSuccess': True, 'Projects': [{
+                        'FilePath': file_path, 'IsSuccess': True,
+                        'ImportedFiles': [] if special_only else [relative_central, '../../../../../Secrets.props'],
+                        'PackageManagementSpecialFileRelativePath': relative_central,
+                        'TargetFrameworks': ['net10.0'],
+                        'Dependencies': [{'Name': 'Known', 'Version': '1.2.3'}]}]}
+                    result = reconcile({project: central}, [native],
+                                       {central: {'Known': {'1.2.3'}}}, {project, central, 'Secrets.props'})
+                    row = result['projects'][0]
+                    self.assertEqual('observed', row['status'])
+                    self.assertTrue(result['complete'])
+                    self.assertEqual(central, row['central_file'])
+                    self.assertEqual([] if special_only else [central], row['imported_files'])
 
     def test_version_from_another_product_does_not_satisfy_central_join(self):
         native = {'Path': '', 'IsSuccess': True, 'Projects': [{

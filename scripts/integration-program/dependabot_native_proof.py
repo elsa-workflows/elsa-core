@@ -26,12 +26,12 @@ ERROR_TYPES = {'unknown_error', 'dependency_file_not_parseable', 'dependency_fil
                'private_source_timed_out', 'dependency_not_found', 'out_of_disk', 'bad_requirement'}
 
 
-def normalized(workspace, value):
+def normalized(base, value):
     """Reject paths outside the snapshot without exposing arbitrary input strings."""
     if not isinstance(value, str) or value.startswith('/') or '\\' in value:
         return None
     parts = []
-    for part in PurePosixPath(workspace.lstrip('/'), value).parts:
+    for part in PurePosixPath(base.lstrip('/'), value).parts:
         if part == '..':
             if not parts:
                 return None
@@ -78,9 +78,11 @@ def reconcile(expected, workspaces, package_versions, tracked):
         result = {'path': path, 'expected_central': central, 'status': 'omitted'}
         if matches:
             row, workspace, workspace_failed = matches[0]
+            # Native imports and central-file paths are relative to the project directory.
+            project_directory = str(PurePosixPath(path).parent)
             imports = sorted({p for value in row.get('ImportedFiles', [])
-                              if (p := normalized(workspace, value)) in tracked})
-            special = normalized(workspace, row.get('PackageManagementSpecialFileRelativePath'))
+                              if (p := normalized(project_directory, value)) in tracked})
+            special = normalized(project_directory, row.get('PackageManagementSpecialFileRelativePath'))
             tfms = sorted({v for v in row.get('TargetFrameworks', [])
                            if isinstance(v, str) and re.fullmatch(r'net(?:standard|coreapp)?[0-9][a-zA-Z0-9.\-]*', v)})
             dependencies = []
