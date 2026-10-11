@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+    
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Elsa.Studio.BlazorWasm.Client\Elsa.Studio.BlazorWasm.Client.csproj" />
+    </ItemGroup>
+
+
+</Project>

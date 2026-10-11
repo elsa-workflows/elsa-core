@@ -248,6 +248,7 @@ def filters(groups: dict[SolutionProject, str], projects: list[SolutionProject],
         studio.add(by_name["Elsa.Api.Client"])
     result["Elsa.Studio.slnf"] = closure(studio)
     result["Elsa.Extensions.slnf"] = closure(members(*domains, EXTENSIONS))
+    result["Elsa.Apps.slnf"] = closure({project for project in projects if project.path.startswith("apps/")})
     return result
 
 

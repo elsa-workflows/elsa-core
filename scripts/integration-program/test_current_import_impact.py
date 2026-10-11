@@ -1,9 +1,16 @@
+import copy
+import json
+import os
 from pathlib import Path
+import tempfile
 import unittest
 from unittest.mock import patch
 
+from apps_consumer_inventory import git
 from current_import_impact import (
     CORE_PROJECT,
+    git_output,
+    partition_source_graph,
     reject_unmapped_elsa_packages,
     restored_test_projects,
     select_scenarios,
@@ -66,10 +73,32 @@ def unit():
 
 
 class CurrentImportedImpactTests(unittest.TestCase):
+    def test_git_head_and_status_use_selected_repository_despite_ambient_routing(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            roots = [Path(temporary) / name for name in ("selected", "ambient")]
+            for root in roots:
+                root.mkdir()
+                git(root, "init", "--quiet")
+                (root / "marker").write_text(root.name)
+                git(root, "add", "marker")
+                git(root, "-c", "user.name=Git fixture", "-c", "user.email=git-fixture@example.invalid",
+                    "commit", "--quiet", "-m", root.name)
+            selected, ambient = roots
+            (selected / "marker").write_text("reviewed working change")
+            expected_head = git(selected, "rev-parse", "HEAD")
+            expected_status = git(selected, "status", "--porcelain")
+            self.assertNotEqual(expected_head, git(ambient, "rev-parse", "HEAD"))
+            self.assertTrue(expected_status)
+            with patch.dict(os.environ, GIT_DIR=str(ambient / ".git"), GIT_WORK_TREE=str(ambient),
+                            GIT_INDEX_FILE=str(ambient / ".git/index"), GIT_CONFIG_COUNT="1",
+                            GIT_CONFIG_KEY_0="core.worktree", GIT_CONFIG_VALUE_0=str(ambient)):
+                self.assertEqual(expected_head, git_output(selected, "rev-parse", "HEAD"))
+                self.assertEqual(expected_status, git_output(selected, "status", "--porcelain"))
+
     def test_workflow_triggers_for_selector_graph_dependencies(self):
         workflow = Path(__file__).resolve().parents[2] / ".github/workflows/current-import-impact.yml"
         text = workflow.read_text(encoding="utf-8")
-        input_roots = (".github/**", "build/**", 'core/samples/**', "scripts/integration-program/**", 'core/src/**', 'core/test/**')
+        input_roots = (".github/**", "build/**", "Elsa.Apps.slnf", 'core/samples/**', "scripts/integration-program/**", 'core/src/**', 'core/test/**')
         for input_root in input_roots:
             with self.subTest(input_root=input_root):
                 self.assertIn(f"      - '{input_root}'", text)
@@ -198,6 +227,77 @@ class CurrentImportedImpactTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "differs from the release-unit manifest"):
             select_scenarios(graph, assets(), configured)
+
+
+class IndependentAppsImpactTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name).resolve()
+        filter_path = Path(__file__).resolve().parents[2] / "Elsa.Apps.slnf"
+        self.documents = assets()
+        self.apps = set(json.loads(filter_path.read_text())["solution"]["projects"])
+        for path in self.apps:
+            self.documents[path] = {
+                "project": {"restore": {"frameworks": {"net10.0": {}}}},
+                "libraries": {"Elsa.Workflows.Core/3.9.0": {"type": "package"}},
+            }
+        self.names = {path: Path(path).stem for path in self.documents}
+        inventory = patch("current_import_impact.current_apps_projects", return_value=[self.root / path for path in self.apps])
+        self.inventory = inventory.start()
+        self.addCleanup(inventory.stop)
+        self.solution = set(self.names)
+
+    def partition(self):
+        return partition_source_graph(self.root, self.names, self.documents, self.solution)
+
+    def test_registered_consumers_are_explicitly_separate_from_source_graph(self):
+        names, documents, independent = self.partition()
+        self.assertEqual(set(independent), self.apps)
+        self.assertEqual(set(names), set(assets()))
+        self.assertEqual(set(documents), set(assets()))
+        reject_unmapped_elsa_packages(documents)
+
+    def test_new_current_registered_consumer_is_accounted_for(self):
+        path = "apps/src/NewHost/NewHost.csproj"
+        self.apps.add(path)
+        self.names[path] = "NewHost"
+        self.documents[path] = copy.deepcopy(self.documents[next(iter(self.apps - {path}))])
+        self.solution.add(path)
+        self.inventory.return_value = [self.root / project for project in self.apps]
+        names, documents, independent = self.partition()
+        self.assertIn(path, independent)
+        self.assertNotIn(path, names)
+        reject_unmapped_elsa_packages(documents)
+
+    def test_missing_or_unregistered_apps_solution_member_is_rejected(self):
+        original = self.solution.copy()
+        for mutate in (
+            lambda: self.solution.remove(next(iter(self.apps))),
+            lambda: self.solution.add("apps/src/Unexpected/Unexpected.csproj"),
+        ):
+            with self.subTest(mutate=mutate):
+                self.solution = original.copy()
+                mutate()
+                with self.assertRaisesRegex(ValueError, "current tracked/filter/solution"):
+                    self.partition()
+
+    def test_project_references_cannot_cross_the_consumer_boundary(self):
+        app = next(iter(self.apps))
+        original = copy.deepcopy(self.documents)
+        for source, target in ((CORE_PROJECT, app), (app, CORE_PROJECT)):
+            with self.subTest(source=source):
+                self.documents = copy.deepcopy(original)
+                framework = next(iter(self.documents[source]["project"]["restore"]["frameworks"].values()))
+                framework["projectReferences"] = {str(self.root / target): {}}
+                with self.assertRaisesRegex(ValueError, "crosses independent Apps boundary"):
+                    self.partition()
+
+    def test_source_packages_remain_fail_closed_after_partition(self):
+        self.documents[CORE_PROJECT]["libraries"] = {"Elsa.Workflows.Core/3.9.0": {"type": "package"}}
+        _, documents, _ = self.partition()
+        with self.assertRaisesRegex(ValueError, "unmapped Elsa package dependency"):
+            reject_unmapped_elsa_packages(documents)
 
 
 if __name__ == "__main__":

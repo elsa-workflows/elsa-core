@@ -43,6 +43,13 @@ class SolutionGroupsTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "missing from scripts/solution/solution-groups.json"):
             sg.classify([*self.projects, stray], self.manifest)
 
+    def test_apps_filter_preserves_released_package_consumer_boundary(self) -> None:
+        projects = [sg.SolutionProject("Elsa.Server", "apps/src/Elsa.Server/Elsa.Server.csproj", "1" * 32),
+                    sg.SolutionProject("Elsa.Server.Web", "core/src/apps/Elsa.Server.Web/Elsa.Server.Web.csproj", "2" * 32)]
+        groups = sg.classify(projects, self.manifest)
+        self.assertEqual(sg.APPS, groups[projects[0]])
+        self.assertEqual([projects[0].path], sg.filters(groups, projects, [])["Elsa.Apps.slnf"])
+
     def test_foundation_may_not_depend_on_an_optional_project(self) -> None:
         manifest = json.loads(json.dumps(self.manifest))
         manifest["foundation"].remove("Elsa.Expressions.Liquid")

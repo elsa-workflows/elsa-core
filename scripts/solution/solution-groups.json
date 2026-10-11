@@ -141,7 +141,8 @@
     "paths": [
       "core/src/apps/",
       "core/src/clients/",
-      "build/"
+      "build/",
+      "apps/src/"
     ]
   },
   "samples": {

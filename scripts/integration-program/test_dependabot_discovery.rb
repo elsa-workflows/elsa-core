@@ -12,6 +12,8 @@ class DependabotDiscoveryTests < Minitest::Test
   REPOSITORY_ROOT = File.expand_path("../..", __dir__)
   CONFIGURATION = YAML.load_file(File.join(REPOSITORY_ROOT, ".github/dependabot.yml"))
   UNMODELED_PROJECT_EXTENSIONS = %w[.proj .fsproj .vbproj].freeze
+  APPS_PROJECTS = JSON.parse(File.read(File.join(REPOSITORY_ROOT,
+    "Elsa.Apps.slnf"))).fetch("solution").fetch("projects").sort.freeze
   LEGACY_CORE_PROJECT = "extensions/src/Elsa.Testing.Extensions/Elsa.Testing.Extensions.csproj"
 
   def setup
@@ -54,7 +56,7 @@ class DependabotDiscoveryTests < Minitest::Test
       FileUtils.mkdir_p(File.dirname(destination))
       FileUtils.cp(File.join(REPOSITORY_ROOT, path), destination)
     end
-    expected = solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")) + [LEGACY_CORE_PROJECT]
+    expected = solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")) - APPS_PROJECTS + [LEGACY_CORE_PROJECT]
 
     batches = CONFIGURATION.fetch("updates").map { |entry| discovered_projects(entry.fetch("directories")) }
     assert_equal expected.sort, batches.flatten.sort, "Reconcile batch selectors when solution membership changes"
@@ -65,8 +67,9 @@ class DependabotDiscoveryTests < Minitest::Test
     CONFIGURATION.fetch("updates").each do |entry|
       refute_includes entry.fetch("directories"), "/", "Never select the root solution as a batch"
     end
-    %w[core extensions studio].each do |product|
-      assert_equal ["core/test/TlsSmoke/TlsSmoke.csproj"].select { |path| path.start_with?("#{product}/") },
+    %w[core extensions studio apps].each do |product|
+      unselected = product == "apps" ? APPS_PROJECTS : ["core/test/TlsSmoke/TlsSmoke.csproj"].select { |path| path.start_with?("#{product}/") }
+      assert_equal unselected,
         projects.select { |path| path.start_with?("#{product}/") } - expected,
         "Every product source, test and sample project needs an explicit disposition"
     end
@@ -77,9 +80,25 @@ class DependabotDiscoveryTests < Minitest::Test
       "docs/integration-program/consolidation/dependabot-recursive-discovery.md"))
       .scan(/`(scripts\/[^`]+\.csproj)`/).flatten.sort
     assert_equal projects.grep(%r{^scripts/}).sort, documented_probes
-    assert_equal ["core/test/TlsSmoke/TlsSmoke.csproj"] + documented_probes,
+    assert_equal (APPS_PROJECTS + ["core/test/TlsSmoke/TlsSmoke.csproj"] + documented_probes).sort,
       (projects - expected).sort
     assert_empty expected - projects, "Solution entries must name tracked manifests"
+  end
+
+  def test_apps_have_an_explicit_independent_consumer_disposition
+    refute_empty APPS_PROJECTS
+    assert_equal APPS_PROJECTS, tracked_projects.grep(%r{^apps/}).sort
+    assert_equal APPS_PROJECTS.length, APPS_PROJECTS.uniq.length
+    assert_equal APPS_PROJECTS, solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")).grep(%r{^apps/}).sort
+    assert APPS_PROJECTS.all? { |path| path.start_with?("apps/") }
+    targets = project_xml("apps/Directory.Build.targets")
+    assert_equal ["false"], targets.get_elements("//UseProjectReferences").map(&:text)
+    assert_equal ["false"], targets.get_elements("//IsPackable").map(&:text)
+    assert_equal ["$(MSBuildThisFileDirectory)NuGet.Config"], targets.get_elements("//RestoreConfigFile").map(&:text)
+    assert_empty targets.get_elements("//Import"), "Apps must not import root source/pack policy"
+    assert_includes File.read(File.join(REPOSITORY_ROOT,
+      "docs/integration-program/consolidation/dependabot-recursive-discovery.md")),
+      "independent released-package consumers"
   end
 
   def test_solution_expansion_includes_tests_samples_and_deeper_projects
@@ -131,6 +150,7 @@ class DependabotDiscoveryTests < Minitest::Test
       expected = case project
       when %r{^extensions/} then "extensions/src/Directory.Packages.props"
       when %r{^studio/} then "studio/src/Directory.Packages.props"
+      when %r{^apps/} then "apps/Directory.Packages.props"
       else "Directory.Packages.props"
       end
       central = nearest_central_file(project)
@@ -257,6 +277,7 @@ class DependabotDiscoveryTests < Minitest::Test
       Directory.Packages.props NuGet.Config nuget.config core/custom.props studio/import.targets
       .config/dotnet-tools.json
       core/global.json docs/integration-program/consolidation/dependabot-recursive-discovery.md
+      Elsa.Apps.slnf
     ] +
       Dir.chdir(REPOSITORY_ROOT) { Dir.glob("**/*.{sln,slnx,props,targets}") }
     future_solutions = {

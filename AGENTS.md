@@ -5,9 +5,9 @@ Guidance for AI coding agents working in this repository.
 ## Project Overview
 
 - Elsa Core is a .NET solution centered on `Elsa.sln`.
-- Products live under `core/`, `extensions/`, and `studio/`, each with `src/`, `test/`, and `docs/`.
+- Products live under `core/`, `extensions/`, `studio/`, and `apps/`. Apps contains official released-package application hosts and Python container-policy tests under `apps/scripts/tests/`; its contributor entrypoint is [Apps](apps/README.md).
 - The root solution, solution filters, build automation, scripts and central policy are shared.
-- Read the product documentation entrypoints: [Core](core/docs/README.md), [Extensions](extensions/docs/README.md), and [Studio](studio/docs/README.md).
+- Read the product documentation entrypoints: [Core](core/docs/README.md), [Extensions](extensions/docs/README.md), [Studio](studio/docs/README.md), and [Apps](apps/docs/README.md).
 - Build automation is implemented with NUKE in `build/Build.cs` and exposed through `build.sh`, `build.ps1`, and `build.cmd`.
 
 ## Working Rules
@@ -32,7 +32,7 @@ Guidance for AI coding agents working in this repository.
 - Build the default target: `./build.sh`
 - Run NUKE test target: `./build.sh Test`
 - Build with dotnet directly: `dotnet build Elsa.sln`
-- Focus a product build with `dotnet build Elsa.Core.slnf`, `dotnet build Elsa.Extensions.slnf`, or `dotnet build Elsa.Studio.slnf`; see product docs for selection boundaries.
+- Focus a product build with `dotnet build Elsa.Core.slnf`, `dotnet build Elsa.Extensions.slnf`, `dotnet build Elsa.Studio.slnf`, or `dotnet build Elsa.Apps.slnf`; see product docs for selection boundaries.
 - Run all tests directly: `dotnet test Elsa.sln`
 - Run a specific test project: `dotnet test core/test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj`
 - Run ElsaScript DSL integration tests: `./run-dsl-tests.sh`
@@ -53,6 +53,7 @@ Prefer targeted `dotnet test <project>` commands while iterating, then run a bro
 - `core/test/`: Core unit, integration, component and performance tests.
 - `extensions/src/`, `extensions/test/`, `extensions/docs/`, `extensions/samples/`: Extensions-owned code, tests, documentation and samples.
 - `studio/src/`, `studio/test/`, `studio/docs/`, `studio/samples/`: Studio-owned code, tests, documentation and samples. Read [Studio contributor guidance](studio/src/AGENTS.md) for Studio modules, hosts, frameworks and tests.
+- `apps/src/`, `apps/scripts/`, `apps/docs/`: official net10 application/image hosts, container policy tests and source-import guidance. Read [Apps agent guidance](apps/AGENTS.md). Apps consumes released packages and does not add Core NuGet release units.
 - `core/docs/specs/` and `studio/docs/specs/`: product feature plans and specifications.
 - `docs/adr/`: shared architecture decisions; `docs/integration-program/`: retained consolidation and proof records.
 - `build/`, `scripts/`, `docker/`, root solution/filter files and central `Directory.*` files: shared tooling and policy.

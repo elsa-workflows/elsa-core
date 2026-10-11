@@ -94,6 +94,27 @@ unit explicitly selects `/.config`. At the baseline, the manifest contains
 `dotnet-ef` version `9.0.11`; the coverage gate checks the tool identity and a nonempty
 version without freezing future updates. It runs when this manifest changes.
 
+## Apps consumer disposition
+
+Task [#8746](https://github.com/elsa-workflows/elsa-core/issues/8746) adds exactly nine
+registered Apps projects to the shared solution as **independent released-package consumers**.
+The [Apps register](../apps-source-import.json) preserves their original manifests; the current
+`Elsa.Apps.slnf`, tracked Apps projects and root solution must agree. They
+remain outside these five source-package updater batches; the coverage census explicitly
+reconciles the current consumer inventory rather than dropping it from inventory. Apps keeps its own
+`apps/Directory.Packages.props`, `apps/NuGet.Config`, internal project references and
+net10.0 target. Its local targets select only that restore config, prevent source-reference
+substitution and set `IsPackable=false`.
+
+The [Apps source workflow](../../../.github/workflows/apps-source-validation.yml) owns
+root-context restore, product builds and the six nonpublishing image profiles. New Apps
+source contributions route through Core. No Apps updater job or preview version stream
+is activated here; any future updater authority/configuration decision remains separately
+governed by [#8636](https://github.com/elsa-workflows/elsa-core/issues/8636) and
+[operational program #8741](https://github.com/elsa-workflows/elsa-core/issues/8741).
+The historical inventory table above predates these nine additions; the five selected
+starting-set counts and existing release-unit inventory are unchanged.
+
 ## Central package and build imports
 
 The coverage test walks from each of the 356 selected project manifests to its nearest
