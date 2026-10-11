@@ -1240,6 +1240,7 @@ WRITER_CENTRAL = 'studio/src/Directory.Packages.props'
 WRITER_UNEXPECTED_PROJECT = 'core/src/clients/Elsa.Api.Client/Elsa.Api.Client.csproj'
 WRITER_TARGET = '10.0.12'
 WRITER_OLD = {'net8.0': '8.0.24', 'net9.0': '9.0.13', 'net10.0': '10.0.3'}
+WRITER_FINAL_REASONS = ('missing_project', 'missing_requested_dependency', 'version_mismatch')
 WRITER_PHASES = {'setup': 180, 'producer': 180, 'writer': 300, 'readback': 120}
 
 
@@ -1300,7 +1301,7 @@ def writer_operations(state, tracked, package_ids):
 
 def writer_events(state, tracked):
     """Project only closed fields; native errors/log text are never summary fields."""
-    result = {'status': 'missing_or_invalid', 'events': [], 'invalid': 0, 'dropped': False}
+    result = {'status': 'missing_or_invalid', 'events': [], 'invalid': 0, 'dropped': False, 'final_validation_causes': []}
     try:
         raw = read_closed_json(state/'writer-events.json', state)
         events = raw['Events']
@@ -1309,8 +1310,9 @@ def writer_events(state, tracked):
         safe_directories = {str(PurePosixPath(path).parent) for path in tracked if path.endswith('.csproj')}
         for row in events:
             try:
-                if (row['Kind'] not in ('request', 'attempt', 'missing_dependency', 'discovery')
-                        or row['State'] not in ('started', 'returned', 'threw', 'observed', 'null')
+                if (row['Kind'] not in ('request', 'attempt', 'missing_dependency', 'discovery', 'final_validation')
+                        or (row['State'] not in WRITER_FINAL_REASONS if row['Kind'] == 'final_validation'
+                            else row['State'] not in ('started', 'returned', 'threw', 'observed', 'null'))
                         or any(type(row[key]) is not int or row[key] < 0 for key in ('Sequence', 'Ordinal', 'Attempt'))
                         or row['Sequence'] != len(result['events'])
                         or type(row['ElapsedSeconds']) not in (int, float) or not math.isfinite(row['ElapsedSeconds'])
@@ -1324,22 +1326,39 @@ def writer_events(state, tracked):
                 result['events'].append(safe)
             except (ValueError, KeyError, TypeError, AttributeError):
                 result['invalid'] += 1
-        warnings, pending, attempts = [], None, set()
+        warnings, causes, pending, attempts = [], [], None, set()
         for event in result['events']:
             if event['Kind'] == 'attempt':
                 valid = event['Attempt'] not in attempts and event['State'] == 'started'
                 attempts.add(event['Attempt'])
                 pending = {'attempt': event['Attempt'], 'project': event['AttemptProject'],
-                           'phase': 'attempt' if valid else 'invalid', 'ordinal': None}
+                           'phase': 'attempt' if valid else 'invalid', 'ordinal': None, 'context_valid': True}
             elif event['Kind'] == 'discovery' and pending is not None:
+                pending['context_valid'] &= (event['Attempt'] == pending['attempt']
+                    and event['AttemptProject'] == pending['project'] and event['Ordinal'] > 0)
                 if (event['Attempt'] == pending['attempt'] and event['State'] == 'started'
                         and pending['phase'] == 'attempt'):
                     pending.update(phase='started', ordinal=event['Ordinal'])
                 elif (event['Attempt'] == pending['attempt'] and event['State'] == 'returned'
                         and pending['phase'] == 'started' and event['Ordinal'] == pending['ordinal']):
                     pending['phase'] = 'returned'
+                elif (event['Attempt'] == pending['attempt'] and pending['project'] == WRITER_PROJECT
+                        and event['State'] == 'started' and pending['phase'] == 'returned'
+                        and event['Ordinal'] == pending['ordinal']+1):
+                    pending.update(phase='final_started', ordinal=event['Ordinal'])
+                elif (event['Attempt'] == pending['attempt'] and event['State'] == 'returned'
+                        and pending['phase'] == 'final_started' and event['Ordinal'] == pending['ordinal']):
+                    pending['phase'] = 'final_returned'
                 else:
                     pending['phase'] = 'invalid'
+            elif event['Kind'] == 'final_validation':
+                if (pending is not None and pending['phase'] == 'final_returned' and pending['attempt'] > 0
+                        and event['Attempt'] == pending['attempt'] and event['Ordinal'] == pending['ordinal']
+                        and event['AttemptProject'] == pending['project'] == WRITER_PROJECT and pending['context_valid']):
+                    causes.append({'reason': event['State'], 'attempt': pending['attempt'], 'project': WRITER_PROJECT,
+                                   'discovery_ordinal': pending['ordinal'], 'writer_loop_tfm': None})
+                if pending is not None:
+                    pending['phase'] = 'consumed'
             elif event['Kind'] == 'missing_dependency':
                 bound = (pending is not None and event['Attempt'] == pending['attempt']
                          and pending['phase'] == 'returned' and event['State'] == 'observed')
@@ -1352,6 +1371,7 @@ def writer_events(state, tracked):
             elif pending is not None:
                 pending['phase'] = 'invalid'
         result['missing_warnings'] = warnings
+        result['final_validation_causes'] = causes if not result['invalid'] and not raw['Dropped'] else []
         result.update(status='observed' if not result['invalid'] and not raw['Dropped'] else 'invalid_or_dropped', dropped=raw['Dropped'])
     except (OSError, ValueError, KeyError, TypeError):
         pass

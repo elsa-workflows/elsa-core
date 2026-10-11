@@ -909,6 +909,50 @@ class WriterSmokeContractTests(unittest.TestCase):
                 self.assertIsNone(warnings[0]['writer_loop_tfm'])
                 self.assertIsNone(warnings[0]['rerun_survivor'])
 
+    def final_reason_events(self, reason='version_mismatch'):
+        events = [self.event_fixture(Kind='attempt', State='started', Attempt=1, AttemptProject=WRITER_PROJECT),
+                self.event_fixture(Kind='discovery', State='started', Attempt=1, Ordinal=2),
+                self.event_fixture(Kind='discovery', State='returned', Attempt=1, Ordinal=2),
+                self.event_fixture(Kind='discovery', State='started', Attempt=1, Ordinal=3),
+                self.event_fixture(Kind='discovery', State='returned', Attempt=1, Ordinal=3),
+                self.event_fixture(Kind='final_validation', State=reason, Attempt=1, Ordinal=3,
+                                   AttemptProject=WRITER_PROJECT)]
+        return [dict(row, AttemptProject=WRITER_PROJECT) for row in events]
+
+    def test_final_validation_cause_requires_complete_ordered_same_attempt_chain(self):
+        for reason in ('missing_project', 'missing_requested_dependency', 'version_mismatch'):
+            with self.subTest(reason=reason):
+                events = [dict(row, Sequence=i) for i, row in enumerate(self.final_reason_events(reason))]
+                (self.state/'writer-events.json').write_text(json.dumps({'Events': events, 'Dropped': False}))
+                result = writer_events(self.state, self.tracked)
+                self.assertEqual('observed', result['status'])
+                self.assertEqual([{'reason': reason, 'attempt': 1, 'project': WRITER_PROJECT,
+                    'discovery_ordinal': 3, 'writer_loop_tfm': None}], result['final_validation_causes'])
+                self.assertNotIn('SECRET', json.dumps(result))
+
+    def test_malformed_or_unbound_final_reason_has_no_accepted_cause(self):
+        valid = self.final_reason_events()
+        cases = {'no_attempt': valid[1:], 'initial_discovery_only': [*valid[:3], valid[-1]],
+                 'reverse_final': [*valid[:3], valid[4], valid[3], valid[-1]],
+                 'duplicate_start': [*valid[:4], valid[3], *valid[4:]],
+                 'duplicate_return': [*valid[:5], valid[4], valid[-1]],
+                 'intervening_attempt': [*valid[:5], dict(valid[0], Attempt=2), valid[-1]],
+                 'wrong_ordinal': [*valid[:5], dict(valid[-1], Ordinal=4)],
+                 'wrong_discovery_project': [valid[0], dict(valid[1], AttemptProject=WRITER_CENTRAL), *valid[2:]],
+                 'wrong_reason_project': [*valid[:5], dict(valid[-1], AttemptProject=WRITER_CENTRAL)],
+                 'unknown_reason': [*valid[:5], dict(valid[-1], State='SECRET https://private')],
+                 'fabricated_tfm': [*valid[:5], dict(valid[-1], Tfm='net9.0')]}
+        for name, events in cases.items():
+            with self.subTest(case=name):
+                events = [dict(row, Sequence=i) for i, row in enumerate(events)]
+                (self.state/'writer-events.json').write_text(json.dumps({'Events': events, 'Dropped': False}))
+                result = writer_events(self.state, self.tracked)
+                self.assertEqual([], result['final_validation_causes'])
+                self.assertNotIn('SECRET', json.dumps(result))
+        events = [dict(row, Sequence=i) for i, row in enumerate(valid)]
+        (self.state/'writer-events.json').write_text(json.dumps({'Events': events, 'Dropped': True}))
+        self.assertEqual([], writer_events(self.state, self.tracked)['final_validation_causes'])
+
     def test_cleanup_is_inside_phase_and_repeated_stop_does_not_borrow(self):
         with contextlib.redirect_stdout(io.StringIO()), mock.patch('dependabot_native_proof.time.monotonic', return_value=100):
             runner = DeadlineRunner(self.state, {'stages': []}, budget_seconds=840, reserve_seconds=60,

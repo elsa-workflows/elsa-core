@@ -266,5 +266,27 @@ internal sealed class WriterLogger(string snapshot, string output) : ILogger
         {
             Record("missing_dependency", "observed");
         }
+        else if (Regex.IsMatch(message, @"^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} WARN Dependency Microsoft\.AspNetCore\.SignalR\.Client not found in final project discovery\.$"))
+        {
+            Record("final_validation", "missing_requested_dependency", _discoveries);
+        }
+        else
+        {
+            match = Regex.Match(message, @"^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} WARN Unable to find final project discovery for project (.+)\.$");
+            if (match.Success && match.Groups[1].Value == Path.Combine(snapshot, WriterSmoke.Project))
+            {
+                Record("final_validation", "missing_project", _discoveries);
+            }
+            else
+            {
+                match = Regex.Match(message, @"^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} WARN Final dependency version for Microsoft\.AspNetCore\.SignalR\.Client is ([0-9][0-9A-Za-z.+-]{0,100}), expected " + Regex.Escape(WriterSmoke.TargetVersion) + @"\.$");
+                if (match.Success && NuGet.Versioning.NuGetVersion.TryParse(match.Groups[1].Value, out var observedVersion)
+                    && observedVersion != NuGet.Versioning.NuGetVersion.Parse(WriterSmoke.TargetVersion))
+                {
+                    // Only the closed reason is emitted; native version/message text stays private.
+                    Record("final_validation", "version_mismatch", _discoveries);
+                }
+            }
+        }
     }
 }
