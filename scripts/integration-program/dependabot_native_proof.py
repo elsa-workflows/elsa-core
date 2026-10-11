@@ -19,8 +19,8 @@ import sys
 import time
 import xml.etree.ElementTree as ET
 
-TARGET = 'cc7ee0bd6a1ceb306e3dbadae1a4f3bf83e4efea'
-TREE = 'e10dd15f97def82b832e95855d65d37760633be2'
+TARGET = '67fd292b0703a443fba8ac3dade3cea1636b0086'
+TREE = 'f3ba6d682f0ad3690f89b8c078d4deb7111a2966'
 UPSTREAM = 'd3bc6c74cbd106d79d24a728ab623a3eaa776087'
 SUBMODULES = {'nuget/helpers/lib/NuGet.Client': '626dc64e95d6f5bc366cbbe191a15751ccbfb097',
               'nuget/helpers/lib/dotnet-core': '843c037496b2941d8bc42d0eceaabf8d15a9deff'}
