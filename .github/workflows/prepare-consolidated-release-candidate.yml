@@ -3,8 +3,6 @@ name: Consolidated release candidate
 on:
   # Repository-write events and trusted workflow review establish authority.
   # Editable YAML is not an immutable security boundary.
-  push:
-    branches: ['codex/consolidated-release-candidate']
   workflow_dispatch:
 
 permissions: {}

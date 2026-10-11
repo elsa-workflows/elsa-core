@@ -1,9 +1,6 @@
 name: Preserved maintenance build rehearsal
 
 on:
-  # Temporary reviewed rehearsal branch; no historical source refs are activated.
-  push:
-    branches: ['codex/maintenance-builds-8677', 'codex/elsa-integration-maintenance-candidates-8683']
   workflow_dispatch:
     inputs:
       product:
