@@ -316,6 +316,16 @@ def smoke_evaluation(state, index, tfm, snapshot, tracked, package_ids):
     return result
 
 
+def smoke_dependency_matches(native, direct, tfm):
+    return (native['Name'] == direct['id'] and native['Version'] == direct['version']
+            and tfm in native['TargetFrameworks'] and native['IsTopLevel']
+            and native['Type'] in (('GlobalPackageReference', 'PackageReference')
+                                  if direct['type'] == 'GlobalPackageReference'
+                                  else ('PackageReference', 'PackageVersion'))
+            and (not native['EvaluationResult']['present']
+                 or native['EvaluationResult'].get('result_type') == 'Success'))
+
+
 def product_smoke_readback(state, snapshot, expected, tracked, versions):
     package_ids = set().union(*(set(rows) for rows in versions.values()))
     rows = []
@@ -331,6 +341,17 @@ def product_smoke_readback(state, snapshot, expected, tracked, versions):
                 gaps.append({'kind': 'unsafe_input_or_closure'})
             if any(not item['success'] for item in native['records']):
                 gaps.append({'kind': 'closure_record_failed'})
+            for item in native['records']:
+                for dep in item['dependencies']:
+                    if dep['EvaluationResult']['present'] and dep['EvaluationResult']['result_type'] != 'Success':
+                        gaps.append({'kind': 'native_evaluation_result', 'path': item['path'], 'id': dep['Name']})
+            top_level = [dep for dep in record['dependencies'] if dep['IsTopLevel']]
+            for dep in top_level:
+                if (not dep['TargetFrameworks'] or len(dep['TargetFrameworks']) != len(set(dep['TargetFrameworks']))
+                        or any(sum(smoke_dependency_matches(dep, direct, value['tfm'])
+                                   for direct in value['direct_versions']) != 1
+                               for value in evaluations if value['tfm'] in dep['TargetFrameworks'])):
+                    gaps.append({'kind': 'native_top_level_conflict', 'id': dep['Name']})
             for evaluation in evaluations:
                 tfm = evaluation['tfm']
                 if evaluation['central_file'] != record['central_file'] or expected[project] not in record['imports']:
@@ -339,13 +360,19 @@ def product_smoke_readback(state, snapshot, expected, tracked, versions):
                 if Counter(references) != Counter(record['references']):
                     gaps.append({'tfm': tfm, 'kind': 'reference_edges'})
                 for dependency in evaluation['direct_versions']:
-                    found = [dep for dep in record['dependencies'] if dep['Name'] == dependency['id']
-                             and dep['Version'] == dependency['version'] and tfm in dep['TargetFrameworks']
-                             and dep['IsTopLevel'] and dep['Type'] in (
-                                 ('GlobalPackageReference', 'PackageReference') if dependency['type'] == 'GlobalPackageReference'
-                                 else ('PackageReference', 'PackageVersion'))]
+                    found = [dep for dep in top_level if smoke_dependency_matches(dep, dependency, tfm)]
                     if len(found) != 1:
-                        gaps.append({'tfm': tfm, 'kind': 'native_version_attribution', 'id': dependency['id']})
+                        surviving = [dep for dep in top_level if dep['Name'] == dependency['id']]
+                        evaluated_versions = {direct['version'] for value in evaluations
+                                              for direct in value['direct_versions'] if direct['id'] == dependency['id']}
+                        # Pinned SDK discovery groups by package name, overwriting earlier differing
+                        # versions. Only a single valid survivor of conditional versions explains loss.
+                        aggregate_loss = (not found and len(surviving) == 1 and len(evaluated_versions) > 1
+                                          and tfm not in surviving[0]['TargetFrameworks']
+                                          and not any(gap['kind'] in ('native_top_level_conflict', 'native_evaluation_result')
+                                                      and gap['id'] == dependency['id'] for gap in gaps))
+                        gaps.append({'tfm': tfm, 'kind': 'native_version_attribution' if aggregate_loss
+                                     else 'native_dependency_mismatch', 'id': dependency['id']})
             row.update(status='matched' if not gaps else 'unresolved', gaps=gaps)
         rows.append(row)
     return {'projects': rows, 'semantic_preflight_complete': all(row['status'] == 'matched' for row in rows),

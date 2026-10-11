@@ -77,9 +77,17 @@ CircularReference, PropertyNotFound), and known
 project-relative imports/reference edges, including duplicate edges and additional
 tracked closure project records. The join checks each evaluated direct dependency
 against a native top-level package declaration with the same version and TFM, and
-compares native central identity/imports and reference edges with evaluation. A
-native aggregate that loses a conditional framework/version association stays
-unresolved; aggregate project TFMs or literal ancestor XML values do not repair it.
+checks every supplied native top-level declaration against evaluated direct inputs.
+Extra IDs, conflicting versions/types, empty or duplicate TFM attribution and duplicate
+matching declarations block the second call. The join also compares native central
+identity/imports and reference edges with evaluation. Only a missing TFM association
+with one valid surviving declaration and multiple actually evaluated versions of the
+same package is retained as known conditional aggregate loss. It stays unresolved
+and permits collecting the second project; missing entire dependencies or missing
+unconditional attribution block progression. Aggregate project TFMs or literal
+ancestor XML values do not repair missing attribution. EvaluationResult must be absent
+or Success for a dependency match. Known non-success results on retained dependencies,
+including closure records, remain explicit evaluation gaps and block the second call.
 Unknown imports/references/top-level dependency fields, closure failures and
 unevaluable inputs block semantic matching. Only well-shaped unadmitted transitive
 dependencies are separately counted and omitted. Raw expression values, property

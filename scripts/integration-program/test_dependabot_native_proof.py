@@ -451,6 +451,7 @@ class ProductSmokeTests(unittest.TestCase):
     def test_conditional_versions_are_joined_by_tfm_and_reference_edges_retained(self):
         result = self.readback()
         self.assertTrue(result['semantic_preflight_complete'])
+        self.assertTrue(smoke_can_continue(result['projects'][0]))
         self.assertFalse(result['acceptance'])
         self.assertEqual((356, 173), (result['selected_denominator'], result['product_denominator']))
         record = result['projects'][0]['native']['records'][0]
@@ -459,7 +460,8 @@ class ProductSmokeTests(unittest.TestCase):
         self.mutate('evaluation-0-net8.0.json', lambda value: value['Items']['PackageVersion'][0].update(Version='9.0.1'))
         result = self.readback()
         self.assertFalse(result['semantic_preflight_complete'])
-        self.assertIn({'tfm': 'net8.0', 'kind': 'native_version_attribution', 'id': 'Conditional'}, result['projects'][0]['gaps'])
+        self.assertIn({'tfm': 'net8.0', 'kind': 'native_dependency_mismatch', 'id': 'Conditional'}, result['projects'][0]['gaps'])
+        self.assertFalse(smoke_can_continue(result['projects'][0]))
 
     def test_missing_empty_failed_or_wrong_workspace_never_passes(self):
         for change in (lambda value: value.update(Projects=[]),
@@ -513,6 +515,53 @@ class ProductSmokeTests(unittest.TestCase):
         self.assertFalse(result['semantic_preflight_complete'])
         self.assertTrue(smoke_can_continue(result['projects'][0]))
 
+    def test_extra_or_conflicting_known_top_level_rows_block_second_call(self):
+        original = (self.state/'workspace-0.json').read_text()
+        for versions in self.versions.values():
+            versions['ExtraKnown'] = {'8.0.1'}
+        for changes in ({'Version': '99.0.0'}, {}, {'Type': 'DotNetTool'},
+                        {'TargetFrameworks': []}, {'TargetFrameworks': ['net8.0', 'net8.0']},
+                        {'Name': 'ExtraKnown'}):
+            with self.subTest(changes=changes):
+                self.mutate('workspace-0.json', lambda value: value['Projects'][0]['Dependencies'].append(
+                    dict(value['Projects'][0]['Dependencies'][0], **changes)))
+                result = self.readback()
+                self.assertFalse(result['semantic_preflight_complete'])
+                self.assertFalse(smoke_can_continue(result['projects'][0]))
+                (self.state/'workspace-0.json').write_text(original)
+
+    def test_missing_unconditional_or_conflicting_attribution_blocks_second_call(self):
+        for tfm in SMOKE_TFMS:
+            self.mutate(f'evaluation-0-{tfm}.json', lambda value:
+                value['Items']['PackageVersion'][0].update(Version='8.0.1'))
+        self.mutate('workspace-0.json', lambda value: value['Projects'][0].update(
+            Dependencies=value['Projects'][0]['Dependencies'][:1]))
+        result = self.readback()
+        self.assertFalse(result['semantic_preflight_complete'])
+        self.assertFalse(smoke_can_continue(result['projects'][0]))
+
+    def test_missing_entire_conditional_dependency_is_not_known_aggregate_loss(self):
+        self.mutate('workspace-0.json', lambda value: value['Projects'][0].update(Dependencies=[]))
+        result = self.readback()
+        self.assertFalse(result['semantic_preflight_complete'])
+        self.assertFalse(smoke_can_continue(result['projects'][0]))
+
+    def test_known_non_success_evaluation_results_block_second_call_without_raw_values(self):
+        original = (self.state/'workspace-0.json').read_text()
+        for result_type in ('PropertyIgnored', 'CircularReference', 'PropertyNotFound'):
+            with self.subTest(result_type=result_type):
+                self.mutate('workspace-0.json', lambda value: [dep.update(EvaluationResult={
+                    'ResultType': result_type, 'OriginalValue': 'SECRET', 'EvaluatedValue': 'SECRET',
+                    'ErrorMessage': 'https://private'}) for dep in value['Projects'][0]['Dependencies']])
+                result = self.readback()
+                self.assertFalse(result['semantic_preflight_complete'])
+                self.assertFalse(smoke_can_continue(result['projects'][0]))
+                self.assertIn({'kind': 'native_evaluation_result', 'path': SMOKE_PROJECTS[0],
+                               'id': 'Conditional'}, result['projects'][0]['gaps'])
+                self.assertNotIn('SECRET', json.dumps(result))
+                self.assertNotIn('https://', json.dumps(result))
+                (self.state/'workspace-0.json').write_text(original)
+
     def test_unknown_reference_or_import_cannot_be_matched_or_continue(self):
         for key in ('ReferencedProjectPaths', 'ImportedFiles'):
             original = (self.state/'workspace-0.json').read_text()
@@ -534,6 +583,7 @@ class ProductSmokeTests(unittest.TestCase):
             'ErrorMessage': 'https://private'}) for dep in value['Projects'][0]['Dependencies']])
         result = self.readback()
         self.assertTrue(result['semantic_preflight_complete'])
+        self.assertTrue(smoke_can_continue(result['projects'][0]))
         dependency = result['projects'][0]['native']['records'][0]['dependencies'][0]
         self.assertEqual({'present': True, 'result_type': 'Success'}, dependency['EvaluationResult'])
         self.assertNotIn('SECRET', json.dumps(result))
