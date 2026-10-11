@@ -17,7 +17,7 @@ from dependabot_native_proof import (DeadlineRunner, NativeProgress, diagnostic_
     units_from_configuration, unit_projects, reconcile_enumeration, probe_workspaces, probe_readback,
     safe_tool_result, child_environment, read_closed_json, digest, recheck_content, inventory,
     product_smoke_readback, smoke_native, smoke_project, smoke_can_continue, reference_output, SMOKE_PROJECTS, SMOKE_TFMS,
-    writer_update_readback, writer_registration_guard, writer_admission, writer_changes, writer_events, writer_operations, run_writer_case,
+    refresh_writer_receipt, writer_update_readback, writer_registration_guard, writer_admission, writer_changes, writer_events, writer_operations, run_writer_case,
     WRITER_PROJECT, WRITER_PACKAGE, WRITER_CENTRAL, WRITER_OLD,
     UNIT_IDS, UNIT_SELECTORS, UNIT_COUNTS, RETAINED, TOOL_MANIFEST)
 
@@ -943,6 +943,31 @@ class WriterSmokeContractTests(unittest.TestCase):
         return {'status': 'reconciled', 'changed_paths': [WRITER_CENTRAL] if at_target else [],
                 'central_version_changes': [{'id': WRITER_PACKAGE, 'old': '9.0.13', 'new': '10.0.12'}] if at_target else [],
                 'central_sha256': inputs[WRITER_CENTRAL]}
+
+    def test_unaccounted_source_write_retains_independent_readback_without_acceptance(self):
+        (self.snapshot/WRITER_PROJECT).write_text('<Project Changed="true"/>')
+        self.readback_fixture()
+        (self.state/'writer-operations.json').write_text('[]')
+        events = [self.event_fixture(Sequence=0, State='started'), self.event_fixture(Sequence=1)]
+        (self.state/'writer-events.json').write_text(json.dumps({'Events': events, 'Dropped': False}))
+        summary = {'writer': {}}
+        refresh_writer_receipt(summary, self.state, self.snapshot, self.tracked,
+                               {WRITER_PACKAGE}, self.before, lambda: True)
+        writer = summary['writer']
+        self.assertEqual('unaccounted_write', writer['changes']['status'])
+        self.assertEqual([WRITER_PROJECT], writer['changes']['changed_paths'])
+        self.assertEqual('matched_final_inputs', writer['requested_target_readback']['status'])
+        self.assertEqual(3, len(writer['after']))
+        self.assertEqual(3, len(writer['requested_target_readback']['per_tfm']))
+        self.assertEqual('requested_target_not_verified', writer['update_outcome'])
+        self.assertFalse(writer['update_verified'])
+        self.assertFalse(writer['execution_complete'])
+        self.assertFalse(writer['case_complete'])
+        self.central.write_text(self.central.read_text()+' ')
+        refresh_writer_receipt(summary, self.state, self.snapshot, self.tracked,
+                               {WRITER_PACKAGE}, self.before, lambda: True)
+        self.assertEqual([], writer['after'])
+        self.assertEqual('readback_incomplete_or_changed', writer['update_outcome'])
 
     def test_empty_operations_are_complete_readback_but_explicit_no_update(self):
         changes = self.readback_fixture()

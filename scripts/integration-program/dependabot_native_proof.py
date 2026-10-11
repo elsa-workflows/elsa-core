@@ -1365,6 +1365,12 @@ def writer_changes(snapshot, before, operations, can_continue):
     result['changed_paths'] = changed
     if status != 'checked':
         return result
+    # Preserve independent central/readback evidence even when another write fails reconciliation.
+    try:
+        result['central_sha256'] = digest(snapshot/WRITER_CENTRAL, snapshot)
+    except (OSError, ValueError):
+        result['status'] = 'unaccounted_write'
+        return result
     for path in snapshot.rglob('*'):
         if not can_continue():
             return result
@@ -1407,7 +1413,6 @@ def writer_changes(snapshot, before, operations, can_continue):
                 if name != new_name or name not in ids or new_version not in new_versions[name]:
                     raise ValueError('writer_output')
                 result['central_version_changes'].append({'id': name, 'old': old_version, 'new': new_version})
-        result['central_sha256'] = digest(snapshot/WRITER_CENTRAL, snapshot)
         result['status'] = 'reconciled'
     except (OSError, ValueError, ET.ParseError):
         result['status'] = 'unaccounted_write'
