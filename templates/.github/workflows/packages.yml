@@ -1,0 +1,373 @@
+name: Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      recovery_run_id:
+        description: "Original completed release run ID with a successful package build whose artifact should be republished to NuGet.org"
+        required: false
+        type: string
+      recovery_version:
+        description: "Package version in the original release artifact, for example 3.8.0"
+        required: false
+        type: string
+  push:
+    branches:
+      - main
+  release:
+    types:
+      - published
+
+permissions:
+  contents: read
+
+env:
+  BASE_VERSION: 3.9.0
+  FEEDZ_FEED_SOURCE: https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json
+  NUGET_FEED_SOURCE: https://api.nuget.org/v3/index.json
+  DOTNET_VERSION: 10.0.x
+
+concurrency:
+  group: packages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build packages
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.recovery_run_id == '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify release tag is on its release source
+        if: ${{ github.event_name == 'release' }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --prune origin +refs/heads/main:refs/remotes/origin/main
+          TAG_COMMIT="$(git rev-list -n 1 "${GITHUB_REF_NAME}")"
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [[ "${VERSION}" == *-* ]]; then
+            BASE_VERSION="${VERSION%%-*}"
+            RELEASE_BRANCH="origin/release/${BASE_VERSION}"
+            git fetch --no-tags --prune origin "+refs/heads/release/${BASE_VERSION}:refs/remotes/${RELEASE_BRANCH}"
+            git merge-base --is-ancestor "${TAG_COMMIT}" "${RELEASE_BRANCH}"
+          else
+            git merge-base --is-ancestor "${TAG_COMMIT}" origin/main
+          fi
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Show .NET info
+        run: |
+          dotnet --info
+          dotnet --list-sdks
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/Directory.Packages.props', '**/*.csproj') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Set package version
+        run: |
+          set -euo pipefail
+
+          if [[ "${GITHUB_EVENT_NAME}" == "release" ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="${BASE_VERSION}-preview.${GITHUB_RUN_NUMBER}"
+          fi
+
+          echo "VERSION=${VERSION}" >> "${GITHUB_ENV}"
+          echo "Package version: ${VERSION}"
+
+      - name: Restore
+        run: dotnet restore Elsa.Templates.slnx
+
+      - name: Build
+        run: dotnet build Elsa.Templates.slnx --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test test/Elsa.Templates.Tests/Elsa.Templates.Tests.csproj --configuration Release --no-build
+
+      - name: Pack
+        run: |
+          rm -rf artifacts/packages
+          dotnet pack src/Elsa.Templates/Elsa.Templates.csproj \
+            --configuration Release \
+            --no-build \
+            --output artifacts/packages \
+            /p:Version="${VERSION}" \
+            /p:PackageVersion="${VERSION}" \
+            /p:RepositoryCommit="${GITHUB_SHA}" \
+            /p:ContinuousIntegrationBuild=true
+
+      - name: Verify package inventory and provenance
+        run: |
+          set -euo pipefail
+          package="artifacts/packages/Elsa.Templates.${VERSION}.nupkg"
+          test -f "${package}"
+          test "$(find artifacts/packages -maxdepth 1 -type f -name '*.nupkg' | wc -l | tr -d ' ')" = 1
+          unzip -p "${package}" Elsa.Templates.nuspec | grep -F "commit=\"${GITHUB_SHA}\""
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: elsa-template-packages
+          path: artifacts/packages/*.nupkg
+          if-no-files-found: error
+
+  publish_feedz:
+    name: Publish to feedz.io
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: ${{ github.event_name == 'push' || github.event_name == 'release' }}
+
+    steps:
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Download packages
+        uses: actions/download-artifact@v4
+        with:
+          name: elsa-template-packages
+
+      - name: Check API key (feedz.io)
+        env:
+          API_KEY: ${{ secrets.FEEDZ_API_KEY }}
+        run: |
+          if [ -z "$API_KEY" ]; then
+            echo "::error::API key for feedz.io is empty. Check the FEEDZ_API_KEY secret (repository or organization); nothing was pushed."
+            exit 1
+          fi
+
+      - name: Publish to feedz.io
+        run: |
+          set -euo pipefail
+          for package in *.nupkg; do
+            dotnet nuget push "${package}" --api-key "${FEEDZ_API_KEY}" --source "${FEEDZ_FEED_SOURCE}" --skip-duplicate
+          done
+        env:
+          FEEDZ_API_KEY: ${{ secrets.FEEDZ_API_KEY }}
+
+  publish_nuget:
+    name: Publish to nuget.org
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: >-
+      ${{ always() &&
+          ((github.event_name == 'release' && needs.build.result == 'success') ||
+           (github.event_name == 'workflow_dispatch' &&
+            inputs.recovery_run_id != '' &&
+            needs.build.result == 'skipped')) }}
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Checkout workflow source for recovery validation
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Download packages from this release
+        if: ${{ github.event_name == 'release' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: elsa-template-packages
+          path: packages
+
+      - name: Validate original release run and resolve recovery artifact
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.recovery_run_id != '' }}
+        id: recovery_source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RECOVERY_RUN_ID: ${{ inputs.recovery_run_id }}
+          RECOVERY_VERSION: ${{ inputs.recovery_version }}
+        run: |
+          set -euo pipefail
+
+          [[ "${RECOVERY_RUN_ID}" =~ ^[0-9]+$ ]] || { echo "recovery_run_id must be numeric" >&2; exit 1; }
+          [[ "${RECOVERY_VERSION}" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]] || { echo "recovery_version must be a package semantic version" >&2; exit 1; }
+
+          run_json="$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${RECOVERY_RUN_ID}")"
+          test "$(jq -r '.repository.full_name // empty' <<<"${run_json}")" = "${GITHUB_REPOSITORY}"
+          test "$(jq -r '.event // empty' <<<"${run_json}")" = "release"
+          test "$(jq -r '.status // empty' <<<"${run_json}")" = "completed"
+          case "$(jq -r '.conclusion // empty' <<<"${run_json}")" in
+            success|failure) ;;
+            *) echo "original release run must be completed with success or failure" >&2; exit 1 ;;
+          esac
+          test "$(jq -r '.path // empty' <<<"${run_json}")" = ".github/workflows/packages.yml"
+          original_head_sha="$(jq -r '.head_sha // empty' <<<"${run_json}")"
+          test -n "${original_head_sha}"
+
+          build_jobs="$(gh api --paginate --slurp "repos/${GITHUB_REPOSITORY}/actions/runs/${RECOVERY_RUN_ID}/jobs?per_page=100" | jq '[.[].jobs[] | select(.name == "Build packages")]')"
+          test "$(jq 'length' <<<"${build_jobs}")" = "1"
+          test "$(jq -r '.[0].status // empty' <<<"${build_jobs}")" = "completed"
+          test "$(jq -r '.[0].conclusion // empty' <<<"${build_jobs}")" = "success"
+
+          artifacts_json="$(gh api --paginate --slurp "repos/${GITHUB_REPOSITORY}/actions/runs/${RECOVERY_RUN_ID}/artifacts?per_page=100")"
+          recovery_artifacts="$(jq --argjson expected_run "${RECOVERY_RUN_ID}" '[.[].artifacts[] | select(.name == "elsa-template-packages" and .expired == false and .workflow_run.id == $expected_run)]' <<<"${artifacts_json}")"
+          test "$(jq 'length' <<<"${recovery_artifacts}")" = "1"
+          artifact_id="$(jq -r '.[0].id // empty' <<<"${recovery_artifacts}")"
+          artifact_digest="$(jq -r '.[0].digest // empty' <<<"${recovery_artifacts}")"
+          artifact_size="$(jq -r '.[0].size_in_bytes // empty' <<<"${recovery_artifacts}")"
+          test -n "${artifact_id}"
+          test -n "${artifact_digest}"
+          test -n "${artifact_size}"
+
+          {
+            echo "head_sha=${original_head_sha}"
+            echo "artifact_id=${artifact_id}"
+            echo "artifact_digest=${artifact_digest}"
+            echo "artifact_size=${artifact_size}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Download packages from the original release run
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.recovery_run_id != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ steps.recovery_source.outputs.artifact_id }}
+          run-id: ${{ inputs.recovery_run_id }}
+          path: packages
+          merge-multiple: true
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+
+      - name: Validate recovered package provenance
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.recovery_run_id != '' }}
+        env:
+          RECOVERY_RUN_ID: ${{ inputs.recovery_run_id }}
+          RECOVERY_VERSION: ${{ inputs.recovery_version }}
+          ORIGINAL_HEAD_SHA: ${{ steps.recovery_source.outputs.head_sha }}
+        run: |
+          set -euo pipefail
+
+          tag_ref="refs/tags/${RECOVERY_VERSION}"
+          if ! git rev-parse --verify "${tag_ref}^{commit}" >/dev/null 2>&1; then
+            tag_ref="refs/tags/v${RECOVERY_VERSION}"
+          fi
+          tag_commit="$(git rev-parse --verify "${tag_ref}^{commit}")"
+          test "${tag_commit}" = "${ORIGINAL_HEAD_SHA}"
+
+          mapfile -t packages < <(find packages -type f -name '*.nupkg' -print)
+          test "${#packages[@]}" -eq 1
+          package="${packages[0]}"
+          test "$(basename "${package}")" = "Elsa.Templates.${RECOVERY_VERSION}.nupkg"
+
+          python3 - "${package}" "${RECOVERY_VERSION}" "${ORIGINAL_HEAD_SHA}" <<'PY'
+          import sys
+          import zipfile
+          import xml.etree.ElementTree as ET
+
+          package_path, expected_version, expected_commit = sys.argv[1:]
+          with zipfile.ZipFile(package_path) as archive:
+              nuspec_name = next(name for name in archive.namelist() if name.endswith('.nuspec'))
+              root = ET.fromstring(archive.read(nuspec_name))
+
+          metadata = next(element for element in root.iter() if element.tag.rsplit('}', 1)[-1] == 'metadata')
+          values = {
+              element.tag.rsplit('}', 1)[-1]: element.text or ''
+              for element in metadata
+          }
+          repository = next(element for element in metadata if element.tag.rsplit('}', 1)[-1] == 'repository')
+          if values.get('id') != 'Elsa.Templates' or values.get('version') != expected_version:
+              raise SystemExit('recovery package identity or version does not match the requested release')
+          if repository.attrib.get('commit') != expected_commit:
+              raise SystemExit('recovery package repository commit does not match the immutable release tag')
+          PY
+
+      - name: NuGet login (OIDC)
+        id: nuget_login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: Check API key (nuget.org)
+        env:
+          API_KEY: ${{ steps.nuget_login.outputs.NUGET_API_KEY }}
+        run: |
+          if [ -z "$API_KEY" ]; then
+            echo "::error::API key for nuget.org is empty. Check the NuGet login (OIDC) step output and the Trusted Publishing policy on nuget.org; nothing was pushed."
+            exit 1
+          fi
+
+      - name: Publish to nuget.org
+        env:
+          NUGET_API_KEY: ${{ steps.nuget_login.outputs.NUGET_API_KEY }}
+        run: |
+          set -euo pipefail
+          for package in packages/*.nupkg; do
+            dotnet nuget push "${package}" --api-key "${NUGET_API_KEY}" --source "${NUGET_FEED_SOURCE}" --skip-duplicate
+          done
+
+      - name: Write recovery receipt
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.recovery_run_id != '' }}
+        env:
+          RECOVERY_VERSION: ${{ inputs.recovery_version }}
+          ORIGINAL_RELEASE_RUN_ID: ${{ inputs.recovery_run_id }}
+          ORIGINAL_SOURCE_COMMIT: ${{ steps.recovery_source.outputs.head_sha }}
+          ORIGINAL_ARTIFACT_ID: ${{ steps.recovery_source.outputs.artifact_id }}
+          ORIGINAL_ARTIFACT_DIGEST: ${{ steps.recovery_source.outputs.artifact_digest }}
+          ORIGINAL_ARTIFACT_SIZE: ${{ steps.recovery_source.outputs.artifact_size }}
+        run: |
+          set -euo pipefail
+          mkdir -p recovery-evidence
+          python3 - > recovery-evidence/recovery-receipt.json <<'PY'
+          import json
+          import os
+          import sys
+
+          receipt = {
+              "schema": 1,
+              "repository": os.environ["GITHUB_REPOSITORY"],
+              "version": os.environ["RECOVERY_VERSION"],
+              "original_source_commit": os.environ["ORIGINAL_SOURCE_COMMIT"],
+              "recovery_run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "recovery_workflow_sha": os.environ["GITHUB_SHA"],
+              "original_release_run_id": int(os.environ["ORIGINAL_RELEASE_RUN_ID"]),
+              "original_artifact": {
+                  "id": int(os.environ["ORIGINAL_ARTIFACT_ID"]),
+                  "name": "elsa-template-packages",
+                  "run_id": int(os.environ["ORIGINAL_RELEASE_RUN_ID"]),
+                  "digest": os.environ["ORIGINAL_ARTIFACT_DIGEST"],
+                  "size_in_bytes": int(os.environ["ORIGINAL_ARTIFACT_SIZE"]),
+              },
+              "target": {
+                  "registry": "nuget.org",
+                  "package_ids": ["Elsa.Templates"],
+                  "version": os.environ["RECOVERY_VERSION"],
+              },
+          }
+          json.dump(receipt, fp=sys.stdout, indent=2, sort_keys=True)
+          print()
+          PY
+
+      - name: Upload recovery evidence
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.recovery_run_id != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: elsa-template-recovery-evidence
+          path: recovery-evidence/recovery-receipt.json
+          if-no-files-found: error
