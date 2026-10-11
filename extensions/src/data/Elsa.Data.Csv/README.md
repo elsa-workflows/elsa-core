@@ -80,7 +80,7 @@ services.AddElsa(elsa =>
 
 ## 📌 Usage
 
-Once the extension is registered, the CSV activities will be ready to use, either via code or [Elsa Studio](https://github.com/elsa-workflows/elsa-studio).
+Once the extension is registered, the CSV activities will be ready to use, either via code or [Elsa Studio](https://github.com/elsa-workflows/elsa-core/tree/main/studio).
 
 ## 🚀 Activities
 

@@ -15,12 +15,12 @@ registries:
     url: https://f.feedz.io/valence-works/loom/nuget/index.json
 
 updates:
-  # One solution scan coordinates Core, Extensions, Studio and shared build updates.
-  # Keep the retained non-solution testing project visible until its disposition is reviewed.
+  # Five bounded starting sets; shared imports/references can still overlap.
+  # Limit 1 applies per entry (up to five version-update PRs), not repository-wide.
+  # Core production
   - package-ecosystem: "nuget"
     directories:
-      - "/"
-      - "/extensions/src/Elsa.Testing.Extensions"
+      - "/core/src/**/*"
     target-branch: "main"
     registries:
       - elsa-feedz-preview
@@ -28,6 +28,87 @@ updates:
     schedule:
       interval: "daily"
       time: "06:00"
+      timezone: "Europe/Amsterdam"
+    open-pull-requests-limit: 1
+    groups:
+      elsa-core-preview:
+        patterns:
+          - "Elsa*"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+  # Core tests (Elsa-named parents; TlsSmoke stays outside the solution)
+  - package-ecosystem: "nuget"
+    directories:
+      - "/core/test/**/Elsa.*"
+    target-branch: "main"
+    registries:
+      - elsa-feedz-preview
+      - valence-loom-feedz
+    schedule:
+      interval: "daily"
+      time: "09:00"
+      timezone: "Europe/Amsterdam"
+    open-pull-requests-limit: 1
+    groups:
+      elsa-core-preview:
+        patterns:
+          - "Elsa*"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+  # Extensions, including tests, samples and the retained testing project
+  - package-ecosystem: "nuget"
+    directories:
+      - "/extensions/**/*"
+    target-branch: "main"
+    registries:
+      - elsa-feedz-preview
+      - valence-loom-feedz
+    schedule:
+      interval: "daily"
+      time: "12:00"
+      timezone: "Europe/Amsterdam"
+    open-pull-requests-limit: 1
+    groups:
+      elsa-core-preview:
+        patterns:
+          - "Elsa*"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+  # Studio, including samples
+  - package-ecosystem: "nuget"
+    directories:
+      - "/studio/**/*"
+    target-branch: "main"
+    registries:
+      - elsa-feedz-preview
+      - valence-loom-feedz
+    schedule:
+      interval: "daily"
+      time: "15:00"
+      timezone: "Europe/Amsterdam"
+    open-pull-requests-limit: 1
+    groups:
+      elsa-core-preview:
+        patterns:
+          - "Elsa*"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+  # Shared build and explicit root tool manifest coverage
+  - package-ecosystem: "nuget"
+    directories:
+      - "/build"
+      - "/.config"
+    target-branch: "main"
+    registries:
+      - elsa-feedz-preview
+      - valence-loom-feedz
+    schedule:
+      interval: "daily"
+      time: "18:00"
       timezone: "Europe/Amsterdam"
     open-pull-requests-limit: 1
     groups:
