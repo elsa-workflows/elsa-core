@@ -1341,7 +1341,7 @@ def writer_events(state, tracked):
                     pending['phase'] = 'invalid'
             elif event['Kind'] == 'missing_dependency':
                 bound = (pending is not None and event['Attempt'] == pending['attempt']
-                         and pending['phase'] == 'returned')
+                         and pending['phase'] == 'returned' and event['State'] == 'observed')
                 warnings.append({'bound': bound, 'attempt': pending['attempt'] if bound else None,
                                  'project': pending['project'] if bound else None,
                                  'discovery_ordinal': pending['ordinal'] if bound else None,
@@ -1496,7 +1496,9 @@ def writer_update_readback(state, snapshot, tracked, package_ids, operations, ch
                     and all_target and operation_matches and central_update)
         if verified:
             outcome = 'requested_target_verified'
-        elif not operations['operations'] and not changes['changed_paths'] and not any(row['matches_requested_target'] for row in observations):
+        elif (operations['status'] == 'observed' and changes['status'] == 'reconciled'
+                and not operations['operations'] and not changes['changed_paths']
+                and not any(row['matches_requested_target'] for row in observations)):
             outcome = 'no_update_observed'
         elif all_target and not requested_operations:
             outcome = 'target_observed_without_requested_operation'

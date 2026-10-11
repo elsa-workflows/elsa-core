@@ -898,6 +898,7 @@ class WriterSmokeContractTests(unittest.TestCase):
                  'duplicate_return': [*valid[:3], valid[2], valid[3]],
                  'intervening_attempt': [*valid[:3], dict(valid[0], Attempt=2), valid[3]],
                  'duplicate_attempt': [valid[0], *valid],
+                 'wrong_warning_state': [*valid[:3], dict(valid[3], State='threw')],
                  'wrong_ordinal': [*valid[:2], dict(valid[2], Ordinal=3), valid[3]]}
         for name, events in cases.items():
             with self.subTest(case=name):
@@ -967,6 +968,21 @@ class WriterSmokeContractTests(unittest.TestCase):
         result = writer_update_readback(self.state, self.snapshot, self.tracked, {WRITER_PACKAGE}, operations, changes, lambda: True)
         self.assertEqual('readback_incomplete_or_changed', result['update_outcome'])
         self.assertFalse(result['update_verified'])
+
+    def test_missing_or_invalid_evidence_cannot_report_a_legitimate_empty_update(self):
+        for case in ('missing_operations', 'invalid_operations', 'unreconciled_changes'):
+            with self.subTest(case=case):
+                changes = self.readback_fixture()
+                if case == 'invalid_operations':
+                    (self.state/'writer-operations.json').write_text('{}')
+                operations = writer_operations(self.state, self.tracked, {WRITER_PACKAGE})
+                if case == 'unreconciled_changes':
+                    operations = {'status': 'observed', 'operations': []}
+                    changes['status'] = 'unaccounted_write'
+                result = writer_update_readback(self.state, self.snapshot, self.tracked, {WRITER_PACKAGE},
+                                               operations, changes, lambda: True)
+                self.assertEqual('requested_target_not_verified', result['update_outcome'])
+                self.assertFalse(result['update_verified'])
 
     def test_event_and_operation_projection_omit_raw_errors_and_unobserved_tfm(self):
         event = self.event_fixture()

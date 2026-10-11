@@ -30,6 +30,7 @@ on:
           - 'tooling'
           - 'retained-probe'
           - 'product-smoke'
+          - 'writer-smoke'
         default: 'off'
         required: true
 
@@ -152,6 +153,7 @@ jobs:
       - name: Discover the fixed candidate with the pinned public worker
         if: ${{ !cancelled() }}
         # Raw build/native logs and full records stay ephemeral, never uploaded.
+        # writer-smoke has an 840-second Python budget, excluding checkout/SDK setup.
         env:
           ELSA_NATIVE_MODE: ${{ inputs.native_diagnostic_mode }}
         run: python3 scripts/integration-program/dependabot_native_proof.py --mode "$ELSA_NATIVE_MODE"
