@@ -300,7 +300,7 @@
       "mode": "100644",
       "category": "scoped_build_properties",
       "owning_workstream": "Feature #8214 build integration; package owners",
-      "proposed_disposition": "Retain this behavior in the product-scoped Directory.Build.props, with package metadata kept product-specific; do not apply one product’s warning suppressions or target defaults globally.Preserve Extension package metadata (repository URL, MIT expression, 2025 copyright), documented-build settings, audit configuration, trim settings, and product-specific version properties in src/extensions scope.",
+      "proposed_disposition": "Retain this behavior in the product-scoped Directory.Build.props, with package metadata kept product-specific; do not apply one product\u2019s warning suppressions or target defaults globally.Preserve Extension package metadata (repository URL, MIT expression, 2025 copyright), documented-build settings, audit configuration, trim settings, and product-specific version properties in src/extensions scope.",
       "evidence_or_gate": "Decided 2026-09-28 in publisher-ci-and-build-configuration-dispositions.md under the lockstep release ADR (doc/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md): the active src/extensions/Directory.Build.props covers the imported product.",
       "status": "represented_in_core",
       "completion": {
@@ -3293,7 +3293,7 @@
       "mode": "100644",
       "category": "scoped_build_properties",
       "owning_workstream": "Feature #8214 build integration; package owners",
-      "proposed_disposition": "Retain this behavior in the product-scoped Directory.Build.props, with package metadata kept product-specific; do not apply one product’s warning suppressions or target defaults globally.Preserve Studio package metadata (repository URL, MIT expression, 2023 copyright), net8/net9/net10 TFMs, icon asset inclusion, and the current project-scoped trim-warning allowlist in src/studio scope.",
+      "proposed_disposition": "Retain this behavior in the product-scoped Directory.Build.props, with package metadata kept product-specific; do not apply one product\u2019s warning suppressions or target defaults globally.Preserve Studio package metadata (repository URL, MIT expression, 2023 copyright), net8/net9/net10 TFMs, icon asset inclusion, and the current project-scoped trim-warning allowlist in src/studio scope.",
       "evidence_or_gate": "Decided 2026-09-28 in publisher-ci-and-build-configuration-dispositions.md under the lockstep release ADR (doc/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md): the active src/studio/Directory.Build.props covers the imported product.",
       "status": "represented_in_core",
       "completion": {
