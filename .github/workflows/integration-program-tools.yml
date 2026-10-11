@@ -21,18 +21,23 @@ on:
       - '.github/workflows/integration-program-tools.yml'
   workflow_dispatch:
     inputs:
-      native_discovery:
-        description: 'Run only the pinned credential-free #8636 native diagnostic (review required)'
-        type: boolean
-        default: false
-        required: false
+      native_diagnostic_mode:
+        description: 'Pinned #8636 stage only; no full discovery or managed acceptance'
+        type: choice
+        options:
+          - 'off'
+          - 'enumerate'
+          - 'tooling'
+          - 'retained-probe'
+        default: 'off'
+        required: true
 
 permissions:
   contents: read
 
 jobs:
   import-rehearsal-tests:
-    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.native_discovery }}
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.native_diagnostic_mode == 'off' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -119,7 +124,7 @@ jobs:
 
   # Temporary #8636 proof. Delete after native inventory evidence is accepted.
   dependabot-native-discovery:
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.native_discovery }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.native_diagnostic_mode != 'off' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -146,7 +151,9 @@ jobs:
       - name: Discover the fixed candidate with the pinned public worker
         if: ${{ !cancelled() }}
         # Raw build/native logs and full records stay ephemeral, never uploaded.
-        run: python3 scripts/integration-program/dependabot_native_proof.py
+        env:
+          ELSA_NATIVE_MODE: ${{ inputs.native_diagnostic_mode }}
+        run: python3 scripts/integration-program/dependabot_native_proof.py --mode "$ELSA_NATIVE_MODE"
       - name: Retain only the closed diagnostic summary
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

@@ -1,6 +1,7 @@
 """Cheap synthetic receipt tests; these do not execute the native updater."""
 import contextlib
 import io
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -9,14 +10,17 @@ import sys
 import tempfile
 import time
 import unittest
+from unittest import mock
 
-from dependabot_native_proof import DeadlineRunner, NativeProgress, diagnostic_complete, reconcile
+from dependabot_native_proof import (DeadlineRunner, NativeProgress, diagnostic_complete, reconcile,
+    units_from_configuration, unit_projects, reconcile_enumeration, probe_workspaces, probe_readback,
+    safe_tool_result, child_environment, read_closed_json, digest, recheck_content, inventory, UNIT_IDS, UNIT_SELECTORS, UNIT_COUNTS, RETAINED, TOOL_MANIFEST)
 
 
 class NativeProofReceiptTests(unittest.TestCase):
     def test_timeout_kills_descendant_and_retains_only_safe_progress(self):
         with tempfile.TemporaryDirectory() as directory:
-            state = Path(directory)
+            state = Path(directory).resolve()
             parent = "import os,signal; from pathlib import Path; signal.signal(signal.SIGTERM, signal.SIG_IGN); pid=os.fork(); Path('descendant.pid').write_text(str(os.getpid())) if pid==0 else print('SECRET https://private',flush=True); signal.pause()"
             summary = {'acceptance': False, 'stages': []}
             output = io.StringIO()
@@ -46,7 +50,7 @@ class NativeProofReceiptTests(unittest.TestCase):
 
     def test_native_markers_are_closed_and_unknown_lines_cannot_leak(self):
         with tempfile.TemporaryDirectory() as directory:
-            state = Path(directory)
+            state = Path(directory).resolve()
             project = 'nested/A.csproj'
             progress = NativeProgress(state, {project: 'Directory.Packages.props'})
             absolute = str(state.resolve()/project)
@@ -164,6 +168,235 @@ class NativeProofReceiptTests(unittest.TestCase):
         self.assertFalse(result['complete'])
         self.assertEqual('duplicate', result['projects'][0]['status'])
         self.assertEqual(1, result['invalid_record_count'])
+
+
+class NativeBatchAdapterTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.state = Path(self.temporary.name).resolve()
+        self.expected = {}
+        for prefix, count in zip(('core/src', 'core/test', 'extensions', 'studio', 'build'), UNIT_COUNTS):
+            for index in range(count):
+                self.expected[f'{prefix}/Elsa.Fixture{index}/Fixture.csproj'] = 'Directory.Packages.props'
+        replaced = next(path for path in self.expected if path.startswith('extensions/'))
+        self.expected[RETAINED] = self.expected.pop(replaced)
+        self.tracked = set(self.expected) | {TOOL_MANIFEST, 'Elsa.sln', 'Directory.Packages.props'}
+
+    def write(self, name, value):
+        (self.state/name).write_text(json.dumps(value))
+
+    def enumerate_fixture(self):
+        for index, (unit, paths) in enumerate(unit_projects(self.expected).items()):
+            directories = sorted({str(Path(path).parent) for path in paths})
+            if unit == 'tooling':
+                directories = ['build', '.config']
+                project = paths[0]
+                self.expected['build/_build.csproj'] = self.expected.pop(project)
+                self.tracked.remove(project)
+                self.tracked.add('build/_build.csproj')
+                paths = ['build/_build.csproj']
+            self.write(f'enumeration-{index}.json', {'Id': unit,
+                'Directories': ['/'+path for path in directories], 'EntryPoints': paths})
+
+    def test_fixed_schema_derives_selectors_and_rejects_mutated_pin_or_topology(self):
+        data = ''.join('  - package-ecosystem: "nuget"\n    directories:\n'+
+            ''.join(f'      - "{path}"\n' for path in selectors)+'    target-branch: "main"\n'
+            for selectors in UNIT_SELECTORS).encode()
+        blob = hashlib.sha1(b'blob '+str(len(data)).encode()+b'\0'+data).hexdigest()
+        with self.assertRaisesRegex(ValueError, '^configuration_pin_mismatch$'):
+            units_from_configuration(data)
+        with mock.patch('dependabot_native_proof.CONFIGURATION_BLOB', blob):
+            units = units_from_configuration(data)
+            self.assertEqual(list(UNIT_IDS), [unit['Id'] for unit in units])
+            self.assertEqual(list(UNIT_SELECTORS), [unit['Selectors'] for unit in units])
+        unsafe = data.replace(b'/core/src/**/*', b'/')
+        blob = hashlib.sha1(b'blob '+str(len(unsafe)).encode()+b'\0'+unsafe).hexdigest()
+        with mock.patch('dependabot_native_proof.CONFIGURATION_BLOB', blob):
+            with self.assertRaisesRegex(ValueError, '^configuration_schema_mismatch$'):
+                units_from_configuration(unsafe)
+
+    def test_native_enumeration_reconciles_all_five_units_without_root_solution(self):
+        self.enumerate_fixture()
+        result = reconcile_enumeration(self.state, self.expected, self.tracked)
+        self.assertTrue(result['complete'])
+        self.assertEqual(356, sum(len(row['entry_projects']) for row in result['units']))
+        self.assertEqual(['build', '.config'], result['units'][-1]['directories'])
+        self.write('enumeration-0.json', {'Id': 'core-production', 'Directories': ['/'], 'EntryPoints': ['Elsa.sln']})
+        result = reconcile_enumeration(self.state, self.expected, self.tracked)
+        self.assertFalse(result['complete'])
+        self.assertNotIn('"directories": ["/"]', json.dumps(result))
+
+    def test_nested_solution_or_unmodeled_entrypoint_is_a_gap(self):
+        self.enumerate_fixture()
+        path = next(path for path in self.expected if path.startswith('core/src/'))
+        nested = str(Path(path).with_name('Nested.slnx'))
+        self.tracked.add(nested)
+        raw = json.loads((self.state/'enumeration-0.json').read_text())
+        raw['EntryPoints'].append(nested)
+        self.write('enumeration-0.json', raw)
+        result = reconcile_enumeration(self.state, self.expected, self.tracked)
+        self.assertFalse(result['complete'])
+        self.assertEqual([nested], result['units'][0]['other_entrypoint_gaps'])
+
+    def test_probe_modes_are_bounded_and_never_select_root_or_all_products(self):
+        self.assertEqual([], probe_workspaces('enumerate'))
+        self.assertEqual(['build', '.config'], probe_workspaces('tooling'))
+        self.assertEqual(['extensions/src/Elsa.Testing.Extensions'], probe_workspaces('retained-probe'))
+        for mode in ('all', '/', 'SECRET https://private'):
+            with self.assertRaisesRegex(ValueError, '^unknown_mode$'):
+                probe_workspaces(mode)
+
+    def test_incremental_return_readback_preserves_full_manifest_and_rejects_unsafe_fields(self):
+        workspace = 'extensions/src/Elsa.Testing.Extensions'
+        self.write('workspace-0.call.json', {'Index': 0, 'Workspace': '/'+workspace,
+                   'State': 'returned', 'ElapsedSeconds': 2.5})
+        self.write('workspace-0.json', {'Path': workspace, 'IsSuccess': True, 'Projects': []})
+        result = probe_readback(self.state, 'retained-probe', self.expected, {}, self.tracked)
+        self.assertEqual(356, len(result['reconciliation']['projects']))
+        self.assertTrue(result['all_calls_returned'])
+        self.assertFalse(result['reconciliation']['complete'])
+        self.assertEqual('omitted', next(row for row in result['reconciliation']['projects'] if row['path'] == RETAINED)['status'])
+        self.write('workspace-0.call.json', {'Index': 0, 'Workspace': 'SECRET https://private',
+                   'State': 'returned', 'ElapsedSeconds': float('nan')})
+        self.write('workspace-0.json', {'Path': workspace, 'Projects': [{'Dependencies': None}]})
+        result = probe_readback(self.state, 'retained-probe', self.expected, {}, self.tracked)
+        self.assertFalse(result['all_calls_returned'])
+        self.assertNotIn('SECRET', json.dumps(result))
+        self.assertNotIn('https://', json.dumps(result))
+
+    def test_reserved_finalization_can_read_completed_call_after_work_deadline(self):
+        summary = {'stages': []}
+        runner = DeadlineRunner(self.state, summary, budget_seconds=30, reserve_seconds=20)
+        runner.deadline = time.monotonic()-1
+        self.assertGreater(runner.finalization_deadline, time.monotonic())
+        self.write('workspace-0.call.json', {'Index': 0, 'Workspace': '/build', 'State': 'returned', 'ElapsedSeconds': 1})
+        self.write('workspace-0.json', {'Path': 'build', 'IsSuccess': True, 'Projects': []})
+        result = probe_readback(self.state, 'tooling', self.expected, {}, self.tracked)
+        self.assertEqual('returned', result['calls'][0]['state'])
+        self.assertEqual('not_read', result['calls'][1]['state'])
+        self.assertFalse(result['all_calls_returned'])
+
+    def test_incremental_progress_reads_each_complete_marker_once_and_reports_truncation(self):
+        progress = NativeProgress(self.state, {}, workspace_count=3)
+        path = self.state/'native.out'
+        path.write_text('ELSA8636_WORKSPACE_2_STARTED\nELSA8636_WORKSPACE_2_RETURNED\n')
+        progress.poll(path, 1)
+        progress.poll(path, 2)
+        self.assertEqual(2, len(progress.events))
+        self.assertEqual('returned', progress.last['phase'])
+        path.write_text('SECRET\n')
+        progress.poll(path, 3)
+        self.assertEqual(1, progress.gaps)
+        self.assertNotIn('SECRET', json.dumps(progress.events))
+        self.assertIsNone(progress.parse('ELSA8636_WORKSPACE_3_RETURNED'))
+
+    def test_root_tool_schema_retains_only_known_id_valid_version_and_manifest(self):
+        raw = {'Path': '.config', 'DotNetToolsJson': {'FilePath': 'dotnet-tools.json',
+            'IsSuccess': True, 'Dependencies': [{'Name': 'dotnet-ef', 'Version': '9.0.12'},
+                {'Name': 'SECRET', 'Version': 'https://private'}]}}
+        result = safe_tool_result([raw], '9.0.12')
+        self.assertEqual('observed', result['status'])
+        self.assertEqual('9.0.12', result['observations'][0]['version'])
+        self.assertTrue(result['workspaces'][0]['matches_target_version'])
+        self.assertFalse(safe_tool_result([raw], '9.0.13')['workspaces'][0]['matches_target_version'])
+        self.assertNotIn('SECRET', json.dumps(result))
+        raw['DotNetToolsJson']['Dependencies'][0]['Version'] = 'https://private'
+        self.assertEqual('not_observed', safe_tool_result([raw], '9.0.12')['status'])
+
+    def test_child_environment_excludes_credentials_and_uses_private_caches(self):
+        with mock.patch.dict(os.environ, {'GH_TOKEN': 'SECRET', 'NUGET_AUTH_TOKEN': 'SECRET',
+                'NuGetPackageSourceCredentials_Feedz': 'SECRET', 'HOME': '/user',
+                'DOTNET_CLI_HOME': '/user', 'NUGET_PACKAGES': '/user'}):
+            environment = child_environment(self.state)
+        self.assertFalse(set(environment) & {'GH_TOKEN', 'NUGET_AUTH_TOKEN', 'NuGetPackageSourceCredentials_Feedz'})
+        for name in ('HOME', 'DOTNET_CLI_HOME', 'NUGET_PACKAGES'):
+            path = Path(environment[name])
+            self.assertTrue(path.is_relative_to(self.state))
+            self.assertEqual(0o700, path.stat().st_mode & 0o777)
+
+    def test_timeout_final_readback_keeps_completed_call_even_without_returned_process(self):
+        summary = {'stages': [], 'acceptance': False}
+        runner = DeadlineRunner(self.state, summary, budget_seconds=1, reserve_seconds=0.7,
+                                grace_seconds=0.05, progress_seconds=1)
+        runner.readback = lambda: summary.update(probe=probe_readback(
+            self.state, 'retained-probe', self.expected, {}, self.tracked))
+        script = "import json,signal; from pathlib import Path; Path('workspace-0.call.json').write_text(json.dumps({'Index':0,'Workspace':'/extensions/src/Elsa.Testing.Extensions','State':'returned','ElapsedSeconds':0.1})); signal.pause()"
+        with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(ValueError, '^overall_deadline$'):
+            runner.run('native_discovery', [sys.executable, '-c', script])
+        receipt = json.loads((self.state/'summary.json').read_text())
+        self.assertEqual('returned', receipt['probe']['calls'][0]['state'])
+        self.assertEqual(356, len(receipt['probe']['reconciliation']['projects']))
+        self.assertFalse(receipt['probe']['reconciliation']['complete'])
+        self.assertFalse(receipt['acceptance'])
+
+    def test_oversized_unknown_line_cannot_turn_its_suffix_into_a_marker(self):
+        progress = NativeProgress(self.state, {})
+        path = self.state/'native.out'
+        path.write_text('SECRET'*1000+'ELSA8636_WORKSPACE_0_RETURNED')
+        progress.poll(path, 1)
+        with path.open('a') as stream:
+            stream.write('\nELSA8636_WORKSPACE_0_STARTED\n')
+        progress.poll(path, 2)
+        self.assertEqual(['started'], [event['phase'] for event in progress.events])
+        self.assertEqual(1, progress.gaps)
+
+    def test_json_hash_and_progress_reject_linked_files_and_parent_directories(self):
+        physical = self.state/'physical'
+        physical.mkdir()
+        record = physical/'record.json'
+        record.write_text('{"value":1}')
+        log = physical/'native.out'
+        log.write_text('ELSA8636_WORKSPACE_0_RETURNED\n')
+        linked_file = self.state/'linked.json'
+        linked_file.symlink_to(record)
+        linked_parent = self.state/'linked-parent'
+        linked_parent.symlink_to(physical, target_is_directory=True)
+        for path in (linked_file, linked_parent/'record.json'):
+            with self.subTest(path=path.name):
+                with self.assertRaises((OSError, ValueError)):
+                    read_closed_json(path, self.state)
+                with self.assertRaises((OSError, ValueError)):
+                    digest(path, self.state)
+        linked_log = self.state/'linked.out'
+        linked_log.symlink_to(log)
+        for path in (linked_log, linked_parent/'native.out'):
+            progress = NativeProgress(self.state, {})
+            self.assertIsNone(progress.poll(path, 1))
+            self.assertEqual([], progress.events)
+            self.assertEqual(1, progress.gaps)
+        self.assertEqual({'value': 1}, read_closed_json(record, self.state))
+
+    def test_same_content_link_replacement_and_missing_files_fail_final_rechecks(self):
+        directory = self.state/'source'
+        directory.mkdir()
+        path = directory/'known.txt'
+        path.write_text('same content')
+        before = {'source/known.txt': digest(path, self.state)}
+        self.assertEqual(('checked', []), recheck_content(self.state, before, lambda: True))
+        target = self.state/'same.txt'
+        target.write_text('same content')
+        path.unlink()
+        path.symlink_to(target)
+        self.assertEqual(('checked', ['source/known.txt']), recheck_content(self.state, before, lambda: True))
+        path.unlink()
+        directory.rmdir()
+        replacement = self.state/'replacement'
+        replacement.mkdir()
+        (replacement/'known.txt').write_text('same content')
+        directory.symlink_to(replacement, target_is_directory=True)
+        self.assertEqual(('checked', ['source/known.txt']), recheck_content(self.state, before, lambda: True))
+        directory.unlink()
+        self.assertEqual(('checked', ['source/known.txt']), recheck_content(self.state, before, lambda: True))
+        self.assertEqual(('not_checked_deadline', []), recheck_content(self.state, before, lambda: False))
+
+    def test_inventory_rejects_internal_link_before_census(self):
+        actual = self.state/'actual'
+        actual.mkdir()
+        (actual/'A.csproj').write_text('<Project/>')
+        (self.state/'alias').symlink_to(actual, target_is_directory=True)
+        with self.assertRaisesRegex(ValueError, '^snapshot_symlink_escape$'):
+            inventory(self.state)
 
 
 if __name__ == '__main__':
