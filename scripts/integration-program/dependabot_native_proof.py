@@ -843,7 +843,7 @@ class DeadlineRunner:
               'snapshot_hashes', 'native_source_hashes', 'caller_hashes'}
 
     def __init__(self, state, summary, budget_seconds=1800, grace_seconds=5,
-                 progress_seconds=15, reserve_seconds=60):
+                 progress_seconds=15, reserve_seconds=60, cleanup_margin_seconds=0):
         self.state, self.summary = state, summary
         self.started = time.monotonic()
         self.deadline = self.started + budget_seconds - reserve_seconds
@@ -854,6 +854,8 @@ class DeadlineRunner:
         self.process = None
         self.native_progress = None
         self.phase_deadline = None
+        self.cleanup_margin = cleanup_margin_seconds
+        self.stopped_process = None
         summary['runner_budget_seconds'] = budget_seconds
         self.save()
 
@@ -868,27 +870,37 @@ class DeadlineRunner:
         self.check()
 
     def effective_deadline(self):
-        return min(self.deadline, self.phase_deadline) if self.phase_deadline is not None else self.deadline
+        boundary = min(self.deadline, self.phase_deadline) if self.phase_deadline is not None else self.deadline
+        return boundary-self.cleanup_margin
 
     def check(self):
         if time.monotonic() >= self.effective_deadline():
             raise ValueError('overall_deadline')
 
-    def stop(self):
-        if self.process is None:
+    def stop(self, force=False):
+        if self.process is None or self.stopped_process is self.process and not force:
             return
+        self.stopped_process = self.process
+        # Cleanup is inside the phase allowance; hard watchdog skips graceful waiting.
+        cleanup_deadline = min(self.phase_deadline or self.finalization_deadline, self.finalization_deadline)
+        def remaining_wait():
+            return min(self.grace, max(0, cleanup_deadline-time.monotonic())) if self.cleanup_margin else self.grace
         # Kill the group even if its original leader has exited and left descendants.
-        for sig in (signal.SIGTERM, signal.SIGKILL):
+        for sig in ((signal.SIGKILL,) if force else (signal.SIGTERM, signal.SIGKILL)):
             try:
                 os.killpg(self.process.pid, sig)
             except ProcessLookupError:
                 pass
             if sig == signal.SIGTERM:
                 try:
-                    self.process.wait(timeout=self.grace)
+                    self.process.wait(timeout=remaining_wait())
                 except subprocess.TimeoutExpired:
                     pass
-        self.process.wait(timeout=self.grace)
+        try:
+            self.process.wait(timeout=remaining_wait())
+        except subprocess.TimeoutExpired:
+            # SIGKILL already sent; never borrow the next phase for another wait.
+            pass
 
     def calculate(self, name, operation):
         if name not in self.STAGES:
@@ -994,22 +1006,41 @@ def run_preflight(checkout, state, mode):
                                   'configured_feed_resolution', 'proposal_or_current_version', 'managed_helper_binary_equivalence'],
                'stages': []}
     writer_mode = mode == 'writer-smoke'
-    runner = DeadlineRunner(state, summary, budget_seconds=840 if writer_mode else 1800)
+    runner = DeadlineRunner(state, summary, budget_seconds=840 if writer_mode else 1800,
+                            grace_seconds=2 if writer_mode else 5, cleanup_margin_seconds=10 if writer_mode else 0)
     if writer_mode:
-        runner.finalization_deadline = runner.started+840
+        runner.finalization_deadline = runner.started+830
         runner.begin_phase('setup')
         summary['writer'] = {'schema_version': 1, 'request_id': 'signalr-authentication-abstractions', 'case_complete': False, 'writer': 'actual_public_UpdaterWorker', 'managed_cwd_parity': False,
             'writer_loop_tfm': 'not_exposed_by_logger', 'rerun_survivors': 'not_exposed_by_logger',
             'managed_binary_equivalence': False, 'feed_parity': 'not_supplied_unknown',
-            'write_observation': 'boundaries_only_transient_writes_unobserved', 'latency_fix_proved': False}
+            'write_observation': 'boundaries_only_transient_writes_unobserved', 'latency_fix_proved': False, 'update_verified': False, 'update_outcome': 'not_observed',
+            'timed_scope': 'Python_clone_build_producer_writer_readback_cleanup',
+            'excluded_scope': 'future_hosted_checkout_and_SDK_preparation',
+            'cleanup_margin_seconds': 10, 'watchdog_seconds': 830, 'emergency_exit_seconds': 840}
     run = runner.run
+    def emergency_exit(signum, frame):
+        # Last-resort process watchdog also interrupts blocking synchronous finalization.
+        if runner.process is not None:
+            try:
+                os.killpg(runner.process.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        os._exit(1)
+
     def hard_deadline(signum, frame):
-        summary.update(preflight_error='overall_deadline', diagnostic_complete=False)
-        runner.stop()
+        if writer_mode:
+            signal.signal(signal.SIGALRM, emergency_exit)
+            signal.setitimer(signal.ITIMER_REAL, max(0.001, runner.started+840-time.monotonic()))
+        summary.update(preflight_error='overall_deadline', diagnostic_complete=False, attempt_complete=False)
+        if writer_mode:
+            summary['writer'].update(execution_complete=False, case_complete=False, update_verified=False,
+                                     update_outcome='finalization_or_work_deadline')
+        runner.stop(force=writer_mode)
         runner.save()
         raise ValueError('overall_deadline')
     previous_handler = signal.signal(signal.SIGALRM, hard_deadline)
-    signal.setitimer(signal.ITIMER_REAL, 835 if writer_mode else 1790)
+    signal.setitimer(signal.ITIMER_REAL, max(0.001, runner.started+(830 if writer_mode else 1790)-time.monotonic()))
     try:
         if writer_mode:
             checkout_files = run('checkout_files', ['git', 'ls-files', '-z'], checkout).decode().split('\0')
@@ -1164,9 +1195,7 @@ def run_preflight(checkout, state, mode):
         if writer_mode:
             if 'before' in locals() and can_finalize():
                 package_ids = set().union(*(set(items) for items in versions.values()))
-                summary['writer']['operations'] = writer_operations(state, tracked, package_ids)
-                summary['writer']['events'] = writer_events(state, tracked)
-                summary['writer']['changes'] = writer_changes(snapshot, before, summary['writer']['operations'], can_finalize)
+                refresh_writer_receipt(summary, state, snapshot, tracked, package_ids, before, can_finalize)
             if 'original_hashes' in locals():
                 status, changed = recheck_content(checkout, original_hashes, can_finalize)
                 summary['original_checkout_recheck'] = {'status': status, 'changed_files': changed}
@@ -1294,20 +1323,33 @@ def writer_events(state, tracked):
                 result['events'].append(safe)
             except (ValueError, KeyError, TypeError, AttributeError):
                 result['invalid'] += 1
-        warnings, pending = [], None
+        warnings, pending, attempts = [], None, set()
         for event in result['events']:
             if event['Kind'] == 'attempt':
-                pending = {'attempt': event['Attempt'], 'project': event['AttemptProject'], 'starts': [], 'returns': []}
-            elif pending is not None and event['Attempt'] == pending['attempt'] and event['Kind'] == 'discovery':
-                if event['State'] in ('started', 'returned'):
-                    pending['starts' if event['State'] == 'started' else 'returns'].append(event['Ordinal'])
+                valid = event['Attempt'] not in attempts and event['State'] == 'started'
+                attempts.add(event['Attempt'])
+                pending = {'attempt': event['Attempt'], 'project': event['AttemptProject'],
+                           'phase': 'attempt' if valid else 'invalid', 'ordinal': None}
+            elif event['Kind'] == 'discovery' and pending is not None:
+                if (event['Attempt'] == pending['attempt'] and event['State'] == 'started'
+                        and pending['phase'] == 'attempt'):
+                    pending.update(phase='started', ordinal=event['Ordinal'])
+                elif (event['Attempt'] == pending['attempt'] and event['State'] == 'returned'
+                        and pending['phase'] == 'started' and event['Ordinal'] == pending['ordinal']):
+                    pending['phase'] = 'returned'
+                else:
+                    pending['phase'] = 'invalid'
             elif event['Kind'] == 'missing_dependency':
                 bound = (pending is not None and event['Attempt'] == pending['attempt']
-                         and len(pending['starts']) == 1 and pending['starts'] == pending['returns'])
+                         and pending['phase'] == 'returned')
                 warnings.append({'bound': bound, 'attempt': pending['attempt'] if bound else None,
                                  'project': pending['project'] if bound else None,
-                                 'discovery_ordinal': pending['starts'][0] if bound else None,
+                                 'discovery_ordinal': pending['ordinal'] if bound else None,
                                  'writer_loop_tfm': None, 'rerun_survivor': None})
+                if pending is not None:
+                    pending['phase'] = 'consumed'
+            elif pending is not None:
+                pending['phase'] = 'invalid'
         result['missing_warnings'] = warnings
         result.update(status='observed' if not result['invalid'] and not raw['Dropped'] else 'invalid_or_dropped', dropped=raw['Dropped'])
     except (OSError, ValueError, KeyError, TypeError):
@@ -1365,6 +1407,7 @@ def writer_changes(snapshot, before, operations, can_continue):
                 if name != new_name or name not in ids or new_version not in new_versions[name]:
                     raise ValueError('writer_output')
                 result['central_version_changes'].append({'id': name, 'old': old_version, 'new': new_version})
+        result['central_sha256'] = digest(snapshot/WRITER_CENTRAL, snapshot)
         result['status'] = 'reconciled'
     except (OSError, ValueError, ET.ParseError):
         result['status'] = 'unaccounted_write'
@@ -1373,6 +1416,9 @@ def writer_changes(snapshot, before, operations, can_continue):
 
 def writer_evaluations(runner, command_root, state, snapshot, tracked, package_ids, phase):
     values = []
+    can_continue = lambda: time.monotonic() < runner.effective_deadline()
+    inputs = writer_input_hashes(snapshot, tracked, can_continue)
+    artifacts = {}
     for tfm in SMOKE_TFMS:
         runner.run('writer_evaluation', ['dotnet', 'msbuild', str(snapshot/WRITER_PROJECT), '-nologo',
             '-property:TargetFramework='+tfm,
@@ -1380,10 +1426,108 @@ def writer_evaluations(runner, command_root, state, snapshot, tracked, package_i
             '-getItem:PackageVersion,PackageReference,GlobalPackageReference,ProjectReference'], command_root,
             output=state/f'evaluation-writer-{phase}-{tfm}.json')
         value = smoke_evaluation(state, 'writer-'+phase, tfm, snapshot, tracked, package_ids, project=WRITER_PROJECT)
+        artifacts[tfm] = digest(state/f'evaluation-writer-{phase}-{tfm}.json', state)
         values.append(value)
         if value['status'] != 'evaluated':
             raise ValueError('writer_evaluation_incomplete')
+    if writer_input_hashes(snapshot, tracked, can_continue) != inputs:
+        raise ValueError('writer_evaluation_incomplete')
+    (state/f'writer-{phase}-inputs.json').write_text(json.dumps({'inputs': inputs, 'artifacts': artifacts}))
     return values
+
+
+def writer_input_hashes(snapshot, tracked, can_continue):
+    hashes = {}
+    for path in sorted(tracked):
+        if not can_continue():
+            raise ValueError('writer_evaluation_incomplete')
+        if (PurePosixPath(path).suffix.lower() in ('.props', '.targets', '.csproj')
+                or PurePosixPath(path).name.lower() in ('global.json', 'nuget.config')):
+            hashes[path] = digest(snapshot/path, snapshot)
+    return hashes
+
+
+def writer_update_readback(state, snapshot, tracked, package_ids, operations, changes, can_continue):
+    """Reparse pinned after artifacts against the same final source and central diff."""
+    result = {'status': 'incomplete', 'update_verified': False, 'update_outcome': 'readback_incomplete',
+              'requested_target': WRITER_TARGET, 'per_tfm': []}
+    try:
+        manifest = read_closed_json(state/'writer-after-inputs.json', state)
+        inputs, artifacts = manifest['inputs'], manifest['artifacts']
+        if (not isinstance(inputs, dict) or not isinstance(artifacts, dict)
+                or set(inputs) != set(writer_input_hashes(snapshot, tracked, can_continue))
+                or set(artifacts) != set(SMOKE_TFMS)):
+            raise ValueError('writer_output')
+        for path, sha in inputs.items():
+            if (path not in tracked or not isinstance(sha, str) or not re.fullmatch('[0-9a-f]{64}', sha)
+                    or not can_continue() or digest(snapshot/path, snapshot) != sha):
+                raise ValueError('writer_source_changed')
+        central_sha = inputs.get(WRITER_CENTRAL)
+        if central_sha != changes.get('central_sha256'):
+            raise ValueError('writer_source_changed')
+        observations, evaluations = [], []
+        for tfm in SMOKE_TFMS:
+            path = state/f'evaluation-writer-after-{tfm}.json'
+            expected = artifacts[tfm]
+            if (not isinstance(expected, str) or not re.fullmatch('[0-9a-f]{64}', expected)
+                    or not can_continue() or digest(path, state) != expected):
+                raise ValueError('writer_source_changed')
+            row = smoke_evaluation(state, 'writer-after', tfm, snapshot, tracked, package_ids, project=WRITER_PROJECT)
+            if row['status'] != 'evaluated' or digest(path, state) != expected:
+                raise ValueError('writer_source_changed')
+            direct = [item for item in row['direct_versions'] if item['id'] == WRITER_PACKAGE]
+            if len(direct) != 1 or row['central_file'] != WRITER_CENTRAL:
+                raise ValueError('writer_output')
+            evaluations.append(row)
+            observations.append({'tfm': tfm, 'observed_version': direct[0]['version'],
+                                 'matches_requested_target': direct[0]['version'] == WRITER_TARGET,
+                                 'evaluation_sha256': expected})
+        # Recheck all inputs after parsing; no stale readback may join a different final diff.
+        if (writer_input_hashes(snapshot, tracked, can_continue) != inputs
+                or digest(snapshot/WRITER_CENTRAL, snapshot) != central_sha):
+            raise ValueError('writer_source_changed')
+        requested_operations = [row for row in operations['operations'] if row['id'] == WRITER_PACKAGE]
+        all_target = all(row['matches_requested_target'] for row in observations)
+        operation_matches = bool(requested_operations) and all(row['new'] == WRITER_TARGET for row in requested_operations)
+        central_update = (WRITER_CENTRAL in changes['changed_paths'] and any(
+            row['id'] == WRITER_PACKAGE and row['new'] == WRITER_TARGET
+            for row in changes.get('central_version_changes', [])))
+        verified = (operations['status'] == 'observed' and changes['status'] == 'reconciled'
+                    and all_target and operation_matches and central_update)
+        if verified:
+            outcome = 'requested_target_verified'
+        elif not operations['operations'] and not changes['changed_paths'] and not any(row['matches_requested_target'] for row in observations):
+            outcome = 'no_update_observed'
+        elif all_target and not requested_operations:
+            outcome = 'target_observed_without_requested_operation'
+        else:
+            outcome = 'requested_target_not_verified'
+        result.update(status='matched_final_inputs', central_sha256=central_sha, per_tfm=observations, evaluations=evaluations,
+                      update_verified=verified, update_outcome=outcome)
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        result.update(status='incomplete_or_changed', update_outcome='readback_incomplete_or_changed')
+    return result
+
+
+def refresh_writer_receipt(summary, state, snapshot, tracked, package_ids, before, can_continue):
+    writer = summary['writer']
+    writer.update(execution_complete=False, case_complete=False, update_verified=False, update_outcome='readback_incomplete')
+    writer['after'] = []
+    writer['operations'] = writer_operations(state, tracked, package_ids)
+    writer['events'] = writer_events(state, tracked)
+    writer['changes'] = writer_changes(snapshot, before, writer['operations'], can_continue)
+    writer['requested_target_readback'] = writer_update_readback(state, snapshot, tracked, package_ids,
+                                                                 writer['operations'], writer['changes'], can_continue)
+    writer['after'] = writer['requested_target_readback'].get('evaluations', [])
+    writer.update({key: writer['requested_target_readback'][key] for key in ('update_verified', 'update_outcome')})
+    request_events = [row for row in writer['events']['events'] if row['Kind'] == 'request']
+    writer['update_operations_observed'] = bool(writer['operations']['operations'])
+    writer['conditional_policy_correctness'] = 'not_certified'
+    writer['execution_complete'] = ([row['State'] for row in request_events] == ['started', 'returned']
+        and writer['operations']['status'] == 'observed' and writer['events']['status'] == 'observed'
+        and writer['changes']['status'] == 'reconciled'
+        and writer['requested_target_readback']['status'] == 'matched_final_inputs')
+    writer['case_complete'] = writer['execution_complete']
 
 
 def writer_registration_guard(snapshot, state=None):
@@ -1438,17 +1582,8 @@ def run_writer_case(runner, command, native_root, state, snapshot, tracked, pack
         writer_error = error
     runner.begin_phase('readback')
     summary['writer']['after'] = writer_evaluations(runner, native_root, state, snapshot, tracked, package_ids, 'after')
-    summary['writer']['operations'] = writer_operations(state, tracked, package_ids)
-    summary['writer']['events'] = writer_events(state, tracked)
-    summary['writer']['changes'] = writer_changes(snapshot, before, summary['writer']['operations'],
-                                                   lambda: time.monotonic() < runner.phase_deadline)
-    request_events = [row for row in summary['writer']['events']['events'] if row['Kind'] == 'request']
-    summary['writer']['update_operations_observed'] = bool(summary['writer']['operations']['operations'])
-    summary['writer']['conditional_policy_correctness'] = 'not_certified'
-    summary['writer']['case_complete'] = ([row['State'] for row in request_events] == ['started', 'returned']
-        and summary['writer']['operations']['status'] == 'observed'
-        and summary['writer']['events']['status'] == 'observed'
-        and summary['writer']['changes']['status'] == 'reconciled')
+    refresh_writer_receipt(summary, state, snapshot, tracked, package_ids, before,
+                           lambda: time.monotonic() < runner.effective_deadline())
     runner.check()
     if writer_error is not None:
         raise writer_error

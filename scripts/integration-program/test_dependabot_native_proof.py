@@ -4,6 +4,7 @@ import io
 import hashlib
 import json
 import os
+import signal
 from pathlib import Path
 import subprocess
 import sys
@@ -16,7 +17,7 @@ from dependabot_native_proof import (DeadlineRunner, NativeProgress, diagnostic_
     units_from_configuration, unit_projects, reconcile_enumeration, probe_workspaces, probe_readback,
     safe_tool_result, child_environment, read_closed_json, digest, recheck_content, inventory,
     product_smoke_readback, smoke_native, smoke_project, smoke_can_continue, reference_output, SMOKE_PROJECTS, SMOKE_TFMS,
-    writer_registration_guard, writer_admission, writer_changes, writer_events, writer_operations, run_writer_case,
+    writer_update_readback, writer_registration_guard, writer_admission, writer_changes, writer_events, writer_operations, run_writer_case,
     WRITER_PROJECT, WRITER_PACKAGE, WRITER_CENTRAL, WRITER_OLD,
     UNIT_IDS, UNIT_SELECTORS, UNIT_COUNTS, RETAINED, TOOL_MANIFEST)
 
@@ -887,19 +888,85 @@ class WriterSmokeContractTests(unittest.TestCase):
         event.update(changes)
         return event
 
-    def test_missing_warning_requires_exact_single_awaited_discovery(self):
-        events = [self.event_fixture(Sequence=0, Kind='attempt', State='started', Attempt=1, AttemptProject=WRITER_PROJECT),
-                  self.event_fixture(Sequence=1, Kind='discovery', State='started', Attempt=1, Ordinal=2),
-                  self.event_fixture(Sequence=2, Kind='discovery', State='returned', Attempt=1, Ordinal=2),
-                  self.event_fixture(Sequence=3, Kind='missing_dependency', State='observed', Attempt=1)]
-        (self.state/'writer-events.json').write_text(json.dumps({'Events': events, 'Dropped': False}))
-        warnings = writer_events(self.state, self.tracked)['missing_warnings']
-        self.assertTrue(warnings[0]['bound'])
-        self.assertIsNone(warnings[0]['writer_loop_tfm'])
-        self.assertIsNone(warnings[0]['rerun_survivor'])
-        events[2]['Ordinal'] = 3
-        (self.state/'writer-events.json').write_text(json.dumps({'Events': events, 'Dropped': False}))
-        self.assertFalse(writer_events(self.state, self.tracked)['missing_warnings'][0]['bound'])
+    def test_missing_warning_requires_exact_ordered_single_discovery(self):
+        valid = [self.event_fixture(Kind='attempt', State='started', Attempt=1, AttemptProject=WRITER_PROJECT),
+                 self.event_fixture(Kind='discovery', State='started', Attempt=1, Ordinal=2),
+                 self.event_fixture(Kind='discovery', State='returned', Attempt=1, Ordinal=2),
+                 self.event_fixture(Kind='missing_dependency', State='observed', Attempt=1)]
+        cases = {'valid': valid, 'reversed': [valid[0], valid[2], valid[1], valid[3]],
+                 'duplicate_start': [*valid[:2], valid[1], *valid[2:]],
+                 'duplicate_return': [*valid[:3], valid[2], valid[3]],
+                 'intervening_attempt': [*valid[:3], dict(valid[0], Attempt=2), valid[3]],
+                 'duplicate_attempt': [valid[0], *valid],
+                 'wrong_ordinal': [*valid[:2], dict(valid[2], Ordinal=3), valid[3]]}
+        for name, events in cases.items():
+            with self.subTest(case=name):
+                events = [dict(row, Sequence=index) for index, row in enumerate(events)]
+                (self.state/'writer-events.json').write_text(json.dumps({'Events': events, 'Dropped': False}))
+                warnings = writer_events(self.state, self.tracked)['missing_warnings']
+                self.assertEqual(name == 'valid', warnings[0]['bound'])
+                self.assertIsNone(warnings[0]['writer_loop_tfm'])
+                self.assertIsNone(warnings[0]['rerun_survivor'])
+
+    def test_cleanup_is_inside_phase_and_repeated_stop_does_not_borrow(self):
+        with contextlib.redirect_stdout(io.StringIO()), mock.patch('dependabot_native_proof.time.monotonic', return_value=100):
+            runner = DeadlineRunner(self.state, {'stages': []}, budget_seconds=840, reserve_seconds=60,
+                                    cleanup_margin_seconds=10, grace_seconds=2)
+            runner.begin_phase('setup')
+            self.assertEqual(270, runner.effective_deadline())
+        process = mock.Mock(pid=123)
+        runner.process = process
+        with mock.patch('dependabot_native_proof.time.monotonic', return_value=279.5), mock.patch('dependabot_native_proof.os.killpg') as kill:
+            runner.stop()
+            runner.stop()
+        self.assertEqual([mock.call(123, signal.SIGTERM), mock.call(123, signal.SIGKILL)], kill.call_args_list)
+        self.assertTrue(all(call.kwargs['timeout'] <= 0.5 for call in process.wait.call_args_list))
+
+    def readback_fixture(self, at_target=False):
+        if at_target:
+            self.central.write_text(self.central.read_text().replace('9.0.13', '10.0.12'))
+        inputs = {WRITER_CENTRAL: digest(self.central, self.snapshot),
+                  WRITER_PROJECT: digest(self.snapshot/WRITER_PROJECT, self.snapshot)}
+        artifacts = {}
+        for tfm in SMOKE_TFMS:
+            raw = {'Properties': {'TargetFramework': tfm, 'TargetFrameworks': ';'.join(SMOKE_TFMS),
+                'ManagePackageVersionsCentrally': 'true', 'DirectoryPackagesPropsPath': str(self.central)},
+                'Items': {'PackageVersion': [{'Identity': WRITER_PACKAGE,
+                    'Version': '10.0.12' if at_target else WRITER_OLD[tfm], 'DefiningProjectFullPath': str(self.central)}],
+                    'PackageReference': [{'Identity': WRITER_PACKAGE, 'DefiningProjectFullPath': str(self.snapshot/WRITER_PROJECT)}],
+                    'GlobalPackageReference': [], 'ProjectReference': []}}
+            path = self.state/f'evaluation-writer-after-{tfm}.json'
+            path.write_text(json.dumps(raw))
+            artifacts[tfm] = digest(path, self.state)
+        (self.state/'writer-after-inputs.json').write_text(json.dumps({'inputs': inputs, 'artifacts': artifacts}))
+        return {'status': 'reconciled', 'changed_paths': [WRITER_CENTRAL] if at_target else [],
+                'central_version_changes': [{'id': WRITER_PACKAGE, 'old': '9.0.13', 'new': '10.0.12'}] if at_target else [],
+                'central_sha256': inputs[WRITER_CENTRAL]}
+
+    def test_empty_operations_are_complete_readback_but_explicit_no_update(self):
+        changes = self.readback_fixture()
+        result = writer_update_readback(self.state, self.snapshot, self.tracked, {WRITER_PACKAGE},
+                                       {'status': 'observed', 'operations': []}, changes, lambda: True)
+        self.assertEqual('matched_final_inputs', result['status'])
+        self.assertEqual('no_update_observed', result['update_outcome'])
+        self.assertFalse(result['update_verified'])
+        self.assertTrue(all(not row['matches_requested_target'] for row in result['per_tfm']))
+
+    def test_target_readback_requires_recorded_operation_and_current_artifacts_and_source(self):
+        changes = self.readback_fixture(at_target=True)
+        operations = {'status': 'observed', 'operations': [{'id': WRITER_PACKAGE, 'new': '10.0.12'}]}
+        result = writer_update_readback(self.state, self.snapshot, self.tracked, {WRITER_PACKAGE}, operations, changes, lambda: True)
+        self.assertTrue(result['update_verified'])
+        self.assertEqual('requested_target_verified', result['update_outcome'])
+        self.assertTrue(all(row['matches_requested_target'] for row in result['per_tfm']))
+        artifact = self.state/'evaluation-writer-after-net8.0.json'
+        artifact.write_text(artifact.read_text()+' ')
+        self.assertFalse(writer_update_readback(self.state, self.snapshot, self.tracked, {WRITER_PACKAGE}, operations, changes, lambda: True)['update_verified'])
+        changes = self.readback_fixture(at_target=True)
+        self.central.write_text(self.central.read_text()+' ')
+        result = writer_update_readback(self.state, self.snapshot, self.tracked, {WRITER_PACKAGE}, operations, changes, lambda: True)
+        self.assertEqual('readback_incomplete_or_changed', result['update_outcome'])
+        self.assertFalse(result['update_verified'])
 
     def test_event_and_operation_projection_omit_raw_errors_and_unobserved_tfm(self):
         event = self.event_fixture()
