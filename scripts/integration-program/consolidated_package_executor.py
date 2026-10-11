@@ -177,6 +177,12 @@ class HttpTransport:
     def _wire_url(self, url):
         return url
 
+    def _allowed_url(self, url):
+        return (url == recovery.FEED_INDEX or recovery._intended_url(url)
+                or url in {PACKAGE_PUBLISH, SYMBOL_PUBLISH}
+                or (url.startswith(SYMBOL_PUBLISH + "/") and KEY.fullmatch(url[len(SYMBOL_PUBLISH)+1:]))
+                or re.fullmatch(r"https://api\.github\.com/repos/elsa-workflows/elsa-core/[A-Za-z0-9_./?=&%-]+", url))
+
     def request(self, method, url, *, data=b"", headers=None, limit=MAX_BYTES, timeout=25):
         require(method in {"GET", "PUT"}, "unsupported_method")
         headers = headers or {}
@@ -185,10 +191,7 @@ class HttpTransport:
             require(method == "GET" and url.startswith("https://api.github.com/")
                     and METADATA_PATH.fullmatch(url[len("https://api.github.com/"):]), "unsafe_metadata_authorization")
         require("X-NuGet-ApiKey" not in headers or method == "PUT" and url in {PACKAGE_PUBLISH, SYMBOL_PUBLISH}, "unsafe_publisher_authorization")
-        allowed = (url == recovery.FEED_INDEX or recovery._intended_url(url)
-                   or url in {PACKAGE_PUBLISH, SYMBOL_PUBLISH}
-                   or (url.startswith(SYMBOL_PUBLISH + "/") and KEY.fullmatch(url[len(SYMBOL_PUBLISH)+1:]))
-                   or re.fullmatch(r"https://api\.github\.com/repos/elsa-workflows/elsa-core/[A-Za-z0-9_./?=&%-]+", url))
+        allowed = self._allowed_url(url)
         require(allowed and ".." not in url and len(data) <= MAX_BYTES, "unsafe_request")
         require(method != "PUT" or url in {PACKAGE_PUBLISH, SYMBOL_PUBLISH}, "unsafe_upload")
         require(self.request_count < self.max_requests, "request_limit")
