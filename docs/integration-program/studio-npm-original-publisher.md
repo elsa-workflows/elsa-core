@@ -29,6 +29,18 @@ python3 scripts/integration-program/publish_studio_npm_pair.py \
   --output /physical/path/reconciliation.json
 ```
 
+The report destination must be separate from both inputs. Before input admission,
+the command rejects direct, resolved-path and hardlink aliases, report symlinks,
+and invalid report parent directories with `unsafe_report_destination` on stdout;
+it writes no report on that rejection. Safe parent-directory aliases such as
+macOS `/tmp` are resolved to their physical destination. Report staging is reserved
+before input admission; an unavailable parent fails through the same closed code.
+An existing separate regular report may be replaced. Reports are staged beside
+the destination and atomically replace its leaf, so a late leaf link cannot truncate an original
+input. Report-write failures return sanitized `report_write_failed` on stdout.
+Use trusted directories under exclusive local ownership: these pathname checks
+and leaf replacement do not protect against adversarial parent-directory races.
+
 A successful verify receipt means local original admission and a complete
 matching/missing public registry observation. It does not mean publication,
 private-reader rights, clean lifecycle replay, release acceptance or cutover.
