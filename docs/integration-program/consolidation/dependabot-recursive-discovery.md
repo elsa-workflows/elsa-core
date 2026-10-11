@@ -49,7 +49,7 @@ The regression reconciles every tracked project, rather than the former 149 sour
 Extensions/Studio projects. All 173 Extensions/Studio projects are selected, including
 20 Extensions tests, three Extensions samples and one Studio sample.
 
-| Ownership | Tracked projects | In Elsa.sln | Additional directory | Unselected |
+| Ownership | Tracked projects | In Elsa.sln | Selected outside Elsa.sln | Unselected |
 | --- | ---: | ---: | ---: | ---: |
 | Core | 183 | 182 | 0 | 1 |
 | Extensions | 100 | 99 | 1 | 0 |

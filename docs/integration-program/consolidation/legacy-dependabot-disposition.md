@@ -1,25 +1,35 @@
 # Reconcile the imported Dependabot policies
 
-## Current coordinated policy under Task #8636
+## Current bounded policy under Task #8636
 
 The October 8 owner decision permits coordinated Core, Extensions and Studio
-proposals with affected-product CI. The current correction replaces the three
-NuGet entries with one job selecting `/` for `Elsa.sln` and the exact retained
-`/extensions/src/Elsa.Testing.Extensions` directory. It removes the old root product
-exclusions. Both Feedz registry declarations and the `FEEDZ_API_KEY` name remain.
-Core adopts the existing daily 06:00 Europe/Amsterdam product cadence; the one-PR
-limit and `Elsa*` group apply to the coordinated job. Package versions and publishers
-are unchanged. The [solution discovery record](dependabot-recursive-discovery.md)
-contains the complete project census, central import reconciliation and remaining
-native/hosted gates.
+proposals with affected-product CI. [PR #8719](https://github.com/elsa-workflows/elsa-core/pull/8719)
+merged a root-solution job plus the retained testing project. Its actual managed
+run [38108457632](https://github.com/elsa-workflows/elsa-core/actions/runs/38108457632)
+reached the 55-minute limit with ongoing Core strategy starts, before any
+Extensions or Studio strategy start. It did not satisfy operational acceptance.
+
+[PR #8724](https://github.com/elsa-workflows/elsa-core/pull/8724) prepares five
+project-parent scheduling units: Core production, Core tests, Extensions, Studio,
+and shared build/tooling. Static coverage preserves all 356 selected projects,
+including all 173 Extensions/Studio projects, the retained testing project, and
+separate root tool-manifest coverage. Both Feedz declarations and the
+`FEEDZ_API_KEY` name remain; no package version or publisher changes.
+
+Daily jobs are staggered from 06:00 through 18:00 Europe/Amsterdam. Each keeps
+a one-PR cap and the `Elsa*` group, so up to five version-update PRs can be open.
+Staggering does not enforce a global cap. Shared central files, tool manifests
+and referenced projects can overlap; the integration owner reconciles proposals
+and requires all affected-product CI and ordinary review/merge gates.
 
 The ledger preserves the original #8495 decision, merge and imported source pins.
-Its active configuration blob identifies the current candidate, and the active
-update links to [PR #8719](https://github.com/elsa-workflows/elsa-core/pull/8719).
-The earlier #8640 recursive-selector correction remains historical evidence.
-This does not claim a reviewed merge, successful native/hosted evaluation, Feedz
-credential use or Task acceptance. A real Studio central-version proposal exists
-in #8673, but complete inventory acceptance remains open under #8636.
+Its active configuration blob identifies this candidate and its active update
+links to #8724. #8640 and #8719 remain historical evidence. The
+[bounded discovery record](dependabot-recursive-discovery.md) records the complete
+census, static import checks and remaining native/managed acceptance gates.
+This does not claim approval or merge of #8724, completed evaluated discovery,
+feed resolution or Task acceptance. Existing Studio proposal #8673 remains a
+bounded proposal, not complete inventory evidence.
 
 ## Historical separate product policies (superseded)
 
