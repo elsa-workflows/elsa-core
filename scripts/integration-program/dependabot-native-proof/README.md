@@ -92,8 +92,8 @@ Unknown imports/references/top-level dependency fields, closure failures and
 unevaluable inputs block semantic matching. Only well-shaped unadmitted transitive
 dependencies are separately counted and omitted. Raw expression values, property
 names, error text and InfoUrl are excluded. Evaluated globals retain their item
-kind and explicit version; pinned SDK native discovery emits those declarations
-as PackageReference, so that native type is admitted for a global join without
+kind and explicit version; pinned SDK native discovery emits all top-level declarations
+as PackageReference, so only that native type is admitted for direct and global joins without
 pretending native output distinguishes the original item collection.
 No claim of complete closure evaluation follows from retaining its records.
 `semantic_preflight_complete` describes this fixed pair only; all 356 selected and

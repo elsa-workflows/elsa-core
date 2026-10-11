@@ -546,6 +546,24 @@ class ProductSmokeTests(unittest.TestCase):
         self.assertFalse(result['semantic_preflight_complete'])
         self.assertFalse(smoke_can_continue(result['projects'][0]))
 
+    def test_only_sdk_package_reference_type_matches_direct_or_global_inputs(self):
+        original = (self.state/'workspace-0.json').read_text()
+        for item_kind in ('PackageReference', 'GlobalPackageReference'):
+            if item_kind == 'GlobalPackageReference':
+                for tfm in SMOKE_TFMS:
+                    self.mutate(f'evaluation-0-{tfm}.json', lambda value: value['Items'].update(
+                        GlobalPackageReference=[dict(value['Items']['PackageReference'][0],
+                            Version=value['Items']['PackageVersion'][0]['Version'])], PackageReference=[]))
+            self.assertTrue(self.readback()['semantic_preflight_complete'])
+            for native_type in ('PackageVersion', 'GlobalPackageReference', 'DotNetTool'):
+                with self.subTest(item_kind=item_kind, native_type=native_type):
+                    self.mutate('workspace-0.json', lambda value: [dep.update(Type=native_type)
+                        for dep in value['Projects'][0]['Dependencies']])
+                    result = self.readback()
+                    self.assertFalse(result['semantic_preflight_complete'])
+                    self.assertFalse(smoke_can_continue(result['projects'][0]))
+                    (self.state/'workspace-0.json').write_text(original)
+
     def test_known_non_success_evaluation_results_block_second_call_without_raw_values(self):
         original = (self.state/'workspace-0.json').read_text()
         for result_type in ('PropertyIgnored', 'CircularReference', 'PropertyNotFound'):

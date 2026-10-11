@@ -319,9 +319,7 @@ def smoke_evaluation(state, index, tfm, snapshot, tracked, package_ids):
 def smoke_dependency_matches(native, direct, tfm):
     return (native['Name'] == direct['id'] and native['Version'] == direct['version']
             and tfm in native['TargetFrameworks'] and native['IsTopLevel']
-            and native['Type'] in (('GlobalPackageReference', 'PackageReference')
-                                  if direct['type'] == 'GlobalPackageReference'
-                                  else ('PackageReference', 'PackageVersion'))
+            and native['Type'] == 'PackageReference'
             and (not native['EvaluationResult']['present']
                  or native['EvaluationResult'].get('result_type') == 'Success'))
 
