@@ -176,6 +176,35 @@ class PublicationContracts(unittest.TestCase):
         self.assertEqual([pair.REACT], [row[0] for row in resumed.calls])
         self.assertEqual(self.candidate['artifacts'][pair.REACT]['bytes'], resumed.calls[0][2])
 
+    def test_wasm_disappearing_after_successful_readback_blocks_react_write(self):
+        registry = Registry(self.candidate)
+        publisher = Publisher(registry)
+        original_get = registry.get
+        original_bytes = {name: item['bytes'] for name, item in self.candidate['artifacts'].items()}
+        original_zip = self.zip.read_bytes()
+        successful_wasm_reads = []
+        wasm_url = publication.REGISTRIES['feedz'] + pair.WASM.split('/')[-1] + '.tgz'
+        def disappear_after_readback(url, **kwargs):
+            response = original_get(url, **kwargs)
+            if url == wasm_url and publisher.calls:
+                self.assertEqual(original_bytes[pair.WASM], response.body)
+                self.assertTrue(response.complete)
+                successful_wasm_reads.append(url)
+                registry.states[pair.WASM] = 'missing'
+            return response
+        with patch.object(registry, 'get', side_effect=disappear_after_readback), \
+             patch.object(publication, 'native_admission', return_value=self.admission):
+            result = publication.execute(self.candidate, 'feedz', operation='publish', transport=registry, publisher=publisher)
+        self.assertEqual([wasm_url], successful_wasm_reads)
+        self.assertEqual([pair.WASM], [call[0] for call in publisher.calls])
+        self.assertFalse(result['success'])
+        self.assertEqual('wasm_dependency_not_matching_before_react', result['failure_code'])
+        self.assertEqual([{'package': pair.WASM, 'state': 'missing'}, {'package': pair.REACT, 'state': 'missing'}], result['after'])
+        self.assertEqual([{'package': pair.WASM, 'command_succeeded': True}], result['uploads'])
+        self.assertEqual(self.admission, result['native_admission'])
+        self.assertEqual(original_bytes, {name: item['bytes'] for name, item in self.candidate['artifacts'].items()})
+        self.assertEqual(original_zip, self.zip.read_bytes())
+
     def test_failed_native_gate_never_publishes(self):
         with self.assertRaisesRegex(publication.PublicationError, 'publication_policy_unconfigured'):
             publication.execute(self.candidate, 'feedz', operation='publish', transport=Registry(self.candidate), publisher=object())

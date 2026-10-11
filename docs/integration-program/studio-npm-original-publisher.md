@@ -64,12 +64,16 @@ base64-token source convention without interpreting token scope. npmjs uses
 trusted-publisher OIDC without inherited npm configuration or token fallback.
 Stable candidates use `latest`; prereleases use `next`.
 
-WASM is uploaded first. A later failure leaves an honest partial pair. On an
+WASM is uploaded first. A fresh pair reconciliation must show matching WASM
+immediately before any React write; a missing dependency stops with the partial
+receipt retained. A later failure leaves an honest partial pair. On an
 uncertain command result, readback is recorded and execution stops even when the
 bytes are visible. Reinvoke with the same original ZIP/packet after reviewing the
 receipt; matching members are skipped, and only missing members are considered.
 A conflict response is never equivalent to matching bytes. The pair is not an
-atomic transaction. Dist-tag state is not independently verified by this version
+atomic transaction. The remaining read/write race requires operational publisher
+serialization and provider immutability controls; this guard provides no atomic
+publication guarantee. Dist-tag state is not independently verified by this version
 and must not be claimed as a completed release gate.
 
 This work prepares #8220 publication handoff and the npm item in #8725; it does

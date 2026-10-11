@@ -400,6 +400,9 @@ def execute(candidate, registry, *, operation='verify', transport=None, publishe
             return result
         if states[index]['state'] == 'matching':
             continue
+        if name == pair.REACT and states[0]['state'] != 'matching':
+            result['failure_code'] = 'wasm_dependency_not_matching_before_react'
+            return result
         try:
             result['native_admission'] = native_admission(candidate, registry, operation)
             published = publisher.publish(candidate, registry, name, tag)
