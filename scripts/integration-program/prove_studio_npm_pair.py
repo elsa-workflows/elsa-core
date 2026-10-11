@@ -25,6 +25,10 @@ ASSETS = ('_framework', '_content', 'appsettings.json', 'Elsa.Studio.Host.Custom
 OWNERSHIP = '.elsa-studio-wasm-assets.json'
 EXPORTS = ('BackendProvider', 'WorkflowDefinitionEditor', 'WorkflowInstanceViewer', 'WorkflowDefinitionList')
 MAX_BYTES = 512 * 1024 * 1024
+RELEASE_CANDIDATE_VERSION = re.compile(
+    r"3\.(?:8|9|10)\.(?:0|[1-9][0-9]*)(?:-"
+    r"(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)"
+    r"(?:\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?\Z")
 
 # Reuse the local, unpublished tarball primitives, not registry/dist-tag verification.
 _spec = importlib.util.spec_from_file_location('release_package_artifacts',
@@ -50,13 +54,28 @@ def write_json(path: Path, value: dict) -> None:
     path.write_text(json.dumps(value, indent=2, sort_keys=True) + '\n')
 
 
+def _validate_provenance(commit: str, tree: str, run: str, attempt: str) -> None:
+    require(isinstance(commit, str) and isinstance(tree, str)
+            and bool(re.fullmatch('[0-9a-f]{40}', commit)) and bool(re.fullmatch('[0-9a-f]{40}', tree)), 'source-identity')
+    require(isinstance(run, str) and isinstance(attempt, str)
+            and bool(re.fullmatch('[1-9][0-9]*', run)) and bool(re.fullmatch('[1-9][0-9]*', attempt)), 'run-identity')
+
+
 def identity(commit: str, tree: str, version: str, run: str, attempt: str) -> dict:
-    require(bool(re.fullmatch('[0-9a-f]{40}', commit)) and bool(re.fullmatch('[0-9a-f]{40}', tree)), 'source-identity')
-    require(bool(re.fullmatch('[1-9][0-9]*', run)) and bool(re.fullmatch('[1-9][0-9]*', attempt)), 'run-identity')
+    _validate_provenance(commit, tree, run, attempt)
     require(version == f'0.0.0-proof.{run}.{attempt}', 'proof-version')
     return {'schema': 1, 'source_repository': 'elsa-workflows/elsa-core', 'source_commit': commit,
             'source_tree': tree, 'version': version, 'run_id': run, 'run_attempt': attempt,
             'framework': 'net10.0', 'published': False}
+
+
+def release_candidate_identity(commit: str, tree: str, version: str, run: str, attempt: str) -> dict:
+    _validate_provenance(commit, tree, run, attempt)
+    require(isinstance(version, str) and RELEASE_CANDIDATE_VERSION.fullmatch(version) is not None,
+            'release-candidate-version')
+    return {'schema': 2, 'kind': 'release-candidate', 'source_repository': 'elsa-workflows/elsa-core',
+            'source_commit': commit, 'source_tree': tree, 'version': version, 'run_id': run,
+            'run_attempt': attempt, 'framework': 'net10.0', 'published': False}
 
 
 def regular(path: Path) -> None:
@@ -269,6 +288,7 @@ class Runner:
         log = self.private / f'{len(self.receipt["commands"]):02}-{label}.log'
         try:
             with log.open('wb') as stream:
+                log.chmod(0o600)
                 process = subprocess.run(argv, cwd=cwd, env=self.env, stdout=stream, stderr=subprocess.STDOUT, timeout=timeout)
             record['exit_code'] = process.returncode
             require(process.returncode == 0, 'command-failed')
@@ -427,10 +447,12 @@ def git(root: Path, *args: str) -> str:
         raise ProofError('source-status-unavailable') from None
 
 
-def prove(root: Path, output: Path, commit: str, version: str, run: str, attempt: str) -> dict:
+def prove(root: Path, output: Path, commit: str, version: str, run: str, attempt: str,
+          *, release_candidate: bool = False) -> dict:
     require(root.resolve() == root and not output.resolve().is_relative_to(root), 'output-location')
     require(not output.exists() and not any(part.is_symlink() for part in output.parents), 'output-exists')
-    proof = identity(commit, git(root, 'rev-parse', 'HEAD^{tree}'), version, run, attempt)
+    tree = git(root, 'rev-parse', 'HEAD^{tree}')
+    proof = (release_candidate_identity if release_candidate else identity)(commit, tree, version, run, attempt)
     require(git(root, 'rev-parse', 'HEAD') == commit and not git(root, 'status', '--porcelain'), 'source-checkout')
     output.mkdir(parents=True)
     public = output / 'retained'
@@ -509,9 +531,12 @@ def main() -> int:
     parser.add_argument('--version', required=True)
     parser.add_argument('--run-id', required=True)
     parser.add_argument('--run-attempt', required=True)
+    parser.add_argument('--release-candidate', action='store_true',
+                        help='use the separate, unpublished release-candidate archive identity')
     args = parser.parse_args()
     try:
-        report = prove(args.root.resolve(), args.output.resolve(), args.commit, args.version, args.run_id, args.run_attempt)
+        report = prove(args.root.resolve(), args.output.resolve(), args.commit, args.version, args.run_id, args.run_attempt,
+                       release_candidate=args.release_candidate)
         print(json.dumps({'success': report['success'], 'stage': report['stage'],
                           'failure_code': report.get('failure_code')}))
         return 0 if report['success'] else 1
