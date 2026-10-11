@@ -1,6 +1,8 @@
 {
   "schema": 1,
+  "status": "Retired four-repository 3.8/3.9 maintenance profile. Studio, Extensions and Apps are folded into elsa-core (standing order 2026-10-11) and must not be released, dispatched or contacted. Only the core and templates repositories, the feeds, the post-release sites and the announcements remain in use. See references/runbook.md, Scope.",
   "container_release": {
+    "retired": "Points at elsa-apps, which is folded into elsa-core and off limits. Core has no image workflow yet; run with --no-containers.",
     "repository": "elsa-workflows/elsa-apps",
     "workflow": ".github/workflows/container-images.yml",
     "source_ref": "main",
@@ -151,6 +153,11 @@
     },
     {
       "name": "studio",
+      "retired": "Folded into elsa-core; do not release or select this repository. Its npm jobs below have no core equivalent yet.",
+      "pending_in_core": {
+        "Publish npm packages to feedz.io": "elsa-workflows/elsa-core#8725",
+        "Publish npm packages to npmjs.com": "elsa-workflows/elsa-core#8725"
+      },
       "directory": "elsa-studio",
       "github": "elsa-workflows/elsa-studio",
       "solution": "Elsa.Studio.sln",
@@ -179,6 +186,7 @@
     },
     {
       "name": "extensions",
+      "retired": "Folded into elsa-core; do not release or select this repository. Packing its projects through core packages.yml is tracked in elsa-workflows/elsa-core#8725.",
       "directory": "elsa-extensions",
       "github": "elsa-workflows/elsa-extensions",
       "solution": "Elsa.Extensions.sln",
