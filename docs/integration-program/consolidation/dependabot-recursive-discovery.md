@@ -194,11 +194,20 @@ Do not replace native evidence with this Ruby model or increase the old timeout.
 
 `extensions/src/Elsa.Testing.Extensions/Elsa.Testing.Extensions.csproj` remains
 selected without retirement. Earlier native/hosted evaluation returned `Projects=[]`,
-`IsSuccess=true`, `Error=null` after NU1008/NU1010 warnings: its explicit conditional
-`Microsoft.AspNetCore.Mvc.Testing` versions conflict with inherited central management,
-and its net7.0 target lacks some inherited central versions. The warnings continued
-rather than aborting discovery. Current native evaluation must report its disposition;
-this configuration repair does not fix its project or claim the warnings resolved.
+`IsSuccess=true`, `Error=null` after NU1008/NU1010 warnings: the then-current project's
+explicit conditional `Microsoft.AspNetCore.Mvc.Testing` versions conflicted with
+inherited central management, and its net7.0 target lacked some inherited central
+versions. The warnings continued rather than aborting discovery.
+
+The source repair removes those local framework/version overrides. The helper now
+inherits net8.0, net9.0 and net10.0, with central MVC.Testing versions 8.0.17, 9.0.17
+and 10.0.9 respectively. Splitting the former shared net8/net9 MVC row increases the
+Extensions central-file element count from the baseline 242 to 243. The 19 module-test
+consumers remain on net10.0 and MVC.Testing 10.0.9. The `retained-testing-helper` CI job
+restores and builds the otherwise out-of-solution helper on all three frameworks and
+checks resolved MVC.Testing versions against evaluated central policy. This source
+repair and build check do not establish native updater success; current native
+evaluation must still report the helper's disposition without omissions.
 
 After the correction lands on default `main`, Task #8636 still needs terminal actual
 managed results for every unit, complete evaluated discovery and central-version

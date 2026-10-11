@@ -30,6 +30,42 @@ permissions:
   contents: read
 
 jobs:
+  retained-testing-helper:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: '10.0.300'
+      - name: Restore and build the retained helper on every supported framework
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import subprocess
+
+          project = Path('extensions/src/Elsa.Testing.Extensions/Elsa.Testing.Extensions.csproj')
+          package = 'Microsoft.AspNetCore.Mvc.Testing'
+          for framework in ('net8.0', 'net9.0', 'net10.0'):
+              subprocess.run([
+                  'dotnet', 'build', str(project), '--configuration', 'Release',
+                  '--framework', framework, '--nologo', '-m:1',
+              ], check=True)
+              evaluation = json.loads(subprocess.check_output([
+                  'dotnet', 'msbuild', str(project), '-nologo',
+                  f'-p:TargetFramework={framework}', '-getItem:PackageVersion',
+              ], text=True))
+              versions = [item['Version'] for item in evaluation['Items']['PackageVersion']
+                          if item['Identity'] == package]
+              assets = json.loads((project.parent / 'obj/project.assets.json').read_text())
+              resolved = [identity for identity in assets['targets'][framework]
+                          if identity.startswith(f'{package}/')]
+              if len(versions) != 1 or resolved != [f'{package}/{versions[0]}']:
+                  raise SystemExit(f'{framework}: resolved MVC.Testing differs from central policy')
+              print(f'{framework}: built with MVC.Testing {versions[0]}', flush=True)
+          PY
+
   import-rehearsal-tests:
     runs-on: ubuntu-latest
     steps:
