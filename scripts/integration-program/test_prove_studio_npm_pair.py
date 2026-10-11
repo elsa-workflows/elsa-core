@@ -1,6 +1,7 @@
 """Synthetic boundary contracts; real host/consumer proof is a separate gate."""
-import copy
 import base64
+import copy
+from contextlib import redirect_stdout
 import io
 import json
 import os
@@ -24,10 +25,11 @@ class PairContracts(unittest.TestCase):
         self.root = Path(self.temporary.name).resolve()
         self.proof = pair.identity('a' * 40, 'b' * 40, '0.0.0-proof.12.1', '12', '1')
 
-    def payload(self, name=pair.WASM):
-        package = {'name': name, 'version': self.proof['version'], 'repository': {'type': 'git', 'url': pair.REPOSITORY},
-                   'gitHead': self.proof['source_commit']}
-        manifest = self.proof | {'package': name}
+    def payload(self, name=pair.WASM, proof=None):
+        proof = proof or self.proof
+        package = {'name': name, 'version': proof['version'], 'repository': {'type': 'git', 'url': pair.REPOSITORY},
+                   'gitHead': proof['source_commit']}
+        manifest = proof | {'package': name}
         if name == pair.WASM:
             payload = {'index.html': b'<script src="_framework/blazor.webassembly.js"></script>',
                        'appsettings.json': b'{}', pair.ASSETS[3]: b'css',
@@ -37,7 +39,7 @@ class PairContracts(unittest.TestCase):
         else:
             package.update(main='./dist/main.cjs', module='./dist/main.js',
                 exports={'.': {'import': './dist/main.js', 'require': './dist/main.cjs'}},
-                dependencies={pair.WASM: self.proof['version']}, scripts={'postinstall': 'node scripts/copy-elsa-studio-wasm.js',
+                dependencies={pair.WASM: proof['version']}, scripts={'postinstall': 'node scripts/copy-elsa-studio-wasm.js',
                     'copy:elsa-studio-wasm': 'node scripts/copy-elsa-studio-wasm.js'})
             manifest['wasm_sha512_integrity'] = FIXTURE_INTEGRITY
             payload = {'dist/main.cjs': b'cjs', 'dist/main.js': b'esm', 'scripts/copy-elsa-studio-wasm.js': b'copy'}
@@ -55,8 +57,8 @@ class PairContracts(unittest.TestCase):
                 archive.addfile(extra)
         return path
 
-    def verify(self, payload, name=pair.WASM, **kwargs):
-        return pair.verify_archive(self.archive(payload), name, self.proof,
+    def verify(self, payload, name=pair.WASM, proof=None, **kwargs):
+        return pair.verify_archive(self.archive(payload), name, proof or self.proof,
                                    wasm_integrity=FIXTURE_INTEGRITY if name == pair.REACT else None, **kwargs)
 
     def mutate_json(self, payload, key, mutate):
@@ -116,6 +118,74 @@ class PairContracts(unittest.TestCase):
                 args[index] = wrong
                 with self.assertRaises(pair.ProofError):
                     pair.identity(*args)
+
+    def test_proof_identity_contract_remains_unchanged(self):
+        self.assertEqual({'schema': 1, 'source_repository': 'elsa-workflows/elsa-core',
+                          'source_commit': 'a' * 40, 'source_tree': 'b' * 40,
+                          'version': '0.0.0-proof.12.1', 'run_id': '12', 'run_attempt': '1',
+                          'framework': 'net10.0', 'published': False}, self.proof)
+
+    def test_release_candidate_identity_is_separate_and_rejects_noncandidate_versions(self):
+        for version in ('3.8.0', '3.9.12', '3.10.0', '3.8.0-preview.5557', '3.9.1-rc1', '3.10.12-preview.5557.2.abcdef'):
+            with self.subTest(version=version):
+                identity = pair.release_candidate_identity('a' * 40, 'b' * 40, version, '12', '1')
+                self.assertEqual(2, identity['schema'])
+                self.assertEqual('release-candidate', identity['kind'])
+                self.assertEqual(('a' * 40, 'b' * 40, '12', '1'),
+                                 (identity['source_commit'], identity['source_tree'], identity['run_id'], identity['run_attempt']))
+                self.assertEqual(version, identity['version'])
+                self.assertFalse(identity['published'])
+                self.assertNotEqual(self.proof, identity)
+
+        for version in ('3.8.01', '3.7.9-preview.1', '3.11.0-preview.1', '3.8.0-preview.01',
+                        '3.9.0-01', '3.10.0-preview.1+build.2', '3.10.0-', '3.10.0-preview..1'):
+            with self.subTest(rejected=version), self.assertRaisesRegex(pair.ProofError, 'release-candidate-version'):
+                pair.release_candidate_identity('a' * 40, 'b' * 40, version, '12', '1')
+
+    def test_candidate_archive_requires_its_exact_candidate_identity(self):
+        candidate = pair.release_candidate_identity('a' * 40, 'b' * 40, '3.8.0-preview.12.1', '12', '1')
+        payload = self.payload(proof=candidate)
+        report = self.verify(payload, proof=candidate)
+        self.assertEqual(candidate | {'package': pair.WASM}, report['manifest'])
+        with self.assertRaisesRegex(pair.ProofError, 'archive-identity'):
+            self.verify(payload)
+        with self.assertRaisesRegex(pair.ProofError, 'manifest-identity'):
+            self.verify(payload, proof=candidate | {'kind': 'proof'})
+
+        old_proof_payload = self.payload()
+        with self.assertRaisesRegex(pair.ProofError, 'archive-identity'):
+            self.verify(old_proof_payload, proof=candidate)
+
+    def test_candidate_cli_flag_selects_the_existing_producer_path(self):
+        output = self.root / 'candidate-output'
+        report = {'success': True, 'stage': 'complete'}
+        argv = ['prove_studio_npm_pair.py', '--root', str(self.root), '--output', str(output),
+                '--commit', 'a' * 40, '--version', '3.8.0-preview.12.1', '--run-id', '12',
+                '--run-attempt', '1', '--release-candidate']
+        with patch.object(sys, 'argv', argv), patch.object(pair, 'prove', return_value=report) as prove, \
+             redirect_stdout(io.StringIO()):
+            self.assertEqual(0, pair.main())
+        prove.assert_called_once_with(self.root, output, 'a' * 40, '3.8.0-preview.12.1', '12', '1',
+                                      release_candidate=True)
+
+    def test_candidate_producer_retains_separate_identity_before_build(self):
+        controller = self.root / 'controller'
+        controller.mkdir()
+        output = self.root / 'candidate-output'
+        version = '3.8.0-preview.12.1'
+        git_values = ['b' * 40, 'a' * 40, '', 'a' * 40, '']
+        with patch.object(pair, 'git', side_effect=git_values), \
+             patch.object(pair.Runner, 'run', side_effect=pair.ProofError('candidate-build-stopped')) as run:
+            report = pair.prove(controller, output, 'a' * 40, version, '12', '1', release_candidate=True)
+
+        expected = pair.release_candidate_identity('a' * 40, 'b' * 40, version, '12', '1')
+        self.assertTrue(all(report[key] == value for key, value in expected.items()))
+        self.assertFalse(report['success'])
+        self.assertFalse(report['published'])
+        self.assertFalse(report['publisher_authority'])
+        self.assertEqual('candidate-build-stopped', report['failure_code'])
+        self.assertEqual(1, run.call_count)
+        self.assertEqual(report, json.loads((output / 'retained/receipt.json').read_text()))
 
     def test_actual_cli_rejects_invalid_root_with_closed_json_and_no_output(self):
         for kind in ('missing', 'not-git', 'file'):
