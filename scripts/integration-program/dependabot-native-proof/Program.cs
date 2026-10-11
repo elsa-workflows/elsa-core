@@ -172,8 +172,14 @@ internal static class WriterSmoke
             var operations = result.UpdateOperations;
             // Raw native operations remain private; Python projects a closed summary.
             await File.WriteAllTextAsync(Path.Combine(output, "writer-operations.json"), JsonSerializer.Serialize(
-                operations.Select(operation => new { operation.Type, operation.DependencyName,
-                    OldVersion = operation.OldVersion?.ToString(), NewVersion = operation.NewVersion.ToString(), operation.UpdatedFiles })));
+                operations.Select(operation => new
+                {
+                    operation.Type,
+                    operation.DependencyName,
+                    OldVersion = operation.OldVersion?.ToString(),
+                    NewVersion = operation.NewVersion.ToString(),
+                    operation.UpdatedFiles
+                })));
             logger.Record("request", "returned");
             return 0;
         }
@@ -213,9 +219,19 @@ internal sealed class WriterLogger(string snapshot, string output) : ILogger
         {
             var central = Path.Combine(snapshot, WriterSmoke.Central);
             var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(central))).ToLowerInvariant();
-            _events.Add(new { Sequence = _events.Count, Kind = kind, State = state, Ordinal = ordinal,
-                Tfm = (string?)null, Attempt = _attempt, AttemptProject, Workspace = workspace,
-                ElapsedSeconds = _clock.Elapsed.TotalSeconds, CentralHash = hash });
+            _events.Add(new
+            {
+                Sequence = _events.Count,
+                Kind = kind,
+                State = state,
+                Ordinal = ordinal,
+                Tfm = (string?)null,
+                Attempt = _attempt,
+                AttemptProject,
+                Workspace = workspace,
+                ElapsedSeconds = _clock.Elapsed.TotalSeconds,
+                CentralHash = hash
+            });
         }
         var path = Path.Combine(output, "writer-events.json");
         File.WriteAllText(path + ".tmp", JsonSerializer.Serialize(new { Events = _events, Dropped }));
