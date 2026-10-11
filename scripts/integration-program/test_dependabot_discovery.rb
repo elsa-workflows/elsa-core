@@ -84,6 +84,29 @@ class DependabotDiscoveryTests < Minitest::Test
       discovered_projects(["/", "/extensions/src/Elsa.Testing.Extensions"])
   end
 
+  def test_slnx_entry_expansion_uses_paths_relative_to_the_solution_directory
+    root_project = "core/src/RootSlnxFixture.csproj"
+    nested_project = "extensions/src/Elsa.Testing.Extensions/deeper/Fixture.csproj"
+    add_project(root_project)
+    add_project(nested_project)
+
+    File.write(File.join(@workspace, "Elsa.slnx"), <<~XML)
+      <Solution>
+        <Project Path="#{root_project}" />
+      </Solution>
+    XML
+
+    nested_directory = File.join(@workspace, "extensions/src/Elsa.Testing.Extensions")
+    File.write(File.join(nested_directory, "Elsa.Testing.Extensions.slnx"), <<~XML)
+      <Solution>
+        <Project Path="deeper/Fixture.csproj" />
+      </Solution>
+    XML
+
+    assert_equal [root_project, nested_project].sort,
+      discovered_projects(["/", "/extensions/src/Elsa.Testing.Extensions"])
+  end
+
   def test_selected_projects_reconcile_central_package_imports
     selected = solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")) + [LEGACY_CORE_PROJECT]
     central_versions = {}
@@ -130,11 +153,16 @@ class DependabotDiscoveryTests < Minitest::Test
     workflow = YAML.load_file(File.join(REPOSITORY_ROOT, ".github/workflows/integration-program-tools.yml"))
     paths = workflow.fetch("on") { workflow.fetch(true) }.fetch("pull_request").fetch("paths")
     inputs = tracked_projects + %w[
-      Elsa.Future.sln extensions/src/Elsa.Testing.Extensions/Future.sln
+      Elsa.Future.sln Elsa.Future.slnx
+      extensions/src/Elsa.Testing.Extensions/Future.sln extensions/src/Elsa.Testing.Extensions/Future.slnx
       Directory.Packages.props NuGet.Config nuget.config core/custom.props studio/import.targets
       core/global.json docs/integration-program/consolidation/dependabot-recursive-discovery.md
     ] +
-      Dir.chdir(REPOSITORY_ROOT) { Dir.glob("**/*.{sln,props,targets}") }
+      Dir.chdir(REPOSITORY_ROOT) { Dir.glob("**/*.{sln,slnx,props,targets}") }
+    future_solutions = %w[Elsa.Future.slnx extensions/src/Elsa.Testing.Extensions/Future.slnx]
+    future_solutions.each do |path|
+      assert_equal ["**/*.slnx"], paths.select { |pattern| File.fnmatch?(pattern, path, File::FNM_PATHNAME) }
+    end
     inputs.each do |path|
       assert paths.any? { |pattern| File.fnmatch?(pattern, path, File::FNM_PATHNAME) },
         "Discovery input #{path} must trigger the coverage gate"
@@ -154,7 +182,12 @@ class DependabotDiscoveryTests < Minitest::Test
   end
 
   def solution_projects(path)
-    File.read(path, encoding: "UTF-8").scan(/"([^"\n]+\.csproj)"/).flatten.map { |project| project.tr("\\", "/") }
+    if path.end_with?(".slnx")
+      document = REXML::Document.new(File.read(path, encoding: "UTF-8"))
+      document.get_elements("//Project").map { |project| project.attributes.fetch("Path").value.tr("\\", "/") }
+    else
+      File.read(path, encoding: "UTF-8").scan(/"([^"\n]+\.csproj)"/).flatten.map { |project| project.tr("\\", "/") }
+    end
   end
 
   def nearest_central_file(project)
@@ -199,7 +232,7 @@ class DependabotDiscoveryTests < Minitest::Test
       directories.flat_map do |directory|
         Dir.children(directory).flat_map do |name|
           path = File.join(directory, name)
-          if name.end_with?(".sln")
+          if name.end_with?(".sln", ".slnx")
             solution_projects(path).map { |project| Pathname.new(File.join(directory, project)).cleanpath.to_s }
           elsif name.end_with?(".csproj")
             [Pathname.new(path).cleanpath.to_s]

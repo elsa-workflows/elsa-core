@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - '**/*.sln'
+      - '**/*.slnx'
       - 'Elsa.Extensions.slnf'
       - 'Elsa.Studio.slnf'
       - '.github/dependabot.yml'
