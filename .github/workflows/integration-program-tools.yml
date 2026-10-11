@@ -19,12 +19,19 @@ on:
       - 'docs/integration-program/hierarchy.json'
       - '.github/workflows/integration-program-tools.yml'
   workflow_dispatch:
+    inputs:
+      native_discovery:
+        description: 'Run only the pinned credential-free #8636 native diagnostic (review required)'
+        type: boolean
+        default: false
+        required: false
 
 permissions:
   contents: read
 
 jobs:
   import-rehearsal-tests:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.native_discovery }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -108,3 +115,42 @@ jobs:
           path: ${{ runner.temp }}/secrets-sqlserver-bridge-report.json
           if-no-files-found: error
           retention-days: 30
+
+  # Temporary #8636 proof. Delete after native inventory evidence is accepted.
+  dependabot-native-discovery:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.native_discovery }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      DOTNET_MULTILEVEL_LOOKUP: '0'
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_NOLOGO: '1'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Isolate the exact SDK and public package cache
+        run: |
+          {
+            echo "DOTNET_INSTALL_DIR=$RUNNER_TEMP/native-proof-sdk"
+            echo "DOTNET_ROOT=$RUNNER_TEMP/native-proof-sdk"
+            echo "NUGET_PACKAGES=$RUNNER_TEMP/native-proof-packages"
+          } >> "$GITHUB_ENV"
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: '10.0.400'
+      - name: Discover the fixed candidate with the pinned public worker
+        if: ${{ !cancelled() }}
+        # Raw build/native logs and full records stay ephemeral, never uploaded.
+        run: python3 scripts/integration-program/dependabot_native_proof.py
+      - name: Retain only the closed diagnostic summary
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: dependabot-native-discovery-8636
+          path: ${{ runner.temp }}/dependabot-native-proof-8636/summary.json
+          if-no-files-found: error
+          retention-days: 7
