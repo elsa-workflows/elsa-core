@@ -601,6 +601,7 @@
     }
   ],
   "adaptedSourceFiles": {
+    "apps/NuGet.Config": "Align the existing Feedz source and mapping names with Core for mixed solution restore; URI and package patterns unchanged.",
     "apps/ElsaApps.sln": "Replace stale source-workflow solution item links with the retained container-images.yml.",
     "apps/README.md": "Describe product location, unchanged Apps Docker context and source-only publication boundary.",
     "apps/scripts/container_release.py": "Allow explicit Core source provenance for verify-local; publisher defaults unchanged.",

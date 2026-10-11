@@ -18,7 +18,7 @@ PR #9 remains an open source proposal, not an accepted merge. Its original chang
 
 The [Apps guide](../../apps/README.md) and [agent instructions](../../apps/AGENTS.md) describe nine net10.0 projects and six existing image profiles. Existing `core/src/apps/` hosts/samples remain separate. App/project/image names, ports, runtime configuration, authentication wiring, backend URL handling, static assets, storage defaults and original Dockerfiles remain unchanged.
 
-Apps retains its own `Directory.Build.props`, `src/Directory.Build.props`, `Directory.Packages.props` and `NuGet.Config`. Core/Studio/Extensions packages remain released 3.9.0 consumers with independently configurable family versions. A local `Directory.Build.targets` prevents inherited consolidated source/proof targets and sets `UseProjectReferences=false`. Only the original internal Apps project references remain. `RestoreConfigFile` explicitly selects the preserved `apps/NuGet.Config` for every Apps project, including root solution/filter restore. This prevents parent source-package mappings from redirecting released Studio dependencies to an incompatible feed; root feeds and mappings remain unchanged.
+Apps retains its own `Directory.Build.props`, `src/Directory.Build.props`, `Directory.Packages.props` and `NuGet.Config`. Core/Studio/Extensions packages remain released 3.9.0 consumers with independently configurable family versions. A local `Directory.Build.targets` prevents inherited consolidated source/proof targets and sets `UseProjectReferences=false`. Only the original internal Apps project references remain. `RestoreConfigFile` explicitly selects the scoped `apps/NuGet.Config` for every Apps project, including root solution/filter restore. The Apps Feedz source and mapping use Core's existing `elsa-preview-feedz` name for their shared URI; only the source identifier changes, with original Apps URI and package patterns preserved. [NuGet requires mapping keys to match source keys](https://learn.microsoft.com/en-us/nuget/consume-packages/package-source-mapping). The previous alias worked for Apps-only restore but failed in mixed root restore when the effective source used Core's alias. Shared source caching by URI is the inferred mechanism; fresh full-solution native restore must verify this correction. Root feeds and mappings remain unchanged.
 
 These image hosts and their private shared libraries set `IsPackable=false`, so adding them to root `Elsa.sln` does not add Core NuGet release units. Existing package IDs, central dependency versions and release-unit inventory are untouched. The root solution includes all nine projects with their original GUIDs; generated `Elsa.Apps.slnf` selects only imported Apps and its internal reference closure. The mapped `apps/ElsaApps.sln` remains usable, with stale links to deleted source workflows replaced by the retained current workflow link. Root NUKE cleanup recognizes the added source location.
 
@@ -86,12 +86,17 @@ The effective policy checks compare package-family versions with the current dec
 in `apps/Directory.Packages.props`; reviewed package updates also require the affected
 product tests. They do not activate an updater or publisher.
 
-The consolidated candidate comparison baseline retains its original 225 package identities
-and 124 exclusions, plus the nine initial Apps nonpackable exclusions. Its original hosted
-artifact evidence is unchanged and does not certify the added rows. A future project
-addition/removal must reconcile its current nonpackable exclusion through normal inventory
-review. The existing package-proof CI supplies evaluated inventory; this source import
-neither prepares a release candidate nor changes release authority.
+The consolidated candidate comparison baseline remains the original 225 package identities
+and 124 exclusions, with its original hosted artifact evidence and validator contracts.
+Apps remains nonpackable; current ordinary package-proof inventory records nine additional
+Apps exclusions separately (133 total). That current inventory is not accepted as a new
+candidate or as replacement bytes for the original archive. Future candidate preparation
+requires an explicit reviewed inventory rebaseline and versioned compatibility with immutable
+artifact recovery/executor contracts under [candidate owner #8220](https://github.com/elsa-workflows/elsa-core/issues/8220)
+and [the explicit operational #8741 handoff](https://github.com/elsa-workflows/elsa-core/issues/8741#issuecomment-6114262033),
+including later Templates inventory disposition.
+The 133-versus-124 candidate comparison is an explicit operational handoff; source acceptance
+does not prepare a candidate, waive that comparison or change release authority.
 
 ## Deferred operational ownership
 

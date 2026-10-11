@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+import xml.etree.ElementTree as ET
 
 from apps_consumer_inventory import declared_package_versions, git, git_environment, current_apps_projects
 from verify_apps_source_import import verify_project_evaluation, verify_restore_graph
@@ -174,6 +175,24 @@ class SourceImportTests(unittest.TestCase):
                                 GIT_CONFIG_KEY_0="core.worktree", GIT_CONFIG_VALUE_0="/outside-checkout")
         for result in self.run_verifier():
             self.assertEqual(0, result.returncode, result.stderr)
+
+
+class NuGetSourceCompatibilityTests(unittest.TestCase):
+    def test_shared_source_uris_keep_identical_names_and_scoped_apps_patterns(self):
+        root = ET.parse(ROOT / "NuGet.Config").getroot()
+        apps = ET.parse(ROOT / "apps/NuGet.Config").getroot()
+        sources = lambda document: {source.attrib["value"]: source.attrib["key"]
+                                    for source in document.findall("packageSources/add")}
+        root_sources, apps_sources = sources(root), sources(apps)
+        for uri in root_sources.keys() & apps_sources.keys():
+            with self.subTest(uri=uri):
+                self.assertEqual(root_sources[uri], apps_sources[uri])
+        mappings = {source.attrib["key"]: [package.attrib["pattern"] for package in source]
+                    for source in apps.findall("packageSourceMapping/packageSource")}
+        self.assertEqual(set(apps_sources.values()), set(mappings))
+        self.assertEqual(["Elsa", "Elsa.*", "Elsa.Studio.*"],
+                         mappings[apps_sources["https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json"]])
+        self.assertEqual(["*"], mappings[apps_sources["https://api.nuget.org/v3/index.json"]])
 
 
 class RootRestoreGraphTests(unittest.TestCase):

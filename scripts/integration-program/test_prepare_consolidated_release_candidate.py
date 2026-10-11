@@ -14,7 +14,6 @@ from unittest.mock import patch
 import xml.etree.ElementTree as ET
 import zipfile
 
-from apps_consumer_inventory import current_apps_projects, git
 import prepare_consolidated_release_candidate as candidate
 import prove_consolidated_packages as packages
 
@@ -213,41 +212,6 @@ class CandidateContractsTests(unittest.TestCase):
             self.assertIn('SetProperty("Version", Version)', section)
             self.assertIn('SetProperty("PackageVersion", Version)', section)
             self.assertIn('SetProperty("Configuration", "Release")', section)
-
-    def test_apps_inventory_adds_only_nonpackable_exclusions_to_the_comparison_baseline(self):
-        path = "scripts/integration-program/consolidated-candidate-inventory-baseline.json"
-        original = json.loads(git(ROOT, "show", "b0fa3f9e59299ea388222b774e6f28cf3e7f5262:" + path))
-        baseline = json.loads((ROOT / path).read_text())
-        self.assertEqual(225, len(original["packages"]))
-        self.assertEqual(124, len(original["exclusions"]))
-        self.assertEqual(original["packages"], baseline["packages"])
-        self.assertEqual(original["evidence"], baseline["evidence"])
-        self.assertEqual(original["exclusions"], [row for row in baseline["exclusions"]
-                                               if not row["project"].startswith("apps/")])
-        projects = current_apps_projects(ROOT)
-        # Exercise the actual inventory producer and comparison consumer, without invoking MSBuild.
-        with patch.object(packages, "solution_projects", return_value=projects), patch.object(
-            packages, "evaluate", side_effect=lambda root, project, *args, **kwargs:
-                {"PackageId": project.stem, "IsPackable": "false"}
-        ):
-            apps = packages.inventory(ROOT, "3.10.0", SOURCE, workers=1, mode="candidate")
-        self.assertEqual([], apps["packages"])
-        self.assertEqual(apps["exclusions"], [row for row in baseline["exclusions"]
-                                           if row["project"].startswith("apps/")])
-        manifest = copy.deepcopy(baseline)
-        manifest["exclusions"] = [row for row in manifest["exclusions"]
-                                  if not row["project"].startswith("apps/")] + apps["exclusions"]
-        for category in ("packages", "exclusions"):
-            for row in manifest[category]:
-                row["project"] = candidate.map_path(row["project"])
-        for row in manifest["packages"]:
-            row["nupkg"] = row["id"] + ".3.10.0.nupkg"
-        with tempfile.TemporaryDirectory() as temporary:
-            output = Path(temporary) / "diff.json"
-            candidate.compare_inventory(manifest, baseline, output)
-            manifest["exclusions"].remove(apps["exclusions"][0])
-            with self.assertRaisesRegex(ValueError, "inventory changed"):
-                candidate.compare_inventory(manifest, baseline, output)
 
     def test_inventory_changes_emit_reviewable_diff_and_fail_before_build(self):
         baseline = json.loads((ROOT / "scripts/integration-program/consolidated-candidate-inventory-baseline.json").read_text())

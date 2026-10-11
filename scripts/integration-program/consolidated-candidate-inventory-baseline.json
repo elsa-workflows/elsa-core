@@ -628,51 +628,6 @@
       "id": "Elsa.Workflows.Runtime.UnitTests",
       "project": "test/unit/Elsa.Workflows.Runtime.UnitTests/Elsa.Workflows.Runtime.UnitTests.csproj",
       "reason": "Project or inherited nonpackable setting remains active"
-    },
-    {
-      "id": "Elsa.Server.Shared",
-      "project": "apps/src/Elsa.Server.Shared/Elsa.Server.Shared.csproj",
-      "reason": "Project or inherited nonpackable setting remains active"
-    },
-    {
-      "id": "Elsa.Server.Studio.BlazorServer",
-      "project": "apps/src/Elsa.Server.Studio.BlazorServer/Elsa.Server.Studio.BlazorServer.csproj",
-      "reason": "Project or inherited nonpackable setting remains active"
-    },
-    {
-      "id": "Elsa.Server.Studio.BlazorWasm.Client",
-      "project": "apps/src/Elsa.Server.Studio.BlazorWasm.Client/Elsa.Server.Studio.BlazorWasm.Client.csproj",
-      "reason": "Project or inherited nonpackable setting remains active"
-    },
-    {
-      "id": "Elsa.Server.Studio.BlazorWasm",
-      "project": "apps/src/Elsa.Server.Studio.BlazorWasm/Elsa.Server.Studio.BlazorWasm.csproj",
-      "reason": "Project or inherited nonpackable setting remains active"
-    },
-    {
-      "id": "Elsa.Server",
-      "project": "apps/src/Elsa.Server/Elsa.Server.csproj",
-      "reason": "Project or inherited nonpackable setting remains active"
-    },
-    {
-      "id": "Elsa.Studio.BlazorServer",
-      "project": "apps/src/Elsa.Studio.BlazorServer/Elsa.Studio.BlazorServer.csproj",
-      "reason": "Project or inherited nonpackable setting remains active"
-    },
-    {
-      "id": "Elsa.Studio.BlazorWasm.Client",
-      "project": "apps/src/Elsa.Studio.BlazorWasm.Client/Elsa.Studio.BlazorWasm.Client.csproj",
-      "reason": "Project or inherited nonpackable setting remains active"
-    },
-    {
-      "id": "Elsa.Studio.BlazorWasm",
-      "project": "apps/src/Elsa.Studio.BlazorWasm/Elsa.Studio.BlazorWasm.csproj",
-      "reason": "Project or inherited nonpackable setting remains active"
-    },
-    {
-      "id": "Shared",
-      "project": "apps/src/Shared/Shared.csproj",
-      "reason": "Project or inherited nonpackable setting remains active"
     }
   ],
   "packages": [
