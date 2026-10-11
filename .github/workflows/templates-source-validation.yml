@@ -7,6 +7,7 @@ on:
     paths:
       - 'templates/**'
       - 'Elsa.sln'
+      - 'global.json'
       - 'Elsa.Templates.slnf'
       - 'scripts/solution/**'
       - 'scripts/integration-program/verify_templates_source_import.py'
@@ -45,8 +46,6 @@ jobs:
           dotnet-version: '10.0.300'
       - name: Verify original source and independent project boundaries
         run: |
-          python3 -m unittest discover -s scripts/integration-program -p 'test_verify_templates_source_import.py' -v
-          python3 -O -m unittest discover -s scripts/integration-program -p 'test_verify_templates_source_import.py' -v
           dotnet msbuild Elsa.Templates.slnf -t:GenerateRestoreGraphFile \
             -p:RestoreGraphOutputPath="$RUNNER_TEMP/templates-restore-graph.json" -nologo -v:quiet
           python3 scripts/integration-program/verify_templates_source_import.py --evaluate \

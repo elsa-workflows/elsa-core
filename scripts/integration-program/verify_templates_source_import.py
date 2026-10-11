@@ -12,8 +12,8 @@ from pathlib import Path
 import subprocess
 import xml.etree.ElementTree as ET
 
-from apps_consumer_inventory import git, git_environment, regular_file, require
-from templates_product_inventory import current_templates_projects, tracked_templates
+from apps_consumer_inventory import git, git_environment, regular_file, require, tracked_product
+from templates_product_inventory import current_templates_projects
 
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = "docs/integration-program/templates-source-import.json"
@@ -92,7 +92,7 @@ def verify(evaluate: bool = False, restore_graph: Path | None = None) -> None:
     git(ROOT, "merge-base", "--is-ancestor", imported, contribution["appliedCommit"])
     git(ROOT, "merge-base", "--is-ancestor", contribution["appliedCommit"], "HEAD")
     require(git(ROOT, "show", "-s", "--format=%an <%ae>", contribution["appliedCommit"]) == contribution["author"], "Contribution author changed")
-    for relative, (mode, blob) in tracked_templates(ROOT).items():
+    for relative, (mode, blob) in tracked_product(ROOT, "templates").items():
         file = regular_file(ROOT, relative)
         require(git(ROOT, "hash-object", "--no-filters", str(file)) == blob, f"Current Templates bytes differ from Git: {relative}")
         actual_mode = "100755" if file.stat().st_mode & 0o111 else "100644"

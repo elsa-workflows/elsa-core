@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 import xml.etree.ElementTree as ET
 
-from apps_consumer_inventory import git, regular_file, require
+from apps_consumer_inventory import regular_file, require, tracked_product
 
 INVENTORY = "scripts/solution/solution-groups.json"
 
@@ -13,19 +13,6 @@ INVENTORY = "scripts/solution/solution-groups.json"
 def reject_templates_source_graph(paths: set[str]) -> None:
     require(not any(path.startswith("templates/") for path in paths),
             "Independent Templates projects must not enter the root source graph")
-
-
-def tracked_templates(root: Path) -> dict[str, tuple[str, str]]:
-    git(root, "diff", "--cached", "--quiet", "HEAD", "--", "templates/")
-    rows = {}
-    for row in git(root, "ls-files", "--stage", "-z", "--", "templates/").split("\0"):
-        if row:
-            metadata, path = row.split("\t", 1)
-            mode, blob, stage = metadata.split()
-            require(stage == "0" and mode in {"100644", "100755"}, f"Unsafe tracked Templates entry: {path}")
-            rows[path] = (mode, blob)
-    require(rows, "Current Templates inventory is empty")
-    return rows
 
 
 def current_templates_projects(root: Path) -> list[Path]:
@@ -37,7 +24,7 @@ def current_templates_projects(root: Path) -> list[Path]:
     require(len(all_projects) == len(set(all_projects)), "Templates build/data dispositions must be unique and disjoint")
     require(all(path.startswith("templates/") and path.endswith(".csproj") for path in all_projects),
             "Templates dispositions must name Templates project manifests")
-    tracked = {path for path in tracked_templates(root) if path.endswith(".csproj")}
+    tracked = {path for path in tracked_product(root, "templates") if path.endswith(".csproj")}
     require(set(all_projects) == tracked, "Every tracked Templates project needs an explicit build/data disposition")
     product = regular_file(root, configuration["solution"])
     declared = []

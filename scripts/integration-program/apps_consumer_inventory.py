@@ -1,4 +1,4 @@
-"""Current Apps inventory and checkout safety, independent of the historical import."""
+"""Current Apps inventory and shared checkout safety, independent of historical imports."""
 
 import json
 import os
@@ -36,18 +36,22 @@ def regular_file(root: Path, relative: str) -> Path:
     return file
 
 
-def tracked_apps(root: Path) -> dict[str, tuple[str, str]]:
-    git(root, "diff", "--cached", "--quiet", "HEAD", "--", "apps/")
+def tracked_product(root: Path, product: str) -> dict[str, tuple[str, str]]:
+    git(root, "diff", "--cached", "--quiet", "HEAD", "--", product + "/")
     rows = {}
-    for row in git(root, "ls-files", "--stage", "-z", "--", "apps/").split("\0"):
+    for row in git(root, "ls-files", "--stage", "-z", "--", product + "/").split("\0"):
         if not row:
             continue
         metadata, path = row.split("\t", 1)
         mode, blob, stage = metadata.split()
-        require(stage == "0" and mode in {"100644", "100755"}, f"Unsafe tracked Apps entry: {path}")
+        require(stage == "0" and mode in {"100644", "100755"}, f"Unsafe tracked {product} entry: {path}")
         rows[path] = (mode, blob)
-    require(rows, "Current Apps inventory is empty")
+    require(rows, f"Current {product} inventory is empty")
     return rows
+
+
+def tracked_apps(root: Path) -> dict[str, tuple[str, str]]:
+    return tracked_product(root, "apps")
 
 
 def current_apps_projects(root: Path) -> list[Path]:

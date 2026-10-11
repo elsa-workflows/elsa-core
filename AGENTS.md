@@ -7,7 +7,7 @@ Guidance for AI coding agents working in this repository.
 - Elsa Core is a .NET solution centered on `Elsa.sln`.
 - Products live under `core/`, `extensions/`, `studio/`, `apps/`, and `templates/`. Apps contains official released-package application hosts and Python container-policy tests under `apps/scripts/tests/`; its contributor entrypoint is [Apps](apps/README.md).
 - The root solution, solution filters, build automation, scripts and central policy are shared. Templates keeps its independent product solution; root `Elsa.sln` includes navigation items only for that product.
-- Read the product documentation entrypoints: [Core](core/docs/README.md), [Extensions](extensions/docs/README.md), [Studio](studio/docs/README.md), and [Apps](apps/docs/README.md).
+- Read the product documentation entrypoints: [Core](core/docs/README.md), [Extensions](extensions/docs/README.md), [Studio](studio/docs/README.md), [Apps](apps/docs/README.md), and [Templates](templates/docs/README.md).
 - Build automation is implemented with NUKE in `build/Build.cs` and exposed through `build.sh`, `build.ps1`, and `build.cmd`.
 
 ## Working Rules

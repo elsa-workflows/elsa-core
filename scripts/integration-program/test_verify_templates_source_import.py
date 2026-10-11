@@ -100,14 +100,19 @@ class TemplatesSourceTests(unittest.TestCase):
             self.assertEqual(0, result.returncode, result.stderr)
 
     def test_ambient_git_routing_and_crlf_filters_cannot_change_provenance(self):
+        crlf = self.root / "templates/docs/crlf-fixture.txt"
+        crlf.write_bytes(b"A committed CRLF source asset.\r\n")
+        git(self.root, "config", "core.autocrlf", "false")
+        self.commit(str(crlf.relative_to(self.root)))
         git(self.root, "config", "core.autocrlf", "input")
         self.environment.update(GIT_DIR="/nonexistent/hostile", GIT_WORK_TREE="/outside", GIT_INDEX_FILE="/nonexistent/index",
                                 GIT_CONFIG_COUNT="1", GIT_CONFIG_KEY_0="core.worktree", GIT_CONFIG_VALUE_0="/outside")
         for result in self.run_verifier():
             self.assertEqual(0, result.returncode, result.stderr)
-        crlf = next(path for path in (self.root / "templates").rglob("*") if path.is_file() and b"\r\n" in path.read_bytes())
         relative = crlf.relative_to(self.root).as_posix()
-        self.assertEqual(git(self.root, "rev-parse", "HEAD:" + relative), git(self.root, "hash-object", "--no-filters", str(crlf)))
+        committed = git(self.root, "rev-parse", "HEAD:" + relative)
+        self.assertEqual(committed, git(self.root, "hash-object", "--no-filters", str(crlf)))
+        self.assertNotEqual(committed, git(self.root, "hash-object", str(crlf)))
 
     def test_starter_data_and_unknown_projects_cannot_enter_build_inventory(self):
         path = self.root / INVENTORY
