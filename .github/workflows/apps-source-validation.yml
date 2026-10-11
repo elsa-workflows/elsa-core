@@ -9,6 +9,7 @@ on:
       - 'Elsa.Apps.slnf'
       - 'scripts/solution/**'
       - 'scripts/integration-program/verify_apps_source_import.py'
+      - 'scripts/integration-program/apps_consumer_inventory.py'
       - 'scripts/integration-program/test_verify_apps_source_import.py'
       - 'docs/integration-program/apps-source-import.json'
       - '.github/workflows/apps-source-validation.yml'
@@ -68,7 +69,7 @@ jobs:
           python3 scripts/container_release.py validate-run \
             --event pull_request --publish false --images all \
             --ref "$SOURCE_REF" --commit "$EXPECTED_HEAD"
-      - name: Restore and build all nine package consumers
+      - name: Restore and build all current package consumers
         run: |
           dotnet restore Elsa.Apps.slnf --force-evaluate
           dotnet restore apps/ElsaApps.sln
@@ -95,7 +96,7 @@ jobs:
       - name: Verify candidate identity
         run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
       - name: Build a local AMD64 image without publication
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         env:
           DOCKER_BUILD_RECORD_UPLOAD: 'false'
           DOCKER_BUILD_SUMMARY: 'false'

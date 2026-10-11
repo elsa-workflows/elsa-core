@@ -98,9 +98,10 @@ version without freezing future updates. It runs when this manifest changes.
 
 Task [#8746](https://github.com/elsa-workflows/elsa-core/issues/8746) adds exactly nine
 registered Apps projects to the shared solution as **independent released-package consumers**.
-The [Apps register](../apps-source-import.json) lists their original manifests. They
+The [Apps register](../apps-source-import.json) preserves their original manifests; the current
+`Elsa.Apps.slnf`, tracked Apps projects and root solution must agree. They
 remain outside these five source-package updater batches; the coverage census explicitly
-reconciles all nine rather than dropping them from inventory. Apps keeps its own
+reconciles the current consumer inventory rather than dropping it from inventory. Apps keeps its own
 `apps/Directory.Packages.props`, `apps/NuGet.Config`, internal project references and
 net10.0 target. Its local targets select only that restore config, prevent source-reference
 substitution and set `IsPackable=false`.

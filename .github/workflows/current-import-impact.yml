@@ -7,7 +7,7 @@ on:
       - '.github/**'
       - 'build/**'
       - 'scripts/integration-program/**'
-      - 'docs/integration-program/apps-source-import.json'
+      - 'Elsa.Apps.slnf'
       - 'core/samples/**'
       - 'extensions/samples/**'
       - 'studio/samples/**'

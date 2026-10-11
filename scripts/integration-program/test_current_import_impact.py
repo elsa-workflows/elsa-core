@@ -73,7 +73,7 @@ class CurrentImportedImpactTests(unittest.TestCase):
     def test_workflow_triggers_for_selector_graph_dependencies(self):
         workflow = Path(__file__).resolve().parents[2] / ".github/workflows/current-import-impact.yml"
         text = workflow.read_text(encoding="utf-8")
-        input_roots = (".github/**", "build/**", "docs/integration-program/apps-source-import.json", 'core/samples/**', "scripts/integration-program/**", 'core/src/**', 'core/test/**')
+        input_roots = (".github/**", "build/**", "Elsa.Apps.slnf", 'core/samples/**', "scripts/integration-program/**", 'core/src/**', 'core/test/**')
         for input_root in input_roots:
             with self.subTest(input_root=input_root):
                 self.assertIn(f"      - '{input_root}'", text)
@@ -209,20 +209,18 @@ class IndependentAppsImpactTests(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name).resolve()
-        manifest = Path(__file__).resolve().parents[2] / "docs/integration-program/apps-source-import.json"
-        self.register = json.loads(manifest.read_text())
-        target = self.root / "docs/integration-program/apps-source-import.json"
-        target.parent.mkdir(parents=True)
-        target.write_text(json.dumps(self.register))
+        filter_path = Path(__file__).resolve().parents[2] / "Elsa.Apps.slnf"
         self.documents = assets()
-        self.apps = {row["destinationPath"] for row in self.register["assets"]
-                     if row["destinationPath"].endswith(".csproj")}
+        self.apps = set(json.loads(filter_path.read_text())["solution"]["projects"])
         for path in self.apps:
             self.documents[path] = {
                 "project": {"restore": {"frameworks": {"net10.0": {}}}},
                 "libraries": {"Elsa.Workflows.Core/3.9.0": {"type": "package"}},
             }
         self.names = {path: Path(path).stem for path in self.documents}
+        inventory = patch("current_import_impact.current_apps_projects", return_value=[self.root / path for path in self.apps])
+        self.inventory = inventory.start()
+        self.addCleanup(inventory.stop)
         self.solution = set(self.names)
 
     def partition(self):
@@ -235,6 +233,18 @@ class IndependentAppsImpactTests(unittest.TestCase):
         self.assertEqual(set(documents), set(assets()))
         reject_unmapped_elsa_packages(documents)
 
+    def test_new_current_registered_consumer_is_accounted_for(self):
+        path = "apps/src/NewHost/NewHost.csproj"
+        self.apps.add(path)
+        self.names[path] = "NewHost"
+        self.documents[path] = copy.deepcopy(self.documents[next(iter(self.apps - {path}))])
+        self.solution.add(path)
+        self.inventory.return_value = [self.root / project for project in self.apps]
+        names, documents, independent = self.partition()
+        self.assertIn(path, independent)
+        self.assertNotIn(path, names)
+        reject_unmapped_elsa_packages(documents)
+
     def test_missing_or_unregistered_apps_solution_member_is_rejected(self):
         original = self.solution.copy()
         for mutate in (
@@ -244,7 +254,7 @@ class IndependentAppsImpactTests(unittest.TestCase):
             with self.subTest(mutate=mutate):
                 self.solution = original.copy()
                 mutate()
-                with self.assertRaisesRegex(ValueError, "exactly the nine registered"):
+                with self.assertRaisesRegex(ValueError, "current tracked/filter/solution"):
                     self.partition()
 
     def test_project_references_cannot_cross_the_consumer_boundary(self):

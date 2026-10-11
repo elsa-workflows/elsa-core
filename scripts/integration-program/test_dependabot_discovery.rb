@@ -13,8 +13,7 @@ class DependabotDiscoveryTests < Minitest::Test
   CONFIGURATION = YAML.load_file(File.join(REPOSITORY_ROOT, ".github/dependabot.yml"))
   UNMODELED_PROJECT_EXTENSIONS = %w[.proj .fsproj .vbproj].freeze
   APPS_PROJECTS = JSON.parse(File.read(File.join(REPOSITORY_ROOT,
-    "docs/integration-program/apps-source-import.json"))).fetch("assets")
-    .map { |asset| asset.fetch("destinationPath") }.grep(/\.csproj$/).sort.freeze
+    "Elsa.Apps.slnf"))).fetch("solution").fetch("projects").sort.freeze
   LEGACY_CORE_PROJECT = "extensions/src/Elsa.Testing.Extensions/Elsa.Testing.Extensions.csproj"
 
   def setup
@@ -87,9 +86,11 @@ class DependabotDiscoveryTests < Minitest::Test
   end
 
   def test_apps_have_an_explicit_independent_consumer_disposition
-    assert_equal 9, APPS_PROJECTS.length
+    refute_empty APPS_PROJECTS
+    assert_equal APPS_PROJECTS, tracked_projects.grep(%r{^apps/}).sort
+    assert_equal APPS_PROJECTS.length, APPS_PROJECTS.uniq.length
     assert_equal APPS_PROJECTS, solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")).grep(%r{^apps/}).sort
-    assert APPS_PROJECTS.all? { |path| path.start_with?("apps/src/") }
+    assert APPS_PROJECTS.all? { |path| path.start_with?("apps/") }
     targets = project_xml("apps/Directory.Build.targets")
     assert_equal ["false"], targets.get_elements("//UseProjectReferences").map(&:text)
     assert_equal ["false"], targets.get_elements("//IsPackable").map(&:text)
@@ -276,7 +277,7 @@ class DependabotDiscoveryTests < Minitest::Test
       Directory.Packages.props NuGet.Config nuget.config core/custom.props studio/import.targets
       .config/dotnet-tools.json
       core/global.json docs/integration-program/consolidation/dependabot-recursive-discovery.md
-      docs/integration-program/apps-source-import.json
+      Elsa.Apps.slnf
     ] +
       Dir.chdir(REPOSITORY_ROOT) { Dir.glob("**/*.{sln,slnx,props,targets}") }
     future_solutions = {

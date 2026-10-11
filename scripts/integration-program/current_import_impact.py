@@ -12,6 +12,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from apps_consumer_inventory import current_apps_projects
 import refresh_canonical_dependency_graph as graph_reader
 from release_unit_manifest import DEFAULT_UNIT_ID, get_unit, load_manifest
 from product_layout import map_path
@@ -41,16 +42,11 @@ def partition_source_graph(
     solution_project_paths: set[str],
 ) -> tuple[dict[str, str], dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
     """Keep registered image consumers outside source-reference impact accounting."""
-    register = json.loads((root / "docs/integration-program/apps-source-import.json").read_text())
-    registered = [row["destinationPath"] for row in register["assets"]
-                  if row["destinationPath"].endswith(".csproj")]
-    independent = set(registered)
-    if (len(registered) != 9 or len(independent) != 9
-            or any(not path.startswith("apps/src/") for path in independent)
-            or {path for path in solution_project_paths if path.startswith("apps/")} != independent
+    independent = {project.relative_to(root).as_posix() for project in current_apps_projects(root)}
+    if ({path for path in solution_project_paths if path.startswith("apps/")} != independent
             or {path for path in project_names if path.startswith("apps/")} != independent
             or not independent.issubset(asset_documents)):
-        raise ValueError("Independent Apps inventory must match exactly the nine registered solution projects")
+        raise ValueError("Independent Apps inventory must match current tracked/filter/solution projects")
     for source, document in asset_documents.items():
         for framework in document["project"]["restore"]["frameworks"].values():
             for reference_path, reference in framework.get("projectReferences", {}).items():
@@ -252,7 +248,7 @@ def receipt(root: Path, manifest_path: Path, expected_head: str | None) -> dict[
         "independentPackageConsumers": {
             "disposition": "Registered Apps image consumers use released packages; excluded from source-reference impact, not claimed as affected-test coverage",
             "validationOwner": ".github/workflows/apps-source-validation.yml",
-            "registerSha256": sha256(root / "docs/integration-program/apps-source-import.json"),
+            "inventoryFilterSha256": sha256(root / "Elsa.Apps.slnf"),
             "buildConfigSha256": {path: sha256(root / path)
                                   for path in graph_reader.ancestor_build_configs(root, set(independent_assets))},
             "projectFileSha256": {path: sha256(root / path) for path in independent_assets},
@@ -271,7 +267,7 @@ def receipt(root: Path, manifest_path: Path, expected_head: str | None) -> dict[
         "scenarios": scenarios,
         "limitations": [
             "Project-reference impact is evaluated from this checkout's restored assets; runtime service effects are not inferred.",
-            "Package-type Elsa dependencies in the source-reference graph other than the known package-manifest generator are rejected; the nine registered Apps released-package consumers are separately accounted for and package-to-source edges are not inferred.",
+            "Package-type Elsa dependencies in the source-reference graph other than the known package-manifest generator are rejected; the current registered Apps released-package consumers are separately accounted for and package-to-source edges are not inferred.",
             "Restored Test SDK projects are selected only when MSBuild evaluates IsTestProject=true for every restored framework.",
             "This receipt selects tests but does not execute them or publish packages.",
             "The release-unit manifest selects one Slack package; it is not a Core release package plan.",

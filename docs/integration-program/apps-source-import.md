@@ -69,22 +69,29 @@ Final acceptance additionally requires fresh author-independent Elsa 3 Code Revi
 ## Maintaining Apps after the source cutoff
 
 The first import commit, original source refs/tree, asset modes/blobs and original
-89-file mapping are historical evidence. Never rewrite them or append new Core-authored
-files as though they came from the original source. For an intentional edit to an
-original mapped file, add its path to `adaptedSourceFiles` in the reviewed change if
-needed, retain its original blob/mode entry, explain the adaptation in the PR, and run
-the affected product and source gates. This exemption records a reviewed content delta;
-it does not waive functional tests. New non-project files belong to normal Core review
-and product validation and do not expand the original import inventory.
+89-file mapping are immutable historical evidence. Never rewrite them or append new
+Core-authored files as though they came from the donor. `adaptedSourceFiles` describes
+this import's integration delta only; it is not a permanent exemption list for future
+source changes. The verifier checks original blobs against the immutable import commit,
+then checks current tracked Apps files against the current committed checkout, rejecting
+unsafe paths and symlink traversal. Normal reviewed runtime edits do not alter the ledger.
 
-The current source-import verifier, Dependabot disposition and source-impact partition
-are deliberately bounded to the original nine project manifests. A tenth project cannot
-be accepted by metadata alone under these checks. Its owning change must first introduce
-or update a separate **current consumer inventory** and reconcile the filter, verifier,
-discovery/impact checks and product CI without changing the immutable original mapping.
-Until that reviewed tooling change lands, project additions fail closed. Changing current
-package versions likewise requires updating the effective-policy expectations and normal
-product tests; it does not alter original source evidence or activate an updater/publisher.
+The current consumer inventory comes from tracked `apps/**/*.csproj` files,
+`Elsa.Apps.slnf` and root `Elsa.sln`; all three must agree exactly. When adding or removing
+an Apps project, maintain the root solution and regenerate its filter with the existing
+solution-group tooling in the same change. Keep references within Apps, scoped package
+consumption and nonpackable defaults. Source-impact selection and dependency discovery
+use this current inventory, so ordinary project additions need no historical ledger entry.
+The effective policy checks compare package-family versions with the current declarations
+in `apps/Directory.Packages.props`; reviewed package updates also require the affected
+product tests. They do not activate an updater or publisher.
+
+The consolidated candidate comparison baseline retains its original 225 package identities
+and 124 exclusions, plus the nine initial Apps nonpackable exclusions. Its original hosted
+artifact evidence is unchanged and does not certify the added rows. A future project
+addition/removal must reconcile its current nonpackable exclusion through normal inventory
+review. The existing package-proof CI supplies evaluated inventory; this source import
+neither prepares a release candidate nor changes release authority.
 
 ## Deferred operational ownership
 
