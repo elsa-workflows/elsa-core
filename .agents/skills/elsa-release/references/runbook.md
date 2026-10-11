@@ -89,11 +89,11 @@ Initialize the plan (local state only):
 
 ```bash
 python3 <skill>/scripts/release_train.py --state <run>/state.json init \
-  --version 3.10.0 --repos-root <parent-of-the-core-and-templates-checkouts> \
-  --repositories core templates --no-containers
+  --version 3.10.0 --repos-root <parent-of-the-core-checkout> \
+  --repositories core --no-containers
 ```
 
-Optional arguments: `--kind stable|rc|preview`, `--repositories core templates` (the profile still lists `studio` and `extensions`; never select them), `--source core=3.9.0-rc1`, repeated `--pr <URL>`, `--no-announcements`, `--no-post-refresh`, `--no-containers`, and `--profile <JSON>`. The flags are independent. `--no-containers` is only for an explicit user request to omit images. A named subset includes its upstream repositories as verification-only dependencies; do not publish those implicitly. Selecting `templates` includes Core and Studio as verification-only upstreams and does not add Extensions. The post-release receipt scope contains only the selected repositories.
+Optional arguments: `--kind stable|rc|preview`, `--repositories core` (the profile still lists `studio`, `extensions` and `templates`; never select `studio` or `extensions`), `--source core=3.10.0-rc1` (use `--source core=origin/main` when the line has no `release/<base-version>` branch yet, because the helper otherwise resolves `origin/release/<base-version>`), repeated `--pr <URL>`, `--no-announcements`, `--no-post-refresh`, `--no-containers`, and `--profile <JSON>`. The flags are independent. `--no-containers` is only for an explicit user request to omit images. A named subset includes its upstream repositories as verification-only dependencies; do not publish those implicitly. Do not select `templates` in the helper yet: the profile declares `studio` as a Templates upstream, so the helper would read the `elsa-studio` repository's GitHub releases, which is off limits. Run the Templates stage by hand (sections 3 to 5 describe the checks, `release.py` works on the Templates repository) and record what you verified, until the profile has a core-only upstream for Templates. The post-release receipt scope contains only the selected repositories.
 
 Container images are out of scope until core has its own image workflow (see Scope). The profile's `container_release` section still points at `elsa-apps`: always initialize with `--no-containers`, and do not run `prepare-containers`, `bind-containers`, `dispatch-containers` or `record-containers`. Report that no images were released.
 
