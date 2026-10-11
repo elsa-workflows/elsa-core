@@ -422,6 +422,18 @@ def execute(candidate, registry, *, operation='verify', transport=None, publishe
     return result
 
 
+def report_destination(output, archive, packet):
+    require(not output.is_symlink(), 'unsafe_report_destination')
+    destination = output.resolve()
+    require(destination.parent.is_dir() and (not destination.exists() or destination.is_file()),
+            'unsafe_report_destination')
+    for original in (archive, packet):
+        require(destination != original.resolve() and
+                not (destination.exists() and original.exists() and destination.samefile(original)),
+                'unsafe_report_destination')
+    return destination
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--archive', type=Path, required=True)
@@ -432,6 +444,13 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     try:
+        output = report_destination(args.output, args.archive, args.packet)
+        temporary_report = tempfile.TemporaryDirectory(prefix='.elsa-npm-report-', dir=output.parent)
+    except Exception:
+        print(json.dumps({'success': False, 'publisher_authority': False,
+                          'failure_code': 'unsafe_report_destination'}))
+        return 1
+    try:
         packet, packet_hash = load(args.packet, MAX_METADATA)
         require(SHA.fullmatch(args.packet_sha256) and packet_hash == args.packet_sha256, 'packet_changed')
         candidate = admit_original(args.archive, packet)
@@ -441,7 +460,18 @@ def main():
     except Exception:
         result = {'success': False, 'publisher_authority': False, 'failure_code': 'input_or_execution_failed'}
     # No raw provider/child output or local input paths are retained.
-    pair.write_json(args.output, result)
+    try:
+        with temporary_report as temporary:
+            staged = Path(temporary) / 'report.json'
+            pair.write_json(staged, result)
+            report_destination(output, args.archive, args.packet)
+            # Replacing the leaf does not truncate an input through a late link.
+            # Parent directories still require exclusive local ownership.
+            os.replace(staged, output)
+    except Exception:
+        print(json.dumps({'success': False, 'publisher_authority': result['publisher_authority'],
+                          'failure_code': 'report_write_failed'}))
+        return 1
     print(json.dumps({'success': result['success'], 'publisher_authority': result['publisher_authority']}))
     return 0 if result['success'] else 1
 

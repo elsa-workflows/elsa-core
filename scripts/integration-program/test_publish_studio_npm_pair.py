@@ -1,7 +1,13 @@
 """Closed artifact/recovery contracts; no provider credentials or publications."""
 import copy
+from contextlib import redirect_stdout
+import io
 import itertools
 import json
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
 import unittest
 from unittest.mock import patch
 import zipfile
@@ -60,6 +66,158 @@ class Publisher:
         self.calls.append((name, tag, candidate['artifacts'][name]['bytes']))
         self.registry.states[name] = 'matching'
         return name != self.failure
+
+
+class ReportDestinationContracts(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name).resolve()
+        self.archive = self.root / 'original.zip'
+        self.packet = self.root / 'reviewed.json'
+        self.inputs = {self.archive: b'disposable original ZIP', self.packet: b'{}'}
+        for path, data in self.inputs.items():
+            path.write_bytes(data)
+
+    def arguments(self, output):
+        return ['--archive', str(self.archive), '--packet', str(self.packet),
+                '--packet-sha256', '0' * 64, '--registry', 'feedz', '--output', str(output)]
+
+    def cli(self, output):
+        return subprocess.run([sys.executable, *([] if __debug__ else ['-O']),
+            str(Path(publication.__file__)), *self.arguments(output)], capture_output=True, text=True, timeout=10)
+
+    def main(self, output):
+        stdout = io.StringIO()
+        with patch.object(sys, 'argv', ['publisher', *self.arguments(output)]), redirect_stdout(stdout):
+            status = publication.main()
+        return status, json.loads(stdout.getvalue())
+
+    def assert_inputs_preserved(self):
+        for path, data in self.inputs.items():
+            self.assertEqual(data, path.read_bytes())
+
+    def test_cli_rejects_input_aliases_without_overwriting_on_admission_failure(self):
+        parent = self.root / 'parent-alias'
+        parent.symlink_to(self.root, target_is_directory=True)
+        nested = self.root / 'nested'
+        nested.mkdir()
+        for target in self.inputs:
+            symlink = self.root / ('symlink-' + target.name)
+            symlink.symlink_to(target)
+            hardlink = self.root / ('hardlink-' + target.name)
+            hardlink.hardlink_to(target)
+            for output in (target, symlink, hardlink, parent / target.name, nested / '..' / target.name):
+                with self.subTest(target=target.name, output=str(output)):
+                    completed = self.cli(output)
+                    self.assert_inputs_preserved()
+                    self.assertEqual(1, completed.returncode)
+                    self.assertEqual({'success': False, 'publisher_authority': False,
+                                      'failure_code': 'unsafe_report_destination'}, json.loads(completed.stdout))
+                    self.assertEqual('', completed.stderr)
+
+    def test_unsafe_output_stops_before_input_admission_or_execution(self):
+        with patch.object(publication, 'load') as load, \
+             patch.object(publication, 'admit_original') as admit, \
+             patch.object(publication, 'execute') as execute:
+            status, summary = self.main(self.archive)
+        self.assertEqual(1, status)
+        self.assertEqual('unsafe_report_destination', summary['failure_code'])
+        for operation in (load, admit, execute):
+            operation.assert_not_called()
+        self.assert_inputs_preserved()
+
+    def test_report_staging_failure_stops_before_input_admission_or_execution(self):
+        with patch.object(publication.tempfile, 'TemporaryDirectory', side_effect=OSError('private-path')), \
+             patch.object(publication, 'load') as load, \
+             patch.object(publication, 'admit_original') as admit, \
+             patch.object(publication, 'execute') as execute:
+            status, summary = self.main(self.root / 'report.json')
+        self.assertEqual(1, status)
+        self.assertEqual({'success': False, 'publisher_authority': False,
+                          'failure_code': 'unsafe_report_destination'}, summary)
+        for operation in (load, admit, execute):
+            operation.assert_not_called()
+        self.assert_inputs_preserved()
+
+    def test_cli_rejects_report_symlinks_and_invalid_parent_without_writing(self):
+        previous = self.root / 'previous.json'
+        previous.write_bytes(b'previous report')
+        for target in (previous, self.root / 'missing.json'):
+            output = self.root / ('link-' + target.name)
+            output.symlink_to(target)
+            completed = self.cli(output)
+            self.assertEqual(1, completed.returncode)
+            self.assertEqual('unsafe_report_destination', json.loads(completed.stdout)['failure_code'])
+            self.assertTrue(output.is_symlink())
+        completed = self.cli(self.root / 'missing-directory' / 'report.json')
+        self.assertEqual(1, completed.returncode)
+        self.assertEqual('unsafe_report_destination', json.loads(completed.stdout)['failure_code'])
+        self.assertEqual(b'previous report', previous.read_bytes())
+        self.assertFalse((self.root / 'missing.json').exists())
+        self.assert_inputs_preserved()
+
+    def test_cli_failure_report_preserves_inputs_for_new_existing_and_parent_alias_outputs(self):
+        parent = self.root / 'parent-alias'
+        parent.symlink_to(self.root, target_is_directory=True)
+        for output in (self.root / 'report.json', parent / 'parent-report.json'):
+            for existing in (False, True):
+                with self.subTest(output=str(output), existing=existing):
+                    if existing:
+                        output.write_bytes(b'previous report')
+                    completed = self.cli(output)
+                    self.assertEqual(1, completed.returncode)
+                    self.assertEqual('packet_changed', json.loads(output.read_text())['failure_code'])
+                    self.assertEqual('', completed.stderr)
+                    self.assert_inputs_preserved()
+                    output.unlink()
+
+    def test_successful_execution_writes_separate_report(self):
+        output = self.root / 'report.json'
+        result = {'success': True, 'publisher_authority': False}
+        with patch.object(publication, 'load', return_value=({}, '0' * 64)), \
+             patch.object(publication, 'admit_original') as admit, \
+             patch.object(publication, 'execute', return_value=result) as execute:
+            status, summary = self.main(output)
+        self.assertEqual(0, status)
+        self.assertEqual(result, summary)
+        self.assertEqual(result, json.loads(output.read_text()))
+        admit.assert_called_once()
+        execute.assert_called_once()
+        self.assert_inputs_preserved()
+
+    def test_report_write_failure_is_sanitized_and_preserves_existing_report_and_inputs(self):
+        output = self.root / 'report.json'
+        output.write_bytes(b'previous report')
+        with patch.object(pair, 'write_json', side_effect=OSError('private-path-or-provider-data')):
+            status, summary = self.main(output)
+        self.assertEqual(1, status)
+        self.assertEqual({'success': False, 'publisher_authority': False,
+                          'failure_code': 'report_write_failed'}, summary)
+        self.assertEqual(b'previous report', output.read_bytes())
+        self.assert_inputs_preserved()
+        self.assertEqual([], list(self.root.glob('.elsa-npm-report-*')))
+
+    def test_late_leaf_links_do_not_truncate_original_inputs(self):
+        output = self.root / 'report.json'
+        replace = publication.os.replace
+        for target in self.inputs:
+            for link in ('symlink', 'hardlink'):
+                def swap_leaf(source, destination):
+                    if destination.exists():
+                        destination.unlink()
+                    if link == 'symlink':
+                        destination.symlink_to(target)
+                    else:
+                        destination.hardlink_to(target)
+                    replace(source, destination)
+                with self.subTest(target=target.name, link=link), \
+                     patch.object(publication.os, 'replace', side_effect=swap_leaf):
+                    status, _ = self.main(output)
+                self.assertEqual(1, status)
+                self.assertEqual('packet_changed', json.loads(output.read_text())['failure_code'])
+                self.assert_inputs_preserved()
+                output.unlink()
 
 
 class PublicationContracts(unittest.TestCase):
