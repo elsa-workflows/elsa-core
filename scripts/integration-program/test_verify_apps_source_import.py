@@ -55,7 +55,25 @@ class SourceImportRejectionTests(unittest.TestCase):
         target = self.fixture / "regular-file"
         target.write_text("Symlinks must fail before blob verification.")
         destination.symlink_to(target)
-        self.assert_rejected("Mapped asset is a symlink")
+        self.assert_rejected("Mapped asset traverses a symlink")
+
+    def test_mapped_parent_symlink_is_rejected(self):
+        external = tempfile.TemporaryDirectory()
+        self.addCleanup(external.cleanup)
+        asset = self.manifest["assets"][0]
+        destination = self.fixture / asset["destinationPath"]
+        original = subprocess.check_output(
+            ["git", "show", f"{self.manifest['sourceCommit']}:{asset['sourcePath']}"], cwd=ROOT
+        )
+        for target in (self.fixture / "linked-assets", Path(external.name)):
+            with self.subTest(target_inside_checkout=target.is_relative_to(self.fixture)):
+                target.mkdir(parents=True, exist_ok=True)
+                (target / destination.name).write_bytes(original)
+                destination.parent.symlink_to(target, target_is_directory=True)
+                try:
+                    self.assert_rejected("Mapped asset traverses a symlink")
+                finally:
+                    destination.parent.unlink()
 
 
 if __name__ == "__main__":

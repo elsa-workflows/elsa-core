@@ -46,7 +46,11 @@ def verify(evaluate: bool = False) -> None:
         require(destination == f'apps/{source}', f'Unexpected mapping: {source}')
         require(source_assets[source] == (row['sourceMode'], row['sourceBlob']), f'Source metadata changed: {source}')
         file = ROOT / destination
-        require(not file.is_symlink(), f"Mapped asset is a symlink: {destination}")
+        for component in (file, *file.parents):
+            if component == ROOT:
+                break
+            require(not component.is_symlink(), f"Mapped asset traverses a symlink: {destination}")
+        require(file.resolve().is_relative_to(ROOT), f"Mapped asset escapes checkout: {destination}")
         require(file.is_file(), f'Missing mapped asset: {destination}')
         expected_executable = row["sourceMode"] == "100755"
         require(bool(file.stat().st_mode & 0o111) == expected_executable, f'File mode changed: {destination}')
