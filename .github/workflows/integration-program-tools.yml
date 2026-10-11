@@ -8,7 +8,11 @@ on:
       - 'Elsa.Extensions.slnf'
       - 'Elsa.Studio.slnf'
       - '.github/dependabot.yml'
+      - '.config/dotnet-tools.json'
       - '**/*.csproj'
+      - '**/*.proj'
+      - '**/*.fsproj'
+      - '**/*.vbproj'
       # MSBuild imports can use custom and lower-case names.
       - '**/*.props'
       - '**/*.targets'
