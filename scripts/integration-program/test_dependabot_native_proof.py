@@ -645,6 +645,30 @@ class ProductSmokeTests(unittest.TestCase):
         self.assertFalse(smoke_can_continue(row))
         self.assertEqual([{'kind': 'duplicate_direct_reference', 'path': self.reference, 'tfm': 'net8.0'}], row['gaps'])
 
+    def test_duplicate_frameworks_in_each_observation_remain_unresolved(self):
+        duplicates = [SMOKE_TFMS[0], *SMOKE_TFMS]
+        cases = (
+            ('native_root', 'workspace-0.json',
+             lambda value: value['Projects'][0].update(TargetFrameworks=duplicates)),
+            ('native_closure', 'workspace-0.json',
+             lambda value: value['Projects'][1].update(TargetFrameworks=duplicates)),
+            ('root_evaluation', 'evaluation-0-net8.0.json',
+             lambda value: value['Properties'].update(TargetFrameworks=';'.join(duplicates))),
+            ('closure_evaluation', reference_output(self.state, 0, self.reference, 'net8.0'),
+             lambda value: value['Properties'].update(TargetFrameworks=';'.join(duplicates))),
+        )
+        for name, output, change in cases:
+            with self.subTest(observation=name):
+                path = self.state/output
+                original = path.read_text()
+                try:
+                    self.mutate(output, change)
+                    result = self.readback()
+                    self.assertFalse(result['semantic_preflight_complete'])
+                    self.assertFalse(smoke_can_continue(result['projects'][0]))
+                finally:
+                    path.write_text(original)
+
     def test_unlike_framework_mapping_and_unsupported_declarations_remain_gaps(self):
         declaration = reference_output(self.state, 0, self.reference)
         original = declaration.read_text()

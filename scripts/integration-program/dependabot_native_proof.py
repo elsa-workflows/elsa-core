@@ -196,7 +196,7 @@ def smoke_native(state, index, snapshot, tracked, package_ids):
             if any(not isinstance(row.get(key), list) or len(row[key]) > 10000 for key in arrays):
                 raise ValueError('invalid_record')
             tfms = row['TargetFrameworks']
-            if any(tfm not in SMOKE_TFMS for tfm in tfms):
+            if any(tfm not in SMOKE_TFMS for tfm in tfms) or len(tfms) != len(set(tfms)):
                 raise ValueError('invalid_framework')
             dependencies, omitted_transitive, unsafe_inputs = [], 0, 0
             for dep in row['Dependencies']:
@@ -272,8 +272,9 @@ def smoke_evaluation(state, index, tfm, snapshot, tracked, package_ids):
     try:
         raw = read_closed_json(state/f'evaluation-{index}-{tfm}.json', state)
         properties, items = raw['Properties'], raw['Items']
+        frameworks = properties['TargetFrameworks'].split(';')
         if (tfm not in SMOKE_TFMS or properties['TargetFramework'] != tfm
-                or set(properties['TargetFrameworks'].split(';')) != set(SMOKE_TFMS)
+                or len(frameworks) != len(set(frameworks)) or set(frameworks) != set(SMOKE_TFMS)
                 or properties['ManagePackageVersionsCentrally'].lower() != 'true'):
             raise ValueError('evaluation_applicability')
         central = known_snapshot_path(properties['DirectoryPackagesPropsPath'], snapshot, tracked)
@@ -358,8 +359,12 @@ def reference_evaluation(state, index, project, tfm, frameworks, snapshot, track
         raw = read_closed_json(reference_output(state, index, project, tfm), state)
         properties = raw['Properties']
         declared = properties['TargetFrameworks']
-        if (properties['TargetFramework'] != tfm or not isinstance(declared, str)
-                or set(declared.split(';') if declared else [tfm]) != set(frameworks)):
+        if not isinstance(declared, str):
+            raise ValueError('reference_applicability')
+        declared_frameworks = declared.split(';') if declared else [tfm]
+        if (properties['TargetFramework'] != tfm
+                or len(declared_frameworks) != len(set(declared_frameworks))
+                or set(declared_frameworks) != set(frameworks)):
             raise ValueError('reference_applicability')
         references = evaluated_project_references(raw['Items']['ProjectReference'], snapshot, tracked)
         result.update(status='evaluated', direct_references=references)
