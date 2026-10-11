@@ -43,40 +43,20 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22'
-      - name: Detect imported Studio source
-        id: source
+      - name: Require the Studio ClientLib source
         run: |
-          if test -f studio/src/modules/Elsa.Studio.Workflows.Designer/ClientLib/package.json; then
-            echo 'mapped=true' >> "$GITHUB_OUTPUT"
-          elif test -d studio/src; then
-            echo 'Imported Studio is missing the required Designer ClientLib manifest.' >&2
+          if ! test -f studio/src/modules/Elsa.Studio.Workflows.Designer/ClientLib/package.json; then
+            echo 'Studio is missing the required Designer ClientLib manifest.' >&2
             exit 1
-          else
-            echo 'mapped=false' >> "$GITHUB_OUTPUT"
           fi
-      - name: Checkout the pinned standalone Studio source before import
-        if: steps.source.outputs.mapped == 'false'
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          repository: elsa-workflows/elsa-studio
-          ref: 9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822
-          path: pinned-studio
-          persist-credentials: false
-      - name: Build pinned Studio ClientLibs on Linux before import
-        if: steps.source.outputs.mapped == 'false'
-        run: |
-          scripts/integration-program/build_studio_clientlibs.sh pinned-studio
       - name: Verify browser proof source-binding guards
-        if: steps.source.outputs.mapped == 'true'
         working-directory: studio/test/browser/DesignerHover
         run: |
           npm ci
           npm test
-      - name: Build consolidated Studio ClientLibs after import
-        if: steps.source.outputs.mapped == 'true'
+      - name: Build Studio ClientLibs
         run: scripts/integration-program/build_studio_clientlibs.sh .
       - name: Verify real X6 edge-hover behavior
-        if: steps.source.outputs.mapped == 'true'
         working-directory: studio/test/browser/DesignerHover
         run: |
           npx --no-install playwright install --with-deps chromium
@@ -87,7 +67,7 @@ jobs:
           test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
           git diff --exit-code HEAD --
       - name: Retain sanitized hover evidence
-        if: always() && steps.source.outputs.mapped == 'true'
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: designer-hover-browser-${{ github.run_id }}-${{ github.run_attempt }}

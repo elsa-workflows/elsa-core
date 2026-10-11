@@ -1,7 +1,7 @@
 # Copilot Playbook: Elsa Release-Unit Notes (GitHub Release + PR/commit links)
 
 ## Goal
-Draft developer-facing notes for one named Elsa release unit between two reviewed refs. The source may live in `elsa-core` or, before an approved publisher cutover, in the still-active Extensions or Studio repository. Source co-location does not make unrelated packages part of the same release. Include:
+Draft developer-facing notes for one named Elsa release unit between two reviewed refs. The source lives in `elsa-core`; Studio and Extensions are folded into it, and their earlier history is imported here (see the [integration program](../docs/integration-program/README.md)), so do not read from or write to the old Studio, Extensions or Apps repositories. Source co-location does not make unrelated packages part of the same release. Include:
 - a short **Highlights** section up top
 - standard grouped sections (Breaking/Features/Improvements/Fixes/Tests/CI)
 - **GitHub-style** PR/commit references at the end of bullets: `(#1234)` or `(abcd123)`
