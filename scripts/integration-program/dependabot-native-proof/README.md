@@ -31,6 +31,14 @@ Cold official builds and 356 native evaluations can take minutes or more. The
 Python uses one 30-minute budget: subprocess work stops at 29 minutes, reserving
 cleanup/finalization time, with a hard watchdog at 29m50s. Each stage has atomic
 state/elapsed receipts and safe name/state/elapsed progress every 15 seconds.
+Native progress also retains the last workspace call boundary (started, returned or
+threw) and selected project's restore-strategy marker. The latter comes only from
+the pinned SdkProjectDiscovery logger's exact INFO messages, joined to the 356
+selected contained project paths. It means a strategy was selected, not that a
+restore started or finished; initial property evaluation happens before this marker.
+Unknown lines and error text are ignored. Tail reads are bounded to 64 KiB, so a
+marker can be missed under unusually large output; absence remains unknown.
+The final timeout receipt retains the last observed safe marker.
 Owned subprocess groups receive TERM then KILL with a five-second grace; raw
 stdout/stderr stay ephemeral. The unchanged 45-minute job cap leaves upload time.
 A timeout is a failed/incomplete diagnostic,

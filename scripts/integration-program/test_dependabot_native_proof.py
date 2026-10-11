@@ -10,7 +10,7 @@ import tempfile
 import time
 import unittest
 
-from dependabot_native_proof import DeadlineRunner, diagnostic_complete, reconcile
+from dependabot_native_proof import DeadlineRunner, NativeProgress, diagnostic_complete, reconcile
 
 
 class NativeProofReceiptTests(unittest.TestCase):
@@ -24,12 +24,16 @@ class NativeProofReceiptTests(unittest.TestCase):
             with contextlib.redirect_stdout(output):
                 runner = DeadlineRunner(state, summary, budget_seconds=3, grace_seconds=0.1,
                                         progress_seconds=0.1, reserve_seconds=0)
+                runner.native_progress = NativeProgress(state, {'A.csproj': 'Directory.Packages.props'})
+                parent = "print('ELSA8636_WORKSPACE_0_STARTED',flush=True); "+parent
                 with self.assertRaisesRegex(ValueError, '^overall_deadline$'):
                     runner.run('native_discovery', [sys.executable, '-c', parent])
             self.assertLess(time.monotonic() - started, 8)
             receipt = json.loads((state/'summary.json').read_text())
             self.assertEqual('timed_out', receipt['stages'][0]['state'])
             self.assertFalse(receipt['acceptance'])
+            self.assertEqual(0, receipt['native_progress']['workspace_index'])
+            self.assertEqual('started', receipt['native_progress']['phase'])
             self.assertNotIn('SECRET', output.getvalue())
             self.assertNotIn('https://', json.dumps(receipt))
             self.assertGreater(len(output.getvalue().splitlines()), 1)
@@ -39,6 +43,41 @@ class NativeProofReceiptTests(unittest.TestCase):
             with contextlib.redirect_stdout(output), self.assertRaisesRegex(ValueError, '^overall_deadline$'):
                 runner.run('caller_build', [sys.executable, '-c', 'raise SystemExit(0)'])
             self.assertEqual('not_started_deadline', summary['stages'][-1]['state'])
+
+    def test_native_markers_are_closed_and_unknown_lines_cannot_leak(self):
+        with tempfile.TemporaryDirectory() as directory:
+            state = Path(directory)
+            project = 'nested/A.csproj'
+            progress = NativeProgress(state, {project: 'Directory.Packages.props'})
+            absolute = str(state.resolve()/project)
+            stamp = '2026/10/11 01:00:00 INFO '
+            valid = stamp+'Performing individual restores for project '+absolute+' using target frameworks net8.0, net9.0, net10.0'
+            output = state/'native_discovery.out'
+            self.assertEqual({'phase': 'single_restore_selected', 'project': project},
+                             progress.parse(stamp+'Performing single restore for project '+absolute))
+            output.write_text('ELSA8636_WORKSPACE_0_STARTED\n'+valid+'\n')
+            observed = progress.poll(output, 1)
+            self.assertEqual({'workspace_index': 0, 'phase': 'individual_restores_selected',
+                              'project': project, 'observed_seconds': 1}, observed)
+            for line in ['SECRET https://private', stamp+'Performing single restore for project /SECRET.csproj',
+                         valid+' SECRET https://private', 'PREFIX '+valid, valid+'\x00',
+                         stamp+'Performing single restore for project '+absolute+'\rSECRET',
+                         'ELSA8636_WORKSPACE_2_STARTED',
+                         'ELSA8636_WORKSPACE_1_STARTED SECRET', stamp+'Performing single restore for project '+absolute+'/../SECRET']:
+                with self.subTest(line=line):
+                    self.assertIsNone(progress.parse(line))
+            with output.open('a') as stream:
+                stream.write('SECRET https://private\n')
+            self.assertEqual(observed, progress.poll(output, 2))
+            with output.open('a') as stream:
+                stream.write('ELSA8636_WORKSPACE_0_RETURNED\nELSA8636_WORKSPACE_1_STARTED\n')
+            self.assertEqual({'workspace_index': 1, 'phase': 'started', 'observed_seconds': 3}, progress.poll(output, 3))
+            self.assertNotIn('SECRET', json.dumps(progress.last))
+            output.write_text('SECRET'*20000+'\n')
+            self.assertEqual(1, progress.poll(output, 4)['workspace_index'])
+            output.unlink()
+            output.symlink_to(state/'missing')
+            self.assertEqual(1, progress.poll(output, 5)['workspace_index'])
 
     def test_deadline_after_native_work_cannot_skip_content_rechecks(self):
         summary = {'reconciliation': {'complete': True}, 'content_recheck': 'not_checked_deadline'}

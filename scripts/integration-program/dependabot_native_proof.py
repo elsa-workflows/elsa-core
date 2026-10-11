@@ -11,6 +11,7 @@ from pathlib import Path, PurePosixPath
 import re
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import time
@@ -179,6 +180,58 @@ def diagnostic_complete(summary):
             and summary.get('changed_upstream_files') == [])
 
 
+class NativeProgress:
+    """Project only pinned logger markers; never copy native log text into a receipt."""
+    def __init__(self, snapshot, expected):
+        self.projects = {str(snapshot.resolve()/path): path for path in expected}
+        self.last = None
+
+    def parse(self, line):
+        workspace = re.fullmatch(r'ELSA8636_WORKSPACE_([01])_(STARTED|RETURNED|THREW)', line)
+        if workspace:
+            return {'workspace_index': int(workspace[1]), 'phase': workspace[2].lower()}
+        message = re.fullmatch(r'[0-9]{4}/[0-9]{2}/[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} INFO (.*)', line)
+        if not message:
+            return None
+        for absolute, relative in self.projects.items():
+            if message[1] == 'Performing single restore for project '+absolute:
+                return {'phase': 'single_restore_selected', 'project': relative}
+            prefix = 'Performing individual restores for project '+absolute+' using target frameworks '
+            if message[1].startswith(prefix) and re.fullmatch(
+                    r'net(?:standard|coreapp)?[0-9][A-Za-z0-9.\-]*(?:, net(?:standard|coreapp)?[0-9][A-Za-z0-9.\-]*)*',
+                    message[1][len(prefix):]):
+                return {'phase': 'individual_restores_selected', 'project': relative}
+        return None
+
+    def poll(self, path, elapsed):
+        # Bounded tail reads keep diagnostics cheap even when raw subprocess output grows.
+        try:
+            descriptor = os.open(path, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW)
+            with os.fdopen(descriptor, 'rb') as stream:
+                if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+                    return self.last
+                stream.seek(0, 2)
+                start = max(0, stream.tell()-65536)
+                stream.seek(start)
+                data = stream.read(65536)
+            lines = data.split(b'\n')
+            if start:
+                lines = lines[1:]  # the first fragment may start in an arbitrary raw message
+            previous = {k: v for k, v in (self.last or {}).items() if k != 'observed_seconds'}
+            latest = previous
+            for raw in lines[:-1]:  # only complete lines are eligible
+                event = self.parse(raw.decode('utf-8', errors='replace').rstrip('\r'))
+                if event is not None:
+                    if 'workspace_index' not in event and 'workspace_index' in latest:
+                        event['workspace_index'] = latest['workspace_index']
+                    latest = event
+            if latest and latest != previous:
+                self.last = dict(latest, observed_seconds=round(elapsed, 3))
+        except OSError:
+            pass
+        return self.last
+
+
 class DeadlineRunner:
     """Run closed stages in isolated process groups under one shared elapsed budget."""
     STAGES = {'proof_identity', 'target_identity', 'target_tree', 'archive', 'extract',
@@ -194,6 +247,7 @@ class DeadlineRunner:
         self.deadline = self.started + budget_seconds - reserve_seconds
         self.grace, self.progress = grace_seconds, progress_seconds
         self.process = None
+        self.native_progress = None
         summary['runner_budget_seconds'] = budget_seconds
         self.save()
 
@@ -252,9 +306,14 @@ class DeadlineRunner:
         self.summary['stages'].append(row)
         def progress():
             row['elapsed_seconds'] = round(time.monotonic()-started, 3)
+            receipt = {'stage': name, 'state': row['state'], 'elapsed_seconds': row['elapsed_seconds']}
+            if name == 'native_discovery' and self.native_progress is not None:
+                native_progress = self.native_progress.poll(self.state/'native_discovery.out', row['elapsed_seconds'])
+                if native_progress is not None:
+                    self.summary['native_progress'] = native_progress
+                    receipt['native_progress'] = native_progress
             self.save()
-            print(json.dumps({'stage': name, 'state': row['state'],
-                              'elapsed_seconds': row['elapsed_seconds']}), flush=True)
+            print(json.dumps(receipt), flush=True)
         try:
             if started >= self.deadline:
                 row['state'] = 'not_started_deadline'
@@ -364,6 +423,7 @@ def run_preflight(checkout, state):
         run('caller_build', ['dotnet', 'build', str(caller/'NativeDiscovery.csproj'), '-c', 'Release', '-o', str(state/'caller'), '--nologo'], native)
         binaries = runner.calculate('caller_hashes', lambda: {p.name: digest(p) for p in (state/'caller').iterdir() if p.is_file()})
         summary['caller_binary_content_sha256'] = hashlib.sha256(json.dumps(binaries, sort_keys=True).encode()).hexdigest()
+        runner.native_progress = NativeProgress(snapshot, expected)
         run('native_discovery', ['dotnet', str(state/'caller/NativeDiscovery.dll'), str(snapshot), str(state)], native)
     except Exception as error:
         # Details are deliberately excluded; stage exit codes and raw ephemeral logs diagnose failures.
