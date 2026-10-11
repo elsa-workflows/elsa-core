@@ -36,6 +36,7 @@ def verify_project_evaluation(root: Path, project: Path, evaluation: dict, versi
     require(all(properties[name] == value for name, value in versions.items()), project)
     for reference in evaluation["Items"]["ProjectReference"]:
         require(Path(reference['FullPath']).resolve() in projects, reference['Identity'])
+    require(evaluation['Items']['PackageReference'], f'Missing package consumers: {project}')
 
 
 def verify(evaluate: bool = False, restore_graph: Path | None = None) -> None:

@@ -1,12 +1,15 @@
 import copy
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
 
+from apps_consumer_inventory import git
 from current_import_impact import (
     CORE_PROJECT,
+    git_output,
     partition_source_graph,
     reject_unmapped_elsa_packages,
     restored_test_projects,
@@ -70,6 +73,28 @@ def unit():
 
 
 class CurrentImportedImpactTests(unittest.TestCase):
+    def test_git_head_and_status_use_selected_repository_despite_ambient_routing(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            roots = [Path(temporary) / name for name in ("selected", "ambient")]
+            for root in roots:
+                root.mkdir()
+                git(root, "init", "--quiet")
+                (root / "marker").write_text(root.name)
+                git(root, "add", "marker")
+                git(root, "-c", "user.name=Git fixture", "-c", "user.email=git-fixture@example.invalid",
+                    "commit", "--quiet", "-m", root.name)
+            selected, ambient = roots
+            (selected / "marker").write_text("reviewed working change")
+            expected_head = git(selected, "rev-parse", "HEAD")
+            expected_status = git(selected, "status", "--porcelain")
+            self.assertNotEqual(expected_head, git(ambient, "rev-parse", "HEAD"))
+            self.assertTrue(expected_status)
+            with patch.dict(os.environ, GIT_DIR=str(ambient / ".git"), GIT_WORK_TREE=str(ambient),
+                            GIT_INDEX_FILE=str(ambient / ".git/index"), GIT_CONFIG_COUNT="1",
+                            GIT_CONFIG_KEY_0="core.worktree", GIT_CONFIG_VALUE_0=str(ambient)):
+                self.assertEqual(expected_head, git_output(selected, "rev-parse", "HEAD"))
+                self.assertEqual(expected_status, git_output(selected, "status", "--porcelain"))
+
     def test_workflow_triggers_for_selector_graph_dependencies(self):
         workflow = Path(__file__).resolve().parents[2] / ".github/workflows/current-import-impact.yml"
         text = workflow.read_text(encoding="utf-8")

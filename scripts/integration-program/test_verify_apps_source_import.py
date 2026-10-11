@@ -140,7 +140,7 @@ class SourceImportTests(unittest.TestCase):
         next((self.fixture / "apps/src").rglob("*.cs")).unlink()
         self.assert_rejected("Missing mapped asset")
 
-    def test_current_version_policy_accepts_updates_and_rejects_version_mismatch(self):
+    def test_current_version_policy_accepts_updates_and_rejects_version_mismatch_or_empty_packages(self):
         self.materialize_current_apps()
         props = self.fixture / "apps/Directory.Packages.props"
         props.write_text(props.read_text().replace("3.9.0", "3.10.0"))
@@ -150,10 +150,14 @@ class SourceImportTests(unittest.TestCase):
             "IsPackable": "false", "RestoreConfigFile": str(self.fixture / "apps/NuGet.Config"),
             "ManagePackageVersionsCentrally": "true",
             "DirectoryPackagesPropsPath": str(self.fixture / "apps/Directory.Packages.props"), **versions},
-            "Items": {"ProjectReference": [], "PackageReference": []}}
+            "Items": {"ProjectReference": [], "PackageReference": [{"Identity": "Elsa.Workflows.Core"}]}}
         verify_project_evaluation(self.fixture, project, evaluation, versions, set(current_apps_projects(self.fixture)))
         evaluation["Properties"]["ElsaVersion"] = "3.9.0"
         with self.assertRaises(ValueError):
+            verify_project_evaluation(self.fixture, project, evaluation, versions, set(current_apps_projects(self.fixture)))
+        evaluation["Properties"]["ElsaVersion"] = versions["ElsaVersion"]
+        evaluation["Items"]["PackageReference"] = []
+        with self.assertRaisesRegex(ValueError, "Missing package consumers"):
             verify_project_evaluation(self.fixture, project, evaluation, versions, set(current_apps_projects(self.fixture)))
 
     def test_preserved_crlf_blob_is_checked_without_git_clean_filters(self):

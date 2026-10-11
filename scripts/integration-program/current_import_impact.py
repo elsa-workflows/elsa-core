@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from apps_consumer_inventory import current_apps_projects
+from apps_consumer_inventory import current_apps_projects, git_environment
 import refresh_canonical_dependency_graph as graph_reader
 from release_unit_manifest import DEFAULT_UNIT_ID, get_unit, load_manifest
 from product_layout import map_path
@@ -30,7 +30,7 @@ def sha256(path: Path) -> str:
 
 def git_output(root: Path, *arguments: str) -> str:
     result = subprocess.run(
-        ["git", "-C", str(root), *arguments], text=True, capture_output=True, check=False
+        ["git", "-C", str(root), *arguments], env=git_environment(), text=True, capture_output=True, check=False
     )
     if result.returncode:
         raise ValueError(f"Cannot inspect source Git state: {result.stderr.strip()}")
