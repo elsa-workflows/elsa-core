@@ -31,7 +31,13 @@ ERROR_TYPES = {'unknown_error', 'dependency_file_not_parseable', 'dependency_fil
                'private_source_timed_out', 'dependency_not_found', 'out_of_disk', 'bad_requirement'}
 
 CONFIGURATION_BLOB = '83e586893f4e58a5f938db815d5478afeb5651b0'
-MODES = ('enumerate', 'tooling', 'retained-probe')
+MODES = ('enumerate', 'tooling', 'retained-probe', 'product-smoke')
+SMOKE_PROJECTS = ('extensions/src/email/Elsa.Email/Elsa.Email.csproj',
+                  'studio/src/framework/Elsa.Studio.Core/Elsa.Studio.Core.csproj')
+SMOKE_TFMS = ('net8.0', 'net9.0', 'net10.0')
+DEPENDENCY_TYPES = {'Unknown', 'PackagesConfig', 'PackageReference', 'PackageVersion',
+                    'GlobalPackageReference', 'DotNetTool', 'MSBuildSdk'}
+EVALUATION_RESULTS = {'Success', 'PropertyIgnored', 'CircularReference', 'PropertyNotFound'}
 UNIT_IDS = ('core-production', 'core-tests', 'extensions', 'studio', 'tooling')
 UNIT_SELECTORS = (['/core/src/**/*'], ['/core/test/**/Elsa.*'], ['/extensions/**/*'],
                   ['/studio/**/*'], ['/build', '/.config'])
@@ -139,6 +145,8 @@ def reconcile_enumeration(state, expected, tracked):
 
 
 def probe_workspaces(mode):
+    if mode == 'product-smoke':
+        return [str(PurePosixPath(path).parent) for path in SMOKE_PROJECTS]
     if mode == 'tooling':
         return ['build', '.config']
     if mode == 'retained-probe':
@@ -146,6 +154,209 @@ def probe_workspaces(mode):
     if mode == 'enumerate':
         return []
     raise ValueError('unknown_mode')
+
+
+def smoke_project(index):
+    if type(index) is not int or index not in (0, 1):
+        raise ValueError('unknown_smoke_project')
+    return SMOKE_PROJECTS[index]
+
+
+def known_snapshot_path(value, snapshot, tracked, base=''):
+    if not isinstance(value, str):
+        return None
+    if value.startswith('/'):
+        try:
+            path = str(Path(os.path.abspath(value)).relative_to(snapshot))
+        except ValueError:
+            return None
+    else:
+        path = normalized(base, value.replace('\\', '/'))
+    return path if path in tracked else None
+
+
+def smoke_native(state, index, snapshot, tracked, package_ids):
+    project = smoke_project(index)
+    workspace = str(PurePosixPath(project).parent)
+    result = {'path': project, 'status': 'missing', 'records': [], 'invalid_records': 0}
+    try:
+        value = read_closed_json(state/f'workspace-{index}.json', state)
+        if (value.get('Path', '').lstrip('/') != workspace or not isinstance(value.get('Projects'), list)
+                or len(value['Projects']) > len(tracked)):
+            raise ValueError('invalid_workspace')
+        result['workspace_success'] = value.get('IsSuccess') is True and value.get('Error') is None
+        result['workspace_errors'] = safe_errors(value.get('Error'))
+        for row in value['Projects']:
+            path = normalized(workspace, row.get('FilePath'))
+            if path not in tracked or not path.endswith('.csproj'):
+                result['invalid_records'] += 1
+                continue
+            parent = str(PurePosixPath(path).parent)
+            arrays = ('TargetFrameworks', 'Dependencies', 'ImportedFiles', 'ReferencedProjectPaths')
+            if any(not isinstance(row.get(key), list) or len(row[key]) > 10000 for key in arrays):
+                raise ValueError('invalid_record')
+            tfms = row['TargetFrameworks']
+            if any(tfm not in SMOKE_TFMS for tfm in tfms):
+                raise ValueError('invalid_framework')
+            dependencies, omitted_transitive, unsafe_inputs = [], 0, 0
+            for dep in row['Dependencies']:
+                if (not isinstance(dep, dict) or not isinstance(dep.get('Name'), str)
+                        or dep.get('Type') not in DEPENDENCY_TYPES
+                        or type(dep.get('IsTopLevel')) is not bool
+                        or not isinstance(dep.get('Version'), str) or not VERSION.fullmatch(dep['Version'])
+                        or not isinstance(dep.get('TargetFrameworks'), list)
+                        or any(tfm not in SMOKE_TFMS for tfm in dep['TargetFrameworks'])):
+                    unsafe_inputs += 1
+                    continue
+                if dep['Name'] not in package_ids:
+                    if dep['IsTopLevel'] is False:
+                        omitted_transitive += 1
+                    else:
+                        unsafe_inputs += 1
+                    continue
+                dependency = {key: dep[key] for key in ('Name', 'Version', 'Type', 'TargetFrameworks', 'IsTopLevel')}
+                evaluation = dep.get('EvaluationResult')
+                if evaluation is None:
+                    dependency['EvaluationResult'] = {'present': False}
+                elif (isinstance(evaluation, dict) and isinstance(evaluation.get('ResultType'), str)
+                        and evaluation['ResultType'] in EVALUATION_RESULTS):
+                    dependency['EvaluationResult'] = {'present': True, 'result_type': evaluation['ResultType']}
+                else:
+                    unsafe_inputs += 1
+                dependencies.append(dependency)
+            imports, references = [], []
+            for key, destination in (('ImportedFiles', imports), ('ReferencedProjectPaths', references)):
+                for raw in row[key]:
+                    known = known_snapshot_path(raw, snapshot, tracked, parent)
+                    if known is None:
+                        unsafe_inputs += 1
+                    else:
+                        destination.append(known)
+            result['records'].append({'path': path, 'success': row.get('IsSuccess') is True and row.get('Error') is None,
+                'errors': safe_errors(row.get('Error')), 'target_frameworks': tfms, 'dependencies': dependencies,
+                'imports': imports, 'references': references,
+                'central_file': known_snapshot_path(row.get('PackageManagementSpecialFileRelativePath'), snapshot, tracked, parent),
+                'omitted_transitive_dependencies': omitted_transitive, 'unsafe_input_fields': unsafe_inputs})
+        matches = [row for row in result['records'] if row['path'] == project]
+        result['status'] = ('observed' if result['workspace_success'] and len(matches) == 1 and matches[0]['success']
+                            and set(matches[0]['target_frameworks']) == set(SMOKE_TFMS)
+                            and matches[0]['central_file'] is not None
+                            and matches[0]['central_file'].endswith('/Directory.Packages.props')
+                            and all(record['success'] and not record['unsafe_input_fields'] for record in result['records'])
+                            and not result['invalid_records'] else 'failed_or_empty')
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        result['status'] = 'missing_or_invalid'
+    return result
+
+
+def smoke_evaluation(state, index, tfm, snapshot, tracked, package_ids):
+    project = smoke_project(index)
+    result = {'path': project, 'tfm': tfm, 'status': 'missing_or_invalid'}
+    try:
+        raw = read_closed_json(state/f'evaluation-{index}-{tfm}.json', state)
+        properties, items = raw['Properties'], raw['Items']
+        if (tfm not in SMOKE_TFMS or properties['TargetFramework'] != tfm
+                or set(properties['TargetFrameworks'].split(';')) != set(SMOKE_TFMS)
+                or properties['ManagePackageVersionsCentrally'].lower() != 'true'):
+            raise ValueError('evaluation_applicability')
+        central = known_snapshot_path(properties['DirectoryPackagesPropsPath'], snapshot, tracked)
+        if central is None or not central.endswith('/Directory.Packages.props'):
+            raise ValueError('evaluation_central')
+        parsed, implicit_references = {}, 0
+        for key in ('PackageVersion', 'PackageReference', 'GlobalPackageReference', 'ProjectReference'):
+            rows = items[key]
+            if not isinstance(rows, list) or len(rows) > 10000:
+                raise ValueError('evaluation_items')
+            parsed[key] = []
+            for row in rows:
+                if not isinstance(row, dict):
+                    raise ValueError('evaluation_item')
+                if key == 'PackageReference' and row.get('IsImplicitlyDefined', '').lower() == 'true':
+                    implicit_references += 1
+                    continue
+                if key == 'ProjectReference':
+                    path = known_snapshot_path(row.get('FullPath'), snapshot, tracked)
+                    if path is None or not path.endswith('.csproj'):
+                        raise ValueError('evaluation_reference')
+                    parsed[key].append({'path': path})
+                    continue
+                name = row.get('Identity')
+                if not isinstance(name, str) or name not in package_ids:
+                    raise ValueError('evaluation_package')
+                value = {'id': name}
+                for field in ('Version', 'VersionOverride'):
+                    version = row.get(field, '')
+                    if not isinstance(version, str) or version and not VERSION.fullmatch(version):
+                        raise ValueError('evaluation_version')
+                    value[field] = version or None
+                defining = known_snapshot_path(row.get('DefiningProjectFullPath'), snapshot, tracked)
+                if defining is None:
+                    raise ValueError('evaluation_definition')
+                value['defined_in'] = defining
+                parsed[key].append(value)
+        central_versions = {}
+        for row in parsed['PackageVersion']:
+            central_versions.setdefault(row['id'], []).append(row['Version'])
+        direct = []
+        for kind, row in ((kind, row) for kind in ('PackageReference', 'GlobalPackageReference') for row in parsed[kind]):
+            versions = central_versions.get(row['id'], [])
+            global_reference = kind == 'GlobalPackageReference'
+            if (not global_reference and row['Version']
+                    or not (row['VersionOverride'] or global_reference and row['Version'])
+                    and (len(versions) != 1 or not versions[0])):
+                raise ValueError('evaluation_ambiguous_version')
+            direct.append({'id': row['id'], 'version': row['VersionOverride'] or (row['Version'] if global_reference else None) or versions[0],
+                           'type': 'GlobalPackageReference' if global_reference else 'PackageReference'})
+        if not direct:
+            raise ValueError('evaluation_empty')
+        result.update(status='evaluated', cpm=True, central_file=central, items=parsed, direct_versions=direct,
+                      implicit_reference_count=implicit_references)
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        pass
+    return result
+
+
+def product_smoke_readback(state, snapshot, expected, tracked, versions):
+    package_ids = set().union(*(set(rows) for rows in versions.values()))
+    rows = []
+    for index, project in enumerate(SMOKE_PROJECTS):
+        native = smoke_native(state, index, snapshot, tracked, package_ids)
+        evaluations = [smoke_evaluation(state, index, tfm, snapshot, tracked, package_ids) for tfm in SMOKE_TFMS]
+        row = {'path': project, 'native': native, 'evaluations': evaluations, 'status': 'unresolved'}
+        matches = [record for record in native['records'] if record['path'] == project]
+        if native['status'] == 'observed' and all(value['status'] == 'evaluated' for value in evaluations):
+            record = matches[0]
+            gaps = []
+            if any(item['unsafe_input_fields'] for item in native['records']):
+                gaps.append({'kind': 'unsafe_input_or_closure'})
+            if any(not item['success'] for item in native['records']):
+                gaps.append({'kind': 'closure_record_failed'})
+            for evaluation in evaluations:
+                tfm = evaluation['tfm']
+                if evaluation['central_file'] != record['central_file'] or expected[project] not in record['imports']:
+                    gaps.append({'tfm': tfm, 'kind': 'central_identity'})
+                references = [item['path'] for item in evaluation['items']['ProjectReference']]
+                if Counter(references) != Counter(record['references']):
+                    gaps.append({'tfm': tfm, 'kind': 'reference_edges'})
+                for dependency in evaluation['direct_versions']:
+                    found = [dep for dep in record['dependencies'] if dep['Name'] == dependency['id']
+                             and dep['Version'] == dependency['version'] and tfm in dep['TargetFrameworks']
+                             and dep['IsTopLevel'] and dep['Type'] in (
+                                 ('GlobalPackageReference', 'PackageReference') if dependency['type'] == 'GlobalPackageReference'
+                                 else ('PackageReference', 'PackageVersion'))]
+                    if len(found) != 1:
+                        gaps.append({'tfm': tfm, 'kind': 'native_version_attribution', 'id': dependency['id']})
+            row.update(status='matched' if not gaps else 'unresolved', gaps=gaps)
+        rows.append(row)
+    return {'projects': rows, 'semantic_preflight_complete': all(row['status'] == 'matched' for row in rows),
+            'selected_denominator': 356, 'product_denominator': 173, 'acceptance': False}
+
+
+def smoke_can_continue(row):
+    """Known aggregate attribution loss is evidence to retain, not an execution failure."""
+    return (row['native']['status'] == 'observed'
+            and all(value['status'] == 'evaluated' for value in row['evaluations'])
+            and all(gap['kind'] == 'native_version_attribution' for gap in row.get('gaps', [])))
 
 
 def probe_readback(state, mode, expected, versions, tracked, tool_version=None):
@@ -476,7 +687,7 @@ class DeadlineRunner:
               'source_init', 'source_remote', 'source_fetch', 'source_checkout',
               'upstream_identity', 'upstream_tree', 'submodules', 'nuget_identity',
               'dotnet_identity', 'sdk_identity', 'source_files', 'official_build',
-              'caller_build', 'native_discovery', 'native_enumeration', 'inventory', 'snapshot_hashes', 'native_source_hashes', 'caller_hashes'}
+              'caller_build', 'native_discovery', 'native_smoke_0', 'native_smoke_1', 'product_evaluation', 'native_enumeration', 'inventory', 'snapshot_hashes', 'native_source_hashes', 'caller_hashes'}
 
     def __init__(self, state, summary, budget_seconds=1800, grace_seconds=5,
                  progress_seconds=15, reserve_seconds=60):
@@ -548,13 +759,13 @@ class DeadlineRunner:
         def progress():
             row['elapsed_seconds'] = round(time.monotonic()-started, 3)
             receipt = {'stage': name, 'state': row['state'], 'elapsed_seconds': row['elapsed_seconds']}
-            if name == 'native_discovery' and self.native_progress is not None:
-                native_progress = self.native_progress.poll(self.state/'native_discovery.out', row['elapsed_seconds'])
+            if name in ('native_discovery', 'native_smoke_0', 'native_smoke_1') and self.native_progress is not None:
+                native_progress = self.native_progress.poll(self.state/(name+'.out'), row['elapsed_seconds'])
                 if native_progress is not None:
                     self.summary['native_progress'] = native_progress
                     receipt['native_progress'] = native_progress
                 self.summary['native_event_journal'] = {'events': self.native_progress.events, 'gaps': self.native_progress.gaps, 'dropped': self.native_progress.dropped}
-            if name == 'native_discovery' and self.readback is not None:
+            if name in ('native_discovery', 'native_smoke_0', 'native_smoke_1', 'product_evaluation') and self.readback is not None:
                 self.readback()
             self.save()
             print(json.dumps(receipt), flush=True)
@@ -703,15 +914,46 @@ def run_preflight(checkout, state, mode):
             def readback():
                 summary['probe'] = probe_readback(state, mode, expected, versions, tracked, tool_version)
                 summary['selected_dispositions'] = summary['probe']['reconciliation']['projects']
+                if mode == 'product-smoke':
+                    summary['product_smoke'] = product_smoke_readback(state, snapshot, expected, tracked, versions)
             runner.readback = readback
-            run('native_discovery', command+[mode], native)
+            if mode == 'product-smoke':
+                for index in (0, 1):
+                    project = smoke_project(index)
+                    unit = summary['enumeration']['units'][2+index]
+                    if project not in unit['entry_projects'] or str(PurePosixPath(project).parent) not in unit['directories']:
+                        raise ValueError('product_smoke_incomplete')
+                    run(f'native_smoke_{index}', command+[mode, str(index)], native)
+                    if summary['product_smoke']['projects'][index]['native']['status'] != 'observed':
+                        raise ValueError('product_smoke_incomplete')
+                    for tfm in SMOKE_TFMS:
+                        run('product_evaluation', ['dotnet', 'msbuild', str(snapshot/project), '-nologo',
+                            '-property:TargetFramework='+tfm,
+                            '-getProperty:TargetFramework,TargetFrameworks,ManagePackageVersionsCentrally,DirectoryPackagesPropsPath',
+                            '-getItem:PackageVersion,PackageReference,GlobalPackageReference,ProjectReference'], native,
+                            output=state/f'evaluation-{index}-{tfm}.json')
+                        if summary['product_smoke']['projects'][index]['evaluations'][SMOKE_TFMS.index(tfm)]['status'] != 'evaluated':
+                            raise ValueError('product_smoke_incomplete')
+                    if not smoke_can_continue(summary['product_smoke']['projects'][index]):
+                        raise ValueError('product_smoke_incomplete')
+                    checks = {}
+                    for label, root, hashes in (('target', snapshot, before), ('upstream', source, closure)):
+                        status, changed = runner.calculate('snapshot_hashes', lambda: recheck_content(
+                            root, hashes, lambda: time.monotonic() < runner.deadline))
+                        checks[label] = {'status': status, 'changed_files': changed}
+                    summary.setdefault('smoke_content_rechecks', []).append({'project_index': index, **checks})
+                    runner.save()
+                    if any(check['status'] != 'checked' or check['changed_files'] for check in checks.values()):
+                        raise ValueError('product_smoke_incomplete')
+            else:
+                run('native_discovery', command+[mode], native)
     except Exception as error:
         # Details are deliberately excluded; stage exit codes and raw ephemeral logs diagnose failures.
         summary['preflight_error'] = str(error) if isinstance(error, ValueError) and str(error) in {
             'static_inventory_changed', 'central_file_missing', 'unhandled_central_import',
             'central_import_escapes_snapshot', 'central_import_cycle', 'target_tree_mismatch',
             'overall_deadline', 'stage_failed', 'submodule_pin_mismatch', 'sdk_pin_mismatch', 'snapshot_symlink_escape', 'upstream_pin_mismatch', 'configuration_pin_mismatch',
-            'configuration_schema_mismatch', 'unit_inventory_changed', 'enumeration_mismatch', 'tool_manifest_mismatch'} else 'preflight_exception'
+            'configuration_schema_mismatch', 'unit_inventory_changed', 'enumeration_mismatch', 'tool_manifest_mismatch', 'product_smoke_incomplete'} else 'preflight_exception'
     finally:
         # Read already-written files inside the existing reserve, after owned work has stopped.
         runner.stop()
@@ -723,6 +965,8 @@ def run_preflight(checkout, state, mode):
             if mode != 'enumerate':
                 summary['probe'] = probe_readback(state, mode, expected, versions, tracked, locals().get('tool_version'))
                 summary['selected_dispositions'] = summary['probe']['reconciliation']['projects']
+                if mode == 'product-smoke':
+                    summary['product_smoke'] = product_smoke_readback(state, snapshot, expected, tracked, versions)
             if 'before' in locals():
                 status, changed = recheck_content(snapshot, before, can_finalize)
                 summary['target_content_recheck'] = status

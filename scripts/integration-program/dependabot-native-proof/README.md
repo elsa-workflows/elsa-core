@@ -1,7 +1,7 @@
 # Temporary #8636 native batch diagnostic
 
 The manual Integration program tools workflow exposes `native_diagnostic_mode`:
-`off` (ordinary checks), `enumerate`, `tooling`, or `retained-probe`. A non-off
+`off` (ordinary checks), `enumerate`, `tooling`, `retained-probe`, or `product-smoke`. A non-off
 choice runs only the diagnostic job. Root must review this adapter and authorize
 execution separately. Remove the proof helpers and opt-in job after their evidence
 has been accepted and retained. No local native execution is needed for review.
@@ -52,6 +52,47 @@ version updates are not prohibited by the schema. Shared ancestor tool discovery
 may produce repeated observations, which are preserved for later reconciliation.
 An empty `.config` project list alone does not establish tool coverage.
 
+`product-smoke` is one fixed pair: `extensions/src/email/Elsa.Email` and
+`studio/src/framework/Elsa.Studio.Core`. Both must appear in the actual native
+Extensions/Studio directory and direct-entrypoint inventories. Python invokes the
+caller with an internal index restricted to 0 or 1; it is not a public workspace
+or unit override. The first native result and its evaluated inputs must be valid before the second
+call starts. Missing, empty, failed or unsafe results stop the attempt. If the only
+gaps are known native conditional-version attribution loss, the second fixed
+project is still collected; semantic completeness remains false. There is no full-unit discovery loop.
+
+For each fixed project, three `dotnet msbuild` evaluation queries use only
+`-property:TargetFramework=net8.0`, `net9.0`, or `net10.0`, the fixed
+`-getProperty:TargetFramework,TargetFrameworks,ManagePackageVersionsCentrally,DirectoryPackagesPropsPath`
+and `-getItem:PackageVersion,PackageReference,GlobalPackageReference,ProjectReference`. They do not run
+restore/build targets and do not prove package resolution. Raw query output stays
+private. The closed receipt retains known central/package/project paths, admitted
+package IDs, validated versions/VersionOverride, defining-file identity, evaluated
+CPM applicability, references and exact TFM attribution. SDK implicit references
+are counted separately; their arbitrary IDs or SDK paths are not copied.
+
+Native records preserve Name/Version/Type/TargetFrameworks/IsTopLevel, nullable
+EvaluationResult presence and its exact ResultType enum (Success, PropertyIgnored,
+CircularReference, PropertyNotFound), and known
+project-relative imports/reference edges, including duplicate edges and additional
+tracked closure project records. The join checks each evaluated direct dependency
+against a native top-level package declaration with the same version and TFM, and
+compares native central identity/imports and reference edges with evaluation. A
+native aggregate that loses a conditional framework/version association stays
+unresolved; aggregate project TFMs or literal ancestor XML values do not repair it.
+Unknown imports/references/top-level dependency fields, closure failures and
+unevaluable inputs block semantic matching. Only well-shaped unadmitted transitive
+dependencies are separately counted and omitted. Raw expression values, property
+names, error text and InfoUrl are excluded. Evaluated globals retain their item
+kind and explicit version; pinned SDK native discovery emits those declarations
+as PackageReference, so that native type is admitted for a global join without
+pretending native output distinguishes the original item collection.
+No claim of complete closure evaluation follows from retaining its records.
+`semantic_preflight_complete` describes this fixed pair only; all 356 selected and
+173 imported-product dispositions/denominators remain visible and acceptance stays
+false. Neither runtime feasibility of an entire scheduling unit nor operational
+acceptance follows from a passing smoke.
+
 Every probe keeps explicit dispositions for all 356 selected projects, including
 unrequested and omitted paths. Retained source is outside `Elsa.sln` and has
 explicit `net7.0`, `net8.0`, and `net9.0` targets. Historical publication eligibility
@@ -87,7 +128,8 @@ The existing 45-minute workflow cap leaves artifact-upload time.
 
 `attempt_complete` and exit zero describe only successful execution and receipt
 reconciliation of the selected bounded stage, including content rechecks and call
-returns. They do not require successful project evaluation: a returned empty or
+returns. Product-smoke may finish its bounded receipts with native-attribution gaps;
+`semantic_preflight_complete` remains false in that case. For tooling/retained modes they do not require successful project evaluation: a returned empty or
 failed project result remains explicitly unverified. `diagnostic_complete`,
 `all_selected_native_evaluation_complete`, `managed_acceptance`, and `acceptance`
 always remain false in this adapter, including successful enumeration. A failed

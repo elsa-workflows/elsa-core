@@ -14,7 +14,9 @@ from unittest import mock
 
 from dependabot_native_proof import (DeadlineRunner, NativeProgress, diagnostic_complete, reconcile,
     units_from_configuration, unit_projects, reconcile_enumeration, probe_workspaces, probe_readback,
-    safe_tool_result, child_environment, read_closed_json, digest, recheck_content, inventory, UNIT_IDS, UNIT_SELECTORS, UNIT_COUNTS, RETAINED, TOOL_MANIFEST)
+    safe_tool_result, child_environment, read_closed_json, digest, recheck_content, inventory,
+    product_smoke_readback, smoke_native, smoke_project, smoke_can_continue, SMOKE_PROJECTS, SMOKE_TFMS,
+    UNIT_IDS, UNIT_SELECTORS, UNIT_COUNTS, RETAINED, TOOL_MANIFEST)
 
 
 class NativeProofReceiptTests(unittest.TestCase):
@@ -397,6 +399,151 @@ class NativeBatchAdapterTests(unittest.TestCase):
         (self.state/'alias').symlink_to(actual, target_is_directory=True)
         with self.assertRaisesRegex(ValueError, '^snapshot_symlink_escape$'):
             inventory(self.state)
+
+
+class ProductSmokeTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.state = Path(temporary.name).resolve()
+        self.snapshot = self.state/'repository'
+        self.snapshot.mkdir()
+        self.expected = {project: prefix+'/Directory.Packages.props' for project, prefix in
+                         zip(SMOKE_PROJECTS, ('extensions/src', 'studio/src'))}
+        self.reference = 'core/src/Fixture/Fixture.csproj'
+        self.tracked = set(SMOKE_PROJECTS) | set(self.expected.values()) | {self.reference}
+        self.versions = {central: {'Conditional': {'8.0.1', '9.0.1', '10.0.1'}}
+                         for central in self.expected.values()}
+        for index, project in enumerate(SMOKE_PROJECTS):
+            parent = str(Path(project).parent)
+            central = self.expected[project]
+            relative_central = os.path.relpath(central, parent)
+            relative_reference = os.path.relpath(self.reference, parent)
+            dependencies = [{'Name': 'Conditional', 'Version': tfm[3:]+'.1',
+                             'TargetFrameworks': [tfm], 'Type': 'PackageReference', 'IsTopLevel': True}
+                            for tfm in SMOKE_TFMS]
+            self.write(f'workspace-{index}.json', {'Path': parent, 'IsSuccess': True, 'Projects': [{
+                'FilePath': Path(project).name, 'IsSuccess': True, 'TargetFrameworks': list(SMOKE_TFMS),
+                'ImportedFiles': [relative_central], 'ReferencedProjectPaths': [relative_reference],
+                'PackageManagementSpecialFileRelativePath': relative_central, 'Dependencies': dependencies}]})
+            for tfm in SMOKE_TFMS:
+                defining = str(self.snapshot/central)
+                self.write(f'evaluation-{index}-{tfm}.json', {'Properties': {
+                    'TargetFramework': tfm, 'TargetFrameworks': ';'.join(SMOKE_TFMS),
+                    'ManagePackageVersionsCentrally': 'true', 'DirectoryPackagesPropsPath': defining},
+                    'Items': {'PackageVersion': [{'Identity': 'Conditional', 'Version': tfm[3:]+'.1',
+                                                 'DefiningProjectFullPath': defining}],
+                              'PackageReference': [{'Identity': 'Conditional', 'DefiningProjectFullPath': str(self.snapshot/project)}],
+                              'GlobalPackageReference': [], 'ProjectReference': [{'FullPath': str(self.snapshot/self.reference)}]}})
+
+    def write(self, name, value):
+        (self.state/name).write_text(json.dumps(value))
+
+    def readback(self):
+        return product_smoke_readback(self.state, self.snapshot, self.expected, self.tracked, self.versions)
+
+    def mutate(self, name, change):
+        path = self.state/name
+        value = json.loads(path.read_text())
+        change(value)
+        self.write(name, value)
+
+    def test_conditional_versions_are_joined_by_tfm_and_reference_edges_retained(self):
+        result = self.readback()
+        self.assertTrue(result['semantic_preflight_complete'])
+        self.assertFalse(result['acceptance'])
+        self.assertEqual((356, 173), (result['selected_denominator'], result['product_denominator']))
+        record = result['projects'][0]['native']['records'][0]
+        self.assertEqual([self.reference], record['references'])
+        self.assertEqual(SMOKE_TFMS, tuple(dep['TargetFrameworks'][0] for dep in record['dependencies']))
+        self.mutate('evaluation-0-net8.0.json', lambda value: value['Items']['PackageVersion'][0].update(Version='9.0.1'))
+        result = self.readback()
+        self.assertFalse(result['semantic_preflight_complete'])
+        self.assertIn({'tfm': 'net8.0', 'kind': 'native_version_attribution', 'id': 'Conditional'}, result['projects'][0]['gaps'])
+
+    def test_missing_empty_failed_or_wrong_workspace_never_passes(self):
+        for change in (lambda value: value.update(Projects=[]),
+                       lambda value: value.update(IsSuccess=False),
+                       lambda value: value.update(Path='SECRET https://private')):
+            original = (self.state/'workspace-0.json').read_text()
+            self.mutate('workspace-0.json', change)
+            result = self.readback()
+            self.assertFalse(result['semantic_preflight_complete'])
+            self.assertNotIn('SECRET', json.dumps(result))
+            (self.state/'workspace-0.json').write_text(original)
+        (self.state/'evaluation-0-net9.0.json').unlink()
+        self.assertFalse(self.readback()['semantic_preflight_complete'])
+
+    def test_cpm_applicability_and_ambiguous_overrides_are_not_literal_matches(self):
+        for change in (lambda value: value['Properties'].update(ManagePackageVersionsCentrally='false'),
+                       lambda value: value['Properties'].update(TargetFramework='net7.0'),
+                       lambda value: value['Items']['PackageReference'][0].update(Version='8.0.1')):
+            original = (self.state/'evaluation-0-net8.0.json').read_text()
+            self.mutate('evaluation-0-net8.0.json', change)
+            self.assertFalse(self.readback()['semantic_preflight_complete'])
+            (self.state/'evaluation-0-net8.0.json').write_text(original)
+
+    def test_exact_pair_and_mode_admission_with_no_arbitrary_workspace(self):
+        self.assertEqual(list(map(lambda path: str(Path(path).parent), SMOKE_PROJECTS)), probe_workspaces('product-smoke'))
+        for index in (-1, 2, False, '0', '/SECRET'):
+            with self.assertRaisesRegex(ValueError, '^unknown_smoke_project$'):
+                smoke_project(index)
+        self.assertEqual(SMOKE_PROJECTS[1], smoke_project(1))
+        with self.assertRaisesRegex(ValueError, '^unknown_mode$'):
+            probe_workspaces('product-smoke /SECRET')
+
+    def test_closure_records_and_duplicate_reference_edges_are_not_silently_dropped(self):
+        self.mutate('workspace-0.json', lambda value: value['Projects'].append({
+            'FilePath': os.path.relpath(self.reference, Path(SMOKE_PROJECTS[0]).parent),
+            'IsSuccess': True, 'TargetFrameworks': ['net10.0'], 'ImportedFiles': [],
+            'ReferencedProjectPaths': [], 'Dependencies': []}))
+        result = self.readback()
+        self.assertEqual(self.reference, result['projects'][0]['native']['records'][1]['path'])
+        self.assertTrue(result['semantic_preflight_complete'])
+        self.mutate('workspace-0.json', lambda value: value['Projects'][0]['ReferencedProjectPaths'].append(
+            value['Projects'][0]['ReferencedProjectPaths'][0]))
+        result = self.readback()
+        self.assertFalse(result['semantic_preflight_complete'])
+        self.assertIn({'tfm': 'net8.0', 'kind': 'reference_edges'}, result['projects'][0]['gaps'])
+
+    def test_collapsed_native_conditional_version_remains_unresolved(self):
+        self.mutate('workspace-0.json', lambda value: value['Projects'][0].update(
+            Dependencies=value['Projects'][0]['Dependencies'][-1:]))
+        result = self.readback()
+        self.assertFalse(result['semantic_preflight_complete'])
+        self.assertTrue(smoke_can_continue(result['projects'][0]))
+
+    def test_unknown_reference_or_import_cannot_be_matched_or_continue(self):
+        for key in ('ReferencedProjectPaths', 'ImportedFiles'):
+            original = (self.state/'workspace-0.json').read_text()
+            self.mutate('workspace-0.json', lambda value: value['Projects'][0][key].append('../../../../SECRET.csproj'))
+            result = self.readback()
+            self.assertFalse(result['semantic_preflight_complete'])
+            self.assertNotEqual('observed', result['projects'][0]['native']['status'])
+            self.assertFalse(smoke_can_continue(result['projects'][0]))
+            self.assertNotIn('SECRET', json.dumps(result))
+            (self.state/'workspace-0.json').write_text(original)
+
+    def test_global_reference_and_evaluation_enum_are_preserved_without_raw_values(self):
+        for tfm in SMOKE_TFMS:
+            self.mutate(f'evaluation-0-{tfm}.json', lambda value: value['Items'].update(
+                GlobalPackageReference=[dict(value['Items']['PackageReference'][0], Version=value['Items']['PackageVersion'][0]['Version'])],
+                PackageReference=[]))
+        self.mutate('workspace-0.json', lambda value: [dep.update(EvaluationResult={
+            'ResultType': 'Success', 'OriginalValue': 'SECRET', 'EvaluatedValue': 'SECRET',
+            'ErrorMessage': 'https://private'}) for dep in value['Projects'][0]['Dependencies']])
+        result = self.readback()
+        self.assertTrue(result['semantic_preflight_complete'])
+        dependency = result['projects'][0]['native']['records'][0]['dependencies'][0]
+        self.assertEqual({'present': True, 'result_type': 'Success'}, dependency['EvaluationResult'])
+        self.assertNotIn('SECRET', json.dumps(result))
+        self.assertNotIn('https://', json.dumps(result))
+        self.mutate('workspace-0.json', lambda value: value['Projects'][0]['Dependencies'][0].update(
+            EvaluationResult={'ResultType': 'SECRET'}))
+        result = self.readback()
+        self.assertFalse(result['semantic_preflight_complete'])
+        self.assertFalse(smoke_can_continue(result['projects'][0]))
+        self.assertNotIn('SECRET', json.dumps(result))
 
 
 if __name__ == '__main__':

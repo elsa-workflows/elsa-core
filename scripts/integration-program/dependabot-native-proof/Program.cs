@@ -6,7 +6,11 @@ using NuGetUpdater.Core.Discover;
 using NuGetUpdater.Core.Run.ApiModel;
 
 // Temporary, credential-free #8636 diagnostic. Never invokes the updater or its proposal API.
-if (args.Length != 4 || args[3] is not ("enumerate" or "tooling" or "retained-probe"))
+if (args.Length is not (4 or 5) || args[3] is not ("enumerate" or "tooling" or "retained-probe" or "product-smoke"))
+{
+    return 1;
+}
+if ((args[3] == "product-smoke") != (args.Length == 5))
 {
     return 1;
 }
@@ -46,9 +50,34 @@ if (args[3] == "enumerate")
     return 0;
 }
 
-var workspaces = args[3] == "tooling" ? Directories(units[^1]) : new[] { "/extensions/src/Elsa.Testing.Extensions" };
+var workspaces = args[3] switch
+{
+    "tooling" => Directories(units[^1]),
+    "product-smoke" => new[] { "/extensions/src/email/Elsa.Email", "/studio/src/framework/Elsa.Studio.Core" },
+    _ => new[] { "/extensions/src/Elsa.Testing.Extensions" }
+};
+var first = 0;
+var count = workspaces.Length;
+if (args[3] == "product-smoke")
+{
+    // Internal fixed-pair index lets Python validate each result before starting the next.
+    if (args.Length != 5 || !int.TryParse(args[4], out first) || first is not (0 or 1))
+    {
+        return 1;
+    }
+    var unitIndex = first == 0 ? 2 : 3;
+    if (!Directories(units[unitIndex]).Contains(workspaces[first], StringComparer.Ordinal))
+    {
+        return 1;
+    }
+    count = first + 1;
+}
+else if (args.Length != 4)
+{
+    return 1;
+}
 var returned = true;
-for (var index = 0; index < workspaces.Length; index++)
+for (var index = first; index < count; index++)
 {
     var clock = Stopwatch.StartNew();
     await WriteAtomic($"workspace-{index}.call.json", new { Index = index, Workspace = workspaces[index], State = "started", ElapsedSeconds = 0.0 });

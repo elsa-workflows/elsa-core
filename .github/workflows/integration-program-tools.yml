@@ -29,6 +29,7 @@ on:
           - 'enumerate'
           - 'tooling'
           - 'retained-probe'
+          - 'product-smoke'
         default: 'off'
         required: true
 
