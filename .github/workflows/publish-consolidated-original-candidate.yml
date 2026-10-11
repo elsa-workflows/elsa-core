@@ -1,8 +1,6 @@
 name: Consolidated original candidate executor
 
 on:
-  push:
-    branches: ['codex/consolidated-original-executor']
   workflow_dispatch:
     inputs:
       operation:

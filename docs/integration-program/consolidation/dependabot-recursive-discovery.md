@@ -1,34 +1,55 @@
-# Dependabot solution discovery
+# Dependabot bounded discovery
 
-Task [#8636](https://github.com/elsa-workflows/elsa-core/issues/8636) replaces three
-overlapping NuGet scans with one coordinated job. The October 8 owner decision
-permits proposals spanning Core, Extensions and Studio, with affected-product CI.
-The job selects `/` (the actual `Elsa.sln`) and
-`/extensions/src/Elsa.Testing.Extensions` (the retained project outside that solution).
-No solution filter is used as an updater entry point.
+Task [#8636](https://github.com/elsa-workflows/elsa-core/issues/8636) keeps the
+October 8 owner decision permitting coordinated Core, Extensions and Studio
+proposals with affected-product CI. The candidate replaces the single root solution
+scan with five smaller scheduling units. It changes starting directories and cadence,
+without changing package versions, project files, registries or publishers.
 
-The root solution gives the native updater one workspace containing product source,
-tests, samples and shared build tooling. Removing the root product exclusions allows
-central imports and project references to participate in coordinated proposals.
-The retained project stays visible; selection does not establish successful evaluation.
+| Unit | Project-parent selectors | Projects | Daily time, Europe/Amsterdam |
+| --- | --- | ---: | --- |
+| Core production | `/core/src/**/*` | 114 | 06:00 |
+| Core tests | `/core/test/**/Elsa.*` | 68 | 09:00 |
+| Extensions | `/extensions/**/*` | 100 | 12:00 |
+| Studio | `/studio/**/*` | 73 | 15:00 |
+| Shared tooling | `/build`, `/.config` | 1 plus root tool manifest | 18:00 |
 
-The single job retains both Feedz registry declarations and the `FEEDZ_API_KEY`
-secret name, the `main` target, and the `deps` commit prefix. It uses the existing
-product cadence, daily at 06:00 Europe/Amsterdam, so Core changes from weekly to daily.
-The one-open-PR limit now applies to the coordinated job instead of separately to
-the two product jobs. The existing `Elsa*` group now also covers Studio and Core;
-other dependencies remain ungrouped. These are proposal settings, not publication
-or automatic-merge policy. No package version, project or publisher changes.
+The recursive selectors match directories containing direct project entry points,
+including deeper source, test and sample projects. No entry selects `/`, `Elsa.sln`
+or a solution filter. Core tests use Elsa-named project parents so the separately
+invoked `TlsSmoke` host stays outside coverage without relying on unverified exclusion
+preprocessing. A new solution project with a differently named parent fails the
+coverage gate and requires selector reconciliation. The other product selectors
+also cover differently named parents at arbitrary depth.
+
+Each unit retains both Feedz registry declarations, the `FEEDZ_API_KEY` secret name,
+the `main` target, the `deps` commit prefix and the `Elsa*` group. Other dependencies
+remain ungrouped. `open-pull-requests-limit: 1` applies to each job, so five version
+update PRs can be open across these units. This is an explicit scheduling tradeoff;
+staggering the jobs does not enforce a repository-wide cap or guarantee completion
+within any time budget. Grouping within a job does not create one aggregate proposal
+across jobs.
+
+The root agent keeps one integration lane for these proposals. Before merging, it
+reconciles versions and edits to shared central files, tool manifests and referenced
+projects, then requires all affected-product CI and ordinary review/merge gates.
+Core production, Core tests and build share the root central package file. Product
+src/test/sample projects share their product central files, and references can cross
+starting sets. Disjoint starting sets therefore do not promise disjoint writes or
+atomic version alignment. Ancestor tool discovery can also expose the root tool to
+multiple jobs; the explicit `/.config` entry preserves coverage without asserting
+exclusive ownership.
 
 ## Complete tracked inventory
 
-At baseline `3cc81c652906fc0e18a2ec0c6732308440f8c720`, `git ls-files` contains 379
-C# project manifests. `Elsa.sln` names 355; the additional directory selects one more.
+At baseline `6ba8e063f453efa22c40c79555a457aa202a496b`, `git ls-files` contains 379
+C# project manifests. `Elsa.sln` names 355; the batching union selects those plus the
+retained testing project.
 The regression reconciles every tracked project, rather than the former 149 source-only
 Extensions/Studio projects. All 173 Extensions/Studio projects are selected, including
 20 Extensions tests, three Extensions samples and one Studio sample.
 
-| Ownership | Tracked projects | In Elsa.sln | Additional directory | Unselected |
+| Ownership | Tracked projects | In Elsa.sln | Selected outside Elsa.sln | Unselected |
 | --- | ---: | ---: | ---: | ---: |
 | Core | 183 | 182 | 0 | 1 |
 | Extensions | 100 | 99 | 1 | 0 |
@@ -39,7 +60,7 @@ Extensions/Studio projects. All 173 Extensions/Studio projects are selected, inc
 
 The unselected Core project is `core/test/TlsSmoke/TlsSmoke.csproj`, an isolated TLS
 smoke host outside the product solution. It remains in the census, not claimed as
-covered by this job. The 22 integration-program projects below are separately invoked
+covered by these jobs. The 22 integration-program projects below are separately invoked
 proof tools, including deliberately version-pinned historical upgrade consumers.
 They retain their current solution/discovery disposition; this task does not change
 their package versions or silently treat them as product coverage. Any addition or
@@ -68,7 +89,12 @@ removal outside the solution requires reconciling this explicit list:
 - `scripts/integration-program/secrets-sqlserver-upgrade/core-3.8.4/CoreRunner.csproj`
 - `scripts/integration-program/secrets-sqlserver-upgrade/extensions-3.8.1/ExtensionsRunner.csproj`
 
-## Central package imports
+The 356-project census does not count `.config/dotnet-tools.json`. The shared-tooling
+unit explicitly selects `/.config`. At the baseline, the manifest contains
+`dotnet-ef` version `9.0.11`; the coverage gate checks the tool identity and a nonempty
+version without freezing future updates. It runs when this manifest changes.
+
+## Central package and build imports
 
 The coverage test walks from each of the 356 selected project manifests to its nearest
 `Directory.Packages.props`, then follows the literal import chain. Core and build reach
@@ -81,8 +107,14 @@ The four `extensions/{test,samples}` and `studio/{test,samples}` central-file st
 import their product's source central file. The regression validates all four,
 including the currently project-free Studio test directory. CI reruns the check for
 solution, project, central package, ancestor build policy, NuGet configuration and
-SDK-selection changes. Static XML/import reconciliation does not evaluate MSBuild
-conditions, restore packages or prove Feedz authentication.
+SDK-selection changes. The test also resolves each selected project's nearest build
+props/targets and
+central file, follows repository imports (including `GetPathOfFileAbove` and
+`MSBuildThisFileDirectory`), and checks literal project references against the selected
+union. Unknown dynamic path forms fail closed. All three source framework declarations
+remain `net8.0;net9.0;net10.0`; no framework is excluded by configuration. Static
+XML/import reconciliation does not evaluate conditions, SDK imports, per-framework
+central versions or restore/feed behavior.
 
 Run the inexpensive coverage and configuration gate with:
 
@@ -93,9 +125,14 @@ ruby scripts/integration-program/test_dependabot_discovery.rb
 The [Integration program tools workflow](../../../.github/workflows/integration-program-tools.yml)
 runs this check. Its Ruby step uses bundled Minitest, with a pinned 5.16.3 fallback.
 Synthetic regressions retain the terminal-glob failure and deeper-project case, and
-exercise solution expansion through source, test and sample entries plus the retained
-direct project. The matcher/solution model corroborates selection; it is not native
-updater execution or a replacement for the next gates.
+exercise deeper project parents, the excluded TLS host, solution expansion, explicit
+tool coverage and exact nonoverlapping batch membership against the root solution
+plus the retained project. The inventory fixture copies every tracked `.sln` and
+`.slnx`, so nested solutions expanding into another batch expose overlap. Native
+`.proj`, `.fsproj` and `.vbproj` entry points fail closed until their model is
+reconciled, with CI triggers covering those additions. A future differently named Core test fixture demonstrates
+the selector boundary. The matcher/solution model corroborates selection; it is not
+native updater execution or a replacement for the next gates.
 
 ## Native and hosted acceptance
 
@@ -124,11 +161,36 @@ NuGet jobs [38003504544](https://github.com/elsa-workflows/elsa-core/actions/run
 and [37883354734](https://github.com/elsa-workflows/elsa-core/actions/runs/37883354734)
 were cancelled. Their status does not supply the missing full-inventory acceptance.
 
-Before the corrected hosted attempt, use the pinned native discovery interface on
-an isolated snapshot of this exact solution and retained entry point. Reconcile its
-project records, evaluated central versions and import paths against the complete
-inventory above. Record failures/omissions explicitly; do not replace native evidence
-with this Ruby model or increase the old directory job's timeout.
+The later root-solution [managed run 38108457632](https://github.com/elsa-workflows/elsa-core/actions/runs/38108457632)
+on `6ba8e063f453efa22c40c79555a457aa202a496b` was cancelled after about 55 minutes.
+Its 175 project strategy starts cover shared build plus 114 Core production and 60
+Core test projects. They are starts, not completed project evaluation receipts; no
+Extensions or Studio strategy start was present before cancellation. Distributed
+progress supports reducing concentrated work, without establishing a batch runtime.
+
+The reported updater OCI tag is `d3bc6c74cbd106d79d24a728ab623a3eaa776087`.
+Its [PathHelper](https://github.com/dependabot/dependabot-core/blob/d3bc6c74cbd106d79d24a728ab623a3eaa776087/nuget/helpers/lib/NuGetUpdater/NuGetUpdater.Core/Utilities/PathHelper.cs)
+and [DiscoveryWorker](https://github.com/dependabot/dependabot-core/blob/d3bc6c74cbd106d79d24a728ab623a3eaa776087/nuget/helpers/lib/NuGetUpdater/NuGetUpdater.Core/Discover/DiscoveryWorker.cs)
+source files are byte-identical to those at the older diagnostic source pin. They
+confirm recursive directory matching and direct-file entry discovery. This source
+identity does not establish equivalence to the executed helper binary or its full
+source/submodule closure. The Ruby matcher is grounded in this source pin.
+
+The same source's [MSBuildHelper](https://github.com/dependabot/dependabot-core/blob/d3bc6c74cbd106d79d24a728ab623a3eaa776087/nuget/helpers/lib/NuGetUpdater/NuGetUpdater.Core/Utilities/MSBuildHelper.cs)
+searches ancestors for the tool manifest. [SDK project discovery](https://github.com/dependabot/dependabot-core/blob/d3bc6c74cbd106d79d24a728ab623a3eaa776087/nuget/helpers/lib/NuGetUpdater/NuGetUpdater.Core/Discover/SdkProjectDiscovery.cs)
+uses restore targets including `ResolveProjectReferences` and returns framework,
+reference and import records. Repository paths outside a starting directory can thus
+participate; static closure checks do not substitute for those evaluated records.
+Selecting project parents removes the root solution workspace and its synthetic
+`SolutionDir`; the static check found no `SolutionDir` usage in repository project,
+props or targets files. SDK behavior remains a native acceptance concern.
+
+Before a corrected hosted attempt, root independently reviews this configuration and
+coverage proof. Then use the reviewed pinned native discovery interface on an isolated
+snapshot of every actual scheduling unit. Reconcile evaluated project records, all
+frameworks, central versions and imports/references against the union above. Record
+failures and omissions explicitly, including duplicate shared-file/tool discovery.
+Do not replace native evidence with this Ruby model or increase the old timeout.
 
 `extensions/src/Elsa.Testing.Extensions/Elsa.Testing.Extensions.csproj` remains
 selected without retirement. Earlier native/hosted evaluation returned `Projects=[]`,
@@ -138,9 +200,11 @@ and its net7.0 target lacks some inherited central versions. The warnings contin
 rather than aborting discovery. Current native evaluation must report its disposition;
 this configuration repair does not fix its project or claim the warnings resolved.
 
-After the correction lands on default `main`, Task #8636 still needs a completed
-hosted discovery/evaluation result, central-version evidence for selected projects,
-an update or current-version result, and configured Feedz resolution where exercised.
+After the correction lands on default `main`, Task #8636 still needs terminal actual
+managed results for every unit, complete evaluated discovery and central-version
+evidence
+for the selected union, an update or current-version result, and configured Feedz
+resolution where exercised.
 Generated dependency PRs follow ordinary affected-product CI/review gates. A green
 Actions status, a generated proposal, or local selector coverage alone does not accept
 the Task. No new hosted run, credential test or publication is performed by this change.

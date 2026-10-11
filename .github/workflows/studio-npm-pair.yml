@@ -1,8 +1,6 @@
 name: Studio paired npm artifact proof
 
 on:
-  push:
-    branches: ['codex/elsa-integration-studio-npm-8679']
   workflow_dispatch:
     inputs:
       expected_head:

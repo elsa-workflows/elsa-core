@@ -24,7 +24,7 @@ on:
       - '.agents/skills/elsa-release/scripts/release_train.py'
       - '.agents/skills/elsa-release/tests/test_release_train.py'
   push:
-    branches: [main, 'codex/**']
+    branches: [main]
     paths:
       - '.github/workflows/packages.yml'
       - '.github/workflows/validate-packages-gates.yml'

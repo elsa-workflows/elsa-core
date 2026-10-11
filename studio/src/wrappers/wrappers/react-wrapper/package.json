@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/elsa-workflows/elsa-studio.git"
+    "url": "git+https://github.com/elsa-workflows/elsa-core.git",
+    "directory": "studio/src/wrappers/wrappers/react-wrapper"
   },
   "type": "module",
   "description": "React wrapper for Elsa Studio, exposing the Blazor WebAssembly workflow designer as React components.",

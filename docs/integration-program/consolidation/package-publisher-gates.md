@@ -14,7 +14,7 @@ Each option defaults to `false`. An authorized operator should set only the opti
 
 | Trigger and ref | Selected options | Package build | Feedz | NuGet.org | Coverage to Pages |
 |---|---|---|---|---|---|
-| Push to a configured branch | none (inputs exist only on dispatch) | yes; artifact uploaded | no | no | no |
+| Push to `main` or `release/*` | none (inputs exist only on dispatch) | yes; artifact uploaded | no | no | no |
 | Release published | none | yes, at the tag version; artifact uploaded | no | no | no |
 | Dispatch from any branch or release tag | none | yes; no artifact | no | no | no |
 | Dispatch from a branch | `publish_preview_feedz` | yes | preview version | no | no |

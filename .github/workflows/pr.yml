@@ -23,9 +23,14 @@ on:
       - 'patch/*'
       - 'develop/*'
       - 'release/*'
-      - 'codex/elsa-integration-program'
+      - codex/elsa-integration-program
     paths:
       - '**/*'
+      - '!docs/**'
+      - '!**/*.md'
+      - '!.agents/**'
+      - '!.claude/**'
+      - '!.specify/**'
 
 concurrency:
   group: ${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.run_id }}

@@ -6,9 +6,10 @@ existing `@elsa-workflows/elsa-studio-wasm` and
 It provides no npm upload, production version allocation, publisher authority,
 maintenance ref activation, archival or browser certification.
 
-The [workflow](../../.github/workflows/studio-npm-pair.yml) runs on the reviewed
-`codex/elsa-integration-studio-npm-8679` proof branch. After main registration,
-manual dispatch on main requires its exact reviewed SHA. The only accepted
+The [workflow](../../.github/workflows/studio-npm-pair.yml) first ran on the reviewed
+`codex/elsa-integration-studio-npm-8679` proof branch. That branch is gone, so its push
+trigger was removed and the workflow now runs only by manual dispatch on main, which
+requires its exact reviewed SHA. The only accepted
 version is `0.0.0-proof.RUN.ATTEMPT`, bound to the workflow run and attempt.
 Checkout credentials are disabled, permissions are read-only, and there is no
 OIDC, protected environment, registry token or publisher action. Source build

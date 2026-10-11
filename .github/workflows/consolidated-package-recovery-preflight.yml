@@ -1,8 +1,6 @@
 name: Consolidated package recovery preflight
 
 on:
-  push:
-    branches: ['codex/consolidated-recovery-preflight']
   workflow_dispatch:
   workflow_call:
     outputs:

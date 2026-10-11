@@ -3,7 +3,8 @@
   "version": "3.0.0-preview.1",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/elsa-workflows/elsa-studio.git"
+    "url": "git+https://github.com/elsa-workflows/elsa-core.git",
+    "directory": "studio/src/hosts/Elsa.Studio.Host.CustomElements/npm"
   },
   "description": "Provides Elsa Studio Blazor components wrapped as custom elements.",
   "scripts": {
