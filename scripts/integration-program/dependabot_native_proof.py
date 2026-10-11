@@ -10,8 +10,10 @@ import os
 from pathlib import Path, PurePosixPath
 import re
 import shutil
+import signal
 import subprocess
 import sys
+import time
 import xml.etree.ElementTree as ET
 
 TARGET = 'c0f470853bfa8fbf9c3266df75da48cb859f9799'
@@ -167,36 +169,164 @@ def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def diagnostic_complete(summary):
+    """Content checks must finish explicitly even if native work finished before deadline."""
+    return (not summary.get('preflight_error') and not summary.get('content_recheck')
+            and summary.get('reconciliation', {}).get('complete') is True
+            and summary.get('target_content_recheck') == 'checked'
+            and summary.get('upstream_content_recheck') == 'checked'
+            and summary.get('changed_target_files') == []
+            and summary.get('changed_upstream_files') == [])
+
+
+class DeadlineRunner:
+    """Run closed stages in isolated process groups under one shared elapsed budget."""
+    STAGES = {'proof_identity', 'target_identity', 'target_tree', 'archive', 'extract',
+              'source_init', 'source_remote', 'source_fetch', 'source_checkout',
+              'upstream_identity', 'upstream_tree', 'submodules', 'nuget_identity',
+              'dotnet_identity', 'sdk_identity', 'source_files', 'official_build',
+              'caller_build', 'native_discovery', 'inventory', 'snapshot_hashes', 'native_source_hashes', 'caller_hashes'}
+
+    def __init__(self, state, summary, budget_seconds=1800, grace_seconds=5,
+                 progress_seconds=15, reserve_seconds=60):
+        self.state, self.summary = state, summary
+        self.started = time.monotonic()
+        self.deadline = self.started + budget_seconds - reserve_seconds
+        self.grace, self.progress = grace_seconds, progress_seconds
+        self.process = None
+        summary['runner_budget_seconds'] = budget_seconds
+        self.save()
+
+    def save(self):
+        temporary = self.state/'summary.tmp'
+        temporary.write_text(json.dumps(self.summary, indent=2)+'\n')
+        temporary.replace(self.state/'summary.json')
+
+    def check(self):
+        if time.monotonic() >= self.deadline:
+            raise ValueError('overall_deadline')
+
+    def stop(self):
+        if self.process is None:
+            return
+        # Kill the group even if its original leader has exited and left descendants.
+        for sig in (signal.SIGTERM, signal.SIGKILL):
+            try:
+                os.killpg(self.process.pid, sig)
+            except ProcessLookupError:
+                pass
+            if sig == signal.SIGTERM:
+                try:
+                    self.process.wait(timeout=self.grace)
+                except subprocess.TimeoutExpired:
+                    pass
+        self.process.wait(timeout=self.grace)
+
+    def calculate(self, name, operation):
+        if name not in self.STAGES:
+            raise ValueError('unknown_stage')
+        row = {'name': name, 'state': 'running', 'elapsed_seconds': 0}
+        self.summary['stages'].append(row)
+        started = time.monotonic()
+        self.save()
+        print(json.dumps({'stage': name, 'state': 'running', 'elapsed_seconds': 0}), flush=True)
+        try:
+            self.check()
+            result = operation()
+            self.check()
+            row['state'] = 'passed'
+            return result
+        except BaseException:
+            row['state'] = 'interrupted'
+            raise
+        finally:
+            row['elapsed_seconds'] = round(time.monotonic()-started, 3)
+            self.save()
+            print(json.dumps({'stage': name, 'state': row['state'], 'elapsed_seconds': row['elapsed_seconds']}), flush=True)
+
+    def run(self, name, args, cwd=None, output=None):
+        if name not in self.STAGES:
+            raise ValueError('unknown_stage')
+        started = time.monotonic()
+        row = {'name': name, 'state': 'running', 'elapsed_seconds': 0}
+        self.summary['stages'].append(row)
+        def progress():
+            row['elapsed_seconds'] = round(time.monotonic()-started, 3)
+            self.save()
+            print(json.dumps({'stage': name, 'state': row['state'],
+                              'elapsed_seconds': row['elapsed_seconds']}), flush=True)
+        try:
+            if started >= self.deadline:
+                row['state'] = 'not_started_deadline'
+                raise ValueError('overall_deadline')
+            progress()
+            with (self.state/(name+'.log')).open('wb') as log:
+                with (output or self.state/(name+'.out')).open('wb') as stdout:
+                    self.process = subprocess.Popen(args, cwd=cwd or self.state, stdout=stdout,
+                                                    stderr=log, start_new_session=True)
+                    while True:
+                        remaining = self.deadline-time.monotonic()
+                        if remaining <= 0:
+                            row['state'] = 'timed_out'
+                            raise ValueError('overall_deadline')
+                        try:
+                            code = self.process.wait(timeout=min(self.progress, remaining))
+                            break
+                        except subprocess.TimeoutExpired:
+                            progress()
+            row.update(state='passed' if code == 0 else 'failed', exit_code=code)
+            if code:
+                raise ValueError('stage_failed')
+            capture = {'proof_identity', 'target_identity', 'target_tree', 'upstream_identity',
+                       'upstream_tree', 'nuget_identity', 'dotnet_identity', 'sdk_identity', 'source_files'}
+            return (self.state/(name+'.out')).read_bytes() if name in capture else b''
+        except BaseException:
+            if row['state'] == 'running':
+                row['state'] = 'interrupted'
+            self.stop()
+            if self.process is not None:
+                row['exit_code'] = self.process.returncode
+            raise
+        finally:
+            if self.process is not None:
+                row['process_group_cleanup'] = 'term_then_kill'
+            self.stop()
+            progress()
+            self.process = None
+
+
 def run_preflight(checkout, state):
     state.mkdir(parents=True, exist_ok=False)
     summary = {'target': TARGET, 'target_tree': TREE, 'upstream': UPSTREAM, 'submodules': SUBMODULES,
                'sdk_required': SDK, 'experiments': {'mode': 'default_diagnostic',
                'nuget_generate_simple_pr_body': False, 'nuget_find_root_directory': False},
                'feed_authentication': 'not_supplied_unknown', 'acceptance': False, 'stages': []}
-    def run(name, args, cwd=state):
-        with (state / (name + '.log')).open('wb') as log:
-            result = subprocess.run(args, cwd=cwd, stdout=log, stderr=subprocess.STDOUT, check=False)
-        summary['stages'].append({'name': name, 'exit_code': result.returncode})
-        if result.returncode:
-            raise ValueError('stage_failed')
+    runner = DeadlineRunner(state, summary)
+    run = runner.run
+    def hard_deadline(signum, frame):
+        summary.update(preflight_error='overall_deadline', diagnostic_complete=False)
+        runner.stop()
+        runner.save()
+        raise ValueError('overall_deadline')
+    previous_handler = signal.signal(signal.SIGALRM, hard_deadline)
+    signal.setitimer(signal.ITIMER_REAL, 1790)
     try:
-        summary['proof_head'] = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=checkout, text=True).strip()
-        actual_target = subprocess.check_output(['git', 'rev-parse', TARGET], cwd=checkout, text=True).strip()
+        summary['proof_head'] = run('proof_identity', ['git', 'rev-parse', 'HEAD'], checkout).decode().strip()
+        actual_target = run('target_identity', ['git', 'rev-parse', TARGET], checkout).decode().strip()
         if actual_target != TARGET:
             raise ValueError('target_tree_mismatch')
         summary['target_actual'] = actual_target
-        tree = subprocess.check_output(['git', 'rev-parse', TARGET + '^{tree}'], cwd=checkout, text=True).strip()
+        tree = run('target_tree', ['git', 'rev-parse', TARGET + '^{tree}'], checkout).decode().strip()
         if tree != TREE:
             raise ValueError('target_tree_mismatch')
         archive = state / 'target.tar'
-        with archive.open('wb') as output:
-            subprocess.run(['git', 'archive', '--format=tar', TARGET], cwd=checkout, stdout=output, check=True)
+        run('archive', ['git', 'archive', '--format=tar', TARGET], checkout, output=archive)
         summary['archive_sha256'] = digest(archive)
         snapshot = state / 'repository'
         snapshot.mkdir()
         run('extract', ['tar', '-xf', str(archive), '-C', str(snapshot)])
-        expected, versions, tracked = inventory(snapshot)
-        before = {p: digest(snapshot / p) for p in tracked}
+        expected, versions, tracked = runner.calculate('inventory', lambda: inventory(snapshot))
+        before = runner.calculate('snapshot_hashes', lambda: {p: digest(snapshot / p) for p in tracked})
         summary.update(tracked_projects=379, solution_projects=355, selected_projects=len(expected),
                        snapshot_content_sha256=hashlib.sha256(json.dumps(before, sort_keys=True).encode()).hexdigest())
         source = state / 'upstream'
@@ -204,25 +334,25 @@ def run_preflight(checkout, state):
         run('source_remote', ['git', 'remote', 'add', 'origin', 'https://github.com/dependabot/dependabot-core.git'], source)
         run('source_fetch', ['git', 'fetch', '--depth=1', 'origin', UPSTREAM], source)
         run('source_checkout', ['git', 'checkout', '--detach', UPSTREAM], source)
-        actual_upstream = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=source, text=True).strip()
+        actual_upstream = run('upstream_identity', ['git', 'rev-parse', 'HEAD'], source).decode().strip()
         if actual_upstream != UPSTREAM:
             raise ValueError('upstream_pin_mismatch')
         summary['upstream_actual'] = actual_upstream
-        summary['upstream_tree'] = subprocess.check_output(['git', 'rev-parse', 'HEAD^{tree}'], cwd=source, text=True).strip()
+        summary['upstream_tree'] = run('upstream_tree', ['git', 'rev-parse', 'HEAD^{tree}'], source).decode().strip()
         run('submodules', ['git', 'submodule', 'update', '--init', '--depth=1'], source)
         summary['submodules_actual'] = {}
         for path, pin in SUBMODULES.items():
-            actual = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=source/path, text=True).strip()
+            actual = run('nuget_identity' if 'NuGet.Client' in path else 'dotnet_identity', ['git', 'rev-parse', 'HEAD'], source/path).decode().strip()
             summary['submodules_actual'][path] = actual
             if actual != pin:
                 raise ValueError('submodule_pin_mismatch')
         native = source / 'nuget/helpers/lib/NuGetUpdater'
-        actual_sdk = subprocess.check_output(['dotnet', '--version'], cwd=native, text=True, stderr=subprocess.STDOUT).strip()
+        actual_sdk = run('sdk_identity', ['dotnet', '--version'], native).decode().strip()
         if actual_sdk != SDK:
             raise ValueError('sdk_pin_mismatch')
         summary['sdk_actual'] = actual_sdk
-        source_files = subprocess.check_output(['git', 'ls-files', '-z'], cwd=source, text=True).split('\0')
-        closure = {p: digest(source/p) for p in source_files if p.startswith('nuget/helpers/lib/NuGetUpdater/') and (source/p).is_file()}
+        source_files = run('source_files', ['git', 'ls-files', '-z'], source).decode().split('\0')
+        closure = runner.calculate('native_source_hashes', lambda: {p: digest(source/p) for p in source_files if p.startswith('nuget/helpers/lib/NuGetUpdater/') and (source/p).is_file()})
         summary['native_source_content_sha256'] = hashlib.sha256(json.dumps(closure, sort_keys=True).encode()).hexdigest()
         run('official_build', ['dotnet', 'build', 'NuGetUpdater.Cli/NuGetUpdater.Cli.csproj', '-c', 'Release', '--nologo'], native)
         caller = native / 'NativeDiscovery'
@@ -232,7 +362,7 @@ def run_preflight(checkout, state):
         shutil.copyfile(helper/'Program.cs', caller/'Program.cs')
         summary['caller_sha256'] = {p.name: digest(p) for p in helper.iterdir() if p.is_file()}
         run('caller_build', ['dotnet', 'build', str(caller/'NativeDiscovery.csproj'), '-c', 'Release', '-o', str(state/'caller'), '--nologo'], native)
-        binaries = {p.name: digest(p) for p in (state/'caller').iterdir() if p.is_file()}
+        binaries = runner.calculate('caller_hashes', lambda: {p.name: digest(p) for p in (state/'caller').iterdir() if p.is_file()})
         summary['caller_binary_content_sha256'] = hashlib.sha256(json.dumps(binaries, sort_keys=True).encode()).hexdigest()
         run('native_discovery', ['dotnet', str(state/'caller/NativeDiscovery.dll'), str(snapshot), str(state)], native)
     except Exception as error:
@@ -240,9 +370,14 @@ def run_preflight(checkout, state):
         summary['preflight_error'] = str(error) if isinstance(error, ValueError) and str(error) in {
             'static_inventory_changed', 'central_file_missing', 'unhandled_central_import',
             'central_import_escapes_snapshot', 'central_import_cycle', 'target_tree_mismatch',
-            'stage_failed', 'submodule_pin_mismatch', 'sdk_pin_mismatch', 'snapshot_symlink_escape', 'upstream_pin_mismatch'} else 'preflight_exception'
+            'overall_deadline', 'stage_failed', 'submodule_pin_mismatch', 'sdk_pin_mismatch', 'snapshot_symlink_escape', 'upstream_pin_mismatch'} else 'preflight_exception'
     finally:
+        deadline_readback = time.monotonic() >= runner.deadline
+        if deadline_readback:
+            summary['native_readback'] = 'not_checked_deadline'
         try:
+            if deadline_readback:
+                raise ValueError('readback_deadline')
             calls = json.loads((state/'calls.json').read_text())
             summary['native_calls_completed'] = calls if isinstance(calls, list) and len(calls) == 2 and all(type(v) is bool for v in calls) else None
         except (OSError, ValueError):
@@ -251,22 +386,38 @@ def run_preflight(checkout, state):
         for index in range(2):
             path = state / f'workspace-{index}.json'
             try:
+                if deadline_readback:
+                    raise ValueError('readback_deadline')
                 workspaces.append(json.loads(path.read_text()))
             except (OSError, ValueError):
                 workspaces.append({'Path': ['', 'extensions/src/Elsa.Testing.Extensions'][index],
-                                   'IsSuccess': False, 'Error': {'error-type': 'output_missing'}, 'Projects': []})
+                                   'IsSuccess': False, 'Error': None if deadline_readback else {'error-type': 'output_missing'}, 'Projects': []})
         if 'expected' in locals():
             summary['reconciliation'] = reconcile(expected, workspaces, versions, tracked)
-            changed = [p for p, sha in before.items() if not (snapshot/p).is_file() or digest(snapshot/p) != sha]
-            summary['changed_target_files'] = sorted(changed)
-        if 'closure' in locals():
+            if deadline_readback:
+                for project in summary['reconciliation']['projects']:
+                    project['status'] = 'not_read_deadline'
+                summary['reconciliation']['status_counts'] = {'not_read_deadline': len(expected)}
+            if 'before' in locals() and time.monotonic() < runner.deadline:
+                changed = [p for p, sha in before.items() if not (snapshot/p).is_file() or digest(snapshot/p) != sha]
+                summary['changed_target_files'] = sorted(changed)
+                summary['target_content_recheck'] = 'checked'
+            else:
+                summary['content_recheck'] = 'not_checked_deadline'
+        if 'closure' in locals() and time.monotonic() < runner.deadline:
             summary['changed_upstream_files'] = [p for p, sha in closure.items() if not (source/p).is_file() or digest(source/p) != sha]
-        summary['diagnostic_complete'] = (not summary.get('preflight_error')
-            and summary.get('reconciliation', {}).get('complete', False)
-            and not summary.get('changed_target_files') and not summary.get('changed_upstream_files'))
-        (state/'summary.json').write_text(json.dumps(summary, indent=2)+'\n')
+            summary['upstream_content_recheck'] = 'checked'
+        summary['diagnostic_complete'] = diagnostic_complete(summary)
+        runner.save()
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous_handler)
     return 0 if summary['diagnostic_complete'] else 1
 
 
 if __name__ == '__main__':
-    raise SystemExit(run_preflight(Path.cwd(), Path(os.environ['RUNNER_TEMP'])/'dependabot-native-proof-8636'))
+    try:
+        code = run_preflight(Path.cwd(), Path(os.environ['RUNNER_TEMP'])/'dependabot-native-proof-8636')
+    except Exception:
+        # A hard watchdog during finalization still leaves the last atomic safe receipt.
+        code = 1
+    raise SystemExit(code)

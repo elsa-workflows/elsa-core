@@ -28,7 +28,12 @@ This is a credential-free diagnostic. Both native experiments use false defaults
 no actual hosted job dictionary is supplied, so this does not establish hosted
 updater equivalence, authenticated Feedz resolution, proposals or package delivery.
 Cold official builds and 356 native evaluations can take minutes or more. The
-45-minute job limit bounds runner cost; a timeout is a failed/incomplete diagnostic,
+Python uses one 30-minute budget: subprocess work stops at 29 minutes, reserving
+cleanup/finalization time, with a hard watchdog at 29m50s. Each stage has atomic
+state/elapsed receipts and safe name/state/elapsed progress every 15 seconds.
+Owned subprocess groups receive TERM then KILL with a five-second grace; raw
+stdout/stderr stay ephemeral. The unchanged 45-minute job cap leaves upload time.
+A timeout is a failed/incomplete diagnostic,
 never successful coverage. No local build, restore or SDK download is needed to
 review this candidate.
 

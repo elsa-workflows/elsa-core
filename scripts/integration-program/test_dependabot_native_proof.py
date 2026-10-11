@@ -1,11 +1,55 @@
 """Cheap synthetic receipt tests; these do not execute the native updater."""
+import contextlib
+import io
 import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import time
 import unittest
 
-from dependabot_native_proof import reconcile
+from dependabot_native_proof import DeadlineRunner, diagnostic_complete, reconcile
 
 
 class NativeProofReceiptTests(unittest.TestCase):
+    def test_timeout_kills_descendant_and_retains_only_safe_progress(self):
+        with tempfile.TemporaryDirectory() as directory:
+            state = Path(directory)
+            parent = "import os,signal; from pathlib import Path; signal.signal(signal.SIGTERM, signal.SIG_IGN); pid=os.fork(); Path('descendant.pid').write_text(str(os.getpid())) if pid==0 else print('SECRET https://private',flush=True); signal.pause()"
+            summary = {'acceptance': False, 'stages': []}
+            output = io.StringIO()
+            started = time.monotonic()
+            with contextlib.redirect_stdout(output):
+                runner = DeadlineRunner(state, summary, budget_seconds=3, grace_seconds=0.1,
+                                        progress_seconds=0.1, reserve_seconds=0)
+                with self.assertRaisesRegex(ValueError, '^overall_deadline$'):
+                    runner.run('native_discovery', [sys.executable, '-c', parent])
+            self.assertLess(time.monotonic() - started, 8)
+            receipt = json.loads((state/'summary.json').read_text())
+            self.assertEqual('timed_out', receipt['stages'][0]['state'])
+            self.assertFalse(receipt['acceptance'])
+            self.assertNotIn('SECRET', output.getvalue())
+            self.assertNotIn('https://', json.dumps(receipt))
+            self.assertGreater(len(output.getvalue().splitlines()), 1)
+            pid = (state/'descendant.pid').read_text()
+            status = subprocess.run(['ps', '-o', 'stat=', '-p', pid], capture_output=True, text=True)
+            self.assertTrue(not status.stdout.strip() or status.stdout.strip().startswith('Z'))
+            with contextlib.redirect_stdout(output), self.assertRaisesRegex(ValueError, '^overall_deadline$'):
+                runner.run('caller_build', [sys.executable, '-c', 'raise SystemExit(0)'])
+            self.assertEqual('not_started_deadline', summary['stages'][-1]['state'])
+
+    def test_deadline_after_native_work_cannot_skip_content_rechecks(self):
+        summary = {'reconciliation': {'complete': True}, 'content_recheck': 'not_checked_deadline'}
+        self.assertFalse(diagnostic_complete(summary))
+        summary.update(target_content_recheck='checked', changed_target_files=[])
+        self.assertFalse(diagnostic_complete(summary))
+        summary.update(upstream_content_recheck='checked', changed_upstream_files=[])
+        self.assertFalse(diagnostic_complete(summary))
+        summary.pop('content_recheck')
+        self.assertTrue(diagnostic_complete(summary))
+
     def test_missing_and_failed_records_remain_visible_without_error_values(self):
         expected = {'core/A.csproj': 'Directory.Packages.props',
                     'extensions/src/Retained/Retained.csproj': 'extensions/src/Directory.Packages.props'}
