@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from apps_consumer_inventory import current_apps_projects, git_environment
+from templates_product_inventory import current_templates_projects, reject_templates_source_graph
 import refresh_canonical_dependency_graph as graph_reader
 from release_unit_manifest import DEFAULT_UNIT_ID, get_unit, load_manifest
 from product_layout import map_path
@@ -42,6 +43,7 @@ def partition_source_graph(
     solution_project_paths: set[str],
 ) -> tuple[dict[str, str], dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
     """Keep registered image consumers outside source-reference impact accounting."""
+    reject_templates_source_graph(set(project_names) | set(asset_documents) | solution_project_paths)
     independent = {project.relative_to(root).as_posix() for project in current_apps_projects(root)}
     if ({path for path in solution_project_paths if path.startswith("apps/")} != independent
             or {path for path in project_names if path.startswith("apps/")} != independent
@@ -51,6 +53,7 @@ def partition_source_graph(
         for framework in document["project"]["restore"]["frameworks"].values():
             for reference_path, reference in framework.get("projectReferences", {}).items():
                 target = graph_reader._relative_path(root, reference.get("projectPath", reference_path))
+                reject_templates_source_graph({target})
                 if (source in independent) != (target in independent):
                     raise ValueError(f"Source-reference edge crosses independent Apps boundary: {source} -> {target}")
     return (
@@ -195,6 +198,7 @@ def receipt(root: Path, manifest_path: Path, expected_head: str | None) -> dict[
     if expected_head and head != expected_head:
         raise ValueError(f"Expected source commit {expected_head}, checked out {head}")
     initial_status = git_output(root, "status", "--porcelain", "--untracked-files=normal")
+    templates_projects = current_templates_projects(root)
     restore = subprocess.run(
         ["dotnet", "restore", str(root / "Elsa.sln"), "-p:UseProjectReferences=true"],
         cwd=root, text=True, capture_output=True, check=False, timeout=1200,
@@ -254,6 +258,13 @@ def receipt(root: Path, manifest_path: Path, expected_head: str | None) -> dict[
             "projectFileSha256": {path: sha256(root / path) for path in independent_assets},
             "projectAssetsSha256": {path: sha256((root / path).parent / "obj/project.assets.json")
                                     for path in independent_assets},
+        },
+        "independentTemplatesProduct": {
+            "disposition": "Separate product solution; independent template pack and test, starter/legacy manifests are build data. No Templates restore or smoke coverage claimed by this source graph.",
+            "validationOwner": ".github/workflows/templates-source-validation.yml",
+            "inventorySha256": sha256(root / "scripts/solution/solution-groups.json"),
+            "filterSha256": sha256(root / "Elsa.Templates.slnf"),
+            "buildProjects": [project.relative_to(root).as_posix() for project in templates_projects],
         },
         "restoredTestProjectCount": len(tests),
         "restore": {

@@ -5,8 +5,8 @@ Guidance for AI coding agents working in this repository.
 ## Project Overview
 
 - Elsa Core is a .NET solution centered on `Elsa.sln`.
-- Products live under `core/`, `extensions/`, `studio/`, and `apps/`. Apps contains official released-package application hosts and Python container-policy tests under `apps/scripts/tests/`; its contributor entrypoint is [Apps](apps/README.md).
-- The root solution, solution filters, build automation, scripts and central policy are shared.
+- Products live under `core/`, `extensions/`, `studio/`, `apps/`, and `templates/`. Apps contains official released-package application hosts and Python container-policy tests under `apps/scripts/tests/`; its contributor entrypoint is [Apps](apps/README.md).
+- The root solution, solution filters, build automation, scripts and central policy are shared. Templates keeps its independent product solution; root `Elsa.sln` includes navigation items only for that product.
 - Read the product documentation entrypoints: [Core](core/docs/README.md), [Extensions](extensions/docs/README.md), [Studio](studio/docs/README.md), and [Apps](apps/docs/README.md).
 - Build automation is implemented with NUKE in `build/Build.cs` and exposed through `build.sh`, `build.ps1`, and `build.cmd`.
 
@@ -33,7 +33,8 @@ Guidance for AI coding agents working in this repository.
 - Run NUKE test target: `./build.sh Test`
 - Build with dotnet directly: `dotnet build Elsa.sln`
 - Focus a product build with `dotnet build Elsa.Core.slnf`, `dotnet build Elsa.Extensions.slnf`, `dotnet build Elsa.Studio.slnf`, or `dotnet build Elsa.Apps.slnf`; see product docs for selection boundaries.
-- Run all tests directly: `dotnet test Elsa.sln`
+- Build Templates separately: `dotnet build Elsa.Templates.slnf` or `dotnet build templates/Elsa.Templates.slnx`; test with `dotnet test templates/test/Elsa.Templates.Tests/Elsa.Templates.Tests.csproj`. Read [Templates guidance](templates/AGENTS.md) before changing that product.
+- Run shared-solution tests directly: `dotnet test Elsa.sln`
 - Run a specific test project: `dotnet test core/test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj`
 - Run ElsaScript DSL integration tests: `./run-dsl-tests.sh`
 
@@ -54,6 +55,7 @@ Prefer targeted `dotnet test <project>` commands while iterating, then run a bro
 - `extensions/src/`, `extensions/test/`, `extensions/docs/`, `extensions/samples/`: Extensions-owned code, tests, documentation and samples.
 - `studio/src/`, `studio/test/`, `studio/docs/`, `studio/samples/`: Studio-owned code, tests, documentation and samples. Read [Studio contributor guidance](studio/src/AGENTS.md) for Studio modules, hosts, frameworks and tests.
 - `apps/src/`, `apps/scripts/`, `apps/docs/`: official net10 application/image hosts, container policy tests and source-import guidance. Read [Apps agent guidance](apps/AGENTS.md). Apps consumes released packages and does not add Core NuGet release units.
+- `templates/src/`, `templates/test/`, `templates/docs/`: independent Elsa 3 .NET project-template pack, smoke tests and contributor guidance. Embedded starter project files are data; keep all Templates projects outside root `Elsa.sln` packing.
 - `core/docs/specs/` and `studio/docs/specs/`: product feature plans and specifications.
 - `docs/adr/`: shared architecture decisions; `docs/integration-program/`: retained consolidation and proof records.
 - `build/`, `scripts/`, `docker/`, root solution/filter files and central `Directory.*` files: shared tooling and policy.

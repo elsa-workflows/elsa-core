@@ -7,8 +7,8 @@
         <Description>.NET templates for creating Elsa Server and Elsa Studio solutions.</Description>
         <Authors>Elsa Workflows</Authors>
         <Company>Elsa Workflows</Company>
-        <PackageProjectUrl>https://github.com/elsa-workflows/elsa-templates</PackageProjectUrl>
-        <RepositoryUrl>https://github.com/elsa-workflows/elsa-templates</RepositoryUrl>
+        <PackageProjectUrl>https://github.com/elsa-workflows/elsa-core</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>
         <RepositoryType>git</RepositoryType>
         <RepositoryCommit Condition="'$(RepositoryCommit)' == '' and '$(SourceRevisionId)' != ''">$(SourceRevisionId)</RepositoryCommit>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>

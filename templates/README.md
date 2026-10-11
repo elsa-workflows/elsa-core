@@ -2,13 +2,17 @@
 
 `elsa-templates` provides .NET solution templates for getting started with Elsa quickly.
 
+## Source development
+
+This product now lives under `templates/` in Elsa Core. See the [contributor guide](docs/README.md) for root/product build commands and the [source import record](../docs/integration-program/templates-source-import.md) for retained history and contribution attribution. The pack remains independently versioned. Nested `.github` publishing metadata is retained inert; publisher and full release work remain separately governed by [#8741](https://github.com/elsa-workflows/elsa-core/issues/8741) and [#8725](https://github.com/elsa-workflows/elsa-core/issues/8725).
+
 ## Version Policy
 
-The `main` branch targets the latest stable Elsa release. The current stable release is Elsa `3.9.0`.
+This Templates product targets released Elsa `3.9.0` independently of Core source versions. The original donor `main` version policy is retained below as historical release guidance.
 
 Preview and release-candidate work uses a matching `release/<base-version>` branch, for example `release/3.9.0`, and produces versions such as `3.9.0-preview.1234`.
 
-The package workflow publishes stable packages only for a published release whose tag is reachable from `main`. Prerelease and release-candidate tags must be reachable from their matching `release/<base-version>` branch and publish to the preview feed and NuGet. Pushes to `main` produce preview packages on the preview feed. Keep preview work on its matching version branch and do not replace the latest stable package with a prerelease build.
+The retained donor package workflow describes stable package publication only for a published release whose tag is reachable from `main`. Prerelease and release-candidate tags must be reachable from their matching `release/<base-version>` branch and publish to the preview feed and NuGet. Pushes to `main` produce preview packages on the preview feed. Keep preview work on its matching version branch and do not replace the latest stable package with a prerelease build.
 
 ## Available Templates
 
@@ -49,8 +53,8 @@ To make the preview feed available for package restore as well, add it to your `
 ## Install From Source
 
 ```bash
-dotnet pack src/Elsa.Templates/Elsa.Templates.csproj
-dotnet new install artifacts/package/release/Elsa.Templates.*.nupkg
+dotnet pack templates/src/Elsa.Templates/Elsa.Templates.csproj -c Release
+dotnet new install templates/artifacts/package/release/Elsa.Templates.3.9.0.nupkg
 ```
 
 ## Usage
@@ -117,7 +121,7 @@ Production has no built-in credentials. Choose one identity source for each depl
 The smoke tests pack the template package, install it into an isolated template hive, generate a representative matrix covering the supported options, and build the generated outputs.
 
 ```bash
-dotnet test test/Elsa.Templates.Tests/Elsa.Templates.Tests.csproj
+dotnet test templates/test/Elsa.Templates.Tests/Elsa.Templates.Tests.csproj
 ```
 
 ## Development

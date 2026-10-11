@@ -107,7 +107,7 @@ public class TemplateSmokeTests : IClassFixture<TemplatePackageFixture>
         Directory.CreateDirectory(outputPath);
         Directory.CreateDirectory(hivePath);
 
-        await DotNet.RunAsync("new", "install", _fixture.PackagePath, "--debug:custom-hive", hivePath);
+        await DotNet.RunAsync(["new", "install", _fixture.PackagePath, "--debug:custom-hive", hivePath], workspace.Path);
 
         var newArguments = new List<string>
         {
@@ -121,7 +121,7 @@ public class TemplateSmokeTests : IClassFixture<TemplatePackageFixture>
         newArguments.AddRange(templateOptions);
         newArguments.AddRange(["--debug:custom-hive", hivePath]);
 
-        await DotNet.RunAsync(newArguments.ToArray());
+        await DotNet.RunAsync(newArguments.ToArray(), workspace.Path);
         AssertGeneratedAppsettingsAreValid(outputPath);
         AssertHealthChecksUseDedicatedEndpoint(outputPath);
         AssertPackageVersions(outputPath, TemplatePackageFixture.ElsaVersion, TemplatePackageFixture.CShellsVersion);
@@ -130,12 +130,18 @@ public class TemplateSmokeTests : IClassFixture<TemplatePackageFixture>
             AssertStudioAuthenticationComposition(outputPath, !templateOptions.Contains("elsa-login", StringComparer.OrdinalIgnoreCase));
             AssertHostPageRoutes(outputPath);
         }
+        if (templateName == "elsa-combined")
+        {
+            var program = File.ReadAllText(Path.Combine(outputPath, "src", $"{solutionName}.Host", "Program.cs"));
+            Assert.Contains("options.RootComponents.RegisterCustomElsaStudioElements();", program, StringComparison.Ordinal);
+            Assert.Contains("options.RootComponents.MaxJSRootComponents = 1000;", program, StringComparison.Ordinal);
+        }
         if (templateName is "elsa-server" or "elsa-combined")
         {
             AssertDashboardComposition(outputPath, templateOptions.Contains("shell", StringComparer.OrdinalIgnoreCase));
             AssertDeploymentOwnedIdentityConfiguration(outputPath);
         }
-        await DotNet.RunAsync("build", Path.Combine(outputPath, $"{solutionName}.slnx"));
+        await DotNet.RunAsync(["build", Path.Combine(outputPath, $"{solutionName}.slnx")], workspace.Path);
     }
 
     private static void AssertStudioAuthenticationComposition(string outputPath, bool expectsSharedAuthenticationUi)
@@ -264,7 +270,7 @@ public sealed class TemplatePackageFixture : IAsyncLifetime
         var projectPath = Path.Combine(repositoryRoot, "src", "Elsa.Templates", "Elsa.Templates.csproj");
 
         var expectedCommit = RepositoryPaths.Commit;
-        await DotNet.RunAsync(
+        await DotNet.RunAsync([
             "pack",
             projectPath,
             "-c",
@@ -272,13 +278,11 @@ public sealed class TemplatePackageFixture : IAsyncLifetime
             "/p:Version=" + ElsaVersion,
             "/p:PackageVersion=" + ElsaVersion,
             "/p:RepositoryCommit=" + expectedCommit,
-            "/p:ContinuousIntegrationBuild=true");
+            "/p:ContinuousIntegrationBuild=true"]);
 
         var packageDirectory = Path.Combine(repositoryRoot, "artifacts", "package", "release");
-        PackagePath = Directory
-            .GetFiles(packageDirectory, "Elsa.Templates.*.nupkg")
-            .OrderByDescending(File.GetLastWriteTimeUtc)
-            .First();
+        PackagePath = Path.Combine(packageDirectory, $"Elsa.Templates.{ElsaVersion}.nupkg");
+        Assert.True(File.Exists(PackagePath), $"Expected freshly packed template package: {PackagePath}");
 
         Assert.Equal($"Elsa.Templates.{ElsaVersion}.nupkg", Path.GetFileName(PackagePath));
         AssertRepositoryCommit(PackagePath, expectedCommit);
@@ -298,7 +302,7 @@ public sealed class TemplatePackageFixture : IAsyncLifetime
             .SingleOrDefault();
 
         Assert.NotNull(repository);
-        Assert.Equal("https://github.com/elsa-workflows/elsa-templates", (string?)repository!.Attribute("url"));
+        Assert.Equal("https://github.com/elsa-workflows/elsa-core", (string?)repository!.Attribute("url"));
         Assert.Equal(expectedCommit, (string?)repository.Attribute("commit"));
     }
 
@@ -337,6 +341,10 @@ public static class RepositoryPaths
             RedirectStandardOutput = true,
             RedirectStandardError = true
         };
+        foreach (var key in startInfo.Environment.Keys.Where(key => key.StartsWith("GIT_", StringComparison.Ordinal)).ToArray())
+        {
+            startInfo.Environment.Remove(key);
+        }
         startInfo.ArgumentList.Add("rev-parse");
         startInfo.ArgumentList.Add("HEAD");
 
@@ -355,12 +363,12 @@ public static class DotNet
 {
     private static readonly TimeSpan Timeout = TimeSpan.FromMinutes(5);
 
-    public static async Task RunAsync(params string[] arguments)
+    public static async Task RunAsync(string[] arguments, string? workingDirectory = null)
     {
         var startInfo = new ProcessStartInfo
         {
             FileName = ResolveDotNetPath(),
-            WorkingDirectory = RepositoryPaths.Root,
+            WorkingDirectory = workingDirectory ?? RepositoryPaths.Root,
             RedirectStandardOutput = true,
             RedirectStandardError = true
         };
@@ -409,8 +417,13 @@ public sealed class TempWorkspace : IAsyncDisposable
 
     public static TempWorkspace Create()
     {
-        var parentDirectory = Directory.GetParent(RepositoryPaths.Root)?.FullName ?? RepositoryPaths.Root;
-        var path = System.IO.Path.Combine(parentDirectory, ".elsa-template-tests", $"elsa-template-tests-{Guid.NewGuid():N}");
+        var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"elsa-template-tests-{Guid.NewGuid():N}");
+        var checkout = System.IO.Path.GetFullPath(System.IO.Path.Combine(RepositoryPaths.Root, ".."));
+        var relative = System.IO.Path.GetRelativePath(checkout, path);
+        if (relative != ".." && !relative.StartsWith(".." + System.IO.Path.DirectorySeparatorChar, StringComparison.Ordinal) && !System.IO.Path.IsPathRooted(relative))
+        {
+            throw new InvalidOperationException("Template smoke workspaces must be outside the consolidated checkout.");
+        }
         Directory.CreateDirectory(path);
         return new(path);
     }
