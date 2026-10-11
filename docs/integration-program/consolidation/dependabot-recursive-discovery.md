@@ -99,7 +99,15 @@ updater execution or a replacement for the next gates.
 
 ## Native and hosted acceptance
 
-The failed hosted runs used updater `9c06d60057ba9e7e79210e6618f932a28cf6a158`.
+The historical failed-discovery receipts are Extensions
+[run 37467995784](https://github.com/elsa-workflows/elsa-core/actions/runs/37467995784),
+which recorded NU1008/NU1010 for the retained testing project, and Studio
+[run 37467996957](https://github.com/elsa-workflows/elsa-core/actions/runs/37467996957),
+which discovered no product projects. Green job status with empty project discovery
+was not successful product evaluation. These receipts differ from the later cancelled
+jobs below and do not establish native or hosted acceptance.
+
+The failed hosted discovery attempts used updater `9c06d60057ba9e7e79210e6618f932a28cf6a158`.
 Its [PathHelper](https://github.com/dependabot/dependabot-core/blob/9c06d60057ba9e7e79210e6618f932a28cf6a158/nuget/helpers/lib/NuGetUpdater/NuGetUpdater.Core/Utilities/PathHelper.cs#L266)
 expands job directories; [DiscoveryWorker.FindEntryPoints](https://github.com/dependabot/dependabot-core/blob/9c06d60057ba9e7e79210e6618f932a28cf6a158/nuget/helpers/lib/NuGetUpdater/NuGetUpdater.Core/Discover/DiscoveryWorker.cs#L262)
 scans direct files and expands supported solutions, not `.slnf` files. Terminal `/**`

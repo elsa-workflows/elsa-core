@@ -132,8 +132,8 @@
         "active_mode": "100644",
         "representation": "expanded",
         "active_update": {
-          "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8640",
-          "reason": "Corrected recursive product selectors to /src/extensions/**/Elsa.* and /src/studio/**/Elsa.* after hosted discovery missed nested projects. Tracked-project selector coverage is verified locally; hosted project evaluation, central versions and feed acceptance remain pending under Task #8636. Task #8636 subsequently replaces the three directory scans with one coordinated solution job plus the retained testing project. This candidate blob is pinned for review; the active_update PR URL remains the historical #8640 correction until the new corrective PR is recorded. Native and hosted inventory, central-version and feed acceptance remain pending."
+          "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8719",
+          "reason": "PR #8719 replaces the three directory scans with one coordinated root solution job plus the retained testing project under Task #8636. The earlier PR #8640 corrected recursive product selectors to /src/extensions/**/Elsa.* and /src/studio/**/Elsa.* after hosted discovery missed nested projects; that correction remains historical evidence. The active configuration blob is pinned to the current candidate for review. Static tracked-project and central-import reconciliation is verified locally; native and hosted inventory, evaluated central versions and configured feed acceptance remain pending. This record does not claim PR approval, a merged correction or Task acceptance."
         }
       }
     },
@@ -2201,8 +2201,8 @@
         "active_mode": "100644",
         "representation": "expanded",
         "active_update": {
-          "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8640",
-          "reason": "Corrected recursive product selectors to /src/extensions/**/Elsa.* and /src/studio/**/Elsa.* after hosted discovery missed nested projects. Tracked-project selector coverage is verified locally; hosted project evaluation, central versions and feed acceptance remain pending under Task #8636. Task #8636 subsequently replaces the three directory scans with one coordinated solution job plus the retained testing project. This candidate blob is pinned for review; the active_update PR URL remains the historical #8640 correction until the new corrective PR is recorded. Native and hosted inventory, central-version and feed acceptance remain pending."
+          "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8719",
+          "reason": "PR #8719 replaces the three directory scans with one coordinated root solution job plus the retained testing project under Task #8636. The earlier PR #8640 corrected recursive product selectors to /src/extensions/**/Elsa.* and /src/studio/**/Elsa.* after hosted discovery missed nested projects; that correction remains historical evidence. The active configuration blob is pinned to the current candidate for review. Static tracked-project and central-import reconciliation is verified locally; native and hosted inventory, evaluated central versions and configured feed acceptance remain pending. This record does not claim PR approval, a merged correction or Task acceptance."
         }
       }
     },
