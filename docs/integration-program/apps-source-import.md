@@ -18,7 +18,7 @@ PR #9 remains an open source proposal, not an accepted merge. Its original chang
 
 The [Apps guide](../../apps/README.md) and [agent instructions](../../apps/AGENTS.md) describe nine net10.0 projects and six existing image profiles. Existing `core/src/apps/` hosts/samples remain separate. App/project/image names, ports, runtime configuration, authentication wiring, backend URL handling, static assets, storage defaults and original Dockerfiles remain unchanged.
 
-Apps retains its own `Directory.Build.props`, `src/Directory.Build.props`, `Directory.Packages.props` and `NuGet.Config`. Core/Studio/Extensions packages remain released 3.9.0 consumers with independently configurable family versions. A local `Directory.Build.targets` prevents inherited consolidated source/proof targets and sets `UseProjectReferences=false`. Only the original internal Apps project references remain.
+Apps retains its own `Directory.Build.props`, `src/Directory.Build.props`, `Directory.Packages.props` and `NuGet.Config`. Core/Studio/Extensions packages remain released 3.9.0 consumers with independently configurable family versions. A local `Directory.Build.targets` prevents inherited consolidated source/proof targets and sets `UseProjectReferences=false`. Only the original internal Apps project references remain. `RestoreConfigFile` explicitly selects the preserved `apps/NuGet.Config` for every Apps project, including root solution/filter restore. This prevents parent source-package mappings from redirecting released Studio dependencies to an incompatible feed; root feeds and mappings remain unchanged.
 
 These image hosts and their private shared libraries set `IsPackable=false`, so adding them to root `Elsa.sln` does not add Core NuGet release units. Existing package IDs, central dependency versions and release-unit inventory are untouched. The root solution includes all nine projects with their original GUIDs; generated `Elsa.Apps.slnf` selects only imported Apps and its internal reference closure. The mapped `apps/ElsaApps.sln` remains usable, with stale links to deleted source workflows replaced by the retained current workflow link. Root NUKE cleanup recognizes the added source location.
 
@@ -31,6 +31,8 @@ docker build -f apps/src/Elsa.Server/Dockerfile -t elsa-local-server apps
 The local-only `verify-local --source-repository elsa-workflows/elsa-core` option verifies honest Core provenance for images built from a Core commit. Its default remains `elsa-workflows/elsa-apps`; publisher label and finalization defaults are unchanged. The focused regression exercises this CLI path while retaining the default contract.
 
 ## Nonpublishing validation and acceptance
+
+The five source-package Dependabot batches explicitly account for all nine Apps projects as independent consumers outside their update inventory; no updater is activated. Current imported-source impact selection restores Apps but records them separately from the source-reference graph. It rejects unknown/missing Apps members and project-reference edges crossing the consumer boundary, and retains fail-closed rejection of unmapped Elsa packages for the remaining source graph. The source-impact receipt does not claim Apps runtime/test coverage; the Apps source workflow owns that proof.
 
 The [Apps source workflow](../../.github/workflows/apps-source-validation.yml) checks the exact candidate head, source ancestry/assets, effective MSBuild policy, Python helpers, solution groups and product builds. Its six-profile native Ubuntu AMD64 image matrix uses only local image load, `push: false` and Core-source/package provenance labels. It has contents-read permission, no registry login, secrets, deployment environment or publishing input. Docker build record/summary uploads are disabled; only allowlisted structured smoke JSON is retained, without credentials or raw build logs.
 
@@ -47,10 +49,12 @@ Run focused checks from root:
 
 ```sh
 python3 -m unittest discover -s scripts/integration-program -p 'test_verify_apps_source_import.py' -v
-python3 scripts/integration-program/verify_apps_source_import.py --evaluate
+dotnet msbuild Elsa.Apps.slnf -t:GenerateRestoreGraphFile -p:RestoreGraphOutputPath=/tmp/apps-root-restore-graph.json
+python3 scripts/integration-program/verify_apps_source_import.py --evaluate --restore-graph /tmp/apps-root-restore-graph.json
 python3 -m unittest discover -s scripts/solution -p 'test_*.py'
 python3 scripts/solution/solution_groups.py --check
 (cd apps && python3 -m unittest discover -s scripts/tests -v)
+dotnet restore Elsa.Apps.slnf --force-evaluate
 dotnet restore apps/ElsaApps.sln
 dotnet build apps/ElsaApps.sln -c Release --no-restore
 dotnet build Elsa.Apps.slnf -c Release --no-restore
@@ -61,6 +65,26 @@ The source verifier rejects corrupted mappings and mapped symlinks under both no
 SQLite/default is the verified smoke configuration. Existing source builds report `NU1608`: Pomelo EF Core 9 requires EF Relational 9 but 10.0.9 resolves. MySQL remains unverified, with no support-policy or dependency change. Existing ApplicationInsights instrumentation-key obsolescence warnings also remain. OIDC, external databases, ARM64 manifests, registry aliases and publication are not certified by this AMD64 source gate; skipped/unexercised cases are not passing evidence.
 
 Final acceptance additionally requires fresh author-independent Elsa 3 Code Review `APPROVE + HIGH @ <full head>`, current-head Greptile 5/5 under repository policy, advisory disposition, applicable CI, independent source-tree/merge-parent readback and a final source freshness check. The lead retains integration and public-write authority.
+
+## Maintaining Apps after the source cutoff
+
+The first import commit, original source refs/tree, asset modes/blobs and original
+89-file mapping are historical evidence. Never rewrite them or append new Core-authored
+files as though they came from the original source. For an intentional edit to an
+original mapped file, add its path to `adaptedSourceFiles` in the reviewed change if
+needed, retain its original blob/mode entry, explain the adaptation in the PR, and run
+the affected product and source gates. This exemption records a reviewed content delta;
+it does not waive functional tests. New non-project files belong to normal Core review
+and product validation and do not expand the original import inventory.
+
+The current source-import verifier, Dependabot disposition and source-impact partition
+are deliberately bounded to the original nine project manifests. A tenth project cannot
+be accepted by metadata alone under these checks. Its owning change must first introduce
+or update a separate **current consumer inventory** and reconcile the filter, verifier,
+discovery/impact checks and product CI without changing the immutable original mapping.
+Until that reviewed tooling change lands, project additions fail closed. Changing current
+package versions likewise requires updating the effective-policy expectations and normal
+product tests; it does not alter original source evidence or activate an updater/publisher.
 
 ## Deferred operational ownership
 

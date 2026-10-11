@@ -18,7 +18,16 @@ def git(*args: str) -> str:
     return subprocess.check_output(["git", *args], cwd=ROOT, text=True).strip()
 
 
-def verify(evaluate: bool = False) -> None:
+def verify_restore_graph(path: Path, projects: list[Path]) -> None:
+    graph = json.loads(path.read_text())
+    restored = graph["projects"]
+    require({Path(project).resolve() for project in restored} == set(projects), "Root restore graph must contain exactly the nine Apps projects")
+    for project, document in restored.items():
+        configs = [Path(config).resolve() for config in document["restore"]["configFilePaths"]]
+        require(configs == [ROOT / "apps/NuGet.Config"], f"Root restore must use only Apps NuGet.Config: {project}")
+
+
+def verify(evaluate: bool = False, restore_graph: Path | None = None) -> None:
     manifest = json.loads((ROOT / "docs/integration-program/apps-source-import.json").read_text())
     imported = manifest["importCommit"]
     require(git('show', '-s', '--format=%P', imported).split() == manifest['importParents'], 'Import parents changed')
@@ -61,11 +70,13 @@ def verify(evaluate: bool = False) -> None:
     selected = json.loads((ROOT / "Elsa.Apps.slnf").read_text())["solution"]["projects"]
     require(len(projects) == 9, 'Apps project count changed')
     require(sorted(selected) == sorted((str(project.relative_to(ROOT)) for project in projects)), 'Apps filter boundary changed')
+    if restore_graph:
+        verify_restore_graph(restore_graph, projects)
     if evaluate:
         for project in projects:
             result = subprocess.check_output([
                 "dotnet", "msbuild", str(project), "-nologo",
-                "-getProperty:TargetFramework,UseProjectReferences,IsPackable,ManagePackageVersionsCentrally,DirectoryPackagesPropsPath,ElsaVersion,ElsaStudioVersion,ElsaExtensionsVersion",
+                "-getProperty:TargetFramework,UseProjectReferences,IsPackable,RestoreConfigFile,ManagePackageVersionsCentrally,DirectoryPackagesPropsPath,ElsaVersion,ElsaStudioVersion,ElsaExtensionsVersion",
                 "-getItem:ProjectReference,PackageReference",
             ], cwd=ROOT, text=True)
             evaluation = json.loads(result)
@@ -73,6 +84,7 @@ def verify(evaluate: bool = False) -> None:
             require(properties['TargetFramework'] == 'net10.0', project)
             require(properties['UseProjectReferences'].lower() == 'false', project)
             require(properties['IsPackable'].lower() == 'false', project)
+            require(Path(properties['RestoreConfigFile']).resolve() == ROOT / 'apps/NuGet.Config', project)
             require(properties['ManagePackageVersionsCentrally'].lower() == 'true', project)
             require(Path(properties['DirectoryPackagesPropsPath']).resolve() == ROOT / 'apps/Directory.Packages.props', project)
             require(all((properties[name] == '3.9.0' for name in ('ElsaVersion', 'ElsaStudioVersion', 'ElsaExtensionsVersion'))), project)
@@ -85,4 +97,6 @@ def verify(evaluate: bool = False) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--evaluate", action="store_true", help="also evaluate all nine projects with the installed .NET SDK")
-    verify(parser.parse_args().evaluate)
+    parser.add_argument("--restore-graph", type=Path, help="verify a root Apps-filter GenerateRestoreGraphFile result")
+    args = parser.parse_args()
+    verify(args.evaluate, args.restore_graph)

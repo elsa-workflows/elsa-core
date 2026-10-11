@@ -50,7 +50,10 @@ jobs:
       - name: Verify original source and effective project boundaries
         run: |
           python3 -m unittest discover -s scripts/integration-program -p 'test_verify_apps_source_import.py' -v
-          python3 scripts/integration-program/verify_apps_source_import.py --evaluate
+          dotnet msbuild Elsa.Apps.slnf -t:GenerateRestoreGraphFile \
+            -p:RestoreGraphOutputPath="$RUNNER_TEMP/apps-root-restore-graph.json" -nologo -v:quiet
+          python3 scripts/integration-program/verify_apps_source_import.py --evaluate \
+            --restore-graph "$RUNNER_TEMP/apps-root-restore-graph.json"
       - name: Verify solution grouping
         run: |
           python3 -m unittest discover -s scripts/solution -p 'test_*.py'
@@ -67,6 +70,7 @@ jobs:
             --ref "$SOURCE_REF" --commit "$EXPECTED_HEAD"
       - name: Restore and build all nine package consumers
         run: |
+          dotnet restore Elsa.Apps.slnf --force-evaluate
           dotnet restore apps/ElsaApps.sln
           dotnet build apps/ElsaApps.sln -c Release --no-restore
           dotnet build Elsa.Apps.slnf -c Release --no-restore

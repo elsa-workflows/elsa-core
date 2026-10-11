@@ -7,6 +7,7 @@ on:
       - '.github/**'
       - 'build/**'
       - 'scripts/integration-program/**'
+      - 'docs/integration-program/apps-source-import.json'
       - 'core/samples/**'
       - 'extensions/samples/**'
       - 'studio/samples/**'

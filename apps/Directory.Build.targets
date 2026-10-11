@@ -2,6 +2,8 @@
     <!-- Official apps consume released packages; do not inherit the root's source/proof targets. -->
     <PropertyGroup>
         <UseProjectReferences>false</UseProjectReferences>
+        <!-- Solution restore must not merge the root source-package mapping into Apps. -->
+        <RestoreConfigFile>$(MSBuildThisFileDirectory)NuGet.Config</RestoreConfigFile>
         <!-- Image hosts and their private shared libraries are not Core NuGet release units. -->
         <IsPackable>false</IsPackable>
     </PropertyGroup>

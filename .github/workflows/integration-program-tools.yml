@@ -20,6 +20,7 @@ on:
       - '**/global.json'
       - 'docs/integration-program/consolidation/dependabot-recursive-discovery.md'
       - 'scripts/integration-program/**'
+      - 'docs/integration-program/apps-source-import.json'
       - 'extensions/src/Elsa.Testing.Extensions/**'
       - 'extensions/samples/workbench/**'
       - 'docs/integration-program/verify-hierarchy.py'

@@ -9,6 +9,8 @@ import sys
 import tempfile
 import unittest
 
+from verify_apps_source_import import verify_restore_graph
+
 ROOT = Path(__file__).resolve().parents[2]
 VERIFIER = Path("scripts/integration-program/verify_apps_source_import.py")
 MANIFEST = Path("docs/integration-program/apps-source-import.json")
@@ -74,6 +76,39 @@ class SourceImportRejectionTests(unittest.TestCase):
                     self.assert_rejected("Mapped asset traverses a symlink")
                 finally:
                     destination.parent.unlink()
+
+
+class RootRestoreGraphTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.path = Path(temporary.name) / "restore-graph.json"
+        self.projects = sorted((ROOT / "apps/src").glob("*/*.csproj"))
+
+    def write_graph(self, configs):
+        graph = {"projects": {str(project): {"restore": {"configFilePaths": configs}}
+                              for project in self.projects}}
+        self.path.write_text(json.dumps(graph))
+
+    def test_root_context_requires_only_the_scoped_apps_config(self):
+        self.write_graph([str(ROOT / "apps/NuGet.Config")])
+        verify_restore_graph(self.path, self.projects)
+
+    def test_inherited_or_root_only_mapping_is_rejected(self):
+        for configs in ([str(ROOT / "NuGet.Config")],
+                        [str(ROOT / "apps/NuGet.Config"), str(ROOT / "NuGet.Config")]):
+            with self.subTest(configs=configs):
+                self.write_graph(configs)
+                with self.assertRaisesRegex(ValueError, "only Apps NuGet.Config"):
+                    verify_restore_graph(self.path, self.projects)
+
+    def test_missing_restore_project_is_rejected(self):
+        self.write_graph([str(ROOT / "apps/NuGet.Config")])
+        graph = json.loads(self.path.read_text())
+        graph["projects"].pop(str(self.projects[0]))
+        self.path.write_text(json.dumps(graph))
+        with self.assertRaisesRegex(ValueError, "exactly the nine Apps"):
+            verify_restore_graph(self.path, self.projects)
 
 
 if __name__ == "__main__":

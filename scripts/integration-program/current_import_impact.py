@@ -36,6 +36,34 @@ def git_output(root: Path, *arguments: str) -> str:
     return result.stdout.strip()
 
 
+def partition_source_graph(
+    root: Path, project_names: dict[str, str], asset_documents: dict[str, dict[str, Any]],
+    solution_project_paths: set[str],
+) -> tuple[dict[str, str], dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
+    """Keep registered image consumers outside source-reference impact accounting."""
+    register = json.loads((root / "docs/integration-program/apps-source-import.json").read_text())
+    registered = [row["destinationPath"] for row in register["assets"]
+                  if row["destinationPath"].endswith(".csproj")]
+    independent = set(registered)
+    if (len(registered) != 9 or len(independent) != 9
+            or any(not path.startswith("apps/src/") for path in independent)
+            or {path for path in solution_project_paths if path.startswith("apps/")} != independent
+            or {path for path in project_names if path.startswith("apps/")} != independent
+            or not independent.issubset(asset_documents)):
+        raise ValueError("Independent Apps inventory must match exactly the nine registered solution projects")
+    for source, document in asset_documents.items():
+        for framework in document["project"]["restore"]["frameworks"].values():
+            for reference_path, reference in framework.get("projectReferences", {}).items():
+                target = graph_reader._relative_path(root, reference.get("projectPath", reference_path))
+                if (source in independent) != (target in independent):
+                    raise ValueError(f"Source-reference edge crosses independent Apps boundary: {source} -> {target}")
+    return (
+        {path: name for path, name in project_names.items() if path not in independent},
+        {path: document for path, document in asset_documents.items() if path not in independent},
+        {path: asset_documents[path] for path in sorted(independent)},
+    )
+
+
 def reject_unmapped_elsa_packages(asset_documents: dict[str, dict[str, Any]]) -> None:
     for project_path, document in asset_documents.items():
         for key, library in document.get("libraries", {}).items():
@@ -196,6 +224,7 @@ def receipt(root: Path, manifest_path: Path, expected_head: str | None) -> dict[
     project_names = {path: name for name, path in entries}
     assets = {path: graph_reader._assets_for_project(root, path)[1] for path in project_names}
     graph_reader._include_restored_project_references(root, project_names, assets)
+    project_names, assets, independent_assets = partition_source_graph(root, project_names, assets, {path for _, path in entries})
     reject_unmapped_elsa_packages(assets)
     tests = restored_test_projects(root, assets)
     graph, _, _ = graph_reader._framework_graph(root, project_names, assets, tests)
@@ -220,6 +249,16 @@ def receipt(root: Path, manifest_path: Path, expected_head: str | None) -> dict[
         "manifestSha256": sha256(manifest_path),
         "solutionProjectCount": len(entries),
         "restoredProjectCount": len(assets),
+        "independentPackageConsumers": {
+            "disposition": "Registered Apps image consumers use released packages; excluded from source-reference impact, not claimed as affected-test coverage",
+            "validationOwner": ".github/workflows/apps-source-validation.yml",
+            "registerSha256": sha256(root / "docs/integration-program/apps-source-import.json"),
+            "buildConfigSha256": {path: sha256(root / path)
+                                  for path in graph_reader.ancestor_build_configs(root, set(independent_assets))},
+            "projectFileSha256": {path: sha256(root / path) for path in independent_assets},
+            "projectAssetsSha256": {path: sha256((root / path).parent / "obj/project.assets.json")
+                                    for path in independent_assets},
+        },
         "restoredTestProjectCount": len(tests),
         "restore": {
             "performed": True,
@@ -232,7 +271,7 @@ def receipt(root: Path, manifest_path: Path, expected_head: str | None) -> dict[
         "scenarios": scenarios,
         "limitations": [
             "Project-reference impact is evaluated from this checkout's restored assets; runtime service effects are not inferred.",
-            "Package-type Elsa dependencies other than the known package-manifest generator are rejected because package-to-source project edges are not inferred.",
+            "Package-type Elsa dependencies in the source-reference graph other than the known package-manifest generator are rejected; the nine registered Apps released-package consumers are separately accounted for and package-to-source edges are not inferred.",
             "Restored Test SDK projects are selected only when MSBuild evaluates IsTestProject=true for every restored framework.",
             "This receipt selects tests but does not execute them or publish packages.",
             "The release-unit manifest selects one Slack package; it is not a Core release package plan.",
