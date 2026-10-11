@@ -27,6 +27,7 @@ import prove_studio_npm_pair as pair
 REGISTRIES = {'feedz': 'https://f.feedz.io/elsa-workflows/elsa-3/npm/',
               'npmjs': 'https://registry.npmjs.org/'}
 WORKFLOW = '.github/workflows/publish-studio-original-pair.yml'
+REGISTRY_PROVENANCE_POLICIES = {'feedz': 'no-registry-attestation', 'npmjs': 'publisher-invocation'}
 REVIEWED_PUBLICATION_POLICY = None
 # Feedz version-absence semantics require separate provider evidence.
 VERIFIED_MISSING_STATUS = {"npmjs": 404}
@@ -269,7 +270,8 @@ def native_admission(candidate, registry, action, *, api=None):
     # Exact candidate, registry and requested action must be source-pinned before
     # credentials/OIDC are exposed. Arbitrary receipt/dispatch approval is ignored.
     binding = {'packet_sha256': digest(json.dumps(candidate['packet'], sort_keys=True, separators=(',', ':')).encode()),
-               'registry': registry, 'action': action}
+               'registry': registry, 'action': action,
+               'registry_provenance_policy': REGISTRY_PROVENANCE_POLICIES[registry]}
     require(binding in policy['actions'] and policy['publisher_identity'] == registry, 'candidate_action_not_authorized')
     env = os.environ
     source, run = env.get('GITHUB_SHA', ''), env.get('GITHUB_RUN_ID', '')
@@ -279,7 +281,6 @@ def native_admission(candidate, registry, action, *, api=None):
             and env.get('GITHUB_JOB') == 'publish' and policy['allowed_ref'] == 'refs/heads/main'
             and env.get('GITHUB_REF') == policy['allowed_ref']
             and env.get('GITHUB_WORKFLOW_SHA') == source
-            and source == candidate['identity']['source_commit']
             and env.get('GITHUB_WORKFLOW_REF') == f"{executor.REPOSITORY}/{WORKFLOW}@{policy['allowed_ref']}", 'runtime_not_admitted')
     require(pair.git(pair.ROOT, 'rev-parse', 'HEAD') == source
             and pair.git(pair.ROOT, 'status', '--porcelain', '--untracked-files=no') == '', 'executor_source_changed')
@@ -316,7 +317,13 @@ def native_admission(candidate, registry, action, *, api=None):
     require(type(actor) is int and actor > 0 and len(selected) == 1 and selected[0].get('state') == 'approved'
             and selected[0].get('user', {}).get('id') in policy['reviewer_ids']
             and selected[0]['user']['id'] != actor, 'native_approval_missing')
-    return True
+    # This records reviewed policy and observed native identity, not an uploaded
+    # attestation. The producer S and later executor D are independently bound.
+    return {'native_approval_verified': True, 'packet_sha256': binding['packet_sha256'],
+            'producer_source_commit': candidate['identity']['source_commit'],
+            'executor_source_commit': source, 'executor_run_id': int(run), 'executor_run_attempt': 1,
+            'registry_provenance_policy': binding['registry_provenance_policy'],
+            'registry_attestation_verified': False}
 
 
 class NpmPublisher:
@@ -376,12 +383,12 @@ def execute(candidate, registry, *, operation='verify', transport=None, publishe
     states = [observe(candidate, registry, name, transport) for name in (pair.WASM, pair.REACT)]
     result = {'schema': 1, 'operation': operation, 'registry': registry, 'identity': identity,
               'original_archive_sha256': candidate['packet']['archive_sha256'], 'registry_observation_scope': 'anonymous_public', 'before': states,
-              'after': list(states), 'uploads': [], 'publisher_authority': False, 'success': False}
+              'after': list(states), 'uploads': [], 'native_admission': None, 'publisher_authority': False, 'success': False}
     if operation == 'verify':
         result['success'] = all(row['state'] in {'matching', 'missing'} for row in states)
         return result
     require(all(row['state'] in {'matching', 'missing'} for row in states), 'remote_pair_not_admitted')
-    native_admission(candidate, registry, operation)
+    result['native_admission'] = native_admission(candidate, registry, operation)
     result['publisher_authority'] = True
     publisher = publisher or NpmPublisher()
     tag = 'next' if '-' in identity['version'] else 'latest'
@@ -394,7 +401,7 @@ def execute(candidate, registry, *, operation='verify', transport=None, publishe
         if states[index]['state'] == 'matching':
             continue
         try:
-            native_admission(candidate, registry, operation)
+            result['native_admission'] = native_admission(candidate, registry, operation)
             published = publisher.publish(candidate, registry, name, tag)
         except (PublicationError, executor.ExecutorError):
             result['failure_code'] = 'publication_admission_or_command_failed'

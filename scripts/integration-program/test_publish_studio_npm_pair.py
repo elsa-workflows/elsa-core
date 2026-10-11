@@ -1,4 +1,5 @@
 """Closed artifact/recovery contracts; no provider credentials or publications."""
+import copy
 import itertools
 import json
 import unittest
@@ -69,6 +70,11 @@ class PublicationContracts(unittest.TestCase):
         self.root = self.fixture.root
         self.identity = pair.release_candidate_identity('a' * 40, 'b' * 40, '3.10.0-preview.1', '12', '1')
         self.candidate, self.zip, self.packet = self.bundle(self.identity)
+        self.admission = {'native_approval_verified': True,
+                          'packet_sha256': publication.digest(json.dumps(self.packet, sort_keys=True, separators=(',', ':')).encode()),
+                          'producer_source_commit': self.identity['source_commit'],
+                          'executor_source_commit': 'c' * 40, 'executor_run_id': 42, 'executor_run_attempt': 1,
+                          'registry_provenance_policy': 'no-registry-attestation', 'registry_attestation_verified': False}
 
     def bundle(self, identity):
         receipt = identity | {'success': True, 'source_unchanged': True, 'publisher_authority': False,
@@ -141,7 +147,7 @@ class PublicationContracts(unittest.TestCase):
         for states in itertools.product(('matching', 'missing', 'conflicting', 'unknown'), repeat=2):
             registry = Registry(self.candidate, states)
             publisher = Publisher(registry)
-            with self.subTest(states=states), patch.object(publication, 'native_admission', return_value=True) as native:
+            with self.subTest(states=states), patch.object(publication, 'native_admission', return_value=self.admission) as native:
                 if set(states) & {'conflicting', 'unknown'}:
                     with self.assertRaisesRegex(publication.PublicationError, 'remote_pair_not_admitted'):
                         publication.execute(self.candidate, 'feedz', operation='publish', transport=registry, publisher=publisher)
@@ -150,6 +156,7 @@ class PublicationContracts(unittest.TestCase):
                 else:
                     result = publication.execute(self.candidate, 'feedz', operation='publish', transport=registry, publisher=publisher)
                     self.assertTrue(result['success'])
+                    self.assertEqual(self.admission, result['native_admission'])
                     self.assertEqual([name for name, state in zip((pair.WASM, pair.REACT), states) if state == 'missing'], [call[0] for call in publisher.calls])
                     for name, tag, data in publisher.calls:
                         self.assertEqual('next', tag)
@@ -158,7 +165,7 @@ class PublicationContracts(unittest.TestCase):
     def test_uncertain_wasm_stops_then_resume_only_wrapper_same_bytes(self):
         registry = Registry(self.candidate)
         first = Publisher(registry, pair.WASM)
-        with patch.object(publication, 'native_admission', return_value=True):
+        with patch.object(publication, 'native_admission', return_value=self.admission):
             result = publication.execute(self.candidate, 'feedz', operation='publish', transport=registry, publisher=first)
             self.assertFalse(result['success'])
             self.assertEqual([pair.WASM], [row[0] for row in first.calls])
@@ -192,13 +199,15 @@ class PublicationContracts(unittest.TestCase):
             self.assertEqual('unknown', publication.observe(self.candidate, 'feedz', pair.WASM, registry)['state'])
             self.assertEqual(1, get.call_count)
 
-    def test_native_same_run_environment_ref_and_other_actor_approval_required(self):
+    def native_context(self, candidate, registry='feedz'):
         policy = {'environment': 'reviewed-npm', 'environment_id': 10, 'reviewer_rule_id': 11,
                   'branch_rule_id': 12, 'reviewer_ids': [20], 'branch_policy': {'id': 13, 'type': 'branch', 'name': 'main'},
-                  'allowed_ref': 'refs/heads/main', 'publisher_identity': 'feedz', 'actions': [{
-                      'packet_sha256': publication.digest(json.dumps(self.packet, sort_keys=True, separators=(',', ':')).encode()),
-                      'registry': 'feedz', 'action': 'publish'}]}
-        source = self.identity['source_commit']
+                  'allowed_ref': 'refs/heads/main', 'publisher_identity': registry, 'actions': [{
+                      'packet_sha256': publication.digest(json.dumps(candidate['packet'], sort_keys=True, separators=(',', ':')).encode()),
+                      'registry': registry, 'action': 'publish',
+                      'registry_provenance_policy': publication.REGISTRY_PROVENANCE_POLICIES[registry]}]}
+        source = 'c' * 40  # Executor D follows the already-created original at S.
+        self.assertNotEqual(candidate['identity']['source_commit'], source)
         runtime = {'id': 42, 'run_attempt': 1, 'head_sha': source, 'event': 'workflow_dispatch',
                    'path': publication.WORKFLOW, 'status': 'in_progress', 'head_branch': 'main',
                    'repository': {'full_name': publication.executor.REPOSITORY},
@@ -222,27 +231,72 @@ class PublicationContracts(unittest.TestCase):
                 if 'deployment-branch-policies?' in path:
                     return {'total_count': 1, 'branch_policies': [policy['branch_policy']]}
                 return environment
-        with patch.object(publication, 'REVIEWED_PUBLICATION_POLICY', policy), patch.dict(publication.os.environ, values, clear=True), \
-             patch.object(pair, 'git', side_effect=lambda root, *args: source if args[0] == 'rev-parse' else ''):
-            self.assertTrue(publication.native_admission(self.candidate, 'feedz', 'publish', api=Api()))
-            for mutation in ('actor', 'ref', 'rule', 'extra_reviewer', 'candidate'):
-                with self.subTest(mutation=mutation):
-                    if mutation == 'actor':
-                        runtime['triggering_actor']['id'] = 20
-                    elif mutation == 'ref':
-                        publication.os.environ['GITHUB_REF'] = 'refs/heads/other'
-                    elif mutation == 'rule':
-                        environment['can_admins_bypass'] = True
-                    elif mutation == 'extra_reviewer':
-                        environment['protection_rules'][1]['reviewers'].append({'type': 'Team', 'reviewer': {'id': 30}})
-                    else:
-                        policy['actions'] = []
+        return policy, runtime, environment, values, Api()
+
+    def test_later_executor_is_independent_and_exact_native_gates_remain(self):
+        for mutation in (None, 'actor', 'ref', 'rule', 'extra_reviewer', 'action', 'packet', 'runtime', 'head', 'dirty', 'workflow', 'workflow_ref', 'runtime_workflow'):
+            candidate = copy.deepcopy(self.candidate)
+            policy, runtime, environment, values, api = self.native_context(candidate)
+            head = values['GITHUB_SHA']
+            if mutation == 'actor':
+                runtime['triggering_actor']['id'] = 20
+            elif mutation == 'ref':
+                values['GITHUB_REF'] = 'refs/heads/other'
+            elif mutation == 'rule':
+                environment['can_admins_bypass'] = True
+            elif mutation == 'extra_reviewer':
+                environment['protection_rules'][1]['reviewers'].append({'type': 'Team', 'reviewer': {'id': 30}})
+            elif mutation == 'action':
+                policy['actions'] = []
+            elif mutation == 'packet':
+                candidate['packet']['source_commit'] = 'd' * 40
+            elif mutation == 'runtime':
+                runtime['head_sha'] = 'd' * 40
+            elif mutation == 'head':
+                head = 'd' * 40
+            elif mutation == 'workflow':
+                values['GITHUB_WORKFLOW_SHA'] = 'd' * 40
+            elif mutation == 'workflow_ref':
+                values['GITHUB_WORKFLOW_REF'] = 'wrong/workflow@refs/heads/main'
+            elif mutation == 'runtime_workflow':
+                runtime['path'] = '.github/workflows/wrong.yml'
+            with self.subTest(mutation=mutation), patch.object(publication, 'REVIEWED_PUBLICATION_POLICY', policy), \
+                 patch.dict(publication.os.environ, values, clear=True), \
+                 patch.object(pair, 'git', side_effect=lambda root, *args: head if args[0] == 'rev-parse' else (' M source' if mutation == 'dirty' else '')):
+                if mutation is None:
+                    self.assertEqual(self.admission, publication.native_admission(candidate, 'feedz', 'publish', api=api))
+                else:
                     with self.assertRaises(publication.PublicationError):
-                        publication.native_admission(self.candidate, 'feedz', 'publish', api=Api())
-                    runtime['triggering_actor']['id'] = 21
-                    publication.os.environ['GITHUB_REF'] = 'refs/heads/main'
-                    environment['can_admins_bypass'] = False
-                    environment['protection_rules'][1]['reviewers'] = [{'type': 'User', 'reviewer': {'id': 20}}]
+                        publication.native_admission(candidate, 'feedz', 'publish', api=api)
+
+    def test_registry_provenance_policy_is_explicit_before_publisher_access(self):
+        for registry in ('feedz', 'npmjs'):
+            # Synthetic 3.9 tests the gate; real maintenance producer admission
+            # remains unconfigured and this is no provider/lifecycle proof.
+            candidate = self.candidate if registry == 'feedz' else self.bundle(
+                pair.release_candidate_identity('a' * 40, 'b' * 40, '3.9.1', '12', '1'))[0]
+            for mode in (None, 'unknown', 'no-registry-attestation' if registry == 'npmjs' else 'publisher-invocation'):
+                policy, runtime, environment, values, api = self.native_context(candidate, registry)
+                if mode is None:
+                    policy['actions'][0].pop('registry_provenance_policy')
+                else:
+                    policy['actions'][0]['registry_provenance_policy'] = mode
+                with self.subTest(registry=registry, mode=mode), patch.object(publication, 'REVIEWED_PUBLICATION_POLICY', policy), \
+                     patch.dict(publication.os.environ, values, clear=True), \
+                     patch.object(pair, 'git', side_effect=lambda root, *args: values['GITHUB_SHA'] if args[0] == 'rev-parse' else ''), \
+                     patch.object(publication.executor, 'GitHubApi', return_value=api), \
+                     patch.object(publication, 'observe', side_effect=lambda candidate, registry, name, transport: {'package': name, 'state': 'missing'}), \
+                     patch.object(publication, 'NpmPublisher') as publisher:
+                    with self.assertRaisesRegex(publication.PublicationError, 'candidate_action_not_authorized'):
+                        publication.execute(candidate, registry, operation='publish', transport=object())
+                    publisher.assert_not_called()
+            if registry == 'npmjs':
+                policy, runtime, environment, values, api = self.native_context(candidate, registry)
+                with patch.object(publication, 'REVIEWED_PUBLICATION_POLICY', policy), patch.dict(publication.os.environ, values, clear=True), \
+                     patch.object(pair, 'git', side_effect=lambda root, *args: values['GITHUB_SHA'] if args[0] == 'rev-parse' else ''):
+                    record = publication.native_admission(candidate, registry, 'publish', api=api)
+                self.assertEqual('publisher-invocation', record['registry_provenance_policy'])
+                self.assertFalse(record['registry_attestation_verified'])
 
     def test_publisher_toolchain_rejected_before_token_lookup(self):
         with patch.object(publication.executor, 'bounded_child', side_effect=[b'v22.23.3', b'10.9.9']), \
@@ -265,7 +319,7 @@ class PublicationContracts(unittest.TestCase):
             return json.dumps({'status': response.status, 'complete': response.complete,
                 'failure_category': response.failure_category, 'body': base64.b64encode(response.body).decode()}).encode()
         with patch.object(publication.executor, 'bounded_child', side_effect=wire), \
-             patch.object(publication, 'native_admission', return_value=True):
+             patch.object(publication, 'native_admission', return_value=self.admission):
             result = publication.execute(self.candidate, 'feedz', operation='publish', publisher=publisher)
         self.assertTrue(result['success'])
         self.assertEqual(20, len(calls))
@@ -276,7 +330,7 @@ class PublicationContracts(unittest.TestCase):
             if publisher.calls and pair.REACT.split('/')[-1] in url:
                 raise RuntimeError('private-provider-secret')
             return original(url, **kwargs)
-        with patch.object(registry, 'get', side_effect=failing), patch.object(publication, 'native_admission', return_value=True):
+        with patch.object(registry, 'get', side_effect=failing), patch.object(publication, 'native_admission', return_value=self.admission):
             result = publication.execute(self.candidate, 'feedz', operation='publish', transport=registry, publisher=publisher)
         self.assertFalse(result['success'])
         self.assertEqual([pair.WASM], [row['package'] for row in result['uploads']])
@@ -292,6 +346,11 @@ class PublicationContracts(unittest.TestCase):
         provider.run['run_attempt'] = 2
         with self.assertRaisesRegex(publication.PublicationError, 'provider_run_changed'):
             publication.provider_admission(self.candidate, self.zip.stat().st_size, api=provider)
+        for origin in ('artifact', 'run'):
+            provider = Provider(self.candidate, self.zip)
+            (provider.artifact['workflow_run'] if origin == 'artifact' else provider.run)['head_sha'] = 'd' * 40
+            with self.subTest(origin=origin), self.assertRaises(publication.PublicationError):
+                publication.provider_admission(self.candidate, self.zip.stat().st_size, api=provider)
         with patch.object(provider, 'get', side_effect=RuntimeError('private-error')), self.assertRaisesRegex(publication.PublicationError, 'provider_metadata_unknown'):
             publication.provider_admission(self.candidate, self.zip.stat().st_size, api=provider)
 

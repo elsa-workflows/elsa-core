@@ -88,8 +88,27 @@ cutover, retain it as the owned operational executor or remove the migration
 preparation after a reviewed replacement and original-artifact recovery proof.
 The #8725 broader cut gate remains unchanged.
 
-Npm automatic provenance would identify the publisher invocation, rather than
-prove the retained original producer run. The native path requires producer and
-executor source commits to match; original producer identity remains separately
-bound by the receipt/provider readback. The final provenance policy and trusted
-publisher configuration still require explicit operational review before activation.
+The original producer commit S and later publisher executor commit D are
+independent. The source-pinned action in D binds the canonical reviewed original
+packet digest (including S, producer run/attempt and original ZIP/receipt digests).
+GitHub run/workflow/ref metadata and the clean checkout independently verify D;
+native approval is for that exact publisher run. D need not equal S, and D never
+contains a self-SHA constant. This permits reviewing original bytes before the
+later activation change without a circular source/artifact dependency.
+
+Each source-pinned action must also explicitly include
+`registry_provenance_policy`: `no-registry-attestation` for Feedz, or
+`publisher-invocation` for npmjs. Missing, unknown or wrong policies fail before
+publisher access. Automatic npm provenance remains enabled: it describes the
+publisher invocation at D, rather than proving that invocation built the
+retained original at S. The npmjs policy explicitly accepts this distinction;
+it is not an original-producer attestation. The sanitized admission record
+retains the canonical packet digest, S, observed D/run/attempt and policy, with
+`registry_attestation_verified: false`. This executor does not verify an uploaded
+attestation. These are policy and native identity observations, not proof of
+registry attestation content.
+
+Publication policy remains unconfigured. Actual trusted-publisher/provenance
+configuration still requires operational review. The 3.10 npmjs refusal and the
+unconfigured 3.8/3.9 maintenance producer restriction remain in force; a
+synthetic policy test does not authorize those routes.
