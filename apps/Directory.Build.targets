@@ -1,0 +1,8 @@
+<Project>
+    <!-- Official apps consume released packages; do not inherit the root's source/proof targets. -->
+    <PropertyGroup>
+        <UseProjectReferences>false</UseProjectReferences>
+        <!-- Image hosts and their private shared libraries are not Core NuGet release units. -->
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+</Project>

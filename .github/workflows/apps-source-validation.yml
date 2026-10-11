@@ -1,0 +1,142 @@
+# Source validation only. The retained apps/.github publisher is deliberately inert.
+name: Apps source validation
+
+on:
+  pull_request:
+    paths:
+      - 'apps/**'
+      - 'Elsa.sln'
+      - 'Elsa.Apps.slnf'
+      - 'scripts/solution/**'
+      - 'scripts/integration-program/verify_apps_source_import.py'
+      - 'scripts/integration-program/test_verify_apps_source_import.py'
+      - 'docs/integration-program/apps-source-import.json'
+      - '.github/workflows/apps-source-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apps-source-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+  SOURCE_REF: ${{ github.head_ref || github.ref }}
+
+jobs:
+  projects:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      version: ${{ steps.plan.outputs.release_version }}
+      core: ${{ steps.plan.outputs.core_version }}
+      studio: ${{ steps.plan.outputs.studio_version }}
+      extensions: ${{ steps.plan.outputs.extensions_version }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify candidate identity
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: '10.0.300'
+      - name: Verify original source and effective project boundaries
+        run: |
+          python3 -m unittest discover -s scripts/integration-program -p 'test_verify_apps_source_import.py' -v
+          python3 scripts/integration-program/verify_apps_source_import.py --evaluate
+      - name: Verify solution grouping
+        run: |
+          python3 -m unittest discover -s scripts/solution -p 'test_*.py'
+          python3 scripts/solution/solution_groups.py --check
+      - name: Test existing container policy and local provenance
+        working-directory: apps
+        run: python3 -m unittest discover -s scripts/tests -v
+      - name: Plan fixed nonpublishing profile validation
+        id: plan
+        working-directory: apps
+        run: |
+          python3 scripts/container_release.py validate-run \
+            --event pull_request --publish false --images all \
+            --ref "$SOURCE_REF" --commit "$EXPECTED_HEAD"
+      - name: Restore and build all nine package consumers
+        run: |
+          dotnet restore apps/ElsaApps.sln
+          dotnet build apps/ElsaApps.sln -c Release --no-restore
+          dotnet build Elsa.Apps.slnf -c Release --no-restore
+      - name: Verify source remained unchanged
+        run: git diff --exit-code HEAD --
+
+  images:
+    needs: projects
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix: ${{ fromJSON(needs.projects.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify candidate identity
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+      - name: Build a local AMD64 image without publication
+        uses: docker/build-push-action@v6
+        env:
+          DOCKER_BUILD_RECORD_UPLOAD: 'false'
+          DOCKER_BUILD_SUMMARY: 'false'
+        with:
+          context: apps
+          file: apps/${{ matrix.dockerfile }}
+          platforms: linux/amd64
+          load: true
+          push: false
+          tags: elsa-source-${{ matrix.id }}:${{ env.EXPECTED_HEAD }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/elsa-workflows/elsa-core
+            org.opencontainers.image.revision=${{ env.EXPECTED_HEAD }}
+            org.opencontainers.image.version=${{ needs.projects.outputs.version }}
+            org.opencontainers.image.ref.name=${{ env.SOURCE_REF }}
+            com.elsa.packages.core=${{ needs.projects.outputs.core }}
+            com.elsa.packages.studio=${{ needs.projects.outputs.studio }}
+            com.elsa.packages.extensions=${{ needs.projects.outputs.extensions }}
+          build-args: |
+            ElsaVersion=${{ needs.projects.outputs.core }}
+            ElsaStudioVersion=${{ needs.projects.outputs.studio }}
+            ElsaExtensionsVersion=${{ needs.projects.outputs.extensions }}
+      - name: Verify package provenance, assets and application smoke
+        working-directory: apps
+        env:
+          IMAGE_ID: ${{ matrix.id }}
+          IMAGE_REPOSITORY: ${{ matrix.repository }}
+          IMAGE_PORT: ${{ matrix.port }}
+          VERSION: ${{ needs.projects.outputs.version }}
+          CORE_VERSION: ${{ needs.projects.outputs.core }}
+          STUDIO_VERSION: ${{ needs.projects.outputs.studio }}
+          EXTENSIONS_VERSION: ${{ needs.projects.outputs.extensions }}
+        run: |
+          python3 scripts/container_release.py verify-local \
+            --id "$IMAGE_ID" --repository "$IMAGE_REPOSITORY" \
+            --reference "elsa-source-$IMAGE_ID:$EXPECTED_HEAD" \
+            --version "$VERSION" --commit "$EXPECTED_HEAD" --source-ref "$SOURCE_REF" \
+            --source-repository elsa-workflows/elsa-core \
+            --core-version "$CORE_VERSION" --studio-version "$STUDIO_VERSION" \
+            --extensions-version "$EXTENSIONS_VERSION" --port "$IMAGE_PORT" \
+            --output-file "$RUNNER_TEMP/apps-smoke-$IMAGE_ID.json"
+      - name: Retain only structured nonpublishing smoke evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: apps-source-${{ matrix.id }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/apps-smoke-${{ matrix.id }}.json
+          if-no-files-found: error
+          retention-days: 14

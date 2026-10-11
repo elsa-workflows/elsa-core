@@ -326,9 +326,12 @@ def github_output(values: dict[str, Any], path: str | None) -> None:
         print(content, end="")
 
 
-def labels_for(version: str, commit: str, source_ref: str, package_versions: dict[str, str]) -> dict[str, str]:
+def labels_for(
+    version: str, commit: str, source_ref: str, package_versions: dict[str, str],
+    source_repository: str = APPS_REPOSITORY,
+) -> dict[str, str]:
     return {
-        "org.opencontainers.image.source": f"https://github.com/{APPS_REPOSITORY}",
+        "org.opencontainers.image.source": f"https://github.com/{source_repository}",
         "org.opencontainers.image.revision": commit,
         "org.opencontainers.image.version": version,
         "org.opencontainers.image.ref.name": source_ref,
@@ -1605,6 +1608,7 @@ def create_parser() -> argparse.ArgumentParser:
     local.add_argument("--version", required=True)
     local.add_argument("--commit", required=True)
     local.add_argument("--source-ref", required=True)
+    local.add_argument("--source-repository", default=APPS_REPOSITORY)
     local.add_argument("--core-version", required=True)
     local.add_argument("--studio-version", required=True)
     local.add_argument("--extensions-version", required=True)
@@ -1727,7 +1731,9 @@ def main(argv: list[str] | None = None) -> int:
                 "extensions": args.extensions_version,
             }
             image = next(item for item in IMAGES if item["id"] == args.id)
-            for key, value in labels_for(args.version, args.commit, args.source_ref, package_versions).items():
+            for key, value in labels_for(
+                args.version, args.commit, args.source_ref, package_versions, args.source_repository,
+            ).items():
                 if labels.get(key) != value:
                     raise ReleaseError(f"Local image label {key!r} does not match expected provenance")
             image_id = run_command(["docker", "image", "inspect", "--format", "{{.Id}}", args.reference]).stdout.strip()

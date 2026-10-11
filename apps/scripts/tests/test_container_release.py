@@ -19,6 +19,28 @@ PLATFORMS = {
 }
 
 
+class LocalSourceProvenanceTests(unittest.TestCase):
+    def test_local_verification_accepts_explicit_core_source_without_changing_publisher_default(self):
+        packages = {family: "3.9.0" for family in ("core", "studio", "extensions")}
+        labels = release.labels_for("3.9.0", COMMIT, "refs/heads/main", packages)
+        self.assertEqual("https://github.com/elsa-workflows/elsa-apps", labels["org.opencontainers.image.source"])
+        labels["org.opencontainers.image.source"] = "https://github.com/elsa-workflows/elsa-core"
+        command = ["verify-local", "--id", "server", "--repository", "elsaworkflows/elsa-server-app",
+                   "--reference", "elsa-local:source", "--version", "3.9.0", "--commit", COMMIT,
+                   "--source-ref", "refs/heads/main", "--port", "8080", "--output-file", "unused.json"]
+        for family in packages:
+            command.extend([f"--{family}-version", packages[family]])
+        for repository, expected in (("elsa-workflows/elsa-core", 0), ("elsa-workflows/elsa-apps", 1)):
+            with (self.subTest(repository=repository), patch.object(release, "validate_inventory"),
+                  patch.object(release, "run_command", side_effect=[Mock(stdout=""), Mock(stdout=json.dumps(labels)),
+                                                                  Mock(stdout=ROOT_DIGEST), Mock(stdout="{}")]),
+                  patch.object(release, "validate_assets_json", return_value={}),
+                  patch.object(release, "smoke_image", return_value={}) as smoke,
+                  patch.object(release, "write_json"), patch("sys.stderr", new=io.StringIO())):
+                self.assertEqual(expected, release.main([*command, "--source-repository", repository]))
+                self.assertEqual(expected == 0, smoke.called)
+
+
 def args(**overrides):
     values = {
         "event": "workflow_dispatch",

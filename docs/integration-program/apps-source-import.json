@@ -1,0 +1,633 @@
+{
+  "schemaVersion": 1,
+  "task": "https://github.com/elsa-workflows/elsa-core/issues/8746",
+  "sourceRepository": "https://github.com/elsa-workflows/elsa-apps",
+  "sourceCommit": "f1b0d4b07f04265806b1ec7a6b9df85aafcc85a9",
+  "sourceTree": "283451a525a9c0cd4e6279c72e90d9b6c611664d",
+  "coreBase": "c46850de361cb84f267845ba66394c87262e2aab",
+  "importCommit": "b0fa3f9e59299ea388222b774e6f28cf3e7f5262",
+  "importParents": [
+    "c46850de361cb84f267845ba66394c87262e2aab",
+    "f1b0d4b07f04265806b1ec7a6b9df85aafcc85a9",
+    "b69bc853d609c1a1ec94c2d55fb0562ace4850f5"
+  ],
+  "sourceHistoryCommits": 76,
+  "sourceRefs": [
+    {
+      "sourceRef": "refs/heads/codex/container-api-smoke-compatibility",
+      "sha": "8ced57803de480aa4b5c5e71f71267518c4bc0b6",
+      "ancestorOfImportedMain": true
+    },
+    {
+      "sourceRef": "refs/heads/codex/dashboard-api-css-fix",
+      "sha": "b3cfeb5fc4dffe071289dd5bfe2c00f26a43e47b",
+      "ancestorOfImportedMain": true
+    },
+    {
+      "sourceRef": "refs/heads/codex/dependabot-feedz-preview",
+      "sha": "ec5590fc8e113e2dd8d3a5386dcdd2164a84ad96",
+      "ancestorOfImportedMain": true
+    },
+    {
+      "sourceRef": "refs/heads/codex/release-container-images",
+      "sha": "f94ffadd299a98a51237c79b6600fe74b9b09780",
+      "ancestorOfImportedMain": true
+    },
+    {
+      "sourceRef": "refs/heads/codex/remove-unused-prior-ref",
+      "sha": "10841d6ed80764f7566a65bd7304afbe4d53f62f",
+      "ancestorOfImportedMain": true
+    },
+    {
+      "sourceRef": "refs/heads/copilot/fix-1",
+      "sha": "4e01d77d00be3ac824a9b3593dba4ad74d6d90ec",
+      "ancestorOfImportedMain": true
+    },
+    {
+      "sourceRef": "refs/heads/dependabot/nuget/main/elsa-preview-6bb50e99a4",
+      "sha": "b69bc853d609c1a1ec94c2d55fb0562ace4850f5",
+      "ancestorOfImportedMain": false
+    },
+    {
+      "sourceRef": "refs/heads/develop/3.6.1",
+      "sha": "24f0639bb8605aceb34d19e11a224487a2cacf23",
+      "ancestorOfImportedMain": true
+    },
+    {
+      "sourceRef": "refs/heads/main",
+      "sha": "f1b0d4b07f04265806b1ec7a6b9df85aafcc85a9",
+      "ancestorOfImportedMain": true
+    },
+    {
+      "sourceRef": "refs/heads/release/3.6.0",
+      "sha": "a452d4c70e6f5659f99872c1dd69f6da888e3d6d",
+      "ancestorOfImportedMain": true
+    }
+  ],
+  "assets": [
+    {
+      "sourcePath": ".dockerignore",
+      "destinationPath": "apps/.dockerignore",
+      "sourceMode": "100644",
+      "sourceBlob": "e569b192ad5dbde43fda5e4e4c4502ffe7a6b75d"
+    },
+    {
+      "sourcePath": ".github/dependabot.yml",
+      "destinationPath": "apps/.github/dependabot.yml",
+      "sourceMode": "100644",
+      "sourceBlob": "a5d9af2004cfca2225d3206deb6aae80924687f0"
+    },
+    {
+      "sourcePath": ".github/workflows/container-images.yml",
+      "destinationPath": "apps/.github/workflows/container-images.yml",
+      "sourceMode": "100644",
+      "sourceBlob": "592ba89ace7049a412751b25c953d527b41fddfd"
+    },
+    {
+      "sourcePath": ".gitignore",
+      "destinationPath": "apps/.gitignore",
+      "sourceMode": "100644",
+      "sourceBlob": "3aa66180774976c72d96078ed9c509ef14db144a"
+    },
+    {
+      "sourcePath": "Directory.Build.props",
+      "destinationPath": "apps/Directory.Build.props",
+      "sourceMode": "100644",
+      "sourceBlob": "bbd058143a914a50aa741f4fde8998811fd5474b"
+    },
+    {
+      "sourcePath": "Directory.Packages.props",
+      "destinationPath": "apps/Directory.Packages.props",
+      "sourceMode": "100644",
+      "sourceBlob": "f67d9bfbaedeed6dd3dd8ad91f163533b20157a5"
+    },
+    {
+      "sourcePath": "ElsaApps.sln",
+      "destinationPath": "apps/ElsaApps.sln",
+      "sourceMode": "100644",
+      "sourceBlob": "5aef9bdee57d68c765dde54ca022881a63cfd475"
+    },
+    {
+      "sourcePath": "LICENSE",
+      "destinationPath": "apps/LICENSE",
+      "sourceMode": "100644",
+      "sourceBlob": "b01aa9c2072fe9133613b489d9b41f4d90e2bd5b"
+    },
+    {
+      "sourcePath": "NuGet.Config",
+      "destinationPath": "apps/NuGet.Config",
+      "sourceMode": "100644",
+      "sourceBlob": "5bc020303291fd9d7b757a21913f4a67bc5eece8"
+    },
+    {
+      "sourcePath": "README.md",
+      "destinationPath": "apps/README.md",
+      "sourceMode": "100644",
+      "sourceBlob": "9593e7b2952168945411e3b5a2274359b82eaab1"
+    },
+    {
+      "sourcePath": "scripts/container_release.py",
+      "destinationPath": "apps/scripts/container_release.py",
+      "sourceMode": "100644",
+      "sourceBlob": "6c2ef967b979bfe1d0538f4c877714d5805451eb"
+    },
+    {
+      "sourcePath": "scripts/tests/test_container_release.py",
+      "destinationPath": "apps/scripts/tests/test_container_release.py",
+      "sourceMode": "100644",
+      "sourceBlob": "4fdc9311c1182dbbc5aa9fc8293f9f44779b5542"
+    },
+    {
+      "sourcePath": "src/Directory.Build.props",
+      "destinationPath": "apps/src/Directory.Build.props",
+      "sourceMode": "100644",
+      "sourceBlob": "202972fa4f2c81f821b74461b87d33d78b852740"
+    },
+    {
+      "sourcePath": "src/Elsa.Server.Shared/DatabaseConfiguration.cs",
+      "destinationPath": "apps/src/Elsa.Server.Shared/DatabaseConfiguration.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "681b2174b46488bd8937c461033f40bf43502c3c"
+    },
+    {
+      "sourcePath": "src/Elsa.Server.Shared/Elsa.Server.Shared.csproj",
+      "destinationPath": "apps/src/Elsa.Server.Shared/Elsa.Server.Shared.csproj",
+      "sourceMode": "100644",
+      "sourceBlob": "2e6bebaea850d65d127e5234fa7afce01c7a901c"
+    },
+    {
+      "sourcePath": "src/Elsa.Server.Studio.BlazorServer/Dockerfile",
+      "destinationPath": "apps/src/Elsa.Server.Studio.BlazorServer/Dockerfile",
+      "sourceMode": "100644",
+      "sourceBlob": "5c0482c1bf008e2eb555451dd2f0f3d3d3381a9f"
+    },
+    {
+      "sourcePath": "src/Elsa.Server.Studio.BlazorServer/Elsa.Server.Studio.BlazorServer.csproj",
+      "destinationPath": "apps/src/Elsa.Server.Studio.BlazorServer/Elsa.Server.Studio.BlazorServer.csproj",
+      "sourceMode": "100644",
+      "sourceBlob": "c425d07e755f7bda583337d9ff902b64f3dee109"
+    },
+    {
+      "sourcePath": "src/Elsa.Server.Studio.BlazorServer/Pages/_Host.cshtml",
+      "destinationPath": "apps/src/Elsa.Server.Studio.BlazorServer/Pages/_Host.cshtml",
+      "sourceMode": "100644",
+      "sourceBlob": "5c719c40db580a30dd29130a9f0640021d3e2605"
+    },
+    {
+      "sourcePath": "src/Elsa.Server.Studio.BlazorServer/Program.cs",
+      "destinationPath": "apps/src/Elsa.Server.Studio.BlazorServer/Program.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "30132f279633bffda0f3969dfce1afef5fdc2ebe"
+    },
+    {
+      "sourcePath": "src/Elsa.Server.Studio.BlazorServer/Properties/launchSettings.json",
+      "destinationPath": "apps/src/Elsa.Server.Studio.BlazorServer/Properties/launchSettings.json",
+      "sourceMode": "100644",
+      "sourceBlob": "e018d6fbcfb98df68f94c7ac50379e59c0e108e1"
+    },
+    {
+      "sourcePath": "src/Elsa.Server.Studio.BlazorServer/_Imports.razor",
+      "destinationPath": "apps/src/Elsa.Server.Studio.BlazorServer/_Imports.razor",
+      "sourceMode": "100644",
+      "sourceBlob": "8de6aeda51163a86783ba1000f51c4d757283960"
+    },
+    {
+      "sourcePath": "src/Elsa.Server.Studio.BlazorServer/appsettings.Development.json",
+      "destinationPath": "apps/src/Elsa.Server.Studio.BlazorServer/appsettings.Development.json",
+      "sourceMode": "100644",
+      "sourceBlob": "2181a3578fc5d9b5aa93ed52d2d35bdbb2af3d17"
+    },
+    {
+      "sourcePath": "src/Elsa.Server.Studio.BlazorServer/appsettings.json",
+      "destinationPath": "apps/src/Elsa.Server.Studio.BlazorServer/appsettings.json",
+      "sourceMode": "100644",
+      "sourceBlob": "24331a83f7e73838566c8d6d6d6bca11bae3338a"
+    },
+    {
+      "sourcePath": "src/Elsa.Server.Studio.BlazorWasm.Client/Elsa.Server.Studio.BlazorWasm.Client.csproj",
+      "destinationPath": "apps/src/Elsa.Server.Studio.BlazorWasm.Client/Elsa.Server.Studio.BlazorWasm.Client.csproj",
+      "sourceMode": "100644",
+      "sourceBlob": "e3fd1db59d197a421e85311fd3efdfa1c17c3be7"
+    },
+    {
+      "sourcePath": "src/Elsa.Server.Studio.BlazorWasm.Client/Program.cs",
+      "destinationPath": "apps/src/Elsa.Server.Studio.BlazorWasm.Client/Program.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "994ee5325fd8b6f19d4c68ec0a01e3d222866a56"
+    },
+    {
+      "sourcePath": "src/Elsa.Server.Studio.BlazorWasm.Client/Properties/launchSettings.json",
+      "destinationPath": "apps/src/Elsa.Server.Studio.BlazorWasm.Client/Properties/launchSettings.json",
+      "sourceMode": "100644",
+      "sourceBlob": "977f345038133c63aee2ad558d8d4ab2c79cd37a"
+    },
+    {
+      "sourcePath": "src/Elsa.Server.Studio.BlazorWasm.Client/_Imports.razor",
+      "destinationPath": "apps/src/Elsa.Server.Studio.BlazorWasm.Client/_Imports.razor",
+      "sourceMode": "100644",
+      "sourceBlob": "63f35b04d2a4a43c08ccdccfdbfe9d44cd037880"
+    },
+    {
+      "sourcePath": "src/Elsa.Server.Studio.BlazorWasm.Client/wwwroot/appsettings.json",
+      "destinationPath": "apps/src/Elsa.Server.Studio.BlazorWasm.Client/wwwroot/appsettings.json",
+      "sourceMode": "100644",
+      "sourceBlob": "2181a3578fc5d9b5aa93ed52d2d35bdbb2af3d17"
+    },
+    {
+      "sourcePath": "src/Elsa.Server.Studio.BlazorWasm/Dockerfile",
+      "destinationPath": "apps/src/Elsa.Server.Studio.BlazorWasm/Dockerfile",
+      "sourceMode": "100644",
+      "sourceBlob": "63419566e477071df598ed2d286e771b5b486e25"
+    },
+    {
+      "sourcePath": "src/Elsa.Server.Studio.BlazorWasm/Elsa.Server.Studio.BlazorWasm.csproj",
+      "destinationPath": "apps/src/Elsa.Server.Studio.BlazorWasm/Elsa.Server.Studio.BlazorWasm.csproj",
+      "sourceMode": "100644",
+      "sourceBlob": "b65e8ace332fe0eabc18491a1b01726c2f8ef696"
+    },
+    {
+      "sourcePath": "src/Elsa.Server.Studio.BlazorWasm/Elsa.Server.Studio.BlazorWasm.http",
+      "destinationPath": "apps/src/Elsa.Server.Studio.BlazorWasm/Elsa.Server.Studio.BlazorWasm.http",
+      "sourceMode": "100644",
+      "sourceBlob": "5a30dfda71f8bdd20fc8dd01c948ea09b3596562"
+    },
+    {
+      "sourcePath": "src/Elsa.Server.Studio.BlazorWasm/Pages/_Host.cshtml",
+      "destinationPath": "apps/src/Elsa.Server.Studio.BlazorWasm/Pages/_Host.cshtml",
+      "sourceMode": "100644",
+      "sourceBlob": "c5fbff980260b56f0e924ae6e936315786a7c77c"
+    },
+    {
+      "sourcePath": "src/Elsa.Server.Studio.BlazorWasm/Program.cs",
+      "destinationPath": "apps/src/Elsa.Server.Studio.BlazorWasm/Program.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "fa0356f180c41f6b129e51c2e569b2ee13dd363a"
+    },
+    {
+      "sourcePath": "src/Elsa.Server.Studio.BlazorWasm/Properties/launchSettings.json",
+      "destinationPath": "apps/src/Elsa.Server.Studio.BlazorWasm/Properties/launchSettings.json",
+      "sourceMode": "100644",
+      "sourceBlob": "d7b4ad0219fabe161eb0b777ecd35840f46c382b"
+    },
+    {
+      "sourcePath": "src/Elsa.Server.Studio.BlazorWasm/appsettings.Development.json",
+      "destinationPath": "apps/src/Elsa.Server.Studio.BlazorWasm/appsettings.Development.json",
+      "sourceMode": "100644",
+      "sourceBlob": "0c208ae9181e5e5717e47ec1bd59368aebc6066e"
+    },
+    {
+      "sourcePath": "src/Elsa.Server.Studio.BlazorWasm/appsettings.json",
+      "destinationPath": "apps/src/Elsa.Server.Studio.BlazorWasm/appsettings.json",
+      "sourceMode": "100644",
+      "sourceBlob": "17bab0e34ef6badd66afa0d96f46dac4c8bf36eb"
+    },
+    {
+      "sourcePath": "src/Elsa.Server/Dockerfile",
+      "destinationPath": "apps/src/Elsa.Server/Dockerfile",
+      "sourceMode": "100644",
+      "sourceBlob": "248bd045e81afee7cd9ca097220073400cc18a90"
+    },
+    {
+      "sourcePath": "src/Elsa.Server/Elsa.Server.csproj",
+      "destinationPath": "apps/src/Elsa.Server/Elsa.Server.csproj",
+      "sourceMode": "100644",
+      "sourceBlob": "9181a009e855266cde652df3db11b2bee9913c4f"
+    },
+    {
+      "sourcePath": "src/Elsa.Server/Program.cs",
+      "destinationPath": "apps/src/Elsa.Server/Program.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "1206610b37af6f48ac58cd75a524926bf2b5039e"
+    },
+    {
+      "sourcePath": "src/Elsa.Server/Properties/launchSettings.json",
+      "destinationPath": "apps/src/Elsa.Server/Properties/launchSettings.json",
+      "sourceMode": "100644",
+      "sourceBlob": "17986e3e2df161c06d6865eda368d7c661afbbe8"
+    },
+    {
+      "sourcePath": "src/Elsa.Server/appsettings.Development.json",
+      "destinationPath": "apps/src/Elsa.Server/appsettings.Development.json",
+      "sourceMode": "100644",
+      "sourceBlob": "2181a3578fc5d9b5aa93ed52d2d35bdbb2af3d17"
+    },
+    {
+      "sourcePath": "src/Elsa.Server/appsettings.json",
+      "destinationPath": "apps/src/Elsa.Server/appsettings.json",
+      "sourceMode": "100644",
+      "sourceBlob": "86b6adbfae74270061b6f45ad20f9975cee2ccc9"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorServer/Bootstrap/Backend.cs",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorServer/Bootstrap/Backend.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "1926919634afab3291ea152da96662b28239be5f"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorServer/Bootstrap/Core.cs",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorServer/Bootstrap/Core.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "4f168fba4cb4baae2a315fda7d768f22265120c2"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorServer/Bootstrap/Diagnostics.cs",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorServer/Bootstrap/Diagnostics.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "1d45d78fe4d826bbc2cbe229128658a9c903506d"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorServer/Bootstrap/HealthChecks.cs",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorServer/Bootstrap/HealthChecks.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "0136ba897b268f4ac19e17d4bce26f7f4d2398bd"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorServer/Bootstrap/Login.cs",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorServer/Bootstrap/Login.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "6c1df45d0382838b81f7834ec5ed1a8520ed431f"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorServer/Bootstrap/Modules.cs",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorServer/Bootstrap/Modules.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "3823d3ee3d5f78e8e4c257bcedae6fad40c942f3"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorServer/Dockerfile",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorServer/Dockerfile",
+      "sourceMode": "100644",
+      "sourceBlob": "0d2de19b3c1705506b499f3739f023d216708487"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorServer/Elsa.Studio.BlazorServer.csproj",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorServer/Elsa.Studio.BlazorServer.csproj",
+      "sourceMode": "100644",
+      "sourceBlob": "f2bb4f2f5fe76141d057e7a217cfed95099cc891"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorServer/Pages/_Host.cshtml",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorServer/Pages/_Host.cshtml",
+      "sourceMode": "100644",
+      "sourceBlob": "b4457d062f77bfebc2c812f21056bdf6c5d31628"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorServer/Program.cs",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorServer/Program.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "5523ef04553090eb10a7218cd534d5476b93264b"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorServer/Properties/launchSettings.json",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorServer/Properties/launchSettings.json",
+      "sourceMode": "100644",
+      "sourceBlob": "713f86e5e546ebf314b212fac82bcdb5a53dc673"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorServer/SafeBlazorServerJwtAccessor.cs",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorServer/SafeBlazorServerJwtAccessor.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "56ffc01e0490001e73e8a046d3a6351ce450fc56"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorServer/_Imports.razor",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorServer/_Imports.razor",
+      "sourceMode": "100644",
+      "sourceBlob": "91e3722fafb07f2283d27559c1e0e68d3f291513"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorServer/appsettings.Development.json",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorServer/appsettings.Development.json",
+      "sourceMode": "100644",
+      "sourceBlob": "0c208ae9181e5e5717e47ec1bd59368aebc6066e"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorServer/appsettings.json",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorServer/appsettings.json",
+      "sourceMode": "100644",
+      "sourceBlob": "3e12ba93aa3f5b40db0cd5b18cddba58841206f9"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorWasm.Client/Bootstrap/Backend.cs",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorWasm.Client/Bootstrap/Backend.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "db0f0f545df055e98d5bec54b97eda2effcf0f5c"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorWasm.Client/Bootstrap/Core.cs",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorWasm.Client/Bootstrap/Core.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "bedc146ac80e525b555e67c0d8c7cce552839f7f"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorWasm.Client/Bootstrap/Diagnostics.cs",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorWasm.Client/Bootstrap/Diagnostics.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "08a70afd1653becb7afdbc44455678e52d777fa1"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorWasm.Client/Bootstrap/HealthChecks.cs",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorWasm.Client/Bootstrap/HealthChecks.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "efe6d4f207a13d087687e5478c04766feac0ea96"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorWasm.Client/Bootstrap/Login.cs",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorWasm.Client/Bootstrap/Login.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "d7b6619c6d76817956fdd004040177159650caf9"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorWasm.Client/Bootstrap/Modules.cs",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorWasm.Client/Bootstrap/Modules.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "a48bac36b30ac18f26d42f6b643b1bae7922e4cb"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorWasm.Client/Dockerfile",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorWasm.Client/Dockerfile",
+      "sourceMode": "100644",
+      "sourceBlob": "b35211cd914bad01d3281de67045104a2ea9f183"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorWasm.Client/Elsa.Studio.BlazorWasm.Client.csproj",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorWasm.Client/Elsa.Studio.BlazorWasm.Client.csproj",
+      "sourceMode": "100644",
+      "sourceBlob": "142a61917ef061d6a7e8b730c9a48e246a943d9d"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorWasm.Client/Program.cs",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorWasm.Client/Program.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "9c9299e1991ca1018b9dee936b5a79d60eaf7c27"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorWasm.Client/Properties/launchSettings.json",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorWasm.Client/Properties/launchSettings.json",
+      "sourceMode": "100644",
+      "sourceBlob": "977f345038133c63aee2ad558d8d4ab2c79cd37a"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorWasm.Client/_Imports.razor",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorWasm.Client/_Imports.razor",
+      "sourceMode": "100644",
+      "sourceBlob": "2609e544703881afe62e58ac9c00670cdec3c409"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorWasm.Client/nginx.conf",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorWasm.Client/nginx.conf",
+      "sourceMode": "100644",
+      "sourceBlob": "b1f53d355f99d4aae1ff2392900e9038c993592c"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorWasm.Client/wwwroot/appsettings.json",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorWasm.Client/wwwroot/appsettings.json",
+      "sourceMode": "100644",
+      "sourceBlob": "8f5355027de17b4b4b34f8442522521b03c33b02"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorWasm.Client/wwwroot/index.html",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorWasm.Client/wwwroot/index.html",
+      "sourceMode": "100644",
+      "sourceBlob": "bc38c2ee069e70b920d970ad7ada7fd1dd80ea65"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorWasm/Dockerfile",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorWasm/Dockerfile",
+      "sourceMode": "100644",
+      "sourceBlob": "0bd85b85963de6f8938179a7ea1619004b3d841b"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorWasm/Elsa.Studio.BlazorWasm.csproj",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorWasm/Elsa.Studio.BlazorWasm.csproj",
+      "sourceMode": "100644",
+      "sourceBlob": "6b8c438a8008db145fca83b08cc6e937e0080ac3"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorWasm/Pages/_Host.cshtml",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorWasm/Pages/_Host.cshtml",
+      "sourceMode": "100644",
+      "sourceBlob": "5782379b852fdb4dac6bf03d6d90b3ae28327fe3"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorWasm/Program.cs",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorWasm/Program.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "61a6bcdec07a329b185eee42ee9dfe2b4c5588a2"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorWasm/Properties/launchSettings.json",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorWasm/Properties/launchSettings.json",
+      "sourceMode": "100644",
+      "sourceBlob": "d7b4ad0219fabe161eb0b777ecd35840f46c382b"
+    },
+    {
+      "sourcePath": "src/Elsa.Studio.BlazorWasm/appsettings.json",
+      "destinationPath": "apps/src/Elsa.Studio.BlazorWasm/appsettings.json",
+      "sourceMode": "100644",
+      "sourceBlob": "a9626f34015a5c2927c9f3c65f64ff6883e14cdd"
+    },
+    {
+      "sourcePath": "src/Shared/Constants/SettingKeys.cs",
+      "destinationPath": "apps/src/Shared/Constants/SettingKeys.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "48abb746ccb995561843d45ce0177e387c3625fd"
+    },
+    {
+      "sourcePath": "src/Shared/Helpers/OptionsHelper.cs",
+      "destinationPath": "apps/src/Shared/Helpers/OptionsHelper.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "f521543189d1e121c5116636eedd14ae8c1ace9d"
+    },
+    {
+      "sourcePath": "src/Shared/Options/AuthenticationOptions.cs",
+      "destinationPath": "apps/src/Shared/Options/AuthenticationOptions.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "fe63bdf627461a83aee03358c46081dd71dc74e3"
+    },
+    {
+      "sourcePath": "src/Shared/Options/DiagnosticOptionType.cs",
+      "destinationPath": "apps/src/Shared/Options/DiagnosticOptionType.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "ad7e2ada670b6559e7210643e3a732d47b1be985"
+    },
+    {
+      "sourcePath": "src/Shared/Options/DiagnosticOptions.cs",
+      "destinationPath": "apps/src/Shared/Options/DiagnosticOptions.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "b0c24d47474e9aba2caa166abf98415c07f59a76"
+    },
+    {
+      "sourcePath": "src/Shared/Options/HealthCheckEndpointOptions.cs",
+      "destinationPath": "apps/src/Shared/Options/HealthCheckEndpointOptions.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "a688cc621d10130f696bc2f873f6d9ac70aca057"
+    },
+    {
+      "sourcePath": "src/Shared/Options/HealthCheckOptions.cs",
+      "destinationPath": "apps/src/Shared/Options/HealthCheckOptions.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "00f342c8ab407f97092a1caf0325409292bddf3f"
+    },
+    {
+      "sourcePath": "src/Shared/Options/IdentityOptionType.cs",
+      "destinationPath": "apps/src/Shared/Options/IdentityOptionType.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "9601addb532110fdde97de2c01ce7f7b653ec656"
+    },
+    {
+      "sourcePath": "src/Shared/Options/IdentityOptions.cs",
+      "destinationPath": "apps/src/Shared/Options/IdentityOptions.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "30176e27167506c5da36d44e32381d511d07dc2f"
+    },
+    {
+      "sourcePath": "src/Shared/Options/ModulesFeaturesOptions.cs",
+      "destinationPath": "apps/src/Shared/Options/ModulesFeaturesOptions.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "b4ea4017b78ee893b287e44ef2a7f14055f76c08"
+    },
+    {
+      "sourcePath": "src/Shared/Options/ModulesOptions.cs",
+      "destinationPath": "apps/src/Shared/Options/ModulesOptions.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "caf7e71531f3918b5a5c0a362110bc388a643513"
+    },
+    {
+      "sourcePath": "src/Shared/Shared.csproj",
+      "destinationPath": "apps/src/Shared/Shared.csproj",
+      "sourceMode": "100644",
+      "sourceBlob": "8a1a197af13e785f25d0bb8cb45db30e68bd9e10"
+    }
+  ],
+  "adaptedSourceFiles": {
+    "apps/ElsaApps.sln": "Replace stale source-workflow solution item links with the retained container-images.yml.",
+    "apps/README.md": "Describe product location, unchanged Apps Docker context and source-only publication boundary.",
+    "apps/scripts/container_release.py": "Allow explicit Core source provenance for verify-local; publisher defaults unchanged.",
+    "apps/scripts/tests/test_container_release.py": "Regression for explicit local source provenance and unchanged publisher default."
+  },
+  "sourceContributions": {
+    "readAtUtc": "2026-10-11T20:36:07.177024+00:00",
+    "pullRequests": [
+      {
+        "number": 9,
+        "url": "https://github.com/elsa-workflows/elsa-apps/pull/9",
+        "author": "dependabot[bot]",
+        "head": "b69bc853d609c1a1ec94c2d55fb0562ace4850f5",
+        "state": "open",
+        "disposition": "Original commit retained as non-content ancestry parent, not accepted/applied/closed. Proposed 3.8.4 Studio/Extensions pins are superseded by imported main 3.9.0."
+      }
+    ],
+    "issues": [
+      {
+        "number": 3,
+        "url": "https://github.com/elsa-workflows/elsa-apps/issues/3",
+        "author": "jwillmer",
+        "title": "OIDC implementation",
+        "state": "open",
+        "disposition": "Retained source report; no authentication change, transfer or closure."
+      }
+    ]
+  },
+  "publicationBoundary": "Source-only import. Nested source workflow/Dependabot metadata remain inert; registry/trust/publisher ownership, image publication, source retirement and archival remain Core #8741."
+}

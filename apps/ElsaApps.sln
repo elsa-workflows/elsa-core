@@ -32,11 +32,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Server.Studio.BlazorWa
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{DF578BFC-CBBA-4D80-A10B-A4C2E2CF937D}"
 	ProjectSection(SolutionItems) = preProject
-		.github\workflows\elsa-server-studio-blazor-server.yml = .github\workflows\elsa-server-studio-blazor-server.yml
-		.github\workflows\elsa-server-studio-blazor-wasm.yml = .github\workflows\elsa-server-studio-blazor-wasm.yml
-		.github\workflows\elsa-server.yml = .github\workflows\elsa-server.yml
-		.github\workflows\elsa-studio-blazor-server.yml = .github\workflows\elsa-studio-blazor-server.yml
-		.github\workflows\elsa-studio-blazor-wasm.yml = .github\workflows\elsa-studio-blazor-wasm.yml
+		.github\workflows\container-images.yml = .github\workflows\container-images.yml
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Server.Shared", "src\Elsa.Server.Shared\Elsa.Server.Shared.csproj", "{24FCA92A-1D69-42FB-84B1-BD2AF1150213}"

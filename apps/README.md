@@ -1,6 +1,6 @@
 # Elsa Apps
 
-This repository provides official application projects for running [Elsa Workflows](https://github.com/elsa-workflows/elsa-core) and [Elsa Studio](https://github.com/elsa-workflows/elsa-studio) as configurable ASP.NET Core applications.  
+The `apps/` product in the consolidated [Elsa repository](https://github.com/elsa-workflows/elsa-core) provides official application projects for running [Elsa Workflows](https://github.com/elsa-workflows/elsa-core) and [Elsa Studio](https://github.com/elsa-workflows/elsa-studio) as configurable ASP.NET Core applications.
 
 Each project comes with its own `Dockerfile`, enabling you to run Elsa servers and studios as prebuilt, containerized applications.
 
@@ -31,11 +31,11 @@ This will allow users to run Elsa Workflow Servers and Elsa Studio apps as prebu
 
 ## Getting Started
 
-Build from the repository root so the Dockerfile can copy the shared package and build configuration:
+From the consolidated repository root, use `apps/` as the Docker build context so the Dockerfile uses the product's own package and build configuration:
 
 ```bash
 # Example: build and run the Elsa Server image with persistent SQLite storage
-docker build -f src/Elsa.Server/Dockerfile -t elsa-server-app .
+docker build -f apps/src/Elsa.Server/Dockerfile -t elsa-server-app apps
 docker run -d -p 5000:8080 --name elsa-server \
        -e Http__BaseUrl=http://localhost:5000 \
        -e Identity__AdminUser__UserName=admin \
@@ -62,7 +62,17 @@ The example uses SQLite, which is the configured default and the database path c
 
 Each Elsa Apps release publishes an exact version tag and a source-specific tag containing the Apps commit SHA for all six applications. Supported release tags are derived from the workflow input and must be Elsa 3.x SemVer versions. The hosted Studio WASM image also receives the matching `elsaworkflows/elsa-studio:<version>` alias, and the server image receives `elsaworkflows/elsa-server:<version>`. These aliases are limited to Elsa 3 release tags; the workflow does not update `latest` or Elsa 4 tags.
 
-The shared [container image workflow](.github/workflows/container-images.yml) builds all six images for pull-request validation without pushing. A manual run defaults to build-only. Publishing requires `publish: true`, a reviewed `main` or matching release-tag ref, the pinned full `expected_commit`, exact package versions for every selected image family, and either `all` or a comma-separated subset of these profile names: `server`, `studio-server`, `studio-wasm`, `studio-wasm-standalone`, `server-studio-server`, and `server-studio-wasm`. A published GitHub release tag builds and publishes the full image set automatically. The workflow validates every selected image's platform manifests and restored package assets, starts the image on each platform, verifies Blazor browser assets, and tests the server login and bearer-authenticated API on server hosts before creating version tags and the machine-readable receipt artifact.
+The [Core Apps validation workflow](../.github/workflows/apps-source-validation.yml) validates the nine net10.0 projects and builds/smokes all six image profiles on Linux AMD64 without pushing images. Run these local checks from the consolidated repository root:
+
+```bash
+dotnet build Elsa.Apps.slnf
+python3 scripts/integration-program/verify_apps_source_import.py --evaluate
+(cd apps && python3 -m unittest discover -s scripts/tests -v)
+```
+
+Apps keeps its released Core, Studio and Extensions package versions independently configurable. `apps/Directory.Build.targets` prevents source-reference substitution and excludes these application hosts/private shared libraries from Core NuGet packing. Existing `core/src/apps/` samples are a separate product surface.
+
+The original [Apps publishing workflow](.github/workflows/container-images.yml) is retained under nested metadata and is **inert in Core**. The source repository's existing publisher remains operationally owned separately; this import does not activate a replacement, change registry/trust ownership, publish images, retire source authority or archive a repository. See the [source import record](../docs/integration-program/apps-source-import.md). The following correction procedure is retained reference for that separately governed source publisher.
 
 For a correction to a completed publication, first merge the fix to `main`, then manually dispatch this workflow from `main` with the exact version and all three package versions, `images: all`, `publish: true`, the full reviewed `expected_commit`, and `supersede_run_id` set to the prior successful publication's run ID. The workflow verifies that run and its receipt artifact, builds and smokes all six profiles, and checks all eight existing version tags against the prior receipt before promoting. It allows only tags matching the prior receipt or the already-verified correction candidate, so an interrupted correction can be retried; a missing or unexpected tag blocks the correction. The new receipt links the superseded run, artifact digest, source commit, and prior image digests. The prior receipt remains intact, and this path never updates Elsa 4 or `latest` tags. Leave `supersede_run_id` blank for normal immutable publication, where conflicting version tags continue to be rejected.
 
