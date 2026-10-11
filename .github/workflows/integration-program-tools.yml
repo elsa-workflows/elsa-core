@@ -13,6 +13,7 @@ on:
       - '**/*.targets'
       - '**/[Nn]u[Gg]et.[Cc]onfig'
       - '**/global.json'
+      - 'docs/integration-program/consolidation/dependabot-recursive-discovery.md'
       - 'scripts/integration-program/**'
       - 'extensions/samples/workbench/**'
       - 'docs/integration-program/verify-hierarchy.py'
