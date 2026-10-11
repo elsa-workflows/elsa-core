@@ -8,7 +8,6 @@ protected environment, publisher identity and exact candidate/action policy.
 from __future__ import annotations
 
 import argparse
-import base64
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -230,6 +229,7 @@ def observe(candidate, registry, name, transport):
                     and candidate['identity']['version'] not in versions):
                 return {'package': name, 'state': 'missing'}
         except (ValueError, AttributeError, TypeError):
+            # Malformed public metadata cannot establish absence; keep unknown.
             pass
         return unknown
     if response.status == VERIFIED_MISSING_STATUS.get(registry):

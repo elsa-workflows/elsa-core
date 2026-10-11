@@ -142,6 +142,39 @@ class PairContracts(unittest.TestCase):
             with self.subTest(rejected=version), self.assertRaisesRegex(pair.ProofError, 'release-candidate-version'):
                 pair.release_candidate_identity('a' * 40, 'b' * 40, version, '12', '1')
 
+    def test_candidate_prerelease_numeric_and_alphanumeric_identifiers(self):
+        accepted = ('0', '10', '0.1', '00a', '01a', 'a01', '0-a', '-', '--', '1-2',
+                    '00-12', '0.--.01a.10', 'rc.0.a-1')
+        rejected = ('00', '01', '0.01', 'a.01', '.a', 'a.', 'a..b', 'a_b', 'a+b',
+                    'a b', 'a\n', 'é', '１')
+        for suffix in accepted:
+            version = '3.10.0-' + suffix
+            with self.subTest(accepted=version):
+                result = pair.release_candidate_identity('a' * 40, 'b' * 40, version, '12', '1')
+                self.assertEqual(version, result['version'])
+        for suffix in rejected:
+            with self.subTest(rejected=suffix), self.assertRaisesRegex(pair.ProofError, 'release-candidate-version'):
+                pair.release_candidate_identity('a' * 40, 'b' * 40, '3.10.0-' + suffix, '12', '1')
+
+    def test_malformed_candidate_prerelease_is_rejected_within_subprocess_bound(self):
+        script = """
+import prove_studio_npm_pair as pair
+for count in (128, 4096):
+    try:
+        pair.release_candidate_identity('a' * 40, 'b' * 40, '3.8.0-0.' + '--.' * count, '12', '1')
+    except pair.ProofError as error:
+        if str(error) != 'release-candidate-version':
+            raise
+    else:
+        raise SystemExit('malformed prerelease accepted')
+print('rejected')
+"""
+        result = subprocess.run([sys.executable, '-c', script], cwd=Path(pair.__file__).parent,
+                                capture_output=True, text=True, timeout=5)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual('rejected\n', result.stdout)
+        self.assertEqual('', result.stderr)
+
     def test_candidate_archive_requires_its_exact_candidate_identity(self):
         candidate = pair.release_candidate_identity('a' * 40, 'b' * 40, '3.8.0-preview.12.1', '12', '1')
         payload = self.payload(proof=candidate)

@@ -25,10 +25,11 @@ ASSETS = ('_framework', '_content', 'appsettings.json', 'Elsa.Studio.Host.Custom
 OWNERSHIP = '.elsa-studio-wasm-assets.json'
 EXPORTS = ('BackendProvider', 'WorkflowDefinitionEditor', 'WorkflowInstanceViewer', 'WorkflowDefinitionList')
 MAX_BYTES = 512 * 1024 * 1024
+# A digits-only prefix makes the first non-digit the unique identifier boundary.
+_PRERELEASE_IDENTIFIER = r"(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)"
 RELEASE_CANDIDATE_VERSION = re.compile(
     r"3\.(?:8|9|10)\.(?:0|[1-9][0-9]*)(?:-"
-    r"(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)"
-    r"(?:\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?\Z")
+    rf"{_PRERELEASE_IDENTIFIER}(?:\.{_PRERELEASE_IDENTIFIER})*)?\Z")
 
 # Reuse the local, unpublished tarball primitives, not registry/dist-tag verification.
 _spec = importlib.util.spec_from_file_location('release_package_artifacts',
