@@ -253,14 +253,21 @@ class DependabotDiscoveryTests < Minitest::Test
     inputs = tracked_projects + %w[
       Elsa.Future.sln Elsa.Future.slnx Future.proj Future.fsproj Future.vbproj
       extensions/src/Elsa.Testing.Extensions/Future.sln extensions/src/Elsa.Testing.Extensions/Future.slnx
+      extensions/src/Elsa.Testing.Extensions/Future.cs
       Directory.Packages.props NuGet.Config nuget.config core/custom.props studio/import.targets
       .config/dotnet-tools.json
       core/global.json docs/integration-program/consolidation/dependabot-recursive-discovery.md
     ] +
       Dir.chdir(REPOSITORY_ROOT) { Dir.glob("**/*.{sln,slnx,props,targets}") }
-    future_solutions = %w[Elsa.Future.slnx extensions/src/Elsa.Testing.Extensions/Future.slnx]
-    future_solutions.each do |path|
-      assert_equal ["**/*.slnx"], paths.select { |pattern| File.fnmatch?(pattern, path, File::FNM_PATHNAME) }
+    future_solutions = {
+      "Elsa.Future.slnx" => ["**/*.slnx"],
+      "extensions/src/Elsa.Testing.Extensions/Future.slnx" => [
+        "**/*.slnx", "extensions/src/Elsa.Testing.Extensions/**"
+      ]
+    }
+    future_solutions.each do |path, expected_patterns|
+      assert_equal expected_patterns,
+        paths.select { |pattern| File.fnmatch?(pattern, path, File::FNM_PATHNAME) }
     end
     inputs.each do |path|
       assert paths.any? { |pattern| File.fnmatch?(pattern, path, File::FNM_PATHNAME) },
