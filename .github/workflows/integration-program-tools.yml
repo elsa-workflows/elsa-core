@@ -3,12 +3,18 @@ name: Integration program tools
 on:
   pull_request:
     paths:
-      - 'Elsa.sln'
+      - '**/*.sln'
+      - '**/*.slnx'
       - 'Elsa.Extensions.slnf'
       - 'Elsa.Studio.slnf'
       - '.github/dependabot.yml'
-      - 'extensions/src/**/*.csproj'
-      - 'studio/src/**/*.csproj'
+      - '**/*.csproj'
+      # MSBuild imports can use custom and lower-case names.
+      - '**/*.props'
+      - '**/*.targets'
+      - '**/[Nn]u[Gg]et.[Cc]onfig'
+      - '**/global.json'
+      - 'docs/integration-program/consolidation/dependabot-recursive-discovery.md'
       - 'scripts/integration-program/**'
       - 'extensions/samples/workbench/**'
       - 'docs/integration-program/verify-hierarchy.py'

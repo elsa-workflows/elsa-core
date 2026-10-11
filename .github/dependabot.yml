@@ -15,23 +15,16 @@ registries:
     url: https://f.feedz.io/valence-works/loom/nuget/index.json
 
 updates:
-  - package-ecosystem: "nuget" # See documentation for possible values
-    directory: "/" # Location of package manifests
-    # The root NuGet.Config lists both Feedz sources; Dependabot's proxy blocks any source not declared here.
-    registries:
-      - elsa-feedz-preview
-      - valence-loom-feedz
-    schedule:
-      interval: "weekly"
-    exclude-paths:
-      - "extensions/src/**"
-      - "studio/src/**"
+  # One solution scan coordinates Core, Extensions, Studio and shared build updates.
+  # Keep the retained non-solution testing project visible until its disposition is reviewed.
   - package-ecosystem: "nuget"
     directories:
-      - "/extensions/src/**/Elsa.*"
+      - "/"
+      - "/extensions/src/Elsa.Testing.Extensions"
     target-branch: "main"
     registries:
       - elsa-feedz-preview
+      - valence-loom-feedz
     schedule:
       interval: "daily"
       time: "06:00"
@@ -41,20 +34,6 @@ updates:
       elsa-core-preview:
         patterns:
           - "Elsa*"
-    commit-message:
-      prefix: "deps"
-      include: "scope"
-  - package-ecosystem: "nuget"
-    directories:
-      - "/studio/src/**/Elsa.*"
-    target-branch: "main"
-    registries:
-      - elsa-feedz-preview
-    schedule:
-      interval: "daily"
-      time: "06:00"
-      timezone: "Europe/Amsterdam"
-    open-pull-requests-limit: 1
     commit-message:
       prefix: "deps"
       include: "scope"
