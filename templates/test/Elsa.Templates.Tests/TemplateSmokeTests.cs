@@ -133,6 +133,7 @@ public class TemplateSmokeTests : IClassFixture<TemplatePackageFixture>
         if (templateName == "elsa-combined")
         {
             var program = File.ReadAllText(Path.Combine(outputPath, "src", $"{solutionName}.Host", "Program.cs"));
+            Assert.Contains("using Elsa.Studio.Workflows.Designer.Extensions;", program, StringComparison.Ordinal);
             Assert.Contains("options.RootComponents.RegisterCustomElsaStudioElements();", program, StringComparison.Ordinal);
             Assert.Contains("options.RootComponents.MaxJSRootComponents = 1000;", program, StringComparison.Ordinal);
         }

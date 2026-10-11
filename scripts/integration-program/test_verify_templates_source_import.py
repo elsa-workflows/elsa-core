@@ -148,9 +148,15 @@ class TemplatesSourceTests(unittest.TestCase):
     def test_applied_contribution_restores_missing_registration_without_replacing_main(self):
         path = "templates/src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Host/Program.cs"
         registration = "options.RootComponents.RegisterCustomElsaStudioElements();"
+        extension_namespace = "using Elsa.Studio.Workflows.Designer.Extensions;"
         self.assertNotIn(registration, git(self.root, "show", self.manifest["importCommit"] + ":" + path))
         applied = self.manifest["appliedContribution"]["appliedCommit"]
-        self.assertIn(registration, git(self.root, "show", applied + ":" + path))
+        adopted_program = git(self.root, "show", applied + ":" + path)
+        self.assertIn(registration, adopted_program)
+        self.assertNotIn(extension_namespace, adopted_program)
+        current_program = (ROOT / path).read_text()
+        self.assertIn(extension_namespace, current_program)
+        self.assertIn(registration, current_program)
         self.assertEqual([path], git(self.root, "diff", "--name-only", applied + "^", applied).splitlines())
         self.assertEqual("gpanayotov <panayotov.g.p@gmail.com>", git(self.root, "show", "-s", "--format=%an <%ae>", applied))
 

@@ -24,6 +24,7 @@ using Elsa.Studio.Login.HttpMessageHandlers;
 using Elsa.Studio.Models;
 using Elsa.Studio.Shell.Extensions;
 using Elsa.Studio.Translations;
+using Elsa.Studio.Workflows.Designer.Extensions;
 using Elsa.Studio.Workflows.Extensions;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.DependencyInjection.Extensions;
