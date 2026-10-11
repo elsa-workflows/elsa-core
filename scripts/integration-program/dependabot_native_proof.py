@@ -1237,6 +1237,7 @@ def run_preflight(checkout, state, mode):
 WRITER_PROJECT = 'studio/src/modules/Elsa.Studio.Authentication.Abstractions/Elsa.Studio.Authentication.Abstractions.csproj'
 WRITER_PACKAGE = 'Microsoft.AspNetCore.SignalR.Client'
 WRITER_CENTRAL = 'studio/src/Directory.Packages.props'
+WRITER_UNEXPECTED_PROJECT = 'core/src/clients/Elsa.Api.Client/Elsa.Api.Client.csproj'
 WRITER_TARGET = '10.0.12'
 WRITER_OLD = {'net8.0': '8.0.24', 'net9.0': '9.0.13', 'net10.0': '10.0.3'}
 WRITER_PHASES = {'setup': 180, 'producer': 180, 'writer': 300, 'readback': 120}
@@ -1357,12 +1358,34 @@ def writer_events(state, tracked):
     return result
 
 
+def writer_bom_classification(snapshot, before, can_continue):
+    """Classify only the fixed unexpected project; a recognized change is still forbidden."""
+    result = {'path': WRITER_UNEXPECTED_PROJECT, 'utf8_bom_removal_only': None}
+    try:
+        baseline = before[WRITER_UNEXPECTED_PROJECT]
+        if not isinstance(baseline, str) or not re.fullmatch('[0-9a-f]{64}', baseline) or not can_continue():
+            return result
+        with open_regular(snapshot/WRITER_UNEXPECTED_PROJECT, snapshot) as stream:
+            data = stream.read(64*1024+1)
+        if len(data) > 64*1024 or not can_continue():
+            return result
+        bom = b'\xef\xbb\xbf'
+        result.update(before_sha256=baseline, after_sha256=hashlib.sha256(data).hexdigest(),
+                      after_bytes=len(data), utf8_bom_removal_only=(not data.startswith(bom)
+                          and hashlib.sha256(bom+data).hexdigest() == baseline))
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    return result
+
+
 def writer_changes(snapshot, before, operations, can_continue):
     """Only recorded central version edits may differ; unrelated temporary writes fail closed."""
     result = {'status': 'incomplete', 'changed_paths': [], 'central_version_changes': [], 'runtime_artifacts': 0,
               'unaccounted_new_files': 0}
     status, changed = recheck_content(snapshot, before, can_continue)
     result['changed_paths'] = changed
+    if WRITER_UNEXPECTED_PROJECT in changed:
+        result['unexpected_file_bytes'] = writer_bom_classification(snapshot, before, can_continue)
     if status != 'checked':
         return result
     # Preserve independent central/readback evidence even when another write fails reconciliation.

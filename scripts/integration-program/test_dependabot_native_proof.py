@@ -17,8 +17,8 @@ from dependabot_native_proof import (DeadlineRunner, NativeProgress, diagnostic_
     units_from_configuration, unit_projects, reconcile_enumeration, probe_workspaces, probe_readback,
     safe_tool_result, child_environment, read_closed_json, digest, recheck_content, inventory,
     product_smoke_readback, smoke_native, smoke_project, smoke_can_continue, reference_output, SMOKE_PROJECTS, SMOKE_TFMS,
-    refresh_writer_receipt, writer_update_readback, writer_registration_guard, writer_admission, writer_changes, writer_events, writer_operations, run_writer_case,
-    WRITER_PROJECT, WRITER_PACKAGE, WRITER_CENTRAL, WRITER_OLD,
+    writer_bom_classification, refresh_writer_receipt, writer_update_readback, writer_registration_guard, writer_admission, writer_changes, writer_events, writer_operations, run_writer_case,
+    WRITER_PROJECT, WRITER_PACKAGE, WRITER_CENTRAL, WRITER_OLD, WRITER_UNEXPECTED_PROJECT,
     UNIT_IDS, UNIT_SELECTORS, UNIT_COUNTS, RETAINED, TOOL_MANIFEST)
 
 
@@ -943,6 +943,49 @@ class WriterSmokeContractTests(unittest.TestCase):
         return {'status': 'reconciled', 'changed_paths': [WRITER_CENTRAL] if at_target else [],
                 'central_version_changes': [{'id': WRITER_PACKAGE, 'old': '9.0.13', 'new': '10.0.12'}] if at_target else [],
                 'central_sha256': inputs[WRITER_CENTRAL]}
+
+    def test_fixed_project_bom_hash_classification_never_admits_the_write(self):
+        path = self.snapshot/WRITER_UNEXPECTED_PROJECT
+        path.parent.mkdir(parents=True)
+        bom, content = b'\xef\xbb\xbf', b'<Project/>SECRET'
+        for baseline, after, expected in ((bom+content, content, True),
+                                          (bom+content, content+b'changed', False),
+                                          (content, content+b'changed', False),
+                                          (content, content, False),
+                                          (bom+content, bom+content+b'changed', False)):
+            with self.subTest(expected=expected, baseline_bom=baseline.startswith(bom)):
+                before = dict(self.before, **{WRITER_UNEXPECTED_PROJECT: hashlib.sha256(baseline).hexdigest()})
+                path.write_bytes(after)
+                result = writer_bom_classification(self.snapshot, before, lambda: True)
+                self.assertEqual(expected, result['utf8_bom_removal_only'])
+                self.assertEqual(len(after), result['after_bytes'])
+                self.assertNotIn('SECRET', json.dumps(result))
+                if baseline != after:
+                    changes = writer_changes(self.snapshot, before, {'status': 'observed', 'operations': []}, lambda: True)
+                    self.assertEqual('unaccounted_write', changes['status'])
+                    self.assertEqual(expected, changes['unexpected_file_bytes']['utf8_bom_removal_only'])
+
+    def test_bom_classification_read_failure_links_and_caps_stay_unknown(self):
+        path = self.snapshot/WRITER_UNEXPECTED_PROJECT
+        path.parent.mkdir(parents=True)
+        before = {WRITER_UNEXPECTED_PROJECT: 'a'*64}
+        for failure in ('missing', 'symlink', 'parent_symlink', 'oversized', 'deadline'):
+            with self.subTest(failure=failure):
+                if path.exists() or path.is_symlink():
+                    path.unlink()
+                if failure == 'symlink':
+                    path.symlink_to(self.central)
+                elif failure == 'parent_symlink':
+                    path.parent.rmdir()
+                    path.parent.symlink_to(self.central.parent, target_is_directory=True)
+                elif failure in ('oversized', 'deadline'):
+                    path.write_bytes(b'x'*(64*1024+1 if failure == 'oversized' else 1))
+                result = writer_bom_classification(self.snapshot, before, lambda: failure != 'deadline')
+                self.assertIsNone(result['utf8_bom_removal_only'])
+                self.assertEqual({'path', 'utf8_bom_removal_only'}, set(result))
+                if failure == 'parent_symlink':
+                    path.parent.unlink()
+                    path.parent.mkdir()
 
     def test_unaccounted_source_write_retains_independent_readback_without_acceptance(self):
         (self.snapshot/WRITER_PROJECT).write_text('<Project Changed="true"/>')
