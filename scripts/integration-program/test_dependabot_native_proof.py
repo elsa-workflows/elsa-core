@@ -16,6 +16,8 @@ from dependabot_native_proof import (DeadlineRunner, NativeProgress, diagnostic_
     units_from_configuration, unit_projects, reconcile_enumeration, probe_workspaces, probe_readback,
     safe_tool_result, child_environment, read_closed_json, digest, recheck_content, inventory,
     product_smoke_readback, smoke_native, smoke_project, smoke_can_continue, reference_output, SMOKE_PROJECTS, SMOKE_TFMS,
+    writer_registration_guard, writer_admission, writer_changes, writer_events, writer_operations, run_writer_case,
+    WRITER_PROJECT, WRITER_PACKAGE, WRITER_CENTRAL, WRITER_OLD,
     UNIT_IDS, UNIT_SELECTORS, UNIT_COUNTS, RETAINED, TOOL_MANIFEST)
 
 
@@ -782,6 +784,136 @@ class ProductSmokeTests(unittest.TestCase):
         result = self.readback()
         self.assertFalse(result['semantic_preflight_complete'])
         self.assertFalse(smoke_can_continue(result['projects'][0]))
+        self.assertNotIn('SECRET', json.dumps(result))
+
+class WriterSmokeContractTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.state = Path(self.temporary.name).resolve()
+        self.snapshot = self.state/'repository'
+        self.snapshot.mkdir()
+        self.central = self.snapshot/WRITER_CENTRAL
+        self.central.parent.mkdir(parents=True)
+        self.central.write_text('<Project><ItemGroup><PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.13"/></ItemGroup></Project>')
+        self.tracked = {WRITER_CENTRAL, WRITER_PROJECT}
+        project = self.snapshot/WRITER_PROJECT
+        project.parent.mkdir(parents=True)
+        project.write_text('<Project/>')
+        self.before = {path: digest(self.snapshot/path, self.snapshot) for path in self.tracked}
+        (self.state/'writer-central-before.xml').write_bytes(self.central.read_bytes())
+
+    def admission_fixture(self):
+        dependency = {'Name': WRITER_PACKAGE, 'Version': '9.0.13', 'Type': 'PackageReference',
+            'IsTopLevel': True, 'TargetFrameworks': ['net9.0'], 'EvaluationResult': {'present': False}}
+        native = {'status': 'observed', 'records': [{'path': WRITER_PROJECT, 'central_file': WRITER_CENTRAL,
+                                                   'dependencies': [dependency]}]}
+        evaluations = [{'tfm': tfm, 'status': 'evaluated', 'central_file': WRITER_CENTRAL,
+            'direct_versions': [{'id': WRITER_PACKAGE, 'version': WRITER_OLD[tfm]}],
+            'items': {'ProjectReference': []}} for tfm in SMOKE_TFMS]
+        return native, evaluations
+
+    def test_admission_requires_one_real_survivor_and_all_three_conditional_evaluations(self):
+        native, evaluations = self.admission_fixture()
+        self.assertEqual('9.0.13', writer_admission(native, evaluations)['OldVersion'])
+        for change in ('missing', 'duplicate', 'unknown_version', 'failed_producer', 'tfm_gap', 'version_normalized'):
+            native, evaluations = self.admission_fixture()
+            if change == 'missing': native['records'][0]['dependencies'] = []
+            if change == 'duplicate': native['records'][0]['dependencies'] *= 2
+            if change == 'unknown_version': native['records'][0]['dependencies'][0]['Version'] = '1SECRET'
+            if change == 'failed_producer': native['status'] = 'failed_or_empty'
+            if change == 'tfm_gap': evaluations.pop()
+            if change == 'version_normalized': evaluations[0]['direct_versions'][0]['version'] = '9.0.13'
+            with self.subTest(change=change), self.assertRaisesRegex(ValueError, '^writer_producer_incomplete$'):
+                writer_admission(native, evaluations)
+
+    def test_failed_producer_never_creates_request_or_starts_writer(self):
+        runner = mock.Mock()
+        runner.run.side_effect = ValueError('stage_failed')
+        with mock.patch('dependabot_native_proof.writer_registration_guard', return_value={}), self.assertRaisesRegex(ValueError, '^stage_failed$'):
+            run_writer_case(runner, ['caller'], self.state, self.state, self.snapshot,
+                            self.tracked, {WRITER_PACKAGE}, self.before, {'writer': {}})
+        self.assertEqual(['writer_producer'], [call.args[0] for call in runner.run.call_args_list])
+        self.assertFalse((self.state/'writer-request.json').exists())
+
+    def test_cold_producer_refuses_existing_external_global_json_without_exposing_path(self):
+        external = self.state/'global.json'
+        external.write_text('SECRET')
+        with self.assertRaisesRegex(ValueError, '^writer_registration_ancestor_global_json$'):
+            writer_registration_guard(self.snapshot)
+        external.unlink()
+        external.symlink_to(self.state/'missing')
+        with self.assertRaisesRegex(ValueError, '^writer_registration_ancestor_global_json$'):
+            writer_registration_guard(self.snapshot)
+
+    def test_phase_deadline_prevents_borrowing_and_preserves_global_reserve(self):
+        with contextlib.redirect_stdout(io.StringIO()), mock.patch('dependabot_native_proof.time.monotonic', return_value=100):
+            runner = DeadlineRunner(self.state, {'stages': []}, budget_seconds=840, reserve_seconds=60)
+            runner.begin_phase('setup')
+            self.assertEqual(280, runner.effective_deadline())
+            self.assertEqual(880, runner.deadline)
+        with mock.patch('dependabot_native_proof.time.monotonic', return_value=281), self.assertRaisesRegex(ValueError, '^overall_deadline$'):
+            runner.check()
+        with contextlib.redirect_stdout(io.StringIO()), mock.patch('dependabot_native_proof.time.monotonic', return_value=850):
+            runner.begin_phase('writer')
+            self.assertEqual(880, runner.effective_deadline())
+
+    def test_only_recorded_central_version_changes_are_reconciled(self):
+        operations = {'status': 'observed', 'operations': [{'id': WRITER_PACKAGE, 'new': '10.0.12', 'paths': [WRITER_CENTRAL]}]}
+        self.central.write_text(self.central.read_text().replace('9.0.13', '10.0.12'))
+        result = writer_changes(self.snapshot, self.before, operations, lambda: True)
+        self.assertEqual('reconciled', result['status'])
+        self.assertEqual([WRITER_CENTRAL], result['changed_paths'])
+        (self.snapshot/WRITER_PROJECT).write_text('<Project Changed="true"/>')
+        self.assertEqual('unaccounted_write', writer_changes(self.snapshot, self.before, operations, lambda: True)['status'])
+
+    def test_unknown_new_files_and_nonversion_xml_edits_fail_without_raw_paths(self):
+        operations = {'status': 'observed', 'operations': []}
+        (self.snapshot/'SECRET-token').write_text('https://private')
+        result = writer_changes(self.snapshot, self.before, operations, lambda: True)
+        self.assertEqual('unaccounted_write', result['status'])
+        self.assertNotIn('SECRET', json.dumps(result))
+        (self.snapshot/'SECRET-token').unlink()
+        operations['operations'] = [{'id': WRITER_PACKAGE, 'new': '10.0.12', 'paths': [WRITER_CENTRAL]}]
+        self.central.write_text(self.central.read_text().replace('<Project>', '<Project Secret="https://private">'))
+        result = writer_changes(self.snapshot, self.before, operations, lambda: True)
+        self.assertEqual('unaccounted_write', result['status'])
+        self.assertNotIn('https://', json.dumps(result))
+
+    def event_fixture(self, **changes):
+        event = {'Sequence': 0, 'Kind': 'request', 'State': 'returned', 'Ordinal': 0, 'Attempt': 0,
+            'AttemptProject': None, 'Workspace': None, 'Tfm': None, 'ElapsedSeconds': 1, 'CentralHash': 'a'*64,
+            'Observation': {'Error': 'SECRET https://private'}, 'Raw': 'SECRET'}
+        event.update(changes)
+        return event
+
+    def test_missing_warning_requires_exact_single_awaited_discovery(self):
+        events = [self.event_fixture(Sequence=0, Kind='attempt', State='started', Attempt=1, AttemptProject=WRITER_PROJECT),
+                  self.event_fixture(Sequence=1, Kind='discovery', State='started', Attempt=1, Ordinal=2),
+                  self.event_fixture(Sequence=2, Kind='discovery', State='returned', Attempt=1, Ordinal=2),
+                  self.event_fixture(Sequence=3, Kind='missing_dependency', State='observed', Attempt=1)]
+        (self.state/'writer-events.json').write_text(json.dumps({'Events': events, 'Dropped': False}))
+        warnings = writer_events(self.state, self.tracked)['missing_warnings']
+        self.assertTrue(warnings[0]['bound'])
+        self.assertIsNone(warnings[0]['writer_loop_tfm'])
+        self.assertIsNone(warnings[0]['rerun_survivor'])
+        events[2]['Ordinal'] = 3
+        (self.state/'writer-events.json').write_text(json.dumps({'Events': events, 'Dropped': False}))
+        self.assertFalse(writer_events(self.state, self.tracked)['missing_warnings'][0]['bound'])
+
+    def test_event_and_operation_projection_omit_raw_errors_and_unobserved_tfm(self):
+        event = self.event_fixture()
+        (self.state/'writer-events.json').write_text(json.dumps({'Events': [event], 'Dropped': False}))
+        result = writer_events(self.state, self.tracked)
+        self.assertEqual('observed', result['status'])
+        self.assertNotIn('SECRET', json.dumps(result))
+        event['Tfm'] = 'net9.0'
+        (self.state/'writer-events.json').write_text(json.dumps({'Events': [event], 'Dropped': False}))
+        self.assertNotEqual('observed', writer_events(self.state, self.tracked)['status'])
+        (self.state/'writer-operations.json').write_text(json.dumps([{'Type': 'DirectUpdate', 'DependencyName': WRITER_PACKAGE,
+            'OldVersion': '9.0.13', 'NewVersion': '10.0.12', 'UpdatedFiles': [WRITER_CENTRAL], 'Error': 'SECRET https://private'}]))
+        result = writer_operations(self.state, self.tracked, {WRITER_PACKAGE})
+        self.assertEqual('observed', result['status'])
         self.assertNotIn('SECRET', json.dumps(result))
 
 

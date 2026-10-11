@@ -31,7 +31,7 @@ ERROR_TYPES = {'unknown_error', 'dependency_file_not_parseable', 'dependency_fil
                'private_source_timed_out', 'dependency_not_found', 'out_of_disk', 'bad_requirement'}
 
 CONFIGURATION_BLOB = '83e586893f4e58a5f938db815d5478afeb5651b0'
-MODES = ('enumerate', 'tooling', 'retained-probe', 'product-smoke')
+MODES = ('enumerate', 'tooling', 'retained-probe', 'product-smoke', 'writer-smoke')
 SMOKE_PROJECTS = ('extensions/src/email/Elsa.Email/Elsa.Email.csproj',
                   'studio/src/framework/Elsa.Studio.Core/Elsa.Studio.Core.csproj')
 SMOKE_TFMS = ('net8.0', 'net9.0', 'net10.0')
@@ -175,8 +175,8 @@ def known_snapshot_path(value, snapshot, tracked, base=''):
     return path if path in tracked else None
 
 
-def smoke_native(state, index, snapshot, tracked, package_ids):
-    project = smoke_project(index)
+def smoke_native(state, index, snapshot, tracked, package_ids, project=None):
+    project = project or smoke_project(index)
     workspace = str(PurePosixPath(project).parent)
     result = {'path': project, 'status': 'missing', 'records': [], 'invalid_records': 0}
     try:
@@ -266,8 +266,8 @@ def evaluated_project_references(rows, snapshot, tracked):
     return references
 
 
-def smoke_evaluation(state, index, tfm, snapshot, tracked, package_ids):
-    project = smoke_project(index)
+def smoke_evaluation(state, index, tfm, snapshot, tracked, package_ids, project=None):
+    project = project or smoke_project(index)
     result = {'path': project, 'tfm': tfm, 'status': 'missing_or_invalid'}
     try:
         raw = read_closed_json(state/f'evaluation-{index}-{tfm}.json', state)
@@ -834,7 +834,7 @@ def child_environment(state):
 
 class DeadlineRunner:
     """Run closed stages in isolated process groups under one shared elapsed budget."""
-    STAGES = {'proof_identity', 'target_identity', 'target_tree', 'archive', 'extract',
+    STAGES = {'writer_producer', 'writer_native', 'writer_evaluation', 'checkout_files', 'proof_identity', 'target_identity', 'target_tree', 'archive', 'extract',
               'source_init', 'source_remote', 'source_fetch', 'source_checkout',
               'upstream_identity', 'upstream_tree', 'submodules', 'nuget_identity',
               'dotnet_identity', 'sdk_identity', 'source_files', 'official_build',
@@ -853,6 +853,7 @@ class DeadlineRunner:
         self.grace, self.progress = grace_seconds, progress_seconds
         self.process = None
         self.native_progress = None
+        self.phase_deadline = None
         summary['runner_budget_seconds'] = budget_seconds
         self.save()
 
@@ -861,8 +862,16 @@ class DeadlineRunner:
         temporary.write_text(json.dumps(self.summary, indent=2)+'\n')
         temporary.replace(self.state/'summary.json')
 
+    def begin_phase(self, phase):
+        self.phase_deadline = min(self.deadline, time.monotonic()+WRITER_PHASES[phase])
+        self.summary.setdefault('writer_phases', []).append({'phase': phase, 'allowance_seconds': WRITER_PHASES[phase]})
+        self.check()
+
+    def effective_deadline(self):
+        return min(self.deadline, self.phase_deadline) if self.phase_deadline is not None else self.deadline
+
     def check(self):
-        if time.monotonic() >= self.deadline:
+        if time.monotonic() >= self.effective_deadline():
             raise ValueError('overall_deadline')
 
     def stop(self):
@@ -924,7 +933,7 @@ class DeadlineRunner:
             self.save()
             print(json.dumps(receipt), flush=True)
         try:
-            if started >= self.deadline:
+            if started >= self.effective_deadline():
                 row['state'] = 'not_started_deadline'
                 raise ValueError('overall_deadline')
             progress()
@@ -933,7 +942,7 @@ class DeadlineRunner:
                     self.process = subprocess.Popen(args, cwd=cwd or self.state, stdout=stdout,
                                                     stderr=log, start_new_session=True, env=self.environment)
                     while True:
-                        remaining = self.deadline-time.monotonic()
+                        remaining = self.effective_deadline()-time.monotonic()
                         if remaining <= 0:
                             row['state'] = 'timed_out'
                             raise ValueError('overall_deadline')
@@ -945,7 +954,7 @@ class DeadlineRunner:
             row.update(state='passed' if code == 0 else 'failed', exit_code=code)
             if code:
                 raise ValueError('stage_failed')
-            capture = {'proof_identity', 'target_identity', 'target_tree', 'upstream_identity',
+            capture = {'checkout_files', 'proof_identity', 'target_identity', 'target_tree', 'upstream_identity',
                        'upstream_tree', 'nuget_identity', 'dotnet_identity', 'sdk_identity', 'source_files'}
             if name in capture:
                 with open_regular(self.state/(name+'.out'), self.state) as stream:
@@ -973,6 +982,8 @@ def run_preflight(checkout, state, mode):
     checkout = checkout.resolve(strict=True)
     state = state.parent.resolve(strict=True)/state.name
     state.mkdir(parents=True, exist_ok=False)
+    if mode == 'writer-smoke':
+        state.chmod(0o700)
     summary = {'target': TARGET, 'target_tree': TREE, 'upstream': UPSTREAM, 'submodules': SUBMODULES,
                'sdk_required': SDK, 'experiments': {'mode': 'default_diagnostic',
                'nuget_generate_simple_pr_body': False, 'nuget_find_root_directory': False},
@@ -982,7 +993,15 @@ def run_preflight(checkout, state, mode):
                'remaining_gaps': ['complete_per_tfm_central_evaluation', 'reference_closure_duplicates',
                                   'configured_feed_resolution', 'proposal_or_current_version', 'managed_helper_binary_equivalence'],
                'stages': []}
-    runner = DeadlineRunner(state, summary)
+    writer_mode = mode == 'writer-smoke'
+    runner = DeadlineRunner(state, summary, budget_seconds=840 if writer_mode else 1800)
+    if writer_mode:
+        runner.finalization_deadline = runner.started+840
+        runner.begin_phase('setup')
+        summary['writer'] = {'schema_version': 1, 'request_id': 'signalr-authentication-abstractions', 'case_complete': False, 'writer': 'actual_public_UpdaterWorker', 'managed_cwd_parity': False,
+            'writer_loop_tfm': 'not_exposed_by_logger', 'rerun_survivors': 'not_exposed_by_logger',
+            'managed_binary_equivalence': False, 'feed_parity': 'not_supplied_unknown',
+            'write_observation': 'boundaries_only_transient_writes_unobserved', 'latency_fix_proved': False}
     run = runner.run
     def hard_deadline(signum, frame):
         summary.update(preflight_error='overall_deadline', diagnostic_complete=False)
@@ -990,8 +1009,11 @@ def run_preflight(checkout, state, mode):
         runner.save()
         raise ValueError('overall_deadline')
     previous_handler = signal.signal(signal.SIGALRM, hard_deadline)
-    signal.setitimer(signal.ITIMER_REAL, 1790)
+    signal.setitimer(signal.ITIMER_REAL, 835 if writer_mode else 1790)
     try:
+        if writer_mode:
+            checkout_files = run('checkout_files', ['git', 'ls-files', '-z'], checkout).decode().split('\0')
+            original_hashes = {path: digest(checkout/path, checkout) for path in checkout_files if path}
         summary['proof_head'] = run('proof_identity', ['git', 'rev-parse', 'HEAD'], checkout).decode().strip()
         actual_target = run('target_identity', ['git', 'rev-parse', TARGET], checkout).decode().strip()
         if actual_target != TARGET:
@@ -1058,82 +1080,97 @@ def run_preflight(checkout, state, mode):
         summary['caller_binary_content_sha256'] = hashlib.sha256(json.dumps(binaries, sort_keys=True).encode()).hexdigest()
         summary['reconstructed_binary_sha256'] = {name: binaries[name] for name in ('NativeDiscovery.dll', 'NuGetUpdater.Core.dll')}
         command = ['dotnet', str(state/'caller/NativeDiscovery.dll'), str(snapshot), str(state), str(state/'units.json')]
-        run('native_enumeration', command+['enumerate'], native)
-        summary['enumeration'] = reconcile_enumeration(state, expected, tracked)
-        runner.save()
-        if not summary['enumeration']['complete']:
-            raise ValueError('enumeration_mismatch')
-        if mode != 'enumerate':
-            runner.native_progress = NativeProgress(snapshot, expected, len(probe_workspaces(mode)), log_root=state)
-            def readback():
-                summary['probe'] = probe_readback(state, mode, expected, versions, tracked, tool_version)
-                summary['selected_dispositions'] = summary['probe']['reconciliation']['projects']
+        if writer_mode:
+            package_ids = set().union(*(set(items) for items in versions.values()))
+            run_writer_case(runner, command, native, state, snapshot, tracked, package_ids, before, summary)
+        else:
+            run('native_enumeration', command+['enumerate'], native)
+            summary['enumeration'] = reconcile_enumeration(state, expected, tracked)
+            runner.save()
+            if not summary['enumeration']['complete']:
+                raise ValueError('enumeration_mismatch')
+            if mode != 'enumerate':
+                runner.native_progress = NativeProgress(snapshot, expected, len(probe_workspaces(mode)), log_root=state)
+                def readback():
+                    summary['probe'] = probe_readback(state, mode, expected, versions, tracked, tool_version)
+                    summary['selected_dispositions'] = summary['probe']['reconciliation']['projects']
+                    if mode == 'product-smoke':
+                        summary['product_smoke'] = product_smoke_readback(state, snapshot, expected, tracked, versions)
+                runner.readback = readback
                 if mode == 'product-smoke':
-                    summary['product_smoke'] = product_smoke_readback(state, snapshot, expected, tracked, versions)
-            runner.readback = readback
-            if mode == 'product-smoke':
-                for index in (0, 1):
-                    project = smoke_project(index)
-                    unit = summary['enumeration']['units'][2+index]
-                    if project not in unit['entry_projects'] or str(PurePosixPath(project).parent) not in unit['directories']:
-                        raise ValueError('product_smoke_incomplete')
-                    run(f'native_smoke_{index}', command+[mode, str(index)], native)
-                    if summary['product_smoke']['projects'][index]['native']['status'] != 'observed':
-                        raise ValueError('product_smoke_incomplete')
-                    for tfm in SMOKE_TFMS:
-                        run('product_evaluation', ['dotnet', 'msbuild', str(snapshot/project), '-nologo',
-                            '-property:TargetFramework='+tfm,
-                            '-getProperty:TargetFramework,TargetFrameworks,ManagePackageVersionsCentrally,DirectoryPackagesPropsPath',
-                            '-getItem:PackageVersion,PackageReference,GlobalPackageReference,ProjectReference'], native,
-                            output=state/f'evaluation-{index}-{tfm}.json')
-                        if summary['product_smoke']['projects'][index]['evaluations'][SMOKE_TFMS.index(tfm)]['status'] != 'evaluated':
+                    for index in (0, 1):
+                        project = smoke_project(index)
+                        unit = summary['enumeration']['units'][2+index]
+                        if project not in unit['entry_projects'] or str(PurePosixPath(project).parent) not in unit['directories']:
                             raise ValueError('product_smoke_incomplete')
-                    records = summary['product_smoke']['projects'][index]['native']['records']
-                    if len({record['path'] for record in records}) != len(records):
-                        raise ValueError('product_smoke_incomplete')
-                    for record in sorted(records, key=lambda value: value['path']):
-                        path = record['path']
-                        if path == project:
-                            continue
-                        run('reference_declaration', ['dotnet', 'msbuild', str(snapshot/path), '-nologo',
-                            '-getProperty:TargetFramework,TargetFrameworks'], native,
-                            output=reference_output(state, index, path))
-                        declaration = reference_frameworks(state, index, record)
-                        if declaration['status'] != 'evaluated':
+                        run(f'native_smoke_{index}', command+[mode, str(index)], native)
+                        if summary['product_smoke']['projects'][index]['native']['status'] != 'observed':
                             raise ValueError('product_smoke_incomplete')
-                        for tfm in declaration['frameworks']:
-                            run('reference_evaluation', ['dotnet', 'msbuild', str(snapshot/path), '-nologo',
-                                '-property:TargetFramework='+tfm, '-getProperty:TargetFramework,TargetFrameworks',
-                                '-getItem:ProjectReference'], native, output=reference_output(state, index, path, tfm))
-                            if reference_evaluation(state, index, path, tfm, declaration['frameworks'],
-                                                    snapshot, tracked)['status'] != 'evaluated':
+                        for tfm in SMOKE_TFMS:
+                            run('product_evaluation', ['dotnet', 'msbuild', str(snapshot/project), '-nologo',
+                                '-property:TargetFramework='+tfm,
+                                '-getProperty:TargetFramework,TargetFrameworks,ManagePackageVersionsCentrally,DirectoryPackagesPropsPath',
+                                '-getItem:PackageVersion,PackageReference,GlobalPackageReference,ProjectReference'], native,
+                                output=state/f'evaluation-{index}-{tfm}.json')
+                            if summary['product_smoke']['projects'][index]['evaluations'][SMOKE_TFMS.index(tfm)]['status'] != 'evaluated':
                                 raise ValueError('product_smoke_incomplete')
-                    if not smoke_can_continue(summary['product_smoke']['projects'][index]):
-                        raise ValueError('product_smoke_incomplete')
-                    checks = {}
-                    for label, root, hashes in (('target', snapshot, before), ('upstream', source, closure)):
-                        status, changed = runner.calculate('snapshot_hashes', lambda: recheck_content(
-                            root, hashes, lambda: time.monotonic() < runner.deadline))
-                        checks[label] = {'status': status, 'changed_files': changed}
-                    summary.setdefault('smoke_content_rechecks', []).append({'project_index': index, **checks})
-                    runner.save()
-                    if any(check['status'] != 'checked' or check['changed_files'] for check in checks.values()):
-                        raise ValueError('product_smoke_incomplete')
-            else:
-                run('native_discovery', command+[mode], native)
+                        records = summary['product_smoke']['projects'][index]['native']['records']
+                        if len({record['path'] for record in records}) != len(records):
+                            raise ValueError('product_smoke_incomplete')
+                        for record in sorted(records, key=lambda value: value['path']):
+                            path = record['path']
+                            if path == project:
+                                continue
+                            run('reference_declaration', ['dotnet', 'msbuild', str(snapshot/path), '-nologo',
+                                '-getProperty:TargetFramework,TargetFrameworks'], native,
+                                output=reference_output(state, index, path))
+                            declaration = reference_frameworks(state, index, record)
+                            if declaration['status'] != 'evaluated':
+                                raise ValueError('product_smoke_incomplete')
+                            for tfm in declaration['frameworks']:
+                                run('reference_evaluation', ['dotnet', 'msbuild', str(snapshot/path), '-nologo',
+                                    '-property:TargetFramework='+tfm, '-getProperty:TargetFramework,TargetFrameworks',
+                                    '-getItem:ProjectReference'], native, output=reference_output(state, index, path, tfm))
+                                if reference_evaluation(state, index, path, tfm, declaration['frameworks'],
+                                                        snapshot, tracked)['status'] != 'evaluated':
+                                    raise ValueError('product_smoke_incomplete')
+                        if not smoke_can_continue(summary['product_smoke']['projects'][index]):
+                            raise ValueError('product_smoke_incomplete')
+                        checks = {}
+                        for label, root, hashes in (('target', snapshot, before), ('upstream', source, closure)):
+                            status, changed = runner.calculate('snapshot_hashes', lambda: recheck_content(
+                                root, hashes, lambda: time.monotonic() < runner.deadline))
+                            checks[label] = {'status': status, 'changed_files': changed}
+                        summary.setdefault('smoke_content_rechecks', []).append({'project_index': index, **checks})
+                        runner.save()
+                        if any(check['status'] != 'checked' or check['changed_files'] for check in checks.values()):
+                            raise ValueError('product_smoke_incomplete')
+                else:
+                    run('native_discovery', command+[mode], native)
     except Exception as error:
         # Details are deliberately excluded; stage exit codes and raw ephemeral logs diagnose failures.
         summary['preflight_error'] = str(error) if isinstance(error, ValueError) and str(error) in {
             'static_inventory_changed', 'central_file_missing', 'unhandled_central_import',
             'central_import_escapes_snapshot', 'central_import_cycle', 'target_tree_mismatch',
             'overall_deadline', 'stage_failed', 'submodule_pin_mismatch', 'sdk_pin_mismatch', 'snapshot_symlink_escape', 'upstream_pin_mismatch', 'configuration_pin_mismatch',
-            'configuration_schema_mismatch', 'unit_inventory_changed', 'enumeration_mismatch', 'tool_manifest_mismatch', 'product_smoke_incomplete'} else 'preflight_exception'
+            'configuration_schema_mismatch', 'unit_inventory_changed', 'enumeration_mismatch', 'tool_manifest_mismatch', 'product_smoke_incomplete', 'writer_producer_incomplete',
+            'writer_evaluation_incomplete', 'writer_producer_changed_source', 'writer_admission_deadline',
+            'writer_registration_ancestor_global_json'} else 'preflight_exception'
     finally:
         # Read already-written files inside the existing reserve, after owned work has stopped.
         runner.stop()
         def can_finalize():
             return time.monotonic() < runner.finalization_deadline
-        if 'expected' in locals() and can_finalize():
+        if writer_mode:
+            if 'before' in locals() and can_finalize():
+                package_ids = set().union(*(set(items) for items in versions.values()))
+                summary['writer']['operations'] = writer_operations(state, tracked, package_ids)
+                summary['writer']['events'] = writer_events(state, tracked)
+                summary['writer']['changes'] = writer_changes(snapshot, before, summary['writer']['operations'], can_finalize)
+            if 'original_hashes' in locals():
+                status, changed = recheck_content(checkout, original_hashes, can_finalize)
+                summary['original_checkout_recheck'] = {'status': status, 'changed_files': changed}
+        elif 'expected' in locals() and can_finalize():
             if 'enumeration' not in summary:
                 summary['enumeration'] = reconcile_enumeration(state, expected, tracked)
             if mode != 'enumerate':
@@ -1156,12 +1193,265 @@ def run_preflight(checkout, state, mode):
             and summary.get('target_content_recheck') == 'checked' and summary.get('changed_target_files') == []
             and summary.get('upstream_content_recheck') == 'checked' and summary.get('changed_upstream_files') == []
             and (mode == 'enumerate' or summary.get('probe', {}).get('all_calls_returned') is True))
+        if writer_mode:
+            summary['attempt_complete'] = (not summary.get('preflight_error')
+                and summary['writer'].get('case_complete') is True
+                and summary.get('original_checkout_recheck') == {'status': 'checked', 'changed_files': []}
+                and summary.get('upstream_content_recheck') == 'checked' and summary.get('changed_upstream_files') == [])
         # Completion here is only this bounded stage's execution/receipt completion.
         summary['diagnostic_complete'] = False
         runner.save()
         signal.setitimer(signal.ITIMER_REAL, 0)
         signal.signal(signal.SIGALRM, previous_handler)
     return 0 if summary['attempt_complete'] else 1
+
+WRITER_PROJECT = 'studio/src/modules/Elsa.Studio.Authentication.Abstractions/Elsa.Studio.Authentication.Abstractions.csproj'
+WRITER_PACKAGE = 'Microsoft.AspNetCore.SignalR.Client'
+WRITER_CENTRAL = 'studio/src/Directory.Packages.props'
+WRITER_TARGET = '10.0.12'
+WRITER_OLD = {'net8.0': '8.0.24', 'net9.0': '9.0.13', 'net10.0': '10.0.3'}
+WRITER_PHASES = {'setup': 180, 'producer': 180, 'writer': 300, 'readback': 120}
+
+
+def writer_admission(native, evaluations):
+    """One fixed public dependency; never invent an absent producer request."""
+    if native.get('status') != 'observed' or len(evaluations) != len(SMOKE_TFMS):
+        raise ValueError('writer_producer_incomplete')
+    roots = [row for row in native['records'] if row['path'] == WRITER_PROJECT]
+    if len(roots) != 1 or roots[0]['central_file'] != WRITER_CENTRAL:
+        raise ValueError('writer_producer_incomplete')
+    dependencies = [row for row in roots[0]['dependencies'] if row['Name'] == WRITER_PACKAGE]
+    if (len(dependencies) != 1 or dependencies[0]['Version'] not in WRITER_OLD.values()
+            or dependencies[0]['Type'] != 'PackageReference' or not dependencies[0]['IsTopLevel']
+            or not dependencies[0]['TargetFrameworks']
+            or len(dependencies[0]['TargetFrameworks']) != len(set(dependencies[0]['TargetFrameworks']))
+            or any(WRITER_OLD.get(tfm) != dependencies[0]['Version'] for tfm in dependencies[0]['TargetFrameworks'])
+            or dependencies[0]['EvaluationResult'].get('result_type', 'Success') != 'Success'):
+        raise ValueError('writer_producer_incomplete')
+    if {row.get('tfm') for row in evaluations} != set(SMOKE_TFMS):
+        raise ValueError('writer_producer_incomplete')
+    for row in evaluations:
+        if row.get('status') != 'evaluated' or row.get('central_file') != WRITER_CENTRAL:
+            raise ValueError('writer_producer_incomplete')
+        direct = [item for item in row['direct_versions'] if item['id'] == WRITER_PACKAGE]
+        if len(direct) != 1 or direct[0]['version'] != WRITER_OLD[row['tfm']]:
+            raise ValueError('writer_producer_incomplete')
+        references = row['items']['ProjectReference']
+        if len(references) != len({item['path'] for item in references}):
+            raise ValueError('writer_producer_incomplete')
+    return {'Project': WRITER_PROJECT, 'Package': WRITER_PACKAGE,
+            'OldVersion': dependencies[0]['Version'], 'NewVersion': WRITER_TARGET}
+
+
+def writer_operations(state, tracked, package_ids):
+    result = {'status': 'missing_or_invalid', 'operations': []}
+    try:
+        raw = read_closed_json(state/'writer-operations.json', state)
+        if not isinstance(raw, list) or len(raw) > 1000:
+            raise ValueError('writer_output')
+        operations = []
+        for row in raw:
+            if (not isinstance(row, dict) or row.get('Type') not in ('DirectUpdate', 'PinnedUpdate', 'ParentUpdate')
+                    or row.get('DependencyName') not in package_ids
+                    or not isinstance(row.get('NewVersion'), str) or not VERSION.fullmatch(row['NewVersion'])
+                    or row.get('OldVersion') is not None and (not isinstance(row['OldVersion'], str)
+                        or not VERSION.fullmatch(row['OldVersion']))
+                    or not isinstance(row.get('UpdatedFiles'), list)
+                    or any(not isinstance(path, str) or path.lstrip('/') not in tracked
+                        or normalized('', path.lstrip('/')) != path.lstrip('/') for path in row['UpdatedFiles'])):
+                raise ValueError('writer_output')
+            operations.append({'type': row['Type'], 'id': row['DependencyName'], 'old': row['OldVersion'],
+                               'new': row['NewVersion'], 'paths': sorted({path.lstrip('/') for path in row['UpdatedFiles']})})
+        result.update(status='observed', operations=operations)
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    return result
+
+
+def writer_events(state, tracked):
+    """Project only closed fields; native errors/log text are never summary fields."""
+    result = {'status': 'missing_or_invalid', 'events': [], 'invalid': 0, 'dropped': False}
+    try:
+        raw = read_closed_json(state/'writer-events.json', state)
+        events = raw['Events']
+        if not isinstance(events, list) or len(events) > 512 or type(raw['Dropped']) is not bool:
+            raise ValueError('writer_output')
+        safe_directories = {str(PurePosixPath(path).parent) for path in tracked if path.endswith('.csproj')}
+        for row in events:
+            try:
+                if (row['Kind'] not in ('request', 'attempt', 'missing_dependency', 'discovery')
+                        or row['State'] not in ('started', 'returned', 'threw', 'observed', 'null')
+                        or any(type(row[key]) is not int or row[key] < 0 for key in ('Sequence', 'Ordinal', 'Attempt'))
+                        or row['Sequence'] != len(result['events'])
+                        or type(row['ElapsedSeconds']) not in (int, float) or not math.isfinite(row['ElapsedSeconds'])
+                        or row['ElapsedSeconds'] < 0 or row['Tfm'] is not None
+                        or row['AttemptProject'] is not None and row['AttemptProject'] not in tracked
+                        or row['Workspace'] is not None and row['Workspace'] not in safe_directories
+                        or not isinstance(row['CentralHash'], str) or not re.fullmatch('[0-9a-f]{64}', row['CentralHash'])):
+                    raise ValueError('writer_output')
+                safe = {key: row[key] for key in ('Sequence', 'Kind', 'State', 'Ordinal', 'Attempt', 'AttemptProject',
+                                                 'Workspace', 'Tfm', 'ElapsedSeconds', 'CentralHash')}
+                result['events'].append(safe)
+            except (ValueError, KeyError, TypeError, AttributeError):
+                result['invalid'] += 1
+        warnings, pending = [], None
+        for event in result['events']:
+            if event['Kind'] == 'attempt':
+                pending = {'attempt': event['Attempt'], 'project': event['AttemptProject'], 'starts': [], 'returns': []}
+            elif pending is not None and event['Attempt'] == pending['attempt'] and event['Kind'] == 'discovery':
+                if event['State'] in ('started', 'returned'):
+                    pending['starts' if event['State'] == 'started' else 'returns'].append(event['Ordinal'])
+            elif event['Kind'] == 'missing_dependency':
+                bound = (pending is not None and event['Attempt'] == pending['attempt']
+                         and len(pending['starts']) == 1 and pending['starts'] == pending['returns'])
+                warnings.append({'bound': bound, 'attempt': pending['attempt'] if bound else None,
+                                 'project': pending['project'] if bound else None,
+                                 'discovery_ordinal': pending['starts'][0] if bound else None,
+                                 'writer_loop_tfm': None, 'rerun_survivor': None})
+        result['missing_warnings'] = warnings
+        result.update(status='observed' if not result['invalid'] and not raw['Dropped'] else 'invalid_or_dropped', dropped=raw['Dropped'])
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    return result
+
+
+def writer_changes(snapshot, before, operations, can_continue):
+    """Only recorded central version edits may differ; unrelated temporary writes fail closed."""
+    result = {'status': 'incomplete', 'changed_paths': [], 'central_version_changes': [], 'runtime_artifacts': 0,
+              'unaccounted_new_files': 0}
+    status, changed = recheck_content(snapshot, before, can_continue)
+    result['changed_paths'] = changed
+    if status != 'checked':
+        return result
+    for path in snapshot.rglob('*'):
+        if not can_continue():
+            return result
+        if path.is_symlink():
+            result['status'] = 'unaccounted_write'
+            return result
+        if path.is_file() and str(path.relative_to(snapshot)) not in before:
+            if any(part in ('obj', 'bin') for part in path.relative_to(snapshot).parts[:-1]):
+                result['runtime_artifacts'] += 1
+            else:
+                result['unaccounted_new_files'] += 1
+    recorded = {path for row in operations['operations'] for path in row['paths']}
+    if (result['unaccounted_new_files'] or any(path != WRITER_CENTRAL or path not in recorded for path in changed)
+            or operations['status'] != 'observed'):
+        result['status'] = 'unaccounted_write'
+        return result
+    # The exact baseline central bytes are retained privately, not reconstructed from reported diffs.
+    try:
+        with open_regular(snapshot/WRITER_CENTRAL, snapshot) as stream:
+            after_xml = ET.parse(stream).getroot()
+        with open_regular(snapshot.parent/'writer-central-before.xml', snapshot.parent) as stream:
+            before_xml = ET.parse(stream).getroot()
+        ids = {row['id'] for row in operations['operations']}
+        new_versions = {name: {row['new'] for row in operations['operations'] if row['id'] == name}
+                        for name in ids}
+        def strip_versions(root):
+            values = []
+            for item in root.iter('PackageVersion'):
+                name, version = item.get('Include') or item.get('Update'), item.get('Version')
+                values.append((name, version))
+                if name in ids and version is not None and VERSION.fullmatch(version):
+                    item.set('Version', '__VERSION__')
+            return values, ET.tostring(root)
+        old, old_shape = strip_versions(before_xml)
+        new, new_shape = strip_versions(after_xml)
+        if old_shape != new_shape or len(old) != len(new):
+            raise ValueError('writer_output')
+        for (name, old_version), (new_name, new_version) in zip(old, new):
+            if old_version != new_version:
+                if name != new_name or name not in ids or new_version not in new_versions[name]:
+                    raise ValueError('writer_output')
+                result['central_version_changes'].append({'id': name, 'old': old_version, 'new': new_version})
+        result['status'] = 'reconciled'
+    except (OSError, ValueError, ET.ParseError):
+        result['status'] = 'unaccounted_write'
+    return result
+
+
+def writer_evaluations(runner, command_root, state, snapshot, tracked, package_ids, phase):
+    values = []
+    for tfm in SMOKE_TFMS:
+        runner.run('writer_evaluation', ['dotnet', 'msbuild', str(snapshot/WRITER_PROJECT), '-nologo',
+            '-property:TargetFramework='+tfm,
+            '-getProperty:TargetFramework,TargetFrameworks,ManagePackageVersionsCentrally,DirectoryPackagesPropsPath',
+            '-getItem:PackageVersion,PackageReference,GlobalPackageReference,ProjectReference'], command_root,
+            output=state/f'evaluation-writer-{phase}-{tfm}.json')
+        value = smoke_evaluation(state, 'writer-'+phase, tfm, snapshot, tracked, package_ids, project=WRITER_PROJECT)
+        values.append(value)
+        if value['status'] != 'evaluated':
+            raise ValueError('writer_evaluation_incomplete')
+    return values
+
+
+def writer_registration_guard(snapshot, state=None):
+    """Cold Discovery walks ancestors with its relative root argument; refuse external global.json."""
+    snapshot = snapshot.resolve(strict=True)
+    workspace = str(PurePosixPath(WRITER_PROJECT).parent)
+    # Exact GetAllDirectoriesToRoot(snapshot, relativeWorkspace) set at CWD=snapshot.
+    directories = [snapshot, *snapshot.parents, snapshot/workspace]
+    if state is not None:
+        manifest = json.dumps({'current_directory': str(snapshot), 'root_argument': workspace,
+                               'directories': [str(path) for path in directories]}, sort_keys=True).encode()
+        (state/'writer-registration.json').write_bytes(manifest)
+    for parent in snapshot.parents:
+        candidate = parent/'global.json'
+        if candidate.exists() or candidate.is_symlink():
+            raise ValueError('writer_registration_ancestor_global_json')
+    return {'producer_registration_directory_count': len(directories),
+            'producer_registration_manifest_sha256': hashlib.sha256(manifest).hexdigest() if state is not None else None,
+            'producer_external_global_json': 'none_at_preflight',
+            'writer_cwd': 'disposable_snapshot_root', 'writer_registration_scope': 'snapshot_root_only',
+            'producer_ancestor_scan': 'public_api_walks_to_filesystem_root',
+            'concurrent_external_global_json_creation': 'not_isolated'}
+
+
+def run_writer_case(runner, command, native_root, state, snapshot, tracked, package_ids, before, summary):
+    runner.check()
+    runner.begin_phase('producer')
+    summary['writer']['registration'] = writer_registration_guard(snapshot, state)
+    (state/'writer-tracked.json').write_text(json.dumps(sorted(tracked)))
+    runner.run('writer_producer', command+['writer-producer'], snapshot)
+    native = smoke_native(state, 2, snapshot, tracked, package_ids, project=WRITER_PROJECT)
+    summary['writer']['producer'] = native
+    evaluations = writer_evaluations(runner, native_root, state, snapshot, tracked, package_ids, 'before')
+    summary['writer']['before'] = evaluations
+    request = writer_admission(native, evaluations)
+    status, changes = recheck_content(snapshot, before, lambda: time.monotonic() < runner.phase_deadline)
+    if status != 'checked' or changes:
+        raise ValueError('writer_producer_changed_source')
+    shutil.copyfile(snapshot/WRITER_CENTRAL, state/'writer-central-before.xml')
+    (state/'writer-request.json').write_text(json.dumps(request))
+    summary['writer']['request'] = request
+    summary['writer']['writer_cwd'] = 'disposable_snapshot_root'
+    runner.check()
+    # The writer cannot consume the readback/finalization allowances.
+    if runner.deadline-time.monotonic() < WRITER_PHASES['writer']+WRITER_PHASES['readback']:
+        raise ValueError('writer_admission_deadline')
+    runner.begin_phase('writer')
+    writer_error = None
+    try:
+        runner.run('writer_native', command+['writer-smoke'], snapshot)
+    except ValueError as error:
+        writer_error = error
+    runner.begin_phase('readback')
+    summary['writer']['after'] = writer_evaluations(runner, native_root, state, snapshot, tracked, package_ids, 'after')
+    summary['writer']['operations'] = writer_operations(state, tracked, package_ids)
+    summary['writer']['events'] = writer_events(state, tracked)
+    summary['writer']['changes'] = writer_changes(snapshot, before, summary['writer']['operations'],
+                                                   lambda: time.monotonic() < runner.phase_deadline)
+    request_events = [row for row in summary['writer']['events']['events'] if row['Kind'] == 'request']
+    summary['writer']['update_operations_observed'] = bool(summary['writer']['operations']['operations'])
+    summary['writer']['conditional_policy_correctness'] = 'not_certified'
+    summary['writer']['case_complete'] = ([row['State'] for row in request_events] == ['started', 'returned']
+        and summary['writer']['operations']['status'] == 'observed'
+        and summary['writer']['events']['status'] == 'observed'
+        and summary['writer']['changes']['status'] == 'reconciled')
+    runner.check()
+    if writer_error is not None:
+        raise writer_error
 
 
 if __name__ == '__main__':
