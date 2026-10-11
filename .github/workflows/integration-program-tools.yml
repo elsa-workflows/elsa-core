@@ -3,7 +3,7 @@ name: Integration program tools
 on:
   pull_request:
     paths:
-      - 'Elsa.sln'
+      - '**/*.sln'
       - 'Elsa.Extensions.slnf'
       - 'Elsa.Studio.slnf'
       - '.github/dependabot.yml'
