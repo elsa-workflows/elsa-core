@@ -129,7 +129,10 @@ class DependabotDiscoveryTests < Minitest::Test
   def test_coverage_workflow_runs_when_discovery_inputs_change
     workflow = YAML.load_file(File.join(REPOSITORY_ROOT, ".github/workflows/integration-program-tools.yml"))
     paths = workflow.fetch("on") { workflow.fetch(true) }.fetch("pull_request").fetch("paths")
-    inputs = tracked_projects + %w[Elsa.sln Directory.Packages.props NuGet.Config nuget.config core/custom.props studio/import.targets] +
+    inputs = tracked_projects + %w[
+      Elsa.sln Directory.Packages.props NuGet.Config nuget.config core/custom.props studio/import.targets
+      core/global.json docs/integration-program/consolidation/dependabot-recursive-discovery.md
+    ] +
       Dir.chdir(REPOSITORY_ROOT) { Dir.glob("**/*.{props,targets}") }
     inputs.each do |path|
       assert paths.any? { |pattern| File.fnmatch?(pattern, path, File::FNM_PATHNAME) },
