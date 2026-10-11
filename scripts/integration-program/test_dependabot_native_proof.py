@@ -15,7 +15,7 @@ from unittest import mock
 from dependabot_native_proof import (DeadlineRunner, NativeProgress, diagnostic_complete, reconcile,
     units_from_configuration, unit_projects, reconcile_enumeration, probe_workspaces, probe_readback,
     safe_tool_result, child_environment, read_closed_json, digest, recheck_content, inventory,
-    product_smoke_readback, smoke_native, smoke_project, smoke_can_continue, SMOKE_PROJECTS, SMOKE_TFMS,
+    product_smoke_readback, smoke_native, smoke_project, smoke_can_continue, reference_output, SMOKE_PROJECTS, SMOKE_TFMS,
     UNIT_IDS, UNIT_SELECTORS, UNIT_COUNTS, RETAINED, TOOL_MANIFEST)
 
 
@@ -435,6 +435,24 @@ class ProductSmokeTests(unittest.TestCase):
                                                  'DefiningProjectFullPath': defining}],
                               'PackageReference': [{'Identity': 'Conditional', 'DefiningProjectFullPath': str(self.snapshot/project)}],
                               'GlobalPackageReference': [], 'ProjectReference': [{'FullPath': str(self.snapshot/self.reference)}]}})
+            self.reference_fixture(index, self.reference)
+
+    def reference_fixture(self, index, path, edges=None, frameworks=SMOKE_TFMS, aggregate=None):
+        self.tracked.add(path)
+        edges = edges or {tfm: [] for tfm in frameworks}
+        references = aggregate if aggregate is not None else sorted({ref for refs in edges.values() for ref in refs})
+        self.mutate(f'workspace-{index}.json', lambda value: value['Projects'].append({
+            'FilePath': os.path.relpath(path, Path(SMOKE_PROJECTS[index]).parent),
+            'IsSuccess': True, 'TargetFrameworks': list(frameworks), 'ImportedFiles': [],
+            'ReferencedProjectPaths': [os.path.relpath(ref, Path(path).parent) for ref in references],
+            'Dependencies': []}))
+        multiple = ';'.join(frameworks) if len(frameworks) > 1 else ''
+        self.write(reference_output(self.state, index, path), {'Properties': {
+            'TargetFramework': '' if multiple else frameworks[0], 'TargetFrameworks': multiple}})
+        for tfm in frameworks:
+            self.write(reference_output(self.state, index, path, tfm), {'Properties': {
+                'TargetFramework': tfm, 'TargetFrameworks': multiple}, 'Items': {
+                'ProjectReference': [{'FullPath': str(self.snapshot/ref)} for ref in edges[tfm]]}})
 
     def write(self, name, value):
         (self.state/name).write_text(json.dumps(value))
@@ -495,10 +513,6 @@ class ProductSmokeTests(unittest.TestCase):
             probe_workspaces('product-smoke /SECRET')
 
     def test_closure_records_and_duplicate_reference_edges_are_not_silently_dropped(self):
-        self.mutate('workspace-0.json', lambda value: value['Projects'].append({
-            'FilePath': os.path.relpath(self.reference, Path(SMOKE_PROJECTS[0]).parent),
-            'IsSuccess': True, 'TargetFrameworks': ['net10.0'], 'ImportedFiles': [],
-            'ReferencedProjectPaths': [], 'Dependencies': []}))
         result = self.readback()
         self.assertEqual(self.reference, result['projects'][0]['native']['records'][1]['path'])
         self.assertTrue(result['semantic_preflight_complete'])
@@ -506,7 +520,7 @@ class ProductSmokeTests(unittest.TestCase):
             value['Projects'][0]['ReferencedProjectPaths'][0]))
         result = self.readback()
         self.assertFalse(result['semantic_preflight_complete'])
-        self.assertIn({'tfm': 'net8.0', 'kind': 'reference_edges'}, result['projects'][0]['gaps'])
+        self.assertIn({'path': SMOKE_PROJECTS[0], 'kind': 'duplicate_native_reference'}, result['projects'][0]['gaps'])
 
     def test_collapsed_native_conditional_version_remains_unresolved(self):
         self.mutate('workspace-0.json', lambda value: value['Projects'][0].update(
@@ -514,6 +528,139 @@ class ProductSmokeTests(unittest.TestCase):
         result = self.readback()
         self.assertFalse(result['semantic_preflight_complete'])
         self.assertTrue(smoke_can_continue(result['projects'][0]))
+
+    def test_email_topology_uses_independent_direct_edges_not_native_self_consistency(self):
+        # Synthetic property/item outputs shaped after the pinned Email source topology;
+        # the original run artifact did not contain these independent closure evaluations.
+        names = ['Elsa.Features', 'Elsa.Mediator', 'Elsa.Common', 'Elsa.Expressions',
+                 'Elsa.Workflows.Core', 'Elsa.Api.Common', 'Elsa.Caching', 'Elsa.Workflows.Management']
+        paths = {name: f"core/src/{'common' if name in names[:2]+['Elsa.Api.Common'] else 'modules'}/{name}/{name}.csproj"
+                 for name in names}
+        direct = [[], [], names[:2], ['Elsa.Features', 'Elsa.Common'],
+                  ['Elsa.Common', 'Elsa.Expressions'], ['Elsa.Workflows.Core', 'Elsa.Features'],
+                  ['Elsa.Features'], ['Elsa.Api.Common', 'Elsa.Caching', 'Elsa.Workflows.Core']]
+        closures = {}
+        for name, targets in zip(names, direct):
+            reached = set(targets)
+            for target in targets:
+                reached.update(closures[target])
+            closures[name] = reached
+        self.mutate('workspace-0.json', lambda value: value.update(Projects=value['Projects'][:1]))
+        for name, targets in zip(names, direct):
+            self.reference_fixture(0, paths[name], {tfm: [paths[target] for target in targets] for tfm in SMOKE_TFMS},
+                                   aggregate=[paths[target] for target in sorted(closures[name])])
+        for tfm in SMOKE_TFMS:
+            self.mutate(f'evaluation-0-{tfm}.json', lambda value: value['Items'].update(
+                ProjectReference=[{'FullPath': str(self.snapshot/paths[names[-1]])}]))
+        self.mutate('workspace-0.json', lambda value: value['Projects'][0].update(
+            ReferencedProjectPaths=[os.path.relpath(path, Path(SMOKE_PROJECTS[0]).parent) for path in paths.values()]))
+        result = self.readback()
+        self.assertTrue(result['semantic_preflight_complete'])
+        evidence = result['projects'][0]['reference_evidence']
+        self.assertEqual(9, len(evidence['projects']))
+        self.assertEqual('not_certified', evidence['native_duplicate_multiplicity'])
+        self.assertEqual('not_exposed', evidence['native_reference_tfm_attribution'])
+        for tfm in SMOKE_TFMS:
+            self.mutate(reference_output(self.state, 0, paths[names[-1]], tfm),
+                        lambda value: value['Items'].update(ProjectReference=[]))
+        result = self.readback()
+        self.assertFalse(result['semantic_preflight_complete'])
+        self.assertFalse(smoke_can_continue(result['projects'][0]))
+
+    def test_reference_stages_execute_and_refresh_closed_evidence(self):
+        summary = {'stages': []}
+        runner = DeadlineRunner(self.state, summary, budget_seconds=30, reserve_seconds=5)
+        runner.readback = lambda: summary.update(product_smoke=self.readback())
+        for name, tfm in (('reference_declaration', 'declared'), ('reference_evaluation', 'net8.0')):
+            output = reference_output(self.state, 0, self.reference, tfm)
+            payload = output.read_text()
+            output.unlink()
+            self.assertFalse(smoke_can_continue(self.readback()['projects'][0]))
+            with contextlib.redirect_stdout(io.StringIO()):
+                runner.run(name, [sys.executable, '-c', 'print('+repr(payload)+')'], output=output)
+            self.assertEqual('passed', summary['stages'][-1]['state'])
+            self.assertTrue(smoke_can_continue(summary['product_smoke']['projects'][0]))
+        self.assertEqual(['reference_declaration', 'reference_evaluation'],
+                         [stage['name'] for stage in summary['stages']])
+
+    def test_tfm_conditioned_edges_and_native_framework_subset_keep_exact_closure(self):
+        leaf = 'core/src/Leaf/Leaf.csproj'
+        self.reference_fixture(0, leaf)
+        self.mutate(reference_output(self.state, 0, self.reference, 'net10.0'),
+                    lambda value: value['Items'].update(ProjectReference=[{'FullPath': str(self.snapshot/leaf)}]))
+        self.mutate('workspace-0.json', lambda value: (
+            value['Projects'][1].update(TargetFrameworks=['net8.0'],
+                ReferencedProjectPaths=[os.path.relpath(leaf, Path(self.reference).parent)]),
+            value['Projects'][0]['ReferencedProjectPaths'].append(os.path.relpath(leaf, Path(SMOKE_PROJECTS[0]).parent))))
+        result = self.readback()
+        self.assertTrue(result['semantic_preflight_complete'])
+        reachable = result['projects'][0]['reference_evidence']['evaluated_reachability']
+        self.assertNotIn(leaf, next(row['paths'] for row in reachable if row['path'] == SMOKE_PROJECTS[0] and row['tfm'] == 'net8.0'))
+        self.assertIn(leaf, next(row['paths'] for row in reachable if row['path'] == SMOKE_PROJECTS[0] and row['tfm'] == 'net10.0'))
+
+    def test_missing_unsafe_duplicate_or_overridden_closure_edges_block_progression(self):
+        output = reference_output(self.state, 0, self.reference, 'net8.0')
+        original = output.read_text()
+        for items in ([{'FullPath': '/SECRET/Unsafe.csproj'}],
+                      [{'FullPath': str(self.snapshot/self.reference)}],
+                      [{'FullPath': str(self.snapshot/self.reference)}]*2,
+                      [{'FullPath': str(self.snapshot/self.reference), 'SetTargetFramework': 'TargetFramework=net9.0'}],
+                      [{'FullPath': str(self.snapshot/self.reference), 'AdditionalProperties': 'SECRET=https://private'}]):
+            with self.subTest(items=items):
+                self.mutate(output, lambda value: value['Items'].update(ProjectReference=items))
+                result = self.readback()
+                self.assertFalse(result['semantic_preflight_complete'])
+                self.assertFalse(smoke_can_continue(result['projects'][0]))
+                self.assertNotIn('SECRET', json.dumps(result))
+                self.assertNotIn('https://', json.dumps(result))
+                output.write_text(original)
+        output.unlink()
+        self.assertFalse(smoke_can_continue(self.readback()['projects'][0]))
+
+    def test_missing_failed_duplicate_or_unexplained_native_closure_records_block_progression(self):
+        original = (self.state/'workspace-0.json').read_text()
+        for change in (lambda value: value.update(Projects=value['Projects'][:1]),
+                       lambda value: value['Projects'][1].update(IsSuccess=False),
+                       lambda value: value['Projects'].append(value['Projects'][1]),
+                       lambda value: value['Projects'][0].update(ReferencedProjectPaths=[])):
+            self.mutate('workspace-0.json', change)
+            result = self.readback()
+            self.assertFalse(result['semantic_preflight_complete'])
+            self.assertFalse(smoke_can_continue(result['projects'][0]))
+            (self.state/'workspace-0.json').write_text(original)
+        self.reference_fixture(0, 'core/src/Unreachable/Unreachable.csproj')
+        result = self.readback()
+        self.assertFalse(smoke_can_continue(result['projects'][0]))
+        self.assertTrue(any(gap['kind'] == 'unreachable_closure_record' for gap in result['projects'][0]['gaps']))
+
+    def test_duplicate_direct_edge_to_valid_leaf_is_a_distinct_gap(self):
+        leaf = 'core/src/Leaf/Leaf.csproj'
+        self.reference_fixture(0, leaf)
+        self.mutate(reference_output(self.state, 0, self.reference, 'net8.0'),
+                    lambda value: value['Items'].update(ProjectReference=[{'FullPath': str(self.snapshot/leaf)}]*2))
+        self.mutate('workspace-0.json', lambda value: (
+            value['Projects'][1].update(ReferencedProjectPaths=[os.path.relpath(leaf, Path(self.reference).parent)]),
+            value['Projects'][0]['ReferencedProjectPaths'].append(os.path.relpath(leaf, Path(SMOKE_PROJECTS[0]).parent))))
+        row = self.readback()['projects'][0]
+        self.assertFalse(smoke_can_continue(row))
+        self.assertEqual([{'kind': 'duplicate_direct_reference', 'path': self.reference, 'tfm': 'net8.0'}], row['gaps'])
+
+    def test_unlike_framework_mapping_and_unsupported_declarations_remain_gaps(self):
+        declaration = reference_output(self.state, 0, self.reference)
+        original = declaration.read_text()
+        for frameworks in ('net8.0;net8.0', 'SECRET', 'net7.0'):
+            self.mutate(declaration, lambda value: value['Properties'].update(TargetFrameworks=frameworks))
+            result = self.readback()
+            self.assertFalse(smoke_can_continue(result['projects'][0]))
+            self.assertNotIn('SECRET', json.dumps(result))
+            declaration.write_text(original)
+        self.mutate(declaration, lambda value: value['Properties'].update(TargetFrameworks='', TargetFramework='net10.0'))
+        self.mutate('workspace-0.json', lambda value: value['Projects'][1].update(TargetFrameworks=['net10.0']))
+        self.mutate(reference_output(self.state, 0, self.reference, 'net10.0'),
+                    lambda value: value['Properties'].update(TargetFrameworks=''))
+        result = self.readback()
+        self.assertFalse(smoke_can_continue(result['projects'][0]))
+        self.assertTrue(any(gap['kind'] == 'reference_framework_mapping' for gap in result['projects'][0]['gaps']))
 
     def test_extra_or_conflicting_known_top_level_rows_block_second_call(self):
         original = (self.state/'workspace-0.json').read_text()

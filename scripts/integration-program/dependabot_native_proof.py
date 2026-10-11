@@ -228,7 +228,7 @@ def smoke_native(state, index, snapshot, tracked, package_ids):
             for key, destination in (('ImportedFiles', imports), ('ReferencedProjectPaths', references)):
                 for raw in row[key]:
                     known = known_snapshot_path(raw, snapshot, tracked, parent)
-                    if known is None:
+                    if known is None or key == 'ReferencedProjectPaths' and not known.endswith('.csproj'):
                         unsafe_inputs += 1
                     else:
                         destination.append(known)
@@ -249,6 +249,23 @@ def smoke_native(state, index, snapshot, tracked, package_ids):
     return result
 
 
+def evaluated_project_references(rows, snapshot, tracked):
+    if not isinstance(rows, list) or len(rows) > 10000:
+        raise ValueError('evaluation_references')
+    references = []
+    for row in rows:
+        path = known_snapshot_path(row.get('FullPath'), snapshot, tracked) if isinstance(row, dict) else None
+        if path is None or not path.endswith('.csproj'):
+            raise ValueError('evaluation_reference')
+        if any(row.get(field) not in ('', None) for field in (
+                'SetTargetFramework', 'AdditionalProperties', 'GlobalPropertiesToRemove', 'UndefineProperties',
+                'SetConfiguration', 'SetPlatform', 'Targets', 'SkipGetTargetFrameworkProperties',
+                'OverrideSkipGetTargetFrameworkProperties', 'Properties')):
+            raise ValueError('reference_target_metadata')
+        references.append({'path': path})
+    return references
+
+
 def smoke_evaluation(state, index, tfm, snapshot, tracked, package_ids):
     project = smoke_project(index)
     result = {'path': project, 'tfm': tfm, 'status': 'missing_or_invalid'}
@@ -267,18 +284,15 @@ def smoke_evaluation(state, index, tfm, snapshot, tracked, package_ids):
             rows = items[key]
             if not isinstance(rows, list) or len(rows) > 10000:
                 raise ValueError('evaluation_items')
+            if key == 'ProjectReference':
+                parsed[key] = evaluated_project_references(rows, snapshot, tracked)
+                continue
             parsed[key] = []
             for row in rows:
                 if not isinstance(row, dict):
                     raise ValueError('evaluation_item')
                 if key == 'PackageReference' and row.get('IsImplicitlyDefined', '').lower() == 'true':
                     implicit_references += 1
-                    continue
-                if key == 'ProjectReference':
-                    path = known_snapshot_path(row.get('FullPath'), snapshot, tracked)
-                    if path is None or not path.endswith('.csproj'):
-                        raise ValueError('evaluation_reference')
-                    parsed[key].append({'path': path})
                     continue
                 name = row.get('Identity')
                 if not isinstance(name, str) or name not in package_ids:
@@ -316,6 +330,114 @@ def smoke_evaluation(state, index, tfm, snapshot, tracked, package_ids):
     return result
 
 
+def reference_output(state, index, project, tfm='declared'):
+    return state/f'references-{index}-{hashlib.sha256(project.encode()).hexdigest()}-{tfm}.json'
+
+
+def reference_frameworks(state, index, record):
+    result = {'path': record['path'], 'status': 'missing_or_invalid', 'frameworks': []}
+    try:
+        properties = read_closed_json(reference_output(state, index, record['path']), state)['Properties']
+        multiple, single = properties['TargetFrameworks'], properties['TargetFramework']
+        if not isinstance(multiple, str) or not isinstance(single, str):
+            raise ValueError('reference_frameworks')
+        frameworks = multiple.split(';') if multiple else [single]
+        if (not frameworks or any(tfm not in SMOKE_TFMS for tfm in frameworks)
+                or len(frameworks) != len(set(frameworks))
+                or not set(record['target_frameworks']).issubset(frameworks)):
+            raise ValueError('reference_frameworks')
+        result.update(status='evaluated', frameworks=frameworks)
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        pass
+    return result
+
+
+def reference_evaluation(state, index, project, tfm, frameworks, snapshot, tracked):
+    result = {'path': project, 'tfm': tfm, 'status': 'missing_or_invalid'}
+    try:
+        raw = read_closed_json(reference_output(state, index, project, tfm), state)
+        properties = raw['Properties']
+        declared = properties['TargetFrameworks']
+        if (properties['TargetFramework'] != tfm or not isinstance(declared, str)
+                or set(declared.split(';') if declared else [tfm]) != set(frameworks)):
+            raise ValueError('reference_applicability')
+        references = evaluated_project_references(raw['Items']['ProjectReference'], snapshot, tracked)
+        result.update(status='evaluated', direct_references=references)
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        pass
+    return result
+
+
+def smoke_reference_readback(state, index, native, evaluations, snapshot, tracked):
+    """Compare native aggregate observations with independently evaluated direct edges."""
+    root = smoke_project(index)
+    records, projects, graph, gaps = {}, [], {}, []
+    for record in native['records']:
+        path = record['path']
+        if path in records:
+            gaps.append({'kind': 'duplicate_closure_record', 'path': path})
+        records[path] = record
+    for path, record in sorted(records.items()):
+        if path == root:
+            declaration = {'path': path, 'status': 'evaluated', 'frameworks': list(SMOKE_TFMS)}
+            edges = [{'path': path, 'tfm': value['tfm'], 'status': value['status'],
+                      'direct_references': value.get('items', {}).get('ProjectReference', [])}
+                     for value in evaluations]
+        else:
+            declaration = reference_frameworks(state, index, record)
+            edges = [reference_evaluation(state, index, path, tfm, declaration['frameworks'], snapshot, tracked)
+                     for tfm in declaration['frameworks']]
+        projects.append({'declaration': declaration, 'evaluations': edges})
+        if declaration['status'] != 'evaluated':
+            gaps.append({'kind': 'reference_framework_declaration', 'path': path})
+        for edge in edges:
+            tfm = edge['tfm']
+            if edge['status'] != 'evaluated':
+                gaps.append({'kind': 'reference_evaluation', 'path': path, 'tfm': tfm})
+                continue
+            paths = [item['path'] for item in edge['direct_references']]
+            if len(paths) != len(set(paths)):
+                gaps.append({'kind': 'duplicate_direct_reference', 'path': path, 'tfm': tfm})
+            graph[path, tfm] = paths
+    reachability = []
+    root_reachable = set()
+    for path, record in sorted(records.items()):
+        union = set()
+        for edge in next(project['evaluations'] for project in projects if project['declaration']['path'] == path):
+            tfm, visited, pending = edge['tfm'], set(), [(path, ())]
+            while pending:
+                current, ancestors = pending.pop()
+                if current in ancestors:
+                    gaps.append({'kind': 'reference_cycle', 'path': current, 'tfm': tfm})
+                    continue
+                if current in visited:
+                    continue
+                visited.add(current)
+                if current not in records:
+                    gaps.append({'kind': 'missing_closure_record', 'path': current, 'tfm': tfm})
+                elif (current, tfm) not in graph:
+                    gaps.append({'kind': 'reference_framework_mapping', 'path': current, 'tfm': tfm})
+                else:
+                    pending.extend((target, ancestors+(current,)) for target in graph[current, tfm])
+            reached = visited-{path}
+            reachability.append({'path': path, 'tfm': tfm, 'paths': sorted(reached)})
+            union.update(reached)
+        if path == root:
+            root_reachable = union
+        if len(record['references']) != len(set(record['references'])):
+            gaps.append({'kind': 'duplicate_native_reference', 'path': path})
+        if set(record['references']) != union:
+            gaps.append({'kind': 'reference_aggregate_mismatch', 'path': path,
+                         'missing_native': sorted(union-set(record['references'])),
+                         'unexplained_native': sorted(set(record['references'])-union)})
+    for path in sorted(set(records)-root_reachable-{root}):
+        gaps.append({'kind': 'unreachable_closure_record', 'path': path})
+    return {'status': 'matched' if not gaps else 'unresolved', 'projects': projects,
+            'evaluated_reachability': reachability, 'gaps': gaps,
+            'native_duplicate_multiplicity': 'not_certified', 'native_reference_tfm_attribution': 'not_exposed',
+            'closure_package_versions': 'not_evaluated'}
+
+
 def smoke_dependency_matches(native, direct, tfm):
     return (native['Name'] == direct['id'] and native['Version'] == direct['version']
             and tfm in native['TargetFrameworks'] and native['IsTopLevel']
@@ -334,7 +456,9 @@ def product_smoke_readback(state, snapshot, expected, tracked, versions):
         matches = [record for record in native['records'] if record['path'] == project]
         if native['status'] == 'observed' and all(value['status'] == 'evaluated' for value in evaluations):
             record = matches[0]
-            gaps = []
+            references = smoke_reference_readback(state, index, native, evaluations, snapshot, tracked)
+            row['reference_evidence'] = references
+            gaps = list(references['gaps'])
             if any(item['unsafe_input_fields'] for item in native['records']):
                 gaps.append({'kind': 'unsafe_input_or_closure'})
             if any(not item['success'] for item in native['records']):
@@ -354,9 +478,6 @@ def product_smoke_readback(state, snapshot, expected, tracked, versions):
                 tfm = evaluation['tfm']
                 if evaluation['central_file'] != record['central_file'] or expected[project] not in record['imports']:
                     gaps.append({'tfm': tfm, 'kind': 'central_identity'})
-                references = [item['path'] for item in evaluation['items']['ProjectReference']]
-                if Counter(references) != Counter(record['references']):
-                    gaps.append({'tfm': tfm, 'kind': 'reference_edges'})
                 for dependency in evaluation['direct_versions']:
                     found = [dep for dep in top_level if smoke_dependency_matches(dep, dependency, tfm)]
                     if len(found) != 1:
@@ -712,7 +833,9 @@ class DeadlineRunner:
               'source_init', 'source_remote', 'source_fetch', 'source_checkout',
               'upstream_identity', 'upstream_tree', 'submodules', 'nuget_identity',
               'dotnet_identity', 'sdk_identity', 'source_files', 'official_build',
-              'caller_build', 'native_discovery', 'native_smoke_0', 'native_smoke_1', 'product_evaluation', 'native_enumeration', 'inventory', 'snapshot_hashes', 'native_source_hashes', 'caller_hashes'}
+              'caller_build', 'native_discovery', 'native_smoke_0', 'native_smoke_1', 'product_evaluation',
+              'reference_declaration', 'reference_evaluation', 'native_enumeration', 'inventory',
+              'snapshot_hashes', 'native_source_hashes', 'caller_hashes'}
 
     def __init__(self, state, summary, budget_seconds=1800, grace_seconds=5,
                  progress_seconds=15, reserve_seconds=60):
@@ -790,7 +913,8 @@ class DeadlineRunner:
                     self.summary['native_progress'] = native_progress
                     receipt['native_progress'] = native_progress
                 self.summary['native_event_journal'] = {'events': self.native_progress.events, 'gaps': self.native_progress.gaps, 'dropped': self.native_progress.dropped}
-            if name in ('native_discovery', 'native_smoke_0', 'native_smoke_1', 'product_evaluation') and self.readback is not None:
+            if name in ('native_discovery', 'native_smoke_0', 'native_smoke_1', 'product_evaluation',
+                        'reference_declaration', 'reference_evaluation') and self.readback is not None:
                 self.readback()
             self.save()
             print(json.dumps(receipt), flush=True)
@@ -959,6 +1083,26 @@ def run_preflight(checkout, state, mode):
                             output=state/f'evaluation-{index}-{tfm}.json')
                         if summary['product_smoke']['projects'][index]['evaluations'][SMOKE_TFMS.index(tfm)]['status'] != 'evaluated':
                             raise ValueError('product_smoke_incomplete')
+                    records = summary['product_smoke']['projects'][index]['native']['records']
+                    if len({record['path'] for record in records}) != len(records):
+                        raise ValueError('product_smoke_incomplete')
+                    for record in sorted(records, key=lambda value: value['path']):
+                        path = record['path']
+                        if path == project:
+                            continue
+                        run('reference_declaration', ['dotnet', 'msbuild', str(snapshot/path), '-nologo',
+                            '-getProperty:TargetFramework,TargetFrameworks'], native,
+                            output=reference_output(state, index, path))
+                        declaration = reference_frameworks(state, index, record)
+                        if declaration['status'] != 'evaluated':
+                            raise ValueError('product_smoke_incomplete')
+                        for tfm in declaration['frameworks']:
+                            run('reference_evaluation', ['dotnet', 'msbuild', str(snapshot/path), '-nologo',
+                                '-property:TargetFramework='+tfm, '-getProperty:TargetFramework,TargetFrameworks',
+                                '-getItem:ProjectReference'], native, output=reference_output(state, index, path, tfm))
+                            if reference_evaluation(state, index, path, tfm, declaration['frameworks'],
+                                                    snapshot, tracked)['status'] != 'evaluated':
+                                raise ValueError('product_smoke_incomplete')
                     if not smoke_can_continue(summary['product_smoke']['projects'][index]):
                         raise ValueError('product_smoke_incomplete')
                     checks = {}

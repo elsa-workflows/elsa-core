@@ -71,6 +71,35 @@ package IDs, validated versions/VersionOverride, defining-file identity, evaluat
 CPM applicability, references and exact TFM attribution. SDK implicit references
 are counted separately; their arbitrary IDs or SDK paths are not copied.
 
+Reference closure receives independent property/item evaluation. Each unique safe,
+successful tracked native closure project first receives an unforced
+`-getProperty:TargetFramework,TargetFrameworks` declaration query. A declaration must
+be nonempty, duplicate-free and within the same fixed net8/net9/net10 vocabulary.
+Single-framework projects use their declared TargetFramework. Native project TFMs
+are package observations and may be a subset of the declaration; they do not drive
+the queries. Each declared framework then receives `-property:TargetFramework=...`,
+`-getProperty:TargetFramework,TargetFrameworks` and `-getItem:ProjectReference` only.
+The selected root retains its existing fixed three package/input queries and their
+declared-framework checks. Closure queries do not extend package-version proof to
+the referenced projects. All queries share the existing process/deadline/path
+boundaries and raw output remains private.
+
+The receipt keeps evaluated direct edges labeled by project and TFM separately
+from native aggregate paths. It computes reachable project paths for each root
+TFM using independently evaluated same-TFM child edges, then compares the union
+exactly with native aggregate observations. Every native closure record must be
+reachable from the root, and every record's own aggregate paths must equal its
+independently evaluated closure across its declared TFMs. Missing/failed records
+or evaluations, unsafe paths, unexplained extras, cycles and duplicate declarations
+or references block progression. A reached child without the parent TFM leaves an
+explicit framework-mapping gap; no nearest-compatible-framework inference is made.
+Nonempty target-affecting reference metadata (including SetTargetFramework,
+AdditionalProperties, GlobalPropertiesToRemove, configuration/platform overrides
+and Targets) is unsupported and fails closed without publishing its value.
+Same-TFM traversal is a bounded proof for this pair, not a general MSBuild selection
+rule. Native HashSet output cannot certify duplicate multiplicity or per-reference
+TFM attribution; both limits remain explicit even when aggregate path sets match.
+
 Native records preserve Name/Version/Type/TargetFrameworks/IsTopLevel, nullable
 EvaluationResult presence and its exact ResultType enum (Success, PropertyIgnored,
 CircularReference, PropertyNotFound), and known
@@ -80,7 +109,7 @@ against a native top-level package declaration with the same version and TFM, an
 checks every supplied native top-level declaration against evaluated direct inputs.
 Extra IDs, conflicting versions/types, empty or duplicate TFM attribution and duplicate
 matching declarations block the second call. The join also compares native central
-identity/imports and reference edges with evaluation. Only a missing TFM association
+identity/imports and independently evaluated reference closure. Only a missing TFM association
 with one valid surviving declaration and multiple actually evaluated versions of the
 same package is retained as known conditional aggregate loss. It stays unresolved
 and permits collecting the second project; missing entire dependencies or missing
@@ -95,7 +124,7 @@ names, error text and InfoUrl are excluded. Evaluated globals retain their item
 kind and explicit version; pinned SDK native discovery emits all top-level declarations
 as PackageReference, so only that native type is admitted for direct and global joins without
 pretending native output distinguishes the original item collection.
-No claim of complete closure evaluation follows from retaining its records.
+Reference reconciliation does not certify package versions or resolution for closure projects.
 `semantic_preflight_complete` describes this fixed pair only; all 356 selected and
 173 imported-product dispositions/denominators remain visible and acceptance stays
 false. Neither runtime feasibility of an entire scheduling unit nor operational
