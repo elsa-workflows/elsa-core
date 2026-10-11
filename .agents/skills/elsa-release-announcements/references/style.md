@@ -36,10 +36,9 @@ Use this shape for Discord drafts and adapt the details to the actual release:
 ```markdown
 :rocket: **Elsa Workflows 3.7.0 is here!**
 
-We've published the stable **Elsa 3.7.0** release across **Elsa Core** and **Elsa Studio**.
+We've published the stable **Elsa 3.7.0** release, which includes **Elsa Core** and **Elsa Studio**.
 
 :point_right: Core: <https://github.com/elsa-workflows/elsa-core/releases/tag/3.7.0>
-:point_right: Studio: <https://github.com/elsa-workflows/elsa-studio/releases/tag/3.7.0>
 
 This release brings a solid set of improvements around **authentication**, **workflow diagnostics**, **Studio extensibility**, and the **modular server runtime**.
 

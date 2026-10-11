@@ -108,7 +108,7 @@ There are no configuration options that can be set in `appsettings.json` for thi
 
 ## 📌 Usage
 
-Once the implementation is registered with your required clients, the activities will be ready to use, either via code or [Elsa Studio](https://github.com/elsa-workflows/elsa-studio).
+Once the implementation is registered with your required clients, the activities will be ready to use, either via code or [Elsa Studio](https://github.com/elsa-workflows/elsa-core/tree/main/studio).
 
 ## 🚀 Activities 
 

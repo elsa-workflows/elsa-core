@@ -4,7 +4,7 @@ These instructions apply to Studio modules, hosts, frameworks and colocated
 .NET tests under `studio/src/`, and browser fixtures under `studio/test/`.
 Follow the repository-root `AGENTS.md` for shared build, review, testing,
 package and ADR rules. This guidance carries the Studio-specific rules from the pinned
-[Studio constitution](https://github.com/elsa-workflows/elsa-studio/blob/20ceaeeed7e671f0c9662003e82063026f2216de/.specify/memory/constitution.md)
+[Studio constitution](../../docs/integration-program/legacy/studio/.specify/memory/constitution.md.source)
 into the consolidated source layout.
 
 ## Module boundaries
