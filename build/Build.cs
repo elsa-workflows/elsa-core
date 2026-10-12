@@ -24,7 +24,7 @@ partial class Build : NukeBuild, ITest, IPack
 
     [GitRepository] readonly GitRepository GitRepository;
 
-    IEnumerable<AbsolutePath> SourceDirectories => new[] { RootDirectory / "core" / "src", RootDirectory / "extensions" / "src", RootDirectory / "studio" / "src" };
+    IEnumerable<AbsolutePath> SourceDirectories => new[] { RootDirectory / "core" / "src", RootDirectory / "extensions" / "src", RootDirectory / "studio" / "src", RootDirectory / "apps" / "src" };
 
     public AbsolutePath PackagesDirectory => RootDirectory / "packages";
     public AbsolutePath TestResultDirectory => RootDirectory / "testresults";

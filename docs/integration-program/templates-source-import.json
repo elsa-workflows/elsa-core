@@ -1,0 +1,531 @@
+{
+  "schemaVersion": 1,
+  "sourceRepository": "https://github.com/elsa-workflows/elsa-templates",
+  "coreBase": "1d5bc1e1deaba8f2d90920109061a3504a945106",
+  "sourceCommit": "891759727db053a37911b616ace4a5599e1005d0",
+  "sourceTree": "0de85b0ca906f6be6559998768378f5c9fb03bb6",
+  "sourceHistoryCommits": 41,
+  "mainHistoryCommits": 29,
+  "sourceRefs": [
+    {
+      "ref": "refs/heads/main",
+      "sha": "891759727db053a37911b616ace4a5599e1005d0",
+      "type": "commit",
+      "commit": "891759727db053a37911b616ace4a5599e1005d0"
+    },
+    {
+      "ref": "refs/pull/1/head",
+      "sha": "4fbeb9ad28ff16fd0ac576b3a99df50df85d1634",
+      "type": "commit",
+      "commit": "4fbeb9ad28ff16fd0ac576b3a99df50df85d1634"
+    },
+    {
+      "ref": "refs/pull/10/head",
+      "sha": "507fba847cb52ec4300ebe45bb4e30cbf9e531b0",
+      "type": "commit",
+      "commit": "507fba847cb52ec4300ebe45bb4e30cbf9e531b0"
+    },
+    {
+      "ref": "refs/pull/11/head",
+      "sha": "d507a0a14ef6efe3b52939d0c0b9af8d744f50ff",
+      "type": "commit",
+      "commit": "d507a0a14ef6efe3b52939d0c0b9af8d744f50ff"
+    },
+    {
+      "ref": "refs/pull/12/head",
+      "sha": "894e2e165a48ebc908dcd81277d8f7b9dca29146",
+      "type": "commit",
+      "commit": "894e2e165a48ebc908dcd81277d8f7b9dca29146"
+    },
+    {
+      "ref": "refs/pull/2/head",
+      "sha": "c5de9ace27159d0c3aa881a477a0dfa1f62486ff",
+      "type": "commit",
+      "commit": "c5de9ace27159d0c3aa881a477a0dfa1f62486ff"
+    },
+    {
+      "ref": "refs/pull/4/head",
+      "sha": "0693e8446346fb6fbcdc0755a4bb7ecc8661cf15",
+      "type": "commit",
+      "commit": "0693e8446346fb6fbcdc0755a4bb7ecc8661cf15"
+    },
+    {
+      "ref": "refs/pull/5/head",
+      "sha": "efaec12e0ebb281b67357980885710bd1dea6306",
+      "type": "commit",
+      "commit": "efaec12e0ebb281b67357980885710bd1dea6306"
+    },
+    {
+      "ref": "refs/pull/6/head",
+      "sha": "b859b6776022f25fa1a9f42d91300859a09e7de3",
+      "type": "commit",
+      "commit": "b859b6776022f25fa1a9f42d91300859a09e7de3"
+    },
+    {
+      "ref": "refs/pull/7/head",
+      "sha": "ecdf4956300e7f5c2a09d0effa5b8691aec44ed9",
+      "type": "commit",
+      "commit": "ecdf4956300e7f5c2a09d0effa5b8691aec44ed9"
+    },
+    {
+      "ref": "refs/pull/8/head",
+      "sha": "f1261a4c4f5d1544b046712cbfcb911d2d1179ff",
+      "type": "commit",
+      "commit": "f1261a4c4f5d1544b046712cbfcb911d2d1179ff"
+    },
+    {
+      "ref": "refs/pull/9/head",
+      "sha": "5dc2c5cf4eb6ed17b2228912f712993e48adb56b",
+      "type": "commit",
+      "commit": "5dc2c5cf4eb6ed17b2228912f712993e48adb56b"
+    },
+    {
+      "ref": "refs/pull/9/merge",
+      "sha": "e881c31f8235a385347d0be7b6fd26034e581b72",
+      "type": "commit",
+      "commit": "e881c31f8235a385347d0be7b6fd26034e581b72"
+    },
+    {
+      "ref": "refs/tags/3.7.0",
+      "sha": "9e394a40fa863fd92f32c31e35d37a5f8da96ef0",
+      "type": "commit",
+      "commit": "9e394a40fa863fd92f32c31e35d37a5f8da96ef0"
+    },
+    {
+      "ref": "refs/tags/3.7.1",
+      "sha": "bd7784ae287e0184cd201a29dccbfedccc2542ec",
+      "type": "commit",
+      "commit": "bd7784ae287e0184cd201a29dccbfedccc2542ec"
+    },
+    {
+      "ref": "refs/tags/3.8.0",
+      "sha": "bdd9c24405d3a133cc7d7ca45b9ff24d4070389d",
+      "type": "tag",
+      "commit": "c44079008d06f4580374d7c8abbeff2faf748df0",
+      "rawTagObjectBase64": "b2JqZWN0IGM0NDA3OTAwOGQwNmY0NTgwMzc0ZDdjOGFiYmVmZjJmYWY3NDhkZjAKdHlwZSBjb21taXQKdGFnIDMuOC4wCnRhZ2dlciBTaXBrZSBTY2hvb3JzdHJhIDxzaXBrZXNjaG9vcnN0cmFAb3V0bG9vay5jb20+IDE3ODg2MjUxOTggKzAyMDAKClJlbGVhc2UgMy44LjAK"
+    },
+    {
+      "ref": "refs/tags/3.9.0",
+      "sha": "89f7747cba408a75a041cc3328b007c0c483acd1",
+      "type": "commit",
+      "commit": "89f7747cba408a75a041cc3328b007c0c483acd1"
+    }
+  ],
+  "importCommit": "f1aaec368a9ad317093c71c993fb51eca2544e9e",
+  "importParents": [
+    "1d5bc1e1deaba8f2d90920109061a3504a945106",
+    "891759727db053a37911b616ace4a5599e1005d0",
+    "0693e8446346fb6fbcdc0755a4bb7ecc8661cf15",
+    "b859b6776022f25fa1a9f42d91300859a09e7de3",
+    "e881c31f8235a385347d0be7b6fd26034e581b72",
+    "ecdf4956300e7f5c2a09d0effa5b8691aec44ed9",
+    "efaec12e0ebb281b67357980885710bd1dea6306",
+    "f1261a4c4f5d1544b046712cbfcb911d2d1179ff"
+  ],
+  "assets": [
+    {
+      "sourcePath": ".editorconfig",
+      "destinationPath": "templates/.editorconfig",
+      "sourceMode": "100644",
+      "sourceBlob": "d00800abb8da66d58ba2f837483148696e68d87e"
+    },
+    {
+      "sourcePath": ".github/workflows/ci.yml",
+      "destinationPath": "templates/.github/workflows/ci.yml",
+      "sourceMode": "100644",
+      "sourceBlob": "221396045f137ccad4c9aa22caa27b1c0d55cb92"
+    },
+    {
+      "sourcePath": ".github/workflows/packages.yml",
+      "destinationPath": "templates/.github/workflows/packages.yml",
+      "sourceMode": "100644",
+      "sourceBlob": "f9598de3a22110e2751e0d91d73f79f13eb89cb1"
+    },
+    {
+      "sourcePath": ".gitignore",
+      "destinationPath": "templates/.gitignore",
+      "sourceMode": "100644",
+      "sourceBlob": "e541cc28d19b204c03729711c52b2e91d68d6102"
+    },
+    {
+      "sourcePath": "Directory.Build.props",
+      "destinationPath": "templates/Directory.Build.props",
+      "sourceMode": "100644",
+      "sourceBlob": "c9e27fd240c862e836d4bed42171139946d3812a"
+    },
+    {
+      "sourcePath": "Directory.Packages.props",
+      "destinationPath": "templates/Directory.Packages.props",
+      "sourceMode": "100644",
+      "sourceBlob": "04afe0ac82f99427e80a22edb2cd55ad16f4615f"
+    },
+    {
+      "sourcePath": "Elsa.Templates.slnx",
+      "destinationPath": "templates/Elsa.Templates.slnx",
+      "sourceMode": "100644",
+      "sourceBlob": "19ef680d1732b08d5fe40825fda46230951a952f"
+    },
+    {
+      "sourcePath": "LICENSE",
+      "destinationPath": "templates/LICENSE",
+      "sourceMode": "100644",
+      "sourceBlob": "ed7211fb7e15d93f4853c5ca37a06c04dcf6db4b"
+    },
+    {
+      "sourcePath": "Program.cs",
+      "destinationPath": "templates/Program.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "734b9c8b8b41115f4d9195341ea91946dd9feb4d"
+    },
+    {
+      "sourcePath": "Properties/launchSettings.json",
+      "destinationPath": "templates/Properties/launchSettings.json",
+      "sourceMode": "100644",
+      "sourceBlob": "f5712fa4c32efbf8e3df61918b9c51d47c9b33be"
+    },
+    {
+      "sourcePath": "README.md",
+      "destinationPath": "templates/README.md",
+      "sourceMode": "100644",
+      "sourceBlob": "420fe4721c19035e5767249738c8817096008c85"
+    },
+    {
+      "sourcePath": "appsettings.Development.json",
+      "destinationPath": "templates/appsettings.Development.json",
+      "sourceMode": "100644",
+      "sourceBlob": "d2356198e69b6f18bd651c9f0913a1269f572fe3"
+    },
+    {
+      "sourcePath": "appsettings.json",
+      "destinationPath": "templates/appsettings.json",
+      "sourceMode": "100644",
+      "sourceBlob": "9409b39b0c61518bdbba11c5a63d74115d28e999"
+    },
+    {
+      "sourcePath": "docs/roadmap.md",
+      "destinationPath": "templates/docs/roadmap.md",
+      "sourceMode": "100644",
+      "sourceBlob": "de97cfe4f7c11d442761f27f58efeaeb013ca8ed"
+    },
+    {
+      "sourcePath": "docs/tasks.md",
+      "destinationPath": "templates/docs/tasks.md",
+      "sourceMode": "100644",
+      "sourceBlob": "34d31821e7a8fc402e24cbd4b18343824d2061d4"
+    },
+    {
+      "sourcePath": "elsa-templates.csproj",
+      "destinationPath": "templates/elsa-templates.csproj",
+      "sourceMode": "100644",
+      "sourceBlob": "0a7d6970c9e043b37fe40136ba5766d2a1fcc371"
+    },
+    {
+      "sourcePath": "elsa-templates.slnx",
+      "destinationPath": "templates/elsa-templates.slnx",
+      "sourceMode": "100644",
+      "sourceBlob": "a50fe5e3f39292a7bc3d625fee0e078d319be93a"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/Elsa.Templates.csproj",
+      "destinationPath": "templates/src/Elsa.Templates/Elsa.Templates.csproj",
+      "sourceMode": "100644",
+      "sourceBlob": "31f7c7ffc439a266ae6ed8b5e96359d6baf828d2"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-combined/.template.config/template.json",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-combined/.template.config/template.json",
+      "sourceMode": "100644",
+      "sourceBlob": "6728996883011d4140f5bca8882a61614c448465"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-combined/Company.ElsaCombined.slnx",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-combined/Company.ElsaCombined.slnx",
+      "sourceMode": "100644",
+      "sourceBlob": "5d9a73ee3596c1799d5fa917b03eb0effba817ed"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Host/Company.ElsaCombined.Host.csproj",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Host/Company.ElsaCombined.Host.csproj",
+      "sourceMode": "100644",
+      "sourceBlob": "6c6eb9a46f1ed0cede9cb88afb71fbb27c21113b"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Host/Pages/_Host.cshtml",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Host/Pages/_Host.cshtml",
+      "sourceMode": "100644",
+      "sourceBlob": "152dd8352b0fad3772a5c8a905a8a38232e2a507"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Host/Pages/_WasmHost.cshtml",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Host/Pages/_WasmHost.cshtml",
+      "sourceMode": "100644",
+      "sourceBlob": "df040c473f53d7b3200eb2f9db028bc0f2dfc092"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Host/Program.cs",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Host/Program.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "c71600d847d7886894cd413618b293e821a42507"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Host/Properties/launchSettings.json",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Host/Properties/launchSettings.json",
+      "sourceMode": "100644",
+      "sourceBlob": "6c20d83b05cb2ac47e14673c0625ca4102bb5f46"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Host/StudioBrandingProvider.cs",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Host/StudioBrandingProvider.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "8f976b978cac32c848d294c6c639f2b299b43a08"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Host/appsettings.Development.json",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Host/appsettings.Development.json",
+      "sourceMode": "100644",
+      "sourceBlob": "1b356fab21c048d0beacccb52d348a44fe387b9e"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Host/appsettings.json",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Host/appsettings.json",
+      "sourceMode": "100644",
+      "sourceBlob": "26db5f9f442f527bc8f9b4a9d9d83641a4700287"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Wasm/Company.ElsaCombined.Wasm.csproj",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Wasm/Company.ElsaCombined.Wasm.csproj",
+      "sourceMode": "100644",
+      "sourceBlob": "91c5b02991dd8e156445e7de18e7bd2748a93d0e"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Wasm/Program.cs",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Wasm/Program.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "24a80607c11a3702a771ff274051c6a368bed952"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Wasm/wwwroot/appsettings.json",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Wasm/wwwroot/appsettings.json",
+      "sourceMode": "100644",
+      "sourceBlob": "434b4c47e9c46da5fd51ab6b7db3480fbff6ab97"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Wasm/wwwroot/index.html",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Wasm/wwwroot/index.html",
+      "sourceMode": "100644",
+      "sourceBlob": "00f29e7338babcd637cc5f323d66e7c884f83bc6"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-server/.template.config/template.json",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-server/.template.config/template.json",
+      "sourceMode": "100644",
+      "sourceBlob": "f96e0e81219622999c0743ce8dab9dce9b368712"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-server/Company.ElsaServer.csproj",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-server/Company.ElsaServer.csproj",
+      "sourceMode": "100644",
+      "sourceBlob": "696f3ec9c223bd21deaf84e132c380293993b939"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-server/Company.ElsaServer.slnx",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-server/Company.ElsaServer.slnx",
+      "sourceMode": "100644",
+      "sourceBlob": "2ad0f95e90418964366a3a8997f0213b0678d9a6"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-server/Program.cs",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-server/Program.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "88f9ca267e6a444dd1aa2465eec4604161678fac"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-server/Properties/launchSettings.json",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-server/Properties/launchSettings.json",
+      "sourceMode": "100644",
+      "sourceBlob": "68ef73f9cc19331055de13cecb957e8f3269493e"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-server/appsettings.Development.json",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-server/appsettings.Development.json",
+      "sourceMode": "100644",
+      "sourceBlob": "dba69fbe1cfa8f7d5c40d97b972967efe1825c6f"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-server/appsettings.json",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-server/appsettings.json",
+      "sourceMode": "100644",
+      "sourceBlob": "e4fdaba7f73086a62d0f9371d616f860d3386cff"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-studio/.template.config/template.json",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-studio/.template.config/template.json",
+      "sourceMode": "100644",
+      "sourceBlob": "797cd3f7efc8cd583457240c42324e0d23d97f64"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-studio/Company.ElsaStudio.slnx",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-studio/Company.ElsaStudio.slnx",
+      "sourceMode": "100644",
+      "sourceBlob": "8a3c9aa11797fe9e827bbdd94b16c06135ef73dd"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Host/Company.ElsaStudio.Host.csproj",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Host/Company.ElsaStudio.Host.csproj",
+      "sourceMode": "100644",
+      "sourceBlob": "a7df77e08a4b3fe3c02b912ae667e4848463971d"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Host/Components/AppHost.razor",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Host/Components/AppHost.razor",
+      "sourceMode": "100644",
+      "sourceBlob": "1a98b7ca2967fa71b3fbec7b063125f3d6916248"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Host/Pages/_Host.cshtml",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Host/Pages/_Host.cshtml",
+      "sourceMode": "100644",
+      "sourceBlob": "245e6161f9831e236594da90d994e333a4c0f6ff"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Host/Pages/_WasmHost.cshtml",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Host/Pages/_WasmHost.cshtml",
+      "sourceMode": "100644",
+      "sourceBlob": "a28025428fe0d9a2ed09e5c0f169540dd7bb3dba"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Host/Program.cs",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Host/Program.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "72b3b8506f936b5f98bd78c1adddbac9882d523e"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Host/Properties/launchSettings.json",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Host/Properties/launchSettings.json",
+      "sourceMode": "100644",
+      "sourceBlob": "3939e54af1cd3cab00e296070d12f9e0636baf7b"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Host/StudioBrandingProvider.cs",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Host/StudioBrandingProvider.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "9f3f3630de3a846c2fc6e933ce6fef3459b26914"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Host/appsettings.Development.json",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Host/appsettings.Development.json",
+      "sourceMode": "100644",
+      "sourceBlob": "2c63c0851048d8f7bff41ecf0f8cee05f52fd120"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Host/appsettings.json",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Host/appsettings.json",
+      "sourceMode": "100644",
+      "sourceBlob": "0635fdbe15a9d9d23d56611858fe57a6cd892c59"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Server/Company.ElsaStudio.Server.csproj",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Server/Company.ElsaStudio.Server.csproj",
+      "sourceMode": "100644",
+      "sourceBlob": "13f1f218d08d10ad209966f4e9f9f6594711ed86"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Server/Components/AppHost.razor",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Server/Components/AppHost.razor",
+      "sourceMode": "100644",
+      "sourceBlob": "1a98b7ca2967fa71b3fbec7b063125f3d6916248"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Server/Pages/_Host.cshtml",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Server/Pages/_Host.cshtml",
+      "sourceMode": "100644",
+      "sourceBlob": "7b0f49534b6effc91bdf36d83e35eb2a3b3c48b4"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Server/Program.cs",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Server/Program.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "60963cfea2ac718c619f25e42745b830a77aad3f"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Server/Properties/launchSettings.json",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Server/Properties/launchSettings.json",
+      "sourceMode": "100644",
+      "sourceBlob": "7c9b0066533a4dbb52666f3448783b2bcb52eb4a"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Server/StudioBrandingProvider.cs",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Server/StudioBrandingProvider.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "8384e59e65cd67c1c1381a115b681d403be5cd0c"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Server/appsettings.Development.json",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Server/appsettings.Development.json",
+      "sourceMode": "100644",
+      "sourceBlob": "2c63c0851048d8f7bff41ecf0f8cee05f52fd120"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Server/appsettings.json",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Server/appsettings.json",
+      "sourceMode": "100644",
+      "sourceBlob": "59e33bf4612e71ca769f6b313052d632a85bd783"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Wasm/Company.ElsaStudio.Wasm.csproj",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Wasm/Company.ElsaStudio.Wasm.csproj",
+      "sourceMode": "100644",
+      "sourceBlob": "61f1d1d55527f43a83104801c1488a91b12bf3da"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Wasm/Program.cs",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Wasm/Program.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "24a80607c11a3702a771ff274051c6a368bed952"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Wasm/wwwroot/appsettings.json",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Wasm/wwwroot/appsettings.json",
+      "sourceMode": "100644",
+      "sourceBlob": "434b4c47e9c46da5fd51ab6b7db3480fbff6ab97"
+    },
+    {
+      "sourcePath": "src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Wasm/wwwroot/index.html",
+      "destinationPath": "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Wasm/wwwroot/index.html",
+      "sourceMode": "100644",
+      "sourceBlob": "3a9339a5c5b07d5d262a38da1c5f96a6459d2920"
+    },
+    {
+      "sourcePath": "test/Elsa.Templates.Tests/Elsa.Templates.Tests.csproj",
+      "destinationPath": "templates/test/Elsa.Templates.Tests/Elsa.Templates.Tests.csproj",
+      "sourceMode": "100644",
+      "sourceBlob": "508ba342c3161681dac904887d19fb31b8efda4b"
+    },
+    {
+      "sourcePath": "test/Elsa.Templates.Tests/TemplateSmokeTests.cs",
+      "destinationPath": "templates/test/Elsa.Templates.Tests/TemplateSmokeTests.cs",
+      "sourceMode": "100644",
+      "sourceBlob": "9eac81bb8b2bd1380c23acea36477c6c6fd35c0d"
+    },
+    {
+      "sourcePath": "test/validate_packages_workflow.py",
+      "destinationPath": "templates/test/validate_packages_workflow.py",
+      "sourceMode": "100644",
+      "sourceBlob": "b64fa2671e3751c384da16586b471580d2f49d4c"
+    }
+  ],
+  "appliedContribution": {
+    "number": 9,
+    "originalCommit": "5dc2c5cf4eb6ed17b2228912f712993e48adb56b",
+    "appliedCommit": "79469e023b7a26b0ff6ca3a5a64104f654466ea2",
+    "author": "gpanayotov <panayotov.g.p@gmail.com>",
+    "disposition": "Custom Studio element registration applied after original-main import; donor PR remains open"
+  },
+  "pendingIssues": [
+    {
+      "number": 3,
+      "author": "agriffard (Antoine Griffard)",
+      "disposition": "Unresolved attributed report; no runtime reproduction or fix claimed"
+    }
+  ]
+}

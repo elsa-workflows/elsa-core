@@ -92,6 +92,8 @@ docker run \
 - [Default Admin User bootstrap (shell + legacy feature system)](core/src/modules/Elsa.Identity/README.md)
 - [Studio source and local development](studio/docs/README.md)
 - [Extensions source and package boundaries](extensions/docs/README.md)
+- [Official application hosts and images](apps/README.md)
+- [.NET project templates](templates/README.md)
 - [Consolidated 3.10 package proof and publication boundaries](docs/integration-program/consolidated-package-proof.md)
 
 ## Training
@@ -191,11 +193,13 @@ Replace `YOUR_USERNAME` with your GitHub username. For more information on forki
 
 ### 2. Open the Shared Solution
 
-Open the root `Elsa.sln` in Visual Studio, JetBrains Rider or Visual Studio Code. Core, Extensions and Studio have separate product roots with their own `src/`, `test/` and `docs/` directories. The root solution filters select focused development subsets while retaining required project dependencies.
+Open the root `Elsa.sln` in Visual Studio, JetBrains Rider or Visual Studio Code. Core, Extensions, Studio and Apps have separate product roots. Core, Extensions and Studio use `src/`, `test/` and `docs/`; Apps keeps application hosts in `apps/src/`, container-policy tests in `apps/scripts/tests/` and documentation in `apps/docs/`. The root solution filters select focused development subsets while retaining required project dependencies.
 
 - [Core development](core/docs/README.md): backend hosts, workflow modules and Core tests.
 - [Extensions development](extensions/docs/README.md): extension modules, tests and samples.
 - [Studio development](studio/docs/README.md): Blazor hosts, browser bundles and Studio tests.
+- [Apps development](apps/README.md): official net10 hosts and six image profiles consuming released packages.
+- [Templates development](templates/docs/README.md): independent Elsa 3 project-template pack and isolated starter smoke tests. Build `Elsa.Templates.slnf`, which selects `templates/Elsa.Templates.slnx`; Templates has navigation items only in the shared solution to preserve independent packaging.
 
 Run build and test commands from the repository root. See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and [AGENTS.md](AGENTS.md) for repository conventions. These source-development commands do not publish packages or change source-repository ownership.
 

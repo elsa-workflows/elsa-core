@@ -8,6 +8,7 @@ on:
       - 'Elsa.sln'
       - '*.slnf'
       - '**/*.csproj'
+      - '**/*.slnx'
       - 'scripts/solution/**'
       - '.github/workflows/solution-groups.yml'
 
