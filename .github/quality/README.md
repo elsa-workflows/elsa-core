@@ -1,6 +1,6 @@
 # Quality loop
 
-Two scheduled agent jobs keep Elsa simple, consistent and pleasant to build on. The roadmap and run log live in [#8700](https://github.com/elsa-workflows/elsa-core/issues/8700).
+Three scheduled agent jobs keep Elsa simple, consistent and pleasant to build on. The roadmap and run log live in [#8700](https://github.com/elsa-workflows/elsa-core/issues/8700).
 
 | Source | Purpose |
 |---|---|
