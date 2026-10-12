@@ -7,7 +7,8 @@ Two scheduled agent jobs keep Elsa simple, consistent and pleasant to build on. 
 | [PRINCIPLES.md](PRINCIPLES.md) | The standard the review job audits against and the fixer's reviewers enforce. |
 | [`CONTEXT.md`](../../CONTEXT.md) | The canonical domain vocabulary. |
 | [`docs/adr/`](../../docs/adr/) and issues closed as *not planned* | Decisions already made, so proposals are not raised again. |
-| [metrics.sh](metrics.sh) | Size metrics posted with every review run. Run it from the repository root. |
+| [metrics.sh](metrics.sh) | Size metrics and theme indicators posted with every review run. Run it from the repository root. |
+| [SCORING.md](SCORING.md) | The fixed 1–5 anchors used by the quarterly re-baseline. |
 
 ## Labels
 
@@ -53,6 +54,10 @@ The review job adds `audit:approved` and `audit:auto` only when all of these hol
 - The effort is small or medium.
 
 Everything else waits for the maintainer.
+
+## Quarterly re-baseline
+
+Each quarter, a third job re-scores all eight dimensions against [SCORING.md](SCORING.md). It posts the scores and their change on #8700, republishes the baseline report with the full score history, and adds new findings to the held candidates. It files no issues itself.
 
 ## Fixer
 

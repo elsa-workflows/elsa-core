@@ -44,3 +44,34 @@ echo "| GitHub workflows: files / lines | $(count '.github/workflows/*.yml') / $
 echo "| Tracked files at repo root | $(git ls-files | grep -vc /) |"
 echo "| ADRs | $(count 'docs/adr/[0-9]*.md') |"
 echo "| Markdown lines: specs / other | $(loc_of '*/specs/*.md') / $(( $(loc_of '*.md') - $(loc_of '*/specs/*.md') )) |"
+
+# Theme indicators: one objective number per baseline theme (see SCORING.md). Lower is better unless noted.
+types() { git ls-files -z 'core/src/*.cs' 'extensions/src/*.cs' 'studio/src/*.cs' | xargs -0 grep -hE "^\s*$1 (sealed |static |abstract |partial |readonly |record |ref )*(class|interface|record|struct|enum|delegate) " | wc -l | tr -d ' '; }
+registrations() { grep -cE '\.(Try)?Add(Scoped|Singleton|Transient|HostedService)?\b|\.Add[A-Z][A-Za-z]*<' "$1" || true; }
+dual_registrations=0
+while read -r shell; do
+  code=${shell/ShellFeatures/Features}
+  [ -f "$code" ] && [ "$(registrations "$shell")" -ge 3 ] && [ "$(registrations "$code")" -ge 3 ] && dual_registrations=$((dual_registrations + 1))
+done < <(git ls-files '*/ShellFeatures/*.cs' | grep -v '/test/')
+program_workflows=0; without_exit=0
+for f in $(git ls-files '.github/workflows/*.yml'); do
+  grep -q 'integration-program' "$f" || continue
+  program_workflows=$((program_workflows + 1)); grep -qi 'delete when' "$f" || without_exit=$((without_exit + 1))
+done
+entry_readmes=(README.md core/docs/README.md extensions/docs/README.md studio/docs/README.md)
+readmes_with_setup=0; for f in "${entry_readmes[@]}"; do grep -q 'AddElsa' "$f" 2>/dev/null && readmes_with_setup=$((readmes_with_setup + 1)); done
+concepts=("Workflow Definition" "Workflow Instance" "Activity" "Bookmark" "Trigger" "Stimulus" "Correlation" "Variable" "Tenant" "Shell" "Feature" "Incident" "Alteration" "Connection" "Journal")
+defined=0; for c in "${concepts[@]}"; do grep -qiE "^\*\*${c}s?\*\*:" CONTEXT.md && defined=$((defined + 1)); done
+duplicate_skills=$({ ls .agents/skills .claude/skills 2>/dev/null | grep -v ':$'; ls .github/agents 2>/dev/null | sed -E 's/\.agent\.md$//; s/^speckit\./speckit-/'; } | grep . | sort | uniq -d | wc -l | tr -d ' ')
+
+echo
+echo "| Theme | Indicator | Value |"
+echo "|---|---|---|"
+echo "| Replacements kept alongside | Feature pairs that register services in both Features/ and ShellFeatures/ | $dual_registrations |"
+echo "| No golden path | Entry READMEs that show AddElsa setup (higher is better) | $readmes_with_setup / ${#entry_readmes[@]} |"
+echo "| Scaffolding without an exit | Program workflows without a \"Delete when\" condition | $without_exit / $program_workflows |"
+echo "| Unguarded public surface | Public / internal types in src | $(types public) / $(types internal) |"
+echo "| Unwritten vocabulary | Core concepts defined in CONTEXT.md (higher is better) | $defined / ${#concepts[@]} |"
+echo "| Docs from agent output | Agent skills duplicated across .agents/.claude/.github | $duplicate_skills |"
+echo "| Docs from agent output | Tracked files that .gitignore excludes | $(git ls-files -ci --exclude-standard | wc -l | tr -d ' ') |"
+echo "| Tests | Fixed sleeps in tests (Task.Delay / Thread.Sleep) | $(git ls-files -z 'core/test/*.cs' 'extensions/test/*.cs' 'studio/src/*Tests/*.cs' | xargs -0 grep -hE 'Task\.Delay\(|Thread\.Sleep\(' | wc -l | tr -d ' ') |"
