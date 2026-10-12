@@ -143,6 +143,10 @@ public static partial class ActivityExecutionContextExtensions
 
     private static Task StoreInputValueAsync(ActivityExecutionContext context, InputDescriptor inputDescriptor, Input? input, object value)
     {
+        // Sensitive inputs are never kept in activity state: it is persisted with the workflow instance and copied
+        // into the execution journal. An input counts as sensitive when its descriptor says so (CanContainSecrets)
+        // or when it is bound to an expression type flagged as sensitive (e.g. Secret). The activity still receives
+        // the evaluated value in memory; removing the entry also clears any value carried over from a previous run.
         if (inputDescriptor.IsSensitive || IsBoundToSensitiveExpression(context, input))
         {
             context.ActivityState.Remove(inputDescriptor.Name);

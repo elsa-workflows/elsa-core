@@ -50,6 +50,31 @@ public class InputEvaluationTests
         Assert.Equal(SensitiveExpressionValue, _activity.CapturedPublicText);
     }
 
+    [Fact]
+    public async Task EvaluateInputPropertiesAsync_WhenResumingWithSensitiveExpressionInput_RemovesPreviouslyStoredValue()
+    {
+        _activity.PublicText = new(new Expression(SensitiveExpressionType, null));
+        _fixture.ConfigureServices(services => services.AddSingleton<IExpressionDescriptorProvider, SensitiveExpressionDescriptorProvider>());
+        _fixture.ConfigureContext(context => context.ActivityState[nameof(ActivityWithSensitiveInputs.PublicText)] = "stale-secret");
+
+        var context = await ActivateAsync();
+
+        Assert.False(context.ActivityState.ContainsKey(nameof(ActivityWithSensitiveInputs.PublicText)));
+        Assert.Equal(SensitiveExpressionValue, _activity.CapturedPublicText);
+    }
+
+    [Fact]
+    public async Task EvaluateInputPropertiesAsync_WhenInputIsBoundToNonSensitiveExpression_StoresItInActivityState()
+    {
+        _activity.PublicText = new(new Expression(PlainExpressionType, null));
+        _fixture.ConfigureServices(services => services.AddSingleton<IExpressionDescriptorProvider, SensitiveExpressionDescriptorProvider>());
+
+        var context = await ActivateAsync();
+
+        Assert.Equal(SensitiveExpressionValue, context.ActivityState[nameof(ActivityWithSensitiveInputs.PublicText)]);
+    }
+
+    private const string PlainExpressionType = "PlainTest";
     private const string SensitiveExpressionType = "SensitiveTest";
     private const string SensitiveExpressionValue = "resolved-secret";
 
@@ -82,6 +107,12 @@ public class InputEvaluationTests
                 Type = SensitiveExpressionType,
                 DisplayName = "Sensitive test",
                 IsSensitive = true,
+                HandlerFactory = _ => new SensitiveExpressionHandler()
+            };
+            yield return new()
+            {
+                Type = PlainExpressionType,
+                DisplayName = "Plain test",
                 HandlerFactory = _ => new SensitiveExpressionHandler()
             };
         }
