@@ -160,6 +160,19 @@ class TemplatesSourceTests(unittest.TestCase):
         self.assertEqual([path], git(self.root, "diff", "--name-only", applied + "^", applied).splitlines())
         self.assertEqual("gpanayotov <panayotov.g.p@gmail.com>", git(self.root, "show", "-s", "--format=%an <%ae>", applied))
 
+        for entrypoint, receiver in (
+            ("elsa-combined/src/Company.ElsaCombined.Wasm/Program.cs", "builder"),
+            ("elsa-studio/src/Company.ElsaStudio.Server/Program.cs", "options"),
+            ("elsa-studio/src/Company.ElsaStudio.Host/Program.cs", "options"),
+            ("elsa-studio/src/Company.ElsaStudio.Wasm/Program.cs", "builder"),
+        ):
+            with self.subTest(entrypoint=entrypoint):
+                path = "templates/src/Elsa.Templates/templates/" + entrypoint
+                self.assertNotIn("RegisterCustomElsaStudioElements", git(self.root, "show", self.manifest["importCommit"] + ":" + path))
+                current_program = (ROOT / path).read_text()
+                self.assertIn(extension_namespace, current_program)
+                self.assertIn(receiver + ".RootComponents.RegisterCustomElsaStudioElements();", current_program)
+
 
 class TemplatesRestoreTests(unittest.TestCase):
     def setUp(self):

@@ -129,13 +129,7 @@ public class TemplateSmokeTests : IClassFixture<TemplatePackageFixture>
         {
             AssertStudioAuthenticationComposition(outputPath, !templateOptions.Contains("elsa-login", StringComparer.OrdinalIgnoreCase));
             AssertHostPageRoutes(outputPath);
-        }
-        if (templateName == "elsa-combined")
-        {
-            var program = File.ReadAllText(Path.Combine(outputPath, "src", $"{solutionName}.Host", "Program.cs"));
-            Assert.Contains("using Elsa.Studio.Workflows.Designer.Extensions;", program, StringComparison.Ordinal);
-            Assert.Contains("options.RootComponents.RegisterCustomElsaStudioElements();", program, StringComparison.Ordinal);
-            Assert.Contains("options.RootComponents.MaxJSRootComponents = 1000;", program, StringComparison.Ordinal);
+            AssertStudioCustomElements(outputPath);
         }
         if (templateName is "elsa-server" or "elsa-combined")
         {
@@ -143,6 +137,28 @@ public class TemplateSmokeTests : IClassFixture<TemplatePackageFixture>
             AssertDeploymentOwnedIdentityConfiguration(outputPath);
         }
         await DotNet.RunAsync(["build", Path.Combine(outputPath, $"{solutionName}.slnx")], workspace.Path);
+    }
+
+    private static void AssertStudioCustomElements(string outputPath)
+    {
+        var programFiles = Directory.GetFiles(outputPath, "Program.cs", SearchOption.AllDirectories);
+        Assert.NotEmpty(programFiles);
+
+        foreach (var programFile in programFiles)
+        {
+            var program = File.ReadAllText(programFile);
+            Assert.Contains("using Elsa.Studio.Workflows.Designer.Extensions;", program, StringComparison.Ordinal);
+            if (program.Contains("WebAssemblyHostBuilder.CreateDefault(args)", StringComparison.Ordinal))
+            {
+                Assert.Contains("builder.RootComponents.RegisterCustomElsaStudioElements();", program, StringComparison.Ordinal);
+            }
+            else
+            {
+                Assert.Contains("WebApplication.CreateBuilder(args)", program, StringComparison.Ordinal);
+                Assert.Contains("options.RootComponents.RegisterCustomElsaStudioElements();", program, StringComparison.Ordinal);
+                Assert.Contains("options.RootComponents.MaxJSRootComponents = 1000;", program, StringComparison.Ordinal);
+            }
+        }
     }
 
     private static void AssertStudioAuthenticationComposition(string outputPath, bool expectsSharedAuthenticationUi)

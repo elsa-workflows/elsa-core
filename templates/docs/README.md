@@ -35,7 +35,7 @@ python3 scripts/solution/solution_groups.py --check
 ruby scripts/integration-program/test_dependabot_discovery.rb
 ```
 
-The [Templates source workflow](../../.github/workflows/templates-source-validation.yml) supplies native proof for both product and root-filter commands, effective scoped MSBuild/NuGet policy, and actual pack/install/generate/build across all 20 existing smoke cases. It requires every case to execute and pass. The combined outputs also assert custom-element registration from retained contributor PR #9 before building against the released API. This catches the missing generated registration; it does not establish a runtime fix for donor issue #3.
+The [Templates source workflow](../../.github/workflows/templates-source-validation.yml) supplies native proof for both product and root-filter commands, effective scoped MSBuild/NuGet policy, and actual pack/install/generate/build across all 20 existing smoke cases. It requires every case to execute and pass. Every generated Studio server and WASM entrypoint asserts custom-element registration before building against the released API. This extends the retained PR #9 regression across standalone and combined hosting; it does not establish a runtime fix for donor issue #3.
 
 Static checks do not establish restore or runtime success. Before source acceptance, require exact-head hosted CI and independent review. The import's local work deliberately defers .NET execution on the overloaded shared host. Supported source options exclude MySQL and preview-only Studio modules; no additional provider, runtime hosting, publisher or release guarantee is inferred.
 

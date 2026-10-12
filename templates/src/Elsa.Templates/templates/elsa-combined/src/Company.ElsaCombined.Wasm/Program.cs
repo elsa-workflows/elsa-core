@@ -22,6 +22,7 @@ using Elsa.Studio.Login.HttpMessageHandlers;
 using Elsa.Studio.Models;
 using Elsa.Studio.Shell;
 using Elsa.Studio.Shell.Extensions;
+using Elsa.Studio.Workflows.Designer.Extensions;
 using Elsa.Studio.Workflows.Extensions;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -32,6 +33,7 @@ var services = builder.Services;
 
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
+builder.RootComponents.RegisterCustomElsaStudioElements();
 
 var authenticationHandler = ConfigureAuthentication(services, configuration);
 var backendApiConfig = new BackendApiConfig
