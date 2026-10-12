@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "status": "prepared-not-active-on-actual-main",
+  "status": "prepared-evidence-record",
   "preparedAtUtc": "2026-10-12T01:36:32.114594+00:00",
   "task": "https://github.com/elsa-workflows/elsa-core/issues/8749",
   "sourceProgram": "https://github.com/elsa-workflows/elsa-core/issues/8740",
@@ -16,7 +16,12 @@
     "unchangedAcceptedTree": "d7d2d2e89c905f1ed9374fd163897778bfdcbce6",
     "actualMainMerge": null,
     "postmergeReceipt": null,
-    "condition": "A reviewed normal shared-to-main merge, final source freshness reconciliation, applicable exact-head gates and lead actual-main parent/tree/history readback recorded on Task8749 activate the cutoff. The later receipt supplies merge/PR identities; this preparatory document does not contain its own commit SHA."
+    "condition": "A reviewed normal shared-to-main merge, final source freshness reconciliation, applicable exact-head gates and lead actual-main parent/tree/history readback recorded on Task8749 activate the cutoff. The later receipt supplies merge/PR identities; this preparatory document does not contain its own commit SHA.",
+    "statusSource": {
+      "task": "https://github.com/elsa-workflows/elsa-core/issues/8749",
+      "record": "lead actual-main acceptance and postmerge receipt"
+    },
+    "externalReceiptFields": "actualMainMerge and postmergeReceipt are intentionally null in this immutable premerge evidence record. Their values and activation status are supplied by the external statusSource receipt, not maintained here."
   },
   "readInterval": {
     "from": "2026-10-12T01:17:52.672815+00:00",

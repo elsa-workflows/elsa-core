@@ -1,6 +1,6 @@
 # Elsa 3 source cutoff
 
-[Task #8749](https://github.com/elsa-workflows/elsa-core/issues/8749) closes the source-integration boundary of [program #8740](https://github.com/elsa-workflows/elsa-core/issues/8740). Core, Extensions, Studio, Apps and Templates now have product roots in this repository. This record is **prepared, not yet active on actual main**. Its [machine-readable inventory](source-cutoff.json) pins the observed inputs and links every open contribution to its accepted disposition.
+[Task #8749](https://github.com/elsa-workflows/elsa-core/issues/8749) closes the source-integration boundary of [program #8740](https://github.com/elsa-workflows/elsa-core/issues/8740). Core, Extensions, Studio, Apps and Templates now have product roots in this repository. This prepared evidence record defines the cutoff; activation is established by the lead's actual-main acceptance receipt on #8749 as described below. Its [machine-readable inventory](source-cutoff.json) pins the observed inputs and links every open contribution to its accepted disposition.
 
 The cutoff becomes effective only after the reviewed normal shared-to-main merge, final donor freshness reconciliation, applicable exact-head review/CI and the lead's actual-main parent/tree/history readback are recorded on #8749. That postmerge receipt supplies the final PR and merge identities without requiring this document to contain its own commit SHA. Preparation and accepted shared checkpoints do not constitute actual-main acceptance.
 
