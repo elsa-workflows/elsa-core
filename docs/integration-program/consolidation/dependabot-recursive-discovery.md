@@ -115,6 +115,12 @@ governed by [#8636](https://github.com/elsa-workflows/elsa-core/issues/8636) and
 The historical inventory table above predates these nine additions; the five selected
 starting-set counts and existing release-unit inventory are unchanged.
 
+## Templates product and build-data disposition
+
+Task [#8748](https://github.com/elsa-workflows/elsa-core/issues/8748) retains nine Templates manifests outside the shared solution and the five updater batches. The explicit current inventory in `scripts/solution/solution-groups.json` separates the independent pack and test project from six embedded starter manifests and one standalone legacy host. Root `Elsa.Templates.slnf` selects `templates/Elsa.Templates.slnx`, with project paths relative to the product solution; root `Elsa.sln` has navigation items only. The census fails on unknown or unaccounted Templates projects, accidental shared-solution membership and build/data overlap. No Templates updater is activated.
+
+Templates uses scoped props, CPM, targets and official-only NuGet configuration. Its [source workflow](../../../.github/workflows/templates-source-validation.yml) owns real pack/install/generate/build proof. The [import record](../templates-source-import.md) preserves the exact original 65-file mapping and independent release/publisher handoff. The historical inventory table and five source-package starting-set counts above remain unchanged.
+
 ## Central package and build imports
 
 The coverage test walks from each of the 356 selected project manifests to its nearest

@@ -150,5 +150,24 @@
       "core/samples/",
       "extensions/samples/"
     ]
+  },
+  "independentProducts": {
+    "templates": {
+      "solution": "templates/Elsa.Templates.slnx",
+      "filter": "Elsa.Templates.slnf",
+      "projects": [
+        "templates/src/Elsa.Templates/Elsa.Templates.csproj",
+        "templates/test/Elsa.Templates.Tests/Elsa.Templates.Tests.csproj"
+      ],
+      "buildData": [
+        "templates/elsa-templates.csproj",
+        "templates/src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Host/Company.ElsaCombined.Host.csproj",
+        "templates/src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Wasm/Company.ElsaCombined.Wasm.csproj",
+        "templates/src/Elsa.Templates/templates/elsa-server/Company.ElsaServer.csproj",
+        "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Host/Company.ElsaStudio.Host.csproj",
+        "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Server/Company.ElsaStudio.Server.csproj",
+        "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Wasm/Company.ElsaStudio.Wasm.csproj"
+      ]
+    }
   }
 }

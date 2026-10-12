@@ -1,0 +1,119 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Elsa Workflows",
+  "classifications": [
+    "Web",
+    "Elsa",
+    "Workflow",
+    "Blazor"
+  ],
+  "identity": "Elsa.Templates.Studio",
+  "name": "Elsa Studio",
+  "shortName": "elsa-studio",
+  "sourceName": "Company.ElsaStudio",
+  "preferNameDirectory": true,
+  "tags": {
+    "language": "C#",
+    "type": "solution"
+  },
+  "symbols": {
+    "hosting": {
+      "type": "parameter",
+      "datatype": "choice",
+      "defaultValue": "server",
+      "description": "The Blazor hosting model to use.",
+      "choices": [
+        {
+          "choice": "server",
+          "description": "Generate a Blazor Server Studio host."
+        },
+        {
+          "choice": "wasm",
+          "description": "Generate a Blazor WebAssembly Studio client."
+        },
+        {
+          "choice": "hybrid",
+          "description": "Generate a host plus WASM client with runtime hosting selection."
+        }
+      ]
+    },
+    "auth-provider": {
+      "type": "parameter",
+      "datatype": "choice",
+      "defaultValue": "elsa-identity",
+      "description": "The Studio authentication provider to configure.",
+      "choices": [
+        {
+          "choice": "elsa-identity",
+          "description": "Use Elsa Identity username/password authentication."
+        },
+        {
+          "choice": "open-id-connect",
+          "description": "Use OpenID Connect authentication."
+        },
+        {
+          "choice": "elsa-login",
+          "description": "Use the legacy Elsa Login module."
+        }
+      ]
+    },
+    "with-labels": {
+      "type": "parameter",
+      "datatype": "bool",
+      "defaultValue": "false",
+      "description": "Include the Studio Labels module."
+    },
+    "useServerHosting": {
+      "type": "computed",
+      "value": "(hosting == \"server\")"
+    },
+    "useWasmHosting": {
+      "type": "computed",
+      "value": "(hosting == \"wasm\")"
+    },
+    "useHybridHosting": {
+      "type": "computed",
+      "value": "(hosting == \"hybrid\")"
+    },
+    "useElsaIdentityAuth": {
+      "type": "computed",
+      "value": "(auth-provider == \"elsa-identity\")"
+    },
+    "useOpenIdConnectAuth": {
+      "type": "computed",
+      "value": "(auth-provider == \"open-id-connect\")"
+    },
+    "useElsaLoginAuth": {
+      "type": "computed",
+      "value": "(auth-provider == \"elsa-login\")"
+    },
+    "withLabels": {
+      "type": "computed",
+      "value": "(with-labels)"
+    }
+  },
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "condition": "(!useServerHosting)",
+          "exclude": [
+            "src/Company.ElsaStudio.Server/**"
+          ]
+        },
+        {
+          "condition": "(!useWasmHosting && !useHybridHosting)",
+          "exclude": [
+            "src/Company.ElsaStudio.Wasm/**"
+          ]
+        },
+        {
+          "condition": "(!useHybridHosting)",
+          "exclude": [
+            "src/Company.ElsaStudio.Host/**"
+          ]
+        }
+      ]
+    }
+  ]
+}

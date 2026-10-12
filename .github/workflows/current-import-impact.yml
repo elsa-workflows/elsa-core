@@ -8,6 +8,8 @@ on:
       - 'build/**'
       - 'scripts/integration-program/**'
       - 'Elsa.Apps.slnf'
+      - 'Elsa.Templates.slnf'
+      - 'scripts/solution/solution-groups.json'
       - 'core/samples/**'
       - 'extensions/samples/**'
       - 'studio/samples/**'

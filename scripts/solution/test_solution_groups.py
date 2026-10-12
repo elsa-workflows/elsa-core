@@ -26,10 +26,22 @@ class SolutionGroupsTests(unittest.TestCase):
         in_solution = {project.path for project in self.projects}
         for path in sorted(sg.ROOT.glob("Elsa.*.slnf")):
             with self.subTest(filter=path.name):
-                selected = json.loads(path.read_text(encoding="utf-8-sig"))["solution"]["projects"]
+                filtered = json.loads(path.read_text(encoding="utf-8-sig"))["solution"]
+                selected = filtered["projects"]
                 self.assertEqual(len(selected), len(set(selected)))
-                self.assertLessEqual(set(selected), in_solution)
-                self.assertTrue(all((sg.ROOT / path).is_file() for path in selected))
+                if filtered["path"] == "Elsa.sln":
+                    self.assertLessEqual(set(selected), in_solution)
+                    self.assertTrue(all((sg.ROOT / project).is_file() for project in selected))
+                else:
+                    registered = {item["filter"]: item for item in self.manifest["independentProducts"].values()}
+                    self.assertIn(path.name, registered)
+                    configuration = registered[path.name]
+                    self.assertEqual(configuration["solution"], filtered["path"])
+                    parent = (sg.ROOT / filtered["path"]).parent
+                    resolved = {(parent / project).relative_to(sg.ROOT).as_posix() for project in selected}
+                    self.assertEqual(set(configuration["projects"]), resolved)
+                    self.assertFalse(resolved & in_solution)
+                    self.assertTrue(all((parent / project).is_file() for project in selected))
 
     def test_foundation_filter_holds_no_optional_source_project_outside_test_closures(self) -> None:
         groups = sg.classify(self.projects, self.manifest)

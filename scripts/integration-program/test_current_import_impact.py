@@ -293,6 +293,25 @@ class IndependentAppsImpactTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "crosses independent Apps boundary"):
                     self.partition()
 
+    def test_templates_members_and_references_cannot_enter_the_source_graph(self):
+        template = "templates/src/Elsa.Templates/Elsa.Templates.csproj"
+        for collection in (self.names, self.documents, self.solution):
+            with self.subTest(collection=type(collection).__name__):
+                if isinstance(collection, set):
+                    collection.add(template)
+                else:
+                    collection[template] = "unexpected"
+                with self.assertRaisesRegex(ValueError, "Templates projects must not enter"):
+                    self.partition()
+                if isinstance(collection, set):
+                    collection.remove(template)
+                else:
+                    del collection[template]
+        self.documents[CORE_PROJECT]["project"]["restore"]["frameworks"]["net10.0"]["projectReferences"] = {
+            str(self.root / template): {}}
+        with self.assertRaisesRegex(ValueError, "Templates projects must not enter"):
+            self.partition()
+
     def test_source_packages_remain_fail_closed_after_partition(self):
         self.documents[CORE_PROJECT]["libraries"] = {"Elsa.Workflows.Core/3.9.0": {"type": "package"}}
         _, documents, _ = self.partition()

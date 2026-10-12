@@ -93,6 +93,7 @@ docker run \
 - [Studio source and local development](studio/docs/README.md)
 - [Extensions source and package boundaries](extensions/docs/README.md)
 - [Official application hosts and images](apps/README.md)
+- [.NET project templates](templates/README.md)
 - [Consolidated 3.10 package proof and publication boundaries](docs/integration-program/consolidated-package-proof.md)
 
 ## Training
@@ -198,6 +199,7 @@ Open the root `Elsa.sln` in Visual Studio, JetBrains Rider or Visual Studio Code
 - [Extensions development](extensions/docs/README.md): extension modules, tests and samples.
 - [Studio development](studio/docs/README.md): Blazor hosts, browser bundles and Studio tests.
 - [Apps development](apps/README.md): official net10 hosts and six image profiles consuming released packages.
+- [Templates development](templates/docs/README.md): independent Elsa 3 project-template pack and isolated starter smoke tests. Build `Elsa.Templates.slnf`, which selects `templates/Elsa.Templates.slnx`; Templates has navigation items only in the shared solution to preserve independent packaging.
 
 Run build and test commands from the repository root. See [CONTRIBUTING.md](CONTRIBUTING.md) for the workflow and [AGENTS.md](AGENTS.md) for repository conventions. These source-development commands do not publish packages or change source-repository ownership.
 

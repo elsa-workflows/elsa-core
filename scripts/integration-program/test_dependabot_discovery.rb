@@ -14,6 +14,9 @@ class DependabotDiscoveryTests < Minitest::Test
   UNMODELED_PROJECT_EXTENSIONS = %w[.proj .fsproj .vbproj].freeze
   APPS_PROJECTS = JSON.parse(File.read(File.join(REPOSITORY_ROOT,
     "Elsa.Apps.slnf"))).fetch("solution").fetch("projects").sort.freeze
+  TEMPLATES = JSON.parse(File.read(File.join(REPOSITORY_ROOT,
+    "scripts/solution/solution-groups.json"))).fetch("independentProducts").fetch("templates").freeze
+  TEMPLATES_PROJECTS = (TEMPLATES.fetch("projects") + TEMPLATES.fetch("buildData")).sort.freeze
   LEGACY_CORE_PROJECT = "extensions/src/Elsa.Testing.Extensions/Elsa.Testing.Extensions.csproj"
 
   def setup
@@ -67,8 +70,12 @@ class DependabotDiscoveryTests < Minitest::Test
     CONFIGURATION.fetch("updates").each do |entry|
       refute_includes entry.fetch("directories"), "/", "Never select the root solution as a batch"
     end
-    %w[core extensions studio apps].each do |product|
-      unselected = product == "apps" ? APPS_PROJECTS : ["core/test/TlsSmoke/TlsSmoke.csproj"].select { |path| path.start_with?("#{product}/") }
+    %w[core extensions studio apps templates].each do |product|
+      unselected = case product
+      when "apps" then APPS_PROJECTS
+      when "templates" then TEMPLATES_PROJECTS
+      else ["core/test/TlsSmoke/TlsSmoke.csproj"].select { |path| path.start_with?("#{product}/") }
+      end
       assert_equal unselected,
         projects.select { |path| path.start_with?("#{product}/") } - expected,
         "Every product source, test and sample project needs an explicit disposition"
@@ -80,7 +87,7 @@ class DependabotDiscoveryTests < Minitest::Test
       "docs/integration-program/consolidation/dependabot-recursive-discovery.md"))
       .scan(/`(scripts\/[^`]+\.csproj)`/).flatten.sort
     assert_equal projects.grep(%r{^scripts/}).sort, documented_probes
-    assert_equal (APPS_PROJECTS + ["core/test/TlsSmoke/TlsSmoke.csproj"] + documented_probes).sort,
+    assert_equal (APPS_PROJECTS + TEMPLATES_PROJECTS + ["core/test/TlsSmoke/TlsSmoke.csproj"] + documented_probes).sort,
       (projects - expected).sort
     assert_empty expected - projects, "Solution entries must name tracked manifests"
   end
@@ -99,6 +106,24 @@ class DependabotDiscoveryTests < Minitest::Test
     assert_includes File.read(File.join(REPOSITORY_ROOT,
       "docs/integration-program/consolidation/dependabot-recursive-discovery.md")),
       "independent released-package consumers"
+  end
+
+  def test_templates_have_an_explicit_independent_build_and_data_disposition
+    assert_equal TEMPLATES_PROJECTS, tracked_projects.grep(%r{^templates/}).sort
+    assert_equal TEMPLATES_PROJECTS.length, TEMPLATES_PROJECTS.uniq.length
+    assert_empty solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")).grep(%r{^templates/})
+    product_projects = solution_projects(File.join(REPOSITORY_ROOT, TEMPLATES.fetch("solution")))
+      .map { |path| "templates/#{path}" }.sort
+    assert_equal TEMPLATES.fetch("projects").sort, product_projects
+    assert_empty product_projects & TEMPLATES.fetch("buildData")
+    filtered = JSON.parse(File.read(File.join(REPOSITORY_ROOT, TEMPLATES.fetch("filter")))).fetch("solution")
+    assert_equal TEMPLATES.fetch("solution"), filtered.fetch("path")
+    assert_equal product_projects, filtered.fetch("projects").map { |path| "templates/#{path}" }.sort
+    targets = project_xml("templates/Directory.Build.targets")
+    assert_equal ["false"], targets.get_elements("//UseProjectReferences").map(&:text)
+    assert_empty targets.get_elements("//Import"), "Templates must not import Core source/pack targets"
+    assert_empty targets.get_elements("//IsPackable"), "Keep the independent template pack packable"
+    assert_equal ["$(MSBuildThisFileDirectory)NuGet.Config"], targets.get_elements("//RestoreConfigFile").map(&:text)
   end
 
   def test_solution_expansion_includes_tests_samples_and_deeper_projects
@@ -277,7 +302,7 @@ class DependabotDiscoveryTests < Minitest::Test
       Directory.Packages.props NuGet.Config nuget.config core/custom.props studio/import.targets
       .config/dotnet-tools.json
       core/global.json docs/integration-program/consolidation/dependabot-recursive-discovery.md
-      Elsa.Apps.slnf
+      Elsa.Apps.slnf Elsa.Templates.slnf scripts/solution/solution-groups.json
     ] +
       Dir.chdir(REPOSITORY_ROOT) { Dir.glob("**/*.{sln,slnx,props,targets}") }
     future_solutions = {

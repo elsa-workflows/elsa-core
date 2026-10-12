@@ -869,6 +869,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Studio.BlazorWasm", "a
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "apps\src\Shared\Shared.csproj", "{C164DE46-8179-4DBE-8AB7-5EE356D9BF13}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Templates", "Templates", "{4052D9B8-2F2A-491D-918C-E068FAED3D30}"
+	ProjectSection(SolutionItems) = preProject
+		templates\Elsa.Templates.slnx = templates\Elsa.Templates.slnx
+		Elsa.Templates.slnf = Elsa.Templates.slnf
+		templates\README.md = templates\README.md
+	EndProjectSection
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Apps", "Apps", "{295C9828-41EA-5AAF-8451-2A366FEF2A5E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{E26ABACB-8C6D-52E5-9453-0A0A46664BAD}"
