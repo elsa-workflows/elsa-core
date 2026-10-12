@@ -1,0 +1,221 @@
+name: Studio original npm pair custody
+
+# #8736 owns this fixed proof preparation. Retain as the reviewed original-input
+# publisher stage, or remove after a reviewed replacement and custody/recovery proof.
+on:
+  workflow_dispatch:
+    inputs:
+      expected_head:
+        description: Exact reviewed executor SHA (must equal this main workflow head)
+        type: string
+        required: true
+
+permissions: {}
+
+jobs:
+  retrieve:
+    permissions:
+      actions: read
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      transfer-id: ${{ steps.transfer.outputs.artifact-id }}
+      transfer-digest: ${{ steps.transfer.outputs.artifact-digest }}
+    steps:
+      # No checkout or repository execution with the artifact-read token. The
+      # validation code/packet below are reviewed workflow source, never dispatch data.
+      - name: Retrieve the fixed original ZIP without unpacking it
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_HEAD: ${{ inputs.expected_head }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from datetime import datetime, timezone
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import subprocess
+          import sys
+
+          def require(condition, code):
+              if not condition:
+                  raise ValueError(code)
+
+          def api(path):
+              result = subprocess.run(['gh', 'api', 'repos/elsa-workflows/elsa-core/' + path],
+                  stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, timeout=60, check=True)
+              require(len(result.stdout) <= 1024 * 1024, 'provider_metadata_limit')
+              return json.loads(result.stdout)
+
+          try:
+              env = os.environ
+              require(env.get('GITHUB_EVENT_NAME') == 'workflow_dispatch'
+                  and env.get('GITHUB_REPOSITORY') == 'elsa-workflows/elsa-core'
+                  and env.get('GITHUB_REF') == 'refs/heads/main'
+                  and re.fullmatch('[0-9a-f]{40}', env.get('EXPECTED_HEAD', ''))
+                  and env['EXPECTED_HEAD'] == env.get('GITHUB_SHA') == env.get('GITHUB_WORKFLOW_SHA')
+                  and env.get('GITHUB_WORKFLOW_REF') == 'elsa-workflows/elsa-core/.github/workflows/publish-studio-original-pair.yml@refs/heads/main'
+                  and re.fullmatch('[1-9][0-9]*', env.get('GITHUB_RUN_ID', ''))
+                  and re.fullmatch('[1-9][0-9]*', env.get('GITHUB_RUN_ATTEMPT', '')), 'executor_request_invalid')
+              packet_bytes = b'''{
+            "archive_sha256": "3f05853f6fad6fbac7389d9cf12825bc0914e457feb5dd79f57db7914a1d96fe",
+            "artifact_id": 11607565131,
+            "artifact_name": "studio-npm-pair-a221888910e96711d07e66f86f6e698edde6524b-37911724081-1",
+            "receipt_sha256": "2957ac31ccedf69e702becd6b714d1a076970dbafd0aa4aebf4bbe6fd1a83280",
+            "run_attempt": 1,
+            "run_id": 37911724081,
+            "source_commit": "a221888910e96711d07e66f86f6e698edde6524b",
+            "source_tree": "0407d373f981c9b29e491b739051e200214682ea",
+            "version": "0.0.0-proof.37911724081.1"
+          }
+          '''
+              packet_hash = '0af4dd27274201e2cb6d13d8d4709304cd4e0da2c0603260d3e3355e4c3703f4'
+              require(hashlib.sha256(packet_bytes).hexdigest() == packet_hash, 'reviewed_packet_changed')
+              packet = json.loads(packet_bytes)
+              artifact = api('actions/artifacts/11607565131')
+              run = api('actions/runs/37911724081/attempts/1')
+              expiry = datetime.fromisoformat(artifact['expires_at'].replace('Z', '+00:00'))
+              require(artifact.get('id') == packet['artifact_id']
+                  and artifact.get('name') == packet['artifact_name']
+                  and artifact.get('size_in_bytes') == 94760475
+                  and artifact.get('digest') == 'sha256:' + packet['archive_sha256']
+                  and artifact.get('expired') is False and expiry.tzinfo is not None
+                  and expiry > datetime.now(timezone.utc)
+                  and artifact.get('workflow_run', {}).get('id') == packet['run_id']
+                  and artifact['workflow_run'].get('head_sha') == packet['source_commit']
+                  and artifact['workflow_run'].get('repository_id') == 151148482
+                  and artifact['workflow_run'].get('head_repository_id') == 151148482, 'original_provider_changed')
+              require(run.get('id') == packet['run_id'] and run.get('run_attempt') == 1
+                  and run.get('head_sha') == packet['source_commit'] and run.get('status') == 'completed'
+                  and run.get('conclusion') == 'success' and run.get('event') in ('push', 'workflow_dispatch')
+                  and run.get('path') == '.github/workflows/studio-npm-pair.yml'
+                  and all(run.get(key, {}).get('id') == 151148482
+                          and run.get(key, {}).get('full_name') == 'elsa-workflows/elsa-core'
+                          for key in ('repository', 'head_repository')), 'original_producer_changed')
+              folder = Path(env['RUNNER_TEMP']) / 'studio-npm-original-input'
+              folder.mkdir()
+              archive = folder / 'original.zip'
+              with archive.open('xb') as stream:
+                  subprocess.run(['gh', 'api', 'repos/elsa-workflows/elsa-core/actions/artifacts/11607565131/zip'],
+                      stdout=stream, stderr=subprocess.DEVNULL, timeout=300, check=True)
+              require(archive.stat().st_size == 94760475, 'original_zip_size_changed')
+              with archive.open('rb') as stream:
+                  require(hashlib.file_digest(stream, 'sha256').hexdigest() == packet['archive_sha256'], 'original_zip_changed')
+              (folder / 'packet.json').write_bytes(packet_bytes)
+              # Allowlist only identity metadata; discard provider bodies/URLs.
+              artifact = {key: artifact.get(key) for key in ('id', 'name', 'size_in_bytes', 'digest', 'expired', 'expires_at')} | {
+                  'workflow_run': {key: artifact['workflow_run'].get(key)
+                                  for key in ('id', 'head_sha', 'repository_id', 'head_repository_id')}}
+              run = {key: run.get(key) for key in ('id', 'run_attempt', 'head_sha', 'status', 'conclusion', 'path', 'event', 'head_branch')} | {
+                  key: {field: run[key].get(field) for field in ('id', 'full_name')}
+                  for key in ('repository', 'head_repository')}
+              retrieval = {'schema': 1, 'packet_sha256': packet_hash,
+                  'archive_sha256': packet['archive_sha256'], 'archive_size': 94760475,
+                  'retrieved_at': datetime.now(timezone.utc).isoformat(),
+                  'executor_source_commit': env['GITHUB_SHA'], 'executor_run_id': int(env['GITHUB_RUN_ID']),
+                  'executor_run_attempt': int(env['GITHUB_RUN_ATTEMPT'])}
+              for name, value in (('artifact.json', artifact), ('producer-run.json', run), ('retrieval.json', retrieval)):
+                  (folder / name).write_text(json.dumps(value, sort_keys=True) + '\n')
+          except ValueError as error:
+              # Only our fixed codes escape; JSON/date/provider errors are opaque.
+              code = str(error)
+              print(json.dumps({'success': False, 'publisher_authority': False,
+                  'failure_code': code if code in {'provider_metadata_limit', 'executor_request_invalid',
+                  'reviewed_packet_changed', 'original_provider_changed', 'original_producer_changed',
+                  'original_zip_size_changed', 'original_zip_changed'} else 'original_retrieval_unknown'}))
+              sys.exit(1)
+          except Exception:
+              print('{"success":false,"publisher_authority":false,"failure_code":"original_retrieval_unknown"}')
+              sys.exit(1)
+          PY
+      - name: Transfer the original ZIP and reviewed identity records unchanged
+        id: transfer
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: studio-npm-original-input-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/studio-npm-original-input/original.zip
+            ${{ runner.temp }}/studio-npm-original-input/packet.json
+            ${{ runner.temp }}/studio-npm-original-input/artifact.json
+            ${{ runner.temp }}/studio-npm-original-input/producer-run.json
+            ${{ runner.temp }}/studio-npm-original-input/retrieval.json
+          if-no-files-found: error
+          retention-days: 30
+
+  verify:
+    needs: retrieve
+    permissions:
+      contents: read
+      actions: none
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      EXPECTED_HEAD: ${{ inputs.expected_head }}
+      TRANSFER_ID: ${{ needs.retrieve.outputs.transfer-id }}
+      TRANSFER_DIGEST: ${{ needs.retrieve.outputs.transfer-digest }}
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          artifact-ids: ${{ needs.retrieve.outputs.transfer-id }}
+          merge-multiple: true
+          path: ${{ runner.temp }}/studio-npm-original-input
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Admit original, transfer and clean executor identities independently
+        run: |
+          mkdir -p "$RUNNER_TEMP/studio-npm-original-evidence"
+          python scripts/integration-program/studio_npm_original_custody.py \
+            --inputs "$RUNNER_TEMP/studio-npm-original-input" --expected-head "$EXPECTED_HEAD" \
+            --transfer-id "$TRANSFER_ID" --transfer-digest "$TRANSFER_DIGEST" \
+            --output "$RUNNER_TEMP/studio-npm-original-evidence/custody.json"
+      - name: Observe the original pair anonymously on Feedz
+        id: feedz
+        run: |
+          python scripts/integration-program/publish_studio_npm_pair.py \
+            --archive "$RUNNER_TEMP/studio-npm-original-input/original.zip" \
+            --packet "$RUNNER_TEMP/studio-npm-original-input/packet.json" \
+            --packet-sha256 0af4dd27274201e2cb6d13d8d4709304cd4e0da2c0603260d3e3355e4c3703f4 \
+            --registry feedz --output "$RUNNER_TEMP/studio-npm-original-evidence/feedz.json"
+      - name: Observe the original pair anonymously on npmjs
+        if: ${{ !cancelled() && steps.feedz.outcome != 'skipped' }}
+        run: |
+          python scripts/integration-program/publish_studio_npm_pair.py \
+            --archive "$RUNNER_TEMP/studio-npm-original-input/original.zip" \
+            --packet "$RUNNER_TEMP/studio-npm-original-input/packet.json" \
+            --packet-sha256 0af4dd27274201e2cb6d13d8d4709304cd4e0da2c0603260d3e3355e4c3703f4 \
+            --registry npmjs --output "$RUNNER_TEMP/studio-npm-original-evidence/npmjs.json"
+      - name: Check that verification preserved the clean exact source and inputs
+        if: ${{ !cancelled() && steps.feedz.outcome != 'skipped' }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          test -z "$(git status --porcelain)"
+          python - <<'PY'
+          import hashlib
+          import os
+          from pathlib import Path
+          folder = Path(os.environ['RUNNER_TEMP']) / 'studio-npm-original-input'
+          for name, expected in (
+              ('original.zip', '3f05853f6fad6fbac7389d9cf12825bc0914e457feb5dd79f57db7914a1d96fe'),
+              ('packet.json', '0af4dd27274201e2cb6d13d8d4709304cd4e0da2c0603260d3e3355e4c3703f4')):
+              with (folder / name).open('rb') as stream:
+                  if hashlib.file_digest(stream, 'sha256').hexdigest() != expected:
+                      raise SystemExit('original_input_changed')
+          PY
+      - name: Retain sanitized custody and registry receipts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: studio-npm-original-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/studio-npm-original-evidence/*.json
+          if-no-files-found: warn
+          retention-days: 30

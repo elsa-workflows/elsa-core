@@ -28,6 +28,7 @@ on:
       - 'docs/integration-program/verify-hierarchy.py'
       - 'docs/integration-program/hierarchy.json'
       - '.github/workflows/integration-program-tools.yml'
+      - '.github/workflows/publish-studio-original-pair.yml'
   workflow_dispatch:
 
 permissions:
