@@ -12,7 +12,7 @@ public class ConfigurationSecretStore(IConfiguration configuration, IOptions<Sec
     public SecretStoreDescriptor Descriptor { get; } = new(
         SecretStoreNames.Configuration,
         "Configuration",
-        "Reads values from application configuration without storing the value in Elsa.",
+        "Reads values from the configured secrets section of application configuration without storing the value in Elsa.",
         SecretStoreCapabilities.Read | SecretStoreCapabilities.Write | SecretStoreCapabilities.Test,
         true);
 
@@ -29,7 +29,7 @@ public class ConfigurationSecretStore(IConfiguration configuration, IOptions<Sec
         if (!version.Payload.Metadata.TryGetValue(ConfigurationKeyMetadataName, out var key) || string.IsNullOrWhiteSpace(key))
             return Task.FromResult<SecretPayload?>(null);
 
-        var configuredValue = configuration[$"{options.Value.ConfigurationSectionName}:{key}"] ?? configuration[key];
+        var configuredValue = configuration.GetSection(options.Value.ConfigurationSectionName)[key];
         return configuredValue == null ? Task.FromResult<SecretPayload?>(null) : Task.FromResult<SecretPayload?>(SecretPayload.FromValue(configuredValue));
     }
 

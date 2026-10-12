@@ -42,10 +42,10 @@ public class SecretStoreTests
     }
 
     [Fact]
-    public async Task ConfigurationStore_FallsBackToRootConfigurationKey()
+    public async Task ConfigurationStore_DoesNotResolveKeysOutsideSecretsSection()
     {
         var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?> { ["SmtpPassword"] = "root-configured-secret" })
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["SmtpPassword"] = "root-configured-value" })
             .Build();
         var fixture = new SecretTestFixture(configuration);
 
@@ -55,11 +55,12 @@ public class SecretStoreTests
             StoreName = SecretStoreNames.Configuration,
             ConfigurationKey = " SmtpPassword "
         });
-        var value = await fixture.Resolver.ResolveAsync("smtp:password");
+        var version = secret.Versions.Single();
+        var store = fixture.StoreRegistry.Get(SecretStoreNames.Configuration);
 
-        Assert.Equal("root-configured-secret", value);
-        Assert.Null(secret.Versions.Single().Payload.Value);
-        Assert.Equal("SmtpPassword", secret.Versions.Single().Payload.Metadata["configurationKey"]);
+        Assert.Null(await store.ReadAsync(secret, version));
+        Assert.False(await store.TestAsync(secret, version));
+        Assert.Equal("SmtpPassword", version.Payload.Metadata["configurationKey"]);
     }
 
     [Fact]
