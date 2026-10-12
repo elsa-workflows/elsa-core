@@ -25,7 +25,7 @@ now have [scoped Studio guidance](studio-scoped-policy.md):
 | Difference | Active representation |
 | --- | --- |
 | `speckit-git-feature` skill and `speckit.git.feature.md` command | Use Core's installed command spelling and retain the template placeholder. |
-| `speckit-plan` skill | Core keeps its root plan marker behavior; active `src/studio/AGENTS.md` keeps Studio-only plans feature-scoped. |
+| `speckit-plan` skill | Core's skill no longer writes a plan marker or agent context into `AGENTS.md`; active `src/studio/AGENTS.md` keeps Studio-only plans feature-scoped. |
 | `.specify/extensions/.registry`, `codex.manifest.json`, `speckit.manifest.json`, `workflow-registry.json` | Use the active Core installation; the reviewed differences are one extra registration, timestamps and JSON map order. |
 | `.specify/memory/constitution.md` | Studio module, backend-awareness and UX rules are represented in active `src/studio/AGENTS.md`; Core's root constitution remains authoritative outside Studio. |
 

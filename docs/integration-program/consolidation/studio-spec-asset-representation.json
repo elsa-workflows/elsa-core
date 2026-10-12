@@ -19,12 +19,12 @@
     },
     ".agents/skills/speckit-plan/SKILL.md": {
       "status": "represented_by_scoped_studio",
-      "activeBlob": "c4be8492399aedbc58c48f365349c1cdff7985cb",
+      "activeBlob": "cc3d8d726dc49f107f35125f98477b62d6f586bc",
       "activeMode": "100644",
       "scopedPath": "src/studio/AGENTS.md",
       "scopedBlob": "f168156c2a20149bad8cb1ae812341f0d4c9ce60",
       "scopedMode": "100644",
-      "reason": "Keep Core's root plan-marker update rule; src/studio/AGENTS.md instructs Studio-only plans to remain feature-scoped without rewriting the root pointer. Historical scoped guidance pin 1c06d45180db59423f3ea98c428a485912b690b0 remains provenance. Accepted main PR #8726, source commit d3a2664ecf4080d6efbf8b9123117dc546486fbd merged as 4478ca92658fed938d5e678a94134550ec3043e4, rewrote the Studio constitution link to the local historical .source copy; the scoped pin now records the resulting studio/src/AGENTS.md blob without changing the imported source pins or Studio policy. The original linked constitution and retained local .source target both have blob ab4ef099d45d933fdf5b02b2d50d9f8e40ece792."
+      "reason": "Core's speckit-plan no longer writes a plan marker or agent context into AGENTS.md; src/studio/AGENTS.md keeps Studio-only plans feature-scoped. Historical scoped guidance pin 1c06d45180db59423f3ea98c428a485912b690b0 remains provenance. Accepted main PR #8726, source commit d3a2664ecf4080d6efbf8b9123117dc546486fbd merged as 4478ca92658fed938d5e678a94134550ec3043e4, rewrote the Studio constitution link to the local historical .source copy; the scoped pin now records the resulting studio/src/AGENTS.md blob without changing the imported source pins or Studio policy. The original linked constitution and retained local .source target both have blob ab4ef099d45d933fdf5b02b2d50d9f8e40ece792."
     },
     ".specify/extensions/.registry": {
       "status": "represented_by_active_core",
