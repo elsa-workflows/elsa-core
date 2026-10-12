@@ -135,15 +135,15 @@ public static partial class ActivityExecutionContextExtensions
                 value = input;
             }
 
-            await StoreInputValueAsync(context, inputDescriptor, value!);
+            await StoreInputValueAsync(context, inputDescriptor, input as Input, value!);
 
             return value;
         }
     }
 
-    private static Task StoreInputValueAsync(ActivityExecutionContext context, InputDescriptor inputDescriptor, object value)
+    private static Task StoreInputValueAsync(ActivityExecutionContext context, InputDescriptor inputDescriptor, Input? input, object value)
     {
-        if (inputDescriptor.IsSensitive)
+        if (inputDescriptor.IsSensitive || IsBoundToSensitiveExpression(context, input))
         {
             context.ActivityState.Remove(inputDescriptor.Name);
             return Task.CompletedTask;
@@ -162,5 +162,16 @@ public static partial class ActivityExecutionContextExtensions
         }
 
         return Task.CompletedTask;
+    }
+
+    private static bool IsBoundToSensitiveExpression(ActivityExecutionContext context, Input? input)
+    {
+        var expressionType = input?.Expression?.Type;
+
+        if (expressionType == null)
+            return false;
+
+        var registry = context.GetRequiredService<IExpressionDescriptorRegistry>();
+        return registry.Find(expressionType)?.IsSensitive == true;
     }
 }
