@@ -51,9 +51,8 @@ into the consolidated source layout.
 ## Plans and verification
 
 - Keep Studio feature-specific requirements, plans, and tasks under
-  `studio/docs/specs/<feature>/`. Do not change the repository-root
-  `AGENTS.md` plan pointer solely for a Studio feature; put its implementation
-  context and backend dependencies in the feature's `plan.md`.
+  `studio/docs/specs/<feature>/`. Put a Studio feature's
+  implementation context and backend dependencies in the feature's `plan.md`.
 - Test client services and filter/query mapping at the smallest practical
   level. Add component tests where the existing infrastructure supports them.
   Consider authentication, absent remote features, and disconnected backends
