@@ -116,9 +116,13 @@ The shell feature model uses CShells identity and persistence features. In devel
 
 Production has no built-in credentials. Choose one identity source for each deployment: use configuration-backed providers for a static setup, or use the durable identity provider with a deployment-owned administrator bootstrap for a shell setup. Do not combine configuration-backed users with a durable provider and assume they are interchangeable.
 
+Base settings retain placeholder signing keys. Replace `Identity:Tokens:SigningKey` and `CShells:Shells:Default:Features:Identity:SigningKey` with deployment-owned secure secrets. The current starters do not explicitly reject these placeholders outside Development; production guard implementation and verification remain [#8741](https://github.com/elsa-workflows/elsa-core/issues/8741) follow-up work.
+
 ## Verification
 
 The smoke tests pack the template package, install it into an isolated template hive, generate a representative matrix covering the supported options, and build the generated outputs.
+
+Build checks do not verify browser editor initialization. Combined WASM host pages retain the original Monaco loader scripts without an explicit `editor.main.js` reference; browser verification and any correction remain [#8741](https://github.com/elsa-workflows/elsa-core/issues/8741) follow-up work.
 
 ```bash
 dotnet test templates/test/Elsa.Templates.Tests/Elsa.Templates.Tests.csproj
