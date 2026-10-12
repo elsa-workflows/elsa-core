@@ -16,15 +16,17 @@ Its tree is exactly the accepted shared tree, `d7d2d2e89c905f1ed9374fd163897778b
 
 ## Inventory and contribution dispositions
 
-The full paginated donor read spans **2026-10-12 01:17:52.672815–01:18:08.288878 UTC**. Each repository's own interval, pagination completion, raw head/tag rows and issue/PR identities are retained in [source-cutoff.json](source-cutoff.json). There are four donors plus the target Core repository, not five donors.
+The full paginated donor read spans **2026-10-12 01:17:52.672815–01:18:08.288878 UTC**. Each repository's own interval, pagination completion, raw head/tag advertisements (including peeled targets) and issue/PR identities are retained in [source-cutoff.json](source-cutoff.json). There are four donors plus the target Core repository, not five donors.
 
-| Donor | Raw head/tag rows | Open issues | Open PRs | Accepted register |
-| --- | ---: | ---: | ---: | --- |
-| Studio | 126 | 137 | 15 | [Studio/Extensions](source-handoff-register.json) |
-| Extensions | 81 | 68 | 16 | [Studio/Extensions](source-handoff-register.json) |
-| Apps | 10 | 1 | 1 | [Apps](apps-source-import.json) |
-| Templates | 6 | 1 | 1 | [Templates](templates-source-import.json) |
-| Total | 223 | 207 | 33 | Per-item pointers in the cutoff inventory |
+| Donor | Named head/tag refs | Peeled-target rows | Advertised rows | Open issues | Open PRs | Accepted register |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| Studio | 122 | 4 | 126 | 137 | 15 | [Studio/Extensions](source-handoff-register.json) |
+| Extensions | 76 | 5 | 81 | 68 | 16 | [Studio/Extensions](source-handoff-register.json) |
+| Apps | 10 | 0 | 10 | 1 | 1 | [Apps](apps-source-import.json) |
+| Templates | 5 | 1 | 6 | 1 | 1 | [Templates](templates-source-import.json) |
+| Total | 213 | 10 | 223 | 207 | 33 | Per-item pointers in the cutoff inventory |
+
+The 223 advertised rows include 213 named head/tag refs and ten synthetic `^{}` peeled-target rows. Raw annotated tag-object identities and peeled commit targets remain distinct in the inventory.
 
 Observed open identity sets match the accepted registers. The Studio/Extensions comparison also checks issue URL/title/author and PR URL/title/author/head/base/baseRef/draft. Apps/Templates comparisons use the fields retained by their smaller import registers; current additional PR fields are recorded observations. This comparison does not audit current bodies, labels, assignees or update timestamps. The original Studio/Extensions register retains its richer dated metadata. Cross-repository reads are not an atomic freeze, and donors remain capable of receiving changes.
 

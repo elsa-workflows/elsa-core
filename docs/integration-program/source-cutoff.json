@@ -29,7 +29,9 @@
     "atomic": false
   },
   "counts": {
-    "rawHeadAndTagRows": 223,
+    "advertisedRows": 223,
+    "namedHeadTagRefs": 213,
+    "peeledTargetRows": 10,
     "issues": 207,
     "pullRequests": 33
   },
@@ -2018,7 +2020,9 @@
         }
       ],
       "counts": {
-        "rawHeadAndTagRows": 126,
+        "advertisedRows": 126,
+        "namedHeadTagRefs": 122,
+        "peeledTargetRows": 4,
         "issues": 137,
         "pullRequests": 15
       },
@@ -3212,7 +3216,9 @@
         }
       ],
       "counts": {
-        "rawHeadAndTagRows": 81,
+        "advertisedRows": 81,
+        "namedHeadTagRefs": 76,
+        "peeledTargetRows": 5,
         "issues": 68,
         "pullRequests": 16
       },
@@ -3308,7 +3314,9 @@
         }
       ],
       "counts": {
-        "rawHeadAndTagRows": 10,
+        "advertisedRows": 10,
+        "namedHeadTagRefs": 10,
+        "peeledTargetRows": 0,
         "issues": 1,
         "pullRequests": 1
       },
@@ -3388,7 +3396,9 @@
         }
       ],
       "counts": {
-        "rawHeadAndTagRows": 6,
+        "advertisedRows": 6,
+        "namedHeadTagRefs": 5,
+        "peeledTargetRows": 1,
         "issues": 1,
         "pullRequests": 1
       },
