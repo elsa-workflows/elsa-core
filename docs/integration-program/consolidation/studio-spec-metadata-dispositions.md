@@ -20,9 +20,9 @@ first comparison's eight-file difference list remains an accurate byte and
 Git-mode report. The two policy differences were subsequently reconciled by
 the reviewed [Studio-scoped policy](studio-scoped-policy.md):
 
-- `.agents/skills/speckit-plan/SKILL.md`: Core keeps its root Spec Kit plan
-  marker behavior; `src/studio/AGENTS.md` keeps Studio-only plans within their
-  feature scope without rewriting the root pointer.
+- `.agents/skills/speckit-plan/SKILL.md`: Core's skill no longer writes a plan
+  marker or agent context into `AGENTS.md`; `src/studio/AGENTS.md` keeps
+  Studio-only plans within their feature scope.
 - `.specify/memory/constitution.md`: Studio's modularity,
   backend-capability, UX, async/disposal and verification rules are represented
   in active `src/studio/AGENTS.md`; Core's root constitution remains unchanged.
