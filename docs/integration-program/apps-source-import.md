@@ -1,6 +1,6 @@
 # Elsa Apps source import
 
-[Task #8746](https://github.com/elsa-workflows/elsa-core/issues/8746) imports official Apps into the `apps/` product for the [Elsa 3 source integration program #8740](https://github.com/elsa-workflows/elsa-core/issues/8740). The [machine-readable register](apps-source-import.json) records every original asset, branch tip and retained contribution.
+[Task #8746](https://github.com/elsa-workflows/elsa-core/issues/8746) imports official Apps into the `apps/` product for the [Elsa 3 source integration program #8740](https://github.com/elsa-workflows/elsa-core/issues/8740). The [machine-readable register](apps-source-import.json) records every original asset, branch tip and retained contribution. [PR #8747](https://github.com/elsa-workflows/elsa-core/pull/8747) accepted the source slice into shared integration at `1d5bc1e1deaba8f2d90920109061a3504a945106`; actual-main cutoff activation is recorded separately in the [source cutoff](source-cutoff.md).
 
 ## Original source and history
 
@@ -18,7 +18,7 @@ PR #9 remains an open source proposal, not an accepted merge. Its original chang
 
 The [Apps guide](../../apps/README.md) and [agent instructions](../../apps/AGENTS.md) describe nine net10.0 projects and six existing image profiles. Existing `core/src/apps/` hosts/samples remain separate. App/project/image names, ports, runtime configuration, authentication wiring, backend URL handling, static assets, storage defaults and original Dockerfiles remain unchanged.
 
-Apps retains its own `Directory.Build.props`, `src/Directory.Build.props`, `Directory.Packages.props` and `NuGet.Config`. Core/Studio/Extensions packages remain released 3.9.0 consumers with independently configurable family versions. A local `Directory.Build.targets` prevents inherited consolidated source/proof targets and sets `UseProjectReferences=false`. Only the original internal Apps project references remain. `RestoreConfigFile` explicitly selects the scoped `apps/NuGet.Config` for every Apps project, including root solution/filter restore. The Apps Feedz source and mapping use Core's existing `elsa-preview-feedz` name for their shared URI; only the source identifier changes, with original Apps URI and package patterns preserved. [NuGet requires mapping keys to match source keys](https://learn.microsoft.com/en-us/nuget/consume-packages/package-source-mapping). The previous alias worked for Apps-only restore but failed in mixed root restore when the effective source used Core's alias. Shared source caching by URI is the inferred mechanism; fresh full-solution native restore must verify this correction. Root feeds and mappings remain unchanged.
+Apps retains its own `Directory.Build.props`, `src/Directory.Build.props`, `Directory.Packages.props` and `NuGet.Config`. Core/Studio/Extensions packages remain released 3.9.0 consumers with independently configurable family versions. A local `Directory.Build.targets` prevents inherited consolidated source/proof targets and sets `UseProjectReferences=false`. Only the original internal Apps project references remain. `RestoreConfigFile` explicitly selects the scoped `apps/NuGet.Config` for every Apps project, including root solution/filter restore. The Apps Feedz source and mapping use Core's existing `elsa-preview-feedz` name for their shared URI; only the source identifier changes, with original Apps URI and package patterns preserved. [NuGet requires mapping keys to match source keys](https://learn.microsoft.com/en-us/nuget/consume-packages/package-source-mapping). The previous alias worked for Apps-only restore but failed in mixed root restore when the effective source used Core's alias. Shared source caching by URI is the inferred mechanism; the accepted native full-solution proof verified restore with this correction. Root feeds and mappings remain unchanged.
 
 These image hosts and their private shared libraries set `IsPackable=false`, so adding them to root `Elsa.sln` does not add Core NuGet release units. Existing package IDs, central dependency versions and release-unit inventory are untouched. The root solution includes all nine projects with their original GUIDs; generated `Elsa.Apps.slnf` selects only imported Apps and its internal reference closure. The mapped `apps/ElsaApps.sln` remains usable, with stale links to deleted source workflows replaced by the retained current workflow link. Root NUKE cleanup recognizes the added source location.
 
@@ -60,11 +60,11 @@ dotnet build apps/ElsaApps.sln -c Release --no-restore
 dotnet build Elsa.Apps.slnf -c Release --no-restore
 ```
 
-The source verifier rejects corrupted mappings and mapped symlinks under both normal Python and `python -O`, using temporary fixtures and the actual retained Git objects. The original helper suite has 50 tests; the added local-provenance regression brings it to 51. Source intake verified successful historical source runs [37747159965](https://github.com/elsa-workflows/elsa-apps/actions/runs/37747159965) and [37747164447](https://github.com/elsa-workflows/elsa-apps/actions/runs/37747164447) at the pinned Apps head. Those runs are prior source evidence, not acceptance of the imported candidate. New exact-head native CI must pass all six profiles before integration. A single representative local image preflight does not replace that matrix.
+The source verifier rejects corrupted mappings and mapped symlinks under both normal Python and `python -O`, using temporary fixtures and the actual retained Git objects. The original helper suite has 50 tests; the added local-provenance regression brings it to 51. Source intake verified successful historical source runs [37747159965](https://github.com/elsa-workflows/elsa-apps/actions/runs/37747159965) and [37747164447](https://github.com/elsa-workflows/elsa-apps/actions/runs/37747164447) at the pinned Apps head. Those runs are prior source evidence, not acceptance of the imported candidate. The accepted `dc27edc05f83ecd8feb18d894a501e0694774d98` native gate passed all six AMD64 profiles. The [dated cutoff evidence](source-cutoff.md#accepted-native-checkpoints) records its package/mixed-solution proof and limits; a representative local image preflight does not replace that matrix.
 
 SQLite/default is the verified smoke configuration. Existing source builds report `NU1608`: Pomelo EF Core 9 requires EF Relational 9 but 10.0.9 resolves. MySQL remains unverified, with no support-policy or dependency change. Existing ApplicationInsights instrumentation-key obsolescence warnings also remain. OIDC, external databases, ARM64 manifests, registry aliases and publication are not certified by this AMD64 source gate; skipped/unexercised cases are not passing evidence.
 
-Final acceptance additionally requires fresh author-independent Elsa 3 Code Review `APPROVE + HIGH @ <full head>`, current-head Greptile 5/5 under repository policy, advisory disposition, applicable CI, independent source-tree/merge-parent readback and a final source freshness check. The lead retains integration and public-write authority.
+The accepted shared source slice completed independent review, required Greptile and applicable CI. The final actual-main integration still requires its own exact-head gates, source freshness comparison and lead tree/parent readback under [#8749](https://github.com/elsa-workflows/elsa-core/issues/8749). The lead retains integration and public-write authority.
 
 ## Maintaining Apps after the source cutoff
 
@@ -88,15 +88,14 @@ product tests. They do not activate an updater or publisher.
 
 The consolidated candidate comparison baseline remains the original 225 package identities
 and 124 exclusions, with its original hosted artifact evidence and validator contracts.
-Apps remains nonpackable; current ordinary package-proof inventory records nine additional
-Apps exclusions separately (133 total). That current inventory is not accepted as a new
-candidate or as replacement bytes for the original archive. Future candidate preparation
-requires an explicit reviewed inventory rebaseline and versioned compatibility with immutable
-artifact recovery/executor contracts under [candidate owner #8220](https://github.com/elsa-workflows/elsa-core/issues/8220)
-and [the explicit operational #8741 handoff](https://github.com/elsa-workflows/elsa-core/issues/8741#issuecomment-6114262033),
-including later Templates inventory disposition.
-The 133-versus-124 candidate comparison is an explicit operational handoff; source acceptance
-does not prepare a candidate, waive that comparison or change release authority.
+Apps remains nonpackable. Current ordinary package-proof inventory is evaluated dynamically;
+the [dated native checkpoints](source-cutoff.md#accepted-native-checkpoints) measured 232
+packages and 132 exclusions, including nine Apps consumers. Those measurements are not a
+new candidate baseline or replacement bytes for the historical archive. Future candidate
+preparation requires explicit reviewed inventory compatibility with the immutable recovery
+and executor contracts under [candidate owner #8220](https://github.com/elsa-workflows/elsa-core/issues/8220)
+and [operational program #8741](https://github.com/elsa-workflows/elsa-core/issues/8741).
+Source acceptance does not prepare a candidate, waive that comparison or change release authority.
 
 ## Deferred operational ownership
 

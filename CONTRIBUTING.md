@@ -29,13 +29,13 @@ All changes happen through Pull Requests targeting the `main` branch.
 
 ### Contribution routing after consolidation
 
-Open new consolidated Core, Extensions, Studio and Apps issues and pull requests in [elsa-core](https://github.com/elsa-workflows/elsa-core). Identify the affected product and version. Retained 3.8/3.9 maintenance continues through its existing source-repository procedure until an explicitly approved replacement is verified; consolidation does not end that support or move its publisher automatically.
+Open new consolidated Core, Extensions, Studio, Apps and Templates issues and pull requests in [elsa-core](https://github.com/elsa-workflows/elsa-core). Identify the affected product and version. Retained 3.8/3.9 maintenance continues through its existing source-repository procedure until an explicitly approved replacement is verified; consolidation does not end that support or move its publisher automatically.
 
-For existing Studio or Extensions contributions, consult the [source contribution handoff and register](docs/integration-program/source-contributor-handoff.md). Reuse a matching Core continuation when one exists. When scheduling new continuation work, link the original issue/PR and preserve its author attribution; an open historical source item is not automatically an active Core task.
+The [source cutoff](docs/integration-program/source-cutoff.md) records the accepted inputs and its actual-main activation condition. For existing donor contributions, consult the [source contribution handoff and register](docs/integration-program/source-contributor-handoff.md). Reuse a matching Core continuation when one exists. When scheduling new continuation work, link the original issue/PR and preserve its author attribution; an open historical source item is not automatically an active Core task.
 
 ### Product ownership and local checks
 
-Core, Extensions, Studio and Apps share this repository and the root `Elsa.sln`. Keep code, tests and documentation in the owning product's directories. Core, Extensions and Studio use `src/`, `test/` and `docs/`; Apps uses `src/`, `scripts/tests/` and `docs/`. Shared build scripts, central package policy and solution filters remain at the repository root. Cross-product references use public contracts; moving a file does not change its package or activity identity.
+All five products share this repository. Core, Extensions, Studio and Apps build through root `Elsa.sln`. Templates has its independent `templates/Elsa.Templates.slnx` product solution and root `Elsa.Templates.slnf`; its entries in `Elsa.sln` are navigation only. Keep code, tests and documentation in the owning product's directories. Core, Extensions and Studio use `src/`, `test/` and `docs/`; Apps uses `src/`, `scripts/tests/` and `docs/`; Templates uses `src/`, `test/` and `docs/` within its product root. Shared build scripts, central package policy and solution filters remain at the repository root. Cross-product references use public contracts; moving a file does not change its package or activity identity.
 
 Run commands from the repository root. Start with the owning project and test project, then use the relevant root filter or full solution when the change crosses boundaries:
 
@@ -44,14 +44,17 @@ dotnet build Elsa.Core.slnf
 dotnet build Elsa.Extensions.slnf
 dotnet build Elsa.Studio.slnf
 dotnet build Elsa.Apps.slnf
+dotnet build Elsa.Templates.slnf
 dotnet test core/test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj
 ```
 
 The Core filter excludes the cross-product `Elsa.Secrets.DefaultHost.IntegrationTests` fixture; it remains in the full solution. These filters include required project references; they are development selections, not isolated package-consumer or publication proof. See [Core](core/docs/README.md), [Extensions](extensions/docs/README.md) and [Studio](studio/docs/README.md) for product entrypoints, and [the package proof](docs/integration-program/consolidated-package-proof.md) for artifact checks. Studio browser bundles require the documented Node build before their .NET hosts.
 
-The first consolidated 3.10 release follows the [lockstep publisher policy](docs/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md). A directory move or successful local build does not authorize publication or source-repository archival. Keep existing source issue/PR attribution and link any reviewed adoption to its original contribution.
+Ordinary independent product releases must not bump or republish unrelated products. The dated [first aligned 3.10 baseline and publisher-cutover ADR](docs/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md) remains an operational handoff under [#8741](https://github.com/elsa-workflows/elsa-core/issues/8741); it does not make every future product release lockstep. A directory move or successful local build does not authorize publication or source-repository archival. Keep existing source issue/PR attribution and link any reviewed adoption to its original contribution.
 
-Apps is a released-package consumer with nine net10.0 projects, its own scoped package policy and no Core NuGet package outputs. See [Apps](apps/README.md) for local build/image commands and the [source import register](docs/integration-program/apps-source-import.md) for original contributions. The imported source publisher remains inert; the new Apps workflow validates local images without registry writes. Existing source publication and retirement ownership remain separate.
+Apps is a released Elsa 3.9.0 package consumer with nine net10.0 projects, its own scoped package policy and no Core NuGet package outputs. See [Apps](apps/README.md) for local build/image commands and the [source import register](docs/integration-program/apps-source-import.md) for original contributions. The imported source publisher remains inert; the new Apps workflow validates local images without registry writes. Existing source publication and retirement ownership remain separate.
+
+Templates retains the independent `Elsa.Templates` 3.9.0 pack identity and version, outside root NUKE/global packing. Its embedded starter projects are package data, not root solution build members. See [Templates](templates/docs/README.md) for pack/install/generate/build commands and the [source import register](docs/integration-program/templates-source-import.md) for provenance and contribution attribution.
 
 ### Architecture Decision Records
 
