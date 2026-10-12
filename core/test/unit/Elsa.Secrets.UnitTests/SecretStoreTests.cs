@@ -64,6 +64,47 @@ public class SecretStoreTests
     }
 
     [Fact]
+    public async Task ConfigurationStore_DoesNotResolveNestedKeysOutsideSecretsSection()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["ConnectionStrings:Default"] = "root-configured-value" })
+            .Build();
+        var fixture = new SecretTestFixture(configuration);
+
+        var secret = await fixture.Manager.CreateAsync(new CreateSecretRequest
+        {
+            Name = "db:connection",
+            StoreName = SecretStoreNames.Configuration,
+            ConfigurationKey = "ConnectionStrings:Default"
+        });
+        var store = fixture.StoreRegistry.Get(SecretStoreNames.Configuration);
+
+        Assert.Null(await store.ReadAsync(secret, secret.Versions.Single()));
+    }
+
+    [Fact]
+    public async Task ConfigurationStore_PrefersSecretsSectionOverRootKey()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["SmtpPassword"] = "root-configured-value",
+                ["Elsa:Secrets:SmtpPassword"] = "section-configured-secret"
+            })
+            .Build();
+        var fixture = new SecretTestFixture(configuration);
+
+        await fixture.Manager.CreateAsync(new CreateSecretRequest
+        {
+            Name = "smtp:password",
+            StoreName = SecretStoreNames.Configuration,
+            ConfigurationKey = "SmtpPassword"
+        });
+
+        Assert.Equal("section-configured-secret", await fixture.Resolver.ResolveAsync("smtp:password"));
+    }
+
+    [Fact]
     public async Task ConfigurationStore_RotateAsync_UsesReplacementConfigurationKey()
     {
         var configuration = new ConfigurationBuilder()
