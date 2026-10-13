@@ -17,7 +17,11 @@ internal class EvictWorkflowDefinitionServiceCache(IWorkflowDefinitionCacheManag
     INotificationHandler<WorkflowDefinitionRetracting>,
     INotificationHandler<WorkflowDefinitionDeleting>,
     INotificationHandler<WorkflowDefinitionsDeleting>,
-    INotificationHandler<WorkflowDefinitionVersionsUpdating>
+    INotificationHandler<WorkflowDefinitionVersionsUpdating>,
+    INotificationHandler<WorkflowDefinitionPublished>,
+    INotificationHandler<WorkflowDefinitionRetracted>,
+    INotificationHandler<WorkflowDefinitionDeleted>,
+    INotificationHandler<WorkflowDefinitionsDeleted>
 {
     public Task HandleAsync(WorkflowDefinitionDraftSaving notification, CancellationToken cancellationToken)
     {
@@ -43,10 +47,9 @@ internal class EvictWorkflowDefinitionServiceCache(IWorkflowDefinitionCacheManag
     }
 
     /// <inheritdoc />
-    public async Task HandleAsync(WorkflowDefinitionsDeleting notification, CancellationToken cancellationToken)
+    public Task HandleAsync(WorkflowDefinitionsDeleting notification, CancellationToken cancellationToken)
     {
-        foreach (var definitionId in notification.DefinitionIds)
-            await workflowDefinitionCacheManager.EvictWorkflowDefinitionAsync(definitionId, cancellationToken);
+        return EvictWorkflowDefinitionsAsync(notification.DefinitionIds, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -54,5 +57,37 @@ internal class EvictWorkflowDefinitionServiceCache(IWorkflowDefinitionCacheManag
     {
         foreach (var definition in notification.WorkflowDefinitions)
             await workflowDefinitionCacheManager.EvictWorkflowDefinitionAsync(definition.DefinitionId, cancellationToken);
+    }
+
+    // Evict again once the store writes are done, so a read between the "-ing" eviction and the save cannot leave a stale entry behind.
+
+    /// <inheritdoc />
+    public Task HandleAsync(WorkflowDefinitionPublished notification, CancellationToken cancellationToken)
+    {
+        return workflowDefinitionCacheManager.EvictWorkflowDefinitionAsync(notification.WorkflowDefinition.DefinitionId, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public Task HandleAsync(WorkflowDefinitionRetracted notification, CancellationToken cancellationToken)
+    {
+        return workflowDefinitionCacheManager.EvictWorkflowDefinitionAsync(notification.WorkflowDefinition.DefinitionId, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public Task HandleAsync(WorkflowDefinitionDeleted notification, CancellationToken cancellationToken)
+    {
+        return workflowDefinitionCacheManager.EvictWorkflowDefinitionAsync(notification.DefinitionId, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public Task HandleAsync(WorkflowDefinitionsDeleted notification, CancellationToken cancellationToken)
+    {
+        return EvictWorkflowDefinitionsAsync(notification.DefinitionIds, cancellationToken);
+    }
+
+    private async Task EvictWorkflowDefinitionsAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken)
+    {
+        foreach (var definitionId in definitionIds)
+            await workflowDefinitionCacheManager.EvictWorkflowDefinitionAsync(definitionId, cancellationToken);
     }
 }

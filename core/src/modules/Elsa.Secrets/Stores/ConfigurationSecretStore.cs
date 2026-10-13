@@ -1,10 +1,15 @@
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Secrets.Stores;
 
-public class ConfigurationSecretStore(IConfiguration configuration, IOptions<SecretsOptions> options) : ISecretStore
+public class ConfigurationSecretStore(IConfiguration configuration, IOptions<SecretsOptions> options, ILogger<ConfigurationSecretStore>? logger) : ISecretStore
 {
+    public ConfigurationSecretStore(IConfiguration configuration, IOptions<SecretsOptions> options) : this(configuration, options, null)
+    {
+    }
+
     private const string ConfigurationKeyMetadataName = "configurationKey";
 
     public string Name => SecretStoreNames.Configuration;
@@ -12,7 +17,7 @@ public class ConfigurationSecretStore(IConfiguration configuration, IOptions<Sec
     public SecretStoreDescriptor Descriptor { get; } = new(
         SecretStoreNames.Configuration,
         "Configuration",
-        "Reads values from application configuration without storing the value in Elsa.",
+        "Reads values from the configured secrets section of application configuration without storing the value in Elsa.",
         SecretStoreCapabilities.Read | SecretStoreCapabilities.Write | SecretStoreCapabilities.Test,
         true);
 
@@ -29,7 +34,14 @@ public class ConfigurationSecretStore(IConfiguration configuration, IOptions<Sec
         if (!version.Payload.Metadata.TryGetValue(ConfigurationKeyMetadataName, out var key) || string.IsNullOrWhiteSpace(key))
             return Task.FromResult<SecretPayload?>(null);
 
-        var configuredValue = configuration[$"{options.Value.ConfigurationSectionName}:{key}"] ?? configuration[key];
+        var sectionName = options.Value.ConfigurationSectionName;
+        var configuredValue = configuration.GetSection(sectionName)[key];
+
+        if (configuredValue == null)
+        {
+            logger?.LogDebug("Configuration secret key {ConfigurationKey} was not found under section {SectionName}.", key, sectionName);
+        }
+
         return configuredValue == null ? Task.FromResult<SecretPayload?>(null) : Task.FromResult<SecretPayload?>(SecretPayload.FromValue(configuredValue));
     }
 

@@ -13,6 +13,7 @@ import os
 import re
 import sys
 import uuid
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -248,11 +249,12 @@ def filters(groups: dict[SolutionProject, str], projects: list[SolutionProject],
         studio.add(by_name["Elsa.Api.Client"])
     result["Elsa.Studio.slnf"] = closure(studio)
     result["Elsa.Extensions.slnf"] = closure(members(*domains, EXTENSIONS))
+    result["Elsa.Apps.slnf"] = closure({project for project in projects if project.path.startswith("apps/")})
     return result
 
 
-def render_filter(projects: list[str]) -> str:
-    return json.dumps({"solution": {"path": "Elsa.sln", "projects": projects}}, indent=2) + "\n"
+def render_filter(projects: list[str], solution: str = "Elsa.sln") -> str:
+    return json.dumps({"solution": {"path": solution, "projects": projects}}, indent=2) + "\n"
 
 
 def generate(root: Path = ROOT) -> dict[Path, str]:
@@ -263,10 +265,25 @@ def generate(root: Path = ROOT) -> dict[Path, str]:
     missing = sorted(project.path for project in projects if not (root / project.path).is_file())
     if missing:
         raise ValueError("Elsa.sln lists project files that do not exist: " + ", ".join(missing))
+    independent = manifest.get("independentProducts", {})
+    for product in independent:
+        if any(project.path.startswith(product + "/") for project in projects):
+            raise ValueError(f"Independent {product} projects must not enter Elsa.sln")
     groups = classify(projects, manifest)
     outputs = {root / SOLUTION.name: rewrite_solution(text, groups, domains)}
     for name, selected in filters(groups, projects, domains).items():
         outputs[root / name] = render_filter(selected)
+    for product, configuration in independent.items():
+        solution = root / configuration["solution"]
+        selected = configuration["projects"]
+        declared = [(solution.parent / project.attrib["Path"]).relative_to(root).as_posix()
+                    for project in ET.parse(solution).iter("Project")]
+        if len(declared) != len(set(declared)) or set(declared) != set(selected):
+            raise ValueError(f"Independent {product} solution must match its registered build projects")
+        if set(selected) & set(configuration["buildData"]) or any(not (root / path).is_file() for path in selected):
+            raise ValueError(f"Independent {product} filter must select existing build projects only")
+        relative = [os.path.relpath(root / path, solution.parent).replace(os.sep, "/") for path in selected]
+        outputs[root / configuration["filter"]] = render_filter(relative, configuration["solution"])
     return outputs
 
 

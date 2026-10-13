@@ -1,10 +1,12 @@
 # Elsa 3 integration program: evidence and delivery
 
-Program [#8194](https://github.com/elsa-workflows/elsa-core/issues/8194) was initially audited on 2026-09-23. Structural consolidation is accepted under [#8667](https://github.com/elsa-workflows/elsa-core/issues/8667): Core, Extensions and Studio now share this repository under their own product roots. Consult the program issue for the live delivery queue and remaining operational cutover gates.
+[Source program #8740](https://github.com/elsa-workflows/elsa-core/issues/8740) brings Core, Extensions, Studio, Apps and Templates into this repository under five product roots. [Operational program #8741](https://github.com/elsa-workflows/elsa-core/issues/8741) separately owns publication, candidate compatibility, deployment and source-authority retirement. Consult those issues for the live delivery queue.
 
 ## Current contribution handoff
 
-New consolidated development belongs in Core. The [source contribution handoff](source-contributor-handoff.md) and [attributed register](source-handoff-register.json) record the open Studio/Extensions issues and PRs, their bounded dispositions, and the remaining source-side operations. Existing source maintenance/publishing boundaries remain until an approved replacement is verified. The register does not imply source archival or implementation of every retained proposal.
+New development belongs in Core/main. Start with [CONTRIBUTING](../../CONTRIBUTING.md) and the product guides: [Core](../../core/docs/README.md), [Extensions](../../extensions/docs/README.md), [Studio](../../studio/docs/README.md), [Apps](../../apps/README.md) and [Templates](../../templates/docs/README.md).
+
+The [source cutoff](source-cutoff.md) records the timestamped donor inventory, attributed dispositions, accepted source checkpoints and actual-main activation condition. The [contribution handoff](source-contributor-handoff.md), [Studio/Extensions register](source-handoff-register.json), [Apps import](apps-source-import.md) and [Templates import](templates-source-import.md) preserve their original evidence. Existing 3.8/3.9 maintenance and publishing procedures continue until an approved replacement is verified; source acceptance does not archive donors or implement every retained proposal.
 
 ## Historical audit and backlog snapshots
 

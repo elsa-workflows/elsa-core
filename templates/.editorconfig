@@ -1,0 +1,14 @@
+root = true
+
+[*.{cs,csproj,props,targets,json,md,yml,yaml}]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+indent_style = space
+indent_size = 4
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.{json,yml,yaml}]
+indent_size = 2
