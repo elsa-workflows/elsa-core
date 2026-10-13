@@ -36,12 +36,12 @@ class ExtensionsManifestContinuationTests(unittest.TestCase):
                 admitted = next(r for r in maintenance.registered_core_candidates(maintenance.load_register())
                                 if r['commit'] == row['commit'])
                 maintenance.verify_source(maintenance.ROOT, admitted)
-                self.assertEqual(metadata.DESCENDANTS[('extensions', line)], row['commit'])
-                self.assertEqual(metadata.bind_source(maintenance.ROOT, 'extensions', line, row['commit'])['tree'], row['tree'])
-                extensions.verify_source(maintenance.ROOT, row['commit'])
+                # The Compile fix stays admitted in ancestry, while selection now binds the MySQL child.
+                with self.assertRaises(ValueError):
+                    metadata.bind_source(maintenance.ROOT, 'extensions', line, row['commit'])
                 with self.assertRaises(ValueError):
                     metadata.bind_source(maintenance.ROOT, 'extensions', line, parent['commit'])
-        self.assertEqual(12, len(catalog['candidates']))
+        self.assertEqual(20, len(catalog['candidates']))
         self.assertEqual(8, len(catalog['rehearsal_sources']))
         self.assertEqual({r['commit'] for r in continuation.CONTINUATIONS.values()},
                          {r['commit'] for r in catalog['rehearsal_sources'] if r['product'] == 'extensions' and
@@ -63,7 +63,7 @@ class ExtensionsManifestContinuationTests(unittest.TestCase):
                              after.split(b'public Configure<DotNetPackSettings>')[1])
             self.assertEqual(maintenance.git_bytes(maintenance.ROOT, parent['commit'], 'Directory.Build.props'),
                              maintenance.git_bytes(maintenance.ROOT, row['commit'], 'Directory.Build.props'))
-        self.assertEqual(continuation.AFTER_BLOB, maintenance39.contract('extensions')['files'][continuation.PATH])
+        self.assertEqual(continuation.AFTER_BLOB, metadata.git(maintenance.ROOT, 'rev-parse', continuation.CONTINUATIONS['3.9']['commit'] + ':' + continuation.PATH))
 
     def test_protected_control_exception_rejects_foreign_identity_modes_paths_and_other_edits(self):
         """Verify protected control exception rejects foreign identity modes paths and other

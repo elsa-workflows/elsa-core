@@ -584,7 +584,7 @@ def load_contracts() -> dict:
         require(metadata.sha256((consumer.ROOT / path).read_bytes()) == sha, 'selected_payload_core_fixture_contract')
     return {'studio': transport.strict_json(CONTRACT.read_bytes()),
         'studio39': transport.strict_json(CONTRACT.with_name('selected_studio39_payload_contract.json').read_bytes()),
-        'core': core, 'maintenance39': original39,
+        'core': core, 'maintenance39': original39, 'extensions_mysql': metadata.mysql.load_contract(),
         'runtime': {'studio': consumer.runtime_contract({'product': 'studio', 'line': '3.8', 'requested_version': ''}),
                     'extensions': consumer.runtime_contract({'product': 'extensions', 'line': '3.8'}),
                     'core': consumer.core.runtime_contract()},

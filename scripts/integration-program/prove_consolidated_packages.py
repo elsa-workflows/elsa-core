@@ -478,8 +478,9 @@ def verify_package_manifest(archive: zipfile.ZipFile, row: dict, version: str, *
         dependencies = feature.get("dependencies")
         if row.get("manifest_dependency_generator") is not None:
             from extensions_manifest_continuation import CONTINUATIONS
+            from extensions_mysql_continuation import CONTINUATIONS as MYSQL
             require(row["id"] == "Elsa.IO.Http" and row["manifest_dependency_generator"] == "0.0.1-preview.50" and
-                    row.get("source_commit") in {item["commit"] for item in CONTINUATIONS.values()},
+                    row.get("source_commit") in {item["commit"] for item in (*CONTINUATIONS.values(), *MYSQL.values())},
                     "Source-pinned manifest generator mismatch")
             # Exact preview.50 output retains false/default objects; NULL fields are omitted.
             require(type(dependencies) is list and all(type(item) is dict and

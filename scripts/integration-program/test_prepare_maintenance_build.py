@@ -1689,12 +1689,14 @@ class CoreCandidateContracts(unittest.TestCase):
         """Verify four metadata descendants and four exact continuations remain exact."""
         from historical_studio_npm_continuation import CONTINUATIONS
         from extensions_manifest_continuation import CONTINUATIONS as EXTENSIONS
+        from extensions_mysql_continuation import load_contract
+        MYSQL = {item['commit']: item for source in load_contract()['sources'].values() for item in source['chain']}
         descendants = [row for row in self.candidates['candidates'] if row['kind'] == 'maintenance']
-        self.assertEqual(len(descendants), 8)
+        self.assertEqual(len(descendants), 16)
         metadata = [row for row in descendants if [change['path'] for change in row['delta']] == ['Directory.Build.props']]
         self.assertEqual(len(metadata), 4)
         self.assertEqual({row['commit'] for row in descendants if row not in metadata},
-                         {row['commit'] for row in (*CONTINUATIONS.values(), *EXTENSIONS.values())})
+                         {row['commit'] for row in (*CONTINUATIONS.values(), *EXTENSIONS.values(), *MYSQL.values())})
         for candidate in metadata:
             with self.subTest(product=candidate['product'], line=candidate['line']):
                 maintenance.verify_core_candidate(maintenance.ROOT, self.select(candidate))
@@ -1978,8 +1980,8 @@ class MaintenanceWorkflowSelectionContracts(unittest.TestCase):
             with self.subTest(run=run), self.assertRaises(ValueError):
                 maintenance.workflow_selections(self.register, self.environment | {'GITHUB_RUN_ID': run})
         candidates = maintenance.load_candidates()
-        with patch.object(maintenance, 'load_candidates', return_value=candidates | {'candidates': candidates['candidates'][:-1]}), \
-                self.assertRaisesRegex(ValueError, 'Incomplete maintenance rehearsal cells'):
+        with patch.object(maintenance, 'load_candidates', return_value=candidates | {'candidates': [r for r in candidates['candidates'] if r['commit'] != candidates['rehearsal_sources'][-1]['commit']]}), \
+                self.assertRaisesRegex(ValueError, 'Incomplete maintenance rehearsal cells|Core candidate parent chain mismatch'):
             maintenance.workflow_selections(self.register, self.environment)
 
     def test_manual_main_selects_only_requested_exact_original_or_core_commit(self):

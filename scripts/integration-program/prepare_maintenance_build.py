@@ -318,10 +318,15 @@ def verify_maintenance_delta(root: Path, row: dict, parent: dict, register: dict
                     'Core candidate metadata mismatch')
         elif path == 'build/Build.cs':
             from extensions_manifest_continuation import CONTINUATIONS, verify_delta
-            require(row['product'] == 'extensions' and row['commit'] in
-                    {item['commit'] for item in CONTINUATIONS.values()}, 'Core candidate protected control mismatch')
-            verify_delta(row, parent, change, git_bytes(root, parent['commit'], path),
-                         git_bytes(root, row['commit'], path))
+            if row['commit'] in {item['commit'] for item in CONTINUATIONS.values()}:
+                verify_delta(row, parent, change, git_bytes(root, parent['commit'], path),
+                             git_bytes(root, row['commit'], path))
+            else:
+                from extensions_mysql_continuation import verify_delta
+                verify_delta(row, parent, change)
+        elif row['product'] == 'extensions' and path.endswith('.csproj'):
+            from extensions_mysql_continuation import verify_delta
+            verify_delta(row, parent, change)
         elif path == 'src/wrappers/wrappers/react-wrapper/package.json':
             from historical_studio_npm_continuation import verify_delta
             verify_delta(row, parent, change, git_bytes(root, parent['commit'], path),

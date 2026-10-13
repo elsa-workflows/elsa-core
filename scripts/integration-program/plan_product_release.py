@@ -369,6 +369,9 @@ def validate_inventory(inventory: dict, binding: dict, version: str) -> None:
             'ownership_policy_identity')
     projects = inventory['projects']
     metadata.validate_project_references(projects)
+    if binding.get('support_policy_sha256') is not None or binding['commit'] in {
+            metadata.DESCENDANTS[('extensions', line)] for line in ('3.8', '3.9')}:
+        metadata.mysql.validate_inventory(binding, inventory, metadata.mysql.load_contract())
     paths = [row['path'] for row in projects]
     selected = inventory['selected']
     selected_paths = [row['project'] for row in selected]

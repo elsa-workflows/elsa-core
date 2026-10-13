@@ -16,7 +16,8 @@ SHAPES = {
     '': ['schema mode controller source product line requested_version inventory expected_artifacts excluded_artifacts prerequisites_excluded_from_publication prerequisites selected_dependency_intent histories npm eligible reasons published version_allocated tag_created semantics limits requested_version_input observed_at consumer_feed_policy feed_service_observations'],
     'controller': ['commit tree execution input_sha256'],
     'controller.execution': ['repository event_name ref run_id run_attempt'],
-    'source': ['product line kind commit tree parents original_commit original_parents contained_commit contained_tree candidate_register_sha256 original_register_sha256', 'product line kind commit tree observation',
+    'source': ['product line kind commit tree parents original_commit original_parents contained_commit contained_tree candidate_register_sha256 original_register_sha256 support_policy_sha256',
+               'product line kind commit tree parents original_commit original_parents contained_commit contained_tree candidate_register_sha256 original_register_sha256', 'product line kind commit tree observation',
                'product line kind commit tree parents original_commit original_tree observation continuation_contract_sha256'],
     'source.observation': ['ref commit tree observed_at branch_observation tag_history tag_observation tag_scope'],
     'source.observation.tag_history[]': ['ref node_id url object'],
@@ -200,8 +201,10 @@ def validate(plan: dict, contracts: dict, *, now: datetime) -> None:
         expected = {'product': product, 'line': line, 'kind': 'admitted-maintenance-descendant',
             **{key: row[key] for key in ('commit', 'tree', 'parents', 'original_commit', 'original_parents', 'contained_commit', 'contained_tree')},
             'candidate_register_sha256': contracts['candidate_register_sha256'],
-            'original_register_sha256': contracts['original_register_sha256']}
+            'original_register_sha256': contracts['original_register_sha256'],
+            **metadata.mysql.binding(row, contracts['extensions_mysql'])}
         require(source == expected, 'selected_plan_source_policy')
+        metadata.mysql.validate_inventory(source, plan['inventory'], contracts['extensions_mysql'])
     for project in plan['inventory']['projects']:
         if 'net7.0' in project['target_frameworks'] or 'net7.0' in project['references_by_framework']:
             require(product == 'core' and project['path'] ==
