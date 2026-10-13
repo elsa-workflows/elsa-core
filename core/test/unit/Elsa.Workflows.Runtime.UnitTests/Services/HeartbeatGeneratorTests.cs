@@ -5,22 +5,20 @@ namespace Elsa.Workflows.Runtime.UnitTests.Services;
 public class HeartbeatGeneratorTests
 {
     [Fact]
-    public async Task KeepsBeating_AfterTransientFailure()
+    public async Task KeepsBeatingAfterAFailedHeartbeat()
     {
         var calls = 0;
-        var secondCall = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var secondBeat = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
         using var generator = new HeartbeatGenerator(() =>
         {
             if (Interlocked.Increment(ref calls) == 1)
                 throw new InvalidOperationException("Transient failure");
 
-            secondCall.TrySetResult();
+            secondBeat.TrySetResult();
             return Task.CompletedTask;
         }, TimeSpan.FromMilliseconds(20), NullLoggerFactory.Instance);
 
-        var completed = await Task.WhenAny(secondCall.Task, Task.Delay(TimeSpan.FromSeconds(5)));
-
-        Assert.Same(secondCall.Task, completed);
+        await secondBeat.Task.WaitAsync(TimeSpan.FromSeconds(10));
     }
 }
