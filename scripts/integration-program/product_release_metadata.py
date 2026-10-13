@@ -31,8 +31,8 @@ CORE_REFS = {'3.8': 'refs/heads/release/3.8.4', '3.9': 'refs/heads/release/3.9.0
 DESCENDANTS = {
     ('studio', '3.8'): 'da2dec10ba36c65e376138ee45e1c34525e45e49',
     ('studio', '3.9'): '98a3f23d9c3c67080f3926eeb584036c49855b72',
-    ('extensions', '3.8'): '79e98dd6cc17441124f7e982ce007470f76ad89b',
-    ('extensions', '3.9'): 'c88477f7af51ac70edb5c0ad5e39075e4db130a9',
+    ('extensions', '3.8'): '20c7a51599b4c85bf591c4615d34674e0f5706bf',
+    ('extensions', '3.9'): 'e4935c95e211f2885c0348a4ab9872f112df7b4a',
 }
 OWNERSHIP_DOCUMENT = 'docs/integration-program/consolidation/secrets-legacy-package-disposition.md'
 OWNERSHIP_SHA256 = '1796509a72de4bd6d3831765df9453da773fb41069cb1202166505fb695b5958'
@@ -304,6 +304,11 @@ def evaluate_inventory(source: Path, binding: dict, version: str, private: Path,
     with ThreadPoolExecutor(max_workers=workers) as pool:
         projects = list(pool.map(lambda path: evaluate_project(source, path, version, binding=binding), paths))
     validate_project_references(projects)
+    if binding['product'] == 'extensions' and 'support_policy_sha256' in binding:
+        support = mysql.load_contract()
+        require(mysql.binding(binding, support) == {'support_policy_sha256': binding['support_policy_sha256']},
+                'source_mysql_support_policy')
+        mysql.validate_net10_references(projects, support)
     selected, excluded = [], []
     for project in projects:
         reason = project_scope(project, binding['product'], recipe_projects)

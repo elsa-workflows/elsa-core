@@ -41,7 +41,7 @@ class ExtensionsManifestContinuationTests(unittest.TestCase):
                     metadata.bind_source(maintenance.ROOT, 'extensions', line, row['commit'])
                 with self.assertRaises(ValueError):
                     metadata.bind_source(maintenance.ROOT, 'extensions', line, parent['commit'])
-        self.assertEqual(20, len(catalog['candidates']))
+        self.assertEqual(22, len(catalog['candidates']))
         self.assertEqual(8, len(catalog['rehearsal_sources']))
         self.assertEqual({r['commit'] for r in continuation.CONTINUATIONS.values()},
                          {r['commit'] for r in catalog['rehearsal_sources'] if r['product'] == 'extensions' and

@@ -281,6 +281,23 @@ class ProductReleasePlanTests(unittest.TestCase):
                  patch.object(metadata, 'evaluate_project', side_effect=lambda root, path, version, *, binding: next(row for row in projects if row['path'] == path)), \
                  patch.object(metadata, 'stage_project', side_effect=stage):
                 inventory = metadata.evaluate_inventory(source, self.binding, '3.8.5', source / 'private', workers=4)
+            # Policy-bound historical sources fail before the first metadata restore.
+            support = metadata.mysql.load_contract()
+            selected = support['sources']['3.8']
+            binding = {**self.binding, 'commit': selected['commit'], 'tree': selected['tree'],
+                       'support_policy_sha256': metadata.mysql.policy_hash(support)}
+            invalid = deepcopy(projects)
+            invalid[-1]['references_by_framework'] = {'net10.0': {
+                'project_references': [], 'package_references': [{'id': 'Elsa.Persistence.EFCore.MySql'}]}}
+            with patch.object(metadata, 'git', return_value='\n'.join(row['path'] for row in invalid)), \
+                 patch.object(metadata, 'evaluate_project', side_effect=lambda root, path, version, *, binding: next(row for row in invalid if row['path'] == path)), \
+                 patch.object(metadata, 'stage_project', return_value={'status': 'observed'}) as restore:
+                with self.assertRaisesRegex(ValueError, 'inventory_mysql_net10_reference'):
+                    metadata.evaluate_inventory(source, binding, '3.8.5', source / 'private', workers=4)
+                restore.assert_not_called()
+                # Unrelated synthetic Extensions inventories do not acquire this source policy.
+                metadata.evaluate_inventory(source, self.binding, '3.8.5', source / 'private', workers=4)
+                self.assertTrue(restore.called)
             self.assertEqual(7, len(inventory['projects']))
             self.assertEqual(5, len(inventory['excluded']))
             self.assertEqual(['Elsa.Secrets.Api', 'Elsa.Secrets.Core'], [row['id'] for row in inventory['selected']])

@@ -1692,7 +1692,7 @@ class CoreCandidateContracts(unittest.TestCase):
         from extensions_mysql_continuation import load_contract
         MYSQL = {item['commit']: item for source in load_contract()['sources'].values() for item in source['chain']}
         descendants = [row for row in self.candidates['candidates'] if row['kind'] == 'maintenance']
-        self.assertEqual(len(descendants), 16)
+        self.assertEqual(len(descendants), 18)
         metadata = [row for row in descendants if [change['path'] for change in row['delta']] == ['Directory.Build.props']]
         self.assertEqual(len(metadata), 4)
         self.assertEqual({row['commit'] for row in descendants if row not in metadata},
