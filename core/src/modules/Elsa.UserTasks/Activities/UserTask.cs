@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Elsa.Expressions.Models;
 using Elsa.Extensions;
 using Elsa.UserTasks.Contracts;
@@ -127,6 +128,10 @@ public sealed class UserTask : Activity<UserTaskResult>
 public sealed class UserTaskActionDefinition
 {
     public string Key { get; set; } = "";
+    /// <summary>
+    /// The label. In JSON (e.g. Studio-designed workflows) this is a plain string; when omitted, the key is used.
+    /// </summary>
+    [JsonConverter(typeof(UserTaskActionLabelJsonConverter))]
     public Input<string> Label { get; set; } = null!;
     public IReadOnlyDictionary<string, object?>? Metadata { get; set; }
 
@@ -140,5 +145,39 @@ public sealed class UserTaskActionDefinition
         Label = new Input<string>(new Literal<string>(label));
     }
 
-    internal UserTaskAction Materialize(ActivityExecutionContext context) => new(Key, Label.Get(context), Metadata);
+    internal UserTaskAction Materialize(ActivityExecutionContext context) => new(Key, ResolveLabel(context), Metadata);
+
+    internal string ResolveLabel(ActivityExecutionContext context)
+    {
+        var label = Label switch
+        {
+            null => null,
+            { Expression.Type: "Literal" } => Label.Expression.Value?.ToString(),
+            _ => Label.Get(context)
+        };
+        return string.IsNullOrWhiteSpace(label) ? Key : label;
+    }
+}
+
+/// <summary>
+/// Reads an action label from a plain JSON string (or null) and writes literal labels back as plain strings,
+/// so action definitions round-trip through JSON workflow definitions.
+/// </summary>
+internal sealed class UserTaskActionLabelJsonConverter : JsonConverter<Input<string>>
+{
+    public override Input<string>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => reader.TokenType switch
+    {
+        JsonTokenType.Null => null,
+        JsonTokenType.String => new Input<string>(reader.GetString()!),
+        _ => throw new JsonException("A User Task action label must be a string.")
+    };
+
+    public override void Write(Utf8JsonWriter writer, Input<string> value, JsonSerializerOptions options)
+    {
+        // Expression labels are code-first only and cannot be represented as a plain string; they are written as null (the key is then used as the label).
+        if (value.Expression?.Type == "Literal")
+            writer.WriteStringValue(value.Expression.Value?.ToString());
+        else
+            writer.WriteNullValue();
+    }
 }
