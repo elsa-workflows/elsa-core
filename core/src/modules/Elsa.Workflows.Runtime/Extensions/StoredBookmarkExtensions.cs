@@ -1,8 +1,7 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Elsa.Workflows;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Serialization.Helpers;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -12,16 +11,6 @@ namespace Elsa.Extensions;
 /// </summary>
 public static class StoredBookmarkExtensions
 {
-    // Mirrors the payload serializer's base options (camel case, string enums) without
-    // needing a service provider: this is a static extension.
-    private static readonly JsonSerializerOptions PayloadSerializerOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        PropertyNameCaseInsensitive = true,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-        Converters = { new JsonStringEnumConverter() },
-    };
-
     /// <summary>
     /// Returns the Data property of the stored bookmark as a strongly-typed object.
     /// </summary>
@@ -30,15 +19,9 @@ public static class StoredBookmarkExtensions
     /// <returns>The Data property of the stored bookmark as a strongly-typed object.</returns>
     /// <remarks>
     /// A payload reloaded from a bookmark store can come back untyped (for example as an ExpandoObject or a JsonElement).
-    /// Such a payload is converted to <typeparamref name="T"/> using the payload serializer's options.
+    /// Such a payload is converted to <typeparamref name="T"/> by <see cref="PayloadConverter"/>.
     /// </remarks>
-    public static T GetPayload<T>(this StoredBookmark storedBookmark) => storedBookmark.Payload switch
-    {
-        T payload => payload,
-        null => default!,
-        JsonElement element => element.Deserialize<T>(PayloadSerializerOptions)!,
-        var payload => JsonSerializer.SerializeToElement(payload, PayloadSerializerOptions).Deserialize<T>(PayloadSerializerOptions)!
-    };
+    public static T GetPayload<T>(this StoredBookmark storedBookmark) => PayloadConverter.ConvertTo<T>(storedBookmark.Payload);
 
     /// <summary>
     /// Filters the specified set of stored bookmarks by the specified activity type.
