@@ -39,6 +39,12 @@ public sealed class UserTaskBookmarkPersistedHandler(IUserTaskProjectionService 
 
     private static UserTaskMaterialization? Deserialize(Bookmark bookmark)
     {
+        // Other activities (Cron, Delay, Event, ...) also persist bookmarks; only UserTask bookmarks carry a materialization.
+        if (bookmark.Name != nameof(Activities.UserTask))
+        {
+            return null;
+        }
+
         try
         {
             return bookmark.Payload switch
