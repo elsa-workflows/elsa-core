@@ -5,8 +5,8 @@
             Provides EF Core migrations for Quartz.NET.
         </Description>
         <PackageTags>elsa extension module scheduling quartz ef core migrations</PackageTags>
-        <!-- Pomelo.EntityFrameworkCore.MySql doesn't support EF Core 10; no Pomelo 10.x exists yet -->
-        <NoWarn>$(NoWarn);NU1608</NoWarn>
+        <!-- MySQL supports EF Core 9 on .NET 8/9; .NET 10/EF Core 10 is deferred. -->
+        <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
     </PropertyGroup>
 
     <ItemGroup>
@@ -18,10 +18,6 @@
 
     <ItemGroup Condition="'$(TargetFramework)' == 'net8.0' OR '$(TargetFramework)' == 'net9.0'">
         <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" />
-    </ItemGroup>
-
-    <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
     </ItemGroup>
 
     <ItemGroup>
