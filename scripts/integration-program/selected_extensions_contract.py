@@ -7,8 +7,9 @@ from prove_consolidated_packages import require
 import product_release_metadata as metadata
 import selected_maintenance_39 as maintenance39
 
-SOURCE = '79e98dd6cc17441124f7e982ce007470f76ad89b'
+SOURCE = '20c7a51599b4c85bf591c4615d34674e0f5706bf'
 SOURCE_BLOBS = {
+    'test/modules/servicebus/Elsa.ServiceBus.AzureServiceBus.ComponentTests/Elsa.ServiceBus.AzureServiceBus.ComponentTests.csproj': '5717c6fd2248ce1f1582f0bc17f66df11ea4039a',
     'src/workbench/Elsa.Server.Web/Elsa.Server.Web.csproj': '4d3f83983df64dffa2946ec5acbdfd48d1834504',
     'src/workbench/Elsa.Server.Web/Program.cs': '464a460fbd774bca2c56f99a2f4fe0317a652f30',
     'src/workbench/Elsa.ServerAndStudio.Web/Elsa.ServerAndStudio.Web.csproj': '7d4a483715448920c4edabaef739d3c499d18e69',

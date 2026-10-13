@@ -74,17 +74,29 @@ def validate_inventory(source: dict, inventory: dict, contract: dict) -> None:
     test = projects.get(policy['quartz_test_project'])
     require(test is not None and test['target_frameworks'] == policy['quartz_test_frameworks'],
             'inventory_mysql_support_tests')
-    paths = {item['project'] for item in policy['projects']}
-    ids = {item['id'].casefold() for item in policy['projects']} | {
-        'elsa.persistence.efcore.mysql', 'pomelo.entityframeworkcore.mysql',
-        'appany.quartz.entityframeworkcore.migrations.mysql'}
-    for project in inventory['projects']:
-        references = project.get('references_by_framework', {}).get('net10.0', {})
-        require(not any(row['target_project'] in paths for row in references.get('project_references', [])) and
-                not any(row['id'].casefold() in ids for row in references.get('package_references', [])),
-                'inventory_mysql_net10_reference')
+    validate_net10_references(inventory['projects'], contract)
+    ids = unsupported_ids(contract)
     for package in inventory['selected']:
         for group in package.get('metadata', {}).get('dependency_groups', []):
             require(group['framework'] != 'net10.0' or
                     not any(row['id'].casefold() in ids for row in group['dependencies']),
                     'inventory_mysql_net10_dependency')
+
+
+def unsupported_ids(contract: dict) -> set[str]:
+    """Name the unsupported EF MySQL closure; plain SQL MySQL remains available."""
+    return {item['id'].casefold() for item in contract['support_policy']['projects']} | {
+        'elsa.persistence.efcore.mysql', 'pomelo.entityframeworkcore.mysql',
+        'appany.quartz.entityframeworkcore.migrations.mysql'}
+
+
+def validate_net10_references(projects: list[dict], contract: dict) -> None:
+    """Check evaluated test/host imports before restoring package metadata."""
+    policy = contract['support_policy']
+    paths = {item['project'] for item in policy['projects']}
+    ids = unsupported_ids(contract)
+    for project in projects:
+        references = project.get('references_by_framework', {}).get('net10.0', {})
+        require(not any(row['target_project'] in paths for row in references.get('project_references', [])) and
+                not any(row['id'].casefold() in ids for row in references.get('package_references', [])),
+                'inventory_mysql_net10_reference')

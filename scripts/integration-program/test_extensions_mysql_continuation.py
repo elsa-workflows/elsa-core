@@ -1,5 +1,8 @@
 """Historical MySQL support admission and plan/inventory regressions; no restore."""
+from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
+from pathlib import Path
+import tempfile
 import unittest
 import xml.etree.ElementTree as ET
 
@@ -68,6 +71,58 @@ class ExtensionsMySqlContinuationTests(unittest.TestCase):
                     metadata.bind_source(maintenance.ROOT, 'extensions', line, parent['commit'])
                 mysql.validate_inventory(binding, self.inventory(), self.contract)
         self.assertEqual(self.contract['sources']['3.9']['commit'], maintenance39.contract('extensions')['commit'])
+
+    def test_servicebus_removes_only_unused_mysql_reference_and_suppression(self):
+        """Keep actual PostgreSQL fixtures, test bodies, framework and original recipes."""
+        project = 'test/modules/servicebus/Elsa.ServiceBus.AzureServiceBus.ComponentTests/Elsa.ServiceBus.AzureServiceBus.ComponentTests.csproj'
+        suppression = (b'    <PropertyGroup>\n'
+            b"        <!-- Pomelo.EntityFrameworkCore.MySql 9.0.0 doesn't support EF Core 10; no Pomelo 10.x exists yet -->\n"
+            b'        <NoWarn>$(NoWarn);NU1608</NoWarn>\n'
+            b'    </PropertyGroup>\n\n')
+        reference = b'        <PackageReference Include="Elsa.Persistence.EFCore.MySql" />\n'
+        for expected in self.contract['sources'].values():
+            row, parent = self.rows[expected['commit']], self.rows[expected['parent']]
+            before = maintenance.git_bytes(maintenance.ROOT, parent['commit'], project)
+            after = maintenance.git_bytes(maintenance.ROOT, row['commit'], project)
+            self.assertEqual(before.replace(suppression, b'').replace(reference, b''), after)
+            self.assertNotEqual(before, after)
+            files = metadata.git(maintenance.ROOT, 'ls-tree', '-r', '--name-only', row['commit'],
+                                 str(Path(project).parent)).splitlines()
+            for path in files:
+                if path != project:
+                    self.assertEqual(maintenance.git_bytes(maintenance.ROOT, parent['commit'], path),
+                                     maintenance.git_bytes(maintenance.ROOT, row['commit'], path))
+            fixture = maintenance.git_bytes(maintenance.ROOT, row['commit'],
+                str(Path(project).parent / 'Fixtures/WorkflowServer.cs'))
+            self.assertEqual(4, fixture.count(b'UsePostgreSql(dbConnectionString)'))
+            self.assertNotIn(b'MySql', fixture)
+
+    def test_live_evaluated_test_universe_rejects_previous_servicebus_dependency(self):
+        """Evaluate every tracked test project without restore; catch real imports before staging."""
+        version = '3.8.4-8693-mysql-preflight'
+        for line, expected in self.contract['sources'].items():
+            with self.subTest(line=line), tempfile.TemporaryDirectory() as private:
+                row = self.rows[expected['commit']]
+                source = Path(private) / 'source'
+                metadata.checkout_source(maintenance.ROOT, row, source)
+                paths = metadata.git(source, 'ls-files', 'test/**/*.csproj').splitlines()
+                self.assertTrue(paths)
+                with ThreadPoolExecutor(max_workers=4) as pool:
+                    projects = list(pool.map(lambda path: metadata.evaluate_project(
+                        source, path, version, binding=row), paths))
+                mysql.validate_net10_references(projects, self.contract)
+                project = 'test/modules/servicebus/Elsa.ServiceBus.AzureServiceBus.ComponentTests/Elsa.ServiceBus.AzureServiceBus.ComponentTests.csproj'
+                servicebus = next(item for item in projects if item['path'] == project)
+                self.assertEqual(['net10.0'], servicebus['target_frameworks'])
+                self.assertIn('Elsa.Persistence.EFCore.PostgreSql',
+                    [item['id'] for item in servicebus['references_by_framework']['net10.0']['package_references']])
+                quartz = next(item for item in projects if item['path'] == self.contract['support_policy']['quartz_test_project'])
+                self.assertEqual(['net8.0', 'net9.0', 'net10.0'], quartz['target_frameworks'])
+                parent = self.rows[expected['parent']]
+                metadata.git(source, 'checkout', '--quiet', '--detach', parent['commit'])
+                previous = metadata.evaluate_project(source, project, version, binding=parent)
+                with self.assertRaisesRegex(ValueError, 'inventory_mysql_net10_reference'):
+                    mysql.validate_net10_references([previous], self.contract)
 
     def test_protected_exception_rejects_unregistered_project_edits_and_ancestry(self):
         """A broader TFM cut, dependency edit or invented descendant cannot use this exception."""

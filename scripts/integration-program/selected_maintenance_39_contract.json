@@ -3,7 +3,7 @@
   "schema": 1,
   "sources": {
     "extensions": {
-      "commit": "c88477f7af51ac70edb5c0ad5e39075e4db130a9",
+      "commit": "e4935c95e211f2885c0348a4ab9872f112df7b4a",
       "excluded_canonical": [
         {
           "id": "Elsa.Secrets.Persistence.EFCore.PostgreSql",
@@ -73,7 +73,7 @@
         "test/modules/scheduling/Elsa.Scheduling.Quartz.UnitTests/Elsa.Scheduling.Quartz.UnitTests.csproj": "8de039c1a29f57460da6b5ebfa81b98c7e146f42",
         "test/modules/scheduling/Elsa.Scheduling.Quartz.UnitTests/ShellFeatures/QuartzFeatureTests.cs": "2e5dce5779fbc1d0a492940fb0e47b0738c3cf30",
         "test/modules/secrets/Elsa.Secrets.Management.UnitTests/Elsa.Secrets.Management.UnitTests.csproj": "27c3fa9c74228beecde4c1686ec800744ba4530b",
-        "test/modules/servicebus/Elsa.ServiceBus.AzureServiceBus.ComponentTests/Elsa.ServiceBus.AzureServiceBus.ComponentTests.csproj": "b6d7ad4617eae3da87a8f5e65a9ea5b18684cf5e",
+        "test/modules/servicebus/Elsa.ServiceBus.AzureServiceBus.ComponentTests/Elsa.ServiceBus.AzureServiceBus.ComponentTests.csproj": "5717c6fd2248ce1f1582f0bc17f66df11ea4039a",
         "test/modules/servicebus/Elsa.ServiceBus.MassTransit.UnitTests/Elsa.ServiceBus.MassTransit.UnitTests.csproj": "2a79dad0b1a4da020b0c10f9bebf758062d0a75a",
         "test/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj": "4fa5dc5c42ca914ef9b5066dfe090c45b89b4f7e"
       },
@@ -137,7 +137,7 @@
           "net10.0"
         ]
       },
-      "tree": "46289474cfc052c5afd576405346e9b568779962",
+      "tree": "27c3e51e6a180174bed5424b3c1cf975e7e32e6c",
       "workflow": ".github/maintenance-inert-workflows/packages.yml.source"
     },
     "studio": {
