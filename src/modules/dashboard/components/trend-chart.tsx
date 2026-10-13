@@ -120,7 +120,7 @@ export function TrendChart({ buckets, granularity, className }: { buckets: Dashb
     <div className={cn("flex flex-col gap-2", className)}>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-3 rounded-[2px] bg-foreground/20" aria-hidden />
+          <span className="inline-block h-2.5 w-3 rounded-[2px] bg-chart-2/40" aria-hidden />
           Started <span className="font-medium text-foreground tabular-nums">{totals.started.toLocaleString()}</span>
         </span>
         {SERIES.map((s) => (
@@ -155,15 +155,17 @@ export function TrendChart({ buckets, granularity, className }: { buckets: Dashb
               </g>
             ))}
             <line x1={PAD.left} x2={width - PAD.right} y1={y(0)} y2={y(0)} className="stroke-border" />
-            {hover !== null && <rect x={slotX(hover)} y={PAD.top} width={slot} height={plotH} className="fill-foreground/5" />}
-            {startedArea && <path d={startedArea} className="fill-foreground/10" />}
+            {/* A crosshair, not a filled band: a full-height band in an empty hour reads as a column of its own. */}
+            {hover !== null && (
+              <line x1={slotX(hover) + slot / 2} x2={slotX(hover) + slot / 2} y1={PAD.top} y2={y(0)} className="stroke-foreground/30" />
+            )}
+            {startedArea && <path d={startedArea} className="fill-chart-2" opacity={0.3} />}
 
             {buckets.map((b, i) => {
               const segments = SERIES.map((s) => ({ ...s, value: b[s.key] })).filter((s) => s.value > 0);
               let acc = 0;
-              const isHover = hover === i;
               return (
-                <g key={b.from} className={cn("transition-opacity", hover !== null && !isHover && "opacity-60")}>
+                <g key={b.from}>
                   {segments.map((s, idx) => {
                     const y0 = y(acc);
                     acc += s.value;
@@ -204,7 +206,7 @@ export function TrendChart({ buckets, granularity, className }: { buckets: Dashb
           <div
             role="tooltip"
             className="pointer-events-none absolute top-0 z-10 w-44 rounded-md border bg-popover p-2 text-xs text-popover-foreground shadow-md"
-            style={{ left: Math.min(Math.max(0, slotX(hover) + slot / 2 - 88), Math.max(0, width - 176)) }}
+            style={hover < n / 2 ? { right: PAD.right } : { left: PAD.left }}
           >
             <div className={cn("font-medium", !hoveredIsQuiet && "mb-1")}>
               {labelFor(hovered.from, granularity)} – {labelFor(hovered.to, granularity)}
