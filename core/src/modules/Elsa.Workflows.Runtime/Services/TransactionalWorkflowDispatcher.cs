@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Elsa.Common;
 using Elsa.Common.Multitenancy;
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Requests;
@@ -13,6 +14,7 @@ namespace Elsa.Workflows.Runtime;
 /// <summary>
 /// Writes workflow dispatch commands to a durable outbox while a workflow execution is in progress.
 /// </summary>
+[method: ActivatorUtilitiesConstructor]
 public class TransactionalWorkflowDispatcher(
     IWorkflowDispatcher decoratedService,
     IServiceProvider serviceProvider,
@@ -21,6 +23,23 @@ public class TransactionalWorkflowDispatcher(
     IOptions<WorkflowDispatcherOptions> options,
     ITenantAccessor? tenantAccessor = null) : IWorkflowDispatcher
 {
+    /// <summary>
+    /// Creates the dispatcher with a notification sender, which is ignored: Dispatching/Dispatched notifications are now
+    /// sent by the inner dispatcher when the outbox delivers the item, not when it is enqueued.
+    /// </summary>
+    [Obsolete("The notification sender is no longer used. Use the constructor without INotificationSender. This overload will be removed in a future version.")]
+    public TransactionalWorkflowDispatcher(
+        IWorkflowDispatcher decoratedService,
+        IServiceProvider serviceProvider,
+        IWorkflowDispatchOutboxAccessor outboxAccessor,
+        INotificationSender notificationSender,
+        IIdentityGenerator identityGenerator,
+        IOptions<WorkflowDispatcherOptions> options,
+        ITenantAccessor? tenantAccessor = null)
+        : this(decoratedService, serviceProvider, outboxAccessor, identityGenerator, options, tenantAccessor)
+    {
+    }
+
     /// <inheritdoc />
     public async Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowDefinitionRequest request, DispatchWorkflowOptions? dispatchOptions = null, CancellationToken cancellationToken = default)
     {

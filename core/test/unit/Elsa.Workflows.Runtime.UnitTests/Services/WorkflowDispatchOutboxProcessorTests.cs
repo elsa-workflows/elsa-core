@@ -596,6 +596,10 @@ public class WorkflowDispatchOutboxProcessorTests
         await processor.ProcessAsync();
 
         await commandSender.Received(1).SendAsync(Arg.Is<DispatchWorkflowDefinitionCommand>(x => x.InstanceId == "child-outbox-1"), CommandStrategy.Background, Arg.Any<IDictionary<object, object>>(), Arg.Any<CancellationToken>());
+        // The obsolete path takes no IWorkflowDispatcher: with the outbox on, the registered one would enqueue the item again.
+        Assert.DoesNotContain(typeof(WorkflowDispatchOutboxProcessor).GetConstructors().Single(x => x.GetCustomAttributes(typeof(ObsoleteAttribute), false).Any()).GetParameters(),
+            x => x.ParameterType == typeof(IWorkflowDispatcher) || x.ParameterType == typeof(IServiceProvider));
+        Assert.Empty(_innerDispatcher.ReceivedCalls());
         await _store.Received(1).DeleteAsync(item.Id, Arg.Any<CancellationToken>());
     }
 

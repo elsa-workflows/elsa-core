@@ -22,6 +22,12 @@ using Microsoft.Extensions.Options;
 namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
+/// <remarks>
+/// Items are delivered through the inner <see cref="IWorkflowDispatcher"/> on their persisted channel. A channel that is
+/// not configured fails closed. When the inner dispatcher cannot route channels (for example
+/// <see cref="BackgroundWorkflowDispatcher"/>), a configured channel is ignored and the item goes to the default queue,
+/// the same as before #8167. Follow-up: #8813.
+/// </remarks>
 public class WorkflowDispatchOutboxProcessor(
     IWorkflowDispatchOutboxStore store,
     IWorkflowInstanceStore workflowInstanceStore,
@@ -42,7 +48,7 @@ public class WorkflowDispatchOutboxProcessor(
     /// closed. It deliberately does not use the registered <see cref="IWorkflowDispatcher"/>: with the outbox enabled that is
     /// the transactional dispatcher, which would enqueue each item again instead of delivering it.
     /// </summary>
-    [Obsolete("Use the constructor that takes the inner IWorkflowDispatcher (keyed WorkflowDispatcherServiceKeys.Inner). This overload will be removed in a future version.")]
+    [Obsolete("This constructor uses the old non-durable delivery: the outbox item is deleted as soon as it is handed to the in-memory background queue, so a node stop before that queue runs can lose the child workflow. Use the constructor that takes the inner IWorkflowDispatcher (keyed WorkflowDispatcherServiceKeys.Inner). This overload will be removed in a future version.")]
     public WorkflowDispatchOutboxProcessor(
         IWorkflowDispatchOutboxStore store,
         IWorkflowInstanceStore workflowInstanceStore,

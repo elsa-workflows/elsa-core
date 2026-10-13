@@ -5,6 +5,7 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Requests;
+using Microsoft.Extensions.DependencyInjection;
 using NSubstitute;
 
 namespace Elsa.Workflows.Runtime.UnitTests.Services;
@@ -44,16 +45,47 @@ public class TransactionalWorkflowDispatcherTests
             Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task ObsoleteConstructor_StillEnqueues()
+    {
+        await CreateDispatcherInsideWorkflowAsync();
+#pragma warning disable CS0618
+        var dispatcher = new TransactionalWorkflowDispatcher(_innerDispatcher, _serviceProvider, _outboxAccessor, Substitute.For<INotificationSender>(), _identityGenerator,
+            Microsoft.Extensions.Options.Options.Create(new WorkflowDispatcherOptions { UseTransactionalOutbox = true }));
+#pragma warning restore CS0618
+
+        await dispatcher.DispatchAsync(new DispatchWorkflowDefinitionRequest("definition-version-1"));
+
+        await _outbox.Received(1).EnqueueAsync(Arg.Any<WorkflowExecutionContext>(), Arg.Any<WorkflowDispatchOutboxItem>(), Arg.Any<CancellationToken>());
+        await _innerDispatcher.DidNotReceiveWithAnyArgs().DispatchAsync(default(DispatchWorkflowDefinitionRequest)!, default, default);
+    }
+
+    [Fact]
+    public void ActivatorUtilities_PicksCurrentConstructor()
+    {
+        var services = new ServiceCollection()
+            .AddSingleton(_outboxAccessor)
+            .AddSingleton(_identityGenerator)
+            .AddSingleton(Substitute.For<INotificationSender>())
+            .AddOptions()
+            .BuildServiceProvider();
+
+        var dispatcher = ActivatorUtilities.CreateInstance<TransactionalWorkflowDispatcher>(services, _innerDispatcher);
+
+        Assert.NotNull(dispatcher);
+    }
+
+    private readonly IServiceProvider _serviceProvider = Substitute.For<IServiceProvider>();
+
     private async Task<TransactionalWorkflowDispatcher> CreateDispatcherInsideWorkflowAsync()
     {
         var fixture = await new ActivityTestFixture(new Sequence()).BuildAsync();
         _outboxAccessor.WorkflowExecutionContext.Returns(fixture.WorkflowExecutionContext);
-        var serviceProvider = Substitute.For<IServiceProvider>();
-        serviceProvider.GetService(typeof(IWorkflowDispatchOutbox)).Returns(_outbox);
+        _serviceProvider.GetService(typeof(IWorkflowDispatchOutbox)).Returns(_outbox);
 
         return new(
             _innerDispatcher,
-            serviceProvider,
+            _serviceProvider,
             _outboxAccessor,
             _identityGenerator,
             Microsoft.Extensions.Options.Options.Create(new WorkflowDispatcherOptions { UseTransactionalOutbox = true }));
