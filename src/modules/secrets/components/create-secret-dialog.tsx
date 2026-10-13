@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { storeRequiresValue, type SecretDescriptorsResponse } from "../api";
 import { useCreateSecret } from "../hooks";
-import { SecretValueField, toIsoOrNull } from "./secret-value-field";
+import { SecretValueField, secretValueError, toIsoOrNull } from "./secret-value-field";
 import { StoreFields, useStoreFields, valueHintFor } from "./store-fields";
 
 const NAME_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._:-]*$/;
@@ -60,7 +60,7 @@ function CreateSecretForm({ descriptors, close }: { descriptors: SecretDescripto
   const requiresValue = storeRequiresValue(effectiveStore);
 
   const nameValid = NAME_PATTERN.test(name.trim());
-  const canSubmit = nameValid && !!typeName && !!effectiveStore && storeFields.complete && (!requiresValue || !!value);
+  const canSubmit = nameValid && !!typeName && !!effectiveStore && storeFields.complete && (!requiresValue || !!value) && !secretValueError(value, type?.editorHint);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();

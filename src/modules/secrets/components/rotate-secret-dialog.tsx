@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { storeRequiresValue, type SecretDescriptorsResponse, type SecretModel } from "../api";
 import { useRotateSecret } from "../hooks";
-import { SecretValueField, toIsoOrNull } from "./secret-value-field";
+import { SecretValueField, secretValueError, toIsoOrNull } from "./secret-value-field";
 import { StoreFields, useStoreFields, valueHintFor } from "./store-fields";
 
 /** Supplies a new value (a new version); the previous version is retired by the server. */
@@ -40,7 +40,7 @@ function RotateSecretForm({ secret, descriptors, close }: { secret: SecretModel;
   const [value, setValue] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
   const rotate = useRotateSecret();
-  const canSubmit = storeFields.complete && (!requiresValue || !!value);
+  const canSubmit = storeFields.complete && (!requiresValue || !!value) && !secretValueError(value, type?.editorHint);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();

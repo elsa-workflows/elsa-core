@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { storeFields, storeRequiresValue, type SecretStoreDescriptor } from "../api";
+import { secretValueError } from "../components/secret-value-field";
 
 const store = (overrides: Partial<SecretStoreDescriptor> & Pick<SecretStoreDescriptor, "name">): SecretStoreDescriptor => ({
   displayName: overrides.name,
@@ -50,5 +51,23 @@ describe("storeRequiresValue", () => {
 
   it("requires nothing when there is no store yet", () => {
     expect(storeRequiresValue(undefined)).toBe(false);
+  });
+});
+
+describe("secretValueError", () => {
+  it("accepts any JSON document, including scalars and arrays", () => {
+    for (const value of ['{"a":1}', "[1,2,3]", '"text"', "42", "null"]) {
+      expect(secretValueError(value, "secret-json")).toBeUndefined();
+    }
+  });
+
+  it("reports malformed JSON", () => {
+    expect(secretValueError("{ not json", "secret-json")).toMatch(/^Not valid JSON: /);
+  });
+
+  it("checks nothing for other types, or for an empty value", () => {
+    expect(secretValueError("{ not json", "secret-text")).toBeUndefined();
+    expect(secretValueError("{ not json", undefined)).toBeUndefined();
+    expect(secretValueError("   ", "secret-json")).toBeUndefined();
   });
 });

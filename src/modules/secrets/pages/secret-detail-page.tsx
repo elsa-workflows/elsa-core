@@ -23,7 +23,7 @@ import type { RouteParams } from "@/lib/modules/types";
 import { Resources, usePermission, Verbs } from "@/lib/permissions";
 import { storeFields as declaredStoreFields, storeRequiresValue, type SecretDescriptorsResponse, type SecretModel } from "../api";
 import { SecretStatusBadge } from "../components/secret-status-badge";
-import { SecretValueField, toIsoOrNull } from "../components/secret-value-field";
+import { SecretValueField, secretValueError, toIsoOrNull } from "../components/secret-value-field";
 import { StoreFields, useStoreFields, valueHintFor } from "../components/store-fields";
 import { useDeleteSecret, useRevokeSecret, useRotateSecret, useSecret, useSecretDescriptors, useTestSecret, useUpdateSecret } from "../hooks";
 import { SecretRoutes } from "../routes";
@@ -348,7 +348,7 @@ function RotationCard({ secret, descriptors, className }: { secret: SecretModel;
   const [value, setValue] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
   const rotate = useRotateSecret();
-  const canSubmit = storeFields.complete && (!requiresValue || !!value);
+  const canSubmit = storeFields.complete && (!requiresValue || !!value) && !secretValueError(value, type?.editorHint);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
