@@ -5,7 +5,6 @@ import unittest
 import extensions_manifest_continuation as continuation
 import prepare_maintenance_build as maintenance
 import product_release_metadata as metadata
-import selected_maintenance_39 as maintenance39
 
 
 class ExtensionsManifestContinuationTests(unittest.TestCase):
