@@ -21,9 +21,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import type { RouteParams } from "@/lib/modules/types";
 import { Resources, usePermission, Verbs } from "@/lib/permissions";
-import { hasCapability, type SecretDescriptorsResponse, type SecretModel } from "../api";
+import { storeFields as declaredStoreFields, storeRequiresValue, type SecretDescriptorsResponse, type SecretModel } from "../api";
 import { SecretStatusBadge } from "../components/secret-status-badge";
 import { SecretValueField, toIsoOrNull } from "../components/secret-value-field";
+import { StoreFields, useStoreFields } from "../components/store-fields";
 import { useDeleteSecret, useRevokeSecret, useRotateSecret, useSecret, useSecretDescriptors, useTestSecret, useUpdateSecret } from "../hooks";
 import { SecretRoutes } from "../routes";
 
@@ -45,8 +46,13 @@ export function SecretDetailPage({ params }: { params: RouteParams }) {
   const remove = useDeleteSecret();
   const test = useTestSecret();
 
+  const store = descriptors.data?.stores.find((s) => s.name === secret?.storeName);
   const typeLabel = descriptors.data?.types.find((t) => t.name === secret?.typeName)?.displayName ?? secret?.typeName;
-  const storeLabel = descriptors.data?.stores.find((s) => s.name === secret?.storeName)?.displayName ?? secret?.storeName;
+  const storeLabel = store?.displayName ?? secret?.storeName;
+  // Where the secret actually lives: the store's own fields, labelled as the store describes them.
+  const storeRows = declaredStoreFields(store)
+    .map((field) => ({ label: field.displayName, value: secret?.metadata?.[field.name] }))
+    .filter((row) => !!row.value);
 
   const onRevoke = async () => {
     if (!secret) return;
@@ -172,6 +178,7 @@ export function SecretDetailPage({ params }: { params: RouteParams }) {
                         { label: "Technical name", value: <span className="font-mono text-xs">{secret.name}</span> },
                         { label: "Type", value: typeLabel },
                         { label: "Store", value: storeLabel },
+                        ...storeRows,
                         { label: "Scope", value: secret.scope || undefined },
                         {
                           label: "Tags",
@@ -332,16 +339,16 @@ function DetailsCard({ secret, canWrite }: { secret: SecretModel; canWrite: bool
   );
 }
 
-/** Inline rotation form; the same rules as `RotateSecretDialog` (reference stores take a configuration key instead of a value). */
+/** Inline rotation form; the same rules as `RotateSecretDialog` (the store declares which fields it needs). */
 function RotationCard({ secret, descriptors, className }: { secret: SecretModel; descriptors: SecretDescriptorsResponse | undefined; className?: string }) {
   const type = descriptors?.types.find((t) => t.name === secret.typeName);
   const store = descriptors?.stores.find((s) => s.name === secret.storeName);
-  const usesReference = !!store && (store.isReadOnly || !hasCapability(store.capabilities, "Write"));
+  const storeFields = useStoreFields(store);
+  const requiresValue = storeRequiresValue(store);
   const [value, setValue] = useState("");
-  const [configurationKey, setConfigurationKey] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
   const rotate = useRotateSecret();
-  const canSubmit = usesReference ? !!configurationKey.trim() : !!value;
+  const canSubmit = storeFields.complete && (!requiresValue || !!value);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -349,13 +356,14 @@ function RotationCard({ secret, descriptors, className }: { secret: SecretModel;
     try {
       const updated = await rotate.mutateAsync({
         name: secret.name,
-        value: usesReference ? undefined : value,
-        configurationKey: usesReference ? configurationKey.trim() : undefined,
+        value: requiresValue ? value : undefined,
+        configurationKey: storeFields.configurationKey,
+        metadata: storeFields.metadata,
         expiresAt: toIsoOrNull(expiresAt),
       });
       toast.success(`Secret "${secret.name}" rotated to version ${updated.currentVersion ?? "?"}`);
       setValue("");
-      setConfigurationKey("");
+      storeFields.reset();
       setExpiresAt("");
     } catch (err) {
       toast.error(describeError(err));
@@ -375,13 +383,8 @@ function RotationCard({ secret, descriptors, className }: { secret: SecretModel;
               This creates version {(secret.currentVersion ?? 0) + 1}. {secret.status !== "Active" && "Rotating a revoked or expired secret makes it active again."}
             </AlertDescription>
           </Alert>
-          {usesReference ? (
-            <Field label="Replacement configuration key" required htmlFor="rotate-config-key" hint="The configuration key that resolves to the replacement value.">
-              <Input id="rotate-config-key" value={configurationKey} onChange={(e) => setConfigurationKey(e.target.value)} />
-            </Field>
-          ) : (
-            <SecretValueField value={value} onChange={setValue} editorHint={type?.editorHint} label="New value" required />
-          )}
+          <StoreFields state={storeFields} idPrefix="rotate" />
+          {requiresValue && <SecretValueField value={value} onChange={setValue} editorHint={type?.editorHint} label="New value" required />}
           <Field label="Expires at" htmlFor="rotate-expires" hint="Optional.">
             <Input id="rotate-expires" type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} className="max-w-xs" />
           </Field>

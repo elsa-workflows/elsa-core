@@ -10,9 +10,10 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { hasCapability, type SecretDescriptorsResponse } from "../api";
+import { storeRequiresValue, type SecretDescriptorsResponse } from "../api";
 import { useCreateSecret } from "../hooks";
 import { SecretValueField, toIsoOrNull } from "./secret-value-field";
+import { StoreFields, useStoreFields } from "./store-fields";
 
 const NAME_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._:-]*$/;
 
@@ -45,7 +46,6 @@ function CreateSecretForm({ descriptors, close }: { descriptors: SecretDescripto
   const [scope, setScope] = useState("");
   const [tags, setTags] = useState("");
   const [value, setValue] = useState("");
-  const [configurationKey, setConfigurationKey] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
   const create = useCreateSecret();
 
@@ -55,11 +55,12 @@ function CreateSecretForm({ descriptors, close }: { descriptors: SecretDescripto
     [stores, type],
   );
   const effectiveStore = availableStores.find((s) => s.name === storeName) ?? availableStores[0];
-  // Stores that cannot be written to (e.g. `configuration`) take a key reference instead of a value.
-  const usesReference = !!effectiveStore && (effectiveStore.isReadOnly || !hasCapability(effectiveStore.capabilities, "Write"));
+  // Each store declares the fields it needs (a configuration key, vault coordinates, …) and whether it also takes a value.
+  const storeFields = useStoreFields(effectiveStore);
+  const requiresValue = storeRequiresValue(effectiveStore);
 
   const nameValid = NAME_PATTERN.test(name.trim());
-  const canSubmit = nameValid && !!typeName && !!effectiveStore && (usesReference ? !!configurationKey.trim() : !!value);
+  const canSubmit = nameValid && !!typeName && !!effectiveStore && storeFields.complete && (!requiresValue || !!value);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -76,8 +77,9 @@ function CreateSecretForm({ descriptors, close }: { descriptors: SecretDescripto
           .split(",")
           .map((t) => t.trim())
           .filter(Boolean),
-        value: usesReference ? undefined : value,
-        configurationKey: usesReference ? configurationKey.trim() : undefined,
+        value: requiresValue ? value : undefined,
+        configurationKey: storeFields.configurationKey,
+        metadata: storeFields.metadata,
         expiresAt: toIsoOrNull(expiresAt),
       });
       toast.success(`Secret "${created.name}" created`);
@@ -136,13 +138,8 @@ function CreateSecretForm({ descriptors, close }: { descriptors: SecretDescripto
             <Input id="secret-tags" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="prod, email" />
           </Field>
         </div>
-        {usesReference ? (
-          <Field label="Configuration key" required htmlFor="secret-config-key" hint="The server reads the value from this configuration key; nothing is stored in the database.">
-            <Input id="secret-config-key" value={configurationKey} onChange={(e) => setConfigurationKey(e.target.value)} placeholder="Smtp:Password" />
-          </Field>
-        ) : (
-          <SecretValueField value={value} onChange={setValue} editorHint={type?.editorHint} required />
-        )}
+        <StoreFields state={storeFields} idPrefix="secret" />
+        {requiresValue && <SecretValueField value={value} onChange={setValue} editorHint={type?.editorHint} required />}
         <Field label="Expires at" htmlFor="secret-expires" hint="Optional. Expired secrets stop resolving.">
           <Input id="secret-expires" type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
         </Field>

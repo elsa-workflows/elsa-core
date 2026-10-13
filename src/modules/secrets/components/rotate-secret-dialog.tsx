@@ -8,9 +8,10 @@ import { Field } from "@/components/common/field";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { hasCapability, type SecretDescriptorsResponse, type SecretModel } from "../api";
+import { storeRequiresValue, type SecretDescriptorsResponse, type SecretModel } from "../api";
 import { useRotateSecret } from "../hooks";
 import { SecretValueField, toIsoOrNull } from "./secret-value-field";
+import { StoreFields, useStoreFields } from "./store-fields";
 
 /** Supplies a new value (a new version); the previous version is retired by the server. */
 export function RotateSecretDialog({
@@ -34,12 +35,12 @@ export function RotateSecretDialog({
 function RotateSecretForm({ secret, descriptors, close }: { secret: SecretModel; descriptors: SecretDescriptorsResponse | undefined; close: () => void }) {
   const type = descriptors?.types.find((t) => t.name === secret.typeName);
   const store = descriptors?.stores.find((s) => s.name === secret.storeName);
-  const usesReference = !!store && (store.isReadOnly || !hasCapability(store.capabilities, "Write"));
+  const storeFields = useStoreFields(store);
+  const requiresValue = storeRequiresValue(store);
   const [value, setValue] = useState("");
-  const [configurationKey, setConfigurationKey] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
   const rotate = useRotateSecret();
-  const canSubmit = usesReference ? !!configurationKey.trim() : !!value;
+  const canSubmit = storeFields.complete && (!requiresValue || !!value);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -47,8 +48,9 @@ function RotateSecretForm({ secret, descriptors, close }: { secret: SecretModel;
     try {
       const updated = await rotate.mutateAsync({
         name: secret.name,
-        value: usesReference ? undefined : value,
-        configurationKey: usesReference ? configurationKey.trim() : undefined,
+        value: requiresValue ? value : undefined,
+        configurationKey: storeFields.configurationKey,
+        metadata: storeFields.metadata,
         expiresAt: toIsoOrNull(expiresAt),
       });
       toast.success(`Secret "${secret.name}" rotated to version ${updated.currentVersion ?? "?"}`);
@@ -67,13 +69,8 @@ function RotateSecretForm({ secret, descriptors, close }: { secret: SecretModel;
         </DialogDescription>
       </DialogHeader>
       <div className="flex flex-col gap-4">
-        {usesReference ? (
-          <Field label="Configuration key" required htmlFor="rotate-config-key">
-            <Input id="rotate-config-key" value={configurationKey} onChange={(e) => setConfigurationKey(e.target.value)} />
-          </Field>
-        ) : (
-          <SecretValueField value={value} onChange={setValue} editorHint={type?.editorHint} label="New value" required />
-        )}
+        <StoreFields state={storeFields} idPrefix="rotate" />
+        {requiresValue && <SecretValueField value={value} onChange={setValue} editorHint={type?.editorHint} label="New value" required />}
         <Field label="Expires at" htmlFor="rotate-expires" hint="Optional.">
           <Input id="rotate-expires" type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
         </Field>
