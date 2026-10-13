@@ -56,11 +56,17 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
     public Func<IServiceProvider, IWorkflowRuntime> WorkflowRuntime { get; set; } = sp => ActivatorUtilities.CreateInstance<LocalWorkflowRuntime>(sp);
 
     /// <summary>
+    /// A factory that instantiates the inner <see cref="IWorkflowDispatcher"/> that actually delivers dispatches. The
+    /// workflow dispatch outbox delivers through it directly, so it must not write to the outbox itself.
+    /// </summary>
+    public Func<IServiceProvider, IWorkflowDispatcher> InnerWorkflowDispatcher { get; set; } = sp => ActivatorUtilities.CreateInstance<BackgroundWorkflowDispatcher>(sp);
+
+    /// <summary>
     /// A factory that instantiates an <see cref="IWorkflowDispatcher"/>.
     /// </summary>
     public Func<IServiceProvider, IWorkflowDispatcher> WorkflowDispatcher { get; set; } = sp =>
     {
-        var decoratedService = ActivatorUtilities.CreateInstance<BackgroundWorkflowDispatcher>(sp);
+        var decoratedService = sp.GetRequiredKeyedService<IWorkflowDispatcher>(WorkflowDispatcherServiceKeys.Inner);
         var transactionalService = ActivatorUtilities.CreateInstance<TransactionalWorkflowDispatcher>(sp, decoratedService);
         return ActivatorUtilities.CreateInstance<ValidatingWorkflowDispatcher>(sp, transactionalService);
     };
@@ -317,6 +323,7 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
             .AddScoped<IWorkflowHostFactory, WorkflowHostFactory>()
             .AddScoped<IBackgroundActivityInvoker, BackgroundActivityInvoker>()
             .AddScoped(WorkflowRuntime)
+            .AddKeyedScoped<IWorkflowDispatcher>(WorkflowDispatcherServiceKeys.Inner, (sp, _) => InnerWorkflowDispatcher(sp))
             .AddScoped(WorkflowDispatcher)
             .AddScoped(StimulusDispatcher)
             .AddScoped(WorkflowCancellationDispatcher)

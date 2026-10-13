@@ -36,6 +36,7 @@ public class TransactionalWorkflowDispatcher(
         await GetOutbox().EnqueueAsync(context, new()
         {
             TenantId = tenantAccessor?.Tenant?.Id,
+            Channel = dispatchOptions?.Channel,
             Kind = WorkflowDispatchOutboxItemKind.WorkflowDefinition,
             WorkflowDefinitionCommand = WorkflowDispatchCommandFactory.CreateCommand(request, generatedInstanceId)
         }, cancellationToken);
@@ -56,6 +57,7 @@ public class TransactionalWorkflowDispatcher(
         await GetOutbox().EnqueueAsync(context, new()
         {
             TenantId = tenantAccessor?.Tenant?.Id,
+            Channel = dispatchOptions?.Channel,
             Kind = WorkflowDispatchOutboxItemKind.WorkflowInstance,
             WorkflowInstanceCommand = WorkflowDispatchCommandFactory.CreateCommand(request)
         }, cancellationToken);
@@ -74,6 +76,7 @@ public class TransactionalWorkflowDispatcher(
         await GetOutbox().EnqueueAsync(context, new()
         {
             TenantId = tenantAccessor?.Tenant?.Id,
+            Channel = dispatchOptions?.Channel,
             Kind = WorkflowDispatchOutboxItemKind.TriggerWorkflows,
             TriggerWorkflowsCommand = WorkflowDispatchCommandFactory.CreateCommand(request)
         }, cancellationToken);
@@ -90,6 +93,7 @@ public class TransactionalWorkflowDispatcher(
         await GetOutbox().EnqueueAsync(context, new()
         {
             TenantId = tenantAccessor?.Tenant?.Id,
+            Channel = dispatchOptions?.Channel,
             Kind = WorkflowDispatchOutboxItemKind.ResumeWorkflows,
             ResumeWorkflowsCommand = WorkflowDispatchCommandFactory.CreateCommand(request)
         }, cancellationToken);
