@@ -23,8 +23,12 @@ namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
 /// <remarks>
-/// Items are delivered through the inner <see cref="IWorkflowDispatcher"/> on their persisted channel. A channel that is
-/// not configured fails closed. When the inner dispatcher cannot route channels (for example
+/// Items are delivered through the inner <see cref="IWorkflowDispatcher"/> on their persisted channel. An unroutable
+/// channel (not configured in <see cref="WorkflowDispatcherOptions.Channels"/>, or answered with
+/// <see cref="RuntimeFaultCodes.UnknownChannel"/> by the inner dispatcher) fails closed: the item is never delivered on the
+/// default queue, never deleted and never counted toward <see cref="WorkflowDispatcherOptions.MaxOutboxDeliveryAttempts"/>;
+/// it stays queued and an error naming the channel is logged on every pass. The attempt limit applies only to real
+/// delivery failures. When the inner dispatcher cannot route channels (for example
 /// <see cref="BackgroundWorkflowDispatcher"/>), a configured channel is ignored and the item goes to the default queue,
 /// the same as before #8167. Follow-up: #8813.
 /// </remarks>
@@ -45,7 +49,7 @@ public class WorkflowDispatchOutboxProcessor(
     /// <summary>
     /// Creates a processor that delivers through mediator background commands, as this processor did before it delivered
     /// through the inner <see cref="IWorkflowDispatcher"/>. This overload cannot route channels, so items with a channel fail
-    /// closed. It deliberately does not use the registered <see cref="IWorkflowDispatcher"/>: with the outbox enabled that is
+    /// closed and stay queued. It deliberately does not use the registered <see cref="IWorkflowDispatcher"/>: with the outbox enabled that is
     /// the transactional dispatcher, which would enqueue each item again instead of delivering it.
     /// </summary>
     [Obsolete("This constructor uses the old non-durable delivery: the outbox item is deleted as soon as it is handed to the in-memory background queue, so a node stop before that queue runs can lose the child workflow. Use the constructor that takes the inner IWorkflowDispatcher (keyed WorkflowDispatcherServiceKeys.Inner). This overload will be removed in a future version.")]
@@ -171,6 +175,12 @@ public class WorkflowDispatchOutboxProcessor(
         {
             throw;
         }
+        catch (UnroutableChannelException e)
+        {
+            // Not a delivery failure: leave the item queued without counting an attempt, so it is never abandoned.
+            logger.LogError(e, "Workflow dispatch outbox item {OutboxItemId} stays queued because channel '{Channel}' cannot be routed; it is not counted as a delivery attempt.", item.Id, item.Channel);
+            return;
+        }
         catch (Exception e) when (e is not OperationCanceledException)
         {
             await HandleDeliveryFailureAsync(item, e, cancellationToken);
@@ -182,11 +192,11 @@ public class WorkflowDispatchOutboxProcessor(
 
     private async Task SendAsync(WorkflowDispatchOutboxItem item, CancellationToken cancellationToken)
     {
-        // Fail closed: an unroutable channel must never silently fall back to the default channel. Throwing leaves the
-        // item in the outbox and counts a delivery attempt, so the normal retry picks it up.
+        // Fail closed: an unroutable channel must never silently fall back to the default channel. The item stays in the
+        // outbox without counting a delivery attempt.
         if (!string.IsNullOrEmpty(item.Channel) && dispatcherOptions.Value.Channels.All(x => x.Name != item.Channel))
         {
-            throw new InvalidOperationException($"Cannot deliver workflow dispatch outbox item {item.Id}: dispatch channel '{item.Channel}' is not configured.");
+            throw new UnroutableChannelException($"Cannot deliver workflow dispatch outbox item {item.Id}: dispatch channel '{item.Channel}' is not configured.");
         }
 
         // Push the tenant here rather than in an async helper: the tenant context is async-local and would not flow back.
@@ -222,6 +232,11 @@ public class WorkflowDispatchOutboxProcessor(
             }, options, cancellationToken),
             _ => throw new InvalidOperationException($"Outbox item {item.Id} does not contain a dispatch command for kind {item.Kind}.")
         };
+
+        if (response.Fault?.Code == RuntimeFaultCodes.UnknownChannel)
+        {
+            throw new UnroutableChannelException($"Delivery of workflow dispatch outbox item {item.Id} was rejected: dispatch channel '{item.Channel ?? "(default)"}' is unknown to the inner dispatcher.", response.Fault);
+        }
 
         if (!response.Succeeded)
         {
@@ -411,6 +426,8 @@ public class WorkflowDispatchOutboxProcessor(
             logger.LogWarning(e, "Failed to remove delivered workflow dispatch outbox item {OutboxItemId} from owner workflow {WorkflowInstanceId}; future commits may prune the marker during a later sweep.", item.Id, item.OwnerWorkflowInstanceId);
         }
     }
+
+    private sealed class UnroutableChannelException(string message, Exception? inner = null) : InvalidOperationException(message, inner);
 
     /// <summary>Delivers through mediator background commands, for the obsolete constructor only. It cannot route channels.</summary>
     private sealed class CommandSenderWorkflowDispatcher(ICommandSender commandSender, ITenantAccessor? tenantAccessor) : IWorkflowDispatcher

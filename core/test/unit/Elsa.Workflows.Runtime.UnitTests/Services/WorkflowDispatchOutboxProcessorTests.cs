@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Elsa.Common;
 using Elsa.Common.DistributedHosting;
 using Elsa.Common.DistributedHosting.DistributedLocks;
@@ -108,7 +109,7 @@ public class WorkflowDispatchOutboxProcessorTests
         await _store.Received(1).FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>());
     }
 
-    private WorkflowDispatchOutboxProcessor CreateProcessor(IDistributedLockProvider? distributedLockProvider = null, ITenantAccessor? tenantAccessor = null, ITenantFinder? tenantFinder = null, IWorkflowDispatcher? innerDispatcher = null)
+    private WorkflowDispatchOutboxProcessor CreateProcessor(IDistributedLockProvider? distributedLockProvider = null, ITenantAccessor? tenantAccessor = null, ITenantFinder? tenantFinder = null, IWorkflowDispatcher? innerDispatcher = null, ILogger<WorkflowDispatchOutboxProcessor>? logger = null)
     {
         return new(
             _store,
@@ -118,7 +119,7 @@ public class WorkflowDispatchOutboxProcessorTests
             _systemClock,
             Microsoft.Extensions.Options.Options.Create(new DistributedLockingOptions()),
             Microsoft.Extensions.Options.Options.Create(_options),
-            NullLogger<WorkflowDispatchOutboxProcessor>.Instance,
+            logger ?? NullLogger<WorkflowDispatchOutboxProcessor>.Instance,
             tenantAccessor,
             tenantFinder);
     }
@@ -505,7 +506,8 @@ public class WorkflowDispatchOutboxProcessorTests
 
         await _innerDispatcher.DidNotReceiveWithAnyArgs().DispatchAsync(default(DispatchWorkflowDefinitionRequest)!, default, default);
         await _store.DidNotReceive().DeleteAsync(item.Id, Arg.Any<CancellationToken>());
-        await _store.Received(1).SaveAsync(Arg.Is<WorkflowDispatchOutboxItem>(x => x.Id == item.Id && x.DeliveryAttempts == 1), Arg.Any<CancellationToken>());
+        await _store.DidNotReceiveWithAnyArgs().SaveAsync(default!, default);
+        Assert.Equal(0, item.DeliveryAttempts);
     }
 
     [Fact]
@@ -523,7 +525,73 @@ public class WorkflowDispatchOutboxProcessorTests
         await _processor.ProcessAsync();
 
         await _store.DidNotReceive().DeleteAsync(item.Id, Arg.Any<CancellationToken>());
-        await _store.Received(1).SaveAsync(Arg.Is<WorkflowDispatchOutboxItem>(x => x.Id == item.Id && x.DeliveryAttempts == 1), Arg.Any<CancellationToken>());
+        await _store.DidNotReceiveWithAnyArgs().SaveAsync(default!, default);
+        Assert.Equal(0, item.DeliveryAttempts);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_KeepsItemPastMaxAttempts_WhenChannelIsNotConfigured()
+    {
+        var item = CreateItem();
+        item.Channel = "missing";
+        var logger = new CapturingLogger<WorkflowDispatchOutboxProcessor>();
+        var processor = SetUpUnroutable(item, logger);
+
+        await RunPastMaxAttemptsAsync(processor);
+
+        AssertStillQueued(item, logger, "missing");
+        await _innerDispatcher.DidNotReceiveWithAnyArgs().DispatchAsync(default(DispatchWorkflowDefinitionRequest)!, default, default);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_KeepsItemPastMaxAttempts_WhenInnerDispatcherReturnsUnknownChannel()
+    {
+        _options.Channels.Add(new DispatcherChannel { Name = "priority" });
+        var item = CreateItem();
+        item.Channel = "priority";
+        var logger = new CapturingLogger<WorkflowDispatchOutboxProcessor>();
+        var processor = SetUpUnroutable(item, logger);
+        _innerDispatcher.DispatchAsync(DefinitionRequestFor(item), Arg.Any<DispatchWorkflowOptions?>(), Arg.Any<CancellationToken>())
+            .Returns(DispatchWorkflowResponse.UnknownChannel());
+
+        await RunPastMaxAttemptsAsync(processor);
+
+        AssertStillQueued(item, logger, "priority");
+        await _innerDispatcher.Received(_options.MaxOutboxDeliveryAttempts + 1).DispatchAsync(DefinitionRequestFor(item), Arg.Any<DispatchWorkflowOptions?>(), Arg.Any<CancellationToken>());
+    }
+
+    private WorkflowDispatchOutboxProcessor SetUpUnroutable(WorkflowDispatchOutboxItem item, CapturingLogger<WorkflowDispatchOutboxProcessor> logger)
+    {
+        // The store keeps returning the item until it is deleted, like a real outbox.
+        var deleted = false;
+        _store.DeleteAsync(item.Id, Arg.Any<CancellationToken>()).Returns(_ =>
+        {
+            deleted = true;
+            return Task.CompletedTask;
+        });
+        _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns(_ => deleted ? [] : new[] { item });
+        _workflowInstanceStore.FindAsync(OwnerFilter(), Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: true)));
+        return CreateProcessor(logger: logger);
+    }
+
+    private async Task RunPastMaxAttemptsAsync(WorkflowDispatchOutboxProcessor processor)
+    {
+        for (var pass = 0; pass < _options.MaxOutboxDeliveryAttempts + 1; pass++)
+        {
+            await processor.ProcessAsync();
+        }
+    }
+
+    private void AssertStillQueued(WorkflowDispatchOutboxItem item, CapturingLogger<WorkflowDispatchOutboxProcessor> logger, string channel)
+    {
+        _store.DidNotReceiveWithAnyArgs().DeleteAsync(default!, default);
+        _store.DidNotReceiveWithAnyArgs().SaveAsync(default!, default);
+        Assert.Equal(0, item.DeliveryAttempts);
+        Assert.Single(_store.FindManyAsync(1, CancellationToken.None).Result);
+        var errors = logger.Entries.Where(x => x.Level == LogLevel.Error).ToList();
+        Assert.Equal(_options.MaxOutboxDeliveryAttempts + 1, errors.Count);
+        Assert.All(errors, x => Assert.Contains($"'{channel}'", x.Message));
     }
 
     [Fact]
@@ -609,21 +677,19 @@ public class WorkflowDispatchOutboxProcessorTests
         _options.Channels.Add(new DispatcherChannel { Name = "priority" });
         var item = CreateItem();
         item.Channel = "priority";
-        var logger = Substitute.For<Microsoft.Extensions.Logging.ILogger<WorkflowDispatchOutboxProcessor>>();
+        var logger = new CapturingLogger<WorkflowDispatchOutboxProcessor>();
         _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([item]);
         _workflowInstanceStore.FindAsync(OwnerFilter(), Arg.Any<CancellationToken>())
             .Returns(new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: true)));
         _innerDispatcher.DispatchAsync(DefinitionRequestFor(item), Arg.Any<DispatchWorkflowOptions?>(), Arg.Any<CancellationToken>())
             .Returns(DispatchWorkflowResponse.UnknownChannel());
-        Exception? logged = null;
-        logger.When(x => x.Log(Microsoft.Extensions.Logging.LogLevel.Error, Arg.Any<Microsoft.Extensions.Logging.EventId>(), Arg.Any<object>(), Arg.Any<Exception?>(), Arg.Any<Func<object, Exception?, string>>()))
-            .Do(call => logged ??= call.ArgAt<Exception?>(3));
         var processor = new WorkflowDispatchOutboxProcessor(_store, _workflowInstanceStore, _innerDispatcher, new NoopDistributedSynchronizationProvider(), _systemClock,
             Microsoft.Extensions.Options.Options.Create(new DistributedLockingOptions()), Microsoft.Extensions.Options.Options.Create(_options), logger);
 
         await processor.ProcessAsync();
 
-        Assert.Contains("'priority'", logged?.Message);
+        var entry = Assert.Single(logger.Entries, x => x.Level == LogLevel.Error);
+        Assert.Contains("'priority'", entry.Message);
     }
 
     private static IPayloadSerializer CreatePayloadSerializer() =>
@@ -780,5 +846,17 @@ public class WorkflowDispatchOutboxProcessorTests
         {
             return ValueTask.FromException<IDistributedSynchronizationHandle?>(new TimeoutException());
         }
+    }
+
+    private sealed class CapturingLogger<T> : ILogger<T>
+    {
+        public List<(LogLevel Level, string Message, Exception? Exception)> Entries { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) =>
+            Entries.Add((logLevel, formatter(state, exception), exception));
     }
 }
