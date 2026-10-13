@@ -1,7 +1,7 @@
-using System.Text.Json;
 using Elsa.Common;
 using Elsa.Common.Models;
 using Elsa.UserTasks.Contracts;
+using Elsa.UserTasks.Helpers;
 using Elsa.UserTasks.Models;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
@@ -143,21 +143,5 @@ public sealed class DefaultUserTaskReconciler(
 
     private static string MaterializationKey(UserTaskMaterialization materialization) => string.Join("/", materialization.TenantId, materialization.WorkflowInstanceId, materialization.ActivityInstanceId);
 
-    private static UserTaskMaterialization? Deserialize(StoredBookmark bookmark)
-    {
-        try
-        {
-            return bookmark.Payload switch
-            {
-                UserTaskMaterialization materialization => materialization,
-                JsonElement element => element.Deserialize<UserTaskMaterialization>(),
-                null => null,
-                _ => JsonSerializer.Deserialize<UserTaskMaterialization>(JsonSerializer.Serialize(bookmark.Payload))
-            };
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-    }
+    private static UserTaskMaterialization? Deserialize(StoredBookmark bookmark) => UserTaskBookmarkPayload.ReadMaterialization(bookmark.Payload);
 }
