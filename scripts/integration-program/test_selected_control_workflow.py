@@ -679,9 +679,9 @@ else:
 
     def test_consumer_range_root_canary_and_wrong_framework_are_unavailable(self):
         import retain_selected_failure_diagnostics as diagnostics
-        selected = self.plan['inventory']['selected'][0]
+        selected = next(row for row in self.plan['inventory']['selected'] if row['frameworks'] == ['net10.0'])
         controller = {key: self.plan['controller'][key] for key in ('commit', 'tree')}
-        for root, framework in ((self.canary, selected['frameworks'][0]), (selected['id'], 'net7.0')):
+        for root, framework in ((self.canary, 'net10.0'), (selected['id'], 'net8.0')):
             with self.subTest(root=root, framework=framework):
                 receipt = deepcopy(self.consumer)
                 receipt['dependency_range_failure'] = {'root_id': root, 'framework': framework,
