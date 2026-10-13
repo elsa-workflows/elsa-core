@@ -21,6 +21,7 @@ public class SecretExpressionDescriptorProvider : IExpressionDescriptorProvider
         {
             Type = SecretExpression.TypeName,
             DisplayName = "Secret",
+            IsSensitive = true,
             HandlerFactory = ActivatorUtilities.GetServiceOrCreateInstance<SecretExpressionHandler>,
             Properties = new Dictionary<string, object>
             {
