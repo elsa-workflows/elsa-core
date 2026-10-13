@@ -210,7 +210,7 @@ services
                             ef.UsePostgreSql(yugabyteDbConnectionString);
 #if !NET9_0
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql) 
-                            ef.UseMySql(mySqlConnectionString);
+                            throw new NotSupportedException("MySQL EF Core persistence is supported on .NET 8/9; .NET 10 support is deferred.");
 #endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString);
@@ -261,7 +261,7 @@ services
                             ef.UsePostgreSql(yugabyteDbConnectionString);
 #if !NET9_0
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
-                            ef.UseMySql(mySqlConnectionString);
+                            throw new NotSupportedException("MySQL EF Core persistence is supported on .NET 8/9; .NET 10 support is deferred.");
 #endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString);
@@ -316,7 +316,7 @@ services
                             ef.UsePostgreSql(yugabyteDbConnectionString);
 #if !NET9_0
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
-                            ef.UseMySql(mySqlConnectionString);
+                            throw new NotSupportedException("MySQL EF Core persistence is supported on .NET 8/9; .NET 10 support is deferred.");
 #endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString);
@@ -496,7 +496,7 @@ services
                             ef.UsePostgreSql(yugabyteDbConnectionString);
 #if !NET9_0
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
-                            ef.UseMySql(mySqlConnectionString);
+                            throw new NotSupportedException("MySQL EF Core persistence is supported on .NET 8/9; .NET 10 support is deferred.");
 #endif
                         else if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb)
                             ef.UsePostgreSql(cockroachDbConnectionString);
@@ -704,7 +704,7 @@ services
                                     });
 #if !NET9_0
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.MySql) 
-                                    ef.UseMySql(mySqlConnectionString);
+                                    throw new NotSupportedException("MySQL EF Core persistence is supported on .NET 8/9; .NET 10 support is deferred.");
 #endif
                                 if (sqlDatabaseProvider == SqlDatabaseProvider.CockroachDb) ef.UsePostgreSql(cockroachDbConnectionString);
                             });
