@@ -1,6 +1,8 @@
 using CShells.Features;
 using CShells.Lifecycle;
+#if NET8_0 || NET9_0
 using Elsa.Scheduling.Quartz.EFCore.MySql.ShellFeatures;
+#endif
 using Elsa.Scheduling.Quartz.EFCore.PostgreSql.ShellFeatures;
 using Elsa.Scheduling.Quartz.EFCore.SqlServer.ShellFeatures;
 using Elsa.Scheduling.Quartz.EFCore.Sqlite.ShellFeatures;
@@ -61,7 +63,9 @@ public class QuartzFeatureTests
 
     public static TheoryData<IShellFeature> QuartzStoreFeatures() => new()
     {
+#if NET8_0 || NET9_0
         new QuartzMySqlFeature(),
+#endif
         new QuartzPostgreSqlFeature(),
         new QuartzSqlServerFeature(),
         new QuartzSqliteFeature()

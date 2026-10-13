@@ -73,7 +73,7 @@ services
                     management.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
 #if !NET9_0
                 else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
-                    management.UseEntityFrameworkCore(ef => ef.UseMySql(mySqlConnectionString));
+                    throw new NotSupportedException("MySQL EF Core persistence is supported on .NET 8/9; .NET 10 support is deferred.");
 #endif
             })
             .UseWorkflowRuntime(runtime =>
@@ -86,7 +86,7 @@ services
                     runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(sqliteConnectionString));
 #if !NET9_0
                 else if (sqlDatabaseProvider == SqlDatabaseProvider.MySql)
-                    runtime.UseEntityFrameworkCore(ef => ef.UseMySql(mySqlConnectionString));
+                    throw new NotSupportedException("MySQL EF Core persistence is supported on .NET 8/9; .NET 10 support is deferred.");
 #endif
 
                 if (useMassTransit)

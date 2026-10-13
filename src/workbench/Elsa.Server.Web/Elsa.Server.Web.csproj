@@ -3,8 +3,7 @@
         <TargetFramework>net10.0</TargetFramework>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
         <IsPackable>false</IsPackable>
-        <!-- Pomelo.EntityFrameworkCore.MySql 9.0.0 doesn't support EF Core 10; no Pomelo 10.x exists yet -->
-        <NoWarn>$(NoWarn);NU1608</NoWarn>
+        <!-- MySQL EF Core is deferred on this .NET 10 workbench; other providers remain available. -->
     </PropertyGroup>
     
     <ItemGroup>
@@ -17,7 +16,6 @@
 		<PackageReference Include="Elsa.Http" />
 		<PackageReference Include="Elsa.Http.Webhooks" />
         <PackageReference Include="Elsa.Persistence.EFCore.Common" />
-        <PackageReference Include="Elsa.Persistence.EFCore.MySql" />
         <PackageReference Include="Elsa.Persistence.EFCore.Oracle" />
         <PackageReference Include="Elsa.Persistence.EFCore.PostgreSql" />
         <PackageReference Include="Elsa.Persistence.EFCore.Sqlite" />
@@ -50,7 +48,6 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\..\modules\actors\Elsa.Actors.ProtoActor\Elsa.Actors.ProtoActor.csproj" />
-	  <ProjectReference Include="..\..\modules\agents\Elsa.Agents.Persistence.EFCore.MySql\Elsa.Agents.Persistence.EFCore.MySql.csproj" />
 	  <ProjectReference Include="..\..\modules\agents\Elsa.Agents.Persistence.EFCore.PostgreSql\Elsa.Agents.Persistence.EFCore.PostgreSql.csproj" />
 	  <ProjectReference Include="..\..\modules\agents\Elsa.Agents.Persistence.EFCore.Sqlite\Elsa.Agents.Persistence.EFCore.Sqlite.csproj" />
 	  <ProjectReference Include="..\..\modules\agents\Elsa.Agents.Persistence.EFCore.SqlServer\Elsa.Agents.Persistence.EFCore.SqlServer.csproj" />
@@ -69,7 +66,6 @@
 	  <ProjectReference Include="..\..\modules\retention\Elsa.Retention\Elsa.Retention.csproj" />
 	  <ProjectReference Include="..\..\modules\runtimes\Elsa.Workflows.Runtime.ProtoActor\Elsa.Workflows.Runtime.ProtoActor.csproj" />
 	  <ProjectReference Include="..\..\modules\scheduling\Elsa.Scheduling.Hangfire\Elsa.Scheduling.Hangfire.csproj" />
-	  <ProjectReference Include="..\..\modules\scheduling\Elsa.Scheduling.Quartz.EFCore.MySql\Elsa.Scheduling.Quartz.EFCore.MySql.csproj" />
 	  <ProjectReference Include="..\..\modules\scheduling\Elsa.Scheduling.Quartz.EFCore.PostgreSql\Elsa.Scheduling.Quartz.EFCore.PostgreSql.csproj" />
 	  <ProjectReference Include="..\..\modules\scheduling\Elsa.Scheduling.Quartz.EFCore.Sqlite\Elsa.Scheduling.Quartz.EFCore.Sqlite.csproj" />
 	  <ProjectReference Include="..\..\modules\scheduling\Elsa.Scheduling.Quartz.EFCore.SqlServer\Elsa.Scheduling.Quartz.EFCore.SqlServer.csproj" />
