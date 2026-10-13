@@ -179,3 +179,18 @@ runs:
         if-no-files-found: error
         retention-days: 14
         compression-level: 0
+    - name: Stage only validated failed-control diagnostic receipts
+      id: failure-diagnostics
+      if: failure()
+      shell: bash
+      run: |
+        python3 -B scripts/integration-program/retain_selected_failure_diagnostics.py --runner-temp "$RUNNER_TEMP"
+    - name: Retain diagnostic evidence without changing the failed outcome
+      if: failure() && steps.failure-diagnostics.outcome == 'success'
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      with:
+        name: selected-failure-diagnostics-${{ inputs.product }}-${{ inputs.line }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+        path: ${{ runner.temp }}/selected-failure-diagnostics/
+        if-no-files-found: error
+        retention-days: 14
+        compression-level: 0

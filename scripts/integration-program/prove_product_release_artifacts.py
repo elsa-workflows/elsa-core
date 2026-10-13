@@ -57,15 +57,16 @@ RECIPE_FAILURE_REASONS = frozenset(maintenance.VERIFICATION_REASONS.values()) | 
 DIAGNOSTIC_LIMIT = 4 * 1024 ** 2
 
 
-def read_diagnostic_receipt(path: Path) -> tuple[dict, str]:
+def read_diagnostic_receipt(path: Path, *, maximum: int = DIAGNOSTIC_LIMIT) -> tuple[dict, str]:
     """Read bounded regular diagnostic data without following a final symlink."""
+    require(type(maximum) is int and 0 < maximum <= 64 * 1024 ** 2, 'diagnostic_invalid')
     require(not any(part.is_symlink() for part in (path, *path.parents)), 'diagnostic_invalid')
     descriptor = os.open(path, os.O_RDONLY | os.O_NONBLOCK | getattr(os, 'O_NOFOLLOW', 0))
     with os.fdopen(descriptor, 'rb') as stream:
         info = os.fstat(stream.fileno())
-        require(stat.S_ISREG(info.st_mode) and info.st_size <= DIAGNOSTIC_LIMIT, 'diagnostic_invalid')
-        data = stream.read(DIAGNOSTIC_LIMIT + 1)
-    require(len(data) <= DIAGNOSTIC_LIMIT, 'diagnostic_invalid')
+        require(stat.S_ISREG(info.st_mode) and info.st_size <= maximum, 'diagnostic_invalid')
+        data = stream.read(maximum + 1)
+    require(len(data) <= maximum, 'diagnostic_invalid')
     value = planner.read_json(data)
     require(type(value) is dict, 'diagnostic_invalid')
     return value, metadata.sha256(data)
