@@ -27,7 +27,7 @@ export function SecretValueField({
   const multiline = !!editorHint && MULTILINE_HINTS.some((h) => editorHint.toLowerCase().includes(h));
   const id = "secret-value";
   return (
-    <Field label={label} htmlFor={id} required={required} hint={hint ?? "Stored encrypted; it is never shown again after saving."}>
+    <Field label={label} htmlFor={id} required={required} hint={hint ?? "Submitted once; it is never shown again after saving."}>
       {multiline ? (
         <Textarea id={id} value={value} onChange={(e) => onChange(e.target.value)} rows={6} className="font-mono text-xs" spellCheck={false} disabled={disabled} />
       ) : (

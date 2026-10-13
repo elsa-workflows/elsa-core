@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { storeRequiresValue, type SecretDescriptorsResponse } from "../api";
 import { useCreateSecret } from "../hooks";
 import { SecretValueField, toIsoOrNull } from "./secret-value-field";
-import { StoreFields, useStoreFields } from "./store-fields";
+import { StoreFields, useStoreFields, valueHintFor } from "./store-fields";
 
 const NAME_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9._:-]*$/;
 
@@ -93,7 +93,11 @@ function CreateSecretForm({ descriptors, close }: { descriptors: SecretDescripto
     <form onSubmit={submit} className="contents">
       <DialogHeader>
         <DialogTitle>Create secret</DialogTitle>
-        <DialogDescription>The value is submitted once and stored encrypted. Only metadata is ever returned.</DialogDescription>
+        <DialogDescription>
+          {requiresValue
+            ? "The value is submitted once and never read back. Only metadata is ever returned."
+            : "Elsa records a reference to a value held elsewhere. Only metadata is ever returned."}
+        </DialogDescription>
       </DialogHeader>
       <div className="flex flex-col gap-4">
         <div className="grid gap-3 sm:grid-cols-2">
@@ -139,7 +143,7 @@ function CreateSecretForm({ descriptors, close }: { descriptors: SecretDescripto
           </Field>
         </div>
         <StoreFields state={storeFields} idPrefix="secret" />
-        {requiresValue && <SecretValueField value={value} onChange={setValue} editorHint={type?.editorHint} required />}
+        {requiresValue && <SecretValueField value={value} onChange={setValue} editorHint={type?.editorHint} hint={valueHintFor(effectiveStore)} required />}
         <Field label="Expires at" htmlFor="secret-expires" hint="Optional. Expired secrets stop resolving.">
           <Input id="secret-expires" type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
         </Field>

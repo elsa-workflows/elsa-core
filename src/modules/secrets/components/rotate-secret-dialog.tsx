@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { storeRequiresValue, type SecretDescriptorsResponse, type SecretModel } from "../api";
 import { useRotateSecret } from "../hooks";
 import { SecretValueField, toIsoOrNull } from "./secret-value-field";
-import { StoreFields, useStoreFields } from "./store-fields";
+import { StoreFields, useStoreFields, valueHintFor } from "./store-fields";
 
 /** Supplies a new value (a new version); the previous version is retired by the server. */
 export function RotateSecretDialog({
@@ -70,7 +70,7 @@ function RotateSecretForm({ secret, descriptors, close }: { secret: SecretModel;
       </DialogHeader>
       <div className="flex flex-col gap-4">
         <StoreFields state={storeFields} idPrefix="rotate" />
-        {requiresValue && <SecretValueField value={value} onChange={setValue} editorHint={type?.editorHint} label="New value" required />}
+        {requiresValue && <SecretValueField value={value} onChange={setValue} editorHint={type?.editorHint} label="New value" hint={valueHintFor(store)} required />}
         <Field label="Expires at" htmlFor="rotate-expires" hint="Optional.">
           <Input id="rotate-expires" type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
         </Field>

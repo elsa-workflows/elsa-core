@@ -24,7 +24,7 @@ import { Resources, usePermission, Verbs } from "@/lib/permissions";
 import { storeFields as declaredStoreFields, storeRequiresValue, type SecretDescriptorsResponse, type SecretModel } from "../api";
 import { SecretStatusBadge } from "../components/secret-status-badge";
 import { SecretValueField, toIsoOrNull } from "../components/secret-value-field";
-import { StoreFields, useStoreFields } from "../components/store-fields";
+import { StoreFields, useStoreFields, valueHintFor } from "../components/store-fields";
 import { useDeleteSecret, useRevokeSecret, useRotateSecret, useSecret, useSecretDescriptors, useTestSecret, useUpdateSecret } from "../hooks";
 import { SecretRoutes } from "../routes";
 
@@ -384,7 +384,7 @@ function RotationCard({ secret, descriptors, className }: { secret: SecretModel;
             </AlertDescription>
           </Alert>
           <StoreFields state={storeFields} idPrefix="rotate" />
-          {requiresValue && <SecretValueField value={value} onChange={setValue} editorHint={type?.editorHint} label="New value" required />}
+          {requiresValue && <SecretValueField value={value} onChange={setValue} editorHint={type?.editorHint} label="New value" hint={valueHintFor(store)} required />}
           <Field label="Expires at" htmlFor="rotate-expires" hint="Optional.">
             <Input id="rotate-expires" type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} className="max-w-xs" />
           </Field>

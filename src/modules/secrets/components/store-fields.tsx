@@ -58,6 +58,13 @@ export function useStoreFields(store: SecretStoreDescriptor | undefined): StoreF
   };
 }
 
+/** What a store does with a submitted value, in that store's own terms. */
+export function valueHintFor(store: SecretStoreDescriptor | undefined): string | undefined {
+  if (!store) return undefined;
+  if (store.name === "encrypted") return "Stored encrypted by Elsa; it is never shown again after saving.";
+  return `Written to ${store.displayName}; Elsa keeps only the reference and never shows the value again.`;
+}
+
 export function StoreFields({ state, idPrefix }: { state: StoreFieldsState; idPrefix: string }) {
   return (
     <>
