@@ -38,7 +38,9 @@ public class ConfigurationSecretStore(IConfiguration configuration, IOptions<Sec
         var configuredValue = configuration.GetSection(sectionName)[key];
 
         if (configuredValue == null)
+        {
             logger?.LogDebug("Configuration secret key {ConfigurationKey} was not found under section {SectionName}.", key, sectionName);
+        }
 
         return configuredValue == null ? Task.FromResult<SecretPayload?>(null) : Task.FromResult<SecretPayload?>(SecretPayload.FromValue(configuredValue));
     }
