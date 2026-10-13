@@ -28,6 +28,12 @@ public class WorkflowDispatchOutboxItem
     public WorkflowDispatchOutboxItemKind Kind { get; set; }
 
     /// <summary>
+    /// The dispatch channel requested by the caller, or null for the default channel. Items stored before this
+    /// property existed load with null, which is what they were dispatched with.
+    /// </summary>
+    public string? Channel { get; set; }
+
+    /// <summary>
     /// When the item was created.
     /// </summary>
     public DateTimeOffset CreatedAt { get; set; }

@@ -80,6 +80,12 @@ public class DispatchWorkflowDefinitionRequest
     public int? SchedulingCallStackDepth { get; set; }
 
     /// <summary>
+    /// When set, the dispatcher skips creating the workflow instance if <see cref="InstanceId"/> already exists. The
+    /// workflow dispatch outbox sets this so a retried delivery cannot create the same child twice.
+    /// </summary>
+    public bool SkipIfInstanceExists { get; set; }
+
+    /// <summary>
     /// Name of the ingress source that initiated this dispatch. Carried through to the execution cycle registry for
     /// drain-time accounting and the FR-018 inconsistency detection. Null when no attribution is available.
     /// </summary>

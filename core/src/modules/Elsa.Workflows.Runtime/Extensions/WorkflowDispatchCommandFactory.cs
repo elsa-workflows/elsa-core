@@ -20,7 +20,7 @@ internal static class WorkflowDispatchCommandFactory
             SchedulingActivityExecutionId = request.SchedulingActivityExecutionId,
             SchedulingWorkflowInstanceId = request.SchedulingWorkflowInstanceId,
             SchedulingCallStackDepth = request.SchedulingCallStackDepth,
-            SkipIfInstanceExists = useGeneratedInstanceId && !string.IsNullOrWhiteSpace(instanceId)
+            SkipIfInstanceExists = request.SkipIfInstanceExists || (useGeneratedInstanceId && !string.IsNullOrWhiteSpace(instanceId))
         };
     }
 
