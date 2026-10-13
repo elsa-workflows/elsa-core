@@ -14,7 +14,8 @@ public class TenantEventsManager(
             tenantActivatedEvents,
             (handler, eventArgs) => handler.TenantActivatedAsync(eventArgs),
             args,
-            "activated");
+            "activated",
+            rethrow: true);
     }
 
     public async Task TenantDeactivatedAsync(TenantDeactivatedEventArgs args)
@@ -39,7 +40,8 @@ public class TenantEventsManager(
         IEnumerable<THandler> handlers,
         Func<THandler, TArgs, Task> handlerAction,
         TArgs args,
-        string eventType)
+        string eventType,
+        bool rethrow = false)
     {
         foreach (var handler in handlers)
         {
@@ -50,6 +52,12 @@ public class TenantEventsManager(
             catch (Exception e)
             {
                 logger.LogError(e, "Error occurred while processing tenant {EventType} event.", eventType);
+
+                // A failed activation (e.g. a migration startup task) leaves the tenant half-initialized, so surface it instead of continuing.
+                if (rethrow)
+                {
+                    throw;
+                }
             }
         }
     }

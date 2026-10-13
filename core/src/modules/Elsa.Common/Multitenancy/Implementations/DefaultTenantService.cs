@@ -119,8 +119,21 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScop
                     if (tenants.Count == 0)
                         tenants = [Tenant.Default];
 
-                    foreach (var tenant in tenants)
-                        await RegisterTenantAsync(tenant, cancellationToken);
+                    try
+                    {
+                        foreach (var tenant in tenants)
+                            await RegisterTenantAsync(tenant, cancellationToken);
+                    }
+                    catch
+                    {
+                        // Don't stay half-started: deactivate the tenants that did activate and let the next call retry from scratch.
+                        foreach (var tenant in _tenantsDictionary.Values.ToArray())
+                            await UnregisterTenantAsync(tenant, false, CancellationToken.None);
+
+                        _tenantsDictionary = null;
+                        _tenantScopesDictionary = null;
+                        throw;
+                    }
                 }
             }
             finally
@@ -138,8 +151,19 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScop
         _tenantsDictionary![tenant.Id.EmptyIfNull()] = tenant;
         _tenantScopesDictionary![tenant] = scope;
 
-        using (tenantAccessor.PushContext(tenant))
-            await tenantEvents.TenantActivatedAsync(new(tenant, scope, cancellationToken));
+        try
+        {
+            using (tenantAccessor.PushContext(tenant))
+                await tenantEvents.TenantActivatedAsync(new(tenant, scope, cancellationToken));
+        }
+        catch
+        {
+            // Keep a tenant that failed to activate unregistered, so the next refresh retries it.
+            _tenantsDictionary.Remove(tenant.Id.EmptyIfNull());
+            _tenantScopesDictionary.Remove(tenant);
+            await scope.DisposeAsync();
+            throw;
+        }
     }
 
     private async Task UnregisterTenantAsync(Tenant tenant, bool isDeleted, CancellationToken cancellationToken = default)
