@@ -169,13 +169,39 @@ public class BackgroundActivityInvokerMiddleware(
     {
         var activity = context.Activity;
         var bookmarksKey = GetBackgroundActivityBookmarksKey(activity.NodeId);
-        var bookmarks = context.WorkflowExecutionContext.GetProperty<ICollection<Bookmark>>(bookmarksKey);
+        context.WorkflowExecutionContext.Properties.TryGetValue(bookmarksKey, out var storedBookmarks);
+        var bookmarks = ReadBackgroundBookmarks(storedBookmarks, context.GetRequiredService<IPayloadSerializer>());
         if (bookmarks != null)
         {
             context.AddBookmarks(bookmarks);
         }
 
         context.WorkflowExecutionContext.Properties.Remove(bookmarksKey);
+    }
+
+    /// <summary>
+    /// Reads the bookmarks a background activity stored in the workflow properties. They are stored as JSON text written
+    /// by <see cref="IPayloadSerializer"/>, which keeps each bookmark payload's type. Workflows saved before #8804 hold
+    /// the bookmarks as a collection instead, which reads back as a property bag after a persisted round-trip.
+    /// </summary>
+    internal static ICollection<Bookmark>? ReadBackgroundBookmarks(object? storedBookmarks, IPayloadSerializer payloadSerializer)
+    {
+        if (storedBookmarks is null or ICollection<Bookmark>)
+        {
+            return (ICollection<Bookmark>?)storedBookmarks;
+        }
+
+        using var document = storedBookmarks is string json ? JsonDocument.Parse(json) : null;
+        var element = document?.RootElement ?? payloadSerializer.SerializeToElement(storedBookmarks); // Pre-#8804 shape: a property bag.
+
+        // A list written as an object is wrapped as {"_items": [...], "_type": ...}. A pre-#8804 property bag holds that
+        // wrapper itself, so serializing it again adds a second layer.
+        while (element.ValueKind == JsonValueKind.Object && element.TryGetProperty("_items", out var items))
+        {
+            element = items;
+        }
+
+        return payloadSerializer.Deserialize<List<Bookmark>>(element);
     }
 
     private void CapturePropertiesIfAny(ActivityExecutionContext context)
