@@ -84,6 +84,22 @@ public sealed class EFCoreUserTaskRepositoryTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task RoundTrip_ReturnsNullForEmptyTaskAndCompletionData()
+    {
+        await using var scope = serviceProvider.CreateAsyncScope();
+        var repository = scope.ServiceProvider.GetRequiredService<EFCoreUserTaskRepository>();
+        var actor = new ParticipantReference("tenant-1", "directory", UserTaskParticipantType.User, "u1", "Alice");
+        var task = CreateTask(DateTimeOffset.UtcNow, actor);
+
+        await repository.AddProjectionAsync(task);
+        var reloaded = await repository.GetAsync(task.TenantId, task.Id);
+
+        Assert.NotNull(reloaded);
+        Assert.Null(reloaded!.TaskData);
+        Assert.Null(reloaded.CompletionData);
+    }
+
+    [Fact]
     public async Task QueryScopeAndConcurrency_AreAppliedBeforePaging()
     {
         await using var scope = serviceProvider.CreateAsyncScope();

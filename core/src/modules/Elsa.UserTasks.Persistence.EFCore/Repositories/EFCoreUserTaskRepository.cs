@@ -815,5 +815,5 @@ public sealed class EFCoreUserTaskRepository(Store<UserTasksElsaDbContext, UserT
     private static string Serialize<T>(T value) => JsonSerializer.Serialize(value, JsonOptions);
     private static string Serialize(JsonElement? value) => !value.HasValue || value.Value.ValueKind == JsonValueKind.Undefined ? "null" : value.Value.GetRawText();
     private static T? Deserialize<T>(string? value) => string.IsNullOrWhiteSpace(value) || string.Equals(value, "null", StringComparison.OrdinalIgnoreCase) ? default : JsonSerializer.Deserialize<T>(value, JsonOptions);
-    private static JsonElement? DeserializeJson(string? value) => Deserialize<JsonElement>(value);
+    private static JsonElement? DeserializeJson(string? value) => Deserialize<JsonElement?>(value);
 }
