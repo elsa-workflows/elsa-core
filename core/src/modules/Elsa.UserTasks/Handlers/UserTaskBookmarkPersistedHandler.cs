@@ -1,7 +1,7 @@
-using System.Text.Json;
 using Elsa.Common;
 using Elsa.Mediator.Contracts;
 using Elsa.UserTasks.Contracts;
+using Elsa.UserTasks.Helpers;
 using Elsa.UserTasks.Models;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Notifications;
@@ -45,19 +45,6 @@ public sealed class UserTaskBookmarkPersistedHandler(IUserTaskProjectionService 
             return null;
         }
 
-        try
-        {
-            return bookmark.Payload switch
-            {
-                UserTaskMaterialization materialization => materialization,
-                JsonElement element => element.Deserialize<UserTaskMaterialization>(),
-                null => null,
-                _ => JsonSerializer.Deserialize<UserTaskMaterialization>(JsonSerializer.Serialize(bookmark.Payload))
-            };
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
+        return UserTaskBookmarkPayload.ReadMaterialization(bookmark.Payload);
     }
 }
