@@ -1,5 +1,9 @@
 # Elsa Studio (Next.js) – architecture and module guide
 
+> Part of the [documentation set](../README.md#documentation): [Getting started](getting-started.md) ·
+> [Configuration](configuration.md) · [Modules](modules.md) · [Designer](designer.md) ·
+> [Deployment](deployment.md) · [Troubleshooting](troubleshooting.md)
+
 A standalone React front end for Elsa Workflows 3.x. Built with Next.js (App Router), React 19,
 TypeScript, Tailwind v4, shadcn/ui (Base UI primitives) and React Flow for the diagrams. The app
 is a client-rendered SPA that talks straight to the Elsa REST API; Next.js only serves the shell

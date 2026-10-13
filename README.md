@@ -1,79 +1,120 @@
-# Elsa Studio (Next.js)
+<div align="center">
+  <img src="src/app/icon.png" alt="Elsa" width="88" height="88">
+  <h1>Elsa Studio</h1>
+  <p><strong>A modern, component-based web studio for <a href="https://github.com/elsa-workflows/elsa-core">Elsa Workflows 3.x</a>.</strong></p>
+  <p>Design, run and operate workflows from the browser: a visual designer, live instance inspection, human tasks, secrets, diagnostics and more.</p>
+  <p>
+    <img src="https://img.shields.io/badge/Next.js-16.4-000000?logo=nextdotjs&logoColor=white" alt="Next.js 16.4">
+    <img src="https://img.shields.io/badge/React-19.3-087EA4?logo=react&logoColor=white" alt="React 19.3">
+    <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" alt="TypeScript 5">
+    <img src="https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss&logoColor=white" alt="Tailwind CSS 4">
+    <img src="https://img.shields.io/badge/pnpm-10-F69220?logo=pnpm&logoColor=white" alt="pnpm 10">
+  </p>
+</div>
 
-A component-based web studio for [Elsa Workflows 3.x](https://github.com/elsa-workflows/elsa-core),
-built from scratch with Next.js, React, TypeScript, Tailwind CSS, shadcn/ui and React Flow.
+![The workflow designer](docs/images/designer.png)
 
-Core modules (always on): **Dashboard**, **Workflow definitions** (list + visual editor) and
-**Workflow instances** (list + viewer). Every other module is enabled per deployment through
-configuration and is hidden automatically when the backend does not have the matching feature:
-environments, labels, secrets, security (users & roles), alterations, user tasks, settings, appearance, console logs,
-structured logs.
+## Overview
+
+Elsa Studio is a standalone front end for the Elsa Workflows engine. It is a client-rendered
+application that talks directly to the Elsa REST API, so it can be deployed next to any Elsa server
+without changing the engine.
+
+Three modules are always available: the **dashboard**, **workflow definitions** and **workflow
+instances**. Everything else is optional and switched on per deployment through configuration, and is
+hidden automatically when the connected backend does not have the matching feature installed.
+
+| | |
+|---|---|
+| **Visual designer** | Flowchart, sequence and state machine containers, a searchable quick-add palette, auto layout, live validation and keyboard-driven editing. |
+| **Operations** | Instance viewer with the execution journal, activity state, incidents and variables, plus bulk cancel and retry through alterations. |
+| **Human tasks** | A task inbox with assignment, dynamic forms, protected fields and completion outcomes. |
+| **Governance** | Users, roles and permissions, labels, and write-only secrets that workflows reference by name. |
+| **Insight** | A call-context view of how workflows invoke each other, data-flow overlays, console and structured logs. |
 
 ## Quick start
 
+**Prerequisites:** Node.js 22 or newer, pnpm 10, and a running Elsa server with CORS open to the
+studio's origin.
+
 ```bash
 pnpm install
-cp studio.config.json studio.config.local.json   # optional: keep your own copy
-pnpm dev                                         # http://localhost:3000
+pnpm dev                 # http://localhost:3000
 ```
 
-Point `servers[0].url` in `studio.config.json` at your Elsa API (default `…/elsa/api`). The Elsa
-server must allow CORS from the studio origin (the reference host in elsa-core already does).
+Point `servers[0].url` in `studio.config.json` at your Elsa API, which is typically something like
+`https://localhost:5001/elsa/api`, then sign in. The default authentication provider is Elsa Identity,
+so a username and password is all you need.
 
-## Editing workflows
+New to the project? Start with the [Getting started guide](docs/getting-started.md).
 
-Three designers, one per container type that elsa-core executes:
+## Documentation
 
-- **Flowchart** (`Elsa.Flowchart`): free graph of steps joined by outcome ports.
-- **Sequence** (`Elsa.Sequence`): an ordered list; steps run top to bottom, a terminal step ends it
-  early. Reorder by dragging, insert with the + buttons. No manual connections exist, by design.
-- **State machine** (`Elsa.StateMachine`): states as nodes, transitions as edges. Each state can have
-  an entry and an exit activity; each transition a trigger (armed while the source state is current),
-  a condition and an action. Transitions without a trigger are automatic and evaluated in declaration
-  order; the first state becomes the initial state. State positions are stored in the activity's
-  designer metadata, everything else is exactly the server's model.
+| Guide | What it covers |
+|---|---|
+| [Getting started](docs/getting-started.md) | Install, run, connect to a server, first sign-in. |
+| [Configuration](docs/configuration.md) | **Adding servers**, authentication providers, feature flags, theming, environment variables. |
+| [Modules](docs/modules.md) | What every module does, how to enable it, and how to build a new one. |
+| [Designer](docs/designer.md) | Containers, the quick-add palette, data flow, call context, keyboard shortcuts. |
+| [Deployment](docs/deployment.md) | Docker image, standalone output, runtime configuration. |
+| [Troubleshooting](docs/troubleshooting.md) | CORS, hidden modules, sign-in failures, workflows from older Elsa versions. |
+| [Architecture](docs/ARCHITECTURE.md) | Module contract, data access, designer internals, conventions. |
 
-Pick the designer when creating a workflow. Containers nest: an If's branch, a state's entry or a
-transition's action can hold a flowchart, a sequence or another state machine, opened from the
-breadcrumb.
+## Screenshots
 
-The designer follows the interaction patterns of modern flow builders:
+### Dashboard
 
-- **Quick-add palette**: press `A`, double-click the canvas, click **+** on a step's port, or **+** on a
-  connection to search and place an activity; it is wired in automatically and recently used
-  activities are listed first.
-- **Context toolbar** on the selected step: add next, rename (`F2` or double-click), duplicate, mark a
-  trigger as the starting point, delete.
-- **Live checks**: disconnected steps and dangling connections are flagged on the canvas and listed in
-  the header; clicking a finding selects the step. Server-side validation still runs on save/publish.
-- **Keyboard**: undo/redo, copy/paste, select-all, save; the keyboard icon in the editor lists them.
-- **One toolbar**: the editor takes over the app header (breadcrumb with the editable workflow name,
-  Designer/Code switch, a View menu for panels and mini-map, save state, Publish, Run); the
-  properties pane shows the workflow's settings, or the selected step's inputs.
-- **Canvas controls**: zoom in/out/fit and the mini-map toggle sit bottom-left; editing actions
-  (Add, undo/redo, auto-layout) top-right. Steps with several outcomes let you pick which outcome to
-  append to or connect from; "Connect to…" wires a step to an existing one with a click.
-- **Straight connections and snapping**: a step's in-port sits on the same row as its out-port, so
-  aligned steps connect with a straight line; while dragging, a step snaps to neighbouring ports and
-  edges (within 6 px) and dashed helper lines show the alignment.
-- **Data flow**: the Variables and I/O tabs show how many steps write (↑) and read (↓) each item;
-  hovering highlights those steps on the canvas and clicking lists them. The data-flow overlay (View
-  menu or the database icon) draws dotted associations from writers to readers and tags each step with
-  the data it uses. Expression editors autocomplete `variables.X`, `getX()`, `getInput('X')` and
-  `getOutputFrom('Step', 'Output')`.
-- Auto-save is on by default (toggle it from the … menu) and leaving with unsaved changes asks for
-  confirmation. Lists offer quick filter chips, a column picker and a clear-filters shortcut.
+Throughput, status breakdown and per-workflow activity for the connected server.
 
-## Configuration
+![Dashboard](docs/images/dashboard.png)
 
-Configuration is resolved on the server for every request, so a container can be reconfigured
-without rebuilding. Sources, highest precedence first:
+### Workflow definitions
 
-1. `STUDIO_CONFIG` – a JSON document in an environment variable.
-2. `STUDIO_CONFIG_PATH` – path to a JSON file (default `./studio.config.json`).
-3. `STUDIO_*` overrides: `STUDIO_TITLE`, `STUDIO_SERVER_URL`, `STUDIO_SERVER_NAME`, `STUDIO_TENANT_ID`,
-   `STUDIO_AUTH_PROVIDER`, `STUDIO_API_KEY`, `STUDIO_OIDC_AUTHORITY`, `STUDIO_OIDC_CLIENT_ID`,
-   `STUDIO_OIDC_SCOPE`, `STUDIO_FEATURES` (comma-separated module ids to enable).
+Published and draft versions, labels, filtering and a column picker.
+
+![Workflow definitions](docs/images/workflow-definitions.png)
+
+### Call context
+
+See where a workflow sits in the hierarchy: every workflow that calls it on the left, everything it
+calls on the right, with the call type on each edge, cycles highlighted, and unresolved or missing
+targets called out. Drill into any node to open that workflow.
+
+![Call context](docs/images/call-context.png)
+
+### Instance viewer
+
+Replay a run against the diagram, with the journal, activity state, variables and incidents.
+
+![Instance viewer](docs/images/instance-viewer.png)
+
+### Human tasks
+
+Task detail with instructions, form fields, protected values and the recorded outcome.
+
+![User task](docs/images/user-task.png)
+
+Completion renders the task's pinned form, validates required fields and submits the response back to
+the workflow.
+
+![Completing a task](docs/images/user-task-form.png)
+
+### Secrets
+
+Credentials workflows reference by name. Values are write-only and never displayed.
+
+![Secrets](docs/images/secrets.png)
+
+### Themes
+
+Five palettes and light, dark or system appearance, selectable per user from the header.
+
+![Designer in dark mode](docs/images/designer-dark.png)
+
+## Configuration at a glance
+
+Configuration is resolved on the server for every request, so a container can be reconfigured without
+a rebuild. See [Configuration](docs/configuration.md) for the full reference.
 
 ```jsonc
 {
@@ -82,12 +123,7 @@ without rebuilding. Sources, highest precedence first:
     { "name": "Local", "url": "https://localhost:5001/elsa/api" },
     { "name": "Staging", "url": "https://staging.example.com/elsa/api", "tenantId": "tenant-1" }
   ],
-  "auth": {
-    "provider": "elsa-identity",                 // none | api-key | elsa-identity | oidc | elsa-external
-    "apiKey": { "key": "" },
-    "oidc": { "authority": "https://login.example.com", "clientId": "elsa-studio", "scope": "openid profile email" },
-    "elsaExternal": { "clientId": "elsa-studio" }
-  },
+  "auth": { "provider": "elsa-identity" },
   "features": {
     "environments": { "enabled": true },
     "labels": { "enabled": true },
@@ -104,50 +140,45 @@ without rebuilding. Sources, highest precedence first:
 }
 ```
 
-### Themes
+Nothing in this document is secret: it is shipped to the browser.
 
-`ui.theme` selects the default Elsa palette: `classic`, `workflow-constellation`, `workflow-aurora`,
-`execution-timeline` or `human-automation` (the same packs as the Blazor studio). `ui.defaultTheme`
-selects the appearance (`light`, `dark`, `system`). Users can override both from the palette menu in
-the header; the choice is remembered per browser. All colours are CSS variables defined per palette in
-`src/app/globals.css`, so components never hard-code hues: status colours come from
-`--status-*`, the canvas and React Flow from `--elsa-canvas*` and the `--xy-*` overrides.
+## Project layout
 
-The full schema (with defaults) lives in `src/config/schema.ts`. Nothing in the configuration is
-secret: it is shipped to the browser.
-
-### Authentication providers
-
-| provider        | How it works                                                                                  |
-|-----------------|-----------------------------------------------------------------------------------------------|
-| `none`          | No credentials; use when the Elsa server runs with security disabled.                          |
-| `api-key`       | Sends `Authorization: ApiKey <key>` on every request (Elsa's default authentication feature).  |
-| `elsa-identity` | Username/password login against `/identity/login`; JWT access token with silent refresh via `/identity/refresh-token`; logout revokes the session. |
-| `oidc`          | OpenID Connect authorization-code flow with PKCE in the browser (`oidc-client-ts`); the access token (or id token) is sent as bearer. Callback route: `/auth/callback`. |
-| `elsa-external` | Elsa's External Authentication broker: lists the server's login methods (local and external identity providers), runs the PKCE code flow against the Elsa server and exchanges the code at `/external-authentication/token`. Callback route: `/auth/callback`. |
-
-Permissions in the token's `permissions` claim drive what the UI shows (`resource:verb`, with
-wildcards). Tokens without the claim are treated as "unknown" and the UI shows everything; the
-server remains the authority.
+```
+src/
+  app/                      Next.js routes; the catch-all delegates to the module registry
+  config/                   runtime configuration: zod schema, server loader, React provider
+  lib/
+    api/                    HTTP client, typed endpoint groups, TanStack Query provider
+    auth/                   AuthStrategy contract and the five providers
+    modules/                StudioModule contract, registry, route matcher
+    permissions/            resource:verb permission set mirroring the server
+  components/
+    ui/                     shadcn components (generated)
+    common/                 shared building blocks (DataTable, PageHeader, ConfirmProvider, …)
+    shell/                  app shell, sidebar, header, login
+  modules/                  one folder per feature module
+```
 
 ## Scripts
 
-- `pnpm dev` – development server
-- `pnpm build` / `pnpm start` – production build (`output: "standalone"`) and server
-- `pnpm lint` – ESLint
-- `npx tsc --noEmit` – type-check
+| Command | Purpose |
+|---|---|
+| `pnpm dev` | Development server on port 3000. |
+| `pnpm build` / `pnpm start` | Production build (standalone output) and server. |
+| `pnpm test` | Unit tests (Vitest). |
+| `pnpm lint` | ESLint. |
+| `npx tsc --noEmit` | Type check. |
 
 ## Docker
 
 ```bash
-docker build -t elsa-studio-next .
-docker run -p 3000:3000 -e STUDIO_SERVER_URL=https://elsa.example.com/elsa/api -e STUDIO_FEATURES=labels,security elsa-studio-next
+docker build -t elsa-studio-react .
+docker run -p 3000:3000 \
+  -e STUDIO_SERVER_URL=https://elsa.example.com/elsa/api \
+  -e STUDIO_FEATURES=labels,secrets,security \
+  elsa-studio-react
 ```
 
-Mount a `studio.config.json` at `/app/studio.config.json` (or set `STUDIO_CONFIG`) for the full
-configuration.
-
-## Architecture
-
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the module contract, data access, designer
-internals and conventions for adding a module.
+Mount a `studio.config.json` at `/app/studio.config.json`, or pass the whole document in
+`STUDIO_CONFIG`, for the full configuration. See [Deployment](docs/deployment.md).
