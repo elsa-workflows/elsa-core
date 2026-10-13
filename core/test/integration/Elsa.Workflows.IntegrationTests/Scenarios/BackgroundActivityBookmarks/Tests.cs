@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
@@ -47,8 +48,10 @@ public class Tests
 
     private static void AssertBookmarkRestored(WorkflowState state)
     {
-        Assert.Empty(state.Incidents);
+        Assert.True(state.Incidents.Count == 0, $"The background activity faulted: {state.Incidents.FirstOrDefault()?.Exception?.Message}");
         Assert.Equal(WorkflowSubStatus.Suspended, state.SubStatus);
+        Assert.True(state.Bookmarks.Any(IsBackgroundBookmark), "The resumed run did not restore the bookmark the background work created.");
+        // DistinctBy is deliberate until #8809 is fixed: AddBookmarks appends the restored bookmarks without de-duplicating.
         var bookmark = Assert.Single(state.Bookmarks.Where(IsBackgroundBookmark).DistinctBy(x => x.Id));
         var payload = Assert.IsType<EventBookmarkPayload>(bookmark.Payload);
         Assert.Equal(EventName, payload.EventName);
@@ -64,11 +67,12 @@ public class Tests
         await connection.OpenAsync();
         var signal = new TaskCompletionSource<WorkflowState>(TaskCreationOptions.RunContinuationsAsynchronously);
         var legacyStore = new LegacyShapeObserver();
+        var stimulusBookmarkSeen = new StrongBox<bool>(); // Shared: the handler is created per notification.
 
         var host = Host.CreateDefaultBuilder()
             .ConfigureServices(services =>
             {
-                services.AddNotificationHandler<CommitSignal, WorkflowStateCommitted>(_ => new(signal));
+                services.AddNotificationHandler<CommitSignal, WorkflowStateCommitted>(_ => new(signal, stimulusBookmarkSeen));
                 services.AddElsa(elsa => elsa
                     .AddActivity<BookmarkingActivity>()
                     .UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore(ef => ef.UseSqlite(connection.ConnectionString))));
@@ -94,14 +98,18 @@ public class Tests
             }, null);
             response.ThrowIfFailed();
 
-            var state = await signal.Task.WaitAsync(TimeSpan.FromSeconds(30));
+            // Fail fast: before #8804 the resumed run faults or never restores the bookmark, so don't wait long.
+            var completed = await Task.WhenAny(signal.Task, Task.Delay(TimeSpan.FromSeconds(5)));
+            Assert.True(completed == signal.Task, "The resumed run did not restore the background activity's bookmark within 5 seconds.");
+            var state = await signal.Task;
             if (saveInLegacyShape)
                 Assert.True(legacyStore.SavedLegacyShape, "Expected the bookmark queue item to be saved in the pre-#8804 shape.");
             return state;
         }
         finally
         {
-            await host.StopAsync();
+            using var stopTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            await host.StopAsync(stopTimeout.Token);
         }
     }
 
@@ -116,13 +124,19 @@ public class Tests
         protected override void Execute(ActivityExecutionContext context) => context.CreateBookmark(new EventBookmarkPayload(EventName));
     }
 
-    /// <summary>Completes once the resumed run has restored the background bookmark, or has faulted.</summary>
-    private class CommitSignal(TaskCompletionSource<WorkflowState> signal) : INotificationHandler<WorkflowStateCommitted>
+    /// <summary>
+    /// Completes once the resumed run has finished with the background activity: it restored the bookmark, faulted, or
+    /// consumed the stimulus bookmark without restoring anything. The last case lets the old code fail immediately.
+    /// </summary>
+    private class CommitSignal(TaskCompletionSource<WorkflowState> signal, StrongBox<bool> stimulusBookmarkSeen) : INotificationHandler<WorkflowStateCommitted>
     {
         public Task HandleAsync(WorkflowStateCommitted notification, CancellationToken cancellationToken)
         {
             var state = notification.WorkflowState;
-            if (state.Incidents.Any() || state.Bookmarks.Any(IsBackgroundBookmark))
+            var hasStimulusBookmark = state.Bookmarks.Any(x => x.Payload is Elsa.Workflows.Runtime.Stimuli.BackgroundActivityStimulus);
+            stimulusBookmarkSeen.Value |= hasStimulusBookmark;
+
+            if (state.Incidents.Any() || state.Bookmarks.Any(IsBackgroundBookmark) || (stimulusBookmarkSeen.Value && !hasStimulusBookmark))
                 signal.TrySetResult(state);
             return Task.CompletedTask;
         }
