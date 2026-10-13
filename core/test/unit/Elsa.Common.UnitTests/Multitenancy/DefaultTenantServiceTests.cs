@@ -145,7 +145,33 @@ public class DefaultTenantServiceTests
         }
     }
 
-    private static Task<(ITenantService TenantService, ServiceProvider ServiceProvider)> CreateTenantServiceAsync(IEnumerable<Tenant> tenants, Func<List<Tenant>>? tenantsFactory = null, ITenantActivatedEvent? activatedEvent = null)
+    [Fact]
+    public async Task ActivateTenantsAsync_WhenLaterTenantFails_DeactivatesTenantsThatActivated()
+    {
+        var tenantA = new Tenant { Id = "a", Name = "A" };
+        var tenantB = new Tenant { Id = "b", Name = "B" };
+        var activatedEvent = Substitute.For<ITenantActivatedEvent>();
+        activatedEvent.TenantActivatedAsync(Arg.Is<TenantActivatedEventArgs>(x => x.Tenant.Id == "b"))
+            .Returns(Task.FromException(new InvalidOperationException("Migration failed")));
+        var deactivatedEvent = Substitute.For<ITenantDeactivatedEvent>();
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync([tenantA, tenantB], activatedEvent: activatedEvent, deactivatedEvent: deactivatedEvent);
+
+        try
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() => tenantService.ActivateTenantsAsync());
+
+            await deactivatedEvent.Received(1).TenantDeactivatedAsync(Arg.Is<TenantDeactivatedEventArgs>(x => x.Tenant.Id == "a"));
+            await deactivatedEvent.DidNotReceive().TenantDeactivatedAsync(Arg.Is<TenantDeactivatedEventArgs>(x => x.Tenant.Id == "b"));
+        }
+        finally
+        {
+            if (tenantService is IAsyncDisposable disposable)
+                await disposable.DisposeAsync();
+            await serviceProvider.DisposeAsync();
+        }
+    }
+
+    private static Task<(ITenantService TenantService, ServiceProvider ServiceProvider)> CreateTenantServiceAsync(IEnumerable<Tenant> tenants, Func<List<Tenant>>? tenantsFactory = null, ITenantActivatedEvent? activatedEvent = null, ITenantDeactivatedEvent? deactivatedEvent = null)
     {
         var tenantList = tenants.ToList();
         var getTenants = tenantsFactory ?? (() => tenantList);
@@ -158,7 +184,7 @@ public class DefaultTenantServiceTests
         services.AddSingleton<ITenantScopeFactory, DefaultTenantScopeFactory>();
         services.AddSingleton<ITenantAccessor, DefaultTenantAccessor>();
         services.AddSingleton(activatedEvent ?? Substitute.For<ITenantActivatedEvent>());
-        services.AddSingleton<ITenantDeactivatedEvent>(Substitute.For<ITenantDeactivatedEvent>());
+        services.AddSingleton(deactivatedEvent ?? Substitute.For<ITenantDeactivatedEvent>());
         services.AddSingleton<ITenantDeletedEvent>(Substitute.For<ITenantDeletedEvent>());
         services.AddSingleton<TenantEventsManager>();
         services.AddSingleton<RecurringTaskScheduleManager>();

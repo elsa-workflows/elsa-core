@@ -9,4 +9,4 @@ Now:
 - If initial activation fails, tenants that already activated are deactivated again, so the tenant service does not stay half-started.
 - Tenant deactivated and deleted handlers are unchanged: failures are logged and the remaining handlers still run.
 
-**What to do:** fix the cause of the failing startup task (the log shows the original exception). If you relied on startup continuing past such a failure, that is no longer supported; for migrations, `Elsa:RunMigrations=false` still lets you apply them out of band.
+**What to do:** fix the cause of the failing startup task (the log shows the original exception). If you relied on startup continuing past such a failure, that is no longer supported; for migrations, you can still turn off automatic migrations by setting `RunMigrations = false` in code on the EF Core persistence feature, and apply them out of band.
