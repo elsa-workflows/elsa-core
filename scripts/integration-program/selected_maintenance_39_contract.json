@@ -79,7 +79,7 @@
       },
       "fixture": {
         "path": "scripts/integration-program/selected-extensions-consumer/Program.cs",
-        "sha256": "9aae81f09558f01d906dadb8ae44acfde918a4302973dde37bf3235a534f7266"
+        "sha256": "8b4bc45ad1e19b0d2e316f9f03f5deafe11308f19dbcc614ec61bf21e568d87a"
       },
       "solution": "Elsa.Extensions.sln",
       "test_projects": {
