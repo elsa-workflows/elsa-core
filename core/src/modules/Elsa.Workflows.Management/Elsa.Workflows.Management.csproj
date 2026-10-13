@@ -24,4 +24,8 @@
         <ProjectReference Include="..\Elsa.Workflows.Core\Elsa.Workflows.Core.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <InternalsVisibleTo Include="Elsa.Workflows.Management.UnitTests" />
+    </ItemGroup>
+
 </Project>

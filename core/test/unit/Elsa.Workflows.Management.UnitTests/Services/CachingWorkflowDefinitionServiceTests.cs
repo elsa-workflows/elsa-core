@@ -1,5 +1,6 @@
 using Elsa.Caching;
 using Elsa.Caching.Options;
+using Elsa.Caching.Services;
 using Elsa.Common.Models;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Entities;
@@ -482,6 +483,28 @@ public class CachingWorkflowDefinitionServiceTests
         var result2 = results.First(r => r.WorkflowDefinition?.DefinitionId == "def-2");
         Assert.Same(definition2, result2.WorkflowDefinition);
         Assert.Null(result2.WorkflowGraph);
+    }
+
+    [Fact]
+    public async Task FindWorkflowDefinitionAsync_WhenNotFound_DoesNotCacheNull()
+    {
+        // Arrange
+        var definition = TestHelpers.CreateWorkflowDefinition(DefaultDefinitionId, DefaultMaterializerName);
+        using var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var cachingOptions = Microsoft.Extensions.Options.Options.Create(new CachingOptions { CacheDuration = TimeSpan.FromMinutes(10) });
+        _cacheManager.Cache.Returns(new CacheManager(memoryCache, Substitute.For<IChangeTokenSignaler>(), cachingOptions));
+        _cacheManager.CreateWorkflowDefinitionVersionCacheKey(DefaultDefinitionId, VersionOptions.Published).Returns("cache-key");
+        _decoratedService.FindWorkflowDefinitionAsync(DefaultDefinitionId, VersionOptions.Published, Arg.Any<CancellationToken>())
+            .Returns((WorkflowDefinition?)null, definition);
+        var service = CreateService();
+
+        // Act
+        var first = await service.FindWorkflowDefinitionAsync(DefaultDefinitionId, VersionOptions.Published);
+        var second = await service.FindWorkflowDefinitionAsync(DefaultDefinitionId, VersionOptions.Published);
+
+        // Assert
+        Assert.Null(first);
+        Assert.Same(definition, second);
     }
 
     private CachingWorkflowDefinitionService CreateService()
