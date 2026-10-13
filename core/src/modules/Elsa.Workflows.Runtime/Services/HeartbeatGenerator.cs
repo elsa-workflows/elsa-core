@@ -23,11 +23,20 @@ public class HeartbeatGenerator : IDisposable
         {
             _logger.LogDebug("Generating heartbeat");
             await _heartbeatAction();
-            _timer.Change(_interval, Timeout.InfiniteTimeSpan);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "An error occurred while generating a workflow heartbeat.");
+        }
+
+        // Re-arm even after a failed update, so one transient error does not stop the heartbeat for the rest of the execution cycle.
+        try
+        {
+            _timer.Change(_interval, Timeout.InfiniteTimeSpan);
+        }
+        catch (ObjectDisposedException)
+        {
+            // The execution cycle ended while the heartbeat was running.
         }
     }
 
