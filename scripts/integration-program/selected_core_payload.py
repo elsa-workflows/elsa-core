@@ -15,7 +15,7 @@ from uuid import UUID
 import core_source_continuation as continuation
 import prove_consolidated_packages as archives
 from prove_consolidated_packages import require
-from selected_control_transport import MAX_PACKAGE_BYTES, closed, digest, integer, safe_name, unique_names, strict_json
+from selected_control_transport import MAX_PACKAGE_BYTES, closed, digest, integer, is_canonical_sha512, safe_name, unique_names, strict_json
 
 FRAMEWORKS = ('net8.0', 'net9.0', 'net10.0')
 SAMPLE_PROJECT = 'src/apps/Elsa.SamplePackage/Elsa.SamplePackage.csproj'
@@ -196,10 +196,7 @@ def _manifest_hint_producer(value: dict, policy: dict) -> None:
             value['feed'] == archives.GENERATOR_FEED and
             value['archive_entry'] in archives.GENERATOR_SOURCE_ENTRIES[version], 'core_payload_manifest_hint_identity')
     checksum = value['restore_sha512']
-    require(type(checksum) is str, 'core_payload_manifest_hint_restore')
-    decoded = base64.b64decode(checksum, validate=True)
-    require(len(decoded) == 64 and base64.b64encode(decoded).decode() == checksum,
-            'core_payload_manifest_hint_restore')
+    require(is_canonical_sha512(checksum), 'core_payload_manifest_hint_restore')
     targets = _rows(policy['metadata']['manifest_content_targets'], 'core_payload_manifest_hint_targets')
     require(len(targets) == 1, 'core_payload_manifest_hint_targets')
     target = closed(targets[0], {'id', 'version', 'restore_sha512', 'entry', 'sha256'},

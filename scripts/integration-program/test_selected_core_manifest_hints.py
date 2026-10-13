@@ -12,6 +12,7 @@ import prove_consolidated_packages as archives
 import selected_control_seal as seal
 import selected_control_transport as transport
 import selected_studio_payload as payload
+import selected_studio_plan_schema as plan_schema
 import test_core_source_continuation as candidate_tests
 import test_prepare_maintenance_build as maintenance_tests
 import test_selected_control_transport as transport_tests
@@ -97,6 +98,7 @@ class CoreManifestHintSealTests(unittest.TestCase):
                     with self.subTest(line=line, kind=kind, framework=framework):
                         values, pin, emitted = self.emitted_fixture(line, kind, framework)
                         self.assertEqual(emitted['family'], 'manifest-hints')
+                        self.assertTrue(emitted['producer']['restore_sha512'].startswith('/'))
                         with patch.dict(archives.GENERATOR_SOURCE_PINS, {VERSION: pin}), \
                              patch('pathlib.Path.read_bytes', side_effect=AssertionError('pure file IO')), \
                              patch.object(maintenance, 'git', side_effect=AssertionError('pure Git')), \
@@ -176,6 +178,25 @@ class CoreManifestHintSealTests(unittest.TestCase):
                 forged = files | {transport.MANIFEST: encoded(manifest)}
                 with self.subTest(mutation=name, boundary='readback'), self.assertRaises(ValueError):
                     self.readback(changed, forged)
+
+    def test_manifest_restore_hash_is_canonical_base64_only_at_its_typed_plan_field(self):
+        path = 'inventory.selected[].metadata.manifest_content_targets[].restore_sha512'
+        values = [base64.b64encode(bytes([byte]) * 64).decode() for byte in (255, 251)]
+        self.assertEqual(['/', '+'], [value[0] for value in values])
+        now = product_fixture('core', '3.8')[2]
+        for value in values:
+            with self.subTest(prefix=value[0]):
+                plan_schema._walk(value, path, now=now)
+        alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+        checksum = values[0]
+        noncanonical = checksum[:85] + alphabet[alphabet.index(checksum[85]) | 1] + '=='
+        for value in ('/private/cache', '!' * 88, base64.b64encode(b'x' * 63).decode(), noncanonical):
+            with self.subTest(invalid=value), self.assertRaisesRegex(ValueError, 'selected_plan_manifest_restore_hash'):
+                plan_schema._walk(value, path, now=now)
+        for path in ('mode', 'inventory.selected[].metadata.dependency_groups[].dependencies[].version'):
+            for value in ('/private/cache', checksum):
+                with self.subTest(path=path), self.assertRaisesRegex(ValueError, 'selected_plan_private_string'):
+                    plan_schema._walk(value, path, now=now)
 
     def test_synthetic_archive_is_rejected_by_unpatched_official_pin(self):
         values, _, _ = self.emitted_fixture()

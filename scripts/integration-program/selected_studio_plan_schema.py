@@ -149,6 +149,8 @@ def _walk(value, path='', *, now: datetime):
             transport.digest(value)
         elif key in {'commit', 'tree', 'original_commit', 'original_tree', 'contained_commit', 'contained_tree', 'source_commit', 'source_tree', 'sha'} or path.endswith(('.parents[]', '.original_parents[]')):
             transport.digest(value, 40)
+        elif path == 'inventory.selected[].metadata.manifest_content_targets[].restore_sha512':
+            require(transport.is_canonical_sha512(value), 'selected_plan_manifest_restore_hash')
         else:
             require(not value.startswith(('/', '\\')) and ':' not in value and not re.match(r'[A-Za-z]:', value),
                     'selected_plan_private_string')

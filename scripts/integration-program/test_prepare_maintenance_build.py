@@ -442,7 +442,8 @@ class MaintenanceContracts(unittest.TestCase):
         archive = package / f'{identifier}.{version}.nupkg'
         with zipfile.ZipFile(archive, 'w') as contents:
             for entry in sorted(consolidated.GENERATOR_SOURCE_ENTRIES[version]):
-                contents.writestr(entry, b'hints')
+                # Fixed bytes exercise a canonical preview.53 SHA-512 beginning with '/'.
+                contents.writestr(zipfile.ZipInfo(entry, (2000, 1, 1, 0, 2, 48)), b'hints')
                 extracted = package / entry
                 extracted.parent.mkdir(parents=True, exist_ok=True)
                 extracted.write_bytes(b'hints')

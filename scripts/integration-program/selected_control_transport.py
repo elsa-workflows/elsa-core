@@ -34,6 +34,17 @@ MANIFEST = 'preupload-manifest.json'
 TRANSPORT_SCOPE = 'transport-only-not-selected-control-acceptance'
 
 
+def is_canonical_sha512(value: object) -> bool:
+    """Recognize exactly one canonical base64 encoding of a 64-byte SHA-512."""
+    if type(value) is not str or len(value) != 88:
+        return False
+    try:
+        decoded = base64.b64decode(value, validate=True)
+    except ValueError:
+        return False
+    return len(decoded) == 64 and base64.b64encode(decoded).decode() == value
+
+
 def closed(value: object, keys: set[str], label: str) -> dict:
     """Require an ordinary dictionary with exactly the allowed keys."""
     require(type(value) is dict and set(value) == keys, label + '_schema')
