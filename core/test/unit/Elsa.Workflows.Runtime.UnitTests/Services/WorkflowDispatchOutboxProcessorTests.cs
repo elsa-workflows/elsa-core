@@ -108,12 +108,12 @@ public class WorkflowDispatchOutboxProcessorTests
         await _store.Received(1).FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>());
     }
 
-    private WorkflowDispatchOutboxProcessor CreateProcessor(IDistributedLockProvider? distributedLockProvider = null, ITenantAccessor? tenantAccessor = null, ITenantFinder? tenantFinder = null)
+    private WorkflowDispatchOutboxProcessor CreateProcessor(IDistributedLockProvider? distributedLockProvider = null, ITenantAccessor? tenantAccessor = null, ITenantFinder? tenantFinder = null, IWorkflowDispatcher? innerDispatcher = null)
     {
         return new(
             _store,
             _workflowInstanceStore,
-            _innerDispatcher,
+            innerDispatcher ?? _innerDispatcher,
             distributedLockProvider ?? new NoopDistributedSynchronizationProvider(),
             _systemClock,
             Microsoft.Extensions.Options.Options.Create(new DistributedLockingOptions()),
@@ -427,19 +427,50 @@ public class WorkflowDispatchOutboxProcessorTests
     }
 
     [Fact]
-    public async Task ProcessAsync_DoesNotCreateChildTwice_WhenRetryFindsChildAlreadyCreated()
+    public async Task ProcessAsync_AsksInnerDispatcherToSkipExistingChild()
     {
         var item = CreateItem();
+        item.WorkflowDefinitionCommand!.SkipIfInstanceExists = true;
         _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([item]);
         _workflowInstanceStore.FindAsync(OwnerFilter(), Arg.Any<CancellationToken>())
-            .Returns(_ => new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: true)));
-        _workflowInstanceStore.FindAsync(Arg.Is<WorkflowInstanceFilter>(x => x.Id == item.WorkflowDefinitionCommand!.InstanceId), Arg.Any<CancellationToken>())
-            .Returns(new ValueTask<WorkflowInstance?>(new WorkflowInstance { Id = item.WorkflowDefinitionCommand!.InstanceId! }));
+            .Returns(new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: true)));
 
         await _processor.ProcessAsync();
 
-        await _innerDispatcher.DidNotReceiveWithAnyArgs().DispatchAsync(default(DispatchWorkflowDefinitionRequest)!, default, default);
-        await _store.Received(1).DeleteAsync(item.Id, Arg.Any<CancellationToken>());
+        await _innerDispatcher.Received(1).DispatchAsync(
+            Arg.Is<DispatchWorkflowDefinitionRequest>(x => x.InstanceId == "child-outbox-1" && x.SkipIfInstanceExists),
+            Arg.Any<DispatchWorkflowOptions?>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public void BackgroundDispatchCommand_CarriesSkipIfInstanceExistsFromRequest()
+    {
+        var command = WorkflowDispatchCommandFactory.CreateCommand(new DispatchWorkflowDefinitionRequest("definition-version-1")
+        {
+            InstanceId = "child-1",
+            SkipIfInstanceExists = true
+        });
+
+        Assert.Equal("child-1", command.InstanceId);
+        Assert.True(command.SkipIfInstanceExists);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_SendsDispatchNotificationsExactlyOnce_AtDelivery()
+    {
+        var notificationSender = Substitute.For<INotificationSender>();
+        var background = new BackgroundWorkflowDispatcher(Substitute.For<ICommandSender>(), notificationSender, new DefaultTenantAccessor());
+        var processor = CreateProcessor(innerDispatcher: background);
+        var item = CreateItem();
+        _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([item]);
+        _workflowInstanceStore.FindAsync(OwnerFilter(), Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: true)));
+
+        await processor.ProcessAsync();
+
+        await notificationSender.Received(1).SendAsync(Arg.Any<Elsa.Workflows.Runtime.Notifications.WorkflowDefinitionDispatching>(), Arg.Any<CancellationToken>());
+        await notificationSender.Received(1).SendAsync(Arg.Any<Elsa.Workflows.Runtime.Notifications.WorkflowDefinitionDispatched>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

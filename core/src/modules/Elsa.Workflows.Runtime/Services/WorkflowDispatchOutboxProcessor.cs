@@ -193,17 +193,9 @@ public class WorkflowDispatchOutboxProcessor(
         logger.LogDebug("Delivered workflow dispatch outbox item {OutboxItemId} for owner workflow {WorkflowInstanceId} on channel {Channel}", item.Id, item.OwnerWorkflowInstanceId, item.Channel ?? "(default)");
     }
 
-    private async Task<DispatchWorkflowResponse> DispatchDefinitionAsync(DispatchWorkflowDefinitionCommand command, DispatchWorkflowOptions options, CancellationToken cancellationToken)
+    private Task<DispatchWorkflowResponse> DispatchDefinitionAsync(DispatchWorkflowDefinitionCommand command, DispatchWorkflowOptions options, CancellationToken cancellationToken)
     {
-        // The child's instance ID is fixed when the item is enqueued. If an earlier attempt already created it (for
-        // example, delivery succeeded but deleting the item failed), a retry must not create it again.
-        if (!string.IsNullOrWhiteSpace(command.InstanceId) && await workflowInstanceStore.FindAsync(new WorkflowInstanceFilter { Id = command.InstanceId }, cancellationToken) != null)
-        {
-            logger.LogDebug("Skipping delivery of workflow {WorkflowInstanceId} because it already exists", command.InstanceId);
-            return DispatchWorkflowResponse.Success();
-        }
-
-        return await innerDispatcher.DispatchAsync(new DispatchWorkflowDefinitionRequest(command.DefinitionVersionId)
+        return innerDispatcher.DispatchAsync(new DispatchWorkflowDefinitionRequest(command.DefinitionVersionId)
         {
             ParentWorkflowInstanceId = command.ParentWorkflowInstanceId,
             Input = command.Input,
@@ -213,7 +205,10 @@ public class WorkflowDispatchOutboxProcessor(
             TriggerActivityId = command.TriggerActivityId,
             SchedulingActivityExecutionId = command.SchedulingActivityExecutionId,
             SchedulingWorkflowInstanceId = command.SchedulingWorkflowInstanceId,
-            SchedulingCallStackDepth = command.SchedulingCallStackDepth
+            SchedulingCallStackDepth = command.SchedulingCallStackDepth,
+            // The child's instance ID is fixed at enqueue; the dispatcher checks for it right before creating the child,
+            // so a retried delivery cannot create it twice.
+            SkipIfInstanceExists = command.SkipIfInstanceExists
         }, options, cancellationToken);
     }
 

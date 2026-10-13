@@ -1,9 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Elsa.Common;
 using Elsa.Common.Multitenancy;
-using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Runtime.Models;
-using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Responses;
@@ -19,7 +17,6 @@ public class TransactionalWorkflowDispatcher(
     IWorkflowDispatcher decoratedService,
     IServiceProvider serviceProvider,
     IWorkflowDispatchOutboxAccessor outboxAccessor,
-    INotificationSender notificationSender,
     IIdentityGenerator identityGenerator,
     IOptions<WorkflowDispatcherOptions> options,
     ITenantAccessor? tenantAccessor = null) : IWorkflowDispatcher
@@ -30,7 +27,6 @@ public class TransactionalWorkflowDispatcher(
         if (!TryGetWorkflowExecutionContext(out var context))
             return await decoratedService.DispatchAsync(request, dispatchOptions, cancellationToken);
 
-        await notificationSender.SendAsync(new WorkflowDefinitionDispatching(request), cancellationToken);
         var generatedInstanceId = string.IsNullOrWhiteSpace(request.InstanceId) ? identityGenerator.GenerateId() : null;
 
         await GetOutbox().EnqueueAsync(context, new()
@@ -41,9 +37,8 @@ public class TransactionalWorkflowDispatcher(
             WorkflowDefinitionCommand = WorkflowDispatchCommandFactory.CreateCommand(request, generatedInstanceId)
         }, cancellationToken);
 
-        var response = DispatchWorkflowResponse.Success();
-        await notificationSender.SendAsync(new WorkflowDefinitionDispatched(request, response), cancellationToken);
-        return response;
+        // Dispatching/Dispatched notifications are sent by the inner dispatcher when the outbox delivers the item.
+        return DispatchWorkflowResponse.Success();
     }
 
     /// <inheritdoc />
@@ -51,8 +46,6 @@ public class TransactionalWorkflowDispatcher(
     {
         if (!TryGetWorkflowExecutionContext(out var context))
             return await decoratedService.DispatchAsync(request, dispatchOptions, cancellationToken);
-
-        await notificationSender.SendAsync(new WorkflowInstanceDispatching(request), cancellationToken);
 
         await GetOutbox().EnqueueAsync(context, new()
         {
@@ -62,9 +55,8 @@ public class TransactionalWorkflowDispatcher(
             WorkflowInstanceCommand = WorkflowDispatchCommandFactory.CreateCommand(request)
         }, cancellationToken);
 
-        var response = DispatchWorkflowResponse.Success();
-        await notificationSender.SendAsync(new WorkflowInstanceDispatched(request, response), cancellationToken);
-        return response;
+        // Dispatching/Dispatched notifications are sent by the inner dispatcher when the outbox delivers the item.
+        return DispatchWorkflowResponse.Success();
     }
 
     /// <inheritdoc />

@@ -35,6 +35,9 @@ public class MassTransitWorkflowDispatcherFeature(ShellFeatureContext context) :
         services.AddScoped<MassTransitWorkflowDispatcher>();
         services.AddScoped<ValidatingWorkflowDispatcher>();
 
+        // The workflow dispatch outbox delivers through the inner dispatcher, so it must be MassTransit too.
+        services.AddKeyedScoped<IWorkflowDispatcher>(WorkflowDispatcherServiceKeys.Inner, (sp, _) => sp.GetRequiredService<MassTransitWorkflowDispatcher>());
+
         // Register as factory delegates that will be picked up by WorkflowRuntime.
         // Same decorator shape as core: Validating → Transactional → MassTransit.
         services.AddSingleton<Func<IServiceProvider, IWorkflowDispatcher>>(sp =>

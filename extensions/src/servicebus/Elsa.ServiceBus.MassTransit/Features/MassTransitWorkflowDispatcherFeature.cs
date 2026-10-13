@@ -52,6 +52,9 @@ public class MassTransitWorkflowDispatcherFeature : FeatureBase
         Module.AddMassTransitConsumer<DispatchStimulusRequestConsumer, DispatchStimulusRequestConsumerDefinition>("elsa-dispatch-stimulus");
         Module.Configure<WorkflowRuntimeFeature>(f =>
         {
+            // The workflow dispatch outbox delivers through the inner dispatcher, so it must be MassTransit too.
+            f.InnerWorkflowDispatcher = sp => ActivatorUtilities.CreateInstance<MassTransitWorkflowDispatcher>(sp);
+
             // Same decorator shape as core: Validating → Transactional → MassTransit.
             f.WorkflowDispatcher = sp =>
             {

@@ -44,6 +44,20 @@ public class MassTransitWorkflowDispatcherFeatureTests
         var dispatcher = workflowRuntime.WorkflowDispatcher(provider);
 
         AssertDecoratorChain(dispatcher);
+        Assert.IsType<MassTransitWorkflowDispatcher>(workflowRuntime.InnerWorkflowDispatcher(provider));
+    }
+
+    [Fact]
+    public void ShellFeature_RegistersMassTransitAsInnerDispatcherForOutbox()
+    {
+        var services = CreateDispatcherServices();
+        var feature = new ShellMassTransitWorkflowDispatcherFeature(new ShellFeatureContext(new ShellSettings(), []));
+
+        feature.ConfigureServices(services);
+
+        using var provider = services.BuildServiceProvider();
+        using var scope = provider.CreateScope();
+        Assert.IsType<MassTransitWorkflowDispatcher>(scope.ServiceProvider.GetRequiredKeyedService<IWorkflowDispatcher>(WorkflowDispatcherServiceKeys.Inner));
     }
 
     [Fact]
