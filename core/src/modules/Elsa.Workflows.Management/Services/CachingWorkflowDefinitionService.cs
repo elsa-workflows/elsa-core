@@ -5,6 +5,7 @@ using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Models;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Primitives;
 
 namespace Elsa.Workflows.Management.Services;
 
@@ -166,6 +167,11 @@ public class CachingWorkflowDefinitionService(
             {
                 var changeTokenKey = cacheManager.CreateWorkflowDefinitionChangeTokenKey(getChangeTokenKeyFunc(obj));
                 entry.AddExpirationToken(cache.GetToken(changeTokenKey));
+            }
+            else
+            {
+                // Don't cache "not found": no change token can be bound to it, so it would outlive a later publish.
+                entry.AddExpirationToken(new CancellationChangeToken(new CancellationToken(canceled: true)));
             }
 
             return obj;
