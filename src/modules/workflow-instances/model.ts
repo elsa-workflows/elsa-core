@@ -98,3 +98,175 @@ export function groupBy<T, K>(items: T[], key: (item: T) => K): Map<K, T[]> {
   }
   return map;
 }
+
+/* ------------------------------------------------------------------------------------------------
+ * Journal spans
+ *
+ * The journal arrives as a flat event log: every activity emits Started, then some combination of
+ * Suspended / Resumed, then Completed or Faulted. Rendered one row per event it is mostly repetition
+ * -- three activities produced eight near-identical rows in the old list.
+ *
+ * These helpers fold the events of one activity execution into a single span (status + duration) and
+ * rebuild the nesting the workflow actually had. Hierarchy comes from `nodeId`, which is a
+ * colon-delimited path (`Workflow1:flowchart1:reviewOrder`); `parentActivityInstanceId` is used when
+ * the server sends it, which not every version does.
+ * ---------------------------------------------------------------------------------------------- */
+
+export interface JournalException {
+  type?: string;
+  message?: string;
+  source?: string;
+  stackTrace?: string;
+}
+
+/** The exception a faulted journal record carries; the server puts it in `payload`, not in a typed field. */
+export function journalException(record: WorkflowExecutionLogRecord): JournalException | undefined {
+  const payload = record.payload as Record<string, unknown> | undefined;
+  if (!payload || typeof payload.exception !== "string") return undefined;
+  const read = (key: string) => (typeof payload[key] === "string" ? (payload[key] as string) : undefined);
+  return { type: payload.exception, message: read("message"), source: read("source"), stackTrace: read("stackTrace") };
+}
+
+export type JournalSpanStatus = "running" | "completed" | "faulted" | "suspended" | "cancelled";
+
+export interface JournalSpan {
+  /** Stable across re-renders: the activity instance, or the node path when the server omits it. */
+  key: string;
+  activityId: string;
+  activityInstanceId?: string;
+  nodeId: string;
+  name: string;
+  activityType: string;
+  /** A container the engine added (workflow, flowchart, sequence) rather than an activity the author placed. */
+  isContainer: boolean;
+  status: JournalSpanStatus;
+  startedAt?: string;
+  endedAt?: string;
+  durationMs?: number;
+  /** Every event folded into this span, in order. */
+  events: WorkflowExecutionLogRecord[];
+  /** The event a click should select; the terminal one carries the exception when there is one. */
+  record: WorkflowExecutionLogRecord;
+  hasException: boolean;
+  children: JournalSpan[];
+}
+
+function statusOf(events: WorkflowExecutionLogRecord[]): JournalSpanStatus {
+  const names = events.map((e) => e.eventName);
+  if (names.includes("Faulted")) return "faulted";
+  if (names.includes("Cancelled")) return "cancelled";
+  if (names.includes("Completed")) return "completed";
+  if (names.lastIndexOf("Suspended") > names.lastIndexOf("Resumed")) return "suspended";
+  return "running";
+}
+
+const TERMINAL_EVENTS = new Set(["Completed", "Faulted", "Cancelled"]);
+
+/** Groups the journal into one span per activity execution, then nests them by node path. */
+export function buildJournalSpans(records: WorkflowExecutionLogRecord[]): JournalSpan[] {
+  const ordered = [...records].sort((a, b) => a.sequence - b.sequence);
+  const byKey = new Map<string, WorkflowExecutionLogRecord[]>();
+
+  for (const record of ordered) {
+    // Without an activity instance id the node path is the best available identity; a looping
+    // activity then folds into one span, which is still better than one row per event.
+    const key = record.activityInstanceId || record.nodeId;
+    const group = byKey.get(key);
+    if (group) group.push(record);
+    else byKey.set(key, [record]);
+  }
+
+  const spans = [...byKey.entries()].map(([key, events]) => {
+    const first = events[0];
+    const terminal = [...events].reverse().find((e) => TERMINAL_EVENTS.has(e.eventName));
+    const started = events.find((e) => e.eventName === "Started") ?? first;
+    const span: JournalSpan = {
+      key,
+      activityId: first.activityId,
+      activityInstanceId: first.activityInstanceId,
+      nodeId: first.nodeId,
+      name: journalDisplayText(first),
+      activityType: first.activityType,
+      isContainer: isSystemActivityType(first.activityType),
+      status: statusOf(events),
+      startedAt: started.timestamp,
+      endedAt: terminal?.timestamp,
+      durationMs: elapsedMs(started.timestamp, terminal?.timestamp),
+      events,
+      record: terminal ?? first,
+      hasException: events.some((e) => !!journalException(e)),
+      children: [],
+    };
+    return span;
+  });
+
+  return nestSpans(spans);
+}
+
+function parentNodeId(nodeId: string) {
+  const at = nodeId.lastIndexOf(":");
+  return at === -1 ? undefined : nodeId.slice(0, at);
+}
+
+function nestSpans(spans: JournalSpan[]): JournalSpan[] {
+  const byInstanceId = new Map(spans.filter((s) => s.activityInstanceId).map((s) => [s.activityInstanceId!, s]));
+  const byNodeId = new Map<string, JournalSpan[]>();
+  for (const span of spans) {
+    const siblings = byNodeId.get(span.nodeId);
+    if (siblings) siblings.push(span);
+    else byNodeId.set(span.nodeId, [span]);
+  }
+
+  const roots: JournalSpan[] = [];
+
+  for (const span of spans) {
+    const parent = findParent(span, spans, byInstanceId, byNodeId);
+    if (parent && parent !== span) parent.children.push(span);
+    else roots.push(span);
+  }
+
+  return roots;
+}
+
+function findParent(
+  span: JournalSpan,
+  spans: JournalSpan[],
+  byInstanceId: Map<string, JournalSpan>,
+  byNodeId: Map<string, JournalSpan[]>,
+): JournalSpan | undefined {
+  const declared = span.events[0].parentActivityInstanceId;
+  if (declared) return byInstanceId.get(declared);
+
+  const parentNode = parentNodeId(span.nodeId);
+  if (!parentNode) return undefined;
+
+  const candidates = byNodeId.get(parentNode);
+  if (!candidates?.length) return undefined;
+  if (candidates.length === 1) return candidates[0];
+
+  // A node that runs more than once (a loop body) has several candidate parents: the right one is the
+  // most recent iteration that had already started when this span did.
+  const startedAt = span.startedAt ?? "";
+  return [...candidates].reverse().find((c) => (c.startedAt ?? "") <= startedAt) ?? candidates[0];
+}
+
+/** Drops container spans, promoting their children in place -- the flat view the journal had before. */
+export function flattenContainers(spans: JournalSpan[]): JournalSpan[] {
+  return spans.flatMap((span) => (span.isContainer ? flattenContainers(span.children) : [{ ...span, children: flattenContainers(span.children) }]));
+}
+
+/** Depth-first walk of the spans a viewer should render, honouring which subtrees are collapsed. */
+export function visibleSpans(
+  spans: JournalSpan[],
+  isCollapsed: (span: JournalSpan, depth: number) => boolean,
+  depth = 0,
+): { span: JournalSpan; depth: number }[] {
+  return spans.flatMap((span) => [
+    { span, depth },
+    ...(isCollapsed(span, depth) ? [] : visibleSpans(span.children, isCollapsed, depth + 1)),
+  ]);
+}
+
+export function countSpans(spans: JournalSpan[]): number {
+  return spans.reduce((total, span) => total + 1 + countSpans(span.children), 0);
+}

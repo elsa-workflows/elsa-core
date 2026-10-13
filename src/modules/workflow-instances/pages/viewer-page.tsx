@@ -37,7 +37,7 @@ import { ActivityExecutionsList } from "../components/activity-executions-list";
 import { IncidentsPanel } from "../components/incidents-panel";
 import { InputOutputPanel } from "../components/input-output-panel";
 import { InstanceDetails } from "../components/instance-details";
-import { JournalList } from "../components/journal-list";
+import { JournalTree } from "../components/journal-tree";
 import { VariablesPanel } from "../components/variables-panel";
 import {
   useActivityExecutions,
@@ -258,7 +258,7 @@ function ViewerBody({
             </TabsTrigger>
           </TabsList>
           <TabsContent value="journal" className="min-h-0 flex-1">
-            <JournalList
+            <JournalTree
               records={journal.records}
               totalCount={journal.totalCount}
               selectedActivityId={selectedActivity?.id}
