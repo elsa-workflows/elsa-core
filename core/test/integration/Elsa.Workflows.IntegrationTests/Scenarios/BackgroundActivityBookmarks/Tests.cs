@@ -167,13 +167,15 @@ public class Tests
             if (properties == null)
                 return record;
 
-            foreach (var key in properties.Keys.Where(x => x.StartsWith("__BackgroundActivityBookmarks:")).ToList())
+            var storedBookmarks = properties
+                .Where(x => x.Key.StartsWith("__BackgroundActivityBookmarks:") && x.Value is string)
+                .ToList();
+
+            foreach (var (key, value) in storedBookmarks)
             {
-                if (properties[key] is not string json)
-                    continue;
                 // The typed List<Bookmark> that pre-#8804 code put here; the EF Core store serializes it in the old shape.
-                var element = System.Text.Json.JsonDocument.Parse(json).RootElement.GetProperty("_items");
-                properties[key] = payloadSerializer.Deserialize<List<Bookmark>>(element);
+                using var document = System.Text.Json.JsonDocument.Parse((string)value);
+                properties[key] = payloadSerializer.Deserialize<List<Bookmark>>(document.RootElement.GetProperty("_items"));
                 observer.SavedLegacyShape = true;
             }
 

@@ -187,16 +187,19 @@ public class BackgroundActivityInvokerMiddleware(
     internal static ICollection<Bookmark>? ReadBackgroundBookmarks(object? storedBookmarks, IPayloadSerializer payloadSerializer)
     {
         if (storedBookmarks is null or ICollection<Bookmark>)
+        {
             return (ICollection<Bookmark>?)storedBookmarks;
+        }
 
-        var element = storedBookmarks is string json
-            ? JsonDocument.Parse(json).RootElement
-            : payloadSerializer.SerializeToElement(storedBookmarks); // Pre-#8804 shape: a property bag.
+        using var document = storedBookmarks is string json ? JsonDocument.Parse(json) : null;
+        var element = document?.RootElement ?? payloadSerializer.SerializeToElement(storedBookmarks); // Pre-#8804 shape: a property bag.
 
         // A list written as an object is wrapped as {"_items": [...], "_type": ...}. A pre-#8804 property bag holds that
         // wrapper itself, so serializing it again adds a second layer.
         while (element.ValueKind == JsonValueKind.Object && element.TryGetProperty("_items", out var items))
+        {
             element = items;
+        }
 
         return payloadSerializer.Deserialize<List<Bookmark>>(element);
     }
