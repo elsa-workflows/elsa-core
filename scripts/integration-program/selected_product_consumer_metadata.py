@@ -145,7 +145,21 @@ def archive_catalog(originals: dict, selected: dict, config: Path, semantics: pl
     sdk_projects = {project: {framework: sdk.original_policy(assets, framework,
         source_downloads=declarations.get(project, {}).get('frameworks', {}).get(framework))
         for framework in assets.get('project', {}).get('frameworks', {})} for project, assets in originals.items()}
-    downloads = sdk.freeze_downloads(originals, inspector, pool, semantics, sdk_projects)
+    external_ids = {key.rsplit('/', 1)[0] for assets in originals.values()
+                    for key, library in assets['libraries'].items() if library['type'] == 'package'} | {
+                    row['id'] for frames in sdk_projects.values() for policy in frames.values() for row in policy['downloads']}
+    ids = sorted(external_ids | {row['id'] for row in selected.values()})
+    native = semantics.call('feeds', config=str(config), ids=ids)
+    sources = {row['name']: row['url'] for row in native['sources']}
+    require(sources and all(url in planner.FEED_BASES for url in sources.values()), 'consumer_feed_origin')
+    mapping = {row['id'].casefold(): row['sources'] for row in native['packages']}
+    require(set(mapping) == {identifier.casefold() for identifier in ids}, 'consumer_feed_inventory')
+    require(all(mapping[identifier.casefold()] and all(name in sources for name in mapping[identifier.casefold()])
+                for identifier in external_ids),
+            'consumer_external_feed_mapping')
+    prepared, identities = [], {}
+    # Preflight every context before any ordinary or SDK archive is copied. Duplicate
+    # identities must not hide another cache's origin or signed/unsigned representation.
     for project, assets in originals.items():
         for key, library in assets['libraries'].items():
             if library['type'] != 'package':
@@ -154,14 +168,6 @@ def archive_catalog(originals: dict, selected: dict, config: Path, semantics: pl
             folded = identifier.casefold()
             require(folded not in selected, 'consumer_original_selected_registry_package')
             require(planner.ID.fullmatch(identifier) is not None, 'consumer_external_catalog_identity')
-            identity = (folded, version)
-            context = {'project': project, 'frameworks': [framework for framework, target in assets['targets'].items()
-                       if key in target], 'content_hash': library['sha512']}
-            if identity in catalog:
-                require(catalog[identity]['content_hash'] == library['sha512'], 'consumer_original_archive_ambiguity')
-                catalog[identity]['original_contexts'].append(context)
-                catalog[identity]['effective_contexts'].extend(sdk.effective_contexts(assets, key, sdk_projects[project]))
-                continue
             relative = Path(library.get('path', f'{folded}/{version.lower()}'))
             require(not relative.is_absolute() and '..' not in relative.parts, 'consumer_original_archive_path')
             candidates = [Path(folder) / relative / f'{folded}.{version.lower()}.nupkg' for folder in assets['packageFolders']]
@@ -170,45 +176,59 @@ def archive_catalog(originals: dict, selected: dict, config: Path, semantics: pl
             source = candidates[0]
             require(source.is_file() and not any(part.is_symlink() for part in (source, *source.parents)),
                     'consumer_original_archive_path')
-            destination = pool / relative / source.name
-            require(not destination.exists(), 'consumer_original_archive_collision')
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(source, destination)
-            # Native integrity/hash and nuspec parsing operate only on frozen bytes.
-            frozen_assets = {'libraries': {key: library}, 'packageFolders': {str(pool): {}}}
-            _, verified = archives.restored_archive(frozen_assets, identifier, version, cache=inspection_cache)
-            with zipfile.ZipFile(destination) as package:
-                names = archives.archive_names(package)
-                nuspecs = [name for name in names if name.endswith('.nuspec')]
-                require(len(nuspecs) == 1, 'consumer_original_nuspec_identity')
-                data = package.read(nuspecs[0])
-            native = semantics.call('nuspecs', values=[data.decode('utf-8-sig')])[0]
-            require(native['id'].casefold() == folded and native['version'] == version, 'consumer_original_nuspec_identity')
-            catalog[identity] = {'id': identifier, 'version': version, 'content_hash': verified['nuget_content_hash'],
-                'archive_sha256': verified['archive_sha256'], 'signed': verified['signed'],
-                'archive': destination, 'nuspec_sha256': metadata.sha256(data), 'groups': native['groups'],
-                'original_contexts': [context], 'effective_contexts': sdk.effective_contexts(assets, key, sdk_projects[project])}
-    ids = sorted({row['id'] for row in catalog.values()} | {row['id'] for row in selected.values()} |
-                 {row['id'] for row in downloads.values()})
-    native = semantics.call('feeds', config=str(config), ids=ids)
-    sources = {row['name']: row['url'] for row in native['sources']}
-    require(sources and all(url in planner.FEED_BASES for url in sources.values()), 'consumer_feed_origin')
-    mapping = {row['id'].casefold(): row['sources'] for row in native['packages']}
-    require(set(mapping) == {identifier.casefold() for identifier in ids}, 'consumer_feed_inventory')
+            provenance = sdk.cache_provenance(source, identifier, sources, mapping)
+            binding = (library['sha512'], provenance['source'], metadata.sha256(source.read_bytes()))
+            identity = (folded, version)
+            require(identity not in identities or identities[identity] == binding, 'consumer_original_archive_ambiguity')
+            identities[identity] = binding
+            prepared.append((project, assets, key, library, source, relative, provenance))
+    downloads = sdk.freeze_downloads(originals, inspector, pool, semantics, sdk_projects,
+                                    sources=sources, mapping=mapping)
+    for project, assets, key, library, source, relative, provenance in prepared:
+        identifier, version = key.rsplit('/', 1)
+        folded = identifier.casefold()
+        identity = (folded, version)
+        context = {'project': project, 'frameworks': [framework for framework, target in assets['targets'].items()
+                   if key in target], 'content_hash': library['sha512'], 'cache_provenance': provenance}
+        if identity in catalog:
+            catalog[identity]['original_contexts'].append(context)
+            catalog[identity]['effective_contexts'].extend(sdk.effective_contexts(assets, key, sdk_projects[project]))
+            continue
+        destination = pool / relative / source.name
+        require(not destination.exists(), 'consumer_original_archive_collision')
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, destination)
+        # Native integrity/hash and nuspec parsing operate only on frozen bytes.
+        frozen_assets = {'libraries': {key: library}, 'packageFolders': {str(pool): {}}}
+        _, verified = archives.restored_archive(frozen_assets, identifier, version, cache=inspection_cache)
+        require(verified['archive_sha256'] == identities[identity][2], 'consumer_original_archive_ambiguity')
+        with zipfile.ZipFile(destination) as package:
+            names = archives.archive_names(package)
+            nuspecs = [name for name in names if name.endswith('.nuspec')]
+            require(len(nuspecs) == 1, 'consumer_original_nuspec_identity')
+            data = package.read(nuspecs[0])
+        native = semantics.call('nuspecs', values=[data.decode('utf-8-sig')])[0]
+        require(native['id'].casefold() == folded and native['version'] == version, 'consumer_original_nuspec_identity')
+        catalog[identity] = {'id': identifier, 'version': version, 'content_hash': verified['nuget_content_hash'],
+            'archive_sha256': verified['archive_sha256'], 'signed': verified['signed'],
+            'archive': destination, 'nuspec_sha256': metadata.sha256(data), 'groups': native['groups'],
+            'cache_provenance': provenance, 'original_contexts': [context],
+            'effective_contexts': sdk.effective_contexts(assets, key, sdk_projects[project])}
     mirrors = {}
     for index, name in enumerate(sorted(sources)):
         directory = output / ('feed-' + str(index))
         directory.mkdir()
         mirrors[name] = str(directory)
     for (folded, _), row in list(catalog.items()) + list(downloads.items()):
-        names = mapping[folded]
-        require(names and all(name in sources for name in names), 'consumer_external_feed_mapping')
+        # A cache's checked origin does not certify identical bytes at other mapped feeds.
+        names = [name for name in mapping[folded] if sources[name] == row['cache_provenance']['source']]
         for name in names:
             destination = Path(mirrors[name]) / row['archive'].name
             shutil.copyfile(row['archive'], destination)
             require(metadata.sha256(destination.read_bytes()) == row['archive_sha256'], 'consumer_mirror_archive_changed')
     receipt = {'original_sources': sources, 'offline_mirrors': mirrors, 'mapping': mapping,
                'source_downloads': source_downloads,
+               'cache_provenance_scope': 'Checked local cache sidecar and mapped source; not network-origin certification',
                'signature_scope': 'Native signature integrity and content identity; not signer or feed-origin certification',
                'toolchain_downloads': [{key: str(value) if isinstance(value, Path) else value for key, value in row.items()}
                                       for row in downloads.values()],

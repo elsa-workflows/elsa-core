@@ -5,6 +5,7 @@ from contextlib import redirect_stdout
 from datetime import datetime, timedelta, timezone
 import io
 import json
+import os
 import subprocess
 from pathlib import Path
 import sys
@@ -339,6 +340,18 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 proof.resolution.audit_native_graph(actual, lock, 'Example', 'net8.0', original_selected,
                     original_catalog, '3.8.999', Semantics(), sdk_policy=policy)
 
+    def cache_metadata(self, archive, source=None):
+        """Write the cache provenance sidecar shared by ordinary and SDK fixtures."""
+        path = archive.parent / '.nupkg.metadata'
+        path.write_text(json.dumps({'version': 2, 'source': source or proof.planner.NUGET_INDEX}))
+        return path
+
+    def freeze_sdk(self, original, semantics, folder='frozen'):
+        """Freeze the SDK fixture under its native mapped source policy."""
+        return proof.resolution.sdk.freeze_downloads({'original': original}, self.root / 'inspector',
+            self.root / folder, semantics, sources={'original': proof.planner.NUGET_INDEX},
+            mapping={'microsoft.netcore.app.ref': ['original']})
+
     def sdk_archive_inputs(self):
         """Create an SDK reference archive and matching original restore-assets fixture."""
         cache = self.root / 'sdk-original-cache'
@@ -348,6 +361,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         with zipfile.ZipFile(archive, 'w') as package:
             package.writestr(identifier + '.nuspec', '<package><metadata><id>' + identifier + '</id><version>' + version + '</version></metadata></package>')
         archive.with_suffix('.nupkg.sha512').write_text(proof.consumers.base64_sha512(archive.read_bytes()))
+        self.cache_metadata(archive)
         assets = {'packageFolders': {str(cache): {}}, 'project': {'frameworks': {'net8.0': {
             'downloadDependencies': [{'name': identifier, 'version': '[8.0.27, 8.0.27]'}]}}}}
         semantics = Semantics()
@@ -358,7 +372,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         """Verify SDK download catalog is new frozen evidence and cold https bytes are separate."""
         archive, original, semantics = self.sdk_archive_inputs()
         sdk = proof.resolution.sdk
-        catalog = sdk.freeze_downloads({'original': original}, self.root / 'inspector', self.root / 'frozen', semantics)
+        catalog = self.freeze_sdk(original, semantics)
         row = catalog[('microsoft.netcore.app.ref', '8.0.27')]
         self.assertNotEqual(archive, row['archive'])
         cache = self.root / 'sdk-cold-proof'
@@ -395,11 +409,11 @@ class SelectedProductConsumerTests(unittest.TestCase):
         copy.parent.mkdir(parents=True); copy.write_bytes(archive.read_bytes())
         ambiguous = deepcopy(original); ambiguous['packageFolders'][str(other)] = {}
         with self.assertRaisesRegex(ValueError, 'consumer_sdk_archive_candidates'):
-            sdk.freeze_downloads({'project': ambiguous}, self.root / 'inspector', self.root / 'unused', semantics)
+            self.freeze_sdk(ambiguous, semantics, 'unused')
         sidecar = archive.with_suffix('.nupkg.sha512'); original_sidecar = sidecar.read_bytes()
         sidecar.unlink(); target = self.root / 'sidecar'; target.write_bytes(original_sidecar); sidecar.symlink_to(target)
         with self.assertRaisesRegex(ValueError, 'consumer_sdk_archive_path'):
-            sdk.freeze_downloads({'project': original}, self.root / 'inspector', self.root / 'unused', semantics)
+            self.freeze_sdk(original, semantics, 'unused')
         for value in ('[8.0.27, )', '[8.0.27, 8.0.28]'):
             malformed = deepcopy(original); malformed['project']['frameworks']['net8.0']['downloadDependencies'][0]['version'] = value
             with self.assertRaisesRegex(ValueError, 'consumer_sdk_original_download'): sdk.original_policy(malformed, 'net8.0')
@@ -414,7 +428,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         native_hash = 'A'*86+'=='
         with patch.object(proof.archives, 'run', return_value=json.dumps({'signed': True,
                 'archive_sha256': metadata.sha256(archive.read_bytes()), 'content_hash': native_hash})) as inspect:
-            catalog = proof.resolution.sdk.freeze_downloads({'original': original}, self.root/'inspector', self.root/'frozen', semantics)
+            catalog = self.freeze_sdk(original, semantics)
         record = next(iter(catalog.values()))
         self.assertEqual(native_hash, record['nuget_content_hash'])
         self.assertNotEqual(proof.consumers.base64_sha512(archive.read_bytes()), native_hash)
@@ -685,6 +699,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         archive.parent.mkdir(parents=True)
         with zipfile.ZipFile(archive, 'w') as package:
             package.writestr('External.nuspec', '<package><metadata><id>External</id><version>1.2.3</version></metadata></package>')
+        self.cache_metadata(archive)
         assets = {'targets': {'net8.0': {'External/1.2.3': {'type': 'package'}}},
             'libraries': {'External/1.2.3': {'type': 'package',
             'sha512': proof.consumers.base64_sha512(archive.read_bytes())}}, 'packageFolders': {str(cache): {}}}
@@ -710,6 +725,8 @@ class SelectedProductConsumerTests(unittest.TestCase):
         self.assertEqual(metadata.sha256(archive.read_bytes()), row['archive_sha256'])
         self.assertEqual(archive.read_bytes(), row['archive'].read_bytes())
         self.assertEqual({'original': proof.planner.NUGET_INDEX}, policy['sources'])
+        self.assertFalse(row['signed'])
+        self.assertEqual(proof.planner.NUGET_INDEX, row['cache_provenance']['source'])
         self.assertEqual(archive.read_bytes(), (Path(policy['mirrors']['original']) / archive.name).read_bytes())
         archive.write_bytes(b'ambient cache changed after freeze')
         self.assertNotEqual(archive.read_bytes(), row['archive'].read_bytes())
@@ -746,6 +763,125 @@ class SelectedProductConsumerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'consumer_original_archive_ambiguity'):
             proof.resolution.archive_catalog({'first': assets, 'second': conflicting}, {}, self.root / 'config',
                 semantics, self.root / 'inspector.dll', self.root / 'conflicting-catalog')
+
+    def freeze_catalog(self, originals, semantics, folder='catalog'):
+        """Freeze original contexts using the shared finite-catalog test seam."""
+        return proof.resolution.archive_catalog(originals, {}, self.root / 'config', semantics,
+            self.root / 'inspector.dll', self.root / folder)
+
+    def test_catalog_provenance_rejects_unsafe_unknown_and_unmapped_sidecars_before_copy(self):
+        archive, assets, semantics, _ = self.catalog_inputs()
+        sidecar = archive.parent / '.nupkg.metadata'
+        target = self.root / 'metadata-target'; target.write_text('{}')
+        cases = ('missing', 'malformed', 'duplicate', 'nonobject', 'unknown', 'unmapped', 'source-type',
+                 'directory', 'final-link', 'fifo', 'oversize', 'credential-url', 'fragment-url', 'url-case')
+        for case in cases:
+            with self.subTest(case=case):
+                sidecar.unlink()
+                if case == 'malformed': sidecar.write_text('{')
+                elif case == 'duplicate': sidecar.write_text('{"source":"a","source":"b"}')
+                elif case == 'nonobject': sidecar.write_text('[]')
+                elif case == 'unknown': sidecar.write_text('{}')
+                elif case == 'source-type': sidecar.write_text('{"source":123}')
+                elif case == 'directory': sidecar.mkdir()
+                elif case == 'final-link': sidecar.symlink_to(target)
+                elif case == 'fifo': os.mkfifo(sidecar)
+                elif case == 'oversize':
+                    with sidecar.open('wb') as stream: stream.seek(4 * 1024 ** 2); stream.write(b' ')
+                elif case != 'missing':
+                    source = {'unmapped': next(url for url in proof.planner.FEED_BASES if url != proof.planner.NUGET_INDEX),
+                        'credential-url': 'https://user:secret@api.nuget.org/v3/index.json',
+                        'fragment-url': proof.planner.NUGET_INDEX + '#fragment',
+                        'url-case': 'https://API.NUGET.ORG/v3/index.json'}[case]
+                    self.cache_metadata(archive, source)
+                with patch.object(proof.resolution.shutil, 'copyfile') as copy, self.assertRaises((ValueError, OSError)):
+                    self.freeze_catalog({'project': assets}, semantics, case)
+                copy.assert_not_called()
+                self.assertFalse(any((self.root / case).glob('feed-*')))
+                if sidecar.is_dir(): sidecar.rmdir()
+                elif sidecar.exists() or sidecar.is_symlink(): sidecar.unlink()
+                self.cache_metadata(archive)
+        original = archive.parent.with_name('private-original')
+        archive.parent.rename(original); archive.parent.symlink_to(original)
+        with patch.object(proof.resolution.shutil, 'copyfile') as copy, self.assertRaises(ValueError):
+            self.freeze_catalog({'project': assets}, semantics, 'linked-parent')
+        copy.assert_not_called()
+        archive.parent.unlink(); original.rename(archive.parent)
+
+    def test_later_duplicate_context_rejects_unmapped_or_conflicting_origin_and_bytes_before_copy(self):
+        archive, assets, semantics, feeds = self.catalog_inputs()
+        second = self.root / 'second-cache/external/1.2.3' / archive.name
+        second.parent.mkdir(parents=True); second.write_bytes(archive.read_bytes())
+        other = deepcopy(assets); other['packageFolders'] = {str(self.root / 'second-cache'): {}}
+        preview = next(url for url in proof.planner.FEED_BASES if url != proof.planner.NUGET_INDEX)
+        feeds['sources'].append({'name': 'preview', 'url': preview})
+        for case in ('unmapped-origin', 'conflicting-origin', 'conflicting-bytes'):
+            with self.subTest(case=case):
+                self.cache_metadata(second, preview if case != 'conflicting-bytes' else proof.planner.NUGET_INDEX)
+                feeds['packages'][0]['sources'] = ['original'] + (['preview'] if case == 'conflicting-origin' else [])
+                second.write_bytes(archive.read_bytes() + (b'changed' if case == 'conflicting-bytes' else b''))
+                with patch.object(proof.resolution.shutil, 'copyfile') as copy, self.assertRaises(ValueError):
+                    self.freeze_catalog({'first': assets, 'later': other}, semantics, case)
+                copy.assert_not_called()
+                self.assertFalse(any((self.root / case).glob('feed-*')))
+        second.write_bytes(archive.read_bytes()); self.cache_metadata(second)
+        feeds['packages'][0]['sources'] = ['original']
+        catalog, _ = self.freeze_catalog({'first': assets, 'later': other}, semantics, 'matching-contexts')
+        self.assertEqual(2, len(catalog[('external', '1.2.3')]['original_contexts']))
+        self.assertEqual(1, len(list((self.root / 'matching-contexts/archives').rglob('*.nupkg'))))
+
+    def test_mapped_signed_catalog_keeps_exact_signature_bytes_and_private_provenance(self):
+        archive, assets, semantics, _ = self.catalog_inputs()
+        with zipfile.ZipFile(archive, 'a') as package: package.writestr('.signature.p7s', b'synthetic native-inspected signature')
+        native_hash = 'A' * 86 + '=='
+        assets['libraries']['External/1.2.3']['sha512'] = native_hash
+        digest = metadata.sha256(archive.read_bytes())
+        with patch.object(proof.archives, 'run', return_value=json.dumps(
+                {'signed': True, 'content_hash': native_hash, 'archive_sha256': digest})):
+            catalog, _ = self.freeze_catalog({'project': assets}, semantics)
+        row = catalog[('external', '1.2.3')]
+        self.assertTrue(row['signed'])
+        self.assertEqual(digest, row['archive_sha256'])
+        self.assertEqual(archive.read_bytes(), row['archive'].read_bytes())
+        self.assertEqual({'source': proof.planner.NUGET_INDEX,
+            'metadata_sha256': metadata.sha256((archive.parent / '.nupkg.metadata').read_bytes())}, row['cache_provenance'])
+        self.assertEqual(row['cache_provenance'], row['original_contexts'][0]['cache_provenance'])
+
+    def test_multiple_mapped_feeds_mirror_only_checked_origin_and_cold_variant_still_fails(self):
+        archive, assets, semantics, feeds = self.catalog_inputs()
+        preview = next(url for url in proof.planner.FEED_BASES if url != proof.planner.NUGET_INDEX)
+        feeds['sources'].append({'name': 'preview', 'url': preview})
+        feeds['packages'][0]['sources'].append('preview')
+        catalog, policy = self.freeze_catalog({'project': assets}, semantics)
+        self.assertEqual(archive.read_bytes(), (Path(policy['mirrors']['original']) / archive.name).read_bytes())
+        self.assertEqual([], list(Path(policy['mirrors']['preview']).iterdir()))
+        # A second allowed origin cannot substitute another exact archive representation.
+        cache = self.root / 'cold'; cold = cache / 'external/1.2.3' / archive.name
+        cold.parent.mkdir(parents=True); cold.write_bytes(archive.read_bytes() + b'different raw bytes')
+        self.cache_metadata(cold, preview)
+        restored = deepcopy(assets); restored['packageFolders'] = {str(cache): {}}
+        graph = {'external': {'id': 'External', 'version': '1.2.3', 'selected': False,
+                             'content_hash': assets['libraries']['External/1.2.3']['sha512']}}
+        with patch.object(proof.archives, 'restored_archive', return_value=(cold,
+                {'archive_sha256': metadata.sha256(cold.read_bytes()), 'nuget_content_hash': graph['external']['content_hash']})), \
+                self.assertRaisesRegex(ValueError, 'consumer_external_archive_hash'):
+            proof.verify_cache(graph, policy, cache, self.artifacts, {}, restored, self.root / 'inspector.dll', catalog)
+
+    def test_sdk_bad_provenance_is_rejected_before_copy(self):
+        archive, original, semantics = self.sdk_archive_inputs()
+        sidecar = archive.parent / '.nupkg.metadata'
+        for case in ('missing', 'malformed', 'unmapped', 'linked'):
+            with self.subTest(case=case):
+                sidecar.unlink()
+                if case == 'malformed': sidecar.write_text('[]')
+                elif case == 'unmapped': self.cache_metadata(archive, 'https://wrong.invalid/index.json')
+                elif case == 'linked':
+                    target = self.root / 'sdk-metadata'; target.write_text('{}'); sidecar.symlink_to(target)
+                with patch.object(proof.resolution.sdk.shutil, 'copyfile') as copy, self.assertRaises((ValueError, OSError)):
+                    self.freeze_sdk(original, semantics, 'sdk-' + case)
+                copy.assert_not_called()
+                if sidecar.exists() or sidecar.is_symlink(): sidecar.unlink()
+                self.cache_metadata(archive)
 
     def test_native_semantics_and_inspector_runtime_are_plan_bound(self):
         """Verify native semantics and inspector runtime are plan bound."""

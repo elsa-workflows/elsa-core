@@ -86,7 +86,15 @@ policy is not implemented.
 
 The [composite action](../../.github/actions/selected-product-control/action.yml) runs a fresh plan and private snapshot, original producer and cold consumers, then [semantic seal/staging](selected-control-seal.md) before uploading only allowlisted bytes. The workflow's six control jobs feed fixed original-provider-ZIP retrieval and a separate readback job that repeats every available semantic/hash/content join at the exact controller. Runner identity assertions alone remain provider-unverified; only successful actual controls plus original provider ZIP evidence can establish hosted acceptance. The required local validation sequence remains Studio 3.8, then generator-bearing Extensions 3.8, then the full six-cell matrix. That actual complete proof remains unverified. Historical producer admission stays bound to its validated actual start; complete current consumer prerequisite checks still run before consumer restore/build, and producer SourceLink checks remain mandatory.
 
-Preserve original planning assets immediately after a fresh eligible plan:
+Start local planning with a new absolute private package-cache directory, as the hosted action does with `NUGET_PACKAGES=$RUNNER_TEMP/selected-planning-cache`. A shared global cache can contain a package from an origin excluded by the admitted source mapping even when its native NuGet content hash agrees.
+
+```sh
+mkdir "$PRIVATE/planning-packages"
+NUGET_PACKAGES="$PRIVATE/planning-packages" python3 -B scripts/integration-program/plan_product_release.py \
+  --product "$PRODUCT" --line "$LINE" --version "$VERSION" --output "$PLAN"
+```
+
+Preserve original planning assets immediately after the fresh eligible plan:
 
 ```sh
 PYTHONDONTWRITEBYTECODE=1 python3 -B scripts/integration-program/snapshot_product_planning_assets.py \
@@ -102,6 +110,10 @@ receipt and original planning package cache private and available until the cons
 freezes/verifies its original external archive catalog. Derived `resolved_targets`
 are advisory; consumers parse the original hash-bound bytes. Nothing from this
 snapshot is a public artifact or consumer execution receipt.
+
+Before copying ordinary external or SDK targeting-pack archives, catalog preflight reads each original cache `.nupkg.metadata` as bounded strict JSON from a regular file with no linked path components. Its source URL must exactly match the native admitted mapping. Every ordinary project context is checked, including later duplicate identities; conflicting origins or exact archive bytes fail before any archive or mirror copy. The private catalog records only the checked source and sidecar SHA-256. This is local cache provenance, not independent network-origin certification. With multiple mapped feeds, an archive is mirrored only under its checked cache origin; another allowed feed does not acquire that archive's byte claim. The separate cold restore still enforces the original mapping, exact raw archive hashes, native content/signature integrity and cache sidecars. Selected local archives remain exact. No signed/unsigned equivalence or fallback origin is admitted.
+
+The Extensions 3.8 local consumer at controller `9ba6ecc753` stopped at `Elsa.Agents/net8.0`: its original global cache held signed nuget.org `Elsa 3.8.4`, while the admitted Feedz-only cold restore returned unsigned bytes. The original failed receipt and both archive variants remain evidence. All shared ZIP payload members agree, but the exact archive hash guard correctly failed. A new private-cache plan and complete fresh consumers are required; this provenance guard does not turn that failed run into acceptance.
 
 The Extensions Compile PackageVersion continuations are registered and byte-bound as documented in [maintenance build](maintenance-build.md). Their new source/controller identities require fresh eligible plans, immediate original planning-assets snapshots and new actual producer/consumer controls. Neither the prior 4966 archives nor old plan receipts certify these children. This source correction does not change the original DLL version policy (1.0.0 plus the selected source SHA), waive requested NuGet/manifest equality, or rewrite an archive.
 

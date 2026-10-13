@@ -4,8 +4,10 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
+import stat
 import subprocess
 
 import core_source_continuation as continuation
@@ -48,6 +50,19 @@ PROPERTIES = ('IsPackable,IsTestProject,PackageId,PackageVersion,AssemblyName,Ta
 
 def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+def read_regular_file(path: Path, *, maximum: int) -> bytes:
+    """Read bounded regular bytes without following any symlink component."""
+    require(type(maximum) is int and 0 < maximum <= 64 * 1024 ** 2, 'diagnostic_invalid')
+    require(not any(part.is_symlink() for part in (path, *path.parents)), 'diagnostic_invalid')
+    descriptor = os.open(path, os.O_RDONLY | os.O_NONBLOCK | getattr(os, 'O_NOFOLLOW', 0))
+    with os.fdopen(descriptor, 'rb') as stream:
+        info = os.fstat(stream.fileno())
+        require(stat.S_ISREG(info.st_mode) and info.st_size <= maximum, 'diagnostic_invalid')
+        data = stream.read(maximum + 1)
+    require(len(data) <= maximum, 'diagnostic_invalid')
+    return data
 
 
 def canonical_hash(value: object) -> str:

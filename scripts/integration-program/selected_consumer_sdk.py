@@ -152,8 +152,19 @@ def pruned_edge(package: dict, framework: str, identifier: str, dependency_range
         identifier.casefold() not in {name.casefold() for name in row['dependencies']} for row in contexts)
 
 
+def cache_provenance(archive: Path, identifier: str, sources: dict, mapping: dict) -> dict:
+    """Check local cache provenance; this is not network-origin certification (#8693)."""
+    data = metadata.read_regular_file(archive.parent / '.nupkg.metadata', maximum=4 * 1024 ** 2)
+    value = planner.read_json(data)
+    names = mapping.get(identifier.casefold(), [])
+    require(type(value) is dict and type(value.get('source')) is str and names and
+            all(name in sources for name in names) and
+            value['source'] in {sources[name] for name in names}, 'consumer_original_cache_source')
+    return {'source': value['source'], 'metadata_sha256': metadata.sha256(data)}
+
+
 def freeze_downloads(originals: dict, inspector: Path, pool: Path, semantics: planner.Semantics,
-                     policies: dict | None = None) -> dict:
+                     policies: dict | None = None, *, sources: dict, mapping: dict) -> dict:
     """Original snapshots bind versions only; these hashes are NEW frozen bootstrap evidence."""
     candidates = {}
     for project, assets in originals.items():
@@ -163,7 +174,7 @@ def freeze_downloads(originals: dict, inspector: Path, pool: Path, semantics: pl
                 key = row['id'], row['version']
                 candidates.setdefault(key, set()).update(Path(folder) / row['id'].lower() / row['version'] /
                     (row['id'].lower() + '.' + row['version'] + '.nupkg') for folder in assets['packageFolders'])
-    result = {}
+    prepared = []
     for (identifier, version), paths in sorted(candidates.items()):
         existing = [path for path in paths if path.exists()]
         require(len(existing) == 1, 'consumer_sdk_archive_candidates')
@@ -171,6 +182,10 @@ def freeze_downloads(originals: dict, inspector: Path, pool: Path, semantics: pl
         sidecar = source.with_suffix('.nupkg.sha512')
         require(all(path.is_file() and not any(part.is_symlink() for part in (path, *path.parents))
                     for path in (source, sidecar)), 'consumer_sdk_archive_path')
+        provenance = cache_provenance(source, identifier, sources, mapping)
+        prepared.append((identifier, version, source, sidecar, provenance))
+    result = {}
+    for identifier, version, source, sidecar, provenance in prepared:
         destination = pool / identifier.lower() / version / source.name
         require(not destination.exists(), 'consumer_sdk_archive_collision')
         destination.parent.mkdir(parents=True)
@@ -188,7 +203,8 @@ def freeze_downloads(originals: dict, inspector: Path, pool: Path, semantics: pl
         result[(identifier.casefold(), version)] = {'id': identifier, 'version': version,
             'archive': destination, 'archive_sha256': verified['archive_sha256'],
             'archive_sha512': hashlib.sha512(destination.read_bytes()).hexdigest(),
-            'nuget_content_hash': verified['nuget_content_hash'], 'signed': verified['signed']}
+            'nuget_content_hash': verified['nuget_content_hash'], 'signed': verified['signed'],
+            'cache_provenance': provenance}
     return result
 
 

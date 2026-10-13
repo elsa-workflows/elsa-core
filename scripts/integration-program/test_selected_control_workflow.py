@@ -99,6 +99,8 @@ class HostedWorkflowContracts(unittest.TestCase):
     def test_private_ordered_action_and_trigger_coverage(self):
         """Verify private ordered action and trigger coverage."""
         self.assertEqual(self.action['runs']['using'], 'composite')
+        plan_step = next(step for step in self.action['runs']['steps'] if step.get('name') == 'Fresh selected plan')
+        self.assertEqual('${{ runner.temp }}/selected-planning-cache', plan_step['env']['NUGET_PACKAGES'])
         self.assertEqual(set(self.action['inputs']), {'product', 'line', 'version'})
         steps = self.action['runs']['steps']
         control = '\n'.join(step.get('run', '') for step in steps)

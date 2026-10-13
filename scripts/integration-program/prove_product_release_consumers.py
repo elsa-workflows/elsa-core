@@ -67,7 +67,7 @@ PUBLIC_FAILURE_CODES = producer.PUBLIC_FAILURE_CODES | frozenset((
     'consumer_native_pruned_edge_retained consumer_native_root_range consumer_native_selected_version '
     'consumer_native_semantics_identity consumer_native_unreachable_package consumer_native_unreviewed_external '
     'consumer_original_archive_ambiguity consumer_original_archive_candidates consumer_original_archive_collision '
-    'consumer_original_archive_path consumer_original_build_archive consumer_original_build_assets_hash '
+    'consumer_original_archive_path consumer_original_cache_source consumer_original_build_archive consumer_original_build_assets_hash '
     'consumer_original_build_boundary consumer_original_build_cache consumer_original_build_collision '
     'consumer_original_build_graph consumer_original_build_group consumer_original_build_incoming '
     'consumer_original_build_origin consumer_original_build_original_boundary consumer_original_build_project '
