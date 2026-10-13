@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace Elsa.Common.Multitenancy;
 
-public class TaskExecutor(IDistributedLockProvider distributedLockProvider, IOptions<DistributedLockingOptions> options) : ITaskExecutor, IBackgroundTaskStarter
+public class TaskExecutor(IDistributedLockProvider distributedLockProvider, ITenantAccessor tenantAccessor, IOptions<DistributedLockingOptions> options) : ITaskExecutor, IBackgroundTaskStarter
 {
     public async Task ExecuteTaskAsync(ITask task, CancellationToken cancellationToken)
     {
@@ -26,17 +26,33 @@ public class TaskExecutor(IDistributedLockProvider distributedLockProvider, IOpt
     private async Task ExecuteInternalAsync(ITask task, Func<Task> action, CancellationToken cancellationToken)
     {
         var taskType = task.GetType();
-        var singleNodeTask = taskType.GetCustomAttribute<SingleNodeTaskAttribute>() != null;
+        var singleNodeTask = taskType.GetCustomAttribute<SingleNodeTaskAttribute>();
 
-        if (singleNodeTask)
-        {
-            var resourceName = taskType.AssemblyQualifiedName!;
-            await using (await distributedLockProvider.AcquireLockAsync(resourceName, options.Value.LockAcquisitionTimeout, cancellationToken: cancellationToken))
-                await action();
-        }
-        else
+        if (singleNodeTask == null)
         {
             await action();
+            return;
         }
+
+        var resourceName = GetResourceName(taskType, singleNodeTask.Scope);
+
+        await using (await distributedLockProvider.AcquireLockAsync(resourceName, options.Value.LockAcquisitionTimeout, cancellationToken: cancellationToken))
+            await action();
+    }
+
+    private string GetResourceName(Type taskType, SingleNodeTaskScope scope)
+    {
+        var taskName = taskType.AssemblyQualifiedName!;
+
+        // A host-scoped task guards something every tenant shares, so its lock name must be the same for all of them.
+        if (scope == SingleNodeTaskScope.Host)
+            return taskName;
+
+        var tenantId = tenantAccessor.TenantId;
+
+        if (tenantId == Tenant.DefaultTenantId)
+            return taskName;
+
+        return $"{taskName}:{tenantId}";
     }
 }

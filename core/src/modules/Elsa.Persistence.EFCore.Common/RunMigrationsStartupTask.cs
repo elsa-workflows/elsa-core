@@ -11,19 +11,33 @@ namespace Elsa.Persistence.EFCore;
 /// Executes EF Core migrations using the specified <see cref="DbContext"/> type.
 /// </summary>
 [UsedImplicitly]
-[SingleNodeTask]
+[SingleNodeTask(SingleNodeTaskScope.Host)]
 [Order(-100)]
-public class RunMigrationsStartupTask<TDbContext>(IDbContextFactory<TDbContext> dbContextFactory, IOptions<MigrationOptions> options) : IStartupTask where TDbContext : DbContext
+public class RunMigrationsStartupTask<TDbContext>(IDbContextFactory<TDbContext> dbContextFactory, IOptions<MigrationOptions> options, MigratedDatabaseRegistry? migratedDatabaseRegistry = null) : IStartupTask where TDbContext : DbContext
 {
     /// <inheritdoc />
     public async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         options.Value.RunMigrations.TryGetValue(typeof(TDbContext), out bool shouldRunMigrations);
-     
+
         if (!shouldRunMigrations)
             return;
 
-        var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
-        await dbContext.Database.MigrateAsync(cancellationToken);
+        await using var dbContext = await dbContextFactory.CreateDbContextAsync(cancellationToken);
+
+        var connectionString = dbContext.Database.IsRelational() ? dbContext.Database.GetConnectionString() : null;
+
+        if (migratedDatabaseRegistry?.TryClaim(typeof(TDbContext), connectionString) == false)
+            return;
+
+        try
+        {
+            await dbContext.Database.MigrateAsync(cancellationToken);
+        }
+        catch
+        {
+            migratedDatabaseRegistry?.Release(typeof(TDbContext), connectionString);
+            throw;
+        }
     }
 }
