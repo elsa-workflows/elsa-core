@@ -116,6 +116,87 @@ describe("buildJournalSpans", () => {
   });
 });
 
+describe("wait time", () => {
+  it("separates time spent suspended from time spent running", () => {
+    const roots = buildJournalSpans(sampleJournal());
+    const review = roots[0].children[0].children[1];
+
+    // Started at 4s, suspended at 5s, resumed at 6s, completed at 7s.
+    expect(review.durationMs).toBe(3000);
+    expect(review.suspendedMs).toBe(1000);
+    expect(review.activeMs).toBe(2000);
+  });
+
+  it("leaves a span that never suspended alone", () => {
+    const start = buildJournalSpans(sampleJournal())[0].children[0].children[0];
+
+    expect(start.suspendedMs).toBeUndefined();
+    expect(start.activeMs).toBe(start.durationMs);
+  });
+
+  it("does not count a suspension that has not resumed", () => {
+    sequence = 0;
+    const [span] = buildJournalSpans([
+      event("w:wait", "Elsa.UserTask", "Started", { activityInstanceId: "wait" }),
+      event("w:wait", "Elsa.UserTask", "Suspended", { activityInstanceId: "wait" }),
+    ]);
+
+    expect(span.status).toBe("suspended");
+    expect(span.suspendedMs).toBeUndefined();
+    expect(span.activeMs).toBeUndefined();
+  });
+
+  it("sums repeated suspensions", () => {
+    sequence = 0;
+    const [span] = buildJournalSpans([
+      event("w:wait", "Elsa.UserTask", "Started", { activityInstanceId: "wait" }), // 0s
+      event("w:wait", "Elsa.UserTask", "Suspended", { activityInstanceId: "wait" }), // 1s
+      event("w:wait", "Elsa.UserTask", "Resumed", { activityInstanceId: "wait" }), // 2s
+      event("w:wait", "Elsa.UserTask", "Suspended", { activityInstanceId: "wait" }), // 3s
+      event("w:wait", "Elsa.UserTask", "Resumed", { activityInstanceId: "wait" }), // 4s
+      event("w:wait", "Elsa.UserTask", "Completed", { activityInstanceId: "wait" }), // 5s
+    ]);
+
+    expect(span.durationMs).toBe(5000);
+    expect(span.suspendedMs).toBe(2000);
+    expect(span.activeMs).toBe(3000);
+  });
+
+  it("charges a container for what its children waited on", () => {
+    const workflow = buildJournalSpans(sampleJournal())[0];
+    const flowchart = workflow.children[0];
+
+    // The flowchart itself never suspended; the user task inside it did.
+    expect(flowchart.suspendedMs).toBe(1000);
+    expect(flowchart.activeMs).toBe((flowchart.durationMs ?? 0) - 1000);
+    expect(workflow.suspendedMs).toBe(1000);
+  });
+
+  it("never reports more waiting than the span lasted", () => {
+    sequence = 0;
+    // Two branches suspended over the same wall-clock window; summing them would exceed the parent.
+    const roots = buildJournalSpans([
+      event("w:fork", "Elsa.Sequence", "Started", { activityInstanceId: "fork" }), // 0s
+      event("w:fork:a", "Elsa.UserTask", "Started", { activityInstanceId: "a" }), // 1s
+      event("w:fork:a", "Elsa.UserTask", "Suspended", { activityInstanceId: "a" }), // 2s
+      event("w:fork:b", "Elsa.UserTask", "Started", { activityInstanceId: "b" }), // 3s
+      event("w:fork:b", "Elsa.UserTask", "Suspended", { activityInstanceId: "b" }), // 4s
+      event("w:fork:a", "Elsa.UserTask", "Resumed", { activityInstanceId: "a" }), // 5s
+      event("w:fork:a", "Elsa.UserTask", "Completed", { activityInstanceId: "a" }), // 6s
+      event("w:fork:b", "Elsa.UserTask", "Resumed", { activityInstanceId: "b" }), // 7s
+      event("w:fork:b", "Elsa.UserTask", "Completed", { activityInstanceId: "b" }), // 8s
+      event("w:fork", "Elsa.Sequence", "Completed", { activityInstanceId: "fork" }), // 9s
+    ]);
+
+    const fork = roots[0];
+    expect(fork.durationMs).toBe(9000);
+    // 3s + 3s of child waiting, clamped to the parent's own 9s rather than reported as 6s of nothing.
+    expect(fork.suspendedMs).toBe(6000);
+    expect(fork.activeMs).toBe(3000);
+    expect(fork.suspendedMs!).toBeLessThanOrEqual(fork.durationMs!);
+  });
+});
+
 describe("flattenContainers", () => {
   it("promotes the activities an author placed and drops the engine's containers", () => {
     const flat = flattenContainers(buildJournalSpans(sampleJournal()));

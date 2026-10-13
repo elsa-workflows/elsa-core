@@ -275,7 +275,19 @@ function JournalRow({
           {span.name}
         </span>
         {hasChildren && collapsed && <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">{countDescendants(span)}</span>}
-        <span className="shrink-0 text-xs text-muted-foreground tabular-nums">{span.durationMs === undefined ? label : formatElapsed(span.durationMs)}</span>
+        {/* Waiting is not working: a user task parked for an hour would otherwise read as an hour of work. */}
+        {!!span.suspendedMs && (
+          <span
+            className="flex shrink-0 items-center gap-0.5 text-[11px] text-amber-600 tabular-nums dark:text-amber-400"
+            title={`Suspended for ${formatElapsed(span.suspendedMs)}`}
+          >
+            <PauseCircle className="size-3" aria-hidden />
+            {formatElapsed(span.suspendedMs)}
+          </span>
+        )}
+        <span className="shrink-0 text-xs text-muted-foreground tabular-nums" title={durationTitle(span)}>
+          {span.durationMs === undefined ? label : formatElapsed(span.activeMs ?? span.durationMs)}
+        </span>
       </div>
 
       {detailOpen && (
@@ -287,6 +299,20 @@ function JournalRow({
             </dd>
             <dt>Status</dt>
             <dd className={className}>{label}</dd>
+            {span.activeMs !== undefined && (
+              <>
+                <dt>Ran</dt>
+                <dd className="text-foreground tabular-nums">{formatElapsed(span.activeMs)}</dd>
+              </>
+            )}
+            {!!span.suspendedMs && (
+              <>
+                <dt>Waited</dt>
+                <dd className="tabular-nums text-amber-600 dark:text-amber-400">{formatElapsed(span.suspendedMs)}</dd>
+                <dt>Elapsed</dt>
+                <dd className="text-foreground tabular-nums">{formatElapsed(span.durationMs)}</dd>
+              </>
+            )}
             {offsetMs !== undefined && offsetMs > 0 && (
               <>
                 <dt>Offset</dt>
@@ -326,6 +352,12 @@ function JournalRow({
       )}
     </li>
   );
+}
+
+function durationTitle(span: JournalSpan) {
+  if (span.durationMs === undefined) return undefined;
+  if (!span.suspendedMs) return `Ran ${formatElapsed(span.durationMs)}`;
+  return `Ran ${formatElapsed(span.activeMs ?? span.durationMs)} · suspended ${formatElapsed(span.suspendedMs)} · ${formatElapsed(span.durationMs)} elapsed`;
 }
 
 function countDescendants(span: JournalSpan): number {

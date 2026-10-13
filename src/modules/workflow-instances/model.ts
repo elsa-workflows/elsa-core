@@ -142,7 +142,15 @@ export interface JournalSpan {
   status: JournalSpanStatus;
   startedAt?: string;
   endedAt?: string;
+  /** Wall-clock time from start to terminal event: execution plus any time spent waiting. */
   durationMs?: number;
+  /**
+   * Time spent suspended, summed over every Suspended → Resumed pair that closed, plus whatever its
+   * children waited for. Undefined when nothing ever suspended.
+   */
+  suspendedMs?: number;
+  /** Execution time: {@link durationMs} with {@link suspendedMs} taken out. This is the one to rank by. */
+  activeMs?: number;
   /** Every event folded into this span, in order. */
   events: WorkflowExecutionLogRecord[];
   /** The event a click should select; the terminal one carries the exception when there is one. */
@@ -161,6 +169,28 @@ function statusOf(events: WorkflowExecutionLogRecord[]): JournalSpanStatus {
 }
 
 const TERMINAL_EVENTS = new Set(["Completed", "Faulted", "Cancelled"]);
+
+/**
+ * Time a span sat suspended, over every Suspended → Resumed pair it closed.
+ *
+ * A user task that waits two hours for a human is not slow, but its wall-clock duration says it is.
+ * Separating the two is what makes the duration column mean "how long this took to run". A suspension
+ * that has not resumed yet is not counted: the span has no end either, so there is nothing to subtract from.
+ */
+function suspendedMsOf(events: WorkflowExecutionLogRecord[]): number | undefined {
+  let total: number | undefined;
+  let openedAt: string | undefined;
+
+  for (const event of events) {
+    if (event.eventName === "Suspended") openedAt = event.timestamp;
+    else if (event.eventName === "Resumed" && openedAt) {
+      total = (total ?? 0) + (elapsedMs(openedAt, event.timestamp) ?? 0);
+      openedAt = undefined;
+    }
+  }
+
+  return total;
+}
 
 /** Groups the journal into one span per activity execution, then nests them by node path. */
 export function buildJournalSpans(records: WorkflowExecutionLogRecord[]): JournalSpan[] {
@@ -192,6 +222,7 @@ export function buildJournalSpans(records: WorkflowExecutionLogRecord[]): Journa
       startedAt: started.timestamp,
       endedAt: terminal?.timestamp,
       durationMs: elapsedMs(started.timestamp, terminal?.timestamp),
+      suspendedMs: suspendedMsOf(events),
       events,
       record: terminal ?? first,
       hasException: events.some((e) => !!journalException(e)),
@@ -200,7 +231,23 @@ export function buildJournalSpans(records: WorkflowExecutionLogRecord[]): Journa
     return span;
   });
 
-  return nestSpans(spans);
+  const roots = nestSpans(spans);
+  for (const root of roots) resolveWaitTime(root);
+  return roots;
+}
+
+/**
+ * Pushes wait time up the tree: a flowchart whose only activity waited an hour did not work for an
+ * hour. Children's waits are summed, which overstates it when branches suspend in parallel, so the
+ * result is clamped to the span's own duration.
+ */
+function resolveWaitTime(span: JournalSpan): number | undefined {
+  const fromChildren = span.children.map(resolveWaitTime).filter((ms): ms is number => ms !== undefined);
+  const total = span.suspendedMs !== undefined || fromChildren.length > 0 ? (span.suspendedMs ?? 0) + fromChildren.reduce((a, b) => a + b, 0) : undefined;
+
+  span.suspendedMs = total === undefined ? undefined : span.durationMs === undefined ? total : Math.min(total, span.durationMs);
+  span.activeMs = span.durationMs === undefined ? undefined : Math.max(0, span.durationMs - (span.suspendedMs ?? 0));
+  return span.suspendedMs;
 }
 
 function parentNodeId(nodeId: string) {
