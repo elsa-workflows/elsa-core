@@ -148,6 +148,15 @@ class HostedWorkflowContracts(unittest.TestCase):
         self.assertEqual(["python -m unittest discover -s scripts/integration-program -p 'test_*.py'",
             "python -O -m unittest discover -s scripts/integration-program -p 'test_*.py'"], suite['run'].splitlines())
 
+    def test_full_suite_jobs_disable_bytecode_before_all_python_steps(self):
+        for workflow, name in (('package-impact-closure.yml', 'selector-and-plan'),
+                               ('integration-program-tools.yml', 'import-rehearsal-tests')):
+            with self.subTest(workflow=workflow, job=name):
+                job = yaml.safe_load((ROOT / '.github/workflows' / workflow).read_text())['jobs'][name]
+                self.assertEqual('1', job['env']['PYTHONDONTWRITEBYTECODE'])
+                self.assertTrue(all(step.get('env', {}).get('PYTHONDONTWRITEBYTECODE', '1') == '1'
+                                    for step in job['steps']))
+
     def test_ineligible_plan_reports_only_closed_reason_categories_before_snapshot(self):
         """Verify ineligible plan reports only closed reason categories before snapshot."""
         steps = self.action['runs']['steps']
