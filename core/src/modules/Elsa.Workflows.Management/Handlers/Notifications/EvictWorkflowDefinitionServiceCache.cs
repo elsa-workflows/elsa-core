@@ -17,7 +17,10 @@ internal class EvictWorkflowDefinitionServiceCache(IWorkflowDefinitionCacheManag
     INotificationHandler<WorkflowDefinitionRetracting>,
     INotificationHandler<WorkflowDefinitionDeleting>,
     INotificationHandler<WorkflowDefinitionsDeleting>,
-    INotificationHandler<WorkflowDefinitionVersionsUpdating>
+    INotificationHandler<WorkflowDefinitionVersionsUpdating>,
+    INotificationHandler<WorkflowDefinitionPublished>,
+    INotificationHandler<WorkflowDefinitionRetracted>,
+    INotificationHandler<WorkflowDefinitionDeleted>
 {
     public Task HandleAsync(WorkflowDefinitionDraftSaving notification, CancellationToken cancellationToken)
     {
@@ -54,5 +57,25 @@ internal class EvictWorkflowDefinitionServiceCache(IWorkflowDefinitionCacheManag
     {
         foreach (var definition in notification.WorkflowDefinitions)
             await workflowDefinitionCacheManager.EvictWorkflowDefinitionAsync(definition.DefinitionId, cancellationToken);
+    }
+
+    // Evict again once the store writes are done, so a read between the "-ing" eviction and the save cannot leave a stale entry behind.
+
+    /// <inheritdoc />
+    public Task HandleAsync(WorkflowDefinitionPublished notification, CancellationToken cancellationToken)
+    {
+        return workflowDefinitionCacheManager.EvictWorkflowDefinitionAsync(notification.WorkflowDefinition.DefinitionId, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public Task HandleAsync(WorkflowDefinitionRetracted notification, CancellationToken cancellationToken)
+    {
+        return workflowDefinitionCacheManager.EvictWorkflowDefinitionAsync(notification.WorkflowDefinition.DefinitionId, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public Task HandleAsync(WorkflowDefinitionDeleted notification, CancellationToken cancellationToken)
+    {
+        return workflowDefinitionCacheManager.EvictWorkflowDefinitionAsync(notification.DefinitionId, cancellationToken);
     }
 }
