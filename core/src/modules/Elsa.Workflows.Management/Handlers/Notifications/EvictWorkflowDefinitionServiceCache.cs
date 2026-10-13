@@ -20,7 +20,8 @@ internal class EvictWorkflowDefinitionServiceCache(IWorkflowDefinitionCacheManag
     INotificationHandler<WorkflowDefinitionVersionsUpdating>,
     INotificationHandler<WorkflowDefinitionPublished>,
     INotificationHandler<WorkflowDefinitionRetracted>,
-    INotificationHandler<WorkflowDefinitionDeleted>
+    INotificationHandler<WorkflowDefinitionDeleted>,
+    INotificationHandler<WorkflowDefinitionsDeleted>
 {
     public Task HandleAsync(WorkflowDefinitionDraftSaving notification, CancellationToken cancellationToken)
     {
@@ -77,5 +78,12 @@ internal class EvictWorkflowDefinitionServiceCache(IWorkflowDefinitionCacheManag
     public Task HandleAsync(WorkflowDefinitionDeleted notification, CancellationToken cancellationToken)
     {
         return workflowDefinitionCacheManager.EvictWorkflowDefinitionAsync(notification.DefinitionId, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task HandleAsync(WorkflowDefinitionsDeleted notification, CancellationToken cancellationToken)
+    {
+        foreach (var definitionId in notification.DefinitionIds)
+            await workflowDefinitionCacheManager.EvictWorkflowDefinitionAsync(definitionId, cancellationToken);
     }
 }
