@@ -20,6 +20,9 @@ public class Label : Entity
         get => _name;
         set
         {
+            ArgumentNullException.ThrowIfNull(value, nameof(Name));
+            value = value.Trim();
+
             if (value.Length > NameMaxLength)
             {
                 throw new ArgumentException(
@@ -28,11 +31,16 @@ public class Label : Entity
             }
 
             _name = value;
-            NormalizedName = value.ToLowerInvariant();
+            NormalizedName = NormalizeName(value);
         }
     }
 
     public string NormalizedName { get; set; } = default!;
+
+    /// <summary>
+    /// Normalizes a label name the way <see cref="Name"/> does: trimmed and lower-cased.
+    /// </summary>
+    public static string NormalizeName(string name) => name.Trim().ToLowerInvariant();
     public string? Description { get; set; }
     public string? Color { get; set; }
 }

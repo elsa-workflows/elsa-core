@@ -2,6 +2,7 @@ using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Labels.Contracts;
 using Elsa.Workflows;
+using Elsa.Workflows.Exceptions;
 using FastEndpoints;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
@@ -26,9 +27,11 @@ internal class Create : ElsaEndpoint<Request, Response, LabelMapper>
 
     public override async Task HandleAsync(Request request, CancellationToken cancellationToken)
     {
-        if (LabelNameValidator.IsTooLong(request.Name))
+        var nameError = LabelNameValidator.GetNameError(request.Name);
+
+        if (nameError != null)
         {
-            AddError(LabelNameValidator.TooLongMessage);
+            AddError(nameError);
             await Send.ErrorsAsync(cancellation: cancellationToken);
             return;
         }
@@ -41,7 +44,17 @@ internal class Create : ElsaEndpoint<Request, Response, LabelMapper>
         }
 
         var label = Map.ToEntity(request);
-        await _store.SaveAsync(label, cancellationToken);
+        try
+        {
+            await _store.SaveAsync(label, cancellationToken);
+        }
+        catch (UniqueKeyConstraintViolationException)
+        {
+            // A concurrent create or rename won the race for the same name.
+            AddError(LabelNameValidator.DuplicateMessage);
+            await Send.ErrorsAsync(StatusCodes.Status409Conflict, cancellationToken);
+            return;
+        }
         var response = Map.FromEntity(label);
         await Send.CreatedAtAsync<Get.Get>(new { Id = label.Id }, response, cancellation: cancellationToken);
     }

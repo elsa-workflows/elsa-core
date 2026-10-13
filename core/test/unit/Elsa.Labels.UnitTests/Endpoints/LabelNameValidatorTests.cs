@@ -11,9 +11,27 @@ public class LabelNameValidatorTests
     [Theory]
     [InlineData(255, false)]
     [InlineData(256, true)]
-    public void IsTooLong_UsesNameMaxLength(int length, bool expected)
+    public void GetNameError_UsesNameMaxLength(int length, bool tooLong)
     {
-        Assert.Equal(expected, LabelNameValidator.IsTooLong(new string('a', length)));
+        Assert.Equal(tooLong ? LabelNameValidator.TooLongMessage : null, LabelNameValidator.GetNameError(new string('a', length)));
+    }
+
+    [Fact]
+    public void GetNameError_TrimsLikeTheLabelEntity()
+    {
+        var padded = $"  {new string('a', Label.NameMaxLength)}  ";
+
+        Assert.Null(LabelNameValidator.GetNameError(padded));
+        Assert.Equal(Label.NameMaxLength, new Label { Name = padded }.Name.Length);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void GetNameError_WhenNameMissing_ReturnsRequired(string? name)
+    {
+        Assert.Equal(LabelNameValidator.RequiredMessage, LabelNameValidator.GetNameError(name));
     }
 
     [Fact]
