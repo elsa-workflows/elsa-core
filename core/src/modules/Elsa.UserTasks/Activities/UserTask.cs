@@ -165,19 +165,67 @@ public sealed class UserTaskActionDefinition
 /// </summary>
 internal sealed class UserTaskActionLabelJsonConverter : JsonConverter<Input<string>>
 {
-    public override Input<string>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => reader.TokenType switch
+    public override Input<string>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        JsonTokenType.Null => null,
-        JsonTokenType.String => new Input<string>(reader.GetString()!),
-        _ => throw new JsonException("A User Task action label must be a string.")
-    };
+        switch (reader.TokenType)
+        {
+            case JsonTokenType.Null:
+                return null;
+            case JsonTokenType.String:
+                return new Input<string>(reader.GetString()!);
+            case JsonTokenType.StartObject:
+                using (var document = JsonDocument.ParseValue(ref reader))
+                {
+                    return ReadLegacyLabel(document.RootElement);
+                }
+            default:
+                throw new JsonException("A User Task action label must be a string.");
+        }
+    }
+
+    // Labels saved before this converter existed use the Input object shape: { "typeName": ..., "expression": { "type": ..., "value": ... } }.
+    // Literal labels are read back as their value; any other expression is read as null, so the key is used as the label.
+    private static Input<string>? ReadLegacyLabel(JsonElement element)
+    {
+        if (!TryGetPropertyIgnoreCase(element, "expression", out var expression) || expression.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        var isLiteral = TryGetPropertyIgnoreCase(expression, "type", out var type) && type.ValueKind == JsonValueKind.String && type.GetString() == "Literal";
+        if (!isLiteral || !TryGetPropertyIgnoreCase(expression, "value", out var value) || value.ValueKind != JsonValueKind.String)
+        {
+            return null;
+        }
+
+        return new Input<string>(value.GetString()!);
+    }
+
+    private static bool TryGetPropertyIgnoreCase(JsonElement element, string name, out JsonElement value)
+    {
+        foreach (var property in element.EnumerateObject())
+        {
+            if (string.Equals(property.Name, name, StringComparison.OrdinalIgnoreCase))
+            {
+                value = property.Value;
+                return true;
+            }
+        }
+
+        value = default;
+        return false;
+    }
 
     public override void Write(Utf8JsonWriter writer, Input<string> value, JsonSerializerOptions options)
     {
         // Expression labels are code-first only and cannot be represented as a plain string; they are written as null (the key is then used as the label).
         if (value.Expression?.Type == "Literal")
+        {
             writer.WriteStringValue(value.Expression.Value?.ToString());
+        }
         else
+        {
             writer.WriteNullValue();
+        }
     }
 }

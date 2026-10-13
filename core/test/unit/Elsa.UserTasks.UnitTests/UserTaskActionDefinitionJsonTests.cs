@@ -1,5 +1,7 @@
 using System.Text.Json;
 using Elsa.Expressions.Helpers;
+using Elsa.Expressions.Models;
+using Elsa.Workflows.Models;
 using Elsa.UserTasks.Activities;
 using Xunit;
 
@@ -27,5 +29,40 @@ public class UserTaskActionDefinitionJsonTests
 
         Assert.Contains("\"Label\":\"Approve\"", json);
         Assert.Equal("Approve", roundTripped.Label.Expression!.Value);
+    }
+
+    [Theory]
+    [InlineData("""{"key":"approved","label":{"typeName":"String","expression":{"type":"Literal","value":"Approve"}}}""")]
+    [InlineData("""{"Key":"approved","Label":{"TypeName":"String","Expression":{"Type":"Literal","Value":"Approve"}}}""")]
+    public void ActionDefinition_ReadsLegacyInputShapedLiteralLabel(string json)
+    {
+        var action = JsonSerializer.Deserialize<UserTaskActionDefinition>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+
+        Assert.Equal("Approve", action.Label.Expression!.Value);
+    }
+
+    [Fact]
+    public void ActionDefinition_ReadsLegacyInputShapedExpressionLabelAsNull()
+    {
+        const string json = """{"key":"approved","label":{"typeName":"String","expression":{"type":"JavaScript","value":"'Approve'"}}}""";
+
+        var action = JsonSerializer.Deserialize<UserTaskActionDefinition>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+
+        Assert.Null(action.Label);
+    }
+
+    [Fact]
+    public void ActionDefinition_WritesExpressionLabelAsNull()
+    {
+        var action = new UserTaskActionDefinition
+        {
+            Key = "approved",
+            Label = new Input<string>(new Expression("JavaScript", "'Approve'"))
+        };
+
+        var json = JsonSerializer.Serialize(action);
+
+        Assert.Contains("\"Label\":null", json);
+        Assert.Null(JsonSerializer.Deserialize<UserTaskActionDefinition>(json)!.Label);
     }
 }
