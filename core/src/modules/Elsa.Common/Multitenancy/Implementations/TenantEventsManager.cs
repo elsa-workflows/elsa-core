@@ -55,7 +55,9 @@ public class TenantEventsManager(
 
                 // A failed activation (e.g. a migration startup task) leaves the tenant half-initialized, so surface it instead of continuing.
                 if (rethrow)
+                {
                     throw;
+                }
             }
         }
     }

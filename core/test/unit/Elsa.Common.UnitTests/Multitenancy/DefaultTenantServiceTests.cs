@@ -119,7 +119,33 @@ public class DefaultTenantServiceTests
         }
     }
 
-    private static Task<(ITenantService TenantService, ServiceProvider ServiceProvider)> CreateTenantServiceAsync(IEnumerable<Tenant> tenants, Func<List<Tenant>>? tenantsFactory = null)
+    [Fact]
+    public async Task ActivateTenantsAsync_WhenActivationFails_RetriesOnNextActivation()
+    {
+        var activatedEvent = Substitute.For<ITenantActivatedEvent>();
+        activatedEvent.TenantActivatedAsync(Arg.Any<TenantActivatedEventArgs>())
+            .Returns(Task.FromException(new InvalidOperationException("Migration failed")), Task.CompletedTask);
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync(Array.Empty<Tenant>(), activatedEvent: activatedEvent);
+
+        try
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() => tenantService.ActivateTenantsAsync());
+
+            await tenantService.ActivateTenantsAsync();
+
+            var tenants = (await tenantService.ListAsync()).ToList();
+            Assert.Same(Tenant.Default, Assert.Single(tenants));
+            await activatedEvent.Received(2).TenantActivatedAsync(Arg.Any<TenantActivatedEventArgs>());
+        }
+        finally
+        {
+            if (tenantService is IAsyncDisposable disposable)
+                await disposable.DisposeAsync();
+            await serviceProvider.DisposeAsync();
+        }
+    }
+
+    private static Task<(ITenantService TenantService, ServiceProvider ServiceProvider)> CreateTenantServiceAsync(IEnumerable<Tenant> tenants, Func<List<Tenant>>? tenantsFactory = null, ITenantActivatedEvent? activatedEvent = null)
     {
         var tenantList = tenants.ToList();
         var getTenants = tenantsFactory ?? (() => tenantList);
@@ -131,7 +157,7 @@ public class DefaultTenantServiceTests
         services.AddSingleton(_ => tenantsProvider);
         services.AddSingleton<ITenantScopeFactory, DefaultTenantScopeFactory>();
         services.AddSingleton<ITenantAccessor, DefaultTenantAccessor>();
-        services.AddSingleton<ITenantActivatedEvent>(Substitute.For<ITenantActivatedEvent>());
+        services.AddSingleton(activatedEvent ?? Substitute.For<ITenantActivatedEvent>());
         services.AddSingleton<ITenantDeactivatedEvent>(Substitute.For<ITenantDeactivatedEvent>());
         services.AddSingleton<ITenantDeletedEvent>(Substitute.For<ITenantDeletedEvent>());
         services.AddSingleton<TenantEventsManager>();
