@@ -10,6 +10,7 @@ import zipfile
 import product_release_metadata as metadata
 import prove_product_release_consumers as proof
 import selected_core_consumer as core
+from product_artifact_execution import local_execution
 from selected_maintenance_test_support import patch_offline_local_execution
 import test_selected_core_producer as producer_tests
 
@@ -167,7 +168,7 @@ class CoreConsumerContracts(unittest.TestCase):
             def cell(*args, **kw):
                 calls.append(('runtime' if kw.get('runtime') else 'compile', args[2]))
                 return {'id': args[1]['id'], 'framework': args[2], 'success': True}
-            receipt = {'execution': proof.local_execution({}), 'planner_controller': {}, 'artifact_controller': {}}
+            receipt = {'execution': local_execution({}), 'planner_controller': {}, 'artifact_controller': {}}
             with patch.object(proof, 'admit_producer_stage', return_value=(plan, receipt, {'scope': 'historical-producer-start-only'})), \
                     patch.object(proof.producer, 'verify_controller', return_value={}), \
                     patch.object(proof, 'admit_artifacts', return_value=selected), \
