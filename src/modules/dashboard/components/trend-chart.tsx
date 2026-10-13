@@ -6,9 +6,15 @@ import { cn } from "@/lib/utils";
 import type { DashboardTrendBucket, DashboardTrendGranularity } from "../api";
 
 /**
- * Inline SVG trend chart: stacked outcome bars (finished / faulted / suspended) with the number of
- * started instances drawn as a muted step line, one y-axis, hover tooltip. Colours reuse the status
- * tones of `StatusBadge` so the chart, badges and tiles read as one system in both themes.
+ * Inline SVG trend chart: one stacked column per bucket for the outcomes recorded in it
+ * (finished / suspended / faulted), one y-axis, hover tooltip. Colours reuse the status tones of
+ * `StatusBadge` so the chart, badges and tiles read as one system in both themes.
+ *
+ * Started is deliberately NOT plotted. It counts a different population: a workflow started in one
+ * bucket can finish in a later one, so an hour can record more outcomes than starts (observed: 11
+ * started, 12 outcomes). Drawing the columns inside a "started" envelope claims a part-of-whole
+ * relationship that does not hold, and the stack visibly overflows its own container when it breaks.
+ * The per-bucket figure stays in the tooltip, where it reads as a separate number.
  *
  * Mark geometry follows the house chart rules: columns capped at 24px and centred in their slot
  * rather than filling it, a 2px surface gap between stacked segments, a 4px rounded cap on the top
@@ -82,8 +88,9 @@ export function TrendChart({ buckets, granularity, className }: { buckets: Dashb
     [buckets],
   );
 
-  const peak = Math.max(1, ...buckets.map((b) => Math.max(b.createdOrStarted, b.finished + b.faulted + b.suspended)));
-  const step = niceStep(peak / 2);
+  const peak = Math.max(1, ...buckets.map((b) => b.finished + b.faulted + b.suspended));
+  // Aim for about three intervals: halving leaves an axis that tops out far above the tallest column.
+  const step = niceStep(peak / 3);
   // The axis tops out on a tick, so the highest column stops at a gridline instead of mid-air.
   const axisMax = Math.ceil(peak / step) * step;
   const plotW = Math.max(0, width - PAD.left - PAD.right);
@@ -100,18 +107,6 @@ export function TrendChart({ buckets, granularity, className }: { buckets: Dashb
   const ticks = Array.from({ length: Math.floor(axisMax / step) + 1 }, (_, i) => i * step).filter((t) => t > 0);
   const xLabels = n === 0 ? [] : [0, Math.floor((n - 1) / 2), n - 1].filter((v, i, a) => a.indexOf(v) === i);
 
-  // Started is a wash behind the columns, not a stroked outline: an outline traced around the bars
-  // reads as a border on the plot rather than as a series.
-  const startedArea =
-    n === 0
-      ? ""
-      : [
-          `M${slotX(0)},${y(0)}`,
-          ...buckets.map((b, i) => `L${slotX(i)},${y(b.createdOrStarted)} H${slotX(i) + slot}`),
-          `L${slotX(n - 1) + slot},${y(0)}`,
-          "Z",
-        ].join(" ");
-
   const hovered = hover !== null ? buckets[hover] : undefined;
   // Most buckets in a quiet range are empty; a tooltip listing five zeros is noise, not information.
   const hoveredIsQuiet = !!hovered && hovered.createdOrStarted + hovered.finished + hovered.faulted + hovered.suspended + hovered.incidentBearing === 0;
@@ -119,8 +114,7 @@ export function TrendChart({ buckets, granularity, className }: { buckets: Dashb
   return (
     <div className={cn("flex flex-col gap-2", className)}>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-        <span className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-3 rounded-[2px] bg-chart-2/40" aria-hidden />
+        <span className="flex items-center gap-1.5 border-r pr-4">
           Started <span className="font-medium text-foreground tabular-nums">{totals.started.toLocaleString()}</span>
         </span>
         {SERIES.map((s) => (
@@ -159,7 +153,6 @@ export function TrendChart({ buckets, granularity, className }: { buckets: Dashb
             {hover !== null && (
               <line x1={slotX(hover) + slot / 2} x2={slotX(hover) + slot / 2} y1={PAD.top} y2={y(0)} className="stroke-foreground/30" />
             )}
-            {startedArea && <path d={startedArea} className="fill-chart-2" opacity={0.3} />}
 
             {buckets.map((b, i) => {
               const segments = SERIES.map((s) => ({ ...s, value: b[s.key] })).filter((s) => s.value > 0);
