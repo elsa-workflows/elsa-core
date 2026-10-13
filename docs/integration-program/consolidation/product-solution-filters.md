@@ -21,6 +21,7 @@ The grouping is curated in [`scripts/solution/solution-groups.json`](../../../sc
 | `Elsa.Foundation.slnf` | Foundation and its tests |
 | `Elsa.<Domain>.slnf` | Foundation plus one domain, one filter per domain |
 | `Elsa.Studio.slnf` | Studio, Foundation and `Elsa.Api.Client` |
+| `Elsa.Apps.slnf` | Official Apps projects and their internal references; released NuGet dependencies remain packages |
 | `Elsa.Extensions.slnf` | Every optional domain; Studio is not selected, though references can pull some in (see below) |
 
 Each filter also includes the project-reference closure of what it selects, so it loads and builds on its own. For

@@ -99,6 +99,41 @@ change to make deliberately rather than fold into this one.
 
 ## Configuration-backed secrets
 
-`ConfigurationSecretStore` reads values from application configuration and stores only a key. The value stays
+`ConfigurationSecretStore` reads values from the configured secrets section of application configuration
+(default `Elsa:Secrets`) and stores only a key. The value stays
 deployment-level and is not partitioned, but the `Secret` record describing it is an ordinary row and is
 tenant-scoped like any other. Two tenants may each hold a record pointing at the same configuration key.
+
+## Breaking: configuration-backed secrets only read the secrets section
+
+`ConfigurationSecretStore` now resolves a key only beneath the configured secrets section
+(`SecretsOptions.ConfigurationSectionName`, default `Elsa:Secrets`). It no longer falls back to the root of
+application configuration. A secret whose key is found only at the root now resolves as unavailable, and its
+`test` call fails.
+
+To keep such a secret working, move the value under the secrets section. The secret's configuration key stays
+the same. For a secret with configuration key `SmtpPassword`:
+
+Before:
+
+```json
+{
+  "SmtpPassword": "..."
+}
+```
+
+After:
+
+```json
+{
+  "Elsa": {
+    "Secrets": {
+      "SmtpPassword": "..."
+    }
+  }
+}
+```
+
+Environment variables follow the same shape, for example `Elsa__Secrets__SmtpPassword`. If you changed the
+section name, use that section instead of `Elsa:Secrets`.
+

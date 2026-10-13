@@ -135,15 +135,19 @@ public static partial class ActivityExecutionContextExtensions
                 value = input;
             }
 
-            await StoreInputValueAsync(context, inputDescriptor, value!);
+            await StoreInputValueAsync(context, inputDescriptor, input as Input, value!);
 
             return value;
         }
     }
 
-    private static Task StoreInputValueAsync(ActivityExecutionContext context, InputDescriptor inputDescriptor, object value)
+    private static Task StoreInputValueAsync(ActivityExecutionContext context, InputDescriptor inputDescriptor, Input? input, object value)
     {
-        if (inputDescriptor.IsSensitive)
+        // Sensitive inputs are never kept in activity state: it is persisted with the workflow instance and copied
+        // into the execution journal. An input counts as sensitive when its descriptor says so (CanContainSecrets)
+        // or when it is bound to an expression type flagged as sensitive (e.g. Secret). The activity still receives
+        // the evaluated value in memory; removing the entry also clears any value carried over from a previous run.
+        if (inputDescriptor.IsSensitive || IsBoundToSensitiveExpression(context, input))
         {
             context.ActivityState.Remove(inputDescriptor.Name);
             return Task.CompletedTask;
@@ -162,5 +166,16 @@ public static partial class ActivityExecutionContextExtensions
         }
 
         return Task.CompletedTask;
+    }
+
+    private static bool IsBoundToSensitiveExpression(ActivityExecutionContext context, Input? input)
+    {
+        var expressionType = input?.Expression?.Type;
+
+        if (expressionType == null)
+            return false;
+
+        var registry = context.GetRequiredService<IExpressionDescriptorRegistry>();
+        return registry.Find(expressionType)?.IsSensitive == true;
     }
 }

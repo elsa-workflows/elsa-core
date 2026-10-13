@@ -56,4 +56,4 @@ Everything else waits for the maintainer.
 
 ## Fixer
 
-Each run delivers one `audit:approved` issue end to end: branch, implement, two-axis review, PR, CI, Greptile and squash-merge, following the merge gate in [`.github/reviewers.md`](../reviewers.md). It picks the earliest approved issue in the order in #8700 whose prerequisites are closed. It never delivers issues labeled `breaking`: public API changes follow principle 6 (deprecate, don't break).
+Each run delivers one `audit:approved` issue end to end: branch, implement, two-axis review, PR, CI, Greptile and squash-merge, following the merge gate in [`.github/reviewers.md`](../reviewers.md). It picks the earliest approved issue in the order in #8700 whose prerequisites are closed. Public API changes follow principle 6 (deprecate, don't break). An issue labeled `breaking` is delivered only after the maintainer has approved it explicitly. The review job never auto-approves breaking work.

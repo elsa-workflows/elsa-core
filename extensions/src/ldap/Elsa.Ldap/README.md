@@ -117,7 +117,7 @@ Or via `appsettings.json`:
 
 ## 📌 Usage
 
-Once the extension is registered with your required implementations, the activities will be ready to use, either via code or [Elsa Studio](https://github.com/elsa-workflows/elsa-studio).
+Once the extension is registered with your required implementations, the activities will be ready to use, either via code or [Elsa Studio](https://github.com/elsa-workflows/elsa-core/tree/main/studio).
 
 ## 🚀 Activities 
 

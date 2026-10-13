@@ -4,9 +4,11 @@ This record implements the contribution-register slice [Core #8670](https://gith
 
 The [register](source-handoff-register.json) preserves 205 open issues (137 Studio, 68 Extensions) and 31 open PRs (15 Studio, 16 Extensions), read on 2026-10-08 at 17:22:59–17:23:05 UTC. Each row retains its original identity, readable source URL, author, title, labels, milestone, assignees and observed open state. PR rows also retain exact head/base identities and draft status. A second complete read at 17:54:14–17:54:21 UTC confirmed all 236 items unchanged, including PR heads/bases and contributor metadata. No additions or removals were found. This is a dated snapshot; refresh it before source archival or a source-item mutation.
 
+The later [five-product source cutoff](source-cutoff.md) refreshes the observed open identities across all four donors and links their per-item dispositions. It supplements this dated register without rewriting its metadata or evidence.
+
 ## Where to contribute
 
-Current consolidated development issues and PRs belong in [Elsa Core](https://github.com/elsa-workflows/elsa-core). Use `core/`, `extensions/` or `studio/` for the relevant product's source, tests and documentation; shared solution, build and integration tooling stays at the root. Follow [CONTRIBUTING](../../CONTRIBUTING.md) for product entrypoints and review requirements. Retained 3.8/3.9 maintenance follows the accepted source-repository procedure until an explicitly approved replacement is verified.
+Current consolidated development issues and PRs belong in [Elsa Core](https://github.com/elsa-workflows/elsa-core). Use `core/`, `extensions/`, `studio/`, `apps/` or `templates/` for the relevant product's source, tests and documentation; shared solution, build and integration tooling stays at the root. Follow [CONTRIBUTING](../../CONTRIBUTING.md) for product entrypoints and review requirements. Retained 3.8/3.9 maintenance follows the accepted source-repository procedure until an explicitly approved replacement is verified.
 
 Before continuing a source contribution, check for a matching Core issue or PR. Reuse a verified continuation when one exists; otherwise, open a scoped Core tracker/PR when the work is scheduled. Link the original source issue/PR and preserve author attribution. An old source item remaining open is a retained report or proposal, not automatically an active Core delivery task.
 
@@ -18,10 +20,12 @@ All 31 bounded PR reviews are retained per row, including represented portions, 
 
 Thirteen source issues reference twelve Core items. Those links are **related-only**, including existing closed items; they are not transfers, resolution evidence or accepted continuation destinations. Per-issue relationship rationales are retained. Historical ledger references remain locators with the same boundary.
 
-## Remaining source-side cutover work
+[Apps](apps-source-import.md) and [Templates](templates-source-import.md) have separate immutable contribution ledgers. Apps PR #9 is ancestry-only because its older package pins are superseded; Templates PR #9 has an attributed application after original main. Their issue #3 reports remain unresolved. The cutoff links every current item to its accepted disposition; no unmerged proposal is bulk-implemented.
+
+## Remaining operational cutover work
 
 1. Refresh open inventories and source refs immediately before source archival or individual transfers/closures. Reconcile additions, changed PR heads and newly accepted Core continuations. The recorded API interval is not an atomic cross-repository freeze.
-2. Apply and verify source README/contribution notices and issue/PR routing as part of the reviewed operational cutover. This Core record does not claim those source-side edits or contributor notifications have happened. Preserve original URLs and attribution.
+2. The [cutoff history receipt](source-cutoff.md#retained-history) retains the observed Studio/Extensions routing-notice tips without applying their trees. Any further source-side notices, routing changes or contributor notifications remain separately authorized operational actions. Preserve original URLs and attribution.
 3. Preserve the accepted 3.8/3.9 maintenance boundaries until an explicit decision establishes a verified writable replacement before source archival, or separately approves ending that maintenance. Keeping a source repository writable for retained maintenance remains an interim option. This record selects no support policy or operational owner.
 4. Verify the selected single-publisher cutover under [#8220](https://github.com/elsa-workflows/elsa-core/issues/8220), including Studio npm/ClientLib ownership and containment of competing source publishers. Existing package/source proofs do not establish credential or registry cutover.
 5. Execute only the concretely authorized operational actions, then verify actual repository archived/read-only state and record the final disposition. The register alone is not archival completion.

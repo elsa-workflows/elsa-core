@@ -48,6 +48,12 @@ public class ExpressionDescriptor
     public bool IsBrowsable { get; set; } = true;
 
     /// <summary>
+    /// Gets or sets whether values produced by this expression type are sensitive.
+    /// Inputs bound to a sensitive expression are not persisted in activity state.
+    /// </summary>
+    public bool IsSensitive { get; set; }
+
+    /// <summary>
     /// Gets or sets the expression type properties.
     /// </summary>
     public IDictionary<string, object> Properties { get; set; } = new Dictionary<string, object>();

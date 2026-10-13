@@ -121,19 +121,19 @@
       "category": "dependency_update_policy",
       "owning_workstream": "Central dependency maintenance",
       "proposed_disposition": "Merge product-specific package ecosystems and directories into the root Dependabot configuration; avoid duplicate root configurations.",
-      "evidence_or_gate": "PR #8495 merged the product policies into the root .github/dependabot.yml, and #8544 added the Feedz registries the Core root entry lacked. The earlier /src/extensions run 36503465765 returned green Actions status, but empty product discovery does not establish credential/feed resolution or product central-version acceptance. PR #8640 corrects recursive product project-directory discovery and pins the current active configuration; hosted project evaluation, product central versions and feed acceptance remain pending under Task #8636.",
+      "evidence_or_gate": "PR #8495 merged the product policies into the root .github/dependabot.yml, and #8544 added the Feedz registries the Core root entry lacked. Earlier empty discovery and cancelled runs remain failed operational evidence. PR #8640 corrected recursive selectors; #8719 subsequently selected the root solution plus the retained testing project. That actual managed run 38108457632 reached the 55-minute limit with ongoing Core strategy starts and no Extensions/Studio starts. PR #8724 prepares five smaller scheduling units preserving the complete selected inventory and root tool manifest. Static coverage does not establish evaluated central versions, Feedz resolution or Task #8636 acceptance.",
       "status": "represented_in_core",
       "completion": {
         "decision_path": "doc/integration-program/consolidation/legacy-dependabot-disposition.md",
         "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8495",
         "merge_commit": "dd3903fab232f8cf3255e8b4f0a953e2a081c3c9",
         "active_path": ".github/dependabot.yml",
-        "active_blob": "7971b16b5b839323ef24761c6d2a2fa9ced13df2",
+        "active_blob": "83e586893f4e58a5f938db815d5478afeb5651b0",
         "active_mode": "100644",
         "representation": "expanded",
         "active_update": {
-          "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8640",
-          "reason": "Corrected recursive product selectors to /src/extensions/**/Elsa.* and /src/studio/**/Elsa.* after hosted discovery missed nested projects. Tracked-project selector coverage is verified locally; hosted project evaluation, central versions and feed acceptance remain pending under Task #8636."
+          "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8724",
+          "reason": "PR #8724 replaces the root-solution scheduling unit with five project-parent batches under Task #8636 after actual managed run 38108457632 reached the 55-minute limit. It preserves the complete 356-project selection, all 173 Extensions/Studio projects, the retained testing project and root tool manifest. Each job retains cap 1, permitting up to five version-update proposals that require coordinated shared-file review and affected-product CI. PR #8719 and earlier #8640 remain historical configuration corrections; their reviewed merges do not approve this candidate. Static coverage/import checks are local evidence only; native evaluated versions, terminal managed results, retained-project disposition and configured feed acceptance remain open."
         }
       }
     },
@@ -1889,7 +1889,7 @@
         "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8432",
         "merge_commit": "4ffd19a22b34b7c7e8f1c49754c15e4b76f657db",
         "active_path": ".agents/skills/speckit-plan/SKILL.md",
-        "active_blob": "c4be8492399aedbc58c48f365349c1cdff7985cb",
+        "active_blob": "cc3d8d726dc49f107f35125f98477b62d6f586bc",
         "active_mode": "100644",
         "representation": "expanded"
       }
@@ -2190,19 +2190,19 @@
       "category": "dependency_update_policy",
       "owning_workstream": "Central dependency maintenance",
       "proposed_disposition": "Merge product-specific package ecosystems and directories into the root Dependabot configuration; avoid duplicate root configurations.",
-      "evidence_or_gate": "PR #8495 merged the product policies into the root .github/dependabot.yml, and #8544 added the Feedz registries the Core root entry lacked. The earlier /src/studio run 36503465892 returned green Actions status, but empty product discovery does not establish credential/feed resolution or product central-version acceptance. PR #8640 corrects recursive product project-directory discovery and pins the current active configuration; hosted project evaluation, product central versions and feed acceptance remain pending under Task #8636.",
+      "evidence_or_gate": "PR #8495 merged the product policies into the root .github/dependabot.yml, and #8544 added the Feedz registries the Core root entry lacked. Earlier empty discovery and cancelled runs remain failed operational evidence. PR #8640 corrected recursive selectors; #8719 subsequently selected the root solution plus the retained testing project. That actual managed run 38108457632 reached the 55-minute limit with ongoing Core strategy starts and no Extensions/Studio starts. PR #8724 prepares five smaller scheduling units preserving the complete selected inventory and root tool manifest. Static coverage does not establish evaluated central versions, Feedz resolution or Task #8636 acceptance.",
       "status": "represented_in_core",
       "completion": {
         "decision_path": "doc/integration-program/consolidation/legacy-dependabot-disposition.md",
         "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8495",
         "merge_commit": "dd3903fab232f8cf3255e8b4f0a953e2a081c3c9",
         "active_path": ".github/dependabot.yml",
-        "active_blob": "7971b16b5b839323ef24761c6d2a2fa9ced13df2",
+        "active_blob": "83e586893f4e58a5f938db815d5478afeb5651b0",
         "active_mode": "100644",
         "representation": "expanded",
         "active_update": {
-          "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8640",
-          "reason": "Corrected recursive product selectors to /src/extensions/**/Elsa.* and /src/studio/**/Elsa.* after hosted discovery missed nested projects. Tracked-project selector coverage is verified locally; hosted project evaluation, central versions and feed acceptance remain pending under Task #8636."
+          "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8724",
+          "reason": "PR #8724 replaces the root-solution scheduling unit with five project-parent batches under Task #8636 after actual managed run 38108457632 reached the 55-minute limit. It preserves the complete 356-project selection, all 173 Extensions/Studio projects, the retained testing project and root tool manifest. Each job retains cap 1, permitting up to five version-update proposals that require coordinated shared-file review and affected-product CI. PR #8719 and earlier #8640 remain historical configuration corrections; their reviewed merges do not approve this candidate. Static coverage/import checks are local evidence only; native evaluated versions, terminal managed results, retained-project disposition and configured feed acceptance remain open."
         }
       }
     },

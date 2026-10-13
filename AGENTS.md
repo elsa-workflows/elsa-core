@@ -5,9 +5,9 @@ Guidance for AI coding agents working in this repository.
 ## Project Overview
 
 - Elsa Core is a .NET solution centered on `Elsa.sln`.
-- Products live under `core/`, `extensions/`, and `studio/`, each with `src/`, `test/`, and `docs/`.
-- The root solution, solution filters, build automation, scripts and central policy are shared.
-- Read the product documentation entrypoints: [Core](core/docs/README.md), [Extensions](extensions/docs/README.md), and [Studio](studio/docs/README.md).
+- Products live under `core/`, `extensions/`, `studio/`, `apps/`, and `templates/`. Apps contains official released-package application hosts and Python container-policy tests under `apps/scripts/tests/`; its contributor entrypoint is [Apps](apps/README.md).
+- The root solution, solution filters, build automation, scripts and central policy are shared. Templates keeps its independent product solution; root `Elsa.sln` includes navigation items only for that product.
+- Read the product documentation entrypoints: [Core](core/docs/README.md), [Extensions](extensions/docs/README.md), [Studio](studio/docs/README.md), [Apps](apps/docs/README.md), and [Templates](templates/docs/README.md).
 - Build automation is implemented with NUKE in `build/Build.cs` and exposed through `build.sh`, `build.ps1`, and `build.cmd`.
 
 ## Working Rules
@@ -32,8 +32,9 @@ Guidance for AI coding agents working in this repository.
 - Build the default target: `./build.sh`
 - Run NUKE test target: `./build.sh Test`
 - Build with dotnet directly: `dotnet build Elsa.sln`
-- Focus a product build with `dotnet build Elsa.Core.slnf`, `dotnet build Elsa.Extensions.slnf`, or `dotnet build Elsa.Studio.slnf`; see product docs for selection boundaries.
-- Run all tests directly: `dotnet test Elsa.sln`
+- Focus a product build with `dotnet build Elsa.Core.slnf`, `dotnet build Elsa.Extensions.slnf`, `dotnet build Elsa.Studio.slnf`, or `dotnet build Elsa.Apps.slnf`; see product docs for selection boundaries.
+- Build Templates separately: `dotnet build Elsa.Templates.slnf` or `dotnet build templates/Elsa.Templates.slnx`; test with `dotnet test templates/test/Elsa.Templates.Tests/Elsa.Templates.Tests.csproj`. Read [Templates guidance](templates/AGENTS.md) before changing that product.
+- Run shared-solution tests directly: `dotnet test Elsa.sln`
 - Run a specific test project: `dotnet test core/test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj`
 - Run ElsaScript DSL integration tests: `./run-dsl-tests.sh`
 
@@ -53,6 +54,8 @@ Prefer targeted `dotnet test <project>` commands while iterating, then run a bro
 - `core/test/`: Core unit, integration, component and performance tests.
 - `extensions/src/`, `extensions/test/`, `extensions/docs/`, `extensions/samples/`: Extensions-owned code, tests, documentation and samples.
 - `studio/src/`, `studio/test/`, `studio/docs/`, `studio/samples/`: Studio-owned code, tests, documentation and samples. Read [Studio contributor guidance](studio/src/AGENTS.md) for Studio modules, hosts, frameworks and tests.
+- `apps/src/`, `apps/scripts/`, `apps/docs/`: official net10 application/image hosts, container policy tests and source-import guidance. Read [Apps agent guidance](apps/AGENTS.md). Apps consumes released packages and does not add Core NuGet release units.
+- `templates/src/`, `templates/test/`, `templates/docs/`: independent Elsa 3 .NET project-template pack, smoke tests and contributor guidance. Embedded starter project files are data; keep all Templates projects outside root `Elsa.sln` packing.
 - `core/docs/specs/` and `studio/docs/specs/`: product feature plans and specifications.
 - `docs/adr/`: shared architecture decisions; `docs/integration-program/`: retained consolidation and proof records.
 - `build/`, `scripts/`, `docker/`, root solution/filter files and central `Directory.*` files: shared tooling and policy.
@@ -92,32 +95,3 @@ Before handing off changes, verify the following when applicable:
 - New code follows nullable annotations and existing style.
 - No unrelated files were changed.
 - The change follows `.github/quality/PRINCIPLES.md`, which is the bar for public API, simplicity, domain language, tests, CI and docs. In particular, public API changes in 3.x deprecate rather than break (principle 6). `.github/quality/README.md` explains the audit and fix loop and its labels.
-
-<!-- SPECKIT START -->
-For additional context about technologies to be used, project structure,
-shell commands, and other important information, read `core/docs/specs/013-user-tasks/plan.md`.
-<!-- SPECKIT END -->
-
-## Active Technologies
-- C# latest, nullable reference types enabled, implicit usings enabled. + `Microsoft.Extensions.Logging`, `Microsoft.AspNetCore.SignalR`, Elsa feature/module infrastructure, FastEndpoints through Elsa API endpoint patterns, existing Elsa identity/authorization features. (003-live-server-logs)
-- Bounded in-memory ring buffer for MVP; no EF Core schema changes. Provider abstraction allows external/shared log backends later. (003-live-server-logs)
-- C# latest, nullable reference types enabled, implicit usings enabled. + `Microsoft.Extensions.Logging`, `Microsoft.Extensions.Options`, `Microsoft.AspNetCore.SignalR`, Elsa feature/module infrastructure, FastEndpoints through Elsa API endpoint patterns, CShells shell feature infrastructure. (004-diagnostics-structured-logs)
-- Existing bounded in-memory ring buffer; no EF Core schema changes. Provider abstraction remains available for future shared backends. (004-diagnostics-structured-logs)
-- C# latest, nullable reference types enabled, implicit usings enabled. + Existing `Elsa.Diagnostics.StructuredLogs`, `Microsoft.Extensions.Logging`, `Microsoft.Extensions.Options`, `Microsoft.AspNetCore.SignalR`, Elsa feature/module infrastructure, FastEndpoints through Elsa API endpoint patterns, FluentMigrator runner packages, SQLite ADO.NET provider, and optionally Dapper for relational operations. (005-structured-log-persistence)
-- Bounded in-memory store by default; opt-in SQLite durable store through shared relational persistence. SQLite stores `Timestamp` and `ReceivedAt` as UTC ISO-8601 text and stores exception, scope, and property payloads as JSON text. (005-structured-log-persistence)
-- C# latest, nullable reference types enabled, implicit usings enabled. + `Microsoft.Extensions.Options`, `Microsoft.AspNetCore.SignalR`, Elsa feature/module infrastructure, FastEndpoints through Elsa API endpoint patterns, Elsa shell feature infrastructure, and existing Elsa identity/authorization patterns. (006-diagnostics-console-logs)
-- Bounded in-memory recent buffer and bounded subscriber queues by default; no durable database schema. Providers receive redacted content only. (006-diagnostics-console-logs)
-- C# latest, nullable reference types enabled, implicit usings enabled. + Elsa feature/module infrastructure, FastEndpoints through Elsa API endpoint patterns, existing Elsa identity/authorization patterns, Elsa workflow input metadata, `Microsoft.Extensions.Configuration`, `Microsoft.AspNetCore.DataProtection`, EF Core persistence infrastructure, mediator notifications, and optional JavaScript expression integration. (007-secrets-module)
-- In-memory store for tests/development; Elsa-managed encrypted store with EF Core persistence for production; configuration-backed read-only store for deployment-managed values. No cloud vault or OS certificate store provider in v1. (007-secrets-module)
-- C# latest, nullable reference types enabled, implicit usings enabled; paired Studio Blazor/Razor module work in the Studio repository. + Elsa feature/module infrastructure, FastEndpoints through Elsa API endpoint patterns, existing identity/authorization and tenancy services, workflow definition/instance abstractions, diagnostics/log abstractions, `Microsoft.Extensions.Options`, `Microsoft.Extensions.Logging`, OpenTelemetry, `System.Text.Json`, SignalR or SSE streaming, GitHub Copilot SDK isolated behind `Elsa.AI.Copilot`, and headless Copilot CLI JSON-RPC integration. (008-weaver-ai-copilot)
-- Configurable conversation/session retention with in-memory support for development and tests; durable proposal and audit stores required for MVP using Elsa persistence provider abstractions and an EF Core provider package for production. (008-weaver-ai-copilot)
-- C# latest, nullable reference types enabled, implicit usings enabled. + Elsa AI abstractions/host modules, `GitHub.Copilot.SDK` isolated behind `Elsa.AI.Copilot`, Activity Registry, workflow management/runtime abstractions, existing identity/tenancy services, FastEndpoints through Elsa endpoint patterns, `System.Text.Json`, `Microsoft.Extensions.Options`, and `Microsoft.Extensions.Logging`. (012-weaver-grounding-tools)
-- Existing workflow definition/runtime stores and Activity Registry are read sources; durable proposal and audit stores remain the write/governance path; no new required database schema for the grounding MVP. (012-weaver-grounding-tools)
-
-## Recent Changes
-- 012-weaver-grounding-tools: Plans governed Weaver grounding tools for installed activities, workflow definitions, workflow proposals, workflow instances, incidents, and Studio capability discovery.
-- 008-weaver-ai-copilot: Captures Weaver as a server-hosted, provider-isolated AI copilot platform with Studio chat, governed tools, proposal-only workflow mutations, audit, and extensibility.
-- 006-diagnostics-console-logs: Plans raw stdout/stderr console capture with redaction-before-provider boundaries, bounded in-memory recent/live buffers, REST backfill/source endpoints, and a SignalR live hub.
-- 005-structured-log-persistence: Plans pluggable structured log storage with in-memory default and opt-in SQLite persistence using FluentMigrator.
-- 004-diagnostics-structured-logs: Refactors the unpublished server logs module into diagnostics structured logs and preserves bounded structured `ILogger` capture.
-- 003-live-server-logs: Added C# latest, nullable reference types enabled, implicit usings enabled. + `Microsoft.Extensions.Logging`, `Microsoft.AspNetCore.SignalR`, Elsa feature/module infrastructure, FastEndpoints through Elsa API endpoint patterns, existing Elsa identity/authorization features.

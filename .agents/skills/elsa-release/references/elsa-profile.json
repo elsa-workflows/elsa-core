@@ -1,5 +1,22 @@
 {
   "schema": 1,
+  "status": "Retired four-repository 3.8/3.9 maintenance profile. Studio, Extensions and Apps are folded into elsa-core (standing order 2026-10-11) and must not be released, dispatched or contacted. Only the core and templates repositories, the feeds, the post-release sites and the announcements remain in use. See references/runbook.md, Scope.",
+  "retired_by_fold": {
+    "note": "Additive annotation: the helper ignores it, and it sits outside the compared repositories and container_release sections so existing checkpoints stay resumable.",
+    "repositories": {
+      "studio": {
+        "reason": "Folded into elsa-core; do not release or select it.",
+        "required_jobs_pending_in_core": {
+          "Publish npm packages to feedz.io": "elsa-workflows/elsa-core#8725",
+          "Publish npm packages to npmjs.com": "elsa-workflows/elsa-core#8725"
+        }
+      },
+      "extensions": {
+        "reason": "Folded into elsa-core; do not release or select it. Packing its projects through core packages.yml is tracked in elsa-workflows/elsa-core#8725."
+      }
+    },
+    "container_release": "Points at elsa-apps, which is folded into elsa-core and off limits. Core has no image workflow yet; run with --no-containers."
+  },
   "container_release": {
     "repository": "elsa-workflows/elsa-apps",
     "workflow": ".github/workflows/container-images.yml",

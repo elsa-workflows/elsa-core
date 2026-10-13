@@ -4,7 +4,7 @@ These instructions apply to Studio modules, hosts, frameworks and colocated
 .NET tests under `studio/src/`, and browser fixtures under `studio/test/`.
 Follow the repository-root `AGENTS.md` for shared build, review, testing,
 package and ADR rules. This guidance carries the Studio-specific rules from the pinned
-[Studio constitution](https://github.com/elsa-workflows/elsa-studio/blob/20ceaeeed7e671f0c9662003e82063026f2216de/.specify/memory/constitution.md)
+[Studio constitution](../../docs/integration-program/legacy/studio/.specify/memory/constitution.md.source)
 into the consolidated source layout.
 
 ## Module boundaries
@@ -51,9 +51,8 @@ into the consolidated source layout.
 ## Plans and verification
 
 - Keep Studio feature-specific requirements, plans, and tasks under
-  `studio/docs/specs/<feature>/`. Do not change the repository-root
-  `AGENTS.md` plan pointer solely for a Studio feature; put its implementation
-  context and backend dependencies in the feature's `plan.md`.
+  `studio/docs/specs/<feature>/`. Put a Studio feature's
+  implementation context and backend dependencies in the feature's `plan.md`.
 - Test client services and filter/query mapping at the smallest practical
   level. Add component tests where the existing infrastructure supports them.
   Consider authentication, absent remote features, and disconnected backends

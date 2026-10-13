@@ -3,23 +3,84 @@ name: Integration program tools
 on:
   pull_request:
     paths:
-      - 'Elsa.sln'
+      - '**/*.sln'
+      - '**/*.slnx'
       - 'Elsa.Extensions.slnf'
       - 'Elsa.Studio.slnf'
       - '.github/dependabot.yml'
-      - 'extensions/src/**/*.csproj'
-      - 'studio/src/**/*.csproj'
+      - '.config/dotnet-tools.json'
+      - '**/*.csproj'
+      - '**/*.proj'
+      - '**/*.fsproj'
+      - '**/*.vbproj'
+      # MSBuild imports can use custom and lower-case names.
+      - '**/*.props'
+      - '**/*.targets'
+      - '**/[Nn]u[Gg]et.[Cc]onfig'
+      - '**/global.json'
+      - 'docs/integration-program/consolidation/dependabot-recursive-discovery.md'
       - 'scripts/integration-program/**'
+      - 'Elsa.Apps.slnf'
+      - 'Elsa.Templates.slnf'
+      - 'scripts/solution/solution-groups.json'
+      - 'extensions/src/Elsa.Testing.Extensions/**'
       - 'extensions/samples/workbench/**'
       - 'docs/integration-program/verify-hierarchy.py'
       - 'docs/integration-program/hierarchy.json'
       - '.github/workflows/integration-program-tools.yml'
+      - '.github/workflows/publish-studio-original-pair.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  retained-testing-helper:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: '10.0.300'
+      - name: Restore and build the retained helper on every supported framework
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import subprocess
+
+          project = Path('extensions/src/Elsa.Testing.Extensions/Elsa.Testing.Extensions.csproj')
+          package = 'Microsoft.AspNetCore.Mvc.Testing'
+          for framework in ('net8.0', 'net9.0', 'net10.0'):
+              subprocess.run([
+                  'dotnet', 'build', str(project), '--configuration', 'Release',
+                  '--framework', framework, '--nologo', '-m:1',
+              ], check=True)
+              evaluation = json.loads(subprocess.check_output([
+                  'dotnet', 'msbuild', str(project), '-nologo',
+                  f'-p:TargetFramework={framework}',
+                  '-getProperty:ManagePackageVersionsCentrally',
+                  '-getItem:PackageVersion,PackageReference',
+              ], text=True))
+              references = [item for item in evaluation['Items']['PackageReference']
+                            if item['Identity'] == package]
+              if (evaluation['Properties']['ManagePackageVersionsCentrally'].lower() != 'true'
+                      or len(references) != 1 or references[0].get('Version')
+                      or references[0].get('VersionOverride')):
+                  raise SystemExit(f'{framework}: MVC.Testing must use central package management')
+              versions = [item['Version'] for item in evaluation['Items']['PackageVersion']
+                          if item['Identity'] == package]
+              assets = json.loads((project.parent / 'obj/project.assets.json').read_text())
+              resolved = [identity for identity in assets['targets'][framework]
+                          if identity.startswith(f'{package}/')]
+              if len(versions) != 1 or resolved != [f'{package}/{versions[0]}']:
+                  raise SystemExit(f'{framework}: resolved MVC.Testing differs from central policy')
+              print(f'{framework}: built with MVC.Testing {versions[0]}', flush=True)
+          PY
+
   import-rehearsal-tests:
     runs-on: ubuntu-latest
     steps:

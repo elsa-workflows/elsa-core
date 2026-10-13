@@ -42,10 +42,10 @@ public class SecretStoreTests
     }
 
     [Fact]
-    public async Task ConfigurationStore_FallsBackToRootConfigurationKey()
+    public async Task ConfigurationStore_DoesNotResolveKeysOutsideSecretsSection()
     {
         var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?> { ["SmtpPassword"] = "root-configured-secret" })
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["SmtpPassword"] = "root-configured-value" })
             .Build();
         var fixture = new SecretTestFixture(configuration);
 
@@ -55,11 +55,53 @@ public class SecretStoreTests
             StoreName = SecretStoreNames.Configuration,
             ConfigurationKey = " SmtpPassword "
         });
-        var value = await fixture.Resolver.ResolveAsync("smtp:password");
+        var version = secret.Versions.Single();
+        var store = fixture.StoreRegistry.Get(SecretStoreNames.Configuration);
 
-        Assert.Equal("root-configured-secret", value);
-        Assert.Null(secret.Versions.Single().Payload.Value);
-        Assert.Equal("SmtpPassword", secret.Versions.Single().Payload.Metadata["configurationKey"]);
+        Assert.Null(await store.ReadAsync(secret, version));
+        Assert.False(await store.TestAsync(secret, version));
+        Assert.Equal("SmtpPassword", version.Payload.Metadata["configurationKey"]);
+    }
+
+    [Fact]
+    public async Task ConfigurationStore_DoesNotResolveNestedKeysOutsideSecretsSection()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?> { ["ConnectionStrings:Default"] = "root-configured-value" })
+            .Build();
+        var fixture = new SecretTestFixture(configuration);
+
+        var secret = await fixture.Manager.CreateAsync(new CreateSecretRequest
+        {
+            Name = "db:connection",
+            StoreName = SecretStoreNames.Configuration,
+            ConfigurationKey = "ConnectionStrings:Default"
+        });
+        var store = fixture.StoreRegistry.Get(SecretStoreNames.Configuration);
+
+        Assert.Null(await store.ReadAsync(secret, secret.Versions.Single()));
+    }
+
+    [Fact]
+    public async Task ConfigurationStore_PrefersSecretsSectionOverRootKey()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["SmtpPassword"] = "root-configured-value",
+                ["Elsa:Secrets:SmtpPassword"] = "section-configured-secret"
+            })
+            .Build();
+        var fixture = new SecretTestFixture(configuration);
+
+        await fixture.Manager.CreateAsync(new CreateSecretRequest
+        {
+            Name = "smtp:password",
+            StoreName = SecretStoreNames.Configuration,
+            ConfigurationKey = "SmtpPassword"
+        });
+
+        Assert.Equal("section-configured-secret", await fixture.Resolver.ResolveAsync("smtp:password"));
     }
 
     [Fact]

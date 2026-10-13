@@ -1,10 +1,54 @@
 # Reconcile the imported Dependabot policies
 
-The consolidated repository has one root Dependabot file. Keep Core's weekly NuGet update entry at `/`, correct its ecosystem spelling to Dependabot's accepted lowercase `nuget`, and exclude `src/extensions/**` and `src/studio/**` from that scan. The imported product policies then run against their relocated manifest trees, `/src/extensions` and `/src/studio`, with the Core entry excluding those same manifests from its recursive root scan.
+## Current bounded policy under Task #8636
 
-Both product entries retain their daily schedule, `main` target, Feedz preview registry, one-open-PR limit, and `deps` commit prefix. Extensions keeps its `Elsa*` group. The source policies' Elsa-only allowlists are deliberately dropped: once the weekly root scan excludes the relocated product trees, those allowlists would also suppress third-party package updates for those trees. The product entries therefore scan all NuGet dependencies, including the actual `Elsa.Platform.PackageManifest.Generator` ID, without adding another ecosystem. The registry credential remains `FEEDZ_API_KEY`; availability of that repository secret and Dependabot's acceptance of the final config remain review gates. The ledger rows stay pending until the decision is merged and the validator can record the reviewed PR and merge commit.
+The October 8 owner decision permits coordinated Core, Extensions and Studio
+proposals with affected-product CI. [PR #8719](https://github.com/elsa-workflows/elsa-core/pull/8719)
+merged a root-solution job plus the retained testing project. Its actual managed
+run [38108457632](https://github.com/elsa-workflows/elsa-core/actions/runs/38108457632)
+reached the 55-minute limit with ongoing Core strategy starts, before any
+Extensions or Studio strategy start. It did not satisfy operational acceptance.
 
-The active configuration and ledger cover exactly the relocated policy paths; the inert `.source` files remain provenance records. No publisher workflow is changed.
+[PR #8724](https://github.com/elsa-workflows/elsa-core/pull/8724) prepares five
+project-parent scheduling units: Core production, Core tests, Extensions, Studio,
+and shared build/tooling. Static coverage preserves all 356 selected projects,
+including all 173 Extensions/Studio projects, the retained testing project, and
+separate root tool-manifest coverage. Both Feedz declarations and the
+`FEEDZ_API_KEY` name remain; no package version or publisher changes.
+
+Daily jobs are staggered from 06:00 through 18:00 Europe/Amsterdam. Each keeps
+a one-PR cap and the `Elsa*` group, so up to five version-update PRs can be open.
+Staggering does not enforce a global cap. Shared central files, tool manifests
+and referenced projects can overlap; the integration owner reconciles proposals
+and requires all affected-product CI and ordinary review/merge gates.
+
+The ledger preserves the original #8495 decision, merge and imported source pins.
+Its active configuration blob identifies this candidate and its active update
+links to #8724. #8640 and #8719 remain historical evidence. The
+[bounded discovery record](dependabot-recursive-discovery.md) records the complete
+census, static import checks and remaining native/managed acceptance gates.
+This does not claim approval or merge of #8724, completed evaluated discovery,
+feed resolution or Task acceptance. Existing Studio proposal #8673 remains a
+bounded proposal, not complete inventory evidence.
+
+## Historical separate product policies (superseded)
+
+The former policy retained Core's weekly NuGet update entry at `/`, corrected its
+ecosystem spelling to lowercase `nuget`, and excluded `src/extensions/**` and
+`src/studio/**`. Imported product entries scanned the then-relocated trees at
+`/src/extensions` and `/src/studio` separately. These paths predate the sibling
+`core/`, `extensions/` and `studio/` layout and are not current instructions.
+
+Both product entries retained their daily schedule, `main` target, Feedz preview
+registry, one-open-PR limit and `deps` commit prefix. Extensions retained its
+`Elsa*` group. Their Elsa-only allowlists were dropped so third-party dependencies
+in the excluded product trees could receive updates, including the actual
+`Elsa.Platform.PackageManifest.Generator` ID. The credential name remained
+`FEEDZ_API_KEY`. The original decision required a reviewed merge and ledger pins;
+its provenance remains preserved alongside the subsequent corrections.
+
+The former root configuration represented the relocated policy paths; inert
+`.source` files retained source provenance. No publisher workflow changed.
 
 ## Post-landing verification (2026-09-29)
 
@@ -18,12 +62,13 @@ The same run exposed a separate, older gap in the Core root entry. `nuget in /.`
 
 ## Recursive discovery correction (2026-10-06)
 
-[PR #8640](https://github.com/elsa-workflows/elsa-core/pull/8640) corrects the
+[PR #8640](https://github.com/elsa-workflows/elsa-core/pull/8640) corrected the
 product selectors to `/src/extensions/**/Elsa.*` and `/src/studio/**/Elsa.*`
-after hosted runs missed nested project manifests. The two ledger rows pin the
-current root configuration blob and cite this PR as their active update. Their
-original disposition PR, merge commit, source blobs, modes and archived receipt
-pins remain historical evidence. The pinned E96 receipt audit still compares
+after hosted runs missed nested project manifests. At that checkpoint, the two
+ledger rows pinned the then-current root configuration blob and cited #8640 as
+their active update. The current coordinated correction is recorded separately
+above. The original disposition PR, merge commit, source blobs, modes and
+archived receipt pins remain historical evidence. The pinned E96 receipt audit still compares
 the same 163 source assets and validates the current ledger separately.
 
 The earlier green Actions statuses remain historical run evidence. Empty
