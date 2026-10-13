@@ -1,6 +1,7 @@
 """Historical MySQL support admission and plan/inventory regressions; no restore."""
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -103,6 +104,8 @@ class ExtensionsMySqlContinuationTests(unittest.TestCase):
         for line, expected in self.contract['sources'].items():
             with self.subTest(line=line), tempfile.TemporaryDirectory() as private:
                 row = self.rows[expected['commit']]
+                (Path(private) / 'global.json').write_text(json.dumps(
+                    {'sdk': {'version': metadata.SDK, 'rollForward': 'disable'}}) + '\n')
                 source = Path(private) / 'source'
                 metadata.checkout_source(maintenance.ROOT, row, source)
                 paths = metadata.git(source, 'ls-files', 'test/**/*.csproj').splitlines()

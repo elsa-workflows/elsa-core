@@ -15,7 +15,12 @@ if (provider.GetService<IHttpClientFactory>() is null)
     throw new InvalidOperationException("HTTP shell feature did not register IHttpClientFactory.");
 }
 
-using var handler = new FakeHandler();
+using var response = new HttpResponseMessage(HttpStatusCode.OK)
+{
+    Content = new StringContent("archived-http-content", Encoding.UTF8, "text/plain")
+};
+response.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment") { FileName = "input.txt" };
+using var handler = new FakeHandler(response);
 using var client = new HttpClient(handler);
 var strategy = new UrlContentStrategy(NullLogger<UrlContentStrategy>.Instance, new FakeFactory(client));
 if (!strategy.CanResolve("https://example.invalid/input.txt") || !strategy.CanResolve("http://example.invalid/input.txt") ||
@@ -45,7 +50,7 @@ sealed class FakeFactory(HttpClient client) : IHttpClientFactory
     public HttpClient CreateClient(string name) => client;
 }
 
-sealed class FakeHandler : HttpMessageHandler
+sealed class FakeHandler(HttpResponseMessage response) : HttpMessageHandler
 {
     public int Calls { get; private set; }
 
@@ -56,11 +61,6 @@ sealed class FakeHandler : HttpMessageHandler
             throw new InvalidOperationException("Unexpected HTTP request.");
         }
         Calls++;
-        var response = new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StringContent("archived-http-content", Encoding.UTF8, "text/plain")
-        };
-        response.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment") { FileName = "input.txt" };
         return Task.FromResult(response);
     }
 }

@@ -1,13 +1,12 @@
 """Closed public plan projection for the six original selected-product cells."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime
 import re
 from urllib.parse import urlsplit
 
 import plan_product_release as planner
 import product_release_metadata as metadata
-import prepare_maintenance_build as maintenance
 from prove_consolidated_packages import require
 import selected_control_transport as transport
 

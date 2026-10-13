@@ -1,12 +1,10 @@
 """Offline exact-source admission contracts; no NUKE or generator execution."""
 from copy import deepcopy
-from pathlib import Path
 import unittest
 
 import extensions_manifest_continuation as continuation
 import prepare_maintenance_build as maintenance
 import product_release_metadata as metadata
-import selected_extensions_contract as extensions
 import selected_maintenance_39 as maintenance39
 
 

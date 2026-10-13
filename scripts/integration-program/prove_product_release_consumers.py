@@ -27,7 +27,7 @@ import selected_core_consumer as core
 import selected_maintenance_39 as maintenance39
 from selected_consumer_cache_retirement import retire_successful_cell_caches
 from selected_product_consumer_metadata import nearest_group
-from product_artifact_execution import local_execution, selected_execution, validate_selected_execution
+from product_artifact_execution import selected_execution, validate_selected_execution
 from prove_consolidated_packages import archive_names, dependency_groups, framework_reference_groups, metadata as nuspec, require
 
 ROOT = Path(__file__).resolve().parents[2]
