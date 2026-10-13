@@ -131,6 +131,22 @@ class HostedWorkflowContracts(unittest.TestCase):
         normal, optimized = planner['jobs']['contracts']['steps'][-1]['run'].splitlines()
         self.assertIn('test_selected_control_workflow', normal.split())
         self.assertIn('test_selected_control_workflow', optimized.split())
+        for command in (normal, optimized):
+            self.assertEqual(1, command.split().count('test_selected_core_manifest_hints'))
+
+    def test_selector_full_suite_installs_exact_native_sdk_before_both_modes(self):
+        import product_release_metadata as metadata
+        workflow = yaml.safe_load((ROOT / '.github/workflows/package-impact-closure.yml').read_text())
+        steps = workflow['jobs']['selector-and-plan']['steps']
+        sdk = next(step for step in steps if step.get('uses', '').startswith('actions/setup-dotnet@'))
+        suite = next(step for step in steps if step.get('name') == 'Test selector and closure classification')
+        self.assertEqual(metadata.SDK, sdk['with']['dotnet-version'])
+        self.assertRegex(sdk['uses'], r'@[a-f0-9]{40}$')
+        self.assertLess(steps.index(sdk), steps.index(suite))
+        self.assertNotIn('if', sdk)
+        self.assertNotIn('continue-on-error', suite)
+        self.assertEqual(["python -m unittest discover -s scripts/integration-program -p 'test_*.py'",
+            "python -O -m unittest discover -s scripts/integration-program -p 'test_*.py'"], suite['run'].splitlines())
 
     def test_ineligible_plan_reports_only_closed_reason_categories_before_snapshot(self):
         """Verify ineligible plan reports only closed reason categories before snapshot."""
