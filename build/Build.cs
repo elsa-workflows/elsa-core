@@ -80,6 +80,10 @@ partial class Build : NukeBuild, ITest, IPack
         ((IHazSolution)this).Solution.AllProjects.Where(x => x.Name.EndsWith("Tests"));
 
     public Configure<DotNetTestSettings, Project> TestProjectSettings => (testSettings, project) => testSettings
+        // Keep all three Quartz framework receipts; NUKE's fixed filename would overwrite them.
+        .When(_ => project.Name == "Elsa.Scheduling.Quartz.UnitTests", settings => settings
+            .RemoveLoggers($"trx;LogFileName={project.Name}.trx")
+            .AddLoggers($"trx;LogFilePrefix={project.Name}"))
         .When(_ => GitHubActions.Instance is not null, settings => settings.AddLoggers("GitHubActions;report-warnings=false"))
         .When(_ => AnalyseCode, settings => settings
             .SetCoverletOutputFormat(CoverletOutputFormat.opencover)
