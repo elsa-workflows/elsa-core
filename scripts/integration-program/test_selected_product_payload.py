@@ -39,6 +39,7 @@ def fixture(product, line, *, source_mutation=None):
                    if r['commit'] == metadata.DESCENDANTS[(product, line)])
         source.update({k: row[k] for k in ('commit', 'tree', 'parents')})
         source['candidate_register_sha256'] = contracts['candidate_register_sha256']
+        source.update(metadata.mysql.binding(row, contracts['extensions_mysql']))
     if product == 'core':
         # A synthetic current observation retains the original source/ref/tag shape.
         source['observation']['observed_at'] = plan['observed_at']
@@ -56,10 +57,15 @@ def fixture(product, line, *, source_mutation=None):
         records = core_producer['packages']['selected']
     else:
         records = []
-        for identifier in ('Elsa.IO.Http', 'Elsa.IO'):
+        for identifier in ('Elsa.IO.Http', 'Elsa.IO', *[item['id'] for item in contracts['extensions_mysql']['support_policy']['projects']]):
             policy = deepcopy(template)
             policy.update(id=identifier, project='src/modules/io/' + identifier + '/' + identifier + '.csproj')
             policy['metadata']['dependency_groups'] = []
+            mysql = next((item for item in contracts['extensions_mysql']['support_policy']['projects'] if item['id'] == identifier), None)
+            if mysql:
+                policy.update(project=mysql['project'], frameworks=['net8.0', 'net9.0'])
+                policy['metadata']['original_output_policy'].pop('net10.0')
+                policy['metadata']['dependency_groups'] = [{'framework': f, 'dependencies': []} for f in policy['frameworks']]
             entries = {f'lib/{target}/{identifier}.dll': (identifier + target).encode() for target in policy['frameworks']}
             if identifier == 'Elsa.IO.Http':
                 for values in policy['metadata']['original_output_policy'].values():
@@ -70,12 +76,13 @@ def fixture(product, line, *, source_mutation=None):
                     'repositoryUrl': 'https://github.com/elsa-workflows/elsa-core'}, 'features': [
                     {'id': 'Elsa.IO.Http.HTTP', **payload.extensions.MANIFEST_FEATURE,
                      'dependencies': [{'featureId': 'Elsa.IO.Http.I/O', 'optional': False, 'extensions': {}}]}]})
-            spec = (f'<package><metadata><id>{identifier}</id><version>{version}</version>'
+            groups = '<dependencies>' + ''.join(f'<group targetFramework="{f}" />' for f in policy['frameworks']) + '</dependencies>' if mysql else ''
+            spec = (f'<package><metadata><id>{identifier}</id><version>{version}</version>{groups}'
                 f'<repository type="git" url="https://github.com/elsa-workflows/elsa-core" commit="{source["commit"]}" />'
                 '</metadata></package>').encode()
             entries['a.nuspec'] = spec
             own = []
-            for suffix, members in (('nupkg', entries), ('snupkg', {'a.nuspec': spec, 'lib/net10.0/' + identifier + '.pdb': b'pdb'})):
+            for suffix, members in (('nupkg', entries), ('snupkg', {'a.nuspec': spec} | {f'lib/{target}/{identifier}.pdb': b'pdb' for target in policy['frameworks']})):
                 data = zipped(list(members.items()))
                 record = {'file': f'{identifier}.{version}.{suffix}', 'id': identifier, 'version': version,
                           'sha256': metadata.sha256(data), 'size': len(data), 'inventory': transport.inventory(members)}
@@ -102,12 +109,16 @@ def fixture(product, line, *, source_mutation=None):
         for item in selected.values():
             policy = item['policy']; old = deepcopy(policy['metadata']['original_output_policy'])
             policy.update({key: deepcopy(template[key]) for key in ('project_url', 'repository_url', 'symbol_format')})
-            policy['metadata'] = deepcopy(template['metadata']); policy['metadata']['dependency_groups'] = []
+            groups = deepcopy(policy['metadata'].get('dependency_groups', []))
+            policy['metadata'] = deepcopy(template['metadata']); policy['metadata']['dependency_groups'] = groups
             policy['metadata']['original_output_policy'] = {f: deepcopy(template['metadata']['original_output_policy'][f]) | values for f, values in old.items()}
     for record in records:
         record['inventory'].sort(key=lambda row: row['path'])
     policies = [item['policy'] for item in selected.values()]
-    tests = historic['test_projects']
+    tests = deepcopy(historic['test_projects'])
+    if product == 'extensions':
+        policy = contracts['extensions_mysql']['support_policy']
+        tests[policy['quartz_test_project']] = policy['quartz_test_frameworks']
     projects = [{'path': r['project'], 'package_id': r['id'], 'is_packable': True, 'is_test_project': False,
         'target_frameworks': r['frameworks'], 'references_by_framework': {f: {'project_references': [], 'package_references': []} for f in r['frameworks']},
         'project_references': [], 'package_references': []} for r in policies]
@@ -171,7 +182,7 @@ def fixture(product, line, *, source_mutation=None):
         row.update(id=policy['id'], framework=target, archive_sha256=item['record']['sha256'], original_output_policy=policy['metadata']['original_output_policy'][target])
         row['sdk_restore']['original_assets_sha256'] = policy['metadata']['restore_assets_sha256']
         row['input_sha256']['Program.cs'] = metadata.sha256(contracts['fixtures'][product] if runtime else b'extern alias selected;\npublic class CompileContract {}\n')
-        admitted = list(selected.values()) if runtime else [item]
+        admitted = [x for x in selected.values() if target in x['policy']['frameworks']] if runtime else [item]
         row['restored'] = [{'id': x['policy']['id'], 'version': version, 'assets_type': 'package', 'source': 'selected-local-archives',
             'sha256': x['record']['sha256'], 'sha512': hashlib.sha512(x['data']).hexdigest()} for x in admitted]
         row['restored_payloads'] = [{'id': x['policy']['id'], 'version': version, 'payloads': [

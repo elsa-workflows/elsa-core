@@ -33,7 +33,7 @@ class Maintenance39Contracts(unittest.TestCase):
 
     def test_exact_git_runtime_recipe_compiler_and_test_pins_for_both_sources(self):
         """Verify exact Git runtime recipe compiler and test pins for both sources."""
-        for product, count, cells in [('studio', 16, 18), ('extensions', 17, 17)]:
+        for product, count, cells in [('studio', 16, 18), ('extensions', 17, 19)]:
             plan = self.plan(product)
             selected.verify_source(artifacts.ROOT, plan)
             tests = selected.contract(product)['test_projects']

@@ -9,6 +9,7 @@ import re
 import subprocess
 
 import core_source_continuation as continuation
+import extensions_mysql_continuation as mysql
 import prepare_maintenance_build as maintenance
 from package_impact import InventoryGraph
 from prove_consolidated_packages import dependency_groups, framework_reference_groups, parse_metadata, require, run
@@ -20,6 +21,8 @@ PLANNER_INPUTS = frozenset({
     'scripts/integration-program/product_release_metadata.py',
     'scripts/integration-program/ProductReleaseSemantics/Program.cs',
     'scripts/integration-program/ProductReleaseSemantics/ProductReleaseSemantics.csproj',
+    'scripts/integration-program/extensions_mysql_continuation.py',
+    'scripts/integration-program/extensions_mysql_continuation_contract.json',
     'scripts/integration-program/core_source_continuation.py',
     'scripts/integration-program/core_source_continuation_contract.json',
     'scripts/integration-program/selected_core_contract.json',
@@ -28,8 +31,8 @@ CORE_REFS = {'3.8': 'refs/heads/release/3.8.4', '3.9': 'refs/heads/release/3.9.0
 DESCENDANTS = {
     ('studio', '3.8'): 'da2dec10ba36c65e376138ee45e1c34525e45e49',
     ('studio', '3.9'): '98a3f23d9c3c67080f3926eeb584036c49855b72',
-    ('extensions', '3.8'): '984009a61c786a9f585ee0ce6304a1281f367dff',
-    ('extensions', '3.9'): '25d70474c6326a430b7f5c8701dc5e416295549a',
+    ('extensions', '3.8'): '79e98dd6cc17441124f7e982ce007470f76ad89b',
+    ('extensions', '3.9'): 'c88477f7af51ac70edb5c0ad5e39075e4db130a9',
 }
 OWNERSHIP_DOCUMENT = 'docs/integration-program/consolidation/secrets-legacy-package-disposition.md'
 OWNERSHIP_SHA256 = '1796509a72de4bd6d3831765df9453da773fb41069cb1202166505fb695b5958'
@@ -121,7 +124,8 @@ def bind_source(controller: Path, product: str, line: str, commit: str, observat
             **{key: row[key] for key in ('commit', 'tree', 'parents', 'original_commit', 'original_parents',
                                         'contained_commit', 'contained_tree')},
             'candidate_register_sha256': sha256(maintenance.CANDIDATES.read_bytes()),
-            'original_register_sha256': sha256(maintenance.REGISTER.read_bytes())}
+            'original_register_sha256': sha256(maintenance.REGISTER.read_bytes()),
+            **mysql.binding(row, mysql.load_contract())}
 
 
 def checkout_source(controller: Path, binding: dict, destination: Path) -> None:

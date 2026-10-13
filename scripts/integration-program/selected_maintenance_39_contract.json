@@ -3,7 +3,7 @@
   "schema": 1,
   "sources": {
     "extensions": {
-      "commit": "25d70474c6326a430b7f5c8701dc5e416295549a",
+      "commit": "c88477f7af51ac70edb5c0ad5e39075e4db130a9",
       "excluded_canonical": [
         {
           "id": "Elsa.Secrets.Persistence.EFCore.PostgreSql",
@@ -40,10 +40,11 @@
         "Elsa.Extensions.sln": "42aace26dfd34157a608d8ec1ec8fe8570a21506",
         "NuGet.Config": "e3f020ab738262a079598ac58a5d22d6429db064",
         "build/Build.CI.GitHubActions.cs": "e88af9df5c6005a0a014f14b2575cefdded26bb1",
-        "build/Build.cs": "1abe2f2dc4a50206fa30958a508d00279d0508a7",
+        "build/Build.cs": "4ea2b88cd5238c4dbc241bcee3f93c8fed0e12bb",
         "build/_build.csproj": "24319083da5c04240f5da58037d5a4895bc70196",
         "src/modules/Directory.Build.props": "c457c8e6daaa2de2f66f84dac7b27d281dcc8cf1",
         "src/modules/PackageManifestHints.cs": "63d76de64a93ad3f0d0bc763795de15bafe6c088",
+        "src/modules/agents/Elsa.Agents.Persistence.EFCore.MySql/Elsa.Agents.Persistence.EFCore.MySql.csproj": "817946a9b25ebb51f301405eb8dec6bfc8e26aec",
         "src/modules/io/Elsa.IO.Compression/ShellFeatures/CompressionIOShellFeature.cs": "2edbe74770544c427d9c95f7a3617376dc337425",
         "src/modules/io/Elsa.IO.Http/Elsa.IO.Http.csproj": "2d5c62ea65e85f218d5fd719a5f33901fca7f7ab",
         "src/modules/io/Elsa.IO.Http/Features/IOHttpFeature.cs": "f33ae57a76da1c5c8ab191fa39340e489b20efae",
@@ -51,6 +52,11 @@
         "src/modules/io/Elsa.IO.Http/ShellFeatures/HttpIOShellFeature.cs": "1965ee72d03e97160c7e490008828c21d23e6f99",
         "src/modules/io/Elsa.IO/Models/BinaryContent.cs": "e84f6cfe937947444e5a6915fa1eb59d53e75df5",
         "src/modules/io/Elsa.IO/ShellFeatures/IOShellFeature.cs": "5e4d8041cac9a94c50959fbbc36edc32bcec634f",
+        "src/modules/scheduling/Elsa.Scheduling.Quartz.EFCore.MySql/Elsa.Scheduling.Quartz.EFCore.MySql.csproj": "0532241497a11b62c8163838eaa7ac3458e56ef4",
+        "src/workbench/Elsa.Server.Web/Elsa.Server.Web.csproj": "1e6bf24e1db4bee1bc996e44cec146a2d6ec516e",
+        "src/workbench/Elsa.Server.Web/Program.cs": "536d328c352be27b5219b751a37b07048babe603",
+        "src/workbench/Elsa.ServerAndStudio.Web/Elsa.ServerAndStudio.Web.csproj": "fa460524a38fbdca76497591dbe2360d9a5f01b7",
+        "src/workbench/Elsa.ServerAndStudio.Web/Program.cs": "fce10f03a31baadae954a44aec36d6c6903ff645",
         "test/modules/Directory.Build.props": "4a2b02b9aa2d2eb2f4b450f420e8cb44dd9c21bf",
         "test/modules/actors/Elsa.Actors.ProtoActor.UnitTests/Elsa.Actors.ProtoActor.UnitTests.csproj": "2f047e0e7712ce2d9faac3a94f066b6dc7a2bd08",
         "test/modules/caching/Elsa.Caching.Distributed.ProtoActor.IntegrationTests/Elsa.Caching.Distributed.ProtoActor.IntegrationTests.csproj": "4509e14509a4a0128a24ec2710a59d4c4636713c",
@@ -64,7 +70,8 @@
         "test/modules/runtimes/Elsa.Workflows.Runtime.ProtoActor.UnitTests/Elsa.Workflows.Runtime.ProtoActor.UnitTests.csproj": "70aa95d482c7b0dcf286479dffcc86d2019acc2e",
         "test/modules/scheduling/Elsa.Scheduling.Hangfire.UnitTests/Elsa.Scheduling.Hangfire.UnitTests.csproj": "97f0a64499935a11471074d89add6bd1e31c4943",
         "test/modules/scheduling/Elsa.Scheduling.Quartz.ComponentTests/Elsa.Scheduling.Quartz.ComponentTests.csproj": "84e47791463686b27a51094701f7bb098dee76f1",
-        "test/modules/scheduling/Elsa.Scheduling.Quartz.UnitTests/Elsa.Scheduling.Quartz.UnitTests.csproj": "c3e2a940cafb365081040df0f6c96112a134bee7",
+        "test/modules/scheduling/Elsa.Scheduling.Quartz.UnitTests/Elsa.Scheduling.Quartz.UnitTests.csproj": "8de039c1a29f57460da6b5ebfa81b98c7e146f42",
+        "test/modules/scheduling/Elsa.Scheduling.Quartz.UnitTests/ShellFeatures/QuartzFeatureTests.cs": "2e5dce5779fbc1d0a492940fb0e47b0738c3cf30",
         "test/modules/secrets/Elsa.Secrets.Management.UnitTests/Elsa.Secrets.Management.UnitTests.csproj": "27c3fa9c74228beecde4c1686ec800744ba4530b",
         "test/modules/servicebus/Elsa.ServiceBus.AzureServiceBus.ComponentTests/Elsa.ServiceBus.AzureServiceBus.ComponentTests.csproj": "b6d7ad4617eae3da87a8f5e65a9ea5b18684cf5e",
         "test/modules/servicebus/Elsa.ServiceBus.MassTransit.UnitTests/Elsa.ServiceBus.MassTransit.UnitTests.csproj": "2a79dad0b1a4da020b0c10f9bebf758062d0a75a",
@@ -113,6 +120,8 @@
           "net10.0"
         ],
         "test/modules/scheduling/Elsa.Scheduling.Quartz.UnitTests/Elsa.Scheduling.Quartz.UnitTests.csproj": [
+          "net8.0",
+          "net9.0",
           "net10.0"
         ],
         "test/modules/secrets/Elsa.Secrets.Management.UnitTests/Elsa.Secrets.Management.UnitTests.csproj": [
@@ -128,7 +137,7 @@
           "net10.0"
         ]
       },
-      "tree": "6274c04fdcdc05f12dc38a6ae4bba982abf45b80",
+      "tree": "46289474cfc052c5afd576405346e9b568779962",
       "workflow": ".github/maintenance-inert-workflows/packages.yml.source"
     },
     "studio": {

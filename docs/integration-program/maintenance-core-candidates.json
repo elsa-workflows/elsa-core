@@ -341,6 +341,430 @@
       "source_kind": "core",
       "source_repository": "elsa-workflows/elsa-core",
       "tree": "6274c04fdcdc05f12dc38a6ae4bba982abf45b80"
+    },
+    {
+      "commit": "6b4764b014cd0c9e6ed1183bfc8cadc5d6ace0aa",
+      "contained_commit": "b2ccd4f8a4b024732f263bc76d9be0a2418cd03e",
+      "contained_tree": "76b2cc6e8d0ac598f110def75e2a4b174bae70ac",
+      "delta": [
+        {
+          "after": {
+            "blob": "817946a9b25ebb51f301405eb8dec6bfc8e26aec",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "before": {
+            "blob": "40be585dc9e808f6b4b105a09cace6dab76c8465",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "path": "src/modules/agents/Elsa.Agents.Persistence.EFCore.MySql/Elsa.Agents.Persistence.EFCore.MySql.csproj"
+        },
+        {
+          "after": {
+            "blob": "0532241497a11b62c8163838eaa7ac3458e56ef4",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "before": {
+            "blob": "289c0feb1b8d3b3a0633f7e15cf3e690c51115ba",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "path": "src/modules/scheduling/Elsa.Scheduling.Quartz.EFCore.MySql/Elsa.Scheduling.Quartz.EFCore.MySql.csproj"
+        }
+      ],
+      "kind": "maintenance",
+      "line": "3.8",
+      "original_commit": "154ba15fb4da85b4bebecfbe43639579cbda1d0d",
+      "original_parents": [
+        "e7d05ef930dfde2aa85bf9dcaf841e5a6ede0a1e"
+      ],
+      "parents": [
+        "984009a61c786a9f585ee0ce6304a1281f367dff"
+      ],
+      "product": "extensions",
+      "source_kind": "core",
+      "source_repository": "elsa-workflows/elsa-core",
+      "tree": "ed368b67268d1ed95944c14736352bfad1f7a5f8"
+    },
+    {
+      "commit": "6474a4ecef28cd8b9788d59abb1fd18869bcc0a8",
+      "contained_commit": "09ab8cefe2a3b24bfe66a6b3e53db95ae91c172d",
+      "contained_tree": "a1341034483e455124ce7c646d35cc8e3452bc95",
+      "delta": [
+        {
+          "after": {
+            "blob": "817946a9b25ebb51f301405eb8dec6bfc8e26aec",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "before": {
+            "blob": "40be585dc9e808f6b4b105a09cace6dab76c8465",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "path": "src/modules/agents/Elsa.Agents.Persistence.EFCore.MySql/Elsa.Agents.Persistence.EFCore.MySql.csproj"
+        },
+        {
+          "after": {
+            "blob": "0532241497a11b62c8163838eaa7ac3458e56ef4",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "before": {
+            "blob": "289c0feb1b8d3b3a0633f7e15cf3e690c51115ba",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "path": "src/modules/scheduling/Elsa.Scheduling.Quartz.EFCore.MySql/Elsa.Scheduling.Quartz.EFCore.MySql.csproj"
+        }
+      ],
+      "kind": "maintenance",
+      "line": "3.9",
+      "original_commit": "89d4eb9b739ae135604aac2a1de18653a289bdb0",
+      "original_parents": [
+        "b59773982b0a6a2dfecab3312f53dbcc3533c079",
+        "75308d9548cb8e0920b17985d69f8e35c82003fc"
+      ],
+      "parents": [
+        "25d70474c6326a430b7f5c8701dc5e416295549a"
+      ],
+      "product": "extensions",
+      "source_kind": "core",
+      "source_repository": "elsa-workflows/elsa-core",
+      "tree": "21e4c23696c47f4a974e5c4cb3461e9f2295e8d9"
+    },
+    {
+      "commit": "3e0e1e1d3b5b5dc5a81076f7a2ca48a5dfa2251d",
+      "contained_commit": "b2ccd4f8a4b024732f263bc76d9be0a2418cd03e",
+      "contained_tree": "76b2cc6e8d0ac598f110def75e2a4b174bae70ac",
+      "delta": [
+        {
+          "after": {
+            "blob": "4d3f83983df64dffa2946ec5acbdfd48d1834504",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "before": {
+            "blob": "45d41451436aad0730893c241c57c4049bd3c13f",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "path": "src/workbench/Elsa.Server.Web/Elsa.Server.Web.csproj"
+        },
+        {
+          "after": {
+            "blob": "464a460fbd774bca2c56f99a2f4fe0317a652f30",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "before": {
+            "blob": "af9a2e30e012b10827b2b0768ee14d99bd4eeafc",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "path": "src/workbench/Elsa.Server.Web/Program.cs"
+        },
+        {
+          "after": {
+            "blob": "7d4a483715448920c4edabaef739d3c499d18e69",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "before": {
+            "blob": "1f4aac3ab2a38631788d25d5d930d526b04ba8a0",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "path": "src/workbench/Elsa.ServerAndStudio.Web/Elsa.ServerAndStudio.Web.csproj"
+        },
+        {
+          "after": {
+            "blob": "3ba5792e53e829aea8c93bc0b3a909d632ad1480",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "before": {
+            "blob": "be6a4cc96a515e5359037e5ca7e23c0ff1ac91f7",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "path": "src/workbench/Elsa.ServerAndStudio.Web/Program.cs"
+        },
+        {
+          "after": {
+            "blob": "698f2a9820297a6cc616e3b92eef181b4a5a1dfa",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "before": {
+            "blob": "c3e2a940cafb365081040df0f6c96112a134bee7",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "path": "test/modules/scheduling/Elsa.Scheduling.Quartz.UnitTests/Elsa.Scheduling.Quartz.UnitTests.csproj"
+        },
+        {
+          "after": {
+            "blob": "2e5dce5779fbc1d0a492940fb0e47b0738c3cf30",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "before": {
+            "blob": "51399a8e97abf862ccace7f41eb3daacbe1465b4",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "path": "test/modules/scheduling/Elsa.Scheduling.Quartz.UnitTests/ShellFeatures/QuartzFeatureTests.cs"
+        }
+      ],
+      "kind": "maintenance",
+      "line": "3.8",
+      "original_commit": "154ba15fb4da85b4bebecfbe43639579cbda1d0d",
+      "original_parents": [
+        "e7d05ef930dfde2aa85bf9dcaf841e5a6ede0a1e"
+      ],
+      "parents": [
+        "6b4764b014cd0c9e6ed1183bfc8cadc5d6ace0aa"
+      ],
+      "product": "extensions",
+      "source_kind": "core",
+      "source_repository": "elsa-workflows/elsa-core",
+      "tree": "9ff288d71fd55993817a8a88ee818e73df9749d8"
+    },
+    {
+      "commit": "e3e28856867b95acdf902a975333bbab3a93e658",
+      "contained_commit": "09ab8cefe2a3b24bfe66a6b3e53db95ae91c172d",
+      "contained_tree": "a1341034483e455124ce7c646d35cc8e3452bc95",
+      "delta": [
+        {
+          "after": {
+            "blob": "1e6bf24e1db4bee1bc996e44cec146a2d6ec516e",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "before": {
+            "blob": "6ec28d857990f4371b42e421a26049e1c80f03be",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "path": "src/workbench/Elsa.Server.Web/Elsa.Server.Web.csproj"
+        },
+        {
+          "after": {
+            "blob": "536d328c352be27b5219b751a37b07048babe603",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "before": {
+            "blob": "4d6a72dea5252554c90a2e7f2cd2455cf3dcd17e",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "path": "src/workbench/Elsa.Server.Web/Program.cs"
+        },
+        {
+          "after": {
+            "blob": "fa460524a38fbdca76497591dbe2360d9a5f01b7",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "before": {
+            "blob": "6078bf0905ddef9c20bec6c2875e46e9afb59483",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "path": "src/workbench/Elsa.ServerAndStudio.Web/Elsa.ServerAndStudio.Web.csproj"
+        },
+        {
+          "after": {
+            "blob": "fce10f03a31baadae954a44aec36d6c6903ff645",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "before": {
+            "blob": "85b679312d6b4bfef0ae3cfc1daf374ca9209949",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "path": "src/workbench/Elsa.ServerAndStudio.Web/Program.cs"
+        },
+        {
+          "after": {
+            "blob": "698f2a9820297a6cc616e3b92eef181b4a5a1dfa",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "before": {
+            "blob": "c3e2a940cafb365081040df0f6c96112a134bee7",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "path": "test/modules/scheduling/Elsa.Scheduling.Quartz.UnitTests/Elsa.Scheduling.Quartz.UnitTests.csproj"
+        },
+        {
+          "after": {
+            "blob": "2e5dce5779fbc1d0a492940fb0e47b0738c3cf30",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "before": {
+            "blob": "51399a8e97abf862ccace7f41eb3daacbe1465b4",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "path": "test/modules/scheduling/Elsa.Scheduling.Quartz.UnitTests/ShellFeatures/QuartzFeatureTests.cs"
+        }
+      ],
+      "kind": "maintenance",
+      "line": "3.9",
+      "original_commit": "89d4eb9b739ae135604aac2a1de18653a289bdb0",
+      "original_parents": [
+        "b59773982b0a6a2dfecab3312f53dbcc3533c079",
+        "75308d9548cb8e0920b17985d69f8e35c82003fc"
+      ],
+      "parents": [
+        "6474a4ecef28cd8b9788d59abb1fd18869bcc0a8"
+      ],
+      "product": "extensions",
+      "source_kind": "core",
+      "source_repository": "elsa-workflows/elsa-core",
+      "tree": "b5787cdf153ae923ccad3bf115e567cd6f7d02c5"
+    },
+    {
+      "commit": "736ff45860bcfa4e8df231b7c17f2f086183f329",
+      "contained_commit": "b2ccd4f8a4b024732f263bc76d9be0a2418cd03e",
+      "contained_tree": "76b2cc6e8d0ac598f110def75e2a4b174bae70ac",
+      "delta": [
+        {
+          "after": {
+            "blob": "8de039c1a29f57460da6b5ebfa81b98c7e146f42",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "before": {
+            "blob": "698f2a9820297a6cc616e3b92eef181b4a5a1dfa",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "path": "test/modules/scheduling/Elsa.Scheduling.Quartz.UnitTests/Elsa.Scheduling.Quartz.UnitTests.csproj"
+        }
+      ],
+      "kind": "maintenance",
+      "line": "3.8",
+      "original_commit": "154ba15fb4da85b4bebecfbe43639579cbda1d0d",
+      "original_parents": [
+        "e7d05ef930dfde2aa85bf9dcaf841e5a6ede0a1e"
+      ],
+      "parents": [
+        "3e0e1e1d3b5b5dc5a81076f7a2ca48a5dfa2251d"
+      ],
+      "product": "extensions",
+      "source_kind": "core",
+      "source_repository": "elsa-workflows/elsa-core",
+      "tree": "8c0498db255b36c4271ff3785b970547231d3198"
+    },
+    {
+      "commit": "79e98dd6cc17441124f7e982ce007470f76ad89b",
+      "contained_commit": "b2ccd4f8a4b024732f263bc76d9be0a2418cd03e",
+      "contained_tree": "76b2cc6e8d0ac598f110def75e2a4b174bae70ac",
+      "delta": [
+        {
+          "after": {
+            "blob": "4ea2b88cd5238c4dbc241bcee3f93c8fed0e12bb",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "before": {
+            "blob": "1abe2f2dc4a50206fa30958a508d00279d0508a7",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "path": "build/Build.cs"
+        }
+      ],
+      "kind": "maintenance",
+      "line": "3.8",
+      "original_commit": "154ba15fb4da85b4bebecfbe43639579cbda1d0d",
+      "original_parents": [
+        "e7d05ef930dfde2aa85bf9dcaf841e5a6ede0a1e"
+      ],
+      "parents": [
+        "736ff45860bcfa4e8df231b7c17f2f086183f329"
+      ],
+      "product": "extensions",
+      "source_kind": "core",
+      "source_repository": "elsa-workflows/elsa-core",
+      "tree": "d07f23ba5b879ad4f75f1c199ceafed1ec8d9313"
+    },
+    {
+      "commit": "802b4695f710a3fec896015ec3ddc7c1721f4749",
+      "contained_commit": "09ab8cefe2a3b24bfe66a6b3e53db95ae91c172d",
+      "contained_tree": "a1341034483e455124ce7c646d35cc8e3452bc95",
+      "delta": [
+        {
+          "after": {
+            "blob": "8de039c1a29f57460da6b5ebfa81b98c7e146f42",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "before": {
+            "blob": "698f2a9820297a6cc616e3b92eef181b4a5a1dfa",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "path": "test/modules/scheduling/Elsa.Scheduling.Quartz.UnitTests/Elsa.Scheduling.Quartz.UnitTests.csproj"
+        }
+      ],
+      "kind": "maintenance",
+      "line": "3.9",
+      "original_commit": "89d4eb9b739ae135604aac2a1de18653a289bdb0",
+      "original_parents": [
+        "b59773982b0a6a2dfecab3312f53dbcc3533c079",
+        "75308d9548cb8e0920b17985d69f8e35c82003fc"
+      ],
+      "parents": [
+        "e3e28856867b95acdf902a975333bbab3a93e658"
+      ],
+      "product": "extensions",
+      "source_kind": "core",
+      "source_repository": "elsa-workflows/elsa-core",
+      "tree": "41b012dc7140d1f571be703737117f1c1af19f73"
+    },
+    {
+      "commit": "c88477f7af51ac70edb5c0ad5e39075e4db130a9",
+      "contained_commit": "09ab8cefe2a3b24bfe66a6b3e53db95ae91c172d",
+      "contained_tree": "a1341034483e455124ce7c646d35cc8e3452bc95",
+      "delta": [
+        {
+          "after": {
+            "blob": "4ea2b88cd5238c4dbc241bcee3f93c8fed0e12bb",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "before": {
+            "blob": "1abe2f2dc4a50206fa30958a508d00279d0508a7",
+            "mode": "100644",
+            "type": "blob"
+          },
+          "path": "build/Build.cs"
+        }
+      ],
+      "kind": "maintenance",
+      "line": "3.9",
+      "original_commit": "89d4eb9b739ae135604aac2a1de18653a289bdb0",
+      "original_parents": [
+        "b59773982b0a6a2dfecab3312f53dbcc3533c079",
+        "75308d9548cb8e0920b17985d69f8e35c82003fc"
+      ],
+      "parents": [
+        "802b4695f710a3fec896015ec3ddc7c1721f4749"
+      ],
+      "product": "extensions",
+      "source_kind": "core",
+      "source_repository": "elsa-workflows/elsa-core",
+      "tree": "46289474cfc052c5afd576405346e9b568779962"
     }
   ],
   "maintenance_refs_activated": false,
