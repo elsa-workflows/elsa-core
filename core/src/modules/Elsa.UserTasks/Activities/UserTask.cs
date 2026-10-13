@@ -40,7 +40,7 @@ public sealed class UserTask : Activity<UserTaskResult>
     [Input] public Input<string?> Instructions { get; set; } = null!;
     [Input] public Input<JsonElement?> TaskData { get; set; } = null!;
     [Input] public Input<UserTaskFormReference?> Form { get; set; } = null!;
-    [Input(Description = "Completion actions. Keys are literal; labels may use expressions.", DefaultSyntax = "Literal", SupportedSyntaxes = ["Literal"])]
+    [Input(Description = "Completion actions. Keys and labels are literal strings. Expression labels are code-first only and are not serialized; the key is used instead.", DefaultSyntax = "Literal", SupportedSyntaxes = ["Literal"])]
     public Input<IReadOnlyCollection<UserTaskActionDefinition>?> ActionDefinitions { get; set; } = null!;
     [Input] public Input<IReadOnlyCollection<UserTaskInvitationDefinition>?> Invitations { get; set; } = null!;
     [Input] public Input<bool> EnableTimeoutOutcome { get; set; } = null!;
@@ -179,7 +179,9 @@ internal sealed class UserTaskActionLabelJsonConverter : JsonConverter<Input<str
                     return ReadLegacyLabel(document.RootElement);
                 }
             default:
-                throw new JsonException("A User Task action label must be a string.");
+                // Numbers, booleans and arrays are not valid labels; skip them so the key is used as the label.
+                reader.Skip();
+                return null;
         }
     }
 

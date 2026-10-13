@@ -65,4 +65,20 @@ public class UserTaskActionDefinitionJsonTests
         Assert.Contains("\"Label\":null", json);
         Assert.Null(JsonSerializer.Deserialize<UserTaskActionDefinition>(json)!.Label);
     }
+
+    [Theory]
+    [InlineData("""{"key":"approved"}""")]
+    [InlineData("""{"key":"approved","label":null}""")]
+    [InlineData("""{"key":"approved","label":""}""")]
+    [InlineData("""{"key":"approved","label":"   "}""")]
+    [InlineData("""{"key":"approved","label":42}""")]
+    [InlineData("""{"key":"approved","label":true}""")]
+    [InlineData("""{"key":"approved","label":["Approve"]}""")]
+    public void ResolveLabel_FallsBackToKey_WhenLabelIsMissingBlankOrInvalid(string json)
+    {
+        var action = JsonSerializer.Deserialize<UserTaskActionDefinition>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })!;
+
+        // Literal and missing labels are resolved without evaluating an expression, so no execution context is needed.
+        Assert.Equal("approved", action.ResolveLabel(null!));
+    }
 }
