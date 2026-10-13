@@ -1,3 +1,5 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Elsa.Workflows;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Runtime.Entities;
@@ -10,13 +12,33 @@ namespace Elsa.Extensions;
 /// </summary>
 public static class StoredBookmarkExtensions
 {
+    // Mirrors the payload serializer's base options (camel case, string enums) without
+    // needing a service provider: this is a static extension.
+    private static readonly JsonSerializerOptions PayloadSerializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        Converters = { new JsonStringEnumConverter() },
+    };
+
     /// <summary>
     /// Returns the Data property of the stored bookmark as a strongly-typed object.
     /// </summary>
     /// <param name="storedBookmark">The stored bookmark.</param>
     /// <typeparam name="T">The type of the Data property.</typeparam>
     /// <returns>The Data property of the stored bookmark as a strongly-typed object.</returns>
-    public static T GetPayload<T>(this StoredBookmark storedBookmark) => (T)storedBookmark.Payload!;
+    /// <remarks>
+    /// A payload reloaded from a bookmark store can come back untyped (for example as an ExpandoObject or a JsonElement).
+    /// Such a payload is converted to <typeparamref name="T"/> using the payload serializer's options.
+    /// </remarks>
+    public static T GetPayload<T>(this StoredBookmark storedBookmark) => storedBookmark.Payload switch
+    {
+        T payload => payload,
+        null => default!,
+        JsonElement element => element.Deserialize<T>(PayloadSerializerOptions)!,
+        var payload => JsonSerializer.SerializeToElement(payload, PayloadSerializerOptions).Deserialize<T>(PayloadSerializerOptions)!
+    };
 
     /// <summary>
     /// Filters the specified set of stored bookmarks by the specified activity type.
