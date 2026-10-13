@@ -70,6 +70,19 @@ public class JsonPayloadSerializer : IPayloadSerializer
     /// <inheritdoc />
     public JsonSerializerOptions GetOptions()
     {
+        var options = CreateBaseOptions();
+        options.Converters.Add(GetService<PolymorphicObjectConverterFactory>());
+        options.Converters.Add(GetService<TypeJsonConverter>());
+        options.Converters.Add(GetService<VariableConverterFactory>());
+        options.Converters.Add(new FuncExpressionValueConverter());
+        return options;
+    }
+
+    /// <summary>
+    /// Creates the payload serializer options that do not depend on registered services.
+    /// </summary>
+    public static JsonSerializerOptions CreateBaseOptions()
+    {
         var options = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -79,10 +92,6 @@ public class JsonPayloadSerializer : IPayloadSerializer
 
         options.Converters.Add(new JsonStringEnumConverter());
         options.Converters.Add(JsonMetadataServices.TimeSpanConverter);
-        options.Converters.Add(GetService<PolymorphicObjectConverterFactory>());
-        options.Converters.Add(GetService<TypeJsonConverter>());
-        options.Converters.Add(GetService<VariableConverterFactory>());
-        options.Converters.Add(new FuncExpressionValueConverter());
         return options;
     }
 
