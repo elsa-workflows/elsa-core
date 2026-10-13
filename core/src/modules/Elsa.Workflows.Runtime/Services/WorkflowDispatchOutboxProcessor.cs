@@ -2,6 +2,10 @@ using Elsa.Common;
 using Elsa.Common.DistributedHosting;
 using Elsa.Common.Models;
 using Elsa.Common.Multitenancy;
+using Elsa.Mediator;
+using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Models;
+using Elsa.Tenants.Mediator;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
@@ -31,6 +35,28 @@ public class WorkflowDispatchOutboxProcessor(
     ITenantFinder? tenantFinder = null) : IWorkflowDispatchOutboxProcessor
 {
     private const string LockResource = "Elsa:WorkflowDispatchOutbox:Processor";
+
+    /// <summary>
+    /// Creates a processor that delivers through mediator background commands, as this processor did before it delivered
+    /// through the inner <see cref="IWorkflowDispatcher"/>. This overload cannot route channels, so items with a channel fail
+    /// closed. It deliberately does not use the registered <see cref="IWorkflowDispatcher"/>: with the outbox enabled that is
+    /// the transactional dispatcher, which would enqueue each item again instead of delivering it.
+    /// </summary>
+    [Obsolete("Use the constructor that takes the inner IWorkflowDispatcher (keyed WorkflowDispatcherServiceKeys.Inner). This overload will be removed in a future version.")]
+    public WorkflowDispatchOutboxProcessor(
+        IWorkflowDispatchOutboxStore store,
+        IWorkflowInstanceStore workflowInstanceStore,
+        ICommandSender commandSender,
+        IDistributedLockProvider distributedLockProvider,
+        ISystemClock systemClock,
+        IOptions<DistributedLockingOptions> distributedLockingOptions,
+        IOptions<WorkflowDispatcherOptions> dispatcherOptions,
+        ILogger<WorkflowDispatchOutboxProcessor> logger,
+        ITenantAccessor? tenantAccessor = null)
+        : this(store, workflowInstanceStore, new CommandSenderWorkflowDispatcher(commandSender, tenantAccessor), distributedLockProvider, systemClock,
+            distributedLockingOptions, dispatcherOptions, logger, tenantAccessor)
+    {
+    }
 
     /// <inheritdoc />
     public async Task ProcessAsync(CancellationToken cancellationToken = default)
@@ -153,7 +179,9 @@ public class WorkflowDispatchOutboxProcessor(
         // Fail closed: an unroutable channel must never silently fall back to the default channel. Throwing leaves the
         // item in the outbox and counts a delivery attempt, so the normal retry picks it up.
         if (!string.IsNullOrEmpty(item.Channel) && dispatcherOptions.Value.Channels.All(x => x.Name != item.Channel))
+        {
             throw new InvalidOperationException($"Cannot deliver workflow dispatch outbox item {item.Id}: dispatch channel '{item.Channel}' is not configured.");
+        }
 
         // Push the tenant here rather than in an async helper: the tenant context is async-local and would not flow back.
         var tenant = await FindItemTenantAsync(item, cancellationToken);
@@ -189,7 +217,10 @@ public class WorkflowDispatchOutboxProcessor(
             _ => throw new InvalidOperationException($"Outbox item {item.Id} does not contain a dispatch command for kind {item.Kind}.")
         };
 
-        response.ThrowIfFailed();
+        if (!response.Succeeded)
+        {
+            throw new InvalidOperationException($"Delivery of workflow dispatch outbox item {item.Id} on channel '{item.Channel ?? "(default)"}' was rejected: {response.Fault!.Message}", response.Fault);
+        }
         logger.LogDebug("Delivered workflow dispatch outbox item {OutboxItemId} for owner workflow {WorkflowInstanceId} on channel {Channel}", item.Id, item.OwnerWorkflowInstanceId, item.Channel ?? "(default)");
     }
 
@@ -216,7 +247,9 @@ public class WorkflowDispatchOutboxProcessor(
     private async Task<Tenant?> FindItemTenantAsync(WorkflowDispatchOutboxItem item, CancellationToken cancellationToken)
     {
         if (tenantAccessor == null || string.IsNullOrEmpty(item.TenantId) || tenantAccessor.Tenant?.Id == item.TenantId)
+        {
             return null;
+        }
 
         var tenant = tenantFinder != null ? await tenantFinder.FindByIdAsync(item.TenantId, cancellationToken) : null;
         return tenant ?? throw new InvalidOperationException($"Cannot deliver workflow dispatch outbox item {item.Id}: tenant '{item.TenantId}' was not found.");
@@ -370,6 +403,34 @@ public class WorkflowDispatchOutboxProcessor(
         catch (Exception e) when (e is not OperationCanceledException)
         {
             logger.LogWarning(e, "Failed to remove delivered workflow dispatch outbox item {OutboxItemId} from owner workflow {WorkflowInstanceId}; future commits may prune the marker during a later sweep.", item.Id, item.OwnerWorkflowInstanceId);
+        }
+    }
+
+    /// <summary>Delivers through mediator background commands, for the obsolete constructor only. It cannot route channels.</summary>
+    private sealed class CommandSenderWorkflowDispatcher(ICommandSender commandSender, ITenantAccessor? tenantAccessor) : IWorkflowDispatcher
+    {
+        public Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowDefinitionRequest request, DispatchWorkflowOptions? options = null, CancellationToken cancellationToken = default) =>
+            SendAsync(WorkflowDispatchCommandFactory.CreateCommand(request), options, cancellationToken);
+
+        public Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowInstanceRequest request, DispatchWorkflowOptions? options = null, CancellationToken cancellationToken = default) =>
+            SendAsync(WorkflowDispatchCommandFactory.CreateCommand(request), options, cancellationToken);
+
+        public Task<DispatchWorkflowResponse> DispatchAsync(DispatchTriggerWorkflowsRequest request, DispatchWorkflowOptions? options = null, CancellationToken cancellationToken = default) =>
+            SendAsync(WorkflowDispatchCommandFactory.CreateCommand(request), options, cancellationToken);
+
+        public Task<DispatchWorkflowResponse> DispatchAsync(DispatchResumeWorkflowsRequest request, DispatchWorkflowOptions? options = null, CancellationToken cancellationToken = default) =>
+            SendAsync(WorkflowDispatchCommandFactory.CreateCommand(request), options, cancellationToken);
+
+        private async Task<DispatchWorkflowResponse> SendAsync<TCommand>(TCommand command, DispatchWorkflowOptions? options, CancellationToken cancellationToken) where TCommand : ICommand<Unit>
+        {
+            // Fail closed: background commands have no channels, so never deliver a channel-bound item on the default queue.
+            if (!string.IsNullOrEmpty(options?.Channel))
+            {
+                return DispatchWorkflowResponse.UnknownChannel();
+            }
+
+            await commandSender.SendAsync(command, CommandStrategy.Background, TenantHeaders.CreateHeaders(tenantAccessor?.Tenant?.Id), cancellationToken);
+            return DispatchWorkflowResponse.Success();
         }
     }
 }

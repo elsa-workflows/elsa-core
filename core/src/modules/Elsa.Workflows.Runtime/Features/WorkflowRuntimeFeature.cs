@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+using Elsa.Common.Multitenancy;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Elsa.Common;
@@ -456,7 +458,18 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
 
         Services.TryAddScoped<IWorkflowDispatchOutbox>(sp => ActivatorUtilities.CreateInstance<WorkflowDispatchOutbox>(sp));
         Services.TryAddScoped(WorkflowDispatchOutboxStore);
-        Services.TryAddScoped<IWorkflowDispatchOutboxProcessor, WorkflowDispatchOutboxProcessor>();
+        // Explicit factory: the processor also has an obsolete constructor, which would make container activation ambiguous.
+        Services.TryAddScoped<IWorkflowDispatchOutboxProcessor>(sp => new WorkflowDispatchOutboxProcessor(
+            sp.GetRequiredService<IWorkflowDispatchOutboxStore>(),
+            sp.GetRequiredService<IWorkflowInstanceStore>(),
+            sp.GetRequiredKeyedService<IWorkflowDispatcher>(WorkflowDispatcherServiceKeys.Inner),
+            sp.GetRequiredService<IDistributedLockProvider>(),
+            sp.GetRequiredService<ISystemClock>(),
+            sp.GetRequiredService<IOptions<DistributedLockingOptions>>(),
+            sp.GetRequiredService<IOptions<WorkflowDispatcherOptions>>(),
+            sp.GetRequiredService<ILogger<WorkflowDispatchOutboxProcessor>>(),
+            sp.GetService<ITenantAccessor>(),
+            sp.GetService<ITenantFinder>()));
     }
 
     private void RegisterWorkflowTypeAliases(SerializationTypeOptions options)

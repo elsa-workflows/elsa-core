@@ -580,6 +580,48 @@ public class WorkflowDispatchOutboxProcessorTests
         Assert.Equal("priority", roundTripped.Channel);
     }
 
+    [Fact]
+    public async Task ObsoleteConstructor_DeliversThroughBackgroundCommands_NotTheRegisteredDispatcher()
+    {
+        var commandSender = Substitute.For<ICommandSender>();
+#pragma warning disable CS0618
+        var processor = new WorkflowDispatchOutboxProcessor(_store, _workflowInstanceStore, commandSender, new NoopDistributedSynchronizationProvider(), _systemClock,
+            Microsoft.Extensions.Options.Options.Create(new DistributedLockingOptions()), Microsoft.Extensions.Options.Options.Create(_options), NullLogger<WorkflowDispatchOutboxProcessor>.Instance);
+#pragma warning restore CS0618
+        var item = CreateItem();
+        _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([item]);
+        _workflowInstanceStore.FindAsync(OwnerFilter(), Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: true)));
+
+        await processor.ProcessAsync();
+
+        await commandSender.Received(1).SendAsync(Arg.Is<DispatchWorkflowDefinitionCommand>(x => x.InstanceId == "child-outbox-1"), CommandStrategy.Background, Arg.Any<IDictionary<object, object>>(), Arg.Any<CancellationToken>());
+        await _store.Received(1).DeleteAsync(item.Id, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ProcessAsync_NamesChannel_WhenInnerDispatcherRejectsIt()
+    {
+        _options.Channels.Add(new DispatcherChannel { Name = "priority" });
+        var item = CreateItem();
+        item.Channel = "priority";
+        var logger = Substitute.For<Microsoft.Extensions.Logging.ILogger<WorkflowDispatchOutboxProcessor>>();
+        _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([item]);
+        _workflowInstanceStore.FindAsync(OwnerFilter(), Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: true)));
+        _innerDispatcher.DispatchAsync(DefinitionRequestFor(item), Arg.Any<DispatchWorkflowOptions?>(), Arg.Any<CancellationToken>())
+            .Returns(DispatchWorkflowResponse.UnknownChannel());
+        Exception? logged = null;
+        logger.When(x => x.Log(Microsoft.Extensions.Logging.LogLevel.Error, Arg.Any<Microsoft.Extensions.Logging.EventId>(), Arg.Any<object>(), Arg.Any<Exception?>(), Arg.Any<Func<object, Exception?, string>>()))
+            .Do(call => logged ??= call.ArgAt<Exception?>(3));
+        var processor = new WorkflowDispatchOutboxProcessor(_store, _workflowInstanceStore, _innerDispatcher, new NoopDistributedSynchronizationProvider(), _systemClock,
+            Microsoft.Extensions.Options.Options.Create(new DistributedLockingOptions()), Microsoft.Extensions.Options.Options.Create(_options), logger);
+
+        await processor.ProcessAsync();
+
+        Assert.Contains("'priority'", logged?.Message);
+    }
+
     private static IPayloadSerializer CreatePayloadSerializer() =>
         new Elsa.Workflows.Serialization.Serializers.JsonPayloadSerializer(new ServiceCollection()
             .AddSingleton<Elsa.Common.Serialization.ISerializationTypeRegistry>(new Elsa.Common.Serialization.SerializationTypeRegistry(Microsoft.Extensions.Options.Options.Create(new Elsa.Common.Serialization.SerializationTypeOptions())))
