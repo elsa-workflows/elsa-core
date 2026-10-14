@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import traceback
 import xml.etree.ElementTree as ET
 import zipfile
@@ -533,12 +534,52 @@ def recipes(row: dict, version: str, output: Path) -> list[tuple[str, list[str]]
     return commands
 
 
-def evaluate_satellites(source: Path, project: str, framework: str, assembly: str, version: str, row: dict | None = None) -> list[dict]:
+def inventory_validation(context: dict | None) -> None:
+    """Clear command focus before checks that do not belong to an SDK query."""
+    if context is not None:
+        context.pop('command', None)
+        context.update(status='unavailable', phase='inventory-validation', operation='validate')
+
+
+def inventory_metadata(source: Path, project: str, arguments: list[str], row: dict, version: str, *,
+                       framework: str | None = None, context: dict | None = None) -> dict:
+    """Evaluate inventory metadata with optional bounded private command diagnostics (#8693)."""
+    inventory_validation(context)
+    command = ['dotnet', 'msbuild', project, '-nologo', '-p:Configuration=Release',
+               *version_arguments(row, version), *arguments]
+    environment = recipe_environment(row, version, source)
+    if context is None:
+        return json.loads(run(command, source, env=environment))
+    context['command_count'] = context.get('command_count', 0) + 1
+    context.update(status='observed', phase='project-properties' if framework is None else 'satellite-output-group',
+                   operation='execute')
+    record = {'project': project, 'framework': framework, 'timeout_seconds': 300, 'process': {}}
+    # Diagnostics cannot turn an unrecognized identity into raw receipt content.
+    if not 0 < len(project) <= 1024 or Path(project).is_absolute() or '..' in Path(project).parts or \
+            '\\' in project or re.match('[A-Za-z]:', project) or any(ord(char) < 32 or ord(char) == 127 for char in project):
+        record.pop('project')
+        context['status'] = 'incomplete'
+    if framework is not None and framework not in ('net8.0', 'net9.0', 'net10.0'):
+        record.pop('framework')
+        context['status'] = 'incomplete'
+    context['command'] = record
+    started = time.monotonic()
+    try:
+        result = run(command, source, env=environment, outcome=record['process'])
+    finally:
+        record['elapsed_seconds'] = round(time.monotonic() - started, 3)
+    context['operation'] = 'decode'
+    value = json.loads(result)
+    context['operation'] = 'validate'
+    return value
+
+
+def evaluate_satellites(source: Path, project: str, framework: str, assembly: str, version: str, row: dict | None = None, *,
+                        context: dict | None = None) -> list[dict]:
     """Evaluate satellite outputs and return their source paths and package hashes."""
     row = row or {}
-    result = json.loads(run(['dotnet', 'msbuild', project, '-nologo', '-p:Configuration=Release',
-        *version_arguments(row, version), f'-p:TargetFramework={framework}', '-target:SatelliteDllsProjectOutputGroup',
-        '-getItem:SatelliteDllsProjectOutputGroupOutput'], source, env=recipe_environment(row, version, source)))
+    result = inventory_metadata(source, project, [f'-p:TargetFramework={framework}', '-target:SatelliteDllsProjectOutputGroup',
+        '-getItem:SatelliteDllsProjectOutputGroupOutput'], row, version, framework=framework, context=context)
     satellites = []
     for item in result['Items']['SatelliteDllsProjectOutputGroupOutput']:
         culture, target = item['Culture'], item['TargetPath'].replace('\\', '/')
@@ -555,8 +596,12 @@ def evaluate_satellites(source: Path, project: str, framework: str, assembly: st
     return satellites
 
 
-def evaluate_inventory(source: Path, row: dict, version: str, output: Path) -> list[dict]:
+def evaluate_inventory(source: Path, row: dict, version: str, output: Path, *, context: dict | None = None) -> list[dict]:
     """Evaluate recipe package policies and persist the applicable test inventory."""
+    if context is not None:
+        context.clear()
+        context['command_count'] = 0
+    inventory_validation(context)
     require(row['product'] in ('core', 'studio', 'extensions'), 'Unsupported producer product')
     solution = source / {'core': 'Elsa.sln', 'studio': 'Elsa.Studio.sln', 'extensions': 'Elsa.Extensions.sln'}[row['product']]
     projects = re.findall(r'^Project\([^\n]+?= "[^"]+", "([^"]+\.csproj)"', solution.read_text(encoding='utf-8-sig'), re.M)
@@ -568,10 +613,10 @@ def evaluate_inventory(source: Path, row: dict, version: str, output: Path) -> l
     properties = 'IsPackable,IsTestProject,AssemblyName,PackageId,PackageVersion,TargetFrameworks,TargetFramework,IncludeSymbols,IncludeBuildOutput'
     inventory, tests = [], []
     for project in projects:
+        inventory_validation(context)
         project = project.replace('\\', '/')
         require(not Path(project).is_absolute() and '..' not in Path(project).parts, 'Unsafe solution project')
-        values = json.loads(run(['dotnet', 'msbuild', project, '-nologo', '-p:Configuration=Release',
-            *version_arguments(row, version), f'-getProperty:{properties}'], source, env=recipe_environment(row, version, source)))['Properties']
+        values = inventory_metadata(source, project, [f'-getProperty:{properties}'], row, version, context=context)['Properties']
         frameworks = (values['TargetFrameworks'] or values['TargetFramework']).split(';')
         if values['IsTestProject'].lower() == 'true':
             tests.append({'project': project, 'assembly_name': values['AssemblyName'], 'frameworks': frameworks})
@@ -589,8 +634,9 @@ def evaluate_inventory(source: Path, row: dict, version: str, output: Path) -> l
             'frameworks': frameworks,
             'symbols': values['IncludeSymbols'].lower() == 'true',
             'satellites': [satellite for framework in frameworks for satellite in
-                evaluate_satellites(source, project, framework, values['AssemblyName'], version, row)]
+                evaluate_satellites(source, project, framework, values['AssemblyName'], version, row, context=context)]
                 if values['IncludeBuildOutput'].lower() == 'true' else []})
+    inventory_validation(context)
     require(bool(inventory) and len({p['id'].casefold() for p in inventory}) == len(inventory), 'Empty/duplicate package inventory')
     require(bool(tests), 'No evaluated test projects')
     write_json(output / 'test-inventory.json', tests)
@@ -1286,7 +1332,13 @@ def prepare(root: Path, row: dict, version: str, output: Path, *, plan: dict | N
             for path in (source / 'packages').glob('*nupkg'):
                 shutil.copyfile(path, output / 'artifacts' / path.name)
         receipt['stage'] = 'inventory'
-        inventory = evaluate_inventory(source, row, version, output)
+        # Selected-plan receipts remain private; the legacy workflow uploads its receipt directly.
+        context = None
+        if plan is not None:
+            receipt.pop('focus', None)
+            context = receipt['inventory_diagnostics'] = {}
+        inventory = evaluate_inventory(source, row, version, output, context=context)
+        inventory_validation(context)
         if original_core(row):
             from selected_core_producer import policy as core_policy
             tests = json.loads((output / 'test-inventory.json').read_text())
@@ -1299,6 +1351,7 @@ def prepare(root: Path, row: dict, version: str, output: Path, *, plan: dict | N
                         item['symbols'] == selected[item['id']]['symbols'] for item in inventory),
                     'core_original_package_policy')
         write_json(output / 'evaluated-inventory.json', public_inventory(inventory))
+        receipt.pop('inventory_diagnostics', None)
         receipt['stage'] = 'test-evidence'
         receipt.pop('focus', None)
         receipt['test_evidence'] = {}
@@ -1324,6 +1377,12 @@ def prepare(root: Path, row: dict, version: str, output: Path, *, plan: dict | N
     except Exception as error:
         receipt['error'] = {'code': receipt['stage'] + '-failed',
                             'reason': verification_reason(str(error))}
+        if receipt['stage'] == 'inventory' and plan is not None:
+            context = receipt['inventory_diagnostics']
+            context.setdefault('status', 'unavailable')
+            context['exception_kind'] = next((kind for exception, kind in (
+                (subprocess.TimeoutExpired, 'timeout'), (json.JSONDecodeError, 'json-decode'),
+                (ValueError, 'validation'), (OSError, 'io')) if isinstance(error, exception)), 'other')
         if receipt['stage'] == 'package-verification' and isinstance(error, SourceProducerVerificationError):
             receipt['error']['source_producer_check'] = error.check
         raise

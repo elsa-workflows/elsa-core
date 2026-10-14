@@ -486,6 +486,7 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
             (source / 'packages.yml').write_bytes(b'workflow')
 
         def fail(*args, **kwargs):
+            self.assertIs(kwargs.get('plan'), self.plan)
             producer = self.output / 'private/producer'
             producer.mkdir()
             receipt = producer / 'receipt.json'
@@ -553,6 +554,34 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
                 self.assertEqual(set(summary), {'status', 'stage', 'reason', 'receipt_sha256'})
                 self.assertEqual(summary, receipt['product_recipe_failure'])
                 self.assertNotIn('/private/secret', json.dumps(result))
+
+    def test_selected_adapter_forwards_exact_admitted_plan_for_each_product(self):
+        for product in ('core', 'studio', 'extensions'):
+            with self.subTest(product=product):
+                self.output = self.root / product
+                self.plan['product'] = self.plan['source']['product'] = product
+                row = self.plan['source'] | {'kind': 'maintenance', 'source_repository': artifacts.maintenance.CORE_REPOSITORY}
+                with patch.object(artifacts.maintenance, 'registered_core_candidates', return_value=[row]), \
+                        patch.object(artifacts.extensions, 'verify_source'):
+                    self.invoke(direct=True)
+
+    def test_private_inventory_context_does_not_expand_public_failure_projection(self):
+        self.inner.update(stage='inventory', error={'code': 'inventory-failed', 'reason': 'unknown-check-failure'},
+                          inventory_diagnostics={'status': 'observed', 'phase': 'project-properties',
+                              'operation': 'execute', 'command_count': 1, 'exception_kind': 'timeout',
+                              'command': {'project': 'build/_build.csproj', 'framework': None,
+                                  'timeout_seconds': 300, 'elapsed_seconds': 300.1,
+                                  'process': {'status': 'timed-out', 'exit_code': -9}},
+                              'unexpected_raw': '/private/secret'})
+        result, receipt = self.invoke()
+        expected = {'status': 'observed', 'stage': 'inventory', 'reason': 'unknown-check-failure',
+                    'receipt_sha256': metadata.sha256((self.output / 'private/producer/receipt.json').read_bytes())}
+        self.assertEqual(result['product_recipe_failure'], expected)
+        self.assertEqual(receipt['product_recipe_failure'], expected)
+        self.assertFalse(receipt['success'])
+        self.assertNotIn('artifact_proof', receipt)
+        for private in ('inventory_diagnostics', 'command_count', '/private/secret', 'build/_build.csproj'):
+            self.assertNotIn(private, json.dumps(result) + json.dumps(receipt))
 
     def source_producer_failure(self):
         """Change the private fixture to a package source-provenance verification failure."""

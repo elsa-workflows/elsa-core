@@ -317,6 +317,7 @@ class MaintenanceContracts(unittest.TestCase):
                          'compiler_sha256': 'c' * 64, 'tools': {}}})
         receipt = json.loads((output / 'receipt.json').read_text())
         self.assertTrue(receipt['success'])
+        self.assertNotIn('inventory_diagnostics', receipt)
         self.assertEqual(receipt['stage'], 'complete')
         self.assertFalse(receipt['published'])
         self.assertFalse(receipt['maintenance_refs_activated'])
@@ -1636,6 +1637,236 @@ class MaintenanceContracts(unittest.TestCase):
                                     self.assertRaisesRegex(ValueError, 'repository provenance|Symbol metadata|Packed version|Symbol identity'):
                                 maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT,
                                                              Path('/inspector'), self.root)
+
+
+class InventoryDiagnosticsTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.output = self.root / 'proof'
+        self.row = next(row for row in maintenance.load_register()['sources']
+                        if row['product'] == 'studio' and row['line'] == '3.8')
+        self.version = '3.8.4-proof.42.1'
+        self.config = b'<configuration />'
+        self.plan = {'consumer_feed_policy': {'config_sha256': maintenance.digest(self.config)}}
+        self.properties = {'IsPackable': 'true', 'IsTestProject': 'true', 'AssemblyName': 'Fixture',
+                           'PackageId': 'Elsa.Studio.Fixture', 'PackageVersion': self.version,
+                           'TargetFrameworks': 'net8.0', 'TargetFramework': '', 'IncludeSymbols': 'true',
+                           'IncludeBuildOutput': 'true'}
+        self.failure = subprocess.TimeoutExpired(['dotnet', '/private/secret'], 300,
+                                                output='secret stdout', stderr='secret stderr')
+        self.source = self.root / 'source'
+        self.source.mkdir()
+        self.checkout(self.source, 'checkout')
+
+    def checkout(self, source, *args, **kwargs):
+        if args[:1] == ('checkout',):
+            (source / 'NuGet.Config').write_bytes(self.config)
+            (source / 'Elsa.Studio.sln').write_text(
+                'Project("{fixture}") = "Build", "build/_build.csproj", "{fixture}"\n'
+                'Project("{fixture}") = "Fixture", "src/Fixture.csproj", "{fixture}"\n')
+        return 'd' * 40
+
+    def prepare_failure(self, execute, *, inventory=None, same_error=True, legacy=False):
+        def build(command, source, log, record, **kwargs):
+            record.update(success=True, process={'status': 'exited', 'exit_code': 0})
+
+        with ExitStack() as stack:
+            for name, options in {
+                'git': {'side_effect': self.checkout}, 'git_bytes': {'return_value': self.config},
+                'verify_source': {}, 'inspect_toolchain': {'return_value': {'dotnet': ['10.0.300']}},
+                'recipes': {'return_value': [('.', ['./build.sh', 'Compile+Test+Pack'])]},
+                'run_build_command': {'side_effect': build}, 'run': {'side_effect': execute},
+            }.items():
+                stack.enter_context(patch.object(maintenance, name, **options))
+            if inventory is not None:
+                stack.enter_context(patch.object(maintenance, 'evaluate_inventory', side_effect=inventory))
+            with self.assertRaises(type(self.failure)) as caught:
+                maintenance.prepare(maintenance.ROOT, self.row, self.version, self.output,
+                                    plan=None if legacy else self.plan)
+        if same_error:
+            self.assertIs(caught.exception, self.failure)
+        receipt = json.loads((self.output / 'receipt.json').read_text())
+        self.assertEqual(receipt['stage'], 'inventory')
+        self.assertFalse(receipt['success'])
+        if legacy:
+            self.assertEqual(receipt['focus'], {'step': 1, 'directory': '.'})
+            self.assertNotIn('inventory_diagnostics', receipt)
+        else:
+            self.assertNotIn('focus', receipt)
+        self.assertEqual(receipt['error'], {'code': 'inventory-failed', 'reason': 'unknown-check-failure'})
+        for private in ('secret', str(self.root), '/private/'):
+            self.assertNotIn(private, json.dumps(receipt))
+        return receipt if legacy else receipt['inventory_diagnostics']
+
+    def metadata_result(self, command, source, **kwargs):
+        if kwargs.get('outcome') is not None:
+            kwargs['outcome'].update(status='exited', exit_code=0)
+        if '-target:SatelliteDllsProjectOutputGroup' in command:
+            return json.dumps({'Items': {'SatelliteDllsProjectOutputGroupOutput': []}})
+        values = self.properties
+        if command[2] == 'build/_build.csproj':
+            values = values | {'IsPackable': 'false', 'IsTestProject': 'false'}
+        return json.dumps({'Properties': values})
+
+    def timeout(self, command, source, **kwargs):
+        self.assertNotIn('timeout', kwargs)
+        if kwargs.get('outcome') is not None:
+            kwargs['outcome'].update(status='timed-out', exit_code=-9)
+        raise self.failure
+
+    def test_property_timeout_retains_private_command_focus_and_original_failure(self):
+        context = self.prepare_failure(self.timeout)
+        self.assertEqual(context['exception_kind'], 'timeout')
+        self.assertEqual(context['status'], 'observed')
+        self.assertEqual(context['phase'], 'project-properties')
+        self.assertEqual(context['operation'], 'execute')
+        self.assertEqual(context['command_count'], 1)
+        command = context['command']
+        self.assertEqual({key: value for key, value in command.items() if key != 'elapsed_seconds'},
+                         {'project': 'build/_build.csproj', 'framework': None,
+                          'timeout_seconds': 300, 'process': {'status': 'timed-out', 'exit_code': -9}})
+        self.assertGreaterEqual(command['elapsed_seconds'], 0)
+
+    def test_satellite_failure_replaces_property_focus_and_retains_process_exit(self):
+        self.failure = ValueError('/private/secret command failure')
+
+        def execute(command, source, **kwargs):
+            if '-target:SatelliteDllsProjectOutputGroup' in command:
+                kwargs['outcome'].update(status='exited', exit_code=7)
+                raise self.failure
+            return self.metadata_result(command, source, **kwargs)
+
+        context = self.prepare_failure(execute)
+        self.assertEqual(context['command_count'], 3)
+        self.assertEqual(context['phase'], 'satellite-output-group')
+        self.assertEqual(context['operation'], 'execute')
+        self.assertEqual(context['exception_kind'], 'validation')
+        self.assertEqual(context['command']['project'], 'src/Fixture.csproj')
+        self.assertEqual(context['command']['framework'], 'net8.0')
+        self.assertEqual(context['command']['process'], {'status': 'exited', 'exit_code': 7})
+        self.assertEqual(set(context), {'command_count', 'status', 'phase', 'operation', 'command', 'exception_kind'})
+
+    def test_successful_command_followed_by_invalid_json_retains_decode_operation(self):
+        self.failure = json.JSONDecodeError('/private/secret decode failure', 'secret output', 0)
+
+        def execute(command, source, **kwargs):
+            result = self.metadata_result(command, source, **kwargs)
+            return 'secret invalid JSON' if command[2] == 'src/Fixture.csproj' else result
+
+        context = self.prepare_failure(execute, same_error=False)
+        self.assertEqual(context['command_count'], 2)
+        self.assertEqual(context['exception_kind'], 'json-decode')
+        self.assertEqual(context['operation'], 'decode')
+        self.assertEqual(context['phase'], 'project-properties')
+        self.assertEqual(context['command']['process'], {'status': 'exited', 'exit_code': 0})
+
+    def test_successful_query_followed_by_policy_rejection_retains_validation_operation(self):
+        self.failure = ValueError('Build-output policy was not evaluated')
+        self.properties['IncludeBuildOutput'] = ''
+        context = self.prepare_failure(self.metadata_result, same_error=False)
+        self.assertEqual(context['exception_kind'], 'validation')
+        self.assertEqual(context['operation'], 'validate')
+        self.assertEqual(context['phase'], 'project-properties')
+        self.assertEqual(context['command_count'], 2)
+        self.assertEqual(context['command']['process'], {'status': 'exited', 'exit_code': 0})
+
+    def test_failure_without_command_context_is_explicitly_unavailable(self):
+        self.failure = OSError('/private/secret before a command')
+        context = self.prepare_failure(None, inventory=self.failure)
+        self.assertEqual(context, {'status': 'unavailable', 'exception_kind': 'io'})
+
+    def test_legacy_receipt_keeps_existing_fields_without_private_inventory_context(self):
+        self.prepare_failure(self.timeout, legacy=True)
+
+    def test_post_evaluation_write_failure_keeps_context_without_previous_query_focus(self):
+        self.failure = OSError('/private/secret inventory write failure')
+
+        def inventory(source, row, version, output, *, context):
+            context.update(status='observed', phase='project-properties', operation='validate', command_count=4,
+                           command={'project': 'Previous.csproj', 'framework': 'net8.0'})
+            return []
+
+        original_write = maintenance.write_json
+        def write(path, value):
+            if path.name == 'evaluated-inventory.json':
+                raise self.failure
+            original_write(path, value)
+
+        with patch.object(maintenance, 'write_json', side_effect=write):
+            context = self.prepare_failure(None, inventory=inventory)
+        self.assertEqual(context, {'status': 'unavailable', 'phase': 'inventory-validation',
+                                   'operation': 'validate', 'command_count': 4, 'exception_kind': 'io'})
+
+    def test_unrecognized_command_identities_are_not_retained_as_raw_diagnostics(self):
+        for project in ('/private/secret.csproj', 'C:/private/secret.csproj', '../private/secret.csproj',
+                        'src/secret\x00.csproj', 'x' * 1025 + '.csproj'):
+            context = {}
+            with self.subTest(project=project[:40]), patch.object(maintenance, 'run', side_effect=self.timeout), \
+                    self.assertRaises(subprocess.TimeoutExpired):
+                maintenance.evaluate_satellites(self.source, project, '/private/secret-framework', 'Fixture',
+                                               self.version, self.row, context=context)
+            self.assertEqual(context['status'], 'incomplete')
+            self.assertNotIn('project', context['command'])
+            self.assertNotIn('framework', context['command'])
+            self.assertNotIn('secret', json.dumps(context))
+            self.assertLess(len(json.dumps(context)), 500)
+
+    def test_later_project_validation_clears_previous_query_focus(self):
+        solution = self.source / 'Elsa.Studio.sln'
+        solution.write_text(solution.read_text() +
+                            'Project("{fixture}") = "Unsafe", "../private/secret.csproj", "{fixture}"\n')
+        context = {}
+        with patch.object(maintenance, 'run', side_effect=self.metadata_result), \
+                self.assertRaisesRegex(ValueError, 'Unsafe solution project'):
+            maintenance.evaluate_inventory(self.source, self.row, self.version, self.root, context=context)
+        self.assertEqual(context, {'status': 'unavailable', 'phase': 'inventory-validation',
+                                   'operation': 'validate', 'command_count': 3})
+
+    def test_final_inventory_validation_does_not_retain_last_project_focus(self):
+        self.properties['IsPackable'] = 'false'
+        context = {}
+        with patch.object(maintenance, 'run', side_effect=self.metadata_result), \
+                self.assertRaisesRegex(ValueError, 'Empty/duplicate package inventory'):
+            maintenance.evaluate_inventory(self.source, self.row, self.version, self.root, context=context)
+        self.assertEqual(context, {'status': 'unavailable', 'phase': 'inventory-validation',
+                                   'operation': 'validate', 'command_count': 2})
+
+    def test_satellite_validation_retains_only_current_framework(self):
+        self.properties['TargetFrameworks'] = 'net8.0;net9.0'
+        self.failure = ValueError('Unexpected evaluated satellite identity')
+
+        def execute(command, source, **kwargs):
+            result = self.metadata_result(command, source, **kwargs)
+            if '-p:TargetFramework=net9.0' in command:
+                return json.dumps({'Items': {'SatelliteDllsProjectOutputGroupOutput': [
+                    {'Culture': '/private/secret', 'TargetPath': 'secret.dll'}]}})
+            return result
+
+        context = self.prepare_failure(execute, same_error=False)
+        self.assertEqual(context['operation'], 'validate')
+        self.assertEqual(context['phase'], 'satellite-output-group')
+        self.assertEqual(context['command_count'], 4)
+        self.assertEqual(context['command']['framework'], 'net9.0')
+        self.assertNotIn('net8.0', json.dumps(context))
+
+    def test_optional_context_preserves_inventory_outputs_commands_and_environment(self):
+        calls, results = [], []
+        for context in (None, {}):
+            with patch.object(maintenance, 'run', side_effect=self.metadata_result) as runner:
+                results.append(maintenance.evaluate_inventory(
+                    self.source, self.row, self.version, self.root, context=context))
+            calls.append([(call.args, {key: value for key, value in call.kwargs.items() if key != 'outcome'})
+                          for call in runner.call_args_list])
+            if context is None:
+                self.assertTrue(all('outcome' not in call.kwargs for call in runner.call_args_list))
+                original_tests = (self.root / 'test-inventory.json').read_bytes()
+        self.assertEqual(results[0], results[1])
+        self.assertEqual(calls[0], calls[1])
+        self.assertEqual((self.root / 'test-inventory.json').read_bytes(), original_tests)
+        self.assertEqual(set(results[0][0]), {'id', 'project', 'assembly_name', 'include_build_output',
+                                             'frameworks', 'symbols', 'satellites'})
 
 
 class CoreCandidateContracts(unittest.TestCase):

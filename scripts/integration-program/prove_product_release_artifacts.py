@@ -463,7 +463,7 @@ def execute(root: Path, data: bytes, digest: str, output: Path, *, setup_only: b
             rows = [row for row in maintenance.registered_core_candidates(maintenance.load_register())
                     if row['commit'] == plan['source']['commit'] and row['kind'] == 'maintenance']
             require(len(rows) == 1, 'artifact_registered_recipe')
-            producer = maintenance.prepare(root, rows[0], plan['requested_version'], private / 'producer')
+            producer = maintenance.prepare(root, rows[0], plan['requested_version'], private / 'producer', plan=plan)
         require(producer['success'] is True, 'artifact_producer_failed')
         producer_completed = True
         receipt['product_tests'] = producer['tests']
