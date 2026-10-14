@@ -1,0 +1,22 @@
+name: Cron validation #8184 verification
+
+on:
+  push:
+    branches:
+      - fix/8184-cron-parser-format-exceptions
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scheduling-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+      - name: Run full Scheduling unit test suite with coverage threshold
+        run: dotnet test core/test/unit/Elsa.Scheduling.UnitTests/Elsa.Scheduling.UnitTests.csproj --verbosity quiet
