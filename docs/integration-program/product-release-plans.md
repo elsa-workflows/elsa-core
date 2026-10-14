@@ -2,14 +2,19 @@
 
 This nonpublishing planner is the first bounded deliverable under #8217. It describes one product, historical source line and explicitly requested version. It does not allocate that version, create a tag/ref, build or publish product artifacts, or complete the individual-release/publisher and operational-cutover gates.
 
-Run from a clean controller checkout with .NET SDK **10.0.300** installed. Private tooling/source parents pin that SDK with roll-forward disabled, without changing historical tracked files:
+Run from a clean controller checkout with .NET SDK **10.0.300** installed. Private tooling/source parents pin that SDK with roll-forward disabled, without changing historical tracked files. Create a fresh absolute private directory for the plan and its NuGet cache:
 
 ```sh
-PYTHONDONTWRITEBYTECODE=1 python3 scripts/integration-program/plan_product_release.py \
+PRIVATE="$(mktemp -d /tmp/elsa-product-release.XXXXXX)"
+mkdir "$PRIVATE/planning-packages"
+PLAN="$PRIVATE/plan"
+NUGET_PACKAGES="$PRIVATE/planning-packages" PYTHONDONTWRITEBYTECODE=1 python3 -B scripts/integration-program/plan_product_release.py \
   --product extensions --line 3.8 --version 3.8.5 \
   --metadata-workers 1 \
-  --output /absolute/new/private-plan-directory
+  --output "$PLAN"
 ```
+
+Keep this directory and the same planning cache private and available through the original [planning-assets snapshot](product-release-artifacts.md#hosted-identity-and-private-snapshot-stage) and [consumer verification](product-release-consumers.md). The snapshot binds the original absolute source and cache paths; consumer verification uses that snapshot while freezing and checking the original external archive catalog. Do not replace or delete the planning cache between these stages.
 
 The planner defaults to four concurrent metadata evaluations. Set `--metadata-workers` to a value from 1 through 4 on a constrained local host; this only bounds project-property evaluation and does not change the selected source, inventory, validation, or hosted default.
 
