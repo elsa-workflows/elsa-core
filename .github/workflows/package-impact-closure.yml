@@ -17,6 +17,7 @@ on:
       - 'scripts/integration-program/prepare_consolidated_build.py'
       - 'scripts/integration-program/VerifyEmbeddedSources/**'
       - 'scripts/integration-program/test_*.py'
+      - 'scripts/integration-program/selected_maintenance_test_support.py'
       - 'scripts/integration-program/consolidated-build/source-integration.patch'
       - 'docs/integration-program/inventory/inventory.json'
       - 'docs/integration-program/release-units.json'
