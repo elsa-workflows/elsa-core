@@ -1,4 +1,6 @@
+using System.Collections.Concurrent;
 using Elsa.Common.Models;
+using Elsa.Extensions;
 using Elsa.Mediator.HostedServices;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Management;
@@ -21,16 +23,13 @@ public class Tests : IAsyncLifetime
 {
     private static readonly TimeSpan ChildTimeout = TimeSpan.FromSeconds(10);
 
-    /// <summary>
-    /// How long an instance that must not be cancelled is watched after the cancellation that could have reached it has
-    /// visibly landed elsewhere. Cancellations are dispatched together, so a wrongly targeted one lands within this window.
-    /// </summary>
-    private static readonly TimeSpan SettleTime = TimeSpan.FromSeconds(1);
-
     private readonly ITestOutputHelper _testOutputHelper;
     private readonly IServiceProvider _services;
     private readonly IWorkflowRuntime _workflowRuntime;
     private readonly BackgroundCommandSenderHostedService _commandProcessor;
+
+    /// <summary>Every instance whose cancellation was dispatched, in order.</summary>
+    private readonly ConcurrentQueue<string> _cancellationTargets = new();
 
     public Tests(ITestOutputHelper testOutputHelper)
     {
@@ -42,6 +41,8 @@ public class Tests : IAsyncLifetime
             .AddWorkflow<DispatchAndWaitInForkWorkflow>()
             .AddWorkflow<DispatchAndWaitBesideFireAndForgetWorkflow>()
             .AddWorkflow<DispatchAndWaitForFinishingChildWorkflow>()
+            .ConfigureElsa(elsa => elsa.UseWorkflowRuntime(runtime => runtime.WorkflowCancellationDispatcher = sp =>
+                new RecordingWorkflowCancellationDispatcher(ActivatorUtilities.CreateInstance<BackgroundWorkflowCancellationDispatcher>(sp), _cancellationTargets)))
             .Build();
         _workflowRuntime = _services.GetRequiredService<IWorkflowRuntime>();
 
@@ -81,15 +82,16 @@ public class Tests : IAsyncLifetime
         // Arrange: the parent has dispatched one child fire-and-forget and is waiting for another.
         var parentId = await StartParentAsync(nameof(DispatchAndWaitBesideFireAndForgetWorkflow));
         await WaitForChildAsync(parentId, nameof(FireAndForgetChildWorkflow), IsSuspended);
-        await WaitForChildAsync(parentId, nameof(BlockingChildWorkflow), IsSuspended);
+        var waitedChildId = (await WaitForChildAsync(parentId, nameof(BlockingChildWorkflow), IsSuspended)).Id;
 
         // Act
         await ProceedParentAsync(parentId);
 
-        // Assert: only the waited-for child is cancelled.
+        // Assert: the cancelled activity dispatched a cancellation for the waited-for child and nothing else, and that
+        // cancellation lands.
+        Assert.Equal(new[] { waitedChildId }, _cancellationTargets);
         var waitedChild = await WaitForChildAsync(parentId, nameof(BlockingChildWorkflow), IsFinished);
         Assert.Equal(WorkflowSubStatus.Cancelled, waitedChild.SubStatus);
-        await AssertStaysSuspendedAsync(parentId, nameof(FireAndForgetChildWorkflow));
     }
 
     [Fact(DisplayName = "Cancelling a waiting DispatchWorkflow activity whose child already finished changes nothing")]
@@ -108,11 +110,10 @@ public class Tests : IAsyncLifetime
         // Act
         await ProceedParentAsync(parentId);
 
-        // Assert: the parent finished without an incident, and neither the finished child nor its own child was touched.
+        // Assert: the parent finished without an incident, and no cancellation was dispatched at all, so neither the
+        // finished child nor its own child is touched.
         Assert.Empty((await ExportStateAsync(parentId)).Incidents);
-        var child = await WaitForChildAsync(parentId, nameof(FinishingChildWorkflow), IsFinished);
-        Assert.Equal(WorkflowSubStatus.Finished, child.SubStatus);
-        await AssertStaysSuspendedAsync(childId, nameof(FireAndForgetChildWorkflow));
+        Assert.Empty(_cancellationTargets);
     }
 
     [Fact(DisplayName = "Control: cancelling the parent workflow through the cancellation service cancels the dispatched child")]
@@ -169,20 +170,6 @@ public class Tests : IAsyncLifetime
     {
         var client = await _workflowRuntime.CreateClientAsync(instanceId);
         return await client.ExportStateAsync();
-    }
-
-    /// <summary>Watches the single child of the definition for <see cref="SettleTime"/> and asserts it stays suspended.</summary>
-    private async Task AssertStaysSuspendedAsync(string parentId, string definitionId)
-    {
-        var settleAt = DateTimeOffset.UtcNow + SettleTime;
-
-        while (DateTimeOffset.UtcNow < settleAt)
-        {
-            var child = await WaitForChildAsync(parentId, definitionId, _ => true);
-            Assert.Equal(WorkflowStatus.Running, child.Status);
-            Assert.Equal(WorkflowSubStatus.Suspended, child.SubStatus);
-            await Task.Delay(TimeSpan.FromMilliseconds(50));
-        }
     }
 
     /// <summary>
