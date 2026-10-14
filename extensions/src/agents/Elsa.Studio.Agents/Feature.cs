@@ -5,7 +5,8 @@ using JetBrains.Annotations;
 namespace Elsa.Studio.Agents;
 
 [UsedImplicitly]
-[RemoteFeature("Elsa.AgentsApi")]
+[RemoteFeature(RemoteFeatureName)]
 public class Feature : FeatureBase
 {
+    public const string RemoteFeatureName = "Elsa.AgentsApi";
 }
