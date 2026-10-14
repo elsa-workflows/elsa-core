@@ -32,9 +32,10 @@ public class OutputJsonConverter<T> : JsonConverter<Output<T>?>
         if (!doc.RootElement.TryGetProperty("typeName", out _))
             return null;
 
-        var memoryReferenceElement = doc.RootElement.GetProperty("memoryReference");
-
-        if (!memoryReferenceElement.TryGetProperty("id", out var memoryReferenceIdElement))
+        if (!doc.RootElement.TryGetProperty("memoryReference", out var memoryReferenceElement) ||
+            memoryReferenceElement.ValueKind != JsonValueKind.Object ||
+            !memoryReferenceElement.TryGetProperty("id", out var memoryReferenceIdElement) ||
+            memoryReferenceIdElement.ValueKind != JsonValueKind.String)
             return default;
 
         var variable = new Variable
