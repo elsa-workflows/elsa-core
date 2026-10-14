@@ -31,7 +31,7 @@ public class ManageUserRoleBoundaryTests
     public ManageUserRoleBoundaryTests()
     {
         _userStore.FindAsync(Arg.Is<UserFilter>(x => x.Id == UserId), Arg.Any<CancellationToken>()).Returns(_user);
-        _roleProvider.FindManyAsync(Arg.Any<RoleFilter>(), Arg.Any<CancellationToken>()).Returns(new ValueTask<IEnumerable<Role>>([new Role { Id = "admin", Name = "admin" }]));
+        _roleProvider.FindManyAsync(Arg.Any<RoleFilter>(), Arg.Any<CancellationToken>()).Returns(new ValueTask<IEnumerable<Role>>([new Role { Id = "admin", Name = "admin", Permissions = ["*"] }]));
         _deletionCoordinator.DeleteAsync(UserId, Arg.Any<CancellationToken>()).Returns(new UserDeletionOperationResult.Deleted());
     }
 
@@ -88,7 +88,7 @@ public class ManageUserRoleBoundaryTests
     }
 
     private void CallerCanAssignCurrentRoles(bool allowed) =>
-        _roleAuthorization.CanAssignRolesAsync(Arg.Any<ClaimsPrincipal>(), Arg.Is<IEnumerable<string>?>(x => x != null && x.SequenceEqual(AdminRoles)), Arg.Any<CancellationToken>()).Returns(allowed);
+        _roleAuthorization.CanCreateRoleWithPermissions(Arg.Any<ClaimsPrincipal>(), Arg.Is<IEnumerable<string>?>(x => x != null && x.SequenceEqual(new[] { "*" }))).Returns(allowed);
 
     private UpdateEndpoint CreateUpdateEndpoint() =>
         Factory.Create<UpdateEndpoint>(WithUserIdRoute, _userStore, _secretHasher, _roleAuthorization, _roleProvider);

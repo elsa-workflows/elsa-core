@@ -1,6 +1,6 @@
-using Elsa.Extensions;
 using Elsa.Authorization;
 using Elsa.Abstractions;
+using Elsa.Extensions;
 using Elsa.Identity.Contracts;
 using Elsa.Identity.Models;
 using JetBrains.Annotations;

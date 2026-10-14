@@ -8,15 +8,14 @@ namespace Elsa.Extensions;
 internal static class UserManagementAuthorizationExtensions
 {
     /// <summary>
-    /// Returns whether <paramref name="caller"/> may change or delete <paramref name="target"/>: the caller must be able to
-    /// assign every role the target currently holds.
+    /// Returns whether <paramref name="caller"/> may change or delete <paramref name="target"/>: the caller must hold every
+    /// permission the target's tokens would carry.
     /// </summary>
     /// <remarks>
-    /// Deleting a role does not remove its ID from users, so a user can carry IDs of roles that no longer exist.
-    /// Those IDs grant nothing (tokens and permission stamps only resolve existing roles), so they are ignored here.
-    /// Otherwise <see cref="IRoleAuthorizationService.CanAssignRolesAsync"/> would fail closed on them and nobody,
-    /// not even a full administrator, could manage that user. If a role with the same ID is created again, it resolves
-    /// and is checked again.
+    /// The target's permissions are resolved exactly as the token issuer resolves them: the permissions of every role the
+    /// role provider returns for the target's role IDs. That keeps the check aligned with case-insensitive stores and with
+    /// providers that return roles regardless of the requested IDs. Role IDs of deleted roles resolve to nothing and grant
+    /// nothing, so they don't block management of the user.
     /// </remarks>
     public static async Task<bool> CanManageUserAsync(
         this IRoleAuthorizationService roleAuthorizationService,
@@ -25,8 +24,8 @@ internal static class UserManagementAuthorizationExtensions
         User target,
         CancellationToken cancellationToken)
     {
-        var existingRoleIds = (await roleProvider.FindByIdsAsync(target.Roles, cancellationToken)).Select(x => x.Id).ToHashSet(StringComparer.Ordinal);
-        var currentRoleIds = target.Roles.Where(existingRoleIds.Contains).ToList();
-        return await roleAuthorizationService.CanAssignRolesAsync(caller, currentRoleIds, cancellationToken);
+        var roles = await roleProvider.FindByIdsAsync(target.Roles, cancellationToken);
+        var permissions = roles.SelectMany(x => x.Permissions).ToList();
+        return roleAuthorizationService.CanCreateRoleWithPermissions(caller, permissions);
     }
 }
