@@ -67,6 +67,37 @@ from synthetic restored archives through seal and readback for both original and
 reviewed-continuation sources, both maintenance lines and all three frameworks
 (12 cells); this does not establish native execution or hosted control acceptance.
 
+The maintenance writer also maps the existing `swagger` physical source family to
+the original `src/common/Elsa.Api.Common/Elsa.Api.Common.csproj` path, only for
+`Elsa.Api.Common` on `net10.0` after exact original or reviewed-continuation Core
+source admission. Only `obj/Release/net10.0/SwaggerExportPathInitializer.g.cs`
+is recognized. The same mapping drives compiler evidence capture and reuses the
+shared resolved `FastEndpoints.Swagger` package, framework/runtime restore target,
+archive content hash and extracted target verification. The older net8/net9 train
+does not gain a family or require unused Swagger generator evidence. Other unknown
+generated documents still fail closed.
+
+Core sealing and provider readback admit the matching closed `swagger` NuGet
+producer only for that package/project's net10 symbol row. The producer must name
+`FastEndpoints.Swagger` 8.2.0 and `build/FastEndpoints.Swagger.targets`, with
+`targeting_pack:false`; its version joins to the selected net10 dependency group.
+The existing NuGet record checks retain archive/content digests, equal canonical
+SHA-512 restore/content hashes and the target's checked-content join. The public
+document path remains an ordinal `[embedded]/document-N`; its original filename
+and private generator archive bytes remain inherited native writer judgments.
+Synthetic tests pass the actual maintenance document writer output through Core
+specialization, sealing and provider ZIP readback for both lines and original and
+reviewed-continuation sources, with rehashed tampering rejected at both boundaries.
+
+Both admitted Core continuations preserve the project reference and net10
+`FastEndpoints.Swagger` 8.2.0 pin. Its locally cached build target writes this file
+before `CoreCompile` and adds it to `Compile`; this confirms the mapping model,
+not the effective import or actual PDB path in a hosted run. The two Core failures
+at controller `33780deffb72061bc1164ddbab75729de6a6ebb7` retained only
+`generated-family-unknown` for this package/framework, without the failing document
+path. The mapping gap is reproduced by Python contracts; attributing those hosted
+failures to Swagger still requires fresh native PDB and producer evidence.
+
 The retained Core test projection must contain exactly the source-pinned 44 (3.8)
 or 61 (3.9) project/net10.0 cells, no inherited placeholder rows, all 16 integer
 counters, positive passed counts and exact fixed skip identities/reasons.

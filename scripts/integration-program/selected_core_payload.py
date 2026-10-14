@@ -208,6 +208,23 @@ def _manifest_hint_producer(value: dict, policy: dict) -> None:
     digest(target['sha256'])
 
 
+def _swagger_producer(value: dict, row: dict, policy: dict) -> None:
+    """Join Core's sole physical generator to the admitted package and framework policy."""
+    _producer(value)
+    identifier, entry = archives.PHYSICAL_GENERATORS['swagger']
+    version, framework = '8.2.0', PurePosixPath(row['assembly']).parts[1]
+    require((policy['id'], policy['project'], framework) == ('Elsa.Api.Common',
+            'src/common/Elsa.Api.Common/Elsa.Api.Common.csproj', 'net10.0') and
+            value['kind'] == 'nuget' and value['package_id'] == identifier and value['package_version'] == version and
+            value['archive_entry'] == entry and value['targeting_pack'] is False,
+            'core_payload_swagger_identity')
+    require(is_canonical_sha512(value['restore_sha512']), 'core_payload_swagger_restore')
+    groups = [group for group in policy['metadata']['dependency_groups'] if group['framework'] == framework]
+    dependencies = [item for group in groups for item in group['dependencies'] if item['id'].casefold() == identifier.casefold()]
+    require(len(groups) == 1 and len(dependencies) == 1 and dependencies[0]['version'] == version,
+            'core_payload_swagger_dependency')
+
+
 def _documents(row: dict, commit: str, policy: dict) -> None:
     """Validate source document provenance or the explicit no-documents applicability branch."""
     documents = _rows(row['documents'], 'core_payload_documents')
@@ -223,10 +240,12 @@ def _documents(row: dict, commit: str, policy: dict) -> None:
         else:
             closed(document, {'path', 'source', 'family', 'producer', 'algorithm', 'checksum'}, 'core_payload_embedded_document')
             require(source == 'embedded' and re.fullmatch(r'\[embedded\]/document-[1-9][0-9]*', document['path']) is not None and
-                    document['family'] in {'sdk', 'manifest-hints', *archives.GENERATOR_TOOLS}, 'core_payload_embedded_family')
+                    document['family'] in {'sdk', 'manifest-hints', 'swagger', *archives.GENERATOR_TOOLS}, 'core_payload_embedded_family')
             family, producer = document['family'], document['producer']
             if family == 'manifest-hints':
                 _manifest_hint_producer(producer, policy)
+            elif family == 'swagger':
+                _swagger_producer(producer, row, policy)
             else:
                 _producer(producer)
                 require((family == 'sdk') == ('compiler_sha256' in producer), 'core_payload_embedded_producer')

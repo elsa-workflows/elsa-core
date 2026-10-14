@@ -2,6 +2,7 @@
 from copy import deepcopy
 import base64
 import io
+import json
 from pathlib import PurePosixPath
 import unittest
 from unittest.mock import patch
@@ -22,7 +23,7 @@ def archive_record(identifier, version, suffix, members):
                 {'path': p, 'size': len(b), 'sha256': core._hash(b)} for p, b in members.items()]}, data
 
 
-def fixture(line='3.8', *, conditional_skips=True):
+def fixture(line='3.8', *, conditional_skips=True, api_common=False):
     """Build synthetic Core plan, producer, consumer, and archive evidence for a release line."""
     contracts = core.load_contracts()
     contract = contracts['producer']['sources'][line]
@@ -45,19 +46,26 @@ def fixture(line='3.8', *, conditional_skips=True):
         producer['product_tests']['executions'].append({'project': project, 'framework': 'net10.0',
             'counters': counters, 'sha256': 'e'*64, 'expected_skips': cases})
     selected = {}
-    for identifier in ('Elsa', 'Elsa.Workflows.Core', 'Elsa.Workflows.Runtime', 'Elsa.SamplePackage'):
+    for identifier in ('Elsa', 'Elsa.Workflows.Core', 'Elsa.Workflows.Runtime', 'Elsa.SamplePackage') + (('Elsa.Api.Common',) if api_common else ()):
         sample = identifier == 'Elsa.SamplePackage'
         frameworks = ['net10.0'] if sample else list(core.FRAMEWORKS)
         policy = {'id': identifier, 'project': core.SAMPLE_PROJECT if sample else f'src/modules/{identifier}/{identifier}.csproj',
                   'symbols': not sample, 'frameworks': frameworks, 'include_build_output': True,
                   'metadata': {'original_output_policy': {f: {'IncludeBuildOutput': 'true', 'GenerateElsaPackageManifest': '',
                     'ElsaPackageManifestIncludeInPackage': '', 'ElsaPackageManifestPackagePath': ''} for f in frameworks}}}
+        dependencies = ''
+        if identifier == 'Elsa.Api.Common':
+            policy['project'] = 'src/common/Elsa.Api.Common/Elsa.Api.Common.csproj'
+            dependencies = '<dependencies>' + ''.join(f'<group targetFramework="{f}"><dependency id="FastEndpoints.Swagger" '
+                f'version="{"8.2.0" if f == "net10.0" else "7.1.1"}" /></group>' for f in frameworks) + '</dependencies>'
         plan['inventory']['selected'].append(policy)
         version = plan['requested_version']
         repository = {'type': 'git', 'url': 'https://github.com/elsa-workflows/elsa-core.git', 'commit': source['commit']}
         nuspec = (f'<package><metadata><id>{identifier}</id><version>{version}</version>'
                   f'<repository type="git" url="{repository["url"]}" commit="{source["commit"]}" />'
-                  '</metadata></package>').encode()
+                  + dependencies + '</metadata></package>').encode()
+        if identifier == 'Elsa.Api.Common':
+            policy['metadata']['dependency_groups'] = core.archives.dependency_groups(core.archives.parse_metadata(nuspec))
         members = {identifier + '.nuspec': nuspec} | {f'lib/{f}/{identifier}.dll': (identifier + f).encode() for f in frameworks}
         symbol_members = {identifier + '.nuspec': nuspec} | {f'lib/{f}/{identifier}.pdb': (identifier + f + '.pdb').encode() for f in frameworks}
         record, data = archive_record(identifier, version, 'nupkg', members)
@@ -67,7 +75,7 @@ def fixture(line='3.8', *, conditional_skips=True):
             symbol_record, _ = archive_record(identifier, version, 'snupkg', symbol_members)
             producer['packages']['selected'].append(symbol_record); records.append(symbol_record)
         native = {'id': identifier, 'version': version, 'frameworks': frameworks, 'assembly_name': identifier,
-                  'include_build_output': True, 'satellites': [], 'dependencies': [], 'repository': repository,
+                  'include_build_output': True, 'satellites': [], 'dependencies': policy['metadata'].get('dependency_groups', []), 'repository': repository,
                   'symbols': [], 'package_manifest': None, 'sdk_assets': [], 'files': [
                       {'name': r['file'], 'sha256': r['sha256'], 'size': r['size']} for r in records]}
         for framework in frameworks:
@@ -382,6 +390,151 @@ class CorePayloadTests(unittest.TestCase):
             lambda c: c['runtime'][0]['restored_payloads'][0]['payloads'][0].update(kind='compile')]
         for mutate in mutations:
             with self.subTest(mutation=mutate): self.rejected(lambda p, r, c, *_: mutate(c))
+
+
+class CoreSwaggerSealTests(unittest.TestCase):
+    """Real maintenance document output through synthetic Core seal and provider readback."""
+
+    def setUp(self):
+        from test_selected_core_manifest_hints import CoreManifestHintSealTests
+        self.boundaries = CoreManifestHintSealTests()
+        self.boundaries.setUp()
+        self.addCleanup(self.boundaries.doCleanups)
+
+    def emitted_fixture(self, line='3.8', kind='original'):
+        import prepare_maintenance_build as maintenance
+        import test_selected_product_payload as product_tests
+
+        with patch.object(product_tests, 'core_fixture', side_effect=lambda line: fixture(line, api_common=True)):
+            values = (self.boundaries.candidates.candidate_files(line) if kind == 'continuation'
+                      else product_tests.fixture('core', line))
+        files = values[0]
+        plan, producer, consumer = (json.loads(files[name]) for name in
+                                   ('plan.json', 'producer/receipt.json', 'consumer/receipt.json'))
+        row = plan['source'] | {'source_repository': 'elsa-workflows/elsa-core'}
+        helpers = self.boundaries.hints
+        source, policy, document, _, _, _, resolved = helpers.core_swagger_fixture(row)
+        helpers.capture_core_swagger(source, row, policy, resolved)
+        document['path'] = '/_/' + document['path']
+        with patch.object(maintenance, 'git', return_value=''):
+            emitted = maintenance.verify_documents({'source_link': {'documents': {'/_/*':
+                f"https://raw.githubusercontent.com/elsa-workflows/elsa-core/{row['commit']}/*"}},
+                'documents': [document]}, source, row, policy, 'net10.0')[0]
+        native = next(r for r in producer['package_verification'] if r['id'] == 'Elsa.Api.Common')
+        next(s for s in native['symbols'] if s['assembly'].split('/')[1] == 'net10.0')['documents'] = [emitted]
+        self.boundaries.bind(files, plan, producer, consumer)
+        return values, emitted
+
+    def test_original_and_continuation_core_swagger_documents_seal_and_read_back(self):
+        import prepare_maintenance_build as maintenance
+        for line in ('3.8', '3.9'):
+            for kind in ('original', 'continuation'):
+                with self.subTest(line=line, kind=kind):
+                    values, emitted = self.emitted_fixture(line, kind)
+                    self.assertEqual(emitted['family'], 'swagger')
+                    self.assertEqual(emitted['path'], '[embedded]/document-1')
+                    with patch('pathlib.Path.read_bytes', side_effect=AssertionError('pure file IO')), \
+                         patch.object(maintenance, 'git', side_effect=AssertionError('pure Git')), \
+                         patch('urllib.request.urlopen', side_effect=AssertionError('pure network')):
+                        sealed = self.boundaries.stage(values)
+                        self.assertEqual(sealed['producer/receipt.json'], values[0]['producer/receipt.json'])
+                        result = self.boundaries.readback(values, sealed)
+                    self.assertTrue(result['success'])
+                    self.assertFalse(result['product_code_executed_during_readback'])
+
+    def test_rehashed_swagger_mutations_fail_seal_and_independent_readback(self):
+        import product_release_metadata as metadata
+        import selected_control_transport as transport
+        from test_selected_studio_payload import encoded
+
+        values, emitted = self.emitted_fixture()
+        baseline = self.boundaries.stage(values)
+        checksum = emitted['producer']['restore_sha512']
+        alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+        noncanonical = checksum[:85] + alphabet[alphabet.index(checksum[85]) | 1] + '=='
+        def wrong_target(policy, symbol, document):
+            producer = document['producer']
+            producer['archive_entry'] = 'build/Other.targets'
+            producer['checked_archive_contents'] = {producer['archive_entry']: producer['content_sha256']}
+        mutations = [
+            ('wrong-package', lambda p, s, d: d['producer'].update(package_id='Other.Generator')),
+            ('old-version', lambda p, s, d: d['producer'].update(package_version='7.1.1')),
+            ('unreviewed-version', lambda p, s, d: d['producer'].update(package_version='8.2.1')),
+            ('wrong-project', lambda p, s, d: p.update(project='src/common/Other/Other.csproj')),
+            ('wrong-kind', lambda p, s, d: d.update(producer={'kind': 'framework', 'package_id': 'FastEndpoints.Swagger',
+                'package_version': '8.2.0', 'content_sha256': 'a' * 64})),
+            ('wrong-target', wrong_target),
+            ('targeting-pack', lambda p, s, d: d['producer'].update(targeting_pack=True)),
+            ('other-core-package', None), ('net8-family', None), ('net9-family', None),
+            ('physical-grpc', lambda p, s, d: d.update(family='grpc')),
+            ('physical-protograin', lambda p, s, d: d.update(family='protograin')),
+            ('unknown-family', lambda p, s, d: d.update(family='other')),
+            ('wrong-family', lambda p, s, d: d.update(family='refit')),
+            ('private-path', lambda p, s, d: d.update(path='src/common/Elsa.Api.Common/obj/Release/net10.0/SwaggerExportPathInitializer.g.cs')),
+            ('document-extra', lambda p, s, d: d.update(filename='SwaggerExportPathInitializer.g.cs')),
+            ('producer-extra', lambda p, s, d: d['producer'].update(tool_path='/tmp/private')),
+            ('producer-missing', lambda p, s, d: d['producer'].pop('restore_sha512')),
+            ('invalid-archive-hash', lambda p, s, d: d['producer'].update(archive_sha256='z' * 64)),
+            ('restore-content-mismatch', lambda p, s, d: d['producer'].update(nuget_content_hash=base64.b64encode(b'x' * 64).decode())),
+            ('invalid-restore-hash', lambda p, s, d: d['producer'].update(restore_sha512='bad', nuget_content_hash='bad')),
+            ('noncanonical-restore-hash', lambda p, s, d: d['producer'].update(restore_sha512=noncanonical, nuget_content_hash=noncanonical)),
+            ('target-content-mismatch', lambda p, s, d: d['producer'].update(content_sha256='a' * 64)),
+            ('target-content-missing', lambda p, s, d: d['producer']['checked_archive_contents'].clear()),
+            ('target-content-extra-path', lambda p, s, d: d['producer']['checked_archive_contents'].update({'../Other.targets': 'a' * 64})),
+        ]
+        for name, mutate in mutations:
+            changed = deepcopy(values)
+            files = changed[0]
+            plan, producer, consumer = (json.loads(files[n]) for n in
+                                       ('plan.json', 'producer/receipt.json', 'consumer/receipt.json'))
+            policy = next(r for r in plan['inventory']['selected'] if r['id'] == 'Elsa.Api.Common')
+            native = next(r for r in producer['package_verification'] if r['id'] == 'Elsa.Api.Common')
+            symbol = next(s for s in native['symbols'] if s['assembly'].split('/')[1] == 'net10.0')
+            if mutate is None:
+                package, framework = ('Elsa', 'net10.0') if name == 'other-core-package' else ('Elsa.Api.Common',
+                    'net8.0' if name == 'net8-family' else 'net9.0')
+                native = next(r for r in producer['package_verification'] if r['id'] == package)
+                next(s for s in native['symbols'] if s['assembly'].split('/')[1] == framework)['documents'] = [deepcopy(emitted)]
+            else:
+                mutate(policy, symbol, symbol['documents'][0])
+            self.boundaries.bind(files, plan, producer, consumer)
+            with self.subTest(mutation=name, boundary='seal'), self.assertRaises(ValueError):
+                self.boundaries.stage(changed)
+            # Forge outer hashes and inventories without stage() so readback must
+            # independently reach and reject the altered Core document evidence.
+            manifest = json.loads(baseline[transport.MANIFEST])
+            manifest.update(plan_sha256=metadata.sha256(files['plan.json']),
+                producer_receipt_sha256=metadata.sha256(files['producer/receipt.json']),
+                consumer_receipt_sha256=metadata.sha256(files['consumer/receipt.json']),
+                artifact_execution=producer['execution'], consumer_execution=consumer['execution'],
+                files=transport.inventory(files))
+            forged = files | {transport.MANIFEST: encoded(manifest)}
+            with self.subTest(mutation=name, boundary='readback'), self.assertRaises(ValueError):
+                self.boundaries.readback(changed, forged)
+
+    def test_swagger_receiver_requires_source_supported_dependency(self):
+        values, emitted = self.emitted_fixture()
+        files = values[0]
+        plan, producer, consumer = (json.loads(files[n]) for n in
+                                   ('plan.json', 'producer/receipt.json', 'consumer/receipt.json'))
+        common = next(r for r in producer['package_verification'] if r['id'] == 'Elsa.Api.Common')
+        # The native receipt and package archive already join to this metadata.
+        # Exercise the additional source-supported dependency guard directly so a
+        # mismatched plan cannot be hidden behind an earlier archive join failure.
+        policy = next(r for r in plan['inventory']['selected'] if r['id'] == 'Elsa.Api.Common')
+        symbol = next(s for s in common['symbols'] if s['assembly'].split('/')[1] == 'net10.0')
+        for mutation in ('missing', 'duplicate', 'wrong-version'):
+            changed = deepcopy(policy)
+            groups = changed['metadata']['dependency_groups']
+            group = next(g for g in groups if g['framework'] == 'net10.0')
+            if mutation == 'missing':
+                group['dependencies'].clear()
+            elif mutation == 'duplicate':
+                group['dependencies'].append(deepcopy(group['dependencies'][0]))
+            else:
+                group['dependencies'][0]['version'] = '7.1.1'
+            with self.subTest(dependency=mutation), self.assertRaisesRegex(ValueError, 'core_payload_swagger_dependency'):
+                core._swagger_producer(emitted['producer'], symbol, changed)
 
 
 if __name__ == '__main__':
