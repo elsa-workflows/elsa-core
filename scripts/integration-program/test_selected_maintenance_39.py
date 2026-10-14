@@ -12,6 +12,7 @@ import prove_product_release_consumers as consumers
 import prove_consolidated_packages as archives
 import selected_extensions_contract as extensions
 import selected_maintenance_39 as selected
+from selected_maintenance_test_support import registered_maintenance_selection
 
 
 class Maintenance39Contracts(unittest.TestCase):
@@ -95,10 +96,10 @@ class Maintenance39Contracts(unittest.TestCase):
         for product in ('studio', 'extensions'):
             with self.subTest(product=product), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary).resolve(); plan = self.plan(product); output = root / 'control'
+                row, plan['source'] = registered_maintenance_selection(product, '3.9', selected.contract(product)['commit'])
                 def checkout(_root, binding, source):
                     source.mkdir(); (source / selected.contract(product)['solution']).write_bytes(b'solution')
                     path = source / selected.contract(product)['workflow']; path.parent.mkdir(parents=True); path.write_bytes(b'workflow')
-                row = {'commit': plan['source']['commit'], 'kind': 'maintenance'}
                 package = {'id': plan['inventory']['selected'][0]['id'], 'package_manifest': {}, 'sdk_assets': []}
                 with patch.object(artifacts, 'admit', return_value=plan), \
                         patch.object(artifacts, 'selected_execution', return_value={'id': 'offline-fixture'}), \
@@ -109,13 +110,14 @@ class Maintenance39Contracts(unittest.TestCase):
                         patch.object(artifacts.planner, 'npm_intent', return_value=plan['npm']), \
                         patch.object(artifacts, 'preflight', return_value={'host_framework': 'net10.0'}), \
                         patch.object(artifacts.planner, 'build_helper'), patch.object(artifacts, 'refresh_remote'), \
-                        patch.object(artifacts.maintenance, 'registered_core_candidates', return_value=[row]), \
                         patch.object(artifacts.maintenance, 'prepare', return_value={'success': True, 'tests': {}, 'packages': [package]}) as prepare, \
                         patch.object(artifacts, 'retain_selected', return_value={}), \
                         patch.object(artifacts.historical, 'prove', return_value={'success': True}) as npm:
                     result = artifacts.execute(artifacts.ROOT, b'{}', 'a'*64, output)
                 bound.assert_called_once_with(artifacts.ROOT, plan)
-                self.assertTrue(result['success']); self.assertEqual('3.9.999', prepare.call_args.args[2])
+                self.assertTrue(result['success']); prepare.assert_called_once()
+                self.assertEqual((artifacts.ROOT, row, '3.9.999'), prepare.call_args.args[:3])
+                self.assertEqual(plan, prepare.call_args.kwargs['plan'])
                 self.assertEqual(product == 'studio', npm.called)
 
     def test_runtime_39_reuses_exact_fixtures_and_original_version_policies(self):

@@ -12,7 +12,7 @@ import prove_consolidated_package_consumers as consumers
 import prove_product_release_artifacts as artifacts
 import prove_product_release_consumers as proof
 import selected_extensions_contract as contract
-from selected_maintenance_test_support import patch_offline_local_execution
+from selected_maintenance_test_support import patch_offline_local_execution, registered_maintenance_selection
 
 
 class ExtensionsControlTests(unittest.TestCase):
@@ -177,15 +177,15 @@ class ExtensionsControlTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve(); controller = root / 'controller'; controller.mkdir()
             output = root / 'control'
+            row, source = registered_maintenance_selection('extensions', '3.8', contract.SOURCE)
             plan = {'product': 'extensions', 'line': '3.8', 'requested_version': '3.8.999',
-                    'controller': {'commit': 'c' * 40, 'tree': 'd' * 40}, 'source': {'commit': contract.SOURCE},
+                    'controller': {'commit': 'c' * 40, 'tree': 'd' * 40}, 'source': source,
                     'npm': None, 'inventory': {'selected': [{'id': 'Elsa.IO.Http'}], 'release_recipe': {
                         'solution': 'Elsa.Extensions.sln', 'sha256': metadata.sha256(b'solution'),
                         'workflow': 'inert.yml', 'workflow_sha256': metadata.sha256(b'workflow')}}}
             def checkout(root, binding, source):
                 source.mkdir(); (source / 'Elsa.Extensions.sln').write_bytes(b'solution')
                 (source / 'inert.yml').write_bytes(b'workflow')
-            row = {'commit': contract.SOURCE, 'kind': 'maintenance'}
             package = {'id': 'Elsa.IO.Http', 'package_manifest': {'sha256': 'a' * 64}, 'sdk_assets': []}
             with patch.object(artifacts, 'admit', return_value=plan), \
                     patch.object(artifacts, 'verify_controller', return_value=plan['controller']), \
@@ -194,7 +194,6 @@ class ExtensionsControlTests(unittest.TestCase):
                     patch.object(artifacts.planner, 'npm_intent', return_value=None), \
                     patch.object(artifacts, 'preflight', return_value={'sdk': metadata.SDK}), \
                     patch.object(artifacts.planner, 'build_helper'), patch.object(artifacts, 'refresh_remote'), \
-                    patch.object(artifacts.maintenance, 'registered_core_candidates', return_value=[row]), \
                     patch.object(artifacts.maintenance, 'prepare', return_value={
                         'success': True, 'tests': {'passed': 1}, 'packages': [package, dict(package, id='Excluded')]} ) as recipe, \
                     patch.object(artifacts, 'retain_selected', return_value={'selected': []}), \
@@ -202,7 +201,8 @@ class ExtensionsControlTests(unittest.TestCase):
                 result = artifacts.execute(controller, b'{}', 'a' * 64, output)
             self.assertTrue(result['success'])
             self.assertEqual([package], result['manifest_verification'])
-            self.assertEqual('3.8.999', recipe.call_args.args[2])
+            recipe.assert_called_once()
+            self.assertEqual((controller, row, '3.8.999'), recipe.call_args.args[:3])
             bound.assert_called_once_with(controller, contract.SOURCE)
             npm.assert_not_called()
             self.assertNotIn('npm', result)
