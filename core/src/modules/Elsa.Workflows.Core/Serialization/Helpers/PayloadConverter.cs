@@ -8,7 +8,11 @@ namespace Elsa.Workflows.Serialization.Helpers;
 /// A payload can come back untyped (for example as an ExpandoObject or a JsonElement);
 /// such a payload is converted to <typeparamref name="T"/> using the payload serializer's base options.
 /// </summary>
-public static class PayloadConverter
+/// <remarks>
+/// Conversion uses only the payload serializer's base options, so payload types that depend on
+/// converters the base options lack (for example custom or DI-registered converters) will not round trip.
+/// </remarks>
+internal static class PayloadConverter
 {
     private static readonly JsonSerializerOptions Options = JsonPayloadSerializer.CreateBaseOptions();
 
