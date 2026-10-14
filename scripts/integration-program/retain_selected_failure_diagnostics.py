@@ -54,7 +54,7 @@ def project(receipt: dict, digest: str, role: str, plan: dict, plan_hash: str, c
         'stage': receipt['stage'], 'failure_code': receipt['stage'] + '-failed'}
     detail = {'status': 'unavailable'}
     try:
-        if role == 'artifact' and plan['product'] == 'core' and receipt['stage'] == 'original-product-recipe':
+        if role == 'artifact' and receipt['stage'] == 'original-product-recipe':
             detail = producer.validate_recipe_failure(receipt['product_recipe_failure'], plan['inventory']['selected'])
         elif role == 'consumer' and 'dependency_range_failure' in receipt:
             candidate = consumer.resolution.validate_range_failure(receipt['dependency_range_failure'])

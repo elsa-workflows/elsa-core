@@ -19,6 +19,7 @@ import prepare_maintenance_build as maintenance
 import selected_extensions_contract as extensions
 import selected_core_producer as core
 import selected_maintenance_39 as maintenance39
+import product_artifact_execution as artifact_execution
 from prove_consolidated_packages import archive_names, dependency_groups, framework_reference_groups, metadata as nuspec, require, run
 import prove_historical_studio_npm_pair as historical
 from product_artifact_execution import selected_execution
@@ -118,20 +119,57 @@ def validate_recipe_failure(value: dict, selected: list[dict] | None = None) -> 
     return result
 
 
-def recipe_failure_diagnostics(output: Path, plan: dict, controller: dict, execution: dict) -> dict:
-    """Project the current failed Core producer only; diagnostics cannot replace its exception."""
+def selected_recipe_source(plan: dict) -> dict:
+    """Bind the producer receipt to the exact Core or registered product source selection."""
+    if plan['product'] == 'core':
+        return plan['source'] | {'source_repository': maintenance.CORE_REPOSITORY}
+
+    source = plan['source']
+    expected_fields = ('product', 'line', 'commit', 'tree', 'parents', 'original_commit',
+                       'original_parents', 'contained_commit', 'contained_tree')
+    expected_repositories = {'studio': 'elsa-workflows/elsa-studio',
+                             'extensions': 'elsa-workflows/elsa-extensions'}
+    matches = [row for row in maintenance.registered_core_candidates(maintenance.load_register())
+               if row.get('kind') == 'maintenance' and
+               (row.get('product'), row.get('line'), row.get('commit'), row.get('tree')) ==
+               (plan['product'], plan['line'], source.get('commit'), source.get('tree'))]
+    require(source.get('kind') == 'admitted-maintenance-descendant' and len(matches) == 1,
+            'artifact_registered_recipe')
+    row = matches[0]
+    require(all(row.get(key) == source.get(key) for key in expected_fields) and
+            row.get('source_repository') == maintenance.CORE_REPOSITORY and
+            row.get('original_source_repository') == expected_repositories[plan['product']] and
+            type(row.get('dependency_version')) is str and
+            re.fullmatch(re.escape(plan['line']) + r'\.[0-9]+', row['dependency_version']) is not None and
+            row.get('original_source_ref') == 'refs/heads/release/' + row['dependency_version'] and
+            source.get('candidate_register_sha256') == metadata.sha256(maintenance.CANDIDATES.read_bytes()) and
+            source.get('original_register_sha256') == metadata.sha256(maintenance.REGISTER.read_bytes()),
+            'artifact_registered_recipe')
+    return row
+
+
+def recipe_failure_diagnostics(output: Path, plan: dict, controller: dict, execution: dict,
+                               selection: dict | None) -> dict:
+    """Project fixed diagnostics from the exact failed product recipe; never replace its exception."""
     try:
         value, digest = read_diagnostic_receipt(output / 'private/producer/receipt.json')
         context = execution.get('context', {})
         require(type(value.get('schema')) is int and value['schema'] == 1 and value.get('success') is False and
                 value.get('published') is False and value.get('maintenance_refs_activated') is False and
-                value.get('selection') == plan['source'] | {'source_repository': maintenance.CORE_REPOSITORY} and
+                type(selection) is dict and value.get('selection') == selection and
                 value.get('version') == plan['requested_version'] and
                 value.get('controller_commit') == controller['commit'] and
                 value.get('controller_tree') == controller['tree'] and
                 value.get('controller_sha256') == metadata.sha256(Path(maintenance.__file__).read_bytes()) and
                 all(key in value and value[key] == context.get(key) for key in ('run_id', 'run_attempt')),
                 'diagnostic_invalid')
+        if execution.get('kind') == 'github-actions-selected-control':
+            require(type(context) is dict and
+                    all(type(context.get(key)) is str and re.fullmatch('[1-9][0-9]*', context[key])
+                        for key in ('run_id', 'run_attempt')), 'diagnostic_invalid')
+        else:
+            require(execution.get('kind') == 'local-control' and not context and
+                    value['run_id'] is None and value['run_attempt'] is None, 'diagnostic_invalid')
         stage, error = value['stage'], value['error']
         require(type(stage) is str and stage in RECIPE_FAILURE_STAGES and type(error) is dict and
                 error.get('code') == stage + '-failed', 'diagnostic_invalid')
@@ -156,20 +194,26 @@ def public_recipe_failure(output: Path, output_existed: bool, stage: str, *,
     if output_existed or stage != 'original-product-recipe':
         return {}
     try:
+        require(plan_bytes is not None and type(plan_sha256) is str and
+                metadata.sha256(plan_bytes) == plan_sha256, 'diagnostic_invalid')
+        plan = planner.read_json(plan_bytes)
         receipt, _ = read_diagnostic_receipt(output / 'retained/receipt.json')
         if type(receipt.get('schema')) is not int or receipt['schema'] != 1 or \
                 receipt.get('mode') != 'selected-product-artifact-control' or receipt.get('success') is not False or \
                 receipt.get('stage') != stage or receipt.get('failure_code') != stage + '-failed' or \
-                receipt.get('product') != 'core' or receipt.get('line') not in ('3.8', '3.9') or \
+                (receipt.get('product'), receipt.get('line'), receipt.get('version')) != \
+                (plan['product'], plan['line'], plan['requested_version']) or \
+                receipt.get('source') != plan['source'] or receipt.get('plan_sha256') != plan_sha256 or \
+                receipt.get('planner_controller') != plan['controller'] or \
                 'product_recipe_failure' not in receipt:
             return {}
-        selected = None
-        if 'source_producer_failure' in receipt['product_recipe_failure']:
-            require(plan_bytes is not None and metadata.sha256(plan_bytes) == plan_sha256 == receipt['plan_sha256'],
-                    'diagnostic_invalid')
-            plan = planner.read_json(plan_bytes)
-            selected = plan['inventory']['selected']
-        return {'product_recipe_failure': validate_recipe_failure(receipt['product_recipe_failure'], selected)}
+        controller = {key: plan['controller'][key] for key in ('commit', 'tree')}
+        require(receipt.get('artifact_controller') == controller, 'diagnostic_invalid')
+        artifact_execution.validate_selected_execution(receipt['execution'], 'artifact', controller, plan, plan_sha256)
+        selection = selected_recipe_source(plan)
+        private_detail = recipe_failure_diagnostics(output, plan, controller, receipt['execution'], selection)
+        require(receipt['product_recipe_failure'] == private_detail, 'diagnostic_invalid')
+        return {'product_recipe_failure': private_detail}
     except Exception:
         return {'product_recipe_failure': {'status': 'unavailable'}}
 
@@ -436,6 +480,7 @@ def execute(root: Path, data: bytes, digest: str, output: Path, *, setup_only: b
                'execution': execution, 'success': False, 'published': False,
                'version_allocated': False, 'tag_created': False, 'stage': 'source-setup'}
     producer_completed = False
+    recipe_source = None
     try:
         source = private / 'admitted-source'
         metadata.checkout_source(root, plan['source'], source)
@@ -456,14 +501,8 @@ def execute(root: Path, data: bytes, digest: str, output: Path, *, setup_only: b
             receipt.update(stage='setup-complete', setup_complete=True, artifact_proof=False)
             return receipt
         receipt['stage'] = 'original-product-recipe'
-        if plan['product'] == 'core':
-            producer = maintenance.prepare(root, plan['source'] | {'source_repository': maintenance.CORE_REPOSITORY},
-                                           plan['requested_version'], private / 'producer', plan=plan)
-        else:
-            rows = [row for row in maintenance.registered_core_candidates(maintenance.load_register())
-                    if row['commit'] == plan['source']['commit'] and row['kind'] == 'maintenance']
-            require(len(rows) == 1, 'artifact_registered_recipe')
-            producer = maintenance.prepare(root, rows[0], plan['requested_version'], private / 'producer', plan=plan)
+        recipe_source = selected_recipe_source(plan)
+        producer = maintenance.prepare(root, recipe_source, plan['requested_version'], private / 'producer', plan=plan)
         require(producer['success'] is True, 'artifact_producer_failed')
         producer_completed = True
         receipt['product_tests'] = producer['tests']
@@ -482,8 +521,9 @@ def execute(root: Path, data: bytes, digest: str, output: Path, *, setup_only: b
         return receipt
     except Exception:
         receipt['failure_code'] = receipt['stage'] + '-failed'
-        if plan['product'] == 'core' and receipt['stage'] == 'original-product-recipe' and not producer_completed:
-            receipt['product_recipe_failure'] = recipe_failure_diagnostics(output, plan, controller, execution)
+        if receipt['stage'] == 'original-product-recipe' and not producer_completed:
+            receipt['product_recipe_failure'] = recipe_failure_diagnostics(
+                output, plan, controller, execution, recipe_source)
         raise
     finally:
         (retained / 'receipt.json').write_text(json.dumps(receipt, indent=2, sort_keys=True) + '\n')

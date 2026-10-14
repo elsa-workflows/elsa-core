@@ -477,9 +477,25 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
                           'diagnostics': {'codes': [{'severity': 'error', 'code': 'NU1101', 'count': 2}],
                               'nuke_failed_targets': ['Restore'], 'unretained_code_occurrences': 0}}]}
         self.failure = RuntimeError('/private/secret original failure')
+        self.base_inner = deepcopy(self.inner)
+
+    def select_registered_recipe(self, product, line):
+        """Bind a synthetic plan to one exact registered non-Core recipe row."""
+        row = next(row for row in artifacts.maintenance.registered_core_candidates(
+            artifacts.maintenance.load_register())
+            if (row['product'], row['line'], row['kind']) == (product, line, 'maintenance'))
+        source = {'product': product, 'line': line, 'kind': 'admitted-maintenance-descendant',
+                  **{key: row[key] for key in ('commit', 'tree', 'parents', 'original_commit', 'original_parents',
+                                               'contained_commit', 'contained_tree')},
+                  'candidate_register_sha256': metadata.sha256(artifacts.maintenance.CANDIDATES.read_bytes()),
+                  'original_register_sha256': metadata.sha256(artifacts.maintenance.REGISTER.read_bytes())}
+        self.plan.update(product=product, line=line, requested_version=f'{line}.5', source=source)
+        self.inner = deepcopy(self.base_inner)
+        self.inner.update(selection=row, version=self.plan['requested_version'])
+        return row
 
     def invoke(self, mutate=None, *, direct=False, producer_complete=False):
-        """Inject a Core recipe failure and return public and retained diagnostic evidence."""
+        """Inject a selected recipe failure and return public and retained diagnostic evidence."""
         def checkout(controller, binding, source):
             source.mkdir()
             (source / 'Elsa.sln').write_bytes(b'solution')
@@ -504,8 +520,11 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
                 patch.object(artifacts, 'verify_controller', return_value=self.identity), \
                 patch.object(artifacts, 'selected_execution', return_value=self.execution), \
                 patch.object(artifacts.core, 'validate_plan'), patch.object(artifacts.core, 'verify_source'), \
+                patch.object(artifacts.maintenance39, 'verify_source'), \
+                patch.object(artifacts.extensions, 'verify_source'), \
                 patch.object(metadata, 'checkout_source', side_effect=checkout), \
-                patch.object(planner, 'npm_intent', return_value=None), patch.object(artifacts, 'preflight', return_value={}), \
+                patch.object(planner, 'npm_intent', side_effect=lambda *args: self.plan['npm']), \
+                patch.object(artifacts, 'preflight', return_value={}), \
                 patch.object(planner, 'build_helper'), patch.object(artifacts, 'refresh_remote'), \
                 patch.object(artifacts.maintenance, 'prepare', side_effect=fail), \
                 patch.object(artifacts, 'retain_selected', side_effect=self.failure), \
@@ -559,11 +578,82 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
         for product in ('core', 'studio', 'extensions'):
             with self.subTest(product=product):
                 self.output = self.root / product
-                self.plan['product'] = self.plan['source']['product'] = product
-                row = self.plan['source'] | {'kind': 'maintenance', 'source_repository': artifacts.maintenance.CORE_REPOSITORY}
-                with patch.object(artifacts.maintenance, 'registered_core_candidates', return_value=[row]), \
-                        patch.object(artifacts.extensions, 'verify_source'):
-                    self.invoke(direct=True)
+                if product == 'core':
+                    self.plan['product'] = self.plan['source']['product'] = product
+                    self.inner = deepcopy(self.base_inner)
+                else:
+                    self.select_registered_recipe(product, '3.8')
+                self.invoke(direct=True)
+
+    def test_studio_and_extensions_failures_report_for_both_supported_lines(self):
+        for product in ('studio', 'extensions'):
+            for line in ('3.8', '3.9'):
+                with self.subTest(product=product, line=line):
+                    self.output = self.root / f'{product}-{line}'
+                    self.select_registered_recipe(product, line)
+                    result, receipt = self.invoke()
+                    summary = result['product_recipe_failure']
+                    self.assertEqual('observed', summary['status'])
+                    self.assertEqual('build-command', summary['stage'])
+                    self.assertEqual(metadata.sha256((self.output / 'private/producer/receipt.json').read_bytes()),
+                                     summary['receipt_sha256'])
+                    self.assertEqual(summary, receipt['product_recipe_failure'])
+                    self.assertFalse(receipt['success'])
+                    self.assertEqual('original-product-recipe-failed', receipt['failure_code'])
+                    self.assertNotIn('/private/secret', json.dumps(result) + json.dumps(receipt))
+
+    def test_noncore_failure_identity_requires_the_full_registered_source_and_private_values_stay_hidden(self):
+        cases = ('registered-row', 'source-repository', 'version', 'controller-hash', 'run-attempt')
+        for case in cases:
+            with self.subTest(case=case):
+                self.output = self.root / f'identity-{case}'
+                row = self.select_registered_recipe('extensions', '3.9')
+                other_row = next(candidate for candidate in artifacts.maintenance.registered_core_candidates(
+                    artifacts.maintenance.load_register()) if candidate['kind'] == 'maintenance' and
+                    (candidate['product'], candidate['line']) != ('extensions', '3.9'))
+
+                def mutate(path):
+                    value = json.loads(path.read_text())
+                    if case == 'registered-row': value['selection'] = other_row
+                    elif case == 'source-repository': value['selection'] = row | {'source_repository': '/private/secret'}
+                    elif case == 'version': value['version'] = '3.9.99'
+                    elif case == 'controller-hash': value['controller_sha256'] = 'f' * 64
+                    else: value['run_attempt'] = '2'
+                    value['private_canary'] = '/private/secret'
+                    path.write_text(json.dumps(value))
+
+                result, receipt = self.invoke(mutate)
+                self.assertEqual({'status': 'unavailable'}, result['product_recipe_failure'])
+                self.assertEqual({'status': 'unavailable'}, receipt['product_recipe_failure'])
+                self.assertEqual('original-product-recipe-failed', receipt['failure_code'])
+                self.assertNotIn('/private/secret', json.dumps(result) + json.dumps(receipt))
+
+    def test_noncore_plan_source_must_match_the_registered_recipe_row(self):
+        self.output = self.root / 'wrong-source'
+        self.select_registered_recipe('studio', '3.8')
+        self.plan['source']['tree'] = 'f' * 40
+        result, receipt = self.invoke()
+        self.assertEqual('artifact_registered_recipe', result['failure_code'])
+        self.assertEqual({'status': 'unavailable'}, result['product_recipe_failure'])
+        self.assertEqual({'status': 'unavailable'}, receipt['product_recipe_failure'])
+        self.assertFalse(receipt['success'])
+
+    def test_registered_product_repository_ref_and_types_are_exact(self):
+        self.select_registered_recipe('extensions', '3.9')
+        row = artifacts.selected_recipe_source(self.plan)
+        mutations = (
+            ('source_repository', '/private/source'),
+            ('original_source_repository', 'elsa-workflows/elsa-studio'),
+            ('original_source_ref', 'refs/heads/main'),
+            ('dependency_version', []),
+            ('parents', 'malformed'),
+        )
+        for field, value in mutations:
+            with self.subTest(field=field):
+                changed = row | {field: value}
+                with patch.object(artifacts.maintenance, 'registered_core_candidates', return_value=[changed]), \
+                        self.assertRaisesRegex(ValueError, 'artifact_registered_recipe'):
+                    artifacts.selected_recipe_source(self.plan)
 
     def test_private_inventory_context_does_not_expand_public_failure_projection(self):
         self.inner.update(stage='inventory', error={'code': 'inventory-failed', 'reason': 'unknown-check-failure'},
@@ -719,14 +809,15 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
 
     def test_hosted_receipt_requires_matching_run_and_attempt(self):
         """Verify hosted receipt requires matching run and attempt."""
-        self.execution = {'context': {'run_id': '123', 'run_attempt': '2'}}
+        self.execution = {'kind': 'github-actions-selected-control',
+                          'context': {'run_id': '123', 'run_attempt': '2'}}
         self.inner.update(run_id='123', run_attempt='2')
-        result, _ = self.invoke()
-        self.assertEqual(result['product_recipe_failure']['status'], 'observed')
+        _, receipt = self.invoke(direct=True)
+        self.assertEqual(receipt['product_recipe_failure']['status'], 'observed')
         self.output = self.root / 'other-attempt'
         self.inner['run_attempt'] = '1'
-        result, _ = self.invoke()
-        self.assertEqual(result['product_recipe_failure'], {'status': 'unavailable'})
+        _, receipt = self.invoke(direct=True)
+        self.assertEqual(receipt['product_recipe_failure'], {'status': 'unavailable'})
 
     def test_failure_after_successful_producer_has_no_nested_failure_summary(self):
         """Verify failure after successful producer has no nested failure summary."""

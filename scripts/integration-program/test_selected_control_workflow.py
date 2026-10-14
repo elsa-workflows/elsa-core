@@ -619,6 +619,8 @@ from pathlib import Path
 args = sys.argv[1:]
 script = next(value for value in args if value.endswith('.py'))
 if script.endswith('retain_selected_failure_diagnostics.py'):
+    import prove_product_release_artifacts as producer
+    producer.verify_controller = lambda root, plan: {key: plan['controller'][key] for key in ('commit', 'tree')}
     sys.argv = args[args.index(script):]
     runpy.run_path(script, run_name='__main__')
 else:
@@ -664,6 +666,40 @@ else:
         canonical.provider.update(archive_size=len(data), archive_sha256=hashlib.sha256(data).hexdigest())
         with self.assertRaisesRegex(ValueError, 'selected_transport_unlisted_path'):
             seal.readback(data, canonical.provider, canonical.expected, contracts=canonical.contracts, now=canonical.now)
+
+    def test_studio_and_extensions_recipe_diagnostics_survive_safe_retention(self):
+        import retain_selected_failure_diagnostics as diagnostics
+        controller = {key: self.plan['controller'][key] for key in ('commit', 'tree')}
+        detail = {'status': 'observed', 'stage': 'build-command', 'reason': 'unknown-check-failure',
+                  'receipt_sha256': 'e' * 64, 'command_step': 1,
+                  'process': {'status': 'exited', 'exit_code': 7},
+                  'diagnostics': {'codes': [], 'nuke_failed_targets': [], 'unretained_code_occurrences': 0}}
+        for product in ('studio', 'extensions'):
+            for line in ('3.8', '3.9'):
+                with self.subTest(product=product, line=line):
+                    plan = deepcopy(self.plan)
+                    import prepare_maintenance_build as maintenance
+                    row = next(row for row in maintenance.registered_core_candidates(maintenance.load_register())
+                               if (row['product'], row['line'], row['kind']) == (product, line, 'maintenance'))
+                    plan.update(product=product, line=line, requested_version=f'{line}.5',
+                        source={'product': product, 'line': line, 'kind': 'admitted-maintenance-descendant',
+                                **{key: row[key] for key in ('commit', 'tree', 'parents', 'original_commit',
+                                                            'original_parents', 'contained_commit', 'contained_tree')},
+                                'candidate_register_sha256': hashlib.sha256(maintenance.CANDIDATES.read_bytes()).hexdigest(),
+                                'original_register_sha256': hashlib.sha256(maintenance.REGISTER.read_bytes()).hexdigest()})
+                    plan_hash = hashlib.sha256(encoded(plan)).hexdigest()
+                    receipt = deepcopy(self.producer)
+                    receipt.update(product=product, line=line, version=plan['requested_version'], source=plan['source'],
+                        plan_sha256=plan_hash, planner_controller=plan['controller'], artifact_controller=controller,
+                        success=False, stage='original-product-recipe', failure_code='original-product-recipe-failed',
+                        product_recipe_failure=detail)
+                    receipt['execution'].update(product=product, line=line, source=plan['source'], plan_sha256=plan_hash,
+                                                controller=controller)
+                    with patch.dict(os.environ, self.environment, clear=True):
+                        projected = diagnostics.project(receipt, 'f' * 64, 'artifact', plan, plan_hash, controller)
+                    self.assertEqual(detail, projected['product_recipe_failure'])
+                    self.assertFalse(projected['success'])
+                    self.assertEqual('selected-product-failure-diagnostics-only-not-control-proof', projected['scope'])
 
     def test_late_consumer_receipt_over_four_mib_is_projected_without_coverage_or_private_fields(self):
         self.consumer['coverage'] *= 200
