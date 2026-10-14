@@ -15,6 +15,12 @@ public class CronTriggerPayloadValidator(ICronParser cronParser) : ITriggerPaylo
         ICollection<WorkflowValidationError> validationErrors,
         CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(payload.CronExpression))
+        {
+            validationErrors.Add(new("Cron expression is required", trigger.ActivityId));
+            return Task.CompletedTask;
+        }
+
         try
         {
             cronParser.GetNextOccurrence(payload.CronExpression);

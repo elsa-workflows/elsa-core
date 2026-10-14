@@ -11,6 +11,21 @@ namespace Elsa.Scheduling.UnitTests.TriggerPayloadValidators;
 
 public class CronTriggerPayloadValidatorTests
 {
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task ValidateAsync_WhenCronExpressionIsNullOrWhitespace_AddsValidationError(string? cronExpression)
+    {
+        var errors = await ValidateAsync(
+            new ThrowingCronParser(new InvalidOperationException("Parser should not be called")),
+            cronExpression!);
+
+        var error = Assert.Single(errors);
+        Assert.Equal("Cron expression is required", error.Message);
+        Assert.Equal("cron-activity", error.ActivityId);
+    }
+
     [Fact]
     public async Task ValidateAsync_WhenQuartzStyleParserThrowsFormatException_AddsValidationError()
     {
