@@ -355,10 +355,14 @@ def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, ru
             identifier, version = key.rsplit('/', 1)
             require(identifier.casefold() in restored and restored[identifier.casefold()]['id'] == identifier and
                 restored[identifier.casefold()]['version'] == version, 'selected_payload_flat_build_provenance_required')
-    if plan['product'] == 'extensions' and cell['id'] == 'Elsa.Workflows.Runtime.ProtoActor':
-        for identifier, version in (('Grpc.Tools', '2.70.0'), ('Proto.Cluster.CodeGen', '1.8.0')):
-            require(identifier.casefold() in restored and restored[identifier.casefold()]['id'] == identifier and
-                restored[identifier.casefold()]['version'] == version, 'selected_payload_flat_build_provenance_required')
+    required_flat = {}
+    if plan['product'] == 'extensions' and cell['id'] in consumer.FLAT_BUILD_ROOTS:
+        required_flat['Grpc.Tools'] = ('2.70.0', ('build',), consumer.DEPENDENCY_FLAT_BUILD_ORIGIN)
+        if plan['line'] == '3.8' or cell['id'] != consumer.FLAT_BUILD_ROOT:
+            required_flat['Proto.Cluster.CodeGen'] = ('1.8.0', ('build', 'buildMultiTargeting'), consumer.ROOT_FLAT_BUILD_ORIGIN)
+    for identifier, (version, _, _) in required_flat.items():
+        require(identifier.casefold() in restored and restored[identifier.casefold()]['id'] == identifier and
+            restored[identifier.casefold()]['version'] == version, 'selected_payload_flat_build_provenance_required')
     validate_sdk_restore(plan, cell['sdk_restore'], selected, framework, restored,
                          item['policy']['metadata']['restore_assets_sha256'])
     payload_rows, payloads = {}, {}
@@ -373,9 +377,8 @@ def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, ru
             markers = [asset for asset in sequence(row['payloads']) if type(asset) is dict and asset.get('kind') == 'build']
             require(len(markers) == 1 and markers[0].get('origin') == consumer.DIRECT_FLAT_BUILD_ORIGIN,
                     'selected_payload_flat_build_provenance_required')
-        if plan['product'] == 'extensions' and cell['id'] == 'Elsa.Workflows.Runtime.ProtoActor' and row['id'] in ('Grpc.Tools', 'Proto.Cluster.CodeGen'):
-            kinds = ('build',) if row['id'] == 'Grpc.Tools' else ('build', 'buildMultiTargeting')
-            origin = consumer.DEPENDENCY_FLAT_BUILD_ORIGIN if row['id'] == 'Grpc.Tools' else consumer.ROOT_FLAT_BUILD_ORIGIN
+        if row['id'] in required_flat:
+            _, kinds, origin = required_flat[row['id']]
             for kind in kinds:
                 markers = [asset for asset in sequence(row['payloads']) if type(asset) is dict and asset.get('kind') == kind]
                 require(len(markers) == 1 and markers[0].get('origin') == origin, 'selected_payload_flat_build_provenance_required')

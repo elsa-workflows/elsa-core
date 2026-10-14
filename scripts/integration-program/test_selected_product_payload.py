@@ -332,10 +332,10 @@ def proven_flat_payload_fixture(*, witness=True, line='3.8', root_id=payload.con
     files, expected, now = fixture('extensions', line, flat_build=True, flat_root=root_id)
     plan, receipt = (json.loads(files[name]) for name in ('plan.json', 'consumer/receipt.json'))
     runtime_root = root_id == 'Elsa.Workflows.Runtime.ProtoActor'
-    for root in (row for row in receipt['coverage'] if row['id'] == root_id and (runtime_root or row['framework'] == 'net8.0')):
+    for root in (row for row in receipt['coverage'] if row['id'] == root_id):
         framework = root['framework']
         actor = next(row for row in receipt['coverage'] if row['id'] == payload.consumer.FLAT_BUILD_WITNESS and row['framework'] == framework)
-        for dependency in ((True, False) if runtime_root else (witness,)):
+        for dependency in ((True, False) if runtime_root or line == '3.8' else (True,)):
             identifier, version = ('Grpc.Tools', '2.70.0') if dependency else ('Proto.Cluster.CodeGen', '1.8.0')
             external = {'id': identifier, 'version': version, 'source': 'https://api.nuget.org/v3/index.json',
                 'sha256': 'a' * 64, 'archive_sha512': 'b' * 128, 'nuget_content_hash': 'A' * 86 + '==', 'signed': True}
@@ -771,14 +771,39 @@ class SelectedProductPayloadTests(unittest.TestCase):
                     self.seal_and_readback(values, sealed=sealed)
 
     def assert_rehashed_flat_rejected(self, values, sealed):
-        with self.assertRaises(ValueError): self.validate(values)
+        with self.subTest(boundary='canonical'), self.assertRaises(ValueError): self.validate(values)
         self.files, self.context = values[:2]
-        seal_tests.SealContracts.assert_cli_rejected(self)
+        with self.subTest(boundary='seal-cli'):
+            seal_tests.SealContracts.assert_cli_rejected(self)
         rehashed = deepcopy(sealed); rehashed['consumer/receipt.json'] = values[0]['consumer/receipt.json']
         manifest = json.loads(rehashed[transport.MANIFEST]); manifest['consumer_receipt_sha256'] = metadata.sha256(rehashed['consumer/receipt.json'])
         manifest['files'] = transport.inventory({name: data for name, data in rehashed.items() if name != transport.MANIFEST})
         rehashed[transport.MANIFEST] = encoded(manifest)
-        with self.assertRaises(ValueError): self.seal_and_readback(values, sealed=rehashed)
+        with self.subTest(boundary='fresh-rehashed-readback'), self.assertRaises(ValueError): self.seal_and_readback(values, sealed=rehashed)
+
+    def test_caching_required_flat_packages_and_each_marker_reject_fully_rehashed_omission(self):
+        for line, witness in (('3.8', True), ('3.8', False), ('3.9', True)):
+            values = proven_flat_payload_fixture(line=line, witness=witness)
+            sealed = self.seal_and_readback(values)
+            identifier = 'Grpc.Tools' if witness else 'Proto.Cluster.CodeGen'
+            # Complete intact controls include every selected TFM. Caching3.9
+            # retains no CodeGen declaration or required CodeGen proof.
+            intact = json.loads(values[0]['consumer/receipt.json'])
+            if line == '3.9':
+                root_cells = [row for row in intact['coverage'] if row['id'] == payload.consumer.FLAT_BUILD_ROOT]
+                self.assertTrue(all(not any(row['id'] == 'Proto.Cluster.CodeGen' for row in cell['restored']) for cell in root_cells))
+            for change in ('package', 'payloads') + (() if witness else ('build', 'buildMultiTargeting')):
+                hostile = deepcopy(values); receipt = json.loads(hostile[0]['consumer/receipt.json'])
+                cell = next(row for row in receipt['coverage'] if row['id'] == payload.consumer.FLAT_BUILD_ROOT and row['framework'] == 'net8.0')
+                row = next(row for row in cell['restored_payloads'] if row['id'] == identifier)
+                if change == 'package':
+                    cell['restored'] = [row for row in cell['restored'] if row['id'] != identifier]
+                    cell['restored_payloads'] = [row for row in cell['restored_payloads'] if row['id'] != identifier]
+                elif change == 'payloads': row['payloads'] = []
+                else: row['payloads'] = [asset for asset in row['payloads'] if asset['kind'] != change]
+                hostile[0]['consumer/receipt.json'] = encoded(receipt)
+                with self.subTest(line=line, witness=witness, omission=change):
+                    self.assert_rehashed_flat_rejected(hostile, sealed)
 
     def test_direct_flat_build_cases_seal_and_readback_with_all_incoming_witnesses(self):
         for product in ('core', 'extensions'):
