@@ -40,6 +40,7 @@ docker run -d -p 5000:8080 --name elsa-server \
        -e Http__BaseUrl=http://localhost:5000 \
        -e Identity__AdminUser__UserName=admin \
        -e Identity__AdminUser__Password='use-a-secret-password' \
+       -e Identity__Tokens__SigningKey="$(openssl rand -base64 48)" \
        -e ConnectionStrings__Sqlite='Data Source=/data/elsa.sqlite.db;cache=shared' \
        -v "$PWD/data:/data" \
        elsa-server-app
@@ -53,6 +54,7 @@ docker run --rm -p 5000:8080 \
        -e Http__BaseUrl=http://localhost:5000 \
        -e Identity__AdminUser__UserName=admin \
        -e Identity__AdminUser__Password='use-a-secret-password' \
+       -e Identity__Tokens__SigningKey="$(openssl rand -base64 48)" \
        -e ConnectionStrings__Sqlite='Data Source=/data/elsa.sqlite.db;cache=shared' \
        -v "$PWD/data:/data" \
        elsaworkflows/elsa-server-app:3.9.0

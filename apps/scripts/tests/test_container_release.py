@@ -1216,6 +1216,9 @@ class SmokeCredentialTests(unittest.TestCase):
             passwords.append(password)
             self.assertGreaterEqual(len(password), 32)
             self.assertNotIn(password, " ".join(start.args[0]))
+            signing_key = environment["Identity__Tokens__SigningKey"]
+            self.assertGreaterEqual(len(signing_key), 32)
+            self.assertNotIn(signing_key, " ".join(start.args[0]))
             self.assertEqual(probe.args[1:], (environment["Identity__AdminUser__UserName"], password))
         self.assertEqual(len(passwords), 2)
         self.assertNotEqual(*passwords)
