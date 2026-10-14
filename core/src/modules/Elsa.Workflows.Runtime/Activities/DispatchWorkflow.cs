@@ -21,12 +21,16 @@ namespace Elsa.Workflows.Runtime.Activities;
 /// When <see cref="WaitForCompletion"/> is enabled and activation is denied, the activity completes with a result dictionary containing
 /// <c>CannotStart</c> set to <c>true</c> and the requested <c>WorkflowInstanceId</c>.
 /// When <see cref="WaitForCompletion"/> is enabled and the activity is cancelled while it waits, the child workflow it is waiting for is cancelled too.
+/// This only reaches a child that has made its first commit: until then a new child exists only in memory and is invisible to the
+/// workflow instance store. A child is missed when the activity is cancelled in the same burst that dispatched it, while the dispatch
+/// queue or message transport is backlogged, or while the child's first burst is still running. Cancelling the parent workflow, which
+/// cascades by parent instance ID, has the same gap.
 /// </summary>
 [Activity("Elsa", "Composition", "Create a new workflow instance of the specified workflow and dispatch it for execution.")]
 [UsedImplicitly]
 public class DispatchWorkflow : Activity<object>
 {
-    private const string WaitedChildInstanceIdKey = nameof(WaitedChildInstanceIdKey);
+    private const string WaitedChildInstanceIdKey = "WaitedChildInstanceId";
 
     /// <inheritdoc />
     public DispatchWorkflow([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
@@ -181,7 +185,8 @@ public class DispatchWorkflow : Activity<object>
     /// <summary>
     /// Cancels the child this activity was waiting for. Only that instance is targeted: cancelling by parent instance
     /// would also reach fire-and-forget and sibling dispatches of the same parent. A child that has already finished is
-    /// left alone, together with anything it dispatched.
+    /// left alone, together with anything it dispatched. If the child finishes between the read and the cancellation,
+    /// the cancellation service still cascades to that child's own children.
     /// </summary>
     private async ValueTask OnCancelledAsync(CancelSignal signal, SignalContext signalContext)
     {
@@ -195,13 +200,9 @@ public class DispatchWorkflow : Activity<object>
             return;
 
         var cancellationToken = signalContext.CancellationToken;
-        var runningChildFilter = new WorkflowInstanceFilter
-        {
-            Id = childInstanceId,
-            WorkflowStatus = WorkflowStatus.Running
-        };
+        var child = await context.GetRequiredService<IWorkflowInstanceStore>().FindAsync(new WorkflowInstanceFilter { Id = childInstanceId }, cancellationToken);
 
-        if (await context.GetRequiredService<IWorkflowInstanceStore>().CountAsync(runningChildFilter, cancellationToken) == 0)
+        if (child is not { Status: WorkflowStatus.Running })
             return;
 
         // The cancellation service hands the child to the workflow cancellation dispatcher, the same way the
