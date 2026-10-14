@@ -77,6 +77,18 @@ archive content hash and extracted target verification. The older net8/net9 trai
 does not gain a family or require unused Swagger generator evidence. Other unknown
 generated documents still fail closed.
 
+Core sealing and provider readback admit the matching closed `swagger` NuGet
+producer only for that package/project's net10 symbol row. The producer must name
+`FastEndpoints.Swagger` 8.2.0 and `build/FastEndpoints.Swagger.targets`, with
+`targeting_pack:false`; its version joins to the selected net10 dependency group.
+The existing NuGet record checks retain archive/content digests, equal canonical
+SHA-512 restore/content hashes and the target's checked-content join. The public
+document path remains an ordinal `[embedded]/document-N`; its original filename
+and private generator archive bytes remain inherited native writer judgments.
+Synthetic tests pass the actual maintenance document writer output through Core
+specialization, sealing and provider ZIP readback for both lines and original and
+reviewed-continuation sources, with rehashed tampering rejected at both boundaries.
+
 Both admitted Core continuations preserve the project reference and net10
 `FastEndpoints.Swagger` 8.2.0 pin. Its locally cached build target writes this file
 before `CoreCompile` and adds it to `Compile`; this confirms the mapping model,
