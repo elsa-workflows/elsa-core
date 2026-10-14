@@ -2,6 +2,7 @@ using System.Text.Json;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.Middleware.Activities;
 using Elsa.Workflows.Runtime.Options;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime;
@@ -73,7 +74,7 @@ public class BackgroundActivityInvoker(
             [scheduledActivitiesKey] = JsonSerializer.Serialize(scheduledActivities),
             [inputKey] = outputValues,
             [journalDataKey] = activityExecutionContext.JournalData,
-            [bookmarksKey] = activityExecutionContext.Bookmarks.ToList(),
+            [bookmarksKey] = serviceProvider.GetRequiredService<IPayloadSerializer>().Serialize(activityExecutionContext.Bookmarks.ToList()), // JSON text keeps each bookmark payload's type (#8804).
             [propsKey] = activityExecutionContext.Properties.ToDictionary() // ChangeTrackingDictionary is not persistable, so we need to create a copy of the dictionary.
         };
 

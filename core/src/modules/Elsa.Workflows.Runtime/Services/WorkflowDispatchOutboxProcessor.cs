@@ -4,31 +4,69 @@ using Elsa.Common.Models;
 using Elsa.Common.Multitenancy;
 using Elsa.Mediator;
 using Elsa.Mediator.Contracts;
+using Elsa.Mediator.Models;
 using Elsa.Tenants.Mediator;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Runtime.Commands;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Requests;
+using Elsa.Workflows.Runtime.Responses;
 using Medallion.Threading;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime;
 
 /// <inheritdoc />
+/// <remarks>
+/// Items are delivered through the inner <see cref="IWorkflowDispatcher"/> on their persisted channel. An unroutable
+/// channel (not configured in <see cref="WorkflowDispatcherOptions.Channels"/>, or answered with
+/// <see cref="RuntimeFaultCodes.UnknownChannel"/> by the inner dispatcher) fails closed: the item is never delivered on the
+/// default queue, never deleted and never counted toward <see cref="WorkflowDispatcherOptions.MaxOutboxDeliveryAttempts"/>;
+/// it stays queued and an error naming the channel is logged on every pass. The attempt limit applies only to real
+/// delivery failures. When the inner dispatcher cannot route channels (for example
+/// <see cref="BackgroundWorkflowDispatcher"/>), a configured channel is ignored and the item goes to the default queue,
+/// the same as before #8167. Follow-up: #8813.
+/// </remarks>
 public class WorkflowDispatchOutboxProcessor(
     IWorkflowDispatchOutboxStore store,
     IWorkflowInstanceStore workflowInstanceStore,
-    ICommandSender commandSender,
+    [FromKeyedServices(WorkflowDispatcherServiceKeys.Inner)] IWorkflowDispatcher innerDispatcher,
     IDistributedLockProvider distributedLockProvider,
     ISystemClock systemClock,
     IOptions<DistributedLockingOptions> distributedLockingOptions,
     IOptions<WorkflowDispatcherOptions> dispatcherOptions,
     ILogger<WorkflowDispatchOutboxProcessor> logger,
-    ITenantAccessor? tenantAccessor = null) : IWorkflowDispatchOutboxProcessor
+    ITenantAccessor? tenantAccessor = null,
+    ITenantFinder? tenantFinder = null) : IWorkflowDispatchOutboxProcessor
 {
     private const string LockResource = "Elsa:WorkflowDispatchOutbox:Processor";
+
+    /// <summary>
+    /// Creates a processor that delivers through mediator background commands, as this processor did before it delivered
+    /// through the inner <see cref="IWorkflowDispatcher"/>. This overload cannot route channels, so items with a channel fail
+    /// closed and stay queued. It deliberately does not use the registered <see cref="IWorkflowDispatcher"/>: with the outbox enabled that is
+    /// the transactional dispatcher, which would enqueue each item again instead of delivering it.
+    /// </summary>
+    [Obsolete("This constructor uses the old non-durable delivery: the outbox item is deleted as soon as it is handed to the in-memory background queue, so a node stop before that queue runs can lose the child workflow. Use the constructor that takes the inner IWorkflowDispatcher (keyed WorkflowDispatcherServiceKeys.Inner). This overload will be removed in a future version.")]
+    public WorkflowDispatchOutboxProcessor(
+        IWorkflowDispatchOutboxStore store,
+        IWorkflowInstanceStore workflowInstanceStore,
+        ICommandSender commandSender,
+        IDistributedLockProvider distributedLockProvider,
+        ISystemClock systemClock,
+        IOptions<DistributedLockingOptions> distributedLockingOptions,
+        IOptions<WorkflowDispatcherOptions> dispatcherOptions,
+        ILogger<WorkflowDispatchOutboxProcessor> logger,
+        ITenantAccessor? tenantAccessor = null)
+        : this(store, workflowInstanceStore, new CommandSenderWorkflowDispatcher(commandSender, tenantAccessor), distributedLockProvider, systemClock,
+            distributedLockingOptions, dispatcherOptions, logger, tenantAccessor)
+    {
+    }
 
     /// <inheritdoc />
     public async Task ProcessAsync(CancellationToken cancellationToken = default)
@@ -137,6 +175,12 @@ public class WorkflowDispatchOutboxProcessor(
         {
             throw;
         }
+        catch (UnroutableChannelException e)
+        {
+            // Not a delivery failure: leave the item queued without counting an attempt, so it is never abandoned.
+            logger.LogError(e, "Workflow dispatch outbox item {OutboxItemId} stays queued because channel '{Channel}' cannot be routed; it is not counted as a delivery attempt.", item.Id, item.Channel);
+            return;
+        }
         catch (Exception e) when (e is not OperationCanceledException)
         {
             await HandleDeliveryFailureAsync(item, e, cancellationToken);
@@ -148,27 +192,88 @@ public class WorkflowDispatchOutboxProcessor(
 
     private async Task SendAsync(WorkflowDispatchOutboxItem item, CancellationToken cancellationToken)
     {
-        var headers = TenantHeaders.CreateHeaders(item.TenantId);
-
-        switch (item.Kind)
+        // Fail closed: an unroutable channel must never silently fall back to the default channel. The item stays in the
+        // outbox without counting a delivery attempt.
+        if (!string.IsNullOrEmpty(item.Channel) && dispatcherOptions.Value.Channels.All(x => x.Name != item.Channel))
         {
-            case WorkflowDispatchOutboxItemKind.WorkflowDefinition when item.WorkflowDefinitionCommand != null:
-                await commandSender.SendAsync(item.WorkflowDefinitionCommand, CommandStrategy.Background, headers, cancellationToken);
-                break;
-            case WorkflowDispatchOutboxItemKind.WorkflowInstance when item.WorkflowInstanceCommand != null:
-                await commandSender.SendAsync(item.WorkflowInstanceCommand, CommandStrategy.Background, headers, cancellationToken);
-                break;
-            case WorkflowDispatchOutboxItemKind.TriggerWorkflows when item.TriggerWorkflowsCommand != null:
-                await commandSender.SendAsync(item.TriggerWorkflowsCommand, CommandStrategy.Background, headers, cancellationToken);
-                break;
-            case WorkflowDispatchOutboxItemKind.ResumeWorkflows when item.ResumeWorkflowsCommand != null:
-                await commandSender.SendAsync(item.ResumeWorkflowsCommand, CommandStrategy.Background, headers, cancellationToken);
-                break;
-            default:
-                throw new InvalidOperationException($"Outbox item {item.Id} does not contain a dispatch command for kind {item.Kind}.");
+            throw new UnroutableChannelException($"Cannot deliver workflow dispatch outbox item {item.Id}: dispatch channel '{item.Channel}' is not configured.");
         }
 
-        logger.LogDebug("Delivered workflow dispatch outbox item {OutboxItemId} for owner workflow {WorkflowInstanceId}", item.Id, item.OwnerWorkflowInstanceId);
+        // Push the tenant here rather than in an async helper: the tenant context is async-local and would not flow back.
+        var tenant = await FindItemTenantAsync(item, cancellationToken);
+        using var tenantContext = tenant != null ? tenantAccessor!.PushContext(tenant) : null;
+        var options = new DispatchWorkflowOptions { Channel = item.Channel };
+
+        var response = item.Kind switch
+        {
+            WorkflowDispatchOutboxItemKind.WorkflowDefinition when item.WorkflowDefinitionCommand is { } command => await DispatchDefinitionAsync(command, options, cancellationToken),
+            WorkflowDispatchOutboxItemKind.WorkflowInstance when item.WorkflowInstanceCommand is { } command => await innerDispatcher.DispatchAsync(new DispatchWorkflowInstanceRequest(command.InstanceId)
+            {
+                BookmarkId = command.BookmarkId,
+                ActivityHandle = command.ActivityHandle,
+                Input = command.Input,
+                Properties = command.Properties,
+                CorrelationId = command.CorrelationId
+            }, options, cancellationToken),
+            WorkflowDispatchOutboxItemKind.TriggerWorkflows when item.TriggerWorkflowsCommand is { } command => await innerDispatcher.DispatchAsync(new DispatchTriggerWorkflowsRequest(command.ActivityTypeName, command.Stimulus)
+            {
+                CorrelationId = command.CorrelationId,
+                WorkflowInstanceId = command.WorkflowInstanceId,
+                ActivityInstanceId = command.ActivityInstanceId,
+                Input = command.Input,
+                Properties = command.Properties
+            }, options, cancellationToken),
+            WorkflowDispatchOutboxItemKind.ResumeWorkflows when item.ResumeWorkflowsCommand is { } command => await innerDispatcher.DispatchAsync(new DispatchResumeWorkflowsRequest(command.ActivityTypeName, command.Stimulus)
+            {
+                CorrelationId = command.CorrelationId,
+                WorkflowInstanceId = command.WorkflowInstanceId,
+                ActivityInstanceId = command.ActivityInstanceId,
+                Input = command.Input
+            }, options, cancellationToken),
+            _ => throw new InvalidOperationException($"Outbox item {item.Id} does not contain a dispatch command for kind {item.Kind}.")
+        };
+
+        if (response.Fault?.Code == RuntimeFaultCodes.UnknownChannel)
+        {
+            throw new UnroutableChannelException($"Delivery of workflow dispatch outbox item {item.Id} was rejected: dispatch channel '{item.Channel ?? "(default)"}' is unknown to the inner dispatcher.", response.Fault);
+        }
+
+        if (!response.Succeeded)
+        {
+            throw new InvalidOperationException($"Delivery of workflow dispatch outbox item {item.Id} on channel '{item.Channel ?? "(default)"}' was rejected: {response.Fault!.Message}", response.Fault);
+        }
+        logger.LogDebug("Delivered workflow dispatch outbox item {OutboxItemId} for owner workflow {WorkflowInstanceId} on channel {Channel}", item.Id, item.OwnerWorkflowInstanceId, item.Channel ?? "(default)");
+    }
+
+    private Task<DispatchWorkflowResponse> DispatchDefinitionAsync(DispatchWorkflowDefinitionCommand command, DispatchWorkflowOptions options, CancellationToken cancellationToken)
+    {
+        return innerDispatcher.DispatchAsync(new DispatchWorkflowDefinitionRequest(command.DefinitionVersionId)
+        {
+            ParentWorkflowInstanceId = command.ParentWorkflowInstanceId,
+            Input = command.Input,
+            Properties = command.Properties,
+            CorrelationId = command.CorrelationId,
+            InstanceId = command.InstanceId,
+            TriggerActivityId = command.TriggerActivityId,
+            SchedulingActivityExecutionId = command.SchedulingActivityExecutionId,
+            SchedulingWorkflowInstanceId = command.SchedulingWorkflowInstanceId,
+            SchedulingCallStackDepth = command.SchedulingCallStackDepth,
+            // The child's instance ID is fixed at enqueue; the dispatcher checks for it right before creating the child,
+            // so a retried delivery cannot create it twice.
+            SkipIfInstanceExists = command.SkipIfInstanceExists
+        }, options, cancellationToken);
+    }
+
+    /// <summary>Finds the tenant the item was enqueued for, or null when the current tenant context already matches.</summary>
+    private async Task<Tenant?> FindItemTenantAsync(WorkflowDispatchOutboxItem item, CancellationToken cancellationToken)
+    {
+        if (tenantAccessor == null || string.IsNullOrEmpty(item.TenantId) || tenantAccessor.Tenant?.Id == item.TenantId)
+        {
+            return null;
+        }
+
+        var tenant = tenantFinder != null ? await tenantFinder.FindByIdAsync(item.TenantId, cancellationToken) : null;
+        return tenant ?? throw new InvalidOperationException($"Cannot deliver workflow dispatch outbox item {item.Id}: tenant '{item.TenantId}' was not found.");
     }
 
     private async Task HandleMissingOwnerAsync(WorkflowDispatchOutboxItem item, CancellationToken cancellationToken)
@@ -319,6 +424,36 @@ public class WorkflowDispatchOutboxProcessor(
         catch (Exception e) when (e is not OperationCanceledException)
         {
             logger.LogWarning(e, "Failed to remove delivered workflow dispatch outbox item {OutboxItemId} from owner workflow {WorkflowInstanceId}; future commits may prune the marker during a later sweep.", item.Id, item.OwnerWorkflowInstanceId);
+        }
+    }
+
+    private sealed class UnroutableChannelException(string message, Exception? inner = null) : InvalidOperationException(message, inner);
+
+    /// <summary>Delivers through mediator background commands, for the obsolete constructor only. It cannot route channels.</summary>
+    private sealed class CommandSenderWorkflowDispatcher(ICommandSender commandSender, ITenantAccessor? tenantAccessor) : IWorkflowDispatcher
+    {
+        public Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowDefinitionRequest request, DispatchWorkflowOptions? options = null, CancellationToken cancellationToken = default) =>
+            SendAsync(WorkflowDispatchCommandFactory.CreateCommand(request), options, cancellationToken);
+
+        public Task<DispatchWorkflowResponse> DispatchAsync(DispatchWorkflowInstanceRequest request, DispatchWorkflowOptions? options = null, CancellationToken cancellationToken = default) =>
+            SendAsync(WorkflowDispatchCommandFactory.CreateCommand(request), options, cancellationToken);
+
+        public Task<DispatchWorkflowResponse> DispatchAsync(DispatchTriggerWorkflowsRequest request, DispatchWorkflowOptions? options = null, CancellationToken cancellationToken = default) =>
+            SendAsync(WorkflowDispatchCommandFactory.CreateCommand(request), options, cancellationToken);
+
+        public Task<DispatchWorkflowResponse> DispatchAsync(DispatchResumeWorkflowsRequest request, DispatchWorkflowOptions? options = null, CancellationToken cancellationToken = default) =>
+            SendAsync(WorkflowDispatchCommandFactory.CreateCommand(request), options, cancellationToken);
+
+        private async Task<DispatchWorkflowResponse> SendAsync<TCommand>(TCommand command, DispatchWorkflowOptions? options, CancellationToken cancellationToken) where TCommand : ICommand<Unit>
+        {
+            // Fail closed: background commands have no channels, so never deliver a channel-bound item on the default queue.
+            if (!string.IsNullOrEmpty(options?.Channel))
+            {
+                return DispatchWorkflowResponse.UnknownChannel();
+            }
+
+            await commandSender.SendAsync(command, CommandStrategy.Background, TenantHeaders.CreateHeaders(tenantAccessor?.Tenant?.Id), cancellationToken);
+            return DispatchWorkflowResponse.Success();
         }
     }
 }

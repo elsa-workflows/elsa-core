@@ -5,6 +5,7 @@ using Elsa.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 // ReSharper disable once CheckNamespace
@@ -98,6 +99,7 @@ public abstract class PersistenceShellFeatureBase<TDbContext> : IShellFeature
             options.RunMigrations[typeof(TDbContext)] = runMigrations;
         });
 
+        services.TryAddSingleton<MigratedDatabaseRegistry>();
         services.AddStartupTask<RunMigrationsStartupTask<TDbContext>>();
         OnConfiguring(services);
     }
