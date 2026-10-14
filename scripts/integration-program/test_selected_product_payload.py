@@ -805,6 +805,51 @@ class SelectedProductPayloadTests(unittest.TestCase):
                 with self.subTest(line=line, witness=witness, omission=change):
                     self.assert_rehashed_flat_rejected(hostile, sealed)
 
+    def test_proto_payload_id_casing_cannot_omit_required_flat_markers(self):
+        for root_id in payload.consumer.FLAT_BUILD_ROOTS:
+            values = proven_flat_payload_fixture(root_id=root_id)
+            sealed = self.seal_and_readback(values)
+            for identifier, omissions in (('Grpc.Tools', ('payloads',)),
+                    ('Proto.Cluster.CodeGen', ('payloads', 'build', 'buildMultiTargeting'))):
+                for spelling in (identifier.lower(), identifier.swapcase()):
+                    intact = deepcopy(values); receipt = json.loads(intact[0]['consumer/receipt.json'])
+                    cell = next(row for row in receipt['coverage'] if row['id'] == root_id and row['framework'] == 'net8.0')
+                    next(row for row in cell['restored_payloads'] if row['id'] == identifier)['id'] = spelling
+                    intact[0]['consumer/receipt.json'] = encoded(receipt)
+                    with self.subTest(root=root_id, identifier=identifier, spelling=spelling, intact=True):
+                        self.validate(intact)
+                        self.seal_and_readback(intact)
+                    for omission in omissions:
+                        hostile = deepcopy(values); receipt = json.loads(hostile[0]['consumer/receipt.json'])
+                        cell = next(row for row in receipt['coverage'] if row['id'] == root_id and row['framework'] == 'net8.0')
+                        row = next(row for row in cell['restored_payloads'] if row['id'] == identifier)
+                        row['id'] = spelling
+                        row['payloads'] = [] if omission == 'payloads' else [asset for asset in row['payloads'] if asset['kind'] != omission]
+                        hostile[0]['consumer/receipt.json'] = encoded(receipt)
+                        with self.subTest(root=root_id, identifier=identifier, spelling=spelling, omission=omission):
+                            self.assert_rehashed_flat_rejected(hostile, sealed)
+
+    def test_direct_payload_id_casing_cannot_omit_required_flat_markers(self):
+        for product, swagger, root_id, identifier, framework in (
+                ('core', False, 'Elsa.AI.Copilot', 'GitHub.Copilot.SDK', 'net8.0'),
+                ('extensions', False, 'Elsa.Logging.Serilog', 'Serilog', 'net8.0'),
+                ('core', True, 'Elsa.Api.Common', 'FastEndpoints.Swagger', 'net10.0')):
+            values = direct_flat_payload_fixture(product, swagger=swagger)
+            sealed = self.seal_and_readback(values)
+            for spelling in (identifier.lower(), identifier.swapcase()):
+                hostile = deepcopy(values); receipt = json.loads(hostile[0]['consumer/receipt.json'])
+                cell = next(row for row in receipt['coverage'] if row['id'] == root_id and row['framework'] == framework)
+                row = next(row for row in cell['restored_payloads'] if row['id'] == identifier)
+                row['id'] = spelling
+                hostile[0]['consumer/receipt.json'] = encoded(receipt)
+                with self.subTest(root=root_id, spelling=spelling, intact=True):
+                    self.validate(hostile)
+                    self.seal_and_readback(hostile)
+                row['payloads'] = []
+                hostile[0]['consumer/receipt.json'] = encoded(receipt)
+                with self.subTest(root=root_id, spelling=spelling):
+                    self.assert_rehashed_flat_rejected(hostile, sealed)
+
     def test_direct_flat_build_cases_seal_and_readback_with_all_incoming_witnesses(self):
         for product in ('core', 'extensions'):
             for line in ('3.8', '3.9'):

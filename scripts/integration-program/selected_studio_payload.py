@@ -350,19 +350,19 @@ def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, ru
                     'selected_payload_native_content_hash')
         restored[folded] = row
     require(cell['id'].casefold() in restored, 'selected_payload_restored_root')
+    required_flat = {}
     for product, root, key in consumer.DIRECT_FLAT_CASES:
         if (product, root) == (plan['product'], cell['id']) and consumer.direct_flat_build_case(plan, root, key, framework):
             identifier, version = key.rsplit('/', 1)
-            require(identifier.casefold() in restored and restored[identifier.casefold()]['id'] == identifier and
-                restored[identifier.casefold()]['version'] == version, 'selected_payload_flat_build_provenance_required')
-    required_flat = {}
+            required_flat[identifier.casefold()] = (identifier, version, ('build',), consumer.DIRECT_FLAT_BUILD_ORIGIN)
     if plan['product'] == 'extensions' and cell['id'] in consumer.FLAT_BUILD_ROOTS:
-        required_flat['Grpc.Tools'] = ('2.70.0', ('build',), consumer.DEPENDENCY_FLAT_BUILD_ORIGIN)
+        required_flat['grpc.tools'] = ('Grpc.Tools', '2.70.0', ('build',), consumer.DEPENDENCY_FLAT_BUILD_ORIGIN)
         if plan['line'] == '3.8' or cell['id'] != consumer.FLAT_BUILD_ROOT:
-            required_flat['Proto.Cluster.CodeGen'] = ('1.8.0', ('build', 'buildMultiTargeting'), consumer.ROOT_FLAT_BUILD_ORIGIN)
-    for identifier, (version, _, _) in required_flat.items():
-        require(identifier.casefold() in restored and restored[identifier.casefold()]['id'] == identifier and
-            restored[identifier.casefold()]['version'] == version, 'selected_payload_flat_build_provenance_required')
+            required_flat['proto.cluster.codegen'] = ('Proto.Cluster.CodeGen', '1.8.0',
+                ('build', 'buildMultiTargeting'), consumer.ROOT_FLAT_BUILD_ORIGIN)
+    for folded, (identifier, version, _, _) in required_flat.items():
+        require(folded in restored and restored[folded]['id'] == identifier and restored[folded]['version'] == version,
+                'selected_payload_flat_build_provenance_required')
     validate_sdk_restore(plan, cell['sdk_restore'], selected, framework, restored,
                          item['policy']['metadata']['restore_assets_sha256'])
     payload_rows, payloads = {}, {}
@@ -373,12 +373,8 @@ def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, ru
                 'selected_payload_restored_payload_identity')
         payload_rows[folded] = row
         seen = set()
-        if consumer.direct_flat_build_case(plan, cell['id'], row['id'] + '/' + row['version'], framework):
-            markers = [asset for asset in sequence(row['payloads']) if type(asset) is dict and asset.get('kind') == 'build']
-            require(len(markers) == 1 and markers[0].get('origin') == consumer.DIRECT_FLAT_BUILD_ORIGIN,
-                    'selected_payload_flat_build_provenance_required')
-        if row['id'] in required_flat:
-            _, kinds, origin = required_flat[row['id']]
+        if folded in required_flat:
+            _, _, kinds, origin = required_flat[folded]
             for kind in kinds:
                 markers = [asset for asset in sequence(row['payloads']) if type(asset) is dict and asset.get('kind') == kind]
                 require(len(markers) == 1 and markers[0].get('origin') == origin, 'selected_payload_flat_build_provenance_required')
@@ -402,8 +398,8 @@ def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, ru
                             consumer.DEPENDENCY_FLAT_BUILD_ACCOUNTING if dependency_flat else
                             consumer.ROOT_FLAT_BUILD_ACCOUNTING), 'selected_payload_flat_build_identity')
                     context = (consumer.direct_flat_build_plan_context(plan, cell['id'], framework,
-                        row['id'] + '/' + row['version'], asset['kind']) if direct_flat else
-                        consumer.flat_build_plan_context(plan, framework, row['id'] + '/' + row['version'],
+                        restored[folded]['id'] + '/' + row['version'], asset['kind']) if direct_flat else
+                        consumer.flat_build_plan_context(plan, framework, restored[folded]['id'] + '/' + row['version'],
                             asset['kind'], witness=dependency_flat, root_id=cell['id']))
                     require(asset['provenance'] == context, 'selected_payload_flat_build_provenance')
                     if direct_flat:
@@ -429,11 +425,11 @@ def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, ru
                             all(parents[0][key] == restored[incoming['id'].casefold()][key]
                                 for key in ('sha256', 'nuget_content_hash')), 'selected_payload_flat_build_incoming')
                         witness_rows = [entry for entry in witnesses[0]['restored'] if
-                            entry['id'] == row['id'] and entry['version'] == row['version']]
+                            entry['id'] == restored[folded]['id'] and entry['version'] == row['version']]
                         require(len(witness_rows) == 1 and all(witness_rows[0][key] == restored[folded][key]
                             for key in ('sha256', 'nuget_content_hash')), 'selected_payload_flat_build_witness_archive')
                         witness_payloads = [entry for entry in witnesses[0]['restored_payloads'] if
-                            entry['id'] == row['id'] and entry['version'] == row['version']]
+                            entry['id'] == restored[folded]['id'] and entry['version'] == row['version']]
                         require(len(witness_payloads) == 1 and any(entry == {
                             'path': 'build/_._', 'kind': 'build', 'metadata': {},
                             'accounting': consumer.ORIGINAL_EXCLUDED_BUILD_ACCOUNTING,
@@ -448,13 +444,7 @@ def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, ru
                     consumer.empty_lib_marker_shape(asset['path'], framework, asset['metadata'])
                     transport.digest(asset['original_assets_sha256'])
                 elif original_build:
-                    require(not consumer.direct_flat_build_case(plan, cell['id'], row['id'] + '/' + row['version'], framework),
-                            'selected_payload_flat_build_provenance_required')
-                    require(not (plan['product'] == 'extensions' and plan['line'] in ('3.8', '3.9') and
-                        cell['id'] in consumer.FLAT_BUILD_ROOTS and ((row['id'], row['version']) == ('Grpc.Tools', '2.70.0') or
-                            (plan['line'] == '3.8' or cell['id'] == 'Elsa.Workflows.Runtime.ProtoActor') and
-                            (row['id'], row['version']) == ('Proto.Cluster.CodeGen', '1.8.0'))),
-                        'selected_payload_flat_build_provenance_required')
+                    require(folded not in required_flat, 'selected_payload_flat_build_provenance_required')
                     require(asset['accounting'] == consumer.ORIGINAL_EXCLUDED_BUILD_ACCOUNTING and
                         asset['kind'] in ('build', 'buildMultiTargeting') and asset['path'] == asset['kind'] + '/_._' and
                         type(asset['metadata']) is dict and asset['metadata'] == {} and
