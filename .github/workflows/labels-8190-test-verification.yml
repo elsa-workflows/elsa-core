@@ -1,0 +1,22 @@
+name: Elsa #8190 workflow label cleanup verification
+
+on:
+  push:
+    branches:
+      - fix/8190-workflow-version-label-cleanup
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  label-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+      - name: Run all Elsa.Labels unit tests and coverage gate
+        run: dotnet test core/test/unit/Elsa.Labels.UnitTests/Elsa.Labels.UnitTests.csproj --verbosity quiet
