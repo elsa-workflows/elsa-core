@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Identity.Contracts;
@@ -9,7 +10,7 @@ namespace Elsa.Identity.Endpoints.Users.Update;
 /// An endpoint that updates an existing user's password and roles.
 /// </summary>
 [PublicAPI]
-internal class Update(IUserStore userStore, ISecretHasher secretHasher, IRoleAuthorizationService roleAuthorizationService) : ElsaEndpoint<Request, Response>
+internal class Update(IUserStore userStore, ISecretHasher secretHasher, IRoleAuthorizationService roleAuthorizationService, IRoleProvider roleProvider) : ElsaEndpoint<Request, Response>
 {
     /// <inheritdoc />
     public override void Configure()
@@ -33,7 +34,7 @@ internal class Update(IUserStore userStore, ISecretHasher secretHasher, IRoleAut
         }
 
         // Callers may only modify users whose current roles they could assign themselves.
-        if (!await roleAuthorizationService.CanAssignRolesAsync(User, user.Roles, cancellationToken))
+        if (!await roleAuthorizationService.CanManageUserAsync(roleProvider, User, user, cancellationToken))
         {
             await Send.ForbiddenAsync(cancellationToken);
             return;

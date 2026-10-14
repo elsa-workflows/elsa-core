@@ -25,11 +25,13 @@ public class ManageUserRoleBoundaryTests
     private readonly ISecretHasher _secretHasher = Substitute.For<ISecretHasher>();
     private readonly IUserDeletionCoordinator _deletionCoordinator = Substitute.For<IUserDeletionCoordinator>();
     private readonly IRoleAuthorizationService _roleAuthorization = Substitute.For<IRoleAuthorizationService>();
+    private readonly IRoleProvider _roleProvider = Substitute.For<IRoleProvider>();
     private readonly User _user = new() { Id = UserId, Name = "admin", Roles = AdminRoles, HashedPassword = "original-hash", HashedPasswordSalt = "original-salt" };
 
     public ManageUserRoleBoundaryTests()
     {
         _userStore.FindAsync(Arg.Is<UserFilter>(x => x.Id == UserId), Arg.Any<CancellationToken>()).Returns(_user);
+        _roleProvider.FindManyAsync(Arg.Any<RoleFilter>(), Arg.Any<CancellationToken>()).Returns(new ValueTask<IEnumerable<Role>>([new Role { Id = "admin", Name = "admin" }]));
         _deletionCoordinator.DeleteAsync(UserId, Arg.Any<CancellationToken>()).Returns(new UserDeletionOperationResult.Deleted());
     }
 
@@ -89,10 +91,10 @@ public class ManageUserRoleBoundaryTests
         _roleAuthorization.CanAssignRolesAsync(Arg.Any<ClaimsPrincipal>(), Arg.Is<IEnumerable<string>?>(x => x != null && x.SequenceEqual(AdminRoles)), Arg.Any<CancellationToken>()).Returns(allowed);
 
     private UpdateEndpoint CreateUpdateEndpoint() =>
-        Factory.Create<UpdateEndpoint>(WithUserIdRoute, _userStore, _secretHasher, _roleAuthorization);
+        Factory.Create<UpdateEndpoint>(WithUserIdRoute, _userStore, _secretHasher, _roleAuthorization, _roleProvider);
 
     private DeleteEndpoint CreateDeleteEndpoint() =>
-        Factory.Create<DeleteEndpoint>(WithUserIdRoute, _deletionCoordinator, _userStore, _roleAuthorization);
+        Factory.Create<DeleteEndpoint>(WithUserIdRoute, _deletionCoordinator, _userStore, _roleAuthorization, _roleProvider);
 
     private static void WithUserIdRoute(DefaultHttpContext context) => context.Request.RouteValues["id"] = UserId;
 }
