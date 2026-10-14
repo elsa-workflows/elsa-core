@@ -56,6 +56,11 @@ public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflow
             throw new Exception($"Workflow definition version with ID '{definitionVersionId}' not found");
 
         var workflowClient = await workflowRuntime.CreateClientAsync(message.InstanceId, cancellationToken);
+
+        // Same rule as the default dispatcher: a redelivered message must not create a second instance with the same ID.
+        if (message.SkipIfInstanceExists && !string.IsNullOrWhiteSpace(message.InstanceId) && await workflowClient.InstanceExistsAsync(cancellationToken))
+            return;
+
         var createWorkflowInstanceRequest = new CreateAndRunWorkflowInstanceRequest
         {
             WorkflowDefinitionHandle = workflowGraph.Workflow.DefinitionHandle,

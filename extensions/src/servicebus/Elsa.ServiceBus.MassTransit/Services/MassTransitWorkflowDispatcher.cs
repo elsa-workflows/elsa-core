@@ -36,6 +36,14 @@ public class MassTransitWorkflowDispatcher(
         if (workflowGraph == null)
             throw new($"Workflow definition version with ID '{request.DefinitionVersionId}' not found");
 
+        // This dispatcher creates and commits the instance up front, and that save overwrites an existing instance with the
+        // same ID. So the default dispatcher's SkipIfInstanceExists rule has to apply here, before anything is created or sent.
+        if (request.SkipIfInstanceExists && !string.IsNullOrWhiteSpace(request.InstanceId) && await workflowInstanceManager.ExistsAsync(request.InstanceId, cancellationToken))
+        {
+            logger.LogDebug("Skipping dispatch of workflow definition version {DefinitionVersionId}: instance {InstanceId} already exists", request.DefinitionVersionId, request.InstanceId);
+            return DispatchWorkflowResponse.Success();
+        }
+
         var workflowInstanceOptions = new WorkflowInstanceOptions
         {
             WorkflowInstanceId = request.InstanceId,
