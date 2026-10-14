@@ -1,0 +1,25 @@
+name: Elsa #8663 focused regression tests
+
+on:
+  push:
+    branches:
+      - fix/8663-synthetic-input-output-collision
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  focused-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+      - name: Test Elsa.Workflows.Core.UnitTests
+        run: >-
+          dotnet test core/test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj
+          --filter "FullyQualifiedName~OutputJsonConverterTests|FullyQualifiedName~JsonActivityConstructorContextHelperTests"
+          --verbosity normal

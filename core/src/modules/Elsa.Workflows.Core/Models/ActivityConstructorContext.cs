@@ -193,9 +193,11 @@ public static class JsonActivityConstructorContextHelper
             if (!activityRoot.TryGetProperty(propertyName, out var propertyElement) || propertyElement.ValueKind == JsonValueKind.Null || propertyElement.ValueKind == JsonValueKind.Undefined)
                 continue;
 
-            var memoryReferenceElement = propertyElement.GetProperty("memoryReference");
-
-            if (!memoryReferenceElement.TryGetProperty("id", out var memoryReferenceIdElement))
+            if (propertyElement.ValueKind != JsonValueKind.Object ||
+                !propertyElement.TryGetProperty("memoryReference", out var memoryReferenceElement) ||
+                memoryReferenceElement.ValueKind != JsonValueKind.Object ||
+                !memoryReferenceElement.TryGetProperty("id", out var memoryReferenceIdElement) ||
+                memoryReferenceIdElement.ValueKind != JsonValueKind.String)
                 continue;
 
             var variable = new Variable

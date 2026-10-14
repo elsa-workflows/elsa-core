@@ -57,6 +57,16 @@ public sealed class OutputJsonConverterTests
         Assert.Equal("resultVariable", document.RootElement.GetProperty("memoryReference").GetProperty("id").GetString());
     }
 
+    [Theory]
+    [InlineData("""{"typeName":"String","memoryReference":null}""")]
+    [InlineData("""{"typeName":"String"}""")]
+    public void When_DeserializeOutputWithNullOrMissingMemoryReference_Then_ReturnsNull(string json)
+    {
+        var result = JsonSerializer.Deserialize<Output<string>>(json, CreateOptions());
+
+        Assert.Null(result);
+    }
+
     private static JsonSerializerOptions CreateOptions() => new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
