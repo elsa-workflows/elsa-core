@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 import xml.etree.ElementTree as ET
+import zipfile
 
 import selected_core_producer as core
 import prepare_maintenance_build as maintenance
@@ -36,6 +37,81 @@ class OriginalCoreProducerContracts(unittest.TestCase):
                 self.assertEqual(count, len(core.policy(row)['test_projects']))
                 core.verify_source(artifacts.ROOT, row)
                 core.validate_plan(self.plan(row))
+
+    def test_original_sample_missing_url_reaches_sdk_payload_checks(self):
+        """The original sample's real repository shape retains git type and source commit."""
+        row = self.rows[0] | {'source_repository': maintenance.CORE_REPOSITORY}
+        policy = {'id': 'Elsa.SamplePackage', 'project': core.SAMPLE_PROJECT, 'symbols': False,
+                  'repository_url': '', 'include_build_output': False, 'frameworks': [], 'satellites': []}
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            nuspec = ET.fromstring('<package><metadata><id>Elsa.SamplePackage</id><version>3.8.5</version></metadata></package>')
+            ET.SubElement(nuspec.find('metadata'), 'repository', {'type': 'git', 'commit': row['commit']})
+            with zipfile.ZipFile(root / 'Elsa.SamplePackage.3.8.5.nupkg', 'w') as archive:
+                archive.writestr('sample.nuspec', ET.tostring(nuspec))
+            with patch.object(maintenance, 'verify_sdk_dependencies', side_effect=RuntimeError('sdk-payload-check')), \
+                    self.assertRaisesRegex(RuntimeError, 'sdk-payload-check'):
+                maintenance.verify_artifacts(root, [policy], row, '3.8.5', root, Path('/unused'), root)
+            with self.assertRaises(ValueError):
+                maintenance.verify_artifacts(root, [policy], row | {'commit': '0' * 40},
+                                             '3.8.5', root, Path('/unused'), root)
+
+    def test_sample_repository_policy_rejects_unbound_shapes_and_preserves_ordinary_urls(self):
+        row = self.rows[0]
+        package = {'id': 'Elsa.SamplePackage', 'project': core.SAMPLE_PROJECT, 'symbols': False, 'repository_url': ''}
+        attributes = {'type': 'git', 'commit': row['commit']}
+        self.assertTrue(core.repository_matches(ET.Element('repository', attributes), package, row,
+                                               canonical_url_matches=False))
+        cases = [(attributes | change, package, row) for change in (
+            {'commit': '0' * 40}, {'url': ''}, {'url': 'https://example.invalid/repository'},
+            {'url': 'https://github.com/elsa-workflows/elsa-core'}, {'branch': 'main'}, {'type': 'other'})]
+        cases += [(attributes, package | change, row) for change in (
+            {'id': 'Other'}, {'project': 'src/Other.csproj'}, {'symbols': True}, {'symbols': 0},
+            {'repository_url': None}, {'repository_url': 'https://github.com/elsa-workflows/elsa-core'})]
+        missing = dict(package); missing.pop('repository_url')
+        cases += [(attributes, missing, row), (attributes, package, row | {'product': 'studio'}),
+                  (attributes, package, row | {'kind': 'other'})]
+        for attrs, policy, source in cases:
+            with self.subTest(attrs=attrs, policy=policy, source=source):
+                self.assertFalse(core.repository_matches(ET.Element('repository', attrs), policy, source,
+                                                        canonical_url_matches=False))
+        self.assertFalse(core.repository_matches(None, package, row, canonical_url_matches=True))
+        ordinary = package | {'id': 'Elsa.Other', 'project': 'src/Elsa.Other.csproj', 'symbols': True}
+        self.assertFalse(core.repository_matches(ET.Element('repository', attributes), ordinary, row,
+                                                canonical_url_matches=False))
+        self.assertTrue(core.repository_matches(ET.Element('repository', attributes | {'url': 'https://github.com/elsa-workflows/elsa-core'}), ordinary, row,
+                                               canonical_url_matches=True))
+
+    def test_native_repository_url_must_equal_the_explicit_selected_plan_value(self):
+        row = self.rows[0] | {'source_repository': maintenance.CORE_REPOSITORY}
+        plan = self.plan(self.rows[0])
+        selected = {'id': 'Elsa.SamplePackage', 'project': core.SAMPLE_PROJECT,
+                    'symbols': False, 'frameworks': ['net10.0'], 'repository_url': ''}
+        plan['inventory']['selected'] = [selected]
+        config = b'<configuration />'
+        plan['consumer_feed_policy'] = {'config_sha256': maintenance.digest(config)}
+        for native_url in ('', None, 'https://example.invalid/repository'):
+            with self.subTest(native_url=native_url), tempfile.TemporaryDirectory() as temporary:
+                output = Path(temporary) / 'producer'
+                def git(root, *args, **_kwargs):
+                    if args[:1] == ('checkout',):
+                        (root / 'NuGet.Config').write_bytes(config)
+                    return 'd' * 40
+                def inventory(_source, _row, _version, destination, **_kwargs):
+                    maintenance.write_json(destination / 'test-inventory.json', [
+                        {'project': project, 'frameworks': ['net10.0']} for project in core.policy(row)['test_projects']])
+                    return [selected | {'repository_url': native_url}]
+                with patch.object(core, 'verify_source'), patch.object(maintenance, 'git', side_effect=git), \
+                        patch.object(maintenance, 'git_bytes', return_value=config), \
+                        patch.object(maintenance, 'inspect_toolchain', return_value={}), \
+                        patch.object(maintenance, 'recipes', return_value=[]), \
+                        patch.object(maintenance, 'evaluate_inventory', side_effect=inventory), \
+                        patch.object(maintenance, 'verify_tests', side_effect=RuntimeError('after-inventory')) as tests:
+                    expected = RuntimeError if native_url == '' else ValueError
+                    message = 'after-inventory' if native_url == '' else 'core_original_package_policy'
+                    with self.assertRaisesRegex(expected, message):
+                        maintenance.prepare(artifacts.ROOT, row, '3.8.5', output, plan=plan)
+                    self.assertEqual(native_url == '', tests.called)
 
     def test_source_kind_line_hash_and_no_npm_plan_are_closed(self):
         """Verify source kind line hash and no npm plan are closed."""
@@ -242,11 +318,13 @@ class OriginalCoreProducerContracts(unittest.TestCase):
                 project = command[2]
                 return json.dumps({'Properties': {'IsPackable': 'true', 'IsTestProject': str(project != projects[0] and (project != projects[2] or extra_is_test)).lower(),
                     'AssemblyName': Path(project).stem, 'PackageId': Path(project).stem, 'PackageVersion': '3.8.99',
-                    'TargetFrameworks': '', 'TargetFramework': 'net10.0', 'IncludeSymbols': 'true', 'IncludeBuildOutput': 'false'}})
+                    'TargetFrameworks': '', 'TargetFramework': 'net10.0', 'IncludeSymbols': 'true', 'IncludeBuildOutput': 'false',
+                    'RepositoryUrl': 'https://github.com/elsa-workflows/elsa-core'}})
             with patch.object(core, 'policy', return_value={'test_projects': projects[1:]}), \
                     patch.object(maintenance, 'run', side_effect=run):
                 inventory = maintenance.evaluate_inventory(source, row, '3.8.99', output)
             self.assertEqual(projects[:2], [item['project'] for item in inventory])
+            self.assertTrue(all(item['repository_url'] == 'https://github.com/elsa-workflows/elsa-core' for item in inventory))
             self.assertEqual(set(projects[1:]), {item['project'] for item in json.loads((output / 'test-inventory.json').read_text())})
             extra_is_test = False
             with patch.object(core, 'policy', return_value={'test_projects': projects[1:]}), \

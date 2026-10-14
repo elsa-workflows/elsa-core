@@ -6,6 +6,7 @@ import json
 from pathlib import PurePosixPath
 import unittest
 from unittest.mock import patch
+import xml.etree.ElementTree as ET
 import zipfile
 
 import selected_core_payload as core
@@ -51,6 +52,7 @@ def fixture(line='3.8', *, conditional_skips=True, api_common=False):
         frameworks = ['net10.0'] if sample else list(core.FRAMEWORKS)
         policy = {'id': identifier, 'project': core.SAMPLE_PROJECT if sample else f'src/modules/{identifier}/{identifier}.csproj',
                   'symbols': not sample, 'frameworks': frameworks, 'include_build_output': True,
+                  'repository_url': '' if sample else 'https://github.com/elsa-workflows/elsa-core',
                   'metadata': {'original_output_policy': {f: {'IncludeBuildOutput': 'true', 'GenerateElsaPackageManifest': '',
                     'ElsaPackageManifestIncludeInPackage': '', 'ElsaPackageManifestPackagePath': ''} for f in frameworks}}}
         dependencies = ''
@@ -60,9 +62,12 @@ def fixture(line='3.8', *, conditional_skips=True, api_common=False):
                 f'version="{"8.2.0" if f == "net10.0" else "7.1.1"}" /></group>' for f in frameworks) + '</dependencies>'
         plan['inventory']['selected'].append(policy)
         version = plan['requested_version']
-        repository = {'type': 'git', 'url': 'https://github.com/elsa-workflows/elsa-core.git', 'commit': source['commit']}
+        repository = {'type': 'git', 'commit': source['commit']}
+        if not sample:
+            repository['url'] = 'https://github.com/elsa-workflows/elsa-core.git'
+        repository_xml = ET.tostring(ET.Element('repository', repository), encoding='unicode')
         nuspec = (f'<package><metadata><id>{identifier}</id><version>{version}</version>'
-                  f'<repository type="git" url="{repository["url"]}" commit="{source["commit"]}" />'
+                  + repository_xml
                   + dependencies + '</metadata></package>').encode()
         if identifier == 'Elsa.Api.Common':
             policy['metadata']['dependency_groups'] = core.archives.dependency_groups(core.archives.parse_metadata(nuspec))
@@ -238,6 +243,21 @@ class CorePayloadTests(unittest.TestCase):
         self.rejected(lambda p, r, *_: r['package_verification'][-1]['symbols'][0].pop('symbol_package'))
         self.rejected(lambda p, r, *_: r['package_verification'][-1]['symbols'][0].update(symbol_package=True))
         self.rejected(lambda p, *_: p['inventory']['selected'][-1].update(project='src/Fake.csproj'))
+
+    def test_matching_native_and_archive_repositories_still_require_sample_source_policy(self):
+        for change in ({'commit': '0' * 40}, {'url': ''}, {'url': 'https://example.invalid/repository'},
+                       {'type': 'other'}, {'branch': 'main'}):
+            values = fixture()
+            _, producer, _, selected, _ = values
+            item = selected['elsa.samplepackage']
+            spec_name = next(name for name in item['members'] if name.endswith('.nuspec'))
+            spec = ET.fromstring(item['members'][spec_name])
+            repository = spec.find('metadata/repository')
+            repository.attrib.update(change)
+            item['members'][spec_name] = ET.tostring(spec)
+            producer['package_verification'][-1]['repository'] = dict(repository.attrib)
+            with self.subTest(change=change), self.assertRaisesRegex(ValueError, 'core_payload_native_nuspec'):
+                self.validate(values)
 
     def test_no_documents_branch_has_exact_native_counts(self):
         """Verify no documents branch has exact native counts."""
@@ -441,6 +461,61 @@ class CoreSwaggerSealTests(unittest.TestCase):
                         result = self.boundaries.readback(values, sealed)
                     self.assertTrue(result['success'])
                     self.assertFalse(result['product_code_executed_during_readback'])
+
+    def test_rehashed_sample_repository_mutations_fail_seal_and_readback(self):
+        import product_release_metadata as metadata
+        import selected_control_transport as transport
+        from test_selected_studio_payload import encoded
+
+        values, _ = self.emitted_fixture()
+        baseline = self.boundaries.stage(values)
+        mutations = [('commit', '0' * 40), ('type', 'other'), ('url', ''),
+                     ('url', 'https://example.invalid/repository'),
+                     ('url', 'https://github.com/elsa-workflows/elsa-core'), ('branch', 'main'),
+                     ('policy-missing', None), ('policy-url', 'https://github.com/elsa-workflows/elsa-core'),
+                     ('policy-project', 'src/Other.csproj'), ('policy-symbols', True)]
+        for field, value in mutations:
+            changed = deepcopy(values)
+            files = changed[0]
+            plan, producer, consumer = (json.loads(files[name]) for name in
+                                       ('plan.json', 'producer/receipt.json', 'consumer/receipt.json'))
+            policy = next(row for row in plan['inventory']['selected'] if row['id'] == 'Elsa.SamplePackage')
+            native = next(row for row in producer['package_verification'] if row['id'] == policy['id'])
+            record = next(row for row in producer['packages']['selected'] if row['id'] == policy['id'])
+            path = 'producer/nuget/' + record['file']
+            members = transport.zip_members(files[path], leaf=True)
+            spec_name = next(name for name in members if name.endswith('.nuspec'))
+            spec = ET.fromstring(members[spec_name])
+            repository = spec.find('metadata/repository')
+            if field == 'policy-missing':
+                policy.pop('repository_url')
+            elif field.startswith('policy-'):
+                policy[{'policy-url': 'repository_url', 'policy-project': 'project', 'policy-symbols': 'symbols'}[field]] = value
+            else:
+                repository.set(field, value)
+            members[spec_name] = ET.tostring(spec)
+            old_sha = record['sha256']
+            replacement, data = archive_record(policy['id'], plan['requested_version'], 'nupkg', members)
+            replacement['inventory'].sort(key=lambda row: row['path'])
+            record.update(replacement)
+            files[path] = data
+            native['repository'] = dict(repository.attrib)
+            native['files'] = [{'name': record['file'], 'sha256': record['sha256'], 'size': record['size']}]
+            # Keep all enclosing receipt and archive hashes valid so the policy is tested.
+            consumer = json.loads(encoded(consumer).replace(old_sha.encode(), record['sha256'].encode()))
+            self.boundaries.bind(files, plan, producer, consumer)
+            failure = 'selected_payload_nuspec_identity' if not field.startswith('policy-') or field == 'policy-url' else '.*'
+            with self.subTest(field=field, value=value, boundary='seal'), self.assertRaisesRegex(ValueError, failure):
+                self.boundaries.stage(changed)
+            manifest = json.loads(baseline[transport.MANIFEST])
+            manifest.update(plan_sha256=metadata.sha256(files['plan.json']),
+                producer_receipt_sha256=metadata.sha256(files['producer/receipt.json']),
+                consumer_receipt_sha256=metadata.sha256(files['consumer/receipt.json']),
+                artifact_execution=producer['execution'], consumer_execution=consumer['execution'],
+                files=transport.inventory(files))
+            forged = files | {transport.MANIFEST: encoded(manifest)}
+            with self.subTest(field=field, value=value, boundary='readback'), self.assertRaisesRegex(ValueError, failure):
+                self.boundaries.readback(changed, forged)
 
     def test_rehashed_swagger_mutations_fail_seal_and_independent_readback(self):
         import product_release_metadata as metadata

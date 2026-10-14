@@ -109,7 +109,7 @@ def fixture(product, line, *, source_mutation=None):
             files['producer/nuget/' + record['file']] = data
         for item in selected.values():
             policy = item['policy']; old = deepcopy(policy['metadata']['original_output_policy'])
-            policy.update({key: deepcopy(template[key]) for key in ('project_url', 'repository_url', 'symbol_format')})
+            policy.update({key: deepcopy(template[key]) for key in ('project_url', 'symbol_format')})
             groups = deepcopy(policy['metadata'].get('dependency_groups', []))
             policy['metadata'] = deepcopy(template['metadata']); policy['metadata']['dependency_groups'] = groups
             policy['metadata']['original_output_policy'] = {f: deepcopy(template['metadata']['original_output_policy'][f]) | values for f, values in old.items()}

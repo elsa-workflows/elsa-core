@@ -1810,13 +1810,15 @@ class MaintenanceContracts(unittest.TestCase):
                                                          Path('/inspector'), self.root)
                     details['informational_version'] = informational_prefix + '+' + self.row['commit']
                     for symbols in (False, True):
-                        for field in ('commit', 'version'):
+                        for field in ('commit', 'version', 'url'):
                             packages()
                             path = artifacts / ('fixture.snupkg' if symbols else 'fixture.nupkg')
                             with zipfile.ZipFile(path) as archive:
                                 entries = {name: archive.read(name) for name in archive.namelist()}
-                            before = self.row['commit'] if field == 'commit' else version
-                            after = 'a' * 40 if field == 'commit' else '99.0.0-proof.42.1'
+                            before = {'commit': self.row['commit'], 'version': version,
+                                      'url': 'https://github.com/' + self.row['source_repository']}[field]
+                            after = {'commit': 'a' * 40, 'version': '99.0.0-proof.42.1',
+                                     'url': 'https://example.invalid/repository'}[field]
                             entries['fixture.nuspec'] = entries['fixture.nuspec'].replace(before.encode(), after.encode())
                             with zipfile.ZipFile(path, 'w') as archive:
                                 for name, data in entries.items():

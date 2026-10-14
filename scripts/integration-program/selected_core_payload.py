@@ -13,6 +13,7 @@ import re
 from uuid import UUID
 
 import core_source_continuation as continuation
+import selected_core_producer as core_producer
 import prove_consolidated_packages as archives
 from prove_consolidated_packages import require
 from selected_control_transport import MAX_PACKAGE_BYTES, closed, digest, integer, is_canonical_sha512, safe_name, unique_names, strict_json
@@ -428,6 +429,10 @@ def _native(plan: dict, producer: dict, selected: dict) -> dict:
                 type(native['repository']) is dict and all(type(k) is str and type(v) is str for k, v in native['repository'].items()) and
                 metadata.find('repository') is not None and native['repository'] == metadata.find('repository').attrib,
                 'core_payload_native_nuspec')
+        repository = metadata.find('repository')
+        require(core_producer.repository_matches(repository, policy, plan['source'], canonical_url_matches=
+            repository.get('url', '').removesuffix('.git').rstrip('/') == 'https://github.com/elsa-workflows/elsa-core'),
+            'core_payload_native_nuspec')
         _manifest(native, policy, members, version)
     return native_by_id
 

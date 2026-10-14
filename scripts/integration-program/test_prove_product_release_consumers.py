@@ -82,13 +82,15 @@ class SelectedProductConsumerTests(unittest.TestCase):
         self.feeds = {'sources': {'original': proof.planner.NUGET_INDEX},
                       'mapping': {'example': ['original'], 'external': ['original']}}
 
-    def artifact_receipt(self, entries=None, *, framework_references=''):
+    def artifact_receipt(self, entries=None, *, framework_references='', repository=None):
         """Create a producer receipt bound to the fixture's exact package archive bytes."""
         path = self.artifacts / self.plan['expected_artifacts'][0]
         identifier = self.policy['id']
+        repository_xml = ET.tostring(ET.Element('repository', repository if repository is not None else
+                                               {'commit': self.source['commit']}), encoding='unicode')
         with zipfile.ZipFile(path, 'w') as archive:
             archive.writestr(identifier + '.nuspec', '<package><metadata><id>' + identifier + '</id><version>3.8.999</version>'
-                '<repository commit="' + self.source['commit'] + '"/><dependencies><group targetFramework="net8.0"/>'
+                + repository_xml + '<dependencies><group targetFramework="net8.0"/>'
                 '</dependencies>' + framework_references + '</metadata></package>')
             for name, data in (entries or {}).items():
                 archive.writestr(name, data)
@@ -171,6 +173,29 @@ class SelectedProductConsumerTests(unittest.TestCase):
         """Verify exact archive receipt admitted."""
         result = proof.admit_artifacts(self.plan, self.hash, self.artifact_receipt(), self.artifacts, self.controller_root)
         self.assertEqual({'example'}, set(result))
+
+    def test_core_sample_archive_admission_preserves_the_exact_missing_url_policy(self):
+        from test_selected_core_producer import OriginalCoreProducerContracts
+        fixture = OriginalCoreProducerContracts(); fixture.setUp()
+        self.source = fixture.rows[0]
+        self.plan = fixture.plan(self.source) | {'controller': deepcopy(self.planner_controller),
+                                               'requested_version': '3.8.999'}
+        self.policy.update(id='Elsa.SamplePackage', project=proof.producer.core.SAMPLE_PROJECT,
+                           symbols=False, repository_url='', frameworks=['net10.0'])
+        self.plan['inventory']['selected'] = [self.policy]
+        self.plan['expected_artifacts'] = ['Elsa.SamplePackage.3.8.999.nupkg']
+        attributes = {'type': 'git', 'commit': self.source['commit']}
+        for change in ({}, {'commit': '0' * 40}, {'url': ''}, {'url': 'https://example.invalid/repository'}):
+            with self.subTest(change=change):
+                receipt = self.artifact_receipt(repository=attributes | change)
+                receipt['product'] = 'core'
+                with patch.object(proof.core, 'bind_assemblies'), patch.object(proof.core, 'validate_runtime'):
+                    if not change:
+                        result = proof.admit_artifacts(self.plan, self.hash, receipt, self.artifacts, self.controller_root)
+                        self.assertEqual({'elsa.samplepackage'}, set(result))
+                    else:
+                        with self.assertRaisesRegex(ValueError, 'consumer_archive_provenance'):
+                            proof.admit_artifacts(self.plan, self.hash, receipt, self.artifacts, self.controller_root)
 
     def test_native_framework_references_must_match_plan_before_fixture_can_supply_them(self):
         """Verify native framework references must match plan before fixture can supply them."""

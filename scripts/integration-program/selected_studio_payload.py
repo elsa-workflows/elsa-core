@@ -115,11 +115,13 @@ def validate_packages(plan: dict, receipt: dict, files: dict[str, bytes]) -> dic
         with zipfile.ZipFile(io.BytesIO(data)) as zipped:
             nuspec = packages.metadata(zipped)
         repository = nuspec.find('repository')
+        policy = selected[row['id'].casefold()]
+        canonical_url_matches = (repository is not None and repository.get('url', '').removesuffix('.git') ==
+                                 'https://github.com/elsa-workflows/elsa-core')
         require(nuspec.findtext('id') == row['id'] and nuspec.findtext('version') == plan['requested_version'] and
                 repository is not None and set(repository.attrib) <= {'type', 'url', 'branch', 'commit'} and
-                repository.get('commit') == plan['source']['commit'] and repository.get('url', '').removesuffix('.git') ==
-                'https://github.com/elsa-workflows/elsa-core', 'selected_payload_nuspec_identity')
-        policy = selected[row['id'].casefold()]
+                producer.core.repository_matches(repository, policy, plan['source'], canonical_url_matches=canonical_url_matches),
+                'selected_payload_nuspec_identity')
         require(packages.dependency_groups(nuspec) == policy['metadata']['dependency_groups'] and
                 packages.framework_reference_groups(nuspec) == policy['metadata']['framework_reference_groups'],
                 'selected_payload_nuspec_dependencies')

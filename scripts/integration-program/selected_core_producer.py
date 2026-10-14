@@ -19,6 +19,22 @@ def original(row: dict) -> bool:
     return row.get('product') == 'core' and row.get('kind') in ('observed-core-release-branch', continuation.KIND)
 
 
+def repository_matches(repository, package: dict, row: dict, *, canonical_url_matches: bool) -> bool:
+    """Check an admitted source's repository without IO or changing ordinary URL rules.
+
+    Original Core's no-symbol sample does not inherit RepositoryUrl. Its evaluated
+    empty property admits only the observed git/commit attributes, never a URL.
+    Source admission and the native-to-plan property join remain caller obligations.
+    """
+    if repository is None or repository.get('commit') != row['commit']:
+        return False
+    if original(row) and (package['id'] == 'Elsa.SamplePackage' or package['project'] == SAMPLE_PROJECT):
+        return ((package['id'], package['project']) == ('Elsa.SamplePackage', SAMPLE_PROJECT)
+                and package['symbols'] is False and package.get('repository_url') == '' and
+                repository.attrib == {'type': 'git', 'commit': row['commit']})
+    return canonical_url_matches
+
+
 def source_binding(row: dict) -> dict:
     # prepare() adds a clone origin after the plan's closed source binding.
     """Remove the optional repository field after requiring the canonical Core repository."""

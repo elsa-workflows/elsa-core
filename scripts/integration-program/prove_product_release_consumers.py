@@ -187,6 +187,8 @@ def verify_producer_controllers(root: Path, plan: dict, receipt: dict) -> None:
 
 def admit_artifacts(plan: dict, plan_hash: str, receipt: dict, artifacts: Path, root: Path) -> dict:
     """Bind successful producer evidence and exact archive bytes to the selected plan."""
+    if plan['product'] == 'core':
+        producer.core.validate_plan(plan)
     require(receipt['success'] is True and receipt['artifact_proof'] is True and receipt['published'] is False and
             receipt['plan_sha256'] == plan_hash and receipt['source'] == plan['source'] and
             all(receipt[key] == plan[key] for key in ('product', 'line')) and
@@ -215,6 +217,10 @@ def admit_artifacts(plan: dict, plan_hash: str, receipt: dict, artifacts: Path, 
             require(package.findtext('id') == row['id'] and package.findtext('version') == row['version'] and
                     repository is not None and repository.get('commit') == plan['source']['commit'], 'consumer_archive_provenance')
             policy = selected[row['id'].casefold()]
+            if plan['product'] == 'core':
+                require(producer.core.repository_matches(repository, policy, plan['source'], canonical_url_matches=
+                    repository.get('url', '').removesuffix('.git').rstrip('/') == 'https://github.com/elsa-workflows/elsa-core'),
+                    'consumer_archive_provenance')
             require(dependency_groups(package) == policy['metadata']['dependency_groups'], 'consumer_archive_dependencies')
             require(framework_reference_groups(package) == policy['metadata'].get('framework_reference_groups', []),
                     'consumer_archive_framework_references')

@@ -611,6 +611,8 @@ def evaluate_inventory(source: Path, row: dict, version: str, output: Path, *, c
         from selected_core_producer import policy as core_policy
         projects += sorted(set(core_policy(row)['test_projects']) - recipe_projects)
     properties = 'IsPackable,IsTestProject,AssemblyName,PackageId,PackageVersion,TargetFrameworks,TargetFramework,IncludeSymbols,IncludeBuildOutput'
+    if original_core(row):
+        properties += ',RepositoryUrl'
     inventory, tests = [], []
     for project in projects:
         inventory_validation(context)
@@ -629,13 +631,16 @@ def evaluate_inventory(source: Path, row: dict, version: str, output: Path, *, c
         require(values['IncludeBuildOutput'].lower() in ('true', 'false'), 'Build-output policy was not evaluated')
         require(bool(values['AssemblyName']) and '/' not in values['AssemblyName'] and '\\' not in values['AssemblyName'],
                 'Invalid evaluated assembly identity')
+        if original_core(row):
+            require(type(values.get('RepositoryUrl')) is str, 'Original Core repository policy was not evaluated')
         inventory.append({'id': values['PackageId'], 'project': project,
             'assembly_name': values['AssemblyName'], 'include_build_output': values['IncludeBuildOutput'].lower() == 'true',
             'frameworks': frameworks,
             'symbols': values['IncludeSymbols'].lower() == 'true',
             'satellites': [satellite for framework in frameworks for satellite in
                 evaluate_satellites(source, project, framework, values['AssemblyName'], version, row, context=context)]
-                if values['IncludeBuildOutput'].lower() == 'true' else []})
+                if values['IncludeBuildOutput'].lower() == 'true' else [],
+            **({'repository_url': values['RepositoryUrl']} if original_core(row) else {})})
     inventory_validation(context)
     require(bool(inventory) and len({p['id'].casefold() for p in inventory}) == len(inventory), 'Empty/duplicate package inventory')
     require(bool(tests), 'No evaluated test projects')
@@ -997,6 +1002,9 @@ def verify_sdk_dependencies(nuspec: ET.Element, policy: dict, *, symbols: bool =
 def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version: str, source: Path,
                      inspector: Path, output: Path, context: dict | None = None) -> list[dict]:
     """Validate the complete package and symbol inventory and persist artifact receipts."""
+    from selected_core_producer import policy as core_policy, repository_matches
+    if original_core(row):
+        core_policy(row)
     expected = {p['id'].casefold(): p for p in inventory}
     produced = set(expected)
     found = set()
@@ -1015,8 +1023,8 @@ def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version:
                     context.update(package=policy['id'])
                 require(nuspec.findtext('version') == version, 'Packed version mismatch')
                 repository = nuspec.find('repository')
-                require(repository is not None and repository.get('commit') == row['commit'] and
-                    repository.get('url', '').removesuffix('.git').rstrip('/') == 'https://github.com/' + row['source_repository'],
+                require(repository_matches(repository, policy, row, canonical_url_matches=repository is not None and
+                    repository.get('url', '').removesuffix('.git').rstrip('/') == 'https://github.com/' + row['source_repository']),
                     'Packed repository provenance mismatch')
                 dependencies = dependency_groups(nuspec)
                 verify_sdk_dependencies(nuspec, policy)
@@ -1354,7 +1362,8 @@ def prepare(root: Path, row: dict, version: str, output: Path, *, plan: dict | N
             require({item['id'] for item in inventory} == set(selected), 'core_original_package_inventory')
             require(all(item['project'] == selected[item['id']]['project'] and
                         item['frameworks'] == selected[item['id']]['frameworks'] and
-                        item['symbols'] == selected[item['id']]['symbols'] for item in inventory),
+                        item['symbols'] == selected[item['id']]['symbols'] and
+                        item['repository_url'] == selected[item['id']]['repository_url'] for item in inventory),
                     'core_original_package_policy')
         write_json(output / 'evaluated-inventory.json', public_inventory(inventory))
         receipt.pop('inventory_diagnostics', None)
