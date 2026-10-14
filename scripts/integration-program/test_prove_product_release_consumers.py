@@ -1962,6 +1962,33 @@ class ConsumerCliDiagnosticsTests(unittest.TestCase):
             self.assertEqual(self.invoke(), {'success': False, 'failure_code': 'artifact_fresh_prerequisite_failed',
                 'failure_stage': 'current-consumer-prerequisites', 'retained_receipt_created': True})
 
+    def test_unjoined_build_identity_has_only_closed_cli_reason_fallback(self):
+        context = {'guard': 'consumer_original_build_group', 'id': 'Unjoined.Transitive.Canary',
+                   'version': '1.2.3', 'framework': 'net8.0', 'kind': 'build',
+                   'reason': 'original-group-mismatch'}
+        cases = (({}, ValueError, 'consumer_original_build_group', 'selected-restore-compile', True),
+                 ({}, ValueError, 'consumer_original_build_group', 'core-runtime-contract', True),
+                 ({'reason': '/private/secret'}, ValueError, 'consumer_original_build_group', 'selected-restore-compile', False),
+                 ({'reason': []}, ValueError, 'consumer_original_build_group', 'selected-restore-compile', False),
+                 ({'guard': 'other'}, ValueError, 'consumer_original_build_group', 'selected-restore-compile', False),
+                 ({}, RuntimeError, 'consumer_original_build_group', 'selected-restore-compile', False),
+                 ({}, ValueError, 'consumer_original_build_origin', 'selected-restore-compile', False),
+                 ({}, ValueError, 'consumer_original_build_group', 'consumer-setup', False))
+        for index, (changes, error_type, code, stage, emitted) in enumerate(cases):
+            self.output = self.root / ('output-' + str(index))
+            error = error_type(code)
+            error._selected_build_group_failure = context | changes
+            with self.subTest(index=index), patch.object(proof, 'execute', side_effect=self.failed_receipt(error,
+                    changes={'stage': stage, 'failure_code': stage + '-failed'})):
+                result = self.invoke()
+            expected = {'success': False, 'failure_code': code if error_type is ValueError else 'consumer_control_failed',
+                        'failure_stage': stage, 'retained_receipt_created': True}
+            if emitted:
+                expected['original_build_group_reason'] = context['reason']
+            self.assertEqual(expected, result)
+            self.assertNotIn(context['id'], json.dumps(result))
+            self.assertNotIn('/private/secret', json.dumps(result))
+
     def test_native_sdk_and_retirement_literal_codes_are_public_without_raw_details(self):
         """Verify native SDK and retirement literal codes are public without raw details."""
         for code in ('consumer_native_content_hash', 'consumer_sdk_download_bytes', 'consumer_cache_retirement_path'):

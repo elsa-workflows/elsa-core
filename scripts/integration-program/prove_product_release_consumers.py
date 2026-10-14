@@ -997,8 +997,12 @@ def main() -> int:
         code = str(error) if type(error) is ValueError and str(error) in PUBLIC_FAILURE_CODES else 'consumer_control_failed'
         receipt_created, stage = producer.failure_receipt_status(args.output, output_existed,
             mode='selected-product-consumers', stages=PUBLIC_FAILURE_STAGES)
+        detail = original_build_group_context(getattr(error, '_selected_build_group_failure', None),
+            role='consumer', stage=stage, product=stage.removesuffix('-runtime-contract')) \
+            if receipt_created and code == 'consumer_original_build_group' else None
+        reason = {'original_build_group_reason': detail['reason']} if detail is not None else {}
         print(json.dumps({'success': False, 'failure_code': code, 'failure_stage': stage,
-            'retained_receipt_created': receipt_created} | resolution.public_range_failure(error)))
+            'retained_receipt_created': receipt_created} | reason | resolution.public_range_failure(error)))
         return 1
 
 
