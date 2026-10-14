@@ -1,5 +1,4 @@
-﻿using Cronos;
-using Elsa.Scheduling.Bookmarks;
+﻿using Elsa.Scheduling.Bookmarks;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Runtime.Contracts;
@@ -20,7 +19,7 @@ public class CronTriggerPayloadValidator(ICronParser cronParser) : ITriggerPaylo
         {
             cronParser.GetNextOccurrence(payload.CronExpression);
         }
-        catch (CronFormatException ex)
+        catch (FormatException ex)
         {
             validationErrors.Add(new("Error when parsing cron expression: " + ex.Message,
                 trigger.ActivityId));
