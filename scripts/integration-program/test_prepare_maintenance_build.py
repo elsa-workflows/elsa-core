@@ -656,6 +656,178 @@ class MaintenanceContracts(unittest.TestCase):
                 (row, policy, 'net8.0', prefix + grain), (row, policy, 'net10.0', prefix + 'Proto/Arbitrary.cs')]:
             self.assertIsNone(maintenance.maintenance_family(selected, selected_policy, framework, path))
 
+    def test_original_core_swagger_family_is_source_project_and_framework_bound(self):
+        policy = {'id': 'Elsa.Api.Common', 'project':
+                  'src/common/Elsa.Api.Common/Elsa.Api.Common.csproj'}
+        prefix = 'src/common/Elsa.Api.Common/obj/Release/'
+        filename = 'SwaggerExportPathInitializer.g.cs'
+        for row in self.core_hint_sources():
+            with self.subTest(line=row['line'], kind=row['kind']):
+                self.assertIsNone(consolidated.generated_family(policy, 'net10.0', prefix + 'net10.0/' + filename))
+                self.assertEqual(maintenance.maintenance_family(row, policy, 'net10.0', prefix + 'net10.0/' + filename), 'swagger')
+                for selected, selected_policy, framework, path in (
+                        (row | {'product': 'studio'}, policy, 'net10.0', prefix + 'net10.0/' + filename),
+                        (row | {'kind': 'metadata-bridge'}, policy, 'net10.0', prefix + 'net10.0/' + filename),
+                        (row, policy | {'id': 'Other'}, 'net10.0', prefix + 'net10.0/' + filename),
+                        (row, policy | {'project': 'src/Other/Other.csproj'}, 'net10.0', 'src/Other/obj/Release/net10.0/' + filename),
+                        (row, policy, 'net8.0', prefix + 'net8.0/' + filename),
+                        (row, policy, 'net9.0', prefix + 'net9.0/' + filename),
+                        (row, policy, 'net10.0', prefix + 'net9.0/' + filename),
+                        (row, policy, 'net10.0', prefix + 'net10.0/Other.g.cs'),
+                        (row, policy, 'net10.0', prefix + 'net10.0/subdir/' + filename),
+                        (row, policy, 'net10.0', prefix + 'net10.0/../net10.0/' + filename),
+                        (row, policy, 'net10.0', prefix.replace('/Release/', '/Debug/') + 'net10.0/' + filename)):
+                    with self.subTest(selected=selected, framework=framework, path=path):
+                        self.assertIsNone(maintenance.maintenance_family(selected, selected_policy, framework, path))
+                for change in ({'commit': '0' * 40}, {'tree': '0' * 40}, {'line': '3.10'},
+                               {'source_repository': 'foreign/repository'}):
+                    with self.subTest(change=change), self.assertRaises(ValueError):
+                        maintenance.maintenance_family(row | change, policy, 'net10.0', prefix + 'net10.0/' + filename)
+
+    def test_original_core_swagger_mapping_matches_immutable_source_dependencies(self):
+        for row in self.core_hint_sources():
+            with self.subTest(line=row['line'], kind=row['kind']):
+                project = ET.fromstring(maintenance.git_bytes(maintenance.ROOT, row['commit'],
+                    'src/common/Elsa.Api.Common/Elsa.Api.Common.csproj'))
+                self.assertEqual(len(project.findall(".//PackageReference[@Include='FastEndpoints.Swagger']")), 1)
+                packages = ET.fromstring(maintenance.git_bytes(maintenance.ROOT, row['commit'], 'Directory.Packages.props'))
+                net10 = packages.find("ItemGroup[@Condition=\"'$(TargetFramework)' == 'net10.0'\"]")
+                self.assertIsNotNone(net10)
+                self.assertEqual(net10.find("PackageVersion[@Include='FastEndpoints.Swagger']").get('Version'), '8.2.0')
+
+    def core_swagger_fixture(self, row, *, runtime=''):
+        """Stage synthetic restored Swagger bytes and real shared compiler evidence."""
+        temporary = tempfile.TemporaryDirectory(dir=self.root)
+        self.addCleanup(temporary.cleanup)
+        source = Path(temporary.name).resolve()
+        identifier, version = 'FastEndpoints.Swagger', '8.2.0'
+        entry = consolidated.PHYSICAL_GENERATORS['swagger'][1]
+        package = source / 'nuget' / identifier.lower() / version
+        tool = package / entry
+        tool.parent.mkdir(parents=True)
+        tool.write_bytes(b'synthetic source-emitting Swagger target')
+        archive = package / f'{identifier.lower()}.{version}.nupkg'
+        with zipfile.ZipFile(archive, 'w') as contents:
+            contents.writestr(entry, tool.read_bytes())
+        assets = {'libraries': {identifier + '/' + version: {'type': 'package',
+            'sha512': base64.b64encode(hashlib.sha512(archive.read_bytes()).digest()).decode()}},
+            'packageFolders': {str(source / 'nuget'): {}},
+            'targets': {'net10.0' + ('/' + runtime if runtime else ''): {identifier + '/' + version: {'type': 'package'}}}}
+        assets_file = source / 'project.assets.json'
+        assets_file.write_text(json.dumps(assets))
+        project = 'src/common/Elsa.Api.Common/Elsa.Api.Common.csproj'
+        generated = 'src/common/Elsa.Api.Common/obj/Release/net10.0/SwaggerExportPathInitializer.g.cs'
+        policy = {'id': 'Elsa.Api.Common', 'project': project, 'source_commit': row['commit'], 'frameworks': ['net10.0'],
+            'framework_properties': {'net10.0': {}}, 'restore_assets': [{'framework': 'net10.0',
+                'path': 'project.assets.json', 'sha256': maintenance.digest(assets_file.read_bytes())}]}
+        compiler = source / 'sdk/10.0.300/Roslyn/bincore/csc.dll'
+        compiler.parent.mkdir(parents=True)
+        compiler.write_bytes(b'synthetic compiler')
+        resolved = {'Properties': {'MSBuildToolsPath': str(compiler.parents[2]), 'NETCoreSdkVersion': '10.0.300',
+            'RuntimeIdentifier': runtime}, 'Items': {'Analyzer': [], 'Compile': [{'FullPath': str(source / generated)}],
+            'ResolvedFrameworkReference': [{'Identity': 'Microsoft.NETCore.App', 'TargetingPackName': 'Microsoft.NETCore.App.Ref',
+                'TargetingPackVersion': '10.0.8', 'TargetingPackPath': str(source / 'packs/10.0.8')}]}}
+        checksum = maintenance.digest(b'synthetic generated source')
+        document = {'path': generated, 'algorithm': 'sha256', 'checksum': checksum, 'embedded_checksum': checksum}
+        return source, policy, document, archive, tool, assets, resolved
+
+    def capture_core_swagger(self, source, row, policy, resolved):
+        """Exercise the maintenance adapter with the unchanged shared capture implementation."""
+        evidence = maintenance.capture_compiler_evidence(source, policy, 'net10.0', resolved,
+            {'source_commit': row['commit'], ('compile_input_paths', row['commit']): set(),
+             'archive_inspector': Path('/fixture-inspector.dll')},
+            physical_families=maintenance.physical_families(row, policy, 'net10.0'))
+        policy['framework_properties']['net10.0']['compiler_evidence'] = evidence
+        return evidence
+
+    def test_original_core_swagger_captures_and_verifies_exact_resolved_producer(self):
+        for row in self.core_hint_sources():
+            for runtime in ('', 'linux-x64'):
+                with self.subTest(line=row['line'], kind=row['kind'], runtime=runtime):
+                    source, policy, document, archive, tool, _, resolved = self.core_swagger_fixture(row, runtime=runtime)
+                    evidence = self.capture_core_swagger(source, row, policy, resolved)
+                    self.assertEqual(evidence['compiler_sha256'], maintenance.digest(b'synthetic compiler'))
+                    self.assertEqual(evidence['compile_inputs'], [{'path': document['path'], 'tracked': False}])
+                    actual = maintenance.verify_non_git_document(document, document['path'], source, row, policy, 'net10.0', {})
+                    self.assertEqual(actual['family'], 'swagger')
+                    producer = actual['producer']
+                    self.assertEqual((producer['package_id'], producer['package_version']), ('FastEndpoints.Swagger', '8.2.0'))
+                    self.assertEqual(producer['archive_sha256'], maintenance.digest(archive.read_bytes()))
+                    self.assertEqual(producer['content_sha256'], maintenance.digest(tool.read_bytes()))
+                    self.assertEqual(producer['nuget_content_hash'], producer['restore_sha512'])
+                    self.assertEqual(producer['checked_archive_contents'], {producer['archive_entry']: producer['content_sha256']})
+                    self.assertNotIn(str(source), json.dumps(actual))
+
+    def test_original_core_swagger_preserves_signed_nuget_content_hash_join(self):
+        row = self.core_hint_sources()[1]
+        source, policy, document, archive, tool, assets, resolved = self.core_swagger_fixture(row)
+        with zipfile.ZipFile(archive, 'w') as contents:
+            contents.writestr(consolidated.PHYSICAL_GENERATORS['swagger'][1], tool.read_bytes())
+            contents.writestr('.signature.p7s', b'synthetic signature')
+        content_hash = base64.b64encode(hashlib.sha512(b'synthetic native NuGet content hash').digest()).decode()
+        assets['libraries']['FastEndpoints.Swagger/8.2.0']['sha512'] = content_hash
+        assets_file = source / 'project.assets.json'
+        assets_file.write_text(json.dumps(assets))
+        policy['restore_assets'][0]['sha256'] = maintenance.digest(assets_file.read_bytes())
+        inspected = {'signed': True, 'archive_sha256': maintenance.digest(archive.read_bytes()), 'content_hash': content_hash}
+        with patch.object(consolidated, 'run', return_value=json.dumps(inspected)) as inspector:
+            self.capture_core_swagger(source, row, policy, resolved)
+            actual = maintenance.verify_non_git_document(document, document['path'], source, row, policy, 'net10.0',
+                {'archive_inspector': Path('/fixture-inspector.dll')})
+        self.assertEqual(inspector.call_count, 2)
+        self.assertEqual(actual['producer']['restore_sha512'], content_hash)
+        self.assertEqual(actual['producer']['nuget_content_hash'], content_hash)
+        self.assertTrue(actual['producer']['signed'])
+
+    def test_original_core_swagger_rejects_wrong_restore_target_or_changed_producer(self):
+        row = self.core_hint_sources()[1]
+        for mutation in ('wrong-framework', 'wrong-runtime', 'wrong-package', 'unrestored-version', 'ambiguous-version',
+                         'restore-hash', 'tool', 'archive', 'assets', 'record-version', 'missing-evidence', 'source', 'embedded'):
+            with self.subTest(mutation=mutation):
+                source, policy, document, archive, tool, assets, resolved = self.core_swagger_fixture(row)
+                if mutation in ('wrong-framework', 'wrong-runtime', 'wrong-package', 'unrestored-version', 'ambiguous-version', 'restore-hash'):
+                    if mutation == 'wrong-framework':
+                        assets['targets']['net9.0'] = assets['targets'].pop('net10.0')
+                    elif mutation == 'wrong-runtime':
+                        resolved['Properties']['RuntimeIdentifier'] = 'linux-x64'
+                    elif mutation == 'wrong-package':
+                        assets['targets']['net10.0'] = {'Other/8.2.0': {'type': 'package'}}
+                    elif mutation == 'unrestored-version':
+                        assets['targets']['net10.0'] = {'FastEndpoints.Swagger/99.0.0': {'type': 'package'}}
+                    elif mutation == 'ambiguous-version':
+                        assets['targets']['net10.0']['FastEndpoints.Swagger/99.0.0'] = {'type': 'package'}
+                    else:
+                        assets['libraries']['FastEndpoints.Swagger/8.2.0']['sha512'] = 'changed'
+                    assets_file = source / 'project.assets.json'
+                    assets_file.write_text(json.dumps(assets))
+                    policy['restore_assets'][0]['sha256'] = maintenance.digest(assets_file.read_bytes())
+                    if mutation == 'wrong-package':
+                        # Shared capture permits absent Swagger on package trains without a target;
+                        # an actual Swagger document must still have exact producer evidence.
+                        self.capture_core_swagger(source, row, policy, resolved)
+                    else:
+                        with self.assertRaises(ValueError):
+                            self.capture_core_swagger(source, row, policy, resolved)
+                        continue
+                else:
+                    evidence = self.capture_core_swagger(source, row, policy, resolved)
+                    if mutation == 'tool':
+                        tool.write_bytes(b'changed target')
+                    elif mutation == 'archive':
+                        archive.write_bytes(b'changed archive')
+                    elif mutation == 'assets':
+                        (source / 'project.assets.json').write_text('{}')
+                    elif mutation == 'record-version':
+                        evidence['tools']['swagger']['package_version'] = '99.0.0'
+                    elif mutation == 'missing-evidence':
+                        evidence['tools'].clear()
+                    elif mutation == 'source':
+                        policy['source_commit'] = '0' * 40
+                    else:
+                        document['embedded_checksum'] = '0' * 64
+                with self.assertRaisesRegex(ValueError, '^Source producer evidence rejected$'):
+                    maintenance.verify_non_git_document(document, document['path'], source, row, policy, 'net10.0', {})
+
     def test_known_generated_families_still_require_actual_producer_verification(self):
         policy = {'id': 'Fixture', 'project': 'src/Fixture/Fixture.csproj', 'source_commit': self.row['commit'],
                   'frameworks': ['net10.0'], 'framework_properties': {'net10.0': {}}}
@@ -676,13 +848,15 @@ class MaintenanceContracts(unittest.TestCase):
                 self.assertEqual(result['family'], family)
                 self.assertEqual(verifier.call_args.args[3], family)
 
-    def metadata_stage_fixture(self):
+    def metadata_stage_fixture(self, *, identifier='Fixture', project='Fixture.csproj', frameworks=('net8.0',)):
         """Create isolated package metadata and a mock MSBuild executor that records inputs."""
         source = self.root / 'source'; source.mkdir()
         (source / 'NuGet.Config').write_text('<configuration />')
-        (source / 'Fixture.csproj').write_text('<Project Sdk="Microsoft.NET.Sdk" />')
+        project_file = source / project
+        project_file.parent.mkdir(parents=True, exist_ok=True)
+        project_file.write_text('<Project Sdk="Microsoft.NET.Sdk" />')
         assets = source / 'obj/project.assets.json'; assets.parent.mkdir(); assets.write_text('{}')
-        policy = {'id': 'Fixture', 'project': 'Fixture.csproj', 'symbols': True, 'frameworks': ['net8.0']}
+        policy = {'id': identifier, 'project': project, 'symbols': True, 'frameworks': list(frameworks)}
         evidence = {'sdk_version': '10.0.300', 'compiler_sha256': 'c' * 64, 'sdk_root': '/private-secret/sdk',
                     'compile_inputs': [{'path': '/private-secret/compile'}], 'tools': {'refit': {
                         'kind': 'nuget', 'package_id': 'Refit', 'package_version': '9.0.2',
@@ -697,14 +871,28 @@ class MaintenanceContracts(unittest.TestCase):
             if '-target:_GetRestoreProjectStyle;GenerateNuspec' in command:
                 destination = Path(next(arg.split('=', 1)[1] for arg in command if arg.startswith('-p:NuspecOutputPath=')))
                 for suffix in ['', '.symbols']:
-                    (destination / ('Fixture.3.8.4-proof.42.1' + suffix + '.nuspec')).write_text(
-                        '<package><metadata><id>Fixture</id><dependencies><group targetFramework="net8.0" /></dependencies>'
+                    (destination / (identifier + '.3.8.4-proof.42.1' + suffix + '.nuspec')).write_text(
+                        '<package><metadata><id>' + identifier + '</id><dependencies>' +
+                        ''.join('<group targetFramework="' + framework + '" />' for framework in frameworks) + '</dependencies>'
                         '<frameworkReferences><group targetFramework="net8.0">'
                         '<frameworkReference name="Microsoft.AspNetCore.App" /></group></frameworkReferences></metadata></package>')
                 return ''
             return json.dumps({'Properties': {'ProjectAssetsFile': str(assets), 'GenerateElsaPackageManifest': '',
-                'ElsaPackageManifestIncludeInPackage': '', 'ElsaPackageManifestPackagePath': ''}, 'Items': {}})
+                'ElsaPackageManifestIncludeInPackage': '', 'ElsaPackageManifestPackagePath': '',
+                'AssemblyVersion': '1.0.0.0', 'InformationalVersion': '1.0.0'}, 'Items': {}})
         return source, policy, evidence, commands, execute
+
+    def test_original_core_metadata_stage_captures_swagger_only_for_net10(self):
+        row = self.core_hint_sources()[1]
+        source, policy, evidence, _, execute = self.metadata_stage_fixture(identifier='Elsa.Api.Common',
+            project='src/common/Elsa.Api.Common/Elsa.Api.Common.csproj', frameworks=('net8.0', 'net9.0', 'net10.0'))
+        with patch.object(maintenance, 'run', side_effect=execute), \
+             patch.object(maintenance, 'capture_compiler_evidence', return_value=evidence) as captured, \
+             patch.object(maintenance, 'capture_sdk_assets', return_value=[]):
+            maintenance.stage_maintenance_metadata(source, row, [policy], '3.8.4-proof.42.1', Path('/inspector'))
+        self.assertEqual([(call.args[2], call.kwargs['physical_families']) for call in captured.call_args_list],
+            [('net8.0', ()), ('net9.0', ()), ('net10.0',
+                consolidated.PHYSICAL_GENERATED_PROJECTS[('Elsa.Api.Common', 'core/' + policy['project'])])])
 
     def test_metadata_stage_binds_restore_and_retains_only_public_projection(self):
         """Verify metadata stage binds restore and retains only public projection."""

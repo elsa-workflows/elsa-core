@@ -19,7 +19,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 
 from prove_consolidated_packages import (archive_names, capture_sdk_assets, capture_compiler_evidence, dependency_groups, framework_reference_groups,
-    generated_family, metadata, only_abstract_methods, read_staged_nuspecs, require, restored_archive, restored_assets,
+    generated_family, metadata, only_abstract_methods, PHYSICAL_GENERATED_PROJECTS, read_staged_nuspecs, require, restored_archive, restored_assets,
     run, source_url, verify_package_manifest, verify_sdk_assets, verify_external_document, verify_external_entry,
     verify_generator_identity, verify_tracked_document)
 
@@ -643,7 +643,13 @@ def evaluate_inventory(source: Path, row: dict, version: str, output: Path, *, c
     return inventory
 
 
-def physical_families(row: dict, policy: dict) -> tuple:
+def physical_families(row: dict, policy: dict, framework: str) -> tuple:
+    if original_core(row) and framework == 'net10.0' and (policy['id'], policy['project']) == (
+            'Elsa.Api.Common', 'src/common/Elsa.Api.Common/Elsa.Api.Common.csproj'):
+        from selected_core_producer import policy as core_policy
+        core_policy(row)  # Bind the alias to an exact admitted original source or reviewed continuation.
+        # The older net8/net9 package train does not supply this source-emitting target.
+        return PHYSICAL_GENERATED_PROJECTS[(policy['id'], 'core/' + policy['project'])]
     if row['product'] != 'extensions':
         return ()
     project = policy['project']
@@ -662,7 +668,7 @@ def maintenance_family(row: dict, policy: dict, framework: str, path: str) -> st
     family = generated_family(policy, framework, path)
     prefix = f"{Path(policy['project']).parent.as_posix()}/obj/Release/{framework}/"
     if family is None and path.startswith(prefix):
-        family = next((kind for pattern, kind in physical_families(row, policy)
+        family = next((kind for pattern, kind in physical_families(row, policy, framework)
                        if re.fullmatch(pattern, path[len(prefix):])), None)
     return family
 
@@ -769,7 +775,7 @@ def stage_maintenance_metadata(source: Path, row: dict, inventory: list[dict], v
                     policy['restore_assets'].append({'framework': framework,
                         'path': assets.relative_to(source).as_posix(), 'sha256': digest(assets.read_bytes())})
                     evidence = capture_compiler_evidence(source, policy, framework, resolved, cache,
-                                                        physical_families=physical_families(row, policy))
+                                                        physical_families=physical_families(row, policy, framework))
                     policy['framework_properties'][framework] = {'compiler_evidence': evidence,
                         'manifest_required': resolved['Properties']['GenerateElsaPackageManifest'].lower() == 'true' and
                             resolved['Properties']['ElsaPackageManifestIncludeInPackage'].lower() == 'true',
