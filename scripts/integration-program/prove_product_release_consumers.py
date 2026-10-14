@@ -607,12 +607,12 @@ def original_empty_lib_marker(assets: dict, original: dict, framework: str, key:
         'consumer_original_lib_cache')
     require(not any(name.casefold() == marker.casefold() for name in names), 'consumer_original_lib_collision')
     directory = marker.rsplit('/', 1)[0]
-    members = [name for name in names if name.startswith(directory + '/')]
+    members = [name for name in names if name.casefold().startswith(directory.casefold() + '/')]
     # Original native group selection is inherited, not recomputed. Restrict this
     # adapter to flat DLL groups without ref/contract alternatives.
     require(members and all(name.isascii() and name.rsplit('/', 1)[0] == directory and
         Path(name).suffix in ('.dll', '.xml', '.pdb') for name in members) and
-        not any(name.startswith(('ref/', 'lib/contract/')) for name in names), 'consumer_original_lib_inventory')
+        not any(name.casefold().startswith(('ref/', 'lib/contract/')) for name in names), 'consumer_original_lib_inventory')
     # OrdinalIgnoreCase compares ASCII uppercase code points, including their
     # position relative to punctuation; lowercase sorting is not equivalent.
     dlls = sorted((name for name in members if name.endswith('.dll')), key=lambda name: (name.rfind('/'), name.upper()))

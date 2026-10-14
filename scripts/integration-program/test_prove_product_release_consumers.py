@@ -1050,6 +1050,43 @@ class SelectedProductConsumerTests(unittest.TestCase):
             else: assets['libraries'][key]['files'].remove(f'lib/{framework}/System.Text.Json.xml')
             with self.subTest(change=change), self.assertRaises((ValueError, KeyError)): self.verify_empty_build(values)
 
+    def assert_original_empty_lib_case_variant_rejected(self, member):
+        """Rebind every byte/hash/source join so only the inventory guard can reject."""
+        values = self.original_empty_lib_fixture()
+        content = b'case-variant alternative DLL'
+        with zipfile.ZipFile(values['archive'], 'a') as package: package.writestr(member, content)
+        path = values['folder'] / member
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
+        data = values['archive'].read_bytes()
+        content_hash = proof.consumers.base64_sha512(data)
+        for assets in (values['assets'], values['original_assets']):
+            assets['libraries'][values['key']]['files'].append(member)
+            assets['libraries'][values['key']]['sha512'] = content_hash
+        next(iter(values['selected'].values()))['policy']['metadata']['restore_assets_sha256'] = metadata.sha256(
+            json.dumps(values['original_assets']).encode())
+        values['graph']['system.text.json']['content_hash'] = content_hash
+        record = next(iter(values['catalog'].values()))
+        record.update(archive_sha256=metadata.sha256(data), content_hash=content_hash)
+        record['original_contexts'][0]['content_hash'] = content_hash
+        sidecar = values['folder'] / '.nupkg.metadata'
+        cache_metadata = json.loads(sidecar.read_text())
+        cache_metadata['contentHash'] = content_hash
+        sidecar.write_text(json.dumps(cache_metadata))
+        with self.assertRaisesRegex(ValueError, '^consumer_original_lib_inventory$'):
+            self.verify_empty_build(values)
+
+    def test_original_empty_lib_rejects_case_variant_ref_and_contract_alternatives(self):
+        """Unsupported alternate groups reject irrespective of directory casing."""
+        for member in ('REF/net10.0/Alternative.dll', 'Ref/net10.0/Alternative.dll',
+                       'LIB/contract/Alternative.dll', 'LiB/Contract/Alternative.dll'):
+            with self.subTest(member=member): self.assert_original_empty_lib_case_variant_rejected(member)
+
+    def test_original_empty_lib_rejects_mixed_case_selected_group_directories(self):
+        """Inventory cannot omit a case-variant member of the selected lib directory."""
+        for member in ('LIB/net10.0/Alternative.dll', 'lib/NET10.0/Alternative.dll', 'LiB/Net10.0/Alternative.dll'):
+            with self.subTest(member=member): self.assert_original_empty_lib_case_variant_rejected(member)
+
     def test_original_empty_lib_checks_real_bytes_physical_markers_and_collisions(self):
         """Synthetic accounting never bypasses physical package/cache payload verification."""
         for change in ('dll', 'xml', 'symlink', 'cache_marker', 'cache_case', 'marker_symlink',
