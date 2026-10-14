@@ -148,6 +148,40 @@ class HostedWorkflowContracts(unittest.TestCase):
         self.assertEqual(["python -m unittest discover -s scripts/integration-program -p 'test_*.py'",
             "python -O -m unittest discover -s scripts/integration-program -p 'test_*.py'"], suite['run'].splitlines())
 
+    def test_full_suite_jobs_install_pinned_node_22_before_normal_and_optimized_discovery(self):
+        full_suite_jobs = (
+            ('package-impact-closure.yml', 'selector-and-plan'),
+            ('integration-program-tools.yml', 'import-rehearsal-tests'),
+        )
+        discovery_commands = (
+            "python -m unittest discover -s scripts/integration-program -p 'test_*.py'",
+            "python -O -m unittest discover -s scripts/integration-program -p 'test_*.py'",
+        )
+
+        for workflow, name in full_suite_jobs:
+            with self.subTest(workflow=workflow, job=name):
+                job = yaml.safe_load((ROOT / '.github/workflows' / workflow).read_text())['jobs'][name]
+                self.assertNotIn('if', job)
+                self.assertNotIn('continue-on-error', job)
+                steps = job['steps']
+                node_steps = [step for step in steps if step.get('uses', '').startswith('actions/setup-node@')]
+                self.assertEqual(1, len(node_steps))
+                node = node_steps[0]
+                self.assertRegex(node['uses'], r'^actions/setup-node@[a-f0-9]{40}$')
+                self.assertEqual('22', node['with']['node-version'])
+                self.assertNotIn('if', node)
+                self.assertNotIn('continue-on-error', node)
+
+                discovery_steps = [step for step in steps if any(
+                    command in step.get('run', '').splitlines() for command in discovery_commands)]
+                found_commands = {command for step in discovery_steps for command in step.get('run', '').splitlines()
+                                  if command in discovery_commands}
+                self.assertEqual(set(discovery_commands), found_commands)
+                self.assertTrue(all(steps.index(node) < steps.index(step) for step in discovery_steps))
+                for step in discovery_steps:
+                    self.assertNotIn('if', step)
+                    self.assertNotIn('continue-on-error', step)
+
     def test_full_suite_jobs_disable_bytecode_before_all_python_steps(self):
         for workflow, name in (('package-impact-closure.yml', 'selector-and-plan'),
                                ('integration-program-tools.yml', 'import-rehearsal-tests')):
