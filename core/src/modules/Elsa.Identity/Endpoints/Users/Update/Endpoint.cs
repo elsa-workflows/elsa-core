@@ -32,6 +32,13 @@ internal class Update(IUserStore userStore, ISecretHasher secretHasher, IRoleAut
             return;
         }
 
+        // Callers may only modify users whose current roles they could assign themselves.
+        if (!await roleAuthorizationService.CanAssignRolesAsync(User, user.Roles, cancellationToken))
+        {
+            await Send.ForbiddenAsync(cancellationToken);
+            return;
+        }
+
         if (request.Roles != null)
         {
             if (!await roleAuthorizationService.CanAssignRolesAsync(User, request.Roles, cancellationToken))

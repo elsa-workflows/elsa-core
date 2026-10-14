@@ -11,7 +11,7 @@ namespace Elsa.Identity.Endpoints.Users.Delete;
 /// An endpoint that deletes a user by ID.
 /// </summary>
 [PublicAPI]
-internal class Delete(IUserDeletionCoordinator coordinator) : ElsaEndpointWithoutRequest
+internal class Delete(IUserDeletionCoordinator coordinator, IUserStore userStore, IRoleAuthorizationService roleAuthorizationService) : ElsaEndpointWithoutRequest
 {
     /// <inheritdoc />
     public override void Configure()
@@ -24,6 +24,20 @@ internal class Delete(IUserDeletionCoordinator coordinator) : ElsaEndpointWithou
     public override async Task HandleAsync(CancellationToken cancellationToken)
     {
         var id = Route<string>("id")!;
+        var user = await userStore.FindAsync(new() { Id = id }, cancellationToken);
+
+        if (user == null)
+        {
+            await Send.NotFoundAsync(cancellationToken);
+            return;
+        }
+
+        // Callers may only delete users whose current roles they could assign themselves.
+        if (!await roleAuthorizationService.CanAssignRolesAsync(User, user.Roles, cancellationToken))
+        {
+            await Send.ForbiddenAsync(cancellationToken);
+            return;
+        }
 
         var result = await coordinator.DeleteAsync(id, cancellationToken);
         switch (result)
