@@ -251,63 +251,6 @@ class ProductReleasePlanTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'metadata_duplicate_package_reference'):
                 metadata.evaluate_project(source, project.name, '3.8.5', binding=self.binding)
 
-    def test_full_inventory_retains_ownership_exclusions_and_strips_private_state(self):
-        """Verify full inventory retains ownership exclusions and strips private state."""
-        with tempfile.TemporaryDirectory() as directory:
-            source = Path(directory)
-            identifiers = list(metadata.CANONICAL_OWNERS) + ['Elsa.Secrets.Api', 'Elsa.Secrets.Core']
-            projects = [{**self.project, 'path': f'src/P{index}/P{index}.csproj', 'package_id': identifier,
-                'properties': {'PackageVersion': '3.8.5', 'IncludeBuildOutput': 'true', 'IncludeSymbols': 'true',
-                    'SymbolPackageFormat': 'snupkg', 'RepositoryUrl': 'https://github.com/elsa-workflows/elsa-core',
-                    'PackageProjectUrl': 'https://github.com/elsa-workflows/elsa-core', 'PrivatePath': '/private/secret'}}
-                for index, identifier in enumerate(identifiers)]
-            for project in projects:
-                path = source / project['path']
-                path.parent.mkdir(parents=True)
-                path.touch()
-            (source / 'Elsa.Extensions.sln').write_text('\n'.join(
-                f'Project("type") = "P", "{row["path"]}", "id"' for row in projects))
-            (source / '.nuke').mkdir()
-            (source / '.nuke/parameters.json').write_text('{"Solution":"Elsa.Extensions.sln"}')
-            workflow = source / '.github/maintenance-inert-workflows/packages.yml.source'
-            workflow.parent.mkdir(parents=True)
-            workflow.write_text('Compile+Test+Pack')
-            staged, writer_thread = [], threading.get_ident()
-            def stage(root, project, version, destination, *, binding):
-                self.assertEqual(writer_thread, threading.get_ident())
-                staged.append(project['path'])
-                return {'status': 'observed', '_assets': {'private': '/private/assets'}}
-            with patch.object(metadata, 'git', return_value='\n'.join(row['path'] for row in projects)), \
-                 patch.object(metadata, 'evaluate_project', side_effect=lambda root, path, version, *, binding: next(row for row in projects if row['path'] == path)), \
-                 patch.object(metadata, 'stage_project', side_effect=stage):
-                inventory = metadata.evaluate_inventory(source, self.binding, '3.8.5', source / 'private', workers=4)
-            # Policy-bound historical sources fail before the first metadata restore.
-            support = metadata.mysql.load_contract()
-            selected = support['sources']['3.8']
-            binding = {**self.binding, 'commit': selected['commit'], 'tree': selected['tree'],
-                       'support_policy_sha256': metadata.mysql.policy_hash(support)}
-            invalid = deepcopy(projects)
-            invalid[-1]['references_by_framework'] = {'net10.0': {
-                'project_references': [], 'package_references': [{'id': 'Elsa.Persistence.EFCore.MySql'}]}}
-            with patch.object(metadata, 'git', return_value='\n'.join(row['path'] for row in invalid)), \
-                 patch.object(metadata, 'evaluate_project', side_effect=lambda root, path, version, *, binding: next(row for row in invalid if row['path'] == path)), \
-                 patch.object(metadata, 'stage_project', return_value={'status': 'observed'}) as restore:
-                with self.assertRaisesRegex(ValueError, 'inventory_mysql_net10_reference'):
-                    metadata.evaluate_inventory(source, binding, '3.8.5', source / 'private', workers=4)
-                restore.assert_not_called()
-                # Unrelated synthetic Extensions inventories do not acquire this source policy.
-                metadata.evaluate_inventory(source, self.binding, '3.8.5', source / 'private', workers=4)
-                self.assertTrue(restore.called)
-            self.assertEqual(7, len(inventory['projects']))
-            self.assertEqual(5, len(inventory['excluded']))
-            self.assertEqual(['Elsa.Secrets.Api', 'Elsa.Secrets.Core'], [row['id'] for row in inventory['selected']])
-            self.assertEqual([row['project'] for row in inventory['selected']], staged)
-            public = metadata.public_inventory(inventory)
-            self.assertNotIn('/private/', json.dumps(public))
-            self.assertNotIn('properties', public['projects'][0])
-            self.assertNotIn('_assets', public['selected'][0]['metadata'])
-            planner.validate_inventory(inventory, self.binding, '3.8.5')
-
     def test_native_source_mapping_precedence_and_unknown_source_are_preserved(self):
         with tempfile.TemporaryDirectory() as directory:
             config = Path(directory) / 'NuGet.Config'
@@ -481,6 +424,155 @@ class ProductReleasePlanTests(unittest.TestCase):
             result = planner.execute(metadata.ROOT, 'studio', '3.10', '3.10.0', Path(self.temporary.name) / '310', self.semantics)
         self.assertFalse(result['eligible'])
         self.assertEqual('aligned_baseline_pending', result['reasons'][0]['category'])
+
+
+class ProductReleaseInventoryWorkerTests(unittest.TestCase):
+    def setUp(self):
+        self.binding = {'product': 'extensions', 'line': '3.8', 'commit': 'a' * 40, 'tree': 'b' * 40}
+        self.project = {'path': 'src/Example/Example.csproj', 'package_id': 'Example', 'is_packable': True,
+                        'is_test_project': False, 'target_frameworks': ['net8.0'],
+                        'project_references': [], 'package_references': [], 'properties': {}}
+
+    def test_full_inventory_retains_ownership_exclusions_and_strips_private_state(self):
+        """Verify the same complete inventory projection at serial and default worker counts."""
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory)
+            identifiers = list(metadata.CANONICAL_OWNERS) + ['Elsa.Secrets.Api', 'Elsa.Secrets.Core']
+            projects = [{**self.project, 'path': f'src/P{index}/P{index}.csproj', 'package_id': identifier,
+                'properties': {'PackageVersion': '3.8.5', 'IncludeBuildOutput': 'true', 'IncludeSymbols': 'true',
+                    'SymbolPackageFormat': 'snupkg', 'RepositoryUrl': 'https://github.com/elsa-workflows/elsa-core',
+                    'PackageProjectUrl': 'https://github.com/elsa-workflows/elsa-core', 'PrivatePath': '/private/secret'}}
+                for index, identifier in enumerate(identifiers)]
+            for project in projects:
+                path = source / project['path']
+                path.parent.mkdir(parents=True)
+                path.touch()
+            (source / 'Elsa.Extensions.sln').write_text('\n'.join(
+                f'Project("type") = "P", "{row["path"]}", "id"' for row in projects))
+            (source / '.nuke').mkdir()
+            (source / '.nuke/parameters.json').write_text('{"Solution":"Elsa.Extensions.sln"}')
+            workflow = source / '.github/maintenance-inert-workflows/packages.yml.source'
+            workflow.parent.mkdir(parents=True)
+            workflow.write_text('Compile+Test+Pack')
+            staged, writer_thread = [], threading.get_ident()
+
+            def stage(root, project, version, destination, *, binding):
+                self.assertEqual(writer_thread, threading.get_ident())
+                staged.append(project['path'])
+                return {'status': 'observed', '_assets': {'private': '/private/assets'}}
+
+            inventories = {}
+            with patch.object(metadata, 'git', return_value='\n'.join(row['path'] for row in projects)), \
+                 patch.object(metadata, 'evaluate_project', side_effect=lambda root, path, version, *, binding: next(row for row in projects if row['path'] == path)), \
+                 patch.object(metadata, 'stage_project', side_effect=stage):
+                for workers in (1, 4):
+                    staged.clear()
+                    inventories[workers] = metadata.evaluate_inventory(
+                        source, self.binding, '3.8.5', source / f'private-{workers}', workers=workers)
+                    self.assertEqual([row['project'] for row in inventories[workers]['selected']], staged)
+
+            inventory = inventories[4]
+            self.assertEqual(metadata.public_inventory(inventories[1]), metadata.public_inventory(inventory))
+            # Policy-bound historical sources fail before the first metadata restore.
+            support = metadata.mysql.load_contract()
+            selected = support['sources']['3.8']
+            binding = {**self.binding, 'commit': selected['commit'], 'tree': selected['tree'],
+                       'support_policy_sha256': metadata.mysql.policy_hash(support)}
+            invalid = deepcopy(projects)
+            invalid[-1]['references_by_framework'] = {'net10.0': {
+                'project_references': [], 'package_references': [{'id': 'Elsa.Persistence.EFCore.MySql'}]}}
+            with patch.object(metadata, 'git', return_value='\n'.join(row['path'] for row in invalid)), \
+                 patch.object(metadata, 'evaluate_project', side_effect=lambda root, path, version, *, binding: next(row for row in invalid if row['path'] == path)), \
+                 patch.object(metadata, 'stage_project', return_value={'status': 'observed'}) as restore:
+                with self.assertRaisesRegex(ValueError, 'inventory_mysql_net10_reference'):
+                    metadata.evaluate_inventory(source, binding, '3.8.5', source / 'private', workers=4)
+                restore.assert_not_called()
+                # Unrelated synthetic Extensions inventories do not acquire this source policy.
+                metadata.evaluate_inventory(source, self.binding, '3.8.5', source / 'private', workers=4)
+                self.assertTrue(restore.called)
+            self.assertEqual(7, len(inventory['projects']))
+            self.assertEqual(5, len(inventory['excluded']))
+            self.assertEqual(['Elsa.Secrets.Api', 'Elsa.Secrets.Core'], [row['id'] for row in inventory['selected']])
+            self.assertEqual([row['project'] for row in inventory['selected']], staged)
+            public = metadata.public_inventory(inventory)
+            self.assertNotIn('/private/', json.dumps(public))
+            self.assertNotIn('properties', public['projects'][0])
+            self.assertNotIn('_assets', public['selected'][0]['metadata'])
+            planner.validate_inventory(inventory, self.binding, '3.8.5')
+
+
+class ProductReleaseMetadataWorkersTests(unittest.TestCase):
+    def test_cli_uses_four_workers_by_default_and_forwards_an_explicit_limit(self):
+        for extra, expected in (([], 4), (['--metadata-workers', '1'], 1)):
+            with self.subTest(workers=expected), tempfile.TemporaryDirectory() as directory:
+                output = Path(directory) / 'plan'
+                argv = ['planner', '--product', 'extensions', '--line', '3.8', '--version', '3.8.5',
+                        '--output', str(output), *extra]
+                stdout = io.StringIO()
+                with patch('sys.argv', argv), patch.object(planner, 'build_helper', return_value=object()), \
+                     patch.object(planner, 'execute', return_value={'eligible': True}) as execute, \
+                     redirect_stdout(stdout):
+                    self.assertEqual(0, planner.main())
+                execute.assert_called_once()
+                self.assertEqual(expected, execute.call_args.kwargs['metadata_workers'])
+                self.assertEqual({'eligible': True, 'published': False}, json.loads(stdout.getvalue()))
+
+    def test_invalid_worker_counts_are_rejected_before_planning_effects(self):
+        for workers in ('0', '5'):
+            with self.subTest(workers=workers), tempfile.TemporaryDirectory() as directory:
+                output = Path(directory) / 'plan'
+                argv = ['planner', '--product', 'extensions', '--line', '3.8', '--version', '3.8.5',
+                        '--output', str(output), '--metadata-workers', workers]
+                stderr = io.StringIO()
+                with patch('sys.argv', argv), patch.object(planner, 'build_helper') as build_helper, \
+                     patch.object(planner, 'execute') as execute, redirect_stderr(stderr):
+                    with self.assertRaises(SystemExit) as raised:
+                        planner.main()
+                self.assertEqual(2, raised.exception.code)
+                build_helper.assert_not_called()
+                execute.assert_not_called()
+                self.assertFalse(output.exists())
+                self.assertIn('--metadata-workers', stderr.getvalue())
+
+    def test_execute_forwards_worker_limit_without_adding_it_to_the_plan(self):
+        class Semantics:
+            def call(self, operation, **request):
+                if operation != 'versions':
+                    raise AssertionError(f'unexpected semantics operation: {operation}')
+                return [{'major': 3, 'minor': 8, 'normalized': '3.8.5'}]
+
+        class Feeds:
+            def __init__(self):
+                self.policy, self.sources, self.services = {}, {}, {}
+
+            def prefetch(self, history_ids, edges):
+                self.prefetched = (history_ids, edges)
+
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / 'plan'
+            binding = {'product': 'extensions', 'line': '3.8', 'commit': 'a' * 40, 'tree': 'b' * 40}
+
+            def git(_controller, *args):
+                return {('rev-parse', 'HEAD'): 'c' * 40,
+                        ('rev-parse', 'HEAD^{tree}'): 'd' * 40,
+                        ('status', '--porcelain'): ''}[args]
+
+            with patch.object(metadata, 'git', side_effect=git), \
+                 patch.object(metadata, 'bind_source', return_value=binding), \
+                 patch.object(metadata, 'checkout_source') as checkout, \
+                 patch.object(metadata, 'evaluate_inventory', return_value={'selected': []}) as evaluate, \
+                 patch.object(planner, 'npm_intent', return_value=None), \
+                 patch.object(planner, 'outgoing_edges', return_value=([], [])), \
+                 patch.object(planner, 'FeedMetadata', return_value=Feeds()), \
+                 patch.object(planner, 'assemble_plan', return_value={'eligible': True, 'published': False}):
+                result = planner.execute(metadata.ROOT, 'extensions', '3.8', '3.8.5', output,
+                                         Semantics(), metadata_workers=2)
+
+            checkout.assert_called_once_with(metadata.ROOT, binding, output / 'source.private')
+            evaluate.assert_called_once_with(output / 'source.private', binding, '3.8.5',
+                                             output / 'metadata.private', workers=2)
+            self.assertNotIn('metadata_workers', result)
+            self.assertNotIn('metadata_workers', json.loads((output / 'plan.json').read_text()))
 
 
 class OriginalCoreMetadataInputsTests(unittest.TestCase):
