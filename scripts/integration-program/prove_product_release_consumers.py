@@ -47,6 +47,42 @@ ROOT_FLAT_BUILD_ACCOUNTING = 'native-selected-root-excluded-flat-build'
 ROOT_FLAT_BUILD_ORIGIN = 'selected-root-nuspec-flat-build-exclusion'
 FLAT_BUILD_ROOT = 'Elsa.Caching.Distributed.ProtoActor'
 FLAT_BUILD_WITNESS = 'Elsa.Actors.ProtoActor'
+FLAT_BUILD_ROOTS = {
+    FLAT_BUILD_ROOT: 'src/modules/caching/Elsa.Caching.Distributed.ProtoActor/Elsa.Caching.Distributed.ProtoActor.csproj',
+    'Elsa.Workflows.Runtime.ProtoActor': 'src/modules/runtimes/Elsa.Workflows.Runtime.ProtoActor/Elsa.Workflows.Runtime.ProtoActor.csproj'}
+DIRECT_FLAT_BUILD_ACCOUNTING = 'native-direct-reference-excluded-flat-build'
+DIRECT_FLAT_BUILD_ORIGIN = 'direct-reference-nuspec-flat-build-exclusion'
+# Actual #8693 archive/nuspec witnesses, not an open package/route-flags policy.
+# Remove with the selected-control adapter. Native nearest groups were observed
+# for all three supported TFMs; runtime rechecks the frozen archives and graph.
+DIRECT_FLAT_CASES = {
+    ('core', 'Elsa.AI.Copilot', 'GitHub.Copilot.SDK/1.0.0'): {
+        'project': 'src/modules/Elsa.AI.Copilot/Elsa.AI.Copilot.csproj',
+        'frameworks': ('net8.0', 'net9.0', 'net10.0'),
+        'sources': {'3.8': ('7e5e6bcf97791e4f7f7165e15579abae18ec7203', 'd5c10535cee3524d91f5ae54b5cecb967c26b606'),
+                    '3.9': ('86fffea6da3cfe67c0279f552c2a32940ef75ae2', '8beb9e093091c098f542a08e82e43625a3b8e520')}},
+    ('extensions', 'Elsa.Logging.Serilog', 'Serilog/4.3.0'): {
+        'project': 'src/modules/diagnostics/Elsa.Logging.Serilog/Elsa.Logging.Serilog.csproj',
+        'frameworks': ('net8.0', 'net9.0', 'net10.0'),
+        'sources': {'3.8': ('20c7a51599b4c85bf591c4615d34674e0f5706bf', '421c27c3365dd28e447a9beec14edec69541b9be'),
+                    '3.9': ('e4935c95e211f2885c0348a4ab9872f112df7b4a', '27c3e51e6a180174bed5424b3c1cf975e7e32e6c')}}}
+DIRECT_FLAT_CASES[('core', 'Elsa.Api.Common', 'FastEndpoints.Swagger/8.2.0')] = {
+    'project': 'src/common/Elsa.Api.Common/Elsa.Api.Common.csproj', 'frameworks': ('net10.0',),
+    'sources': DIRECT_FLAT_CASES[('core', 'Elsa.AI.Copilot', 'GitHub.Copilot.SDK/1.0.0')]['sources']}
+DIRECT_FLAT_PARENTS = (
+    {'id': 'Serilog.Extensions.Logging', 'version': '10.0.0', 'range': '4.2.0',
+     'archive_sha256': '3207d62bf4895943f13f3ae70949f19fa4b2f9205598fddd61deb4bb2f3435d1',
+     'nuspec_sha256': '66df1d930a2694b0499f439ad28feb088706b377974903e2e4418305f6a5472c',
+     'groups': {'net8.0': 'net8.0', 'net9.0': 'net9.0', 'net10.0': 'net10.0'}},
+    {'id': 'Serilog.Formatting.Compact', 'version': '3.0.0', 'range': '4.0.0',
+     'archive_sha256': '9de8c462a244306f4fda2159bdbb0250faf92d946dc5b7544cb088f4def58c76',
+     'nuspec_sha256': 'ae4ccc1b4a71d372d63af397e740e5c18426aab45cc660486beabb372011b138',
+     'groups': {'net8.0': 'net8.0', 'net9.0': 'net8.0', 'net10.0': 'net8.0'}},
+    {'id': 'Serilog.Sinks.File', 'version': '7.0.0', 'range': '4.2.0',
+     'archive_sha256': '2f165852850f9028c82156ab2629675e7a9088cac5349b68462966cd336d523a',
+     'nuspec_sha256': '269ff2dccec088353ff0f9a97b1f2636228d83a072a462a74fd6d68177877fbc',
+     'groups': {'net8.0': 'net8.0', 'net9.0': 'net9.0', 'net10.0': 'net9.0'}})
+
 ORIGINAL_EMPTY_LIB_ACCOUNTING = 'native-original-excluded-lib'
 ORIGINAL_EMPTY_LIB_ORIGIN = 'original-excluded-lib'
 STUDIO38_CONTRACT_SOURCE = {
@@ -488,16 +524,22 @@ def synthetic_build_marker(assets: dict, original: dict, framework: str, key: st
 
 
 
-def flat_build_plan_context(plan: dict, framework: str, key: str, kind: str, *, witness: bool) -> dict:
+def flat_build_plan_context(plan: dict, framework: str, key: str, kind: str, *, witness: bool,
+                            root_id: str = FLAT_BUILD_ROOT) -> dict:
     """Closed #8693 source/plan joins for the two observed flat exclusions; remove with the adapter."""
     identifier, version = key.rsplit('/', 1)
     require(plan['product'] == 'extensions' and plan['line'] in ('3.8', '3.9') and
-        kind in ('build', 'buildMultiTargeting') and (witness or plan['line'] == '3.8') and
+        kind in ('build', 'buildMultiTargeting') and root_id in FLAT_BUILD_ROOTS and
+        (witness or plan['line'] == '3.8' or root_id == 'Elsa.Workflows.Runtime.ProtoActor') and
         (identifier, version) == (('Grpc.Tools', '2.70.0') if witness else ('Proto.Cluster.CodeGen', '1.8.0')),
         'consumer_flat_build_case')
+    if root_id == 'Elsa.Workflows.Runtime.ProtoActor':
+        sources = DIRECT_FLAT_CASES[('extensions', 'Elsa.Logging.Serilog', 'Serilog/4.3.0')]['sources']
+        require(sources.get(plan['line']) == (plan['source']['commit'], plan['source']['tree']), 'consumer_flat_build_case')
     policies = plan['inventory']['selected']
-    roots = [row for row in policies if row['id'] == FLAT_BUILD_ROOT]
-    require(len(roots) == 1 and framework in roots[0]['frameworks'], 'consumer_flat_build_root')
+    roots = [row for row in policies if row['id'] == root_id]
+    require(len(roots) == 1 and roots[0]['project'] == FLAT_BUILD_ROOTS[root_id] and
+        framework in roots[0]['frameworks'], 'consumer_flat_build_root')
     root = roots[0]
     projects = [row for row in plan['inventory']['projects'] if row['path'] == root['project'] and row['package_id'] == root['id']]
     require(len(projects) == 1, 'consumer_flat_build_project')
@@ -536,6 +578,81 @@ def flat_build_plan_context(plan: dict, framework: str, key: str, kind: str, *, 
     return result
 
 
+def direct_flat_build_case(plan: dict, root: str, key: str, framework: str) -> bool:
+    case = DIRECT_FLAT_CASES.get((plan['product'], root, key))
+    return case is not None and framework in case['frameworks'] and case['sources'].get(plan['line']) == (plan['source']['commit'], plan['source']['tree'])
+
+
+def direct_flat_build_plan_context(plan: dict, root_id: str, framework: str, key: str, kind: str) -> dict:
+    """Reconstruct the exact direct-reference case and all fixed incoming witnesses."""
+    case = DIRECT_FLAT_CASES.get((plan['product'], root_id, key))
+    require(case is not None and kind == 'build' and framework in case['frameworks'] and
+        case['sources'].get(plan['line']) == (plan['source']['commit'], plan['source']['tree']),
+        'consumer_flat_build_case')
+    identifier, version = key.rsplit('/', 1)
+    roots = [row for row in plan['inventory']['selected'] if row['id'] == root_id]
+    require(len(roots) == 1 and roots[0]['project'] == case['project'] and framework in roots[0]['frameworks'],
+            'consumer_flat_build_root')
+    root = roots[0]
+    projects = [row for row in plan['inventory']['projects'] if row['path'] == case['project'] and row['package_id'] == root_id]
+    require(len(projects) == 1, 'consumer_flat_build_project')
+    refs = [row for row in projects[0]['references_by_framework'][framework]['package_references'] if row['id'] == identifier]
+    require(len(refs) == 1 and all(refs[0][field] == '' for field in
+        ('Version', 'VersionOverride', 'PrivateAssets', 'IncludeAssets', 'ExcludeAssets')), 'consumer_flat_build_original_flags')
+    edge = build_exclusion_edge(root['metadata']['dependency_groups'], framework, identifier)
+    require(edge == {'id': identifier, 'version': version, 'include': '', 'exclude': 'Build,Analyzers'},
+            'consumer_flat_build_flags')
+    prerequisites = [row for row in plan['prerequisites'] if
+        (row['consumer'], row['project'], row['framework'], row['id'], row['version'], row['range']) ==
+        (root_id, case['project'], framework, identifier, version, version)]
+    require(len(prerequisites) == 1 and prerequisites[0]['eligible'] is True, 'consumer_flat_build_prerequisite')
+    incoming = [{'id': root_id, 'version': plan['requested_version'], 'group': framework, 'edge': dict(edge)}]
+    if identifier == 'Serilog':
+        for parent in DIRECT_FLAT_PARENTS:
+            incoming.append({key: parent[key] for key in ('id', 'version', 'archive_sha256', 'nuspec_sha256')} |
+                {'group': parent['groups'][framework], 'edge': {'id': identifier, 'version': parent['range'],
+                    'include': '', 'exclude': 'Build,Analyzers'}})
+    return {'root_id': root_id, 'root_project': case['project'], 'framework': framework,
+        'root_assets_sha256': root['metadata']['restore_assets_sha256'],
+        'source': {key: plan['source'][key] for key in ('commit', 'tree')},
+        'planner_controller_sha256': metadata.canonical_hash(plan['controller']), 'edge': dict(edge), 'incoming': incoming}
+
+
+def verify_direct_flat_incoming(context: dict, assets: dict, graph: dict, catalog: dict,
+                                selected: dict, semantics: planner.Semantics) -> None:
+    """Every actual incoming edge must match its native admitted group and Build exclusion."""
+    framework, identifier = context['framework'], context['edge']['id']
+    expected = sorted((row['id'] + '/' + row['version'], row['edge']['version']) for row in context['incoming'])
+    require(sorted(flat_build_incoming(assets['targets'][framework], identifier)) == expected,
+            'consumer_flat_build_incoming')
+    for row in context['incoming']:
+        folded = row['id'].casefold()
+        node = graph.get(folded, {})
+        require(node.get('id') == row['id'] and node.get('version') == row['version'] and
+            node.get('selected') is (row['id'] == context['root_id']), 'consumer_flat_build_incoming')
+        if folded in selected:
+            group = nearest_group(selected[folded]['dependency_groups'], framework, semantics)
+        else:
+            record = catalog.get((folded, row['version']), {})
+            require(record.get('archive_sha256') == row['archive_sha256'] and
+                record.get('nuspec_sha256') == row['nuspec_sha256'] and
+                metadata.sha256(record['archive'].read_bytes()) == row['archive_sha256'], 'consumer_flat_build_archive')
+            native = nearest_group(record['groups'], framework, semantics)
+            require(native['framework'] == row['group'], 'consumer_flat_build_incoming')
+            with zipfile.ZipFile(record['archive']) as package:
+                group = next((value for value in dependency_groups(nuspec(package)) if value['framework'] == row['group']), {})
+            native_edges = [value for value in native['dependencies'] if value['id'] == identifier]
+            require(native_edges == [{'id': identifier, 'range': '[' + row['edge']['version'] + ', )'}],
+                    'consumer_flat_build_incoming')
+        require(group.get('framework') == row['group'] and
+            [edge for edge in group.get('dependencies', []) if edge['id'].casefold() == identifier.casefold()] == [row['edge']],
+            'consumer_flat_build_flags')
+        ranges = [node.get('dependencies', {}).get(identifier), row['edge']['version']]
+        checks = semantics.call('ranges', values=[{'range': value, 'version': context['edge']['version']} for value in ranges])
+        require(len(checks) == 2 and all(check['satisfies'] for check in checks) and
+            checks[0]['normalized'] == checks[1]['normalized'], 'consumer_flat_build_incoming')
+
+
 def flat_build_incoming(targets: dict, identifier: str) -> list[tuple[str, str]]:
     incoming = []
     for key, target in targets.items():
@@ -548,9 +665,13 @@ def flat_build_incoming(targets: dict, identifier: str) -> list[tuple[str, str]]
 
 def proven_flat_build_marker(assets: dict, original: dict, framework: str, key: str, kind: str,
                              package: zipfile.ZipFile, names: list[str], folder: Path, catalog: dict,
-                             graph: dict, selected: dict, plan: dict, original_policy: dict, *, witness: bool) -> dict:
-    """Two separate native proofs share only archive/cache and sole-root boundary checks."""
-    context = flat_build_plan_context(plan, framework, key, kind, witness=witness)
+                             graph: dict, selected: dict, plan: dict, original_policy: dict, *, witness: bool, direct_reference: bool = False,
+                             semantics: planner.Semantics | None = None) -> dict:
+    """Closed native proofs share only archive/cache and sole-root boundary checks."""
+    root_ids = list(assets.get('project', {}).get('frameworks', {}).get(framework, {}).get('dependencies', {}))
+    context = (direct_flat_build_plan_context(plan, root_ids[0] if len(root_ids) == 1 else '', framework, key, kind)
+        if direct_reference else flat_build_plan_context(plan, framework, key, kind, witness=witness,
+            root_id=root_ids[0] if len(root_ids) == 1 else ''))
     identifier, version = key.rsplit('/', 1)
     root = selected.get(context['root_id'].casefold(), {})
     require(root.get('policy') == next(row for row in plan['inventory']['selected'] if row['id'] == context['root_id']) and
@@ -621,7 +742,11 @@ def proven_flat_build_marker(assets: dict, original: dict, framework: str, key: 
             'consumer_flat_build_witness_context')
     else:
         before_assets = original
-        require(incoming == [(root_key, context['edge']['version'])], 'consumer_flat_build_incoming')
+        if direct_reference:
+            require(semantics is not None, 'consumer_flat_build_incoming')
+            verify_direct_flat_incoming(context, assets, graph, catalog, selected, semantics)
+        else:
+            require(incoming == [(root_key, context['edge']['version'])], 'consumer_flat_build_incoming')
         original_direct = original['project']['frameworks'][framework].get('dependencies', {}).get(identifier, {})
         require(set(original_direct) <= {'target', 'version', 'versionCentrallyManaged'} and
             original_direct.get('target') == 'Package' and original_direct.get('version') == '[' + version + ', )' and
@@ -660,8 +785,8 @@ def proven_flat_build_marker(assets: dict, original: dict, framework: str, key: 
         not any(entry.relative_to(folder).as_posix().casefold() == marker.casefold() for entry in folder.rglob('*')),
         'consumer_flat_build_cache')
     return {'path': marker, 'kind': kind, 'metadata': {}, 'archive_sha256': record['archive_sha256'],
-        'accounting': DEPENDENCY_FLAT_BUILD_ACCOUNTING if witness else ROOT_FLAT_BUILD_ACCOUNTING,
-        'origin': DEPENDENCY_FLAT_BUILD_ORIGIN if witness else ROOT_FLAT_BUILD_ORIGIN, 'provenance': context}
+        'accounting': DIRECT_FLAT_BUILD_ACCOUNTING if direct_reference else DEPENDENCY_FLAT_BUILD_ACCOUNTING if witness else ROOT_FLAT_BUILD_ACCOUNTING,
+        'origin': DIRECT_FLAT_BUILD_ORIGIN if direct_reference else DEPENDENCY_FLAT_BUILD_ORIGIN if witness else ROOT_FLAT_BUILD_ORIGIN, 'provenance': context}
 
 
 def original_excluded_build_marker(assets: dict, original: dict, framework: str, key: str, kind: str,
@@ -846,7 +971,8 @@ def original_empty_lib_marker(assets: dict, original: dict, framework: str, key:
 
 def verify_asset_payloads(assets: dict, framework: str, graph: dict, cache: Path, artifacts: Path, selected: dict,
                           *, catalog: dict | None = None, original_assets: dict | None = None,
-                          plan: dict | None = None, original_policy: dict | None = None) -> list[dict]:
+                          plan: dict | None = None, original_policy: dict | None = None,
+                          semantics: planner.Semantics | None = None) -> list[dict]:
     """Join restored payload bytes and permitted empty markers to archive evidence."""
     evidence = []
     for key, library in assets['targets'][framework].items():
@@ -880,13 +1006,16 @@ def verify_asset_payloads(assets: dict, framework: str, graph: dict, cache: Path
                     if kind in ('build', 'buildMultiTargeting') and entry == kind + '/_._' and entry not in names:
                         require(not graph[folded]['selected'], 'consumer_original_build_selected')
                         direct = assets.get('project', {}).get('frameworks', {}).get(framework, {}).get('dependencies', {})
-                        root_case = plan is not None and original_policy is not None and set(direct) == {FLAT_BUILD_ROOT}
+                        root_case = plan is not None and original_policy is not None and len(direct) == 1 and next(iter(direct)) in FLAT_BUILD_ROOTS
                         before = (original_assets or {}).get('targets', {}).get(framework, {}).get(key, {})
                         witness_case = root_case and key == 'Grpc.Tools/2.70.0' and not before
-                        exclusion_case = root_case and plan['line'] == '3.8' and key == 'Proto.Cluster.CodeGen/1.8.0' and before.get(kind) != {kind + '/_._': {}}
-                        if witness_case or exclusion_case:
+                        exclusion_case = root_case and (plan['line'] == '3.8' or next(iter(direct)) == 'Elsa.Workflows.Runtime.ProtoActor') and key == 'Proto.Cluster.CodeGen/1.8.0' and before.get(kind) != {kind + '/_._': {}}
+                        direct_case = plan is not None and original_policy is not None and len(direct) == 1 and \
+                            direct_flat_build_case(plan, next(iter(direct)), key, framework)
+                        if witness_case or exclusion_case or direct_case:
                             payloads.append(proven_flat_build_marker(assets, original_assets, framework, key, kind,
-                                package, names, folder, catalog or {}, graph, selected, plan, original_policy, witness=witness_case))
+                                package, names, folder, catalog or {}, graph, selected, plan, original_policy, witness=witness_case,
+                                direct_reference=direct_case, semantics=semantics))
                         else:
                             payloads.append(original_excluded_build_marker(assets, original_assets, framework, key, kind,
                                 package, names, folder, catalog or {}, graph, selected))
@@ -1030,7 +1159,7 @@ def cell(plan: dict, package: dict, framework: str, selected: dict, artifacts: P
         cache, policy['sources'], policy['mapping'], inspector, proof=True)
     cached = verify_cache(graph, policy, cache, artifacts, selected, restored, inspector, catalog)
     payloads = verify_asset_payloads(restored, framework, graph, cache, artifacts, selected, catalog=catalog,
-        original_assets=original_policy['original_assets'][package['policy']['project']], plan=plan, original_policy=original_policy)
+        original_assets=original_policy['original_assets'][package['policy']['project']], plan=plan, original_policy=original_policy, semantics=semantics)
     commands.append(consumers._run_command(['dotnet', 'build', str(project), '-c', 'Release', '--no-restore', '--disable-build-servers',
         '--nologo'], output, environment, output / 'build.log', 1200))
     require(all(metadata.sha256((output / name).read_bytes()) == digest for name, digest in inputs.items()) and

@@ -24,12 +24,14 @@ def archive_record(identifier, version, suffix, members):
                 {'path': p, 'size': len(b), 'sha256': core._hash(b)} for p, b in members.items()]}, data
 
 
-def fixture(line='3.8', *, conditional_skips=True, api_common=False):
+def fixture(line='3.8', *, conditional_skips=True, api_common=False, copilot=False, source_override=None, direct_api=False):
     """Build synthetic Core plan, producer, consumer, and archive evidence for a release line."""
     contracts = core.load_contracts()
     contract = contracts['producer']['sources'][line]
     source = {'product': 'core', 'line': line, 'kind': 'observed-core-release-branch',
               'commit': contract['commit'], 'tree': contract['tree']}
+    if source_override is not None:
+        source = deepcopy(source_override)
     plan = {'product': 'core', 'line': line, 'source': source, 'npm': None, 'requested_version': line + '.999',
             'inventory': {'release_recipe': {'solution': 'Elsa.sln', 'workflow': '.github/workflows/packages.yml'},
                 'projects': [{'path': p, 'is_test_project': True} for p in contract['test_projects']], 'selected': [],
@@ -47,7 +49,7 @@ def fixture(line='3.8', *, conditional_skips=True, api_common=False):
         producer['product_tests']['executions'].append({'project': project, 'framework': 'net10.0',
             'counters': counters, 'sha256': 'e'*64, 'expected_skips': cases})
     selected = {}
-    for identifier in ('Elsa', 'Elsa.Workflows.Core', 'Elsa.Workflows.Runtime', 'Elsa.SamplePackage') + (('Elsa.Api.Common',) if api_common else ()):
+    for identifier in ('Elsa', 'Elsa.Workflows.Core', 'Elsa.Workflows.Runtime', 'Elsa.SamplePackage') + (('Elsa.Api.Common',) if api_common else ()) + (('Elsa.AI.Copilot',) if copilot else ()):
         sample = identifier == 'Elsa.SamplePackage'
         frameworks = ['net10.0'] if sample else list(core.FRAMEWORKS)
         policy = {'id': identifier, 'project': core.SAMPLE_PROJECT if sample else f'src/modules/{identifier}/{identifier}.csproj',
@@ -59,7 +61,12 @@ def fixture(line='3.8', *, conditional_skips=True, api_common=False):
         if identifier == 'Elsa.Api.Common':
             policy['project'] = 'src/common/Elsa.Api.Common/Elsa.Api.Common.csproj'
             dependencies = '<dependencies>' + ''.join(f'<group targetFramework="{f}"><dependency id="FastEndpoints.Swagger" '
-                f'version="{"8.2.0" if f == "net10.0" else "7.1.1"}" /></group>' for f in frameworks) + '</dependencies>'
+                f'version="{"8.2.0" if f == "net10.0" else "7.1.1"}"' + (' exclude="Build,Analyzers"' if direct_api else '') + ' /></group>' for f in frameworks) + '</dependencies>'
+        if identifier == 'Elsa.AI.Copilot':
+            dependencies = '<dependencies>' + ''.join(f'<group targetFramework="{f}"><dependency id="GitHub.Copilot.SDK" '
+                'version="1.0.0" exclude="Build,Analyzers" /></group>' for f in frameworks) + '</dependencies>'
+            policy['metadata']['dependency_groups'] = [{'framework': f, 'dependencies': [
+                {'id': 'GitHub.Copilot.SDK', 'version': '1.0.0', 'include': '', 'exclude': 'Build,Analyzers'}]} for f in sorted(frameworks)]
         plan['inventory']['selected'].append(policy)
         version = plan['requested_version']
         repository = {'type': 'git', 'commit': source['commit']}
@@ -425,9 +432,11 @@ class CoreSwaggerSealTests(unittest.TestCase):
         import prepare_maintenance_build as maintenance
         import test_selected_product_payload as product_tests
 
-        with patch.object(product_tests, 'core_fixture', side_effect=lambda line: fixture(line, api_common=True)):
-            values = (self.boundaries.candidates.candidate_files(line) if kind == 'continuation'
-                      else product_tests.fixture('core', line))
+        if kind == 'continuation':
+            values = product_tests.direct_flat_payload_fixture('core', line, swagger=True)
+        else:
+            with patch.object(product_tests, 'core_fixture', side_effect=lambda line: fixture(line, api_common=True)):
+                values = product_tests.fixture('core', line)
         files = values[0]
         plan, producer, consumer = (json.loads(files[name]) for name in
                                    ('plan.json', 'producer/receipt.json', 'consumer/receipt.json'))

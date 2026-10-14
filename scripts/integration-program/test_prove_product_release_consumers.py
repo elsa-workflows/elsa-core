@@ -2134,10 +2134,10 @@ class FlatBuildEvidenceTests(unittest.TestCase):
     def setUp(self):
         self.root = Path(self.enterContext(tempfile.TemporaryDirectory())).resolve()
 
-    def fixture(self, *, witness=True, line='3.8', framework='net8.0'):
-        root_id, actor = proof.FLAT_BUILD_ROOT, proof.FLAT_BUILD_WITNESS
+    def fixture(self, *, witness=True, line='3.8', framework='net8.0', root_id=proof.FLAT_BUILD_ROOT):
+        actor = proof.FLAT_BUILD_WITNESS
         version = line + '.999'
-        root_project = 'src/modules/caching/' + root_id + '/' + root_id + '.csproj'
+        root_project = proof.FLAT_BUILD_ROOTS[root_id]
         actor_project = 'src/modules/actors/' + actor + '/' + actor + '.csproj'
         identifier, external_version = ('Grpc.Tools', '2.70.0') if witness else ('Proto.Cluster.CodeGen', '1.8.0')
         key = identifier + '/' + external_version
@@ -2153,7 +2153,7 @@ class FlatBuildEvidenceTests(unittest.TestCase):
         chain = {root_id: {actor: version, 'Proto.Cluster.CodeGen': '1.8.0'}, actor: {'Proto.Remote': '1.8.0'},
                  'Proto.Remote': {'Grpc.AspNetCore': '2.70.0'}, 'Grpc.AspNetCore': {'Grpc.Tools': '2.70.0'},
                  'Grpc.Tools': {}, 'Proto.Cluster.CodeGen': {}}
-        if line == '3.9' and witness:
+        if line == '3.9' and witness and root_id == proof.FLAT_BUILD_ROOT:
             chain[root_id].pop('Proto.Cluster.CodeGen'); chain.pop('Proto.Cluster.CodeGen')
         versions = {root_id: version, actor: version, 'Proto.Remote': '1.8.0', 'Grpc.AspNetCore': '2.70.0',
                     'Grpc.Tools': '2.70.0', 'Proto.Cluster.CodeGen': '1.8.0'}
@@ -2171,7 +2171,7 @@ class FlatBuildEvidenceTests(unittest.TestCase):
             'Grpc.Tools': {'target': 'Package', 'version': '[2.76.0, )', 'suppressParent': 'All', 'versionCentrallyManaged': True},
             'Proto.Cluster.CodeGen': {'target': 'Package', 'version': '[1.8.0, )', 'versionCentrallyManaged': True}}
         original['projectFileDependencyGroups'] = {framework: ['Grpc.Tools >= 2.76.0', 'Proto.Cluster.CodeGen >= 1.8.0']}
-        if line == '3.9' and witness:
+        if line == '3.9' and witness and root_id == proof.FLAT_BUILD_ROOT:
             original['project']['frameworks'][framework]['dependencies'].pop('Proto.Cluster.CodeGen')
             original['projectFileDependencyGroups'][framework].remove('Proto.Cluster.CodeGen >= 1.8.0')
         if witness:
@@ -2189,17 +2189,20 @@ class FlatBuildEvidenceTests(unittest.TestCase):
             'restore_assets_sha256': 'a' * 64, 'dependency_groups': [{'framework': framework, 'dependencies': [
                 {'id': actor, 'version': version, 'include': '', 'exclude': 'Build,Analyzers'},
                 {'id': 'Proto.Cluster.CodeGen', 'version': '1.8.0', 'include': '', 'exclude': 'Build,Analyzers'}]}]}}
-        if line == '3.9' and witness:
+        if line == '3.9' and witness and root_id == proof.FLAT_BUILD_ROOT:
             root_policy['metadata']['dependency_groups'][0]['dependencies'].pop()
         actor_policy = {'id': actor, 'project': actor_project, 'frameworks': [framework], 'metadata': {'restore_assets_sha256': 'b' * 64}}
         refs = [{'id': name, 'Version': '', 'VersionOverride': '', 'PrivateAssets': private, 'IncludeAssets': '', 'ExcludeAssets': ''}
                 for name, private in (('Grpc.Tools', 'all'), ('Proto.Cluster.CodeGen', ''))
-                if line == '3.8' or not witness or name != 'Proto.Cluster.CodeGen']
+                if line == '3.8' or root_id != proof.FLAT_BUILD_ROOT or not witness or name != 'Proto.Cluster.CodeGen']
         plan = {'product': 'extensions', 'line': line, 'requested_version': version, 'source': {'commit': 'c' * 40, 'tree': 'd' * 40},
             'controller': {'commit': 'e' * 40, 'tree': 'f' * 40}, 'inventory': {'selected': [root_policy, actor_policy],
                 'projects': [{'path': root_project, 'package_id': root_id, 'references_by_framework': {
                     framework: {'package_references': refs}}}]}, 'prerequisites': [{'consumer': root_id, 'project': root_project,
                     'framework': framework, 'id': 'Proto.Cluster.CodeGen', 'version': '1.8.0', 'range': '1.8.0', 'eligible': True}]}
+        if root_id == 'Elsa.Workflows.Runtime.ProtoActor':
+            plan['source'] = dict(zip(('commit', 'tree'), proof.DIRECT_FLAT_CASES[
+                ('extensions', 'Elsa.Logging.Serilog', 'Serilog/4.3.0')]['sources'][line]))
         policy = {'original_assets': {root_project: original, actor_project: other}, 'sdk_projects': {
             root_project: {framework: {'pruning': {}, 'downloads': []}}, actor_project: {framework: {'pruning': {}, 'downloads': []}}}}
         graph = {name.casefold(): {'id': name, 'version': versions[name], 'dependencies': edges,
@@ -2218,6 +2221,138 @@ class FlatBuildEvidenceTests(unittest.TestCase):
                 kind, package, proof.archive_names(package), values['folder'], values['catalog'], values['graph'],
                 values['selected'], values['plan'], values['original_policy'], witness=values['witness'])
 
+    def direct_fixture(self, *, product='extensions', line='3.8', framework='net8.0', swagger=False):
+        values = self.fixture(witness=False, line=line, framework=framework)
+        root_id, key = (('Elsa.Api.Common', 'FastEndpoints.Swagger/8.2.0') if swagger else
+            ('Elsa.AI.Copilot', 'GitHub.Copilot.SDK/1.0.0')) if product == 'core' else ('Elsa.Logging.Serilog', 'Serilog/4.3.0')
+        identifier, version = key.split('/')
+        case = proof.DIRECT_FLAT_CASES[(product, root_id, key)]
+        root_policy = values['plan']['inventory']['selected'][0]
+        root_policy.update(id=root_id, project=case['project'])
+        edge = {'id': identifier, 'version': version, 'include': '', 'exclude': 'Build,Analyzers'}
+        root_policy['metadata']['dependency_groups'] = [{'framework': framework, 'dependencies': [edge]}]
+        plan = values['plan']; plan.update(product=product, source=dict(zip(('commit', 'tree'), case['sources'][line])))
+        plan['inventory']['selected'] = [root_policy]
+        plan['inventory']['projects'] = [{'path': case['project'], 'package_id': root_id, 'references_by_framework': {
+            framework: {'package_references': [{'id': identifier, **dict.fromkeys(
+                ('Version', 'VersionOverride', 'PrivateAssets', 'IncludeAssets', 'ExcludeAssets'), '')}]}}}]
+        plan['prerequisites'] = [{'consumer': root_id, 'project': case['project'], 'framework': framework,
+            'id': identifier, 'version': version, 'range': version, 'eligible': True}]
+        root_key = root_id + '/' + plan['requested_version']
+        entries = {'build/' + identifier + suffix: b'<Project />' for suffix in (('.props', '.targets') if product == 'core' else ('.targets',))}
+        with zipfile.ZipFile(values['archive'], 'w') as package:
+            for name, data in entries.items(): package.writestr(name, data)
+        for name, data in entries.items():
+            path = values['folder'] / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
+        library = {'type': 'package', 'sha512': 'native-content-hash', 'files': list(entries)}
+        values['key'] = key
+        values['assets']['targets'][framework] = {root_key: {'type': 'package', 'dependencies': {identifier: version}},
+            key: {'type': 'package', 'build': {'build/_._': {}}}}
+        values['assets']['libraries'] = {key: deepcopy(library)}
+        values['assets']['project']['frameworks'][framework]['dependencies'] = {root_id: {
+            'target': 'Package', 'version': '[' + plan['requested_version'] + ', ' + plan['requested_version'] + ']', 'aliases': 'selected'}}
+        values['assets']['projectFileDependencyGroups'][framework] = [root_id + ' >= ' + plan['requested_version'] + ' <= ' + plan['requested_version']]
+        original = deepcopy(values['assets']); original['targets'][framework].pop(root_key)
+        original['targets'][framework][key]['build'] = {name: {} for name in entries}
+        original['project']['restore'] = {'projectPath': '/source/' + case['project']}
+        original['project']['frameworks'][framework]['dependencies'] = {identifier: {
+            'target': 'Package', 'version': '[' + version + ', )', 'versionCentrallyManaged': True}}
+        original['projectFileDependencyGroups'][framework] = [identifier + ' >= ' + version]
+        values['original'] = original
+        values['selected'] = {root_id.casefold(): {'id': root_id, 'policy': root_policy,
+            'dependency_groups': root_policy['metadata']['dependency_groups']}}
+        values['graph'] = {root_id.casefold(): {'id': root_id, 'version': plan['requested_version'], 'selected': True,
+            'dependencies': {identifier: version}}, identifier.casefold(): {'id': identifier, 'version': version, 'selected': False, 'dependencies': {}}}
+        values['catalog'] = {(identifier.casefold(), version): {'id': identifier, 'version': version,
+            'content_hash': library['sha512'], 'archive_sha256': metadata.sha256(values['archive'].read_bytes()),
+            'original_contexts': [{'project': case['project'], 'frameworks': [framework], 'content_hash': library['sha512']}]}}
+        parents = []
+        if product == 'extensions':
+            for parent in proof.DIRECT_FLAT_PARENTS:
+                item = deepcopy(parent)
+                spec = ('<package><metadata><dependencies><group targetFramework="' + item['groups'][framework] + '">'
+                    '<dependency id="Serilog" version="' + item['range'] + '" exclude="Build,Analyzers" />'
+                    '</group></dependencies></metadata></package>').encode()
+                archive = values['folder'] / (item['id'] + '.nupkg')
+                with zipfile.ZipFile(archive, 'w') as package: package.writestr('a.nuspec', spec)
+                item.update(archive_sha256=metadata.sha256(archive.read_bytes()), nuspec_sha256=metadata.sha256(spec))
+                parents.append(item)
+                parent_key = item['id'] + '/' + item['version']
+                values['assets']['targets'][framework][parent_key] = {'type': 'package', 'dependencies': {identifier: item['range']}}
+                values['original']['targets'][framework][parent_key] = deepcopy(values['assets']['targets'][framework][parent_key])
+                values['graph'][item['id'].casefold()] = {'id': item['id'], 'version': item['version'], 'selected': False,
+                    'dependencies': {identifier: item['range']}}
+                values['catalog'][(item['id'].casefold(), item['version'])] = item | {'archive': archive,
+                    'groups': [{'framework': item['groups'][framework], 'dependencies': [{'id': identifier, 'range': '[' + item['range'] + ', )'}]}]}
+            self.enterContext(patch.object(proof, 'DIRECT_FLAT_PARENTS', tuple(parents)))
+        values['original_policy'] = {'original_assets': {case['project']: original}}
+        return values
+
+    def verify_direct(self, values):
+        with zipfile.ZipFile(values['archive']) as package:
+            return proof.proven_flat_build_marker(values['assets'], values['original'], values['framework'], values['key'],
+                'build', package, proof.archive_names(package), values['folder'], values['catalog'], values['graph'],
+                values['selected'], values['plan'], values['original_policy'], witness=False, direct_reference=True, semantics=Semantics())
+
+    def test_direct_flat_cases_prove_root_and_every_native_incoming_exclusion(self):
+        for product in ('core', 'extensions'):
+            for line in ('3.8', '3.9'):
+                for framework in ('net8.0', 'net9.0', 'net10.0'):
+                    values = self.direct_fixture(product=product, line=line, framework=framework)
+                    with self.subTest(product=product, line=line, framework=framework):
+                        with zipfile.ZipFile(values['archive']) as package, self.assertRaisesRegex(ValueError, 'consumer_original_build_group'):
+                            proof.original_excluded_build_marker(values['assets'], values['original'], framework, values['key'],
+                                'build', package, proof.archive_names(package), values['folder'], values['catalog'], values['graph'], values['selected'])
+                        result = self.verify_direct(values)
+                        self.assertEqual(proof.DIRECT_FLAT_BUILD_ORIGIN, result['origin'])
+                        self.assertEqual(1 if product == 'core' else 4, len(result['provenance']['incoming']))
+
+    def test_swagger_direct_flat_exclusion_is_net10_only_on_both_source_lines(self):
+        for line in ('3.8', '3.9'):
+            values = self.direct_fixture(product='core', line=line, framework='net10.0', swagger=True)
+            self.assertEqual(proof.DIRECT_FLAT_BUILD_ORIGIN, self.verify_direct(values)['origin'])
+            for framework in ('net8.0', 'net9.0'):
+                self.assertFalse(proof.direct_flat_build_case(values['plan'], 'Elsa.Api.Common', 'FastEndpoints.Swagger/8.2.0', framework))
+                with self.assertRaisesRegex(ValueError, 'consumer_flat_build_case'):
+                    proof.direct_flat_build_plan_context(values['plan'], 'Elsa.Api.Common', framework, 'FastEndpoints.Swagger/8.2.0', 'build')
+            self.assertFalse(proof.direct_flat_build_case(values['plan'], 'Elsa.Api.Common', 'FastEndpoints.Swagger/7.1.1', 'net10.0'))
+
+    def test_direct_flat_cases_reject_changed_source_flags_graph_and_archive_evidence(self):
+        for product in ('core', 'extensions'):
+            changes = ('source', 'root', 'tfm', 'version', 'flags', 'override', 'snapshot', 'marker', 'transitive',
+                'original_transitive', 'original_group', 'incoming', 'duplicate', 'graph', 'archive', 'cache', 'collision', 'exclusion')
+            if product == 'extensions': changes += ('parent_archive', 'parent_group', 'parent_edge', 'parent_range', 'missing_parent')
+            for change in changes:
+                values = self.direct_fixture(product=product)
+                plan = values['plan']; root = plan['inventory']['selected'][0]; framework = values['framework']
+                target = values['assets']['targets'][framework][values['key']]
+                if change == 'source': plan['source']['commit'] = 'f' * 40
+                elif change == 'root': root['project'] = 'src/Wrong.csproj'
+                elif change == 'tfm': values['framework'] = 'net7.0'
+                elif change == 'version': plan['prerequisites'][0]['version'] = '9.0.0'
+                elif change in ('flags', 'override'): plan['inventory']['projects'][0]['references_by_framework'][framework]['package_references'][0]['PrivateAssets' if change == 'flags' else 'VersionOverride'] = 'All'
+                elif change == 'snapshot': values['original_policy']['original_assets'] = {}
+                elif change == 'marker': target['build']['build/_._'] = {'raw': 'private'}
+                elif change == 'transitive': target['buildTransitive'] = {'buildTransitive/x.targets': {}}
+                elif change == 'original_transitive': values['original']['targets'][framework][values['key']]['buildTransitive'] = {'buildTransitive/x.targets': {}}
+                elif change == 'original_group': values['original']['targets'][framework][values['key']]['build'] = {'build/_._': {}}
+                elif change == 'incoming': target['dependencies'] = {values['key'].split('/')[0]: '1.0.0'}
+                elif change == 'duplicate': next(iter(values['assets']['targets'][framework].values()))['dependencies'][values['key'].split('/')[0].lower()] = '1.0.0'
+                elif change == 'graph': values['graph'].pop(next(iter(values['graph'])))
+                elif change == 'archive': next(iter(values['catalog'].values()))['archive_sha256'] = 'f' * 64
+                elif change == 'cache': (values['folder'] / next(iter(values['original']['targets'][framework][values['key']]['build']))).write_bytes(b'changed')
+                elif change == 'collision': (values['folder'] / 'build/_._').write_bytes(b'')
+                elif change == 'exclusion': root['metadata']['dependency_groups'][0]['dependencies'][0]['exclude'] = 'BuildTransitive'
+                else:
+                    parent = proof.DIRECT_FLAT_PARENTS[0]; record = values['catalog'][(parent['id'].lower(), parent['version'])]
+                    if change == 'parent_archive': record['archive_sha256'] = 'f' * 64
+                    elif change == 'parent_group': record['groups'][0]['framework'] = 'net7.0'
+                    elif change == 'parent_edge': record['groups'][0]['dependencies'][0]['range'] = '[9.0.0, )'
+                    elif change == 'parent_range': values['graph'][parent['id'].lower()]['dependencies']['Serilog'] = '9.0.0'
+                    elif change == 'missing_parent': values['assets']['targets'][framework].pop(parent['id'] + '/' + parent['version'])
+                with self.subTest(product=product, change=change), self.assertRaises((ValueError, KeyError)):
+                    self.verify_direct(values)
+
     def test_real_shaped_private_override_and_selected_root_flat_exclusion(self):
         for line in ('3.8', '3.9'):
             for witness in ((True, False) if line == '3.8' else (True,)):
@@ -2232,6 +2367,32 @@ class FlatBuildEvidenceTests(unittest.TestCase):
                         self.assertEqual(proof.DEPENDENCY_FLAT_BUILD_ORIGIN if witness else proof.ROOT_FLAT_BUILD_ORIGIN, result['origin'])
                         self.assertEqual('a' * 64, result['provenance']['root_assets_sha256'])
                         if witness: self.assertEqual('b' * 64, result['provenance']['witness_assets_sha256'])
+
+    def test_runtime_proto_root_reuses_both_closed_proofs_on_both_actual_source_lines(self):
+        for line in ('3.8', '3.9'):
+            for witness in (True, False):
+                values = self.fixture(root_id='Elsa.Workflows.Runtime.ProtoActor', witness=witness, line=line)
+                for kind in (('build',) if witness else ('build', 'buildMultiTargeting')):
+                    with self.subTest(line=line, witness=witness, kind=kind):
+                        result = self.verify(values, kind)
+                        self.assertEqual('Elsa.Workflows.Runtime.ProtoActor', result['provenance']['root_id'])
+                        self.assertEqual(values['plan']['inventory']['selected'][0]['project'], result['provenance']['root_project'])
+
+    def test_runtime_proto_rejects_wrong_source_project_incoming_and_sdk_witness(self):
+        for witness in (True, False):
+            for change in ('source', 'project', 'snapshot', 'incoming', 'marker') + (('sdk', 'witness', 'private') if witness else ('flags',)):
+                values = self.fixture(root_id='Elsa.Workflows.Runtime.ProtoActor', witness=witness, line='3.9')
+                root = values['plan']['inventory']['selected'][0]
+                if change == 'source': values['plan']['source']['commit'] = 'f' * 40
+                elif change == 'project': root['project'] = proof.FLAT_BUILD_ROOTS[proof.FLAT_BUILD_ROOT]
+                elif change == 'snapshot': values['original_policy']['original_assets'].pop(root['project'])
+                elif change == 'incoming': values['assets']['targets']['net8.0'][values['key']]['dependencies'] = {values['key'].split('/')[0]: '1.0.0'}
+                elif change == 'marker': values['assets']['targets']['net8.0'][values['key']]['build']['build/_._'] = {'unexpected': 'private'}
+                elif change == 'sdk': values['original_policy']['sdk_projects'][root['project']]['net8.0']['downloads'] = [{'wrong': True}]
+                elif change == 'witness': values['plan']['inventory']['selected'][1]['id'] = 'Elsa.Other'
+                elif change == 'private': values['original']['project']['frameworks']['net8.0']['dependencies']['Grpc.Tools']['suppressParent'] = 'None'
+                elif change == 'flags': root['metadata']['dependency_groups'][0]['dependencies'][1]['exclude'] = 'BuildTransitive'
+                with self.subTest(witness=witness, change=change), self.assertRaises(ValueError): self.verify(values)
 
     def test_registered_39_absent_codegen_declaration_cannot_use_38_root_proof(self):
         values = self.fixture(witness=False, line='3.9')
