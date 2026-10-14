@@ -57,6 +57,38 @@ public sealed class OutputJsonConverterTests
         Assert.Equal("resultVariable", document.RootElement.GetProperty("memoryReference").GetProperty("id").GetString());
     }
 
+    [Theory]
+    [InlineData("""{"typeName":"String","memoryReference":null}""")]
+    [InlineData("""{"typeName":"String"}""")]
+    [InlineData("""{"typeName":"String","memoryReference":"x"}""")]
+    [InlineData("""{"typeName":"String","memoryReference":{"id":5}}""")]
+    [InlineData("""{"typeName":"String","memoryReference":{}}""")]
+    public void When_DeserializeOutputWithNullOrMissingMemoryReference_Then_ReturnsNull(string json)
+    {
+        var result = JsonSerializer.Deserialize<Output<string>>(json, CreateOptions());
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void When_WriteUnboundOutput_Then_DeserializesAsNull()
+    {
+        var options = CreateOptions();
+        var converter = new OutputJsonConverter<string>(SerializationTypeRegistry.CreateDefault());
+        using var stream = new MemoryStream();
+
+        using (var writer = new Utf8JsonWriter(stream))
+        {
+            converter.Write(writer, null, options);
+        }
+
+        using var document = JsonDocument.Parse(stream.ToArray());
+        Assert.Equal(JsonValueKind.Null, document.RootElement.GetProperty("memoryReference").ValueKind);
+
+        var result = JsonSerializer.Deserialize<Output<string>>(stream.ToArray(), options);
+        Assert.Null(result);
+    }
+
     private static JsonSerializerOptions CreateOptions() => new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
