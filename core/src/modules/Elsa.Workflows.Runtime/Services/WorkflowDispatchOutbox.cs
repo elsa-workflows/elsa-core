@@ -18,5 +18,9 @@ public class WorkflowDispatchOutbox(
 
         await store.SaveAsync(item, cancellationToken);
         workflowExecutionContext.AddWorkflowDispatchOutboxItem(item.Id);
+
+        // Lets a dispatching activity cancelled later in this burst withdraw the child before it is ever created.
+        if (item.WorkflowDefinitionCommand?.InstanceId is { Length: > 0 } childInstanceId)
+            workflowExecutionContext.AddPendingChildDispatch(childInstanceId, item.Id);
     }
 }

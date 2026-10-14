@@ -97,3 +97,47 @@ public class DispatchAndWaitForFinishingChildWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder builder) => builder.Root = DispatchAndWaitInForkWorkflow.CreateFork(nameof(FinishingChildWorkflow));
 }
+
+/// <summary>
+/// A parent that dispatches <see cref="BlockingChildWorkflow"/> and waits for it on one fork branch, beside a branch that
+/// completes in the same burst. The fork waits for any branch, so the waiting <see cref="DispatchWorkflow"/> is cancelled in
+/// the burst that dispatched its child, before that child exists anywhere but in a pending dispatch.
+/// </summary>
+public class DispatchAndWaitBesideCompletingBranchWorkflow : WorkflowBase
+{
+    protected override void Build(IWorkflowBuilder builder) => builder.Root = CreateFork();
+
+    /// <summary>The fork that waits for the child on one branch while the other branch completes at once.</summary>
+    public static Fork CreateFork() => new()
+    {
+        JoinMode = ForkJoinMode.WaitAny,
+        Branches =
+        {
+            new DispatchWorkflow
+            {
+                WorkflowDefinitionId = new(nameof(BlockingChildWorkflow)),
+                WaitForCompletion = new(true)
+            },
+            new WriteLine("Sibling branch completed")
+        }
+    };
+}
+
+/// <summary>
+/// The <see cref="DispatchAndWaitBesideCompletingBranchWorkflow"/> fork, preceded by a fire-and-forget dispatch of
+/// <see cref="FireAndForgetChildWorkflow"/> in the same burst.
+/// </summary>
+public class FireAndForgetThenDispatchAndWaitBesideCompletingBranchWorkflow : WorkflowBase
+{
+    protected override void Build(IWorkflowBuilder builder)
+    {
+        builder.Root = new Sequence
+        {
+            Activities =
+            {
+                new DispatchWorkflow { WorkflowDefinitionId = new(nameof(FireAndForgetChildWorkflow)) },
+                DispatchAndWaitBesideCompletingBranchWorkflow.CreateFork()
+            }
+        };
+    }
+}
