@@ -27,6 +27,8 @@ export interface SecretModel {
   createdAt: string;
   updatedAt?: string | null;
   expiresAt?: string | null;
+  /** The current version's values for the fields its store declared. Only returned by `GET /secrets/{name}`. */
+  metadata?: Record<string, string>;
 }
 
 export interface CreateSecretRequest {
@@ -76,12 +78,36 @@ export interface ListSecretsResponse {
 /** `SecretStoreCapabilities` is a [Flags] enum; it arrives as a comma-separated string or a number. */
 export type SecretStoreCapabilities = string | number;
 
+/** What editor to render for a store field; mirrors `Elsa.Secrets.Models.SecretStoreFieldKind`. */
+export type SecretStoreFieldKind = "Text" | "Secret" | "Url" | "Select";
+
+/**
+ * A per-secret value a store needs in order to locate or write its material, such as a configuration key or a vault name.
+ * Values are submitted through `metadata`, keyed by `name`.
+ */
+export interface SecretStoreFieldDescriptor {
+  name: string;
+  displayName: string;
+  description: string;
+  kind: SecretStoreFieldKind;
+  required: boolean;
+  placeholder?: string | null;
+  defaultValue?: string | null;
+  options: string[];
+}
+
 export interface SecretStoreDescriptor {
   name: string;
   displayName: string;
   description: string;
   capabilities: SecretStoreCapabilities;
   isReadOnly: boolean;
+  /** Absent on servers predating store-declared fields; use `storeFields()` rather than reading this directly. */
+  fields?: SecretStoreFieldDescriptor[];
+  /** Absent on older servers; use `storeRequiresValue()`. */
+  requiresValue?: boolean;
+  /** Store-declared type pairings. The server already folds these into each type's `supportedStoreNames`. */
+  supportedTypeNames?: string[];
 }
 
 export interface SecretTypeDescriptor {
@@ -127,6 +153,34 @@ export interface SecretReference {
 export const SECRET_EXPRESSION_TYPE = "Secret";
 
 const CAPABILITY_BITS: Record<string, number> = { None: 0, Read: 1, Write: 2, Delete: 4, Test: 8, ExportEncrypted: 16, Versioned: 32 };
+
+/**
+ * The fields a store needs. Older servers do not declare any, so the one store that needed a field before this was
+ * declarative — `configuration` — gets its descriptor synthesized here, which keeps this studio working against them.
+ */
+export function storeFields(store: SecretStoreDescriptor | undefined): SecretStoreFieldDescriptor[] {
+  if (!store) return [];
+  if (store.fields) return store.fields;
+  if (store.name !== "configuration") return [];
+  return [
+    {
+      name: "configurationKey",
+      displayName: "Configuration key",
+      description: "The server reads the value from this configuration key; nothing is stored in the database.",
+      kind: "Text",
+      required: true,
+      placeholder: "Smtp:Password",
+      options: [],
+    },
+  ];
+}
+
+/** Whether a store captures a secret value. Falls back to the pre-descriptor rule for older servers. */
+export function storeRequiresValue(store: SecretStoreDescriptor | undefined): boolean {
+  if (!store) return false;
+  if (store.requiresValue !== undefined) return store.requiresValue;
+  return !store.isReadOnly && hasCapability(store.capabilities, "Write");
+}
 
 export function hasCapability(capabilities: SecretStoreCapabilities | undefined, capability: keyof typeof CAPABILITY_BITS): boolean {
   if (capabilities === undefined) return false;

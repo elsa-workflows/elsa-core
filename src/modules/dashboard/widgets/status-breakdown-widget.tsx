@@ -26,7 +26,13 @@ export function StatusBreakdownWidget({ range }: { range: DashboardRange }) {
     : [];
 
   return (
-    <WidgetCard title="Instances by status" description={capability === "fallback" ? "All time" : RANGE_LABELS[range]} isLoading={isLoading} error={error}>
+    <WidgetCard
+      title="Instances by status"
+      description={capability === "fallback" ? "All time" : RANGE_LABELS[range]}
+      isLoading={isLoading}
+      error={error}
+      contentClassName="flex flex-col justify-center gap-3"
+    >
       <DonutChart slices={slices} centerLabel="instances" />
       <SourceNote capability={capability}>Counts cover all instances; the Dashboard API would scope them to the selected range.</SourceNote>
     </WidgetCard>

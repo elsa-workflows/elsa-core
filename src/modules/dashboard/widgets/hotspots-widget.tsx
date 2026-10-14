@@ -38,6 +38,7 @@ export function WorkflowHotspotsWidget({ range }: { range: DashboardRange }) {
       isLoading={hotspots.isLoading}
       error={hotspots.error}
       skeleton={<LinesSkeleton lines={5} />}
+      scroll
       contentClassName="px-0"
     >
       {items.length === 0 ? (

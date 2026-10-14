@@ -46,8 +46,9 @@ function fromInstance(i: WorkflowInstanceSummary): ActivityRow {
 
 /** `GET /dashboard/recent-activity`, or the 10 newest instances from the core list endpoint. */
 export function RecentActivityWidget({ range }: { range: DashboardRange }) {
-  const activity = useRecentActivity(range);
-  const fallback = useFallbackRecentInstances();
+  // Enough rows to fill the fixed card height on a busy server; the list scrolls past that.
+  const activity = useRecentActivity(range, 14);
+  const fallback = useFallbackRecentInstances(14);
   const capability = activity.capability;
   const source = capability === "fallback" ? fallback : activity;
   const rows: ActivityRow[] = capability === "fallback" ? (fallback.data ?? []).map(fromInstance) : (activity.data?.items ?? []).map(fromApi);
@@ -64,6 +65,7 @@ export function RecentActivityWidget({ range }: { range: DashboardRange }) {
       isLoading={source.isLoading}
       error={source.error}
       skeleton={<LinesSkeleton lines={6} />}
+      scroll
       contentClassName="flex flex-col gap-3"
     >
       {rows.length === 0 ? (

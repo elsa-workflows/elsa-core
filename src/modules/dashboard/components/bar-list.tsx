@@ -13,7 +13,7 @@ export interface BarListRow {
 }
 
 /** Horizontal bar list; the longest bar fills the row. Good for "per workflow" comparisons. */
-export function BarList({ rows, className, color = "var(--primary)" }: { rows: BarListRow[]; className?: string; color?: string }) {
+export function BarList({ rows, className, color = "var(--status-success)" }: { rows: BarListRow[]; className?: string; color?: string }) {
   const max = Math.max(1, ...rows.map((r) => r.value));
   return (
     <ol className={cn("flex flex-col gap-2", className)}>
@@ -26,8 +26,18 @@ export function BarList({ rows, className, color = "var(--primary)" }: { rows: B
             </span>
             <div className="relative h-4 overflow-hidden rounded-full bg-muted">
               <div className="absolute inset-y-0 left-0 flex overflow-hidden rounded-full" style={{ width, background: color }}>
-                {r.segments?.map((seg) => (
-                  <span key={seg.label} title={`${seg.label}: ${seg.value}`} style={{ width: `${r.value ? (seg.value / r.value) * 100 : 0}%`, background: seg.color }} />
+                {r.segments?.map((seg, i) => (
+                  <span
+                    key={seg.label}
+                    title={`${seg.label}: ${seg.value}`}
+                    style={{
+                      width: `${r.value ? (seg.value / r.value) * 100 : 0}%`,
+                      background: seg.color,
+                      // A 2px gap in the surface colour separates touching segments; a stroke around
+                      // them would add ink that is not data.
+                      boxShadow: i < (r.segments?.length ?? 0) - 1 ? "inset -2px 0 0 var(--card)" : undefined,
+                    }}
+                  />
                 ))}
               </div>
             </div>

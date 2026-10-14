@@ -3,6 +3,15 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { ErrorAlert } from "@/components/common/error-alert";
 import type { DashboardRange, DashboardWidget, DashboardZone } from "@/lib/modules/types";
+import { cn } from "@/lib/utils";
+
+/**
+ * Row heights for the zones that hold list widgets. Fixing them is what stops a card from growing
+ * with its row count: the list scrolls inside the card, and the columns beside it stay aligned.
+ * Below `lg` the rows stack and size to content, where a scroll-inside-a-scroll would be worse.
+ */
+const PRIMARY_ROW_HEIGHT = "lg:h-[21rem]";
+const ACTIVITY_ROW_HEIGHT = "lg:h-[34rem]";
 
 /**
  * Lays widgets out by zone:
@@ -40,7 +49,7 @@ export function DashboardZones({ widgets, range }: { widgets: DashboardWidget[];
       )}
       <Stack widgets={trend} range={range} label="Trends" />
       {primary.length > 0 && (
-        <section aria-label="Primary" className="grid gap-4 lg:grid-cols-2">
+        <section aria-label="Primary" className={cn("grid gap-4 lg:grid-cols-2", PRIMARY_ROW_HEIGHT)}>
           {primary.map((w) => (
             <WidgetBoundary key={w.id} id={w.id}>
               <w.component range={range} />
@@ -49,15 +58,15 @@ export function DashboardZones({ widgets, range }: { widgets: DashboardWidget[];
         </section>
       )}
       {(activity.length > 0 || side.length > 0) && (
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className={cn("grid gap-4 lg:grid-cols-3", ACTIVITY_ROW_HEIGHT)}>
           {activity.length > 0 && (
-            <div className={side.length > 0 ? "lg:col-span-2" : "lg:col-span-3"}>
-              <Stack widgets={activity} range={range} label="Activity" />
+            <div className={cn("min-h-0", side.length > 0 ? "lg:col-span-2" : "lg:col-span-3")}>
+              <Stack widgets={activity} range={range} label="Activity" fill />
             </div>
           )}
           {side.length > 0 && (
-            <div className={activity.length > 0 ? "lg:col-span-1" : "lg:col-span-3"}>
-              <Stack widgets={side} range={range} label="Findings" />
+            <div className={cn("min-h-0", activity.length > 0 ? "lg:col-span-1" : "lg:col-span-3")}>
+              <Stack widgets={side} range={range} label="Findings" fill />
             </div>
           )}
         </div>
@@ -67,14 +76,17 @@ export function DashboardZones({ widgets, range }: { widgets: DashboardWidget[];
   );
 }
 
-function Stack({ widgets, range, label }: { widgets: DashboardWidget[]; range: DashboardRange; label: string }) {
+/** `fill` stretches the stack to its row, letting the last widget absorb whatever height is left. */
+function Stack({ widgets, range, label, fill }: { widgets: DashboardWidget[]; range: DashboardRange; label: string; fill?: boolean }) {
   if (widgets.length === 0) return null;
   return (
-    <section aria-label={label} className="flex flex-col gap-4">
-      {widgets.map((w) => (
-        <WidgetBoundary key={w.id} id={w.id}>
-          <w.component range={range} />
-        </WidgetBoundary>
+    <section aria-label={label} className={cn("flex flex-col gap-4", fill && "lg:h-full")}>
+      {widgets.map((w, i) => (
+        <div key={w.id} className={cn("min-h-0", fill && i === widgets.length - 1 && "lg:flex-1")}>
+          <WidgetBoundary id={w.id}>
+            <w.component range={range} />
+          </WidgetBoundary>
+        </div>
       ))}
     </section>
   );

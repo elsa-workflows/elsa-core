@@ -18,6 +18,7 @@ export function WidgetCard({
   skeleton,
   className,
   contentClassName,
+  scroll,
   children,
 }: {
   title: ReactNode;
@@ -29,6 +30,11 @@ export function WidgetCard({
   skeleton?: ReactNode;
   className?: string;
   contentClassName?: string;
+  /**
+   * Scrolls the content instead of letting it set the card's height. Zones give list widgets a fixed
+   * height so a dashboard keeps the same shape whether a server has three workflows or three hundred.
+   */
+  scroll?: boolean;
   children?: ReactNode;
 }) {
   return (
@@ -41,7 +47,7 @@ export function WidgetCard({
         {description && <CardDescription>{description}</CardDescription>}
         {action && <CardAction>{action}</CardAction>}
       </CardHeader>
-      <CardContent className={cn("flex-1", contentClassName)}>
+      <CardContent className={cn("min-h-0 flex-1", scroll && "overflow-y-auto overscroll-contain", contentClassName)}>
         {error ? <ErrorAlert error={error} title="Could not load" /> : isLoading ? (skeleton ?? <LinesSkeleton />) : children}
       </CardContent>
     </Card>
