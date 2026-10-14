@@ -10,15 +10,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Field } from "@/components/common/field";
 import { describeError } from "@/components/common/error-alert";
 import { href } from "@/lib/modules/router";
-import { emptyContainer } from "@/modules/designer";
+import { emptyContainer, FLOW_TYPES } from "@/modules/designer";
 import { cn } from "@/lib/utils";
-import { GitBranch, ListOrdered, Workflow } from "lucide-react";
 
-const ROOT_TYPES = [
-  { type: "Elsa.Flowchart", label: "Flowchart", description: "Free-form graph of steps joined by outcomes.", icon: Workflow },
-  { type: "Elsa.Sequence", label: "Sequence", description: "Steps that run one after another.", icon: ListOrdered },
-  { type: "Elsa.StateMachine", label: "State machine", description: "Named states with trigger-driven transitions.", icon: GitBranch },
-] as const;
+/** Shared with the branch-slot chooser, so picking a flow reads the same in both places. */
+const ROOT_TYPES = FLOW_TYPES;
 import { useWorkflowDefinitionMutations } from "../hooks";
 import { WorkflowDefinitionRoutes } from "../routes";
 
@@ -26,7 +22,7 @@ import { WorkflowDefinitionRoutes } from "../routes";
 export function CreateWorkflowDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [rootType, setRootType] = useState<(typeof ROOT_TYPES)[number]["type"]>("Elsa.Flowchart");
+  const [rootType, setRootType] = useState<string>(ROOT_TYPES[0].type);
   const { save } = useWorkflowDefinitionMutations();
   const router = useRouter();
 
