@@ -116,6 +116,38 @@ describe("buildJournalSpans", () => {
   });
 });
 
+describe("records missing their identifiers", () => {
+  /** The types declare nodeId and activityInstanceId as required; a server that disagrees must not take the panel down. */
+  const strip = (records: WorkflowExecutionLogRecord[], ...fields: (keyof WorkflowExecutionLogRecord)[]) =>
+    records.map((r) => {
+      const copy = { ...r };
+      for (const f of fields) delete (copy as Record<string, unknown>)[f];
+      return copy;
+    });
+
+  it("still groups by activity when nodeId is absent", () => {
+    const roots = buildJournalSpans(strip(sampleJournal(), "nodeId"));
+
+    // No paths to nest by, so every span is a root -- but the events of one activity stay together.
+    expect(countSpans(roots)).toBe(4);
+    expect(roots).toHaveLength(4);
+    expect(roots.every((r) => r.children.length === 0)).toBe(true);
+  });
+
+  it("falls back to the activity id when both identifiers are absent", () => {
+    const roots = buildJournalSpans(strip(sampleJournal(), "nodeId", "activityInstanceId"));
+
+    // One span per activity id, not one span for the entire journal.
+    expect(roots.map((r) => r.activityId)).toEqual(["Workflow1", "flowchart1", "start", "review"]);
+  });
+
+  it("degrades to one span per event when nothing identifies the activity", () => {
+    const records = strip(sampleJournal(), "nodeId", "activityInstanceId", "activityId");
+
+    expect(countSpans(buildJournalSpans(records))).toBe(records.length);
+  });
+});
+
 describe("wait time", () => {
   it("separates time spent suspended from time spent running", () => {
     const roots = buildJournalSpans(sampleJournal());

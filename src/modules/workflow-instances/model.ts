@@ -198,9 +198,11 @@ export function buildJournalSpans(records: WorkflowExecutionLogRecord[]): Journa
   const byKey = new Map<string, WorkflowExecutionLogRecord[]>();
 
   for (const record of ordered) {
-    // Without an activity instance id the node path is the best available identity; a looping
-    // activity then folds into one span, which is still better than one row per event.
-    const key = record.activityInstanceId || record.nodeId;
+    // Identity, best first. The type declares the first two as required, but that is an assumption
+    // about the server, not a guarantee: falling through to the activity id folds a looping activity
+    // into one span, and to the record id gives one span per event -- the list this replaced. Either
+    // degradation is local; keying everything as `undefined` would collapse the whole journal to one row.
+    const key = record.activityInstanceId || record.nodeId || record.activityId || record.id;
     const group = byKey.get(key);
     if (group) group.push(record);
     else byKey.set(key, [record]);
@@ -250,15 +252,16 @@ function resolveWaitTime(span: JournalSpan): number | undefined {
   return span.suspendedMs;
 }
 
-function parentNodeId(nodeId: string) {
-  const at = nodeId.lastIndexOf(":");
-  return at === -1 ? undefined : nodeId.slice(0, at);
+function parentNodeId(nodeId: string | undefined) {
+  const at = nodeId?.lastIndexOf(":") ?? -1;
+  return at === -1 ? undefined : nodeId!.slice(0, at);
 }
 
 function nestSpans(spans: JournalSpan[]): JournalSpan[] {
   const byInstanceId = new Map(spans.filter((s) => s.activityInstanceId).map((s) => [s.activityInstanceId!, s]));
   const byNodeId = new Map<string, JournalSpan[]>();
   for (const span of spans) {
+    if (!span.nodeId) continue;
     const siblings = byNodeId.get(span.nodeId);
     if (siblings) siblings.push(span);
     else byNodeId.set(span.nodeId, [span]);
