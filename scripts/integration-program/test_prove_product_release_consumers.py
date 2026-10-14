@@ -6,6 +6,7 @@ from datetime import datetime, timedelta, timezone
 import io
 import json
 import os
+import shutil
 import subprocess
 from pathlib import Path
 import sys
@@ -1790,6 +1791,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         receipt, _, output, _ = self.run_private_consumer(retire_caches=True, command_error='build')
         self.assertFalse(receipt['success'])
         self.assertEqual([], receipt['coverage'])
+        self.assertEqual({'id': 'Elsa.Studio.Core', 'framework': 'net8.0'}, receipt['focus'])
         name = metadata.sha256(b'Elsa.Studio.Core/net8.0')[:16]
         cell = output / 'private' / name
         self.assertTrue((cell / 'packages').is_dir())
@@ -1801,10 +1803,19 @@ class SelectedProductConsumerTests(unittest.TestCase):
         receipt, _, output, _ = self.run_private_consumer(retire_caches=True, command_error='run')
         self.assertFalse(receipt['success'])
         self.assertEqual([], receipt['runtime'])
+        self.assertEqual({'id': 'Elsa.Studio.Core', 'framework': 'net8.0'}, receipt['focus'])
         cell = output / 'private/runtime-net8.0'
         self.assertTrue((cell / 'packages').is_dir())
         self.assertTrue((cell / 'discovery/packages').is_dir())
         self.assertFalse((cell / 'cell-proof.private.json').exists())
+
+    def test_aggregate_or_runtime_setup_failure_does_not_retain_last_compile_focus(self):
+        for target, failure in (('validate_ledger', 'ledger'), ('runtime_contract', 'contract')):
+            with self.subTest(target=target), patch.object(proof, target, side_effect=ValueError('injected_' + failure)):
+                receipt, _, output, _ = self.run_private_consumer(command_error=failure)
+                self.assertFalse(receipt['success'])
+                self.assertNotIn('focus', receipt)
+            shutil.rmtree(output)
 
     def test_retirement_failure_cannot_report_complete_acceptance(self):
         """Verify retirement failure cannot report complete acceptance."""

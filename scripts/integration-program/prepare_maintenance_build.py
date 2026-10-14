@@ -1010,6 +1010,8 @@ def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version:
     found = set()
     receipts = []
     producer_cache = {'archive_inspector': inspector, 'source_commit': row['commit']}
+    if context is not None:
+        context.clear()
     with tempfile.TemporaryDirectory(prefix='maintenance-symbols-') as temporary:
         for path in sorted(artifacts.glob('*.nupkg')):
             with zipfile.ZipFile(path) as package:
@@ -1019,7 +1021,6 @@ def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version:
                 found.add(identifier.casefold())
                 policy = expected[identifier.casefold()]
                 if context is not None:
-                    context.pop('framework', None)
                     context.update(package=policy['id'])
                 require(nuspec.findtext('version') == version, 'Packed version mismatch')
                 repository = nuspec.find('repository')
@@ -1108,6 +1109,8 @@ def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version:
                                     'checksum_algorithm', 'declared_checksum', 'normalized_checksum', 'pdb_sha256', 'pdb_size')}, 'assembly_version': details['assembly_version'],
                                 'informational_version': details['informational_version'],
                                 **source_evidence, **({'symbol_package': False} if symbol_package is None else {})})
+                            if context is not None:
+                                context.pop('framework', None)
                 receipts.append({'id': identifier, 'version': version, 'frameworks': frameworks,
                     'assembly_name': policy['assembly_name'], 'include_build_output': policy['include_build_output'],
                     'satellites': policy['satellites'],
@@ -1116,6 +1119,8 @@ def verify_artifacts(artifacts: Path, inventory: list[dict], row: dict, version:
                         for asset in policy.get('expected_sdk_assets', [])],
                     'files': [{'name': p.name, 'sha256': digest(p.read_bytes()), 'size': p.stat().st_size}
                               for p in (path, symbols_path) if p.exists()]})
+                if context is not None:
+                    context.clear()
     require(found == produced, 'Missing evaluated packages')
     expected_files = {f['name'] for p in receipts for f in p['files']}
     require({p.name for p in artifacts.iterdir()} == expected_files, 'Unexpected artifact files')

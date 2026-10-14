@@ -461,7 +461,8 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
         self.plan = {'product': 'core', 'line': '3.8', 'requested_version': '3.8.5',
                      'controller': self.identity, 'npm': None,
                      'source': {'product': 'core', 'line': '3.8', 'commit': 'c' * 40, 'tree': 'd' * 40},
-                     'inventory': {'selected': [{'id': 'Elsa.Example', 'frameworks': ['net8.0', 'net9.0']}],
+                     'inventory': {'selected': [{'id': 'Elsa.Example', 'project': 'src/Elsa.Example.csproj',
+                         'frameworks': ['net8.0', 'net9.0']}],
                          'release_recipe': {'solution': 'Elsa.sln', 'sha256': metadata.sha256(b'solution'),
                          'workflow': 'packages.yml', 'workflow_sha256': metadata.sha256(b'workflow')}}}
         self.inner = {'schema': 1, 'success': False, 'published': False, 'maintenance_refs_activated': False,
@@ -689,6 +690,47 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
         self.assertNotIn('artifact_proof', receipt)
         for private in ('inventory_diagnostics', 'command_count', '/private/secret', 'build/_build.csproj'):
             self.assertNotIn(private, json.dumps(result) + json.dumps(receipt))
+
+    def test_generic_package_failure_retains_only_admitted_package_and_optional_framework(self):
+        for index, focus in enumerate(({'package': 'Elsa.Example'},
+                                       {'package': 'Elsa.Example', 'framework': 'net9.0'})):
+            with self.subTest(focus=focus):
+                self.output = self.root / f'focus-{index}'
+                self.inner.update(stage='package-verification', focus=focus,
+                    error={'code': 'package-verification-failed', 'reason': 'sdk-dependency-groups-mismatch'})
+                result, receipt = self.invoke()
+                self.assertEqual(focus, result['product_recipe_failure']['focus'])
+                self.assertEqual(result['product_recipe_failure'], receipt['product_recipe_failure'])
+                self.assertFalse(receipt['success'])
+                self.assertNotIn('/private/secret', json.dumps(result))
+
+    def test_invalid_optional_package_focus_preserves_fixed_recipe_diagnostic(self):
+        invalid = [None, [], True, {}, {'package': 'elsa.example'}, {'package': 'Private.ValidIdentifier'},
+            {'package': 'Elsa.Example', 'framework': 'net10.0'}, {'package': True},
+            {'package': 'Elsa.Example', 'framework': []},
+            {'package': 'Elsa.Example', 'document': '/private/secret'}]
+        for index, focus in enumerate(invalid):
+            with self.subTest(focus=focus):
+                self.output = self.root / f'invalid-focus-{index}'
+                self.inner.update(stage='package-verification', focus=focus,
+                    error={'code': 'package-verification-failed', 'reason': 'sdk-dependency-groups-mismatch'})
+                result, receipt = self.invoke()
+                detail = result['product_recipe_failure']
+                self.assertNotIn('focus', detail)
+                self.assertEqual('sdk-dependency-groups-mismatch', detail['reason'])
+                self.assertEqual(detail, receipt['product_recipe_failure'])
+                self.assertNotIn('/private/secret', json.dumps(result))
+
+    def test_optional_focus_is_closed_at_recipe_projection_boundary(self):
+        detail = {'status': 'observed', 'stage': 'package-verification',
+                  'reason': 'sdk-dependency-groups-mismatch', 'receipt_sha256': 'a' * 64}
+        selected = self.plan['inventory']['selected']
+        for focus in (None, {'package': 'private-canary'}, {'package': 'Elsa.Example', 'raw': '/private/secret'}):
+            with self.subTest(focus=focus):
+                self.assertEqual(detail, artifacts.validate_recipe_failure(detail | {'focus': focus}, selected))
+        for stage in ('inventory', 'sdk-metadata'):
+            value = detail | {'stage': stage, 'focus': {'package': 'Elsa.Example'}}
+            self.assertEqual(detail | {'stage': stage}, artifacts.validate_recipe_failure(value, selected))
 
     def source_producer_failure(self):
         """Change the private fixture to a package source-provenance verification failure."""

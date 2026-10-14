@@ -18,6 +18,7 @@ import prove_product_release_consumers as consumer
 import selected_control_seal as seal
 import selected_control_transport as transport
 from prove_consolidated_packages import require
+from selected_product_diagnostics import selected_focus
 
 SCOPE = 'selected-product-failure-diagnostics-only-not-control-proof'
 
@@ -52,6 +53,11 @@ def project(receipt: dict, digest: str, role: str, plan: dict, plan_hash: str, c
         'source': {key: plan['source'][key] for key in ('commit', 'tree')}, 'controller': controller,
         'execution': {'id': receipt['execution']['id'], 'role': role, 'context': execution.hosted_context(controller)},
         'stage': receipt['stage'], 'failure_code': receipt['stage'] + '-failed'}
+    if role == 'consumer' and receipt['stage'] in ('selected-restore-compile', plan['product'] + '-runtime-contract'):
+        focus = selected_focus(receipt.get('focus'), plan['inventory']['selected'],
+                               package_key='id', framework_required=True)
+        if focus is not None:
+            result['focus'] = focus
     detail = {'status': 'unavailable'}
     try:
         if role == 'artifact' and receipt['stage'] == 'original-product-recipe':

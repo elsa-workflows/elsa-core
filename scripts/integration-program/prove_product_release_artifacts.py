@@ -23,6 +23,7 @@ import product_artifact_execution as artifact_execution
 from prove_consolidated_packages import archive_names, dependency_groups, framework_reference_groups, metadata as nuspec, require, run
 import prove_historical_studio_npm_pair as historical
 from product_artifact_execution import selected_execution
+from selected_product_diagnostics import selected_focus
 
 ROOT = Path(__file__).resolve().parents[2]
 PLANNER_INPUTS = metadata.PLANNER_INPUTS
@@ -115,7 +116,14 @@ def validate_recipe_failure(value: dict, selected: list[dict] | None = None) -> 
         result['source_producer_failure'] = {'package': packages[0]['id'],
             'framework': next(framework for framework in packages[0]['frameworks'] if framework == detail['framework']),
             'check': detail['check']}
-    require(set(value) == set(result), 'diagnostic_invalid')
+        require(set(value) == set(result), 'diagnostic_invalid')
+    else:
+        if value['stage'] == 'package-verification':
+            focus = selected_focus(value.get('focus'), selected, package_key='package')
+            if focus is not None:
+                result['focus'] = focus
+        # Optional legacy/malformed focus cannot erase the fixed diagnostic.
+        require(set(value) - {'focus'} == set(result) - {'focus'}, 'diagnostic_invalid')
     return result
 
 
@@ -183,6 +191,10 @@ def recipe_failure_diagnostics(output: Path, plan: dict, controller: dict, execu
             result.update(command_step=step, process=commands[-1]['process'], diagnostics=commands[-1]['diagnostics'])
         if stage == 'package-verification' and error['reason'] == 'source-producer-unverified':
             result['source_producer_failure'] = value['focus'] | {'check': error['source_producer_check']}
+        elif stage == 'package-verification':
+            focus = selected_focus(value.get('focus'), plan['inventory']['selected'], package_key='package')
+            if focus is not None:
+                result['focus'] = focus
         return validate_recipe_failure(result, plan['inventory']['selected'])
     except Exception:
         return {'status': 'unavailable'}

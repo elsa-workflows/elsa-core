@@ -937,6 +937,7 @@ def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, rec
                 result['focus'] = {'id': package['id'], 'framework': framework}
                 name = metadata.sha256((package['id'] + '/' + framework).encode())[:16]
                 result['coverage'].append(prove_cell(package, framework, name))
+                result.pop('focus', None)
         validate_ledger(plan, result['coverage'])
         result['stage'] = plan['product'] + '-runtime-contract'
         contract = runtime_contract(plan)
@@ -945,7 +946,7 @@ def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, rec
         for framework in package['policy']['frameworks']:
             result['focus'] = {'id': package['id'], 'framework': framework}
             result['runtime'].append(prove_cell(package, framework, 'runtime-' + framework, runtime=True))
-        result.pop('focus', None)
+            result.pop('focus', None)
         result.update(success=True, stage='complete', limitations=[
             'Complete selected restore/compile coverage is distinct from representative runtime behavior.',
             contract['limitation']])

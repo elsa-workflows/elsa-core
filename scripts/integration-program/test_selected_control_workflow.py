@@ -2,6 +2,7 @@
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 import base64
+import fnmatch
 import hashlib
 import io
 import json
@@ -133,6 +134,21 @@ class HostedWorkflowContracts(unittest.TestCase):
         self.assertIn('test_selected_control_workflow', optimized.split())
         for command in (normal, optimized):
             self.assertEqual(1, command.split().count('test_selected_core_manifest_hints'))
+
+    def test_native_failure_focus_inputs_trigger_all_consuming_contract_workflows(self):
+        scripts = ['scripts/integration-program/' + name for name in (
+            'selected_product_diagnostics.py', 'test_prepare_maintenance_build.py',
+            'test_prove_product_release_artifacts.py', 'test_prove_product_release_consumers.py',
+            'test_selected_control_workflow.py')]
+        for name in ('product-release-plan.yml', 'package-impact-closure.yml', 'integration-program-tools.yml'):
+            workflow = yaml.safe_load((ROOT / '.github/workflows' / name).read_text())
+            trigger = workflow.get('on', workflow.get(True))
+            paths = trigger['pull_request']['paths']
+            inputs = scripts + ([] if name == 'integration-program-tools.yml' else
+                                ['docs/integration-program/selected-control-seal.md'])
+            for path in inputs:
+                with self.subTest(workflow=name, path=path):
+                    self.assertTrue(any(fnmatch.fnmatchcase(path, pattern) for pattern in paths), path)
 
     def test_selector_full_suite_installs_exact_native_sdk_before_both_modes(self):
         import product_release_metadata as metadata
@@ -702,6 +718,8 @@ else:
                     self.assertEqual('selected-product-failure-diagnostics-only-not-control-proof', projected['scope'])
 
     def test_late_consumer_receipt_over_four_mib_is_projected_without_coverage_or_private_fields(self):
+        selected = self.plan['inventory']['selected'][0]
+        self.consumer['focus'] = {'id': selected['id'], 'framework': selected['frameworks'][0]}
         self.consumer['coverage'] *= 200
         self.assertGreater(len(encoded(self.consumer)), 4 * 1024 ** 2)
         result = self.run_pipeline('consumer')
@@ -711,6 +729,7 @@ else:
         value = json.loads((output / 'consumer.json').read_bytes())
         self.assertEqual({'status': 'unavailable'}, value['dependency_range_failure'])
         self.assertNotIn('coverage', value)
+        self.assertEqual(self.consumer['focus'], value['focus'])
         self.assertNotIn(self.canary, json.dumps(value))
         self.assertLess((output / 'consumer.json').stat().st_size, 4096)
         self.assertEqual('producer\nconsumer\n', (self.root / 'calls').read_text())
@@ -764,6 +783,41 @@ else:
         result = self.run_pipeline('producer')
         self.assertEqual(1, result.returncode)
         self.assertFalse((self.root / 'selected-failure-diagnostics').exists())
+
+    def project_consumer_focus(self, focus, *, stage='selected-restore-compile'):
+        import retain_selected_failure_diagnostics as diagnostics
+        receipt = deepcopy(self.consumer)
+        receipt.update(stage=stage, failure_code=stage + '-failed')
+        if focus is not None:
+            receipt['focus'] = focus
+        controller = {key: self.plan['controller'][key] for key in ('commit', 'tree')}
+        with patch.dict(os.environ, self.environment, clear=True):
+            return diagnostics.project(receipt, 'e' * 64, 'consumer', self.plan,
+                hashlib.sha256(self.plan_bytes).hexdigest(), controller)
+
+    def test_active_selected_focus_survives_compile_and_runtime_failure_projection(self):
+        selected = self.plan['inventory']['selected'][0]
+        focus = {'id': selected['id'], 'framework': selected['frameworks'][0]}
+        for stage in ('selected-restore-compile', 'core-runtime-contract'):
+            with self.subTest(stage=stage):
+                value = self.project_consumer_focus(focus, stage=stage)
+                self.assertEqual(focus, value['focus'])
+                self.assertFalse(value['success'])
+                self.assertNotIn(self.canary, json.dumps(value))
+
+    def test_invalid_or_legacy_consumer_focus_does_not_erase_fixed_diagnostics(self):
+        selected = next(row for row in self.plan['inventory']['selected'] if row['frameworks'] == ['net10.0'])
+        focus = {'id': selected['id'], 'framework': 'net10.0'}
+        invalid = [None, [], True, {}, {'id': selected['id']}, focus | {'id': self.canary},
+            focus | {'id': selected['id'].lower()}, focus | {'framework': 'net8.0'},
+            focus | {'framework': []}, focus | {'id': True}, focus | {'project': self.canary}]
+        for candidate in invalid:
+            with self.subTest(focus=candidate):
+                value = self.project_consumer_focus(candidate)
+                self.assertNotIn('focus', value)
+                self.assertEqual('selected-restore-compile-failed', value['failure_code'])
+                self.assertNotIn(self.canary, json.dumps(value))
+        self.assertNotIn('focus', self.project_consumer_focus(focus, stage='original-external-archive-catalog'))
 
     def test_valid_consumer_range_details_are_bound_to_the_selected_root(self):
         selected = self.plan['inventory']['selected'][0]

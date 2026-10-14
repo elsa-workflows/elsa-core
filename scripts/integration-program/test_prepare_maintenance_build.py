@@ -1378,6 +1378,30 @@ class MaintenanceContracts(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'not evaluated'):
                 maintenance.evaluate_inventory(source, self.row, '3.8.4-proof.42.1', self.root)
 
+    def test_package_focus_is_absent_before_next_archive_and_aggregate_checks(self):
+        policy = self.framework_reference_policy_fixture(symbols=False)
+        for case in ('complete', 'unknown-next-archive', 'missing-inventory', 'extra-file'):
+            with self.subTest(case=case):
+                artifacts = self.write_package_fixture()
+                inventory = [policy]
+                if case == 'unknown-next-archive':
+                    (artifacts / 'z-duplicate.nupkg').write_bytes((artifacts / 'fixture.nupkg').read_bytes())
+                elif case == 'missing-inventory':
+                    inventory = [policy, policy | {'id': 'Missing.Package'}]
+                elif case == 'extra-file':
+                    (artifacts / 'private-extra').write_text('private-canary')
+                context = {'package': 'Previous.Package', 'framework': 'net9.0'}
+                if case == 'complete':
+                    maintenance.verify_artifacts(artifacts, inventory, self.row, '3.8.4-proof.42.1',
+                        maintenance.ROOT, Path('/unused'), self.root, context=context)
+                else:
+                    with self.assertRaises(ValueError):
+                        maintenance.verify_artifacts(artifacts, inventory, self.row, '3.8.4-proof.42.1',
+                            maintenance.ROOT, Path('/unused'), self.root, context=context)
+                self.assertEqual({}, context)
+                for extra in ('z-duplicate.nupkg', 'private-extra'):
+                    (artifacts / extra).unlink(missing_ok=True)
+
     def test_manifest_failure_focus_clears_previous_package_framework_and_reason_is_closed(self):
         """Verify manifest failure focus clears previous package framework and reason is closed."""
         artifacts = self.write_package_fixture()
@@ -1605,13 +1629,24 @@ class MaintenanceContracts(unittest.TestCase):
                     'stamp': 1, 'checksum_algorithm': 'SHA256', 'declared_checksum': 'fixture-checksum',
                     'normalized_checksum': 'fixture-checksum', 'pdb_sha256': hashlib.sha256(symbols).hexdigest(),
                     'pdb_size': len(symbols)}})
+        context = {}
         with patch.object(maintenance, 'run', side_effect=inspect):
-            receipt = maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT, Path('/inspector'), self.root)
+            receipt = maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT,
+                Path('/inspector'), self.root, context=context)
+        self.assertEqual({}, context)
         self.assertEqual(inspected, frameworks)
         self.assertEqual(receipt[0]['frameworks'], frameworks)
         self.assertEqual([symbol['assembly'] for symbol in receipt[0]['symbols']],
                          ['lib/net8.0/Elsa.Studio.Fixture.dll', 'lib/net9.0/Elsa.Studio.Fixture.dll'])
         self.assertTrue(all(symbol['documents'][0]['source'] == 'original-git' for symbol in receipt[0]['symbols']))
+
+        with patch.object(maintenance, 'run', side_effect=inspect), patch.object(maintenance, 'verify_documents',
+                side_effect=[[{'fixture': True}], ValueError('injected framework failure')]):
+            with self.assertRaisesRegex(ValueError, 'injected framework failure'):
+                maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT,
+                    Path('/inspector'), self.root, context=context)
+        self.assertEqual({'package': policy[0]['id'], 'framework': 'net9.0'}, context)
+
         # SDK-evaluated resource satellites have exact emitted bytes but no primary-style PDB.
         source = self.root / 'source'; source.mkdir()
         (source / 'NuGet.Config').write_text('<configuration />')
