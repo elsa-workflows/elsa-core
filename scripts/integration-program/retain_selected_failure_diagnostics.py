@@ -18,7 +18,7 @@ import prove_product_release_consumers as consumer
 import selected_control_seal as seal
 import selected_control_transport as transport
 from prove_consolidated_packages import require
-from selected_product_diagnostics import selected_focus
+from selected_product_diagnostics import selected_focus, prerequisite_failure, original_build_group_failure
 
 SCOPE = 'selected-product-failure-diagnostics-only-not-control-proof'
 
@@ -58,6 +58,13 @@ def project(receipt: dict, digest: str, role: str, plan: dict, plan_hash: str, c
                                package_key='id', framework_required=True)
         if focus is not None:
             result['focus'] = focus
+    prerequisite = prerequisite_failure(receipt.get('prerequisite_failure'), plan, role=role, stage=receipt['stage'])
+    if prerequisite is not None:
+        result['prerequisite_failure'] = prerequisite
+    build_group = original_build_group_failure(receipt.get('original_build_group_failure'), plan,
+                                               receipt.get('focus'), role=role, stage=receipt['stage'])
+    if build_group is not None:
+        result['original_build_group_failure'] = build_group
     detail = {'status': 'unavailable'}
     try:
         if role == 'artifact' and receipt['stage'] == 'original-product-recipe':

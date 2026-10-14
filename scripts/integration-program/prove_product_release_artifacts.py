@@ -23,7 +23,7 @@ import product_artifact_execution as artifact_execution
 from prove_consolidated_packages import archive_names, dependency_groups, framework_reference_groups, metadata as nuspec, require, run
 import prove_historical_studio_npm_pair as historical
 from product_artifact_execution import selected_execution
-from selected_product_diagnostics import selected_focus
+from selected_product_diagnostics import selected_focus, prerequisite_context
 
 ROOT = Path(__file__).resolve().parents[2]
 PLANNER_INPUTS = metadata.PLANNER_INPUTS
@@ -373,7 +373,16 @@ def refresh_remote(plan: dict, source: Path, semantics: planner.Semantics) -> di
     histories += [planner.check_history(identifier, plan['requested_version'], plan['line'],
         observation, semantics, checked, npm=True) for identifier, observation in npm_histories]
     prerequisites = [feeds.prerequisite(edge, semantics, checked) for edge in edges]
-    require(all(row['eligible'] is True for row in histories + prerequisites), 'artifact_fresh_prerequisite_failed')
+    try:
+        require(all(row['eligible'] is True for row in histories + prerequisites), 'artifact_fresh_prerequisite_failed')
+    except ValueError as error:
+        kind, row = next((kind, row) for kind, rows in (('history', histories), ('prerequisite', prerequisites))
+                         for row in rows if row['eligible'] is not True)
+        fields = ('id',) if kind == 'history' else ('consumer', 'project', 'framework', 'id', 'version')
+        error._selected_prerequisite_failure = {'guard': 'artifact_fresh_prerequisite_failed', 'kind': kind,
+            **{key: row.get(key) for key in fields}, 'reason': row.get('reason'),
+            **({'version': plan['requested_version']} if kind == 'history' else {})}
+        raise
     # New history observations may grow; requested version must still be eligible.
     for old, current in zip(plan['prerequisites'], prerequisites):
         before = {row['observation']['sha256'] for row in old['feeds'] if row['eligible']}
@@ -531,8 +540,12 @@ def execute(root: Path, data: bytes, digest: str, output: Path, *, setup_only: b
                                               receipt['preflight']['host_framework'], controller, digest)
         receipt.update(success=True, stage='complete', artifact_proof=True)
         return receipt
-    except Exception:
+    except Exception as error:
         receipt['failure_code'] = receipt['stage'] + '-failed'
+        detail = getattr(error, '_selected_prerequisite_failure', None)
+        if type(error) is ValueError and str(error) == 'artifact_fresh_prerequisite_failed' and \
+                prerequisite_context(detail, role='artifact', stage=receipt['stage']) is not None:
+            receipt['prerequisite_failure'] = detail
         if receipt['stage'] == 'original-product-recipe' and not producer_completed:
             receipt['product_recipe_failure'] = recipe_failure_diagnostics(
                 output, plan, controller, execution, recipe_source)

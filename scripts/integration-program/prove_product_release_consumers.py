@@ -26,6 +26,7 @@ import selected_extensions_contract as extensions
 import selected_core_consumer as core
 import selected_maintenance_39 as maintenance39
 from selected_consumer_cache_retirement import retire_successful_cell_caches
+from selected_product_diagnostics import prerequisite_context, original_build_group_context
 from selected_product_consumer_metadata import nearest_group
 from product_artifact_execution import selected_execution, validate_selected_execution
 from prove_consolidated_packages import archive_names, dependency_groups, framework_reference_groups, metadata as nuspec, require
@@ -481,10 +482,19 @@ def original_excluded_build_marker(assets: dict, original: dict, framework: str,
     targets = assets['targets'][framework]
     original_targets = original.get('targets', {}).get(framework, {})
     current_target, original_target = targets[key], original_targets.get(key, {})
-    require(original_target.get('type') == 'package' and
-        current_target.get(kind) == original_target.get(kind) == {marker: {}} and
-        not current_target.get('buildTransitive') and not original_target.get('buildTransitive'),
-        'consumer_original_build_group')
+    conditions = (
+        ('original-package-missing', original_target.get('type') == 'package'),
+        ('current-group-mismatch', current_target.get(kind) == {marker: {}}),
+        ('original-group-mismatch', original_target.get(kind) == {marker: {}}),
+        ('current-build-transitive', not current_target.get('buildTransitive')),
+        ('original-build-transitive', not original_target.get('buildTransitive')))
+    try:
+        require(all(matches for _, matches in conditions), 'consumer_original_build_group')
+    except ValueError as error:
+        error._selected_build_group_failure = {'guard': 'consumer_original_build_group', 'id': identifier,
+            'version': version, 'framework': framework, 'kind': kind,
+            'reason': next(reason for reason, matches in conditions if not matches)}
+        raise
     direct = assets.get('project', {}).get('frameworks', {}).get(framework, {}).get('dependencies', {})
     require(type(direct) is dict and len(direct) == 1, 'consumer_original_build_boundary')
     root, dependency = next(iter(direct.items()))
@@ -954,6 +964,14 @@ def execute(root: Path, plan_path: Path, plan_hash: str, receipt_path: Path, rec
     except Exception as error:
         result['failure_code'] = result['stage'] + '-failed'
         result.update(resolution.public_range_failure(error))
+        detail = getattr(error, '_selected_prerequisite_failure', None)
+        if type(error) is ValueError and str(error) == 'artifact_fresh_prerequisite_failed' and \
+                prerequisite_context(detail, role='consumer', stage=result['stage']) is not None:
+            result['prerequisite_failure'] = detail
+        detail = getattr(error, '_selected_build_group_failure', None)
+        if type(error) is ValueError and str(error) == 'consumer_original_build_group' and \
+                original_build_group_context(detail, role='consumer', stage=result['stage'], product=plan['product']) is not None:
+            result['original_build_group_failure'] = detail
         raise
     finally:
         (retained / 'receipt.json').write_text(json.dumps(result, indent=2, sort_keys=True) + '\n')

@@ -137,7 +137,8 @@ class HostedWorkflowContracts(unittest.TestCase):
 
     def test_native_failure_focus_inputs_trigger_all_consuming_contract_workflows(self):
         scripts = ['scripts/integration-program/' + name for name in (
-            'selected_product_diagnostics.py', 'test_prepare_maintenance_build.py',
+            'selected_product_diagnostics.py', 'retain_selected_failure_diagnostics.py',
+            'prove_product_release_artifacts.py', 'prove_product_release_consumers.py', 'test_prepare_maintenance_build.py',
             'test_prove_product_release_artifacts.py', 'test_prove_product_release_consumers.py',
             'test_selected_control_workflow.py')]
         for name in ('product-release-plan.yml', 'package-impact-closure.yml', 'integration-program-tools.yml'):
@@ -659,6 +660,99 @@ else:
         self.assertEqual(13 if role == 'producer' else 17, control.returncode)
         self.assertNotIn(self.canary.encode(), control.stdout + control.stderr + diagnostic.stdout + diagnostic.stderr)
         return diagnostic
+
+    def specific_context(self, *, prerequisite=False):
+        root = self.plan['inventory']['selected'][0]
+        framework = root['frameworks'][0]
+        self.consumer['focus'] = {'id': root['id'], 'framework': framework}
+        edge = {'consumer': root['id'], 'project': root['project'], 'framework': framework,
+                'id': 'Original.Dependency', 'version': '1.2.3', 'range': '[1.2.3]'}
+        self.plan['prerequisites'] = [edge]
+        if prerequisite:
+            return {'guard': 'artifact_fresh_prerequisite_failed', 'kind': 'prerequisite',
+                    **{key: edge[key] for key in ('consumer', 'project', 'framework', 'id', 'version')},
+                    'reason': 'prerequisite_unavailable'}
+        return {'guard': 'consumer_original_build_group', 'id': edge['id'], 'version': edge['version'],
+                'framework': framework, 'kind': 'build', 'reason': 'original-group-mismatch'}
+
+    def project_specific_context(self, value, *, prerequisite=False, role='consumer', stage=None):
+        import retain_selected_failure_diagnostics as diagnostics
+        stage = stage or ('current-consumer-prerequisites' if prerequisite else 'selected-restore-compile')
+        receipt = deepcopy(self.consumer if role == 'consumer' else self.producer)
+        receipt.update(stage=stage, failure_code=stage + '-failed')
+        field = 'prerequisite_failure' if prerequisite else 'original_build_group_failure'
+        receipt[field] = value
+        controller = {key: self.plan['controller'][key] for key in ('commit', 'tree')}
+        with patch.dict(os.environ, self.environment, clear=True):
+            return diagnostics.project(receipt, 'e' * 64, role, self.plan,
+                                       hashlib.sha256(self.plan_bytes).hexdigest(), controller)
+
+    def test_specific_context_projects_exact_external_selected_and_history_identities(self):
+        value = self.specific_context(prerequisite=True)
+        projected = self.project_specific_context(value, prerequisite=True)
+        self.assertEqual({key: item for key, item in value.items() if key != 'project'}, projected['prerequisite_failure'])
+        self.assertNotIn('project', projected['prerequisite_failure'])
+        value = self.specific_context()
+        self.assertEqual(value, self.project_specific_context(value)['original_build_group_failure'])
+        selected = self.plan['inventory']['selected'][0]
+        value.update(id=selected['id'], version=self.plan['requested_version'])
+        self.assertEqual(value, self.project_specific_context(value)['original_build_group_failure'])
+        history = {'guard': 'artifact_fresh_prerequisite_failed', 'kind': 'history', 'id': selected['id'],
+                   'version': self.plan['requested_version'], 'reason': 'version_reused'}
+        self.assertEqual(history, self.project_specific_context(history, prerequisite=True)['prerequisite_failure'])
+        self.assertEqual(history, self.project_specific_context(history, prerequisite=True,
+                         role='artifact', stage='fresh-prerequisites')['prerequisite_failure'])
+
+    def test_prerequisite_context_survives_actual_failure_only_consumer_upload(self):
+        selected = self.plan['inventory']['selected'][0]
+        detail = {'guard': 'artifact_fresh_prerequisite_failed', 'kind': 'history', 'id': selected['id'],
+                  'version': self.plan['requested_version'], 'reason': 'history_unavailable'}
+        self.consumer.update(stage='current-consumer-prerequisites', failure_code='current-consumer-prerequisites-failed',
+                             prerequisite_failure=detail)
+        result = self.run_pipeline('consumer')
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        projected = json.loads((self.root / 'selected-failure-diagnostics/consumer.json').read_bytes())
+        self.assertEqual(detail, projected['prerequisite_failure'])
+        self.assertFalse(projected['success'])
+        self.assertNotIn(self.canary, json.dumps(projected))
+        self.assertEqual('producer\nconsumer\n', (self.root / 'calls').read_text())
+
+    def test_build_context_survives_actual_failure_only_upload_without_private_canaries(self):
+        selected = self.plan['inventory']['selected'][0]
+        self.consumer['focus'] = {'id': selected['id'], 'framework': selected['frameworks'][0]}
+        detail = {'guard': 'consumer_original_build_group', 'id': selected['id'],
+                  'version': self.plan['requested_version'], 'framework': selected['frameworks'][0],
+                  'kind': 'buildMultiTargeting', 'reason': 'original-group-mismatch'}
+        self.consumer['original_build_group_failure'] = detail
+        result = self.run_pipeline('consumer')
+        self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+        projected = json.loads((self.root / 'selected-failure-diagnostics/consumer.json').read_bytes())
+        self.assertEqual(detail, projected['original_build_group_failure'])
+        self.assertFalse(projected['success'])
+        self.assertNotIn(self.canary, json.dumps(projected))
+        self.assertEqual('producer\nconsumer\n', (self.root / 'calls').read_text())
+
+    def test_specific_context_omits_unadmitted_hostile_unknown_and_wrong_stage_values(self):
+        for prerequisite in (False, True):
+            value = self.specific_context(prerequisite=prerequisite)
+            field = 'prerequisite_failure' if prerequisite else 'original_build_group_failure'
+            changes = [('id', value['id'].lower()), ('id', 'Foreign.Package'), ('version', '9.9.9'),
+                       ('framework', 'NET8.0'), ('reason', 'unreviewed'), ('guard', 'other'),
+                       ('extra', '/private/secret'), ('id', {'nested': '/private/secret'})]
+            if prerequisite: changes += [('consumer', value['consumer'].lower()), ('project', '/private/secret')]
+            for key, item in changes:
+                with self.subTest(prerequisite=prerequisite, key=key, item=item):
+                    altered = value | {key: item}
+                    self.assertNotIn(field, self.project_specific_context(altered, prerequisite=prerequisite))
+            for candidate in (None, [], {'nested': value}, {key: item for key, item in value.items() if key != 'reason'}):
+                with self.subTest(prerequisite=prerequisite, candidate=candidate):
+                    result = self.project_specific_context(candidate, prerequisite=prerequisite)
+                    self.assertNotIn(field, result)
+                    self.assertFalse(result['success'])
+                    self.assertEqual(result['stage'] + '-failed', result['failure_code'])
+            self.assertNotIn(field, self.project_specific_context(value, prerequisite=prerequisite, stage='consumer-setup'))
+            if not prerequisite:
+                self.assertNotIn(field, self.project_specific_context(value, role='artifact', stage='fresh-prerequisites'))
 
     def test_actual_failed_producer_keeps_only_safe_bound_diagnostic_and_original_exit(self):
         result = self.run_pipeline('producer')

@@ -200,6 +200,28 @@ class ProductArtifactAdmissionTests(unittest.TestCase):
             with self.subTest(status=status, age=age), self.assertRaisesRegex(ValueError, 'artifact_fresh_prerequisite_failed'):
                 self.refresh_remote(status=status, age=age)
 
+    def test_refresh_exception_keeps_first_actual_failed_row_without_changing_guard(self):
+        from unittest.mock import Mock
+        selected = self.plan['inventory']['selected'][0]
+        edge = {'consumer': selected['id'], 'project': selected['project'], 'framework': 'net10.0',
+                'id': 'Actual.External', 'range': '[1.2.3]', 'version': '1.2.3'}
+        plan = self.plan | {'npm': None, 'consumer_feed_policy': {}, 'prerequisites': [edge]}
+        for history_failed in (True, False):
+            feed = Mock(policy={})
+            feed.history.return_value = {'id': selected['id'], 'eligible': not history_failed,
+                                         'reason': 'history_unavailable' if history_failed else None}
+            feed.prerequisite.return_value = edge | {'eligible': False, 'reason': 'prerequisite_wrong_version'}
+            with self.subTest(history_failed=history_failed), patch.object(planner, 'FeedMetadata', return_value=feed):
+                with self.assertRaisesRegex(ValueError, '^artifact_fresh_prerequisite_failed$') as caught:
+                    artifacts.refresh_remote(plan, Path('/unused'), object())
+            detail = caught.exception._selected_prerequisite_failure
+            self.assertEqual('history' if history_failed else 'prerequisite', detail['kind'])
+            self.assertEqual(selected['id'] if history_failed else edge['id'], detail['id'])
+            self.assertEqual(plan['requested_version'] if history_failed else edge['version'], detail['version'])
+            self.assertEqual('history_unavailable' if history_failed else 'prerequisite_wrong_version', detail['reason'])
+            self.assertNotIn('feeds', detail)
+            self.assertEqual(1, feed.prefetch.call_count)
+
     def test_selected_retention_rejects_missing_unknown_and_wrong_dependency_archives(self):
         """Verify selected retention rejects missing unknown and wrong dependency archives."""
         with tempfile.TemporaryDirectory() as directory:

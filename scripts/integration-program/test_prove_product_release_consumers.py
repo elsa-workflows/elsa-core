@@ -48,7 +48,8 @@ class SelectedProductConsumerTests(unittest.TestCase):
         cls.addClassCleanup(temporary.cleanup)
         cls.controller_root = Path(temporary.name).resolve()
         def git(*args):
-            return subprocess.check_output(['git', *args], cwd=cls.controller_root, text=True).strip()
+            # This helper touches only the synthetic temporary repository, never author commits.
+            return subprocess.check_output(['git', '-c', 'commit.gpgsign=false', *args], cwd=cls.controller_root, text=True).strip()
         git('init', '-q')
         path = cls.controller_root / 'planner.py'
         path.write_text('immutable planner input')
@@ -1294,6 +1295,29 @@ class SelectedProductConsumerTests(unittest.TestCase):
             with self.subTest(change=change), self.assertRaisesRegex(ValueError, 'consumer_original_build_'):
                 self.verify_empty_build(values)
 
+    def test_original_build_group_failure_keeps_actual_dependency_and_first_mismatch(self):
+        for change, reason in (('type', 'original-package-missing'), ('current', 'current-group-mismatch'),
+                               ('original', 'original-group-mismatch'), ('current_transitive', 'current-build-transitive'),
+                               ('original_transitive', 'original-build-transitive'), ('multiple', 'original-package-missing')):
+            values = self.original_flat_build_fixture()
+            key, framework = values['key'], values['framework']
+            current = values['assets']['targets'][framework][key]
+            original = values['original_assets']['targets'][framework][key]
+            if change == 'multiple':
+                original['type'] = 'project'
+                current['build']['build/_._'] = {'unexpected': False}
+                original.pop('build')
+            elif change == 'type': original['type'] = 'project'
+            elif change == 'current': current['build']['build/_._'] = {'unexpected': False}
+            elif change == 'original': original.pop('build')
+            elif change == 'current_transitive': current['buildTransitive'] = {'private/path': {}}
+            else: original['buildTransitive'] = {'private/path': {}}
+            with self.subTest(change=change), self.assertRaisesRegex(ValueError, '^consumer_original_build_group$') as caught:
+                self.verify_empty_build(values)
+            self.assertEqual({'guard': 'consumer_original_build_group', 'id': 'FastEndpoints.Swagger',
+                              'version': '8.2.0', 'framework': framework, 'kind': 'build', 'reason': reason},
+                             caught.exception._selected_build_group_failure)
+
     def test_original_flat_build_never_skips_physical_archive_or_cache_markers(self):
         """Verify original flat build never skips physical archive or cache markers."""
         for change in ('cache', 'case_cache', 'symlink', 'case_archive', 'real_archive', 'missing_real_member', 'archive_transitive', 'wrong_directory', 'real_member_symlink', 'real_member_changed'):
@@ -1608,7 +1632,7 @@ class SelectedProductConsumerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'consumer_input_hash'):
             self.verify_empty_content(values)
 
-    def run_private_consumer(self, freshness_error=None, *, retire_caches=False, command_error=None, cli=False):
+    def run_private_consumer(self, freshness_error=None, *, retire_caches=False, command_error=None, cli=False, cell_error=None):
         """Run a mocked consumer flow with optional prerequisite, command, or cache-retirement
         failures.
         """
@@ -1689,7 +1713,8 @@ class SelectedProductConsumerTests(unittest.TestCase):
                     'checked_at': proof.planner.now(), 'eligible': True, 'histories': [{'eligible': True}], 'prerequisites': []}), \
                 patch.object(proof.resolution, 'build_inspector', return_value=self.root / 'inspector.dll') as inspector_mock, \
                 patch.object(proof.resolution, 'archive_catalog', side_effect=catalog) as catalog_mock, \
-                patch.object(proof.consumers, '_run_command', side_effect=command):
+                patch.object(proof.consumers, '_run_command', side_effect=command), \
+                patch.object(proof, 'cell', wraps=proof.cell, side_effect=cell_error):
             def execute():
                 return proof.execute(self.controller_root, plan_path, self.hash, receipt_path,
                     metadata.sha256(receipt_path.read_bytes()), self.artifacts, self.root / 'unused', output,
@@ -1706,6 +1731,9 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 self.cli_diagnostic = json.loads(stdout.getvalue())
             elif freshness_error:
                 with self.assertRaisesRegex(ValueError, str(freshness_error)):
+                    execute()
+            elif cell_error:
+                with self.assertRaisesRegex(ValueError, str(cell_error)):
                     execute()
             elif command_error:
                 with self.assertRaisesRegex(ValueError, 'injected_' + command_error):
@@ -1725,6 +1753,37 @@ class SelectedProductConsumerTests(unittest.TestCase):
         self.assertFalse(receipt['success'])
         self.assertFalse(receipt['current_consumer_admission']['eligible'])
         self.assertEqual('current-consumer-prerequisites', receipt['stage'])
+
+    def test_current_build_group_failure_survives_original_failed_consumer_receipt(self):
+        selected = self.plan['inventory']['selected'][0]
+        error = ValueError('consumer_original_build_group')
+        error._selected_build_group_failure = {'guard': str(error), 'id': selected['id'],
+            'version': self.plan['requested_version'], 'framework': 'net8.0',
+            'kind': 'buildMultiTargeting', 'reason': 'original-group-mismatch'}
+        receipt, _, _, _ = self.run_private_consumer(cell_error=error)
+        self.assertEqual(error._selected_build_group_failure, receipt['original_build_group_failure'])
+        self.assertEqual({'id': selected['id'], 'framework': 'net8.0'}, receipt['focus'])
+        self.assertEqual('selected-restore-compile-failed', receipt['failure_code'])
+
+    def test_unjoined_actual_build_dependency_stays_private_without_public_projection(self):
+        error = ValueError('consumer_original_build_group')
+        error._selected_build_group_failure = {'guard': str(error), 'id': 'Unjoined.Transitive.Dependency',
+            'version': '1.2.3', 'framework': 'net8.0', 'kind': 'build', 'reason': 'original-group-mismatch'}
+        receipt, _, _, _ = self.run_private_consumer(cell_error=error)
+        self.assertEqual(error._selected_build_group_failure, receipt['original_build_group_failure'])
+        from selected_product_diagnostics import original_build_group_failure
+        self.assertIsNone(original_build_group_failure(receipt['original_build_group_failure'], self.plan | {'prerequisites': []},
+            receipt['focus'], role='consumer', stage=receipt['stage']))
+
+    def test_current_prerequisite_failure_retains_only_validated_actual_context(self):
+        error = ValueError('artifact_fresh_prerequisite_failed')
+        error._selected_prerequisite_failure = {'guard': str(error), 'kind': 'history',
+            'id': self.plan['inventory']['selected'][0]['id'], 'version': self.plan['requested_version'],
+            'reason': 'history_unavailable'}
+        receipt, _, _, _ = self.run_private_consumer(error)
+        self.assertEqual(error._selected_prerequisite_failure, receipt['prerequisite_failure'])
+        self.assertEqual('current-consumer-prerequisites-failed', receipt['failure_code'])
+        self.assertFalse(receipt['current_consumer_admission']['eligible'])
 
     def test_cli_reports_real_execute_failure_stage_before_inspector_or_cell_work(self):
         """Verify CLI reports real execute failure stage before inspector or cell work."""
