@@ -1,0 +1,21 @@
+name: Elsa #8663 extended regression tests
+
+on:
+  push:
+    branches: [fix/8663-synthetic-input-output-collision]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  core-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+      - name: Run all Elsa Core unit tests and coverage gate
+        run: dotnet test core/test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj --verbosity quiet

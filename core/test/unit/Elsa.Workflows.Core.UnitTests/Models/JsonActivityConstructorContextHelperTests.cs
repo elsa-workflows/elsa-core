@@ -46,6 +46,10 @@ public sealed class JsonActivityConstructorContextHelperTests
     [Theory]
     [InlineData("""{"data":{"typeName":"String","memoryReference":null}}""")]
     [InlineData("""{"data":{"typeName":"String"}}""")]
+    [InlineData("""{"data":{"typeName":"String","memoryReference":"x"}}""")]
+    [InlineData("""{"data":{"typeName":"String","memoryReference":{"id":5}}}""")]
+    [InlineData("""{"data":{"typeName":"String","memoryReference":{}}}""")]
+    [InlineData("""{"data":"text"}""")]
     public void When_ReadSyntheticOutputWithoutMemoryReference_Then_SkipsUnboundOutput(string json)
     {
         var descriptor = new ActivityDescriptor
