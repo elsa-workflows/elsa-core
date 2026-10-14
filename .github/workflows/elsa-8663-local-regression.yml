@@ -18,8 +18,13 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.x'
-      - name: Test Elsa.Workflows.Core.UnitTests
+      - name: Test focused serialization cases
         run: >-
           dotnet test core/test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj
+          -p:Threshold=0
           --filter "FullyQualifiedName~OutputJsonConverterTests|FullyQualifiedName~JsonActivityConstructorContextHelperTests"
-          --verbosity normal
+          --verbosity quiet
+      - name: Test full Elsa.Workflows.Core suite (with normal coverage gate)
+        run: >-
+          dotnet test core/test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj
+          --verbosity quiet
