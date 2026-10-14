@@ -6,6 +6,7 @@ Run from a clean controller checkout with .NET SDK **10.0.300** installed. Priva
 
 ```sh
 PRIVATE="$(mktemp -d /tmp/elsa-product-release.XXXXXX)"
+PRIVATE="$(cd "$PRIVATE" && pwd -P)"
 mkdir "$PRIVATE/planning-packages"
 PLAN="$PRIVATE/plan"
 NUGET_PACKAGES="$PRIVATE/planning-packages" PYTHONDONTWRITEBYTECODE=1 python3 -B scripts/integration-program/plan_product_release.py \
