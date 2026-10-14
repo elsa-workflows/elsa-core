@@ -506,8 +506,7 @@ public class WorkflowDispatchOutboxProcessorTests
 
         await _innerDispatcher.DidNotReceiveWithAnyArgs().DispatchAsync(default(DispatchWorkflowDefinitionRequest)!, default, default);
         await _store.DidNotReceive().DeleteAsync(item.Id, Arg.Any<CancellationToken>());
-        await _store.DidNotReceiveWithAnyArgs().SaveAsync(default!, default);
-        Assert.Equal(0, item.DeliveryAttempts);
+        await _store.Received(1).SaveAsync(Arg.Is<WorkflowDispatchOutboxItem>(x => x.Id == item.Id && x.DeliveryAttempts == 1), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -525,12 +524,11 @@ public class WorkflowDispatchOutboxProcessorTests
         await _processor.ProcessAsync();
 
         await _store.DidNotReceive().DeleteAsync(item.Id, Arg.Any<CancellationToken>());
-        await _store.DidNotReceiveWithAnyArgs().SaveAsync(default!, default);
-        Assert.Equal(0, item.DeliveryAttempts);
+        await _store.Received(1).SaveAsync(Arg.Is<WorkflowDispatchOutboxItem>(x => x.Id == item.Id && x.DeliveryAttempts == 1), Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ProcessAsync_KeepsItemPastMaxAttempts_WhenChannelIsNotConfigured()
+    public async Task ProcessAsync_AbandonsItemAtMaxAttempts_WhenChannelIsNotConfigured()
     {
         var item = CreateItem();
         item.Channel = "missing";
@@ -539,12 +537,12 @@ public class WorkflowDispatchOutboxProcessorTests
 
         await RunPastMaxAttemptsAsync(processor);
 
-        AssertStillQueued(item, logger, "missing");
+        AssertAbandoned(item, logger, "missing");
         await _innerDispatcher.DidNotReceiveWithAnyArgs().DispatchAsync(default(DispatchWorkflowDefinitionRequest)!, default, default);
     }
 
     [Fact]
-    public async Task ProcessAsync_KeepsItemPastMaxAttempts_WhenInnerDispatcherReturnsUnknownChannel()
+    public async Task ProcessAsync_AbandonsItemAtMaxAttempts_WhenInnerDispatcherReturnsUnknownChannel()
     {
         _options.Channels.Add(new DispatcherChannel { Name = "priority" });
         var item = CreateItem();
@@ -556,8 +554,8 @@ public class WorkflowDispatchOutboxProcessorTests
 
         await RunPastMaxAttemptsAsync(processor);
 
-        AssertStillQueued(item, logger, "priority");
-        await _innerDispatcher.Received(_options.MaxOutboxDeliveryAttempts + 1).DispatchAsync(DefinitionRequestFor(item), Arg.Any<DispatchWorkflowOptions?>(), Arg.Any<CancellationToken>());
+        AssertAbandoned(item, logger, "priority");
+        await _innerDispatcher.Received(_options.MaxOutboxDeliveryAttempts).DispatchAsync(DefinitionRequestFor(item), Arg.Any<DispatchWorkflowOptions?>(), Arg.Any<CancellationToken>());
     }
 
     private WorkflowDispatchOutboxProcessor SetUpUnroutable(WorkflowDispatchOutboxItem item, CapturingLogger<WorkflowDispatchOutboxProcessor> logger)
@@ -583,15 +581,52 @@ public class WorkflowDispatchOutboxProcessorTests
         }
     }
 
-    private void AssertStillQueued(WorkflowDispatchOutboxItem item, CapturingLogger<WorkflowDispatchOutboxProcessor> logger, string channel)
+    private void AssertAbandoned(WorkflowDispatchOutboxItem item, CapturingLogger<WorkflowDispatchOutboxProcessor> logger, string channel)
     {
-        _store.DidNotReceiveWithAnyArgs().DeleteAsync(default!, default);
-        _store.DidNotReceiveWithAnyArgs().SaveAsync(default!, default);
-        Assert.Equal(0, item.DeliveryAttempts);
-        Assert.Single(_store.FindManyAsync(1, CancellationToken.None).Result);
-        var errors = logger.Entries.Where(x => x.Level == LogLevel.Error).ToList();
-        Assert.Equal(_options.MaxOutboxDeliveryAttempts + 1, errors.Count);
-        Assert.All(errors, x => Assert.Contains($"'{channel}'", x.Message));
+        // Unroutable passes count as failed attempts (#8816), so the item is abandoned at the limit instead of stalling the batch.
+        _store.Received(1).DeleteAsync(item.Id, Arg.Any<CancellationToken>());
+        Assert.Equal(_options.MaxOutboxDeliveryAttempts, item.DeliveryAttempts);
+        Assert.Empty(_store.FindManyAsync(1, CancellationToken.None).Result);
+        Assert.Equal(_options.MaxOutboxDeliveryAttempts - 1, logger.Entries.Count(x => x.Level == LogLevel.Error && x.Message.Contains($"'{channel}'")));
+        var warning = Assert.Single(logger.Entries, x => x.Level == LogLevel.Warning);
+        Assert.Contains($"'{channel}'", warning.Message);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_DeliversNewerItem_WhenFullBatchOfRejectedItemsIsAhead()
+    {
+        // #8816: real processor and key-value store. A full batch of rejected items must not stall a newer deliverable item.
+        _options.OutboxProcessorBatchSize = 5;
+        _options.MaxOutboxDeliveryAttempts = 1;
+        var store = new KeyValueWorkflowDispatchOutboxStore(new Elsa.KeyValues.Stores.MemoryKeyValueStore(new Elsa.Common.Services.MemoryStore<Elsa.KeyValues.Entities.SerializedKeyValuePair>()), CreatePayloadSerializer());
+        var start = new DateTimeOffset(2026, 10, 14, 0, 0, 0, TimeSpan.Zero);
+        var rejected = Enumerable.Range(0, _options.OutboxProcessorBatchSize).Select(i =>
+        {
+            var x = CreateItem(start.AddSeconds(i), $"rejected-{i}");
+            x.Channel = "missing";
+            return x;
+        }).ToList();
+        var deliverable = CreateItem(start.AddMinutes(1), "deliverable");
+        foreach (var x in rejected.Append(deliverable))
+        {
+            await store.SaveAsync(x);
+        }
+        _workflowInstanceStore.FindAsync(OwnerFilter(), Arg.Any<CancellationToken>())
+            .Returns(_ => new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: true, rejected.Append(deliverable).Select(x => x.Id).ToList())));
+        var processor = new WorkflowDispatchOutboxProcessor(store, _workflowInstanceStore, _innerDispatcher, new NoopDistributedSynchronizationProvider(), _systemClock,
+            Microsoft.Extensions.Options.Options.Create(new DistributedLockingOptions()), Microsoft.Extensions.Options.Options.Create(_options), NullLogger<WorkflowDispatchOutboxProcessor>.Instance);
+        _innerDispatcher.DispatchAsync(Arg.Any<DispatchWorkflowDefinitionRequest>(), Arg.Any<DispatchWorkflowOptions?>(), Arg.Any<CancellationToken>())
+            .Returns(DispatchWorkflowResponse.Success());
+
+        var passes = 0;
+        while (passes < 2 && !_innerDispatcher.ReceivedCalls().Any(c => c.GetArguments()[0] is DispatchWorkflowDefinitionRequest r && r.InstanceId == "child-deliverable"))
+        {
+            await processor.ProcessAsync();
+            passes++;
+        }
+
+        await _innerDispatcher.Received(1).DispatchAsync(Arg.Is<DispatchWorkflowDefinitionRequest>(r => r.InstanceId == "child-deliverable"), Arg.Any<DispatchWorkflowOptions?>(), Arg.Any<CancellationToken>());
+        Assert.Empty(await store.FindManyAsync());
     }
 
     [Fact]
