@@ -8,6 +8,7 @@ using Elsa.Workflows.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
@@ -15,6 +16,7 @@ using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Stimuli;
 using Elsa.Workflows.Runtime.UIHints;
+using Elsa.Workflows.Signals;
 using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
 
@@ -22,6 +24,9 @@ namespace Elsa.Workflows.Runtime.Activities;
 
 /// <summary>
 /// Creates new workflow instances of the specified workflow for each item in the data source and dispatches them for execution.
+/// When <see cref="WaitForCompletion"/> is enabled and the activity is cancelled while it waits, the child workflows it is waiting for
+/// are cancelled too. This only reaches children that have made their first commit: until then a new child exists only in memory and
+/// is invisible to the workflow instance store, the same gap <see cref="DispatchWorkflow"/> has.
 /// </summary>
 [Activity("Elsa", "Composition", "Create new workflow instances for each item in the data source and dispatch them for execution.", Kind = ActivityKind.Task)]
 [FlowNode("Completed", "Canceled", "Done")]
@@ -30,10 +35,16 @@ public class BulkDispatchWorkflows : Activity
 {
     private const string DispatchedInstancesCountKey = nameof(DispatchedInstancesCountKey);
     private const string CompletedInstancesCountKey = nameof(CompletedInstancesCountKey);
+    private const string WaitsForChildrenKey = "WaitsForChildren";
+
+    // The child workflow property that names the activity instance waiting for that child. Children carry it rather than
+    // this activity storing their IDs, so a large batch does not grow the activity's state.
+    private const string WaitingActivityInstanceIdKey = "WaitingActivityInstanceId";
 
     /// <inheritdoc />
     public BulkDispatchWorkflows([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
+        OnSignalReceived<CancelSignal>(OnCancelledAsync);
     }
 
     /// <summary>
@@ -126,6 +137,9 @@ public class BulkDispatchWorkflows : Activity
         // If we need to wait for the child workflows to complete (if any), create a bookmark.
         if (waitForCompletion && count > 0)
         {
+            // Remember that this activity waits for its children, so cancelling it can cancel them.
+            context.SetProperty(WaitsForChildrenKey, true);
+
             var workflowInstanceId = context.WorkflowExecutionContext.Id;
             var bookmarkOptions = new CreateBookmarkArgs
             {
@@ -172,6 +186,8 @@ public class BulkDispatchWorkflows : Activity
 
         if (waitForCompletion)
         {
+            properties[WaitingActivityInstanceIdKey] = context.Id;
+
             var activityTypeName = ActivityTypeNameHelper.GenerateTypeName<BulkDispatchWorkflows>();
             var stimulus = new BulkDispatchWorkflowsStimulus(parentInstanceId)
             {
@@ -269,5 +285,42 @@ public class BulkDispatchWorkflows : Activity
 
         if (finishedInstancesCount >= dispatchedInstancesCount)
             await context.CompleteActivityWithOutcomesAsync("Completed", "Done");
+    }
+
+    /// <summary>
+    /// Cancels the running children this activity instance was waiting for. They are found by the parent instance ID and
+    /// then matched on the activity instance ID they carry, so fire-and-forget children and the children of another
+    /// dispatching activity of the same parent are left alone. Children that already finished are left alone too,
+    /// together with anything they dispatched.
+    /// </summary>
+    private async ValueTask OnCancelledAsync(CancelSignal signal, SignalContext signalContext)
+    {
+        if (!signalContext.IsSelf)
+            return;
+
+        var context = signalContext.ReceiverActivityExecutionContext;
+
+        if (!context.GetProperty<bool>(WaitsForChildrenKey))
+            return;
+
+        var cancellationToken = signalContext.CancellationToken;
+        var filter = new WorkflowInstanceFilter
+        {
+            ParentWorkflowInstanceIds = [context.WorkflowExecutionContext.Id],
+            WorkflowStatus = WorkflowStatus.Running
+        };
+        var children = await context.GetRequiredService<IWorkflowInstanceStore>().FindManyAsync(filter, cancellationToken);
+        var waitedChildIds = children
+            .Where(x => x.WorkflowState.Properties.TryGetValue<string>(WaitingActivityInstanceIdKey, out var waitingActivityInstanceId) && waitingActivityInstanceId == context.Id)
+            .Select(x => x.Id)
+            .ToList();
+
+        if (waitedChildIds.Count == 0)
+            return;
+
+        // The cancellation service hands each child to the workflow cancellation dispatcher, the same way the
+        // workflow-level cascade does, so the children are not cancelled inside this workflow's execution. It also
+        // cancels the children's own children.
+        await context.GetRequiredService<IWorkflowCancellationService>().CancelWorkflowsAsync(waitedChildIds, cancellationToken);
     }
 }
