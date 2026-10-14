@@ -638,6 +638,23 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
         self.assertEqual({'status': 'unavailable'}, receipt['product_recipe_failure'])
         self.assertFalse(receipt['success'])
 
+    def test_local_public_projection_uses_verified_artifact_controller(self):
+        self.output = self.root / 'distinct-controller'
+        self.plan['controller'] = {'commit': 'e' * 40, 'tree': 'f' * 40}
+        result, receipt = self.invoke()
+        self.assertEqual('observed', result['product_recipe_failure']['status'])
+        self.assertEqual(receipt['product_recipe_failure'], result['product_recipe_failure'])
+
+        path = self.output / 'retained/receipt.json'
+        receipt['artifact_controller'] = self.plan['controller']
+        path.write_text(json.dumps(receipt))
+        plan_bytes = (self.root / 'plan.json').read_bytes()
+        with patch.object(artifacts, 'ROOT', self.controller), \
+                patch.object(artifacts, 'verify_controller', return_value=self.identity):
+            result = artifacts.public_recipe_failure(self.output, False, 'original-product-recipe',
+                plan_bytes=plan_bytes, plan_sha256=metadata.sha256(plan_bytes))
+        self.assertEqual({'product_recipe_failure': {'status': 'unavailable'}}, result)
+
     def test_registered_product_repository_ref_and_types_are_exact(self):
         self.select_registered_recipe('extensions', '3.9')
         row = artifacts.selected_recipe_source(self.plan)
@@ -726,8 +743,10 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
         path = self.output / 'retained/receipt.json'
         project = lambda **kwargs: artifacts.public_recipe_failure(
             self.output, False, 'original-product-recipe', **kwargs)
-        self.assertEqual(project(plan_bytes=plan_bytes, plan_sha256=plan_hash)['product_recipe_failure'],
-                         receipt['product_recipe_failure'])
+        with patch.object(artifacts, 'ROOT', self.controller), \
+                patch.object(artifacts, 'verify_controller', return_value=self.identity):
+            self.assertEqual(project(plan_bytes=plan_bytes, plan_sha256=plan_hash)['product_recipe_failure'],
+                             receipt['product_recipe_failure'])
         for arguments in ({}, {'plan_bytes': plan_bytes, 'plan_sha256': 'f' * 64},
                           {'plan_bytes': b'{}', 'plan_sha256': metadata.sha256(b'{}')}):
             with self.subTest(arguments=arguments):
@@ -739,7 +758,9 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
                 receipt = deepcopy(original)
                 receipt['product_recipe_failure']['source_producer_failure'].update(changes)
                 path.write_text(json.dumps(receipt))
-                result = project(plan_bytes=plan_bytes, plan_sha256=plan_hash)
+                with patch.object(artifacts, 'ROOT', self.controller), \
+                        patch.object(artifacts, 'verify_controller', return_value=self.identity):
+                    result = project(plan_bytes=plan_bytes, plan_sha256=plan_hash)
                 self.assertEqual(result, {'product_recipe_failure': {'status': 'unavailable'}})
                 self.assertNotIn('/private/secret', json.dumps(result))
                 self.assertNotIn('Private.ValidIdentifier', json.dumps(result))
@@ -833,8 +854,12 @@ class CoreRecipeFailureDiagnosticsTests(unittest.TestCase):
         path = self.output / 'retained/receipt.json'
         receipt['product_recipe_failure']['reason'] = '/private/secret'
         path.write_text(json.dumps(receipt))
-        self.assertEqual(artifacts.public_recipe_failure(self.output, False, 'original-product-recipe'),
-                         {'product_recipe_failure': {'status': 'unavailable'}})
+        with patch.object(artifacts, 'ROOT', self.controller), \
+                patch.object(artifacts, 'verify_controller', return_value=self.identity):
+            self.assertEqual(artifacts.public_recipe_failure(self.output, False, 'original-product-recipe',
+                plan_bytes=(self.root / 'plan.json').read_bytes(),
+                plan_sha256=metadata.sha256((self.root / 'plan.json').read_bytes())),
+                {'product_recipe_failure': {'status': 'unavailable'}})
         self.assertEqual(artifacts.public_recipe_failure(self.output, True, 'original-product-recipe'), {})
         self.assertEqual(artifacts.public_recipe_failure(self.output, False, 'tool-preflight'), {})
 

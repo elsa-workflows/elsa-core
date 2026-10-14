@@ -207,7 +207,7 @@ def public_recipe_failure(output: Path, output_existed: bool, stage: str, *,
                 receipt.get('planner_controller') != plan['controller'] or \
                 'product_recipe_failure' not in receipt:
             return {}
-        controller = {key: plan['controller'][key] for key in ('commit', 'tree')}
+        controller = verify_controller(ROOT, plan)
         require(receipt.get('artifact_controller') == controller, 'diagnostic_invalid')
         artifact_execution.validate_selected_execution(receipt['execution'], 'artifact', controller, plan, plan_sha256)
         selection = selected_recipe_source(plan)
