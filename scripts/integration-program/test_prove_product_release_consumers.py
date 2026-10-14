@@ -919,6 +919,179 @@ class SelectedProductConsumerTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'consumer_input_hash'):
             proof.verify_asset_payloads(assets, 'net8.0', self.graph, cache, self.artifacts, selected)
 
+    def original_empty_lib_fixture(self, framework='net10.0', asset_framework=None):
+        """Retained ProtoActor/STJ shape; fixture payload bytes are deliberately synthetic."""
+        asset_framework = asset_framework or framework
+        temporary = tempfile.TemporaryDirectory(dir=self.root)
+        self.addCleanup(temporary.cleanup)
+        cache = Path(temporary.name).resolve()
+        root_id = 'Elsa.Actors.ProtoActor'
+        root_key = root_id + '/3.8.999'
+        root_archive = self.artifacts / (root_key.replace('/', '.') + '.nupkg')
+        with zipfile.ZipFile(root_archive, 'w') as package: package.writestr('a.nuspec', b'<package />')
+        values = {'cache': cache, 'framework': framework, 'root_key': root_key}
+        identifier, version = 'System.Text.Json', '10.0.9'
+        key = identifier + '/' + version
+        folder = values['cache'] / identifier.lower() / version
+        folder.mkdir(parents=True)
+        archive = folder / (identifier.lower() + '.' + version + '.nupkg')
+        entries = {f'lib/{asset_framework}/{identifier}.dll': b'original external DLL',
+                   f'lib/{asset_framework}/{identifier}.xml': b'original related XML'}
+        with zipfile.ZipFile(archive, 'w') as package:
+            for name, data in entries.items(): package.writestr(name, data)
+        for name, data in entries.items():
+            path = folder / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(data)
+        content_hash = proof.consumers.base64_sha512(archive.read_bytes())
+        (folder / '.nupkg.metadata').write_text(json.dumps({'version': 2, 'source': proof.planner.NUGET_INDEX,
+                                                          'contentHash': content_hash}))
+        marker = f'lib/{asset_framework}/_._'
+        library = {'type': 'package', 'compile': {marker: {'related': '.xml'}},
+                   'runtime': {marker: {'related': '.xml'}}}
+        assets = {'targets': {framework: {root_key: {'type': 'package', 'dependencies': {identifier: version}}, key: library}},
+            'libraries': {key: {'type': 'package', 'sha512': content_hash, 'files': list(entries)}},
+            'project': {'frameworks': {framework: {'dependencies': {
+                root_id: {'target': 'Package', 'version': '[3.8.999, 3.8.999]', 'aliases': 'selected'}}}}},
+            'projectFileDependencyGroups': {framework: [root_id + ' >= 3.8.999 <= 3.8.999']}}
+        original = deepcopy(assets)
+        project = 'src/Elsa.Actors.ProtoActor/Elsa.Actors.ProtoActor.csproj'
+        original['project']['restore'] = {'projectPath': '/original/' + project}
+        root = root_key.rsplit('/', 1)[0].casefold()
+        values.update(assets=assets, archive=archive, folder=folder, key=key, marker=marker, original_assets=original,
+            graph={root: {'selected': True, 'version': '3.8.999'},
+                   identifier.lower(): {'selected': False, 'version': version, 'content_hash': content_hash}},
+            catalog={(identifier.lower(), version): {'archive_sha256': metadata.sha256(archive.read_bytes()),
+                'content_hash': content_hash, 'cache_provenance': {'source': proof.planner.NUGET_INDEX},
+                'original_contexts': [{'project': project, 'frameworks': [framework], 'content_hash': content_hash}]}},
+            selected={root: {'nupkg': root_archive.name,
+                'policy': {'project': project, 'metadata': {'restore_assets_sha256': metadata.sha256(json.dumps(original).encode())}}}})
+        return values
+
+    def test_original_native_empty_lib_markers_are_inert_and_keep_related_metadata(self):
+        """Native ClearIfExists copies related XML properties onto absent lib sentinels."""
+        values = self.original_empty_lib_fixture()
+        rows = self.verify_empty_build(values)
+        markers = rows[-1]['payloads']
+        self.assertEqual([row['kind'] for row in markers], ['compile', 'runtime'])
+        for row in markers:
+            self.assertEqual(row['accounting'], proof.ORIGINAL_EMPTY_LIB_ACCOUNTING)
+            self.assertEqual(row['path'], 'lib/net10.0/_._')
+            self.assertEqual(row['metadata'], {'related': '.xml'})
+            self.assertNotIn('size', row)
+            self.assertNotIn('sha256', row)
+
+    def test_original_empty_lib_group_allows_inherited_compatible_older_lib_framework(self):
+        """NuGet may retain an older lib group for a later modern .NET consumer."""
+        for framework, asset_framework in (('net8.0', 'net6.0'), ('net8.0', 'net7.0'),
+                                           ('net9.0', 'net8.0'), ('net10.0', 'net9.0')):
+            values = self.original_empty_lib_fixture(framework, asset_framework)
+            with self.subTest(framework=framework, asset_framework=asset_framework): self.verify_empty_build(values)
+
+    def test_original_empty_lib_keeps_only_first_dll_related_properties(self):
+        """ClearIfExists retains the first assembly's case-sensitive related prefix."""
+        values = self.original_empty_lib_fixture()
+        extra = {'lib/net10.0/System.Text.Json.pdb': b'pdb', 'lib/net10.0/_FirstByLowercase.dll': b'punctuation',
+                 'lib/net10.0/ZLast.dll': b'last dll',
+                 'lib/net10.0/ZLast.xml': b'last xml'}
+        with zipfile.ZipFile(values['archive'], 'a') as package:
+            for name, data in extra.items(): package.writestr(name, data)
+        for name, data in extra.items(): (values['folder'] / name).write_bytes(data)
+        for assets in (values['assets'], values['original_assets']):
+            assets['libraries'][values['key']]['files'].extend(extra)
+            for kind in ('compile', 'runtime'):
+                assets['targets']['net10.0'][values['key']][kind][values['marker']]['related'] = '.pdb;.xml'
+        next(iter(values['catalog'].values()))['archive_sha256'] = metadata.sha256(values['archive'].read_bytes())
+        for row in self.verify_empty_build(values)[-1]['payloads']:
+            self.assertEqual(row['metadata'], {'related': '.pdb;.xml'})
+
+    def test_original_empty_lib_rejects_unbound_context_graph_hashes_and_metadata(self):
+        """An absent lib marker is insufficient without exact original native evidence."""
+        for change in ('original_missing', 'original_group', 'original_kind', 'original_project', 'original_framework',
+                       'catalog_context', 'catalog_source', 'catalog_hash', 'native_hash', 'cache_source', 'cache_hash',
+                       'extra_direct', 'direct_flags', 'fallback', 'graph', 'mixed', 'mixed_reversed',
+                       'private_metadata', 'wrong_related', 'future_framework', 'selected', 'inventory'):
+            values = self.original_empty_lib_fixture()
+            key, framework = values['key'], values['framework']
+            assets, original = values['assets'], values['original_assets']
+            group = assets['targets'][framework][key]['compile']
+            record = next(iter(values['catalog'].values()))
+            if change == 'original_missing': values['original_assets'] = None
+            elif change == 'original_group': original['targets'][framework][key]['compile'] = {}
+            elif change == 'original_kind': original['targets'][framework][key]['type'] = 'project'
+            elif change == 'original_project': original['project']['restore']['projectPath'] = '/unrelated/project.csproj'
+            elif change == 'original_framework': original['targets'].pop(framework)
+            elif change == 'catalog_context': record['original_contexts'][0]['project'] = 'unrelated.csproj'
+            elif change == 'catalog_source': record['cache_provenance']['source'] = 'https://unrelated.invalid'
+            elif change == 'catalog_hash': record['archive_sha256'] = 'f' * 64
+            elif change == 'native_hash': original['libraries'][key]['sha512'] = 'unbound'
+            elif change in ('cache_source', 'cache_hash'):
+                path = values['folder'] / '.nupkg.metadata'; data = json.loads(path.read_text())
+                data['source' if change == 'cache_source' else 'contentHash'] = 'unbound'
+                path.write_text(json.dumps(data))
+            elif change == 'extra_direct': assets['project']['frameworks'][framework]['dependencies']['Unreviewed'] = {}
+            elif change == 'direct_flags': next(iter(assets['project']['frameworks'][framework]['dependencies'].values()))['exclude'] = 'Compile'
+            elif change == 'fallback': assets['targets'][framework][key]['type'] = 'project'
+            elif change == 'graph': values['graph'].pop('system.text.json')
+            elif change.startswith('mixed'):
+                group[f'lib/{framework}/System.Text.Json.dll'] = {}
+                if change.endswith('reversed'): assets['targets'][framework][key]['compile'] = dict(reversed(list(group.items())))
+            elif change in ('private_metadata', 'wrong_related'):
+                properties = {'private': '/private/path'} if change == 'private_metadata' else {'related': '.pdb'}
+                group[values['marker']] = properties
+                original['targets'][framework][key]['compile'] = deepcopy(group)
+            elif change == 'future_framework':
+                group.clear(); group['lib/net11.0/_._'] = {'related': '.xml'}
+                original['targets'][framework][key]['compile'] = deepcopy(group)
+            elif change == 'selected':
+                values['graph']['system.text.json']['selected'] = True
+                values['selected']['system.text.json'] = {'nupkg': values['archive'].name}
+                self.artifacts.joinpath(values['archive'].name).write_bytes(values['archive'].read_bytes())
+            else: assets['libraries'][key]['files'].remove(f'lib/{framework}/System.Text.Json.xml')
+            with self.subTest(change=change), self.assertRaises((ValueError, KeyError)): self.verify_empty_build(values)
+
+    def test_original_empty_lib_checks_real_bytes_physical_markers_and_collisions(self):
+        """Synthetic accounting never bypasses physical package/cache payload verification."""
+        for change in ('dll', 'xml', 'symlink', 'cache_marker', 'cache_case', 'marker_symlink',
+                       'metadata_symlink', 'archive_case', 'archive_bytes', 'ref_group', 'physical'):
+            values = self.original_empty_lib_fixture()
+            folder, marker = values['folder'], values['marker']
+            path = folder / marker
+            if change in ('dll', 'xml', 'symlink'):
+                member = folder / ('lib/net10.0/System.Text.Json.' + ('xml' if change == 'xml' else 'dll'))
+                if change == 'symlink': member.unlink(); member.symlink_to(folder / 'missing')
+                else: member.write_bytes(b'changed')
+            elif change in ('cache_marker', 'cache_case'):
+                (folder / (marker if change == 'cache_marker' else 'LIB/net10.0/_._')).parent.mkdir(parents=True, exist_ok=True)
+                (folder / (marker if change == 'cache_marker' else 'LIB/net10.0/_._')).write_bytes(b'physical')
+            elif change == 'marker_symlink': path.symlink_to(folder / 'missing')
+            elif change == 'metadata_symlink':
+                sidecar = folder / '.nupkg.metadata'; sidecar.rename(folder / 'metadata.json')
+                sidecar.symlink_to(folder / 'metadata.json')
+            else:
+                name = (marker if change == 'physical' else 'ref/net10.0/System.Text.Json.dll' if change == 'ref_group'
+                        else 'unbound.txt' if change == 'archive_bytes' else 'LIB/net10.0/_._')
+                with zipfile.ZipFile(values['archive'], 'a') as package: package.writestr(name, b'physical')
+                if change != 'archive_bytes':
+                    next(iter(values['catalog'].values()))['archive_sha256'] = metadata.sha256(values['archive'].read_bytes())
+                if change == 'physical':
+                    path.write_bytes(b'physical')
+                    rows = self.verify_empty_build(values)
+                    self.assertEqual(rows[-1]['payloads'][0]['sha256'], metadata.sha256(b'physical'))
+                    self.assertNotIn('accounting', rows[-1]['payloads'][0])
+                    path.write_bytes(b'changed')
+            with self.subTest(change=change), self.assertRaises(ValueError): self.verify_empty_build(values)
+
+    def test_other_missing_compile_and_runtime_payloads_still_fail(self):
+        """A DLL path or other missing group never receives marker accounting."""
+        for kind, path in (('compile', 'lib/net10.0/Missing.dll'), ('runtime', 'ref/net10.0/_._'),
+                           ('native', 'lib/net10.0/_._')):
+            values = self.original_empty_lib_fixture()
+            target = values['assets']['targets']['net10.0'][values['key']]
+            target.clear(); target.update(type='package', **{kind: {path: {}}})
+            with self.subTest(kind=kind, path=path), self.assertRaisesRegex(ValueError, 'consumer_asset_archive_member'):
+                self.verify_empty_build(values)
+
     def original_flat_build_fixture(self, *, helper_members=()):
         """Exact HTTP/net10 native group shape: one Swagger and two NSwag sentinels."""
         temporary = tempfile.TemporaryDirectory(dir=self.root)

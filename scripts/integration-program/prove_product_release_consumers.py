@@ -40,6 +40,8 @@ EMPTY_BUILD_ACCOUNTING = 'native-synthetic-excluded-build'
 EMPTY_BUILD_ORIGIN = 'selected-root-nuspec-build-exclusion'
 ORIGINAL_EXCLUDED_BUILD_ACCOUNTING = 'native-original-excluded-flat-build'
 ORIGINAL_EXCLUDED_BUILD_ORIGIN = 'original-excluded-flat-build'
+ORIGINAL_EMPTY_LIB_ACCOUNTING = 'native-original-excluded-lib'
+ORIGINAL_EMPTY_LIB_ORIGIN = 'original-excluded-lib'
 STUDIO38_CONTRACT_SOURCE = {
     'src/framework/Elsa.Studio.Core/Services/DefaultRemoteBackendAccessor.cs': '2818998450af0126555755dec8f2ff45fe582c6558ac09c064c5053e761bb909',
     'src/framework/Elsa.Studio.Core/Options/BackendOptions.cs': 'd640f27152eb46631bc157733c4e8284cae845923d717f6fdb9df9235466c538',
@@ -72,6 +74,10 @@ PUBLIC_FAILURE_CODES = producer.PUBLIC_FAILURE_CODES | frozenset((
     'consumer_original_build_graph consumer_original_build_group consumer_original_build_incoming '
     'consumer_original_build_origin consumer_original_build_original_boundary consumer_original_build_project '
     'consumer_original_build_real_group consumer_original_build_real_member consumer_original_build_selected '
+    'consumer_original_lib_archive consumer_original_lib_boundary consumer_original_lib_cache '
+    'consumer_original_lib_collision consumer_original_lib_context consumer_original_lib_group '
+    'consumer_original_lib_inventory consumer_original_lib_metadata consumer_original_lib_origin '
+    'consumer_original_lib_path consumer_original_lib_selected '
     'consumer_original_feed_config consumer_original_nuspec_identity consumer_original_selected_registry_package '
     'consumer_output_location consumer_planner_controller_identity consumer_producer_controller_tree '
     'consumer_producer_identity consumer_producer_planner_inputs consumer_producer_stage_incomplete '
@@ -542,6 +548,93 @@ def original_excluded_build_marker(assets: dict, original: dict, framework: str,
             'archive_sha256': record['archive_sha256'], 'origin': ORIGINAL_EXCLUDED_BUILD_ORIGIN,
             'original_assets_sha256': original_hash}
 
+
+def empty_lib_marker_shape(marker: str, framework: str, properties: dict) -> None:
+    """Closed inherited lib shape for the supported modern .NET framework family."""
+    path = re.fullmatch(r'lib/net(6|7|8|9|10)\.0/_\._', marker)
+    consumer = re.fullmatch(r'net(8|9|10)\.0', framework)
+    require(path is not None and consumer is not None and int(path[1]) <= int(consumer[1]),
+            'consumer_original_lib_path')
+    require(type(properties) is dict and properties in ({}, {'related': '.xml'}, {'related': '.pdb'},
+            {'related': '.pdb;.xml'}), 'consumer_original_lib_metadata')
+
+
+def original_empty_lib_marker(assets: dict, original: dict, framework: str, key: str, kind: str,
+                              package: zipfile.ZipFile, names: list[str], folder: Path, catalog: dict,
+                              graph: dict, selected: dict) -> dict:
+    """Inherit one original native excluded lib group, with no invented payload bytes."""
+    identifier, version = key.rsplit('/', 1)
+    require(type(original) is dict and kind in ('compile', 'runtime'), 'consumer_original_lib_origin')
+    target = assets['targets'][framework][key]
+    group = target.get(kind, {})
+    require(type(group) is dict and len(group) == 1 and
+        original.get('targets', {}).get(framework, {}).get(key, {}).get('type') == target.get('type') == 'package' and
+        original['targets'][framework][key].get(kind) == group, 'consumer_original_lib_group')
+    marker, properties = next(iter(group.items()))
+    empty_lib_marker_shape(marker, framework, properties)
+    direct = assets.get('project', {}).get('frameworks', {}).get(framework, {}).get('dependencies', {})
+    require(type(direct) is dict and len(direct) == 1, 'consumer_original_lib_boundary')
+    root, dependency = next(iter(direct.items()))
+    folded_root = root.casefold()
+    require(folded_root in selected and folded_root in graph and graph[folded_root]['selected'] is True and
+        type(dependency) is dict and set(dependency) <= {'target', 'version', 'aliases'} and
+        dependency.get('target') == 'Package' and dependency.get('version') ==
+        '[{0}, {0}]'.format(graph[folded_root]['version']) and dependency.get('aliases', 'selected') == 'selected' and
+        assets.get('projectFileDependencyGroups') == {
+            framework: [root + ' >= ' + graph[folded_root]['version'] + ' <= ' + graph[folded_root]['version']]} and
+        len(assets['targets'][framework]) == len(graph) and
+        {name.rsplit('/', 1)[0].casefold() for name in assets['targets'][framework]} == set(graph) and
+        all(item.get('type') == 'package' for item in assets['targets'][framework].values()),
+        'consumer_original_lib_boundary')
+    policy = selected[folded_root]['policy']
+    project = policy['project']
+    original_path = original.get('project', {}).get('restore', {}).get('projectPath')
+    original_hash = policy['metadata']['restore_assets_sha256']
+    record = catalog.get((identifier.casefold(), version))
+    require(type(original_path) is str and original_path.endswith('/' + project) and
+        type(original_hash) is str and re.fullmatch(r'[0-9a-f]{64}', original_hash) and record is not None and
+        any(context.get('project') == project and framework in context.get('frameworks', []) and
+            context.get('content_hash') == record['content_hash'] for context in record.get('original_contexts', [])),
+        'consumer_original_lib_context')
+    before, current = original.get('libraries', {}).get(key, {}), assets['libraries'][key]
+    require(before.get('type') == current.get('type') == 'package' and
+        before.get('sha512') == current.get('sha512') == graph[identifier.casefold()]['content_hash'] == record['content_hash'] and
+        metadata.sha256(Path(package.filename).read_bytes()) == record['archive_sha256'],
+        'consumer_original_lib_archive')
+    cache_metadata = planner.read_json(metadata.read_regular_file(folder / '.nupkg.metadata', maximum=4 * 1024 ** 2))
+    require(cache_metadata.get('source') == record.get('cache_provenance', {}).get('source') and
+        type(cache_metadata.get('source')) is str and cache_metadata.get('contentHash') == record['content_hash'],
+        'consumer_original_lib_cache')
+    require(not any(name.casefold() == marker.casefold() for name in names), 'consumer_original_lib_collision')
+    directory = marker.rsplit('/', 1)[0]
+    members = [name for name in names if name.startswith(directory + '/')]
+    # Original native group selection is inherited, not recomputed. Restrict this
+    # adapter to flat DLL groups without ref/contract alternatives.
+    require(members and all(name.isascii() and name.rsplit('/', 1)[0] == directory and
+        Path(name).suffix in ('.dll', '.xml', '.pdb') for name in members) and
+        not any(name.startswith(('ref/', 'lib/contract/')) for name in names), 'consumer_original_lib_inventory')
+    # OrdinalIgnoreCase compares ASCII uppercase code points, including their
+    # position relative to punctuation; lowercase sorting is not equivalent.
+    dlls = sorted((name for name in members if name.endswith('.dll')), key=lambda name: (name.rfind('/'), name.upper()))
+    require(bool(dlls), 'consumer_original_lib_inventory')
+    require(not any(name.casefold() == marker.casefold() for values in (before, current)
+        for name in values.get('files', [])), 'consumer_original_lib_inventory')
+    for name in members:
+        require(name in before.get('files', []) and name in current.get('files', []), 'consumer_original_lib_inventory')
+        read_bound(folder / name, metadata.sha256(package.read(name)))
+    prefix = dlls[0][:-4]
+    related = sorted(name[len(prefix):] for name in members if name.startswith(prefix + '.') and
+                     Path(name).suffix in ('.xml', '.pdb'))
+    require(properties == ({'related': ';'.join(related)} if related else {}), 'consumer_original_lib_metadata')
+    path = folder / marker
+    require(not path.exists() and not any(part.is_symlink() for part in (path, *path.parents)) and
+        not any(entry.relative_to(folder).as_posix().casefold() == marker.casefold() for entry in folder.rglob('*')),
+        'consumer_original_lib_cache')
+    return {'path': marker, 'kind': kind, 'accounting': ORIGINAL_EMPTY_LIB_ACCOUNTING, 'metadata': properties,
+            'archive_sha256': record['archive_sha256'], 'origin': ORIGINAL_EMPTY_LIB_ORIGIN,
+            'original_assets_sha256': original_hash}
+
+
 def verify_asset_payloads(assets: dict, framework: str, graph: dict, cache: Path, artifacts: Path, selected: dict,
                           *, catalog: dict | None = None, original_assets: dict | None = None) -> list[dict]:
     """Join restored payload bytes and permitted empty markers to archive evidence."""
@@ -559,6 +652,11 @@ def verify_asset_payloads(assets: dict, framework: str, graph: dict, cache: Path
             for kind in ('compile', 'runtime', 'contentFiles', 'build', 'buildMultiTargeting', 'native', 'runtimeTargets', 'resource'):
                 for entry in library.get(kind, {}):
                     safe_relative(entry)
+                    if kind in ('compile', 'runtime') and entry.startswith('lib/') and entry.endswith('/_._') and entry not in names:
+                        require(not graph[folded]['selected'], 'consumer_original_lib_selected')
+                        payloads.append(original_empty_lib_marker(assets, original_assets, framework, key, kind,
+                            package, names, folder, catalog or {}, graph, selected))
+                        continue
                     if kind == 'contentFiles' and entry == EMPTY_CONTENT and entry not in names:
                         require(not graph[folded]['selected'], 'consumer_synthetic_content_selected')
                         payloads.append(synthetic_content_marker(assets, original_assets, framework, key,

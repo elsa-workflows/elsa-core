@@ -361,12 +361,20 @@ def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, ru
         for asset in sequence(row['payloads']):
             if type(asset) is dict and 'accounting' in asset:
                 original_build = asset.get('origin') == consumer.ORIGINAL_EXCLUDED_BUILD_ORIGIN
+                original_lib = asset.get('origin') == consumer.ORIGINAL_EMPTY_LIB_ORIGIN
                 keys = {'path', 'kind', 'accounting', 'metadata', 'archive_sha256', 'origin'}
-                transport.closed(asset, keys | ({'original_assets_sha256'} if original_build else set()),
+                transport.closed(asset, keys | ({'original_assets_sha256'} if original_build or original_lib else set()),
                                  'selected_payload_synthetic_content')
                 require(folded not in selected and asset['archive_sha256'] == restored[folded]['sha256'] and
                     (asset['path'], asset['kind']) not in seen, 'selected_payload_synthetic_content_identity')
-                if original_build:
+                if original_lib:
+                    require(asset['accounting'] == consumer.ORIGINAL_EMPTY_LIB_ACCOUNTING and
+                        asset['kind'] in ('compile', 'runtime') and
+                        asset['original_assets_sha256'] == item['policy']['metadata']['restore_assets_sha256'],
+                        'selected_payload_original_lib_identity')
+                    consumer.empty_lib_marker_shape(asset['path'], framework, asset['metadata'])
+                    transport.digest(asset['original_assets_sha256'])
+                elif original_build:
                     require(asset['accounting'] == consumer.ORIGINAL_EXCLUDED_BUILD_ACCOUNTING and
                         asset['kind'] in ('build', 'buildMultiTargeting') and asset['path'] == asset['kind'] + '/_._' and
                         type(asset['metadata']) is dict and asset['metadata'] == {} and
@@ -415,6 +423,10 @@ def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, ru
             build = [item for item in row['payloads'] if item['kind'] == kind]
             require(not any('accounting' in item for item in build) or len(build) == 1,
                     'selected_payload_synthetic_build_group')
+        for kind in ('compile', 'runtime'):
+            group = [item for item in row['payloads'] if item['kind'] == kind]
+            require(not any('accounting' in item for item in group) or len(group) == 1,
+                    'selected_payload_original_lib_group')
     require(set(payload_rows) == set(restored), 'selected_payload_restored_payload_bijection')
     if runtime:
         evidence = transport.closed(cell['runtime'], {'contract', 'loaded_assemblies'}, 'selected_payload_runtime')

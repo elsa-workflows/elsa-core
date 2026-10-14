@@ -12,6 +12,7 @@ from unittest.mock import patch
 import product_release_metadata as metadata
 import selected_control_seal as seal
 import test_selected_control_seal as seal_tests
+import test_prove_product_release_consumers as consumer_tests
 import selected_control_transport as transport
 import selected_studio_payload as payload
 import selected_studio_plan_schema as schema
@@ -277,11 +278,104 @@ def original_flat_build_fixture():
 
 
 class SelectedProductPayloadTests(unittest.TestCase):
+    def original_empty_lib_payload(self):
+        """Feed actual verifier output into a synthetic producer/consumer seal fixture."""
+        files, expected, now = fixture('extensions', '3.8')
+        plan, receipt = (json.loads(files[name]) for name in ('plan.json', 'consumer/receipt.json'))
+        cell = next(row for row in receipt['coverage'] if row['framework'] == 'net10.0')
+        policy = next(row for row in plan['inventory']['selected'] if row['id'] == cell['id'])
+        harness = consumer_tests.SelectedProductConsumerTests()
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        harness.root = Path(temporary.name).resolve()
+        harness.artifacts = harness.root / 'artifacts'
+        harness.artifacts.mkdir()
+        self.addCleanup(harness.doCleanups)
+        values = harness.original_empty_lib_fixture()
+        old_root = values['root_key']
+        root = cell['id'].casefold()
+        root_key = cell['id'] + '/' + plan['requested_version']
+        values['assets']['targets']['net10.0'][root_key] = values['assets']['targets']['net10.0'].pop(old_root)
+        values['assets']['project']['frameworks']['net10.0']['dependencies'] = {
+            cell['id']: {'target': 'Package', 'version': '[' + plan['requested_version'] + ', ' + plan['requested_version'] + ']',
+                         'aliases': 'selected'}}
+        values['assets']['projectFileDependencyGroups'] = {
+            'net10.0': [cell['id'] + ' >= ' + plan['requested_version'] + ' <= ' + plan['requested_version']]}
+        values['graph'][root] = values['graph'].pop(old_root.rsplit('/', 1)[0].casefold())
+        archive_name = cell['id'] + '.' + plan['requested_version'] + '.nupkg'
+        harness.artifacts.joinpath(archive_name).write_bytes(files['producer/nuget/' + archive_name])
+        values['selected'] = {root: {'nupkg': archive_name, 'policy': policy}}
+        values['original_assets']['project']['restore']['projectPath'] = '/original/' + policy['project']
+        record = next(iter(values['catalog'].values()))
+        record['original_contexts'][0]['project'] = policy['project']
+        verified = harness.verify_empty_build(values)
+        data = values['archive'].read_bytes()
+        cell['restored'].append({'id': 'System.Text.Json', 'version': '10.0.9', 'source': payload.consumer.planner.NUGET_INDEX,
+            'sha256': metadata.sha256(data), 'archive_sha512': hashlib.sha512(data).hexdigest(),
+            'nuget_content_hash': payload.consumer.consumers.base64_sha512(data), 'signed': False})
+        cell['restored_payloads'].append(next(row for row in verified if row['id'] == 'System.Text.Json'))
+        files['consumer/receipt.json'] = encoded(receipt)
+        return files, expected, now
+
     def validate(self, values):
         """Run pure payload validation with exact plan and receipt hashes and loaded contracts."""
         files, expected, now = values
         return payload.validate(files, expected, *(metadata.sha256(files[name]) for name in
             ('plan.json', 'producer/receipt.json', 'consumer/receipt.json')), contracts=payload.load_contracts(), now=now)
+
+    def seal_and_readback(self, values):
+        """Validate a complete synthetic provider ZIP through the real seal/readback path."""
+        files, expected, now = values
+        sealed = seal.stage(files, expected, tuple(metadata.sha256(files[name]) for name in
+            ('plan.json', 'producer/receipt.json', 'consumer/receipt.json')), contracts=payload.load_contracts(), now=now)
+        provider_fixture = ProviderFixture(); provider_fixture.setUp()
+        provider = provider_fixture.provider
+        manifest_hash = metadata.sha256(sealed[transport.MANIFEST])
+        original_zip = zipped(list(sealed.items()))
+        context = expected['context']
+        provider.update(artifact_name=f"selected-control-{expected['product']}-{expected['line']}-{context['head_sha']}-{context['run_id']}-{context['run_attempt']}",
+            manifest_sha256=manifest_hash, archive_sha256=metadata.sha256(original_zip), archive_size=len(original_zip),
+            created_at=(now-timedelta(minutes=2)).isoformat(), retrieved_at=(now-timedelta(minutes=1)).isoformat(),
+            expires_at=(now+timedelta(days=1)).isoformat())
+        result = seal.readback(original_zip, provider, expected | {'manifest_sha256': manifest_hash},
+            contracts=payload.load_contracts(), now=now)
+        self.assertTrue(result['success'])
+        self.assertFalse(result['product_code_executed_during_readback'])
+        return sealed
+
+    def test_original_empty_lib_verifier_output_seals_and_reads_back(self):
+        """No-native verifier-to-consumer-receipt-to-seal validation preserves inert rows."""
+        values = self.original_empty_lib_payload()
+        self.validate(values)
+        self.seal_and_readback(values)
+
+    def test_rehashed_original_empty_lib_accounting_is_closed_and_source_bound(self):
+        """The seal rejects fabricated/private, incompatible, mixed and selected markers."""
+        for change in ('accounting', 'origin', 'original_hash', 'missing_hash', 'private_metadata', 'wrong_related',
+                       'future_framework', 'archive_hash', 'fake_bytes', 'selected', 'kind', 'mixed', 'mixed_reversed'):
+            values = self.original_empty_lib_payload()
+            receipt = json.loads(values[0]['consumer/receipt.json'])
+            cell = next(row for row in receipt['coverage'] if row['framework'] == 'net10.0')
+            row = cell['restored_payloads'][-1]; marker = row['payloads'][0]
+            if change == 'accounting': marker['accounting'] = 'fabricated'
+            elif change == 'origin': marker['origin'] = 'fabricated'
+            elif change == 'original_hash': marker['original_assets_sha256'] = 'f' * 64
+            elif change == 'missing_hash': marker.pop('original_assets_sha256')
+            elif change == 'private_metadata': marker['metadata']['private'] = '/private/path'
+            elif change == 'wrong_related': marker['metadata'] = {'related': '.exe'}
+            elif change == 'future_framework': marker['path'] = 'lib/net11.0/_._'
+            elif change == 'archive_hash': marker['archive_sha256'] = 'f' * 64
+            elif change == 'fake_bytes': marker.update(size=0, sha256=metadata.sha256(b''))
+            elif change == 'selected': cell['restored_payloads'][0]['payloads'].append(marker)
+            elif change == 'kind': marker['kind'] = 'native'
+            else:
+                row['payloads'].append({'path': 'lib/net10.0/System.Text.Json.dll', 'kind': 'compile',
+                                       'sha256': 'd' * 64, 'size': 10})
+                if change == 'mixed_reversed': row['payloads'].reverse()
+            values[0]['consumer/receipt.json'] = encoded(receipt)
+            with self.subTest(change=change), self.assertRaises(ValueError): self.validate(values)
+            self.files, self.context = values[:2]
+            seal_tests.SealContracts.assert_cli_rejected(self)
 
     def test_full_six_cell_byte_dispatch(self):
         """Verify full six cell byte dispatch."""
@@ -292,22 +386,8 @@ class SelectedProductPayloadTests(unittest.TestCase):
                     result = self.validate(values)
                     self.assertEqual(result['plan']['product'], product)
                     self.assertEqual(len(result['consumer']['runtime']), 3)
-                    sealed = seal.stage(values[0], values[1], tuple(metadata.sha256(values[0][name]) for name in
-                        ('plan.json', 'producer/receipt.json', 'consumer/receipt.json')), contracts=payload.load_contracts(), now=values[2])
+                    sealed = self.seal_and_readback(values)
                     self.assertEqual('original npm lifecycle/import/Vite execution' in json.loads(sealed[transport.MANIFEST])['inherited_judgments'], product == 'studio')
-                    provider_fixture = ProviderFixture(); provider_fixture.setUp()
-                    provider = provider_fixture.provider
-                    manifest_hash = metadata.sha256(sealed[transport.MANIFEST])
-                    original_zip = zipped(list(sealed.items()))
-                    context = values[1]['context']
-                    provider.update(artifact_name=f"selected-control-{product}-{line}-{context['head_sha']}-{context['run_id']}-{context['run_attempt']}",
-                        manifest_sha256=manifest_hash, archive_sha256=metadata.sha256(original_zip), archive_size=len(original_zip),
-                        created_at=(values[2]-timedelta(minutes=2)).isoformat(), retrieved_at=(values[2]-timedelta(minutes=1)).isoformat(),
-                        expires_at=(values[2]+timedelta(days=1)).isoformat())
-                    result = seal.readback(original_zip, provider, values[1] | {'manifest_sha256': manifest_hash},
-                        contracts=payload.load_contracts(), now=values[2])
-                    self.assertTrue(result['success'])
-                    self.assertFalse(result['product_code_executed_during_readback'])
 
     def test_core_missing_branch_or_tag_observation_rehashed_payload_is_rejected(self):
         """Verify Core missing branch or tag observation rehashed payload is rejected."""
