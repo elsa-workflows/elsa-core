@@ -28,19 +28,20 @@ public class DbSchemaAwareMigrationAssembly(
             throw new ArgumentNullException(nameof(activeProvider));
 
         var hasCtorWithSchema = migrationClass.GetConstructor([typeof(IElsaDbContextSchema)]) != null;
+        Migration instance;
 
         if (hasCtorWithSchema && _context is IElsaDbContextSchema schema)
         {
-            var instance = (Migration)Activator.CreateInstance(migrationClass.AsType(), schema)!;
+            instance = (Migration)Activator.CreateInstance(migrationClass.AsType(), schema)!;
             instance.ActiveProvider = activeProvider;
-
-            if (schema.Schema != ElsaDbContextBase.DefaultElsaSchema)
-                PatchDesignerSchema(instance, schema.Schema);
-
-            return instance;
         }
+        else
+            instance = base.CreateMigration(migrationClass, activeProvider);
 
-        return base.CreateMigration(migrationClass, activeProvider);
+        if (_context is IElsaDbContextSchema contextSchema && contextSchema.Schema != ElsaDbContextBase.DefaultElsaSchema)
+            PatchDesignerSchema(instance, contextSchema.Schema);
+
+        return instance;
     }
 
     private static void PatchDesignerSchema(Migration migration, string schema)
