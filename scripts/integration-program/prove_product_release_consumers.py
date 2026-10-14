@@ -41,6 +41,12 @@ EMPTY_BUILD_ACCOUNTING = 'native-synthetic-excluded-build'
 EMPTY_BUILD_ORIGIN = 'selected-root-nuspec-build-exclusion'
 ORIGINAL_EXCLUDED_BUILD_ACCOUNTING = 'native-original-excluded-flat-build'
 ORIGINAL_EXCLUDED_BUILD_ORIGIN = 'original-excluded-flat-build'
+DEPENDENCY_FLAT_BUILD_ACCOUNTING = 'native-selected-dependency-excluded-flat-build'
+DEPENDENCY_FLAT_BUILD_ORIGIN = 'selected-dependency-original-flat-build'
+ROOT_FLAT_BUILD_ACCOUNTING = 'native-selected-root-excluded-flat-build'
+ROOT_FLAT_BUILD_ORIGIN = 'selected-root-nuspec-flat-build-exclusion'
+FLAT_BUILD_ROOT = 'Elsa.Caching.Distributed.ProtoActor'
+FLAT_BUILD_WITNESS = 'Elsa.Actors.ProtoActor'
 ORIGINAL_EMPTY_LIB_ACCOUNTING = 'native-original-excluded-lib'
 ORIGINAL_EMPTY_LIB_ORIGIN = 'original-excluded-lib'
 STUDIO38_CONTRACT_SOURCE = {
@@ -105,6 +111,17 @@ PUBLIC_FAILURE_CODES = producer.PUBLIC_FAILURE_CODES | frozenset((
     'core_consumer_native_dll_inventory core_consumer_native_frameworks core_consumer_native_inventory '
     'core_consumer_runtime_frameworks core_consumer_runtime_packages core_consumer_source_contract'
 ).split())
+PUBLIC_FAILURE_CODES |= frozenset((
+    'consumer_flat_build_archive consumer_flat_build_boundary consumer_flat_build_cache '
+    'consumer_flat_build_case consumer_flat_build_catalog_context consumer_flat_build_collision '
+    'consumer_flat_build_flags consumer_flat_build_graph consumer_flat_build_group '
+    'consumer_flat_build_incoming consumer_flat_build_marker consumer_flat_build_original_flags '
+    'consumer_flat_build_original_group consumer_flat_build_prerequisite consumer_flat_build_private_omission '
+    'consumer_flat_build_private_override consumer_flat_build_project consumer_flat_build_real_group '
+    'consumer_flat_build_real_member consumer_flat_build_root consumer_flat_build_root_snapshot '
+    'consumer_flat_build_selected_path consumer_flat_build_witness consumer_flat_build_witness_context '
+).split())
+
 PUBLIC_FAILURE_STAGES = frozenset(('consumer-setup', 'consumer-semantics-preflight', 'current-consumer-prerequisites',
     'original-external-archive-catalog', 'selected-restore-compile', 'core-runtime-contract',
     'studio-runtime-contract', 'extensions-runtime-contract'))
@@ -471,6 +488,182 @@ def synthetic_build_marker(assets: dict, original: dict, framework: str, key: st
 
 
 
+def flat_build_plan_context(plan: dict, framework: str, key: str, kind: str, *, witness: bool) -> dict:
+    """Closed #8693 source/plan joins for the two observed flat exclusions; remove with the adapter."""
+    identifier, version = key.rsplit('/', 1)
+    require(plan['product'] == 'extensions' and plan['line'] in ('3.8', '3.9') and
+        kind in ('build', 'buildMultiTargeting') and (witness or plan['line'] == '3.8') and
+        (identifier, version) == (('Grpc.Tools', '2.70.0') if witness else ('Proto.Cluster.CodeGen', '1.8.0')),
+        'consumer_flat_build_case')
+    policies = plan['inventory']['selected']
+    roots = [row for row in policies if row['id'] == FLAT_BUILD_ROOT]
+    require(len(roots) == 1 and framework in roots[0]['frameworks'], 'consumer_flat_build_root')
+    root = roots[0]
+    projects = [row for row in plan['inventory']['projects'] if row['path'] == root['project'] and row['package_id'] == root['id']]
+    require(len(projects) == 1, 'consumer_flat_build_project')
+    refs = [row for row in projects[0]['references_by_framework'][framework]['package_references'] if row['id'] == identifier]
+    require(len(refs) == 1 and refs[0]['PrivateAssets'].casefold() == ('all' if witness else '') and
+        refs[0]['IncludeAssets'] == refs[0]['ExcludeAssets'] == refs[0]['Version'] == refs[0]['VersionOverride'] == '',
+        'consumer_flat_build_original_flags')
+    groups = root['metadata']['dependency_groups']
+    active = [row for row in groups if row['framework'] == framework]
+    require(len(active) == 1, 'consumer_flat_build_group')
+    result = {'root_id': root['id'], 'root_project': root['project'], 'framework': framework,
+        'root_assets_sha256': root['metadata']['restore_assets_sha256'],
+        'source': {key: plan['source'][key] for key in ('commit', 'tree')},
+        'planner_controller_sha256': metadata.canonical_hash(plan['controller'])}
+    if witness:
+        require(not any(row['id'].casefold() == identifier.casefold() for row in active[0]['dependencies']),
+                'consumer_flat_build_private_omission')
+        witnesses = [row for row in policies if row['id'] == FLAT_BUILD_WITNESS]
+        require(len(witnesses) == 1 and framework in witnesses[0]['frameworks'], 'consumer_flat_build_witness')
+        other = witnesses[0]
+        path = [row for row in active[0]['dependencies'] if row['id'] == other['id']]
+        require(len(path) == 1 and path[0]['version'] == plan['requested_version'], 'consumer_flat_build_selected_path')
+        result.update(witness_id=other['id'], witness_project=other['project'],
+            witness_assets_sha256=other['metadata']['restore_assets_sha256'],
+            selected_path=[root['id'], other['id']], private_override_version='2.76.0',
+            incoming={'id': 'Grpc.AspNetCore', 'version': '2.70.0', 'range': '2.70.0'})
+    else:
+        edge = build_exclusion_edge(groups, framework, identifier)
+        excluded = {flag.strip().casefold() for flag in edge['exclude'].split(',')}
+        require(bool(excluded & {'build', 'all'}), 'consumer_flat_build_flags')
+        prerequisites = [row for row in plan['prerequisites'] if
+            (row['consumer'], row['project'], row['framework'], row['id'], row['version'], row['range']) ==
+            (root['id'], root['project'], framework, identifier, version, edge['version'])]
+        require(len(prerequisites) == 1 and prerequisites[0]['eligible'] is True, 'consumer_flat_build_prerequisite')
+        result['edge'] = dict(edge)
+    return result
+
+
+def flat_build_incoming(targets: dict, identifier: str) -> list[tuple[str, str]]:
+    incoming = []
+    for key, target in targets.items():
+        edges = target.get('dependencies', {})
+        require(type(edges) is dict and all(type(name) is str for name in edges) and
+            len({name.casefold() for name in edges}) == len(edges), 'consumer_flat_build_incoming')
+        incoming.extend((key, value) for name, value in edges.items() if name.casefold() == identifier.casefold())
+    return incoming
+
+
+def proven_flat_build_marker(assets: dict, original: dict, framework: str, key: str, kind: str,
+                             package: zipfile.ZipFile, names: list[str], folder: Path, catalog: dict,
+                             graph: dict, selected: dict, plan: dict, original_policy: dict, *, witness: bool) -> dict:
+    """Two separate native proofs share only archive/cache and sole-root boundary checks."""
+    context = flat_build_plan_context(plan, framework, key, kind, witness=witness)
+    identifier, version = key.rsplit('/', 1)
+    root = selected.get(context['root_id'].casefold(), {})
+    require(root.get('policy') == next(row for row in plan['inventory']['selected'] if row['id'] == context['root_id']) and
+        original is original_policy['original_assets'].get(context['root_project']) and
+        original.get('project', {}).get('restore', {}).get('projectPath', '').endswith('/' + context['root_project']),
+        'consumer_flat_build_root_snapshot')
+    targets = assets['targets'][framework]
+    marker = kind + '/_._'
+    direct = assets.get('project', {}).get('frameworks', {}).get(framework, {}).get('dependencies', {})
+    root_key = context['root_id'] + '/' + plan['requested_version']
+    require(type(direct) is dict and set(direct) == {context['root_id']} and
+        type(direct[context['root_id']]) is dict and set(direct[context['root_id']]) <= {'target', 'version', 'aliases'} and
+        direct[context['root_id']].get('target') == 'Package' and
+        direct[context['root_id']].get('version') == '[{0}, {0}]'.format(plan['requested_version']) and
+        direct[context['root_id']].get('aliases', 'selected') == 'selected' and
+        assets.get('projectFileDependencyGroups') == {framework: [context['root_id'] + ' >= ' +
+            plan['requested_version'] + ' <= ' + plan['requested_version']]}, 'consumer_flat_build_boundary')
+    require(len(targets) == len(graph) and {name.rsplit('/', 1)[0].casefold() for name in targets} == set(graph) and
+        all(target.get('type') == 'package' for target in targets.values()) and
+        graph[context['root_id'].casefold()]['selected'] is True and
+        all(graph[name.rsplit('/', 1)[0].casefold()]['version'] == name.rsplit('/', 1)[1] for name in targets),
+        'consumer_flat_build_graph')
+    current = targets[key]
+    require(current.get(kind) == {marker: {}} and not current.get('buildTransitive'), 'consumer_flat_build_marker')
+    incoming = flat_build_incoming(targets, identifier)
+    if witness:
+        require(kind == 'build' and key not in original['targets'][framework] and key not in original['libraries'],
+                'consumer_flat_build_private_override')
+        override_key = identifier + '/' + context['private_override_version']
+        override = original.get('project', {}).get('frameworks', {}).get(framework, {}).get('dependencies', {}).get(identifier, {})
+        require(set(override) <= {'target', 'version', 'versionCentrallyManaged', 'suppressParent'} and
+            override.get('target') == 'Package' and override.get('suppressParent') == 'All' and
+            override.get('version') == '[' + context['private_override_version'] + ', )' and
+            original['targets'][framework].get(override_key, {}).get('type') == 'package',
+            'consumer_flat_build_private_override')
+        witness_key = context['witness_id'] + '/' + plan['requested_version']
+        require(witness_key in targets and graph[context['witness_id'].casefold()]['selected'] is True and
+            targets[root_key].get('dependencies', {}).get(context['witness_id']) == plan['requested_version'],
+            'consumer_flat_build_selected_path')
+        require(incoming == [('Grpc.AspNetCore/2.70.0', '2.70.0')] and
+            flat_build_incoming(original['targets'][framework], identifier) == incoming and
+            original['targets'][framework]['Grpc.AspNetCore/2.70.0'].get('type') == 'package', 'consumer_flat_build_incoming')
+        reachable = set()
+        pending = [context['root_id'].casefold()]
+        while pending:
+            node = pending.pop()
+            if node in reachable:
+                continue
+            reachable.add(node)
+            pending.extend(name.casefold() for name in graph[node].get('dependencies', {}))
+        candidates = []
+        for folded, row in selected.items():
+            project = row['policy']['project']
+            snapshot = original_policy['original_assets'].get(project, {})
+            target = snapshot.get('targets', {}).get(framework, {}).get(key, {})
+            if folded in reachable and folded != context['root_id'].casefold() and target.get(kind) == {marker: {}}:
+                candidates.append((row, snapshot))
+        require(len(candidates) == 1 and candidates[0][0]['id'] == context['witness_id'] and
+            candidates[0][0]['policy'] == next(row for row in plan['inventory']['selected'] if row['id'] == context['witness_id']),
+            'consumer_flat_build_witness')
+        before_assets = candidates[0][1]
+        require(before_assets.get('project', {}).get('restore', {}).get('projectPath', '').endswith('/' + context['witness_project']) and
+            original_policy['sdk_projects'][context['root_project']][framework] ==
+                original_policy['sdk_projects'][context['witness_project']][framework] and
+            not any(name.casefold() == identifier.casefold() for name in before_assets['project']['frameworks'][framework].get('dependencies', {})) and
+            flat_build_incoming(before_assets['targets'][framework], identifier) == incoming and
+            before_assets['targets'][framework]['Grpc.AspNetCore/2.70.0'].get('type') == 'package',
+            'consumer_flat_build_witness_context')
+    else:
+        before_assets = original
+        require(incoming == [(root_key, context['edge']['version'])], 'consumer_flat_build_incoming')
+        original_direct = original['project']['frameworks'][framework].get('dependencies', {}).get(identifier, {})
+        require(set(original_direct) <= {'target', 'version', 'versionCentrallyManaged'} and
+            original_direct.get('target') == 'Package' and original_direct.get('version') == '[' + version + ', )' and
+            identifier + ' >= ' + version in original.get('projectFileDependencyGroups', {}).get(framework, []),
+            'consumer_flat_build_original_flags')
+    before_target = before_assets['targets'][framework].get(key, {})
+    require(before_target.get('type') == 'package' and not before_target.get('buildTransitive') and
+        (before_target.get(kind) == {marker: {}} if witness else bool(before_target.get(kind))),
+        'consumer_flat_build_original_group')
+    before, library = before_assets['libraries'].get(key, {}), assets['libraries'][key]
+    record = catalog.get((identifier.casefold(), version))
+    require(record is not None and record.get('id') == identifier and record.get('version') == version and
+        before.get('type') == library.get('type') == 'package' and
+        before.get('sha512') == library.get('sha512') == record['content_hash'] and
+        metadata.sha256(Path(package.filename).read_bytes()) == record['archive_sha256'], 'consumer_flat_build_archive')
+    catalog_project = context['witness_project'] if witness else context['root_project']
+    contexts = [row for row in record.get('original_contexts', []) if row.get('project') == catalog_project and
+        framework in row.get('frameworks', []) and row.get('content_hash') == record['content_hash']]
+    require(len(contexts) == 1, 'consumer_flat_build_catalog_context')
+    real = [name for name in names if name.casefold().startswith(kind.casefold() + '/') and name.casefold().endswith(('.props', '.targets'))]
+    require(real and not any(name.casefold().startswith('buildtransitive/') for name in names), 'consumer_flat_build_real_group')
+    for entry in real:
+        safe_relative(entry)
+        require(entry.isascii() and entry in before.get('files', []) and entry in library.get('files', []),
+                'consumer_flat_build_real_member')
+        read_bound(folder / entry, metadata.sha256(package.read(entry)))
+    entrypoints = [entry for entry in real if Path(entry).name.casefold() in {identifier.casefold() + '.props', identifier.casefold() + '.targets'}]
+    require(entrypoints and all(entry.rsplit('/', 1)[0] == kind for entry in entrypoints), 'consumer_flat_build_real_member')
+    if not witness:
+        require(before_target[kind] == {entry: {} for entry in entrypoints}, 'consumer_flat_build_original_group')
+    first = sorted(entrypoints, key=lambda entry: (entry.rfind('/'), entry.casefold()))[0]
+    require(first.rsplit('/', 1)[0] + '/_._' == marker and not any(name.casefold() == marker.casefold() for name in names),
+            'consumer_flat_build_collision')
+    path = folder / marker
+    require(not path.exists() and not any(part.is_symlink() for part in (path, *path.parents)) and
+        not any(entry.relative_to(folder).as_posix().casefold() == marker.casefold() for entry in folder.rglob('*')),
+        'consumer_flat_build_cache')
+    return {'path': marker, 'kind': kind, 'metadata': {}, 'archive_sha256': record['archive_sha256'],
+        'accounting': DEPENDENCY_FLAT_BUILD_ACCOUNTING if witness else ROOT_FLAT_BUILD_ACCOUNTING,
+        'origin': DEPENDENCY_FLAT_BUILD_ORIGIN if witness else ROOT_FLAT_BUILD_ORIGIN, 'provenance': context}
+
+
 def original_excluded_build_marker(assets: dict, original: dict, framework: str, key: str, kind: str,
                                    package: zipfile.ZipFile, names: list[str], folder: Path, catalog: dict,
                                    graph: dict, selected: dict) -> dict:
@@ -652,7 +845,8 @@ def original_empty_lib_marker(assets: dict, original: dict, framework: str, key:
 
 
 def verify_asset_payloads(assets: dict, framework: str, graph: dict, cache: Path, artifacts: Path, selected: dict,
-                          *, catalog: dict | None = None, original_assets: dict | None = None) -> list[dict]:
+                          *, catalog: dict | None = None, original_assets: dict | None = None,
+                          plan: dict | None = None, original_policy: dict | None = None) -> list[dict]:
     """Join restored payload bytes and permitted empty markers to archive evidence."""
     evidence = []
     for key, library in assets['targets'][framework].items():
@@ -685,8 +879,17 @@ def verify_asset_payloads(assets: dict, framework: str, graph: dict, cache: Path
                         continue
                     if kind in ('build', 'buildMultiTargeting') and entry == kind + '/_._' and entry not in names:
                         require(not graph[folded]['selected'], 'consumer_original_build_selected')
-                        payloads.append(original_excluded_build_marker(assets, original_assets, framework, key, kind,
-                            package, names, folder, catalog or {}, graph, selected))
+                        direct = assets.get('project', {}).get('frameworks', {}).get(framework, {}).get('dependencies', {})
+                        root_case = plan is not None and original_policy is not None and set(direct) == {FLAT_BUILD_ROOT}
+                        before = (original_assets or {}).get('targets', {}).get(framework, {}).get(key, {})
+                        witness_case = root_case and key == 'Grpc.Tools/2.70.0' and not before
+                        exclusion_case = root_case and plan['line'] == '3.8' and key == 'Proto.Cluster.CodeGen/1.8.0' and before.get(kind) != {kind + '/_._': {}}
+                        if witness_case or exclusion_case:
+                            payloads.append(proven_flat_build_marker(assets, original_assets, framework, key, kind,
+                                package, names, folder, catalog or {}, graph, selected, plan, original_policy, witness=witness_case))
+                        else:
+                            payloads.append(original_excluded_build_marker(assets, original_assets, framework, key, kind,
+                                package, names, folder, catalog or {}, graph, selected))
                         continue
                     require(entry in names, 'consumer_asset_archive_member')
                     content = package.read(entry)
@@ -827,7 +1030,7 @@ def cell(plan: dict, package: dict, framework: str, selected: dict, artifacts: P
         cache, policy['sources'], policy['mapping'], inspector, proof=True)
     cached = verify_cache(graph, policy, cache, artifacts, selected, restored, inspector, catalog)
     payloads = verify_asset_payloads(restored, framework, graph, cache, artifacts, selected, catalog=catalog,
-        original_assets=original_policy['original_assets'][package['policy']['project']])
+        original_assets=original_policy['original_assets'][package['policy']['project']], plan=plan, original_policy=original_policy)
     commands.append(consumers._run_command(['dotnet', 'build', str(project), '-c', 'Release', '--no-restore', '--disable-build-servers',
         '--nologo'], output, environment, output / 'build.log', 1200))
     require(all(metadata.sha256((output / name).read_bytes()) == digest for name, digest in inputs.items()) and

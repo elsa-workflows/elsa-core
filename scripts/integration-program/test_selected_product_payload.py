@@ -23,7 +23,7 @@ from test_selected_control_transport import zipped, Fixture as ProviderFixture
 SHAPES = Path(__file__).with_name('selected_product_plan_shapes.json')
 
 
-def fixture(product, line, *, source_mutation=None):
+def fixture(product, line, *, source_mutation=None, flat_build=False):
     """Create complete synthetic payload bytes and expected identity for one product/release
     cell.
     """
@@ -58,10 +58,20 @@ def fixture(product, line, *, source_mutation=None):
         records = core_producer['packages']['selected']
     else:
         records = []
-        for identifier in ('Elsa.IO.Http', 'Elsa.IO', *[item['id'] for item in contracts['extensions_mysql']['support_policy']['projects']]):
+        for identifier in ('Elsa.IO.Http', 'Elsa.IO', *([payload.consumer.FLAT_BUILD_ROOT, payload.consumer.FLAT_BUILD_WITNESS] if flat_build else []), *[item['id'] for item in contracts['extensions_mysql']['support_policy']['projects']]):
             policy = deepcopy(template)
             policy.update(id=identifier, project='src/modules/io/' + identifier + '/' + identifier + '.csproj')
             policy['metadata']['dependency_groups'] = []
+            if flat_build and identifier in (payload.consumer.FLAT_BUILD_ROOT, payload.consumer.FLAT_BUILD_WITNESS):
+                category = 'caching' if identifier == payload.consumer.FLAT_BUILD_ROOT else 'actors'
+                policy['project'] = 'src/modules/' + category + '/' + identifier + '/' + identifier + '.csproj'
+                policy['metadata']['restore_assets_sha256'] = ('a' if category == 'caching' else 'b') * 64
+                dependencies = ([{'id': payload.consumer.FLAT_BUILD_WITNESS, 'version': version, 'include': '', 'exclude': 'Build,Analyzers'},
+                    {'id': 'Proto.Cluster.CodeGen', 'version': '1.8.0', 'include': '', 'exclude': 'Build,Analyzers'}] if category == 'caching' else
+                    [{'id': 'Proto.Remote', 'version': '1.8.0', 'include': '', 'exclude': 'Build,Analyzers'}])
+                if category == 'caching' and line == '3.9':
+                    dependencies = [edge for edge in dependencies if edge['id'] != 'Proto.Cluster.CodeGen']
+                policy['metadata']['dependency_groups'] = [{'framework': f, 'dependencies': deepcopy(dependencies)} for f in sorted(policy['frameworks'])]
             mysql = next((item for item in contracts['extensions_mysql']['support_policy']['projects'] if item['id'] == identifier), None)
             if mysql:
                 policy.update(project=mysql['project'], frameworks=['net8.0', 'net9.0'])
@@ -77,7 +87,10 @@ def fixture(product, line, *, source_mutation=None):
                     'repositoryUrl': 'https://github.com/elsa-workflows/elsa-core'}, 'features': [
                     {'id': 'Elsa.IO.Http.HTTP', **payload.extensions.MANIFEST_FEATURE,
                      'dependencies': [{'featureId': 'Elsa.IO.Http.I/O', 'optional': False, 'extensions': {}}]}]})
-            groups = '<dependencies>' + ''.join(f'<group targetFramework="{f}" />' for f in policy['frameworks']) + '</dependencies>' if mysql else ''
+            groups = '<dependencies>' + ''.join('<group targetFramework="' + group['framework'] + '">' +
+                ''.join('<dependency id="' + edge['id'] + '" version="' + edge['version'] + '" include="' + edge['include'] +
+                    '" exclude="' + edge['exclude'] + '" />' for edge in group['dependencies']) + '</group>'
+                for group in policy['metadata']['dependency_groups']) + '</dependencies>' if policy['metadata']['dependency_groups'] else ''
             spec = (f'<package><metadata><id>{identifier}</id><version>{version}</version>{groups}'
                 f'<repository type="git" url="https://github.com/elsa-workflows/elsa-core" commit="{source["commit"]}" />'
                 '</metadata></package>').encode()
@@ -137,6 +150,28 @@ def fixture(product, line, *, source_mutation=None):
             inventory['excluded'].append(deepcopy(row))
             r = deepcopy(projects[0]); r.update(path=row['project'], package_id=row['id']); projects.append(r)
             inventory['release_recipe']['projects'].append(row['project'])
+    if flat_build:
+        root = next(row for row in policies if row['id'] == payload.consumer.FLAT_BUILD_ROOT)
+        project = next(row for row in projects if row['path'] == root['project'])
+        refs = [{'id': name, 'Version': '', 'VersionOverride': '', 'PrivateAssets': private, 'IncludeAssets': '', 'ExcludeAssets': ''}
+                for name, private in (('Grpc.Tools', 'all'), ('Proto.Cluster.CodeGen', '')) if line == '3.8' or name != 'Proto.Cluster.CodeGen']
+        for framework in root['frameworks']:
+            project['references_by_framework'][framework]['package_references'] = deepcopy(refs)
+        project['package_references'] = [{'id': row['id']} for row in refs]
+        plan['prerequisites'], plan['selected_dependency_intent'] = [], []
+        for policy in policies:
+            for group in policy['metadata']['dependency_groups']:
+                for edge in group['dependencies']:
+                    record = {'consumer': policy['id'], 'project': policy['project'], 'framework': group['framework'],
+                              'id': edge['id'], 'range': edge['version'], 'version': edge['version'], 'eligible': True}
+                    if edge['id'].casefold() in selected:
+                        plan['selected_dependency_intent'].append(record)
+                    else:
+                        observation = deepcopy(plan['histories'][0]['feeds'][0]['observation'])
+                        observation['url'] = payload.consumer.planner.nuspec_url(edge['id'], edge['version'])
+                        feed = record | {'reason': None, 'feed': 'https://api.nuget.org/v3/index.json', 'observation': observation}
+                        plan['prerequisites'].append(record | {'feeds': [feed], 'reason': None, 'compatibility_scope': 'dependency-metadata-only'})
+        plan['prerequisites_excluded_from_publication'] = sorted({row['id'] for row in plan['prerequisites']})
     inventory['sha256'] = metadata.canonical_hash(metadata.public_inventory(inventory))
     history = deepcopy(plan['histories'][0]); history['feeds'][0]['decision']['normalized'] = version
     plan['histories'] = [deepcopy(history) for _ in policies]
@@ -175,6 +210,7 @@ def fixture(product, line, *, source_mutation=None):
         runtime_contract_source=payload.runtime_source(plan, contracts))
     consumer['producer_plan_admission'].update(artifact_receipt_sha256=producer_hash)
     consumer['current_consumer_admission']['histories'] = len(plan['histories'])
+    consumer['current_consumer_admission']['prerequisites'] = len(plan['prerequisites'])
     description = payload.runtime_policy(plan, contracts)
     consumer['limitations'][1] = description['limitation']
     template_cell = deepcopy(consumer['coverage'][0])
@@ -277,6 +313,40 @@ def original_flat_build_fixture():
     return files, expected, now
 
 
+def proven_flat_payload_fixture(*, witness=True, line='3.8'):
+    """Complete admitted payload with actual producer-shaped marker evidence and coverage witness."""
+    files, expected, now = fixture('extensions', line, flat_build=True)
+    plan, receipt = (json.loads(files[name]) for name in ('plan.json', 'consumer/receipt.json'))
+    root = next(row for row in receipt['coverage'] if row['id'] == payload.consumer.FLAT_BUILD_ROOT and row['framework'] == 'net8.0')
+    actor = next(row for row in receipt['coverage'] if row['id'] == payload.consumer.FLAT_BUILD_WITNESS and row['framework'] == 'net8.0')
+    identifier, version = ('Grpc.Tools', '2.70.0') if witness else ('Proto.Cluster.CodeGen', '1.8.0')
+    external = {'id': identifier, 'version': version, 'source': 'https://api.nuget.org/v3/index.json',
+        'sha256': 'a' * 64, 'archive_sha512': 'b' * 128, 'nuget_content_hash': 'A' * 86 + '==', 'signed': True}
+    kinds = ('build',) if witness else ('build', 'buildMultiTargeting')
+    root['restored'].append(deepcopy(external))
+    root['restored_payloads'].append({'id': identifier, 'version': version, 'payloads': [
+        {'path': kind + '/_._', 'kind': kind, 'metadata': {}, 'archive_sha256': external['sha256'],
+         'accounting': payload.consumer.DEPENDENCY_FLAT_BUILD_ACCOUNTING if witness else payload.consumer.ROOT_FLAT_BUILD_ACCOUNTING,
+         'origin': payload.consumer.DEPENDENCY_FLAT_BUILD_ORIGIN if witness else payload.consumer.ROOT_FLAT_BUILD_ORIGIN,
+         'provenance': payload.consumer.flat_build_plan_context(plan, 'net8.0', identifier + '/' + version, kind, witness=witness)}
+        for kind in kinds]})
+    if witness:
+        actor['restored'].append(deepcopy(external))
+        actor_policy = next(row for row in plan['inventory']['selected'] if row['id'] == actor['id'])
+        actor['restored_payloads'].append({'id': identifier, 'version': version, 'payloads': [{
+            'path': 'build/_._', 'kind': 'build', 'metadata': {}, 'archive_sha256': external['sha256'],
+            'accounting': payload.consumer.ORIGINAL_EXCLUDED_BUILD_ACCOUNTING, 'origin': payload.consumer.ORIGINAL_EXCLUDED_BUILD_ORIGIN,
+            'original_assets_sha256': actor_policy['metadata']['restore_assets_sha256']}]})
+        parent = external | {'id': 'Grpc.AspNetCore', 'sha256': 'c' * 64}
+        for cell in (root, actor):
+            cell['restored'].append(deepcopy(parent))
+            cell['restored_payloads'].append({'id': parent['id'], 'version': parent['version'], 'payloads': []})
+        actor_restore = deepcopy(actor['restored'][0]); actor_payload = deepcopy(actor['restored_payloads'][0])
+        root['restored'].append(actor_restore); root['restored_payloads'].append(actor_payload)
+    files['consumer/receipt.json'] = encoded(receipt)
+    return files, expected, now
+
+
 class SelectedProductPayloadTests(unittest.TestCase):
     def original_empty_lib_payload(self):
         """Feed actual verifier output into a synthetic producer/consumer seal fixture."""
@@ -323,10 +393,10 @@ class SelectedProductPayloadTests(unittest.TestCase):
         return payload.validate(files, expected, *(metadata.sha256(files[name]) for name in
             ('plan.json', 'producer/receipt.json', 'consumer/receipt.json')), contracts=payload.load_contracts(), now=now)
 
-    def seal_and_readback(self, values):
+    def seal_and_readback(self, values, *, sealed=None):
         """Validate a complete synthetic provider ZIP through the real seal/readback path."""
         files, expected, now = values
-        sealed = seal.stage(files, expected, tuple(metadata.sha256(files[name]) for name in
+        sealed = sealed if sealed is not None else seal.stage(files, expected, tuple(metadata.sha256(files[name]) for name in
             ('plan.json', 'producer/receipt.json', 'consumer/receipt.json')), contracts=payload.load_contracts(), now=now)
         provider_fixture = ProviderFixture(); provider_fixture.setUp()
         provider = provider_fixture.provider
@@ -576,6 +646,65 @@ class SelectedProductPayloadTests(unittest.TestCase):
             with self.subTest(change=change), self.assertRaises(ValueError): self.validate(values)
             self.files, self.context = values[:2]
             seal_tests.SealContracts.assert_cli_rejected(self)
+
+    def test_new_flat_cases_join_witness_coverage_and_seal_readback(self):
+        for line in ('3.8', '3.9'):
+            for witness in ((True, False) if line == '3.8' else (True,)):
+                values = proven_flat_payload_fixture(witness=witness, line=line)
+                with self.subTest(line=line, witness=witness):
+                    self.validate(values)
+                    self.seal_and_readback(values)
+
+    def test_rehashed_new_flat_provenance_rejects_wrong_origin_witness_sdk_and_plan_joins(self):
+        for witness in (True, False):
+            changes = ('origin', 'root_hash', 'source', 'framework', 'extra', 'old_origin', 'old_shape', 'root_project', 'missing_context') + (
+                ('witness_hash', 'witness_id', 'path', 'sdk', 'witness_archive', 'witness_marker', 'override', 'incoming', 'parent') if witness else ('edge',))
+            for change in changes:
+                values = proven_flat_payload_fixture(witness=witness)
+                sealed = self.seal_and_readback(values)
+                receipt = json.loads(values[0]['consumer/receipt.json'])
+                cell = next(row for row in receipt['coverage'] if row['id'] == payload.consumer.FLAT_BUILD_ROOT and row['framework'] == 'net8.0')
+                marker = next(row for row in cell['restored_payloads'] if row['id'] == ('Grpc.Tools' if witness else 'Proto.Cluster.CodeGen'))['payloads'][0]
+                provenance = marker['provenance']
+                if change == 'origin': marker['origin'] = payload.consumer.ROOT_FLAT_BUILD_ORIGIN if witness else payload.consumer.DEPENDENCY_FLAT_BUILD_ORIGIN
+                elif change in ('old_origin', 'old_shape'):
+                    marker.update(origin=payload.consumer.ORIGINAL_EXCLUDED_BUILD_ORIGIN, accounting=payload.consumer.ORIGINAL_EXCLUDED_BUILD_ACCOUNTING)
+                    if change == 'old_shape':
+                        marker['original_assets_sha256'] = marker.pop('provenance')['root_assets_sha256']
+                elif change == 'root_hash': provenance['root_assets_sha256'] = 'f' * 64
+                elif change == 'root_project': provenance['root_project'] = 'src/Wrong.csproj'
+                elif change == 'missing_context': provenance.pop('source')
+                elif change == 'override': provenance['private_override_version'] = '2.70.0'
+                elif change == 'incoming': provenance['incoming']['range'] = '9.9.9'
+                elif change == 'source': provenance['source']['commit'] = 'f' * 40
+                elif change == 'framework': provenance['framework'] = 'net9.0'
+                elif change == 'extra': marker['raw'] = '/private/source'
+                elif change == 'witness_hash': provenance['witness_assets_sha256'] = 'f' * 64
+                elif change == 'witness_id':
+                    plan = json.loads(values[0]['plan.json'])
+                    foreign = next(row for row in plan['inventory']['selected'] if row['id'] == 'Elsa.IO')
+                    provenance.update(witness_id=foreign['id'], witness_project=foreign['project'],
+                        witness_assets_sha256=foreign['metadata']['restore_assets_sha256'],
+                        selected_path=[payload.consumer.FLAT_BUILD_ROOT, foreign['id']])
+                elif change == 'path': provenance['selected_path'] = [payload.consumer.FLAT_BUILD_ROOT, 'Elsa.IO']
+                elif change == 'edge': provenance['edge']['exclude'] = 'BuildTransitive'
+                else:
+                    actor = next(row for row in receipt['coverage'] if row['id'] == payload.consumer.FLAT_BUILD_WITNESS and row['framework'] == 'net8.0')
+                    if change == 'sdk': actor['sdk_restore']['pruning_sha256'] = 'f' * 64
+                    elif change == 'witness_archive': next(row for row in actor['restored'] if row['id'] == 'Grpc.Tools')['sha256'] = 'f' * 64
+                    elif change == 'parent': next(row for row in actor['restored'] if row['id'] == 'Grpc.AspNetCore')['version'] = '2.71.0'
+                    else: next(row for row in actor['restored_payloads'] if row['id'] == 'Grpc.Tools')['payloads'] = []
+                values[0]['consumer/receipt.json'] = encoded(receipt)
+                with self.subTest(witness=witness, change=change), self.assertRaises(ValueError): self.validate(values)
+                self.files, self.context = values[:2]
+                seal_tests.SealContracts.assert_cli_rejected(self)
+                sealed['consumer/receipt.json'] = values[0]['consumer/receipt.json']
+                manifest = json.loads(sealed[transport.MANIFEST])
+                manifest['consumer_receipt_sha256'] = metadata.sha256(sealed['consumer/receipt.json'])
+                manifest['files'] = transport.inventory({key: data for key, data in sealed.items() if key != transport.MANIFEST})
+                sealed[transport.MANIFEST] = encoded(manifest)
+                with self.subTest(witness=witness, change=change, boundary='rehashed-readback'), self.assertRaises(ValueError):
+                    self.seal_and_readback(values, sealed=sealed)
 
     def test_frozen_retained_file_closure_is_conditional_on_product(self):
         """Verify frozen retained file closure is conditional on product."""

@@ -1989,6 +1989,14 @@ class ConsumerCliDiagnosticsTests(unittest.TestCase):
             self.assertNotIn(context['id'], json.dumps(result))
             self.assertNotIn('/private/secret', json.dumps(result))
 
+    def test_new_flat_build_failures_keep_closed_cli_code_without_private_fields(self):
+        for code in ('consumer_flat_build_witness_context', 'consumer_flat_build_flags'):
+            error = ValueError(code)
+            error.private = {'path': '/private/secret', 'project': 'Unadmitted.Project'}
+            with self.subTest(code=code), patch.object(proof, 'execute', side_effect=error):
+                self.assertEqual(self.invoke(), {'success': False, 'failure_code': code,
+                    'failure_stage': 'unclassified', 'retained_receipt_created': False})
+
     def test_native_sdk_and_retirement_literal_codes_are_public_without_raw_details(self):
         """Verify native SDK and retirement literal codes are public without raw details."""
         for code in ('consumer_native_content_hash', 'consumer_sdk_download_bytes', 'consumer_cache_retirement_path'):
@@ -2120,3 +2128,168 @@ class ConsumerCliDiagnosticsTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class FlatBuildEvidenceTests(unittest.TestCase):
+    def setUp(self):
+        self.root = Path(self.enterContext(tempfile.TemporaryDirectory())).resolve()
+
+    def fixture(self, *, witness=True, line='3.8', framework='net8.0'):
+        root_id, actor = proof.FLAT_BUILD_ROOT, proof.FLAT_BUILD_WITNESS
+        version = line + '.999'
+        root_project = 'src/modules/caching/' + root_id + '/' + root_id + '.csproj'
+        actor_project = 'src/modules/actors/' + actor + '/' + actor + '.csproj'
+        identifier, external_version = ('Grpc.Tools', '2.70.0') if witness else ('Proto.Cluster.CodeGen', '1.8.0')
+        key = identifier + '/' + external_version
+        folder = self.root / ('case-' + str(len(list(self.root.iterdir()))))
+        folder.mkdir()
+        entries = {kind + '/' + identifier + '.props': b'<Project />' for kind in ('build', 'buildMultiTargeting')}
+        entries['build/helpers/actual.targets'] = b'<Project />'
+        archive = folder / (identifier + '.nupkg')
+        with zipfile.ZipFile(archive, 'w') as package:
+            for name, data in entries.items(): package.writestr(name, data)
+        for name, data in entries.items():
+            path = folder / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
+        chain = {root_id: {actor: version, 'Proto.Cluster.CodeGen': '1.8.0'}, actor: {'Proto.Remote': '1.8.0'},
+                 'Proto.Remote': {'Grpc.AspNetCore': '2.70.0'}, 'Grpc.AspNetCore': {'Grpc.Tools': '2.70.0'},
+                 'Grpc.Tools': {}, 'Proto.Cluster.CodeGen': {}}
+        if line == '3.9' and witness:
+            chain[root_id].pop('Proto.Cluster.CodeGen'); chain.pop('Proto.Cluster.CodeGen')
+        versions = {root_id: version, actor: version, 'Proto.Remote': '1.8.0', 'Grpc.AspNetCore': '2.70.0',
+                    'Grpc.Tools': '2.70.0', 'Proto.Cluster.CodeGen': '1.8.0'}
+        targets = {name + '/' + versions[name]: {'type': 'package', 'dependencies': edges} for name, edges in chain.items()}
+        targets[key].update({kind: {kind + '/_._': {}} for kind in ('build', 'buildMultiTargeting')})
+        library = {'type': 'package', 'sha512': 'native-content-hash', 'files': list(entries)}
+        assets = {'targets': {framework: targets}, 'libraries': {key: deepcopy(library)},
+            'project': {'frameworks': {framework: {'dependencies': {root_id: {
+                'target': 'Package', 'version': '[' + version + ', ' + version + ']', 'aliases': 'selected'}}}}},
+            'projectFileDependencyGroups': {framework: [root_id + ' >= ' + version + ' <= ' + version]}}
+        original = deepcopy(assets)
+        original['targets'][framework].pop(root_id + '/' + version)
+        original['project']['restore'] = {'projectPath': '/source/' + root_project}
+        original['project']['frameworks'][framework]['dependencies'] = {
+            'Grpc.Tools': {'target': 'Package', 'version': '[2.76.0, )', 'suppressParent': 'All', 'versionCentrallyManaged': True},
+            'Proto.Cluster.CodeGen': {'target': 'Package', 'version': '[1.8.0, )', 'versionCentrallyManaged': True}}
+        original['projectFileDependencyGroups'] = {framework: ['Grpc.Tools >= 2.76.0', 'Proto.Cluster.CodeGen >= 1.8.0']}
+        if line == '3.9' and witness:
+            original['project']['frameworks'][framework]['dependencies'].pop('Proto.Cluster.CodeGen')
+            original['projectFileDependencyGroups'][framework].remove('Proto.Cluster.CodeGen >= 1.8.0')
+        if witness:
+            original['targets'][framework].pop(key)
+            original['libraries'].pop(key)
+            original['targets'][framework]['Grpc.Tools/2.76.0'] = {'type': 'package'}
+        else:
+            original['targets'][framework][key].update({kind: {kind + '/' + identifier + '.props': {}}
+                for kind in ('build', 'buildMultiTargeting')})
+        other = deepcopy(assets)
+        other['targets'][framework].pop(root_id + '/' + version)
+        other['project']['restore'] = {'projectPath': '/source/' + actor_project}
+        other['project']['frameworks'][framework]['dependencies'] = {}
+        root_policy = {'id': root_id, 'project': root_project, 'frameworks': [framework], 'metadata': {
+            'restore_assets_sha256': 'a' * 64, 'dependency_groups': [{'framework': framework, 'dependencies': [
+                {'id': actor, 'version': version, 'include': '', 'exclude': 'Build,Analyzers'},
+                {'id': 'Proto.Cluster.CodeGen', 'version': '1.8.0', 'include': '', 'exclude': 'Build,Analyzers'}]}]}}
+        if line == '3.9' and witness:
+            root_policy['metadata']['dependency_groups'][0]['dependencies'].pop()
+        actor_policy = {'id': actor, 'project': actor_project, 'frameworks': [framework], 'metadata': {'restore_assets_sha256': 'b' * 64}}
+        refs = [{'id': name, 'Version': '', 'VersionOverride': '', 'PrivateAssets': private, 'IncludeAssets': '', 'ExcludeAssets': ''}
+                for name, private in (('Grpc.Tools', 'all'), ('Proto.Cluster.CodeGen', ''))
+                if line == '3.8' or not witness or name != 'Proto.Cluster.CodeGen']
+        plan = {'product': 'extensions', 'line': line, 'requested_version': version, 'source': {'commit': 'c' * 40, 'tree': 'd' * 40},
+            'controller': {'commit': 'e' * 40, 'tree': 'f' * 40}, 'inventory': {'selected': [root_policy, actor_policy],
+                'projects': [{'path': root_project, 'package_id': root_id, 'references_by_framework': {
+                    framework: {'package_references': refs}}}]}, 'prerequisites': [{'consumer': root_id, 'project': root_project,
+                    'framework': framework, 'id': 'Proto.Cluster.CodeGen', 'version': '1.8.0', 'range': '1.8.0', 'eligible': True}]}
+        policy = {'original_assets': {root_project: original, actor_project: other}, 'sdk_projects': {
+            root_project: {framework: {'pruning': {}, 'downloads': []}}, actor_project: {framework: {'pruning': {}, 'downloads': []}}}}
+        graph = {name.casefold(): {'id': name, 'version': versions[name], 'dependencies': edges,
+                                  'selected': name in (root_id, actor)} for name, edges in chain.items()}
+        selected = {root_id.casefold(): {'id': root_id, 'policy': root_policy}, actor.casefold(): {'id': actor, 'policy': actor_policy}}
+        return dict(assets=assets, original=original, framework=framework, key=key, folder=folder, archive=archive,
+            catalog={(identifier.casefold(), external_version): {'id': identifier, 'version': external_version,
+                'content_hash': library['sha512'], 'archive_sha256': metadata.sha256(archive.read_bytes()),
+                'original_contexts': [{'project': actor_project if witness else root_project,
+                    'frameworks': [framework], 'content_hash': library['sha512']}]}}, graph=graph, selected=selected, plan=plan,
+            original_policy=policy, witness=witness)
+
+    def verify(self, values, kind='build'):
+        with zipfile.ZipFile(values['archive']) as package:
+            return proof.proven_flat_build_marker(values['assets'], values['original'], values['framework'], values['key'],
+                kind, package, proof.archive_names(package), values['folder'], values['catalog'], values['graph'],
+                values['selected'], values['plan'], values['original_policy'], witness=values['witness'])
+
+    def test_real_shaped_private_override_and_selected_root_flat_exclusion(self):
+        for line in ('3.8', '3.9'):
+            for witness in ((True, False) if line == '3.8' else (True,)):
+                values = self.fixture(witness=witness, line=line)
+                for kind in (('build',) if witness else ('build', 'buildMultiTargeting')):
+                    with self.subTest(line=line, witness=witness, kind=kind):
+                        with zipfile.ZipFile(values['archive']) as package, self.assertRaisesRegex(ValueError, 'consumer_original_build_group'):
+                            proof.original_excluded_build_marker(values['assets'], values['original'], values['framework'],
+                                values['key'], kind, package, proof.archive_names(package), values['folder'], values['catalog'],
+                                values['graph'], values['selected'])
+                        result = self.verify(values, kind)
+                        self.assertEqual(proof.DEPENDENCY_FLAT_BUILD_ORIGIN if witness else proof.ROOT_FLAT_BUILD_ORIGIN, result['origin'])
+                        self.assertEqual('a' * 64, result['provenance']['root_assets_sha256'])
+                        if witness: self.assertEqual('b' * 64, result['provenance']['witness_assets_sha256'])
+
+    def test_registered_39_absent_codegen_declaration_cannot_use_38_root_proof(self):
+        values = self.fixture(witness=False, line='3.9')
+        project = values['plan']['inventory']['projects'][0]
+        project['references_by_framework']['net8.0']['package_references'] = [row for row in
+            project['references_by_framework']['net8.0']['package_references'] if row['id'] != 'Proto.Cluster.CodeGen']
+        with self.assertRaisesRegex(ValueError, 'consumer_flat_build_case'):
+            self.verify(values)
+
+    def test_new_flat_proofs_reject_decisive_native_boundary_changes(self):
+        for witness in (True, False):
+            changes = ['marker', 'transitive', 'archive', 'content_hash', 'cache', 'incoming', 'source_flags', 'wrong_tfm', 'entrypoint', 'version_override', 'source_version', 'catalog_context', 'archive_transitive', 'physical_marker', 'case_marker']
+            changes += ['sdk', 'witness_project', 'path', 'private_override', 'ambiguous_witness', 'witness_direct', 'witness_marker', 'witness_parent_type'] if witness else ['buildtransitive_only', 'original_flags']
+            for change in changes:
+                values = self.fixture(witness=witness)
+                root = values['plan']['inventory']['selected'][0]
+                target = values['assets']['targets'][values['framework']][values['key']]
+                if change == 'marker': target['build']['build/_._'] = {'unexpected': False}
+                elif change == 'transitive': target['buildTransitive'] = {'buildTransitive/real.props': {}}
+                elif change == 'archive': next(iter(values['catalog'].values()))['archive_sha256'] = 'f' * 64
+                elif change == 'content_hash': values['assets']['libraries'][values['key']]['sha512'] = 'wrong'
+                elif change == 'cache': (values['folder'] / 'build/helpers/actual.targets').write_bytes(b'changed')
+                elif change == 'catalog_context': next(iter(values['catalog'].values()))['original_contexts'][0]['project'] = 'foreign.csproj'
+                elif change == 'archive_transitive':
+                    with zipfile.ZipFile(values['archive'], 'a') as package: package.writestr('buildTransitive/real.props', b'<Project />')
+                    next(iter(values['catalog'].values()))['archive_sha256'] = metadata.sha256(values['archive'].read_bytes())
+                elif change in ('physical_marker', 'case_marker'):
+                    path = values['folder'] / ('build/_._' if change == 'physical_marker' else 'Build/_._')
+                    path.parent.mkdir(exist_ok=True); path.write_bytes(b'')
+                elif change == 'incoming': target['dependencies'] = {'Grpc.Tools' if witness else 'Proto.Cluster.CodeGen': '1.0.0'}
+                elif change == 'source_flags': values['plan']['inventory']['projects'][0]['references_by_framework'][values['framework']]['package_references'][0 if witness else 1]['PrivateAssets'] = 'none'
+                elif change in ('version_override', 'source_version'):
+                    refs = values['plan']['inventory']['projects'][0]['references_by_framework'][values['framework']]['package_references']
+                    refs[0 if witness else 1]['VersionOverride' if change == 'version_override' else 'Version'] = '9.9.9'
+                elif change == 'wrong_tfm': values['framework'] = 'net9.0'
+                elif change in ('ambiguous_witness', 'witness_direct', 'witness_marker', 'witness_parent_type'):
+                    actor = values['plan']['inventory']['selected'][1]
+                    other = values['original_policy']['original_assets'][actor['project']]
+                    if change == 'witness_direct': other['project']['frameworks']['net8.0']['dependencies']['Grpc.Tools'] = {'target': 'Package'}
+                    elif change == 'witness_marker': other['targets']['net8.0']['Grpc.Tools/2.70.0']['build'] = {'build/real.props': {}}
+                    elif change == 'witness_parent_type': other['targets']['net8.0']['Grpc.AspNetCore/2.70.0']['type'] = 'project'
+                    else:
+                        extra = deepcopy(values['selected'][actor['id'].casefold()]); extra.update(id='Elsa.Other')
+                        extra['policy'].update(id='Elsa.Other', project='src/Other.csproj')
+                        values['selected']['elsa.other'] = extra
+                        values['original_policy']['original_assets']['src/Other.csproj'] = deepcopy(other)
+                        values['graph']['elsa.other'] = {'id': 'Elsa.Other', 'version': values['plan']['requested_version'], 'dependencies': {}, 'selected': True}
+                        values['graph'][actor['id'].casefold()]['dependencies']['Elsa.Other'] = values['plan']['requested_version']
+                        values['assets']['targets']['net8.0']['Elsa.Other/' + values['plan']['requested_version']] = {'type': 'package'}
+                elif change == 'sdk': values['original_policy']['sdk_projects'][values['plan']['inventory']['selected'][1]['project']]['net8.0']['downloads'] = [{'id': 'changed', 'version': '1'}]
+                elif change == 'witness_project': values['original_policy']['original_assets'][values['plan']['inventory']['selected'][1]['project']]['project']['restore']['projectPath'] = '/wrong/source.csproj'
+                elif change == 'path': values['assets']['targets']['net8.0'][root['id'] + '/' + values['plan']['requested_version']]['dependencies'].pop(proof.FLAT_BUILD_WITNESS)
+                elif change == 'private_override': values['original']['project']['frameworks']['net8.0']['dependencies']['Grpc.Tools']['suppressParent'] = 'Build'
+                elif change == 'buildtransitive_only': root['metadata']['dependency_groups'][0]['dependencies'][1]['exclude'] = 'BuildTransitive'
+                elif change == 'original_flags': values['original']['project']['frameworks']['net8.0']['dependencies']['Proto.Cluster.CodeGen']['include'] = 'All'
+                else:
+                    # Real nested package-named entrypoints cannot be relabeled flat.
+                    with zipfile.ZipFile(values['archive'], 'a') as package: package.writestr('build/net8.0/' + values['key'].split('/')[0] + '.props', b'<Project />')
+                    next(iter(values['catalog'].values()))['archive_sha256'] = metadata.sha256(values['archive'].read_bytes())
+                with self.subTest(witness=witness, change=change), self.assertRaises((ValueError, KeyError)):
+                    self.verify(values)

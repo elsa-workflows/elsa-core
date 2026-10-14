@@ -291,7 +291,7 @@ def validate_sdk_restore(plan: dict, value: dict, selected: dict, framework: str
                 'selected_payload_sdk_content_hash')
 
 
-def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, runtime: bool) -> None:
+def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, runtime: bool, coverage: list | None = None) -> None:
     """Validate a consumer cell's restored package evidence and optional runtime checks."""
     transport.closed(cell, CELL_KEYS | ({'runtime'} if runtime else set()), 'selected_payload_cell')
     require(cell['id'].casefold() in selected and cell['id'] == selected[cell['id'].casefold()]['record']['id'],
@@ -364,12 +364,52 @@ def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, ru
             if type(asset) is dict and 'accounting' in asset:
                 original_build = asset.get('origin') == consumer.ORIGINAL_EXCLUDED_BUILD_ORIGIN
                 original_lib = asset.get('origin') == consumer.ORIGINAL_EMPTY_LIB_ORIGIN
+                dependency_flat = asset.get('origin') == consumer.DEPENDENCY_FLAT_BUILD_ORIGIN
+                root_flat = asset.get('origin') == consumer.ROOT_FLAT_BUILD_ORIGIN
                 keys = {'path', 'kind', 'accounting', 'metadata', 'archive_sha256', 'origin'}
-                transport.closed(asset, keys | ({'original_assets_sha256'} if original_build or original_lib else set()),
+                transport.closed(asset, keys | ({'original_assets_sha256'} if original_build or original_lib else
+                    {'provenance'} if dependency_flat or root_flat else set()),
                                  'selected_payload_synthetic_content')
                 require(folded not in selected and asset['archive_sha256'] == restored[folded]['sha256'] and
                     (asset['path'], asset['kind']) not in seen, 'selected_payload_synthetic_content_identity')
-                if original_lib:
+                if dependency_flat or root_flat:
+                    require(cell['id'] == consumer.FLAT_BUILD_ROOT and asset['kind'] in ('build', 'buildMultiTargeting') and
+                        asset['path'] == asset['kind'] + '/_._' and type(asset['metadata']) is dict and asset['metadata'] == {} and
+                        asset['accounting'] == (consumer.DEPENDENCY_FLAT_BUILD_ACCOUNTING if dependency_flat else
+                            consumer.ROOT_FLAT_BUILD_ACCOUNTING), 'selected_payload_flat_build_identity')
+                    context = consumer.flat_build_plan_context(plan, framework, row['id'] + '/' + row['version'],
+                                                               asset['kind'], witness=dependency_flat)
+                    require(asset['provenance'] == context, 'selected_payload_flat_build_provenance')
+                    if dependency_flat:
+                        require(asset['kind'] == 'build', 'selected_payload_flat_build_identity')
+                        witnesses = [entry for entry in sequence(coverage) if
+                            entry['id'] == context['witness_id'] and entry['framework'] == framework]
+                        require(len(witnesses) == 1 and context['witness_id'].casefold() in restored and
+                            witnesses[0]['sdk_restore']['original_assets_sha256'] == context['witness_assets_sha256'],
+                            'selected_payload_flat_build_witness')
+                        sdk_keys = ('sdk_version', 'pruning_enabled', 'pruning_sha256', 'downloads', 'toolchain_hash_scope')
+                        require(all(cell['sdk_restore'][key] == witnesses[0]['sdk_restore'][key] for key in sdk_keys),
+                                'selected_payload_flat_build_sdk')
+                        incoming = context['incoming']
+                        parents = [entry for entry in witnesses[0]['restored'] if
+                            (entry['id'], entry['version']) == (incoming['id'], incoming['version'])]
+                        require(len(parents) == 1 and incoming['id'].casefold() in restored and
+                            restored[incoming['id'].casefold()]['version'] == incoming['version'] and
+                            all(parents[0][key] == restored[incoming['id'].casefold()][key]
+                                for key in ('sha256', 'nuget_content_hash')), 'selected_payload_flat_build_incoming')
+                        witness_rows = [entry for entry in witnesses[0]['restored'] if
+                            entry['id'] == row['id'] and entry['version'] == row['version']]
+                        require(len(witness_rows) == 1 and all(witness_rows[0][key] == restored[folded][key]
+                            for key in ('sha256', 'nuget_content_hash')), 'selected_payload_flat_build_witness_archive')
+                        witness_payloads = [entry for entry in witnesses[0]['restored_payloads'] if
+                            entry['id'] == row['id'] and entry['version'] == row['version']]
+                        require(len(witness_payloads) == 1 and any(entry == {
+                            'path': 'build/_._', 'kind': 'build', 'metadata': {},
+                            'accounting': consumer.ORIGINAL_EXCLUDED_BUILD_ACCOUNTING,
+                            'archive_sha256': asset['archive_sha256'], 'origin': consumer.ORIGINAL_EXCLUDED_BUILD_ORIGIN,
+                            'original_assets_sha256': context['witness_assets_sha256']}
+                            for entry in witness_payloads[0]['payloads']), 'selected_payload_flat_build_witness_marker')
+                elif original_lib:
                     require(asset['accounting'] == consumer.ORIGINAL_EMPTY_LIB_ACCOUNTING and
                         asset['kind'] in ('compile', 'runtime') and
                         asset['original_assets_sha256'] == item['policy']['metadata']['restore_assets_sha256'],
@@ -377,6 +417,10 @@ def validate_cell(plan: dict, cell: dict, selected: dict, contracts: dict, *, ru
                     consumer.empty_lib_marker_shape(asset['path'], framework, asset['metadata'])
                     transport.digest(asset['original_assets_sha256'])
                 elif original_build:
+                    require(not (plan['product'] == 'extensions' and plan['line'] in ('3.8', '3.9') and
+                        cell['id'] == consumer.FLAT_BUILD_ROOT and ((row['id'], row['version']) == ('Grpc.Tools', '2.70.0') or
+                            plan['line'] == '3.8' and (row['id'], row['version']) == ('Proto.Cluster.CodeGen', '1.8.0'))),
+                        'selected_payload_flat_build_provenance_required')
                     require(asset['accounting'] == consumer.ORIGINAL_EXCLUDED_BUILD_ACCOUNTING and
                         asset['kind'] in ('build', 'buildMultiTargeting') and asset['path'] == asset['kind'] + '/_._' and
                         type(asset['metadata']) is dict and asset['metadata'] == {} and
@@ -491,7 +535,7 @@ def validate_consumers(plan: dict, receipt: dict, result: dict, selected: dict, 
     for runtime, rows in ((False, result['coverage']), (True, result['runtime'])):
         observed = []
         for row in sequence(rows):
-            validate_cell(plan, row, selected, contracts, runtime=runtime)
+            validate_cell(plan, row, selected, contracts, runtime=runtime, coverage=result['coverage'])
             observed.append((row['id'], row['framework']))
         wanted = ({(selected[contract['package']]['record']['id'], framework)
             for framework in selected[contract['package']]['policy']['frameworks']} if runtime else expected)
