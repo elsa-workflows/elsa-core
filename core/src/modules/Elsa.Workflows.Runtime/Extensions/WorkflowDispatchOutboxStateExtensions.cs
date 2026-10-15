@@ -53,8 +53,9 @@ public static class WorkflowDispatchOutboxStateExtensions
     /// removed from the workflow state and deleted from the outbox. The outbox cannot deliver an item before the parent
     /// commits it, so when the parent has not committed since the dispatch, the child is never created. When it has, for
     /// example under an activity commit strategy, the outbox may already have delivered the item, and withdrawing it
-    /// only helps if it has not. Changes nothing when this burst enqueued no such item, for example because the
-    /// transactional outbox is off or the child was dispatched in an earlier burst.
+    /// only helps if it has not. If a delivery already in flight then fails, the failure path may save the withdrawn row
+    /// again; that window closes once this cancel burst commits. Changes nothing when this burst enqueued no such item,
+    /// for example because the transactional outbox is off or the child was dispatched in an earlier burst.
     /// </summary>
     internal static async Task WithdrawPendingChildDispatchAsync(this WorkflowExecutionContext context, string childInstanceId, CancellationToken cancellationToken)
     {

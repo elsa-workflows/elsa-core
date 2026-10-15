@@ -150,11 +150,12 @@ public class FireAndForgetThenDispatchAndWaitBesideCompletingBranchWorkflow : Wo
 /// </summary>
 public class DispatchAndWaitInLoopWorkflow : WorkflowBase
 {
+    public const int StillWaitingIteration = 0;
     public const int LastIteration = 1;
 
     protected override void Build(IWorkflowBuilder builder)
     {
-        builder.Root = new ParallelForEach<int>(Enumerable.Range(0, LastIteration + 1).ToList())
+        builder.Root = new ParallelForEach<int>(Enumerable.Range(StillWaitingIteration, LastIteration - StillWaitingIteration + 1).ToList())
         {
             Body = new Fork
             {
@@ -164,7 +165,8 @@ public class DispatchAndWaitInLoopWorkflow : WorkflowBase
                     new DispatchWorkflow
                     {
                         WorkflowDefinitionId = new(nameof(BlockingChildWorkflow)),
-                        WaitForCompletion = new(true)
+                        WaitForCompletion = new(true),
+                        CorrelationId = new(context => context.GetVariable<int>("CurrentIndex").ToString())
                     },
                     new If(context => context.GetVariable<int>("CurrentIndex") == LastIteration)
                     {

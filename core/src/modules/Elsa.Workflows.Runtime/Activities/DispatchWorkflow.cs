@@ -186,7 +186,9 @@ public class DispatchWorkflow : Activity<object>
 
     /// <summary>
     /// Cancels the child this activity was waiting for. When this burst dispatched it through the transactional outbox,
-    /// the pending dispatch is withdrawn first; if the parent has not committed since the dispatch, the child is never created. Only that instance
+    /// the pending dispatch is withdrawn first; if the parent has not committed since the dispatch, the child is never created.
+    /// After a mid-burst commit, a delivery already in flight can still create the child, and if that delivery fails the
+    /// failure path may save the withdrawn row again until this cancel burst commits. Only that instance
     /// is targeted: cancelling by parent instance would also reach fire-and-forget and sibling dispatches of the same
     /// parent. A child that has already finished is left alone, together with anything it dispatched. If the child finishes between the read and the cancellation,
     /// the cancellation service still cascades to that child's own children.

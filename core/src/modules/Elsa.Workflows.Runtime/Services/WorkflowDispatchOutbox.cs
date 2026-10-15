@@ -1,6 +1,9 @@
 using Elsa.Common;
 using Elsa.Extensions;
+using Elsa.Workflows.Helpers;
+using Elsa.Workflows.Runtime.Activities;
 using Elsa.Workflows.Runtime.Models;
+using Elsa.Workflows.Runtime.Notifications;
 
 namespace Elsa.Workflows.Runtime;
 
@@ -20,9 +23,11 @@ public class WorkflowDispatchOutbox(
         await store.SaveAsync(item, cancellationToken);
         workflowExecutionContext.AddWorkflowDispatchOutboxItem(item.Id);
 
-        // Lets the activity waiting for this child withdraw it when the activity is cancelled later in this burst.
+        // Lets DispatchWorkflow withdraw this child when the activity is cancelled later in this burst. BulkDispatchWorkflows
+        // also waits, but nothing withdraws those children yet; that same-burst case stays with #8821 part 2.
         if (item.WorkflowDefinitionCommand is { InstanceId: { Length: > 0 } childInstanceId } command
-            && command.Properties?.TryGetValue<bool>("WaitForCompletion", out var waitForCompletion) == true && waitForCompletion)
+            && command.Properties?.TryGetValue<bool>("WaitForCompletion", out var waitForCompletion) is true && waitForCompletion
+            && DispatchWorkflowActivationDeniedRoute.IsForActivityType(command.Properties, ActivityTypeNameHelper.GenerateTypeName<DispatchWorkflow>()))
             workflowExecutionContext.AddPendingChildDispatch(childInstanceId, item.Id);
     }
 }
