@@ -8,7 +8,6 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import shutil
 import sqlite3
 import subprocess
 import sys
@@ -19,6 +18,7 @@ import urllib.request
 import xml.etree.ElementTree as ET
 import zipfile
 
+from secrets_bridge_project import project_staging_evidence, stage_bridge_project
 from secrets_sqlite_bridge_mapping import run_contract_fixtures
 
 
@@ -255,16 +255,7 @@ def prepare_current_core_checkout(destination):
         cwd=destination, capture=True, timeout=300)
     verify_current_core_source_pin(destination)
 
-    project_relative_path = CURRENT_PROJECT.relative_to(ROOT)
-    project_directory = destination / project_relative_path.parent
-    if project_directory.exists():
-        shutil.rmtree(project_directory)
-    shutil.copytree(
-        CURRENT_PROJECT.parent,
-        project_directory,
-        ignore=shutil.ignore_patterns('bin', 'obj', '.vs'),
-    )
-    return project_directory / CURRENT_PROJECT.name
+    return stage_bridge_project(CURRENT_PROJECT, ROOT, destination)
 
 
 def main():
@@ -517,6 +508,7 @@ def main():
             'targetFramework': manifest['targetFramework'],
             'sdkVersion': sdk_version,
             'targetCoreSourceCommit': PINNED_TARGET_CORE_SOURCE_COMMIT,
+            'currentProjectStaging': project_staging_evidence(CURRENT_PROJECT, ROOT, current_project, current_core_source),
             'verifiedPackages': verified,
             'packageLocks': lock_summaries,
             'dataProtectionPurpose': manifest['dataProtectionPurpose'],

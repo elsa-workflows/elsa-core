@@ -2,15 +2,19 @@
 WORKDIR /source
 
 # copy sources.
-COPY src/. ./src
+COPY core/src/. ./core/src
+COPY extensions/src/. ./extensions/src
+COPY studio/src/. ./studio/src
 COPY ./NuGet.Config ./
-COPY *.props ./
+COPY *.props *.targets ./
+COPY icon.png ./
+COPY build/ConsolidatedPackageProof.targets ./build/
 
 # restore packages.
-RUN dotnet restore "./src/apps/Elsa.ModularServer.Web/Elsa.ModularServer.Web.csproj"
+RUN dotnet restore "./core/src/apps/Elsa.ModularServer.Web/Elsa.ModularServer.Web.csproj"
 
 # build and publish (UseAppHost=false creates platform independent binaries).
-WORKDIR /source/src/apps/Elsa.ModularServer.Web
+WORKDIR /source/core/src/apps/Elsa.ModularServer.Web
 RUN dotnet build "Elsa.ModularServer.Web.csproj" -c Release -o /app/build
 RUN dotnet publish "Elsa.ModularServer.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore -f net10.0
 

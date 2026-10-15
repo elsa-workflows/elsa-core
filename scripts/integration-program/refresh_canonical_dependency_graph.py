@@ -26,9 +26,9 @@ from release_unit_manifest import (
 )
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_EVIDENCE = REPOSITORY_ROOT / "doc/integration-program/consolidation/canonical-95a-nuke-test-evidence.json"
-DEFAULT_INVENTORY = REPOSITORY_ROOT / "doc/integration-program/inventory/inventory.json"
-DEFAULT_MANIFEST = REPOSITORY_ROOT / "doc/integration-program/release-units.json"
+DEFAULT_EVIDENCE = REPOSITORY_ROOT / 'docs/integration-program/consolidation/canonical-95a-nuke-test-evidence.json'
+DEFAULT_INVENTORY = REPOSITORY_ROOT / 'docs/integration-program/inventory/inventory.json'
+DEFAULT_MANIFEST = REPOSITORY_ROOT / 'docs/integration-program/release-units.json'
 SOLUTION_PROJECT = re.compile(r'^Project\("\{[^\n]+?"\) = "([^"]+)", "([^"]+\.csproj)"', re.MULTILINE)
 BUILD_PROPS = (
     "Directory.Build.props",
@@ -784,7 +784,7 @@ def _validate_current_tip_profile(
     if sha256(source_integration_patch) != prep_receipt.get("patchSha256"):
         raise ValueError("Current preparation receipt does not match the reviewed source-integration patch")
 
-    accepted_dir = REPOSITORY_ROOT / "doc/integration-program/consolidation" / profile["evidenceDirectory"]
+    accepted_dir = REPOSITORY_ROOT / 'docs/integration-program/consolidation' / profile["evidenceDirectory"]
     # Compare the exact uncompressed public receipts, not merely their summary fields.
     accepted_import_bytes = gzip.decompress((accepted_dir / "import-receipt.json.gz").read_bytes())
     accepted_prep_bytes = gzip.decompress((accepted_dir / "consolidated-build-receipt.json.gz").read_bytes())
@@ -864,7 +864,7 @@ def refresh_receipt(
     prep_receipt = read_json(prep_receipt_path)
     import_receipt = read_json(import_receipt_path)
     evidence = read_json(evidence_path) if evidence_path is not None else None
-    profile_ledger_path = REPOSITORY_ROOT / "doc/integration-program/consolidation/canonical-source-profile-ledger.json"
+    profile_ledger_path = REPOSITORY_ROOT / 'docs/integration-program/consolidation/canonical-source-profile-ledger.json'
     current_profile_receipts = None
     if source_profile == "historical-95a":
         if evidence is None:
@@ -1106,13 +1106,13 @@ def refresh_receipt(
         "scripts/integration-program/prepare_consolidated_build.py": REPOSITORY_ROOT / "scripts/integration-program/prepare_consolidated_build.py",
         "scripts/integration-program/test_prepare_consolidated_build.py": REPOSITORY_ROOT / "scripts/integration-program/test_prepare_consolidated_build.py",
         "scripts/integration-program/consolidated-build/source-integration.patch": source_integration_patch,
-        "doc/integration-program/inventory/inventory.json": inventory_path,
-        "doc/integration-program/release-units.json": manifest_path,
+        'docs/integration-program/inventory/inventory.json': inventory_path,
+        'docs/integration-program/release-units.json': manifest_path,
     }
     if evidence_path is not None:
         tool_paths[evidence_path.name] = evidence_path
     if source_profile == "historical-95a":
-        tool_paths["doc/integration-program/consolidation/canonical-source-profile-ledger.json"] = profile_ledger_path
+        tool_paths['docs/integration-program/consolidation/canonical-source-profile-ledger.json'] = profile_ledger_path
     else:
         tool_paths["reviewed-overlay-receipt.json"] = overlay_receipt_path
         if overlay_build_receipt_path is not None:

@@ -5,7 +5,6 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -13,6 +12,8 @@ import zipfile
 import xml.etree.ElementTree as ET
 
 import run_secrets_postgresql_upgrade_fixture as postgres
+from secrets_bridge_project import project_staging_evidence, stage_bridge_project
+
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURE = Path(__file__).resolve().parent / 'secrets-postgresql-bridge'
@@ -91,18 +92,14 @@ def run_old(action, connection, packages_dir, key_ring=None):
 def prepare_pinned_core(destination):
     run(['git', 'clone', '--shared', '--no-checkout', str(ROOT), str(destination)], capture=True)
     run(['git', '-C', str(destination), 'checkout', '--detach', PINNED_CORE_COMMIT], capture=True)
-    relative = CURRENT_PROJECT.relative_to(ROOT)
-    project_dir = destination / relative.parent
-    project_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copytree(CURRENT_PROJECT.parent, project_dir, dirs_exist_ok=True,
-                    ignore=shutil.ignore_patterns('bin', 'obj'))
+    project = stage_bridge_project(CURRENT_PROJECT, ROOT, destination)
     changed = subprocess.run(['git', '-C', str(destination), 'diff', '--quiet', PINNED_CORE_COMMIT,
                               '--', 'src', 'Directory.Build.props', 'Directory.Build.targets',
                               'Directory.Packages.props', 'global.json', 'NuGet.Config', 'nuget.config'],
                              check=False, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
     if changed.returncode != 0:
         raise RuntimeError('Pinned Core source/build inputs differ from the reviewed source commit')
-    return project_dir / CURRENT_PROJECT.name
+    return project
 
 
 def run_current(project, config, packages_dir, source_connection, target_connection,
@@ -315,10 +312,12 @@ def main():
                 'targetFramework': manifest['targetFramework'],
                 'postgresImage': manifest['postgresImage'],
                 'targetCoreSourceCommit': PINNED_CORE_COMMIT,
+                'currentProjectStaging': project_staging_evidence(CURRENT_PROJECT, ROOT, current_project, target_source),
                 'fixtureCodeCommit': run(['git', '-C', str(ROOT), 'rev-parse', 'HEAD'], capture=True).stdout.strip(),
                 'checkedSourceFiles': {
                     str(path.relative_to(ROOT)): hashlib.sha256(path.read_bytes()).hexdigest()
-                    for path in (Path(__file__).resolve(), CURRENT_PROJECT.parent / 'Program.cs', OLD_PROJECT.parent / 'Program.cs')
+                    for path in (Path(__file__).resolve(), Path(__file__).with_name('secrets_bridge_project.py'),
+                                 CURRENT_PROJECT, CURRENT_PROJECT.parent / 'Program.cs', OLD_PROJECT.parent / 'Program.cs')
                 },
                 'verifiedPackages': verified,
                 'oldPackageLock': old_locks,

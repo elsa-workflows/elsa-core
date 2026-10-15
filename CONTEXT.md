@@ -1,5 +1,7 @@
 # Elsa Workflow Runtime
 
+Runtime source and tests live under `core/src/` and `core/test/`; feature plans live under `core/docs/specs/`. See [Core development](core/docs/README.md) and [repository guidance](AGENTS.md) for the shared solution and product boundaries. The domain terminology below is unchanged by the directory layout.
+
 The workflow runtime executes activities and moves their results into destinations that workflows can consume.
 
 ## Language

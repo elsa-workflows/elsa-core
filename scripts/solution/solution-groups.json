@@ -1,0 +1,173 @@
+{
+  "description": "Curated grouping of Elsa.sln projects. Foundation is the workflow engine and what a minimal server needs; everything else is an optional domain. scripts/solution/solution_groups.py generates the solution folders and solution filters from this file. Foundation source projects may reference only Foundation projects; the generator enforces this, which is why Liquid (used by Elsa.Http) and Alterations (used by Elsa.Persistence.EFCore) are foundational.",
+  "foundation": [
+    "Elsa.Api.Common",
+    "Elsa.Features",
+    "Elsa.Mediator",
+    "Elsa.Testing.Shared",
+    "Elsa.Testing.Shared.Component",
+    "Elsa.Testing.Shared.Integration",
+    "Elsa",
+    "Elsa.Common",
+    "Elsa.Workflows.Core",
+    "Elsa.Workflows.Management",
+    "Elsa.Workflows.Runtime",
+    "Elsa.Workflows.Runtime.Distributed",
+    "Elsa.Workflows.Api",
+    "Elsa.Hosting.Management",
+    "Elsa.Expressions",
+    "Elsa.Expressions.JavaScript",
+    "Elsa.Expressions.JavaScript.Libraries",
+    "Elsa.Expressions.Liquid",
+    "Elsa.Identity",
+    "Elsa.Tenants",
+    "Elsa.Tenants.AspNetCore",
+    "Elsa.KeyValues",
+    "Elsa.Labels",
+    "Elsa.Scheduling",
+    "Elsa.Resilience",
+    "Elsa.Resilience.Core",
+    "Elsa.Caching",
+    "Elsa.Http",
+    "Elsa.SasTokens",
+    "Elsa.Persistence.EFCore.Common",
+    "Elsa.Persistence.EFCore",
+    "Elsa.Persistence.EFCore.MySql",
+    "Elsa.Persistence.EFCore.Oracle",
+    "Elsa.Persistence.EFCore.PostgreSql",
+    "Elsa.Persistence.EFCore.Sqlite",
+    "Elsa.Persistence.EFCore.SqlServer",
+    "Elsa.Alterations",
+    "Elsa.Alterations.Core",
+    "Elsa.Workflows.IntegrationTests"
+  ],
+  "domains": {
+    "Scripting": {
+      "names": [
+        "Elsa.Expressions.CSharp",
+        "Elsa.Expressions.Python",
+        "Elsa.Dsl.ElsaScript"
+      ]
+    },
+    "Persistence": {
+      "namePrefixes": [
+        "Elsa.Persistence.VNext"
+      ],
+      "paths": [
+        "extensions/src/persistence/",
+        "extensions/src/data/",
+        "extensions/src/sql/"
+      ]
+    },
+    "Runtime": {
+      "paths": [
+        "extensions/src/actors/",
+        "extensions/src/runtimes/",
+        "extensions/src/servicebus/",
+        "extensions/src/caching/",
+        "extensions/src/mqtt/",
+        "extensions/src/scheduling/"
+      ],
+      "namePrefixes": [
+        "Elsa.Workflows.Admission"
+      ]
+    },
+    "AI": {
+      "namePrefixes": [
+        "Elsa.AI."
+      ],
+      "paths": [
+        "extensions/src/agents/"
+      ]
+    },
+    "Security": {
+      "namePrefixes": [
+        "Elsa.ExternalAuthentication",
+        "Elsa.Secrets",
+        "Elsa.Connections"
+      ],
+      "paths": [
+        "extensions/src/ldap/",
+        "extensions/src/secrets/",
+        "extensions/src/connections/"
+      ]
+    },
+    "Operations": {
+      "namePrefixes": [
+        "Elsa.Diagnostics.",
+        "Elsa.Dashboard."
+      ],
+      "names": [
+        "Elsa.Workflows.Runtime.Dashboard"
+      ],
+      "paths": [
+        "extensions/src/diagnostics/",
+        "extensions/src/devops/",
+        "extensions/src/retention/",
+        "extensions/src/alterations/"
+      ]
+    },
+    "Integrations": {
+      "namePrefixes": [
+        "Elsa.Bpmn",
+        "Elsa.UserTasks",
+        "Elsa.WorkflowProviders."
+      ],
+      "names": [
+        "Elsa.Http.Webhooks",
+        "Elsa.Platform.Integration",
+        "Elsa.Shells.Api"
+      ],
+      "paths": [
+        "extensions/src/communication/",
+        "extensions/src/email/",
+        "extensions/src/telecom/",
+        "extensions/src/cms/",
+        "extensions/src/io/",
+        "extensions/src/storage/",
+        "extensions/src/http/",
+        "extensions/src/workflows/",
+        "extensions/src/dropins/"
+      ]
+    }
+  },
+  "studio": {
+    "paths": [
+      "studio/src/",
+      "studio/samples/"
+    ]
+  },
+  "apps": {
+    "paths": [
+      "core/src/apps/",
+      "core/src/clients/",
+      "build/",
+      "apps/src/"
+    ]
+  },
+  "samples": {
+    "paths": [
+      "core/samples/",
+      "extensions/samples/"
+    ]
+  },
+  "independentProducts": {
+    "templates": {
+      "solution": "templates/Elsa.Templates.slnx",
+      "filter": "Elsa.Templates.slnf",
+      "projects": [
+        "templates/src/Elsa.Templates/Elsa.Templates.csproj",
+        "templates/test/Elsa.Templates.Tests/Elsa.Templates.Tests.csproj"
+      ],
+      "buildData": [
+        "templates/elsa-templates.csproj",
+        "templates/src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Host/Company.ElsaCombined.Host.csproj",
+        "templates/src/Elsa.Templates/templates/elsa-combined/src/Company.ElsaCombined.Wasm/Company.ElsaCombined.Wasm.csproj",
+        "templates/src/Elsa.Templates/templates/elsa-server/Company.ElsaServer.csproj",
+        "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Host/Company.ElsaStudio.Host.csproj",
+        "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Server/Company.ElsaStudio.Server.csproj",
+        "templates/src/Elsa.Templates/templates/elsa-studio/src/Company.ElsaStudio.Wasm/Company.ElsaStudio.Wasm.csproj"
+      ]
+    }
+  }
+}

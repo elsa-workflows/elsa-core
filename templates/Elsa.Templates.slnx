@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/solution/">
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Elsa.Templates/Elsa.Templates.csproj" />
+  </Folder>
+  <Folder Name="/test/">
+    <Project Path="test/Elsa.Templates.Tests/Elsa.Templates.Tests.csproj" />
+  </Folder>
+</Solution>

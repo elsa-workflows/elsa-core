@@ -9,7 +9,7 @@ import re
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-MANIFEST_PATH = Path(__file__).resolve().parents[2] / "doc/integration-program/release-units.json"
+MANIFEST_PATH = Path(__file__).resolve().parents[2] / 'docs/integration-program/release-units.json'
 DEFAULT_UNIT_ID = "elsa-slack"
 PACKAGE_ID_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 SEMVER_PATTERN = re.compile(

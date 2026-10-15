@@ -1,0 +1,236 @@
+@page "/tasks/guest"
+@attribute [AllowAnonymous]
+@inject IAnonymousBackendApiClientProvider AnonymousApiClientProvider
+@inject NavigationManager NavigationManager
+
+<PageTitle>Guest task</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="py-8">
+    @if (_successMessage != null)
+    {
+        <MudAlert Severity="Severity.Success" Variant="Variant.Outlined">@_successMessage</MudAlert>
+    }
+    else if (_error != null)
+    {
+        @* One generic message for every failure: expired, revoked, consumed, wrong code, or unknown link.
+           Distinguishing them here would turn this page into a task-existence oracle. *@
+        <MudAlert Severity="Severity.Error" Variant="Variant.Outlined">@_error</MudAlert>
+    }
+    else if (_task == null)
+    {
+        @if (_challenge == null)
+        {
+            <MudProgressCircular Indeterminate="true" Color="Color.Primary" aria-label="Loading"/>
+        }
+        else
+        {
+            <MudPaper Class="pa-6" Elevation="0" Outlined="true">
+                <MudText Typo="Typo.h5">Verification required</MudText>
+                @if (!string.IsNullOrWhiteSpace(_challenge.Prompt))
+                {
+                    <MudText Class="mt-3">@_challenge.Prompt</MudText>
+                }
+                @if (_challenge.RequiresCode)
+                {
+                    <MudTextField T="string" Label="Verification code" Value="@_verificationCode" ValueChanged="SetVerificationCode" Disabled="@_busy"/>
+                }
+                <MudButton Class="mt-4" Variant="Variant.Filled" Color="Color.Primary" Disabled="@_busy" OnClick="VerifyAsync">Continue</MudButton>
+            </MudPaper>
+        }
+    }
+    else
+    {
+        <MudPaper Class="pa-6" Elevation="0" Outlined="true">
+            <MudText Typo="Typo.h4">@_task.Title</MudText>
+            @if (!string.IsNullOrWhiteSpace(_task.Summary))
+            {
+                <MudText Class="mt-3">@_task.Summary</MudText>
+            }
+            <MudText Typo="Typo.body2" Class="mt-3">Status: @_task.Status</MudText>
+            <MudText Typo="Typo.body2">
+                Due: @(_task.DueAt?.ToLocalTime().ToString("g") ?? "No due date")
+                @if (_task.IsOverdue)
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.Warning" Size="Size.Small" Class="ml-1" aria-hidden="true"/>
+                    <span>(overdue)</span>
+                }
+            </MudText>
+
+            @if (_task.IsTerminal || _task.IsTransitioning)
+            {
+                <MudAlert Severity="Severity.Info" Variant="Variant.Outlined" Class="mt-4">This task has already been answered.</MudAlert>
+            }
+            else
+            {
+                @if (_task.Form is { } form)
+                {
+                    <MudStack Spacing="2" Class="mt-4">
+                        @foreach (var field in form.Fields)
+                        {
+                            <MudTextField T="string" Label="@field.Label" Required="@field.Required" Disabled="@_busy"
+                                          Value="@GuestValue(field)" ValueChanged="@(value => SetField(field.Key, value))"
+                                          Error="@_fieldErrors.ContainsKey(field.Key)"
+                                          ErrorText="@(_fieldErrors.TryGetValue(field.Key, out var error) ? error : null)"/>
+                        }
+                    </MudStack>
+                }
+
+                <MudSelect T="string" Label="Outcome" Class="mt-4" Value="@_actionKey" ValueChanged="SetAction" Disabled="@_busy" Required="true">
+                    @foreach (var action in Actions)
+                    {
+                        <MudSelectItem Value="@action.Key">@action.Label</MudSelectItem>
+                    }
+                </MudSelect>
+
+                <MudCheckBox T="bool" Label="I understand that submitting this response is final." @bind-Value="_confirmSubmit" Disabled="@_busy"/>
+                <MudButton Class="mt-6" Variant="Variant.Filled" Color="Color.Primary"
+                           Disabled="@(_busy || !_confirmSubmit || string.IsNullOrWhiteSpace(_actionKey))"
+                           OnClick="CompleteAsync" AriaLabel="@($"Submit response for {_task.Title}")">Submit</MudButton>
+            }
+        </MudPaper>
+    }
+</MudContainer>
+
+@code {
+    private const string GenericFailure = "This task link is invalid or unavailable.";
+
+    private readonly Dictionary<string, string?> _formData = [];
+    private readonly Dictionary<string, string> _fieldErrors = [];
+
+    private UserTaskGuestChallenge? _challenge;
+    private UserTaskDetail? _task;
+    private string? _credential;
+    private string? _token;
+    private string? _error;
+    private string? _successMessage;
+    private string? _verificationCode;
+    private string _actionKey = "";
+    private bool _confirmSubmit;
+    private bool _busy;
+
+    /// <summary>
+    /// A single operation ID is minted for the guest's submission and reused on retry, so a double click or
+    /// a network retry is recognised as the same completion rather than accepted as a second one.
+    /// </summary>
+    private string? _submissionOperationId;
+
+    private IReadOnlyCollection<UserTaskFormAction> Actions => _task is null ? [] : _task.Form?.Actions.Count > 0 ? _task.Form.Actions : _task.Actions;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // The token is passed straight through: never decoded, stored, logged, or displayed.
+        _token = QueryHelpers.ParseQuery(new Uri(NavigationManager.Uri).Query).TryGetValue("t", out var token) ? token.FirstOrDefault() : null;
+        if (string.IsNullOrWhiteSpace(_token))
+        {
+            _error = GenericFailure;
+            return;
+        }
+
+        try
+        {
+            var api = await AnonymousApiClientProvider.GetApiAsync<IUserTaskGuestApi>();
+            _challenge = await api.GetChallengeAsync(_token);
+        }
+        catch
+        {
+            _error = GenericFailure;
+        }
+    }
+
+    private async Task VerifyAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_token) || _busy)
+            return;
+
+        _busy = true;
+        try
+        {
+            var api = await AnonymousApiClientProvider.GetApiAsync<IUserTaskGuestApi>();
+            var session = await api.VerifyAsync(_token, new(_verificationCode));
+            if (string.IsNullOrWhiteSpace(session.SessionCredential))
+            {
+                _error = GenericFailure;
+                return;
+            }
+
+            _credential = session.SessionCredential;
+            // The session identifies the task; no task ID is sent, so this page cannot address another one.
+            _task = await api.GetTaskAsync(Authorization);
+            if (!_task.Disclosure.GuestVisible)
+            {
+                _task = null;
+                _credential = null;
+                _error = GenericFailure;
+                return;
+            }
+
+            _actionKey = Actions.FirstOrDefault()?.Key ?? "";
+        }
+        catch
+        {
+            _error = GenericFailure;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task CompleteAsync()
+    {
+        if (_task == null || _busy || string.IsNullOrWhiteSpace(_credential) || string.IsNullOrWhiteSpace(_actionKey))
+            return;
+        if (!ValidateForm())
+            return;
+
+        _busy = true;
+        _submissionOperationId ??= Guid.NewGuid().ToString("N");
+        try
+        {
+            var api = await AnonymousApiClientProvider.GetApiAsync<IUserTaskGuestApi>();
+            JsonElement? data = _task.Form == null || _formData.Count == 0 ? null : JsonSerializer.SerializeToElement(_formData);
+            await api.CompleteAsync(Authorization, new(_task.Revision, _submissionOperationId, _actionKey, data));
+            _successMessage = "Your response was accepted. You may close this page.";
+            // The session is consumed with the task; dropping it here stops any further use from this page.
+            _credential = null;
+        }
+        catch
+        {
+            _error = "This task could not be completed. It may have expired or already been answered.";
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private bool ValidateForm()
+    {
+        _fieldErrors.Clear();
+        if (_task?.Form is not { } form)
+            return true;
+
+        foreach (var field in form.Fields.Where(x => x.Required && string.IsNullOrWhiteSpace(GuestValue(x))))
+            _fieldErrors[field.Key] = $"{field.Label} is required.";
+
+        return _fieldErrors.Count == 0;
+    }
+
+    private string Authorization => $"UserTaskSession {_credential}";
+
+    private string? GuestValue(UserTaskFormField field)
+    {
+        if (_formData.TryGetValue(field.Key, out var edited))
+            return edited;
+        return field.Value is { } value ? value.ValueKind == JsonValueKind.String ? value.GetString() : value.ToString() : null;
+    }
+
+    private void SetField(string key, string? value)
+    {
+        _formData[key] = value;
+        _fieldErrors.Remove(key);
+    }
+
+    private void SetVerificationCode(string? value) => _verificationCode = value ?? "";
+    private void SetAction(string? value) => _actionKey = value ?? "";
+}

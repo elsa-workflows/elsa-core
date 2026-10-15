@@ -1,0 +1,36 @@
+<MudPaper Outlined="true" Elevation="0" Class="dashboard-panel dashboard-section" Style="@DashboardStyles.Panel">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="dashboard-section-header" Style="@DashboardStyles.SectionHeader">
+        <MudText Typo="Typo.subtitle1">Needs attention</MudText>
+        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@ChipColor">@ChipText</MudChip>
+    </MudStack>
+
+    @if (Items.Count == 0)
+    {
+        <MudAlert Severity="Severity.Success" Dense="true" Variant="Variant.Text" Icon="@Icons.Material.Outlined.CheckCircle">
+            No active findings in the selected range.
+        </MudAlert>
+    }
+    else
+    {
+        <MudList T="DashboardFinding" Dense="true" Class="dashboard-finding-list" Style="@DashboardStyles.FindingList">
+            @foreach (var item in Items.OrderBy(x => x.Priority).Take(8))
+            {
+                var href = DashboardNavigationTargetMapper.ForFinding(item.TargetKind, item.Target);
+                <MudListItem T="DashboardFinding" Value="@item" Href="@href" Icon="@DashboardUiMapper.SeverityIcon(item.Severity)" IconColor="@DashboardUiMapper.SeverityColor(item.Severity)">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Spacing="2" Class="dashboard-finding-row" Style="@DashboardStyles.FindingRow">
+                        <MudText Typo="Typo.body2">@item.Message</MudText>
+                        <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@DashboardUiMapper.SeverityColor(item.Severity)">@item.Severity</MudChip>
+                    </MudStack>
+                </MudListItem>
+            }
+        </MudList>
+    }
+</MudPaper>
+
+@code {
+    [Parameter] public IReadOnlyCollection<DashboardFinding> Items { get; set; } = [];
+    [Parameter] public DashboardCapabilityStatus Capability { get; set; } = DashboardCapabilityStatus.Available;
+
+    private string ChipText => DashboardUiMapper.CapabilityLabel(Capability);
+    private Color ChipColor => DashboardUiMapper.CapabilityColor(Capability);
+}

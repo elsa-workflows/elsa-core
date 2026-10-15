@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:elsa="https://elsaworkflows.io/schemas/bpmn/v1"
+                  xmlns:vw="https://bpmn.valenceworks.io/schema/bpmn"
+                  id="Definitions_subprocess-boundary-events"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:message id="Message_Escalate" name="EscalationRequested" />
+  <bpmn:signal id="Signal_Recall" name="RecallIssued" />
+  <bpmn:error id="Error_Payment" name="PaymentFailed" errorCode="PAY-01" />
+  <bpmn:escalation id="Escalation_Late" name="LateShipment" escalationCode="LATE" />
+
+  <bpmn:process id="subprocess-boundary-events" name="Subprocess And Boundary Events" isExecutable="true">
+    <bpmn:extensionElements>
+      <vw:variable name="orderLines" typeHint="Object" />
+    </bpmn:extensionElements>
+    <bpmn:startEvent id="Start_1" name="Start">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:subProcess id="Fulfil" name="Fulfil Order">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+      <bpmn:multiInstanceLoopCharacteristics isSequential="false" vw:collection="orderLines" vw:itemVariable="line" />
+      <bpmn:startEvent id="Sub_Start">
+        <bpmn:outgoing>Sub_Flow_1</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:serviceTask id="PickLine" name="Pick Line">
+        <bpmn:extensionElements>
+          <elsa:activityBinding activityType="Elsa.WriteLine">
+            <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"pick"}}</elsa:input>
+          </elsa:activityBinding>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Sub_Flow_1</bpmn:incoming>
+        <bpmn:outgoing>Sub_Flow_2</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:endEvent id="Sub_End">
+        <bpmn:incoming>Sub_Flow_2</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="Sub_Flow_1" sourceRef="Sub_Start" targetRef="PickLine" />
+      <bpmn:sequenceFlow id="Sub_Flow_2" sourceRef="PickLine" targetRef="Sub_End" />
+    </bpmn:subProcess>
+
+    <bpmn:boundaryEvent id="FulfilTimeout" name="After 1 hour" attachedToRef="Fulfil" cancelActivity="true">
+      <bpmn:outgoing>Flow_Timeout</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="Timer_Boundary">
+        <bpmn:timeDuration>PT1H</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+
+    <bpmn:boundaryEvent id="FulfilNudge" name="Nudge" attachedToRef="Fulfil" cancelActivity="false">
+      <bpmn:outgoing>Flow_Nudge</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="Message_Boundary" messageRef="Message_Escalate" />
+    </bpmn:boundaryEvent>
+
+    <bpmn:boundaryEvent id="FulfilFailed" name="Payment failed" attachedToRef="Fulfil">
+      <bpmn:outgoing>Flow_Failed</bpmn:outgoing>
+      <bpmn:errorEventDefinition id="Error_Boundary" errorRef="Error_Payment" />
+    </bpmn:boundaryEvent>
+
+    <bpmn:serviceTask id="Escalate" name="Escalate">
+      <bpmn:extensionElements>
+        <elsa:activityBinding activityType="Elsa.WriteLine">
+          <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"escalate"}}</elsa:input>
+        </elsa:activityBinding>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Timeout</bpmn:incoming>
+      <bpmn:incoming>Flow_Nudge</bpmn:incoming>
+      <bpmn:incoming>Flow_Failed</bpmn:incoming>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:intermediateThrowEvent id="RaiseLate" name="Raise late">
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+      <bpmn:outgoing>Flow_4</bpmn:outgoing>
+      <bpmn:escalationEventDefinition id="Escalation_Throw" escalationRef="Escalation_Late" />
+    </bpmn:intermediateThrowEvent>
+
+    <bpmn:endEvent id="End_Escalated" name="Escalated">
+      <bpmn:incoming>Flow_4</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:endEvent id="End_Terminated" name="Terminated">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+      <bpmn:terminateEventDefinition id="Terminate_1" />
+    </bpmn:endEvent>
+
+    <bpmn:subProcess id="OnRecall" name="On Recall" triggeredByEvent="true">
+      <bpmn:startEvent id="RecallStart" isInterrupting="true">
+        <bpmn:signalEventDefinition id="Signal_Start" signalRef="Signal_Recall" />
+        <bpmn:outgoing>Recall_Flow_1</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:serviceTask id="HandleRecall" name="Handle Recall">
+        <bpmn:extensionElements>
+          <elsa:activityBinding activityType="Elsa.WriteLine">
+            <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"recall"}}</elsa:input>
+          </elsa:activityBinding>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Recall_Flow_1</bpmn:incoming>
+        <bpmn:outgoing>Recall_Flow_2</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:endEvent id="RecallEnd">
+        <bpmn:incoming>Recall_Flow_2</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="Recall_Flow_1" sourceRef="RecallStart" targetRef="HandleRecall" />
+      <bpmn:sequenceFlow id="Recall_Flow_2" sourceRef="HandleRecall" targetRef="RecallEnd" />
+    </bpmn:subProcess>
+
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Fulfil" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Fulfil" targetRef="End_Terminated" />
+    <bpmn:sequenceFlow id="Flow_Timeout" sourceRef="FulfilTimeout" targetRef="Escalate" />
+    <bpmn:sequenceFlow id="Flow_Nudge" sourceRef="FulfilNudge" targetRef="Escalate" />
+    <bpmn:sequenceFlow id="Flow_Failed" sourceRef="FulfilFailed" targetRef="Escalate" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Escalate" targetRef="RaiseLate" />
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="RaiseLate" targetRef="End_Escalated" />
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="subprocess-boundary-events">
+      <bpmndi:BPMNShape id="Start_1_di" bpmnElement="Start_1">
+        <dc:Bounds x="150" y="182" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Fulfil_di" bpmnElement="Fulfil" isExpanded="true">
+        <dc:Bounds x="250" y="120" width="380" height="200" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sub_Start_di" bpmnElement="Sub_Start">
+        <dc:Bounds x="280" y="202" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="PickLine_di" bpmnElement="PickLine">
+        <dc:Bounds x="370" y="180" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sub_End_di" bpmnElement="Sub_End">
+        <dc:Bounds x="530" y="202" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="FulfilTimeout_di" bpmnElement="FulfilTimeout">
+        <dc:Bounds x="312" y="302" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="290" y="345" width="80" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="FulfilNudge_di" bpmnElement="FulfilNudge">
+        <dc:Bounds x="412" y="302" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="FulfilFailed_di" bpmnElement="FulfilFailed">
+        <dc:Bounds x="512" y="302" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Escalate_di" bpmnElement="Escalate">
+        <dc:Bounds x="700" y="380" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="RaiseLate_di" bpmnElement="RaiseLate">
+        <dc:Bounds x="852" y="402" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Escalated_di" bpmnElement="End_Escalated">
+        <dc:Bounds x="952" y="402" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Terminated_di" bpmnElement="End_Terminated">
+        <dc:Bounds x="700" y="182" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="OnRecall_di" bpmnElement="OnRecall" isExpanded="true">
+        <dc:Bounds x="250" y="500" width="380" height="180" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="RecallStart_di" bpmnElement="RecallStart">
+        <dc:Bounds x="280" y="572" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="HandleRecall_di" bpmnElement="HandleRecall">
+        <dc:Bounds x="370" y="550" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="RecallEnd_di" bpmnElement="RecallEnd">
+        <dc:Bounds x="530" y="572" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="186" y="200" />
+        <di:waypoint x="250" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+        <di:waypoint x="630" y="200" />
+        <di:waypoint x="700" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Timeout_di" bpmnElement="Flow_Timeout">
+        <di:waypoint x="330" y="338" />
+        <di:waypoint x="330" y="420" />
+        <di:waypoint x="700" y="420" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Nudge_di" bpmnElement="Flow_Nudge">
+        <di:waypoint x="430" y="338" />
+        <di:waypoint x="430" y="440" />
+        <di:waypoint x="700" y="440" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Failed_di" bpmnElement="Flow_Failed">
+        <di:waypoint x="530" y="338" />
+        <di:waypoint x="530" y="460" />
+        <di:waypoint x="700" y="460" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3">
+        <di:waypoint x="800" y="420" />
+        <di:waypoint x="852" y="420" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_4_di" bpmnElement="Flow_4">
+        <di:waypoint x="888" y="420" />
+        <di:waypoint x="952" y="420" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Sub_Flow_1_di" bpmnElement="Sub_Flow_1">
+        <di:waypoint x="316" y="220" />
+        <di:waypoint x="370" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Sub_Flow_2_di" bpmnElement="Sub_Flow_2">
+        <di:waypoint x="470" y="220" />
+        <di:waypoint x="530" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Recall_Flow_1_di" bpmnElement="Recall_Flow_1">
+        <di:waypoint x="316" y="590" />
+        <di:waypoint x="370" y="590" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Recall_Flow_2_di" bpmnElement="Recall_Flow_2">
+        <di:waypoint x="470" y="590" />
+        <di:waypoint x="530" y="590" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

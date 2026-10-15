@@ -21,18 +21,16 @@ on:
   push:
     branches:
       - 'main'
-      - 'bug/*'
-      - 'perf/*'
-      - 'patch/*'
-      - 'feat/*'
-      - 'enh/*'
-      - 'rc/*'
-      - 'develop/*'
       - 'release/*'
-      - 'codex/*'
   release:
     # published covers stable releases and prereleases; subscribe once.
     types: [published]
+
+# A push never publishes, so a newer push to the same branch supersedes it.
+# Release and dispatch runs each get their own group and are never cancelled or replaced.
+concurrency:
+  group: packages-${{ github.event_name == 'push' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'push' }}
 
 env:
   base_version: '3.10.0'
@@ -106,14 +104,14 @@ jobs:
 
           # Discover unit and integration test projects. Component tests run in their own job.
           mapfile -t projects < <(
-            find test/unit test/integration \
+            find core/test/unit core/test/integration \
               -type f -name '*.csproj' -print0 2>/dev/null \
               | xargs -0 -n1 \
               | sort
           )
 
           if [ ${#projects[@]} -eq 0 ]; then
-            echo "No test projects were found in test/unit or test/integration." >&2
+            echo "No test projects were found in core/test/unit or core/test/integration." >&2
             exit 1
           fi
 
@@ -192,14 +190,14 @@ jobs:
           fi
 
           mapfile -t projects < <(
-            find test/component \
+            find core/test/component \
               -type f -name '*.csproj' -print0 2>/dev/null \
               | xargs -0 -n1 \
               | sort
           )
 
           if [ ${#projects[@]} -eq 0 ]; then
-            echo "No test projects were found in test/component." >&2
+            echo "No test projects were found in core/test/component." >&2
             exit 1
           fi
 
@@ -451,7 +449,7 @@ jobs:
         uses: ./.github/actions/push-nuget-packages
         with:
           feed-source: ${{ env.nuget_feed_source }}
-          api-key: ${{ secrets.NUGET_API_KEY }}
+          api-key: ${{ steps.nuget_login.outputs.NUGET_API_KEY }}
 
   deploy_coverage:
     name: Deploy coverage to GitHub Pages

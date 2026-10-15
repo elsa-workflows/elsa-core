@@ -1,0 +1,56 @@
+<div class="mud-table-pagination">
+    <MudToolBar Gutters="false" Class="mud-table-pagination-toolbar">
+        <MudSpacer />
+        <div class="mud-table-pagination-display">
+            <MudText Typo="Typo.caption" Class="mud-table-pagination-caption">Rows Per Page</MudText>
+            <MudSelect
+                T="int"
+                Value="PageSize"
+                ValueChanged="PageSizeChanged"
+                Disabled="Loading"
+                Dense="true"
+                Variant="Variant.Text"
+                Class="mud-table-pagination-select"
+                aria-label="Rows per page">
+                @foreach (var option in PageSizeOptions)
+                {
+                    <MudSelectItem T="int" Value="option">@option</MudSelectItem>
+                }
+            </MudSelect>
+        </div>
+        <MudText Typo="Typo.caption" Class="mud-table-pagination-information">Page @PageNumber</MudText>
+        <div class="mud-table-pagination-actions">
+            <MudIconButton
+                Icon="@Icons.Material.Filled.FirstPage"
+                Disabled="@(!HasPrevious || Loading)"
+                OnClick="FirstPage"
+                aria-label="First page"
+                title="First page" />
+            <MudIconButton
+                Icon="@Icons.Material.Filled.NavigateBefore"
+                Disabled="@(!HasPrevious || Loading)"
+                OnClick="PreviousPage"
+                aria-label="Previous page"
+                title="Previous page" />
+            <MudIconButton
+                Icon="@Icons.Material.Filled.NavigateNext"
+                Disabled="@(!HasNext || Loading)"
+                OnClick="NextPage"
+                aria-label="Next page"
+                title="Next page" />
+        </div>
+    </MudToolBar>
+</div>
+
+@code {
+    [Parameter] public int PageNumber { get; set; } = 1;
+    [Parameter] public int PageSize { get; set; } = 10;
+    [Parameter] public IReadOnlyList<int> PageSizeOptions { get; set; } = [10, 25, 50, 100];
+    [Parameter] public bool HasPrevious { get; set; }
+    [Parameter] public bool HasNext { get; set; }
+    [Parameter] public bool Loading { get; set; }
+    [Parameter] public EventCallback<int> PageSizeChanged { get; set; }
+    [Parameter] public EventCallback FirstPage { get; set; }
+    [Parameter] public EventCallback PreviousPage { get; set; }
+    [Parameter] public EventCallback NextPage { get; set; }
+}

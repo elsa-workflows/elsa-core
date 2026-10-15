@@ -1,0 +1,107 @@
+using System.Text.Json;
+using Elsa.Common.Serialization;
+using Elsa.Extensions;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Serialization.Converters;
+
+namespace Elsa.Workflows.Core.UnitTests.Serialization.Converters;
+
+public sealed class OutputJsonConverterTests
+{
+    [Fact]
+    public void When_SerializeAndDeserializeConfiguredOutput_Then_ConverterConfigurationRoundTrips()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var output = new Output<string>(new Variable("Result"))
+        {
+            Converter = new OutputConverterConfiguration("sample.to-text", CreateSettings())
+        };
+
+        // Act
+        var json = JsonSerializer.Serialize(output, options);
+        var result = JsonSerializer.Deserialize<Output<string>>(json, options);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("resultVariable", result.MemoryBlockReference().Id);
+        var configuration = Assert.IsType<OutputConverterConfiguration>(result.Converter);
+        Assert.Equal("sample.to-text", configuration.Id);
+        Assert.True(configuration.Settings.HasValue);
+        Assert.Equal("compact", configuration.Settings.Value.GetProperty("format").GetString());
+
+        using var document = JsonDocument.Parse(json);
+        var converter = document.RootElement.GetProperty("converter");
+        Assert.Equal(new[] { "id", "settings" }, converter.EnumerateObject().Select(x => x.Name));
+    }
+
+    [Fact]
+    public void When_SerializeAndDeserializeUnconfiguredOutput_Then_ConverterPropertyIsOmitted()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var output = new Output<string>(new Variable("Result"));
+
+        // Act
+        var json = JsonSerializer.Serialize(output, options);
+        var result = JsonSerializer.Deserialize<Output<string>>(json, options);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Null(result.Converter);
+
+        using var document = JsonDocument.Parse(json);
+        Assert.Equal(new[] { "typeName", "memoryReference" }, document.RootElement.EnumerateObject().Select(x => x.Name));
+        Assert.Equal("String", document.RootElement.GetProperty("typeName").GetString());
+        Assert.Equal("resultVariable", document.RootElement.GetProperty("memoryReference").GetProperty("id").GetString());
+    }
+
+    [Theory]
+    [InlineData("""{"typeName":"String","memoryReference":null}""")]
+    [InlineData("""{"typeName":"String"}""")]
+    [InlineData("""{"typeName":"String","memoryReference":"x"}""")]
+    [InlineData("""{"typeName":"String","memoryReference":{"id":5}}""")]
+    [InlineData("""{"typeName":"String","memoryReference":{}}""")]
+    public void When_DeserializeOutputWithNullOrMissingMemoryReference_Then_ReturnsNull(string json)
+    {
+        var result = JsonSerializer.Deserialize<Output<string>>(json, CreateOptions());
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void When_WriteUnboundOutput_Then_DeserializesAsNull()
+    {
+        var options = CreateOptions();
+        var converter = new OutputJsonConverter<string>(SerializationTypeRegistry.CreateDefault());
+        using var stream = new MemoryStream();
+
+        using (var writer = new Utf8JsonWriter(stream))
+        {
+            converter.Write(writer, null, options);
+        }
+
+        using var document = JsonDocument.Parse(stream.ToArray());
+        Assert.Equal(JsonValueKind.Null, document.RootElement.GetProperty("memoryReference").ValueKind);
+
+        var result = JsonSerializer.Deserialize<Output<string>>(stream.ToArray(), options);
+        Assert.Null(result);
+    }
+
+    private static JsonSerializerOptions CreateOptions() => new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,
+        Converters =
+        {
+            new OutputJsonConverter<string>(SerializationTypeRegistry.CreateDefault())
+        }
+    };
+
+    private static JsonElement CreateSettings()
+    {
+        using var document = JsonDocument.Parse("""{"format":"compact"}""");
+        return document.RootElement.Clone();
+    }
+}

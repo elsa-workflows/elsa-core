@@ -9,7 +9,7 @@ on:
       - 'docker/**'
       - '.dockerignore'
       - 'scripts/test-ca-trust.sh'
-      - 'test/TlsSmoke/**'
+      - 'core/test/TlsSmoke/**'
       - '.github/workflows/docker-ca.yml'
   push:
     branches:
@@ -18,7 +18,7 @@ on:
       - 'docker/**'
       - '.dockerignore'
       - 'scripts/test-ca-trust.sh'
-      - 'test/TlsSmoke/**'
+      - 'core/test/TlsSmoke/**'
       - '.github/workflows/docker-ca.yml'
 
 jobs:
@@ -54,7 +54,7 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Publish TLS smoke test app
-        run: dotnet publish test/TlsSmoke/TlsSmoke.csproj -c Release -o artifacts/tls-smoke
+        run: dotnet publish core/test/TlsSmoke/TlsSmoke.csproj -c Release -o artifacts/tls-smoke
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

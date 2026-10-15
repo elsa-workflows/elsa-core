@@ -1,0 +1,54 @@
+@using Elsa.Studio.Contracts
+@using Elsa.Studio.Extensions
+@using Elsa.Studio.Models
+@using Microsoft.Extensions.Logging
+@inject IMenuService MenuService
+@inject ILocalizer Localizer
+@inject ILogger<DashboardWelcome> Logger
+
+@* Shown instead of the dashboard's widgets to a user who may see none of them. Renders nothing while the navigation loads. *@
+@if (_pages is { } pages)
+{
+    if (pages.Count == 0 && !_navigationUnavailable)
+    {
+        <NoAccessiblePages />
+    }
+    else
+    {
+        <MudPaper Outlined="true" Elevation="0" Class="dashboard-panel" Style="@DashboardStyles.Panel" data-testid="dashboard-welcome">
+            <MudText Typo="Typo.h6">@Localizer["Welcome"]</MudText>
+            <MudText Typo="Typo.body2" Class="mb-3" Style="color:var(--mud-palette-text-secondary);">
+                @(pages.Count > 0
+                    ? Localizer["No dashboard widgets are available to your role. These are the pages you can open:"]
+                    : Localizer["No dashboard widgets are available to your role."])
+            </MudText>
+            <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="2">
+                @foreach (var shortcut in pages)
+                {
+                    <MudButton Href="@shortcut.Href" Variant="Variant.Outlined" Color="Color.Primary" StartIcon="@shortcut.Icon">@shortcut.Text</MudButton>
+                }
+            </MudStack>
+        </MudPaper>
+    }
+}
+
+@code {
+    private IReadOnlyList<MenuPage>? _pages;
+    private bool _navigationUnavailable;
+
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _pages = (await MenuService.GetNavigationAsync()).GetPages().ToList();
+        }
+        catch (Exception exception)
+        {
+            // Without the menu there are no shortcuts to offer, but the welcome still beats an error page.
+            Logger.LogWarning(exception, "Could not resolve the navigation menu for the dashboard's shortcuts.");
+            _pages = [];
+            _navigationUnavailable = true;
+        }
+    }
+}

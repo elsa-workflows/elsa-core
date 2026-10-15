@@ -1,0 +1,17 @@
+@inject ILocalizer Localizer
+
+<div style="height:100%">
+    @if (UseReactFlow)
+    {
+        <MudAlert Severity="Severity.Info">@Localizer["BPMN is not yet available on the React Flow canvas."]</MudAlert>
+    }
+    else if (IsEmptyScope)
+    {
+        <MudAlert Severity="Severity.Info">@Localizer["This BPMN scope has no content yet. A nested BPMN scope cannot be populated by importing a BPMN document; its content comes from the document the workflow was imported from, or from BPMN editing once that is available."]</MudAlert>
+    }
+    else
+    {
+        <BpmnDesigner @ref="@Designer" Activity="@Activity" SourceXml="@SourceXml" ActivityStats="@ActivityStats"
+            ActivitySelected="@ActivitySelected" ActivityDoubleClick="@ActivityDoubleClick" CanvasSelected="@OnCanvasSelected" ElementSelected="@ElementSelected" />
+    }
+</div>

@@ -1,0 +1,386 @@
+name: Elsa Apps container images
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Elsa 3.x SemVer version to tag (for example 3.8.4, 3.9.0, or a later 3.x version)
+        type: string
+        required: true
+      images:
+        description: all or comma-separated image profile names
+        type: string
+        required: true
+        default: all
+      publish:
+        description: Publish tags to Docker Hub (main or the matching release tag only)
+        type: boolean
+        required: true
+        default: false
+      core_version:
+        description: Exact Elsa Core package version (required when publishing)
+        type: string
+        required: false
+        default: ''
+      studio_version:
+        description: Exact Elsa Studio package version (required when publishing)
+        type: string
+        required: false
+        default: ''
+      extensions_version:
+        description: Exact Elsa Extensions package version (required when publishing)
+        type: string
+        required: false
+        default: ''
+      expected_commit:
+        description: Full reviewed source commit SHA (required when publishing)
+        type: string
+        required: false
+        default: ''
+      supersede_run_id:
+        description: Prior successful full publication run to explicitly correct (advanced recovery only)
+        type: string
+        required: false
+        default: ''
+  release:
+    types:
+      - published
+
+permissions:
+  contents: read
+
+concurrency:
+  group: elsa-apps-containers-${{ github.event.release.tag_name || inputs.version || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Validate release inputs
+    runs-on: ubuntu-latest
+    outputs:
+      release_version: ${{ steps.release.outputs.release_version }}
+      publish: ${{ steps.release.outputs.publish }}
+      source_ref: ${{ steps.release.outputs.source_ref }}
+      source_commit: ${{ steps.release.outputs.source_commit }}
+      core_version: ${{ steps.release.outputs.core_version }}
+      studio_version: ${{ steps.release.outputs.studio_version }}
+      extensions_version: ${{ steps.release.outputs.extensions_version }}
+      supersede_run_id: ${{ steps.release.outputs.supersede_run_id }}
+      images: ${{ steps.release.outputs.images }}
+      matrix: ${{ steps.release.outputs.matrix }}
+    steps:
+      - name: Check out the exact workflow revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Test container release policy helpers
+        run: python3 -m unittest discover -s scripts/tests -v
+
+      - name: Validate event, versions, image selection, and publication source
+        id: release
+        env:
+          RELEASE_EVENT_TAG: ${{ github.event.release.tag_name || '' }}
+          VERSION_INPUT: ${{ inputs.version || '' }}
+          IMAGE_SELECTION: ${{ inputs.images || 'all' }}
+          PUBLISH_INPUT: ${{ inputs.publish || false }}
+          CORE_VERSION: ${{ inputs.core_version || '' }}
+          STUDIO_VERSION: ${{ inputs.studio_version || '' }}
+          EXTENSIONS_VERSION: ${{ inputs.extensions_version || '' }}
+          EXPECTED_COMMIT: ${{ inputs.expected_commit || '' }}
+          SUPERSEDE_RUN_ID: ${{ inputs.supersede_run_id || '' }}
+        run: |
+          python3 scripts/container_release.py validate-run \
+            --event "$GITHUB_EVENT_NAME" \
+            --version "$VERSION_INPUT" \
+            --images "$IMAGE_SELECTION" \
+            --publish "$PUBLISH_INPUT" \
+            --core-version "$CORE_VERSION" \
+            --studio-version "$STUDIO_VERSION" \
+            --extensions-version "$EXTENSIONS_VERSION" \
+            --expected-commit "$EXPECTED_COMMIT" \
+            --supersede-run-id "$SUPERSEDE_RUN_ID" \
+            --release-tag "$RELEASE_EVENT_TAG" \
+            --ref "$GITHUB_REF" \
+            --commit "$GITHUB_SHA"
+
+      - name: Require correction source to be in main history
+        if: inputs.supersede_run_id != ''
+        run: |
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          git merge-base --is-ancestor "$GITHUB_SHA" refs/remotes/origin/main || {
+            echo "A correction must use a source commit already included in main." >&2
+            exit 1
+          }
+
+      - name: Require published tag to be present in main history
+        if: steps.release.outputs.publish == 'true' && startsWith(github.ref, 'refs/tags/')
+        run: |
+          git fetch origin main:refs/remotes/origin/main
+          git merge-base --is-ancestor "$GITHUB_SHA" refs/remotes/origin/main || {
+            echo "The release tag must point to a commit already included in main." >&2
+            exit 1
+          }
+
+  build-and-smoke:
+    name: Build and smoke ${{ matrix.id }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
+    steps:
+      - name: Check out the exact source commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.source_commit }}
+
+      - name: Set up QEMU for ARM64 smoke tests
+        if: needs.prepare.outputs.publish == 'true'
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        if: needs.prepare.outputs.publish == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Plan reuse or candidate build
+        id: plan
+        if: needs.prepare.outputs.publish == 'true'
+        env:
+          IMAGE_REPOSITORY: ${{ matrix.repository }}
+          RELEASE_VERSION: ${{ needs.prepare.outputs.release_version }}
+          SOURCE_COMMIT: ${{ needs.prepare.outputs.source_commit }}
+          SOURCE_REF: ${{ needs.prepare.outputs.source_ref }}
+          CORE_VERSION: ${{ needs.prepare.outputs.core_version }}
+          STUDIO_VERSION: ${{ needs.prepare.outputs.studio_version }}
+          EXTENSIONS_VERSION: ${{ needs.prepare.outputs.extensions_version }}
+          SUPERSEDE_RUN_ID: ${{ needs.prepare.outputs.supersede_run_id }}
+        run: |
+          PLAN_OPTIONS=()
+          if [[ -n "$SUPERSEDE_RUN_ID" ]]; then
+            PLAN_OPTIONS+=(--skip-version-tag)
+          fi
+          python3 scripts/container_release.py plan-image \
+            --repository "$IMAGE_REPOSITORY" \
+            --version "$RELEASE_VERSION" \
+            --commit "$SOURCE_COMMIT" \
+            --source-ref "$SOURCE_REF" \
+            --core-version "$CORE_VERSION" \
+            --studio-version "$STUDIO_VERSION" \
+            --extensions-version "$EXTENSIONS_VERSION" \
+            "${PLAN_OPTIONS[@]}"
+
+      - name: Build and push immutable source tag
+        if: needs.prepare.outputs.publish == 'true' && steps.plan.outputs.reuse != 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ matrix.repository }}:${{ needs.prepare.outputs.release_version }}-sha-${{ needs.prepare.outputs.source_commit }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/elsa-workflows/elsa-apps
+            org.opencontainers.image.revision=${{ needs.prepare.outputs.source_commit }}
+            org.opencontainers.image.version=${{ needs.prepare.outputs.release_version }}
+            org.opencontainers.image.ref.name=${{ needs.prepare.outputs.source_ref }}
+            com.elsa.packages.core=${{ needs.prepare.outputs.core_version }}
+            com.elsa.packages.studio=${{ needs.prepare.outputs.studio_version }}
+            com.elsa.packages.extensions=${{ needs.prepare.outputs.extensions_version }}
+          build-args: |
+            ElsaVersion=${{ needs.prepare.outputs.core_version }}
+            ElsaStudioVersion=${{ needs.prepare.outputs.studio_version }}
+            ElsaExtensionsVersion=${{ needs.prepare.outputs.extensions_version }}
+          cache-from: type=gha,scope=${{ matrix.id }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.id }}
+
+      - name: Inspect manifests and smoke each published platform
+        if: needs.prepare.outputs.publish == 'true'
+        env:
+          IMAGE_ID: ${{ matrix.id }}
+          IMAGE_REPOSITORY: ${{ matrix.repository }}
+          IMAGE_REFERENCE: ${{ steps.plan.outputs.source_ref }}
+          RELEASE_VERSION: ${{ needs.prepare.outputs.release_version }}
+          SOURCE_COMMIT: ${{ needs.prepare.outputs.source_commit }}
+          SOURCE_REF: ${{ needs.prepare.outputs.source_ref }}
+          CORE_VERSION: ${{ needs.prepare.outputs.core_version }}
+          STUDIO_VERSION: ${{ needs.prepare.outputs.studio_version }}
+          EXTENSIONS_VERSION: ${{ needs.prepare.outputs.extensions_version }}
+          CONTAINER_PORT: ${{ matrix.port }}
+        run: |
+          python3 scripts/container_release.py verify-image \
+            --id "$IMAGE_ID" \
+            --repository "$IMAGE_REPOSITORY" \
+            --reference "$IMAGE_REFERENCE" \
+            --version "$RELEASE_VERSION" \
+            --commit "$SOURCE_COMMIT" \
+            --source-ref "$SOURCE_REF" \
+            --core-version "$CORE_VERSION" \
+            --studio-version "$STUDIO_VERSION" \
+            --extensions-version "$EXTENSIONS_VERSION" \
+            --port "$CONTAINER_PORT" \
+            --output-file "artifacts/images/$IMAGE_ID.json"
+
+      - name: Build a local validation image
+        if: needs.prepare.outputs.publish != 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64
+          load: true
+          push: false
+          tags: elsa-local-${{ matrix.id }}:${{ needs.prepare.outputs.release_version }}-${{ needs.prepare.outputs.source_commit }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/elsa-workflows/elsa-apps
+            org.opencontainers.image.revision=${{ needs.prepare.outputs.source_commit }}
+            org.opencontainers.image.version=${{ needs.prepare.outputs.release_version }}
+            org.opencontainers.image.ref.name=${{ needs.prepare.outputs.source_ref }}
+            com.elsa.packages.core=${{ needs.prepare.outputs.core_version }}
+            com.elsa.packages.studio=${{ needs.prepare.outputs.studio_version }}
+            com.elsa.packages.extensions=${{ needs.prepare.outputs.extensions_version }}
+          build-args: |
+            ElsaVersion=${{ needs.prepare.outputs.core_version }}
+            ElsaStudioVersion=${{ needs.prepare.outputs.studio_version }}
+            ElsaExtensionsVersion=${{ needs.prepare.outputs.extensions_version }}
+          cache-from: type=gha,scope=${{ matrix.id }}
+
+      - name: Smoke the local validation image
+        if: needs.prepare.outputs.publish != 'true'
+        env:
+          IMAGE_ID: ${{ matrix.id }}
+          IMAGE_REPOSITORY: ${{ matrix.repository }}
+          IMAGE_REFERENCE: elsa-local-${{ matrix.id }}:${{ needs.prepare.outputs.release_version }}-${{ needs.prepare.outputs.source_commit }}
+          RELEASE_VERSION: ${{ needs.prepare.outputs.release_version }}
+          SOURCE_COMMIT: ${{ needs.prepare.outputs.source_commit }}
+          SOURCE_REF: ${{ needs.prepare.outputs.source_ref }}
+          CORE_VERSION: ${{ needs.prepare.outputs.core_version }}
+          STUDIO_VERSION: ${{ needs.prepare.outputs.studio_version }}
+          EXTENSIONS_VERSION: ${{ needs.prepare.outputs.extensions_version }}
+          CONTAINER_PORT: ${{ matrix.port }}
+        run: |
+          python3 scripts/container_release.py verify-local \
+            --id "$IMAGE_ID" \
+            --repository "$IMAGE_REPOSITORY" \
+            --reference "$IMAGE_REFERENCE" \
+            --version "$RELEASE_VERSION" \
+            --commit "$SOURCE_COMMIT" \
+            --source-ref "$SOURCE_REF" \
+            --core-version "$CORE_VERSION" \
+            --studio-version "$STUDIO_VERSION" \
+            --extensions-version "$EXTENSIONS_VERSION" \
+            --port "$CONTAINER_PORT" \
+            --output-file "artifacts/images/$IMAGE_ID.json"
+
+      - name: Save image evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-image-${{ matrix.id }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/images/${{ matrix.id }}.json
+          if-no-files-found: error
+          retention-days: 30
+
+  finalize:
+    name: Publish version tags and write receipt
+    permissions:
+      actions: read
+      contents: read
+    needs:
+      - prepare
+      - build-and-smoke
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the exact source commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.source_commit }}
+          fetch-depth: 0
+
+      - name: Fetch main for correction ancestry validation
+        if: needs.prepare.outputs.supersede_run_id != ''
+        run: git fetch --no-tags origin main:refs/remotes/origin/main
+
+      - name: Download image evidence
+        uses: actions/download-artifact@v4
+        with:
+          pattern: container-image-*-${{ github.run_id }}-*
+          path: artifacts/image-evidence
+          merge-multiple: false
+
+      - name: Set up Docker Buildx
+        if: needs.prepare.outputs.publish == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        if: needs.prepare.outputs.publish == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Promote only verified manifests and create receipt
+        env:
+          PUBLICATION: ${{ needs.prepare.outputs.publish == 'true' && 'published' || 'build-only' }}
+          RELEASE_VERSION: ${{ needs.prepare.outputs.release_version }}
+          SOURCE_COMMIT: ${{ needs.prepare.outputs.source_commit }}
+          SOURCE_REF: ${{ needs.prepare.outputs.source_ref }}
+          IMAGE_SELECTION: ${{ needs.prepare.outputs.images }}
+          CORE_VERSION: ${{ needs.prepare.outputs.core_version }}
+          STUDIO_VERSION: ${{ needs.prepare.outputs.studio_version }}
+          EXTENSIONS_VERSION: ${{ needs.prepare.outputs.extensions_version }}
+          EXPECTED_COMMIT: ${{ github.event_name == 'release' && github.sha || inputs.expected_commit || '' }}
+          INPUT_VERSION: ${{ inputs.version || '' }}
+          INPUT_PUBLISH: ${{ inputs.publish || false }}
+          INPUT_IMAGES: ${{ inputs.images || '' }}
+          INPUT_CORE_VERSION: ${{ inputs.core_version || '' }}
+          INPUT_STUDIO_VERSION: ${{ inputs.studio_version || '' }}
+          INPUT_EXTENSIONS_VERSION: ${{ inputs.extensions_version || '' }}
+          SUPERSEDE_RUN_ID: ${{ needs.prepare.outputs.supersede_run_id }}
+          EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/container_release.py finalize \
+            --publication "$PUBLICATION" \
+            --version "$RELEASE_VERSION" \
+            --commit "$SOURCE_COMMIT" \
+            --source-ref "$SOURCE_REF" \
+            --images "$IMAGE_SELECTION" \
+            --core-version "$CORE_VERSION" \
+            --studio-version "$STUDIO_VERSION" \
+            --extensions-version "$EXTENSIONS_VERSION" \
+            --event "$EVENT_NAME" \
+            --workflow .github/workflows/container-images.yml \
+            --expected-commit "$EXPECTED_COMMIT" \
+            --input-version "$INPUT_VERSION" \
+            --input-publish "$INPUT_PUBLISH" \
+            --input-images "$INPUT_IMAGES" \
+            --input-core-version "$INPUT_CORE_VERSION" \
+            --input-studio-version "$INPUT_STUDIO_VERSION" \
+            --input-extensions-version "$INPUT_EXTENSIONS_VERSION" \
+            --supersede-run-id "$SUPERSEDE_RUN_ID" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --artifact-dir artifacts/image-evidence \
+            --output-file artifacts/container-release-receipt.json
+
+      - name: Upload release receipt
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-release-receipt-${{ needs.prepare.outputs.release_version }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/container-release-receipt.json
+          if-no-files-found: error
+          retention-days: 90

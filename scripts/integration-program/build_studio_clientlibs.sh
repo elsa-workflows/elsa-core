@@ -4,7 +4,9 @@ set -euo pipefail
 
 root="${1:-.}"
 root="$(cd "$root" && pwd -P)"
-if [[ -f "$root/src/studio/modules/Elsa.Studio.Workflows.Designer/ClientLib/package.json" ]]; then
+if [[ -f "$root/studio/src/modules/Elsa.Studio.Workflows.Designer/ClientLib/package.json" ]]; then
+    studio="$root/studio/src"
+elif [[ -f "$root/src/studio/modules/Elsa.Studio.Workflows.Designer/ClientLib/package.json" ]]; then
     studio="$root/src/studio"
 else
     studio="$root/src"

@@ -1,0 +1,232 @@
+using Elsa.Extensions;
+using Elsa.Workflows.Activities.Flowchart.Extensions;
+using Elsa.Workflows.Activities.Flowchart.Models;
+using Elsa.Workflows.Options;
+using Elsa.Workflows.Signals;
+
+namespace Elsa.Workflows.Activities.Flowchart.Activities;
+
+public partial class Flowchart
+{
+    private const string TokenStoreKey = "Flowchart.Tokens";
+
+    private async ValueTask OnChildCompletedTokenBasedLogicAsync(ActivityCompletedContext ctx)
+    {
+        var flowContext = ctx.TargetContext;
+        var completedActivity = ctx.ChildContext.Activity;
+        var flowGraph = flowContext.GetFlowGraph();
+        var tokens = GetTokenList(flowContext);
+
+        // If the completed activity is a terminal node, complete the flowchart immediately.
+        if (completedActivity is ITerminalNode)
+        {
+            tokens.Clear();
+            await flowContext.CompleteActivityAsync();
+            return;
+        }
+
+        // Emit tokens for active outcomes.
+        var outcomes = (ctx.Result as Outcomes ?? Outcomes.Default).Names;
+        var outboundConnections = flowGraph.GetOutboundConnections(completedActivity);
+        var activeOutboundConnections = outboundConnections.Where(x => outcomes.Contains(x.Source.Port)).Distinct().ToList();
+
+        foreach (var connection in activeOutboundConnections)
+            tokens.Add(Token.Create(connection.Source.Activity, connection.Target.Activity, connection.Source.Port));
+
+        // Consume inbound tokens to the completed activity.
+        var inboundTokens = tokens.Where(t => t.ToActivityId == completedActivity.Id && t is { Consumed: false, Blocked: false }).ToList();
+        foreach (var t in inboundTokens)
+            t.Consume();
+
+        // The activation wave for the completed activity is decided once it completes.
+        // Clear blocked inbound tokens so future activations (e.g. via loop-back edges) are not swallowed by stale blocks.
+        tokens.RemoveWhere(t => t.ToActivityId == completedActivity.Id && t.Blocked);
+
+        // Schedule next activities based on merge modes.
+        foreach (var connection in activeOutboundConnections)
+        {
+            var targetActivity = connection.Target.Activity;
+            var mergeMode = await targetActivity.GetMergeModeAsync(ctx.ChildContext);
+
+            switch (mergeMode)
+            {
+                case MergeMode.Cascade:
+                case MergeMode.Race:
+                    // Check for existing blocked token on this specific connection.
+                    var existingBlockedToken = tokens.FirstOrDefault(t =>
+                        t.ToActivityId == targetActivity.Id &&
+                        t.FromActivityId == connection.Source.Activity.Id &&
+                        t.Outcome == connection.Source.Port &&
+                        t.Blocked);
+
+                    if (existingBlockedToken == null)
+                    {
+                        // Schedule the target.
+                        var options = new ScheduleWorkOptions
+                        {
+                            CompletionCallback = OnChildCompletedTokenBasedLogicAsync,
+                            SchedulingActivityExecutionId = ctx.ChildContext.Id
+                        };
+                        await flowContext.ScheduleActivityAsync(targetActivity, options);
+
+                        // Cancel the losing branches only after the target is scheduled. Cancelling first leaves the flowchart
+                        // without pending work, so its cancel handler completes it before the join runs (#8464).
+                        if (mergeMode == MergeMode.Race)
+                        {
+                            await flowContext.CancelInboundAncestorsAsync(targetActivity);
+                        }
+
+                        // Block other inbound connections (adjust per mode if needed).
+                        var otherInboundConnections = flowGraph.GetForwardInboundConnections(targetActivity)
+                            .Where(x => x.Source.Activity != completedActivity)
+                            .ToList();
+
+                        foreach (var inboundConnection in otherInboundConnections)
+                        {
+                            var blockedToken = Token.Create(inboundConnection.Source.Activity, inboundConnection.Target.Activity, inboundConnection.Source.Port).Block();
+                            tokens.Add(blockedToken);
+                        }
+                    }
+                    else
+                    {
+                        if (mergeMode == MergeMode.Race)
+                        {
+                            await flowContext.CancelInboundAncestorsAsync(targetActivity);
+                        }
+
+                        // Consume the block without scheduling.
+                        existingBlockedToken.Consume();
+                    }
+
+                    break;
+
+                case MergeMode.Merge:
+                    // Wait for tokens from all forward inbound connections.
+                    // Unlike Converge, this ignores backward connections (loops).
+                    // Schedule on arrival for <=1 forward inbound (e.g., loops, sequential).
+                    var inboundConnectionsMerge = flowGraph.GetForwardInboundConnections(targetActivity);
+
+                    if (inboundConnectionsMerge.Count > 1)
+                    {
+                        var hasAllTokens = inboundConnectionsMerge.All(inbound =>
+                            tokens.Any(t =>
+                                t is { Consumed: false, Blocked: false } &&
+                                t.FromActivityId == inbound.Source.Activity.Id &&
+                                t.ToActivityId == targetActivity.Id &&
+                                t.Outcome == inbound.Source.Port
+                            )
+                        );
+
+                        if (hasAllTokens)
+                        {
+                            var options = new ScheduleWorkOptions
+                            {
+                                CompletionCallback = OnChildCompletedTokenBasedLogicAsync,
+                                SchedulingActivityExecutionId = ctx.ChildContext.Id
+                            };
+                            await flowContext.ScheduleActivityAsync(targetActivity, options);
+                        }
+                    }
+                    else
+                    {
+                        var options = new ScheduleWorkOptions
+                        {
+                            CompletionCallback = OnChildCompletedTokenBasedLogicAsync,
+                            SchedulingActivityExecutionId = ctx.ChildContext.Id
+                        };
+                        await flowContext.ScheduleActivityAsync(targetActivity, options);
+                    }
+
+                    break;
+
+                case MergeMode.Converge:
+                    // Strictest mode: Wait for tokens from ALL inbound connections (forward + backward).
+                    // Requires every possible inbound path to execute before proceeding.
+                    var allInboundConnectionsConverge = flowGraph.GetInboundConnections(targetActivity);
+
+                    if (allInboundConnectionsConverge.Count > 1)
+                    {
+                        var hasAllTokens = allInboundConnectionsConverge.All(inbound =>
+                            tokens.Any(t =>
+                                t is { Consumed: false, Blocked: false } &&
+                                t.FromActivityId == inbound.Source.Activity.Id &&
+                                t.ToActivityId == targetActivity.Id &&
+                                t.Outcome == inbound.Source.Port
+                            )
+                        );
+
+                        if (hasAllTokens)
+                        {
+                            var options = new ScheduleWorkOptions
+                            {
+                                CompletionCallback = OnChildCompletedTokenBasedLogicAsync,
+                                SchedulingActivityExecutionId = ctx.ChildContext.Id
+                            };
+                            await flowContext.ScheduleActivityAsync(targetActivity, options);
+                        }
+                    }
+                    else
+                    {
+                        var options = new ScheduleWorkOptions
+                        {
+                            CompletionCallback = OnChildCompletedTokenBasedLogicAsync,
+                            SchedulingActivityExecutionId = ctx.ChildContext.Id
+                        };
+                        await flowContext.ScheduleActivityAsync(targetActivity, options);
+                    }
+
+                    break;
+
+                case MergeMode.Stream:
+                default:
+                    // Flows freely - approximation that proceeds when upstream completes, ignoring dead paths.
+                    var inboundConnectionsStream = flowGraph.GetForwardInboundConnections(targetActivity);
+                    var hasUnconsumed = inboundConnectionsStream.Any(inbound =>
+                        tokens.Any(t => !t.Consumed && !t.Blocked && t.ToActivityId == inbound.Source.Activity.Id)
+                    );
+
+                    if (!hasUnconsumed)
+                    {
+                        var options = new ScheduleWorkOptions
+                        {
+                            CompletionCallback = OnChildCompletedTokenBasedLogicAsync,
+                            SchedulingActivityExecutionId = ctx.ChildContext.Id
+                        };
+                        await flowContext.ScheduleActivityAsync(targetActivity, options);
+                    }
+                    break;
+            }
+        }
+
+        // Complete flowchart if no pending work.
+        if (!flowContext.HasPendingWork())
+        {
+            tokens.Clear();
+            await flowContext.CompleteActivityAsync();
+        }
+
+        // Purge consumed tokens for the completed activity.
+        tokens.RemoveWhere(t => t.ToActivityId == completedActivity.Id && t.Consumed);
+    }
+
+    private async ValueTask OnTokenFlowActivityCanceledAsync(CancelSignal signal, SignalContext context)
+    {
+        var flowchartContext = context.ReceiverActivityExecutionContext;
+        var cancelledActivityContext = context.SenderActivityExecutionContext;
+
+        // Remove all tokens from and to this activity.
+        var tokenList = GetTokenList(flowchartContext);
+        tokenList.RemoveWhere(x => x.FromActivityId == cancelledActivityContext.Activity.Id || x.ToActivityId == cancelledActivityContext.Activity.Id);
+        await CompleteIfNoPendingWorkAsync(flowchartContext);
+    }
+
+    internal List<Token> GetTokenList(ActivityExecutionContext context)
+    {
+        if (context.Properties.TryGetValue(TokenStoreKey, out var obj) && obj is List<Token> list)
+            return list;
+
+        var newList = new List<Token>();
+        context.Properties[TokenStoreKey] = newList;
+        return newList;
+    }
+}

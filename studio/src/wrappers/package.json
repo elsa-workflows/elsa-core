@@ -1,0 +1,20 @@
+{
+  "name": "root",
+  "private": true,
+  "workspaces": [
+    "wrappers/*"
+  ],
+  "dependencies": {
+  },
+  "devDependencies": {
+    "lerna": "^10.0.1"
+  },
+  "overrides": {
+    "js-yaml": "^4.3.2",
+    "pacote": "^21.5.1",
+    "smol-toml": "^1.7.1",
+    "nx": {
+      "brace-expansion": "^5.0.12"
+    }
+  }
+}

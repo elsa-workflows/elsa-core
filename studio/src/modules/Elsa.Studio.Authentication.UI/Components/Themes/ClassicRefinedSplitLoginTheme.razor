@@ -1,0 +1,62 @@
+@inherits LoginThemeComponentBase
+
+<main class="classic-login-theme classic-refined-split-login-theme"
+      style="@BackgroundStyle"
+      aria-labelledby="elsa-login-heading">
+    <div class="classic-login-theme__utilities classic-refined-split-login-theme__utilities">
+        @Context.UtilityLinks
+    </div>
+
+    <article class="classic-refined-split-login-theme__card">
+        <aside class="classic-refined-split-login-theme__brand"
+               aria-label="@Context.Branding.ApplicationName">
+            <div class="classic-refined-split-login-theme__brand-lockup">
+                @if (!string.IsNullOrWhiteSpace(BrandLogoUrl))
+                {
+                    <img class="classic-refined-split-login-theme__logo"
+                         src="@BrandLogoUrl"
+                         alt="" />
+                }
+
+                <div class="classic-refined-split-login-theme__brand-copy">
+                    <div class="classic-refined-split-login-theme__brand-name">
+                        @Context.Branding.ApplicationName
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(Context.Branding.Tagline))
+                    {
+                        <p>@Context.Branding.Tagline</p>
+                    }
+                </div>
+            </div>
+
+            <p class="classic-refined-split-login-theme__statement">
+                @Localizer["Your workspace for designing, operating, and understanding automated processes."]
+            </p>
+
+            <div class="classic-refined-split-login-theme__context">
+                <strong>@Localizer["Secure workspace access"]</strong>
+                <span>@Localizer["Choose the identity route provided by your organization."]</span>
+                @if (!string.IsNullOrWhiteSpace(Context.Version))
+                {
+                    <span class="classic-refined-split-login-theme__version">
+                        @Localizer["Version"] @Context.Version
+                    </span>
+                }
+            </div>
+        </aside>
+
+        <section class="classic-refined-split-login-theme__panel">
+            @Context.LoginPanel
+        </section>
+    </article>
+</main>
+
+@code {
+    private string? BrandLogoUrl =>
+        Context.Branding.LogoUrl ?? Context.Branding.ReverseLogoUrl;
+
+    private string? BackgroundStyle =>
+        string.IsNullOrWhiteSpace(Context.Branding.ClassicBackgroundUrl)
+            ? null
+            : $"background-image: url('{Context.Branding.ClassicBackgroundUrl}')";
+}

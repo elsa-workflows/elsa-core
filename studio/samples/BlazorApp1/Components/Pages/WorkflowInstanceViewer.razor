@@ -1,0 +1,12 @@
+﻿@page "/workflow-instances/{instanceId}"
+@rendermode InteractiveServer
+<WorkflowInstanceViewerWrapper InstanceId="@InstanceId"/>
+
+@code
+{
+    /// <summary>
+    /// The ID of the workflow instance to edit.
+    /// </summary>
+    [Parameter]
+    public string InstanceId { get; set; } = default!;
+}

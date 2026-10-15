@@ -56,6 +56,36 @@ retain only sanitized status, route, hash and UI observations in the public
 receipt. A successful preparation is not a browser result; #8326 stays open
 until the actual imported-source host and browser exercise passes.
 
+The 2026-09-27 final-head replay added the following steps. Repeat them in any
+later replay.
+
+- **Default-disabled launch.** Before the enabled launch, start the prepared
+  host once from `launch-command.txt` without `--Features:Secrets:Enabled=true`.
+  Add `--Features:Multitenancy:Enabled=false` and point
+  `--ConnectionStrings:Sqlite` at a second private database under
+  `content-root/App_Data`, so the shared fresh database stays untouched.
+  Expect all of the following: zero routes from the probe; 404 for
+  `/elsa/api/secrets`, `/secrets/descriptors` and `/secrets/picker`; 401 for
+  an existing management route such as `/elsa/api/workflow-definitions`; and
+  no Secrets table. Stop the host before the enabled launch.
+- **Studio hosts.** Start each server-side Studio host with
+  `dotnet <Elsa.Studio.Host.Server.dll> --contentRoot <private-content-root> --urls http://127.0.0.1:<port>`.
+  Use `ASPNETCORE_ENVIRONMENT=Development` and a private `HOME`,
+  `DOTNET_CLI_HOME`, `TMPDIR` and XDG directories.
+- **Browser automation.** Give each principal its own browser profile. Wait
+  for the Blazor circuit (`window.Blazor`) before typing, type with key
+  events, and blur each field before submitting. Earlier runs saw the
+  MudBlazor login form stay invalid when fields were set with a direct
+  `fill` or before the circuit connected.
+- **Cross-tenant checks in both directions.** Check A against B-only and B
+  against A-only. The canonical `POST /secrets/{name}/test` endpoint returns
+  HTTP 200 with `succeeded: false` for a missing or other-tenant name, so
+  compare that response with one for a never-existed name rather than
+  expecting 404.
+- **Scan controls.** Include positive controls in the synthetic-marker scan.
+  SQLite removes its WAL and SHM files on clean shutdown, so copy them while
+  the host runs if runtime WAL contents must be scanned.
+
 Before any launch, review the generated source receipt, `launch-plan.json`, `host-build.log`, and `launch-command.txt`; confirm the Workbench DLL hash and all configured data, lock, and drop-in paths are under the expected private roots. After the process exits, remove only the marked fixture:
 
 ```sh

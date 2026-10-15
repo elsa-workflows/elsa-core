@@ -24,7 +24,7 @@ partial class Build : NukeBuild, ITest, IPack
 
     [GitRepository] readonly GitRepository GitRepository;
 
-    AbsolutePath SourceDirectory => RootDirectory / "src";
+    IEnumerable<AbsolutePath> SourceDirectories => new[] { RootDirectory / "core" / "src", RootDirectory / "extensions" / "src", RootDirectory / "studio" / "src", RootDirectory / "apps" / "src" };
 
     public AbsolutePath PackagesDirectory => RootDirectory / "packages";
     public AbsolutePath TestResultDirectory => RootDirectory / "testresults";
@@ -37,6 +37,14 @@ partial class Build : NukeBuild, ITest, IPack
     [Parameter] string Version;
 
     [Parameter] bool AnalyseCode;
+
+    bool IsConsolidatedPackageProof => string.Equals(
+        Environment.GetEnvironmentVariable("ConsolidatedPackageProof"), "true", StringComparison.OrdinalIgnoreCase);
+
+    bool IsConsolidatedReleaseCandidate => string.Equals(
+        Environment.GetEnvironmentVariable("ConsolidatedReleaseCandidate"), "true", StringComparison.OrdinalIgnoreCase);
+
+    bool IsConsolidatedPackageBuild => IsConsolidatedPackageProof || IsConsolidatedReleaseCandidate;
 
     protected override void OnBuildInitialized()
     {
@@ -57,28 +65,44 @@ partial class Build : NukeBuild, ITest, IPack
         .Before<IRestore>(x => x.Restore)
         .Executes(() =>
         {
-            SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => x.DeleteDirectory());
+            SourceDirectories.SelectMany(directory => directory.GlobDirectories("**/bin", "**/obj")).ForEach(x => x.DeleteDirectory());
             ((IHazArtifacts)this).ArtifactsDirectory.CreateOrCleanDirectory();
 
             TestResultDirectory.CreateOrCleanDirectory();
         });
 
     public Configure<DotNetRestoreSettings> RestoreSettings => _ => _
-        .SetVerbosity(DotNetVerbosity.quiet);
+        .SetVerbosity(DotNetVerbosity.quiet)
+        .When(_ => IsConsolidatedPackageBuild, settings => settings
+            .SetProperty("Configuration", "Release")
+            .SetProperty("Version", Version)
+            .SetProperty("PackageVersion", Version));
 
     public Configure<DotNetBuildSettings> CompileSettings => _ => _
         // ensure we don't generate too much output in CI run
         // 0  Turns off emission of all warning messages
         // 1  Displays severe warning messages
-        .SetWarningLevel(IsServerBuild ? 0 : 1);
+        .SetWarningLevel(IsServerBuild ? 0 : 1)
+        .When(_ => IsConsolidatedPackageBuild, settings => settings
+            .SetProperty("Configuration", "Release")
+            .SetProperty("Version", Version)
+            .SetProperty("PackageVersion", Version)
+            .SetProperty("EmbedAllSources", "true"));
 
     public Configure<DotNetPackSettings> PackSettings => settings =>
-        string.IsNullOrWhiteSpace(Version) ? settings : settings.SetVersion(Version);
+        (string.IsNullOrWhiteSpace(Version) ? settings : settings.SetVersion(Version))
+            .When(_ => IsConsolidatedPackageBuild, configured => configured
+                .SetProperty("Configuration", "Release")
+                .SetProperty("Version", Version)
+                .SetProperty("PackageVersion", Version));
 
     public IEnumerable<Project> TestProjects =>
         ((IHazSolution)this).Solution.AllProjects.Where(x => x.Name.EndsWith("Tests"));
 
     public Configure<DotNetTestSettings, Project> TestProjectSettings => (testSettings, project) => testSettings
+        .EnableBlameHang()
+        .SetBlameHangTimeout("10m")
+        .SetBlameHangDumpType("mini")
         .When(_ => GitHubActions.Instance is not null, settings => settings.AddLoggers("GitHubActions;report-warnings=false"))
         .When(_ => AnalyseCode, settings => settings
             .SetCoverletOutputFormat(CoverletOutputFormat.opencover)

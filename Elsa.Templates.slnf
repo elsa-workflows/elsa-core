@@ -1,0 +1,9 @@
+{
+  "solution": {
+    "path": "templates/Elsa.Templates.slnx",
+    "projects": [
+      "src/Elsa.Templates/Elsa.Templates.csproj",
+      "test/Elsa.Templates.Tests/Elsa.Templates.Tests.csproj"
+    ]
+  }
+}

@@ -1,0 +1,41 @@
+@using Elsa.Studio.Diagnostics.OpenTelemetry.Services
+
+@if (Rows.Count == 0)
+{
+    <MudAlert Severity="Severity.Normal" Variant="Variant.Text">No metrics received.</MudAlert>
+}
+else
+{
+    <MudTable T="MetricSeriesRow" Items="Rows" Dense="true" Hover="true" Elevation="0" Outlined="true" Breakpoint="Breakpoint.Lg" Class="elsa-otel-table-card">
+        <HeaderContent>
+            <MudTh>Name</MudTh>
+            <MudTh>Kind</MudTh>
+            <MudTh>Unit</MudTh>
+            <MudTh>Points</MudTh>
+            <MudTh>Last Value</MudTh>
+            <MudTh>Last Sum</MudTh>
+            <MudTh>Last Count</MudTh>
+            <MudTh>Last Timestamp</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Name">@context.Instrument.Name</MudTd>
+            <MudTd DataLabel="Kind">@context.Instrument.Kind</MudTd>
+            <MudTd DataLabel="Unit">@(context.Instrument.Unit ?? "-")</MudTd>
+            <MudTd DataLabel="Points">@context.PointCount</MudTd>
+            <MudTd DataLabel="Last Value">@FormatNumber(context.LastValue)</MudTd>
+            <MudTd DataLabel="Last Sum">@FormatNumber(context.LastSum)</MudTd>
+            <MudTd DataLabel="Last Count">@(context.LastCount?.ToString() ?? "-")</MudTd>
+            <MudTd DataLabel="Last Timestamp">@(context.LastTimestamp.HasValue ? FormatTime(context.LastTimestamp.Value) : "-")</MudTd>
+        </RowTemplate>
+    </MudTable>
+}
+
+@code {
+    [Parameter] public OpenTelemetryMetricResult Metrics { get; set; } = new([], [], 0);
+
+    private IReadOnlyCollection<MetricSeriesRow> Rows => MetricSeriesMapper.CreateRows(Metrics);
+
+    private static string FormatNumber(double? value) => value?.ToString("n2") ?? "-";
+
+    private static string FormatTime(DateTimeOffset value) => value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss");
+}

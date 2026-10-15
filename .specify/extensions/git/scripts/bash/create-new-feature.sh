@@ -261,7 +261,7 @@ fi
 
 cd "$REPO_ROOT"
 
-SPECS_DIR="$REPO_ROOT/specs"
+SPECS_DIR="$REPO_ROOT/core/docs/specs"
 
 # Function to generate branch name with stop word filtering
 generate_branch_name() {

@@ -1,0 +1,7 @@
+.connection-workspace__actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    border-top: 1px solid var(--mud-palette-lines-default, #d7dde5);
+    background: var(--mud-palette-surface, #fff);
+}

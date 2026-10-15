@@ -1,0 +1,13 @@
+<main class="elsa-login-recovery" aria-labelledby="elsa-login-heading">
+    <section class="elsa-login-recovery__content">
+        <MudAlert Severity="Severity.Warning" Dense="true" role="status">
+            @Localizer["The configured sign-in appearance could not be loaded. You can still sign in."]
+        </MudAlert>
+        @Context.LoginPanel
+    </section>
+</main>
+
+@code {
+    [Parameter, EditorRequired]
+    public LoginThemeContext Context { get; set; } = null!;
+}
