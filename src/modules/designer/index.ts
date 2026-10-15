@@ -16,6 +16,7 @@ export { activityIcon, activityAccent, activityAccentColor } from "./model/icons
 export { ActivityIcon } from "./components/activity-icon";
 export { emptyFlowchart, emptySequence, emptyStateMachine, emptyContainer, indexActivities, resolveContainer, type PathSegment } from "./model/flowchart-ops";
 export { containerKind, isDesignableContainer, listSlots, childActivities, getSlot, CONTAINER_TYPES, type SlotPath } from "./model/containers";
+export { FLOW_TYPES, type FlowType } from "./model/flow-types";
 export { selectionId, stateMachineDesignerMetadata } from "./store";
 export { useActivityRegistry } from "./hooks";
 export { validateWorkflow, validateFlowchart, issuesByActivity, type DesignerIssue } from "./model/validation";

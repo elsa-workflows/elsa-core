@@ -7,6 +7,7 @@ import type { ActivityDescriptor } from "@/lib/api/types/descriptors";
 import { useDesigner, useDesignerState } from "../context";
 import type { DesignerState } from "../store";
 import { activityAccentColor } from "../model/icons";
+import { FLOW_TYPES } from "../model/flow-types";
 import { readRecentActivities, rememberActivity } from "../model/recent";
 import { ActivityIcon } from "./activity-icon";
 
@@ -62,12 +63,18 @@ export function QuickAddMenu() {
     store.getState().quickAddActivity(d, request);
   };
 
+  /** Containers are not browsable descriptors, so the chooser places them by type name. */
+  const pickType = (typeName: string) => {
+    const descriptor = registry.get(typeName);
+    if (descriptor) pick(descriptor);
+  };
+
   const left = Math.max(8, Math.min(request.screen.x, window.innerWidth - WIDTH - 8));
   const top = Math.max(8, Math.min(request.screen.y, window.innerHeight - HEIGHT - 8));
   const sourceName = request.source ? store.getState().children().find((a) => a.id === request.source!.activityId)?.name : undefined;
 
   return createPortal(
-    <QuickAddPanel key={`${request.screen.x}:${request.screen.y}:${request.source?.activityId ?? ""}:${request.insertInto ? "insert" : ""}:${request.slot?.activityId ?? ""}:${request.slot?.slot ?? ""}:${request.sequenceIndex ?? ""}`} request={request} left={left} top={top} sourceName={sourceName} recent={recent} groups={groups} pick={pick} panelRef={ref} />,
+    <QuickAddPanel key={`${request.screen.x}:${request.screen.y}:${request.source?.activityId ?? ""}:${request.insertInto ? "insert" : ""}:${request.slot?.activityId ?? ""}:${request.slot?.slot ?? ""}:${request.sequenceIndex ?? ""}`} request={request} left={left} top={top} sourceName={sourceName} recent={recent} groups={groups} pick={pick} pickType={pickType} panelRef={ref} />,
     document.body,
   );
 }
@@ -80,6 +87,7 @@ function QuickAddPanel({
   recent,
   groups,
   pick,
+  pickType,
   panelRef,
 }: {
   request: NonNullable<ReturnType<typeof useDesignerState<DesignerState["quickAdd"]>>>;
@@ -89,9 +97,56 @@ function QuickAddPanel({
   recent: ActivityDescriptor[];
   groups: [string, ActivityDescriptor[]][];
   pick: (d: ActivityDescriptor) => void;
+  pickType: (typeName: string) => void;
   panelRef: React.RefObject<HTMLDivElement | null>;
 }) {
   const [query, setQuery] = useState("");
+  /**
+   * Filling a branch -- an If's Then, a loop's Body, a Switch case -- usually means starting a nested
+   * flow, so that choice leads, presented the way the new-workflow dialog presents it. The full
+   * palette is one click behind it for the single-activity case.
+   */
+  const offersFlowTypes = !!request.slot && !!request.allowContainers && !request.triggersOnly;
+  const [mode, setMode] = useState<"chooser" | "palette">(offersFlowTypes ? "chooser" : "palette");
+
+  if (mode === "chooser") {
+    return (
+      <div
+        ref={panelRef}
+        className="fixed z-[100] overflow-hidden rounded-lg border bg-popover p-2 text-popover-foreground shadow-xl"
+        style={{ left, top, width: WIDTH }}
+        role="dialog"
+        aria-label="Choose what runs in this branch"
+      >
+        <p className="px-1 pb-1.5 pt-0.5 text-xs text-muted-foreground">Start a flow in this branch</p>
+        <div className="flex flex-col gap-1">
+          {FLOW_TYPES.map((f) => (
+            <button
+              key={f.type}
+              type="button"
+              autoFocus={f === FLOW_TYPES[0]}
+              onClick={() => pickType(f.type)}
+              className="flex items-start gap-2.5 rounded-md border p-2 text-left outline-none hover:border-primary focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/40"
+            >
+              <f.icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+              <span className="min-w-0">
+                <span className="block text-sm font-medium">{f.label}</span>
+                <span className="block text-xs text-muted-foreground">{f.description}</span>
+              </span>
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setMode("palette")}
+            className="mt-0.5 rounded-md border border-dashed p-2 text-left text-sm text-muted-foreground outline-none hover:border-primary hover:text-foreground focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/40"
+          >
+            A single activity instead…
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={panelRef}

@@ -7,6 +7,7 @@ import type { ActivityDescriptor } from "@/lib/api/types/descriptors";
  *  - Flowchart: `activities[]` + `connections[]`
  *  - Sequence: ordered `activities[]`
  *  - StateMachine: `states[i].entry|exit`, `transitions[i].trigger|action`
+ *  - Switch: `cases[i].activity`, plus the Embedded `Default` port
  *  - any other activity: one child per Embedded port (`then`, `else`, `body`, …)
  */
 export type ContainerKind = "flowchart" | "sequence" | "stateMachine" | "ports" | "none";
@@ -34,6 +35,31 @@ export const CONTAINER_TYPES = [FLOWCHART_TYPE, SEQUENCE_TYPE, STATE_MACHINE_TYP
  *  `transitions.2.trigger`, `transitions.2.action`
  */
 export type SlotPath = string;
+
+/**
+ * `Elsa.Switch` keeps a child per case in `cases[i].activity`, which no port descriptor mentions --
+ * only its `Default` port is declared. Without this the case branches are unreachable from the
+ * designer and a Switch can only ever run its default.
+ */
+const SWITCH_TYPE = "Elsa.Switch";
+
+interface SwitchCaseShape {
+  label?: string;
+  activity?: Activity | null;
+}
+
+function switchCases(activity: Activity): SwitchCaseShape[] {
+  const cases = (activity as Activity & { cases?: unknown }).cases;
+  return Array.isArray(cases) ? (cases as SwitchCaseShape[]) : [];
+}
+
+function switchCaseSlots(activity: Activity): SlotInfo[] {
+  return switchCases(activity).map((c, i) => ({
+    slot: `cases.${i}.activity`,
+    label: c?.label?.trim() || `Case ${i + 1}`,
+    child: getSlot(activity, `cases.${i}.activity`),
+  }));
+}
 
 export interface SlotRef {
   activityId: string;
@@ -102,14 +128,21 @@ export function listSlots(activity: Activity, descriptor: ActivityDescriptor | u
     return out;
   }
   if (isFlowchart(activity) || isSequence(activity)) return [];
-  return (descriptor?.ports ?? [])
+  const ports = (descriptor?.ports ?? [])
     .filter((p) => p.type === "Embedded")
     .map((p) => ({ slot: portSlot(p.name), label: p.displayName ?? p.name, child: getSlot(activity, portSlot(p.name)) }));
+  // Cases first: they are the branches an author thinks in, and Default is the fallback after them.
+  return activity.type === SWITCH_TYPE ? [...switchCaseSlots(activity), ...ports] : ports;
 }
 
 /** Direct children of an activity regardless of how it stores them. */
 export function childActivities(activity: Activity, descriptor?: ActivityDescriptor): Activity[] {
   if (isFlowchart(activity) || isSequence(activity)) return activity.activities;
+  if (activity.type === SWITCH_TYPE && !descriptor) {
+    const fromCases = switchCaseSlots(activity).map((s) => s.child).filter((c): c is Activity => !!c);
+    const fallback = getSlot(activity, "default");
+    return fallback ? [...fromCases, fallback] : fromCases;
+  }
   if (isStateMachine(activity)) {
     const out: Activity[] = [];
     for (const st of activity.states) {
@@ -144,6 +177,10 @@ export function findSlotOf(parent: Activity, childId: string, descriptor?: Activ
     return undefined;
   }
   if (isFlowchart(parent) || isSequence(parent)) return undefined;
+  if (parent.type === SWITCH_TYPE) {
+    const hit = switchCaseSlots(parent).find((s) => s.child?.id === childId);
+    if (hit) return hit.slot;
+  }
   if (descriptor) return listSlots(parent, descriptor).find((s) => s.child?.id === childId)?.slot;
   for (const [k, v] of Object.entries(parent)) if (v && typeof v === "object" && (v as Activity).id === childId) return k;
   return undefined;
