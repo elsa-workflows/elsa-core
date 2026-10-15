@@ -12,6 +12,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import sys
 import xml.etree.ElementTree as ET
 
 import product_release_metadata as metadata
@@ -32,7 +33,14 @@ FAILURE_KEYS = {'schema', 'scope', 'phase', 'code', 'plan_sha256',
                 'producer_receipt_sha256', 'consumer_receipt_sha256'}
 FAILURE_PHASES = frozenset(('input-freeze', 'controller-verification', 'semantic-validation',
                             'input-recheck', 'output-write'))
-FAILURE_CODES = frozenset(('seal-rejected', 'unclassified'))
+FAILURE_REASON_CODES = {
+    'selected_transport_size': 'input-size-rejected',
+    'selected_seal_input_size': 'input-size-rejected',
+    'selected_seal_expanded_size': 'input-size-rejected',
+    'selected_seal_retained_closure': 'input-closure-rejected',
+    'selected_seal_input_hash': 'input-hash-rejected',
+}
+FAILURE_CODES = frozenset(('seal-rejected', *FAILURE_REASON_CODES.values(), 'unclassified'))
 MAX_FAILURE_RECORD_BYTES = 4096
 
 
@@ -42,6 +50,15 @@ class SealFailure(ValueError):
     def __init__(self, phase: str, code: str):
         self.phase = phase
         self.code = code
+
+
+def rejection_code(error: Exception) -> str:
+    """Map only exact, reviewed guard labels to finite public rejection categories."""
+    if isinstance(error, ValueError) and len(error.args) == 1 and type(error.args[0]) is str:
+        known = FAILURE_REASON_CODES.get(error.args[0])
+        if known is not None:
+            return known
+    return 'unclassified'
 
 
 def failure_record(phase: str, code: str, plan_hash: str, producer_hash: str,
@@ -55,6 +72,13 @@ def failure_record(phase: str, code: str, plan_hash: str, producer_hash: str,
     return {'schema': 1, 'scope': FAILURE_SCOPE, 'phase': phase, 'code': code,
             'plan_sha256': hashes[0], 'producer_receipt_sha256': hashes[1],
             'consumer_receipt_sha256': hashes[2]}
+
+
+def failure_notice(phase: str, code: str) -> dict:
+    """Return the value-free stderr notice used when the redirected record is unavailable."""
+    phase = phase if type(phase) is str and phase in FAILURE_PHASES else 'input-freeze'
+    code = code if type(code) is str and code in FAILURE_CODES else 'unclassified'
+    return {'scope': FAILURE_SCOPE, 'phase': phase, 'code': code}
 
 
 def read_failure_record(path: Path, plan_hash: str, producer_hash: str,
@@ -212,9 +236,7 @@ def seal(plan_path: Path, plan_hash: str, retained: Path, producer_hash: str,
         write_new(output, sealed)
         return expected | {'manifest_sha256': metadata.sha256(sealed[transport.MANIFEST])}
     except Exception as error:
-        expected_errors = (ValueError, KeyError, TypeError, OSError, ET.ParseError)
-        code = 'seal-rejected' if isinstance(error, expected_errors) else 'unclassified'
-        raise SealFailure(phase, code) from None
+        raise SealFailure(phase, rejection_code(error)) from None
 
 
 def readback(data: bytes, provider: dict, expected: dict, *, contracts: dict,
@@ -283,6 +305,7 @@ def main() -> int:
         if args.command == 'seal':
             print(json.dumps(failure_record(error.phase, error.code, args.plan_sha256,
                 args.producer_receipt_sha256, args.consumer_receipt_sha256), sort_keys=True))
+            print(json.dumps(failure_notice(error.phase, error.code), sort_keys=True), file=sys.stderr)
         else:
             print('Selected seal/readback rejected inputs; no selected control acceptance emitted.')
         return 1

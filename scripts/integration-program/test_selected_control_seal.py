@@ -1,6 +1,6 @@
 """Real synthetic ZIP readback and safe staging, without product/provider work."""
 from copy import deepcopy
-from contextlib import contextmanager, redirect_stdout
+from contextlib import contextmanager, redirect_stderr, redirect_stdout
 from datetime import timedelta
 import io
 import json
@@ -158,9 +158,11 @@ class SealContracts(unittest.TestCase):
         """Verify unexpected seal failures are reduced to the fixed generic record."""
         with self.seal_cli_inputs() as (args, output):
             printed = io.StringIO()
+            diagnostics = io.StringIO()
             with patch('sys.argv', args), patch.object(seal.producer, 'verify_controller', return_value=self.context['controller']), \
                  patch.object(seal, 'hosted_context', return_value=self.context['context']), \
-                 patch.object(seal, 'stage', side_effect=RuntimeError('PRIVATE_SEAL_EXCEPTION')), redirect_stdout(printed):
+                 patch.object(seal, 'stage', side_effect=RuntimeError('PRIVATE_SEAL_EXCEPTION')), \
+                 redirect_stdout(printed), redirect_stderr(diagnostics):
                 self.assertEqual(seal.main(), 1)
             value = json.loads(printed.getvalue())
             self.assertEqual(value, {
@@ -169,17 +171,64 @@ class SealContracts(unittest.TestCase):
                 'producer_receipt_sha256': metadata.sha256(self.files['producer/receipt.json']),
                 'consumer_receipt_sha256': metadata.sha256(self.files['consumer/receipt.json'])})
             self.assertNotIn('PRIVATE_SEAL_EXCEPTION', printed.getvalue())
+            self.assertEqual(json.loads(diagnostics.getvalue()), {
+                'scope': seal.FAILURE_SCOPE, 'phase': 'semantic-validation', 'code': 'unclassified'})
+            self.assertNotIn('PRIVATE_SEAL_EXCEPTION', diagnostics.getvalue())
+            self.assertNotIn(str(args), diagnostics.getvalue())
             self.assertFalse(output.exists())
+
+    def test_oversized_receipt_keeps_value_free_stderr_diagnostic(self):
+        """Verify an oversized receipt remains visible when the bounded adapter cannot read it."""
+        receipt = json.loads(self.files['producer/receipt.json'])
+        receipt['private_input'] = 'PRIVATE_RECEIPT_CANARY'
+        self.files['producer/receipt.json'] = encoded(receipt)
+        with self.seal_cli_inputs() as (args, output):
+            printed, diagnostics = io.StringIO(), io.StringIO()
+            with patch('sys.argv', args), patch.object(transport, 'MAX_RECEIPT_BYTES', 1), \
+                 redirect_stdout(printed), redirect_stderr(diagnostics):
+                self.assertEqual(seal.main(), 1)
+            stdout_record = json.loads(printed.getvalue())
+            self.assertEqual(stdout_record['code'], 'input-size-rejected')
+            self.assertEqual(stdout_record['phase'], 'input-freeze')
+            self.assertEqual(json.loads(diagnostics.getvalue()), {
+                'scope': seal.FAILURE_SCOPE, 'phase': 'input-freeze', 'code': 'input-size-rejected'})
+            self.assertNotIn('PRIVATE_RECEIPT_CANARY', diagnostics.getvalue())
+            self.assertNotIn(str(args), diagnostics.getvalue())
+            self.assertFalse(output.exists())
+
+    def test_cli_uses_only_closed_categories_for_exact_known_guards(self):
+        """Verify selected exact size, closure, and hash codes map to finite public categories."""
+        for reason, expected_code in (
+            ('selected_transport_size', 'input-size-rejected'),
+            ('selected_seal_retained_closure', 'input-closure-rejected'),
+            ('selected_seal_input_hash', 'input-hash-rejected'),
+            ('PRIVATE_RAW_REASON', 'unclassified')):
+            with self.subTest(reason=reason), self.seal_cli_inputs() as (args, output):
+                printed, diagnostics = io.StringIO(), io.StringIO()
+                with patch('sys.argv', args), patch.object(seal.producer, 'verify_controller', return_value=self.context['controller']), \
+                     patch.object(seal, 'hosted_context', return_value=self.context['context']), \
+                     patch.object(seal, 'stage', side_effect=ValueError(reason)), \
+                     redirect_stdout(printed), redirect_stderr(diagnostics):
+                    self.assertEqual(seal.main(), 1)
+                self.assertEqual(json.loads(printed.getvalue())['code'], expected_code)
+                self.assertEqual(json.loads(diagnostics.getvalue()), {
+                    'scope': seal.FAILURE_SCOPE, 'phase': 'semantic-validation', 'code': expected_code})
+                self.assertNotIn(reason, diagnostics.getvalue())
+                self.assertNotIn(reason, printed.getvalue())
+                self.assertNotIn(str(args), diagnostics.getvalue())
+                self.assertFalse(output.exists())
 
     def test_successful_cli_output_and_manifest_staging_are_unchanged(self):
         """Verify successful seal stdout and the complete staged bytes stay unchanged."""
         with self.seal_cli_inputs() as (args, output):
-            printed = io.StringIO()
+            printed, diagnostics = io.StringIO(), io.StringIO()
             with patch('sys.argv', args), patch.object(seal.producer, 'verify_controller', return_value=self.context['controller']), \
-                 patch.object(seal, 'hosted_context', return_value=self.context['context']), redirect_stdout(printed):
+                 patch.object(seal, 'hosted_context', return_value=self.context['context']), \
+                 redirect_stdout(printed), redirect_stderr(diagnostics):
                 self.assertEqual(seal.main(), 0)
             self.assertEqual(json.loads(printed.getvalue()), self.context | {
                 'manifest_sha256': metadata.sha256(self.sealed[transport.MANIFEST])})
+            self.assertEqual(diagnostics.getvalue(), '')
             self.assertEqual({path.relative_to(output).as_posix(): path.read_bytes()
                 for path in output.rglob('*') if path.is_file()}, self.sealed)
 
@@ -220,18 +269,23 @@ class SealContracts(unittest.TestCase):
     def assert_cli_rejected(self):
         """Require malformed sealed input to fail with only bounded safe diagnostics."""
         with self.seal_cli_inputs() as (args, output):
-            printed = io.StringIO()
+            printed, diagnostics = io.StringIO(), io.StringIO()
             # Only trusted runner/Git identity boundaries are stubbed. Real frozen
             # archive bytes reach the actual parser and CLI failure guard.
             with patch('sys.argv', args), patch.object(seal.producer, 'verify_controller', return_value=self.context['controller']), \
-                 patch.object(seal, 'hosted_context', return_value=self.context['context']), redirect_stdout(printed):
+                 patch.object(seal, 'hosted_context', return_value=self.context['context']), \
+                 redirect_stdout(printed), redirect_stderr(diagnostics):
                 self.assertEqual(seal.main(), 1)
             value = json.loads(printed.getvalue())
-            self.assertEqual(value, seal.failure_record('semantic-validation', 'seal-rejected',
+            self.assertEqual(value, seal.failure_record('semantic-validation', 'unclassified',
                 metadata.sha256(self.files['plan.json']), metadata.sha256(self.files['producer/receipt.json']),
                 metadata.sha256(self.files['consumer/receipt.json'])))
             self.assertFalse(output.exists())
             self.assertNotIn('malformed private input', printed.getvalue())
+            self.assertEqual(json.loads(diagnostics.getvalue()), {
+                'scope': seal.FAILURE_SCOPE, 'phase': 'semantic-validation', 'code': 'unclassified'})
+            self.assertNotIn('malformed private input', diagnostics.getvalue())
+            self.assertNotIn(str(args), diagnostics.getvalue())
 
     @contextmanager
     def seal_cli_inputs(self):
