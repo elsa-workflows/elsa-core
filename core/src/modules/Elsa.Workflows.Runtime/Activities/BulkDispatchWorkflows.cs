@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using Elsa.Common.Entities;
 using Elsa.Common.Models;
 using Elsa.Expressions.Contracts;
 using Elsa.Expressions.Helpers;
@@ -17,6 +18,7 @@ using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Stimuli;
 using Elsa.Workflows.Runtime.UIHints;
 using Elsa.Workflows.Signals;
+using Elsa.Workflows.State;
 using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
 
@@ -26,7 +28,10 @@ namespace Elsa.Workflows.Runtime.Activities;
 /// Creates new workflow instances of the specified workflow for each item in the data source and dispatches them for execution.
 /// When <see cref="WaitForCompletion"/> is enabled and the activity is cancelled while it waits, the child workflows it is waiting for
 /// are cancelled too. This only reaches children that have made their first commit: until then a new child exists only in memory and
-/// is invisible to the workflow instance store, the same gap <see cref="DispatchWorkflow"/> has.
+/// is invisible to the workflow instance store. Children are missed when the activity is cancelled in the burst that dispatched them,
+/// while the dispatch queue or message transport is backlogged, or while a child's first burst is still running. Children dispatched by a
+/// version without this behavior do not carry the dispatching activity instance ID, so cancelling an activity that was already waiting
+/// for them when this shipped leaves them running.
 /// </summary>
 [Activity("Elsa", "Composition", "Create new workflow instances for each item in the data source and dispatch them for execution.", Kind = ActivityKind.Task)]
 [FlowNode("Completed", "Canceled", "Done")]
@@ -40,6 +45,8 @@ public class BulkDispatchWorkflows : Activity
     // The child workflow property that names the activity instance waiting for that child. Children carry it rather than
     // this activity storing their IDs, so a large batch does not grow the activity's state.
     private const string WaitingActivityInstanceIdKey = "WaitingActivityInstanceId";
+
+    private const int ChildPageSize = 100;
 
     /// <inheritdoc />
     public BulkDispatchWorkflows([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
@@ -291,7 +298,8 @@ public class BulkDispatchWorkflows : Activity
     /// Cancels the running children this activity instance was waiting for. They are found by the parent instance ID and
     /// then matched on the activity instance ID they carry, so fire-and-forget children and the children of another
     /// dispatching activity of the same parent are left alone. Children that already finished are left alone too,
-    /// together with anything they dispatched.
+    /// together with anything they dispatched. The parent's children are read one page at a time, and each page's
+    /// matches are cancelled before the next page is read.
     /// </summary>
     private async ValueTask OnCancelledAsync(CancelSignal signal, SignalContext signalContext)
     {
@@ -304,23 +312,38 @@ public class BulkDispatchWorkflows : Activity
             return;
 
         var cancellationToken = signalContext.CancellationToken;
-        var filter = new WorkflowInstanceFilter
+        var store = context.GetRequiredService<IWorkflowInstanceStore>();
+        var cancellationService = context.GetRequiredService<IWorkflowCancellationService>();
+
+        // WorkflowInstanceFilter cannot query a workflow property, so this queries the parent's children and matches the
+        // activity instance ID they carry in memory. Querying by that correlation directly needs a new indexed column in
+        // every workflow instance store. The query does not filter on status: a child finishing while the pages are read
+        // would leave the result set and shift the later pages, so a running child could be skipped.
+        var filter = new WorkflowInstanceFilter { ParentWorkflowInstanceIds = [context.WorkflowExecutionContext.Id] };
+        var order = new WorkflowInstanceOrder<string>(x => x.Id, OrderDirection.Ascending);
+        var pageArgs = PageArgs.FromPage(0, ChildPageSize);
+
+        while (true)
         {
-            ParentWorkflowInstanceIds = [context.WorkflowExecutionContext.Id],
-            WorkflowStatus = WorkflowStatus.Running
-        };
-        var children = await context.GetRequiredService<IWorkflowInstanceStore>().FindManyAsync(filter, cancellationToken);
-        var waitedChildIds = children
-            .Where(x => x.WorkflowState.Properties.TryGetValue<string>(WaitingActivityInstanceIdKey, out var waitingActivityInstanceId) && waitingActivityInstanceId == context.Id)
-            .Select(x => x.Id)
-            .ToList();
+            var page = await store.FindManyAsync(filter, pageArgs, order, cancellationToken);
+            var waitedChildIds = page.Items
+                .Where(x => x.Status == WorkflowStatus.Running && IsWaitedForBy(x.WorkflowState, context.Id))
+                .Select(x => x.Id)
+                .ToList();
 
-        if (waitedChildIds.Count == 0)
-            return;
+            // The cancellation service hands each child to the workflow cancellation dispatcher, the same way the
+            // workflow-level cascade does, so the children are not cancelled inside this workflow's execution. It also
+            // cancels the children's own children.
+            if (waitedChildIds.Count > 0)
+                await cancellationService.CancelWorkflowsAsync(waitedChildIds, cancellationToken);
 
-        // The cancellation service hands each child to the workflow cancellation dispatcher, the same way the
-        // workflow-level cascade does, so the children are not cancelled inside this workflow's execution. It also
-        // cancels the children's own children.
-        await context.GetRequiredService<IWorkflowCancellationService>().CancelWorkflowsAsync(waitedChildIds, cancellationToken);
+            if (page.Items.Count < ChildPageSize)
+                return;
+
+            pageArgs = pageArgs.Next();
+        }
     }
+
+    private static bool IsWaitedForBy(WorkflowState child, string activityInstanceId) =>
+        child.Properties.TryGetValue<string>(WaitingActivityInstanceIdKey, out var waitingActivityInstanceId) && waitingActivityInstanceId == activityInstanceId;
 }

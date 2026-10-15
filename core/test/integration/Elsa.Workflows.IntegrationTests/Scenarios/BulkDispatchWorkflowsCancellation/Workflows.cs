@@ -8,19 +8,20 @@ namespace Elsa.Workflows.IntegrationTests.Scenarios.BulkDispatchWorkflowsCancell
 public class SecondBulkChildWorkflow : BlockingChildWorkflow;
 
 /// <summary>
-/// A parent that bulk-dispatches two <see cref="BlockingChildWorkflow"/> instances and waits for them on one fork branch,
-/// and blocks on a second branch the test resumes. The fork waits for any branch, so resuming the second one completes
-/// the fork and cancels the still-waiting <see cref="BulkDispatchWorkflows"/> activity.
+/// A parent that bulk-dispatches <see cref="BlockingChildWorkflow"/> instances and waits for them on one fork branch, and
+/// blocks on a second branch the test resumes. The fork waits for any branch, so resuming the second one completes the
+/// fork and cancels the still-waiting <see cref="BulkDispatchWorkflows"/> activity. There are more children than the
+/// activity reads in one page (100) when it looks for them, so cancelling them takes more than one page.
 /// </summary>
 public class BulkDispatchAndWaitInForkWorkflow : WorkflowBase
 {
     public const string ProceedActivityId = "proceed";
-    public const int ChildCount = 2;
+    public const int ChildCount = 101;
 
-    protected override void Build(IWorkflowBuilder builder) => builder.Root = CreateFork();
+    protected override void Build(IWorkflowBuilder builder) => builder.Root = CreateFork(ChildCount);
 
     /// <summary>The fork that waits for the bulk-dispatched children on one branch and for the test on the other.</summary>
-    public static Fork CreateFork() => new()
+    public static Fork CreateFork(int childCount) => new()
     {
         JoinMode = ForkJoinMode.WaitAny,
         Branches =
@@ -28,7 +29,7 @@ public class BulkDispatchAndWaitInForkWorkflow : WorkflowBase
             new BulkDispatchWorkflows
             {
                 WorkflowDefinitionId = new(nameof(BlockingChildWorkflow)),
-                Items = new(Enumerable.Range(0, ChildCount).Cast<object>().ToArray())
+                Items = new(Enumerable.Range(0, childCount).Cast<object>().ToArray())
             },
             new Event("ProceedParent") { Id = ProceedActivityId }
         }
@@ -43,6 +44,8 @@ public class BulkDispatchAndWaitInForkWorkflow : WorkflowBase
 /// </summary>
 public class BulkDispatchAndWaitBesideSiblingDispatchesWorkflow : WorkflowBase
 {
+    public const int WaitedChildCount = 2;
+
     protected override void Build(IWorkflowBuilder builder)
     {
         builder.Root = new Sequence
@@ -55,7 +58,7 @@ public class BulkDispatchAndWaitBesideSiblingDispatchesWorkflow : WorkflowBase
                     JoinMode = ForkJoinMode.WaitAll,
                     Branches =
                     {
-                        BulkDispatchAndWaitInForkWorkflow.CreateFork(),
+                        BulkDispatchAndWaitInForkWorkflow.CreateFork(WaitedChildCount),
                         new BulkDispatchWorkflows
                         {
                             WorkflowDefinitionId = new(nameof(SecondBulkChildWorkflow)),
