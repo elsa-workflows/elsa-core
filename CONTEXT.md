@@ -6,6 +6,10 @@ The workflow runtime executes activities and moves their results into destinatio
 
 ## Language
 
+**Outbox Marker Cleanup**:
+Removal of a deleted dispatch outbox item's committed marker from its owner workflow state. It runs after successful delivery or abandonment. Hosts with additional state-ownership requirements can replace `IWorkflowDispatchOutboxMarkerCleaner` without replacing the dispatch processor.
+_Avoid_: Outbox delivery, outbox record deletion
+
 **Activity Output**:
 The native value produced by an activity. Its meaning and type belong to the activity's contract and are not changed by a consumer's binding choices. Activity-output registers, journals, APIs, and diagnostics expose this native value.
 _Avoid_: Converted output, bound output

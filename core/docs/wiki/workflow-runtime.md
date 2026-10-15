@@ -108,6 +108,45 @@ Operational notes:
 - Dispatch calls outside a workflow execution context, including API-triggered asynchronous events, continue to use the regular background dispatcher.
 - In-workflow `PublishEvent` and asynchronous `IEventPublisher` calls use `IWorkflowDispatcher` (`DispatchTriggerWorkflowsRequest`) so `TransactionalWorkflowDispatcher` applies. They do not go through `IStimulusDispatcher` / `BackgroundStimulusDispatcher`.
 
+### Customizing outbox marker cleanup
+
+After successfully deleting a delivered or abandoned outbox item, the processor calls
+[IWorkflowDispatchOutboxMarkerCleaner](../../src/modules/Elsa.Workflows.Runtime/Contracts/IWorkflowDispatchOutboxMarkerCleaner.cs)
+to remove the item's committed marker from its owner workflow. The default
+[WorkflowDispatchOutboxMarkerCleaner](../../src/modules/Elsa.Workflows.Runtime/Services/WorkflowDispatchOutboxMarkerCleaner.cs)
+acquires `workflow-instance:{OwnerWorkflowInstanceId}` using the configured distributed lock provider,
+reloads the owner, removes only that marker and saves the owner. Missing owners and already-removed markers require no save.
+
+Hosts whose workflow state writes require additional ownership, such as a database session lock acquired
+before loading state, can replace this scoped service without replacing the outbox processor:
+
+```csharp
+using Elsa.Workflows.Runtime;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+
+// ApplicationOutboxMarkerCleaner is the host's IWorkflowDispatchOutboxMarkerCleaner implementation.
+services.Replace(ServiceDescriptor.Scoped<IWorkflowDispatchOutboxMarkerCleaner, ApplicationOutboxMarkerCleaner>());
+```
+
+Both module and shell runtime registration use `TryAddScoped`, so registering a custom cleaner before runtime
+registration also works. Existing processor constructors retain their default cleanup behavior. Code that manually
+constructs a processor can use the overload whose first argument is `IWorkflowDispatchOutboxMarkerCleaner`.
+
+The cleaner receives the full outbox item, including its tenant and owner identifiers. It must use the owner ID,
+which can differ from the dispatched child or resumed workflow ID. The processor retains its processor lock
+while calling the cleaner, but acquires no workflow instance lock on the cleaner's behalf. A custom cleaner can
+therefore establish its own ownership before acquiring that instance lock and reloading state; it can delegate
+to the default cleaner after establishing that ownership.
+
+Cleanup can run from the immediate post-commit processor while the owner is still executing and holds an
+instance lock. A custom cleaner must account for that case rather than wait on a lock held by its caller or
+overwrite an active execution's state. Hosts that defer cleanup must provide their own durable reconciliation:
+the outbox record has already been deleted, so the processor does not automatically retry marker cleanup.
+Cleanup exceptions are logged without recreating the item or counting a new delivery failure; cancellation
+propagates. If outbox deletion fails, the cleaner is not called. This extension changes neither dispatch routing
+and retries nor the outbox's at-least-once delivery guarantee.
+
 ## Triggers And Bookmarks
 
 Triggers start workflows. Bookmarks resume suspended workflow instances. Runtime indexes and queries them through:
