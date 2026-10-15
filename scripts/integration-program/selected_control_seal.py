@@ -7,6 +7,7 @@ input from the fixed retrieval job; this module does not fetch or invent it.
 from __future__ import annotations
 
 import argparse
+import binascii
 from datetime import datetime, timezone
 import json
 import os
@@ -40,7 +41,160 @@ FAILURE_REASON_CODES = {
     'selected_seal_retained_closure': 'input-closure-rejected',
     'selected_seal_input_hash': 'input-hash-rejected',
 }
-FAILURE_CODES = frozenset(('seal-rejected', *FAILURE_REASON_CODES.values(), 'unclassified'))
+# Static reviewed source guards only. New guards require explicit review here;
+# neither prefixes nor artifact/exception values can extend this vocabulary.
+SEMANTIC_FAILURE_GUARDS = frozenset("""
+    selected_payload_archive_bijection selected_payload_archive_bytes selected_payload_archive_identity
+    selected_payload_archive_inventory selected_payload_archive_missing selected_payload_archive_schema
+    selected_payload_array selected_payload_asset_ambiguity selected_payload_asset_bytes selected_payload_asset_kind
+    selected_payload_asset_schema selected_payload_cell_bijection selected_payload_cell_not_implemented
+    selected_payload_cell_output_policy selected_payload_cell_package selected_payload_cell_schema
+    selected_payload_cell_scope selected_payload_consumer_identity selected_payload_consumer_limitations
+    selected_payload_consumer_schema selected_payload_consumer_source selected_payload_core_fixture_contract
+    selected_payload_current_admission selected_payload_current_admission_schema selected_payload_exact_file_set
+    selected_payload_expected_context selected_payload_expected_schema selected_payload_fixture_contract
+    selected_payload_flat_build_identity selected_payload_flat_build_incoming selected_payload_flat_build_provenance
+    selected_payload_flat_build_provenance_required selected_payload_flat_build_sdk
+    selected_payload_flat_build_witness selected_payload_flat_build_witness_archive
+    selected_payload_flat_build_witness_marker selected_payload_hashes_schema selected_payload_historical_admission
+    selected_payload_input_hash selected_payload_inputs selected_payload_inventory_duplicate
+    selected_payload_inventory_schema selected_payload_inventory_size selected_payload_isolation
+    selected_payload_loaded_assembly_policy selected_payload_loaded_assembly_schema selected_payload_loaded_payload
+    selected_payload_loaded_runtime_asset selected_payload_native_content_hash selected_payload_npm_archive_identity
+    selected_payload_npm_archive_schema selected_payload_npm_command selected_payload_npm_command_schema
+    selected_payload_npm_commands selected_payload_npm_consumer_failed selected_payload_npm_consumer_pair
+    selected_payload_npm_consumer_schema selected_payload_npm_dist_bytes selected_payload_npm_entrypoint
+    selected_payload_npm_generated_bytes selected_payload_npm_generated_collision selected_payload_npm_host_assets
+    selected_payload_npm_identity selected_payload_npm_integrity selected_payload_npm_inventory
+    selected_payload_npm_lifecycle selected_payload_npm_managed_assets selected_payload_npm_manifest_intent
+    selected_payload_npm_original_metadata selected_payload_npm_schema selected_payload_npm_separate_receipt
+    selected_payload_npm_source selected_payload_nuspec_dependencies selected_payload_nuspec_identity
+    selected_payload_original_build_identity selected_payload_original_lib_group
+    selected_payload_original_lib_identity selected_payload_package_id selected_payload_packages_schema
+    selected_payload_placeholder selected_payload_placeholder_source selected_payload_preflight
+    selected_payload_preflight_schema selected_payload_private_output_scope selected_payload_producer_identity
+    selected_payload_producer_schema selected_payload_restored_duplicate selected_payload_restored_external_schema
+    selected_payload_restored_external_source selected_payload_restored_object
+    selected_payload_restored_payload_bijection selected_payload_restored_payload_identity
+    selected_payload_restored_payloads_schema selected_payload_restored_root
+    selected_payload_restored_selected_bytes selected_payload_restored_selected_schema
+    selected_payload_runtime_contract selected_payload_runtime_description selected_payload_runtime_fixture
+    selected_payload_runtime_representative selected_payload_runtime_schema selected_payload_sdk_content_hash
+    selected_payload_sdk_download_identity selected_payload_sdk_download_schema
+    selected_payload_sdk_download_version selected_payload_sdk_original_assets selected_payload_sdk_prune_range
+    selected_payload_sdk_pruned_edge_schema selected_payload_sdk_pruned_parent selected_payload_sdk_pruned_scope
+    selected_payload_sdk_restore_schema selected_payload_sdk_restore_scope selected_payload_size
+    selected_payload_source_contract selected_payload_synthetic_build_group
+    selected_payload_synthetic_build_identity selected_payload_synthetic_build_prerequisite
+    selected_payload_synthetic_content_group selected_payload_synthetic_content_identity
+    selected_payload_synthetic_content_schema selected_payload_test_bijection selected_payload_test_counters_schema
+    selected_payload_test_counts selected_payload_test_execution_schema selected_payload_test_failed_or_skipped
+    selected_payload_tests_schema selected_payload_text
+    core_payload_assembly_identity core_payload_assembly_name core_payload_conditional_skip_gate
+    core_payload_contracts_schema core_payload_counters_schema core_payload_declared_skips
+    core_payload_dll_inventory core_payload_document_identity core_payload_document_schema core_payload_documents
+    core_payload_embedded_document_schema core_payload_embedded_family core_payload_embedded_producer
+    core_payload_excluded_identity core_payload_excluded_inventory core_payload_excluded_member_schema
+    core_payload_excluded_output_schema core_payload_framework_tool_schema core_payload_generator_content
+    core_payload_generator_contents core_payload_generator_hash core_payload_loaded
+    core_payload_loaded_assembly_schema core_payload_loaded_duplicate core_payload_loaded_name
+    core_payload_loaded_native_identity core_payload_loaded_package core_payload_loaded_required
+    core_payload_loaded_restored core_payload_manifest_absent core_payload_manifest_bytes
+    core_payload_manifest_catalog core_payload_manifest_hint_identity core_payload_manifest_hint_plan_restore
+    core_payload_manifest_hint_producer_schema core_payload_manifest_hint_restore
+    core_payload_manifest_hint_target_schema core_payload_manifest_hint_targets core_payload_manifest_identity
+    core_payload_manifest_policy core_payload_manifest_required core_payload_manifest_schema core_payload_member
+    core_payload_native_file_schema core_payload_native_files core_payload_native_frameworks
+    core_payload_native_identity core_payload_native_inventory core_payload_native_nuspec core_payload_native_rows
+    core_payload_native_schema core_payload_native_symbol_schema core_payload_npm core_payload_nuget_tool
+    core_payload_nuget_tool_schema core_payload_nuspec core_payload_original_source core_payload_output_policy
+    core_payload_pdb_archive core_payload_pdb_path core_payload_pdb_size core_payload_private_outputs
+    core_payload_private_pdb core_payload_recipe core_payload_runtime core_payload_runtime_cells
+    core_payload_runtime_contract core_payload_runtime_packages core_payload_runtime_result_schema
+    core_payload_runtime_source core_payload_satellite_identity core_payload_satellite_schema
+    core_payload_satellites core_payload_schema core_payload_sdk_asset_schema core_payload_sdk_assets
+    core_payload_sdk_framework_schema core_payload_sdk_frameworks core_payload_sdk_inventory
+    core_payload_sdk_producer_schema core_payload_sdk_tool_schema core_payload_skip_cell core_payload_skip_contract
+    core_payload_skip_duplicate core_payload_skip_schema core_payload_skips core_payload_source_applicability
+    core_payload_source_applicability_schema core_payload_sourcelink core_payload_swagger_dependency
+    core_payload_swagger_identity core_payload_swagger_restore core_payload_symbol_checksum
+    core_payload_symbol_identity core_payload_symbol_inventory core_payload_symbol_schema core_payload_symbols
+    core_payload_symbols_partition core_payload_symbols_policy core_payload_test_cells core_payload_test_counts
+    core_payload_test_duplicate core_payload_test_inventory core_payload_test_placeholders core_payload_test_rows
+    core_payload_test_schema core_payload_tests_schema core_payload_text
+    selected_payload_cell_not_implemented selected_plan_array_type selected_plan_artifact_exclusions
+    selected_plan_artifact_partition selected_plan_boolean selected_plan_boolean_type
+    selected_plan_controller_inputs selected_plan_core_observation selected_plan_exclusion
+    selected_plan_feed_ineligible selected_plan_feed_inventory selected_plan_feed_service_inventory
+    selected_plan_history_inventory selected_plan_ineligible selected_plan_integer selected_plan_integer_type
+    selected_plan_inventory_identity selected_plan_inventory_partition selected_plan_maintenance39_source
+    selected_plan_manifest_restore_hash selected_plan_map selected_plan_native_identity selected_plan_npm_scope
+    selected_plan_null selected_plan_object_schema selected_plan_object_type selected_plan_observation_inventory
+    selected_plan_observation_schema selected_plan_original_empty_url_scope selected_plan_original_net7_scope
+    selected_plan_prerequisite_ineligible selected_plan_prerequisite_scope selected_plan_private_string
+    selected_plan_registered_source selected_plan_scalar_type selected_plan_selected_scope
+    selected_plan_source_policy selected_plan_string selected_plan_test_inventory selected_plan_url
+    selected_plan_version
+    selected_transport_archive_size selected_transport_bytes selected_transport_cell selected_transport_clock
+    selected_transport_context_binding selected_transport_context_run selected_transport_context_schema
+    selected_transport_controller_schema selected_transport_digest selected_transport_duplicate
+    selected_transport_execution_binding selected_transport_execution_schema selected_transport_execution_uuid
+    selected_transport_expanded_size selected_transport_expected_schema selected_transport_file
+    selected_transport_json selected_transport_json_constant selected_transport_json_duplicate
+    selected_transport_json_nonfinite selected_transport_json_object selected_transport_json_size
+    selected_transport_manifest_binding selected_transport_manifest_bytes selected_transport_manifest_closure
+    selected_transport_manifest_content selected_transport_manifest_duplicate
+    selected_transport_manifest_entry_schema selected_transport_manifest_files selected_transport_manifest_schema
+    selected_transport_member_count selected_transport_member_size selected_transport_member_type
+    selected_transport_npm_metadata selected_transport_outer_bytes selected_transport_path
+    selected_transport_path_collision selected_transport_planner_context selected_transport_provider_artifact
+    selected_transport_provider_binding selected_transport_provider_expiry selected_transport_provider_run
+    selected_transport_provider_schema selected_transport_size selected_transport_stage_identity
+    selected_transport_tar selected_transport_tar_member selected_transport_tar_trailing_members
+    selected_transport_time selected_transport_unlisted_path selected_transport_zip
+""".split())
+# Store the actual code objects and compare by identity, not filenames, function
+# names or code-object equality (which can admit structurally equal clones).
+SEMANTIC_FAILURE_SITES = tuple((function.__code__, site) for function, site in (
+    (studio.sequence, 'shared-sequence'), (studio.hashes, 'shared-hashes'),
+    (studio.text, 'shared-text'), (studio.package_id, 'shared-package-id'),
+    (studio.inventory, 'shared-inventory'), (studio.archive_record, 'shared-archive'),
+    (studio.validate_packages, 'shared-packages'), (studio.validate_tests, 'shared-tests'),
+    (studio.validate_npm, 'shared-npm'), (studio.validate_sdk_restore, 'shared-sdk'),
+    (studio.validate_cell, 'shared-cell'), (studio.validate_consumers, 'shared-consumers'),
+    (studio.validate, 'shared-validate'), (studio.runtime_policy, 'shared-runtime-policy'),
+    (studio.runtime_source, 'shared-runtime-source'), (studio.load_contracts, 'shared-contracts'),
+    (studio.core_payload._rows, 'core-rows'), (studio.core_payload._text, 'core-text'),
+    (studio.core_payload._hash, 'core-hash'), (studio.core_payload._member, 'core-member'),
+    (studio.core_payload._source, 'core-source'), (studio.core_payload._skip_groups, 'core-skip-groups'),
+    (studio.core_payload._tests, 'core-tests'), (studio.core_payload._producer, 'core-producer'),
+    (studio.core_payload._manifest_hint_producer, 'core-manifest-hint'),
+    (studio.core_payload._swagger_producer, 'core-swagger'),
+    (studio.core_payload._documents, 'core-documents'), (studio.core_payload._symbols, 'core-symbols'),
+    (studio.core_payload._manifest, 'core-manifest'), (studio.core_payload._excluded_outputs, 'core-excluded'),
+    (studio.core_payload._native, 'core-native'), (studio.core_payload._runtime, 'core-runtime'),
+    (studio.core_payload.validate_specialization, 'core-specialization'),
+    (studio.core_payload.load_contracts, 'core-contracts'),
+    (studio.plan_schema.public_url, 'plan-url'), (studio.plan_schema._walk, 'plan-walk'),
+    (studio.plan_schema.validate, 'plan-validate'), (studio.plan_schema.admit, 'plan-admit'),
+    (transport.closed, 'transport-schema'), (transport.digest, 'transport-digest'),
+    (transport.integer, 'transport-integer'), (transport.safe_name, 'transport-name'),
+    (transport.unique_names, 'transport-names'), (transport.strict_json, 'transport-json'),
+    (transport.utc, 'transport-time'), (transport.zip_members, 'transport-zip'),
+    (transport.tar_members, 'transport-tar'), (transport.file_limit, 'transport-file-limit'),
+    (transport.inventory, 'transport-inventory'), (transport.archive_inventory, 'transport-archive'),
+    (transport.validate_context, 'transport-context'), (transport.validate_execution, 'transport-execution'),
+    (transport.validate_execution_pair, 'transport-execution-pair'),
+))
+SEMANTIC_EXCEPTION_TYPES = (
+    (ValueError, 'value-error'), (KeyError, 'key-error'), (TypeError, 'type-error'),
+    (AttributeError, 'attribute-error'), (IndexError, 'index-error'), (OverflowError, 'overflow-error'),
+    (binascii.Error, 'base64-error'), (ET.ParseError, 'xml-parse-error'),
+)
+MAX_DIAGNOSTIC_TRACEBACK_FRAMES = 64
+FAILURE_CODES = frozenset(('seal-rejected', *FAILURE_REASON_CODES.values(), *SEMANTIC_FAILURE_GUARDS,
+    *(site + '-' + category for _, site in SEMANTIC_FAILURE_SITES for _, category in SEMANTIC_EXCEPTION_TYPES),
+    'unclassified'))
 MAX_FAILURE_RECORD_BYTES = 4096
 
 
@@ -52,13 +206,48 @@ class SealFailure(ValueError):
         self.code = code
 
 
+def trusted_failure_site(error: Exception) -> str | None:
+    """Return the innermost explicitly reviewed code-object site within a fixed bound."""
+    trace, site = error.__traceback__, None
+    for _ in range(MAX_DIAGNOSTIC_TRACEBACK_FRAMES):
+        if trace is None:
+            return site
+        for code, candidate in SEMANTIC_FAILURE_SITES:
+            if trace.tb_frame.f_code is code:
+                site = candidate
+                break
+        trace = trace.tb_next
+    return None
+
+
+def semantic_exception_code(error: Exception) -> str | None:
+    """Classify exact trusted exception types/sites without inspecting their values."""
+    category = next((name for kind, name in SEMANTIC_EXCEPTION_TYPES if type(error) is kind), None)
+    if category is None:
+        return None
+    if type(error) is ValueError and (len(error.args) != 1 or type(error.args[0]) is not str):
+        return None
+    site = trusted_failure_site(error)
+    return site + '-' + category if site is not None else None
+
+
 def rejection_code(error: Exception) -> str:
-    """Map only exact, reviewed guard labels to finite public rejection categories."""
-    if isinstance(error, ValueError) and len(error.args) == 1 and type(error.args[0]) is str:
+    """Emit only static guard identifiers or exact trusted site/type categories."""
+    if type(error) is ValueError:
+        if len(error.args) != 1 or type(error.args[0]) is not str:
+            return 'unclassified'
         known = FAILURE_REASON_CODES.get(error.args[0])
         if known is not None:
             return known
-    return 'unclassified'
+        if error.args[0] == 'core_payload_schema' and trusted_failure_site(error) == 'core-specialization':
+            # Inspect exactly one explicit cause from the real Core wrapper.
+            # Never follow arbitrary cause/context chains or expose arguments.
+            detail = semantic_exception_code(error.__cause__)
+            if detail is not None:
+                return detail
+        if error.args[0] in SEMANTIC_FAILURE_GUARDS:
+            return error.args[0]
+    return semantic_exception_code(error) or 'unclassified'
 
 
 def failure_record(phase: str, code: str, plan_hash: str, producer_hash: str,

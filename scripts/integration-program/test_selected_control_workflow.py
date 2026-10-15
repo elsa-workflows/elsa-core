@@ -838,6 +838,33 @@ else:
         self.assertNotIn('coverage', projected)
         self.assertLess((output / 'seal.json').stat().st_size, 4096)
 
+    def test_trusted_site_rejection_retains_only_finite_code_and_bound_hashes(self):
+        import retain_selected_failure_diagnostics as diagnostics
+        import selected_control_seal as seal
+        import selected_studio_plan_schema as schema
+        sentinel = '/PRIVATE_DIAGNOSTIC_PATH/PRIVATE_DIAGNOSTIC_VALUE'
+        try:
+            schema.admit({}, '', b'', sentinel, {})
+        except ValueError as error:
+            code = seal.rejection_code(error)
+        else:
+            self.fail('invalid date was accepted')
+        self.assertEqual('plan-admit-value-error', code)
+        hashes, producer_receipt, consumer_receipt = self.install_successful_seal_failure_inputs()
+        record_path = self.root / 'selected-expected.json'
+        record_path.write_bytes(encoded(seal.failure_record('semantic-validation', code, *hashes)))
+        failure, digest = seal.read_failure_record(record_path, *hashes)
+        controller = {key: self.plan['controller'][key] for key in ('commit', 'tree')}
+        with patch.dict(os.environ, self.environment, clear=True):
+            projected = diagnostics.project_seal_failure(failure, digest, producer_receipt, hashes[1],
+                consumer_receipt, hashes[2], self.plan, hashes[0], controller)
+        self.assertEqual({'phase': 'semantic-validation', 'code': code}, projected['seal_rejection'])
+        self.assertEqual(digest, projected['failure_record_sha256'])
+        self.assertTrue(projected['producer_success'] and projected['consumer_success'])
+        self.assertNotIn(sentinel, json.dumps(projected))
+        self.assertNotIn('coverage', projected)
+        self.assertLess(len(encoded(projected)), seal.MAX_FAILURE_RECORD_BYTES)
+
     def test_invalid_seal_failure_records_are_unavailable_and_never_uploaded(self):
         """Reject malformed, unbound, oversized, and symlinked seal reports without leakage."""
         import retain_selected_failure_diagnostics as diagnostics
