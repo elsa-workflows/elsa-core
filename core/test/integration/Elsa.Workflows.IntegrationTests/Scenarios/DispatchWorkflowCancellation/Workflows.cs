@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Runtime.Activities;
 
@@ -137,6 +138,40 @@ public class FireAndForgetThenDispatchAndWaitBesideCompletingBranchWorkflow : Wo
             {
                 new DispatchWorkflow { WorkflowDefinitionId = new(nameof(FireAndForgetChildWorkflow)) },
                 DispatchAndWaitBesideCompletingBranchWorkflow.CreateFork()
+            }
+        };
+    }
+}
+
+/// <summary>
+/// A parent whose loop runs the same waiting <see cref="DispatchWorkflow"/> twice in one burst, each beside a branch that
+/// completes on the last iteration only. Both children are dispatched before the last iteration's fork cancels its
+/// dispatch; the first one keeps waiting.
+/// </summary>
+public class DispatchAndWaitInLoopWorkflow : WorkflowBase
+{
+    public const int LastIteration = 1;
+
+    protected override void Build(IWorkflowBuilder builder)
+    {
+        builder.Root = new ParallelForEach<int>(Enumerable.Range(0, LastIteration + 1).ToList())
+        {
+            Body = new Fork
+            {
+                JoinMode = ForkJoinMode.WaitAny,
+                Branches =
+                {
+                    new DispatchWorkflow
+                    {
+                        WorkflowDefinitionId = new(nameof(BlockingChildWorkflow)),
+                        WaitForCompletion = new(true)
+                    },
+                    new If(context => context.GetVariable<int>("CurrentIndex") == LastIteration)
+                    {
+                        Then = new WriteLine("Last iteration moves on"),
+                        Else = new Event("NeverPublished")
+                    }
+                }
             }
         };
     }

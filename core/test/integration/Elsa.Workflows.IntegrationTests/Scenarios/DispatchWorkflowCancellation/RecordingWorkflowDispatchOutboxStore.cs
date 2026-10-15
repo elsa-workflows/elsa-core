@@ -6,9 +6,10 @@ namespace Elsa.Workflows.IntegrationTests.Scenarios.DispatchWorkflowCancellation
 
 /// <summary>
 /// Records the child instance ID of every workflow definition dispatch written to the outbox, then delegates. This shows
-/// which children a workflow dispatched, even after their pending dispatches have left the outbox again.
+/// which children a workflow dispatched, even after their pending dispatches have left the outbox again. Deletes fail
+/// while <paramref name="failDeletes"/> returns true.
 /// </summary>
-public class RecordingWorkflowDispatchOutboxStore(IWorkflowDispatchOutboxStore inner, ConcurrentQueue<string> enqueuedInstanceIds) : IWorkflowDispatchOutboxStore
+public class RecordingWorkflowDispatchOutboxStore(IWorkflowDispatchOutboxStore inner, ConcurrentQueue<string> enqueuedInstanceIds, Func<bool> failDeletes) : IWorkflowDispatchOutboxStore
 {
     public Task SaveAsync(WorkflowDispatchOutboxItem item, CancellationToken cancellationToken = default)
     {
@@ -22,5 +23,6 @@ public class RecordingWorkflowDispatchOutboxStore(IWorkflowDispatchOutboxStore i
 
     public Task<IEnumerable<WorkflowDispatchOutboxItem>> FindManyAsync(int maxCount, CancellationToken cancellationToken = default) => inner.FindManyAsync(maxCount, cancellationToken);
 
-    public Task DeleteAsync(string id, CancellationToken cancellationToken = default) => inner.DeleteAsync(id, cancellationToken);
+    public Task DeleteAsync(string id, CancellationToken cancellationToken = default) =>
+        failDeletes() ? throw new InvalidOperationException("Simulated outbox store failure.") : inner.DeleteAsync(id, cancellationToken);
 }

@@ -2,6 +2,7 @@ using Elsa.Extensions;
 using Elsa.Workflows.Runtime.Models;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime;
 
@@ -15,7 +16,7 @@ public static class WorkflowDispatchOutboxStateExtensions
     /// </summary>
     public const string PropertyKey = "Elsa.Workflows.Runtime.WorkflowDispatchOutbox";
 
-    // Maps the instance ID of each child dispatched during the current burst to the outbox item that will create it.
+    // Maps the instance ID of each waited-for child dispatched during the current burst to the outbox item that creates it.
     private static readonly object PendingChildDispatchesKey = new();
 
     /// <summary>
@@ -49,10 +50,11 @@ public static class WorkflowDispatchOutboxStateExtensions
 
     /// <summary>
     /// Withdraws the outbox item that creates the specified child, when the current burst enqueued it: the item is
-    /// removed from the workflow state that would commit it and deleted from the outbox. The outbox cannot deliver an
-    /// item before the parent commits it, so while the parent has not committed since the dispatch, the child is never
-    /// created. Changes nothing when this burst enqueued no such item, for example because the transactional outbox is
-    /// off or the child was dispatched in an earlier burst.
+    /// removed from the workflow state and deleted from the outbox. The outbox cannot deliver an item before the parent
+    /// commits it, so when the parent has not committed since the dispatch, the child is never created. When it has, for
+    /// example under an activity commit strategy, the outbox may already have delivered the item, and withdrawing it
+    /// only helps if it has not. Changes nothing when this burst enqueued no such item, for example because the
+    /// transactional outbox is off or the child was dispatched in an earlier burst.
     /// </summary>
     internal static async Task WithdrawPendingChildDispatchAsync(this WorkflowExecutionContext context, string childInstanceId, CancellationToken cancellationToken)
     {
@@ -62,9 +64,23 @@ public static class WorkflowDispatchOutboxStateExtensions
             return;
 
         // Unclaim the item first: the outbox never delivers an item the owner's committed state does not reference, so an
-        // item the parent has not committed yet stays undelivered even if deleting it below fails.
+        // item the parent has not committed stays undelivered even if deleting it below fails. The recurring sweep then
+        // deletes it once the orphaned item retention elapses.
         context.Properties.RemoveWorkflowDispatchOutboxItem(outboxItemId);
-        await context.ServiceProvider.GetRequiredService<IWorkflowDispatchOutboxStore>().DeleteAsync(outboxItemId, cancellationToken);
+
+        try
+        {
+            await context.ServiceProvider.GetRequiredService<IWorkflowDispatchOutboxStore>().DeleteAsync(outboxItemId, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception e) when (e is not OperationCanceledException)
+        {
+            context.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(WorkflowDispatchOutbox))
+                .LogWarning(e, "Failed to delete withdrawn workflow dispatch outbox item {OutboxItemId} for child workflow {WorkflowInstanceId}; unless the parent committed it before the withdrawal, it is not delivered and is deleted once the orphaned item retention elapses.", outboxItemId, childInstanceId);
+        }
     }
 
     /// <summary>

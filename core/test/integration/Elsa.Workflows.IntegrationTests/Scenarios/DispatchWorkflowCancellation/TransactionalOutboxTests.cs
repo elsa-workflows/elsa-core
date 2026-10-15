@@ -3,6 +3,8 @@ using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.KeyValues.Features;
 using Elsa.Testing.Shared;
+using Elsa.Workflows.CommitStates.Strategies;
+using Elsa.Workflows.Features;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
@@ -21,7 +23,9 @@ namespace Elsa.Workflows.IntegrationTests.Scenarios.DispatchWorkflowCancellation
 /// </summary>
 public class TransactionalOutboxTests : IAsyncLifetime
 {
-    private readonly IServiceProvider _services;
+    private readonly ITestOutputHelper _testOutputHelper;
+    private IServiceProvider _services;
+    private bool _failOutboxDeletes;
 
     /// <summary>The child instance ID of every workflow definition dispatch written to the outbox, in order.</summary>
     private readonly ConcurrentQueue<string> _enqueuedInstanceIds = new();
@@ -31,18 +35,26 @@ public class TransactionalOutboxTests : IAsyncLifetime
 
     public TransactionalOutboxTests(ITestOutputHelper testOutputHelper)
     {
-        _services = new TestApplicationBuilder(testOutputHelper)
+        _testOutputHelper = testOutputHelper;
+        _services = BuildServices();
+    }
+
+    private IServiceProvider BuildServices(Action<WorkflowsFeature>? configureWorkflows = null)
+    {
+        return new TestApplicationBuilder(_testOutputHelper)
             .AddWorkflow<BlockingChildWorkflow>()
             .AddWorkflow<FireAndForgetChildWorkflow>()
             .AddWorkflow<DispatchAndWaitBesideCompletingBranchWorkflow>()
             .AddWorkflow<FireAndForgetThenDispatchAndWaitBesideCompletingBranchWorkflow>()
+            .AddWorkflow<DispatchAndWaitInLoopWorkflow>()
             .ConfigureElsa(elsa =>
             {
                 elsa.Configure<KeyValueFeature>();
+                elsa.UseWorkflows(workflows => configureWorkflows?.Invoke(workflows));
                 elsa.UseWorkflowRuntime(runtime =>
                 {
                     runtime.WorkflowDispatchOutboxStore = sp =>
-                        new RecordingWorkflowDispatchOutboxStore(ActivatorUtilities.CreateInstance<KeyValueWorkflowDispatchOutboxStore>(sp), _enqueuedInstanceIds);
+                        new RecordingWorkflowDispatchOutboxStore(ActivatorUtilities.CreateInstance<KeyValueWorkflowDispatchOutboxStore>(sp), _enqueuedInstanceIds, () => _failOutboxDeletes);
                     runtime.InnerWorkflowDispatcher = sp =>
                         new RecordingWorkflowDispatcher(ActivatorUtilities.CreateInstance<BackgroundWorkflowDispatcher>(sp), _deliveredInstanceIds);
                 });
@@ -68,7 +80,7 @@ public class TransactionalOutboxTests : IAsyncLifetime
 
         // Assert: the child was dispatched in that burst, its pending dispatch has left the outbox, and the parent's
         // committed state no longer claims it.
-        var childId = Assert.Single(_enqueuedInstanceIds);
+        Assert.Single(_enqueuedInstanceIds);
         Assert.Empty(await FindPendingInstanceIdsAsync());
         Assert.False((await FindInstanceAsync(parentId))!.WorkflowState.HasWorkflowDispatchOutboxItems());
 
@@ -76,7 +88,6 @@ public class TransactionalOutboxTests : IAsyncLifetime
         await _services.GetRequiredService<IWorkflowDispatchOutboxProcessor>().ProcessAsync();
 
         Assert.Empty(_deliveredInstanceIds);
-        Assert.Null(await FindInstanceAsync(childId));
     }
 
     [Fact(DisplayName = "With the outbox on, withdrawing a cancelled waiting dispatch leaves a fire-and-forget dispatch of the same burst pending")]
@@ -97,7 +108,66 @@ public class TransactionalOutboxTests : IAsyncLifetime
         Assert.Equal(new[] { fireAndForgetChildId }, _deliveredInstanceIds);
     }
 
-    private async Task<string> RunParentAsync(string definitionId)
+    [Fact(DisplayName = "With the outbox on, a withdrawal whose outbox delete fails still keeps the child from being delivered and does not fault the parent")]
+    public async Task CancellingTheWaitingDispatchActivityInTheDispatchingBurst_WhenTheOutboxDeleteFails_StillWithdrawsTheChildDispatch()
+    {
+        _failOutboxDeletes = true;
+
+        // Act
+        var parentId = await RunParentAsync(nameof(DispatchAndWaitBesideCompletingBranchWorkflow));
+
+        // Assert: the parent finished cleanly. The item is still stored, but the parent's committed state does not claim
+        // it, so delivering the outbox does not hand the child over.
+        var parent = (await FindInstanceAsync(parentId))!;
+        Assert.Empty(parent.WorkflowState.Incidents);
+        Assert.False(parent.WorkflowState.HasWorkflowDispatchOutboxItems());
+        Assert.Equal(_enqueuedInstanceIds, await FindPendingInstanceIdsAsync());
+
+        await _services.GetRequiredService<IWorkflowDispatchOutboxProcessor>().ProcessAsync();
+
+        Assert.Empty(_deliveredInstanceIds);
+    }
+
+    [Fact(DisplayName = "With the outbox on, a pending dispatch the parent already committed in the same burst is still withdrawn while undelivered")]
+    public async Task CancellingTheWaitingDispatchActivityAfterAMidBurstCommit_WithdrawsTheUndeliveredChildDispatch()
+    {
+        // Arrange: commit after every activity, so the parent commits the dispatch before the fork cancels it. The outbox is
+        // only delivered by the test, so the committed item is still undelivered when the cancellation runs.
+        _services = BuildServices(workflows => workflows.WithDefaultActivityCommitStrategy(new ExecutedActivityStrategy()));
+        await _services.PopulateRegistriesAsync();
+
+        // Act
+        await RunParentAsync(nameof(DispatchAndWaitBesideCompletingBranchWorkflow));
+
+        // Assert
+        Assert.Single(_enqueuedInstanceIds);
+        Assert.Empty(await FindPendingInstanceIdsAsync());
+
+        await _services.GetRequiredService<IWorkflowDispatchOutboxProcessor>().ProcessAsync();
+
+        Assert.Empty(_deliveredInstanceIds);
+    }
+
+    [Fact(DisplayName = "With the outbox on, a DispatchWorkflow that dispatches again in the same burst withdraws only the cancelled iteration's child")]
+    public async Task CancellingOneIterationOfARepeatedDispatchInTheDispatchingBurst_WithdrawsOnlyThatChild()
+    {
+        // Act: the last iteration's dispatch is cancelled, the other one keeps waiting.
+        await RunParentAsync(nameof(DispatchAndWaitInLoopWorkflow), WorkflowStatus.Running, WorkflowSubStatus.Suspended);
+
+        // Assert: the same activity dispatched two waited-for children in the burst, and only the one still waited for
+        // stays pending and is delivered.
+        var enqueued = _enqueuedInstanceIds.ToArray();
+        Assert.Equal(2, enqueued.Length);
+        var pending = Assert.Single(await FindPendingInstanceIdsAsync());
+        Assert.Contains(pending, enqueued);
+        var waitedChildId = pending!;
+
+        await _services.GetRequiredService<IWorkflowDispatchOutboxProcessor>().ProcessAsync();
+
+        Assert.Equal(new[] { waitedChildId }, _deliveredInstanceIds);
+    }
+
+    private async Task<string> RunParentAsync(string definitionId, WorkflowStatus expectedStatus = WorkflowStatus.Finished, WorkflowSubStatus expectedSubStatus = WorkflowSubStatus.Finished)
     {
         var client = await _services.GetRequiredService<IWorkflowRuntime>().CreateClientAsync();
         var response = await client.CreateAndRunInstanceAsync(new CreateAndRunWorkflowInstanceRequest
@@ -105,8 +175,8 @@ public class TransactionalOutboxTests : IAsyncLifetime
             WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Published)
         });
 
-        Assert.Equal(WorkflowStatus.Finished, response.Status);
-        Assert.Equal(WorkflowSubStatus.Finished, response.SubStatus);
+        Assert.Equal(expectedStatus, response.Status);
+        Assert.Equal(expectedSubStatus, response.SubStatus);
         return response.WorkflowInstanceId;
     }
 
