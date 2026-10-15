@@ -867,11 +867,18 @@ def original_excluded_build_marker(assets: dict, original: dict, framework: str,
     # inventories and cache bytes checked without treating them as entrypoints.
     entrypoints = [entry for entry in real if Path(entry).name.casefold() in
                    {identifier.casefold() + '.props', identifier.casefold() + '.targets'}]
-    require(entrypoints and all(entry.rsplit('/', 1)[0] == kind for entry in entrypoints),
-            'consumer_original_build_real_member')
+    # NuGet selects the compatible Build group before package-name filtering.
+    # For admitted modern .NET TFMs, build/native is a different, incompatible
+    # framework group, even when it contains package-named props or targets.
+    # Keep other nested package-named layouts closed rather than resolve TFMs.
+    require(all(entry.rsplit('/', 1)[0] == kind or (kind == 'build' and
+        framework in ('net8.0', 'net9.0', 'net10.0') and entry.rsplit('/', 1)[0] == 'build/native')
+        for entry in entrypoints), 'consumer_original_build_real_member')
+    applicable = [entry for entry in entrypoints if entry.rsplit('/', 1)[0] == kind]
+    require(applicable, 'consumer_original_build_real_member')
     # Native ClearIfExists uses the character offset of the last slash, then
-    # OrdinalIgnoreCase path; flat ASCII props/targets make that order explicit.
-    first = sorted(entrypoints, key=lambda entry: (entry.rfind('/'), entry.casefold()))[0]
+    # OrdinalIgnoreCase path within the applicable flat ASCII group.
+    first = sorted(applicable, key=lambda entry: (entry.rfind('/'), entry.upper()))[0]
     require(first.rsplit('/', 1)[0] + '/_._' == marker and
         not any(name.casefold() == marker.casefold() for name in names), 'consumer_original_build_collision')
     path = folder / marker

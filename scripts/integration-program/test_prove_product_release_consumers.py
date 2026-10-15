@@ -1156,35 +1156,44 @@ class SelectedProductConsumerTests(unittest.TestCase):
             with self.subTest(kind=kind, path=path), self.assertRaisesRegex(ValueError, 'consumer_asset_archive_member'):
                 self.verify_empty_build(values)
 
-    def original_flat_build_fixture(self, *, helper_members=()):
-        """Exact HTTP/net10 native group shape: one Swagger and two NSwag sentinels."""
+    def original_flat_build_fixture(self, *, helper_members=(), native_build=False, framework='net10.0', native_members=None):
+        """Inherited HTTP groups or Kafka's flat props and native-framework targets."""
         temporary = tempfile.TemporaryDirectory(dir=self.root)
         self.addCleanup(temporary.cleanup)
         values = {'cache': Path(temporary.name).resolve()}
-        root, version, framework = 'Elsa.IO.Http', '3.8.999', 'net10.0'
+        root, version = ('Elsa.ServiceBus.Kafka' if native_build else 'Elsa.IO.Http'), '3.8.999'
         root_key = root + '/' + version
         root_archive = self.artifacts / (root_key.replace('/', '.') + '.nupkg')
         with zipfile.ZipFile(root_archive, 'w') as archive: archive.writestr('a.nuspec', b'<package />')
-        targets = {root_key: {'type': 'package', 'dependencies': {'Elsa.Api.Common': '3.8.4'}}}
+        targets = {root_key: {'type': 'package', 'dependencies': (
+            {'Confluent.Kafka': '2.12.0'} if native_build else {'Elsa.Api.Common': '3.8.4'})}}
         libraries, catalog, graph = {}, {}, {root.lower(): {'selected': True, 'version': version}}
-        for identifier, package_version, groups, dependency in (
+        packages = (
+            ('Confluent.Kafka', '2.12.0', (), {'librdkafka.redist': '2.12.0'}),
+            ('librdkafka.redist', '2.12.0', ('build',), {})) if native_build else (
             ('Elsa.Api.Common', '3.8.4', (), {'FastEndpoints.Swagger': '8.2.0'}),
             ('FastEndpoints.Swagger', '8.2.0', ('build',), {'NSwag.AspNetCore': '14.7.1'}),
-            ('NSwag.AspNetCore', '14.7.1', ('build', 'buildMultiTargeting'), {})):
+            ('NSwag.AspNetCore', '14.7.1', ('build', 'buildMultiTargeting'), {}))
+        for identifier, package_version, groups, dependency in packages:
             key = identifier + '/' + package_version
             folder = values['cache'] / identifier.lower() / package_version
             folder.mkdir(parents=True)
             entries = {group + '/' + identifier + '.targets': b'<Project />' for group in groups}
-            if identifier == 'FastEndpoints.Swagger':
+            if identifier == 'librdkafka.redist':
+                entries = {name: b'<Project />' for name in (native_members if native_members is not None else (
+                    'build/native/librdkafka.redist.targets', 'build/librdkafka.redist.props'))}
+            if identifier == ('librdkafka.redist' if native_build else 'FastEndpoints.Swagger'):
                 entries.update({name: b'<Project />' for name in helper_members})
-            entries['lib/net10.0/' + identifier + '.dll'] = b'external DLL'
+            if identifier != 'librdkafka.redist':
+                entries['lib/' + framework + '/' + identifier + '.dll'] = b'external DLL'
             archive = folder / (identifier.lower() + '.' + package_version + '.nupkg')
             with zipfile.ZipFile(archive, 'w') as package:
                 for name, data in entries.items(): package.writestr(name, data)
             for name, data in entries.items():
                 path = folder / name; path.parent.mkdir(parents=True, exist_ok=True); path.write_bytes(data)
             targets[key] = {'type': 'package', 'dependencies': dependency,
-                'compile': {'lib/net10.0/' + identifier + '.dll': {}},
+                **({'compile': {'lib/' + framework + '/' + identifier + '.dll': {}}}
+                    if identifier != 'librdkafka.redist' else {}),
                 **{group: {group + '/_._': {}} for group in groups}}
             libraries[key] = {'type': 'package', 'sha512': 'native-' + identifier, 'files': list(entries)}
             catalog[(identifier.lower(), package_version)] = {'archive_sha256': metadata.sha256(archive.read_bytes()),
@@ -1195,12 +1204,80 @@ class SelectedProductConsumerTests(unittest.TestCase):
                 root: {'target': 'Package', 'version': '[3.8.999, 3.8.999]'}}}}},
             'projectFileDependencyGroups': {framework: [root + ' >= 3.8.999 <= 3.8.999']}}
         original = deepcopy(assets)
-        original['project']['restore'] = {'projectPath': '/owned/source/src/Elsa.IO.Http.csproj'}
+        project = 'src/modules/servicebus/' + root + '/' + root + '.csproj' if native_build else 'src/Elsa.IO.Http.csproj'
+        original['project']['restore'] = {'projectPath': '/owned/source/' + project}
         selected = {root.lower(): {'nupkg': root_archive.name,
-            'policy': {'project': 'src/Elsa.IO.Http.csproj', 'metadata': {'restore_assets_sha256': 'a' * 64}}}}
+            'policy': {'project': project, 'metadata': {'restore_assets_sha256': 'a' * 64}}}}
         values.update(assets=assets, original_assets=original, selected=selected, catalog=catalog, graph=graph,
-            framework=framework, key='FastEndpoints.Swagger/8.2.0', root_key=root_key)
+            framework=framework, key='librdkafka.redist/2.12.0' if native_build else 'FastEndpoints.Swagger/8.2.0', root_key=root_key)
         return values
+
+    def test_original_build_inherits_kafka_native_layout_with_same_root_marker(self):
+        """Native-framework targets do not displace flat props for modern .NET consumers."""
+        for framework in ('net8.0', 'net9.0', 'net10.0'):
+            values = self.original_flat_build_fixture(native_build=True, framework=framework)
+            with self.subTest(framework=framework):
+                rows = self.verify_empty_build(values)
+                self.assertEqual(rows[-1], {'id': 'librdkafka.redist', 'version': '2.12.0', 'payloads': [{
+                    'path': 'build/_._', 'kind': 'build', 'metadata': {},
+                    'accounting': proof.ORIGINAL_EXCLUDED_BUILD_ACCOUNTING,
+                    'origin': proof.ORIGINAL_EXCLUDED_BUILD_ORIGIN,
+                    'archive_sha256': values['catalog'][('librdkafka.redist', '2.12.0')]['archive_sha256'],
+                    'original_assets_sha256': 'a' * 64}]})
+
+    def test_original_build_native_layout_keeps_member_source_and_cache_guards(self):
+        for change in ('original_inventory', 'current_inventory', 'cache_bytes', 'cache_symlink',
+                       'original_group', 'current_group', 'archive_hash', 'native_hash', 'current_native_hash',
+                       'source_project', 'source_hash', 'extra_incoming', 'boundary', 'transitive',
+                       'physical_marker', 'case_marker', 'archive_marker', 'archive_transitive'):
+            values = self.original_flat_build_fixture(native_build=True, framework='net8.0')
+            key = values['key']
+            assets, original = values['assets'], values['original_assets']
+            folder = values['cache'] / key
+            member = 'build/native/librdkafka.redist.targets'
+            if change == 'original_inventory': original['libraries'][key]['files'].remove(member)
+            elif change == 'current_inventory': assets['libraries'][key]['files'].remove(member)
+            elif change == 'cache_bytes': (folder / member).write_bytes(b'changed native targets')
+            elif change == 'cache_symlink':
+                (folder / member).unlink(); (folder / member).symlink_to(folder / 'build/librdkafka.redist.props')
+            elif change == 'original_group': original['targets']['net8.0'][key]['build'] = {'build/native/_._': {}}
+            elif change == 'current_group': assets['targets']['net8.0'][key]['build'] = {'build/native/_._': {}}
+            elif change == 'archive_hash': values['catalog'][('librdkafka.redist', '2.12.0')]['archive_sha256'] = 'f' * 64
+            elif change == 'native_hash': original['libraries'][key]['sha512'] = 'changed'
+            elif change == 'current_native_hash': assets['libraries'][key]['sha512'] = 'changed'
+            elif change == 'source_project': original['project']['restore']['projectPath'] = '/foreign/Kafka.csproj'
+            elif change == 'source_hash': values['selected']['elsa.servicebus.kafka']['policy']['metadata']['restore_assets_sha256'] = 'invalid'
+            elif change == 'extra_incoming': assets['targets']['net8.0'][values['root_key']]['dependencies']['librdkafka.redist'] = '2.12.0'
+            elif change == 'boundary': assets['project']['frameworks']['net8.0']['dependencies']['librdkafka.redist'] = {'target': 'Package'}
+            elif change == 'transitive': assets['targets']['net8.0'][key]['buildTransitive'] = {member: {}}
+            elif change.startswith('archive_'):
+                archive = folder / 'librdkafka.redist.2.12.0.nupkg'
+                with zipfile.ZipFile(archive, 'a') as package:
+                    package.writestr('BUILD/_._' if change == 'archive_marker' else
+                        'buildTransitive/librdkafka.redist.targets', b'<Project />')
+                values['catalog'][('librdkafka.redist', '2.12.0')]['archive_sha256'] = metadata.sha256(archive.read_bytes())
+            else:
+                marker = folder / ('build/_._' if change == 'physical_marker' else 'BUILD/_._')
+                marker.parent.mkdir(exist_ok=True); marker.write_bytes(b'physical')
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                self.verify_empty_build(values)
+
+    def test_original_build_native_layout_requires_flat_applicable_entrypoint(self):
+        for members, framework, succeeds in (
+            (('build/librdkafka.redist.props', 'build/native/librdkafka.redist.targets'), 'net8.0', True),
+            (('build/native/librdkafka.redist.props', 'build/librdkafka.redist.targets'), 'net8.0', True),
+            (('build/native/librdkafka.redist.targets',), 'net8.0', False),
+            (('build/librdkafka.redist.props', 'build/net8.0/librdkafka.redist.targets'), 'net8.0', False),
+            (('build/librdkafka.redist.props', 'build/other/librdkafka.redist.targets'), 'net8.0', False),
+            (('build/librdkafka.redist.props', 'build/native/helpers/librdkafka.redist.targets'), 'net8.0', False),
+            (('build/librdkafka.redist.props', 'build/native/librdkafka.redist.targets'), 'native', False)):
+            values = self.original_flat_build_fixture(native_build=True, framework=framework, native_members=members)
+            with self.subTest(members=members, framework=framework):
+                if succeeds:
+                    self.assertEqual(self.verify_empty_build(values)[-1]['payloads'][0]['path'], 'build/_._')
+                else:
+                    with self.assertRaisesRegex(ValueError, 'consumer_original_build_real_member'):
+                        self.verify_empty_build(values)
 
     def test_original_flat_build_allows_archive_bound_unselected_helpers(self):
         # Grpc.Tools has flat package-named entrypoints plus nested _grpc and

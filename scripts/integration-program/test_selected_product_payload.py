@@ -23,7 +23,7 @@ from test_selected_control_transport import zipped, Fixture as ProviderFixture
 SHAPES = Path(__file__).with_name('selected_product_plan_shapes.json')
 
 
-def fixture(product, line, *, source_mutation=None, flat_build=False, direct_build=False, flat_root=payload.consumer.FLAT_BUILD_ROOT):
+def fixture(product, line, *, source_mutation=None, flat_build=False, direct_build=False, flat_root=payload.consumer.FLAT_BUILD_ROOT, native_build=False):
     """Create complete synthetic payload bytes and expected identity for one product/release
     cell.
     """
@@ -61,10 +61,12 @@ def fixture(product, line, *, source_mutation=None, flat_build=False, direct_bui
         records = core_producer['packages']['selected']
     else:
         records = []
-        for identifier in ('Elsa.IO.Http', 'Elsa.IO', *(['Elsa.Logging.Serilog'] if direct_build else []), *([flat_root, payload.consumer.FLAT_BUILD_WITNESS] if flat_build else []), *[item['id'] for item in contracts['extensions_mysql']['support_policy']['projects']]):
+        for identifier in ('Elsa.IO.Http', 'Elsa.IO', *(['Elsa.ServiceBus.Kafka'] if native_build else []), *(['Elsa.Logging.Serilog'] if direct_build else []), *([flat_root, payload.consumer.FLAT_BUILD_WITNESS] if flat_build else []), *[item['id'] for item in contracts['extensions_mysql']['support_policy']['projects']]):
             policy = deepcopy(template)
             policy.update(id=identifier, project='src/modules/io/' + identifier + '/' + identifier + '.csproj')
             policy['metadata']['dependency_groups'] = []
+            if identifier == 'Elsa.ServiceBus.Kafka':
+                policy['project'] = 'src/modules/servicebus/' + identifier + '/' + identifier + '.csproj'
             if flat_build and identifier in (flat_root, payload.consumer.FLAT_BUILD_WITNESS):
                 category = ('caching' if flat_root == payload.consumer.FLAT_BUILD_ROOT else 'runtimes') if identifier == flat_root else 'actors'
                 policy['project'] = 'src/modules/' + category + '/' + identifier + '/' + identifier + '.csproj'
@@ -386,11 +388,13 @@ def direct_flat_payload_fixture(product='extensions', line='3.8', *, swagger=Fal
 
 
 class SelectedProductPayloadTests(unittest.TestCase):
-    def original_empty_lib_payload(self):
+    def original_marker_payload(self, *, native_build=False):
         """Feed actual verifier output into a synthetic producer/consumer seal fixture."""
-        files, expected, now = fixture('extensions', '3.8')
+        files, expected, now = fixture('extensions', '3.8', native_build=native_build)
         plan, receipt = (json.loads(files[name]) for name in ('plan.json', 'consumer/receipt.json'))
-        cell = next(row for row in receipt['coverage'] if row['framework'] == 'net10.0')
+        framework = 'net8.0' if native_build else 'net10.0'
+        cell = next(row for row in receipt['coverage'] if row['framework'] == framework and
+                    (not native_build or row['id'] == 'Elsa.ServiceBus.Kafka'))
         policy = next(row for row in plan['inventory']['selected'] if row['id'] == cell['id'])
         harness = consumer_tests.SelectedProductConsumerTests()
         temporary = tempfile.TemporaryDirectory()
@@ -399,29 +403,36 @@ class SelectedProductPayloadTests(unittest.TestCase):
         harness.artifacts = harness.root / 'artifacts'
         harness.artifacts.mkdir()
         self.addCleanup(harness.doCleanups)
-        values = harness.original_empty_lib_fixture()
+        values = (harness.original_flat_build_fixture(native_build=True, framework=framework) if native_build else
+                  harness.original_empty_lib_fixture())
         old_root = values['root_key']
         root = cell['id'].casefold()
         root_key = cell['id'] + '/' + plan['requested_version']
-        values['assets']['targets']['net10.0'][root_key] = values['assets']['targets']['net10.0'].pop(old_root)
-        values['assets']['project']['frameworks']['net10.0']['dependencies'] = {
+        values['assets']['targets'][framework][root_key] = values['assets']['targets'][framework].pop(old_root)
+        values['assets']['project']['frameworks'][framework]['dependencies'] = {
             cell['id']: {'target': 'Package', 'version': '[' + plan['requested_version'] + ', ' + plan['requested_version'] + ']',
                          'aliases': 'selected'}}
         values['assets']['projectFileDependencyGroups'] = {
-            'net10.0': [cell['id'] + ' >= ' + plan['requested_version'] + ' <= ' + plan['requested_version']]}
+            framework: [cell['id'] + ' >= ' + plan['requested_version'] + ' <= ' + plan['requested_version']]}
         values['graph'][root] = values['graph'].pop(old_root.rsplit('/', 1)[0].casefold())
         archive_name = cell['id'] + '.' + plan['requested_version'] + '.nupkg'
         harness.artifacts.joinpath(archive_name).write_bytes(files['producer/nuget/' + archive_name])
         values['selected'] = {root: {'nupkg': archive_name, 'policy': policy}}
         values['original_assets']['project']['restore']['projectPath'] = '/original/' + policy['project']
-        record = next(iter(values['catalog'].values()))
-        record['original_contexts'][0]['project'] = policy['project']
+        if not native_build:
+            record = next(iter(values['catalog'].values()))
+            record['original_contexts'][0]['project'] = policy['project']
         verified = harness.verify_empty_build(values)
-        data = values['archive'].read_bytes()
-        cell['restored'].append({'id': 'System.Text.Json', 'version': '10.0.9', 'source': payload.consumer.planner.NUGET_INDEX,
-            'sha256': metadata.sha256(data), 'archive_sha512': hashlib.sha512(data).hexdigest(),
-            'nuget_content_hash': payload.consumer.consumers.base64_sha512(data), 'signed': False})
-        cell['restored_payloads'].append(next(row for row in verified if row['id'] == 'System.Text.Json'))
+        for row in verified:
+            if row['id'].casefold() == root:
+                continue
+            identifier, version = row['id'], row['version']
+            archive = values['cache'] / identifier.lower() / version / (identifier.lower() + '.' + version + '.nupkg')
+            data = archive.read_bytes()
+            cell['restored'].append({'id': identifier, 'version': version, 'source': payload.consumer.planner.NUGET_INDEX,
+                'sha256': metadata.sha256(data), 'archive_sha512': hashlib.sha512(data).hexdigest(),
+                'nuget_content_hash': payload.consumer.consumers.base64_sha512(data), 'signed': False})
+            cell['restored_payloads'].append(row)
         files['consumer/receipt.json'] = encoded(receipt)
         return files, expected, now
 
@@ -453,15 +464,35 @@ class SelectedProductPayloadTests(unittest.TestCase):
 
     def test_original_empty_lib_verifier_output_seals_and_reads_back(self):
         """No-native verifier-to-consumer-receipt-to-seal validation preserves inert rows."""
-        values = self.original_empty_lib_payload()
+        values = self.original_marker_payload()
         self.validate(values)
         self.seal_and_readback(values)
+
+    def test_original_kafka_native_build_verifier_output_seals_and_reads_back(self):
+        """The observed mixed flat/native archive retains the existing closed proof row."""
+        values = self.original_marker_payload(native_build=True)
+        self.validate(values)
+        self.seal_and_readback(values)
+        for change in ('native_marker', 'transitive', 'original_hash', 'metadata'):
+            files = deepcopy(values[0])
+            receipt = json.loads(files['consumer/receipt.json'])
+            cell = next(row for row in receipt['coverage'] if row['id'] == 'Elsa.ServiceBus.Kafka' and row['framework'] == 'net8.0')
+            marker = next(row for row in cell['restored_payloads'] if row['id'] == 'librdkafka.redist')['payloads'][0]
+            if change == 'native_marker': marker['path'] = 'build/native/_._'
+            elif change == 'transitive': marker['kind'] = 'buildTransitive'
+            elif change == 'original_hash': marker['original_assets_sha256'] = 'f' * 64
+            else: marker['metadata'] = {'unexpected': False}
+            files['consumer/receipt.json'] = encoded(receipt)
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                self.validate((files, *values[1:]))
+            self.files, self.context = files, values[1]
+            seal_tests.SealContracts.assert_cli_rejected(self)
 
     def test_rehashed_original_empty_lib_accounting_is_closed_and_source_bound(self):
         """The seal rejects fabricated/private, incompatible, mixed and selected markers."""
         for change in ('accounting', 'origin', 'original_hash', 'missing_hash', 'private_metadata', 'wrong_related',
                        'future_framework', 'archive_hash', 'fake_bytes', 'selected', 'kind', 'mixed', 'mixed_reversed'):
-            values = self.original_empty_lib_payload()
+            values = self.original_marker_payload()
             receipt = json.loads(values[0]['consumer/receipt.json'])
             cell = next(row for row in receipt['coverage'] if row['framework'] == 'net10.0')
             row = cell['restored_payloads'][-1]; marker = row['payloads'][0]
