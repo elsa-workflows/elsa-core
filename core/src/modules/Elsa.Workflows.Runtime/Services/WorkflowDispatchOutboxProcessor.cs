@@ -33,6 +33,7 @@ namespace Elsa.Workflows.Runtime;
 /// the same as before #8167. Follow-up: #8813.
 /// </remarks>
 public class WorkflowDispatchOutboxProcessor(
+    IWorkflowDispatchOutboxMarkerCleaner markerCleaner,
     IWorkflowDispatchOutboxStore store,
     IWorkflowInstanceStore workflowInstanceStore,
     [FromKeyedServices(WorkflowDispatcherServiceKeys.Inner)] IWorkflowDispatcher innerDispatcher,
@@ -45,6 +46,26 @@ public class WorkflowDispatchOutboxProcessor(
     ITenantFinder? tenantFinder = null) : IWorkflowDispatchOutboxProcessor
 {
     private const string LockResource = "Elsa:WorkflowDispatchOutbox:Processor";
+
+    /// <summary>
+    /// Creates a processor with the default distributed-lock-based cleanup of committed outbox markers.
+    /// </summary>
+    public WorkflowDispatchOutboxProcessor(
+        IWorkflowDispatchOutboxStore store,
+        IWorkflowInstanceStore workflowInstanceStore,
+        [FromKeyedServices(WorkflowDispatcherServiceKeys.Inner)] IWorkflowDispatcher innerDispatcher,
+        IDistributedLockProvider distributedLockProvider,
+        ISystemClock systemClock,
+        IOptions<DistributedLockingOptions> distributedLockingOptions,
+        IOptions<WorkflowDispatcherOptions> dispatcherOptions,
+        ILogger<WorkflowDispatchOutboxProcessor> logger,
+        ITenantAccessor? tenantAccessor = null,
+        ITenantFinder? tenantFinder = null)
+        : this(new WorkflowDispatchOutboxMarkerCleaner(workflowInstanceStore, distributedLockProvider, distributedLockingOptions),
+            store, workflowInstanceStore, innerDispatcher, distributedLockProvider, systemClock,
+            distributedLockingOptions, dispatcherOptions, logger, tenantAccessor, tenantFinder)
+    {
+    }
 
     /// <summary>
     /// Creates a processor that delivers through mediator background commands, as this processor did before it delivered
@@ -326,7 +347,9 @@ public class WorkflowDispatchOutboxProcessor(
             {
                 logger.LogWarning(exception, "Abandoning workflow dispatch outbox item {OutboxItemId} on channel '{Channel}' after {DeliveryAttempts} failed delivery attempts", item.Id, item.Channel ?? "(default)", item.DeliveryAttempts);
                 if (await TryDeleteAbandonedItemAsync(item, cancellationToken))
+                {
                     await RemoveCommittedMarkerAsync(item, cancellationToken);
+                }
                 return;
             }
 
@@ -396,20 +419,9 @@ public class WorkflowDispatchOutboxProcessor(
 
     private async Task RemoveCommittedMarkerAsync(WorkflowDispatchOutboxItem item, CancellationToken cancellationToken)
     {
-        var lockResource = $"workflow-instance:{item.OwnerWorkflowInstanceId}";
-
         try
         {
-            await using var handle = await distributedLockProvider.AcquireLockAsync(lockResource, distributedLockingOptions.Value.LockAcquisitionTimeout, cancellationToken);
-            var owner = await workflowInstanceStore.FindAsync(new WorkflowInstanceFilter { Id = item.OwnerWorkflowInstanceId }, cancellationToken);
-
-            if (owner == null)
-                return;
-
-            if (!owner.WorkflowState.RemoveWorkflowDispatchOutboxItem(item.Id))
-                return;
-
-            await workflowInstanceStore.SaveAsync(owner, cancellationToken);
+            await markerCleaner.RemoveAsync(item, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

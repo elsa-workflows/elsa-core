@@ -139,6 +139,167 @@ public class WorkflowDispatchOutboxProcessorTests
         await _store.DidNotReceive().DeleteAsync(item.Id, Arg.Any<CancellationToken>());
     }
 
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task Processing_AllowsCustomOwnershipBeforeReloadingOwner_ForDeliveryAndAbandonment(bool eager, bool abandon)
+    {
+        var item = CreateItem();
+        item.TenantId = "tenant-a";
+        var staleOwner = CreateOwnerWorkflowInstance(includeOutboxMarker: true);
+        var freshOwner = CreateOwnerWorkflowInstance(includeOutboxMarker: true, itemIds: [item.Id, "another-item"]);
+        freshOwner.Name = "updated during dispatch";
+        var lockProvider = new RecordingDistributedSynchronizationProvider();
+        var cleaner = Substitute.For<IWorkflowDispatchOutboxMarkerCleaner>();
+        var defaultCleaner = new WorkflowDispatchOutboxMarkerCleaner(_workflowInstanceStore, lockProvider, Microsoft.Extensions.Options.Options.Create(new DistributedLockingOptions()));
+        var ownsState = false;
+        var cleanupCompleted = false;
+        var deleted = false;
+        var reads = 0;
+        using var cancellation = new CancellationTokenSource();
+        _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([item]);
+        _store.DeleteAsync(item.Id, cancellation.Token).Returns(_ =>
+        {
+            deleted = true;
+            return Task.CompletedTask;
+        });
+        _workflowInstanceStore.FindAsync(OwnerFilter(), Arg.Any<CancellationToken>()).Returns(_ =>
+        {
+            if (++reads == 1)
+            {
+                return new ValueTask<WorkflowInstance?>(staleOwner);
+            }
+
+            Assert.True(ownsState);
+            Assert.Equal("workflow-instance:parent-1", lockProvider.CurrentLockName);
+            return new ValueTask<WorkflowInstance?>(freshOwner);
+        });
+        _workflowInstanceStore.SaveAsync(Arg.Any<WorkflowInstance>(), Arg.Any<CancellationToken>()).Returns(_ =>
+        {
+            Assert.True(ownsState);
+            Assert.Equal("workflow-instance:parent-1", lockProvider.CurrentLockName);
+            return ValueTask.CompletedTask;
+        });
+        cleaner.RemoveAsync(item, cancellation.Token).Returns(async _ =>
+        {
+            Assert.True(deleted);
+            Assert.Equal("Elsa:WorkflowDispatchOutbox:Processor", lockProvider.CurrentLockName);
+            Assert.Equal("tenant-a", item.TenantId);
+            ownsState = true;
+            try
+            {
+                await defaultCleaner.RemoveAsync(item, cancellation.Token);
+                cleanupCompleted = true;
+            }
+            finally
+            {
+                ownsState = false;
+            }
+        });
+        if (abandon)
+        {
+            item.DeliveryAttempts = _options.MaxOutboxDeliveryAttempts - 1;
+            _innerDispatcher.DispatchAsync(DefinitionRequestFor(item), Arg.Any<DispatchWorkflowOptions?>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromException<DispatchWorkflowResponse>(new InvalidOperationException("Delivery failed.")));
+        }
+        var processor = CreateProcessorWithMarkerCleaner(cleaner, lockProvider);
+
+        if (eager)
+        {
+            Assert.True(await processor.TryProcessAsync(cancellation.Token));
+        }
+        else
+        {
+            await processor.ProcessAsync(cancellation.Token);
+        }
+
+        await cleaner.Received(1).RemoveAsync(item, cancellation.Token);
+        Assert.True(cleanupCompleted);
+        Assert.Equal(2, reads);
+        await _workflowInstanceStore.Received(1).SaveAsync(freshOwner, cancellation.Token);
+        Assert.False(freshOwner.WorkflowState.HasWorkflowDispatchOutboxItem(item.Id));
+        Assert.True(freshOwner.WorkflowState.HasWorkflowDispatchOutboxItem("another-item"));
+        Assert.Equal("updated during dispatch", freshOwner.Name);
+        Assert.True(staleOwner.WorkflowState.HasWorkflowDispatchOutboxItem(item.Id));
+        Assert.Null(lockProvider.CurrentLockName);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ProcessAsync_DoesNotCallCustomCleanup_WhenItemDeletionFails(bool abandon)
+    {
+        var item = CreateItem();
+        var cleaner = Substitute.For<IWorkflowDispatchOutboxMarkerCleaner>();
+        _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([item]);
+        _workflowInstanceStore.FindAsync(OwnerFilter(), Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: true)));
+        _store.DeleteAsync(item.Id, Arg.Any<CancellationToken>()).Returns(Task.FromException(new InvalidOperationException("Delete failed.")));
+        if (abandon)
+        {
+            item.DeliveryAttempts = _options.MaxOutboxDeliveryAttempts - 1;
+            _innerDispatcher.DispatchAsync(DefinitionRequestFor(item), Arg.Any<DispatchWorkflowOptions?>(), Arg.Any<CancellationToken>())
+                .Returns(Task.FromException<DispatchWorkflowResponse>(new InvalidOperationException("Delivery failed.")));
+        }
+
+        await CreateProcessorWithMarkerCleaner(cleaner).ProcessAsync();
+
+        await cleaner.DidNotReceiveWithAnyArgs().RemoveAsync(default!, default);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_ContinuesBatchWithoutRedelivery_WhenCustomCleanupFails()
+    {
+        var item = CreateItem();
+        var nextItem = CreateItem(id: "outbox-2");
+        var cleaner = Substitute.For<IWorkflowDispatchOutboxMarkerCleaner>();
+        var logger = new CapturingLogger<WorkflowDispatchOutboxProcessor>();
+        var failure = new InvalidOperationException("Cleanup unavailable.");
+        _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([item, nextItem]);
+        _workflowInstanceStore.FindAsync(OwnerFilter(), Arg.Any<CancellationToken>())
+            .Returns(_ => new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: true, itemIds: [item.Id, nextItem.Id])));
+        cleaner.RemoveAsync(item, Arg.Any<CancellationToken>()).Returns(Task.FromException(failure));
+
+        await CreateProcessorWithMarkerCleaner(cleaner, logger: logger).ProcessAsync();
+
+        await _innerDispatcher.Received(1).DispatchAsync(DefinitionRequestFor(item), Arg.Any<DispatchWorkflowOptions?>(), Arg.Any<CancellationToken>());
+        await _innerDispatcher.Received(1).DispatchAsync(DefinitionRequestFor(nextItem), Arg.Any<DispatchWorkflowOptions?>(), Arg.Any<CancellationToken>());
+        await _store.Received(1).DeleteAsync(item.Id, Arg.Any<CancellationToken>());
+        await cleaner.Received(1).RemoveAsync(nextItem, Arg.Any<CancellationToken>());
+        await _store.DidNotReceiveWithAnyArgs().SaveAsync(default!, default);
+        await _workflowInstanceStore.DidNotReceiveWithAnyArgs().SaveAsync(default!, default);
+        Assert.Equal(0, item.DeliveryAttempts);
+        Assert.Same(failure, Assert.Single(logger.Entries, x => x.Level == LogLevel.Warning).Exception);
+    }
+
+    [Fact]
+    public async Task ProcessAsync_PropagatesCustomCleanupCancellationWithoutRecreatingItem()
+    {
+        var item = CreateItem();
+        var cleaner = Substitute.For<IWorkflowDispatchOutboxMarkerCleaner>();
+        using var cancellation = new CancellationTokenSource();
+        _store.FindManyAsync(Arg.Any<int>(), Arg.Any<CancellationToken>()).Returns([item]);
+        _workflowInstanceStore.FindAsync(OwnerFilter(), Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<WorkflowInstance?>(CreateOwnerWorkflowInstance(includeOutboxMarker: true)));
+        cleaner.RemoveAsync(item, cancellation.Token).Returns(_ =>
+        {
+            cancellation.Cancel();
+            return Task.FromCanceled(cancellation.Token);
+        });
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => CreateProcessorWithMarkerCleaner(cleaner).ProcessAsync(cancellation.Token));
+
+        await _store.Received(1).DeleteAsync(item.Id, cancellation.Token);
+        await _store.DidNotReceiveWithAnyArgs().SaveAsync(default!, default);
+        Assert.Equal(0, item.DeliveryAttempts);
+    }
+
+    private WorkflowDispatchOutboxProcessor CreateProcessorWithMarkerCleaner(IWorkflowDispatchOutboxMarkerCleaner cleaner, IDistributedLockProvider? lockProvider = null, ILogger<WorkflowDispatchOutboxProcessor>? logger = null) =>
+        new(cleaner, _store, _workflowInstanceStore, _innerDispatcher, lockProvider ?? new NoopDistributedSynchronizationProvider(), _systemClock,
+            Microsoft.Extensions.Options.Options.Create(new DistributedLockingOptions()), Microsoft.Extensions.Options.Options.Create(_options), logger ?? NullLogger<WorkflowDispatchOutboxProcessor>.Instance);
+
     [Fact]
     public async Task ProcessAsync_DeletesOutboxItem_WhenOwnerWorkflowNeverCommittedMarkerAfterRetentionPeriod()
     {
