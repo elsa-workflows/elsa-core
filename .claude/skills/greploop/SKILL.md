@@ -1,8 +1,9 @@
 ---
 name: greploop
 description: >
-  Iteratively improves a PR (GitHub), MR (GitLab), or shelved changelist (Perforce) until Greptile
-  gives it a 5/5 confidence score with zero unresolved comments. Triggers Greptile review, fixes all
+  Iteratively improves a PR (GitHub), MR (GitLab), or shelved changelist (Perforce), optionally aiming
+  for a Greptile 5/5 confidence score with zero unresolved comments. Greptile is advisory only, not a
+  merge gate (see .github/reviewers.md). Triggers Greptile review, fixes all
   actionable comments, pushes/re-shelves, re-triggers review, and repeats. Use when the user wants to
   fully optimize a PR/MR/CL against Greptile's code review standards.
 license: MIT
@@ -15,7 +16,9 @@ allowed-tools: Bash(gh:*) Bash(glab:*) Bash(git:*) Bash(p4:*)
 
 # Greploop
 
-Iteratively fix a PR/MR/CL until Greptile gives a perfect review: 5/5 confidence, zero unresolved comments.
+> **Greptile is advisory only; it is not a merge gate. See .github/reviewers.md.** In this repository a Greptile 5/5 score is an optional target for this loop, not a merge requirement. The only merge gate is the Elsa 3 Code Review (plus green CI) described in `.github/reviewers.md`.
+
+Iteratively fix a PR/MR/CL, optionally aiming for a clean Greptile review: 5/5 confidence, zero unresolved comments. Reaching 5/5 is not required to merge.
 
 ## Inputs
 
@@ -286,8 +289,9 @@ Filter to comments from the Greptile bot user that have not been marked as resol
 
 Stop the loop if **any** of these are true:
 
-- Confidence score is **5/5** AND there are **zero unresolved comments**
+- Confidence score is **5/5** AND there are **zero unresolved comments** (the optional target; not a merge requirement)
 - Max iterations reached (report current state)
+- The remaining Greptile comments have each been fixed or answered, and you choose to stop short of 5/5. Greptile is advisory only; see .github/reviewers.md.
 
 #### D. Fix actionable comments
 
