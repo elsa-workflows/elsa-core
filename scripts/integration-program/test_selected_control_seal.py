@@ -275,7 +275,7 @@ class SealContracts(unittest.TestCase):
     def test_real_trusted_unknown_value_error_never_exports_its_input(self):
         sentinel = '/PRIVATE_DIAGNOSTIC_PATH/PRIVATE_DIAGNOSTIC_VALUE'
         def reject(*args, **kwargs):
-            return payload.plan_schema.admit({}, '', b'', sentinel, {})
+            payload.plan_schema.admit({}, '', b'', sentinel, {})
         with seal_cli_inputs(self.files) as (args, output):
             printed, diagnostics = io.StringIO(), io.StringIO()
             with patch('sys.argv', args), patch.object(seal.producer, 'verify_controller', return_value=self.context['controller']), \
@@ -333,8 +333,9 @@ class SealContracts(unittest.TestCase):
         sentinel = '/PRIVATE_DIAGNOSTIC_PATH/PRIVATE_DIAGNOSTIC_VALUE'
         def recurse(depth):
             if depth:
-                return recurse(depth - 1)
-            return payload.plan_schema.admit({}, '', b'', sentinel, {})
+                recurse(depth - 1)
+            else:
+                payload.plan_schema.admit({}, '', b'', sentinel, {})
         try:
             recurse(seal.MAX_DIAGNOSTIC_TRACEBACK_FRAMES)
         except ValueError as error:
