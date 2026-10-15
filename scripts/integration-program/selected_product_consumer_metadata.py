@@ -110,6 +110,7 @@ def attach_range_failure(error: ValueError, root_id: str, framework: str, phase:
             detail.update(reason='unsatisfied-range', unsatisfied_checks=failed, ranges=samples)
         error.consumer_range_failure = validate_range_failure(detail)
     except Exception:
+        # Optional diagnostics must never replace the original control failure.
         pass
 
 
