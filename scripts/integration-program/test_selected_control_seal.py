@@ -18,6 +18,25 @@ from test_selected_control_transport import MALFORMED_GZIP, zipped
 from test_selected_studio_payload import fixture, encoded
 
 
+@contextmanager
+def seal_cli_inputs(files):
+    """Prepare bounded on-disk inputs and exact CLI arguments for a seal invocation."""
+    with tempfile.TemporaryDirectory() as temporary:
+        root = Path(temporary).resolve()
+        inputs = root / 'inputs'
+        for name, data in files.items():
+            target = inputs / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+        output = root / 'output'
+        args = ['selected_control_seal.py', 'seal', '--plan', str(inputs / 'plan.json'),
+            '--plan-sha256', metadata.sha256(files['plan.json']), '--producer-retained', str(inputs / 'producer'),
+            '--producer-receipt-sha256', metadata.sha256(files['producer/receipt.json']),
+            '--consumer-receipt', str(inputs / 'consumer/receipt.json'),
+            '--consumer-receipt-sha256', metadata.sha256(files['consumer/receipt.json']), '--output', str(output)]
+        yield args, output
+
+
 class SealContracts(unittest.TestCase):
     def setUp(self):
         """Create a complete sealed Studio payload and matching synthetic provider metadata."""
@@ -156,7 +175,7 @@ class SealContracts(unittest.TestCase):
 
     def test_unclassified_cli_failure_emits_only_fixed_safe_record(self):
         """Verify unexpected seal failures are reduced to the fixed generic record."""
-        with self.seal_cli_inputs() as (args, output):
+        with seal_cli_inputs(self.files) as (args, output):
             printed = io.StringIO()
             diagnostics = io.StringIO()
             with patch('sys.argv', args), patch.object(seal.producer, 'verify_controller', return_value=self.context['controller']), \
@@ -182,7 +201,7 @@ class SealContracts(unittest.TestCase):
         receipt = json.loads(self.files['producer/receipt.json'])
         receipt['private_input'] = 'PRIVATE_RECEIPT_CANARY'
         self.files['producer/receipt.json'] = encoded(receipt)
-        with self.seal_cli_inputs() as (args, output):
+        with seal_cli_inputs(self.files) as (args, output):
             printed, diagnostics = io.StringIO(), io.StringIO()
             with patch('sys.argv', args), patch.object(transport, 'MAX_RECEIPT_BYTES', 1), \
                  redirect_stdout(printed), redirect_stderr(diagnostics):
@@ -203,7 +222,7 @@ class SealContracts(unittest.TestCase):
             ('selected_seal_retained_closure', 'input-closure-rejected'),
             ('selected_seal_input_hash', 'input-hash-rejected'),
             ('PRIVATE_RAW_REASON', 'unclassified')):
-            with self.subTest(reason=reason), self.seal_cli_inputs() as (args, output):
+            with self.subTest(reason=reason), seal_cli_inputs(self.files) as (args, output):
                 printed, diagnostics = io.StringIO(), io.StringIO()
                 with patch('sys.argv', args), patch.object(seal.producer, 'verify_controller', return_value=self.context['controller']), \
                      patch.object(seal, 'hosted_context', return_value=self.context['context']), \
@@ -220,7 +239,7 @@ class SealContracts(unittest.TestCase):
 
     def test_successful_cli_output_and_manifest_staging_are_unchanged(self):
         """Verify successful seal stdout and the complete staged bytes stay unchanged."""
-        with self.seal_cli_inputs() as (args, output):
+        with seal_cli_inputs(self.files) as (args, output):
             printed, diagnostics = io.StringIO(), io.StringIO()
             with patch('sys.argv', args), patch.object(seal.producer, 'verify_controller', return_value=self.context['controller']), \
                  patch.object(seal, 'hosted_context', return_value=self.context['context']), \
@@ -268,7 +287,7 @@ class SealContracts(unittest.TestCase):
 
     def assert_cli_rejected(self):
         """Require malformed sealed input to fail with only bounded safe diagnostics."""
-        with self.seal_cli_inputs() as (args, output):
+        with seal_cli_inputs(self.files) as (args, output):
             printed, diagnostics = io.StringIO(), io.StringIO()
             # Only trusted runner/Git identity boundaries are stubbed. Real frozen
             # archive bytes reach the actual parser and CLI failure guard.
@@ -286,24 +305,6 @@ class SealContracts(unittest.TestCase):
                 'scope': seal.FAILURE_SCOPE, 'phase': 'semantic-validation', 'code': 'unclassified'})
             self.assertNotIn('malformed private input', diagnostics.getvalue())
             self.assertNotIn(str(args), diagnostics.getvalue())
-
-    @contextmanager
-    def seal_cli_inputs(self):
-        """Prepare bounded on-disk inputs and exact CLI arguments for a seal invocation."""
-        with tempfile.TemporaryDirectory() as temporary:
-            root = Path(temporary).resolve()
-            inputs = root / 'inputs'
-            for name, data in self.files.items():
-                target = inputs / name
-                target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_bytes(data)
-            output = root / 'output'
-            args = ['selected_control_seal.py', 'seal', '--plan', str(inputs / 'plan.json'),
-                '--plan-sha256', metadata.sha256(self.files['plan.json']), '--producer-retained', str(inputs / 'producer'),
-                '--producer-receipt-sha256', metadata.sha256(self.files['producer/receipt.json']),
-                '--consumer-receipt', str(inputs / 'consumer/receipt.json'),
-                '--consumer-receipt-sha256', metadata.sha256(self.files['consumer/receipt.json']), '--output', str(output)]
-            yield args, output
 
     def test_retained_symlink_and_rejected_write_leave_no_output(self):
         """Verify retained symlink and rejected write leave no output."""

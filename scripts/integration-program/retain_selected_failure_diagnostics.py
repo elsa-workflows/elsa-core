@@ -76,6 +76,7 @@ def project(receipt: dict, digest: str, role: str, plan: dict, plan_hash: str, c
             require(len(roots) == 1 and candidate['framework'] in roots[0]['frameworks'], 'diagnostic_invalid')
             detail = candidate
     except (KeyError, TypeError, ValueError, RecursionError):
+        # Malformed optional detail stays unavailable; validated failure identity remains intact.
         pass
     result['product_recipe_failure' if role == 'artifact' else 'dependency_range_failure'] = detail
     return result
