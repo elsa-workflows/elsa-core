@@ -87,6 +87,8 @@ docker pull elsaworkflows/elsa-server-and-studio-v3:latest
 docker run -t -i -e ASPNETCORE_ENVIRONMENT='Development' -e HTTP_PORTS=8080 -e HTTP__BASEURL=http://localhost:13000 -p 13000:8080 elsaworkflows/elsa-server-and-studio-v3:latest
 ```
 
+The same source-built Community images are also published as `elsaworkflows/elsa-server-v3` and `elsaworkflows/elsa-studio-v3`. Stable release tags (`3.9.0`) publish `X.Y.Z`, `X.Y`, and `latest`; preview tags (`3.9.0-preview.1`) publish only that exact tag. The publisher is [`.github/workflows/docker-publish.yml`](../../../.github/workflows/docker-publish.yml); `docker-ca.yml` builds the same Dockerfiles for TLS smoke tests without pushing.
+
 Production containers must inject a secure JWT signing key through environment variables or a secrets manager. The appsettings placeholder and known public sample keys are rejected during startup outside `Development` or `Demo`.
 
 Default development login is available only when a development configuration explicitly provisions it:

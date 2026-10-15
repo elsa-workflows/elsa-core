@@ -1,0 +1,194 @@
+# Publishes the Elsa 3 Community Docker images (source-built reference hosts).
+#
+# Images (Docker Hub only; these are the names the old Community publishers used,
+# and the names still referenced by the root README, wiki, samples, and docs):
+#   elsaworkflows/elsa-server-v3              <- docker/ElsaServer.Dockerfile
+#   elsaworkflows/elsa-studio-v3              <- docker/ElsaStudio.Dockerfile
+#   elsaworkflows/elsa-server-and-studio-v3   <- docker/ElsaServerAndStudio.Dockerfile
+#
+# Tags:
+#   stable  X.Y.Z  ->  X.Y.Z, X.Y, latest
+#   preview X.Y.Z-preview.N  ->  that exact tag only (never X.Y or latest)
+#
+# Registry login uses the Community publisher secrets last used by
+# .github/workflows/elsa-server.yml (and the studio / combined siblings):
+#   DOCKER_USER, DOCKER_PASS
+# The inert Apps publisher uses different names (DOCKER_USERNAME / DOCKER_PASSWORD)
+# and is out of scope here.
+#
+# Datadog (docker/ElsaServer-Datadog.Dockerfile) is smoke-tested by docker-ca.yml
+# but was never a published Community image, so it is not included.
+#
+# Multi-arch: linux/amd64,linux/arm64. The retired Community workflows also
+# pushed linux/arm/v7; that platform is dropped because current .NET 10 base
+# images and the later Apps publisher are amd64/arm64 only.
+#
+# Do not dispatch this workflow to the public registry without the owner's GO.
+
+name: Publish Elsa 3 Community Docker images
+
+on:
+  push:
+    tags:
+      # GitHub tag filters are globs, not regex. The prepare job rejects
+      # anything that is not 3.X.Y or 3.X.Y-preview.N (no v prefix).
+      - '*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Elsa 3 SemVer to publish (for example 3.9.0 or 3.9.0-preview.1)
+        required: true
+        type: string
+      ref:
+        description: Git ref or tag to build from. Defaults to the tag equal to version.
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docker-publish-${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Resolve version and source
+    if: github.repository == 'elsa-workflows/elsa-core'
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      source_ref: ${{ steps.release.outputs.source_ref }}
+      stable: ${{ steps.release.outputs.stable }}
+    steps:
+      - name: Validate version and choose the source ref
+        id: release
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          VERSION_INPUT: ${{ inputs.version || '' }}
+          REF_INPUT: ${{ inputs.ref || '' }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            VERSION="$VERSION_INPUT"
+            if [ -n "$REF_INPUT" ]; then
+              SOURCE_REF="$REF_INPUT"
+            else
+              SOURCE_REF="$VERSION"
+            fi
+          else
+            VERSION="$TAG_NAME"
+            SOURCE_REF="$TAG_NAME"
+          fi
+
+          if [[ "$VERSION" == v* ]]; then
+            echo "elsa-core release tags have no v prefix (received '$VERSION')." >&2
+            exit 1
+          fi
+
+          STABLE_RE='^[0-9]+\.[0-9]+\.[0-9]+$'
+          PREVIEW_RE='^[0-9]+\.[0-9]+\.[0-9]+-preview\.[0-9]+$'
+
+          if [[ "$VERSION" =~ $STABLE_RE ]]; then
+            STABLE=true
+          elif [[ "$VERSION" =~ $PREVIEW_RE ]]; then
+            STABLE=false
+          else
+            echo "Unsupported version '$VERSION'. Use 3.X.Y or 3.X.Y-preview.N." >&2
+            exit 1
+          fi
+
+          case "$VERSION" in
+            3.*)
+              ;;
+            *)
+              echo "This workflow publishes Elsa 3 Community images only (received '$VERSION')." >&2
+              exit 1
+              ;;
+          esac
+
+          {
+            echo "version=$VERSION"
+            echo "source_ref=$SOURCE_REF"
+            echo "stable=$STABLE"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Publishing Community images as $VERSION (stable=$STABLE) from $SOURCE_REF"
+
+  publish:
+    name: Publish ${{ matrix.name }}
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      actions: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: elsa-server
+            dockerfile: docker/ElsaServer.Dockerfile
+            image: elsaworkflows/elsa-server-v3
+          - name: elsa-server-and-studio
+            dockerfile: docker/ElsaServerAndStudio.Dockerfile
+            image: elsaworkflows/elsa-server-and-studio-v3
+          - name: elsa-studio
+            dockerfile: docker/ElsaStudio.Dockerfile
+            image: elsaworkflows/elsa-studio-v3
+    steps:
+      - name: Checkout ${{ needs.prepare.outputs.source_ref }}
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.source_ref }}
+          persist-credentials: false
+
+      - name: Record source commit
+        id: source
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ matrix.image }}
+          flavor: |
+            latest=false
+          tags: |
+            type=semver,pattern={{version}},value=${{ needs.prepare.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.prepare.outputs.version }},enable=${{ needs.prepare.outputs.stable == 'true' }}
+            type=raw,value=latest,enable=${{ needs.prepare.outputs.stable == 'true' }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/elsa-workflows/elsa-core
+            org.opencontainers.image.revision=${{ steps.source.outputs.sha }}
+            org.opencontainers.image.version=${{ needs.prepare.outputs.version }}
+            org.opencontainers.image.ref.name=${{ needs.prepare.outputs.source_ref }}
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASS }}
+
+      - name: Build and push ${{ matrix.name }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
