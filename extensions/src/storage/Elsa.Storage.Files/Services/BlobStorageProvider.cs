@@ -1,22 +1,22 @@
-using FluentStorage.Blobs;
+using FluentStorage.Storage;
 
 namespace Elsa.Storage.Files.Services;
 
 /// <summary>
-/// A provider of <see cref="IBlobStorage"/>.
+/// A provider of <see cref="IStore"/>.
 /// </summary>
 public class BlobStorageProvider : IBlobStorageProvider
 {
-    private readonly IBlobStorage _blobStorage;
+    private readonly IStore _blobStorage;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BlobStorageProvider"/> class.
     /// </summary>
-    public BlobStorageProvider(IBlobStorage blobStorage)
+    public BlobStorageProvider(IStore blobStorage)
     {
         _blobStorage = blobStorage;
     }
 
     /// <inheritdoc />
-    public IBlobStorage GetBlobStorage() => _blobStorage;
+    public IStore GetBlobStorage() => _blobStorage;
 }
