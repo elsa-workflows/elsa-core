@@ -27,7 +27,7 @@ internal class ResumeBulkDispatchWorkflowActivity(IBookmarkQueue bookmarkQueue, 
         if (workflowState.Status != WorkflowStatus.Finished)
             return;
 
-        var waitForCompletion = workflowState.Properties.TryGetValue("WaitForCompletion", out var waitForCompletionValue) && (bool)waitForCompletionValue;
+        var waitForCompletion = workflowState.Properties.TryGetValue(WorkflowDispatchProperties.WaitForCompletion, out var waitForCompletionValue) && (bool)waitForCompletionValue;
         
         if (!waitForCompletion)
             return;

@@ -98,7 +98,7 @@ public class ExecuteWorkflow : Activity<ExecuteWorkflowResult>
 
         // If we need to wait for the child workflow to complete, set the property. This will be used by the ResumeExecuteWorkflowActivity to resume the parent workflow.
         if (waitForCompletion)
-            properties["WaitForCompletion"] = true;
+            properties[WorkflowDispatchProperties.WaitForCompletion] = true;
 
         input["ParentInstanceId"] = parentInstanceId;
 

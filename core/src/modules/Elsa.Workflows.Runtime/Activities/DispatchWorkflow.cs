@@ -13,6 +13,7 @@ using Elsa.Workflows.Runtime.UIHints;
 using Elsa.Workflows.Signals;
 using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime.Activities;
 
@@ -136,7 +137,7 @@ public class DispatchWorkflow : Activity<object>
         };
 
         // If we need to wait for the child workflow to complete, set the property. This will be used by the ResumeDispatchWorkflowActivity handler.
-        if (waitForCompletion) properties["WaitForCompletion"] = true;
+        if (waitForCompletion) properties[WorkflowDispatchProperties.WaitForCompletion] = true;
         if (startNewTrace) properties["StartNewTrace"] = true;
         
         input["ParentInstanceId"] = parentInstanceId;
@@ -191,7 +192,8 @@ public class DispatchWorkflow : Activity<object>
     /// failure path may save the withdrawn row again until this cancel burst commits. Only that instance
     /// is targeted: cancelling by parent instance would also reach fire-and-forget and sibling dispatches of the same
     /// parent. A child that has already finished is left alone, together with anything it dispatched. If the child finishes between the read and the cancellation,
-    /// the cancellation service still cascades to that child's own children.
+    /// the cancellation service still cascades to that child's own children. A failure looking up or cancelling the child
+    /// is logged so this best-effort cleanup does not fault the parent's cancel path.
     /// </summary>
     private async ValueTask OnCancelledAsync(CancelSignal signal, SignalContext signalContext)
     {
@@ -207,14 +209,26 @@ public class DispatchWorkflow : Activity<object>
         var cancellationToken = signalContext.CancellationToken;
         await context.WorkflowExecutionContext.WithdrawPendingChildDispatchAsync(childInstanceId, cancellationToken);
 
-        var child = await context.GetRequiredService<IWorkflowInstanceStore>().FindAsync(new WorkflowInstanceFilter { Id = childInstanceId }, cancellationToken);
+        try
+        {
+            var child = await context.GetRequiredService<IWorkflowInstanceStore>().FindAsync(new WorkflowInstanceFilter { Id = childInstanceId }, cancellationToken);
 
-        if (child is not { Status: WorkflowStatus.Running })
-            return;
+            if (child is not { Status: WorkflowStatus.Running })
+                return;
 
-        // The cancellation service hands the child to the workflow cancellation dispatcher, the same way the
-        // workflow-level cascade does, so the child is not cancelled inside this workflow's execution. It also cancels
-        // the child's own children.
-        await context.GetRequiredService<IWorkflowCancellationService>().CancelWorkflowAsync(childInstanceId, cancellationToken);
+            // The cancellation service hands the child to the workflow cancellation dispatcher, the same way the
+            // workflow-level cascade does, so the child is not cancelled inside this workflow's execution. It also cancels
+            // the child's own children.
+            await context.GetRequiredService<IWorkflowCancellationService>().CancelWorkflowAsync(childInstanceId, cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            context.GetRequiredService<ILogger<DispatchWorkflow>>().LogWarning(
+                ex,
+                "Failed to cancel waited-for child workflow {ChildWorkflowInstanceId} of parent {ParentWorkflowInstanceId} for activity {ActivityInstanceId}.",
+                childInstanceId,
+                context.WorkflowExecutionContext.Id,
+                context.Id);
+        }
     }
 }

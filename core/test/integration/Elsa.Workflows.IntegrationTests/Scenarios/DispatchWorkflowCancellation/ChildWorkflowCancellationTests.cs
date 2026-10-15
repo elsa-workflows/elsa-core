@@ -82,6 +82,9 @@ public abstract class ChildWorkflowCancellationTests : IAsyncLifetime
         return await client.ExportStateAsync();
     }
 
+    /// <summary>Delivers pending transactional-outbox child dispatches.</summary>
+    protected Task DeliverOutboxAsync() => Services.GetRequiredService<IWorkflowDispatchOutboxProcessor>().ProcessAsync();
+
     /// <summary>Polls for the single child of the definition the parent dispatched; see <see cref="WaitForChildrenAsync"/>.</summary>
     protected async Task<WorkflowState> WaitForChildAsync(string parentId, string definitionId, Func<WorkflowState, bool> condition, bool throwOnTimeout = true) =>
         (await WaitForChildrenAsync(parentId, definitionId, 1, condition, throwOnTimeout)).Single();
