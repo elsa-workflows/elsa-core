@@ -27,6 +27,49 @@ INHERITED = ['original compiler and native SDK package checks', 'original produc
 MANIFEST_KEYS = {'schema', 'scope', 'context', 'controller', 'product', 'line', 'source', 'version',
                  'plan_sha256', 'producer_receipt_sha256', 'consumer_receipt_sha256',
                  'artifact_execution', 'consumer_execution', 'files', 'inherited_judgments'}
+FAILURE_SCOPE = 'selected-control-seal-rejection-only'
+FAILURE_KEYS = {'schema', 'scope', 'phase', 'code', 'plan_sha256',
+                'producer_receipt_sha256', 'consumer_receipt_sha256'}
+FAILURE_PHASES = frozenset(('input-freeze', 'controller-verification', 'semantic-validation',
+                            'input-recheck', 'output-write'))
+FAILURE_CODES = frozenset(('seal-rejected', 'unclassified'))
+MAX_FAILURE_RECORD_BYTES = 4096
+
+
+class SealFailure(ValueError):
+    """A seal rejection with only finite, non-sensitive diagnostic fields."""
+
+    def __init__(self, phase: str, code: str):
+        self.phase = phase
+        self.code = code
+
+
+def failure_record(phase: str, code: str, plan_hash: str, producer_hash: str,
+                   consumer_hash: str) -> dict:
+    """Return the closed safe CLI record; malformed caller values never pass through."""
+    phase = phase if type(phase) is str and phase in FAILURE_PHASES else 'input-freeze'
+    code = code if type(code) is str and code in FAILURE_CODES else 'unclassified'
+    hashes = [value if type(value) is str and len(value) == 64 and
+              all(char in '0123456789abcdef' for char in value) else None
+              for value in (plan_hash, producer_hash, consumer_hash)]
+    return {'schema': 1, 'scope': FAILURE_SCOPE, 'phase': phase, 'code': code,
+            'plan_sha256': hashes[0], 'producer_receipt_sha256': hashes[1],
+            'consumer_receipt_sha256': hashes[2]}
+
+
+def read_failure_record(path: Path, plan_hash: str, producer_hash: str,
+                        consumer_hash: str) -> tuple[dict, str]:
+    """Read a bounded regular, no-follow failure record and bind it to exact inputs."""
+    path = absolute(path)
+    data = metadata.read_regular_file(path, maximum=MAX_FAILURE_RECORD_BYTES)
+    record = transport.strict_json(data, MAX_FAILURE_RECORD_BYTES)
+    transport.closed(record, FAILURE_KEYS, 'selected_seal_failure')
+    require(type(record['schema']) is int and record['schema'] == 1 and record['scope'] == FAILURE_SCOPE and
+            type(record['phase']) is str and record['phase'] in FAILURE_PHASES and
+            type(record['code']) is str and record['code'] in FAILURE_CODES and
+            record['plan_sha256'] == plan_hash and record['producer_receipt_sha256'] == producer_hash and
+            record['consumer_receipt_sha256'] == consumer_hash, 'selected_seal_failure_binding')
+    return {'phase': record['phase'], 'code': record['code']}, metadata.sha256(data)
 
 
 def inherited_judgments(product: str) -> list[str]:
@@ -151,16 +194,27 @@ def write_new(output: Path, files: dict[str, bytes]) -> None:
 def seal(plan_path: Path, plan_hash: str, retained: Path, producer_hash: str,
          consumer_path: Path, consumer_hash: str, output: Path) -> dict:
     """Freeze inputs, validate their complete control evidence, and write a new sealed payload."""
-    output = output_location(output, [absolute(plan_path).parent, absolute(retained), absolute(consumer_path).parent])
-    files, originals = freeze_inputs(plan_path, plan_hash, retained, producer_hash, consumer_path, consumer_hash)
-    plan = transport.strict_json(files['plan.json'], transport.MAX_PLAN_BYTES)
-    controller = producer.verify_controller(producer.ROOT, plan)
-    expected = {'context': hosted_context(controller), 'controller': controller, 'product': plan['product'], 'line': plan['line']}
-    sealed = stage(files, expected, (plan_hash, producer_hash, consumer_hash), contracts=studio.load_contracts())
-    require(all(transport.safe_file(path).read_bytes() == data for path, data in originals.items()),
-            'selected_seal_input_changed')
-    write_new(output, sealed)
-    return expected | {'manifest_sha256': metadata.sha256(sealed[transport.MANIFEST])}
+    phase = 'input-freeze'
+    try:
+        output = output_location(output, [absolute(plan_path).parent, absolute(retained), absolute(consumer_path).parent])
+        files, originals = freeze_inputs(plan_path, plan_hash, retained, producer_hash, consumer_path, consumer_hash)
+        plan = transport.strict_json(files['plan.json'], transport.MAX_PLAN_BYTES)
+        phase = 'controller-verification'
+        controller = producer.verify_controller(producer.ROOT, plan)
+        expected = {'context': hosted_context(controller), 'controller': controller,
+                    'product': plan['product'], 'line': plan['line']}
+        phase = 'semantic-validation'
+        sealed = stage(files, expected, (plan_hash, producer_hash, consumer_hash), contracts=studio.load_contracts())
+        phase = 'input-recheck'
+        require(all(transport.safe_file(path).read_bytes() == data for path, data in originals.items()),
+                'selected_seal_input_changed')
+        phase = 'output-write'
+        write_new(output, sealed)
+        return expected | {'manifest_sha256': metadata.sha256(sealed[transport.MANIFEST])}
+    except Exception as error:
+        expected_errors = (ValueError, KeyError, TypeError, OSError, ET.ParseError)
+        code = 'seal-rejected' if isinstance(error, expected_errors) else 'unclassified'
+        raise SealFailure(phase, code) from None
 
 
 def readback(data: bytes, provider: dict, expected: dict, *, contracts: dict,
@@ -225,6 +279,13 @@ def main() -> int:
             write_new(output, {'readback.json': encoded(result)})
         print(json.dumps(result if args.command == 'seal' else {'success': True, 'scope': result['scope']}, sort_keys=True))
         return 0
+    except SealFailure as error:
+        if args.command == 'seal':
+            print(json.dumps(failure_record(error.phase, error.code, args.plan_sha256,
+                args.producer_receipt_sha256, args.consumer_receipt_sha256), sort_keys=True))
+        else:
+            print('Selected seal/readback rejected inputs; no selected control acceptance emitted.')
+        return 1
     except (ValueError, KeyError, TypeError, OSError, ET.ParseError):
         print('Selected seal/readback rejected inputs; no selected control acceptance emitted.')
         return 1

@@ -21,6 +21,7 @@ from prove_consolidated_packages import require
 from selected_product_diagnostics import selected_focus, prerequisite_failure, original_build_group_failure
 
 SCOPE = 'selected-product-failure-diagnostics-only-not-control-proof'
+SEAL_FAILURE_STATUS = 'seal-rejected'
 
 
 def validate_identity(receipt: dict, role: str, plan: dict, plan_hash: str, controller: dict) -> None:
@@ -80,6 +81,35 @@ def project(receipt: dict, digest: str, role: str, plan: dict, plan_hash: str, c
     return result
 
 
+def project_seal_failure(failure: dict, failure_hash: str, producer_receipt: dict, producer_hash: str,
+                         consumer_receipt: dict, consumer_hash: str, plan: dict, plan_hash: str,
+                         controller: dict) -> dict:
+    """Project a seal rejection only after both successful stage receipts are rebound."""
+    validate_identity(producer_receipt, 'artifact', plan, plan_hash, controller)
+    validate_identity(consumer_receipt, 'consumer', plan, plan_hash, controller)
+    require(producer_receipt['success'] is True and producer_receipt.get('stage') == 'complete' and
+            producer_receipt.get('artifact_proof') is True and
+            consumer_receipt['success'] is True and consumer_receipt.get('stage') == 'complete' and
+            consumer_receipt.get('artifact_receipt_sha256') == producer_hash and
+            consumer_receipt.get('producer_execution') == producer_receipt['execution'],
+            'failure_diagnostic_seal_stages')
+    context = execution.hosted_context(controller)
+    require(type(failure_hash) is str and len(failure_hash) == 64 and
+            all(char in '0123456789abcdef' for char in failure_hash), 'failure_diagnostic_seal_hash')
+    transport.validate_execution_pair(plan, plan_hash, producer_receipt['execution'], consumer_receipt['execution'],
+        controller, controller, now=datetime.now(timezone.utc))
+    return {'schema': 1, 'scope': SCOPE, 'status': SEAL_FAILURE_STATUS,
+        'producer_success': True, 'consumer_success': True, 'published': False,
+        'failure_record_sha256': failure_hash, 'plan_sha256': plan_hash,
+        'producer_receipt_sha256': producer_hash, 'consumer_receipt_sha256': consumer_hash,
+        'product': plan['product'], 'line': plan['line'],
+        'source': {key: plan['source'][key] for key in ('commit', 'tree')}, 'controller': controller,
+        'executions': {
+            'artifact': {'id': producer_receipt['execution']['id'], 'context': context},
+            'consumer': {'id': consumer_receipt['execution']['id'], 'context': context}},
+        'seal_rejection': failure}
+
+
 def retain(runner_temp: Path) -> Path:
     """Stage only validated projections into a new physically separate directory."""
     runner_temp = seal.absolute(runner_temp)
@@ -87,8 +117,9 @@ def retain(runner_temp: Path) -> Path:
     producer_path = runner_temp / 'selected-producer/retained/receipt.json'
     consumer_path = runner_temp / 'selected-consumer/retained/receipt.json'
     plan_path = runner_temp / 'selected-plan/plan.json'
+    expected_path = runner_temp / 'selected-expected.json'
     output = seal.output_location(runner_temp / 'selected-failure-diagnostics',
-                                  [path.parent for path in (producer_path, consumer_path, plan_path)])
+                                  [path.parent for path in (producer_path, consumer_path, plan_path)] + [expected_path])
     original, producer_hash = producer.read_diagnostic_receipt(producer_path, maximum=transport.MAX_RECEIPT_BYTES)
     plan, plan_hash = producer.read_diagnostic_receipt(plan_path, maximum=transport.MAX_PLAN_BYTES)
     require(original['plan_sha256'] == plan_hash, 'failure_diagnostic_plan')
@@ -106,9 +137,16 @@ def retain(runner_temp: Path) -> Path:
         failed, consumer_hash = producer.read_diagnostic_receipt(consumer_path, maximum=transport.MAX_RECEIPT_BYTES)
         require(failed['artifact_receipt_sha256'] == producer_hash and
                 failed['producer_execution'] == original['execution'], 'failure_diagnostic_producer')
-        transport.validate_execution_pair(plan, plan_hash, original['execution'], failed['execution'],
-            controller, controller, now=datetime.now(timezone.utc))
-        files['consumer.json'] = project(failed, consumer_hash, 'consumer', plan, plan_hash, controller)
+        if failed['success'] is False:
+            transport.validate_execution_pair(plan, plan_hash, original['execution'], failed['execution'],
+                controller, controller, now=datetime.now(timezone.utc))
+            files['consumer.json'] = project(failed, consumer_hash, 'consumer', plan, plan_hash, controller)
+        else:
+            require(failed['success'] is True and failed.get('stage') == 'complete',
+                    'failure_diagnostic_consumer')
+            failure, failure_hash = seal.read_failure_record(expected_path, plan_hash, producer_hash, consumer_hash)
+            files['seal.json'] = project_seal_failure(failure, failure_hash, original, producer_hash,
+                failed, consumer_hash, plan, plan_hash, controller)
     output.mkdir()
     for name, value in files.items():
         (output / name).write_bytes(seal.encoded(value))

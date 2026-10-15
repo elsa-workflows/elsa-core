@@ -1,9 +1,10 @@
 """Real synthetic ZIP readback and safe staging, without product/provider work."""
 from copy import deepcopy
-from contextlib import redirect_stdout
+from contextlib import contextmanager, redirect_stdout
 from datetime import timedelta
 import io
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
@@ -131,8 +132,8 @@ class SealContracts(unittest.TestCase):
                 seal.freeze_inputs(paths['plan.json'], self.hashes[0], root / 'producer', self.hashes[1],
                                    paths['consumer/receipt.json'], self.hashes[2])
 
-    def test_malformed_nuspec_cli_rejects_generically_before_output(self):
-        """Verify malformed nuspec CLI rejects generically before output."""
+    def test_malformed_nuspec_cli_emits_safe_rejection_record(self):
+        """Verify malformed nuspec CLI emits safe rejection evidence before output."""
         receipt = json.loads(self.files['producer/receipt.json'])
         row = receipt['packages']['selected'][0]
         name = 'producer/nuget/' + row['file']
@@ -143,8 +144,8 @@ class SealContracts(unittest.TestCase):
         self.files['producer/receipt.json'] = encoded(receipt)
         self.assert_cli_rejected()
 
-    def test_malformed_gzip_cli_rejects_generically_before_output(self):
-        """Verify malformed gzip CLI rejects generically before output."""
+    def test_malformed_gzip_cli_emits_safe_rejection_record(self):
+        """Verify malformed gzip CLI emits safe rejection evidence before output."""
         receipt = json.loads(self.files['producer/receipt.json'])
         wasm = receipt['npm']['wasm']
         self.files['producer/npm/' + wasm['file']] = MALFORMED_GZIP
@@ -153,29 +154,102 @@ class SealContracts(unittest.TestCase):
         self.files['producer/receipt.json'] = encoded(receipt)
         self.assert_cli_rejected()
 
-    def assert_cli_rejected(self):
-        """Require malformed sealed input to fail the CLI without output or private diagnostics."""
+    def test_unclassified_cli_failure_emits_only_fixed_safe_record(self):
+        """Verify unexpected seal failures are reduced to the fixed generic record."""
+        with self.seal_cli_inputs() as (args, output):
+            printed = io.StringIO()
+            with patch('sys.argv', args), patch.object(seal.producer, 'verify_controller', return_value=self.context['controller']), \
+                 patch.object(seal, 'hosted_context', return_value=self.context['context']), \
+                 patch.object(seal, 'stage', side_effect=RuntimeError('PRIVATE_SEAL_EXCEPTION')), redirect_stdout(printed):
+                self.assertEqual(seal.main(), 1)
+            value = json.loads(printed.getvalue())
+            self.assertEqual(value, {
+                'schema': 1, 'scope': seal.FAILURE_SCOPE, 'phase': 'semantic-validation',
+                'code': 'unclassified', 'plan_sha256': metadata.sha256(self.files['plan.json']),
+                'producer_receipt_sha256': metadata.sha256(self.files['producer/receipt.json']),
+                'consumer_receipt_sha256': metadata.sha256(self.files['consumer/receipt.json'])})
+            self.assertNotIn('PRIVATE_SEAL_EXCEPTION', printed.getvalue())
+            self.assertFalse(output.exists())
+
+    def test_successful_cli_output_and_manifest_staging_are_unchanged(self):
+        """Verify successful seal stdout and the complete staged bytes stay unchanged."""
+        with self.seal_cli_inputs() as (args, output):
+            printed = io.StringIO()
+            with patch('sys.argv', args), patch.object(seal.producer, 'verify_controller', return_value=self.context['controller']), \
+                 patch.object(seal, 'hosted_context', return_value=self.context['context']), redirect_stdout(printed):
+                self.assertEqual(seal.main(), 0)
+            self.assertEqual(json.loads(printed.getvalue()), self.context | {
+                'manifest_sha256': metadata.sha256(self.sealed[transport.MANIFEST])})
+            self.assertEqual({path.relative_to(output).as_posix(): path.read_bytes()
+                for path in output.rglob('*') if path.is_file()}, self.sealed)
+
+    def test_failure_record_reader_rejects_extra_keys_wrong_bindings_and_symlinks(self):
+        """Verify failure records are bounded, closed, bound to current inputs, and no-follow."""
+        hashes = tuple(metadata.sha256(self.files[name]) for name in
+            ('plan.json', 'producer/receipt.json', 'consumer/receipt.json'))
+        record = seal.failure_record('semantic-validation', 'seal-rejected', *hashes)
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve()
-            inputs, output = root / 'inputs', root / 'output'
-            for path, data in self.files.items():
-                target = inputs / path
-                target.parent.mkdir(parents=True, exist_ok=True)
-                target.write_bytes(data)
-            args = ['selected_control_seal.py', 'seal', '--plan', str(inputs / 'plan.json'),
-                '--plan-sha256', metadata.sha256(self.files['plan.json']), '--producer-retained', str(inputs / 'producer'),
-                '--producer-receipt-sha256', metadata.sha256(self.files['producer/receipt.json']),
-                '--consumer-receipt', str(inputs / 'consumer/receipt.json'),
-                '--consumer-receipt-sha256', metadata.sha256(self.files['consumer/receipt.json']), '--output', str(output)]
+            path = root / 'selected-expected.json'
+            path.write_bytes(encoded(record))
+            validated, digest = seal.read_failure_record(path, *hashes)
+            self.assertEqual(validated, {'phase': 'semantic-validation', 'code': 'seal-rejected'})
+            self.assertEqual(digest, metadata.sha256(path.read_bytes()))
+            for invalid in (record | {'private': 'PRIVATE_CANARY'}, record | {'plan_sha256': '0' * 64},
+                            record | {'phase': 'PRIVATE_CANARY'}, record | {'code': 'PRIVATE_CANARY'}):
+                path.write_bytes(encoded(invalid))
+                with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                    seal.read_failure_record(path, *hashes)
+            path.unlink()
+            path.symlink_to(root / 'outside.json')
+            (root / 'outside.json').write_bytes(encoded(record))
+            with self.assertRaises(ValueError):
+                seal.read_failure_record(path, *hashes)
+            path.unlink()
+            path.write_bytes(b' ' * (seal.MAX_FAILURE_RECORD_BYTES + 1))
+            with self.assertRaises(ValueError):
+                seal.read_failure_record(path, *hashes)
+            (root / 'linked-parent').symlink_to(root, target_is_directory=True)
+            with self.assertRaises(ValueError):
+                seal.read_failure_record(root / 'linked-parent/selected-expected.json', *hashes)
+            path.unlink()
+            os.mkfifo(path)
+            with self.assertRaises(ValueError):
+                seal.read_failure_record(path, *hashes)
+
+    def assert_cli_rejected(self):
+        """Require malformed sealed input to fail with only bounded safe diagnostics."""
+        with self.seal_cli_inputs() as (args, output):
             printed = io.StringIO()
             # Only trusted runner/Git identity boundaries are stubbed. Real frozen
             # archive bytes reach the actual parser and CLI failure guard.
             with patch('sys.argv', args), patch.object(seal.producer, 'verify_controller', return_value=self.context['controller']), \
                  patch.object(seal, 'hosted_context', return_value=self.context['context']), redirect_stdout(printed):
                 self.assertEqual(seal.main(), 1)
-            self.assertEqual(printed.getvalue(), 'Selected seal/readback rejected inputs; no selected control acceptance emitted.\n')
+            value = json.loads(printed.getvalue())
+            self.assertEqual(value, seal.failure_record('semantic-validation', 'seal-rejected',
+                metadata.sha256(self.files['plan.json']), metadata.sha256(self.files['producer/receipt.json']),
+                metadata.sha256(self.files['consumer/receipt.json'])))
             self.assertFalse(output.exists())
             self.assertNotIn('malformed private input', printed.getvalue())
+
+    @contextmanager
+    def seal_cli_inputs(self):
+        """Prepare bounded on-disk inputs and exact CLI arguments for a seal invocation."""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            inputs = root / 'inputs'
+            for name, data in self.files.items():
+                target = inputs / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(data)
+            output = root / 'output'
+            args = ['selected_control_seal.py', 'seal', '--plan', str(inputs / 'plan.json'),
+                '--plan-sha256', metadata.sha256(self.files['plan.json']), '--producer-retained', str(inputs / 'producer'),
+                '--producer-receipt-sha256', metadata.sha256(self.files['producer/receipt.json']),
+                '--consumer-receipt', str(inputs / 'consumer/receipt.json'),
+                '--consumer-receipt-sha256', metadata.sha256(self.files['consumer/receipt.json']), '--output', str(output)]
+            yield args, output
 
     def test_retained_symlink_and_rejected_write_leave_no_output(self):
         """Verify retained symlink and rejected write leave no output."""

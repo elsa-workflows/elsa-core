@@ -121,6 +121,9 @@ class HostedWorkflowContracts(unittest.TestCase):
         self.assertIn('${{ inputs.product }}-${{ inputs.line }}', uploads[0]['name'])
         diagnostic = next(step for step in steps if step.get('id') == 'failure-diagnostics')
         self.assertEqual('failure()', diagnostic['if'])
+        self.assertIn('retain_selected_failure_diagnostics.py --runner-temp "$RUNNER_TEMP"', diagnostic['run'])
+        seal_step = next(step for step in steps if 'selected_control_seal.py seal' in step.get('run', ''))
+        self.assertIn('> "$RUNNER_TEMP/selected-expected.json"', seal_step['run'])
         failed_upload = next(step for step in steps if step.get('with', {}).get('name', '').startswith('selected-failure-diagnostics-'))
         self.assertEqual("failure() && steps.failure-diagnostics.outcome == 'success'", failed_upload['if'])
         self.assertEqual('${{ runner.temp }}/selected-failure-diagnostics/', failed_upload['with']['path'])
@@ -603,6 +606,7 @@ class FailureDiagnosticContracts(unittest.TestCase):
         self.consumer['controller'] = controller
         for value in (self.producer['execution'], self.consumer['execution'], self.consumer['producer_execution']):
             value.update(controller=controller, context=deepcopy(context), plan_sha256=plan_hash)
+        self.success_producer, self.success_consumer = deepcopy(self.producer), deepcopy(self.consumer)
         selected = self.plan['inventory']['selected'][0]
         self.producer.update(success=False, stage='original-product-recipe', failure_code='original-product-recipe-failed',
             product_recipe_failure={'status': 'observed', 'stage': 'package-verification',
@@ -617,6 +621,32 @@ class FailureDiagnosticContracts(unittest.TestCase):
         plan_path = self.root / 'selected-plan/plan.json'
         plan_path.parent.mkdir(); plan_path.write_bytes(self.plan_bytes)
         self.action = yaml.safe_load(ACTION.read_text())
+
+    def install_successful_seal_failure_inputs(self, root=None, report=None):
+        """Write bound successful receipts and one fixed failed-seal record."""
+        import product_release_metadata as metadata
+        import selected_control_seal as seal
+        root = self.root if root is None else root
+        producer_receipt, consumer_receipt = deepcopy(self.success_producer), deepcopy(self.success_consumer)
+        producer_path = root / 'selected-producer/retained/receipt.json'
+        consumer_path = root / 'selected-consumer/retained/receipt.json'
+        producer_path.parent.mkdir(parents=True, exist_ok=True)
+        consumer_path.parent.mkdir(parents=True, exist_ok=True)
+        producer_bytes = encoded(producer_receipt)
+        producer_hash = metadata.sha256(producer_bytes)
+        consumer_receipt['artifact_receipt_sha256'] = producer_hash
+        consumer_receipt['producer_execution'] = deepcopy(producer_receipt['execution'])
+        consumer_bytes = encoded(consumer_receipt)
+        consumer_hash = metadata.sha256(consumer_bytes)
+        producer_path.write_bytes(producer_bytes)
+        consumer_path.write_bytes(consumer_bytes)
+        plan_path = root / 'selected-plan/plan.json'
+        plan_path.parent.mkdir(parents=True, exist_ok=True)
+        plan_path.write_bytes(self.plan_bytes)
+        hashes = (metadata.sha256(self.plan_bytes), producer_hash, consumer_hash)
+        record = seal.failure_record('semantic-validation', 'seal-rejected', *hashes) if report is None else report
+        (root / 'selected-expected.json').write_bytes(encoded(record))
+        return hashes, producer_receipt, consumer_receipt
 
     def script(self, name):
         return next(step['run'] for step in self.action['runs']['steps'] if step.get('name') == name)
@@ -776,6 +806,81 @@ else:
         canonical.provider.update(archive_size=len(data), archive_sha256=hashlib.sha256(data).hexdigest())
         with self.assertRaisesRegex(ValueError, 'selected_transport_unlisted_path'):
             seal.readback(data, canonical.provider, canonical.expected, contracts=canonical.contracts, now=canonical.now)
+
+    def test_seal_failure_retains_bound_phase_without_recasting_successful_stages(self):
+        """Retain only fixed seal rejection details after both exact stage receipts succeeded."""
+        import retain_selected_failure_diagnostics as diagnostics
+        hashes, producer_receipt, consumer_receipt = self.install_successful_seal_failure_inputs()
+        controller = {key: self.plan['controller'][key] for key in ('commit', 'tree')}
+        stdout = io.StringIO()
+        with patch.dict(os.environ, self.environment, clear=True), \
+             patch.object(diagnostics.producer, 'verify_controller', return_value=controller), \
+             patch.object(sys, 'argv', ['retain_selected_failure_diagnostics.py', '--runner-temp', str(self.root)]), \
+             patch('sys.stdout', stdout):
+            self.assertEqual(0, diagnostics.main())
+        self.assertEqual({'scope': diagnostics.SCOPE, 'status': 'retained'}, json.loads(stdout.getvalue()))
+        output = self.root / 'selected-failure-diagnostics'
+        self.assertEqual(['seal.json'], sorted(path.name for path in output.iterdir()))
+        projected = json.loads((output / 'seal.json').read_bytes())
+        self.assertEqual('seal-rejected', projected['status'])
+        self.assertTrue(projected['producer_success'])
+        self.assertTrue(projected['consumer_success'])
+        self.assertEqual('core', projected['product'])
+        self.assertEqual('3.8', projected['line'])
+        self.assertEqual(hashes[0], projected['plan_sha256'])
+        self.assertEqual(hashes[1], projected['producer_receipt_sha256'])
+        self.assertEqual(hashes[2], projected['consumer_receipt_sha256'])
+        self.assertEqual({'phase': 'semantic-validation', 'code': 'seal-rejected'}, projected['seal_rejection'])
+        self.assertEqual(producer_receipt['execution']['id'], projected['executions']['artifact']['id'])
+        self.assertEqual(consumer_receipt['execution']['id'], projected['executions']['consumer']['id'])
+        self.assertEqual(producer_receipt['execution']['context'], projected['executions']['artifact']['context'])
+        self.assertNotIn(self.canary, json.dumps(projected))
+        self.assertNotIn('coverage', projected)
+        self.assertLess((output / 'seal.json').stat().st_size, 4096)
+
+    def test_invalid_seal_failure_records_are_unavailable_and_never_uploaded(self):
+        """Reject malformed, unbound, oversized, and symlinked seal reports without leakage."""
+        import retain_selected_failure_diagnostics as diagnostics
+        import selected_control_seal as seal
+        for kind in ('extra', 'wrong-hash', 'wrong-schema', 'malformed', 'oversize', 'final-link', 'runner-link'):
+            with self.subTest(kind=kind):
+                root = self.root / kind
+                root.mkdir()
+                _, _, _ = self.install_successful_seal_failure_inputs(root=root)
+                report_path = root / 'selected-expected.json'
+                record = json.loads(report_path.read_bytes())
+                if kind == 'extra':
+                    record['private'] = self.canary
+                    report_path.write_bytes(encoded(record))
+                elif kind == 'wrong-hash':
+                    record['plan_sha256'] = '0' * 64
+                    report_path.write_bytes(encoded(record))
+                elif kind == 'wrong-schema':
+                    record['schema'] = 2
+                    report_path.write_bytes(encoded(record))
+                elif kind == 'malformed':
+                    report_path.write_text('{"private":"' + self.canary)
+                elif kind == 'oversize':
+                    report_path.write_bytes(b' ' * (seal.MAX_FAILURE_RECORD_BYTES + 1))
+                elif kind == 'final-link':
+                    target = root / 'outside.json'
+                    target.write_bytes(report_path.read_bytes())
+                    report_path.unlink()
+                    report_path.symlink_to(target)
+                runner_temp = root
+                if kind == 'runner-link':
+                    runner_temp = self.root / ('linked-' + kind)
+                    runner_temp.symlink_to(root, target_is_directory=True)
+                output = io.StringIO()
+                argv = ['retain_selected_failure_diagnostics.py', '--runner-temp', str(runner_temp)]
+                with patch.dict(os.environ, self.environment, clear=True), \
+                     patch.object(diagnostics.producer, 'verify_controller', return_value={
+                         key: self.plan['controller'][key] for key in ('commit', 'tree')}), \
+                     patch.object(sys, 'argv', argv), patch('sys.stdout', output):
+                    self.assertEqual(1, diagnostics.main())
+                self.assertEqual(json.loads(output.getvalue()), {'scope': diagnostics.SCOPE, 'status': 'unavailable'})
+                self.assertNotIn(self.canary, output.getvalue())
+                self.assertFalse((root / 'selected-failure-diagnostics').exists())
 
     def test_studio_and_extensions_recipe_diagnostics_survive_safe_retention(self):
         import retain_selected_failure_diagnostics as diagnostics
