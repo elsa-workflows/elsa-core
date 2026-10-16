@@ -5,7 +5,6 @@ using Elsa.Persistence.EFCore.Oracle.Configurations;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Entities;
 using JetBrains.Annotations;
-using Microsoft.EntityFrameworkCore;
 using Oracle.EntityFrameworkCore.Infrastructure;
 
 // ReSharper disable once CheckNamespace
@@ -84,25 +83,6 @@ public static class OracleProvidersExtensions
             .ApplyConfiguration<StoredBookmark>(runtime)
             .ApplyConfiguration<WorkflowInboxMessage>(runtime));
         
-        return options;
-    }
-
-    /// <summary>
-    /// Applies <see cref="ConfigureOracle"/> plus the V3_6 <c>ActivityNodeId</c> NCLOB snapshot pin.
-    /// Use this from design-time factories and model-differ tests only. Pinning
-    /// <c>ActivityNodeId</c> at runtime changes <c>==</c> filters to
-    /// <c>DBMS_LOB.COMPARE</c> and <c>Contains</c> binds to <c>TO_NCLOB</c>.
-    /// </summary>
-    public static ElsaDbContextOptions ConfigureOracleDesignTime(this ElsaDbContextOptions? options)
-    {
-        options = options.ConfigureOracle();
-
-        options.ConfigureModel<RuntimeElsaDbContext>(modelBuilder =>
-        {
-            modelBuilder.Entity<ActivityExecutionRecord>().Property(x => x.ActivityNodeId).HasColumnType("NCLOB");
-            modelBuilder.Entity<WorkflowExecutionLogRecord>().Property(x => x.ActivityNodeId).HasColumnType("NCLOB");
-        });
-
         return options;
     }
 

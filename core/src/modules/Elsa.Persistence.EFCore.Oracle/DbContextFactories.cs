@@ -35,7 +35,7 @@ public class OracleDesignTimeDbContextFactory<TDbContext> : DesignTimeDbContextF
 {
     protected override void ConfigureBuilder(DbContextOptionsBuilder<TDbContext> builder, string connectionString)
     {
-        var options = new ElsaDbContextOptions().ConfigureOracleDesignTime();
+        var options = new ElsaDbContextOptions().ConfigureOracle();
         builder.UseElsaOracle(GetType().Assembly, connectionString, options);
     }
 }

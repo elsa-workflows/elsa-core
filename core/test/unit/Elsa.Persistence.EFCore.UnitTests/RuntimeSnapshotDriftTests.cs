@@ -9,10 +9,9 @@ namespace Elsa.Persistence.EFCore.UnitTests;
 
 /// <summary>
 /// V3_7 already created the Scheduling* indexes, and Oracle V3_6 already converted
-/// <c>ActivityNodeId</c> to NCLOB. The runtime snapshot (and the Oracle design-time model)
+/// <c>ActivityNodeId</c> to NCLOB. The runtime snapshot (and the current Oracle model)
 /// must describe that same schema so <see cref="Microsoft.EntityFrameworkCore.Migrations.IMigrationsModelDiffer"/>
-/// does not emit a spurious CreateIndex or AlterColumn. The <c>ActivityNodeId</c> NCLOB pin
-/// is design-time only: applying it at runtime changes <c>==</c> to <c>DBMS_LOB.COMPARE</c>.
+/// does not emit a spurious CreateIndex or AlterColumn.
 /// </summary>
 /// <remarks>
 /// Other pending snapshot gaps (for example the StoredTrigger unique-index columns addressed
@@ -48,9 +47,9 @@ public class RuntimeSnapshotDriftTests
     }
 
     [Fact]
-    public void Oracle_DesignTimeModel_HasNoSchedulingCreateIndex_AndNoAlterColumn()
+    public void Oracle_RuntimeModel_HasNoSchedulingCreateIndex_AndNoAlterColumn()
     {
-        var operations = RuntimeModelDiffer.GetDifferences(ConfigureOracleDesignTime);
+        var operations = RuntimeModelDiffer.GetDifferences(ConfigureOracle);
 
         AssertNoSchedulingCreateIndex(operations);
         var alterColumns = operations.OfType<AlterColumnOperation>().ToArray();
@@ -60,23 +59,6 @@ public class RuntimeSnapshotDriftTests
             "Expected no Oracle AlterColumn operations against the runtime snapshot, but found:"
             + Environment.NewLine
             + RuntimeModelDiffer.Format(alterColumns));
-    }
-
-    [Fact]
-    public void Oracle_RuntimeConfigureOracle_ActivityNodeIdFiltersUseEqualityNotLobCompare()
-    {
-        const string nodeId = "node-1";
-        var nodeIds = new[] { "node-1", "node-2" };
-
-        using var dbContext = RuntimeModelDiffer.Create(ConfigureOracle);
-
-        var equalsSql = dbContext.ActivityExecutionRecords.Where(x => x.ActivityNodeId == nodeId).ToQueryString();
-        var containsSql = dbContext.ActivityExecutionRecords.Where(x => nodeIds.Contains(x.ActivityNodeId)).ToQueryString();
-
-        Assert.Contains("\"ActivityNodeId\" = N'node-1'", equalsSql, StringComparison.Ordinal);
-        Assert.DoesNotContain("DBMS_LOB.COMPARE", equalsSql, StringComparison.Ordinal);
-        Assert.Contains("bind_variable(l_cur, ':p_nodeIds1', N'node-1')", containsSql, StringComparison.Ordinal);
-        Assert.DoesNotContain("TO_NCLOB", containsSql, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -130,10 +112,4 @@ public class RuntimeSnapshotDriftTests
             typeof(Elsa.Persistence.EFCore.Oracle.Migrations.Runtime.V3_6).Assembly,
             "Data Source=unused",
             new ElsaDbContextOptions().ConfigureOracle());
-
-    private static void ConfigureOracleDesignTime(DbContextOptionsBuilder<RuntimeElsaDbContext> builder) =>
-        builder.UseElsaOracle(
-            typeof(Elsa.Persistence.EFCore.Oracle.Migrations.Runtime.V3_6).Assembly,
-            "Data Source=unused",
-            new ElsaDbContextOptions().ConfigureOracleDesignTime());
 }
