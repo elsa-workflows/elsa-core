@@ -7,12 +7,13 @@ using Elsa.Workflows.Management.Models;
 namespace Elsa.Workflows.IntegrationTests.Scenarios.BulkDispatchWorkflowsCancellation;
 
 /// <summary>
-/// Delegates to the real store, except the first paged, ordered read of a parent's children — the query the cancel
-/// cascade uses — throws once. Later pages and every other store call still go through.
+/// Delegates to the real store, except the first <paramref name="failureCount"/> paged, ordered reads of a parent's
+/// children — the query the cancel cascade uses — throw. Later cascade reads after that budget is spent, and every
+/// other store call, still go through.
 /// </summary>
-public class FailingOncePagedReadWorkflowInstanceStore(IWorkflowInstanceStore inner) : IWorkflowInstanceStore
+public class FailingOncePagedReadWorkflowInstanceStore(IWorkflowInstanceStore inner, int failureCount = 1) : IWorkflowInstanceStore
 {
-    private bool _failed;
+    private int _failures;
 
     public ValueTask<WorkflowInstance?> FindAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) =>
         inner.FindAsync(filter, cancellationToken);
@@ -23,9 +24,9 @@ public class FailingOncePagedReadWorkflowInstanceStore(IWorkflowInstanceStore in
     public ValueTask<Page<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
         // The cancel cascade queries by parent id only. Arrange/assert polls set DefinitionId, so they are left alone.
-        if (!_failed && filter.DefinitionId == null && filter.ParentWorkflowInstanceIds is { Count: > 0 } && pageArgs.Offset == 0)
+        if (_failures < failureCount && filter.DefinitionId == null && filter.ParentWorkflowInstanceIds is { Count: > 0 })
         {
-            _failed = true;
+            _failures++;
             throw new InvalidOperationException("Simulated child page read failure.");
         }
 

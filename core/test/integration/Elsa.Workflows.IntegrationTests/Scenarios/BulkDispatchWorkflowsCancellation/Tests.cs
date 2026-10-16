@@ -10,8 +10,10 @@ namespace Elsa.Workflows.IntegrationTests.Scenarios.BulkDispatchWorkflowsCancell
 public class Tests(ITestOutputHelper testOutputHelper) : ChildWorkflowCancellationTests(testOutputHelper, builder => builder
     .AddWorkflow<BlockingChildWorkflow>()
     .AddWorkflow<FireAndForgetChildWorkflow>()
+    .AddWorkflow<FinishingChildWorkflow>()
     .AddWorkflow<SecondBulkChildWorkflow>()
     .AddWorkflow<BulkDispatchAndWaitInForkWorkflow>()
+    .AddWorkflow<BulkDispatchAndWaitForFinishingChildWorkflow>()
     .AddWorkflow<BulkDispatchAndWaitBesideSiblingDispatchesWorkflow>())
 {
     [Fact(DisplayName = "Cancelling a waiting BulkDispatchWorkflows activity cancels all the child workflows it dispatched, past the first page")]
@@ -59,6 +61,28 @@ public class Tests(ITestOutputHelper testOutputHelper) : ChildWorkflowCancellati
         Assert.Equal(waitedChildIds, CancellationTargets.Order());
         var waitedChildren = await WaitForChildrenAsync(parentId, nameof(BlockingChildWorkflow), waitedChildCount, IsFinished);
         Assert.All(waitedChildren, child => Assert.Equal(WorkflowSubStatus.Cancelled, child.SubStatus));
+    }
+
+    [Fact(DisplayName = "Cancelling a waiting BulkDispatchWorkflows activity skips a child that has already finished")]
+    public async Task CancellingTheWaitingBulkDispatchActivity_WhenAChildAlreadyFinished_SkipsThatChild()
+    {
+        // Arrange: the child has dispatched a fire-and-forget child of its own, and then finished. The test host runs no
+        // bookmark queue worker, so the child's completion is not delivered and the parent's BulkDispatchWorkflows keeps waiting.
+        var parentId = await StartParentAsync(nameof(BulkDispatchAndWaitForFinishingChildWorkflow));
+        var childId = (await WaitForChildAsync(parentId, nameof(FinishingChildWorkflow), IsSuspended)).Id;
+        await WaitForChildAsync(childId, nameof(FireAndForgetChildWorkflow), IsSuspended);
+
+        var finished = await ResumeAsync(childId, FinishingChildWorkflow.FinishActivityId);
+        Assert.Equal(WorkflowSubStatus.Finished, finished.SubStatus);
+
+        // Act: the other fork branch completes, so the fork completes and cancels the waiting BulkDispatchWorkflows.
+        var resumed = await ResumeProceedAsync(parentId);
+        Assert.Equal(WorkflowStatus.Finished, resumed.Status);
+
+        // Assert: the parent finished without an incident, and no cancellation was dispatched, so neither the finished
+        // child nor its own child is touched.
+        Assert.Empty((await ExportStateAsync(parentId)).Incidents);
+        Assert.Empty(CancellationTargets);
     }
 
     /// <summary>Resumes the parent's proceed branch, which completes the inner fork and cancels its waiting bulk activity.</summary>
