@@ -6,6 +6,7 @@ using Elsa.Workflows.Runtime.Messages;
 using JetBrains.Annotations;
 using MassTransit;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Elsa.ServiceBus.MassTransit.Consumers;
 
@@ -17,6 +18,15 @@ public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflow
     IConsumer<DispatchWorkflowDefinition>,
     IConsumer<DispatchWorkflowInstance>
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DispatchWorkflowRequestConsumer"/> class without a logger.
+    /// </summary>
+    [Obsolete("Use the constructor that takes an ILogger instead. Removed in the next major version.")]
+    public DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflowDefinitionService, IWorkflowRuntime workflowRuntime)
+        : this(workflowDefinitionService, workflowRuntime, NullLogger<DispatchWorkflowRequestConsumer>.Instance)
+    {
+    }
+
     /// <inheritdoc />
     public async Task Consume(ConsumeContext<DispatchWorkflowDefinition> context)
     {
@@ -61,7 +71,9 @@ public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflow
 
         // Same rule as the default dispatcher: a redelivered message must not create a second instance with the same ID.
         if (message.SkipIfInstanceExists && !string.IsNullOrWhiteSpace(message.InstanceId) && await workflowClient.InstanceExistsAsync(cancellationToken))
+        {
             return;
+        }
 
         var createWorkflowInstanceRequest = new CreateAndRunWorkflowInstanceRequest
         {

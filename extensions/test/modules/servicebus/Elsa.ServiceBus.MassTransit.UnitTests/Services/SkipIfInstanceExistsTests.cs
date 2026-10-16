@@ -101,9 +101,13 @@ public class SkipIfInstanceExistsTests
     public async Task DispatcherCreatesAndSendsOtherwise(bool skipIfInstanceExists, bool instanceExists)
     {
         if (instanceExists)
+        {
             SetupExistingInstance(WorkflowSubStatus.Pending);
+        }
         else
+        {
             _instanceManager.Setup(x => x.FindByIdAsync(InstanceId, It.IsAny<CancellationToken>())).ReturnsAsync((WorkflowInstance?)null);
+        }
 
         await CreateDispatcher().DispatchAsync(CreateRequest(skipIfInstanceExists));
 
@@ -125,6 +129,8 @@ public class SkipIfInstanceExistsTests
     [Theory]
     [InlineData(WorkflowSubStatus.Suspended)]
     [InlineData(WorkflowSubStatus.Executing)]
+    [InlineData(WorkflowSubStatus.Finished)]
+    [InlineData(WorkflowSubStatus.Faulted)]
     public async Task ConsumerSkipsExistingInstanceWhenNotPending(WorkflowSubStatus subStatus)
     {
         _client.Setup(x => x.ExportStateAsync(It.IsAny<CancellationToken>()))
@@ -133,6 +139,19 @@ public class SkipIfInstanceExistsTests
         await CreateConsumer().Consume(CreateExistingInstanceContext());
 
         _client.Verify(x => x.RunInstanceAsync(It.IsAny<RunWorkflowInstanceRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ObsoleteTwoArgConstructor_StillConsumesNewInstanceMessages()
+    {
+        _client.Setup(x => x.InstanceExistsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(false);
+#pragma warning disable CS0618 // Exercise the public two-argument constructor that remains for 3.x compatibility.
+        var consumer = new DispatchWorkflowRequestConsumer(_definitionService.Object, _runtime.Object);
+#pragma warning restore CS0618
+
+        await consumer.Consume(CreateContext(skipIfInstanceExists: true));
+
+        _client.Verify(x => x.CreateAndRunInstanceAsync(It.IsAny<CreateAndRunWorkflowInstanceRequest>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
