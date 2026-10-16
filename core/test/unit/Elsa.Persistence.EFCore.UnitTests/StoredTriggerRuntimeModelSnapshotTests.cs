@@ -74,6 +74,9 @@ public class StoredTriggerRuntimeModelSnapshotTests
         var options = new ElsaDbContextOptions().ConfigureSqlServer();
         var before = options.GetModelConfigurations(typeof(RuntimeElsaDbContext)).GetInvocationList().Length;
 
+        options.ConfigureSqlServer();
+        Assert.Equal(before, options.GetModelConfigurations(typeof(RuntimeElsaDbContext)).GetInvocationList().Length);
+
         ConfigureSqlServer(new DbContextOptionsBuilder<RuntimeElsaDbContext>(), options);
         ConfigureSqlServer(new DbContextOptionsBuilder<RuntimeElsaDbContext>(), options);
 
