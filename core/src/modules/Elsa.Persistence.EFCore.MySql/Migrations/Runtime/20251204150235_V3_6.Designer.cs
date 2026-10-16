@@ -314,9 +314,10 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
                     b.HasIndex("WorkflowDefinitionVersionId")
                         .HasDatabaseName("IX_StoredTrigger_WorkflowDefinitionVersionId");
 
-                    b.HasIndex("WorkflowDefinitionId", "Hash", "ActivityId")
+                    b.HasIndex("WorkflowDefinitionId", "Hash", "ActivityId", "TenantId")
                         .IsUnique()
-                        .HasDatabaseName("IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId");
+                        .HasDatabaseName("IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_Ten")
+                        .HasAnnotation("MySql:IndexPrefixLength", new[] { 191, 191, 191, 191 });
 
                     b.ToTable("Triggers", "Elsa");
                 });
