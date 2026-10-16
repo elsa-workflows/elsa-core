@@ -40,6 +40,15 @@ namespace Elsa.Studio.Workflows.Components
         private bool InitializedFromQuery { get; set; }
 
         /// <inheritdoc/>
+        protected override void OnInitialized()
+        {
+            // MudTable reads CurrentPage/RowsPerPage on first render. Parse paging here so a
+            // deep link or back-navigation to ?page=N does not load page 1 and rewrite the URL.
+            ApplyPagingFromUri();
+            base.OnInitialized();
+        }
+
+        /// <inheritdoc/>
         protected override async Task OnAfterRenderAsync(bool firstRender)
         {
             if (firstRender)
@@ -61,11 +70,7 @@ namespace Elsa.Studio.Workflows.Components
 
             try
             {
-                var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
-                var query = QueryHelpers.ParseQuery(uri.Query);
-
-                // Convert StringValues to single string values
-                var dict = query.ToDictionary(k => k.Key, kv => kv.Value.ToString(), StringComparer.OrdinalIgnoreCase);
+                var dict = GetQuery();
 
                 try
                 {
@@ -85,11 +90,47 @@ namespace Elsa.Studio.Workflows.Components
         }
 
         /// <summary>
+        /// Maps <c>page</c> and <c>pageSize</c> query values onto <see cref="InitialPage"/> and
+        /// <see cref="InitialPageSize"/>. URL pages are 1-based; <see cref="InitialPage"/> is 0-based.
+        /// </summary>
+        protected void ApplyPagingFromQuery(IDictionary<string, string> query)
+        {
+            if (query.TryGetValue("page", out var pageValue) && int.TryParse(pageValue, out var page) && page > 0)
+                InitialPage = page - 1;
+            if (query.TryGetValue("pageSize", out var pageSizeValue) && int.TryParse(pageSizeValue, out var pageSize) && pageSize > 0)
+                InitialPageSize = pageSize;
+        }
+
+        private IDictionary<string, string> GetQuery()
+        {
+            var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+            var query = QueryHelpers.ParseQuery(uri.Query);
+            return query.ToDictionary(k => k.Key, kv => kv.Value.ToString(), StringComparer.OrdinalIgnoreCase);
+        }
+
+        private void ApplyPagingFromUri()
+        {
+            try
+            {
+                ApplyPagingFromQuery(GetQuery());
+            }
+            catch (Exception ex)
+            {
+                Logger?.LogWarning(ex, "Failed parsing paging query parameters.");
+            }
+        }
+
+        /// <summary>
         /// Build and navigate to an updated URI that reflects the provided table state.
         /// Delegates construction of the query dictionary to <see cref="BuildQueryFromState"/>.
         /// </summary>
         protected void TryUpdateUrlFromState(TableState state)
         {
+            // Keep the bound CurrentPage/RowsPerPage values aligned with the table so a later
+            // re-render (row selection, polling) does not re-apply page 0 and snap back to page 1.
+            InitialPage = state.Page;
+            InitialPageSize = state.PageSize;
+
             try
             {
                 if (!InitializedFromQuery)
