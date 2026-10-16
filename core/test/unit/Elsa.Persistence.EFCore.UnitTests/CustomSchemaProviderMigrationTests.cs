@@ -64,13 +64,16 @@ public class CustomSchemaProviderMigrationTests
     {
         var schemas = migration.UpOperations
             .Concat(migration.DownOperations)
+            .Where(HasSchema)
             .Select(GetSchema)
-            .Where(x => x is not null)
             .ToList();
 
         Assert.NotEmpty(schemas);
         Assert.All(schemas, schema => Assert.Equal(CustomSchema, schema));
     }
+
+    private static bool HasSchema(MigrationOperation operation) =>
+        operation is EnsureSchemaOperation || operation.GetType().GetProperty("Schema") is not null;
 
     private static string? GetSchema(MigrationOperation operation)
     {
