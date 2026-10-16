@@ -329,10 +329,10 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
                     b.HasIndex("WorkflowDefinitionVersionId")
                         .HasDatabaseName("IX_StoredTrigger_WorkflowDefinitionVersionId");
 
-                    b.HasIndex("WorkflowDefinitionId", "Hash", "ActivityId")
+                    b.HasIndex("WorkflowDefinitionId", "Hash", "ActivityId", "TenantId")
                         .IsUnique()
-                        .HasDatabaseName("IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId")
-                        .HasFilter("\"Hash\" IS NOT NULL");
+                        .HasDatabaseName("IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId")
+                        .HasFilter("\"Hash\" IS NOT NULL AND \"TenantId\" IS NOT NULL");
 
                     b.ToTable("Triggers", "Elsa");
                 });

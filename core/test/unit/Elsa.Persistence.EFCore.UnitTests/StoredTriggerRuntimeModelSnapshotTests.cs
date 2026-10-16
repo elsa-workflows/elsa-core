@@ -6,8 +6,8 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Elsa.Persistence.EFCore.UnitTests;
 
 /// <summary>
-/// The V3_6 runtime migrations for PostgreSQL, Sqlite and Oracle create the StoredTrigger unique index
-/// over four columns. Their snapshots (and V3_6 designers) must describe that same index so
+/// The V3_6 runtime migrations create the StoredTrigger unique index over four columns.
+/// Provider snapshots and designers must describe that same index so
 /// <see cref="IMigrationsModelDiffer"/> reports no unique-index operations for it.
 /// </summary>
 /// <remarks>
@@ -43,7 +43,20 @@ public class StoredTriggerRuntimeModelSnapshotTests
     public void Oracle_RuntimeModel_MatchesSnapshot_AndHasFourColumnUniqueIndex()
     {
         RuntimeModelSnapshotInspector.AssertEmptyStoredTriggerUniqueIndexDiff(ConfigureOracle);
-        RuntimeModelSnapshotInspector.AssertStoredTriggerUniqueIndex(ConfigureOracle, UniqueIndexColumns);
+        RuntimeModelSnapshotInspector.AssertStoredTriggerUniqueIndex(
+            ConfigureOracle,
+            UniqueIndexColumns,
+            expectedFilter: "\"Hash\" IS NOT NULL AND \"TenantId\" IS NOT NULL");
+    }
+
+    [Fact]
+    public void SqlServer_RuntimeModel_MatchesSnapshot_AndHasFourColumnUniqueIndex()
+    {
+        RuntimeModelSnapshotInspector.AssertEmptyStoredTriggerUniqueIndexDiff(ConfigureSqlServer);
+        RuntimeModelSnapshotInspector.AssertStoredTriggerUniqueIndex(
+            ConfigureSqlServer,
+            UniqueIndexColumns,
+            expectedFilter: "[Hash] IS NOT NULL");
     }
 
     private static void ConfigurePostgreSql(DbContextOptionsBuilder<RuntimeElsaDbContext> builder) =>
@@ -54,4 +67,7 @@ public class StoredTriggerRuntimeModelSnapshotTests
 
     private static void ConfigureOracle(DbContextOptionsBuilder<RuntimeElsaDbContext> builder) =>
         builder.UseElsaOracle(typeof(Elsa.Persistence.EFCore.Oracle.Migrations.Runtime.V3_6).Assembly, "Data Source=unused");
+
+    private static void ConfigureSqlServer(DbContextOptionsBuilder<RuntimeElsaDbContext> builder) =>
+        builder.UseElsaSqlServer(typeof(Elsa.Persistence.EFCore.SqlServer.Migrations.Runtime.V3_6).Assembly, "Server=unused");
 }

@@ -33,7 +33,9 @@ internal static class RuntimeModelSnapshotInspector
 
     public static void AssertStoredTriggerUniqueIndex(
         Action<DbContextOptionsBuilder<RuntimeElsaDbContext>> configure,
-        string[] expectedColumns)
+        string[] expectedColumns,
+        string expectedName = StoredTriggerUniqueIndexName,
+        string? expectedFilter = null)
     {
         using var dbContext = Create(configure);
         var entity = dbContext.Model.FindEntityType(typeof(StoredTrigger));
@@ -42,7 +44,12 @@ internal static class RuntimeModelSnapshotInspector
         var index = Assert.Single(entity.GetIndexes(), i => i.IsUnique);
 
         Assert.Equal(expectedColumns, index.Properties.Select(property => property.Name).ToArray());
-        Assert.Equal(StoredTriggerUniqueIndexName, index.GetDatabaseName());
+        Assert.Equal(expectedName, index.GetDatabaseName());
+
+        if (expectedFilter is not null)
+        {
+            Assert.Equal(expectedFilter, index.GetFilter());
+        }
     }
 
     private static RuntimeElsaDbContext Create(Action<DbContextOptionsBuilder<RuntimeElsaDbContext>> configure)
@@ -60,7 +67,9 @@ internal static class RuntimeModelSnapshotInspector
         Assert.NotNull(snapshotModel);
 
         if (snapshotModel is IMutableModel mutableModel)
+        {
             snapshotModel = mutableModel.FinalizeModel();
+        }
 
         snapshotModel = dbContext.GetService<IModelRuntimeInitializer>().Initialize(snapshotModel);
         var designTimeModel = dbContext.GetService<IDesignTimeModel>().Model;
@@ -87,7 +96,9 @@ internal static class RuntimeModelSnapshotInspector
     private static string Format(IReadOnlyList<MigrationOperation> operations)
     {
         if (operations.Count == 0)
+        {
             return "(no IMigrationsModelDiffer operations)";
+        }
 
         return string.Join(Environment.NewLine, operations.Select(operation => operation switch
         {
