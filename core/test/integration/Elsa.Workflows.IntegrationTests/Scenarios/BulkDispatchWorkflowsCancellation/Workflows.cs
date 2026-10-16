@@ -21,19 +21,30 @@ public class BulkDispatchAndWaitInForkWorkflow : WorkflowBase
     protected override void Build(IWorkflowBuilder builder) => builder.Root = CreateFork(ChildCount);
 
     /// <summary>The fork that waits for the bulk-dispatched children on one branch and for the test on the other.</summary>
-    public static Fork CreateFork(int childCount) => new()
+    public static Fork CreateFork(int childCount) => CreateFork(nameof(BlockingChildWorkflow), childCount);
+
+    /// <summary>The fork that waits for the specified child definition on one branch and for the test on the other.</summary>
+    public static Fork CreateFork(string childDefinitionId, int childCount) => new()
     {
         JoinMode = ForkJoinMode.WaitAny,
         Branches =
         {
             new BulkDispatchWorkflows
             {
-                WorkflowDefinitionId = new(nameof(BlockingChildWorkflow)),
+                WorkflowDefinitionId = new(childDefinitionId),
                 Items = new(Enumerable.Range(0, childCount).Cast<object>().ToArray())
             },
             new Event("ProceedParent") { Id = ProceedActivityId }
         }
     };
+}
+
+/// <summary>
+/// The <see cref="BulkDispatchAndWaitInForkWorkflow"/> fork, waiting for a single <see cref="FinishingChildWorkflow"/>.
+/// </summary>
+public class BulkDispatchAndWaitForFinishingChildWorkflow : WorkflowBase
+{
+    protected override void Build(IWorkflowBuilder builder) => builder.Root = BulkDispatchAndWaitInForkWorkflow.CreateFork(nameof(FinishingChildWorkflow), 1);
 }
 
 /// <summary>

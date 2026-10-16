@@ -7,12 +7,26 @@ using Elsa.Workflows.Management.Models;
 namespace Elsa.Workflows.IntegrationTests.Scenarios.BulkDispatchWorkflowsCancellation;
 
 /// <summary>
-/// Delegates to the real store, except the first paged, ordered read of a parent's children — the query the cancel
-/// cascade uses — throws once. Later pages and every other store call still go through.
+/// Shared count of cancel-cascade page reads the failing store rejected. Kept outside the store because the host
+/// builds a new store instance per resolution.
 /// </summary>
-public class FailingOncePagedReadWorkflowInstanceStore(IWorkflowInstanceStore inner) : IWorkflowInstanceStore
+public sealed class RejectedCascadeReadCounter
 {
-    private bool _failed;
+    public int Count { get; set; }
+}
+
+/// <summary>
+/// Delegates to the real store, except the first <paramref name="failureCount"/> paged, ordered reads of a parent's
+/// children — the query the cancel cascade uses — throw. Later cascade reads after that budget is spent, and every
+/// other store call, still go through.
+/// </summary>
+public class FailingOncePagedReadWorkflowInstanceStore(
+    IWorkflowInstanceStore inner,
+    int failureCount = 1,
+    RejectedCascadeReadCounter? rejectedReads = null,
+    bool throwCanceled = false) : IWorkflowInstanceStore
+{
+    private int _failures;
 
     public ValueTask<WorkflowInstance?> FindAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default) =>
         inner.FindAsync(filter, cancellationToken);
@@ -23,10 +37,15 @@ public class FailingOncePagedReadWorkflowInstanceStore(IWorkflowInstanceStore in
     public ValueTask<Page<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
         // The cancel cascade queries by parent id only. Arrange/assert polls set DefinitionId, so they are left alone.
-        if (!_failed && filter.DefinitionId == null && filter.ParentWorkflowInstanceIds is { Count: > 0 } && pageArgs.Offset == 0)
+        if (_failures < failureCount && filter.DefinitionId == null && filter.ParentWorkflowInstanceIds is { Count: > 0 })
         {
-            _failed = true;
-            throw new InvalidOperationException("Simulated child page read failure.");
+            _failures++;
+            if (rejectedReads is not null)
+                rejectedReads.Count++;
+
+            throw throwCanceled
+                ? new OperationCanceledException("Simulated unrelated child page read cancellation.")
+                : new InvalidOperationException("Simulated child page read failure.");
         }
 
         return inner.FindManyAsync(filter, pageArgs, order, cancellationToken);

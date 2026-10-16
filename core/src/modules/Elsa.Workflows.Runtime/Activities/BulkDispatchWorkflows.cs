@@ -298,10 +298,12 @@ public class BulkDispatchWorkflows : Activity
     /// Cancels the running children this activity instance was waiting for. They are found by the parent instance ID and
     /// then matched on the activity instance ID they carry, so fire-and-forget children and the children of another
     /// dispatching activity of the same parent are left alone. Children that already finished are left alone too,
-    /// together with anything they dispatched. The parent's children are read one page at a time, and each page's
-    /// matches are cancelled before the next page is read. Only a successfully read short page ends the loop: a failed
-    /// read is logged and the next page is still attempted. A failed cancel of a page that was read is logged and paging
-    /// continues. This best-effort cleanup does not fault the parent's cancel path.
+    /// together with anything they dispatched. Children dispatched before the parent commits are not in the store yet
+    /// and are not covered. The parent's children are read one page at a time, and each page's matches are cancelled
+    /// before the next page is read. Only a successfully read short page ends the loop. A failed read is retried once
+    /// before that page is skipped and the next page is still attempted. After
+    /// <see cref="MaxConsecutiveReadFailures"/> consecutive skipped pages, paging gives up. A failed cancel of a page
+    /// that was read is logged and paging continues. This best-effort cleanup does not fault the parent's cancel path.
     /// </summary>
     private async ValueTask OnCancelledAsync(CancelSignal signal, SignalContext signalContext)
     {
@@ -330,65 +332,120 @@ public class BulkDispatchWorkflows : Activity
         var pageArgs = PageArgs.FromPage(0, ChildPageSize);
         var pageNumber = 0;
         var consecutiveReadFailures = 0;
+        var cancelledCount = 0;
 
-        while (true)
+        try
         {
-            Page<WorkflowInstance> page;
-
-            try
+            while (true)
             {
-                page = await store.FindManyAsync(filter, pageArgs, order, cancellationToken);
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                consecutiveReadFailures++;
-                logger.LogWarning(
-                    ex,
-                    "Failed to read waited-for child workflows of parent {ParentWorkflowInstanceId} for activity {ActivityInstanceId} on page {PageNumber}; skipping this page.",
-                    parentInstanceId,
-                    context.Id,
-                    pageNumber);
+                var (page, failure) = await TryReadChildPageAsync(store, filter, pageArgs, order, cancellationToken, logger, pageNumber);
 
-                if (consecutiveReadFailures >= MaxConsecutiveReadFailures)
+                if (page is null)
+                {
+                    consecutiveReadFailures++;
+
+                    if (consecutiveReadFailures >= MaxConsecutiveReadFailures)
+                    {
+                        logger.LogWarning(
+                            failure,
+                            "Giving up after {MaxConsecutiveReadFailures} consecutive unreadable pages at page {PageNumber} of parent {ParentWorkflowInstanceId} for activity {ActivityInstanceId}.",
+                            MaxConsecutiveReadFailures,
+                            pageNumber,
+                            parentInstanceId,
+                            context.Id);
+                        return;
+                    }
+
+                    logger.LogWarning(
+                        failure,
+                        "Failed to read waited-for child workflows of parent {ParentWorkflowInstanceId} for activity {ActivityInstanceId} on page {PageNumber}; skipping this page.",
+                        parentInstanceId,
+                        context.Id,
+                        pageNumber);
+
+                    pageArgs = pageArgs.Next();
+                    pageNumber++;
+                    continue;
+                }
+
+                consecutiveReadFailures = 0;
+
+                try
+                {
+                    var waitedChildIds = page.Items
+                        .Where(x => x.Status == WorkflowStatus.Running && IsWaitedForBy(x.WorkflowState, context.Id))
+                        .Select(x => x.Id)
+                        .ToList();
+
+                    // The cancellation service hands each child to the workflow cancellation dispatcher, the same way the
+                    // workflow-level cascade does, so the children are not cancelled inside this workflow's execution. It also
+                    // cancels the children's own children.
+                    if (waitedChildIds.Count > 0)
+                        cancelledCount += await cancellationService.CancelWorkflowsAsync(waitedChildIds, cancellationToken);
+                }
+                catch (Exception ex) when (!IsCallerCancellation(ex, cancellationToken))
+                {
+                    logger.LogWarning(
+                        ex,
+                        "Failed to cancel waited-for child workflows of parent {ParentWorkflowInstanceId} for activity {ActivityInstanceId} on page {PageNumber}.",
+                        parentInstanceId,
+                        context.Id,
+                        pageNumber);
+                }
+
+                if (page.Items.Count < ChildPageSize)
                     return;
 
                 pageArgs = pageArgs.Next();
                 pageNumber++;
-                continue;
             }
+        }
+        finally
+        {
+            logger.LogDebug(
+                "Requested cancellation of {CancelledCount} waited-for child workflows of parent {ParentWorkflowInstanceId} for activity {ActivityInstanceId}.",
+                cancelledCount,
+                parentInstanceId,
+                context.Id);
+        }
+    }
 
-            consecutiveReadFailures = 0;
+    /// <summary>
+    /// Reads one page of the parent's children, retrying once after a non-caller failure.
+    /// </summary>
+    private static async ValueTask<(Page<WorkflowInstance>? Page, Exception? Failure)> TryReadChildPageAsync(
+        IWorkflowInstanceStore store,
+        WorkflowInstanceFilter filter,
+        PageArgs pageArgs,
+        WorkflowInstanceOrder<string> order,
+        CancellationToken cancellationToken,
+        ILogger logger,
+        int pageNumber)
+    {
+        try
+        {
+            return (await store.FindManyAsync(filter, pageArgs, order, cancellationToken), null);
+        }
+        catch (Exception ex) when (!IsCallerCancellation(ex, cancellationToken))
+        {
+            logger.LogDebug(
+                ex,
+                "Retrying waited-for child page {PageNumber} after a failed read.",
+                pageNumber);
 
             try
             {
-                var waitedChildIds = page.Items
-                    .Where(x => x.Status == WorkflowStatus.Running && IsWaitedForBy(x.WorkflowState, context.Id))
-                    .Select(x => x.Id)
-                    .ToList();
-
-                // The cancellation service hands each child to the workflow cancellation dispatcher, the same way the
-                // workflow-level cascade does, so the children are not cancelled inside this workflow's execution. It also
-                // cancels the children's own children.
-                if (waitedChildIds.Count > 0)
-                    await cancellationService.CancelWorkflowsAsync(waitedChildIds, cancellationToken);
+                return (await store.FindManyAsync(filter, pageArgs, order, cancellationToken), null);
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
+            catch (Exception retryEx) when (!IsCallerCancellation(retryEx, cancellationToken))
             {
-                logger.LogWarning(
-                    ex,
-                    "Failed to cancel waited-for child workflows of parent {ParentWorkflowInstanceId} for activity {ActivityInstanceId} on page {PageNumber}.",
-                    parentInstanceId,
-                    context.Id,
-                    pageNumber);
+                return (null, retryEx);
             }
-
-            if (page.Items.Count < ChildPageSize)
-                return;
-
-            pageArgs = pageArgs.Next();
-            pageNumber++;
         }
     }
+
+    private static bool IsCallerCancellation(Exception exception, CancellationToken cancellationToken) =>
+        exception is OperationCanceledException && cancellationToken.IsCancellationRequested;
 
     private static bool IsWaitedForBy(WorkflowState child, string activityInstanceId) =>
         child.Properties.TryGetValue<string>(WorkflowDispatchProperties.WaitingActivityInstanceId, out var waitingActivityInstanceId) && waitingActivityInstanceId == activityInstanceId;
