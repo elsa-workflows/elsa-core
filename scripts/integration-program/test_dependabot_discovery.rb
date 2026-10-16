@@ -64,7 +64,7 @@ class DependabotDiscoveryTests < Minitest::Test
     batches = CONFIGURATION.fetch("updates").map { |entry| discovered_projects(entry.fetch("directories")) }
     assert_equal expected.sort, batches.flatten.sort, "Reconcile batch selectors when solution membership changes"
     assert_equal batches.flatten.length, batches.flatten.uniq.length, "Project starting sets must not overlap"
-    assert_equal [114, 68, 100, 73, 1], batches.map(&:length)
+    assert_equal [114, 69, 100, 73, 1], batches.map(&:length)
     assert_equal 173, batches.flatten.grep(%r{^(extensions|studio)/}).length
     assert_includes batches[2], LEGACY_CORE_PROJECT
     CONFIGURATION.fetch("updates").each do |entry|
