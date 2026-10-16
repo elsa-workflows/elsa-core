@@ -14,8 +14,11 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime;
 /// <para>
 /// Fresh databases get that index from <c>V3_6</c>. Databases that already recorded <c>V3_6</c>
 /// may still have the unprefixed four-column name (truncated to 64 characters) or the original
-/// three-column name. This repair drops the three-column index if present, drops the four-column
-/// name only when a column prefix is not 191, and creates the prefixed index if it is missing.
+/// three-column name. This repair drops the four-column name only when a column prefix is not 191,
+/// creates the prefixed four-column index if it is missing, then drops the three-column index.
+/// The three-column and four-column names differ, so the replacement can exist before the old
+/// index is removed. A mismatched four-column index must be dropped first because it reuses the
+/// same 64-character name.
 /// </para>
 /// <para>
 /// <c>Down()</c> is a no-op: the prefixed four-column index is the current model, and restoring
@@ -33,9 +36,9 @@ public partial class StoredTriggerUniqueIndex : Migration
     /// <inheritdoc />
     protected override void Up(MigrationBuilder migrationBuilder)
     {
-        DropIndexIfPresent(migrationBuilder, StoredTriggerMySqlUniqueIndex.ThreeColumnName);
         DropFourColumnIndexIfPrefixMismatch(migrationBuilder);
         CreatePrefixedUniqueIndexIfMissing(migrationBuilder);
+        DropIndexIfPresent(migrationBuilder, StoredTriggerMySqlUniqueIndex.ThreeColumnName);
     }
 
     /// <inheritdoc />

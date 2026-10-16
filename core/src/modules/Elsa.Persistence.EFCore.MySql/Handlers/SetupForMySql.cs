@@ -14,7 +14,9 @@ public class SetupForMySql : IEntityModelCreatingHandler
     public void Handle(ElsaDbContextBase dbContext, ModelBuilder modelBuilder, IMutableEntityType entityType)
     {
         if (!dbContext.Database.IsMySql())
+        {
             return;
+        }
 
         // Configure the WorkflowDefinition entity to use the MySQL JSON type for the StringData property:
         if (entityType.ClrType == typeof(WorkflowDefinition))
@@ -26,7 +28,9 @@ public class SetupForMySql : IEntityModelCreatingHandler
         }
 
         if (entityType.ClrType != typeof(StoredTrigger))
+        {
             return;
+        }
 
         // Shared Configurations.cs uses a 69-character, unprefixed name. MySQL identifiers cap at 64,
         // and four varchar(255) utf8mb4 columns exceed InnoDB's 3,072-byte unique-key limit.

@@ -53,7 +53,9 @@ public class MySqlStoredTriggerUniqueIndexMigrationTests
         var modelInitializer = db.GetService<IModelRuntimeInitializer>();
         var snapshotModel = migrationsAssembly.ModelSnapshot!.Model;
         if (snapshotModel is IMutableModel mutableModel)
+        {
             snapshotModel = mutableModel.FinalizeModel();
+        }
         snapshotModel = modelInitializer.Initialize(snapshotModel);
 
         var differences = differ.GetDifferences(snapshotModel.GetRelationalModel(), designTimeModel.GetRelationalModel());
