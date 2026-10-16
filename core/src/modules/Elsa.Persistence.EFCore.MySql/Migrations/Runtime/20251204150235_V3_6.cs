@@ -29,18 +29,23 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
                 .Annotation("MySql:CharSet", "utf8mb4")
                 .OldAnnotation("MySql:CharSet", "utf8mb4");
 
+            // Three columns, matching the designer and snapshot. Four varchar(255) utf8mb4
+            // columns (including TenantId) are 4,080 bytes and exceed InnoDB's 3,072-byte limit.
             migrationBuilder.CreateIndex(
-                name: "IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId",
+                name: "IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId",
                 schema: _schema.Schema,
                 table: "Triggers",
-                columns: new[] { "WorkflowDefinitionId", "Hash", "ActivityId", "TenantId" },
+                columns: new[] { "WorkflowDefinitionId", "Hash", "ActivityId" },
                 unique: true);
 
-            var schemaFilter = _schema.Schema != null ? $"'{_schema.Schema}'" : "DATABASE()";
+            // Pomelo SchemaBehavior.Ignore stores tables in DATABASE(), not an Elsa schema.
+            var schemaClause = _schema.Schema != null
+                ? $"IN (DATABASE(), '{_schema.Schema.Replace("'", "''")}')"
+                : "= DATABASE()";
 
             migrationBuilder.Sql($@"
                 SET @exist := (SELECT COUNT(*) FROM information_schema.statistics
-                    WHERE table_schema = {schemaFilter} AND table_name = 'WorkflowExecutionLogRecords'
+                    WHERE table_schema {schemaClause} AND table_name = 'WorkflowExecutionLogRecords'
                     AND index_name = 'IX_WorkflowExecutionLogRecord_ActivityNodeId');
                 SET @sqlstmt := IF(@exist > 0, 'DROP INDEX `IX_WorkflowExecutionLogRecord_ActivityNodeId` ON `WorkflowExecutionLogRecords`', 'SELECT 1');
                 PREPARE stmt FROM @sqlstmt;
@@ -50,7 +55,7 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
 
             migrationBuilder.Sql($@"
                 SET @exist := (SELECT COUNT(*) FROM information_schema.statistics
-                    WHERE table_schema = {schemaFilter} AND table_name = 'ActivityExecutionRecords'
+                    WHERE table_schema {schemaClause} AND table_name = 'ActivityExecutionRecords'
                     AND index_name = 'IX_ActivityExecutionRecord_ActivityNodeId');
                 SET @sqlstmt := IF(@exist > 0, 'DROP INDEX `IX_ActivityExecutionRecord_ActivityNodeId` ON `ActivityExecutionRecords`', 'SELECT 1');
                 PREPARE stmt FROM @sqlstmt;
@@ -85,7 +90,7 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropIndex(
-                name: "IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId",
+                name: "IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId",
                 schema: _schema.Schema,
                 table: "Triggers");
 
