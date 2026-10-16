@@ -9,6 +9,7 @@ using Elsa.Workflows.Activities.Flowchart.Attributes;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
@@ -43,6 +44,7 @@ public class BulkDispatchWorkflows : Activity
     private const string CompletedInstancesCountKey = nameof(CompletedInstancesCountKey);
     private const string WaitsForChildrenKey = "WaitsForChildren";
     private const int ChildPageSize = 100;
+    private const int MaxConsecutiveReadFailures = 3;
 
     /// <inheritdoc />
     public BulkDispatchWorkflows([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
@@ -297,8 +299,9 @@ public class BulkDispatchWorkflows : Activity
     /// then matched on the activity instance ID they carry, so fire-and-forget children and the children of another
     /// dispatching activity of the same parent are left alone. Children that already finished are left alone too,
     /// together with anything they dispatched. The parent's children are read one page at a time, and each page's
-    /// matches are cancelled before the next page is read. A failing page is logged and the remaining pages still run,
-    /// so this best-effort cleanup does not fault the parent's cancel path.
+    /// matches are cancelled before the next page is read. Only a successfully read short page ends the loop: a failed
+    /// read is logged and the next page is still attempted. A failed cancel of a page that was read is logged and paging
+    /// continues. This best-effort cleanup does not fault the parent's cancel path.
     /// </summary>
     private async ValueTask OnCancelledAsync(CancelSignal signal, SignalContext signalContext)
     {
@@ -314,6 +317,7 @@ public class BulkDispatchWorkflows : Activity
         var store = context.GetRequiredService<IWorkflowInstanceStore>();
         var cancellationService = context.GetRequiredService<IWorkflowCancellationService>();
         var parentInstanceId = context.WorkflowExecutionContext.Id;
+        var logger = context.GetRequiredService<ILogger<BulkDispatchWorkflows>>();
 
         // WorkflowInstanceFilter cannot query a workflow property, so this queries the parent's children and matches the
         // activity instance ID they carry in memory. Querying by that correlation directly needs a new indexed column in
@@ -325,15 +329,38 @@ public class BulkDispatchWorkflows : Activity
         var order = new WorkflowInstanceOrder<string>(x => x.Id, OrderDirection.Ascending);
         var pageArgs = PageArgs.FromPage(0, ChildPageSize);
         var pageNumber = 0;
+        var consecutiveReadFailures = 0;
 
         while (true)
         {
-            var itemCount = 0;
+            Page<WorkflowInstance> page;
 
             try
             {
-                var page = await store.FindManyAsync(filter, pageArgs, order, cancellationToken);
-                itemCount = page.Items.Count;
+                page = await store.FindManyAsync(filter, pageArgs, order, cancellationToken);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                consecutiveReadFailures++;
+                logger.LogWarning(
+                    ex,
+                    "Failed to read waited-for child workflows of parent {ParentWorkflowInstanceId} for activity {ActivityInstanceId} on page {PageNumber}; skipping this page.",
+                    parentInstanceId,
+                    context.Id,
+                    pageNumber);
+
+                if (consecutiveReadFailures >= MaxConsecutiveReadFailures)
+                    return;
+
+                pageArgs = pageArgs.Next();
+                pageNumber++;
+                continue;
+            }
+
+            consecutiveReadFailures = 0;
+
+            try
+            {
                 var waitedChildIds = page.Items
                     .Where(x => x.Status == WorkflowStatus.Running && IsWaitedForBy(x.WorkflowState, context.Id))
                     .Select(x => x.Id)
@@ -347,7 +374,7 @@ public class BulkDispatchWorkflows : Activity
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                context.GetRequiredService<ILogger<BulkDispatchWorkflows>>().LogWarning(
+                logger.LogWarning(
                     ex,
                     "Failed to cancel waited-for child workflows of parent {ParentWorkflowInstanceId} for activity {ActivityInstanceId} on page {PageNumber}.",
                     parentInstanceId,
@@ -355,7 +382,7 @@ public class BulkDispatchWorkflows : Activity
                     pageNumber);
             }
 
-            if (itemCount < ChildPageSize)
+            if (page.Items.Count < ChildPageSize)
                 return;
 
             pageArgs = pageArgs.Next();

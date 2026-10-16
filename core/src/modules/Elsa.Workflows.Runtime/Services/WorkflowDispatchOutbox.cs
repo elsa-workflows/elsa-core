@@ -26,7 +26,7 @@ public class WorkflowDispatchOutbox(
         // Lets DispatchWorkflow withdraw this child when the activity is cancelled later in this burst. BulkDispatchWorkflows
         // also waits, but nothing withdraws those children yet; that same-burst case stays with #8821 part 2.
         if (item.WorkflowDefinitionCommand is { InstanceId: { Length: > 0 } childInstanceId } command
-            && command.Properties?.TryGetValue<bool>("WaitForCompletion", out var waitForCompletion) is true && waitForCompletion
+            && command.Properties?.TryGetValue<bool>(WorkflowDispatchProperties.WaitForCompletion, out var waitForCompletion) is true && waitForCompletion
             && DispatchWorkflowActivationDeniedRoute.IsForActivityType(command.Properties, ActivityTypeNameHelper.GenerateTypeName<DispatchWorkflow>()))
             workflowExecutionContext.AddPendingChildDispatch(childInstanceId, item.Id);
     }
