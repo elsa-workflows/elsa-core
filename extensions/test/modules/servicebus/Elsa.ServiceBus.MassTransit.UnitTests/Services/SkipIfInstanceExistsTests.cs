@@ -5,6 +5,7 @@ using Elsa.ServiceBus.MassTransit.Services;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Options;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
@@ -39,15 +40,19 @@ public class SkipIfInstanceExistsTests
         var graph = new WorkflowGraph(workflow, node, [node]);
         _definitionService.Setup(x => x.FindWorkflowGraphAsync(DefinitionVersionId, It.IsAny<CancellationToken>())).ReturnsAsync(graph);
         _instanceManager.Setup(x => x.CreateAndCommitWorkflowInstanceAsync(It.IsAny<Workflow>(), It.IsAny<WorkflowInstanceOptions?>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Elsa.Workflows.Management.Entities.WorkflowInstance { Id = InstanceId, WorkflowState = new WorkflowState() });
+            .ReturnsAsync(new WorkflowInstance { Id = InstanceId, WorkflowState = new WorkflowState(), SubStatus = WorkflowSubStatus.Pending });
         _bus.Setup(x => x.GetSendEndpoint(It.IsAny<Uri>())).ReturnsAsync(_sendEndpoint.Object);
         _runtime.Setup(x => x.CreateClientAsync(InstanceId, It.IsAny<CancellationToken>())).ReturnsAsync(_client.Object);
     }
 
-    [Fact]
-    public async Task DispatcherSkipsWhenFlagIsSetAndInstanceExists()
+    [Theory]
+    [InlineData(WorkflowSubStatus.Executing)]
+    [InlineData(WorkflowSubStatus.Suspended)]
+    [InlineData(WorkflowSubStatus.Finished)]
+    [InlineData(WorkflowSubStatus.Faulted)]
+    public async Task DispatcherSkipsWhenFlagIsSetAndInstanceHasLeftPending(WorkflowSubStatus subStatus)
     {
-        _instanceManager.Setup(x => x.ExistsAsync(InstanceId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        SetupExistingInstance(subStatus);
 
         var response = await CreateDispatcher().DispatchAsync(CreateRequest(skipIfInstanceExists: true));
 
@@ -56,12 +61,49 @@ public class SkipIfInstanceExistsTests
         _sendEndpoint.Verify(x => x.Send(It.IsAny<DispatchWorkflowDefinition>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    [Fact]
+    public async Task DispatcherResendsWithoutRecreatingWhenExistingInstanceIsStillPending()
+    {
+        SetupExistingInstance(WorkflowSubStatus.Pending);
+
+        var response = await CreateDispatcher().DispatchAsync(CreateRequest(skipIfInstanceExists: true));
+
+        Assert.True(response.Succeeded);
+        _instanceManager.Verify(x => x.CreateAndCommitWorkflowInstanceAsync(It.IsAny<Workflow>(), It.IsAny<WorkflowInstanceOptions?>(), It.IsAny<CancellationToken>()), Times.Never);
+        _sendEndpoint.Verify(x => x.Send(It.Is<DispatchWorkflowDefinition>(m => m.InstanceId == InstanceId && m.IsExistingInstance), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task DispatcherResendsOnceOnRetryAfterCreateSucceedsAndSendFails()
+    {
+        _instanceManager.Setup(x => x.FindByIdAsync(InstanceId, It.IsAny<CancellationToken>())).ReturnsAsync((WorkflowInstance?)null);
+        _sendEndpoint.SetupSequence(x => x.Send(It.IsAny<DispatchWorkflowDefinition>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("send failed"))
+            .Returns(Task.CompletedTask);
+
+        var dispatcher = CreateDispatcher();
+        var request = CreateRequest(skipIfInstanceExists: true);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => dispatcher.DispatchAsync(request));
+
+        SetupExistingInstance(WorkflowSubStatus.Pending);
+
+        var response = await dispatcher.DispatchAsync(request);
+
+        Assert.True(response.Succeeded);
+        _instanceManager.Verify(x => x.CreateAndCommitWorkflowInstanceAsync(It.IsAny<Workflow>(), It.IsAny<WorkflowInstanceOptions?>(), It.IsAny<CancellationToken>()), Times.Once);
+        _sendEndpoint.Verify(x => x.Send(It.Is<DispatchWorkflowDefinition>(m => m.InstanceId == InstanceId && m.IsExistingInstance), It.IsAny<CancellationToken>()), Times.Exactly(2));
+    }
+
     [Theory]
     [InlineData(true, false)]
     [InlineData(false, true)]
     public async Task DispatcherCreatesAndSendsOtherwise(bool skipIfInstanceExists, bool instanceExists)
     {
-        _instanceManager.Setup(x => x.ExistsAsync(InstanceId, It.IsAny<CancellationToken>())).ReturnsAsync(instanceExists);
+        if (instanceExists)
+            SetupExistingInstance(WorkflowSubStatus.Pending);
+        else
+            _instanceManager.Setup(x => x.FindByIdAsync(InstanceId, It.IsAny<CancellationToken>())).ReturnsAsync((WorkflowInstance?)null);
 
         await CreateDispatcher().DispatchAsync(CreateRequest(skipIfInstanceExists));
 
@@ -99,6 +141,12 @@ public class SkipIfInstanceExistsTests
     }
 
     private DispatchWorkflowRequestConsumer CreateConsumer() => new(_definitionService.Object, _runtime.Object);
+
+    private void SetupExistingInstance(WorkflowSubStatus subStatus)
+    {
+        _instanceManager.Setup(x => x.FindByIdAsync(InstanceId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new WorkflowInstance { Id = InstanceId, WorkflowState = new WorkflowState(), SubStatus = subStatus });
+    }
 
     private static DispatchWorkflowDefinitionRequest CreateRequest(bool skipIfInstanceExists) =>
         new(DefinitionVersionId) { InstanceId = InstanceId, SkipIfInstanceExists = skipIfInstanceExists };
