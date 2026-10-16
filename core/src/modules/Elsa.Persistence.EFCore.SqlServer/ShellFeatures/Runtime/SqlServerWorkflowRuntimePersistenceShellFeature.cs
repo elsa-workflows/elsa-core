@@ -28,6 +28,7 @@ public class SqlServerWorkflowRuntimePersistenceShellFeature
     /// <inheritdoc />
     protected override void ConfigureProvider(DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options)
     {
+        options = options.ConfigureSqlServer();
         builder.UseElsaSqlServer(migrationsAssembly, connectionString, options);
     }
 
