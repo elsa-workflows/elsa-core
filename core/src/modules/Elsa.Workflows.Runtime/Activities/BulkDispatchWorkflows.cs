@@ -338,41 +338,34 @@ public class BulkDispatchWorkflows : Activity
         {
             while (true)
             {
-                Page<WorkflowInstance> page;
+                var (page, failure) = await TryReadChildPageAsync(store, filter, pageArgs, order, cancellationToken, logger, pageNumber);
 
-                try
+                if (page is null)
                 {
-                    page = await store.FindManyAsync(filter, pageArgs, order, cancellationToken);
-                }
-                catch (Exception ex) when (!IsCallerCancellation(ex, cancellationToken))
-                {
-                    try
+                    consecutiveReadFailures++;
+
+                    if (consecutiveReadFailures >= MaxConsecutiveReadFailures)
                     {
-                        page = await store.FindManyAsync(filter, pageArgs, order, cancellationToken);
-                    }
-                    catch (Exception retryEx) when (!IsCallerCancellation(retryEx, cancellationToken))
-                    {
-                        consecutiveReadFailures++;
                         logger.LogWarning(
-                            retryEx,
-                            "Failed to read waited-for child workflows of parent {ParentWorkflowInstanceId} for activity {ActivityInstanceId} on page {PageNumber}; skipping this page.",
+                            failure,
+                            "Giving up after {MaxConsecutiveReadFailures} consecutive unreadable pages at page {PageNumber} of parent {ParentWorkflowInstanceId} for activity {ActivityInstanceId}.",
+                            MaxConsecutiveReadFailures,
+                            pageNumber,
                             parentInstanceId,
-                            context.Id,
-                            pageNumber);
-
-                        if (consecutiveReadFailures >= MaxConsecutiveReadFailures)
-                        {
-                            logger.LogWarning(
-                                "Giving up after {MaxConsecutiveReadFailures} consecutive read failures at page {PageNumber}.",
-                                MaxConsecutiveReadFailures,
-                                pageNumber);
-                            return;
-                        }
-
-                        pageArgs = pageArgs.Next();
-                        pageNumber++;
-                        continue;
+                            context.Id);
+                        return;
                     }
+
+                    logger.LogWarning(
+                        failure,
+                        "Failed to read waited-for child workflows of parent {ParentWorkflowInstanceId} for activity {ActivityInstanceId} on page {PageNumber}; skipping this page.",
+                        parentInstanceId,
+                        context.Id,
+                        pageNumber);
+
+                    pageArgs = pageArgs.Next();
+                    pageNumber++;
+                    continue;
                 }
 
                 consecutiveReadFailures = 0;
@@ -388,10 +381,7 @@ public class BulkDispatchWorkflows : Activity
                     // workflow-level cascade does, so the children are not cancelled inside this workflow's execution. It also
                     // cancels the children's own children.
                     if (waitedChildIds.Count > 0)
-                    {
-                        await cancellationService.CancelWorkflowsAsync(waitedChildIds, cancellationToken);
-                        cancelledCount += waitedChildIds.Count;
-                    }
+                        cancelledCount += await cancellationService.CancelWorkflowsAsync(waitedChildIds, cancellationToken);
                 }
                 catch (Exception ex) when (!IsCallerCancellation(ex, cancellationToken))
                 {
@@ -413,10 +403,44 @@ public class BulkDispatchWorkflows : Activity
         finally
         {
             logger.LogDebug(
-                "Cancelled {CancelledCount} waited-for child workflows of parent {ParentWorkflowInstanceId} for activity {ActivityInstanceId}.",
+                "Requested cancellation of {CancelledCount} waited-for child workflows of parent {ParentWorkflowInstanceId} for activity {ActivityInstanceId}.",
                 cancelledCount,
                 parentInstanceId,
                 context.Id);
+        }
+    }
+
+    /// <summary>
+    /// Reads one page of the parent's children, retrying once after a non-caller failure.
+    /// </summary>
+    private static async ValueTask<(Page<WorkflowInstance>? Page, Exception? Failure)> TryReadChildPageAsync(
+        IWorkflowInstanceStore store,
+        WorkflowInstanceFilter filter,
+        PageArgs pageArgs,
+        WorkflowInstanceOrder<string> order,
+        CancellationToken cancellationToken,
+        ILogger logger,
+        int pageNumber)
+    {
+        try
+        {
+            return (await store.FindManyAsync(filter, pageArgs, order, cancellationToken), null);
+        }
+        catch (Exception ex) when (!IsCallerCancellation(ex, cancellationToken))
+        {
+            logger.LogDebug(
+                ex,
+                "Retrying waited-for child page {PageNumber} after a failed read.",
+                pageNumber);
+
+            try
+            {
+                return (await store.FindManyAsync(filter, pageArgs, order, cancellationToken), null);
+            }
+            catch (Exception retryEx) when (!IsCallerCancellation(retryEx, cancellationToken))
+            {
+                return (null, retryEx);
+            }
         }
     }
 
