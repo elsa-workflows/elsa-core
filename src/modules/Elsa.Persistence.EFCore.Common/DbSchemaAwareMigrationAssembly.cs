@@ -3,6 +3,7 @@ using System.Reflection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Migrations.Internal;
 
@@ -27,14 +28,28 @@ public class DbSchemaAwareMigrationAssembly(
             throw new ArgumentNullException(nameof(activeProvider));
 
         var hasCtorWithSchema = migrationClass.GetConstructor([typeof(IElsaDbContextSchema)]) != null;
+        Migration instance;
 
         if (hasCtorWithSchema && _context is IElsaDbContextSchema schema)
         {
-            var instance = (Migration)Activator.CreateInstance(migrationClass.AsType(), schema)!;
+            instance = (Migration)Activator.CreateInstance(migrationClass.AsType(), schema)!;
             instance.ActiveProvider = activeProvider;
-            return instance;
         }
+        else
+            instance = base.CreateMigration(migrationClass, activeProvider);
 
-        return base.CreateMigration(migrationClass, activeProvider);
+        if (_context is IElsaDbContextSchema contextSchema && contextSchema.Schema != ElsaDbContextBase.DefaultElsaSchema)
+            PatchDesignerSchema(instance, contextSchema.Schema);
+
+        return instance;
+    }
+
+    private static void PatchDesignerSchema(Migration migration, string schema)
+    {
+        foreach (var entityType in migration.TargetModel.GetEntityTypes())
+        {
+            if (entityType is IMutableEntityType mutableEntityType && entityType.GetSchema() == ElsaDbContextBase.DefaultElsaSchema)
+                mutableEntityType.SetSchema(schema);
+        }
     }
 }

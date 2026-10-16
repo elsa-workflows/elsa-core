@@ -12,6 +12,8 @@ namespace Elsa.Persistence.EFCore;
 /// </summary>
 public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
 {
+    internal const string DefaultElsaSchema = "Elsa";
+
     private static readonly ISet<EntityState> ModifiedEntityStates = new HashSet<EntityState>
     {
         EntityState.Added,
@@ -25,7 +27,7 @@ public abstract class ElsaDbContextBase : DbContext, IElsaDbContextSchema
     /// <summary>
     /// The default schema used by Elsa.
     /// </summary>
-    public static string ElsaSchema { get; set; } = "Elsa";
+    public static string ElsaSchema { get; set; } = DefaultElsaSchema;
 
     /// <inheritdoc/>
     public string Schema { get; }
