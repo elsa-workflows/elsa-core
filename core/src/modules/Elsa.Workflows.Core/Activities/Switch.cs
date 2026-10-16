@@ -114,12 +114,13 @@ public class Switch : Activity
     {
         var scheduledActivityIds = context.TargetContext.GetProperty<ICollection<string>>("ScheduledActivityIds");
 
-        if (scheduledActivityIds != null
-            && scheduledActivityIds.Remove(context.ChildContext.Activity.Id)
-            && scheduledActivityIds.Count == 0)
-        {
+        if (scheduledActivityIds == null || !scheduledActivityIds.Remove(context.ChildContext.Activity.Id))
+            return;
+
+        context.TargetContext.SetProperty("ScheduledActivityIds", scheduledActivityIds);
+
+        if (scheduledActivityIds.Count == 0)
             await context.TargetContext.CompleteActivityAsync();
-        }
     }
 }
 
