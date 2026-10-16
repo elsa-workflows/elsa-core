@@ -60,6 +60,8 @@ Date-prefixed ADRs:
 | [2026-09-25](../../../docs/adr/2026-09-25-separate-workflow-connection-sharing-authorization.md) | Separate workflow connection sharing from grant management and use. |
 | [2026-09-27](../../../docs/adr/2026-09-27-dedicated-connection-metadata-inspection-policy.md) | Decide connection metadata inspection with its own host policy. (Supersedes 2026-09-25 inspection boundary.) |
 | [2026-09-28](../../../docs/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md) | Release the consolidated packages in lockstep and cut publishers over at 3.10.0. |
+| [2026-10-08](../../../docs/adr/2026-10-08-durable-event-admission-and-isolated-execution.md) | Durable event admission with isolated local execution: admission ledger, guarded composition, accountable provider event handling, and recovery classification. |
+| [2026-10-08](../../../docs/adr/2026-10-08-product-directory-boundaries.md) | Give Core, Extensions and Studio separate root directories. Supersedes the folder-location portion of the 2026-09-23 consolidation ADR. |
 
 ## Active And Recent Specs
 
@@ -190,6 +192,13 @@ For runtime behavior, read in this order:
 3. [specs/011-persistence-vnext/roadmap.md](../specs/011-persistence-vnext/roadmap.md)
 4. `Elsa.Persistence.VNext` core abstractions
 5. `Elsa.Persistence.VNext.Relational`, `Sqlite`, `PostgreSql`, `SqlServer`, `MongoDb` providers
+
+## Reading Order For Durable Event Admission Work
+
+1. [2026-10-08 durable event admission ADR](../../../docs/adr/2026-10-08-durable-event-admission-and-isolated-execution.md) — decision, supported topology, admission state machine, private authority model, and recovery classification
+2. [core/docs/guides/durable-event-admission.md](../guides/durable-event-admission.md) — setup and recovery guide
+3. `Elsa.Workflows.Admission` feature, contracts, and admission registry
+4. `Elsa.Workflows.Admission.Persistence.EFCore` and the PostgreSQL provider
 
 ## When To Write An ADR
 
