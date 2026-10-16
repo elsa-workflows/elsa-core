@@ -45,8 +45,10 @@ on:
 permissions:
   contents: read
 
+# One group for every version and trigger. The highest-tag decision in
+# prepare and the floating X.Y / latest pushes must not overlap.
 concurrency:
-  group: docker-publish-${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
+  group: docker-publish-floating-tags
   cancel-in-progress: false
 
 jobs:
