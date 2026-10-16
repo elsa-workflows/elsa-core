@@ -62,6 +62,22 @@ public class RuntimeSnapshotDriftTests
     }
 
     [Fact]
+    public void Oracle_RuntimeConfigureOracle_ActivityNodeIdFiltersUseLobCompare()
+    {
+        const string nodeId = "node-1";
+        var nodeIds = new[] { "node-1", "node-2" };
+
+        using var dbContext = RuntimeModelDiffer.Create(ConfigureOracle);
+
+        var equalsSql = dbContext.ActivityExecutionRecords.Where(x => x.ActivityNodeId == nodeId).ToQueryString();
+        var containsSql = dbContext.ActivityExecutionRecords.Where(x => nodeIds.Contains(x.ActivityNodeId)).ToQueryString();
+
+        Assert.Contains("DBMS_LOB.COMPARE", equalsSql, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"ActivityNodeId\" =", equalsSql, StringComparison.Ordinal);
+        Assert.Contains("TO_NCLOB", containsSql, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Oracle_RuntimeSnapshot_HasColumnTypesCreatedByMigrations()
     {
         AssertSnapshotColumnType(typeof(ActivityExecutionRecord), "ActivityNodeId", "NCLOB");
