@@ -1,6 +1,8 @@
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Options;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
 namespace Elsa.Activities.IntegrationTests.Branching;
@@ -284,5 +286,47 @@ public class SwitchTests(ITestOutputHelper testOutputHelper)
         // Assert
         result.AssertActivitiesCompleted(switchActivity, case2Activity);
         result.AssertActivitiesNotExecuted(case1Activity, case3Activity);
+    }
+
+    [Fact(DisplayName = "Switch completes after a branch suspends and resumes from persisted state")]
+    public async Task Switch_Completes_AfterBranchSuspendsAndResumesFromPersistedState()
+    {
+        // Arrange
+        var wait = new BlockingActivity();
+        var switchActivity = new Switch
+        {
+            Cases =
+            {
+                new("Match", () => true, wait)
+            }
+        };
+
+        await _fixture.BuildAsync();
+        var runner = _fixture.Services.GetRequiredService<IWorkflowRunner>();
+        var serializer = _fixture.Services.GetRequiredService<IWorkflowStateSerializer>();
+        var workflow = Workflow.FromActivity(switchActivity);
+
+        // Act
+        var started = await runner.RunAsync(workflow);
+        Assert.Equal(WorkflowSubStatus.Suspended, started.WorkflowState.SubStatus);
+
+        var persisted = serializer.Deserialize(serializer.Serialize(started.WorkflowState));
+        var bookmark = Assert.Single(persisted.Bookmarks);
+        var resumed = await runner.RunAsync(workflow, persisted, new RunWorkflowOptions
+        {
+            BookmarkId = bookmark.Id
+        });
+
+        // Assert
+        resumed.AssertActivityCompleted(switchActivity);
+        resumed.AssertWorkflowCompleted();
+    }
+
+    /// <summary>
+    /// Suspends by creating a bookmark so the Switch branch can be persisted and resumed.
+    /// </summary>
+    private sealed class BlockingActivity : Activity
+    {
+        protected override void Execute(ActivityExecutionContext context) => context.CreateBookmark();
     }
 }
