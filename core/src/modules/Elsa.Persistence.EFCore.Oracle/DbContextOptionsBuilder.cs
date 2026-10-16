@@ -13,13 +13,8 @@ public static class DbContextOptionsBuilderExtensions
     /// <summary>
     /// Configures Entity Framework Core with Oracle.
     /// </summary>
-    public static DbContextOptionsBuilder UseElsaOracle(this DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options = null, Action<OracleDbContextOptionsBuilder>? configure = null)
-    {
-        // Always apply the Oracle column-type pins (NCLOB / snapshot lengths) so design-time,
-        // runtime, and IMigrationsModelDiffer see the same model as the snapshot.
-        options = options.ConfigureOracle();
-
-        return builder
+    public static DbContextOptionsBuilder UseElsaOracle(this DbContextOptionsBuilder builder, Assembly migrationsAssembly, string connectionString, ElsaDbContextOptions? options = null, Action<OracleDbContextOptionsBuilder>? configure = null) =>
+        builder
             .UseElsaDbContextOptions(options)
             .UseOracle(connectionString, db =>
             {
@@ -29,5 +24,4 @@ public static class DbContextOptionsBuilderExtensions
 
                 configure?.Invoke(db);
             });
-    }
 }

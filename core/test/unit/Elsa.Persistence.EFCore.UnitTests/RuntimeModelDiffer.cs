@@ -23,6 +23,9 @@ internal static class RuntimeModelDiffer
     public static RuntimeElsaDbContext Create(Action<DbContextOptionsBuilder<RuntimeElsaDbContext>> configure)
     {
         var optionsBuilder = new DbContextOptionsBuilder<RuntimeElsaDbContext>();
+        // Other tests build RuntimeElsaDbContext without ConfigureOracle(). EF's service-provider
+        // cache would otherwise reuse that model and hide the Oracle column-type pins.
+        optionsBuilder.EnableServiceProviderCaching(false);
         configure(optionsBuilder);
 
         var serviceProvider = new ServiceCollection().BuildServiceProvider();
@@ -31,18 +34,37 @@ internal static class RuntimeModelDiffer
 
     public static IReadOnlyList<MigrationOperation> GetDifferences(DbContext dbContext)
     {
+        var snapshotModel = GetSnapshotModel(dbContext);
+        var designTimeModel = dbContext.GetService<IDesignTimeModel>().Model;
+
+        return dbContext.GetService<IMigrationsModelDiffer>().GetDifferences(
+            snapshotModel.GetRelationalModel(),
+            designTimeModel.GetRelationalModel());
+    }
+
+    public static string GetSnapshotColumnType(Action<DbContextOptionsBuilder<RuntimeElsaDbContext>> configure, Type entityType, string propertyName)
+    {
+        using var dbContext = Create(configure);
+        var entity = GetSnapshotModel(dbContext).FindEntityType(entityType);
+        Assert.NotNull(entity);
+
+        var property = entity.FindProperty(propertyName);
+        Assert.NotNull(property);
+
+        var columnType = property.GetColumnType();
+        Assert.False(string.IsNullOrEmpty(columnType), $"Snapshot column type for {entityType.Name}.{propertyName} was empty.");
+        return columnType;
+    }
+
+    private static IModel GetSnapshotModel(DbContext dbContext)
+    {
         var snapshotModel = dbContext.GetService<IMigrationsAssembly>().ModelSnapshot?.Model;
         Assert.NotNull(snapshotModel);
 
         if (snapshotModel is IMutableModel mutableModel)
             snapshotModel = mutableModel.FinalizeModel();
 
-        snapshotModel = dbContext.GetService<IModelRuntimeInitializer>().Initialize(snapshotModel);
-        var designTimeModel = dbContext.GetService<IDesignTimeModel>().Model;
-
-        return dbContext.GetService<IMigrationsModelDiffer>().GetDifferences(
-            snapshotModel.GetRelationalModel(),
-            designTimeModel.GetRelationalModel());
+        return dbContext.GetService<IModelRuntimeInitializer>().Initialize(snapshotModel);
     }
 
     public static string Format(IEnumerable<MigrationOperation> operations)
