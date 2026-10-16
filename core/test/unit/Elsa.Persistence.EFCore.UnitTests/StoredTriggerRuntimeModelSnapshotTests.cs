@@ -68,6 +68,21 @@ public class StoredTriggerRuntimeModelSnapshotTests
     private static void ConfigureOracle(DbContextOptionsBuilder<RuntimeElsaDbContext> builder) =>
         builder.UseElsaOracle(typeof(Elsa.Persistence.EFCore.Oracle.Migrations.Runtime.V3_6).Assembly, "Data Source=unused");
 
+    [Fact]
+    public void UseElsaSqlServer_DoesNotAppendModelConfiguration()
+    {
+        var options = new ElsaDbContextOptions().ConfigureSqlServer();
+        var before = options.GetModelConfigurations(typeof(RuntimeElsaDbContext)).GetInvocationList().Length;
+
+        ConfigureSqlServer(new DbContextOptionsBuilder<RuntimeElsaDbContext>(), options);
+        ConfigureSqlServer(new DbContextOptionsBuilder<RuntimeElsaDbContext>(), options);
+
+        Assert.Equal(before, options.GetModelConfigurations(typeof(RuntimeElsaDbContext)).GetInvocationList().Length);
+    }
+
     private static void ConfigureSqlServer(DbContextOptionsBuilder<RuntimeElsaDbContext> builder) =>
-        builder.UseElsaSqlServer(typeof(Elsa.Persistence.EFCore.SqlServer.Migrations.Runtime.V3_6).Assembly, "Server=unused");
+        ConfigureSqlServer(builder, new ElsaDbContextOptions().ConfigureSqlServer());
+
+    private static void ConfigureSqlServer(DbContextOptionsBuilder<RuntimeElsaDbContext> builder, ElsaDbContextOptions options) =>
+        builder.UseElsaSqlServer(typeof(Elsa.Persistence.EFCore.SqlServer.Migrations.Runtime.V3_6).Assembly, "Server=unused", options);
 }
