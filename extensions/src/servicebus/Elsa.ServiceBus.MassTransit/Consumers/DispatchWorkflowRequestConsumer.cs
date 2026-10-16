@@ -1,9 +1,11 @@
 using Elsa.ServiceBus.MassTransit.Messages;
+using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Messages;
 using JetBrains.Annotations;
 using MassTransit;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.ServiceBus.MassTransit.Consumers;
 
@@ -11,7 +13,7 @@ namespace Elsa.ServiceBus.MassTransit.Consumers;
 /// A consumer of various dispatch message types to asynchronously execute workflows.
 /// </summary>
 [UsedImplicitly]
-public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflowDefinitionService, IWorkflowRuntime workflowRuntime) :
+public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflowDefinitionService, IWorkflowRuntime workflowRuntime, ILogger<DispatchWorkflowRequestConsumer> logger) :
     IConsumer<DispatchWorkflowDefinition>,
     IConsumer<DispatchWorkflowInstance>
 {
@@ -77,6 +79,14 @@ public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflow
     {
         if (string.IsNullOrWhiteSpace(message.InstanceId)) throw new ArgumentException("The instance ID is required when dispatching an existing workflow instance.");
 
+        var workflowClient = await workflowRuntime.CreateClientAsync(message.InstanceId, cancellationToken);
+        var state = await workflowClient.ExportStateAsync(cancellationToken);
+        if (state.SubStatus != WorkflowSubStatus.Pending)
+        {
+            logger.LogDebug("Skipping existing-instance dispatch of {InstanceId}: sub-status is {SubStatus}", message.InstanceId, state.SubStatus);
+            return;
+        }
+
         var request = new RunWorkflowInstanceRequest
         {
             TriggerActivityId = message.TriggerActivityId,
@@ -84,7 +94,6 @@ public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflow
             Properties = message.Properties
         };
 
-        var workflowClient = await workflowRuntime.CreateClientAsync(message.InstanceId, cancellationToken);
         await workflowClient.RunInstanceAsync(request, cancellationToken);
     }
 }
