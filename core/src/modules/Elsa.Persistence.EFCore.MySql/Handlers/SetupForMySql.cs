@@ -30,6 +30,7 @@ public class SetupForMySql : IEntityModelCreatingHandler
 
         // Shared Configurations.cs uses a 69-character, unprefixed name. MySQL identifiers cap at 64,
         // and four varchar(255) utf8mb4 columns exceed InnoDB's 3,072-byte unique-key limit.
+        // Prefix uniqueness covers the first 191 characters of each column, not the full 255.
         modelBuilder.Entity<StoredTrigger>()
             .HasIndex(x => new
             {

@@ -1,4 +1,3 @@
-using Elsa.Persistence.EFCore.MySql;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -31,7 +30,8 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Runtime
                 .OldAnnotation("MySql:CharSet", "utf8mb4");
 
             // Four varchar(255) utf8mb4 columns are 4,080 bytes, above InnoDB's 3,072-byte limit.
-            // 191-character prefixes are 3,056 bytes. The 64-character name fits MySQL's identifier cap.
+            // 191-character prefixes are 3,056 bytes and uniqueness covers those prefixes, not the full 255.
+            // The 64-character name fits MySQL's identifier cap.
             migrationBuilder.Sql($"""
                 CREATE UNIQUE INDEX `{StoredTriggerMySqlUniqueIndex.Name}`
                 ON `Triggers` (`WorkflowDefinitionId`({StoredTriggerMySqlUniqueIndex.PrefixLength}), `Hash`({StoredTriggerMySqlUniqueIndex.PrefixLength}), `ActivityId`({StoredTriggerMySqlUniqueIndex.PrefixLength}), `TenantId`({StoredTriggerMySqlUniqueIndex.PrefixLength}));
