@@ -1,3 +1,4 @@
+using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Runtime.Activities;
 
@@ -96,4 +97,84 @@ public class DispatchAndWaitBesideFireAndForgetWorkflow : WorkflowBase
 public class DispatchAndWaitForFinishingChildWorkflow : WorkflowBase
 {
     protected override void Build(IWorkflowBuilder builder) => builder.Root = DispatchAndWaitInForkWorkflow.CreateFork(nameof(FinishingChildWorkflow));
+}
+
+/// <summary>
+/// A parent that dispatches <see cref="BlockingChildWorkflow"/> and waits for it on one fork branch, beside a branch that
+/// completes in the same burst. The fork waits for any branch, so the waiting <see cref="DispatchWorkflow"/> is cancelled in
+/// the burst that dispatched its child, before that child exists anywhere but in a pending dispatch.
+/// </summary>
+public class DispatchAndWaitBesideCompletingBranchWorkflow : WorkflowBase
+{
+    protected override void Build(IWorkflowBuilder builder) => builder.Root = CreateFork();
+
+    /// <summary>The fork that waits for the child on one branch while the other branch completes at once.</summary>
+    public static Fork CreateFork() => new()
+    {
+        JoinMode = ForkJoinMode.WaitAny,
+        Branches =
+        {
+            new DispatchWorkflow
+            {
+                WorkflowDefinitionId = new(nameof(BlockingChildWorkflow)),
+                WaitForCompletion = new(true)
+            },
+            new WriteLine("Sibling branch completed")
+        }
+    };
+}
+
+/// <summary>
+/// The <see cref="DispatchAndWaitBesideCompletingBranchWorkflow"/> fork, preceded by a fire-and-forget dispatch of
+/// <see cref="FireAndForgetChildWorkflow"/> in the same burst.
+/// </summary>
+public class FireAndForgetThenDispatchAndWaitBesideCompletingBranchWorkflow : WorkflowBase
+{
+    protected override void Build(IWorkflowBuilder builder)
+    {
+        builder.Root = new Sequence
+        {
+            Activities =
+            {
+                new DispatchWorkflow { WorkflowDefinitionId = new(nameof(FireAndForgetChildWorkflow)) },
+                DispatchAndWaitBesideCompletingBranchWorkflow.CreateFork()
+            }
+        };
+    }
+}
+
+/// <summary>
+/// A parent whose loop runs the same waiting <see cref="DispatchWorkflow"/> twice in one burst, each beside a branch that
+/// completes on the last iteration only. Both children are dispatched before the last iteration's fork cancels its
+/// dispatch; the first one keeps waiting.
+/// </summary>
+public class DispatchAndWaitInLoopWorkflow : WorkflowBase
+{
+    public const int StillWaitingIteration = 0;
+    public const int LastIteration = 1;
+
+    protected override void Build(IWorkflowBuilder builder)
+    {
+        builder.Root = new ParallelForEach<int>(Enumerable.Range(StillWaitingIteration, LastIteration - StillWaitingIteration + 1).ToList())
+        {
+            Body = new Fork
+            {
+                JoinMode = ForkJoinMode.WaitAny,
+                Branches =
+                {
+                    new DispatchWorkflow
+                    {
+                        WorkflowDefinitionId = new(nameof(BlockingChildWorkflow)),
+                        WaitForCompletion = new(true),
+                        CorrelationId = new(context => context.GetVariable<int>("CurrentIndex").ToString())
+                    },
+                    new If(context => context.GetVariable<int>("CurrentIndex") == LastIteration)
+                    {
+                        Then = new WriteLine("Last iteration moves on"),
+                        Else = new Event("NeverPublished")
+                    }
+                }
+            }
+        };
+    }
 }
