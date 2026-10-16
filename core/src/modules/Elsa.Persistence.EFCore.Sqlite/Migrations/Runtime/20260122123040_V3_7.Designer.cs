@@ -143,6 +143,15 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Runtime
                     b.HasIndex("HasBookmarks")
                         .HasDatabaseName("IX_ActivityExecutionRecord_HasBookmarks");
 
+                    b.HasIndex("SchedulingActivityExecutionId")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_SchedulingActivityExecutionId");
+
+                    b.HasIndex("SchedulingActivityId")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_SchedulingActivityId");
+
+                    b.HasIndex("SchedulingWorkflowInstanceId")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_SchedulingWorkflowInstanceId");
+
                     b.HasIndex("StartedAt")
                         .HasDatabaseName("IX_ActivityExecutionRecord_StartedAt");
 
