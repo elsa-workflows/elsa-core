@@ -62,7 +62,9 @@ internal static class RuntimeModelDiffer
         Assert.NotNull(snapshotModel);
 
         if (snapshotModel is IMutableModel mutableModel)
+        {
             snapshotModel = mutableModel.FinalizeModel();
+        }
 
         return dbContext.GetService<IModelRuntimeInitializer>().Initialize(snapshotModel);
     }
@@ -71,7 +73,9 @@ internal static class RuntimeModelDiffer
     {
         var list = operations.ToArray();
         if (list.Length == 0)
+        {
             return "(no IMigrationsModelDiffer operations)";
+        }
 
         return string.Join(Environment.NewLine, list.Select(operation => operation switch
         {
