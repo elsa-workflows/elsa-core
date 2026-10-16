@@ -38,6 +38,7 @@ public sealed class QueryTablePagingTests : BunitContext, IAsyncLifetime
     private const string PageTwoDefinitionName = "Definition page 2";
     private readonly WorkflowInstanceServiceProxy _instances = new();
     private readonly WorkflowDefinitionServiceProxy _definitions = new();
+    private readonly IRenderedComponent<MudPopoverProvider> _popovers;
 
     public QueryTablePagingTests()
     {
@@ -58,7 +59,7 @@ public sealed class QueryTablePagingTests : BunitContext, IAsyncLifetime
             opts.IsEnabledByDefault = false;
             opts.IntervalSeconds = 3600;
         });
-        Render<MudPopoverProvider>();
+        _popovers = Render<MudPopoverProvider>();
     }
 
     Task IAsyncLifetime.InitializeAsync() => Task.CompletedTask;
@@ -78,7 +79,7 @@ public sealed class QueryTablePagingTests : BunitContext, IAsyncLifetime
     [Fact]
     public void TryUpdateUrlFromState_keeps_bound_page_in_sync_with_the_table()
     {
-        Services.GetRequiredService<NavigationManager>().NavigateTo("/workflows/instances?page=3&pageSize=10");
+        Services.GetRequiredService<NavigationManager>().NavigateTo("/workflows/instances?page=1&pageSize=10");
         var cut = Render<TestQueryTable>();
 
         cut.Instance.Sync(new TableState { Page = 2, PageSize = 10 });
@@ -118,16 +119,52 @@ public sealed class QueryTablePagingTests : BunitContext, IAsyncLifetime
         var cut = RenderList<TList>(expectedRowText);
 
         Assert.Contains("page=2", Services.GetRequiredService<NavigationManager>().Uri);
-        Assert.Contains(1, requestedPages);
-        Assert.DoesNotContain(0, requestedPages);
+        Assert.Equal([1], requestedPages);
         Assert.Contains(expectedRowText, cut.Markup);
+    }
+
+    [Fact]
+    public void InstanceList_keeps_the_current_page_after_paging_then_selecting()
+    {
+        Services.GetRequiredService<NavigationManager>().NavigateTo("/workflows/instances");
+        var cut = RenderList<WorkflowInstanceList>("instance-p0-0");
+
+        cut.Find("button[aria-label='Next page']").Click();
+        cut.WaitForAssertion(() => Assert.Contains(PageTwoInstanceId, cut.Markup));
+
+        cut.Find("tbody input[type=checkbox]").Change(true);
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("page=2", Services.GetRequiredService<NavigationManager>().Uri);
+            Assert.Contains(PageTwoInstanceId, cut.Markup);
+        });
+        Assert.Equal([0, 1], _instances.RequestedPages);
+    }
+
+    [Fact]
+    public void InstanceList_changing_page_size_resets_to_page_one()
+    {
+        Services.GetRequiredService<NavigationManager>().NavigateTo("/workflows/instances?page=2&pageSize=10");
+        var cut = RenderList<WorkflowInstanceList>(PageTwoInstanceId);
+
+        cut.Find(".mud-table-pagination-select").MouseDown();
+        _popovers.WaitForAssertion(() => Assert.Contains("25", _popovers.Markup));
+        _popovers.FindAll(".mud-list-item").Single(item => item.TextContent.Trim() == "25").Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            var uri = Services.GetRequiredService<NavigationManager>().Uri;
+            Assert.Contains("page=1&pageSize=25", uri);
+            Assert.Contains("instance-p0-0", cut.Markup);
+        });
+        Assert.Equal([1, 0], _instances.RequestedPages);
     }
 
     private void AssertListKeepsPageAfterSelection<TList>(string url, string expectedRowText, List<int> requestedPages) where TList : IComponent
     {
         Services.GetRequiredService<NavigationManager>().NavigateTo(url);
         var cut = RenderList<TList>(expectedRowText);
-        var pagesBeforeSelection = requestedPages.ToArray();
 
         cut.Find("tbody input[type=checkbox]").Change(true);
 
@@ -136,7 +173,7 @@ public sealed class QueryTablePagingTests : BunitContext, IAsyncLifetime
             Assert.Contains("page=2", Services.GetRequiredService<NavigationManager>().Uri);
             Assert.Contains(expectedRowText, cut.Markup);
         });
-        Assert.Equal(pagesBeforeSelection, requestedPages);
+        Assert.Equal([1], requestedPages);
     }
 
     private IRenderedComponent<TList> RenderList<TList>(string expectedRowText) where TList : IComponent

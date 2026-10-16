@@ -70,11 +70,7 @@ namespace Elsa.Studio.Workflows.Components
 
             try
             {
-                var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
-                var query = QueryHelpers.ParseQuery(uri.Query);
-
-                // Convert StringValues to single string values
-                var dict = query.ToDictionary(k => k.Key, kv => kv.Value.ToString(), StringComparer.OrdinalIgnoreCase);
+                var dict = GetQuery();
 
                 try
                 {
@@ -105,14 +101,18 @@ namespace Elsa.Studio.Workflows.Components
                 InitialPageSize = pageSize;
         }
 
+        private IDictionary<string, string> GetQuery()
+        {
+            var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+            var query = QueryHelpers.ParseQuery(uri.Query);
+            return query.ToDictionary(k => k.Key, kv => kv.Value.ToString(), StringComparer.OrdinalIgnoreCase);
+        }
+
         private void ApplyPagingFromUri()
         {
             try
             {
-                var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
-                var query = QueryHelpers.ParseQuery(uri.Query);
-                var dict = query.ToDictionary(k => k.Key, kv => kv.Value.ToString(), StringComparer.OrdinalIgnoreCase);
-                ApplyPagingFromQuery(dict);
+                ApplyPagingFromQuery(GetQuery());
             }
             catch (Exception ex)
             {
