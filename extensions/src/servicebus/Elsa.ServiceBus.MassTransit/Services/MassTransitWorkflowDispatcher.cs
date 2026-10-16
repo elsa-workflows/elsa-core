@@ -36,6 +36,26 @@ public class MassTransitWorkflowDispatcher(
         if (workflowGraph == null)
             throw new($"Workflow definition version with ID '{request.DefinitionVersionId}' not found");
 
+        // This dispatcher creates and commits the instance up front, then sends a "run existing instance" message.
+        // Existence is not the same as "dispatch done": a still-Pending instance may never have been published.
+        // Skip create-and-overwrite in that case, but re-send the run message. Once the instance has left Pending,
+        // skip entirely — the same outcome as the default dispatcher's SkipIfInstanceExists rule.
+        if (request.SkipIfInstanceExists && !string.IsNullOrWhiteSpace(request.InstanceId))
+        {
+            var existing = await workflowInstanceManager.FindByIdAsync(request.InstanceId, cancellationToken);
+            if (existing != null)
+            {
+                if (existing.SubStatus != WorkflowSubStatus.Pending)
+                {
+                    logger.LogDebug("Skipping dispatch of workflow definition version {DefinitionVersionId}: instance {InstanceId} already exists", request.DefinitionVersionId, request.InstanceId);
+                    return DispatchWorkflowResponse.Success();
+                }
+
+                await SendDispatchExistingInstanceAsync(existing.Id, request.TriggerActivityId, options, cancellationToken);
+                return DispatchWorkflowResponse.Success();
+            }
+        }
+
         var workflowInstanceOptions = new WorkflowInstanceOptions
         {
             WorkflowInstanceId = request.InstanceId,
@@ -126,8 +146,13 @@ public class MassTransitWorkflowDispatcher(
     private async Task DispatchWorkflowAsync(Workflow workflow, WorkflowInstanceOptions? workflowInstanceOptions, string? triggerActivityId, DispatchWorkflowOptions? options, CancellationToken cancellationToken)
     {
         var workflowInstance = await workflowInstanceManager.CreateAndCommitWorkflowInstanceAsync(workflow, workflowInstanceOptions, cancellationToken);
+        await SendDispatchExistingInstanceAsync(workflowInstance.Id, triggerActivityId, options, cancellationToken);
+    }
+
+    private async Task SendDispatchExistingInstanceAsync(string instanceId, string? triggerActivityId, DispatchWorkflowOptions? options, CancellationToken cancellationToken)
+    {
         var sendEndpoint = await GetSendEndpointAsync(options);
-        var message = DispatchWorkflowDefinition.DispatchExistingWorkflowInstance(workflowInstance.Id, triggerActivityId);
+        var message = DispatchWorkflowDefinition.DispatchExistingWorkflowInstance(instanceId, triggerActivityId);
         await sendEndpoint.Send(message, cancellationToken);
     }
 
