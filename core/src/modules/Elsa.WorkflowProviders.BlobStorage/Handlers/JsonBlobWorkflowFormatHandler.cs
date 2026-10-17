@@ -4,7 +4,7 @@ using Elsa.Workflows.Management.Mappers;
 using Elsa.Workflows.Management.Materializers;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Runtime;
-using FluentStorage.Blobs;
+using FluentStorage.Model;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.WorkflowProviders.BlobStorage.Handlers;
@@ -24,7 +24,7 @@ public class JsonBlobWorkflowFormatHandler(
     public IEnumerable<string> SupportedExtensions => ["json"];
 
     /// <inheritdoc />
-    public bool CanHandle(Blob blob, string? contentType)
+    public bool CanHandle(StoreObject blob, string? contentType)
     {
         // Extension filtering is already handled by the provider via SupportedExtensions.
         // Here we can optionally check content type for additional validation.
@@ -36,7 +36,7 @@ public class JsonBlobWorkflowFormatHandler(
     }
 
     /// <inheritdoc />
-    public ValueTask<MaterializedWorkflow?> TryParseAsync(Blob blob, string content, CancellationToken cancellationToken = default)
+    public ValueTask<MaterializedWorkflow?> TryParseAsync(StoreObject blob, string content, CancellationToken cancellationToken = default)
     {
         try
         {

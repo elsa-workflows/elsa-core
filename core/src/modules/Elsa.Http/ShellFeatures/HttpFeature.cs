@@ -77,7 +77,7 @@ public class HttpFeature : IMiddlewareShellFeature
     public Func<IServiceProvider, IFileCacheStorageProvider> FileCache { get; set; } = sp =>
     {
         var options = sp.GetRequiredService<IOptions<HttpFileCacheOptions>>().Value;
-        var blobStorage = StorageFactory.Blobs.DirectoryFiles(options.LocalCacheDirectory);
+        var blobStorage = StorageFactory.Disk(options.LocalCacheDirectory);
         return new BlobFileCacheStorageProvider(blobStorage);
     };
 

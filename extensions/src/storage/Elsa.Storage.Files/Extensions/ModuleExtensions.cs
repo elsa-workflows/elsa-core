@@ -1,6 +1,6 @@
 using Elsa.Features.Services;
 using Elsa.Storage.Files.Features;
-using FluentStorage.Blobs;
+using FluentStorage.Storage;
 using JetBrains.Annotations;
 
 // ReSharper disable once CheckNamespace
@@ -15,7 +15,7 @@ public static class ModuleExtensions
     /// <summary>
     /// Installs the Storage feature.
     /// </summary>
-    public static IModule UseFileStorage(this IModule module, Func<IServiceProvider, IBlobStorage> blobStorage)
+    public static IModule UseFileStorage(this IModule module, Func<IServiceProvider, IStore> blobStorage)
     {
         return module.UseFileStorage(feature => feature.BlobStorage = blobStorage);
     }
