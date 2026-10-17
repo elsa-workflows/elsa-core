@@ -418,7 +418,8 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     /// <param name="bookmarks">The bookmarks to add.</param>
     public void AddBookmarks(IEnumerable<Bookmark> bookmarks)
     {
-        WorkflowExecutionContext.Bookmarks.AddRange(bookmarks);
+        var existingIds = WorkflowExecutionContext.Bookmarks.Select(x => x.Id).ToHashSet();
+        WorkflowExecutionContext.Bookmarks.AddRange(bookmarks.Where(x => existingIds.Add(x.Id)));
         Taint();
     }
 
