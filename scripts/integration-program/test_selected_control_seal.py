@@ -1,0 +1,458 @@
+"""Real synthetic ZIP readback and safe staging, without product/provider work."""
+from copy import deepcopy
+from contextlib import contextmanager, redirect_stderr, redirect_stdout
+from datetime import timedelta
+import ast
+import io
+import json
+import os
+from pathlib import Path
+import tempfile
+import types
+import unittest
+from unittest.mock import patch
+
+import product_release_metadata as metadata
+import selected_control_seal as seal
+import selected_control_transport as transport
+import selected_studio_payload as payload
+from test_selected_control_transport import MALFORMED_GZIP, zipped
+from test_selected_studio_payload import fixture, encoded
+from test_selected_core_payload import fixture as core_fixture
+
+
+@contextmanager
+def seal_cli_inputs(files):
+    """Prepare bounded on-disk inputs and exact CLI arguments for a seal invocation."""
+    with tempfile.TemporaryDirectory() as temporary:
+        root = Path(temporary).resolve()
+        inputs = root / 'inputs'
+        for name, data in files.items():
+            target = inputs / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+        output = root / 'output'
+        args = ['selected_control_seal.py', 'seal', '--plan', str(inputs / 'plan.json'),
+            '--plan-sha256', metadata.sha256(files['plan.json']), '--producer-retained', str(inputs / 'producer'),
+            '--producer-receipt-sha256', metadata.sha256(files['producer/receipt.json']),
+            '--consumer-receipt', str(inputs / 'consumer/receipt.json'),
+            '--consumer-receipt-sha256', metadata.sha256(files['consumer/receipt.json']), '--output', str(output)]
+        yield args, output
+
+
+def core_schema_failure():
+    """Keep the real Core wrapper traceback; assertRaises would clear it."""
+    plan, producer, consumer, selected, contracts = core_fixture('3.8')
+    contracts['producer']['sources']['3.8'].pop('test_projects')
+    try:
+        payload.core_payload.validate_specialization(plan, producer, consumer, selected, contracts=contracts)
+    except ValueError as error:
+        return error
+    raise AssertionError('missing Core contract key was accepted')
+
+
+class SealContracts(unittest.TestCase):
+    def setUp(self):
+        """Create a complete sealed Studio payload and matching synthetic provider metadata."""
+        self.files, self.context, self.now = fixture()
+        self.contracts = payload.load_contracts()
+        self.hashes = tuple(metadata.sha256(self.files[name]) for name in
+            ('plan.json', 'producer/receipt.json', 'consumer/receipt.json'))
+        self.sealed = seal.stage(self.files, self.context, self.hashes, contracts=self.contracts, now=self.now)
+        self.expected = self.context | {'manifest_sha256': metadata.sha256(self.sealed[transport.MANIFEST])}
+        context = self.context['context']
+        self.provider = {'schema': 1, 'repository': context['repository'], 'repository_id': context['repository_id'],
+            'run_id': context['run_id'], 'run_attempt': context['run_attempt'], 'head_sha': context['head_sha'],
+            'head_branch': transport.HOSTED_REF.removeprefix('refs/heads/'), 'event': 'push',
+            'workflow_path': transport.WORKFLOW, 'control_job': 'control', 'control_conclusion': 'success',
+            'run_status': 'in_progress', 'run_conclusion': None, 'artifact_id': 456,
+            'artifact_name': f"selected-control-studio-3.8-{context['head_sha']}-{context['run_id']}-{context['run_attempt']}",
+            'archive_sha256': '0' * 64, 'archive_size': 1, 'manifest_sha256': self.expected['manifest_sha256'],
+            'created_at': (self.now - timedelta(minutes=2)).isoformat(),
+            'expires_at': (self.now + timedelta(days=1)).isoformat(), 'expired': False,
+            'retrieved_at': (self.now - timedelta(minutes=1)).isoformat()}
+
+    def archive(self, sealed=None):
+        """Encode sealed files as a ZIP and rebind its size and hashes in provider evidence."""
+        sealed = self.sealed if sealed is None else sealed
+        data = zipped(list(sealed.items()))
+        self.expected['manifest_sha256'] = self.provider['manifest_sha256'] = metadata.sha256(sealed[transport.MANIFEST])
+        self.provider.update(archive_size=len(data), archive_sha256=metadata.sha256(data))
+        return data
+
+    def readback(self, data):
+        """Validate supplied ZIP bytes using the fixture's provider, expected identity, and
+        clock.
+        """
+        return seal.readback(data, self.provider, self.expected, contracts=self.contracts, now=self.now)
+
+    def test_studio_vertical_original_zip_in_independent_job(self):
+        """Verify Studio vertical original ZIP in independent job."""
+        original = self.archive()
+        with patch.dict('os.environ', {'GITHUB_JOB': 'readback', 'GITHUB_RUN_ID': 'different'}):
+            result = self.readback(original)
+        self.assertTrue(result['success'])
+        self.assertFalse(result['product_code_executed_during_readback'])
+        self.assertEqual(result['consumer_execution_scope'], 'preupload-exact-local-archives')
+        self.assertEqual(result['provider']['archive_sha256'], metadata.sha256(original))
+        self.assertEqual(len(result['files']), len(self.files))
+        self.assertEqual(self.sealed['producer/receipt.json'], self.files['producer/receipt.json'])
+
+    def test_transport_only_manifest_cannot_authorize_control(self):
+        """Verify transport only manifest cannot authorize control."""
+        changed = dict(self.sealed)
+        manifest = json.loads(changed[transport.MANIFEST])
+        manifest['scope'] = transport.TRANSPORT_SCOPE
+        changed[transport.MANIFEST] = encoded(manifest)
+        with self.assertRaisesRegex(ValueError, 'manifest_binding'):
+            self.readback(self.archive(changed))
+
+    def test_full_closure_and_semantic_joins_rechecked_after_outer_rehash(self):
+        """Verify full closure and semantic joins rechecked after outer rehash."""
+        for kind in ('extra', 'missing', 'private', 'runtime', 'npm', 'source', 'execution'):
+            changed = dict(self.sealed)
+            manifest = json.loads(changed[transport.MANIFEST])
+            if kind == 'extra': changed['producer/nuget/unlisted.1.0.0.nupkg'] = b'excluded'
+            elif kind == 'missing': del changed['producer/npm/receipt.json']
+            elif kind == 'private': manifest['private_location'] = '/private/tmp/raw.log'
+            elif kind in ('runtime', 'source', 'execution'):
+                result = json.loads(changed['consumer/receipt.json'])
+                if kind == 'runtime': result['runtime'][0]['runtime']['loaded_assemblies'][0]['sha256'] = 'f' * 64
+                elif kind == 'source': result['source']['commit'] = 'f' * 40
+                else: result['execution']['context']['run_attempt'] = '99'
+                changed['consumer/receipt.json'] = encoded(result)
+                manifest['consumer_receipt_sha256'] = metadata.sha256(changed['consumer/receipt.json'])
+            elif kind == 'npm':
+                result = json.loads(changed['producer/npm/receipt.json'])
+                result['consumer']['lifecycle_generated_assets']['assets'][0]['sha256'] = 'f' * 64
+                changed['producer/npm/receipt.json'] = encoded(result)
+            manifest['files'] = transport.inventory({key: value for key, value in changed.items() if key != transport.MANIFEST})
+            changed[transport.MANIFEST] = encoded(manifest)
+            with self.subTest(kind=kind), self.assertRaises(ValueError): self.readback(self.archive(changed))
+
+    def test_provider_identity_and_time_are_rechecked(self):
+        """Verify provider identity and time are rechecked."""
+        data = self.archive()
+        cases = {'run_attempt': '99', 'head_sha': 'f' * 40, 'event': 'pull_request', 'artifact_id': 0,
+                 'artifact_name': 'latest', 'archive_size': len(data) + 1, 'archive_sha256': 'f' * 64,
+                 'expired': True, 'retrieved_at': (self.now + timedelta(seconds=1)).isoformat(),
+                 'expires_at': self.now.isoformat(), 'control_conclusion': 'failure'}
+        original = deepcopy(self.provider)
+        for key, value in cases.items():
+            self.provider[key] = value
+            with self.subTest(key=key), self.assertRaises(ValueError): self.readback(data)
+            self.provider = deepcopy(original)
+
+    def test_freeze_exact_safe_retained_files_preserves_bytes(self):
+        """Verify freeze exact safe retained files preserves bytes."""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            paths = {name: root / name for name in self.files}
+            for name, data in self.files.items():
+                paths[name].parent.mkdir(parents=True, exist_ok=True)
+                paths[name].write_bytes(data)
+            frozen, originals = seal.freeze_inputs(paths['plan.json'], self.hashes[0], root / 'producer', self.hashes[1],
+                                                  paths['consumer/receipt.json'], self.hashes[2])
+            self.assertEqual(frozen, self.files)
+            self.assertEqual(len(originals), len(self.files))
+            output = seal.output_location(root / 'sealed', [root / 'producer', root / 'consumer', paths['plan.json']])
+            seal.write_new(output, self.sealed)
+            self.assertEqual({path.relative_to(output).as_posix(): path.read_bytes() for path in output.rglob('*') if path.is_file()}, self.sealed)
+            with self.assertRaises(ValueError): seal.output_location(output, [])
+            with self.assertRaises(ValueError): seal.output_location(root / 'producer/out', [root / 'producer'])
+            (root / 'producer/raw.log').write_text('private')
+            with self.assertRaisesRegex(ValueError, 'closure'):
+                seal.freeze_inputs(paths['plan.json'], self.hashes[0], root / 'producer', self.hashes[1],
+                                   paths['consumer/receipt.json'], self.hashes[2])
+
+    def test_malformed_nuspec_cli_emits_safe_rejection_record(self):
+        """Verify malformed nuspec CLI emits safe rejection evidence before output."""
+        receipt = json.loads(self.files['producer/receipt.json'])
+        row = receipt['packages']['selected'][0]
+        name = 'producer/nuget/' + row['file']
+        members = transport.zip_members(self.files[name], leaf=True)
+        members['a.nuspec'] = b'<package><metadata>malformed private input'
+        self.files[name] = zipped(list(members.items()))
+        row.update(sha256=metadata.sha256(self.files[name]), size=len(self.files[name]), inventory=transport.inventory(members))
+        self.files['producer/receipt.json'] = encoded(receipt)
+        self.assert_cli_rejected(expected_code='shared-packages-xml-parse-error')
+
+    def test_malformed_gzip_cli_emits_safe_rejection_record(self):
+        """Verify malformed gzip CLI emits safe rejection evidence before output."""
+        receipt = json.loads(self.files['producer/receipt.json'])
+        wasm = receipt['npm']['wasm']
+        self.files['producer/npm/' + wasm['file']] = MALFORMED_GZIP
+        wasm['sha512_integrity'] = transport.sha512_integrity(MALFORMED_GZIP)
+        self.files['producer/npm/receipt.json'] = encoded(receipt['npm'])
+        self.files['producer/receipt.json'] = encoded(receipt)
+        self.assert_cli_rejected(expected_code='selected_transport_tar')
+
+    def test_unclassified_cli_failure_emits_only_fixed_safe_record(self):
+        """Verify unexpected seal failures are reduced to the fixed generic record."""
+        with seal_cli_inputs(self.files) as (args, output):
+            printed = io.StringIO()
+            diagnostics = io.StringIO()
+            with patch('sys.argv', args), patch.object(seal.producer, 'verify_controller', return_value=self.context['controller']), \
+                 patch.object(seal, 'hosted_context', return_value=self.context['context']), \
+                 patch.object(seal, 'stage', side_effect=RuntimeError('PRIVATE_SEAL_EXCEPTION')), \
+                 redirect_stdout(printed), redirect_stderr(diagnostics):
+                self.assertEqual(seal.main(), 1)
+            value = json.loads(printed.getvalue())
+            self.assertEqual(value, {
+                'schema': 1, 'scope': seal.FAILURE_SCOPE, 'phase': 'semantic-validation',
+                'code': 'unclassified', 'plan_sha256': metadata.sha256(self.files['plan.json']),
+                'producer_receipt_sha256': metadata.sha256(self.files['producer/receipt.json']),
+                'consumer_receipt_sha256': metadata.sha256(self.files['consumer/receipt.json'])})
+            self.assertNotIn('PRIVATE_SEAL_EXCEPTION', printed.getvalue())
+            self.assertEqual(json.loads(diagnostics.getvalue()), {
+                'scope': seal.FAILURE_SCOPE, 'phase': 'semantic-validation', 'code': 'unclassified'})
+            self.assertNotIn('PRIVATE_SEAL_EXCEPTION', diagnostics.getvalue())
+            self.assertNotIn(str(args), diagnostics.getvalue())
+            self.assertFalse(output.exists())
+
+    def test_oversized_receipt_keeps_value_free_stderr_diagnostic(self):
+        """Verify an oversized receipt remains visible when the bounded adapter cannot read it."""
+        receipt = json.loads(self.files['producer/receipt.json'])
+        receipt['private_input'] = 'PRIVATE_RECEIPT_CANARY'
+        self.files['producer/receipt.json'] = encoded(receipt)
+        with seal_cli_inputs(self.files) as (args, output):
+            printed, diagnostics = io.StringIO(), io.StringIO()
+            with patch('sys.argv', args), patch.object(transport, 'MAX_RECEIPT_BYTES', 1), \
+                 redirect_stdout(printed), redirect_stderr(diagnostics):
+                self.assertEqual(seal.main(), 1)
+            stdout_record = json.loads(printed.getvalue())
+            self.assertEqual(stdout_record['code'], 'input-size-rejected')
+            self.assertEqual(stdout_record['phase'], 'input-freeze')
+            self.assertEqual(json.loads(diagnostics.getvalue()), {
+                'scope': seal.FAILURE_SCOPE, 'phase': 'input-freeze', 'code': 'input-size-rejected'})
+            self.assertNotIn('PRIVATE_RECEIPT_CANARY', diagnostics.getvalue())
+            self.assertNotIn(str(args), diagnostics.getvalue())
+            self.assertFalse(output.exists())
+
+    def test_cli_uses_only_closed_categories_for_exact_known_guards(self):
+        """Verify selected exact size, closure, and hash codes map to finite public categories."""
+        for reason, expected_code in (
+            ('selected_transport_size', 'input-size-rejected'),
+            ('selected_seal_retained_closure', 'input-closure-rejected'),
+            ('selected_seal_input_hash', 'input-hash-rejected'),
+            ('PRIVATE_RAW_REASON', 'unclassified')):
+            with self.subTest(reason=reason), seal_cli_inputs(self.files) as (args, output):
+                printed, diagnostics = io.StringIO(), io.StringIO()
+                with patch('sys.argv', args), patch.object(seal.producer, 'verify_controller', return_value=self.context['controller']), \
+                     patch.object(seal, 'hosted_context', return_value=self.context['context']), \
+                     patch.object(seal, 'stage', side_effect=ValueError(reason)), \
+                     redirect_stdout(printed), redirect_stderr(diagnostics):
+                    self.assertEqual(seal.main(), 1)
+                self.assertEqual(json.loads(printed.getvalue())['code'], expected_code)
+                self.assertEqual(json.loads(diagnostics.getvalue()), {
+                    'scope': seal.FAILURE_SCOPE, 'phase': 'semantic-validation', 'code': expected_code})
+                self.assertNotIn(reason, diagnostics.getvalue())
+                self.assertNotIn(reason, printed.getvalue())
+                self.assertNotIn(str(args), diagnostics.getvalue())
+                self.assertFalse(output.exists())
+
+    def test_real_shared_core_guards_and_closed_schema_keep_exact_finite_codes(self):
+        cases = (
+            ('selected_payload_array', lambda: payload.sequence({'private': '/PRIVATE_DIAGNOSTIC_VALUE'})),
+            ('selected_payload_producer_schema', lambda: transport.closed({}, {'required'}, 'selected_payload_producer')),
+            ('selected_transport_json', lambda: transport.strict_json(b'{/PRIVATE_DIAGNOSTIC_VALUE')))
+        for code, reject in cases:
+            with self.subTest(code=code), self.assertRaises(ValueError) as caught:
+                reject()
+            self.assertEqual(code, seal.rejection_code(caught.exception))
+        plan, producer, consumer, selected, contracts = core_fixture('3.8')
+        producer['product_tests']['inherited_skipped_placeholders'] = ['/PRIVATE_DIAGNOSTIC_VALUE']
+        with self.assertRaises(ValueError) as caught:
+            payload.core_payload.validate_specialization(plan, producer, consumer, selected, contracts=contracts)
+        self.assertEqual('core_payload_test_placeholders', seal.rejection_code(caught.exception))
+
+    def test_core_schema_wrapper_identifies_actual_trusted_cause_site(self):
+        error = core_schema_failure()
+        self.assertEqual(('core_payload_schema',), error.args)
+        self.assertIs(type(error.__cause__), KeyError)
+        self.assertEqual('core-source-key-error', seal.rejection_code(error))
+
+    def test_real_trusted_unknown_value_error_never_exports_its_input(self):
+        sentinel = '/PRIVATE_DIAGNOSTIC_PATH/PRIVATE_DIAGNOSTIC_VALUE'
+        def reject(*args, **kwargs):
+            payload.plan_schema.admit({}, '', b'', sentinel, {})
+        with seal_cli_inputs(self.files) as (args, output):
+            printed, diagnostics = io.StringIO(), io.StringIO()
+            with patch('sys.argv', args), patch.object(seal.producer, 'verify_controller', return_value=self.context['controller']), \
+                 patch.object(seal, 'hosted_context', return_value=self.context['context']), \
+                 patch.object(seal, 'stage', side_effect=reject), \
+                 redirect_stdout(printed), redirect_stderr(diagnostics):
+                self.assertEqual(1, seal.main())
+            record = json.loads(printed.getvalue())
+            self.assertEqual('plan-admit-value-error', record['code'])
+            self.assertEqual(seal.failure_notice('semantic-validation', record['code']), json.loads(diagnostics.getvalue()))
+            self.assertEqual(seal.failure_record('semantic-validation', record['code'], *self.hashes), record)
+            self.assertLess(len(printed.getvalue().encode()), seal.MAX_FAILURE_RECORD_BYTES)
+            self.assertNotIn(sentinel, printed.getvalue() + diagnostics.getvalue())
+            self.assertNotIn(str(args), printed.getvalue() + diagnostics.getvalue())
+            self.assertFalse(output.exists())
+
+    def test_untrusted_messages_exception_shapes_and_spoofed_code_stay_unclassified(self):
+        sentinel = '/PRIVATE_DIAGNOSTIC_PATH/PRIVATE_DIAGNOSTIC_VALUE'
+        class HostileValueError(ValueError):
+            @property
+            def args(self):
+                raise AssertionError('exception subclass args must never be read')
+        class HostileString(str):
+            def __hash__(self):
+                raise AssertionError('string subclass must never be looked up')
+        for error in (ValueError(sentinel), ValueError('core_payload_unreviewed_guard'),
+                      ValueError('selected_payload_schema/' + sentinel), ValueError('core_payload_npm', sentinel), ValueError(),
+                      ValueError({'private': sentinel}), ValueError(HostileString('core_payload_npm')),
+                      HostileValueError('core_payload_npm'), KeyError(sentinel), TypeError(sentinel),
+                      RuntimeError('core_payload_npm')):
+            with self.subTest(error_type=type(error).__name__):
+                self.assertEqual('unclassified', seal.rejection_code(error))
+        def foreign():
+            raise ValueError(sentinel)
+        spoofed = types.FunctionType(foreign.__code__.replace(
+            co_filename=payload.core_payload._native.__code__.co_filename, co_name='_native'), globals(), closure=foreign.__closure__)
+        try:
+            spoofed()
+        except ValueError as error:
+            self.assertEqual('unclassified', seal.rejection_code(error))
+        else:
+            self.fail('foreign fixture did not raise')
+        original = payload.plan_schema.admit
+        clone = types.FunctionType(original.__code__.replace(), original.__globals__)
+        self.assertEqual(original.__code__, clone.__code__)
+        self.assertIsNot(original.__code__, clone.__code__)
+        try:
+            clone({}, '', b'', sentinel, {})
+        except ValueError as error:
+            self.assertEqual('unclassified', seal.rejection_code(error))
+        else:
+            self.fail('cloned validator did not raise')
+
+    def test_trusted_traceback_scan_is_bounded_and_does_not_follow_nested_causes(self):
+        sentinel = '/PRIVATE_DIAGNOSTIC_PATH/PRIVATE_DIAGNOSTIC_VALUE'
+        def recurse(depth):
+            if depth:
+                recurse(depth - 1)
+            else:
+                payload.plan_schema.admit({}, '', b'', sentinel, {})
+        try:
+            recurse(seal.MAX_DIAGNOSTIC_TRACEBACK_FRAMES)
+        except ValueError as error:
+            self.assertEqual('unclassified', seal.rejection_code(error))
+        else:
+            self.fail('invalid date was accepted')
+        error = core_schema_failure()
+        unsupported = RuntimeError(sentinel)
+        unsupported.__cause__ = error.__cause__
+        error.__cause__ = unsupported
+        self.assertEqual('core_payload_schema', seal.rejection_code(error))
+
+    def test_static_guard_inventory_and_all_failure_codes_remain_reviewed_and_bounded(self):
+        expected = set()
+        for module in (payload, payload.core_payload, payload.plan_schema, transport):
+            tree = ast.parse(Path(module.__file__).read_text())
+            for node in ast.walk(tree):
+                if not isinstance(node, ast.Call) or not node.args:
+                    continue
+                name = node.func.id if isinstance(node.func, ast.Name) else node.func.attr if isinstance(node.func, ast.Attribute) else ''
+                label = node.args[-1]
+                if name in ('require', 'ValueError', 'closed', '_rows') and isinstance(label, ast.Constant) and type(label.value) is str:
+                    guard = label.value + ('_schema' if name == 'closed' else '')
+                    if guard.startswith(('core_payload_', 'selected_payload_', 'selected_plan_', 'selected_transport_')):
+                        expected.add(guard)
+        self.assertEqual(expected, seal.SEMANTIC_FAILURE_GUARDS)
+        for code in seal.FAILURE_CODES:
+            with self.subTest(code=code):
+                record = seal.failure_record('semantic-validation', code, *self.hashes)
+                self.assertEqual(code, record['code'])
+                self.assertLess(len(seal.encoded(record)), seal.MAX_FAILURE_RECORD_BYTES)
+                self.assertEqual(code, seal.failure_notice('semantic-validation', code)['code'])
+
+    def test_successful_cli_output_and_manifest_staging_are_unchanged(self):
+        """Verify successful seal stdout and the complete staged bytes stay unchanged."""
+        with seal_cli_inputs(self.files) as (args, output):
+            printed, diagnostics = io.StringIO(), io.StringIO()
+            with patch('sys.argv', args), patch.object(seal.producer, 'verify_controller', return_value=self.context['controller']), \
+                 patch.object(seal, 'hosted_context', return_value=self.context['context']), \
+                 redirect_stdout(printed), redirect_stderr(diagnostics):
+                self.assertEqual(seal.main(), 0)
+            self.assertEqual(json.loads(printed.getvalue()), self.context | {
+                'manifest_sha256': metadata.sha256(self.sealed[transport.MANIFEST])})
+            self.assertEqual(diagnostics.getvalue(), '')
+            self.assertEqual({path.relative_to(output).as_posix(): path.read_bytes()
+                for path in output.rglob('*') if path.is_file()}, self.sealed)
+
+    def test_failure_record_reader_rejects_extra_keys_wrong_bindings_and_symlinks(self):
+        """Verify failure records are bounded, closed, bound to current inputs, and no-follow."""
+        hashes = tuple(metadata.sha256(self.files[name]) for name in
+            ('plan.json', 'producer/receipt.json', 'consumer/receipt.json'))
+        record = seal.failure_record('semantic-validation', 'seal-rejected', *hashes)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            path = root / 'selected-expected.json'
+            path.write_bytes(encoded(record))
+            validated, digest = seal.read_failure_record(path, *hashes)
+            self.assertEqual(validated, {'phase': 'semantic-validation', 'code': 'seal-rejected'})
+            self.assertEqual(digest, metadata.sha256(path.read_bytes()))
+            for invalid in (record | {'private': 'PRIVATE_CANARY'}, record | {'plan_sha256': '0' * 64},
+                            record | {'phase': 'PRIVATE_CANARY'}, record | {'code': 'PRIVATE_CANARY'}):
+                path.write_bytes(encoded(invalid))
+                with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                    seal.read_failure_record(path, *hashes)
+            path.unlink()
+            path.symlink_to(root / 'outside.json')
+            (root / 'outside.json').write_bytes(encoded(record))
+            with self.assertRaises(ValueError):
+                seal.read_failure_record(path, *hashes)
+            path.unlink()
+            path.write_bytes(b' ' * (seal.MAX_FAILURE_RECORD_BYTES + 1))
+            with self.assertRaises(ValueError):
+                seal.read_failure_record(path, *hashes)
+            (root / 'linked-parent').symlink_to(root, target_is_directory=True)
+            with self.assertRaises(ValueError):
+                seal.read_failure_record(root / 'linked-parent/selected-expected.json', *hashes)
+            path.unlink()
+            os.mkfifo(path)
+            with self.assertRaises(ValueError):
+                seal.read_failure_record(path, *hashes)
+
+    def assert_cli_rejected(self, *, expected_code=None):
+        """Require malformed sealed input to fail with only bounded safe diagnostics."""
+        with seal_cli_inputs(self.files) as (args, output):
+            printed, diagnostics = io.StringIO(), io.StringIO()
+            # Only trusted runner/Git identity boundaries are stubbed. Real frozen
+            # archive bytes reach the actual parser and CLI failure guard.
+            with patch('sys.argv', args), patch.object(seal.producer, 'verify_controller', return_value=self.context['controller']), \
+                 patch.object(seal, 'hosted_context', return_value=self.context['context']), \
+                 redirect_stdout(printed), redirect_stderr(diagnostics):
+                self.assertEqual(seal.main(), 1)
+            value = json.loads(printed.getvalue())
+            self.assertIn(value['code'], seal.FAILURE_CODES)
+            if expected_code is not None:
+                self.assertEqual(expected_code, value['code'])
+            self.assertEqual(value, seal.failure_record('semantic-validation', value['code'],
+                metadata.sha256(self.files['plan.json']), metadata.sha256(self.files['producer/receipt.json']),
+                metadata.sha256(self.files['consumer/receipt.json'])))
+            self.assertFalse(output.exists())
+            self.assertNotIn('malformed private input', printed.getvalue())
+            self.assertEqual(json.loads(diagnostics.getvalue()), {
+                'scope': seal.FAILURE_SCOPE, 'phase': 'semantic-validation', 'code': value['code']})
+            self.assertNotIn('malformed private input', diagnostics.getvalue())
+            self.assertNotIn(str(args), diagnostics.getvalue())
+
+    def test_retained_symlink_and_rejected_write_leave_no_output(self):
+        """Verify retained symlink and rejected write leave no output."""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            retained = root / 'producer'
+            retained.mkdir()
+            (retained / 'receipt.json').symlink_to(root / 'outside')
+            with self.assertRaisesRegex(ValueError, 'path'): seal.retained_files(retained)
+            output = root / 'new'
+            with patch.object(Path, 'open', side_effect=OSError('fixture write failure')):
+                with self.assertRaises(OSError): seal.write_new(output, {'plan.json': b'bytes'})
+            self.assertFalse(output.exists())
+
+
+if __name__ == '__main__': unittest.main()

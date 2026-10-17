@@ -1,0 +1,556 @@
+{
+  "schema": 1,
+  "census_sha256": "73d2d71cc5f7e5d0163c10451b1c02b26babafe659b809013dc8486fe58ce6c3",
+  "sources": {
+    "3.8": {
+      "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+      "tree": "7ab70135ea43fc6e93c6cb26b9d0df2d91b20b85",
+      "files": {
+        ".github/workflows/packages.yml": "9e8825e5d187f71e83e558c52a268b9495b53d35",
+        ".nuke/build.schema.json": "8391009603dad514cbbac678cd26dec287d5b378",
+        ".nuke/parameters.json": "8535901f9e421af9db8c52d6b52f175a0d974d72",
+        "Directory.Build.props": "969fcc3f5c104d1be78231c0ac23ed3ab3737736",
+        "Directory.Build.targets": "dcef467e1a566f6dacc6fb80d91173f9b3bb12ed",
+        "Elsa.sln": "01caa18d261d46be889f508d8b7178ae5735dc85",
+        "build.sh": "fdff0c623663cbbe1226165447a1a7e1d06d042e",
+        "build/Build.CI.GitHubActions.cs": "699080e2beac256e1081f00f9b90189eb63a8f73",
+        "build/Build.cs": "840f70e4260bc534064198d5346f9ccff34ef611",
+        "build/Directory.Build.props": "61fd9f44b85b914b0d3d8996c055de86b67b3026",
+        "build/Directory.Build.targets": "253260956d504935e80ddc02a0695a148d9f2a1e",
+        "build/_build.csproj": "0fb8a5f80ba9e5925762b84b680eb90b3b1f6391",
+        "src/Directory.Build.props": "2b0debfb64fecc66368a9227fc068889d9c0691a",
+        "src/apps/Elsa.SamplePackage/Elsa.SamplePackage.csproj": "81a9869262934c9a03e0b9e5efc97844e0245c42",
+        "test/component/Elsa.Workflows.ComponentTests/Scenarios/ClusteredHosting/ActivityRegistrySyncTests.cs": "b19d547677fb73d5f6a9b01478ec4ccfcf915918",
+        "test/component/Elsa.Workflows.ComponentTests/Scenarios/LogPersistenceModes/InputOutputLoggingTests.cs": "45ff0d88a52f2714a00d26f7f034532307cbe756",
+        "test/component/Elsa.Workflows.ComponentTests/Scenarios/WorkflowActivities/DeleteWorkflowTests.cs": "2b111e8d4314b9f89ac33a2e559bfd0e5620b706"
+      },
+      "test_projects": [
+        "test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj",
+        "test/integration/Elsa.AI.IntegrationTests/Elsa.AI.IntegrationTests.csproj",
+        "test/integration/Elsa.Activities.IntegrationTests/Elsa.Activities.IntegrationTests.csproj",
+        "test/integration/Elsa.Alterations.IntegrationTests/Elsa.Alterations.IntegrationTests.csproj",
+        "test/integration/Elsa.Common.IntegrationTests/Elsa.Common.IntegrationTests.csproj",
+        "test/integration/Elsa.Diagnostics.ConsoleLogs.IntegrationTests/Elsa.Diagnostics.ConsoleLogs.IntegrationTests.csproj",
+        "test/integration/Elsa.Diagnostics.OpenTelemetry.IntegrationTests/Elsa.Diagnostics.OpenTelemetry.IntegrationTests.csproj",
+        "test/integration/Elsa.Diagnostics.StructuredLogs.IntegrationTests/Elsa.Diagnostics.StructuredLogs.IntegrationTests.csproj",
+        "test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.csproj",
+        "test/integration/Elsa.Dsl.ElsaScript.IntegrationTests/Elsa.Dsl.ElsaScript.IntegrationTests.csproj",
+        "test/integration/Elsa.ExternalAuthentication.IntegrationTests/Elsa.ExternalAuthentication.IntegrationTests.csproj",
+        "test/integration/Elsa.Http.IntegrationTests/Elsa.Http.IntegrationTests.csproj",
+        "test/integration/Elsa.JavaScript.IntegrationTests/Elsa.JavaScript.IntegrationTests.csproj",
+        "test/integration/Elsa.Resilience.IntegrationTests/Elsa.Resilience.IntegrationTests.csproj",
+        "test/integration/Elsa.Workflows.IntegrationTests/Elsa.Workflows.IntegrationTests.csproj",
+        "test/unit/Elsa.AI.Abstractions.UnitTests/Elsa.AI.Abstractions.UnitTests.csproj",
+        "test/unit/Elsa.AI.Copilot.UnitTests/Elsa.AI.Copilot.UnitTests.csproj",
+        "test/unit/Elsa.AI.Host.UnitTests/Elsa.AI.Host.UnitTests.csproj",
+        "test/unit/Elsa.AI.Persistence.EFCore.UnitTests/Elsa.AI.Persistence.EFCore.UnitTests.csproj",
+        "test/unit/Elsa.Activities.UnitTests/Elsa.Activities.UnitTests.csproj",
+        "test/unit/Elsa.Common.UnitTests/Elsa.Common.UnitTests.csproj",
+        "test/unit/Elsa.Dashboard.Api.UnitTests/Elsa.Dashboard.Api.UnitTests.csproj",
+        "test/unit/Elsa.Diagnostics.ConsoleLogs.UnitTests/Elsa.Diagnostics.ConsoleLogs.UnitTests.csproj",
+        "test/unit/Elsa.Diagnostics.OpenTelemetry.UnitTests/Elsa.Diagnostics.OpenTelemetry.UnitTests.csproj",
+        "test/unit/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests.csproj",
+        "test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/Elsa.Diagnostics.StructuredLogs.UnitTests.csproj",
+        "test/unit/Elsa.Expressions.UnitTests/Elsa.Expressions.UnitTests.csproj",
+        "test/unit/Elsa.ExternalAuthentication.UnitTests/Elsa.ExternalAuthentication.UnitTests.csproj",
+        "test/unit/Elsa.Hosting.Management.UnitTests/Elsa.Hosting.Management.UnitTests.csproj",
+        "test/unit/Elsa.Http.UnitTests/Elsa.Http.UnitTests.csproj",
+        "test/unit/Elsa.Identity.UnitTests/Elsa.Identity.UnitTests.csproj",
+        "test/unit/Elsa.Mediator.UnitTests/Elsa.Mediator.UnitTests.csproj",
+        "test/unit/Elsa.Persistence.VNext.UnitTests/Elsa.Persistence.VNext.UnitTests.csproj",
+        "test/unit/Elsa.Platform.Integration.UnitTests/Elsa.Platform.Integration.UnitTests.csproj",
+        "test/unit/Elsa.Resilience.Core.UnitTests/Elsa.Resilience.Core.UnitTests.csproj",
+        "test/unit/Elsa.SasTokens.UnitTests/Elsa.SasTokens.UnitTests.csproj",
+        "test/unit/Elsa.Scheduling.UnitTests/Elsa.Scheduling.UnitTests.csproj",
+        "test/unit/Elsa.Secrets.UnitTests/Elsa.Secrets.UnitTests.csproj",
+        "test/unit/Elsa.Shells.Api.Tests/Elsa.Shells.Api.Tests.csproj",
+        "test/unit/Elsa.Tenants.UnitTests/Elsa.Tenants.UnitTests.csproj",
+        "test/unit/Elsa.Workflows.Api.UnitTests/Elsa.Workflows.Api.UnitTests.csproj",
+        "test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj",
+        "test/unit/Elsa.Workflows.Management.UnitTests/Elsa.Workflows.Management.UnitTests.csproj",
+        "test/unit/Elsa.Workflows.Runtime.UnitTests/Elsa.Workflows.Runtime.UnitTests.csproj"
+      ],
+      "declared_skips": [
+        {
+          "path": "test/component/Elsa.Workflows.ComponentTests/Scenarios/ClusteredHosting/ActivityRegistrySyncTests.cs",
+          "display_identity": "Elsa.Workflows.ComponentTests.Scenarios.ClusteredHosting.ActivityRegistrySyncTests.ImportWorkflowActivity_ShouldUpdateOtherPods",
+          "reason": "Not yet implemented"
+        },
+        {
+          "path": "test/component/Elsa.Workflows.ComponentTests/Scenarios/WorkflowActivities/DeleteWorkflowTests.cs",
+          "display_identity": "Elsa.Workflows.ComponentTests.Scenarios.WorkflowActivities.DeleteWorkflowTests.DeleteWorkflow_Clustered",
+          "reason": "Clustered tests are interfering with other event driven tests"
+        },
+        {
+          "path": "test/component/Elsa.Workflows.ComponentTests/Scenarios/LogPersistenceModes/InputOutputLoggingTests.cs",
+          "display_identity": "Elsa.Workflows.ComponentTests.Scenarios.LogPersistenceModes.InputOutputLoggingTests.WorkflowAsActivityInternal_ShouldHonorSettings_WhenExecuting",
+          "reason": "Although this functionality works in practice, the component test fails from time to time for no clear reason (yet)."
+        }
+      ],
+      "conditional": null
+    },
+    "3.9": {
+      "commit": "5d3582b6309a2fd8ea33ebdb8c39fb040bfdc514",
+      "tree": "59d5cf6d6f2ce378c4b3fd888238abe2a9541561",
+      "files": {
+        ".github/workflows/packages.yml": "ef9be78c4ef6bbec357017dad5274c72aebef6cd",
+        ".nuke/build.schema.json": "8391009603dad514cbbac678cd26dec287d5b378",
+        ".nuke/parameters.json": "8535901f9e421af9db8c52d6b52f175a0d974d72",
+        "Directory.Build.props": "969fcc3f5c104d1be78231c0ac23ed3ab3737736",
+        "Directory.Build.targets": "2a61364c98e134dfbbf6ba8c5d6498f0bffcb81b",
+        "Elsa.sln": "04b23545f454c3d338dba173465a6acd1cbd102d",
+        "build.sh": "fdff0c623663cbbe1226165447a1a7e1d06d042e",
+        "build/Build.CI.GitHubActions.cs": "f2fd6686dd8f95d3d244327360d63f113a969fc9",
+        "build/Build.cs": "3e609c5ca4b06455fc9e236d4da28c438d0ab32a",
+        "build/Directory.Build.props": "61fd9f44b85b914b0d3d8996c055de86b67b3026",
+        "build/Directory.Build.targets": "253260956d504935e80ddc02a0695a148d9f2a1e",
+        "build/_build.csproj": "e35f2122925738488ac39a1a75e2ca6f21d8a416",
+        "src/Directory.Build.props": "4daf7065cff42f1f3bbc4ed1fc3a7daffd58883e",
+        "src/apps/Elsa.SamplePackage/Elsa.SamplePackage.csproj": "81a9869262934c9a03e0b9e5efc97844e0245c42",
+        "test/component/Elsa.Workflows.ComponentTests/Scenarios/ClusteredHosting/ActivityRegistrySyncTests.cs": "b19d547677fb73d5f6a9b01478ec4ccfcf915918",
+        "test/component/Elsa.Workflows.ComponentTests/Scenarios/WorkflowActivities/DeleteWorkflowTests.cs": "2b111e8d4314b9f89ac33a2e559bfd0e5620b706",
+        "test/unit/Elsa.UserTasks.Persistence.ConformanceTests/Infrastructure/ConformanceFactAttribute.cs": "490296d0720695f5deffa8d99c8789d6e998aea6",
+        "test/unit/Elsa.UserTasks.Persistence.ConformanceTests/Infrastructure/ConformanceProviders.cs": "fadac4a7af4f9de56546a1565a40b5820db71b95",
+        "test/unit/Elsa.UserTasks.Persistence.ConformanceTests/ProviderConformanceSuites.cs": "e6dcb6782e862c301571cae2e385b9f4e5bd4201",
+        "test/unit/Elsa.UserTasks.Persistence.ConformanceTests/UserTaskFaultInjectionConformanceTests.cs": "d73c79fe5a961e288819bea4a20d3fc812cdb51e",
+        "test/unit/Elsa.UserTasks.Persistence.ConformanceTests/UserTaskGuestSessionConformanceTests.cs": "0c31130809af7c18e6461bfefcbbb018d5367ead",
+        "test/unit/Elsa.UserTasks.Persistence.ConformanceTests/UserTaskInvitationOutboxConformanceTests.cs": "1e08710459c39cbef8c6a0854f5467e605d038c2",
+        "test/unit/Elsa.UserTasks.Persistence.ConformanceTests/UserTaskRepositoryConformanceTests.cs": "e29a13f9e163710bde3e53247e9edd06e815221d"
+      },
+      "test_projects": [
+        "test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj",
+        "test/integration/Elsa.AI.IntegrationTests/Elsa.AI.IntegrationTests.csproj",
+        "test/integration/Elsa.Activities.IntegrationTests/Elsa.Activities.IntegrationTests.csproj",
+        "test/integration/Elsa.Alterations.IntegrationTests/Elsa.Alterations.IntegrationTests.csproj",
+        "test/integration/Elsa.Alterations.Persistence.ConformanceTests/Elsa.Alterations.Persistence.ConformanceTests.csproj",
+        "test/integration/Elsa.Bpmn.IntegrationTests/Elsa.Bpmn.IntegrationTests.csproj",
+        "test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Elsa.Bpmn.Interchange.IntegrationTests.csproj",
+        "test/integration/Elsa.Common.IntegrationTests/Elsa.Common.IntegrationTests.csproj",
+        "test/integration/Elsa.Diagnostics.ConsoleLogs.IntegrationTests/Elsa.Diagnostics.ConsoleLogs.IntegrationTests.csproj",
+        "test/integration/Elsa.Diagnostics.OpenTelemetry.IntegrationTests/Elsa.Diagnostics.OpenTelemetry.IntegrationTests.csproj",
+        "test/integration/Elsa.Diagnostics.StructuredLogs.IntegrationTests/Elsa.Diagnostics.StructuredLogs.IntegrationTests.csproj",
+        "test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.ConformanceTests/Elsa.Diagnostics.StructuredLogs.Persistence.ConformanceTests.csproj",
+        "test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.csproj",
+        "test/integration/Elsa.Dsl.ElsaScript.IntegrationTests/Elsa.Dsl.ElsaScript.IntegrationTests.csproj",
+        "test/integration/Elsa.ExternalAuthentication.IntegrationTests/Elsa.ExternalAuthentication.IntegrationTests.csproj",
+        "test/integration/Elsa.Hosts.SmokeTests/Elsa.Hosts.SmokeTests.csproj",
+        "test/integration/Elsa.Http.IntegrationTests/Elsa.Http.IntegrationTests.csproj",
+        "test/integration/Elsa.JavaScript.IntegrationTests/Elsa.JavaScript.IntegrationTests.csproj",
+        "test/integration/Elsa.Labels.Persistence.ConformanceTests/Elsa.Labels.Persistence.ConformanceTests.csproj",
+        "test/integration/Elsa.Resilience.IntegrationTests/Elsa.Resilience.IntegrationTests.csproj",
+        "test/integration/Elsa.Workflows.IntegrationTests/Elsa.Workflows.IntegrationTests.csproj",
+        "test/integration/Elsa.Workflows.Persistence.ConformanceTests/Elsa.Workflows.Persistence.ConformanceTests.csproj",
+        "test/unit/Elsa.AI.Abstractions.UnitTests/Elsa.AI.Abstractions.UnitTests.csproj",
+        "test/unit/Elsa.AI.Copilot.UnitTests/Elsa.AI.Copilot.UnitTests.csproj",
+        "test/unit/Elsa.AI.Host.UnitTests/Elsa.AI.Host.UnitTests.csproj",
+        "test/unit/Elsa.AI.Persistence.EFCore.UnitTests/Elsa.AI.Persistence.EFCore.UnitTests.csproj",
+        "test/unit/Elsa.Activities.UnitTests/Elsa.Activities.UnitTests.csproj",
+        "test/unit/Elsa.Alterations.Core.UnitTests/Elsa.Alterations.Core.UnitTests.csproj",
+        "test/unit/Elsa.Api.Common.UnitTests/Elsa.Api.Common.UnitTests.csproj",
+        "test/unit/Elsa.Bpmn.Interchange.UnitTests/Elsa.Bpmn.Interchange.UnitTests.csproj",
+        "test/unit/Elsa.Bpmn.UnitTests/Elsa.Bpmn.UnitTests.csproj",
+        "test/unit/Elsa.Common.UnitTests/Elsa.Common.UnitTests.csproj",
+        "test/unit/Elsa.Dashboard.Api.UnitTests/Elsa.Dashboard.Api.UnitTests.csproj",
+        "test/unit/Elsa.Diagnostics.ConsoleLogs.UnitTests/Elsa.Diagnostics.ConsoleLogs.UnitTests.csproj",
+        "test/unit/Elsa.Diagnostics.OpenTelemetry.UnitTests/Elsa.Diagnostics.OpenTelemetry.UnitTests.csproj",
+        "test/unit/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests.csproj",
+        "test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/Elsa.Diagnostics.StructuredLogs.UnitTests.csproj",
+        "test/unit/Elsa.Expressions.UnitTests/Elsa.Expressions.UnitTests.csproj",
+        "test/unit/Elsa.ExternalAuthentication.UnitTests/Elsa.ExternalAuthentication.UnitTests.csproj",
+        "test/unit/Elsa.Features.UnitTests/Elsa.Features.UnitTests.csproj",
+        "test/unit/Elsa.Hosting.Management.UnitTests/Elsa.Hosting.Management.UnitTests.csproj",
+        "test/unit/Elsa.Http.UnitTests/Elsa.Http.UnitTests.csproj",
+        "test/unit/Elsa.Identity.UnitTests/Elsa.Identity.UnitTests.csproj",
+        "test/unit/Elsa.Labels.UnitTests/Elsa.Labels.UnitTests.csproj",
+        "test/unit/Elsa.Mediator.UnitTests/Elsa.Mediator.UnitTests.csproj",
+        "test/unit/Elsa.Persistence.EFCore.UnitTests/Elsa.Persistence.EFCore.UnitTests.csproj",
+        "test/unit/Elsa.Persistence.VNext.UnitTests/Elsa.Persistence.VNext.UnitTests.csproj",
+        "test/unit/Elsa.Platform.Integration.UnitTests/Elsa.Platform.Integration.UnitTests.csproj",
+        "test/unit/Elsa.Resilience.Core.UnitTests/Elsa.Resilience.Core.UnitTests.csproj",
+        "test/unit/Elsa.SasTokens.UnitTests/Elsa.SasTokens.UnitTests.csproj",
+        "test/unit/Elsa.Scheduling.UnitTests/Elsa.Scheduling.UnitTests.csproj",
+        "test/unit/Elsa.Secrets.UnitTests/Elsa.Secrets.UnitTests.csproj",
+        "test/unit/Elsa.Shells.Api.Tests/Elsa.Shells.Api.Tests.csproj",
+        "test/unit/Elsa.Tenants.UnitTests/Elsa.Tenants.UnitTests.csproj",
+        "test/unit/Elsa.UserTasks.Persistence.ConformanceTests/Elsa.UserTasks.Persistence.ConformanceTests.csproj",
+        "test/unit/Elsa.UserTasks.Persistence.EFCore.UnitTests/Elsa.UserTasks.Persistence.EFCore.UnitTests.csproj",
+        "test/unit/Elsa.UserTasks.UnitTests/Elsa.UserTasks.UnitTests.csproj",
+        "test/unit/Elsa.Workflows.Api.UnitTests/Elsa.Workflows.Api.UnitTests.csproj",
+        "test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj",
+        "test/unit/Elsa.Workflows.Management.UnitTests/Elsa.Workflows.Management.UnitTests.csproj",
+        "test/unit/Elsa.Workflows.Runtime.UnitTests/Elsa.Workflows.Runtime.UnitTests.csproj"
+      ],
+      "declared_skips": [
+        {
+          "path": "test/component/Elsa.Workflows.ComponentTests/Scenarios/ClusteredHosting/ActivityRegistrySyncTests.cs",
+          "display_identity": "Elsa.Workflows.ComponentTests.Scenarios.ClusteredHosting.ActivityRegistrySyncTests.ImportWorkflowActivity_ShouldUpdateOtherPods",
+          "reason": "Not yet implemented"
+        },
+        {
+          "path": "test/component/Elsa.Workflows.ComponentTests/Scenarios/WorkflowActivities/DeleteWorkflowTests.cs",
+          "display_identity": "Elsa.Workflows.ComponentTests.Scenarios.WorkflowActivities.DeleteWorkflowTests.DeleteWorkflow_Clustered",
+          "reason": "Clustered tests are interfering with other event driven tests"
+        }
+      ],
+      "conditional": {
+        "gates": [
+          {
+            "description": "Elsa.UserTasks.Persistence.EFCore over SQL Server",
+            "env": "ELSA_USERTASKS_TEST_SQLSERVER",
+            "provider": "SqlServer"
+          },
+          {
+            "description": "Elsa.UserTasks.Persistence.EFCore over PostgreSQL",
+            "env": "ELSA_USERTASKS_TEST_POSTGRES",
+            "provider": "PostgreSql"
+          },
+          {
+            "description": "Elsa.UserTasks.Persistence.EFCore over Oracle",
+            "env": "ELSA_USERTASKS_TEST_ORACLE",
+            "provider": "Oracle"
+          }
+        ],
+        "classes": [
+          {
+            "attribute_line": 99,
+            "base_class": "UserTaskRepositoryConformanceTests",
+            "class": "SqlServerUserTaskRepositoryConformanceTests",
+            "class_line": 100,
+            "provider": "SqlServer",
+            "source_path": "test/unit/Elsa.UserTasks.Persistence.ConformanceTests/ProviderConformanceSuites.cs"
+          },
+          {
+            "attribute_line": 103,
+            "base_class": "UserTaskGuestSessionConformanceTests",
+            "class": "SqlServerUserTaskGuestSessionConformanceTests",
+            "class_line": 104,
+            "provider": "SqlServer",
+            "source_path": "test/unit/Elsa.UserTasks.Persistence.ConformanceTests/ProviderConformanceSuites.cs"
+          },
+          {
+            "attribute_line": 107,
+            "base_class": "UserTaskInvitationOutboxConformanceTests",
+            "class": "SqlServerUserTaskInvitationOutboxConformanceTests",
+            "class_line": 108,
+            "provider": "SqlServer",
+            "source_path": "test/unit/Elsa.UserTasks.Persistence.ConformanceTests/ProviderConformanceSuites.cs"
+          },
+          {
+            "attribute_line": 111,
+            "base_class": "UserTaskFaultInjectionConformanceTests",
+            "class": "SqlServerUserTaskFaultInjectionConformanceTests",
+            "class_line": 112,
+            "provider": "SqlServer",
+            "source_path": "test/unit/Elsa.UserTasks.Persistence.ConformanceTests/ProviderConformanceSuites.cs"
+          },
+          {
+            "attribute_line": 115,
+            "base_class": "UserTaskRepositoryConformanceTests",
+            "class": "PostgreSqlUserTaskRepositoryConformanceTests",
+            "class_line": 116,
+            "provider": "PostgreSql",
+            "source_path": "test/unit/Elsa.UserTasks.Persistence.ConformanceTests/ProviderConformanceSuites.cs"
+          },
+          {
+            "attribute_line": 119,
+            "base_class": "UserTaskGuestSessionConformanceTests",
+            "class": "PostgreSqlUserTaskGuestSessionConformanceTests",
+            "class_line": 120,
+            "provider": "PostgreSql",
+            "source_path": "test/unit/Elsa.UserTasks.Persistence.ConformanceTests/ProviderConformanceSuites.cs"
+          },
+          {
+            "attribute_line": 123,
+            "base_class": "UserTaskInvitationOutboxConformanceTests",
+            "class": "PostgreSqlUserTaskInvitationOutboxConformanceTests",
+            "class_line": 124,
+            "provider": "PostgreSql",
+            "source_path": "test/unit/Elsa.UserTasks.Persistence.ConformanceTests/ProviderConformanceSuites.cs"
+          },
+          {
+            "attribute_line": 127,
+            "base_class": "UserTaskFaultInjectionConformanceTests",
+            "class": "PostgreSqlUserTaskFaultInjectionConformanceTests",
+            "class_line": 128,
+            "provider": "PostgreSql",
+            "source_path": "test/unit/Elsa.UserTasks.Persistence.ConformanceTests/ProviderConformanceSuites.cs"
+          },
+          {
+            "attribute_line": 131,
+            "base_class": "UserTaskRepositoryConformanceTests",
+            "class": "OracleUserTaskRepositoryConformanceTests",
+            "class_line": 132,
+            "provider": "Oracle",
+            "source_path": "test/unit/Elsa.UserTasks.Persistence.ConformanceTests/ProviderConformanceSuites.cs"
+          },
+          {
+            "attribute_line": 135,
+            "base_class": "UserTaskGuestSessionConformanceTests",
+            "class": "OracleUserTaskGuestSessionConformanceTests",
+            "class_line": 136,
+            "provider": "Oracle",
+            "source_path": "test/unit/Elsa.UserTasks.Persistence.ConformanceTests/ProviderConformanceSuites.cs"
+          },
+          {
+            "attribute_line": 139,
+            "base_class": "UserTaskInvitationOutboxConformanceTests",
+            "class": "OracleUserTaskInvitationOutboxConformanceTests",
+            "class_line": 140,
+            "provider": "Oracle",
+            "source_path": "test/unit/Elsa.UserTasks.Persistence.ConformanceTests/ProviderConformanceSuites.cs"
+          },
+          {
+            "attribute_line": 143,
+            "base_class": "UserTaskFaultInjectionConformanceTests",
+            "class": "OracleUserTaskFaultInjectionConformanceTests",
+            "class_line": 144,
+            "provider": "Oracle",
+            "source_path": "test/unit/Elsa.UserTasks.Persistence.ConformanceTests/ProviderConformanceSuites.cs"
+          }
+        ],
+        "methods": [
+          {
+            "base_class": "UserTaskFaultInjectionConformanceTests",
+            "method": "AConcurrentEditMakesTheManagerReportAConflictInsteadOfFaulting",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskFaultInjectionConformanceTests",
+            "method": "TwoCompletionsOnOneRevisionLeaveExactlyOneWinnerAndOneConflict",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskFaultInjectionConformanceTests",
+            "method": "AFailureInThePreCommitSweepLeavesTheInvitationRevocableAndTheRetryRepairsIt",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskFaultInjectionConformanceTests",
+            "method": "AFailureInThePostCommitSweepIsRepairedIdempotentlyByARetry",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskFaultInjectionConformanceTests",
+            "method": "ASuccessfulRevocationSweepsSessionsOnBothSidesOfTheCommit",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskFaultInjectionConformanceTests",
+            "method": "ACredentialIssuedInsideTheRevokeCommitWindowIsDeadEitherWay",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskFaultInjectionConformanceTests",
+            "method": "AFailedSaveCommitsNothingAndTheRetrySucceedsOnTheSameRevision",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskFaultInjectionConformanceTests",
+            "method": "AFailedCompareAndSwapCommitsNothingAndTheRetryConverges",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskFaultInjectionConformanceTests",
+            "method": "AnAuditWriteFailureDoesNotConsumeTheCallersRevision",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskGuestSessionConformanceTests",
+            "method": "AnIssuedCredentialResolvesToItsInvitationsSubjectAndActions",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskGuestSessionConformanceTests",
+            "method": "AnUnknownOrEmptyCredentialResolvesToNothing",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskGuestSessionConformanceTests",
+            "method": "RevokingForATaskKillsEveryCredentialIssuedForIt",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskGuestSessionConformanceTests",
+            "method": "RevokingForOneInvitationLeavesAnotherInvitationsSessionAlive",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskGuestSessionConformanceTests",
+            "method": "RevocationIsScopedByTenant",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskGuestSessionConformanceTests",
+            "method": "RevokingTwiceIsHarmless",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskGuestSessionConformanceTests",
+            "method": "ASessionStopsResolvingOnceItExpiresWithoutAnExplicitRevoke",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskGuestSessionConformanceTests",
+            "method": "ASessionNeverOutlivesTheInvitationItCameFrom",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskGuestSessionConformanceTests",
+            "method": "AnAlreadyExpiredInvitationIssuesNothingAtAll",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskGuestSessionConformanceTests",
+            "method": "TheRawCredentialIsNeverRecoverableFromTheStore",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskInvitationOutboxConformanceTests",
+            "method": "ADeliveryRoundTripsItsSecretAndItsRoutingMetadata",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskInvitationOutboxConformanceTests",
+            "method": "ACompletedDeliveryIsRemovedSoTheSecretStopsExisting",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskInvitationOutboxConformanceTests",
+            "method": "ADeliveryIsNotDueBeforeItsScheduledTime",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskInvitationOutboxConformanceTests",
+            "method": "ReschedulingAdvancesTheAttemptCountAndDefersTheDelivery",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskInvitationOutboxConformanceTests",
+            "method": "DeliveryIsAbandonedOnceTheRetryScheduleIsExhausted",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskInvitationOutboxConformanceTests",
+            "method": "ReschedulingAnUnknownDeliveryIsHarmless",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskInvitationOutboxConformanceTests",
+            "method": "AnExpiredDeliveryIsDroppedRatherThanDeliveredLate",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskInvitationOutboxConformanceTests",
+            "method": "TheDueBatchIsBoundedByTheRequestedCount",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskRepositoryConformanceTests",
+            "method": "AStaleSaveThrowsTheContractsConflictNotTheStoresNativeConcurrencyType",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskRepositoryConformanceTests",
+            "method": "TwoWritersOnSeparateConnectionsLeaveExactlyOneWinnerAndOneConflict",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskRepositoryConformanceTests",
+            "method": "TryMutateReturnsFalseOnALostRaceRatherThanThrowing",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskRepositoryConformanceTests",
+            "method": "TryMutateCommitsNothingWhenTheMutationDeclines",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskRepositoryConformanceTests",
+            "method": "AppendEventDoesNotConsumeTheConcurrencyToken",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskRepositoryConformanceTests",
+            "method": "AppendEventIgnoresAnUnknownTask",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskRepositoryConformanceTests",
+            "method": "AddProjectionIsIdempotentOnTheMaterializationKey",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskRepositoryConformanceTests",
+            "method": "LookupsByMaterializationKeyAndBookmarkAreTenantScoped",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskRepositoryConformanceTests",
+            "method": "InvitationLookupResolvesFromATokenHashAloneAndReturnsNullForUnknown",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskRepositoryConformanceTests",
+            "method": "SafeSearchByTagReturnsOnlyTheMatchingTask",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskRepositoryConformanceTests",
+            "method": "ScopeAndExclusionApplyBeforeTotalsCursorsAndPageLimits",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskRepositoryConformanceTests",
+            "method": "AvailableScopeShowsASnapshotMemberOnlyWhenTheTaskUsesSnapshotMode",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskRepositoryConformanceTests",
+            "method": "AvailableScopeShowsALiveCandidateOnlyWhenTheTaskUsesLiveMode",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskRepositoryConformanceTests",
+            "method": "AvailableScopeDoesNotTreatSnapshotGroupsAsLiveMembership",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskRepositoryConformanceTests",
+            "method": "AvailableScopeStillAppliesExclusionsBeforeSnapshotMembership",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskRepositoryConformanceTests",
+            "method": "AScopeFromAnotherTenantMatchesNothingEvenWhenTheQueryNamesThisOne",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskRepositoryConformanceTests",
+            "method": "CursorsAreStableAcrossEverySupportedSortAndDirection",
+            "attribute": "ConformanceTheory"
+          },
+          {
+            "base_class": "UserTaskRepositoryConformanceTests",
+            "method": "UpdatedSortUsesUpdatedAtThenAscendingId",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskRepositoryConformanceTests",
+            "method": "TasksWithoutADueDateOrderLastInBothDirections",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskRepositoryConformanceTests",
+            "method": "ThePageLimitIsHonouredAndTheFinalPageReportsNoCursor",
+            "attribute": "ConformanceFact"
+          },
+          {
+            "base_class": "UserTaskRepositoryConformanceTests",
+            "method": "AnUnreadableCursorIsIgnoredRatherThanFailingTheRequest",
+            "attribute": "ConformanceFact"
+          }
+        ]
+      }
+    }
+  }
+}
