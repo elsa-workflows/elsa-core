@@ -1,6 +1,7 @@
 using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Actors.ProtoActor;
+using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.ProtoActor.ProtoBuf;
 using Elsa.Workflows.State;
@@ -70,6 +71,15 @@ public class ProtoActorWorkflowClient : IWorkflowClient
         var protoRequest = _mappers.RunWorkflowInstanceRequestMapper.Map(request);
         var response = await _actorClient.Run(protoRequest, CreateHeaders(), cancellationToken);
         return _mappers.RunWorkflowInstanceResponseMapper.Map(WorkflowInstanceId, response!);
+    }
+
+    /// <inheritdoc />
+    public async Task<RunWorkflowInstanceResponse?> RunInstanceIfPendingAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
+    {
+        // The instance actor processes its mailbox serially, but the state export and the run
+        // remain two messages: this is the client-side guard the dispatcher used to keep.
+        var state = await ExportStateAsync(cancellationToken);
+        return state.SubStatus == WorkflowSubStatus.Pending ? await RunInstanceAsync(request, cancellationToken) : null;
     }
 
     /// <inheritdoc />

@@ -358,6 +358,41 @@ public class LocalWorkflowClientTests
         await _workflowInstanceManager.DidNotReceiveWithAnyArgs().CreateAndCommitWorkflowInstanceAsync(default!, default, default);
     }
 
+    [Fact]
+    public async Task RunInstanceIfPendingAsync_RunsTheInstanceWhenPending()
+    {
+        var client = CreateClient();
+        var instance = CreateRunningInstance();
+        instance.SubStatus = WorkflowSubStatus.Pending;
+        _workflowInstanceManager.FindByIdAsync("test-workflow-instance-id", Arg.Any<CancellationToken>()).Returns(instance);
+        SetupWorkflowGraph("test-definition");
+        _workflowRunner.RunAsync(Arg.Any<WorkflowGraph>(), Arg.Any<WorkflowState>(), Arg.Any<RunWorkflowOptions>(), Arg.Any<CancellationToken>())
+            .Returns(new RunWorkflowResult(null!, instance.WorkflowState, new Workflow { Id = "test-definition" }, null, Journal.Empty));
+
+        var response = await client.RunInstanceIfPendingAsync(new RunWorkflowInstanceRequest());
+
+        Assert.NotNull(response);
+        await _workflowRunner.Received(1).RunAsync(Arg.Any<WorkflowGraph>(), Arg.Any<WorkflowState>(), Arg.Any<RunWorkflowOptions>(), Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData(WorkflowSubStatus.Suspended)]
+    [InlineData(WorkflowSubStatus.Executing)]
+    [InlineData(WorkflowSubStatus.Finished)]
+    [InlineData(WorkflowSubStatus.Faulted)]
+    public async Task RunInstanceIfPendingAsync_ReturnsNullWithoutRunningWhenNotPending(WorkflowSubStatus subStatus)
+    {
+        var client = CreateClient();
+        var instance = CreateRunningInstance();
+        instance.SubStatus = subStatus;
+        _workflowInstanceManager.FindByIdAsync("test-workflow-instance-id", Arg.Any<CancellationToken>()).Returns(instance);
+
+        var response = await client.RunInstanceIfPendingAsync(new RunWorkflowInstanceRequest());
+
+        Assert.Null(response);
+        await _workflowRunner.DidNotReceive().RunAsync(Arg.Any<WorkflowGraph>(), Arg.Any<WorkflowState>(), Arg.Any<RunWorkflowOptions>(), Arg.Any<CancellationToken>());
+    }
+
     private static WorkflowInstance CreateRunningInstance() => new()
     {
         Id = "test-workflow-instance-id",

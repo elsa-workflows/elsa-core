@@ -23,6 +23,13 @@ public interface IWorkflowClient
     /// Executes the workflow instance and waits for it to complete or reach a suspend point.
     /// </summary>
     Task<RunWorkflowInstanceResponse> RunInstanceAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Runs the instance only while it is still pending, reading the sub-status under the same instance lock that guards the run,
+    /// so two dispatch consumers that both observed pending cannot both run it. Returns <c>null</c> without running when the
+    /// instance has already left the pending sub-status.
+    /// </summary>
+    Task<RunWorkflowInstanceResponse?> RunInstanceIfPendingAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Creates a new workflow instance and executes it.
