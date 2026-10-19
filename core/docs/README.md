@@ -38,3 +38,7 @@ identities. Successful source builds do not authorize package publication or
 source-repository archival; the [first consolidated release policy](../../docs/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md)
 and [artifact proof](../../docs/integration-program/consolidated-package-proof.md)
 retain their separate gates.
+
+## Planned native compensation
+
+The [Native compensation and saga recovery delivery program](compensation/README.md) owns the staged Core and Studio work, source evidence, decisions and readiness gates. It is planning material, not a released capability.

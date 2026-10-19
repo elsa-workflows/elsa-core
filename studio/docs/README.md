@@ -63,3 +63,7 @@ All three documents are byte-for-byte copies of the corresponding files at
 Studio commit `f0eeb3c7428443b09512049fe890635fa4f7b427`. The first two
 import dispositions and verification are recorded in the
 [integration-program asset note](../../docs/integration-program/consolidation/studio-document-assets.md).
+
+## Planned native compensation
+
+The [Native compensation authoring, inspection and recovery program](../../core/docs/compensation/README.md) owns the staged Core and Studio work, source evidence, decisions and readiness gates. It is planning material, not a released capability.
