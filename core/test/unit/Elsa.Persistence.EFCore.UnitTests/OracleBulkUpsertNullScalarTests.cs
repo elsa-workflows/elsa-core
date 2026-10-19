@@ -42,6 +42,48 @@ public class OracleBulkUpsertNullScalarTests
         Assert.Equal(populated.Enabled, parameters[valueOffset + 3]);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void GenerateOracleUpsert_CastsConvertedStringsUsingProviderType(bool nullsFirst)
+    {
+        using var context = new ConvertedScalarContext(new DbContextOptionsBuilder<ConvertedScalarContext>().UseOracle("Data Source=unused").Options);
+        var missing = new ConvertedScalarEntity { Id = "missing" };
+        var populated = new ConvertedScalarEntity { Id = "populated", Status = CompletionStatus.Done };
+        var rows = nullsFirst ? new[] { missing, populated } : new[] { populated, missing };
+
+        var (sql, parameters) = BulkUpsertExtensions.GenerateOracleUpsert(context, rows, row => row.Id);
+
+        Assert.Contains("CAST({1} AS VARCHAR2(32)) AS \"Status\"", sql);
+        Assert.Contains("CAST({3} AS VARCHAR2(32)) AS \"Status\"", sql);
+        Assert.Equal(
+            nullsFirst
+                ? new object?[] { "missing", null, "populated", "Done" }
+                : new object?[] { "populated", "Done", "missing", null },
+            parameters);
+    }
+
+    private enum CompletionStatus
+    {
+        Done
+    }
+
+    private sealed class ConvertedScalarEntity
+    {
+        public string Id { get; set; } = null!;
+        public CompletionStatus? Status { get; set; }
+    }
+
+    private sealed class ConvertedScalarContext(DbContextOptions<ConvertedScalarContext> options) : DbContext(options)
+    {
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            var entity = builder.Entity<ConvertedScalarEntity>();
+            entity.Property(row => row.Id).HasColumnType("NVARCHAR2(450)");
+            entity.Property(row => row.Status).HasConversion<string>().HasColumnType("VARCHAR2(32)");
+        }
+    }
+
     private sealed class ScalarEntity
     {
         public string Id { get; set; } = null!;
