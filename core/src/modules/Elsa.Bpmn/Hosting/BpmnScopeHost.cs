@@ -8,6 +8,7 @@ using Elsa.Bpmn.Signals;
 using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities.Flowchart.Models;
+using Elsa.Workflows.Runtime.Activities;
 using Elsa.Workflows.Signals;
 using Microsoft.Extensions.Logging;
 
@@ -96,7 +97,7 @@ internal sealed class BpmnScopeHost
         memory.Work.Remove(record);
         memory.SaveWork();
 
-        var outcomeNames = result is Outcomes outcomes ? outcomes.Names : [];
+        var outcomeNames = result is Outcomes outcomes ? outcomes.Names : CallActivityOutcomeNames(record, childContext);
 
         return Interpreter.OnWorkCompleted(new BpmnWorkCompletedRequest(
             Graph, memory.State, Snapshot(memory), record.BindingRef, record.Handle, outcomeNames, record.IterationId));
@@ -177,6 +178,21 @@ internal sealed class BpmnScopeHost
     }
 
     // --- Plumbing ------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// The outcome names a call activity's completed work reports for how its called workflow ended. Only a call
+    /// activity's <see cref="DispatchWorkflow"/> reports them: the same activity bound to any other element keeps
+    /// reporting none, as before.
+    /// </summary>
+    private IReadOnlyCollection<string> CallActivityOutcomeNames(BpmnWorkRecord record, ActivityExecutionContext childContext)
+    {
+        if (childContext.Activity is not DispatchWorkflow || Graph.FindElementByBindingRef(record.BindingRef) is not { } element || !BpmnElementFamilies.IsCallActivity(element))
+        {
+            return [];
+        }
+
+        return BpmnCallActivityOutcomes.For(DispatchWorkflow.GetChildWorkflowSubStatus(childContext));
+    }
 
     private ValueTask EvaluateAsync(Func<BpmnScopeMemory, BpmnEvaluation?> evaluate) =>
         DispatcherOf(_context.WorkflowExecutionContext).PostAsync(async () =>
