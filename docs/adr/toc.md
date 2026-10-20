@@ -50,3 +50,4 @@
 * [2026-10-20. Retain native compensation obligations in the workflow instance](2026-10-20-native-compensation-instance-journal.md)
 * [2026-10-20. Build one BPMN modeler module for both Studios](2026-10-20-one-bpmn-modeler-for-both-studios.md)
 * [2026-10-20. Publish the supported BPMN subset as a tested matrix](2026-10-20-published-bpmn-support-matrix.md)
+* [2026-10-21. Guard compensation-aware snapshots at the native persistence boundary](2026-10-21-native-compensation-guarded-snapshots.md)

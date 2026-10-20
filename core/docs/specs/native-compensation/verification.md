@@ -31,6 +31,22 @@ Record exact source head, host/provider/commit configuration, workflow and handl
 
 V3 command-specific redelivery, V4 mutation negatives and V7 operator-action checks apply when their M2–M4 entrypoints are delivered. M1 exercises native state/attempt deduplication, denied inspection and publication/execution validation; it does not need later operator APIs. V8a is the exact M1 baseline; V8b remains M5 upgrade/retention qualification.
 
+## Guarded-snapshot E1 proof detail
+
+The [guard contract](guarded-snapshot.md) narrows the storage checks required before M1. Extend the actual-provider test fixture, not a standalone fake, with:
+
+| Guard case | Required observation |
+|---|---|
+| Stale row revision and owner epoch | Two contexts read one row. After the winning guarded commit or owner handoff, a stale revision and a stale epoch each affect zero rows or map to conflict. No effect or correctness-dependent side-store write follows either conflict. |
+| Local ownership restart | Kill old backend and verify positive supervisor evidence that it stopped before a new process claims a higher epoch. Reuse of the old receipt fails. A timeout/heartbeat-only takeover remains blocked. |
+| Lost local commit acknowledgement | Inject loss before commit and after commit. Reconcile using canonical transition ID, exact hash and revision; only an exact committed receipt permits dependent participant call. Stable participant keys alone do not acknowledge a database commit. |
+| Outer/inner restore admission | Cover invalid outer JSON, compression mismatch/unknown codec, unknown inner schema, missing definition/activity pins, queued-work node and callback owner/child. Each blocks before loader fallback, extractor omission, Save, runner or effect; verify original Data and codec preservation. |
+| Core write bypasses | Try Save, Update, SaveMany, timestamp update, TryMarkInterrupted, delete, bulk delete, runtime cancel, instance import, alteration retry and interruption recovery against a marked unresolved row. Each follows a defined receipt-checked transition or refuses. Then run an old-interface provider and normal writes on an unmarked legacy row to confirm compatibility. |
+| Tenant authority | Tenant B cannot load a usable receipt or mutate tenant A by known ID. Test exact tenant, default null/empty compatibility, asterisk-visible but mutation-blocked row, and request execution with disabled/unknown tenant filtering. |
+| Transaction boundary | With candidate SQLite and actual contexts, force final instance CAS to conflict after required bookmark/variable/work writes are staged. Verify all correctness-dependent records roll back together or prove the selected durable repair protocol completes before any effect. Exclude logs only if they are shown irrelevant to recovery. |
+
+The test-only guard-disabled control should reproduce stale-write and null-resave risks. Do not add a production opt-out. The E1 report is Partial; these are acceptance requirements, not results.
+
 For provider or mode support, repeat the material crash/security matrix for the advertised configuration. Do not infer every provider or Blazor host is qualified from one successful run. A failed demonstration keeps its milestone open and identifies the corrective work; issue closure and compilation are not proof.
 
 ## M0 design review walkthroughs
