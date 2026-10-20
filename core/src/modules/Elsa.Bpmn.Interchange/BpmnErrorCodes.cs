@@ -38,6 +38,17 @@ public static class BpmnErrorCodes
     public const string ImportDuplicateElementId = "bpmn.import.duplicate-element-id";
 
     /// <summary>
+    /// <c>bpmn/import</c> and the document <c>PUT</c> refuse a document whose sequence flows carry a standard BPMN
+    /// <c>conditionExpression</c> — anywhere in it, subprocess bodies included — because nothing evaluates those
+    /// expressions yet: the reader turns each such flow into an unconditional one, so the imported workflow would route
+    /// differently from its diagram. A flow conditional on an outcome through the library's own
+    /// <c>conditionOutcome</c> attribute is unaffected. Unlike other import findings, no opt-in overrides this refusal.
+    /// <c>bpmn/analyze</c> keeps reporting these flows as findings without refusing. Carries <c>data.elementIds</c>
+    /// (the offending sequence flow ids, sorted and distinct).
+    /// </summary>
+    public const string ImportConditionUnsupported = "bpmn.import.condition-unsupported";
+
+    /// <summary>
     /// <c>bpmn/definitions/{id}/export</c> and the document <c>GET</c> refuse a workflow definition that does not
     /// currently carry BPMN source — either it was never imported from BPMN, or a later save replaced its custom
     /// properties wholesale.
