@@ -34,9 +34,22 @@ public static class TriggerWorkflowProperties
     public static IDictionary<string, object>? WithStimulusHash(IDictionary<string, object>? properties, string? stimulusHash)
     {
         if (string.IsNullOrWhiteSpace(stimulusHash))
+        {
             return properties;
+        }
 
-        var copy = properties != null ? new Dictionary<string, object>(properties) : new Dictionary<string, object>();
+        // Workflow property keys are case-insensitive at run time, so the copy is too: a caller key that differs from
+        // the reserved key only in case is replaced rather than kept beside it.
+        var copy = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+
+        if (properties != null)
+        {
+            foreach (var property in properties)
+            {
+                copy[property.Key] = property.Value;
+            }
+        }
+
         copy[StimulusHash] = stimulusHash;
         return copy;
     }
