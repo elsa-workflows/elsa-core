@@ -7,7 +7,7 @@
 
 ## Context
 
-The owner permits one adaptation design task while production remains paused. Elsa 4 provides useful native compensation semantics and Studio interactions, but Elsa 3 lacks its checkpoint/causal-result/structure contracts. Elsa 3 removes completed child contexts and maintains a transient output register. A child's properties or generic execution history cannot be the only retained recovery truth.
+The owner initially permitted one adaptation design task; standing delivery authorization on 21 October 2026 supersedes that pause while the technical readiness gates remain. Elsa 4 provides useful native compensation semantics and Studio interactions, but Elsa 3 lacks its checkpoint/causal-result/structure contracts. Elsa 3 removes completed child contexts and maintains a transient output register. A child's properties or generic execution history cannot be the only retained recovery truth.
 
 ## Options
 
@@ -30,4 +30,4 @@ The [evidence map](../../core/docs/specs/native-compensation/evidence.md) pins a
 
 ## Revisit
 
-Accept or revise after design review and owner policy decisions. If journal size, lifecycle, supported provider atomicity or protection cannot satisfy the contract, revise this ADR with evidence before adding a separate retained store. Production work needs a separate owner authorization and readiness gate even if this design PR merges. Retain held setup PR #8897 as its own record; this ADR does not accept it.
+Accept or revise after design review and owner policy decisions. If journal size, lifecycle, supported provider atomicity or protection cannot satisfy the contract, revise this ADR with evidence before adding a separate retained store. Standing owner authorization now permits production delivery through the readiness gate; merging this design alone cannot satisfy that gate. Retain setup PR #8897 as its own review record; this ADR does not accept it.

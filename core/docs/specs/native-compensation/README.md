@@ -2,7 +2,7 @@
 
 Status: proposed design packet for [#8896](https://github.com/elsa-workflows/elsa-core/issues/8896), 20 October 2026. [Program #8884](https://github.com/elsa-workflows/elsa-core/issues/8884), [canonical PRD #8886](https://github.com/elsa-workflows/elsa-core/issues/8886), [Project #60](https://github.com/orgs/elsa-workflows/projects/60).
 
-The owner lifted the pause for **#8896 only**: deliver this reviewed design and its remaining decisions. Production implementation, M1 readiness, other leaves and establishment PR #8897 remain paused. This design is independent of that held PR and does not accept or close setup #8885. Its former blocking edge was waived only as this design's start prerequisite, with the owner instruction recorded on #8896.
+On 21 October 2026 the owner granted [standing authorization to lift current and future delivery holds](https://github.com/elsa-workflows/elsa-core/issues/8884#issuecomment-6303225186), superseding the earlier #8896-only exception. The program lead now owns end-to-end delivery through the actual readiness/review/qualification gates. E1–E3 still gate M1 readiness; authority is not evidence. This design remains independent of setup PR #8897 and does not accept or close #8885. Its former blocking edge was waived as this design's start prerequisite.
 
 ## Design result
 
@@ -21,7 +21,7 @@ No BPMN implementation reuse, adapters, shared compensation abstractions or depe
 | [Studio interaction contract](../../../../studio/docs/specs/native-compensation/plan.md) | Authoring, captures, publication diagnostics, execution navigation, accessible states and host integration. |
 | [Verification plan](verification.md) | Real browser/backend/store/participant restart demonstrations and negative controls; no pass is implied. |
 | [Review record](review.md) | Independent findings, corrections and the limits of design review. |
-| [Decisions and delivery gates](decisions.md) | Selected design proposals, remaining owner decisions, technical evidence gates and progressive delivery. |
+| [Decisions and delivery gates](decisions.md) | Accepted owner policies, selected design proposals, remaining technical gates and progressive delivery. |
 | [Shared proposed ADR](../../../../docs/adr/2026-10-20-native-compensation-instance-journal.md) | Root instance journal and generation-specific recovery boundary. |
 
 The program lead integrates the packet. Runtime/persistence reviewers own the commit, scheduling and ownership proofs; Studio reviewers own the interactions/client mapping; security reviewers own command/disclosure/protection; QA owns reproducible qualification. These are accountable roles, not claims that named maintainers have accepted future implementation work.
@@ -44,6 +44,6 @@ The program lead integrates the packet. Runtime/persistence reviewers own the co
 
 ## Acceptance boundary
 
-This packet can be complete as a reviewed design while M1 remains Not Ready: #8896 explicitly permits a bounded evidence-spike proposal when existing source cannot establish a consequential guarantee. E1–E3 are those evidence gates. No production task or spike execution is authorized here. O1 explicit confirmation, O2 compensation-aware cancellation and O3 Compensated/default-versus-original-fault behavior are accepted by the owner. E1–E3 remain unproved, and policy acceptance alone grants no implementation readiness or production authorization.
+This packet can be complete as a reviewed design while M1 remains Not Ready: #8896 explicitly permits a bounded evidence-spike proposal when existing source cannot establish a consequential guarantee. E1–E3 are those evidence gates. The standing authorization permits the lead to schedule the bounded E1 experiment and later production leaves once each passes its readiness gate. O1 explicit confirmation, O2 compensation-aware cancellation and O3 Compensated/default-versus-original-fault behavior are accepted by the owner. E1–E3 remain unproved, and policy acceptance alone grants no implementation readiness.
 
 Existing setup records are reused, not copied into a second product PRD. This additive technical packet is necessary because current main has no native compensation contract. No product code is made obsolete or removed. Feature plans remain working documents during delivery; after qualification, move lasting contracts to product documentation/ADRs and retire redundant plan text under the owning program.

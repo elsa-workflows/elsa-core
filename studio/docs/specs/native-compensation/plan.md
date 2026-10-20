@@ -1,6 +1,6 @@
 # Elsa 3 Studio compensation interaction design
 
-Status: proposed design for [#8896](https://github.com/elsa-workflows/elsa-core/issues/8896), 20 October 2026. Backend source, semantics, persistence, security and remaining decisions live in the [Core packet](../../../../core/docs/specs/native-compensation/README.md). Only this design task is active; production remains paused. Follow [Studio guidance](../../../src/AGENTS.md) and the [design system](../../design/system.md).
+Status: proposed design for [#8896](https://github.com/elsa-workflows/elsa-core/issues/8896), 20 October 2026. Backend source, semantics, persistence, security and remaining decisions live in the [Core packet](../../../../core/docs/specs/native-compensation/README.md). The [21 October standing authorization](https://github.com/elsa-workflows/elsa-core/issues/8884#issuecomment-6303225186) permits end-to-end delivery through actual readiness gates; E1–E3 still prevent premature M1 readiness. Follow [Studio guidance](../../../src/AGENTS.md) and the [design system](../../design/system.md).
 
 ## Elsa 3 implementation boundary
 
