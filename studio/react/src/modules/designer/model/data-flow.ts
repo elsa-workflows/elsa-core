@@ -1,7 +1,7 @@
-import type { Activity } from "@/lib/api/types/activities";
-import { isFlowchart, isSequence } from "@/lib/api/types/activities";
+import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
+import { isFlowchart, isSequence } from "@elsa-workflows/react-studio-api-client/types/activities";
 import { childActivities } from "./containers";
-import type { InputDefinition, OutputDefinition } from "@/lib/api/types/workflow-definitions";
+import type { InputDefinition, OutputDefinition } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
 import type { ActivityRegistry } from "./registry";
 
 /** A named piece of workflow data that activities can read or write. */

@@ -16,9 +16,9 @@ import {
 } from "@xyflow/react";
 import { LayoutGrid, Map as MapIcon, Maximize, Minus, MousePointerClick, PanelLeftOpen, Plus, Redo2, Undo2, X } from "lucide-react";
 import { layoutGraph } from "../model/layout";
-import { Button } from "@/components/ui/button";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { cn } from "@/lib/utils";
-import { isStateMachine, type StateMachine } from "@/lib/api/types/activities";
+import { isStateMachine, type StateMachine } from "@elsa-workflows/react-studio-api-client/types/activities";
 import { useDesigner, useDesignerState } from "../context";
 import { resolveContainer } from "../model/flowchart-ops";
 import { validateWorkflow } from "../model/validation";

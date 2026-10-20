@@ -1,4 +1,4 @@
-import type { HttpClient } from "@/lib/api/http";
+import type { HttpClient } from "@elsa-workflows/react-studio-api-client/http";
 
 /** Contract derived from `Elsa.UserTasks/Endpoints/UserTaskApiModels.cs` and `Models/UserTaskModels.cs`. */
 

@@ -5,11 +5,11 @@ import Link from "@/lib/navigation/link";
 import { useMemo } from "react";
 import { EmptyState } from "@/components/common/empty-state";
 import { PageHeader } from "@/components/common/page-header";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@elsa-workflows/react-studio-ui/card";
 import { useExtensions } from "@/lib/modules/registry";
-import type { SettingsSection } from "@/lib/modules/types";
-import { usePermissions } from "@/lib/permissions";
+import type { SettingsSection } from "@elsa-workflows/react-studio-sdk";
+import { usePermissions } from "@elsa-workflows/react-studio-auth/permissions";
 
 /**
  * Settings sections from every enabled module, filtered by permission and ordered deterministically

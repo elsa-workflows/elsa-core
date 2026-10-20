@@ -2,11 +2,11 @@
 
 import { NodeToolbar, Position } from "@xyflow/react";
 import { ArrowUpRight, Copy, Link2, Pencil, Plus, Settings2, Trash2, Zap } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import type { Activity } from "@/lib/api/types/activities";
-import type { ActivityDescriptor } from "@/lib/api/types/descriptors";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@elsa-workflows/react-studio-ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@elsa-workflows/react-studio-ui/tooltip";
+import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
+import type { ActivityDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
 import { useDesigner } from "../context";
 import type { ActivityPorts } from "../model/ports";
 

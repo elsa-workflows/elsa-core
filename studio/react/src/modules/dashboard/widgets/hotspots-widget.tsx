@@ -3,8 +3,8 @@
 import Link from "@/lib/navigation/link";
 import { useState } from "react";
 import { SimpleSelect } from "@/components/common/simple-select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import type { DashboardRange } from "@/lib/modules/types";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@elsa-workflows/react-studio-ui/table";
+import type { DashboardRange } from "@elsa-workflows/react-studio-sdk";
 import type { DashboardHotspotMetric } from "../api";
 import { LinesSkeleton, WidgetCard, WidgetEmpty } from "../components/widget-card";
 import { formatCount, formatDuration, parseTimeSpan, RANGE_LABELS } from "../format";

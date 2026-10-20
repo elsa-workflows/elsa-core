@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { CirclePlay, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Input } from "@elsa-workflows/react-studio-ui/input";
+import { Checkbox } from "@elsa-workflows/react-studio-ui/checkbox";
 import { Field } from "@/components/common/field";
-import { isStateMachine } from "@/lib/api/types/activities";
+import { isStateMachine } from "@elsa-workflows/react-studio-api-client/types/activities";
 import { useDesigner, useDesignerState } from "../context";
 import { resolveContainer } from "../model/flowchart-ops";
 import { selectionId } from "../store";

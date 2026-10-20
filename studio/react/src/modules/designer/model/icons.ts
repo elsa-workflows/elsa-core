@@ -20,7 +20,7 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
-import type { ActivityDescriptor } from "@/lib/api/types/descriptors";
+import type { ActivityDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
 
 const byType: Record<string, LucideIcon> = {
   "Elsa.Start": Play,

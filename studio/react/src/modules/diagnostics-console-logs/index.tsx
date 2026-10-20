@@ -1,6 +1,6 @@
 import { Terminal } from "lucide-react";
-import { defineModule, NavGroups } from "@/lib/modules/types";
-import { Resources, Verbs } from "@/lib/permissions";
+import { defineModule, NavGroups } from "@elsa-workflows/react-studio-sdk";
+import { Resources, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
 import { ConsoleLogStorageWidget } from "./components/storage-widget";
 import { ConsoleLogsPage } from "./pages/console-page";
 

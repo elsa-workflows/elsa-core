@@ -2,9 +2,9 @@
 
 import { KeyRound } from "lucide-react";
 import { CopyButton } from "@/components/common/copy-button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@elsa-workflows/react-studio-ui/alert";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@elsa-workflows/react-studio-ui/dialog";
 
 /** Shows a server-generated password exactly once; it cannot be retrieved after closing. */
 export function GeneratedPasswordDialog({

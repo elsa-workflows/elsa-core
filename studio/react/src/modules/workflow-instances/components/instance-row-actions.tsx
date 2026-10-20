@@ -2,19 +2,19 @@
 
 import { Ban, Eye, MoreHorizontal, Trash2 } from "lucide-react";
 import Link from "@/lib/navigation/link";
-import { Button } from "@/components/ui/button";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import type { WorkflowInstanceSummary } from "@/lib/api/types/workflow-instances";
+} from "@elsa-workflows/react-studio-ui/dropdown-menu";
+import type { WorkflowInstanceSummary } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
 import { href } from "@/lib/modules/router";
 import { useExtensions } from "@/lib/modules/registry";
-import type { ListActionHelpers } from "@/lib/modules/types";
-import { usePermissions, Resources, Verbs } from "@/lib/permissions";
+import type { ListActionHelpers } from "@elsa-workflows/react-studio-sdk";
+import { usePermissions, Resources, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
 import { WorkflowInstanceRoutes } from "../routes";
 
 export function InstanceRowActions({

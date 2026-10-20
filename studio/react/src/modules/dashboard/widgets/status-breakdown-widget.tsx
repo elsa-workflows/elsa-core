@@ -1,6 +1,6 @@
 "use client";
 
-import type { DashboardRange } from "@/lib/modules/types";
+import type { DashboardRange } from "@elsa-workflows/react-studio-sdk";
 import { DonutChart } from "../components/donut-chart";
 import { SourceNote, WidgetCard } from "../components/widget-card";
 import { useDashboardOverview, useFallbackInstanceCounts } from "../hooks";

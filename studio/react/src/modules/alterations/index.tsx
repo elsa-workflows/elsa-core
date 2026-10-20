@@ -1,6 +1,6 @@
 import { Wrench } from "lucide-react";
-import { defineModule, NavGroups } from "@/lib/modules/types";
-import { Resources, Verbs } from "@/lib/permissions";
+import { defineModule, NavGroups } from "@elsa-workflows/react-studio-sdk";
+import { Resources, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
 import { AlterationDialogHost } from "./components/alteration-dialog-host";
 import { useAlterationDialogs, type AlterTarget } from "./dialog-store";
 import { AlterationPlansPage } from "./pages/plans-page";

@@ -1,4 +1,4 @@
-import { defineModule } from "@/lib/modules/types";
+import { defineModule } from "@elsa-workflows/react-studio-sdk";
 import { EnvironmentPicker } from "./components/environment-picker";
 
 export { EnvironmentPicker } from "./components/environment-picker";

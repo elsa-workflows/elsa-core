@@ -5,7 +5,7 @@ import { useRouter } from "@/lib/navigation";
 import { useAuth } from "@/lib/auth/provider";
 import { useModules } from "@/lib/modules/registry";
 import { resolveRoute } from "@/lib/modules/router";
-import { usePermissions } from "@/lib/permissions";
+import { usePermissions } from "@elsa-workflows/react-studio-auth/permissions";
 import { AppShell } from "./app-shell";
 import { AccessDenied, NotFound } from "./status-pages";
 import { FullPageSpinner } from "./full-page-spinner";

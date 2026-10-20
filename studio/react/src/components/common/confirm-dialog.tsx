@@ -10,8 +10,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { buttonVariants } from "@/components/ui/button";
+} from "@elsa-workflows/react-studio-ui/alert-dialog";
+import { buttonVariants } from "@elsa-workflows/react-studio-ui/button";
 import { cn } from "@/lib/utils";
 
 export interface ConfirmOptions {

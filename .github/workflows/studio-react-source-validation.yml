@@ -56,6 +56,8 @@ jobs:
           pnpm lint
           pnpm typecheck
           pnpm test
+          pnpm test:packages
+          pnpm docs:api
           pnpm audit
           pnpm build
       - name: Build the host on all supported frameworks and test runtime configuration
@@ -100,5 +102,6 @@ jobs:
           path: |
             ${{ runner.temp }}/react-studio-tests/*.trx
             studio/react/test-results/**
+            studio/react/docs/api/**
           if-no-files-found: warn
           retention-days: 14

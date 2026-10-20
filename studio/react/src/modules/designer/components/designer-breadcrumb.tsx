@@ -2,7 +2,7 @@
 
 import { Fragment } from "react";
 import { ChevronRight, Home } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { useDesigner, useDesignerState } from "../context";
 import { resolveContainer } from "../model/flowchart-ops";
 import { activityDisplayText } from "../model/display";

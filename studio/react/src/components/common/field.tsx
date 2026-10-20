@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Label } from "@/components/ui/label";
+import { Label } from "@elsa-workflows/react-studio-ui/label";
 import { cn } from "@/lib/utils";
 
 /** Label + control + hint/error in a consistent vertical layout. */

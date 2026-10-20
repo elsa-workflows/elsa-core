@@ -1,6 +1,6 @@
 import { differenceInMilliseconds, isValid, parseISO } from "date-fns";
-import type { Activity } from "@/lib/api/types/activities";
-import type { ActivityExecutionRecord, ActivityExecutionStats, WorkflowExecutionLogRecord, WorkflowStatus, WorkflowSubStatus } from "@/lib/api/types/workflow-instances";
+import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
+import type { ActivityExecutionRecord, ActivityExecutionStats, WorkflowExecutionLogRecord, WorkflowStatus, WorkflowSubStatus } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
 import { indexActivities } from "@/modules/designer";
 
 export const WORKFLOW_STATUSES: WorkflowStatus[] = ["Running", "Finished"];

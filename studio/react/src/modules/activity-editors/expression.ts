@@ -1,5 +1,5 @@
-import type { ActivityInput, Expression } from "@/lib/api/types/activities";
-import type { InputDescriptor } from "@/lib/api/types/descriptors";
+import type { ActivityInput, Expression } from "@elsa-workflows/react-studio-api-client/types/activities";
+import type { InputDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
 import type { CodeLanguage } from "@/components/common/code-editor";
 
 export const LITERAL = "Literal";

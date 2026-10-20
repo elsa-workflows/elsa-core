@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle, Loader2, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { describeError } from "@/components/common/error-alert";
 import type { CallContextState } from "./use-call-context";
 

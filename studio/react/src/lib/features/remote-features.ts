@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { useElsaClient, useQueryScope } from "@/lib/api/provider";
 import { useAuth } from "@/lib/auth/provider";
-import type { FeatureDescriptor } from "@/lib/api/types/descriptors";
+import type { FeatureDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
 
 /**
  * The server's installed feature catalog (`GET /features/installed`). Modules can declare that they

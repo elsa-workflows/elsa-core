@@ -3,10 +3,10 @@
 import { Loader2, RefreshCw } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@elsa-workflows/react-studio-ui/dialog";
+import { Input } from "@elsa-workflows/react-studio-ui/input";
+import { Textarea } from "@elsa-workflows/react-studio-ui/textarea";
 import { Field } from "@/components/common/field";
 import { ErrorAlert, describeError } from "@/components/common/error-alert";
 import type { RunAlterationsResult } from "../api";

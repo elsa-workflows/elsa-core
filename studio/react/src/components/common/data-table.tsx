@@ -10,8 +10,8 @@ import {
   Loader2,
 } from "lucide-react";
 import { useSyncExternalStore, type ReactNode } from "react";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Checkbox } from "@elsa-workflows/react-studio-ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -19,7 +19,7 @@ import {
   DropdownMenuGroup,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@elsa-workflows/react-studio-ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -27,10 +27,10 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@elsa-workflows/react-studio-ui/table";
 import { SimpleSelect } from "./simple-select";
 import { cn } from "@/lib/utils";
-import type { OrderDirection } from "@/lib/api/types/common";
+import type { OrderDirection } from "@elsa-workflows/react-studio-api-client/types/common";
 
 export interface DataTableColumn<T> {
   id: string;

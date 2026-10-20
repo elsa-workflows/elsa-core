@@ -17,8 +17,8 @@ import {
   SlidersHorizontal,
   Undo2,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@elsa-workflows/react-studio-ui/badge";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -28,13 +28,13 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+} from "@elsa-workflows/react-studio-ui/dropdown-menu";
+import { Tabs, TabsList, TabsTrigger } from "@elsa-workflows/react-studio-ui/tabs";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from "@elsa-workflows/react-studio-ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useWorkflowEditor } from "../editor-context";
 import { useDesignerState } from "@/modules/designer";

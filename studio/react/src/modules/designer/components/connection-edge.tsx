@@ -4,7 +4,7 @@ import { memo } from "react";
 import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, type Edge, type EdgeProps } from "@xyflow/react";
 import { Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Connection } from "@/lib/api/types/activities";
+import type { Connection } from "@elsa-workflows/react-studio-api-client/types/activities";
 import { useDesigner } from "../context";
 
 export interface ConnectionEdgeData extends Record<string, unknown> {

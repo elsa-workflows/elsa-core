@@ -1,4 +1,4 @@
-import type { InputDescriptor, SelectListItem } from "@/lib/api/types/descriptors";
+import type { InputDescriptor, SelectListItem } from "@elsa-workflows/react-studio-api-client/types/descriptors";
 
 /**
  * Finds the select-list items for a dropdown/checklist/radiolist input. The server puts them under

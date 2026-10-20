@@ -1,6 +1,6 @@
 "use client";
 
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@elsa-workflows/react-studio-ui/select";
 import { cn } from "@/lib/utils";
 
 export interface SelectOption<T extends string = string> {

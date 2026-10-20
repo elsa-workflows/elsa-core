@@ -1,7 +1,7 @@
 import { ListChecks, Workflow } from "lucide-react";
-import { defineModule, NavGroups } from "@/lib/modules/types";
+import { defineModule, NavGroups } from "@elsa-workflows/react-studio-sdk";
 import { RunningCountBadge } from "./components/running-count-badge";
-import { Resources, Verbs } from "@/lib/permissions";
+import { Resources, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
 import { WorkflowInstancesListPage } from "./pages/list-page";
 import { WorkflowInstanceViewerPage } from "./pages/viewer-page";
 import { WorkflowInstanceRoutes } from "./routes";

@@ -1,7 +1,7 @@
 "use client";
 
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import { Checkbox } from "@elsa-workflows/react-studio-ui/checkbox";
+import { Label } from "@elsa-workflows/react-studio-ui/label";
 import type { IdentityRole } from "../api";
 
 /** Multi-select over roles rendered as a compact checkbox list. */

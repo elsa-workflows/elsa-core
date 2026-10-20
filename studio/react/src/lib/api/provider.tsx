@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth/provider";
 import { useActiveServer } from "@/lib/environments/active-server";
-import { createElsaClient, type ElsaClient } from "./client";
+import { createElsaClient, type ElsaClient } from "@elsa-workflows/react-studio-api-client";
 
 const ElsaClientContext = createContext<ElsaClient | null>(null);
 

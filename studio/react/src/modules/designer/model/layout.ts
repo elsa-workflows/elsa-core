@@ -1,5 +1,5 @@
 import dagre from "@dagrejs/dagre";
-import type { Flowchart } from "@/lib/api/types/activities";
+import type { Flowchart } from "@elsa-workflows/react-studio-api-client/types/activities";
 import { DEFAULT_NODE_HEIGHT, DEFAULT_NODE_WIDTH, activitySize } from "./display";
 
 export interface LayoutNode {

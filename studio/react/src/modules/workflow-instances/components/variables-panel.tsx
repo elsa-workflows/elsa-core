@@ -4,8 +4,8 @@ import { Loader2 } from "lucide-react";
 import { EmptyState } from "@/components/common/empty-state";
 import { ErrorAlert } from "@/components/common/error-alert";
 import { JsonViewer } from "@/components/common/json-viewer";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import type { WorkflowInstanceVariable } from "@/lib/api/types/workflow-instances";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@elsa-workflows/react-studio-ui/table";
+import type { WorkflowInstanceVariable } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
 
 function VariableValue({ value }: { value: unknown }) {
   if (value === null || value === undefined) return <span className="text-muted-foreground">null</span>;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { WorkflowExecutionLogRecord } from "@/lib/api/types/workflow-instances";
+import type { WorkflowExecutionLogRecord } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
 import { buildJournalSpans, countSpans, flattenContainers, journalException, visibleSpans } from "../model";
 
 let sequence = 0;

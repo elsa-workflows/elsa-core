@@ -4,9 +4,9 @@ import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { useStore } from "zustand";
 import type { DesignerState, DesignerStore } from "./store";
 import { ActivityRegistry } from "./model/registry";
-import type { ActivityExecutionStats } from "@/lib/api/types/workflow-instances";
+import type { ActivityExecutionStats } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
 import type { DataFlowIndex } from "./model/data-flow";
-import type { Activity } from "@/lib/api/types/activities";
+import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
 
 /** A navigation target an activity points at (e.g. the workflow a Dispatch Workflow step calls). */
 export interface ActivityLink {

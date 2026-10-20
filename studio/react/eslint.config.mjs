@@ -4,10 +4,10 @@ import react from "eslint-plugin-react";
 import hooks from "eslint-plugin-react-hooks";
 
 export default defineConfig([
-  globalIgnores(["dist/**", "node_modules/**", "dotnet/**/bin/**", "dotnet/**/obj/**", "test-results/**", "playwright-report/**"]),
+  globalIgnores(["dist/**", "packages/*/dist/**", "docs/api/**", "node_modules/**", "dotnet/**/bin/**", "dotnet/**/obj/**", "test-results/**", "playwright-report/**"]),
   ...tseslint.configs.recommended,
   {
-    files: ["src/**/*.{ts,tsx}"],
+    files: ["src/**/*.{ts,tsx}", "packages/*/src/**/*.{ts,tsx}", "samples/**/*.{ts,tsx}"],
     plugins: { react, "react-hooks": hooks },
     settings: { react: { version: "detect" } },
     rules: {

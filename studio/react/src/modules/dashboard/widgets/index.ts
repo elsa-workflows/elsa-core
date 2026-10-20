@@ -1,5 +1,5 @@
-import type { DashboardWidget } from "@/lib/modules/types";
-import { Resources, Verbs } from "@/lib/permissions";
+import type { DashboardWidget } from "@elsa-workflows/react-studio-sdk";
+import { Resources, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
 import { RecentActivityWidget } from "./activity-widget";
 import { NeedsAttentionWidget } from "./findings-widget";
 import { WorkflowHotspotsWidget } from "./hotspots-widget";

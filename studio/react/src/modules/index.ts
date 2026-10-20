@@ -1,4 +1,4 @@
-import type { StudioModule } from "@/lib/modules/types";
+import type { StudioModule } from "@elsa-workflows/react-studio-sdk";
 import { alterationsModule } from "./alterations";
 import { appearanceModule } from "./appearance";
 import { dashboardModule } from "./dashboard";

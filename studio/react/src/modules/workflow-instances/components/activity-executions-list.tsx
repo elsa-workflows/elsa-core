@@ -5,9 +5,9 @@ import { useMemo } from "react";
 import { EmptyState } from "@/components/common/empty-state";
 import { StatusBadge } from "@/components/common/status-badge";
 import { formatTimestamp } from "@/components/common/timestamp";
-import { Badge } from "@/components/ui/badge";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import type { ActivityExecutionRecord } from "@/lib/api/types/workflow-instances";
+import { Badge } from "@elsa-workflows/react-studio-ui/badge";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@elsa-workflows/react-studio-ui/collapsible";
+import type { ActivityExecutionRecord } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
 import { cn } from "@/lib/utils";
 import { elapsedMs, executionDisplayText, formatElapsed, groupBy } from "../model";
 

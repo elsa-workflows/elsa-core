@@ -3,9 +3,9 @@
 import Link from "@/lib/navigation/link";
 import { usePathname, useRouter } from "@/lib/navigation";
 import { ChevronRight, LogOut, Plus } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Avatar, AvatarFallback } from "@elsa-workflows/react-studio-ui/avatar";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@elsa-workflows/react-studio-ui/collapsible";
 import {
   Sidebar,
   SidebarContent,
@@ -22,14 +22,14 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
   useSidebar,
-} from "@/components/ui/sidebar";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+} from "@elsa-workflows/react-studio-ui/sidebar";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@elsa-workflows/react-studio-ui/tooltip";
 import { useStudioConfig } from "@/config/provider";
 import { useAuth } from "@/lib/auth/provider";
 import { useActiveServer } from "@/lib/environments/active-server";
 import { useNavigation } from "@/lib/modules/registry";
-import { NavGroups, type NavItem } from "@/lib/modules/types";
-import { Resources, usePermission, Verbs } from "@/lib/permissions";
+import { NavGroups, type NavItem } from "@elsa-workflows/react-studio-sdk";
+import { Resources, usePermission, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
 import { cn } from "@/lib/utils";
 import { BrandMark } from "./brand-mark";
 

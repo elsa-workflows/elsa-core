@@ -1,7 +1,7 @@
 "use client";
 
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@elsa-workflows/react-studio-ui/radio-group";
+import { Label } from "@elsa-workflows/react-studio-ui/label";
 import type { UiHintEditorProps } from "../types";
 import { ExpressionEditor } from "../expression-editor";
 import { selectListItems } from "./options";

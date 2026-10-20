@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@elsa-workflows/react-studio-ui/checkbox";
+import { Input } from "@elsa-workflows/react-studio-ui/input";
+import { ScrollArea } from "@elsa-workflows/react-studio-ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@elsa-workflows/react-studio-ui/tabs";
+import { Textarea } from "@elsa-workflows/react-studio-ui/textarea";
 import { Field } from "@/components/common/field";
 import { KeyValueTable } from "@/components/common/key-value-table";
 import { SimpleSelect } from "@/components/common/simple-select";

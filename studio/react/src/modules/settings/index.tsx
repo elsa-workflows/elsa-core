@@ -1,5 +1,5 @@
 import { SettingsRoutes } from "@/lib/modules/settings";
-import { defineModule } from "@/lib/modules/types";
+import { defineModule } from "@elsa-workflows/react-studio-sdk";
 import { SettingsPage } from "./pages/settings-page";
 
 export { SettingsRoutes };

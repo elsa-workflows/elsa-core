@@ -5,10 +5,10 @@ import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { describeError } from "@/components/common/error-alert";
 import { Field } from "@/components/common/field";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@elsa-workflows/react-studio-ui/dialog";
+import { Input } from "@elsa-workflows/react-studio-ui/input";
+import { Textarea } from "@elsa-workflows/react-studio-ui/textarea";
 import type { SecretModel } from "../api";
 import { useUpdateSecret } from "../hooks";
 

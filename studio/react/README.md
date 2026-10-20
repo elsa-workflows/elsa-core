@@ -158,17 +158,21 @@ Nothing in this document is secret: it is shipped to the browser.
 ```
 src/
   main.tsx                  Vite entry and History API router
-  config/                   runtime configuration: zod schema and React provider
+  config/                   runtime configuration provider
   lib/
-    api/                    HTTP client, typed endpoint groups, TanStack Query provider
-    auth/                   AuthStrategy contract and the five providers
-    modules/                StudioModule contract, registry, route matcher
-    permissions/            resource:verb permission set mirroring the server
+    api/                    TanStack Query provider and host hooks
+    auth/                   config/server adapter for the shared auth provider
+    modules/                enabled-module registry and route matcher
   components/
-    ui/                     shadcn components (generated)
     common/                 shared building blocks (DataTable, PageHeader, ConfirmProvider, …)
     shell/                  app shell, sidebar, header, login
   modules/                  one folder per feature module
+packages/
+  sdk/                      Preview registration contracts and host runtime
+  api-client/               HTTP client, typed endpoints and workflow models
+  auth/                     shared strategies, React context and permissions
+  ui/                       shared primitives and theme styles
+samples/weather-module/     external consumer compiled against packed packages
 ```
 
 ## Scripts
@@ -182,6 +186,8 @@ src/
 | `pnpm test` | Unit tests (Vitest). |
 | `pnpm lint` | ESLint. |
 | `pnpm typecheck` | Type check. |
+| `pnpm test:packages` | Compile and render a separate consumer using four packed packages. |
+| `pnpm docs:api` | Generate the Preview API reference under `docs/api/`. |
 
 ## Docker
 

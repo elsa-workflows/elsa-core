@@ -3,7 +3,7 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
 import { useElsaClient, useQueryScope } from "@/lib/api/provider";
-import { ApiError } from "@/lib/api/http";
+import { ApiError } from "@elsa-workflows/react-studio-api-client/http";
 import { useAuth } from "@/lib/auth/provider";
 import { useStudioConfig } from "@/config/provider";
 import { consoleLogsApi, type ConsoleLogFilter } from "./api";

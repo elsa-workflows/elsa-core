@@ -1,6 +1,6 @@
 import { ShieldCheck, UserCog, Users } from "lucide-react";
-import { defineModule, NavGroups } from "@/lib/modules/types";
-import { Resources, Verbs } from "@/lib/permissions";
+import { defineModule, NavGroups } from "@elsa-workflows/react-studio-sdk";
+import { Resources, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
 import { RolesPage } from "./pages/roles-page";
 import { UsersPage } from "./pages/users-page";
 

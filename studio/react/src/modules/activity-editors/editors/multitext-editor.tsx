@@ -2,8 +2,8 @@
 
 import { X } from "lucide-react";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import { Badge } from "@elsa-workflows/react-studio-ui/badge";
+import { Input } from "@elsa-workflows/react-studio-ui/input";
 import type { UiHintEditorProps } from "../types";
 import { stringListOf } from "../expression";
 import { ExpressionEditor } from "../expression-editor";

@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Checkbox } from "@elsa-workflows/react-studio-ui/checkbox";
 import { CodeEditor } from "@/components/common/code-editor";
-import type { WorkflowDefinition } from "@/lib/api/types/workflow-definitions";
+import type { WorkflowDefinition } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
 
 /** JSON view of the whole definition; edits can be applied back to the editor. */
 export function CodeView({ definition, onApply, readOnly }: { definition: WorkflowDefinition; onApply: (next: WorkflowDefinition) => void; readOnly: boolean }) {

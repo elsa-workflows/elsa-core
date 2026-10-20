@@ -5,16 +5,16 @@ import Link from "@/lib/navigation/link";
 import { useRouter } from "@/lib/navigation";
 import { ChevronDown, Copy, Download, Eye, FileUp, MoreHorizontal, Pencil, Play, Plus, Rocket, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@elsa-workflows/react-studio-ui/badge";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+} from "@elsa-workflows/react-studio-ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@elsa-workflows/react-studio-ui/tooltip";
 import { DataTable, type DataTableColumn, type SortState } from "@/components/common/data-table";
 import { useConfirm } from "@/components/common/confirm-dialog";
 import { describeError } from "@/components/common/error-alert";
@@ -23,11 +23,11 @@ import { SearchInput } from "@/components/common/search-input";
 import { FilterChips } from "@/components/common/filter-chips";
 import { Timestamp } from "@/components/common/timestamp";
 import { useStudioConfig } from "@/config/provider";
-import type { OrderDirection } from "@/lib/api/types/common";
-import type { WorkflowDefinitionSummary } from "@/lib/api/types/workflow-definitions";
+import type { OrderDirection } from "@elsa-workflows/react-studio-api-client/types/common";
+import type { WorkflowDefinitionSummary } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
 import { useExtensions } from "@/lib/modules/registry";
 import { href } from "@/lib/modules/router";
-import { Resources, usePermissions, Verbs } from "@/lib/permissions";
+import { Resources, usePermissions, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
 import { downloadBlob, pickFiles } from "@/lib/utils/download";
 import { useUrlState } from "@/lib/utils/url-state";
 import { useElsaClient } from "@/lib/api/provider";

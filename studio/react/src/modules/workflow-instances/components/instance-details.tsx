@@ -5,7 +5,7 @@ import { KeyValueTable } from "@/components/common/key-value-table";
 import { StatusBadge } from "@/components/common/status-badge";
 import { Timestamp } from "@/components/common/timestamp";
 import { CopyButton } from "@/components/common/copy-button";
-import type { WorkflowInstance } from "@/lib/api/types/workflow-instances";
+import type { WorkflowInstance } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
 import { href } from "@/lib/modules/router";
 import { WorkflowDefinitionRoutes } from "@/modules/workflow-definitions";
 import { WorkflowInstanceRoutes } from "../routes";

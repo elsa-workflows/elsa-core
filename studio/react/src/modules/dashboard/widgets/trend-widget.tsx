@@ -1,7 +1,7 @@
 "use client";
 
-import { Skeleton } from "@/components/ui/skeleton";
-import type { DashboardRange } from "@/lib/modules/types";
+import { Skeleton } from "@elsa-workflows/react-studio-ui/skeleton";
+import type { DashboardRange } from "@elsa-workflows/react-studio-sdk";
 import { TrendChart } from "../components/trend-chart";
 import { WidgetCard, WidgetEmpty } from "../components/widget-card";
 import { RANGE_LABELS } from "../format";

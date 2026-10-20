@@ -1,8 +1,8 @@
 import Link from "@/lib/navigation/link";
 import { ArrowUpRight, FileCode2, LayoutDashboard, ListChecks, type LucideIcon } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { Card } from "@elsa-workflows/react-studio-ui/card";
 import { EmptyState } from "@/components/common/empty-state";
-import { Resources, usePermissions, Verbs } from "@/lib/permissions";
+import { Resources, usePermissions, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
 import { DashboardLinks } from "../links";
 
 /** Welcome state when no dashboard widget is visible (none registered, or the user lacks every permission). */

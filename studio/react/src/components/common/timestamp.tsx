@@ -1,7 +1,7 @@
 "use client";
 
 import { format, formatDistanceToNowStrict, isValid, parseISO } from "date-fns";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@elsa-workflows/react-studio-ui/tooltip";
 
 export function formatTimestamp(value: string | Date | undefined | null, pattern = "yyyy-MM-dd HH:mm:ss") {
   if (!value) return "";

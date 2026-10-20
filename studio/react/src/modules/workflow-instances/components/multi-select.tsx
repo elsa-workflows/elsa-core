@@ -2,11 +2,11 @@
 
 import { Check, ChevronsUpDown, X } from "lucide-react";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Badge } from "@elsa-workflows/react-studio-ui/badge";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Checkbox } from "@elsa-workflows/react-studio-ui/checkbox";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@elsa-workflows/react-studio-ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@elsa-workflows/react-studio-ui/popover";
 import type { SelectOption } from "@/components/common/simple-select";
 import { cn } from "@/lib/utils";
 

@@ -1,8 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@elsa-workflows/react-studio-ui/sidebar";
+import { Separator } from "@elsa-workflows/react-studio-ui/separator";
 import { ConfirmProvider } from "@/components/common/confirm-dialog";
 import { useExtensions } from "@/lib/modules/registry";
 import { cn } from "@/lib/utils";

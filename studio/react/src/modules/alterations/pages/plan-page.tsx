@@ -2,15 +2,15 @@
 
 import { ArrowLeft, RefreshCw } from "lucide-react";
 import Link from "@/lib/navigation/link";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@elsa-workflows/react-studio-ui/card";
 import { DataTable, type DataTableColumn } from "@/components/common/data-table";
 import { ErrorAlert } from "@/components/common/error-alert";
 import { JsonViewer } from "@/components/common/json-viewer";
 import { KeyValueTable } from "@/components/common/key-value-table";
 import { PageHeader } from "@/components/common/page-header";
 import { Timestamp } from "@/components/common/timestamp";
-import type { RouteParams } from "@/lib/modules/types";
+import type { RouteParams } from "@elsa-workflows/react-studio-sdk";
 import type { AlterationJob } from "../api";
 import { AlterationLog } from "../components/alteration-results";
 import { PlanStatusBadge } from "../components/plan-status-badge";

@@ -1,6 +1,6 @@
-import type { Activity, ActivityInput } from "@/lib/api/types/activities";
-import { DEFAULT_DONE_PORT, DEFAULT_IN_PORT } from "@/lib/api/types/activities";
-import type { ActivityDescriptor } from "@/lib/api/types/descriptors";
+import type { Activity, ActivityInput } from "@elsa-workflows/react-studio-api-client/types/activities";
+import { DEFAULT_DONE_PORT, DEFAULT_IN_PORT } from "@elsa-workflows/react-studio-api-client/types/activities";
+import type { ActivityDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
 
 export interface OutPort {
   name: string;

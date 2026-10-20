@@ -4,10 +4,10 @@ import { X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { JsonViewer } from "@/components/common/json-viewer";
 import { StatusBadge } from "@/components/common/status-badge";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Activity } from "@/lib/api/types/activities";
-import type { ActivityExecutionRecord, WorkflowExecutionLogRecord } from "@/lib/api/types/workflow-instances";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@elsa-workflows/react-studio-ui/tabs";
+import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
+import type { ActivityExecutionRecord, WorkflowExecutionLogRecord } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
 import { activityDisplayText, useDesigner } from "@/modules/designer";
 import { ExecutionsTable } from "./executions-table";
 

@@ -2,13 +2,13 @@
 
 import { Check, Eye, History, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@elsa-workflows/react-studio-ui/table";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@elsa-workflows/react-studio-ui/tooltip";
 import { useConfirm } from "@/components/common/confirm-dialog";
 import { describeError } from "@/components/common/error-alert";
 import { Timestamp } from "@/components/common/timestamp";
-import { Resources, usePermissions, Verbs } from "@/lib/permissions";
+import { Resources, usePermissions, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
 import { useWorkflowEditor } from "../editor-context";
 import { useWorkflowDefinitionMutations, useWorkflowDefinitionVersions } from "../hooks";
 

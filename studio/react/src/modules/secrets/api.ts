@@ -1,4 +1,4 @@
-import type { HttpClient } from "@/lib/api/http";
+import type { HttpClient } from "@elsa-workflows/react-studio-api-client/http";
 
 /*
  * Types mirror `Elsa.Secrets.Models.SecretApiModels` (camelCase on the wire). Note that the C#

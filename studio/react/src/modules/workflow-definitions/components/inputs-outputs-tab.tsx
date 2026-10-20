@@ -2,16 +2,16 @@
 
 import { useState } from "react";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@elsa-workflows/react-studio-ui/badge";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Checkbox } from "@elsa-workflows/react-studio-ui/checkbox";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@elsa-workflows/react-studio-ui/dialog";
+import { Input } from "@elsa-workflows/react-studio-ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@elsa-workflows/react-studio-ui/table";
 import { Field } from "@/components/common/field";
 import { SimpleSelect } from "@/components/common/simple-select";
 import { useStorageDrivers, useVariableTypes } from "@/lib/api/hooks/descriptors";
-import type { InputDefinition, OutputDefinition } from "@/lib/api/types/workflow-definitions";
+import type { InputDefinition, OutputDefinition } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
 import { useWorkflowEditor } from "../editor-context";
 import { useDesigner } from "@/modules/designer";
 import { DataUsageChips } from "./data-usage";

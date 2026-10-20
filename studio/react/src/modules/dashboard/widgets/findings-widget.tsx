@@ -2,7 +2,7 @@
 
 import Link from "@/lib/navigation/link";
 import { ArrowUpRight, CircleAlert, CircleCheck, Info, OctagonAlert, TriangleAlert, type LucideIcon } from "lucide-react";
-import type { DashboardRange } from "@/lib/modules/types";
+import type { DashboardRange } from "@elsa-workflows/react-studio-sdk";
 import { cn } from "@/lib/utils";
 import type { DashboardFinding, DashboardFindingSeverity } from "../api";
 import { SourceNote, WidgetCard, WidgetEmpty } from "../components/widget-card";

@@ -1,5 +1,5 @@
-import type { Activity } from "@/lib/api/types/activities";
-import type { ActivityDescriptor } from "@/lib/api/types/descriptors";
+import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
+import type { ActivityDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
 
 export function activityDisplayText(activity: Activity, descriptor?: ActivityDescriptor) {
   const custom = activity.metadata?.displayText;

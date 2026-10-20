@@ -1,8 +1,8 @@
 import Link from "@/lib/navigation/link";
 import type { LucideIcon } from "lucide-react";
 import { ArrowUpRight } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Card } from "@elsa-workflows/react-studio-ui/card";
+import { Skeleton } from "@elsa-workflows/react-studio-ui/skeleton";
 import { cn } from "@/lib/utils";
 import type React from "react";
 

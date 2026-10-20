@@ -3,11 +3,11 @@
 import { Braces, Code2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { CodeEditor } from "@/components/common/code-editor";
-import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import type { ActivityInput } from "@/lib/api/types/activities";
-import type { InputDescriptor } from "@/lib/api/types/descriptors";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@elsa-workflows/react-studio-ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@elsa-workflows/react-studio-ui/tooltip";
+import type { ActivityInput } from "@elsa-workflows/react-studio-api-client/types/activities";
+import type { InputDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
 import { expressionText, isBindingSyntax, languageForSyntax, LITERAL, makeInput, OBJECT, syntaxOf } from "./expression";
 import { BindingPicker } from "./editors/binding-picker";
 import { expressionCompletions } from "@/modules/designer/model/data-flow";

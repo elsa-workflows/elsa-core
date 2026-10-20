@@ -20,10 +20,10 @@ import {
 import "@xyflow/react/dist/style.css";
 import { Database, LayoutGrid, Map as MapIcon, Maximize, Minus, MousePointerClick, PanelLeftOpen, Plus, Redo2, Undo2, X } from "lucide-react";
 import { useViewport } from "@xyflow/react";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@elsa-workflows/react-studio-ui/tooltip";
 import { cn } from "@/lib/utils";
-import { DEFAULT_IN_PORT } from "@/lib/api/types/activities";
+import { DEFAULT_IN_PORT } from "@elsa-workflows/react-studio-api-client/types/activities";
 import { useDesigner, useDesignerState } from "../context";
 import { connectionKey, resolveContainer } from "../model/flowchart-ops";
 import { autoLayout } from "../model/layout";
@@ -39,7 +39,7 @@ import { isDecorationId, type CanvasDecorations, type DecorationEdge, type Decor
 import { DesignerBreadcrumb } from "./designer-breadcrumb";
 import { QuickAddMenu } from "./quick-add-menu";
 import { issuesByActivity, validateWorkflow } from "../model/validation";
-import { isFlowchart, type Flowchart } from "@/lib/api/types/activities";
+import { isFlowchart, type Flowchart } from "@elsa-workflows/react-studio-api-client/types/activities";
 import { emptyFlowchart } from "../model/flowchart-ops";
 import { snapNode, type HelperLines } from "../model/snapping";
 

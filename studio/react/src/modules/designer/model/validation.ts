@@ -1,5 +1,5 @@
-import type { Activity, Flowchart, StateMachine } from "@/lib/api/types/activities";
-import { isFlowchart, isStateMachine } from "@/lib/api/types/activities";
+import type { Activity, Flowchart, StateMachine } from "@elsa-workflows/react-studio-api-client/types/activities";
+import { isFlowchart, isStateMachine } from "@elsa-workflows/react-studio-api-client/types/activities";
 import { childActivities } from "./containers";
 import type { ActivityRegistry } from "./registry";
 import { computePorts } from "./ports";

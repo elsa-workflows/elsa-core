@@ -2,7 +2,7 @@
 
 import { SearchInput } from "@/components/common/search-input";
 import { SimpleSelect, type SelectOption } from "@/components/common/simple-select";
-import type { TimestampFilter, WorkflowStatus, WorkflowSubStatus } from "@/lib/api/types/workflow-instances";
+import type { TimestampFilter, WorkflowStatus, WorkflowSubStatus } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
 import { WORKFLOW_STATUSES, WORKFLOW_SUB_STATUSES } from "../model";
 import { DateFilterPopover } from "./date-filter-popover";
 import { MultiSelect } from "./multi-select";

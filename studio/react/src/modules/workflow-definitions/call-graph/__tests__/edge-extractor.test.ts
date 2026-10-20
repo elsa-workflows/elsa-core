@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Activity } from "@/lib/api/types/activities";
+import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
 import { extractCallEdges } from "../edge-extractor";
 import { dispatch, execute, expr, flowchart, forEach, ifActivity, sequence, writeLine } from "./helpers";
 

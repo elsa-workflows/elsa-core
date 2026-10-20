@@ -12,22 +12,20 @@ and resolves runtime configuration per request.
 ```
 src/
   main.tsx                  fetch runtime configuration, then mount the History API router
-  config/                   runtime configuration: Zod schema and React provider (ASP.NET resolves the document)
+  config/                   runtime configuration React provider (ASP.NET resolves the document)
   lib/
-    api/                    HTTP client, typed endpoint groups, TS models, TanStack Query provider
-    auth/                   AuthStrategy contract + none / api-key / elsa-identity / oidc / elsa-external
+    api/                    TanStack Query provider and host hooks
+    auth/                   config/server adapter for the shared auth provider
     environments/           active backend selection (multi-server)
     features/               server feature catalog (GET /features/installed)
-    modules/                StudioModule contract, registry, route matcher
-    permissions/            resource:verb permission set (mirrors the server; unknown = allow)
+    modules/                enabled-module registry and route matcher
     utils/                  download helpers, URL state
   components/
-    ui/                     shadcn components (generated, do not hand-edit)
     common/                 shared building blocks (DataTable, PageHeader, SearchInput, SimpleSelect,
                             ConfirmProvider/useConfirm, StatusBadge, Timestamp, CodeEditor, JsonViewer…)
     shell/                  AppShell, sidebar, header, login, auth callback, status pages
   modules/
-    index.ts                the list of compiled-in modules (order = route resolution order)
+    index.ts                the list of compiled-in modules (transitional until #8845)
     dashboard/              core
     workflow-definitions/   core (list + editor)
     workflow-instances/     core (list + viewer)
@@ -35,12 +33,17 @@ src/
     activity-editors/       core shared: UI-hint editors, expression editor, properties panel
     <optional>/             labels, secrets, security, environments, alterations, user-tasks, settings,
                             diagnostics…
+packages/
+  sdk/                      typed register(api) contracts, config schema, editor context and host runtime
+  api-client/               HTTP client, endpoint groups and workflow models
+  auth/                     shared authentication strategies, React context and permissions
+  ui/                       shared primitives and theme styles
 ```
 
 ## Runtime configuration
 
 `studio.config.json` (or `STUDIO_CONFIG` JSON env, or `STUDIO_*` env overrides) is read on the server
-for every configuration request. The browser validates `src/config/schema.ts` and provides it with
+for every configuration request. The browser validates `react-studio-sdk/config` and provides it with
 `useStudioConfig()`. Nothing in it is secret: it ends up in the browser.
 
 ```jsonc
@@ -57,7 +60,23 @@ for every configuration request. The browser validates `src/config/schema.ts` an
 
 ## Modules
 
-A module is a plain object created with `defineModule()` (`src/lib/modules/types.ts`):
+The [SDK v1 Preview](../packages/sdk/README.md) exposes `register(api)` with typed
+contribution slots. The host checks manifest host/SDK API versions before importing
+an entry and reports incompatible, failed-load, failed-registration and cleanup
+diagnostics. Registration is transactional and cleanup follows the module lifetime.
+Equal-order slots use stable module and contribution IDs, independent of load order.
+`pnpm docs:api` generates the public API reference; CI retains it as an artifact.
+`pnpm test:packages` compiles and renders an external sample against packed SDK,
+API-client, auth and UI packages, without host aliases.
+
+The imported modules still use `defineModule()` from the public SDK. It adapts their
+declarative definitions into `register(api)`; this adapter and the compiled-in list
+are removed by the physical RCL split in #8845. Existing routes, navigation,
+dashboard, settings, UI hints, tabs, actions, headers and providers consume that
+adapter. The additional property, expression and designer slot contracts await
+their renderer integration during the split.
+
+For example:
 
 ```ts
 export const labelsModule = defineModule({
@@ -181,7 +200,7 @@ providers it needs.
 ## Theming
 
 Five palettes (`ELSA_THEMES` in `src/lib/theme/elsa-theme.ts`) are expressed as CSS variable sets in
-`src/globals.css`, selected by the `data-elsa-theme` attribute on `<html>` (set by `main.tsx` from runtime
+`packages/ui/src/styles.css`, selected by the `data-elsa-theme` attribute on `<html>` (set by `main.tsx` from runtime
 config and client-side from the persisted store). Light/dark comes from next-themes (`.dark` class).
 Use the semantic tokens (`bg-card`, `text-muted-foreground`, `bg-status-success`, `text-brand`,
 `bg-canvas`) and the helpers `node-card`, `accent-rail` (with `--rail-color`), `eyebrow`,

@@ -1,4 +1,4 @@
-import type { Activity, ActivityInput } from "@/lib/api/types/activities";
+import type { Activity, ActivityInput } from "@elsa-workflows/react-studio-api-client/types/activities";
 import { childActivities } from "@/modules/designer/model/containers";
 import { CALL_ACTIVITY_TYPES, TARGET_INPUT_NAME, type CallType } from "./config";
 import type { CallEdge } from "./types";

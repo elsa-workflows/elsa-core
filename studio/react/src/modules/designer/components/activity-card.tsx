@@ -3,9 +3,9 @@
 import type { ReactNode } from "react";
 import { ChevronRight, TriangleAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Activity } from "@/lib/api/types/activities";
-import type { ActivityDescriptor } from "@/lib/api/types/descriptors";
-import type { ActivityExecutionStats } from "@/lib/api/types/workflow-instances";
+import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
+import type { ActivityDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
+import type { ActivityExecutionStats } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
 import { useDesigner } from "../context";
 import { listSlots } from "../model/containers";
 import { activityDescription, activityDisplayText } from "../model/display";

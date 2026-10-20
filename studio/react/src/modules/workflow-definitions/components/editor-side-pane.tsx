@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { selectionId, StatePanel, TransitionPanel, useDesignerState } from "@/modules/designer";
 import { ActivityPropertiesPanel } from "@/modules/activity-editors";
 import { useWorkflowEditor } from "../editor-context";
