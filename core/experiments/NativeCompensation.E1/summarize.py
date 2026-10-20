@@ -22,7 +22,10 @@ def journal_summary(journal):
     summary["originalCauseRetained"] = bool(journal.get("ProtectedOriginalCause"))
     summary["recoveryCauseRetained"] = bool(journal.get("ProtectedRecoveryCause"))
     summary["entries"] = []
-    for entry in journal.get("Entries", []):
+    entries = journal.get("Entries", [])
+    if isinstance(entries, dict):
+        entries = entries.get("$values", [])
+    for entry in entries:
         fields = ("Slot", "OccurrenceId", "OperationKey", "UndoKey", "Status", "ForwardContextId", "UndoContextId", "AttemptId", "CompletionOrdinal")
         item = {field: entry.get(field) for field in fields}
         item["protectedCaptureHashes"] = {field: hashlib.sha256(entry[field].encode()).hexdigest() if entry.get(field) else None
@@ -54,7 +57,7 @@ def snapshot_summary(snapshot):
 summary = {
     "result": "Partial: E1 does not pass; no M1 readiness or supported-provider claim",
     "baseSourceHead": "51d316882e6a79376145aef1283aa4004a3f400d",
-    "matrixSourceHead": "f3d4b3186",
+    "matrixSourceHead": "f3d4b31863dc7e2a029d6e93454a25a905e9b813",
     "controlsSourceHead": options.controls_source_head,
     "sdk": "10.0.300", "targetFramework": "net10.0", "matrix": [], "controls": []
 }
@@ -67,6 +70,15 @@ for category, directory in (("matrix", options.matrix), ("controls", options.con
         assert source.get("classification"), file
         before = source.get("after_first", source.get("before", {}))
         after = source.get("final", source.get("after", {}))
+        if category == "matrix" and source.get("kill_at"):
+            before_rows = before.get("elsa", {}).get("rows", [])
+            after_rows = after.get("elsa", {}).get("rows", [])
+            if before_rows and after_rows:
+                before_journal = before_rows[0]["snapshot"]["properties"]["elsa.experimental.native-compensation.e1"]
+                after_journal = after_rows[0]["snapshot"]["properties"]["elsa.experimental.native-compensation.e1"]
+                for field in ("Seed", "DefinitionVersion", "HandlerVersion", "Handoff", "ProtectedOriginalCause", "ProtectedRecoveryCause"):
+                    if before_journal.get(field):
+                        assert before_journal[field] == after_journal[field], (file, field)
         record = {
             "case": source["case"], "classification": source["classification"], "configuration": source.get("configuration"),
             "killBarrier": source.get("kill_at"), "backendPid": source["first"]["pid"],
