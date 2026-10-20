@@ -141,8 +141,8 @@ under Settings. Their choice is remembered per browser and overrides these defau
 
 | Variable | Effect |
 |---|---|
-| `STUDIO_CONFIG` | A complete JSON configuration document. Highest priority. |
-| `STUDIO_CONFIG_PATH` | Path to a JSON file. Defaults to `./studio.config.json`. |
+| `STUDIO_CONFIG` | Complete JSON document, preferred over the file; individual overrides still apply. |
+| `STUDIO_CONFIG_PATH` | JSON file path relative to the host content root. The standalone host defaults to its published `studio.config.json`; `pnpm host` selects the source file. |
 | `STUDIO_TITLE` | Application title in the sidebar and browser tab. |
 | `STUDIO_SERVER_URL` | Overwrites the URL of the **first** server. |
 | `STUDIO_SERVER_NAME` | Overwrites the name of the first server. |

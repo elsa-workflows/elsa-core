@@ -73,8 +73,8 @@ export const labelsModule = defineModule({
 Rules:
 
 - Core modules set `core: true` and ignore the flag; everything else is **off unless enabled** in config.
-- Routes are matched by the catch-all page through `resolveRoute()`; patterns use `:param` segments.
-  Never add files under `src/app/` for a module.
+- The History API router passes the path to `resolveRoute()`; patterns use `:param` segments.
+  Register module routes instead of adding file-system pages.
 - Each module owns `src/modules/<id>/` with `index.tsx` (the `defineModule` export), `api.ts`
   (endpoint group built from `useElsaClient().http`), `hooks.ts` (TanStack Query hooks, keys prefixed
   with `useQueryScope()`), `pages/` and `components/`.
@@ -181,7 +181,7 @@ providers it needs.
 ## Theming
 
 Five palettes (`ELSA_THEMES` in `src/lib/theme/elsa-theme.ts`) are expressed as CSS variable sets in
-`src/app/globals.css`, selected by the `data-elsa-theme` attribute on `<html>` (set server-side from
+`src/globals.css`, selected by the `data-elsa-theme` attribute on `<html>` (set by `main.tsx` from runtime
 config and client-side from the persisted store). Light/dark comes from next-themes (`.dark` class).
 Use the semantic tokens (`bg-card`, `text-muted-foreground`, `bg-status-success`, `text-brand`,
 `bg-canvas`) and the helpers `node-card`, `accent-rail` (with `--rail-color`), `eyebrow`,
@@ -194,4 +194,4 @@ Use the semantic tokens (`bg-card`, `text-muted-foreground`, `bg-status-success`
 - Prefer the shared `SimpleSelect`, `DataTable`, `Field`, `SearchInput`, `useConfirm()` and
   `useUrlState()` over ad-hoc markup so list pages look and behave alike.
 - Toasts: `import { toast } from "sonner"`.
-- No `any`; keep components small; no business logic in `src/app`.
+- No `any`; keep components small; keep `main.tsx` limited to bootstrap and routing.
