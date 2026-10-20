@@ -11,6 +11,41 @@ const manifest = (id: string): StudioModuleManifest => ({
 const entry = (register: RegisterModule) => async () => ({ register });
 
 describe("SDK module activation", () => {
+  it("qualifies host tab identities without changing module-local SDK IDs", async () => {
+    const registry = new StudioRegistry();
+    for (const id of ["alpha", "beta"]) {
+      await registry.load(manifest(id), entry(api => {
+        for (const tab of ["details", "properties"]) api.contribute("workflowPropertiesTabs", { id: tab, label: tab, component: () => null });
+        api.contribute("activityPropertiesTabs", { id: "details", label: "Details", component: () => null });
+      }));
+    }
+    const modules = registry.studioModules();
+    const ids = modules.flatMap(module => module.extensions?.workflowPropertiesTabs?.map(tab => tab.id) ?? []);
+    expect(new Set(ids).size).toBe(4);
+    expect(ids).not.toContain("properties");
+    expect(ids.map(id => JSON.parse(id))).toEqual([["alpha", "details"], ["alpha", "properties"], ["beta", "details"], ["beta", "properties"]]);
+    expect(new Set(modules.flatMap(module => module.extensions?.activityTabs?.map(tab => tab.id) ?? [])).size).toBe(2);
+    expect(registry.slots("workflowPropertiesTabs").map(tab => tab.id)).toEqual(["details", "properties", "details", "properties"]);
+  });
+
+  it("retains cleanup diagnostics when a suspended registration is replaced", async () => {
+    const registry = new StudioRegistry();
+    let resume!: () => void;
+    let started!: () => void;
+    const registering = new Promise<void>(resolve => { started = resolve; });
+    const paused = new Promise<void>(resolve => { resume = resolve; });
+    const first = registry.load(manifest("weather"), entry(async api => {
+      api.onDispose(() => { throw new Error("Cleanup failed during replacement"); });
+      started();
+      await paused;
+    }));
+    await registering;
+    await registry.load(manifest("weather"), entry(() => {}));
+    expect(registry.diagnostics).toContainEqual({ moduleId: "weather", code: "cleanup-failed", message: "Cleanup failed during replacement" });
+    resume();
+    expect(await first).toBe(false);
+  });
+
   it("retains every provider and nests them in contribution order", async () => {
     const registry = new StudioRegistry();
     await registry.load(manifest("providers"), entry(api => {

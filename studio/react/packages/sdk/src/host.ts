@@ -35,8 +35,8 @@ export class StudioRegistry {
     this.generations.set(manifest.id, generation);
     const abandoned = this.pending.get(manifest.id);
     this.pending.delete(manifest.id);
-    if (abandoned) this.dispose(abandoned);
     this.messages = this.messages.filter(message => message.moduleId !== manifest.id);
+    if (abandoned) this.dispose(abandoned);
     if (manifest.hostApiVersion !== 1 || manifest.sdkApiVersion !== 1) {
       this.messages.push({ moduleId: manifest.id, code: "incompatible",
         message: `Module ${manifest.id} requires host API ${manifest.hostApiVersion} and SDK API ${manifest.sdkApiVersion}; this Preview provides host API 1 and SDK API 1.` });
@@ -119,9 +119,9 @@ export class StudioRegistry {
       const extensions: StudioModuleExtensions = {
         providers: [...own("providers")],
         dashboardWidgets: [...own("dashboardWidgets")], settingsSections: [...own("settingsSections")],
-        workflowPropertiesTabs: [...own("workflowPropertiesTabs")], definitionRowActions: [...own("definitionRowActions")],
+        workflowPropertiesTabs: own("workflowPropertiesTabs").map(item => ({ ...item, id: JSON.stringify([module.manifest.id, item.id]) })), definitionRowActions: [...own("definitionRowActions")],
         instanceRowActions: [...own("instanceRowActions")], instanceViewerActions: [...own("instanceViewerActions")],
-        headerItems: [...own("headerItems")], activityTabs: [...own("activityPropertiesTabs")],
+        headerItems: [...own("headerItems")], activityTabs: own("activityPropertiesTabs").map(item => ({ ...item, id: JSON.stringify([module.manifest.id, item.id]) })),
         uiHints: Object.fromEntries(own("uiHints").map(item => [item.hint, item.component])),
       };
       const providers = own("providers");
