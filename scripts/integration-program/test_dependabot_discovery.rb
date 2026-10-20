@@ -18,6 +18,14 @@ class DependabotDiscoveryTests < Minitest::Test
     "scripts/solution/solution-groups.json"))).fetch("independentProducts").fetch("templates").freeze
   TEMPLATES_PROJECTS = (TEMPLATES.fetch("projects") + TEMPLATES.fetch("buildData")).sort.freeze
   LEGACY_CORE_PROJECT = "extensions/src/Elsa.Testing.Extensions/Elsa.Testing.Extensions.csproj"
+  # Temporary package-consumer proof owned by #8839. These stay outside Elsa.sln
+  # but are covered by the Studio updater until production coverage replaces them.
+  REACT_STUDIO_SPIKE_PROJECTS = %w[
+    studio/samples/ReactStudio.Modularity/Host/Host.csproj
+    studio/samples/ReactStudio.Modularity/Labels/Elsa.ReactStudio.Spike.Labels.csproj
+    studio/samples/ReactStudio.Modularity/Runtime/Elsa.ReactStudio.Spike.csproj
+    studio/samples/ReactStudio.Modularity/ThirdParty/Example.ReactStudio.Spike.Weather.csproj
+  ].sort.freeze
 
   def setup
     @workspace = Dir.mktmpdir("dependabot-discovery-")
@@ -59,13 +67,14 @@ class DependabotDiscoveryTests < Minitest::Test
       FileUtils.mkdir_p(File.dirname(destination))
       FileUtils.cp(File.join(REPOSITORY_ROOT, path), destination)
     end
-    expected = solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")) - APPS_PROJECTS + [LEGACY_CORE_PROJECT]
+    expected = solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")) - APPS_PROJECTS +
+      [LEGACY_CORE_PROJECT] + REACT_STUDIO_SPIKE_PROJECTS
 
     batches = CONFIGURATION.fetch("updates").map { |entry| discovered_projects(entry.fetch("directories")) }
     assert_equal expected.sort, batches.flatten.sort, "Reconcile batch selectors when solution membership changes"
     assert_equal batches.flatten.length, batches.flatten.uniq.length, "Project starting sets must not overlap"
-    assert_equal [114, 69, 100, 73, 1], batches.map(&:length)
-    assert_equal 173, batches.flatten.grep(%r{^(extensions|studio)/}).length
+    assert_equal [114, 69, 100, 77, 1], batches.map(&:length)
+    assert_equal 177, batches.flatten.grep(%r{^(extensions|studio)/}).length
     assert_includes batches[2], LEGACY_CORE_PROJECT
     CONFIGURATION.fetch("updates").each do |entry|
       refute_includes entry.fetch("directories"), "/", "Never select the root solution as a batch"
@@ -89,7 +98,13 @@ class DependabotDiscoveryTests < Minitest::Test
     assert_equal projects.grep(%r{^scripts/}).sort, documented_probes
     assert_equal (APPS_PROJECTS + TEMPLATES_PROJECTS + ["core/test/TlsSmoke/TlsSmoke.csproj"] + documented_probes).sort,
       (projects - expected).sort
-    assert_empty expected - projects, "Solution entries must name tracked manifests"
+    assert_empty expected - projects, "Selected entries must name tracked manifests"
+  end
+
+  def test_react_studio_spike_has_an_explicit_independent_sample_disposition
+    assert_equal REACT_STUDIO_SPIKE_PROJECTS,
+      tracked_projects.grep(%r{^studio/samples/ReactStudio\.Modularity/}).sort
+    assert_empty solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")) & REACT_STUDIO_SPIKE_PROJECTS
   end
 
   def test_apps_have_an_explicit_independent_consumer_disposition
@@ -168,11 +183,13 @@ class DependabotDiscoveryTests < Minitest::Test
   end
 
   def test_selected_projects_reconcile_central_package_imports
-    selected = solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")) + [LEGACY_CORE_PROJECT]
+    selected = solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")) +
+      [LEGACY_CORE_PROJECT] + REACT_STUDIO_SPIKE_PROJECTS
     central_versions = {}
     import_chains = {}
     selected.each do |project|
       expected = case project
+      when %r{^studio/samples/ReactStudio\.Modularity/} then "Directory.Packages.props"
       when %r{^extensions/} then "extensions/src/Directory.Packages.props"
       when %r{^studio/} then "studio/src/Directory.Packages.props"
       when %r{^apps/} then "apps/Directory.Packages.props"
@@ -193,7 +210,8 @@ class DependabotDiscoveryTests < Minitest::Test
   end
 
   def test_static_project_reference_and_build_import_closure_stays_available
-    selected = solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")) + [LEGACY_CORE_PROJECT]
+    selected = solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")) +
+      [LEGACY_CORE_PROJECT] + REACT_STUDIO_SPIKE_PROJECTS
     closure = selected.flat_map { |project| static_source_closure(project) }.uniq
     references = closure.flat_map do |path|
       project_xml(path).get_elements("//ProjectReference").map do |reference|
