@@ -26,8 +26,11 @@ Conditions are evaluated by the host, with Elsa's expression engine.
 
 - `Bpmn.Semantics` gains a host callback for condition evaluation, alongside `IBpmnVariableReader`. It receives the
   expression text and language and returns true or false. This change is requested upstream in valence-works/bpmn.
-- `Elsa.Bpmn` implements the callback with `IExpressionEvaluator`. A flow's `language` attribute selects the Elsa
-  expression type: `javascript`, `csharp` or `liquid`, case-insensitively. A missing language means JavaScript.
+- `Elsa.Bpmn` implements the callback with `IExpressionEvaluator`. The language follows BPMN's precedence: a
+  `conditionExpression`'s own `language` attribute overrides the document's `definitions/@expressionLanguage`. Either
+  value selects an Elsa expression type, `javascript`, `csharp` or `liquid`, written as that name, case-insensitively,
+  or as a URI whose last path segment is that name. JavaScript is used when neither value is present. A language Elsa
+  does not support is refused at import with a coded error, never mapped to another language.
 - A condition that fails to evaluate faults the work that reached it, like any other expression failure in Elsa.
 - `conditionOutcome` keeps working as it does today.
 - The same callback serves `completionCondition`, standard loops and conditional events once the library supports them.

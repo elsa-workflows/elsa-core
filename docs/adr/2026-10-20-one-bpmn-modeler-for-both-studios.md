@@ -9,8 +9,9 @@ Proposed
 ## Context
 
 Elsa 3 now has two Studios. The Blazor Studio is the default. The React Studio is folded into `studio/react/` and ships
-in 3.11 as an opt-in preview (#8859); its BPMN import and export parity is tracked in #8853. The Blazor Studio's BPMN
-designer is already missing from its own React Flow canvas (W9b, elsa-studio#1003).
+in 3.11 as an opt-in preview (#8859); its BPMN import and export parity is tracked in #8853. The Blazor Studio
+also has an optional React Flow canvas (`DesignerOptions.UseReactFlow`), and its BPMN designer is not available there
+either (W9b, elsa-studio#1003): BPMN already lives in one canvas per Studio, and only in one of them.
 
 A BPMN modeler is the largest single piece of the BPMN v2 program. Building it twice, once per Studio, would double the
 largest cost in the program and leave two modelers to keep consistent. bpmn-js (see
@@ -21,6 +22,13 @@ its own.
 
 Build the BPMN modeler once, as a framework-neutral JavaScript module around bpmn-js with a small, documented API:
 load a document, save it, select an element, apply an overlay, and raise change and selection events.
+
+- Documents go in and out as BPMN XML strings, the source of truth in
+  [Keep BPMN XML as the source of truth for BPMN workflows](2026-10-20-bpmn-xml-as-source-of-truth.md). Load returns the
+  import warnings bpmn-js reports.
+- Selection, change and overlay calls identify elements by their BPMN element id, the same key the existing
+  `BpmnElementStats` overlay and the execution-log diagnostics use.
+- The exact payload shapes are fixed by the spike (#8901) and documented with the module.
 
 - The Blazor Studio hosts it first, through JS interop, because it is the default Studio.
 - The React Studio mounts the same module directly when its BPMN work reaches modeling.

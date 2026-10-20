@@ -27,7 +27,9 @@ activity of `Elsa.UserTasks`, and `scriptTask` to its own script.
 Be lenient about what is unfinished and strict about what would change meaning.
 
 - **Unbound tasks.** Import and save accept tasks without a binding. Each unbound task is bound to a placeholder activity
-  that faults if it ever runs. Publishing is refused while any placeholder remains, as it is today.
+  that faults if it ever runs. `ValidateBpmnProcessBindings` is extended to refuse that placeholder type, alongside the
+  missing activities and `NotFoundActivity` instances it refuses today, so publishing is refused while any placeholder
+  remains.
 - **Degraded and Dropped findings.** Import and save refuse a document with any Degraded or Dropped finding, with a coded
   error listing the elements. A caller can accept them explicitly with an `acceptDegraded` option. The finding is then
   recorded on the definition and shown in Studio.
