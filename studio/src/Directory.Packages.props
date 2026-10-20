@@ -8,7 +8,7 @@
       once, keeps that PackageDownload's version pin from drifting from this file's PackageVersion
       entry. ClientLib/scripts/generate-bpmn-types.js also reads this property.
     -->
-    <BpmnModelVersion>0.2.0</BpmnModelVersion>
+    <BpmnModelVersion>0.3.1</BpmnModelVersion>
   </PropertyGroup>
   <ItemGroup Label="Elsa">
     <PackageVersion Include="Elsa.Api.Client" Version="3.8.4" />

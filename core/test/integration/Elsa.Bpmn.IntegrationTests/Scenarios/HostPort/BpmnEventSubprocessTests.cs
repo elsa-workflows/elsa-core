@@ -82,6 +82,37 @@ public class BpmnEventSubprocessTests(ITestOutputHelper testOutputHelper)
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
     }
 
+    [Fact(DisplayName = "Work an interrupting event subprocess stops in the evaluation that started it is never started")]
+    public async Task InterruptingEscalationEventSubprocess_NeverStartsWorkItStoppedInTheSameEvaluation()
+    {
+        // valence-works/bpmn#33, reported against Elsa as #8834. The split reaches the long-running task and the
+        // escalation throw in one evaluation, so the task's StartWork is issued and its token is then cancelled by the
+        // interrupting catcher before the host applies anything. Before Bpmn.Semantics 0.3.1 the command stayed on the
+        // list: the host started work no token waited for, nothing ever tore it down because it was never live, and
+        // completing it faulted the workflow with "Unable to resolve the BPMN token for completed work".
+        //
+        // The handler blocks so the scope is still open afterwards. With an immediate handler the scope completes at
+        // once and, at the root, Elsa tears the stray work down on its own -- which hides the defect rather than
+        // proving it gone.
+
+        // Act
+        await _host.RunAsync(BpmnTestProcesses.InterruptingEscalationAlongsideLongRunningWork(_host.Log), typeof(FaultStrategy));
+
+        // Assert: the catcher's body is the only work that started. The interrupted task never reached the host, so
+        // there is nothing left whose completion could resolve to no token.
+        Assert.Equal(["executed:handleEscalation"], _host.Log.Entries);
+        Assert.DoesNotContain(BpmnTestProcesses.BindingRef("longRunning"), _host.LiveWorkOf("scope").Select(work => work.BindingRef));
+
+        // Act: the catcher's body completes, which is the last thing keeping the interrupted scope open.
+        var result = await _host.FinishWorkAsync("handleEscalation");
+
+        // Assert
+        Assert.DoesNotContain("executed:longRunning", _host.Log.Entries);
+        Assert.Empty(result.WorkflowState.Bookmarks);
+        Assert.Empty(result.WorkflowState.Incidents);
+        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+    }
+
     [Fact(DisplayName = "A message-triggered event subprocess arms its listener at scope start and runs its body when the trigger fires")]
     public async Task MessageEventSubprocess_ArmsItsListenerAtScopeStartAndRunsItsBodyWhenFired()
     {

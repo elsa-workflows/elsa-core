@@ -78,6 +78,47 @@ internal static partial class BpmnTestProcesses
     }
 
     /// <summary>
+    /// A parallel split into a long-running task and an escalation throw, caught by an interrupting escalation-triggered
+    /// event subprocess on the same scope.
+    /// </summary>
+    /// <remarks>
+    /// Both branches are reached in the one evaluation that starts the scope, so the long-running task's
+    /// <c>StartWork</c> is issued and its token is cancelled by the interrupting catcher before the host has applied a
+    /// single command. That is the shape valence-works/bpmn#33 describes: work stopped in the evaluation that started
+    /// it, which must not reach the host at all.
+    /// </remarks>
+    public static BpmnProcess InterruptingEscalationAlongsideLongRunningWork(BpmnTestLog log)
+    {
+        var handlerBody = new BpmnProcessBuilder("interrupting-escalation-event-subprocess-body")
+            .Element(EventSubprocessStart("escStart", Escalation("OVERDUE")))
+            .Task("handleEscalation", bindingRef: BindingRef("handleEscalation"))
+            .EndEvent("escEnd")
+            .ConnectSequence("escStart", "handleEscalation", "escEnd")
+            .Build();
+
+        var definition = new BpmnProcessBuilder("interrupting-escalation-alongside-long-running-work")
+            .StartEvent("start")
+            .ParallelGateway("split")
+            .Task("longRunning", bindingRef: BindingRef("longRunning"))
+            .EndEvent("longEnd")
+            .IntermediateThrowEvent("escalate", Escalation("OVERDUE"))
+            .EndEvent("escalateEnd")
+            .Element(EventSubprocess("evtSub"))
+            .ConnectSequence("start", "split")
+            .Connect("split", "longRunning")
+            .Connect("split", "escalate")
+            .Connect("longRunning", "longEnd")
+            .Connect("escalate", "escalateEnd")
+            .Build();
+
+        return Scope(
+            "scope",
+            definition,
+            Blocking("longRunning", log),
+            Scope("evtSub", handlerBody, Blocking("handleEscalation", log)));
+    }
+
+    /// <summary>
     /// A non-interrupting message-triggered event subprocess: a listener armed at scope start, and a body that runs
     /// each time the listener fires while the scope's own long-running work is still going.
     /// </summary>
