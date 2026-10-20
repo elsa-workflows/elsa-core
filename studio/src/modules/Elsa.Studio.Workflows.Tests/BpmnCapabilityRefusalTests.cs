@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Elsa.Studio.Workflows.Domain.Extensions;
 using Elsa.Studio.Workflows.Domain.Models.Bpmn;
 using Xunit;
@@ -50,6 +51,31 @@ public class BpmnCapabilityRefusalTests
         Assert.NotNull(refusal);
         Assert.Equal(["ScopeSignalling", "CompensationHandling"], refusal!.CapabilityNames);
         Assert.Equal(["Gateway_1", "Task_2"], refusal.ElementIds);
+    }
+
+    [Fact]
+    public void ConditionRefusalFromData_ExtractsTheFlowIds_FromTheCodedEnvelope()
+    {
+        const string content = $$"""
+        {
+          "errors": { "generalErrors": ["The document's sequence flows carry expression conditions: f2, f3."] },
+          "code": "{{BpmnErrorCodes.ImportConditionUnsupported}}",
+          "data": { "elementIds": ["f2", "f3"] }
+        }
+        """;
+
+        var errors = ValidationApiExceptionExtensions.GetValidationErrorsFromContent(content);
+        var refusal = BpmnConditionRefusal.FromData(errors!.Data);
+
+        Assert.NotNull(refusal);
+        Assert.Equal(["f2", "f3"], refusal!.FlowIds);
+    }
+
+    [Fact]
+    public void ConditionRefusalFromData_ReturnsNull_ForNoData()
+    {
+        Assert.Null(BpmnConditionRefusal.FromData(null));
+        Assert.Null(BpmnConditionRefusal.FromData(JsonDocument.Parse("""{ "elementIds": [] }""").RootElement));
     }
 
     [Theory]

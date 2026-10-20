@@ -119,6 +119,42 @@ internal static partial class BpmnTestProcesses
     }
 
     /// <summary>
+    /// A signal-triggered event subprocess, interrupting or not, alongside the scope's own long-running work and the
+    /// work that follows it.
+    /// </summary>
+    /// <remarks>
+    /// The listener is the scope-listener binding, standing in for a real signal subscription; firing it is a test
+    /// finishing it. <c>work</c> blocks so the scope is still running when the signal arrives, and <c>after</c> is the
+    /// work only an uninterrupted scope ever reaches.
+    /// </remarks>
+    public static BpmnProcess SignalEventSubprocess(BpmnTestLog log, bool interrupting)
+    {
+        var body = new BpmnProcessBuilder("signal-event-subprocess-body")
+            .Element(EventSubprocessStart("recallStart", Signal("RecallIssued"), interrupting))
+            .Task("handleRecall", bindingRef: BindingRef("handleRecall"))
+            .EndEvent("recallEnd")
+            .ConnectSequence("recallStart", "handleRecall", "recallEnd")
+            .Build();
+
+        var definition = new BpmnProcessBuilder("signal-event-subprocess")
+            .StartEvent("start")
+            .Task("work", bindingRef: BindingRef("work"))
+            .Task("after", bindingRef: BindingRef("after"))
+            .EndEvent("end")
+            .Element(EventSubprocess("evtSub", listenerBindingRef: BindingRef("recallListener")))
+            .ConnectSequence("start", "work", "after", "end")
+            .Build();
+
+        return Scope(
+            "scope",
+            definition,
+            Blocking("work", log),
+            Immediate("after", log),
+            Blocking("recallListener", log),
+            Scope("evtSub", body, Immediate("handleRecall", log)));
+    }
+
+    /// <summary>
     /// The same message-triggered event subprocess, but inside an embedded subprocess that completes while the
     /// enclosing scope carries on — so a listener that outlived the scope that armed it is distinguishable from one
     /// that merely outlived the workflow.
