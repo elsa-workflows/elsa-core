@@ -15,6 +15,14 @@
 // The schema's version is not copied here: it is read straight out of the same
 // Directory.Packages.props entry that pins the NuGet restore, so there is exactly one place that
 // names the version this repository builds against.
+//
+// Drift from Core: Studio keeps its own pin (see docs/integration-program/consolidation/
+// legacy-asset-dispositions.md), but Core's server produces the payloads these types describe, so
+// --check also fails when Studio's BpmnModelVersion differs from the Bpmn.Model version in Core's
+// root Directory.Packages.props (elsa-workflows/elsa-core#8906). A deliberate divergence is declared
+// in Studio's Directory.Packages.props as <BpmnModelDivergesFromCoreVersion>, naming the Core version
+// being diverged from, so the next Core bump fails the check again instead of drifting silently.
+// Plain generation only warns about drift. The comparison lives in scripts/bpmn-model-drift.js.
 'use strict';
 
 const fs = require('fs');
@@ -22,6 +30,14 @@ const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const { compile } = require('json-schema-to-typescript');
+const {
+    PACKAGE_ID,
+    VERSION_PROPERTY_NAME,
+    readProperty,
+    findCorePin,
+    describeCoreDrift,
+    driftSeverity,
+} = require('./bpmn-model-drift');
 
 const PACKAGES_PROPS_CANDIDATES = [
     path.resolve(__dirname, '..', '..', '..', '..', 'Directory.Packages.props'),
@@ -42,8 +58,6 @@ function resolvePackagesPropsPath() {
 
 const PACKAGES_PROPS_PATH = resolvePackagesPropsPath();
 const OUTPUT_PATH = path.join(__dirname, '..', 'src', 'bpmn', 'types.generated.ts');
-const PACKAGE_ID = 'Bpmn.Model';
-const VERSION_PROPERTY_NAME = 'BpmnModelVersion';
 
 // A raw `[k: string]: unknown` (or `any`) index signature is the old hand-written mirror's failure
 // mode: it means some object in the schema lost its shape (usually a missing `additionalProperties:
@@ -54,15 +68,13 @@ const VERSION_PROPERTY_NAME = 'BpmnModelVersion';
 const LOOSE_INDEX_SIGNATURE = /\[k: string\]:\s*(unknown|any)\b/;
 
 function readPinnedVersion() {
-    const xml = fs.readFileSync(PACKAGES_PROPS_PATH, 'utf8');
-    const pattern = new RegExp(`<${VERSION_PROPERTY_NAME}>([^<]+)</${VERSION_PROPERTY_NAME}>`);
-    const match = xml.match(pattern);
+    const version = readProperty(fs.readFileSync(PACKAGES_PROPS_PATH, 'utf8'), VERSION_PROPERTY_NAME);
 
-    if (!match) {
+    if (!version) {
         throw new Error(`Could not find a <${VERSION_PROPERTY_NAME}>...</${VERSION_PROPERTY_NAME}> property in ${PACKAGES_PROPS_PATH}.`);
     }
 
-    return match[1];
+    return version;
 }
 
 function resolveNuGetGlobalPackagesFolder() {
@@ -145,6 +157,18 @@ async function main() {
     const checkMode = process.argv.includes('--check');
     const version = readPinnedVersion();
     const schemaPath = resolveSchemaPath(version);
+    const drift = describeCoreDrift(fs.readFileSync(PACKAGES_PROPS_PATH, 'utf8'), PACKAGES_PROPS_PATH, findCorePin(PACKAGES_PROPS_PATH));
+    const severity = driftSeverity(drift, checkMode);
+
+    if (severity === 'error') {
+        console.error(`error: ${drift}`);
+        process.exitCode = 1;
+        return;
+    }
+
+    if (severity === 'warning') {
+        console.warn(`warning: ${drift}`);
+    }
 
     if (!fs.existsSync(schemaPath)) {
         const message = `Bpmn.Model ${version}'s schema was not found at ${schemaPath}. `
