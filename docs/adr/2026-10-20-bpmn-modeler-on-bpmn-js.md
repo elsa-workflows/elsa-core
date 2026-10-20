@@ -39,7 +39,7 @@ Build Studio's BPMN modeler on bpmn-js and its properties-panel packages, not on
 A spike confirms the decision before Phase 3 of the BPMN v2 program starts. It checks:
 
 - bundle size and load time in Blazor WebAssembly;
-- the shared module's whole API through JS interop: load, save, selection, change events, overlays applied and cleared,
+- the shared module's whole API through JS interop: load, save, selection, change events, overlays and markers applied and cleared,
   and disposal;
 - theming in light and dark;
 - a lossless XML round trip through load, edit and save: the `elsa:` extensions, foreign extensions, unknown elements

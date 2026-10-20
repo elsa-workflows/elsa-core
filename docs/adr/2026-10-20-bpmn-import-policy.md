@@ -40,8 +40,10 @@ Be lenient about what is unfinished and strict about what would change meaning.
   - `scriptTask` binds to its script, run as an Elsa expression in the language its `scriptFormat` names. The format
     maps to `javascript`, `csharp` or `liquid` by the same rules as condition languages: the bare name or a URI ending
     in it, case-insensitively, with JavaScript when `scriptFormat` is absent. A script task with an unsupported format
-    or an empty script gets the placeholder instead and an import finding naming the element, so the draft imports
-    and publishing refuses it until the author binds the task.
+    or an empty script is treated as an unbound task: it gets the placeholder and an Info finding naming the element.
+    This is not a Degraded finding and needs no `acceptDegraded`, because nothing the document says is changed or
+    lost: the script is kept in the stored XML, and the task is unfinished work like any other unbound task.
+    Publishing refuses the process until the author binds the task.
   - `sendTask` and `receiveTask` that name a message keep the message publish and message wait bindings the reader
     already gives them.
   - `serviceTask`, `businessRuleTask`, `manualTask`, plain `task`, and a send or receive task without a message have no
