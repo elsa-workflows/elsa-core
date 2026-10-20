@@ -71,6 +71,21 @@ public class BpmnErrorResponseMappingTests
         Assert.Equal(new[] { "Outer" }, (IReadOnlyList<string>)data.ElementIds);
     }
 
+    [Fact(DisplayName = "An expression-condition refusal is coded bpmn.import.condition-unsupported, carrying the offending flow ids as data")]
+    public void ConditionUnsupportedResponseFor_CarriesTheCodeAndTheStructuredData()
+    {
+        var exception = new BpmnConditionUnsupportedException("The document's sequence flows carry expression conditions: f2, f3.", ["f2", "f3"]);
+
+        var response = BpmnImportErrorResponses.ConditionUnsupportedResponseFor(exception);
+
+        Assert.Equal(BpmnErrorCodes.ImportConditionUnsupported, response.Code);
+        Assert.Equal(StatusCodes.Status422UnprocessableEntity, response.StatusCode);
+        Assert.Equal(exception.Message, Assert.Single(response.Errors["generalErrors"]));
+
+        dynamic data = response.Data!;
+        Assert.Equal(new[] { "f2", "f3" }, (IReadOnlyList<string>)data.ElementIds);
+    }
+
     [Fact(DisplayName = "A definition-not-found refusal is coded bpmn.document.not-found")]
     public void NotFoundResponseFor_CarriesTheCode()
     {

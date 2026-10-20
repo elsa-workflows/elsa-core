@@ -11,7 +11,8 @@ namespace Elsa.Studio.Workflows.Domain.Models.Bpmn;
 /// <remarks>
 /// <c>RemoteBpmnInterchangeService</c> classifies the export refusals by these codes into
 /// <see cref="BpmnExportFailureReason"/>, and the document <c>GET</c>/<c>PUT</c> refusals into
-/// <see cref="BpmnDocumentFailureReason"/>; <c>BpmnImportUiService</c> reads <see cref="ImportCapabilityUnsupported"/>.
+/// <see cref="BpmnDocumentFailureReason"/>; <c>BpmnImportUiService</c> reads <see cref="ImportCapabilityUnsupported"/>
+/// and <see cref="ImportConditionUnsupported"/>.
 /// </remarks>
 public static class BpmnErrorCodes
 {
@@ -27,6 +28,15 @@ public static class BpmnErrorCodes
     /// a runnable Elsa activity.
     /// </summary>
     public const string ImportBindingInvalid = "bpmn.import.binding-invalid";
+
+    /// <summary>
+    /// <c>bpmn/import</c> (and the document <c>PUT</c>) refuses a document whose sequence flows carry a standard BPMN
+    /// <c>conditionExpression</c>, which the server does not evaluate yet, so the workflow would route differently from
+    /// its diagram. A flow conditional on an outcome through <c>conditionOutcome</c> is unaffected, and no opt-in
+    /// overrides this refusal. Carries <c>data.elementIds</c> (the offending sequence flow ids, across the whole
+    /// document including nested subprocesses, sorted and distinct).
+    /// </summary>
+    public const string ImportConditionUnsupported = "bpmn.import.condition-unsupported";
 
     /// <summary>
     /// <c>bpmn/definitions/{id}/export</c> (and the document <c>GET</c>) refuses a workflow definition that does not

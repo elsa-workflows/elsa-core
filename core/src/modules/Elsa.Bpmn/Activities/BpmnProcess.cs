@@ -61,7 +61,7 @@ public class BpmnProcess : Container, ITrigger
     /// spin the scheduler; set it higher and a legitimate short-interval timer would be refused for no reason the
     /// scheduler can back up.
     /// </remarks>
-    private static readonly TimeSpan MinimumTimerInterval = TimeSpan.FromMilliseconds(1);
+    internal static readonly TimeSpan MinimumTimerInterval = TimeSpan.FromMilliseconds(1);
 
     /// <inheritdoc />
     public BpmnProcess([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
