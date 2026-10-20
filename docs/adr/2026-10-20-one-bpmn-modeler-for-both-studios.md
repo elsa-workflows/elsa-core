@@ -45,7 +45,9 @@ which releases the bpmn-js instance and its event handlers.
   - `save` returns `{ xml }`;
   - `change` sends `{ elementIds, isDirty, canUndo, canRedo }`;
   - `selection` sends `{ elementIds, primary: { id, type, name? } | null }`;
-  - `applyOverlays` takes the `BpmnElementStats` keyed by element id and returns `{ applied, unknownElementIds }`;
+  - `applyOverlays` takes the `BpmnElementStats` keyed by element id, or `null`, and replaces the whole overlay: entries
+    not in the new map are removed, and `null` or an empty map clears it, as `clearOverlays` does. It returns
+    `{ applied, unknownElementIds }` either way, empty after a clear;
   - `getBinding(elementId)` returns `{ activityType, inputs: [{ name, value }] } | null`, the element's
     `elsa:activityBinding` with its `elsa:input` values as JSON text;
   - `setBinding(elementId, binding | null)` writes or removes that binding as one undoable edit, keeps every other part
