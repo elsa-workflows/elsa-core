@@ -25,24 +25,32 @@ its own.
 
 Build the BPMN modeler once, as a framework-neutral JavaScript module around bpmn-js with a small, documented API:
 load a document, save it, select an element, read and replace an element's `elsa:` binding, apply and clear overlays,
-raise change and selection events, and dispose of the modeler. Each host calls dispose when it unmounts the canvas, which releases the bpmn-js instance and its event
-handlers.
+raise change and selection events, and dispose of the modeler. Each host calls dispose when it unmounts the canvas,
+which releases the bpmn-js instance and its event handlers.
 
 - Documents go in and out as BPMN XML strings, the source of truth in
   [Keep BPMN XML as the source of truth for BPMN workflows](2026-10-20-bpmn-xml-as-source-of-truth.md). Load returns the
   import warnings bpmn-js reports. When a warning reports content that a save would drop, the host saves only after the
-  user has seen the list and explicitly acknowledged it.
+  user has seen the list and explicitly acknowledged it. The host owns that acknowledgement: it keeps the warnings
+  `load` returned for the open document, shows them before the first save, and records the user's answer. The designer
+  takes no part in it; `save` returns the XML whatever was acknowledged, and the host decides whether to send it.
+  What the server finds missing compared with the stored document comes back in the `PUT …/xml` response, not from
+  the designer.
 - Selection, change and overlay calls identify elements by their BPMN element id, the same key the existing
   `BpmnElementStats` overlay and the execution-log diagnostics use.
 - The payload shapes start from the ones the spike (#8901) used, and are documented with the module:
-  - `load` returns `{ imported, error?, warnings: [{ message, elementId? }] }`;
+  - `load` returns `{ imported, error?, warnings: [{ kind, message, elementId? }] }`, where `kind` says whether the
+    warning reports `dropped` content or only a `rewritten` one, so the host can tell which warnings need
+    acknowledgement;
+  - `save` returns `{ xml }`;
   - `change` sends `{ elementIds, isDirty, canUndo, canRedo }`;
   - `selection` sends `{ elementIds, primary: { id, type, name? } | null }`;
   - `applyOverlays` takes the `BpmnElementStats` keyed by element id and returns `{ applied, unknownElementIds }`;
   - `getBinding(elementId)` returns `{ activityType, inputs: [{ name, value }] } | null`, the element's
     `elsa:activityBinding` with its `elsa:input` values as JSON text;
-  - `setBinding(elementId, binding | null)` writes or removes that binding as one undoable edit, keeps the element's
-    other extension elements where they are, and raises `change`. It refuses an element that cannot carry a binding
+  - `setBinding(elementId, binding | null)` writes or removes that binding as one undoable edit, keeps every other part
+    of the element that the round trip preserves (foreign extension elements and attributes in their place), and raises
+    `change`. It refuses an element that cannot carry a binding
     (anything but a task), as Elsa's binder does.
 - This API is the BPMN designer contract. The X6 and React Flow designers implement it too, so the code around a
   designer never depends on which one is enabled.

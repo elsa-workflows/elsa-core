@@ -52,6 +52,8 @@ enables.
     at every depth, and BPMN DI;
   - the load-warning contract;
   - Elsa importing the saved document identically;
+  - the binding operations: `getBinding` and `setBinding` read and write the binding, refuse elements other than tasks,
+    keep the element's other extension content, undo in one step and raise `change`;
   - overlays and events.
 - **Phased delivery.** bpmn-js ships first, in the Blazor Studio and then the React Studio. The X6 and React Flow
   designers follow as later phases and become full editors: palette, BPMN connection rules, DI for new shapes,
