@@ -1,0 +1,6 @@
+/* SPIKE (#8901) -- everything the module needs, bundled into one stylesheet. */
+@import 'bpmn-js/dist/assets/diagram-js.css';
+@import 'bpmn-js/dist/assets/bpmn-js.css';
+@import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
+@import '@bpmn-io/properties-panel/dist/assets/properties-panel.css';
+@import './elsa-bpmn-theme.css';

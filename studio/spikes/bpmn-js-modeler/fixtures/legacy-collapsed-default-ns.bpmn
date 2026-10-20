@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI"
+             xmlns:ext="https://elsaworkflows.io/schemas/bpmn/v1"
+             id="Definitions_legacy"
+             targetNamespace="https://elsaworkflows.io/spike">
+  <!-- BPMN as the default namespace, the elsa: namespace under another prefix, and a collapsed subprocess whose
+       children are drawn in the main plane (how Camunda Modeler 4 and many other tools write it). -->
+  <process id="Process_Legacy" isExecutable="true">
+    <startEvent id="Start">
+      <outgoing>F1</outgoing>
+    </startEvent>
+    <subProcess id="Legacy_Collapsed" name="Legacy collapsed">
+      <incoming>F1</incoming>
+      <outgoing>F2</outgoing>
+      <startEvent id="Inner_Start">
+        <outgoing>IF1</outgoing>
+      </startEvent>
+      <serviceTask id="Inner_Task" name="Inner">
+        <extensionElements>
+          <ext:activityBinding activityType="Elsa.WriteLine">
+            <ext:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"legacy"}}</ext:input>
+          </ext:activityBinding>
+        </extensionElements>
+        <incoming>IF1</incoming>
+      </serviceTask>
+      <sequenceFlow id="IF1" sourceRef="Inner_Start" targetRef="Inner_Task" />
+    </subProcess>
+    <endEvent id="End">
+      <incoming>F2</incoming>
+    </endEvent>
+    <sequenceFlow id="F1" sourceRef="Start" targetRef="Legacy_Collapsed" />
+    <sequenceFlow id="F2" sourceRef="Legacy_Collapsed" targetRef="End" />
+  </process>
+  <bpmndi:BPMNDiagram id="Diagram_Legacy">
+    <bpmndi:BPMNPlane id="Plane_Legacy" bpmnElement="Process_Legacy">
+      <bpmndi:BPMNShape id="Start_di" bpmnElement="Start">
+        <omgdc:Bounds x="100" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Legacy_Collapsed_di" bpmnElement="Legacy_Collapsed" isExpanded="false">
+        <omgdc:Bounds x="190" y="78" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Inner_Start_di" bpmnElement="Inner_Start">
+        <omgdc:Bounds x="200" y="300" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Inner_Task_di" bpmnElement="Inner_Task">
+        <omgdc:Bounds x="290" y="278" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="IF1_di" bpmnElement="IF1">
+        <omgdi:waypoint x="236" y="318" />
+        <omgdi:waypoint x="290" y="318" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="End_di" bpmnElement="End">
+        <omgdc:Bounds x="352" y="100" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="F1_di" bpmnElement="F1">
+        <omgdi:waypoint x="136" y="118" />
+        <omgdi:waypoint x="190" y="118" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="F2_di" bpmnElement="F2">
+        <omgdi:waypoint x="290" y="118" />
+        <omgdi:waypoint x="352" y="118" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>

@@ -1,0 +1,84 @@
+/*
+ * SPIKE (#8901) -- maps Studio's MudBlazor palette onto bpmn.io's semantic tokens.
+ *
+ * diagram-js, bpmn-js and @bpmn-io/properties-panel all resolve their chrome through `--bio-*` custom properties,
+ * so overriding those on the hosts is enough for the palette, context pad, popup menu and properties panel. The
+ * canvas shapes are drawn with inline `fill`/`stroke` styles; the module passes `var(--elsa-bpmn-*)` as the
+ * renderer's default colours, so shapes follow the same variables and a theme switch needs no re-render.
+ */
+.elsa-bpmn-modeler,
+.elsa-bpmn-properties {
+    --elsa-bpmn-shape-fill: var(--mud-palette-surface);
+    --elsa-bpmn-shape-stroke: var(--mud-palette-text-primary);
+    --elsa-bpmn-label: var(--mud-palette-text-primary);
+}
+
+.elsa-bpmn-modeler .bio-theme-parent,
+.elsa-bpmn-modeler.bio-theme-parent,
+.elsa-bpmn-modeler .djs-parent,
+.elsa-bpmn-properties .bio-theme-parent,
+.elsa-bpmn-properties .bio-properties-panel {
+    --bio-surface: var(--mud-palette-surface);
+    --bio-surface-overlay: var(--mud-palette-surface);
+    --bio-surface-subtle: var(--mud-palette-background-gray);
+    --bio-surface-medium: var(--mud-palette-action-default-hover);
+    --bio-surface-strong: var(--mud-palette-lines-default);
+    --bio-text: var(--mud-palette-text-primary);
+    --bio-text-subtle: var(--mud-palette-text-secondary);
+    --bio-text-subtlest: var(--mud-palette-text-disabled);
+    --bio-border: var(--mud-palette-lines-default);
+    --bio-border-subtle: var(--mud-palette-lines-default);
+    --bio-border-input: var(--mud-palette-lines-inputs);
+    --bio-primary: var(--mud-palette-primary);
+    --bio-primary-hover: var(--mud-palette-primary-darken);
+    --bio-primary-surface: color-mix(in srgb, var(--mud-palette-primary) 15%, transparent);
+    --bio-focus: var(--mud-palette-primary);
+    --bio-canvas-accent: var(--mud-palette-primary);
+    --bio-canvas-accent-subtle: color-mix(in srgb, var(--mud-palette-primary) 50%, transparent);
+    --bio-danger: var(--mud-palette-error);
+    --bio-warning: var(--mud-palette-warning);
+    --bio-info: var(--mud-palette-info);
+}
+
+.elsa-bpmn-modeler {
+    background: var(--mud-palette-surface);
+}
+
+/* Instance state: markers recolour the shape, a badge carries the count. Renderer styles are inline, hence !important. */
+.elsa-bpmn-modeler .djs-element.elsa-faulted .djs-visual > :first-child { stroke: var(--mud-palette-error) !important; }
+.elsa-bpmn-modeler .djs-element.elsa-blocked .djs-visual > :first-child { stroke: var(--mud-palette-warning) !important; }
+.elsa-bpmn-modeler .djs-element.elsa-active .djs-visual > :first-child { stroke: var(--mud-palette-info) !important; }
+.elsa-bpmn-modeler .djs-element.elsa-completed .djs-visual > :first-child { stroke: var(--mud-palette-success) !important; }
+.elsa-bpmn-modeler .djs-element.elsa-canceled .djs-visual > :first-child { stroke: var(--mud-palette-text-disabled) !important; }
+
+.elsa-bpmn-badge {
+    min-width: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    font: 600 11px/18px sans-serif;
+    text-align: center;
+    color: var(--mud-palette-surface);
+    background: var(--mud-palette-text-secondary);
+}
+.elsa-bpmn-badge.elsa-faulted { background: var(--mud-palette-error); }
+.elsa-bpmn-badge.elsa-blocked { background: var(--mud-palette-warning); }
+.elsa-bpmn-badge.elsa-active { background: var(--mud-palette-info); }
+.elsa-bpmn-badge.elsa-completed { background: var(--mud-palette-success); }
+
+/*
+ * Dark theme and the watermark. bpmn-js draws the bpmn.io logo inline in #404040 and it must stay unchanged, so on a
+ * dark canvas it is barely legible. Opt-in experiment: a light plate *behind* the logo (z-index below the logo's 100,
+ * never over it, not a hit target). Whether this satisfies the licence's "fully visible" needs bpmn.io's confirmation.
+ */
+.elsa-bpmn-modeler.elsa-bpmn-watermark-plate .bjs-container::after {
+    content: '';
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    width: 63px;
+    height: 31px;
+    border-radius: 4px;
+    background: #ffffff;
+    z-index: 99;
+    pointer-events: none;
+}

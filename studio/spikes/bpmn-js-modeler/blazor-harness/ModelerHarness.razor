@@ -1,0 +1,125 @@
+@* SPIKE (#8901): a Studio-like component that hosts the framework-neutral modeler through JS interop only. *@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject HttpClient Http
+
+<div class="harness">
+    <div class="toolbar">
+        <button id="select" @onclick="SelectAsync">Select Task_Deep</button>
+        <button id="select-missing" @onclick="SelectMissingAsync">Select missing</button>
+        <button id="overlays" @onclick="ApplyOverlaysAsync">Apply overlays</button>
+        <button id="clear-overlays" @onclick="ClearOverlaysAsync">Clear overlays</button>
+        <button id="save" @onclick="SaveAsync">Save</button>
+        <button id="dispose" @onclick="DisposeModelerAsync">Dispose</button>
+        <span id="status">@_status</span>
+    </div>
+    <div class="designer">
+        <div class="canvas" @ref="_canvas"></div>
+        <aside class="properties" @ref="_properties"></aside>
+    </div>
+    <pre id="log">@string.Join("\n", _log)</pre>
+</div>
+
+@code {
+    private ElementReference _canvas;
+    private ElementReference _properties;
+    private IJSObjectReference? _host;
+    private IJSObjectReference? _modeler;
+    private DotNetObjectReference<ModelerHarness>? _self;
+    private string _status = "starting";
+    private readonly List<string> _log = [];
+    private static readonly JsonSerializerOptions LogJson = new(JsonSerializerDefaults.Web);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await JS.InvokeVoidAsync("performance.mark", "blazor-first-render");
+        var xml = await Http.GetStringAsync("fixtures/foreign-unknown-deep.bpmn");
+        _host = await JS.InvokeAsync<IJSObjectReference>("import", "./bpmn-host.js");
+        await JS.InvokeVoidAsync("performance.mark", "module-imported");
+        _self = DotNetObjectReference.Create(this);
+        _modeler = await _host.InvokeAsync<IJSObjectReference>("create", _canvas, _properties, _self);
+        var result = await _modeler.InvokeAsync<LoadResult>("load", xml);
+        await JS.InvokeVoidAsync("performance.mark", "canvas-interactive");
+        Log("load", result);
+        _status = result.Imported ? $"loaded with {result.Warnings.Length} warning(s)" : $"load failed: {result.Error}";
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void OnChanged(ChangeEvent change)
+    {
+        Log("change", change);
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void OnSelectionChanged(SelectionEvent selection)
+    {
+        Log("selection", selection);
+        StateHasChanged();
+    }
+
+    private async Task SelectAsync() => Log("select", await _modeler!.InvokeAsync<bool>("select", "Task_Deep"));
+
+    private async Task SelectMissingAsync() => Log("select-missing", await _modeler!.InvokeAsync<bool>("select", "Does_Not_Exist"));
+
+    private async Task ApplyOverlaysAsync()
+    {
+        var stats = new Dictionary<string, ElementStats>
+        {
+            ["Task_Bound"] = new(Started: 3, Completed: 3),
+            ["Task_Deep"] = new(Started: 1, Faulted: true),
+            ["Sub_L2"] = new(Started: 2, Active: 1),
+            ["Nope"] = new(Started: 1)
+        };
+        Log("overlays", await _modeler!.InvokeAsync<OverlayResult>("applyOverlays", stats));
+    }
+
+    private async Task ClearOverlaysAsync()
+    {
+        await _modeler!.InvokeVoidAsync("clearOverlays");
+        Log("clear-overlays", true);
+    }
+
+    private async Task SaveAsync()
+    {
+        var xml = await _modeler!.InvokeAsync<string>("save");
+        Log("save", new { length = xml.Length, hasElsaBinding = xml.Contains("elsa:activityBinding") });
+    }
+
+    private async Task DisposeModelerAsync()
+    {
+        await DisposeAsync();
+        Log("dispose", true);
+        _status = "disposed";
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        // The order a Studio component would use: release the bpmn-js instance and its handlers, then the references.
+        if (_modeler is not null)
+        {
+            await _modeler.InvokeVoidAsync("dispose");
+            await _modeler.DisposeAsync();
+            _modeler = null;
+        }
+        if (_host is not null)
+        {
+            await _host.DisposeAsync();
+            _host = null;
+        }
+        _self?.Dispose();
+        _self = null;
+    }
+
+    private void Log(string kind, object? payload) => _log.Add($"{kind} {JsonSerializer.Serialize(payload, LogJson)}");
+
+    public sealed record ImportWarning(string Message, string? ElementId);
+    public sealed record LoadResult(bool Imported, string? Error, ImportWarning[] Warnings);
+    public sealed record ChangeEvent(string[] ElementIds, bool IsDirty, bool CanUndo, bool CanRedo);
+    public sealed record SelectedElement(string Id, string Type, string? Name);
+    public sealed record SelectionEvent(string[] ElementIds, SelectedElement? Primary);
+    public sealed record OverlayResult(string[] Applied, string[] UnknownElementIds);
+    public sealed record ElementStats(int? Started = null, int? Completed = null, int? Active = null, bool? Blocked = null, bool? Faulted = null, bool? Canceled = null);
+}

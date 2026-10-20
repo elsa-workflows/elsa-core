@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>BPMN modeler spike</title>
+    <link rel="stylesheet" href="../dist/elsa-bpmn-modeler.css">
+    <style>
+        /* A stand-in for Studio's MudBlazor palette (values from MudBlazor's default light and dark themes). */
+        :root, .mud-light {
+            --mud-palette-surface: #ffffff;
+            --mud-palette-background: #f5f5f5;
+            --mud-palette-background-gray: #f5f5f5;
+            --mud-palette-appbar-background: #594ae2;
+            --mud-palette-drawer-background: #ffffff;
+            --mud-palette-text-primary: rgba(66, 66, 66, 1);
+            --mud-palette-text-secondary: rgba(0, 0, 0, 0.54);
+            --mud-palette-text-disabled: rgba(0, 0, 0, 0.38);
+            --mud-palette-lines-default: rgba(0, 0, 0, 0.12);
+            --mud-palette-lines-inputs: rgba(189, 189, 189, 1);
+            --mud-palette-action-default-hover: rgba(0, 0, 0, 0.06);
+            --mud-palette-primary: #594ae2;
+            --mud-palette-primary-darken: #3e2fc9;
+            --mud-palette-error: #f44336;
+            --mud-palette-warning: #ff9800;
+            --mud-palette-info: #2196f3;
+            --mud-palette-success: #00c853;
+        }
+        .mud-dark {
+            --mud-palette-surface: #373740;
+            --mud-palette-background: #32333d;
+            --mud-palette-background-gray: #27272f;
+            --mud-palette-appbar-background: #27272f;
+            --mud-palette-drawer-background: #27272f;
+            --mud-palette-text-primary: rgba(255, 255, 255, 0.70);
+            --mud-palette-text-secondary: rgba(255, 255, 255, 0.50);
+            --mud-palette-text-disabled: rgba(255, 255, 255, 0.20);
+            --mud-palette-lines-default: rgba(255, 255, 255, 0.12);
+            --mud-palette-lines-inputs: rgba(255, 255, 255, 0.30);
+            --mud-palette-action-default-hover: rgba(255, 255, 255, 0.06);
+            --mud-palette-primary: #776be7;
+            --mud-palette-primary-darken: #5a4de0;
+            --mud-palette-error: #f64e62;
+            --mud-palette-warning: #ffa800;
+            --mud-palette-info: #3299ff;
+            --mud-palette-success: #0bba83;
+        }
+        html, body { margin: 0; height: 100%; font-family: Roboto, Helvetica, Arial, sans-serif; }
+        body { background: var(--mud-palette-background); color: var(--mud-palette-text-primary); }
+        .shell { display: grid; grid-template-rows: 56px 1fr; grid-template-columns: 220px 1fr; height: 100vh; }
+        .appbar { grid-column: 1 / 3; background: var(--mud-palette-appbar-background); color: #fff; display: flex; align-items: center; padding: 0 16px; }
+        .drawer { background: var(--mud-palette-drawer-background); border-right: 1px solid var(--mud-palette-lines-default); }
+        .content { display: grid; grid-template-rows: 44px 1fr; min-width: 0; min-height: 0; }
+        .toolbar { display: flex; gap: 8px; align-items: center; padding: 0 12px; border-bottom: 1px solid var(--mud-palette-lines-default); background: var(--mud-palette-surface); }
+        .toolbar button { font: inherit; }
+        /* The rule the spike checks: the canvas host has nothing of Studio's floating over it; the properties panel
+           sits beside it, never on top. bpmn-js draws its watermark in the canvas's bottom-right corner. */
+        .designer { display: grid; grid-template-columns: 1fr 360px; min-height: 0; }
+        #canvas { position: relative; min-width: 0; min-height: 0; overflow: hidden; }
+        #properties { overflow: auto; border-left: 1px solid var(--mud-palette-lines-default); background: var(--mud-palette-surface); }
+        @media (max-width: 900px) { .shell { grid-template-columns: 0 1fr; } .designer { grid-template-columns: 1fr 280px; } }
+    </style>
+</head>
+<body class="mud-light">
+<div class="shell">
+    <header class="appbar">Elsa Studio (spike stand-in)</header>
+    <nav class="drawer"></nav>
+    <section class="content">
+        <div class="toolbar">
+            <button id="theme">Toggle theme</button>
+            <span id="status"></span>
+        </div>
+        <div class="designer">
+            <div id="canvas"></div>
+            <aside id="properties" class="elsa-bpmn-properties"></aside>
+        </div>
+    </section>
+</div>
+<script type="module">
+    performance.mark('module-import-start');
+    const module = await import('../dist/elsa-bpmn-modeler.js');
+    performance.mark('module-import-end');
+    const tools = await import('../dist/harness-tools.js');
+    window.spike = { module, tools };
+    document.getElementById('theme').onclick = () => {
+        document.body.classList.toggle('mud-dark');
+        document.body.classList.toggle('mud-light');
+    };
+    window.spikeReady = true;
+</script>
+</body>
+</html>

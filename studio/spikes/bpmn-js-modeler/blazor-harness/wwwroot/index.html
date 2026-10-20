@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>BPMN modeler spike (Blazor WASM)</title>
+    <base href="/blazor/">
+    <link rel="stylesheet" href="bpmn/elsa-bpmn-modeler.css">
+    <style>
+        :root {
+            --mud-palette-surface: #ffffff; --mud-palette-background-gray: #f5f5f5; --mud-palette-text-primary: rgba(66, 66, 66, 1);
+            --mud-palette-text-secondary: rgba(0, 0, 0, 0.54); --mud-palette-text-disabled: rgba(0, 0, 0, 0.38);
+            --mud-palette-lines-default: rgba(0, 0, 0, 0.12); --mud-palette-lines-inputs: rgba(189, 189, 189, 1);
+            --mud-palette-action-default-hover: rgba(0, 0, 0, 0.06); --mud-palette-primary: #594ae2; --mud-palette-primary-darken: #3e2fc9;
+            --mud-palette-error: #f44336; --mud-palette-warning: #ff9800; --mud-palette-info: #2196f3; --mud-palette-success: #00c853;
+        }
+        html, body { margin: 0; height: 100%; font-family: sans-serif; }
+        .harness { display: grid; grid-template-rows: auto 1fr auto; height: 100vh; }
+        .toolbar { display: flex; gap: 6px; padding: 6px; flex-wrap: wrap; }
+        .designer { display: grid; grid-template-columns: 1fr 320px; min-height: 0; }
+        .canvas { position: relative; min-width: 0; min-height: 0; overflow: hidden; }
+        .properties { overflow: auto; border-left: 1px solid #ddd; }
+        pre { margin: 0; max-height: 160px; overflow: auto; font-size: 11px; background: #f5f5f5; }
+    </style>
+</head>
+<body>
+<div id="app">Loading…</div>
+<script>performance.mark('page-start');</script>
+<script src="_framework/blazor.webassembly.js"></script>
+</body>
+</html>

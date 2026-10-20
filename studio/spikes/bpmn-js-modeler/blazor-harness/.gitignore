@@ -1,0 +1,5 @@
+# The root .gitignore ignores every wwwroot/; this harness keeps its hand-written host page and adapter.
+!wwwroot/
+# Copied in by build.mjs.
+wwwroot/bpmn/
+wwwroot/fixtures/

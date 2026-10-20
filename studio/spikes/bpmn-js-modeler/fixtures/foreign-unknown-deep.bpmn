@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Crafted for the #8901 spike: foreign and unknown content, subprocess bodies at three depths, multiple planes, colours, label DI. -->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:elsa="https://elsaworkflows.io/schemas/bpmn/v1"
+                  xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+                  xmlns:acme="https://example.com/schemas/acme"
+                  xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0"
+                  xmlns:color="http://www.omg.org/spec/BPMN/non-normative/color/1.0"
+                  id="Definitions_spike"
+                  targetNamespace="https://elsaworkflows.io/spike"
+                  exporter="Spike author"
+                  exporterVersion="0.0.1"
+                  acme:revision="7">
+  <acme:catalog version="2"><acme:entry key="root-level foreign element" /></acme:catalog>
+  <bpmn:message id="Message_Order" name="OrderPlaced" />
+  <bpmn:message id="Message_Cancel" name="CancelRequested" />
+  <bpmn:collaboration id="Collaboration_1">
+    <bpmn:participant id="Participant_Main" name="Order handling" processRef="Process_Main" />
+    <bpmn:participant id="Participant_Partner" name="Partner" />
+    <bpmn:messageFlow id="MessageFlow_1" sourceRef="Participant_Partner" targetRef="Start_Msg" messageRef="Message_Order" />
+  </bpmn:collaboration>
+  <bpmn:process id="Process_Main" name="Main" isExecutable="true" camunda:versionTag="3" acme:owner="team-a">
+    <bpmn:documentation textFormat="text/markdown"><![CDATA[Process docs with <markup> & "quotes".]]></bpmn:documentation>
+    <bpmn:extensionElements>
+      <acme:meta level="1">
+        <acme:tag>alpha</acme:tag>
+        <acme:mixed>text before <acme:b>bold</acme:b> text after</acme:mixed>
+      </acme:meta>
+    </bpmn:extensionElements>
+    <!-- A comment inside the process -->
+    <bpmn:startEvent id="Start_Msg" name="Order placed" isInterrupting="true">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MED_1" messageRef="Message_Order" />
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="Task_Bound" name="Notify warehouse" camunda:asyncBefore="true" acme:sla="PT5M" legacyFlag="yes">
+      <bpmn:documentation>Plain documentation &amp; an escaped ampersand.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <camunda:inputOutput>
+          <camunda:inputParameter name="orderId">${orderId}</camunda:inputParameter>
+        </camunda:inputOutput>
+        <elsa:activityBinding activityType="Elsa.WriteLine">
+          <elsa:input name="text">{"typeName":"String","expression":{"type":"JavaScript","value":"a &lt; b &amp;&amp; c &gt; d ? \"caf\u00e9 \\n\" : 'x'"}}</elsa:input>
+        </elsa:activityBinding>
+        <acme:retry attempts="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="Gateway_Route" name="Route?" default="Flow_Default">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_Cond</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Default</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:subProcess id="Sub_L1" name="Level 1">
+      <bpmn:extensionElements>
+        <acme:scope depth="1" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Cond</bpmn:incoming>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+      <bpmn:startEvent id="L1_Start">
+        <bpmn:outgoing>L1_Flow_1</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:subProcess id="Sub_L2" name="Level 2">
+        <bpmn:incoming>L1_Flow_1</bpmn:incoming>
+        <bpmn:outgoing>L1_Flow_2</bpmn:outgoing>
+        <bpmn:multiInstanceLoopCharacteristics isSequential="true" acme:collection="audits" />
+        <bpmn:startEvent id="L2_Start">
+          <bpmn:outgoing>L2_Flow_1</bpmn:outgoing>
+        </bpmn:startEvent>
+        <bpmn:subProcess id="Sub_L3" name="Level 3">
+          <bpmn:incoming>L2_Flow_1</bpmn:incoming>
+          <bpmn:outgoing>L2_Flow_2</bpmn:outgoing>
+          <bpmn:startEvent id="L3_Start">
+            <bpmn:outgoing>L3_Flow_1</bpmn:outgoing>
+          </bpmn:startEvent>
+          <bpmn:task id="Task_Deep" name="Deep task" acme:depth="3">
+            <bpmn:extensionElements>
+              <elsa:activityBinding activityType="Elsa.Delay">
+                <elsa:input name="timeSpan">{"typeName":"TimeSpan","expression":{"type":"Literal","value":"00:00:05"}}</elsa:input>
+              </elsa:activityBinding>
+              <acme:note>deep foreign content</acme:note>
+            </bpmn:extensionElements>
+            <bpmn:incoming>L3_Flow_1</bpmn:incoming>
+            <bpmn:outgoing>L3_Flow_2</bpmn:outgoing>
+          </bpmn:task>
+          <bpmn:endEvent id="L3_End">
+            <bpmn:incoming>L3_Flow_2</bpmn:incoming>
+          </bpmn:endEvent>
+          <bpmn:sequenceFlow id="L3_Flow_1" sourceRef="L3_Start" targetRef="Task_Deep" />
+          <bpmn:sequenceFlow id="L3_Flow_2" sourceRef="Task_Deep" targetRef="L3_End" />
+        </bpmn:subProcess>
+        <bpmn:endEvent id="L2_End">
+          <bpmn:incoming>L2_Flow_2</bpmn:incoming>
+        </bpmn:endEvent>
+        <bpmn:sequenceFlow id="L2_Flow_1" sourceRef="L2_Start" targetRef="Sub_L3" />
+        <bpmn:sequenceFlow id="L2_Flow_2" sourceRef="Sub_L3" targetRef="L2_End" />
+      </bpmn:subProcess>
+      <bpmn:boundaryEvent id="Boundary_Timer" name="Too slow" attachedToRef="Sub_L2" cancelActivity="false">
+        <bpmn:outgoing>L1_Flow_3</bpmn:outgoing>
+        <bpmn:timerEventDefinition id="TED_1">
+          <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT1H</bpmn:timeDuration>
+        </bpmn:timerEventDefinition>
+      </bpmn:boundaryEvent>
+      <bpmn:endEvent id="L1_End">
+        <bpmn:incoming>L1_Flow_2</bpmn:incoming>
+        <bpmn:incoming>L1_Flow_3</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="L1_Flow_1" sourceRef="L1_Start" targetRef="Sub_L2" />
+      <bpmn:sequenceFlow id="L1_Flow_2" sourceRef="Sub_L2" targetRef="L1_End" />
+      <bpmn:sequenceFlow id="L1_Flow_3" sourceRef="Boundary_Timer" targetRef="L1_End" />
+    </bpmn:subProcess>
+    <bpmn:subProcess id="Sub_Collapsed" name="Collapsed (own plane)">
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+      <bpmn:outgoing>Flow_4</bpmn:outgoing>
+      <bpmn:startEvent id="C_Start">
+        <bpmn:outgoing>C_Flow_1</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:task id="C_Task" name="Inside collapsed">
+        <bpmn:extensionElements>
+          <elsa:activityBinding activityType="Elsa.WriteLine">
+            <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"collapsed"}}</elsa:input>
+          </elsa:activityBinding>
+        </bpmn:extensionElements>
+        <bpmn:incoming>C_Flow_1</bpmn:incoming>
+        <bpmn:outgoing>C_Flow_2</bpmn:outgoing>
+      </bpmn:task>
+      <bpmn:endEvent id="C_End">
+        <bpmn:incoming>C_Flow_2</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="C_Flow_1" sourceRef="C_Start" targetRef="C_Task" />
+      <bpmn:sequenceFlow id="C_Flow_2" sourceRef="C_Task" targetRef="C_End" />
+    </bpmn:subProcess>
+    <bpmn:subProcess id="EventSub" name="Cancellation" triggeredByEvent="true">
+      <bpmn:startEvent id="E_Start" name="Cancel requested" isInterrupting="false">
+        <bpmn:outgoing>E_Flow_1</bpmn:outgoing>
+        <bpmn:messageEventDefinition id="MED_2" messageRef="Message_Cancel" />
+      </bpmn:startEvent>
+      <bpmn:task id="E_Task" name="Log cancellation">
+        <bpmn:extensionElements>
+          <elsa:activityBinding activityType="Elsa.WriteLine">
+            <elsa:input name="text">{
+  "typeName": "String",
+  "expression": {"type": "Literal", "value": "naïve — ✓ &lt;&amp;&gt; cancelled"}
+}</elsa:input>
+          </elsa:activityBinding>
+        </bpmn:extensionElements>
+        <bpmn:incoming>E_Flow_1</bpmn:incoming>
+        <bpmn:outgoing>E_Flow_2</bpmn:outgoing>
+      </bpmn:task>
+      <bpmn:endEvent id="E_End">
+        <bpmn:incoming>E_Flow_2</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="E_Flow_1" sourceRef="E_Start" targetRef="E_Task" />
+      <bpmn:sequenceFlow id="E_Flow_2" sourceRef="E_Task" targetRef="E_End" />
+    </bpmn:subProcess>
+    <bpmn:endEvent id="End_Main" name="Done">
+      <bpmn:incoming>Flow_4</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="End_Default" name="Rejected">
+      <bpmn:incoming>Flow_Default</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:fancyTask id="Unknown_Bpmn_Element" name="Not a BPMN element" />
+    <acme:annotation id="Foreign_Outside_Extensions">foreign element outside extensionElements</acme:annotation>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_Msg" targetRef="Task_Bound" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_Bound" targetRef="Gateway_Route" />
+    <bpmn:sequenceFlow id="Flow_Cond" name="ok" sourceRef="Gateway_Route" targetRef="Sub_L1">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" language="javascript"><![CDATA[order.total < 100 && order.valid]]></bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Default" sourceRef="Gateway_Route" targetRef="End_Default" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Sub_L1" targetRef="Sub_Collapsed" />
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="Sub_Collapsed" targetRef="End_Main" />
+    <bpmn:textAnnotation id="Annotation_1">
+      <bpmn:text>Annotated end</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Association_1" sourceRef="End_Main" targetRef="Annotation_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_Main" name="Main diagram">
+    <bpmndi:BPMNPlane id="Plane_Main" bpmnElement="Collaboration_1">
+      <bpmndi:BPMNShape id="Participant_Main_di" bpmnElement="Participant_Main" isHorizontal="true">
+        <dc:Bounds x="100" y="40" width="1560" height="720" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Participant_Partner_di" bpmnElement="Participant_Partner" isHorizontal="true">
+        <dc:Bounds x="100" y="820" width="600" height="100" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Start_Msg_di" bpmnElement="Start_Msg">
+        <dc:Bounds x="172" y="232" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="158" y="275" width="65" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Bound_di" bpmnElement="Task_Bound" bioc:stroke="#205022" bioc:fill="#c8e6c9" color:background-color="#c8e6c9" color:border-color="#205022">
+        <dc:Bounds x="250" y="210" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_Route_di" bpmnElement="Gateway_Route" isMarkerVisible="true">
+        <dc:Bounds x="395" y="225" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="402" y="195" width="36" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sub_L1_di" bpmnElement="Sub_L1" isExpanded="true">
+        <dc:Bounds x="490" y="80" width="760" height="400" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="L1_Start_di" bpmnElement="L1_Start">
+        <dc:Bounds x="510" y="262" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sub_L2_di" bpmnElement="Sub_L2" isExpanded="true">
+        <dc:Bounds x="580" y="120" width="540" height="300" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="L2_Start_di" bpmnElement="L2_Start">
+        <dc:Bounds x="600" y="262" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sub_L3_di" bpmnElement="Sub_L3" isExpanded="true">
+        <dc:Bounds x="670" y="180" width="340" height="200" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="L3_Start_di" bpmnElement="L3_Start">
+        <dc:Bounds x="690" y="262" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Task_Deep_di" bpmnElement="Task_Deep">
+        <dc:Bounds x="770" y="240" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="L3_End_di" bpmnElement="L3_End">
+        <dc:Bounds x="930" y="262" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="L2_End_di" bpmnElement="L2_End">
+        <dc:Bounds x="1050" y="262" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Boundary_Timer_di" bpmnElement="Boundary_Timer">
+        <dc:Bounds x="1002" y="402" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1046" y="440" width="44" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="L1_End_di" bpmnElement="L1_End">
+        <dc:Bounds x="1172" y="262" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Sub_Collapsed_di" bpmnElement="Sub_Collapsed" isExpanded="false">
+        <dc:Bounds x="1300" y="240" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EventSub_di" bpmnElement="EventSub" isExpanded="true">
+        <dc:Bounds x="490" y="530" width="380" height="180" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="E_Start_di" bpmnElement="E_Start">
+        <dc:Bounds x="520" y="602" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="E_Task_di" bpmnElement="E_Task">
+        <dc:Bounds x="610" y="580" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="E_End_di" bpmnElement="E_End">
+        <dc:Bounds x="772" y="602" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Main_di" bpmnElement="End_Main">
+        <dc:Bounds x="1462" y="262" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1467" y="305" width="26" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Default_di" bpmnElement="End_Default">
+        <dc:Bounds x="402" y="402" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Annotation_1_di" bpmnElement="Annotation_1">
+        <dc:Bounds x="1520" y="120" width="110" height="40" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="MessageFlow_1_di" bpmnElement="MessageFlow_1">
+        <di:waypoint x="190" y="820" />
+        <di:waypoint x="190" y="268" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="208" y="250" />
+        <di:waypoint x="250" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+        <di:waypoint x="350" y="250" />
+        <di:waypoint x="395" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Cond_di" bpmnElement="Flow_Cond">
+        <di:waypoint x="445" y="250" />
+        <di:waypoint x="490" y="250.5" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="460" y="232" width="13" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Default_di" bpmnElement="Flow_Default">
+        <di:waypoint x="420" y="275" />
+        <di:waypoint x="420" y="402" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="L1_Flow_1_di" bpmnElement="L1_Flow_1">
+        <di:waypoint x="546" y="280" />
+        <di:waypoint x="580" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="L2_Flow_1_di" bpmnElement="L2_Flow_1">
+        <di:waypoint x="636" y="280" />
+        <di:waypoint x="670" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="L3_Flow_1_di" bpmnElement="L3_Flow_1">
+        <di:waypoint x="726" y="280" />
+        <di:waypoint x="770" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="L3_Flow_2_di" bpmnElement="L3_Flow_2">
+        <di:waypoint x="870" y="280" />
+        <di:waypoint x="930" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="L2_Flow_2_di" bpmnElement="L2_Flow_2">
+        <di:waypoint x="1010" y="280" />
+        <di:waypoint x="1050" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="L1_Flow_2_di" bpmnElement="L1_Flow_2">
+        <di:waypoint x="1120" y="280" />
+        <di:waypoint x="1172" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="L1_Flow_3_di" bpmnElement="L1_Flow_3">
+        <di:waypoint x="1020" y="438" />
+        <di:waypoint x="1020" y="458" />
+        <di:waypoint x="1190" y="458" />
+        <di:waypoint x="1190" y="298" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3">
+        <di:waypoint x="1250" y="280" />
+        <di:waypoint x="1300" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_4_di" bpmnElement="Flow_4">
+        <di:waypoint x="1400" y="280" />
+        <di:waypoint x="1462" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_Flow_1_di" bpmnElement="E_Flow_1">
+        <di:waypoint x="556" y="620" />
+        <di:waypoint x="610" y="620" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="E_Flow_2_di" bpmnElement="E_Flow_2">
+        <di:waypoint x="710" y="620" />
+        <di:waypoint x="772" y="620" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Association_1_di" bpmnElement="Association_1">
+        <di:waypoint x="1492" y="268" />
+        <di:waypoint x="1560" y="160" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+    <bpmndi:BPMNLabelStyle id="LabelStyle_1">
+      <dc:Font name="Arial" size="11" isBold="false" isItalic="false" isUnderline="false" isStrikeThrough="false" />
+    </bpmndi:BPMNLabelStyle>
+  </bpmndi:BPMNDiagram>
+  <bpmndi:BPMNDiagram id="Diagram_Collapsed">
+    <bpmndi:BPMNPlane id="Plane_Collapsed" bpmnElement="Sub_Collapsed">
+      <bpmndi:BPMNShape id="C_Start_di" bpmnElement="C_Start">
+        <dc:Bounds x="180" y="160" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="C_Task_di" bpmnElement="C_Task">
+        <dc:Bounds x="270" y="138" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="C_End_di" bpmnElement="C_End">
+        <dc:Bounds x="432" y="160" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="C_Flow_1_di" bpmnElement="C_Flow_1">
+        <di:waypoint x="216" y="178" />
+        <di:waypoint x="270" y="178" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="C_Flow_2_di" bpmnElement="C_Flow_2">
+        <di:waypoint x="370" y="178" />
+        <di:waypoint x="432" y="178" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

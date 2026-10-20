@@ -1,0 +1,28 @@
+{
+  "name": "Elsa",
+  "uri": "https://elsaworkflows.io/schemas/bpmn/v1",
+  "prefix": "elsa",
+  "xml": {
+    "tagAlias": "lowerCase"
+  },
+  "associations": [],
+  "types": [
+    {
+      "name": "ActivityBinding",
+      "superClass": [ "Element" ],
+      "properties": [
+        { "name": "activityType", "type": "String", "isAttr": true },
+        { "name": "inputs", "type": "Input", "isMany": true }
+      ]
+    },
+    {
+      "name": "Input",
+      "superClass": [ "Element" ],
+      "properties": [
+        { "name": "name", "type": "String", "isAttr": true },
+        { "name": "value", "type": "String", "isBody": true }
+      ]
+    }
+  ],
+  "enumerations": []
+}

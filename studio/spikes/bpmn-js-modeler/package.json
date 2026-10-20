@@ -1,0 +1,21 @@
+{
+  "name": "elsa-bpmn-js-modeler-spike",
+  "private": true,
+  "description": "Throwaway Phase 0 spike for #8901: evaluate bpmn-js as Studio's BPMN modeler. Not shipped.",
+  "license": "MIT",
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "spike": "node build.mjs && node run-spike.mjs"
+  },
+  "dependencies": {
+    "@bpmn-io/properties-panel": "3.56.1",
+    "bpmn-js": "18.31.0",
+    "bpmn-js-properties-panel": "5.65.1"
+  },
+  "devDependencies": {
+    "bpmn-auto-layout": "1.3.0",
+    "esbuild": "0.28.2"
+  }
+}

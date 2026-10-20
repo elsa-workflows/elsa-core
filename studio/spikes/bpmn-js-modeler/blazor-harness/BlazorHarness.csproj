@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+    <!--
+      SPIKE (#8901), not part of any solution: a minimal Blazor WebAssembly host that drives the framework-neutral
+      modeler module through IJSRuntime / IJSObjectReference, the way a Studio component would.
+      `node build.mjs` copies the module into wwwroot/bpmn before this is published.
+    -->
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <IsPackable>false</IsPackable>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
+    </ItemGroup>
+
+</Project>
