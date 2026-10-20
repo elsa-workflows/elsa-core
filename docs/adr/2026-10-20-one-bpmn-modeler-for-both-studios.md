@@ -24,8 +24,8 @@ its own.
 ## Decision
 
 Build the BPMN modeler once, as a framework-neutral JavaScript module around bpmn-js with a small, documented API:
-load a document, save it, select an element, apply and clear overlays, raise change and selection events, and dispose
-of the modeler. Each host calls dispose when it unmounts the canvas, which releases the bpmn-js instance and its event
+load a document, save it, select an element, read and replace an element's `elsa:` binding, apply and clear overlays,
+raise change and selection events, and dispose of the modeler. Each host calls dispose when it unmounts the canvas, which releases the bpmn-js instance and its event
 handlers.
 
 - Documents go in and out as BPMN XML strings, the source of truth in
@@ -38,13 +38,20 @@ handlers.
   - `load` returns `{ imported, error?, warnings: [{ message, elementId? }] }`;
   - `change` sends `{ elementIds, isDirty, canUndo, canRedo }`;
   - `selection` sends `{ elementIds, primary: { id, type, name? } | null }`;
-  - `applyOverlays` takes the `BpmnElementStats` keyed by element id and returns `{ applied, unknownElementIds }`.
+  - `applyOverlays` takes the `BpmnElementStats` keyed by element id and returns `{ applied, unknownElementIds }`;
+  - `getBinding(elementId)` returns `{ activityType, inputs: [{ name, value }] } | null`, the element's
+    `elsa:activityBinding` with its `elsa:input` values as JSON text;
+  - `setBinding(elementId, binding | null)` writes or removes that binding as one undoable edit, keeps the element's
+    other extension elements where they are, and raises `change`. It refuses an element that cannot carry a binding
+    (anything but a task), as Elsa's binder does.
 - This API is the BPMN designer contract. The X6 and React Flow designers implement it too, so the code around a
   designer never depends on which one is enabled.
 
 - The Blazor Studio hosts it first, through JS interop, because it is the default Studio.
 - The React Studio mounts the same module directly when its BPMN work reaches modeling.
-- Studio-specific code is limited to hosting: dialogs, the activity picker and input editors, and the save flow.
+- Studio-specific code is limited to hosting: dialogs, the activity picker and input editors, and the save flow. The
+  picker and editors follow the selection event and edit through `getBinding` and `setBinding`, so they never parse
+  or patch the XML themselves.
 
 ## Consequences
 

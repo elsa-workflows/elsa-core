@@ -33,9 +33,10 @@ enables.
 
 - **One contract.** Every designer implements the designer API defined in
   [Build one BPMN modeler module for both Studios](2026-10-20-one-bpmn-modeler-for-both-studios.md): load a BPMN XML
-  document and report what it could not represent, save it, select an element, apply and clear overlays keyed by BPMN
-  element id, raise change and selection events, and dispose. Studio code outside the designer depends only on that
-  contract, so the activity picker, the input editors, the save flow and the instance overlays work with any designer.
+  document and report what it could not represent, save it, select an element, read and replace an element's `elsa:`
+  binding, apply and clear overlays keyed by BPMN element id, raise change and selection events, and dispose. Studio
+  code outside the designer depends only on that contract: the activity picker and input editors follow the selection
+  and edit through the binding operations, so they, the save flow and the instance overlays work with any designer.
 - **One module per designer.** Each designer is its own Studio module, such as `Elsa.Studio.Bpmn.BpmnJs` and
   `Elsa.Studio.Bpmn.X6` in the Blazor Studio. A host enables a designer the way it enables any other Studio feature.
   When a host enables none, the Studio's BPMN feature enables bpmn-js. A designer the host does not enable adds nothing

@@ -34,7 +34,10 @@ Build Studio's BPMN modeler on bpmn-js and its properties-panel packages, not on
 
 - The `elsa:` vendor extension (`elsa:activityBinding`, `elsa:input`) is published as a bpmn-js moddle descriptor, so the
   modeler reads and writes bindings as BPMN rather than through a side channel.
-- Elsa-specific editing, choosing the activity that performs a task and editing its inputs, is a properties-panel provider.
+- Elsa-specific editing, choosing the activity that performs a task and editing its inputs, uses Studio's activity
+  picker and input editors through the designer contract's binding operations
+  ([Build one BPMN modeler module for both Studios](2026-10-20-one-bpmn-modeler-for-both-studios.md)). The bpmn-js
+  properties panel shows them through a provider that calls the same operations.
 - Instance state (the per-element overlay Studio already computes from `BpmnElementStats`) is drawn with bpmn-js
   overlays and markers.
 - bpmn-js is the default BPMN designer in both Studios. Other designers implement the same contract
