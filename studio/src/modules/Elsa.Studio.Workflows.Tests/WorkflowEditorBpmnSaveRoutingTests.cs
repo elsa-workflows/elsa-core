@@ -268,6 +268,27 @@ public sealed class WorkflowEditorBpmnSaveRoutingTests : BunitContext, IAsyncLif
         Assert.True(Session(cut).IsDirty);
     }
 
+    /// <summary>
+    /// A refusal for expression conditions is about the whole process, not the edited task, so the editor's own message
+    /// names the flows rather than only saying the binding changes were not saved.
+    /// </summary>
+    [Fact]
+    public async Task ASaveRefusedForExpressionConditions_SaysWhichFlowsCarryThem()
+    {
+        var cut = RenderEditor(BpmnDefinition());
+        await EditBindingAsync(cut);
+        _documentService.RefusesPut(new BpmnDocumentFailure(BpmnDocumentFailureReason.ConditionUnsupported, "The server's own words.")
+        {
+            ConditionRefusal = new(["Flow_A", "Flow_B"])
+        });
+
+        await InvokeAsync(cut, "OnSaveClick");
+
+        Assert.Equal(BpmnDocumentFailureReason.ConditionUnsupported, Session(cut).SaveFailure!.Reason);
+        Assert.Contains(_messages.Messages, message => message.Contains("were not saved", StringComparison.Ordinal)
+                                                       && message.Contains("'Flow_A', 'Flow_B'", StringComparison.Ordinal));
+    }
+
     [Fact]
     public async Task Reloading_ReplacesTheDefinitionAndTheDocument_DiscardingUnsavedBindingChanges()
     {

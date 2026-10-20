@@ -129,8 +129,9 @@ public interface IWorkflowDefinitionStore
     /// <para>
     /// Loads the matching row, and only if <paramref name="matchesExpected"/> is true applies
     /// <paramref name="update"/> to that just-loaded row and saves the result. The load, the match,
-    /// the update and the save are one critical section (memory) or one conditional write (EF:
-    /// <c>ExecuteUpdate</c> against the loaded snapshot). A lost race returns
+    /// the update and the save are one critical section (memory), one conditional write (EF:
+    /// <c>ExecuteUpdate</c> against the loaded snapshot), one serializable transaction (Dapper) or one
+    /// snapshot-read session transaction (MongoDB). A lost race returns
     /// <see cref="WorkflowDefinitionUpdateOutcome.Conflict"/> — it does not wait.
     /// </para>
     /// <para>
@@ -144,9 +145,10 @@ public interface IWorkflowDefinitionStore
     /// of a published version), the previously latest row is unmarked in the same step.
     /// </para>
     /// <para>
-    /// Persistence providers outside this repository (Mongo, Dapper, Event Sourcing) must implement
-    /// this the same way before the BPMN document <c>PUT</c> is concurrency-safe on those stores.
-    /// Until they do, that endpoint's atomic precondition is not available there.
+    /// Every store in this repository implements this atomically. The MongoDB store needs a deployment
+    /// that supports transactions, such as a replica set; against a standalone server it throws
+    /// <see cref="NotSupportedException"/> without writing. A store from outside this repository must
+    /// give the same guarantee for the BPMN document <c>PUT</c> to be concurrency-safe on it.
     /// </para>
     /// </remarks>
     /// <param name="filter">Typically the latest version of one definition id.</param>

@@ -15,11 +15,12 @@ import { defineConfig } from 'vitest/config';
 // mapping, badge policy and graph options are all plain functions precisely so that they can be
 // tested here rather than only in a browser. The flowchart designer's edge hover tools are covered
 // the same way, through the graph events they listen to. The rest of the designer and react-designer
-// bundles have no test suite; they are covered by the .NET side.
+// bundles have no test suite; they are covered by the .NET side. Under scripts/, the Bpmn.Model drift
+// guard that generate-bpmn-types.js applies is covered as plain functions too.
 export default defineConfig({
     test: {
         environment: 'jsdom',
-        include: ['src/**/*.test.ts'],
+        include: ['src/**/*.test.ts', 'scripts/**/*.test.ts'],
         typecheck: {
             enabled: true,
             include: ['src/**/*.test-d.ts'],
