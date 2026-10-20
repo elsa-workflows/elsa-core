@@ -32,7 +32,9 @@ Conditions are evaluated by the host, with Elsa's expression engine.
   or as a URI whose last path segment is that name. JavaScript is used when neither value is present. A language Elsa
   does not support is refused at import with a coded error, never mapped to another language.
 - A condition that fails to evaluate faults the work that reached it, like any other expression failure in Elsa.
-- `conditionOutcome` keeps working as it does today.
+- `conditionOutcome` keeps working as it does today. A sequence flow that carries both a `conditionOutcome` and a
+  `conditionExpression` is refused at import with a coded error, because either precedence rule would route some
+  documents differently from what their author meant.
 - The same callback serves `completionCondition`, standard loops and conditional events once the library supports them.
 
 Until the callback ships, import refuses a document whose flows carry `conditionExpression`, with a coded error,

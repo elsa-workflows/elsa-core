@@ -36,9 +36,16 @@ Build Studio's BPMN modeler on bpmn-js and its properties-panel packages, not on
   overlays and markers.
 - The X6 BPMN renderer and its read-only adapter are retired once the modeler reaches parity with them.
 
-A spike confirms the decision before Phase 3 of the BPMN v2 program starts: bundle size and load time in Blazor
-WebAssembly, JS interop for load, save and selection, theming in light and dark, the `elsa:` moddle round trip, and a
-canvas layout in which no Studio element covers the bpmn.io watermark.
+A spike confirms the decision before Phase 3 of the BPMN v2 program starts. It checks:
+
+- bundle size and load time in Blazor WebAssembly;
+- the shared module's whole API through JS interop: load, save, selection, change events, overlays applied and cleared,
+  and disposal;
+- theming in light and dark;
+- a lossless XML round trip through load, edit and save: the `elsa:` extensions, foreign extensions, unknown elements
+  and attributes, subprocess bodies at every depth, and BPMN DI;
+- editing `elsa:activityBinding` and `elsa:input` through the properties panel;
+- a canvas layout in which no Studio element covers the bpmn.io watermark.
 
 ## Consequences
 

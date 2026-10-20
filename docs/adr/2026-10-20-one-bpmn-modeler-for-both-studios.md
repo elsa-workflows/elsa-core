@@ -21,7 +21,9 @@ its own.
 ## Decision
 
 Build the BPMN modeler once, as a framework-neutral JavaScript module around bpmn-js with a small, documented API:
-load a document, save it, select an element, apply an overlay, and raise change and selection events.
+load a document, save it, select an element, apply and clear overlays, raise change and selection events, and dispose
+of the modeler. Each host calls dispose when it unmounts the canvas, which releases the bpmn-js instance and its event
+handlers.
 
 - Documents go in and out as BPMN XML strings, the source of truth in
   [Keep BPMN XML as the source of truth for BPMN workflows](2026-10-20-bpmn-xml-as-source-of-truth.md). Load returns the
