@@ -63,3 +63,7 @@ All three documents are byte-for-byte copies of the corresponding files at
 Studio commit `f0eeb3c7428443b09512049fe890635fa4f7b427`. The first two
 import dispositions and verification are recorded in the
 [integration-program asset note](../../docs/integration-program/consolidation/studio-document-assets.md).
+
+## Native compensation design
+
+The [Elsa 3 adaptation design packet](specs/native-compensation/plan.md) is the design-only #8896 exception. It describes proposed contracts and remaining decisions; production implementation and other program leaves remain paused.

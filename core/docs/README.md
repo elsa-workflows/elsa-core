@@ -38,3 +38,7 @@ identities. Successful source builds do not authorize package publication or
 source-repository archival; the [first consolidated release policy](../../docs/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md)
 and [artifact proof](../../docs/integration-program/consolidated-package-proof.md)
 retain their separate gates.
+
+## Native compensation design
+
+The [Elsa 3 adaptation design packet](specs/native-compensation/README.md) is the design-only #8896 exception. It describes proposed contracts and remaining decisions; production implementation and other program leaves remain paused.
