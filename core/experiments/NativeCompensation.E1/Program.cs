@@ -68,7 +68,7 @@ internal static class Program
             if (args[0] == "resave")
             {
                 await store.SaveAsync(existing ?? throw new InvalidOperationException("Expected saved instance."));
-                Events.Write("resaved", new { existing.Id, stateId = existing.WorkflowState.Id, propertyCount = existing.WorkflowState.Properties.Count });
+                Events.Write("resaved", new { existing.Id, stateId = existing.WorkflowState?.Id, propertyCount = existing.WorkflowState?.Properties.Count });
                 return 0;
             }
             if (args[0] == "stale")
