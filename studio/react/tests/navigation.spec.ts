@@ -25,6 +25,22 @@ test("deep links, search state, SPA links and browser history stay under the mou
   expect(errors).toEqual([]);
 });
 
+test("dashboard legend preserves the mount and instance filter during SPA navigation", async ({ page }) => {
+  // Exercise the retained core-API fallback, whose count data produces the legend.
+  await page.route("**/elsa/api/dashboard/**", route => route.fulfill({ status: 404 }));
+  await page.goto("/studio-preview/");
+  const link = page.getByRole("link", { name: /^Executing/ });
+  await expect(link).toHaveAttribute("href", "/studio-preview/workflows/instances?subStatus=Executing");
+  const marker = await page.evaluate(() => performance.timeOrigin);
+  await link.click();
+  await expect(page).toHaveURL(/\/studio-preview\/workflows\/instances\?subStatus=Executing$/);
+  await expect(page.getByRole("heading", { name: "Workflow instances", exact: true })).toBeVisible();
+  expect(await page.evaluate(() => performance.timeOrigin)).toBe(marker);
+  await page.reload();
+  await expect(page).toHaveURL(/\/studio-preview\/workflows\/instances\?subStatus=Executing$/);
+  await expect(page.getByRole("heading", { name: "Workflow instances", exact: true })).toBeVisible();
+});
+
 test("host title, Preview label and CSS load without a Next runtime", async ({ page }) => {
   const failed: string[] = [];
   page.on("response", response => {
