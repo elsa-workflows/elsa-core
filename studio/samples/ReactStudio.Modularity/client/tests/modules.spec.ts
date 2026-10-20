@@ -45,6 +45,16 @@ test("disabled CShells features contribute neither manifests nor assets", async 
   await expect(page.getByRole("link", { name: "Weather", exact: true })).toHaveCount(0);
 });
 
+test("a module render failure leaves navigation and other modules usable", async ({ page }) => {
+  await page.goto("/studio-preview/weather/error");
+  await expect(page.getByRole("alert").filter({ hasText: "Module weather-error could not render: Weather view failed" })).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Label editor" })).toBeVisible();
+  await page.getByRole("link", { name: "Labels", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Labels from NuGet" })).toBeVisible();
+  await page.getByRole("button", { name: "Add label" }).click();
+  await expect(page.getByTestId("labels-counter")).toHaveText("Shared count: 1");
+});
+
 test("Vite hot updates travel through the ASP.NET host with its nonce CSP", async ({ page }) => {
   const base = "http://127.0.0.1:5103";
   const source = new URL("../src/labels.ts", import.meta.url);

@@ -12,7 +12,12 @@ function Weather() {
     h("p", { "data-testid": "weather-counter" }, `Shared count: ${query.data}`));
 }
 
+function BrokenWeather(): never {
+  throw new Error("Weather view failed");
+}
+
 export function register(api: StudioApi) {
   api.routes.push({ id: "weather", order: 20, value: { path: "/weather", component: Weather } });
+  api.routes.push({ id: "weather-error", order: 20, value: { path: "/weather/error", component: BrokenWeather } });
   api.navigation.push({ id: "weather", order: 20, value: { path: "/weather", label: "Weather" } });
 }

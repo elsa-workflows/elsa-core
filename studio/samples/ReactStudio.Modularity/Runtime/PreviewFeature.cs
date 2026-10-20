@@ -89,7 +89,9 @@ public sealed class PreviewFeature : IWebShellFeature
     private static IResult Asset(System.Reflection.Assembly assembly, string prefix, string file)
     {
         if (file is not ("entry.js" or "style.css"))
+        {
             return Results.NotFound();
+        }
         var stream = assembly.GetManifestResourceStream($"{prefix}/{file}");
         return stream == null ? Results.NotFound() : Results.Stream(stream, file.EndsWith(".js") ? "text/javascript" : "text/css");
     }

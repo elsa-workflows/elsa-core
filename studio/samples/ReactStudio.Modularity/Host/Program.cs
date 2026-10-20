@@ -16,7 +16,9 @@ builder.AddShells(shells => shells
     {
         shell.WithFeatures(typeof(LabelsFeature));
         if (builder.Configuration.GetValue("Spike:ThirdPartyEnabled", true))
+        {
             shell.WithFeatures(typeof(WeatherFeature), typeof(IncompatibleFeature));
+        }
     }));
 
 var viteUrl = builder.Configuration["Spike:ViteUrl"];

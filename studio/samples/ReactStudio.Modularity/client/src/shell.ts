@@ -1,4 +1,4 @@
-import { createElement as h, useEffect, useState } from "react";
+import { Component, createElement as h, useEffect, useState, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeContext, ordered, type StudioApi } from "@elsa-workflows/react-studio-sdk";
@@ -31,6 +31,20 @@ for (const module of manifest.modules) {
 }
 
 const client = new QueryClient();
+class ModuleBoundary extends Component<{ id: string; children?: ReactNode }, { message: string | null }> {
+  state = { message: null as string | null };
+
+  static getDerivedStateFromError(error: unknown) {
+    return { message: error instanceof Error ? error.message : String(error) };
+  }
+
+  render() {
+    return this.state.message
+      ? h("p", { role: "alert" }, `Module ${this.props.id} could not render: ${this.state.message}`)
+      : this.props.children;
+  }
+}
+
 function Shell() {
   const [theme, setTheme] = useState("light");
   const [path, setPath] = useState(location.pathname.slice(base.length) || "/labels");
@@ -63,8 +77,9 @@ function Shell() {
         },
       }, item.value.label))),
       ...manifest.diagnostics.map(item => h("p", { key: item.id, role: "alert" }, item.message)),
-      route ? h(route.value.component) : h("p", null, "Page not found"),
-      h("section", { "aria-label": "UI hint editors" }, ...ordered(api.editors).map(item => h(item.value.component, { key: item.id })))));
+      route ? h(ModuleBoundary, { id: route.id, key: route.id }, h(route.value.component)) : h("p", null, "Page not found"),
+      h("section", { "aria-label": "UI hint editors" }, ...ordered(api.editors).map(item =>
+        h(ModuleBoundary, { id: item.id, key: item.id }, h(item.value.component))))));
 }
 
 createRoot(document.getElementById("root")!).render(h(Shell));

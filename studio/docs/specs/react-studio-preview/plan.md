@@ -59,8 +59,14 @@ The original snapshot time was 2026-10-19 09:00 Europe/Amsterdam; establish the 
 source refs from Git and retain all subsequent work in the import receipt. Do not
 archive the source repository before the import is reviewed and merged.
 
-On 2026-10-20 the cloud instance denied GitHub API requests with HTTP 403. `api.github.com` has
-been added to the environment draft, preserving the existing Feedz and font-domain
-requirements. Saving a draft does not apply network policy. Until access is applied,
-issue assignment, pull-request creation, review requests and CI inspection are blocked.
-No issue-assignment or GitHub completion claim is made by this local delivery record.
+GitHub API access was restored on 2026-10-20. The epic and spike are assigned to
+the connected account, `sfmskywalker`, and the initial implementation is under review
+in [#8923](https://github.com/elsa-workflows/elsa-core/pull/8923). Required Greptile
+and automatic CodeRabbit reviews were requested/started. The source remains unimported;
+the epic and child issues are not closed by this record.
+
+Feedz and Google Fonts access also recovered. The unchanged reference server builds,
+its workflow-core suite passes 363 tests, both health checks pass, and its sample HTTP
+workflow executes. The unchanged donor production build and browser sign-in/dashboard
+check pass. These establish a development baseline; they do not establish the Vite
+port, production module package integration, full feature parity or a preview release.
