@@ -34,7 +34,14 @@ docker run --rm -p 8080:8080 \
 
 The image builds the frontend with a frozen lockfile, embeds its assets in the host,
 and runs the ASP.NET runtime on port 8080 as its supplied non-root app user. Node.js
-is needed only in the build stage. To supply a complete configuration:
+is needed only in the build stage.
+
+When a build network uses a private certificate authority, pass its trusted CA bundle
+with `docker build --secret id=build-ca,src=/path/to/ca-bundle.crt` along with the
+build arguments above. The optional secret is used only during dependency installation
+and compilation; it is not copied into the image. TLS verification remains enabled.
+
+To supply a complete runtime configuration:
 
 ```sh
 docker run --rm -p 8080:8080 \

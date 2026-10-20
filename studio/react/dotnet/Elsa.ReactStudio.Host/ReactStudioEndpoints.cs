@@ -41,7 +41,7 @@ public static class ReactStudioEndpoints
                     Environment.GetEnvironmentVariable, context.RequestAborted);
                 return Results.Json(config);
             }
-            catch (Exception exception) when (exception is JsonException or InvalidDataException or InvalidOperationException or IOException or ArgumentException)
+            catch (Exception exception) when (exception is JsonException or InvalidDataException or InvalidOperationException or IOException or UnauthorizedAccessException or ArgumentException)
             {
                 // Configuration can contain API keys; neither response nor logs echo document values.
                 context.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("Elsa.ReactStudio.Host")

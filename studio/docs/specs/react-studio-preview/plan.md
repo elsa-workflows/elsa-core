@@ -84,7 +84,7 @@ The host builds on net8/net9/net10. The build scans 113 production dependencies 
 retains their notices; the full npm audit reports zero known vulnerabilities.
 
 The source-validation workflow also builds and starts the standalone Preview image
-without publishing. Local image validation is pending access to the Microsoft base
-image CDN. Production module extraction, SDK v1, opt-in CShells/server integration,
+without publishing. Local image build and non-root container sign-in, definitions navigation and reload
+pass after configuring the build network’s trusted CA bundle. Production module extraction, SDK v1, opt-in CShells/server integration,
 parity work, publication and final source cutover remain open. See the
 [port verification checklist](../../../react/docs/vite-port-verification.md).

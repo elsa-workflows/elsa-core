@@ -13,7 +13,11 @@ const upstreamNotices = new Map([
   ["react-remove-scroll-bar@2.3.8", "react-remove-scroll-bar.txt"],
 ]);
 const pnpm = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
-const report = JSON.parse(execFileSync(pnpm, ["licenses", "list", "--prod", "--json"], { encoding: "utf8" }));
+const args = ["licenses", "list", "--prod", "--json"];
+// pnpm supplies its JS entrypoint in scripts, including on Windows where a .cmd
+// shim cannot be launched directly by execFileSync.
+const report = JSON.parse(execFileSync(process.env.npm_execpath ? process.execPath : pnpm,
+  process.env.npm_execpath ? [process.env.npm_execpath, ...args] : args, { encoding: "utf8" }));
 const notices = [];
 let packages = 0;
 for (const [license, entries] of Object.entries(report)) {

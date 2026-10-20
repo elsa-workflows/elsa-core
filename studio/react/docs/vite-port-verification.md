@@ -17,6 +17,7 @@ separately by `scripts/dependency-licenses.mjs` during every frontend build.
 | Default OIDC/external callback URLs include mount | Playwright observes the OIDC authorization request and PKCE callback under the mount; complete identity-provider round trips remain to verify |
 | Missing JS/CSS return 404 | HTTP and browser tests |
 | Real Elsa Identity sign-in and authenticated dashboard/list reload | Local browser check against Elsa.Server.Web |
+| Standalone image and published host | Non-root Docker sign-in, definitions navigation/reload, runtime overrides; published host at site root |
 | Production assets, Preview label and host title | Playwright against built ESM/CSS embedded in the ASP.NET host |
 | Compatible production dependency licenses and retained notices | Build-time scan; full npm audit |
 
