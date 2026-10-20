@@ -91,6 +91,27 @@ The ledger is serialized to JSON as part of the scope's `ActivityExecutionContex
 
 BPMN describes *what* a task is for, not *how* to perform it. An unbound task gets its implementation from an `elsa:activityBinding` vendor extension inside the BPMN element's `<extensionElements>`. A send or receive task whose `messageRef` resolves to a named message is not unbound: it binds to `MessagePublish` or `MessageWait` like a message throw or catch event. `elsa:activityBinding` is accepted only on an unbound task; the binder refuses one on any other element, such as a gateway, an event, or a send or receive task bound to its message, because nothing would ever run it.
 
+### Call activity failure
+
+A waiting call activity takes its normal outgoing flow only when the called workflow finishes successfully. When the
+called workflow faults, the scope host reports the call activity's work as completed with
+`BpmnInterpreter.CallActivityFaultedOutcomeName`, and with `BpmnInterpreter.CallActivityCancelledOutcomeName` when its
+final sub-status is `Cancelled`. The interpreter routes that failure the way BPMN routes an error:
+
+1. an error boundary event attached to the call activity fires and its path is taken;
+2. otherwise the scope's error event subprocess starts;
+3. otherwise the process faults with `bpmn.call-activity.faulted` (or `bpmn.call-activity.cancelled`).
+
+Only call activities do this. `DispatchWorkflow` itself completes the same way whatever its child's sub-status, so a
+`Flowchart` that waits for a child still continues on `Done` after the child faults. The scope host reads the child's
+final sub-status, which `DispatchWorkflow` records when it resumes, instead.
+
+A child cancelled through the cancellation API does not resume its waiting parent at all, so in practice only a
+faulted child reaches this path today. A child whose activation is denied completes the call activity with
+`CannotStart` in its result, as before; it is not mapped to `BpmnInterpreter.CallActivityDispatchFailedOutcomeName`.
+
+Test coverage: `test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Scenarios/Runtime/BpmnCallActivityTests.cs`.
+
 ## The `elsa:` Vendor Extension
 
 Namespace URI: `https://elsaworkflows.io/schemas/bpmn/v1`, conventional prefix `elsa`.
