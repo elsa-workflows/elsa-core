@@ -126,7 +126,10 @@ Templates uses scoped props, CPM, targets and official-only NuGet configuration.
 The temporary React Studio modularity proof under #8839 adds four independent
 Studio sample projects outside `Elsa.sln`: its Runtime, Labels, third-party Weather
 and consuming Host. They are included in the Studio updater's existing recursive
-selector, bringing its current starting set to 77 projects. The census names the
+selector, bringing its starting set to 77 projects. The #8843 Vite port adds three
+explicitly inventoried host/server/test projects under `studio/react/dotnet`, bringing
+the current Studio set to 80. These remain outside the root solution until production
+module extraction and solution integration in #8845. The census names the
 four explicitly and verifies that no new project under that proof root is omitted.
 Their scoped central file imports the root package versions for CShells/YARP;
 their sample package IDs resolve only from a local feed. Their package references

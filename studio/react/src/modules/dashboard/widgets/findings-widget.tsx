@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/lib/navigation/link";
 import { ArrowUpRight, CircleAlert, CircleCheck, Info, OctagonAlert, TriangleAlert, type LucideIcon } from "lucide-react";
 import type { DashboardRange } from "@/lib/modules/types";
 import { cn } from "@/lib/utils";

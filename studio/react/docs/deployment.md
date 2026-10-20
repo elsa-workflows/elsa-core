@@ -1,78 +1,65 @@
-# Deployment
+# Deploy the React Studio Preview
 
-The studio is a Next.js application built with `output: "standalone"`. It serves the shell and
-resolves configuration per request; all workflow data is fetched from the Elsa API by the browser.
+The Vite SPA is served by ASP.NET Core and calls the Elsa API from the browser.
+This opt-in frontend targets 3.11.0 Preview; the Blazor Studio remains the default.
+
+## Standalone host
+
+From `studio/react/`:
+
+```sh
+pnpm install --frozen-lockfile
+pnpm build
+dotnet publish dotnet/Elsa.ReactStudio.Server -c Release -o artifacts/server
+dotnet artifacts/server/Elsa.ReactStudio.Server.dll --urls http://0.0.0.0:8080
+```
+
+The default mount is `/studio-preview`. Set `ReactStudio:Path` in host configuration
+or pass `--ReactStudio:Path=/` for a dedicated site. The host writes the HTML base
+per request, so the same frontend build supports either mount and deep-link reloads.
+The published configuration file is loaded on every configuration request. Set
+`STUDIO_CONFIG_PATH` to an external file to replace it without publishing again.
 
 ## Docker
 
-```bash
-docker build -t elsa-studio-react .
-docker run -p 3000:3000 \
+Build from the repository root:
+
+```sh
+docker build -f studio/react/Dockerfile -t elsa-react-studio:preview .
+docker run --rm -p 8080:8080 \
   -e STUDIO_SERVER_URL=https://elsa.example.com/elsa/api \
-  -e STUDIO_SERVER_NAME=Production \
   -e STUDIO_FEATURES=labels,secrets,security,user-tasks \
-  elsa-studio-react
+  elsa-react-studio:preview
 ```
 
-The image is multi-stage on `node:22-alpine`, installs with a frozen lockfile, builds, and runs the
-standalone server on port 3000 as a non-root user.
+The image builds the frontend with a frozen lockfile, embeds its assets in the host,
+and runs the ASP.NET runtime on port 8080 as its supplied non-root app user. Node.js
+is needed only in the build stage. To supply a complete configuration:
 
-### Configuring a container
-
-`STUDIO_SERVER_URL` and its siblings only overwrite the **first** server. For anything more, supply
-the whole document.
-
-Mount a file:
-
-```bash
-docker run -p 3000:3000 \
-  -v $(pwd)/studio.config.json:/app/studio.config.json:ro \
-  elsa-studio-react
+```sh
+docker run --rm -p 8080:8080 \
+  -v "$PWD/studio.config.json:/app/studio.config.json:ro" \
+  elsa-react-studio:preview
 ```
 
-Or pass it inline, which suits Kubernetes ConfigMaps:
+`STUDIO_CONFIG` and the existing `STUDIO_*` overrides are also supported. Every
+configuration value is browser-visible. See [Configuration](configuration.md).
 
-```bash
-docker run -p 3000:3000 \
-  -e STUDIO_CONFIG='{"servers":[{"name":"Prod","url":"https://elsa.example.com/elsa/api"}],"auth":{"provider":"oidc"}}' \
-  elsa-studio-react
-```
+## Backend and reverse proxy requirements
 
-Because configuration is read per request, replacing a mounted file reconfigures a running container
-without a restart. See [Configuration](configuration.md) for the full reference.
+The configured API URL must be reachable from the user's browser. For separate
+origins, allow the Studio origin, required methods, `Authorization`, `Content-Type`
+and `X-Tenant-Id` in the backend's CORS policy. Use HTTPS for the API when the Studio
+uses HTTPS. Match the Studio authentication provider to the backend.
 
-## Running without Docker
+For OIDC and Elsa External Authentication, default callback and logout URLs include
+the Studio mount. Explicit configured redirect URIs take precedence. Register the
+complete callback URI with the identity provider.
 
-```bash
-pnpm install
-pnpm build
-pnpm start
-```
+Forward the entire mount to ASP.NET, including deep links and `studio-config`, and
+forward `/_content/Elsa.ReactStudio.Host/` for versioned JS/CSS. A proxy that preserves
+a site prefix must configure ASP.NET's `PathBase` before mapping the endpoints.
+Do not cache HTML or runtime configuration; versioned assets are immutable.
 
-The standalone output lands in `.next/standalone` with static assets in `.next/static`, which is what
-the Dockerfile copies.
-
-## Requirements on the Elsa server
-
-- **CORS.** The API must allow the studio's origin, with the `Authorization` and `Content-Type`
-  headers and the methods the studio uses. A single fixed allowed origin is a common cause of a studio
-  that cannot sign in; see [Troubleshooting](troubleshooting.md#cors-requests-are-blocked).
-- **Features.** Optional modules stay hidden unless the server reports the matching feature. See
-  [Modules](modules.md).
-- **Authentication.** The provider configured in the studio must match what the server expects.
-
-## Reverse proxies
-
-The studio is a plain HTTP application and sits behind any reverse proxy. Two points matter:
-
-- The browser talks to the Elsa API **directly**, using the `url` from the configuration, so that URL
-  must be reachable from the user's browser, not only from the studio container.
-- If you terminate TLS at the proxy, make sure the configured API URL uses `https`, otherwise the
-  browser blocks the calls as mixed content.
-
-## Health and operations
-
-- The studio holds no state of its own. Everything lives in the Elsa server.
-- Per-user preferences such as the chosen environment, palette and column visibility are kept in the
-  browser's local storage and are safe to lose.
-- Scaling out needs no sticky sessions.
+Workflow data lives in the Elsa server; browser preferences live in local storage.
+Optional module visibility still depends on configuration and backend capabilities.

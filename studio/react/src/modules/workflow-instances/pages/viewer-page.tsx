@@ -2,8 +2,8 @@
 
 import { ReactFlowProvider } from "@xyflow/react";
 import { Ban, FileCode2, Loader2, RefreshCw, Trash2 } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import Link from "@/lib/navigation/link";
+import { useRouter } from "@/lib/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";

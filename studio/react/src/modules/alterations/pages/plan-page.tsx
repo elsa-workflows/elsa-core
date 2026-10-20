@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft, RefreshCw } from "lucide-react";
-import Link from "next/link";
+import Link from "@/lib/navigation/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataTable, type DataTableColumn } from "@/components/common/data-table";

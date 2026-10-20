@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/lib/navigation/link";
 import { ShieldAlert, SearchX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 

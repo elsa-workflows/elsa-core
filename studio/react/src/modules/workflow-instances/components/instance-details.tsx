@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/lib/navigation/link";
 import { KeyValueTable } from "@/components/common/key-value-table";
 import { StatusBadge } from "@/components/common/status-badge";
 import { Timestamp } from "@/components/common/timestamp";

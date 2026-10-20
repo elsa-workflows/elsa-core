@@ -1,7 +1,7 @@
 "use client";
 
 import { Loader2, Play, Send } from "lucide-react";
-import Link from "next/link";
+import Link from "@/lib/navigation/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";

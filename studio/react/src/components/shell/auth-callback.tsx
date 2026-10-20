@@ -1,7 +1,8 @@
 "use client";
 
+import { studioRoute } from "@/lib/navigation/base-path";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/lib/navigation";
 import { useAuth } from "@/lib/auth/provider";
 import { FullPageSpinner } from "./full-page-spinner";
 import { AccessDenied } from "./status-pages";
@@ -19,7 +20,7 @@ export function AuthCallback() {
     }
     strategy
       .completeSignIn()
-      .then(() => router.replace(window.location.pathname + window.location.search))
+      .then(() => router.replace(studioRoute(window.location.pathname) + window.location.search))
       .catch((e: Error) => setError(e.message));
   }, [strategy, router]);
 

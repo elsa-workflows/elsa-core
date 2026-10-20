@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft, Check, Monitor, Moon, RotateCcw, Sun } from "lucide-react";
-import Link from "next/link";
+import Link from "@/lib/navigation/link";
 import { useTheme } from "next-themes";
 import { useSyncExternalStore } from "react";
 import { PageHeader } from "@/components/common/page-header";

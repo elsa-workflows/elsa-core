@@ -1,10 +1,10 @@
 <div align="center">
-  <img src="src/app/icon.png" alt="Elsa" width="88" height="88">
-  <h1>Elsa Studio</h1>
+  <img src="public/icon.png" alt="Elsa" width="88" height="88">
+  <h1>Elsa React Studio · Preview</h1>
   <p><strong>A modern, component-based web studio for <a href="https://github.com/elsa-workflows/elsa-core">Elsa Workflows 3.x</a>.</strong></p>
   <p>Design, run and operate workflows from the browser: a visual designer, live instance inspection, human tasks, secrets, diagnostics and more.</p>
   <p>
-    <img src="https://img.shields.io/badge/Next.js-16.4-000000?logo=nextdotjs&logoColor=white" alt="Next.js 16.4">
+    <img src="https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white" alt="Vite 7">
     <img src="https://img.shields.io/badge/React-19.3-087EA4?logo=react&logoColor=white" alt="React 19.3">
     <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" alt="TypeScript 5">
     <img src="https://img.shields.io/badge/Tailwind-4-06B6D4?logo=tailwindcss&logoColor=white" alt="Tailwind CSS 4">
@@ -13,6 +13,15 @@
 </div>
 
 ![The workflow designer](docs/images/designer.png)
+
+This opt-in frontend targets **3.11.0 Preview**. The Blazor Studio remains the default
+through 3.x. [Source provenance](../../docs/integration-program/studio-react-source-import.md)
+retains donor history and attribution; the [delivery record](../docs/specs/react-studio-preview/plan.md)
+tracks production module extraction and remaining Preview requirements.
+
+The host, standalone server and host tests under `dotnet/` deliberately remain outside
+`Elsa.sln` during the #8843 port. They are explicitly covered by the Studio dependency
+inventory. #8845 owns their production solution integration and module packaging.
 
 ## Overview
 
@@ -34,12 +43,14 @@ hidden automatically when the connected backend does not have the matching featu
 
 ## Quick start
 
-**Prerequisites:** Node.js 22 or newer, pnpm 10, and a running Elsa server with CORS open to the
+**Prerequisites:** .NET SDK 10, Node.js 22.12 or newer, pnpm 10, and a running Elsa server with CORS open to the
 studio's origin.
 
 ```bash
-pnpm install
-pnpm dev                 # http://localhost:3000
+pnpm install --frozen-lockfile
+pnpm build
+pnpm host                # ASP.NET host on port 5201, mounted at /studio-preview
+# In another terminal: pnpm dev  (Vite on port 5173; config proxied to the host)
 ```
 
 Point `servers[0].url` in `studio.config.json` at your Elsa API, which is typically something like
@@ -146,8 +157,8 @@ Nothing in this document is secret: it is shipped to the browser.
 
 ```
 src/
-  app/                      Next.js routes; the catch-all delegates to the module registry
-  config/                   runtime configuration: zod schema, server loader, React provider
+  main.tsx                  Vite entry and History API router
+  config/                   runtime configuration: zod schema and React provider
   lib/
     api/                    HTTP client, typed endpoint groups, TanStack Query provider
     auth/                   AuthStrategy contract and the five providers
@@ -164,20 +175,22 @@ src/
 
 | Command | Purpose |
 |---|---|
-| `pnpm dev` | Development server on port 3000. |
-| `pnpm build` / `pnpm start` | Production build (standalone output) and server. |
+| `pnpm dev` | Vite development server on port 5173; run the configuration host too. |
+| `pnpm host` | ASP.NET host on port 5201; reads the source configuration file per request. |
+| `pnpm build` | Type check and build ESM/CSS for the ASP.NET host. |
+| `pnpm test:browser` | Browser tests against the built ASP.NET host. |
 | `pnpm test` | Unit tests (Vitest). |
 | `pnpm lint` | ESLint. |
-| `npx tsc --noEmit` | Type check. |
+| `pnpm typecheck` | Type check. |
 
 ## Docker
 
 ```bash
-docker build -t elsa-studio-react .
-docker run -p 3000:3000 \
+docker build -f studio/react/Dockerfile -t elsa-react-studio:preview . # repository root
+docker run -p 8080:8080 \
   -e STUDIO_SERVER_URL=https://elsa.example.com/elsa/api \
   -e STUDIO_FEATURES=labels,secrets,security \
-  elsa-studio-react
+  elsa-react-studio:preview
 ```
 
 Mount a `studio.config.json` at `/app/studio.config.json`, or pass the whole document in

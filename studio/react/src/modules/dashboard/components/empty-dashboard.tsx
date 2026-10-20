@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/lib/navigation/link";
 import { ArrowUpRight, FileCode2, LayoutDashboard, ListChecks, type LucideIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/common/empty-state";

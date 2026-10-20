@@ -71,3 +71,20 @@ its workflow-core suite passes 363 tests, both health checks pass, and its sampl
 workflow executes. The unchanged donor production build and browser sign-in/dashboard
 check pass. These establish a development baseline; they do not establish the Vite
 port, production module package integration, full feature parity or a preview release.
+
+## Imported application adaptation
+
+The receipted history-preserving import is under review in
+[#8924](https://github.com/elsa-workflows/elsa-core/pull/8924). The subsequent #8843
+port replaces Next.js with Vite and an ASP.NET host while retaining the 74 existing
+unit cases. Host configuration and HTTP behavior have 19 passing .NET cases; four
+browser cases cover mounted deep links, History navigation, assets and OIDC callback
+URLs. The real reference backend also passes sign-in, dashboard and list reload.
+The host builds on net8/net9/net10. The build scans 113 production dependencies and
+retains their notices; the full npm audit reports zero known vulnerabilities.
+
+The source-validation workflow also builds and starts the standalone Preview image
+without publishing. Local image validation is pending access to the Microsoft base
+image CDN. Production module extraction, SDK v1, opt-in CShells/server integration,
+parity work, publication and final source cutover remain open. See the
+[port verification checklist](../../../react/docs/vite-port-verification.md).

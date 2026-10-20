@@ -1,8 +1,8 @@
 # Configuration
 
 Everything the studio needs at runtime lives in one document. It is resolved **on the server for every
-request**, which means a deployed container can be reconfigured by replacing a file or an environment
-variable, with no rebuild. A browser reload is enough to pick up a change.
+request**, which means a deployed container can be reconfigured by replacing a file or restarting with new environment
+variables, with no frontend rebuild. A browser reload is enough to pick up a change.
 
 The full schema, with defaults, is defined in [`src/config/schema.ts`](../src/config/schema.ts).
 
@@ -12,9 +12,15 @@ The full schema, with defaults, is defined in [`src/config/schema.ts`](../src/co
 
 Sources are merged in this order, highest priority first:
 
-1. **`STUDIO_CONFIG`** — a complete JSON document in an environment variable.
-2. **`STUDIO_CONFIG_PATH`** — a path to a JSON file. Defaults to `./studio.config.json`.
-3. **`STUDIO_*` variables** — individual overrides layered on top of whichever document was loaded.
+1. **Individual `STUDIO_*` variables** — overrides layered on the selected document.
+2. **`STUDIO_CONFIG`** — a complete JSON document, preferred over the file.
+3. **`STUDIO_CONFIG_PATH`** — a JSON file path, relative to the host content root. The standalone host defaults to its published `studio.config.json`.
+
+The browser fetches `<mount>/studio-config` with caching disabled before mounting
+the application. The ASP.NET host resolves the document on each request; the browser
+validates it with the existing Zod schema and applies its defaults. `pnpm host` uses
+the source file so edits are visible after reloading. Environment changes require a
+host restart, as with other process environment variables.
 
 ## Adding a server
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { Ban, Eye, MoreHorizontal, Trash2 } from "lucide-react";
-import Link from "next/link";
+import Link from "@/lib/navigation/link";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,

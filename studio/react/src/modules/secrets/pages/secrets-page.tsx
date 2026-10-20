@@ -1,7 +1,7 @@
 "use client";
 
 import { Ban, Eye, FlaskConical, MoreHorizontal, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/lib/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useConfirm } from "@/components/common/confirm-dialog";

@@ -1,18 +1,18 @@
-# Elsa Studio (Next.js) – architecture and module guide
+# Elsa React Studio Preview (Vite) – architecture and module guide
 
 > Part of the [documentation set](../README.md#documentation): [Getting started](getting-started.md) ·
 > [Configuration](configuration.md) · [Modules](modules.md) · [Designer](designer.md) ·
 > [Deployment](deployment.md) · [Troubleshooting](troubleshooting.md)
 
-A standalone React front end for Elsa Workflows 3.x. Built with Next.js (App Router), React 19,
+A standalone React front end for Elsa Workflows 3.x. Built with Vite, React 19,
 TypeScript, Tailwind v4, shadcn/ui (Base UI primitives) and React Flow for the diagrams. The app
-is a client-rendered SPA that talks straight to the Elsa REST API; Next.js only serves the shell
-and resolves the runtime configuration per request.
+is a client-rendered SPA that talks straight to the Elsa REST API; the ASP.NET host serves the shell
+and resolves runtime configuration per request.
 
 ```
 src/
-  app/                      Next.js routes (thin): layout loads config; [[...slug]] is a catch-all
-  config/                   runtime configuration: zod schema, server-side loader, React provider
+  main.tsx                  fetch runtime configuration, then mount the History API router
+  config/                   runtime configuration: Zod schema and React provider (ASP.NET resolves the document)
   lib/
     api/                    HTTP client, typed endpoint groups, TS models, TanStack Query provider
     auth/                   AuthStrategy contract + none / api-key / elsa-identity / oidc / elsa-external
@@ -40,7 +40,7 @@ src/
 ## Runtime configuration
 
 `studio.config.json` (or `STUDIO_CONFIG` JSON env, or `STUDIO_*` env overrides) is read on the server
-for every request, validated with `src/config/schema.ts`, and provided to the client with
+for every configuration request. The browser validates `src/config/schema.ts` and provides it with
 `useStudioConfig()`. Nothing in it is secret: it ends up in the browser.
 
 ```jsonc

@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft, CheckCircle2, Eye, Hand, RefreshCw, UserMinus, UserPlus, XCircle } from "lucide-react";
-import Link from "next/link";
+import Link from "@/lib/navigation/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";

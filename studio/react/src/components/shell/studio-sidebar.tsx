@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import Link from "@/lib/navigation/link";
+import { usePathname, useRouter } from "@/lib/navigation";
 import { ChevronRight, LogOut, Plus } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -91,7 +91,7 @@ export function StudioSidebar() {
             <SidebarMenuButton size="lg" render={<Link href="/" />} className="hover:bg-transparent">
               <BrandMark className="size-8 shrink-0 shadow-sm" />
               <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                <span className="truncate font-semibold tracking-tight">{config.title}</span>
+                <span className="truncate font-semibold tracking-tight">{config.title} <span className="text-xs font-normal text-muted-foreground">Preview</span></span>
                 <span className="flex items-center gap-1.5 truncate text-[11px] text-muted-foreground">
                   <span className="relative flex size-2">
                     <span className="absolute inline-flex size-full animate-ping rounded-full bg-status-success opacity-50" />

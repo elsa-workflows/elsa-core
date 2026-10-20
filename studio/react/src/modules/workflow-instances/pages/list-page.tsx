@@ -1,8 +1,8 @@
 "use client";
 
 import { Ban, RefreshCw, Trash2, X } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import Link from "@/lib/navigation/link";
+import { useRouter } from "@/lib/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useConfirm } from "@/components/common/confirm-dialog";

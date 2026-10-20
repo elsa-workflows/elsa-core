@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import Link from "@/lib/navigation/link";
+import { useRouter } from "@/lib/navigation";
 import { ChevronDown, Copy, Download, Eye, FileUp, MoreHorizontal, Pencil, Play, Plus, Rocket, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
