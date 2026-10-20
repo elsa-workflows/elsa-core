@@ -36,7 +36,10 @@ Conditions are evaluated by the host, with Elsa's expression engine.
 - The same callback serves `completionCondition`, standard loops and conditional events once the library supports them.
 
 Until the callback ships, import refuses a document whose flows carry `conditionExpression`, with a coded error,
-instead of running it with the conditions removed.
+instead of running it with the conditions removed. This refusal is an exception to the `acceptDegraded` opt-in in
+[Accept unbound tasks in BPMN drafts and refuse silent degradation](2026-10-20-bpmn-import-policy.md): the opt-in does
+not override it, because a process with its conditions removed routes differently from its diagram on every run, not
+only in an edge case an author could reasonably accept.
 
 ## Consequences
 

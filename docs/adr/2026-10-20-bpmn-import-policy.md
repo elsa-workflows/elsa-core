@@ -32,7 +32,9 @@ Be lenient about what is unfinished and strict about what would change meaning.
   remains.
 - **Degraded and Dropped findings.** Import and save refuse a document with any Degraded or Dropped finding, with a coded
   error listing the elements. A caller can accept them explicitly with an `acceptDegraded` option. The finding is then
-  recorded on the definition and shown in Studio.
+  recorded on the definition and shown in Studio. The one exception is an expression condition on a sequence flow:
+  until Elsa evaluates conditions, it is refused even with `acceptDegraded`, as
+  [Evaluate BPMN conditions with Elsa expressions](2026-10-20-elsa-evaluates-bpmn-conditions.md) records.
 - **Default bindings.** When a task has no binding, its type supplies one:
   - `userTask` binds to `UserTask` when `Elsa.UserTasks` is enabled.
   - `scriptTask` binds to its script, run as an Elsa expression in the language its `scriptFormat` names.
