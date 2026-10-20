@@ -1,13 +1,13 @@
 # Discovery baseline for native Elsa 3 compensation
 
-Evidence date: 19 October 2026. Current main inspected at `df0697fd84e8036db71b6f5740e5df23c7eb517e`. The initial attached checkout was older (`806852c774533c6b26f0ba30b30b507e11f8b15d`) and used obsolete `src/studio/` paths. Planning and the documentation branch use current main's `core/`, `studio/`, `extensions/` and `docs/` layout. Refresh before design execution; source findings are not released-package support claims.
+Evidence date: 19 October 2026. Main was inspected at `df0697fd84e8036db71b6f5740e5df23c7eb517e`. The initial attached checkout was older (`806852c774533c6b26f0ba30b30b507e11f8b15d`) and used obsolete `src/studio/` paths. This is a pinned historical source snapshot, not a current-head revalidation, released-package support claim, or runtime/browser/restart proof. The later [adaptation packet](../specs/native-compensation/README.md) records its own source refresh and evidence gaps; refresh again before implementation.
 
 ## Existing demand and work
 
 - [#4015](https://github.com/elsa-workflows/elsa-core/issues/4015) is the existing Elsa 3 compensation request. It had no assignee, active claim, child or matching open native compensation PR at discovery. It is reused as the capability Epic; its original text remains intact.
 - [#304](https://github.com/elsa-workflows/elsa-core/issues/304) asks for saga guidance. [#2683](https://github.com/elsa-workflows/elsa-core/issues/2683) is the original Elsa 2 compensation specification, and [#4342](https://github.com/elsa-workflows/elsa-core/issues/4342) records an Elsa 2 regression and confirmation of the 2.13.0 fix. These are evidence, not additional delivery queues.
 - [Foundation #3035](https://github.com/elsa-workflows/elsa-foundation/issues/3035) / [#3036](https://github.com/elsa-workflows/elsa-foundation/issues/3036) already establish Elsa 4 native compensation. Their four-Epic, M0–M5 structure and integrated Studio outcomes are reused conceptually. The new owner request authorizes a separate Elsa 3 program now; it does not alter Elsa 4 scope or make either program depend on the other.
-- Current Core contribution routing sends new consolidated Studio work here. [#8740](https://github.com/elsa-workflows/elsa-core/issues/8740) and [#8741](https://github.com/elsa-workflows/elsa-core/issues/8741) retain source-consolidation and release/maintenance ownership. Do not duplicate their publishing or maintenance work. See [current contribution policy](https://github.com/elsa-workflows/elsa-core/blob/df0697fd84e8036db71b6f5740e5df23c7eb517e/CONTRIBUTING.md) and [publisher boundary ADR](https://github.com/elsa-workflows/elsa-core/blob/df0697fd84e8036db71b6f5740e5df23c7eb517e/docs/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md).
+- At this source snapshot, Core contribution routing sends new consolidated Studio work here. [#8740](https://github.com/elsa-workflows/elsa-core/issues/8740) and [#8741](https://github.com/elsa-workflows/elsa-core/issues/8741) retain source-consolidation and release/maintenance ownership. Do not duplicate their publishing or maintenance work. See the [contribution policy snapshot](https://github.com/elsa-workflows/elsa-core/blob/df0697fd84e8036db71b6f5740e5df23c7eb517e/CONTRIBUTING.md) and [publisher boundary ADR](https://github.com/elsa-workflows/elsa-core/blob/df0697fd84e8036db71b6f5740e5df23c7eb517e/docs/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md).
 - Source search found no existing native saga/compensation module in the inspected Core/runtime/management/API paths. Existing BPMN compensation is explicitly excluded from reuse and is not evidence of native support. No matching open native compensation PR or Studio compensation feature was found at discovery.
 
 ## Elsa 2 historical implementation
@@ -23,7 +23,7 @@ The appropriate historical branch is `2.x`, inspected at `7a317f81a7178e13795ace
 
 The inspected service uses workflow instance activity data and scheduled activities. It does not establish a separate durable external-operation/attempt ledger, uncertain-outcome reconciliation or audited operator-intervention protocol. A direct port would not meet the PRD.
 
-## Current Elsa 3 runtime and persistence
+## Elsa 3 runtime and persistence at the pinned snapshot
 
 | Source seam | Verified mechanism | Design gap / boundary |
 |---|---|---|
@@ -38,7 +38,7 @@ The inspected service uses workflow instance activity data and scheduled activit
 
 These sources support an Elsa 3 design, not transplantation of Elsa 4's artifact contracts or Durable/Balanced/Ephemeral terminology. Existing registrations, `IWorkflowRuntime`/`IWorkflowClient`, commit strategies, bookmarks, instance stores and activity descriptors are the candidate seams. New public APIs need a documented caller scenario; preserve 3.x compatibility and existing module ownership.
 
-## Current Studio seams and gaps
+## Studio seams and gaps at the pinned snapshot
 
 - [IActivityPortProvider](https://github.com/elsa-workflows/elsa-core/blob/df0697fd84e8036db71b6f5740e5df23c7eb517e/studio/src/modules/Elsa.Studio.Workflows.Core/Domain/Contracts/IActivityPortProvider.cs) and [ActivityMapper](https://github.com/elsa-workflows/elsa-core/blob/df0697fd84e8036db71b6f5740e5df23c7eb517e/studio/src/modules/Elsa.Studio.Workflows.Designer/Services/ActivityMapper.cs) support descriptor-driven ports and mapping. [InputsTab](https://github.com/elsa-workflows/elsa-core/blob/df0697fd84e8036db71b6f5740e5df23c7eb517e/studio/src/modules/Elsa.Studio.Workflows/Components/WorkflowDefinitionEditor/Components/ActivityProperties/Tabs/InputsTab.razor.cs) uses descriptor input metadata and UI hints. Evaluate native descriptor-backed activities first; special handler associations need an explicit interaction contract rather than borrowing BPMN graph semantics.
 - [WorkflowDefinitionEditorService](https://github.com/elsa-workflows/elsa-core/blob/df0697fd84e8036db71b6f5740e5df23c7eb517e/studio/src/modules/Elsa.Studio.Workflows.Core/Domain/Services/WorkflowDefinitionEditorService.cs) sends publish intent and maps API validation errors. Native publication validation can remain server-authoritative, with Studio diagnostics linked to the relevant scope/handler/mapping.

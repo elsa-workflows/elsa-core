@@ -1,5 +1,5 @@
 // GENERATED FILE -- do not edit by hand.
-// Source: Bpmn.Model 0.2.0, payload format 1.0.0, schema/bpmn-payload.schema.json.
+// Source: Bpmn.Model 0.3.0, payload format 1.0.0, schema/bpmn-payload.schema.json.
 // Regenerate with: npm run generate:bpmn-types (from src/modules/Elsa.Studio.Workflows.Designer/ClientLib).
 // See scripts/generate-bpmn-types.js.
 /**

@@ -1,6 +1,8 @@
 # Program decisions and requirements gate
 
-The [PRD](https://github.com/elsa-workflows/elsa-core/issues/8886) owns product requirements. This register records program decisions and deferred architecture questions; the [boundary ADR](../../../docs/adr/2026-10-19-native-compensation-recovery-boundaries.md) records the proposed architecture constraints. Design task [#8896](https://github.com/elsa-workflows/elsa-core/issues/8896) owns resolution before implementation readiness.
+The [PRD](https://github.com/elsa-workflows/elsa-core/issues/8886) remains the single product-requirements record. This page preserves dated program decisions and current status; the [adaptation packet](../specs/native-compensation/README.md) owns the detailed proposed design and technical gates. The [scope-boundary ADR](../../../docs/adr/2026-10-19-native-compensation-recovery-boundaries.md) and [instance-journal ADR](../../../docs/adr/2026-10-20-native-compensation-instance-journal.md) both remain proposed.
+
+**Status note (21 October 2026):** The owner's [standing authorization](https://github.com/elsa-workflows/elsa-core/issues/8884#issuecomment-6303225186) to lift all current and future delivery holds supersedes earlier pause instructions recorded below. Those dated quotations remain historical. O1–O3 are accepted product policies; the physical architecture and E1–E3 evidence remain unaccepted or unproved as detailed in the adaptation packet.
 
 ## 2026-10-19 — Establish Elsa 3 independently
 
@@ -28,20 +30,14 @@ The [PRD](https://github.com/elsa-workflows/elsa-core/issues/8886) owns product 
 
 **Revisit:** Program lead/QA at every milestone; failed proof reopens the owning work and keeps the milestone incomplete.
 
-## Deferred decisions with owners and gates
+## 2026-10-21 — Standing delivery authorization and current gates
 
-| ID | Decision | Accountable owner | Revisit / evidence | Why safe to defer now |
-|---|---|---|---|---|
-| A1 | Recovery schema, pre-effect commit, atomic result updates, CAS/fencing and dispatch/resumption hooks | Program lead + Core/persistence reviewers | M0; inspect configured commit strategy and store participation; accept a bounded spike if evidence is insufficient. Before M1 tasks are ready. | Setup creates no public contract or production state. |
-| A2 | Scope/handler notation, captured mapping, publication errors and accessible occurrence/attempt UI | Program lead + Studio reviewer | M0 paired walkthrough for sequential, loop and nested examples, including failure/uncertainty. | No activity API is frozen ahead of UX. |
-| A3 | Confirmation, nested obligations, cancellation/late result and ordering policy | Program lead + runtime/Studio reviewers; Sipke for unresolved product policy | M0 transition table; full supported composition matrix before M3 refinement. | First milestone is design; no worker has to invent the policy. |
-| A4 | Exact provider/runtime/host support and 3.x target release | Program lead + QA/release reviewers | M0 selects first durable host/provider, proposed SQLite local configuration; M5 proves the full advertised matrix. | Source support is not advertised as released support. No commitment to every provider. |
-| A5 | Permission names, safe summary/detail model, audit retention, pinned-version retention and purge behavior | Program lead + security/operations reviewers | Baseline before M1; full action model before M4; upgrade/retention proof at M5. | Existing tenant, data and secret policies are fixed requirements. Destructive cleanup and broad new privileges are not authorized. |
-| A6 | Named implementation/release maintainers and runbook acceptance | Program lead | Before M1 dispatch for implementation; before M5 exit for release readiness. | Role accountability is recorded; no unconfirmed person is assigned. |
-| A7 | GitHub Project and org issue types | Program lead; organization administrator supplies permission | Retry only after App permission change or explicit identity authorization. | Native issue hierarchy and blockers work now; board absence cannot hide or block the design queue. |
+The owner authorized the program lead to lift all current and future delivery holds. This supersedes the earlier owner-directed pause of production work and spikes. The lead may proceed with setup, bounded evidence work and production delivery as each real dependency, review and verification gate permits. The authorization itself is not evidence, does not make a production task Ready, and does not change separate release or deployment policy.
+
+O1, O2 and O3 are accepted product policy. O1 requires explicit confirmation to end a scope occurrence's compensation eligibility. O2 requires persisted, compensation-aware business cancellation that preserves uncertain and in-flight work. O3 records successful recovery as `Compensated` and selects either that outcome or explicit propagation of the original fault. The [adaptation packet's decision register](../specs/native-compensation/decisions.md) owns the complete rules; this page does not duplicate the canonical PRD or freeze public API names.
+
+E1–E3 remain technical evidence gates. E1 is the bounded runtime/persistence proof tracked by [#8930](https://github.com/elsa-workflows/elsa-core/issues/8930); E2 covers security, protection, disclosure and authorization; E3 covers Studio/runtime composition and integration. Their scope and exit evidence are defined in the [design packet](../specs/native-compensation/decisions.md). The proposed instance-journal ADR describes a direction to test, not an accepted physical architecture. M1 [#8891](https://github.com/elsa-workflows/elsa-core/issues/8891) cannot become Ready until the required gates pass review.
 
 ## Requirements-interrogation result
 
-The gate passes for **establishment and the bounded M0 design task only**. Goal, actors, journeys, native/BPMN boundary, Studio inclusion, current repository ownership, security invariants, critical path and evidence standard are resolved by the owner request and source inspection. A1–A6 are design deliverables with owners and revisit gates; they cannot invalidate the establishment work. A7 is an exact administrative limitation, not product ambiguity.
-
-No production leaf is Agent Ready. Next [#8896](https://github.com/elsa-workflows/elsa-core/issues/8896) is prepared but blocked on acceptance of the setup documentation. The program lead must refresh live claims/PRs and accept that design-only readiness gate before labelling it ready. After M0, only a dependency-satisfied, explicitly reviewed M1 task may be refined/promoted; unresolved material M1 choices must be settled or escalated first. Do not auto-dispatch follow-on work from this session.
+The setup requirements and M0 design packet are recorded. Owner policies O1–O3 are accepted, while E1–E3 and the physical architecture remain open for technical evidence and review. [#8930](https://github.com/elsa-workflows/elsa-core/issues/8930) is the bounded E1 work item; consult its live record for execution status. Keep M1 [#8891](https://github.com/elsa-workflows/elsa-core/issues/8891) Not Ready until its dependencies and evidence pass. The [Program #8884](https://github.com/elsa-workflows/elsa-core/issues/8884), [PRD #8886](https://github.com/elsa-workflows/elsa-core/issues/8886) and [Project #60](https://github.com/orgs/elsa-workflows/projects/60) remain the live program controls. No real runtime, browser, independent-participant or restart proof is claimed by these planning records.

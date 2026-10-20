@@ -175,3 +175,25 @@ _Avoid_: Task status, workflow incident
 **Guest Invitation**:
 A bounded, one-time candidacy for an external participant that becomes a task-scoped guest session only after configured verification.
 _Avoid_: Elsa user invitation, bearer account
+
+## Native compensation design vocabulary
+
+These domain terms belong to the [Elsa 3 compensation design](core/docs/specs/native-compensation/README.md). O1–O3 owner policy is accepted, while the physical design and technical guarantees remain proposed or unproved; these terms do not announce an implemented capability or freeze public API names. See the packet's [decision register](core/docs/specs/native-compensation/decisions.md) for current policy and gates.
+
+**Compensation scope**: An authored boundary that associates forward operations with recovery handlers and owns their compensation obligations.
+
+**Step identity**: The stable identity of one authored step. Its editable label and row position are not execution identities.
+
+**Scope occurrence**: One activation of a compensation scope. It remains addressable after its child execution context completes.
+
+**Operation occurrence**: One logical forward effect in one scope activation or loop iteration. Retries belong to the same occurrence.
+
+**Operation key**: The stable participant idempotency key for a logical forward effect. An **undo key** separately identifies its recovery effect; each is reused across its attempts.
+
+**Recovery attempt**: One execution attempt to settle a compensation obligation, with its own identity and causal execution/error evidence.
+
+**Compensated outcome**: The distinct outward result after all required recovery settles. Under accepted O3, a published scope either emits this result or propagates the original fault, never both.
+
+**Recovery capture**: Immutable, versioned occurrence data retained for a handler. It is not a later lookup of mutable workflow variables or the latest output of an activity node.
+
+**Confirmation**: An explicit end of compensation eligibility under the accepted scope policy. It preserves audit and does not erase unresolved work.

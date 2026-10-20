@@ -1,13 +1,13 @@
 # Keep native compensation recovery within Elsa 3 runtime and Studio boundaries
 
-- Status: Proposed; the owner's scope constraints are binding, while technical contracts await M0 review.
+- Status: Proposed; owner scope constraints and O1–O3 policy are binding, while the physical design and technical guarantees remain unproved.
 - Date: 2026-10-19
 - Owners: Elsa 3 program lead, with Core, persistence, Studio and security review
 - Related: [Program #8884](https://github.com/elsa-workflows/elsa-core/issues/8884), [PRD #8886](https://github.com/elsa-workflows/elsa-core/issues/8886), [design task #8896](https://github.com/elsa-workflows/elsa-core/issues/8896)
 
 ## Context
 
-Elsa 3 needs visually authored native compensation with durable recovery, explicit uncertain outcomes and authorized operations. Historical Elsa 2 scopes establish useful concepts, but their activity-ID scheduling and scheduling-time `Compensated` marker do not meet occurrence-aware recovery requirements. Current Elsa 3 provides activity execution contexts, commit strategies, workflow instance/version state, bookmarks, fault signals, cancellation/drain behavior and an at-least-once workflow dispatch outbox. These are candidate extension points; none alone proves safe compensation of arbitrary external effects.
+Elsa 3 needs visually authored native compensation with durable recovery, explicit uncertain outcomes and authorized operations. The owner accepted O1 explicit confirmation, O2 compensation-aware cancellation and O3 distinct `Compensated`/original-fault behavior; the [decision register](../../core/docs/specs/native-compensation/decisions.md) records their exact policy. The 21 October [standing authorization](https://github.com/elsa-workflows/elsa-core/issues/8884#issuecomment-6303225186) supersedes earlier delivery holds but does not prove technical readiness. Historical Elsa 2 scopes establish useful concepts, but their activity-ID scheduling and scheduling-time `Compensated` marker do not meet occurrence-aware recovery requirements. The source mechanisms summarized in [the discovery snapshot](../../core/docs/compensation/discovery.md) are candidate extension points; none alone proves safe compensation of arbitrary external effects.
 
 Current main co-locates Core and Studio under `core/` and `studio/` in `elsa-core`. This is independently verified Elsa 3 ownership. Elsa 4 reference outcomes do not supply Elsa 3 contracts, repository paths or persistence modes. See the [source baseline](../../core/docs/compensation/discovery.md).
 
@@ -16,7 +16,7 @@ Current main co-locates Core and Studio under `core/` and `studio/` in `elsa-cor
 1. Directly port Elsa 2 activity/service contracts. Familiar semantics, but insufficient operation identity, uncertain-outcome handling, retained context and truthful success evidence.
 2. Share or adapt BPMN compensation infrastructure. Explicitly excluded by the owner, including shared abstractions and dependencies; not a permissible implementation option.
 3. Import Elsa 4 contracts or wait for its delivery. Couples Elsa 3 to a different runtime and violates independent delivery.
-4. Design native recovery using verified Elsa 3 extension points, with paired Studio and persistence acceptance. Selected direction; exact mechanisms remain an M0 design decision.
+4. Design native recovery using Elsa 3 extension points, with paired Studio and persistence acceptance. The [adaptation packet](../../core/docs/specs/native-compensation/README.md) now proposes a versioned workflow-instance journal and related mechanisms; the [instance-journal ADR](2026-10-20-native-compensation-instance-journal.md) remains Proposed, and E1–E3 must establish the guarantees before M1 readiness.
 
 ## Proposed decision
 
@@ -36,4 +36,4 @@ Core and Studio remain separate product/package responsibilities within one sour
 
 ## Revisit
 
-[Design task #8896](https://github.com/elsa-workflows/elsa-core/issues/8896) must accept or revise this proposal with Core/persistence/Studio/security review before M1 tasks become ready. The [decision register](../../core/docs/compensation/decisions.md) assigns each unresolved contract, support matrix and policy question an owner and gate. Refresh when current runtime/store behavior invalidates an assumption; failed restart or disclosure evidence prevents milestone acceptance. Elsa 4 terminology coordination is advisory and never blocks Elsa 3 delivery.
+[Design task #8896](https://github.com/elsa-workflows/elsa-core/issues/8896) records the reviewed adaptation proposal and accepted owner policies; it does not accept the physical architecture by itself. Core, persistence, Studio and security reviewers must complete the packet's E1–E3 gates before M1 tasks become ready. Revisit the proposal when source evidence invalidates an assumption; failed restart or disclosure evidence prevents milestone acceptance. Elsa 4 terminology coordination is advisory and never blocks Elsa 3 delivery.
