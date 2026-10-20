@@ -293,6 +293,23 @@ public sealed class BpmnPerformedByPanelTests : BunitContext, IAsyncLifetime
     }
 
     [Fact]
+    public async Task ASaveRefusedForExpressionConditions_NamesTheFlows_AndOffersNoReload()
+    {
+        _documentService.RefusesPut(new BpmnDocumentFailure(BpmnDocumentFailureReason.ConditionUnsupported, "The server's own words.")
+        {
+            ConditionRefusal = new(["Flow_A", "Flow_B"])
+        });
+        var cut = RenderPanel(TaskSelection);
+
+        await EditAndSaveAsync(cut);
+
+        var alert = cut.Find("[data-testid='bpmn-document-save-failure']").TextContent;
+        Assert.Contains("expression conditions", alert);
+        Assert.Contains("'Flow_A', 'Flow_B'", alert);
+        Assert.Empty(cut.FindAll("[data-testid='bpmn-reload']"));
+    }
+
+    [Fact]
     public async Task ADocumentWithASubprocess_StillOffersEditingAndSavingTheTopLevelTask()
     {
         var document = Document();

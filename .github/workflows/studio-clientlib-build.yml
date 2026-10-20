@@ -5,6 +5,8 @@ on:
     paths:
       - 'studio/src/**/ClientLib/**'
       - 'studio/src/Directory.Packages.props'
+      # Core's Bpmn.Model pin: `npm run check:generated` fails when Studio's pin drifts from it.
+      - 'Directory.Packages.props'
       - 'studio/src/Directory.Build.props'
       - 'core/src/Directory.Build.props'
       - 'scripts/integration-program/build_studio_clientlibs.sh'

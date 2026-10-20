@@ -30,7 +30,8 @@ internal sealed class FakeBpmnDocumentService : IBpmnInterchangeService
     public FakeBpmnDocumentService ReturnsDocument(JsonObject document, string eTag) => ReturnsOnGet(new(new BpmnDocumentRevision(document, eTag)));
     public FakeBpmnDocumentService RefusesGet(BpmnDocumentFailureReason reason, string message = "refused") => ReturnsOnGet(new(new BpmnDocumentFailure(reason, message)));
     public FakeBpmnDocumentService AcceptsPut(string newETag) => ReturnsOnPut(new(new BpmnDocumentSaveResult(new BpmnImportResultModel(), newETag)));
-    public FakeBpmnDocumentService RefusesPut(BpmnDocumentFailureReason reason, string message = "refused") => ReturnsOnPut(new(new BpmnDocumentFailure(reason, message)));
+    public FakeBpmnDocumentService RefusesPut(BpmnDocumentFailureReason reason, string message = "refused") => RefusesPut(new BpmnDocumentFailure(reason, message));
+    public FakeBpmnDocumentService RefusesPut(BpmnDocumentFailure failure) => ReturnsOnPut(new(failure));
 
     public Task<Result<BpmnDocumentRevision, BpmnDocumentFailure>> GetDocumentAsync(string definitionId, CancellationToken cancellationToken = default)
     {

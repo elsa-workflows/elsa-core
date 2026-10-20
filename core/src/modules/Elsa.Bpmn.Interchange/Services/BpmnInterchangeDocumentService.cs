@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json.Nodes;
+using System.Xml.Linq;
 using Bpmn.Interchange;
 using Bpmn.Model;
 using Bpmn.Semantics;
@@ -90,6 +91,12 @@ namespace Elsa.Bpmn.Interchange.Services;
 /// the graph also validates structural invariants that belong to the runtime module's own execution path
 /// (<c>Elsa.Bpmn.Hosting.BpmnScopeHost</c>), and re-running that here would duplicate it outside the module that owns
 /// it.
+/// </para>
+/// <para>
+/// <b>Expression conditions are refused here too, and nothing opts out of it.</b> A sequence flow's standard
+/// <c>conditionExpression</c> is read as unconditional because nothing evaluates it yet, so import refuses the document
+/// (see <see cref="EnsureNoExpressionConditions"/>) rather than persisting a workflow that routes differently from its
+/// diagram. <see cref="Analyze"/> keeps reporting those flows as findings.
 /// </para>
 /// </remarks>
 public sealed class BpmnInterchangeDocumentService(
@@ -199,6 +206,7 @@ public sealed class BpmnInterchangeDocumentService(
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <exception cref="BpmnInterchangeException">The document cannot be read, or declares more than one process and <paramref name="processId"/> does not pick one.</exception>
     /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
+    /// <exception cref="BpmnConditionUnsupportedException">A sequence flow carries an expression condition, which nothing evaluates yet.</exception>
     /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
     public Task<BpmnDocumentImportResult> ImportAsync(string xml, string? definitionId, string? name, string? processId, CancellationToken cancellationToken) =>
         ImportCoreAsync(xml, definitionId, name, processId, preserveMetadataFrom: null, expectedETag: null, compareAndSwap: false, cancellationToken);
@@ -234,6 +242,7 @@ public sealed class BpmnInterchangeDocumentService(
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <exception cref="BpmnInterchangeException">The document cannot be read, or declares more than one process and <paramref name="processId"/> does not pick one.</exception>
     /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
+    /// <exception cref="BpmnConditionUnsupportedException">A sequence flow carries an expression condition, which nothing evaluates yet.</exception>
     /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
     private async Task<BpmnDocumentImportResult> ImportCoreAsync(
         string xml,
@@ -256,6 +265,7 @@ public sealed class BpmnInterchangeDocumentService(
         var rootDefinition = ResolveRootDefinition(result.Definitions, processId);
 
         EnsureCapabilitiesSatisfied(rootDefinition, result.Bindings);
+        EnsureNoExpressionConditions(xml, result);
 
         var process = binder.Bind(rootDefinition, result.Bindings);
 
@@ -575,6 +585,7 @@ public sealed class BpmnInterchangeDocumentService(
     /// subprocess element that has a stored body but no bindingRef to write that body back under.
     /// </exception>
     /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
+    /// <exception cref="BpmnConditionUnsupportedException">A sequence flow carries an expression condition, which nothing evaluates yet.</exception>
     /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
     public async Task<BpmnDocumentImportResult> ImportDocumentAsync(
         BpmnDefinitions document,
@@ -968,6 +979,65 @@ public sealed class BpmnInterchangeDocumentService(
             + "This is most often a subprocess nested inside another subprocess that reuses its parent's id. Reading or writing such a document "
             + "cannot be done safely, so it is refused rather than attempted.",
             duplicateIds);
+    }
+
+    /// <summary>
+    /// Refuses a document whose sequence flows carry a standard BPMN <c>conditionExpression</c>, anywhere in it, naming
+    /// the offending flow ids. A flow conditional on an outcome through the library's own <c>conditionOutcome</c> is
+    /// accepted, including with the readable <c>conditionExpression</c> the library's own writer emits beside it.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Nothing evaluates such an expression yet, so <see cref="BpmnXmlReader"/> reads the flow as unconditional; the
+    /// workflow would route differently from its diagram on every run. Per
+    /// <c>docs/adr/2026-10-20-elsa-evaluates-bpmn-conditions.md</c> the document is refused rather than imported with
+    /// its conditions removed, and no opt-in overrides that. <see cref="Analyze"/> does not call this: a preview reports
+    /// the same flows as Degraded findings and refuses nothing.
+    /// </para>
+    /// <para>
+    /// The reader's own finding for such a flow carries only a severity, an element id and a sentence of text — no
+    /// stable kind — and the <c>conditionExpression</c> itself is consumed rather than retained on the model, so neither
+    /// says structurally that a flow lost a condition. So the read model decides which flows exist and which are
+    /// conditional on an outcome (resolving the vendor namespace exactly as the read did), across every top-level
+    /// process and every nested process body, and the XML text the read came from — the same text, which
+    /// <see cref="BpmnXmlReader"/> parses the same way — decides, namespace-aware, which of the remaining flows declare
+    /// a <c>conditionExpression</c> child. The document is checked whole, not only the process being imported, like
+    /// <see cref="EnsureElementIdsUnique"/>.
+    /// </para>
+    /// </remarks>
+    /// <exception cref="BpmnConditionUnsupportedException">A sequence flow carries an expression condition.</exception>
+    internal static void EnsureNoExpressionConditions(string xml, BpmnImportResult result)
+    {
+        var flowIdsWithoutOutcome = result.Definitions.Processes
+            .Concat(result.Bindings.OfType<BpmnWorkBinding.NestedProcess>().Select(nested => nested.Definition))
+            .SelectMany(process => process.SequenceFlows)
+            .Where(flow => flow.ConditionOutcome is null)
+            .Select(flow => flow.FlowId)
+            .ToHashSet(StringComparer.Ordinal);
+
+        if (flowIdsWithoutOutcome.Count == 0)
+            return;
+
+        var conditionExpression = BpmnXmlNames.Model + "conditionExpression";
+
+        var offendingFlowIds = XDocument.Parse(xml)
+            .Descendants(BpmnXmlNames.Model + "sequenceFlow")
+            .Where(flow => flow.Element(conditionExpression) is not null)
+            .Select(flow => (string?)flow.Attribute("id"))
+            .OfType<string>()
+            .Where(flowIdsWithoutOutcome.Contains)
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToList();
+
+        if (offendingFlowIds.Count == 0)
+            return;
+
+        throw new BpmnConditionUnsupportedException(
+            $"The document's sequence flows carry expression conditions, which Elsa does not evaluate yet: {string.Join(", ", offendingFlowIds)}. "
+            + "Importing it would run each of these flows as unconditional, so the workflow would route differently from its diagram. "
+            + "Remove the conditionExpression from these flows, or make each one conditional on an outcome with the conditionOutcome attribute.",
+            offendingFlowIds);
     }
 
     /// <summary>
