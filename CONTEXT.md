@@ -6,6 +6,10 @@ The workflow runtime executes activities and moves their results into destinatio
 
 ## Language
 
+**Trigger Stimulus Hash**:
+The `StoredTrigger.Hash` of the stored trigger that started a workflow instance. The runtime records it in the instance's workflow properties when it starts a workflow from a trigger it matched, and `WorkflowExecutionContext.GetTriggerStimulusHash()` reads it. It tells apart the several triggers one trigger activity can register. It describes how the instance started, not how it was last resumed.
+_Avoid_: Bookmark hash, trigger ID
+
 **Outbox Marker Cleanup**:
 Removal of a deleted dispatch outbox item's committed marker from its owner workflow state. It runs after successful delivery or abandonment. Hosts with additional state-ownership requirements can replace `IWorkflowDispatchOutboxMarkerCleaner` without replacing the dispatch processor.
 _Avoid_: Outbox delivery, outbox record deletion
