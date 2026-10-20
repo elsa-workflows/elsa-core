@@ -87,10 +87,12 @@ After frozen candidate `d163c7b285a6f08001a6a9db1dc23a601ff11719`, this harness-
 
 The strengthened assertions were rechecked against the original 16 r5 and eight control-r2 raw records. All 24 hashes still match the committed evidence summary. No C# behavior changed, no .NET build or native execution was repeated, and the original execution source heads above remain authoritative. The regenerated summary is byte-identical to the frozen summary; these are new assertions over retained observations, not fresh runtime results. The historical r4 native patch's blank-line whitespace was corrected and its application check was repeated against the recorded f3d source.
 
-Thirteen cheap Python tests cover retained-evidence validation/hashes, mutations of native status/exit/kill/PID/cut-state, missing-work and callback outcomes, missing undo/bookmark evidence, case-set/name/duplicate errors, empty recorded failures, controller failure exit status, host override and protected-summary sanitization:
+Fifteen cheap Python tests cover retained-evidence validation/hashes, relocated raw-only copies with original-path reads denied, optimized-Python import/CLI rejection before controller execution, coherent mutations of native status/exit/kill/PID/cut-state, missing-work and callback outcomes, missing undo/bookmark evidence, case-set/name/duplicate errors, empty recorded failures, controller failure exit status, host override and protected-summary sanitization:
 
 ```sh
 python3 -m unittest discover -s core/experiments/NativeCompensation.E1 -p test_validation.py -v
 ```
 
 The tests default to the retained `/tmp` directories above; set `E1_MATRIX_EVIDENCE` and `E1_CONTROL_EVIDENCE` to relocated evidence directories when needed. They launch no .NET or participant process. E1 remains Partial and all previously recorded gates remain open.
+
+The final review correction after `0e6f468c40b0e58ae68c84cfa4c45b69f9fac365` resolves hashes under each configured evidence root and case name, rather than following historical absolute paths in the summary. Validation explicitly refuses Python `-O`/`PYTHONOPTIMIZE`, which would remove its assertion gates. The status mutation changes the observed result, result event and persisted state together and verifies rejection by the native expected-status gate. These checks use the unchanged retained records or isolated copies; no fresh native execution/build is implied.

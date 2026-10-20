@@ -4,6 +4,8 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -28,12 +30,45 @@ class ValidationTests(unittest.TestCase):
         with self.assertRaises(AssertionError):
             (validate_control if control else validate_matrix)(candidate)
 
-    def test_all_retained_cases_and_original_raw_hashes(self):
-        self.assertEqual(16, len(load_evidence(MATRIX, "matrix")))
-        self.assertEqual(8, len(load_evidence(CONTROLS, "controls")))
+    def check_retained_files(self, matrix, controls):
+        self.assertEqual(16, len(load_evidence(matrix, "matrix")))
+        self.assertEqual(8, len(load_evidence(controls, "controls")))
         summary = json.loads((Path(__file__).parent / "evidence-summary.json").read_text())
-        for item in summary["matrix"] + summary["controls"]:
-            self.assertEqual(item["evidenceSha256"], hashlib.sha256(Path(item["evidenceFile"]).read_bytes()).hexdigest())
+        for category, root in (("matrix", matrix), ("controls", controls)):
+            for item in summary[category]:
+                file = root / item["case"] / "evidence.json"
+                self.assertEqual(item["evidenceSha256"], hashlib.sha256(file.read_bytes()).hexdigest())
+
+    def test_all_retained_cases_and_original_raw_hashes(self):
+        self.check_retained_files(MATRIX, CONTROLS)
+
+    def test_relocated_records_validate_without_reading_original_paths(self):
+        with tempfile.TemporaryDirectory() as directory:
+            relocated = [Path(directory) / "matrix", Path(directory) / "controls"]
+            for source, target in zip((MATRIX, CONTROLS), relocated):
+                for file in source.glob("*/evidence.json"):
+                    destination = target / file.parent.name / file.name
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    destination.write_bytes(file.read_bytes())
+            original_open = Path.open
+            def guarded_open(path, *args, **kwargs):
+                self.assertFalse(any(path.resolve().is_relative_to(root.resolve()) for root in (MATRIX, CONTROLS)), "Original evidence path read")
+                return original_open(path, *args, **kwargs)
+            with patch.object(Path, "open", guarded_open):
+                self.check_retained_files(*relocated)
+
+    def test_optimized_python_fails_before_controller_execution(self):
+        here = Path(__file__).parent.resolve()
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "must-not-be-created"
+            commands = [[sys.executable, "-O", "-c", "import validation"],
+                        [sys.executable, "-O", str(here / "run.py"), str(output), "--case", "baseline"]]
+            for command in commands:
+                with self.subTest(command=command):
+                    result = subprocess.run(command, cwd=here, capture_output=True, text=True)
+                    self.assertNotEqual(0, result.returncode)
+                    self.assertIn("requires Python assertions", result.stderr)
+                    self.assertFalse(output.exists())
 
     def test_missing_work_wrong_native_outcome_is_rejected(self):
         self.rejected("missing-work", lambda r: r["after"]["elsa"]["rows"][0]["snapshot"].update(subStatus="Finished"), True)
@@ -48,7 +83,13 @@ class ValidationTests(unittest.TestCase):
         self.rejected("callback-owner", lambda r: r["after"]["participant"]["operations"][0].update(closed=1), True)
 
     def test_bad_native_status_is_rejected(self):
-        self.rejected("baseline", lambda r: r["observed_result"].update(status="Running"))
+        candidate = copy.deepcopy(record("baseline"))
+        candidate["observed_result"]["status"] = "Running"
+        final = next(event["value"] for event in candidate["first"]["events"] if event["kind"] == "result")
+        final["status"] = "Running"
+        candidate["final"]["elsa"]["rows"][0]["snapshot"]["status"] = "Running"
+        with self.assertRaisesRegex(AssertionError, "Unexpected native status/substatus"):
+            validate_matrix(candidate)
 
     def test_wrong_exit_kill_pid_and_preintent_effect_are_rejected(self):
         mutations = [lambda r: r["restart"].update(exit=2), lambda r: r["first"].update(exit=0),

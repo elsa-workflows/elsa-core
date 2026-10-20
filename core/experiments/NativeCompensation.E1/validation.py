@@ -1,4 +1,7 @@
 """One source of proof assertions for live controllers and retained evidence."""
+if not __debug__:
+    raise RuntimeError("E1 evidence validation requires Python assertions; do not use -O or PYTHONOPTIMIZE.")
+
 import json
 from pathlib import Path
 import signal
