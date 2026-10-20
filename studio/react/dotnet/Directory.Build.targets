@@ -1,0 +1,10 @@
+<Project>
+  <Import Project="../../../Directory.Build.targets" />
+  <!-- Razor's default JSON content discovery includes workspace manifests.
+       Publish only the prebuilt feature assets, never Client/package.json. -->
+  <Target Name="ExcludeReactClientBuildInputs" BeforeTargets="AssignTargetPaths">
+    <ItemGroup>
+      <Content Remove="Client/**/*" />
+    </ItemGroup>
+  </Target>
+</Project>
