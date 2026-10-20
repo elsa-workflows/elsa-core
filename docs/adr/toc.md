@@ -48,3 +48,4 @@
 * [2026-10-20. Evaluate BPMN conditions with Elsa expressions](2026-10-20-elsa-evaluates-bpmn-conditions.md)
 * [2026-10-20. Build one BPMN modeler module for both Studios](2026-10-20-one-bpmn-modeler-for-both-studios.md)
 * [2026-10-20. Publish the supported BPMN subset as a tested matrix](2026-10-20-published-bpmn-support-matrix.md)
+* [2026-10-20. Offer selectable BPMN designers](2026-10-20-selectable-bpmn-designers.md)
