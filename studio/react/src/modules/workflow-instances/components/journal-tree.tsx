@@ -2,13 +2,13 @@
 
 import { AlertTriangle, Ban, CheckCircle2, ChevronRight, Circle, ChevronsDownUp, ChevronsUpDown, Loader2, PauseCircle, type LucideIcon } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { EmptyState } from "@/components/common/empty-state";
-import { formatTimestamp } from "@/components/common/timestamp";
+import { EmptyState } from "@elsa-workflows/react-studio-ui/common/empty-state";
+import { formatTimestamp } from "@elsa-workflows/react-studio-ui/common/timestamp";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Label } from "@elsa-workflows/react-studio-ui/label";
 import { Switch } from "@elsa-workflows/react-studio-ui/switch";
 import type { WorkflowExecutionLogRecord } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
-import { cn } from "@/lib/utils";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 import {
   buildJournalSpans,
   countSpans,

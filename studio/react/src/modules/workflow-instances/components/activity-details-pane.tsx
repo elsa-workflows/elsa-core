@@ -2,13 +2,13 @@
 
 import { X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { JsonViewer } from "@/components/common/json-viewer";
-import { StatusBadge } from "@/components/common/status-badge";
+import { JsonViewer } from "@elsa-workflows/react-studio-ui/common/json-viewer";
+import { StatusBadge } from "@elsa-workflows/react-studio-ui/common/status-badge";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@elsa-workflows/react-studio-ui/tabs";
 import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
 import type { ActivityExecutionRecord, WorkflowExecutionLogRecord } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
-import { activityDisplayText, useDesigner } from "@/modules/designer";
+import { activityDisplayText, useDesigner } from "@elsa-workflows/react-studio-sdk/designer/index";
 import { ExecutionsTable } from "./executions-table";
 
 /** Bottom pane of the viewer: what happened to the selected activity. */

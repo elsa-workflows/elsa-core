@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "@/lib/navigation";
+import { useRouter, useSearchParams } from "@elsa-workflows/react-studio-sdk/navigation/index";
 import { useEffect, useState, type FormEvent } from "react";
 import { ExternalLink, Loader2 } from "lucide-react";
 import { BrandLogo, BrandMark } from "./brand-mark";
@@ -8,12 +8,12 @@ import { LoginIllustration } from "./login-illustration";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@elsa-workflows/react-studio-ui/card";
 import { Input } from "@elsa-workflows/react-studio-ui/input";
-import { Field } from "@/components/common/field";
-import { useStudioConfig } from "@/config/provider";
+import { Field } from "@elsa-workflows/react-studio-ui/common/field";
+import { useStudioConfig } from "@elsa-workflows/react-studio-sdk/config-provider";
 import { useAuth } from "@/lib/auth/provider";
 import type { ElsaExternalAuthStrategy, LoginMethod } from "@elsa-workflows/react-studio-auth/strategies/elsa-external";
-import { useActiveServer } from "@/lib/environments/active-server";
-import { FullPageSpinner } from "./full-page-spinner";
+import { useActiveServer } from "@elsa-workflows/react-studio-sdk/environments/active-server";
+import { FullPageSpinner } from "@elsa-workflows/react-studio-ui/full-page-spinner";
 
 /** Safe, site-local return path. Anything absolute or protocol-relative collapses to `/`. */
 function safeReturnTo(value: string | null) {

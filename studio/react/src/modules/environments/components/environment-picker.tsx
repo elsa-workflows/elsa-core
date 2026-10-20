@@ -12,9 +12,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@elsa-workflows/react-studio-ui/dropdown-menu";
-import { useStudioConfig } from "@/config/provider";
-import { useActiveServerStore } from "@/lib/environments/active-server";
-import { cn } from "@/lib/utils";
+import { useStudioConfig } from "@elsa-workflows/react-studio-sdk/config-provider";
+import { useActiveServerStore } from "@elsa-workflows/react-studio-sdk/environments/active-server";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 import { environmentUrl, normalizeUrl } from "../api";
 import { useServerEnvironments } from "../hooks";
 

@@ -2,22 +2,22 @@
 
 import { ReactFlowProvider } from "@xyflow/react";
 import { Ban, FileCode2, Loader2, RefreshCw, Trash2 } from "lucide-react";
-import Link from "@/lib/navigation/link";
-import { useRouter } from "@/lib/navigation";
+import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
+import { useRouter } from "@elsa-workflows/react-studio-sdk/navigation/index";
 import { useCallback, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { useConfirm } from "@/components/common/confirm-dialog";
-import { describeError, ErrorAlert } from "@/components/common/error-alert";
-import { PageHeader } from "@/components/common/page-header";
-import { StatusBadge, ToneBadge } from "@/components/common/status-badge";
+import { useConfirm } from "@elsa-workflows/react-studio-ui/common/confirm-dialog";
+import { describeError, ErrorAlert } from "@elsa-workflows/react-studio-ui/common/error-alert";
+import { PageHeader } from "@elsa-workflows/react-studio-ui/common/page-header";
+import { StatusBadge, ToneBadge } from "@elsa-workflows/react-studio-ui/common/status-badge";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@elsa-workflows/react-studio-ui/resizable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@elsa-workflows/react-studio-ui/tabs";
 import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
 import type { ActivityExecutionStats, WorkflowInstance } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
-import { href } from "@/lib/modules/router";
-import { useExtensions } from "@/lib/modules/registry";
+import { href } from "@elsa-workflows/react-studio-sdk/routing";
+import { useExtensions } from "@elsa-workflows/react-studio-ui/runtime/module-registry";
 import type { ListActionHelpers, RouteParams } from "@elsa-workflows/react-studio-sdk";
 import { usePermissions, Resources, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
 import {
@@ -30,8 +30,8 @@ import {
   useActivityRegistry,
   useDesignerState,
   type DesignerStore,
-} from "@/modules/designer";
-import { WorkflowDefinitionRoutes } from "@/modules/workflow-definitions";
+} from "@elsa-workflows/react-studio-sdk/designer/index";
+import { WorkflowDefinitionRoutes } from "@elsa-workflows/react-studio-sdk/routes";
 import { ActivityDetailsPane } from "../components/activity-details-pane";
 import { ActivityExecutionsList } from "../components/activity-executions-list";
 import { IncidentsPanel } from "../components/incidents-panel";

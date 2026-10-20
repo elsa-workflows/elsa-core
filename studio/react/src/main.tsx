@@ -5,7 +5,7 @@ import { Providers } from "./providers";
 import { StudioRouter } from "@/components/shell/studio-router";
 import { LoginPage } from "@/components/shell/login-page";
 import { AuthCallback } from "@/components/shell/auth-callback";
-import { studioBasePath } from "@/lib/navigation/base-path";
+import { studioBasePath } from "@elsa-workflows/react-studio-sdk/navigation/base-path";
 import { registerStudioModule } from "@elsa-workflows/react-studio-sdk";
 import { StudioRegistry } from "@elsa-workflows/react-studio-sdk/host";
 import { studioModules } from "@/modules";
@@ -36,7 +36,7 @@ async function start() {
   document.documentElement.dataset.elsaTheme = config.ui.theme;
   createRoot(document.getElementById("root")!).render(
     <BrowserRouter basename={studioBasePath() || "/"}>
-      <Providers config={config} modules={registry.studioModules()}>
+      <Providers config={config} modules={registry.studioModules()} components={registry.components()}>
         {registry.diagnostics.length > 0 && <aside role="alert">
           {registry.diagnostics.map((diagnostic, index) => <p key={`${diagnostic.moduleId}:${index}`}>
             {diagnostic.moduleId}: {diagnostic.message}

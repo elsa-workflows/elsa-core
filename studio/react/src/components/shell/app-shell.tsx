@@ -3,10 +3,10 @@
 import type { ReactNode } from "react";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@elsa-workflows/react-studio-ui/sidebar";
 import { Separator } from "@elsa-workflows/react-studio-ui/separator";
-import { ConfirmProvider } from "@/components/common/confirm-dialog";
-import { useExtensions } from "@/lib/modules/registry";
-import { cn } from "@/lib/utils";
-import { useShellChrome } from "./shell-chrome";
+import { ConfirmProvider } from "@elsa-workflows/react-studio-ui/common/confirm-dialog";
+import { useExtensions } from "@elsa-workflows/react-studio-ui/runtime/module-registry";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
+import { useShellChrome } from "@elsa-workflows/react-studio-ui/shell-chrome";
 import { StudioSidebar } from "./studio-sidebar";
 import { ThemeMenu } from "./theme-menu";
 import { UserMenu } from "./user-menu";

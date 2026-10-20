@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Check } from "lucide-react";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Checkbox } from "@elsa-workflows/react-studio-ui/checkbox";
-import { CodeEditor } from "@/components/common/code-editor";
+import { CodeEditor } from "@elsa-workflows/react-studio-ui/common/code-editor";
 import type { WorkflowDefinition } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
 
 /** JSON view of the whole definition; edits can be applied back to the editor. */

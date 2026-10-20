@@ -1,4 +1,4 @@
-import { SettingsRoutes } from "@/lib/modules/settings";
+import { SettingsRoutes } from "@elsa-workflows/react-studio-ui/runtime/settings";
 import { defineModule } from "@elsa-workflows/react-studio-sdk";
 import { SettingsPage } from "./pages/settings-page";
 

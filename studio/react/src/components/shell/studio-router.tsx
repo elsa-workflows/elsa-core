@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "@/lib/navigation";
+import { useRouter } from "@elsa-workflows/react-studio-sdk/navigation/index";
 import { useAuth } from "@/lib/auth/provider";
-import { useModules } from "@/lib/modules/registry";
-import { resolveRoute } from "@/lib/modules/router";
+import { useModules } from "@elsa-workflows/react-studio-ui/runtime/module-registry";
+import { resolveRoute } from "@elsa-workflows/react-studio-sdk/routing";
 import { usePermissions } from "@elsa-workflows/react-studio-auth/permissions";
 import { AppShell } from "./app-shell";
 import { AccessDenied, NotFound } from "./status-pages";
-import { FullPageSpinner } from "./full-page-spinner";
+import { FullPageSpinner } from "@elsa-workflows/react-studio-ui/full-page-spinner";
 
 export function StudioRouter({ path }: { path: string }) {
   const auth = useAuth();

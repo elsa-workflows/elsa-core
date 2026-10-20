@@ -1,9 +1,9 @@
 "use client";
 
 import { Component, type ErrorInfo, type ReactNode } from "react";
-import { ErrorAlert } from "@/components/common/error-alert";
+import { ErrorAlert } from "@elsa-workflows/react-studio-ui/common/error-alert";
 import type { DashboardRange, DashboardWidget, DashboardZone } from "@elsa-workflows/react-studio-sdk";
-import { cn } from "@/lib/utils";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 
 /**
  * Row heights for the zones that hold list widgets. Fixing them is what stops a card from growing

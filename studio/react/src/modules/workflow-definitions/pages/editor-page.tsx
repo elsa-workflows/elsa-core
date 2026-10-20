@@ -1,23 +1,25 @@
 "use client";
 
+import { IconButton } from "@elsa-workflows/react-studio-ui/icon-button";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { usePathname, useRouter } from "@/lib/navigation";
+import { usePathname, useRouter } from "@elsa-workflows/react-studio-sdk/navigation/index";
 import { ReactFlowProvider } from "@xyflow/react";
 import { toast } from "sonner";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@elsa-workflows/react-studio-ui/resizable";
-import { useConfirmChoice } from "@/components/common/confirm-dialog";
-import { describeError, ErrorAlert } from "@/components/common/error-alert";
-import { useShellHeader } from "@/components/shell/shell-chrome";
-import { FullPageSpinner } from "@/components/shell/full-page-spinner";
+import { useConfirmChoice } from "@elsa-workflows/react-studio-ui/common/confirm-dialog";
+import { describeError, ErrorAlert } from "@elsa-workflows/react-studio-ui/common/error-alert";
+import { useShellHeader } from "@elsa-workflows/react-studio-ui/shell-chrome";
+import { FullPageSpinner } from "@elsa-workflows/react-studio-ui/full-page-spinner";
 import type { RouteParams } from "@elsa-workflows/react-studio-sdk";
 import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
 import type { WorkflowDefinition } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
-import { useElsaClient } from "@/lib/api/provider";
+import { useElsaClient } from "@elsa-workflows/react-studio-api-client/react";
 import { Resources, usePermissions, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
-import { downloadBlob, pickFiles } from "@/lib/utils/download";
-import { useUrlState } from "@/lib/utils/url-state";
+import { downloadBlob, pickFiles } from "@elsa-workflows/react-studio-sdk/utils/download";
+import { useUrlState } from "@elsa-workflows/react-studio-sdk/utils/url-state";
 import { Network } from "lucide-react";
-import { ActivityToolbox, createDesignerStore, DesignerProvider, DesignerSurface, emptyFlowchart, IconButton, indexDataFlow, isDesignableContainer, useActivityRegistry } from "@/modules/designer";
+import { ActivityToolbox, createDesignerStore, DesignerProvider, DesignerSurface, emptyFlowchart, indexDataFlow, isDesignableContainer, useActivityRegistry } from "@elsa-workflows/react-studio-sdk/designer/index";
 import { CodeView } from "../components/code-view";
 import { EditorHeader, type EditorViewState } from "../components/editor-header";
 import { EditorSidePane } from "../components/editor-side-pane";
@@ -28,7 +30,7 @@ import { readCallTarget, useCallGraphService } from "../call-graph";
 import { WorkflowEditorProvider, type WorkflowEditorContextValue } from "../editor-context";
 import { toModel, useWorkflowDefinition, useWorkflowDefinitionMutations } from "../hooks";
 import { WorkflowDefinitionRoutes } from "../routes";
-import { href } from "@/lib/modules/router";
+import { href } from "@elsa-workflows/react-studio-sdk/routing";
 
 /** Query parameter that carries call-context mode across drill-in navigations. */
 const CONTEXT_PARAM = "context";

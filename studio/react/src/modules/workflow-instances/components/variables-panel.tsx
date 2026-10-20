@@ -1,9 +1,9 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
-import { EmptyState } from "@/components/common/empty-state";
-import { ErrorAlert } from "@/components/common/error-alert";
-import { JsonViewer } from "@/components/common/json-viewer";
+import { EmptyState } from "@elsa-workflows/react-studio-ui/common/empty-state";
+import { ErrorAlert } from "@elsa-workflows/react-studio-ui/common/error-alert";
+import { JsonViewer } from "@elsa-workflows/react-studio-ui/common/json-viewer";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@elsa-workflows/react-studio-ui/table";
 import type { WorkflowInstanceVariable } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
 

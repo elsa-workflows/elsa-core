@@ -2,10 +2,10 @@
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
-import { useElsaClient, useQueryScope } from "@/lib/api/provider";
+import { useElsaClient, useQueryScope } from "@elsa-workflows/react-studio-api-client/react";
 import { ApiError } from "@elsa-workflows/react-studio-api-client/http";
-import { useAuth } from "@/lib/auth/provider";
-import { useStudioConfig } from "@/config/provider";
+import { useAuth } from "@elsa-workflows/react-studio-auth";
+import { useStudioConfig } from "@elsa-workflows/react-studio-sdk/config-provider";
 import { consoleLogsApi, type ConsoleLogFilter } from "./api";
 
 export function useConsoleLogsApi() {

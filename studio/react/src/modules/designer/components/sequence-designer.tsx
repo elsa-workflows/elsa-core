@@ -3,11 +3,11 @@
 import { useMemo, useRef, useState, type DragEvent } from "react";
 import { ArrowDown, GripVertical, MousePointerClick, Plus } from "lucide-react";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
-import { cn } from "@/lib/utils";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 import { isSequence, type Activity, type Sequence } from "@elsa-workflows/react-studio-api-client/types/activities";
-import { useDesigner, useDesignerState } from "../context";
-import { resolveContainer } from "../model/flowchart-ops";
-import { computePorts } from "../model/ports";
+import { useDesigner, useDesignerState } from "@elsa-workflows/react-studio-sdk/designer/context";
+import { resolveContainer } from "@elsa-workflows/react-studio-sdk/designer/model/flowchart-ops";
+import { computePorts } from "@elsa-workflows/react-studio-sdk/designer/model/ports";
 import { ActivityCard } from "./activity-card";
 import { DesignerBreadcrumb } from "./designer-breadcrumb";
 import { QuickAddMenu } from "./quick-add-menu";

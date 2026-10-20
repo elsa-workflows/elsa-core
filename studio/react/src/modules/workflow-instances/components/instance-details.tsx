@@ -1,13 +1,13 @@
 "use client";
 
-import Link from "@/lib/navigation/link";
-import { KeyValueTable } from "@/components/common/key-value-table";
-import { StatusBadge } from "@/components/common/status-badge";
-import { Timestamp } from "@/components/common/timestamp";
-import { CopyButton } from "@/components/common/copy-button";
+import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
+import { KeyValueTable } from "@elsa-workflows/react-studio-ui/common/key-value-table";
+import { StatusBadge } from "@elsa-workflows/react-studio-ui/common/status-badge";
+import { Timestamp } from "@elsa-workflows/react-studio-ui/common/timestamp";
+import { CopyButton } from "@elsa-workflows/react-studio-ui/common/copy-button";
 import type { WorkflowInstance } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
-import { href } from "@/lib/modules/router";
-import { WorkflowDefinitionRoutes } from "@/modules/workflow-definitions";
+import { href } from "@elsa-workflows/react-studio-sdk/routing";
+import { WorkflowDefinitionRoutes } from "@elsa-workflows/react-studio-sdk/routes";
 import { WorkflowInstanceRoutes } from "../routes";
 
 function Mono({ value }: { value: string | undefined }) {

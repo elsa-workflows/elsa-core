@@ -4,11 +4,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@elsa-workflows/react-studio-ui/command";
 import type { ActivityDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
-import { useDesigner, useDesignerState } from "../context";
-import type { DesignerState } from "../store";
-import { activityAccentColor } from "../model/icons";
-import { FLOW_TYPES } from "../model/flow-types";
-import { readRecentActivities, rememberActivity } from "../model/recent";
+import { useDesigner, useDesignerState } from "@elsa-workflows/react-studio-sdk/designer/context";
+import type { DesignerState } from "@elsa-workflows/react-studio-sdk/designer/store";
+import { activityAccentColor } from "@elsa-workflows/react-studio-sdk/designer/model/icons";
+import { FLOW_TYPES } from "@elsa-workflows/react-studio-sdk/designer/model/flow-types";
+import { readRecentActivities, rememberActivity } from "@elsa-workflows/react-studio-sdk/designer/model/recent";
 import { ActivityIcon } from "./activity-icon";
 
 const WIDTH = 340;

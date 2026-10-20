@@ -1,1 +1,1 @@
-export { SettingsRoutes } from "@/lib/modules/settings";
+export { SettingsRoutes } from "@elsa-workflows/react-studio-ui/runtime/settings";

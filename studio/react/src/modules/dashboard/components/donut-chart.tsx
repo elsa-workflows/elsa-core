@@ -1,7 +1,7 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import Link from "@/lib/navigation/link";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
+import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
 
 export interface DonutSlice {
   label: string;

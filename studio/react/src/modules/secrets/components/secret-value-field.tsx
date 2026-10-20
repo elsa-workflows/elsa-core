@@ -1,6 +1,6 @@
 "use client";
 
-import { Field } from "@/components/common/field";
+import { Field } from "@elsa-workflows/react-studio-ui/common/field";
 import { Input } from "@elsa-workflows/react-studio-ui/input";
 import { Textarea } from "@elsa-workflows/react-studio-ui/textarea";
 

@@ -3,8 +3,8 @@
 import { memo } from "react";
 import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, type Edge, type EdgeProps } from "@xyflow/react";
 import { Zap, X } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useDesigner } from "../context";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
+import { useDesigner } from "@elsa-workflows/react-studio-sdk/designer/context";
 
 export interface TransitionEdgeData extends Record<string, unknown> {
   index: number;

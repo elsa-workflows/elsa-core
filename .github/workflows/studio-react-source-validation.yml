@@ -55,6 +55,7 @@ jobs:
         run: |
           pnpm lint
           pnpm typecheck
+          pnpm check:boundaries
           pnpm test
           pnpm test:packages
           pnpm docs:api

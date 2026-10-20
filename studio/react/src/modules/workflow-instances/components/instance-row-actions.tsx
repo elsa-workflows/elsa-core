@@ -1,7 +1,7 @@
 "use client";
 
 import { Ban, Eye, MoreHorizontal, Trash2 } from "lucide-react";
-import Link from "@/lib/navigation/link";
+import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import {
   DropdownMenu,
@@ -11,8 +11,8 @@ import {
   DropdownMenuTrigger,
 } from "@elsa-workflows/react-studio-ui/dropdown-menu";
 import type { WorkflowInstanceSummary } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
-import { href } from "@/lib/modules/router";
-import { useExtensions } from "@/lib/modules/registry";
+import { href } from "@elsa-workflows/react-studio-sdk/routing";
+import { useExtensions } from "@elsa-workflows/react-studio-ui/runtime/module-registry";
 import type { ListActionHelpers } from "@elsa-workflows/react-studio-sdk";
 import { usePermissions, Resources, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
 import { WorkflowInstanceRoutes } from "../routes";

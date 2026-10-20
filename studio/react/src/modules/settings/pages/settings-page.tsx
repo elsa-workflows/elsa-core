@@ -1,13 +1,13 @@
 "use client";
 
 import { ArrowRight, Settings, SlidersHorizontal } from "lucide-react";
-import Link from "@/lib/navigation/link";
+import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
 import { useMemo } from "react";
-import { EmptyState } from "@/components/common/empty-state";
-import { PageHeader } from "@/components/common/page-header";
+import { EmptyState } from "@elsa-workflows/react-studio-ui/common/empty-state";
+import { PageHeader } from "@elsa-workflows/react-studio-ui/common/page-header";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@elsa-workflows/react-studio-ui/card";
-import { useExtensions } from "@/lib/modules/registry";
+import { useExtensions } from "@elsa-workflows/react-studio-ui/runtime/module-registry";
 import type { SettingsSection } from "@elsa-workflows/react-studio-sdk";
 import { usePermissions } from "@elsa-workflows/react-studio-auth/permissions";
 

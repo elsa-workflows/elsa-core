@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { InputDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
-import { isBindingSyntax, stringListOf } from "../expression";
+import { isBindingSyntax, stringListOf } from "@elsa-workflows/react-studio-sdk/activity-expressions";
 
 const descriptor = (defaultValue?: unknown) => ({ name: "SupportedMethods", typeName: "List<String>", defaultValue } as unknown as InputDescriptor);
 

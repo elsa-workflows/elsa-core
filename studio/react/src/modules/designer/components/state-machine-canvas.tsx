@@ -15,19 +15,19 @@ import {
   type NodeChange,
 } from "@xyflow/react";
 import { LayoutGrid, Map as MapIcon, Maximize, Minus, MousePointerClick, PanelLeftOpen, Plus, Redo2, Undo2, X } from "lucide-react";
-import { layoutGraph } from "../model/layout";
+import { layoutGraph } from "@elsa-workflows/react-studio-sdk/designer/model/layout";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
-import { cn } from "@/lib/utils";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 import { isStateMachine, type StateMachine } from "@elsa-workflows/react-studio-api-client/types/activities";
-import { useDesigner, useDesignerState } from "../context";
-import { resolveContainer } from "../model/flowchart-ops";
-import { validateWorkflow } from "../model/validation";
+import { useDesigner, useDesignerState } from "@elsa-workflows/react-studio-sdk/designer/context";
+import { resolveContainer } from "@elsa-workflows/react-studio-sdk/designer/model/flowchart-ops";
+import { validateWorkflow } from "@elsa-workflows/react-studio-sdk/designer/model/validation";
 import { DesignerBreadcrumb } from "./designer-breadcrumb";
 import { IconButton } from "./designer-canvas";
 import { QuickAddMenu } from "./quick-add-menu";
 import { StateNode, type StateFlowNode } from "./state-node";
 import { TransitionEdge, type TransitionFlowEdge } from "./transition-edge";
-import { selectionId, stateMachineDesignerMetadata } from "../store";
+import { selectionId, stateMachineDesignerMetadata } from "@elsa-workflows/react-studio-sdk/designer/store";
 
 const nodeTypes = { state: StateNode };
 const edgeTypes = { transition: TransitionEdge };

@@ -1,6 +1,6 @@
 "use client";
 
-import { SimpleSelect } from "@/components/common/simple-select";
+import { SimpleSelect } from "@elsa-workflows/react-studio-ui/common/simple-select";
 import type { UiHintEditorProps } from "../types";
 import { ExpressionEditor } from "../expression-editor";
 import { selectListItems } from "./options";

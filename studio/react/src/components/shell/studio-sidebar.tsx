@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "@/lib/navigation/link";
-import { usePathname, useRouter } from "@/lib/navigation";
+import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
+import { usePathname, useRouter } from "@elsa-workflows/react-studio-sdk/navigation/index";
 import { ChevronRight, LogOut, Plus } from "lucide-react";
 import { Avatar, AvatarFallback } from "@elsa-workflows/react-studio-ui/avatar";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
@@ -24,13 +24,13 @@ import {
   useSidebar,
 } from "@elsa-workflows/react-studio-ui/sidebar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@elsa-workflows/react-studio-ui/tooltip";
-import { useStudioConfig } from "@/config/provider";
+import { useStudioConfig } from "@elsa-workflows/react-studio-sdk/config-provider";
 import { useAuth } from "@/lib/auth/provider";
-import { useActiveServer } from "@/lib/environments/active-server";
-import { useNavigation } from "@/lib/modules/registry";
+import { useActiveServer } from "@elsa-workflows/react-studio-sdk/environments/active-server";
+import { useNavigation } from "@elsa-workflows/react-studio-ui/runtime/module-registry";
 import { NavGroups, type NavItem } from "@elsa-workflows/react-studio-sdk";
 import { Resources, usePermission, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
-import { cn } from "@/lib/utils";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 import { BrandMark } from "./brand-mark";
 
 function isActive(item: NavItem, pathname: string) {

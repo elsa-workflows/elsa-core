@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 
 /*
  * Decorative workflow diagram drawn with theme colours; purely presentational.

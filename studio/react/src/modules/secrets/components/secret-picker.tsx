@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { describeError } from "@/components/common/error-alert";
-import { SimpleSelect } from "@/components/common/simple-select";
+import { describeError } from "@elsa-workflows/react-studio-ui/common/error-alert";
+import { SimpleSelect } from "@elsa-workflows/react-studio-ui/common/simple-select";
 import type { SecretModel, SecretPickerRequest } from "../api";
 import { usePickerSecrets } from "../hooks";
 

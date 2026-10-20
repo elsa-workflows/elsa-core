@@ -11,8 +11,8 @@ import {
   type DecorationEdge,
   type DecorationNode,
   type DesignerStore,
-} from "@/modules/designer";
-import { activitySize } from "@/modules/designer/model/display";
+} from "@elsa-workflows/react-studio-sdk/designer/index";
+import { activitySize } from "@elsa-workflows/react-studio-sdk/designer/model/display";
 import { computeContextSubgraph, layoutContextNodes, useCallGraphService, useCallGraphVersion, CONTEXT_NODE_HEIGHT, CONTEXT_NODE_WIDTH, type ContextNode, type ContextSubgraph } from "../../call-graph";
 import type { CallGraphWarning } from "../../call-graph/types";
 

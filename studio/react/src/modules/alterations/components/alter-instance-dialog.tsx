@@ -1,17 +1,17 @@
 "use client";
 
 import { Loader2, Play, Send } from "lucide-react";
-import Link from "@/lib/navigation/link";
+import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@elsa-workflows/react-studio-ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@elsa-workflows/react-studio-ui/tabs";
 import { Input } from "@elsa-workflows/react-studio-ui/input";
-import { Field } from "@/components/common/field";
-import { ErrorAlert, describeError } from "@/components/common/error-alert";
-import { useConfirm } from "@/components/common/confirm-dialog";
-import { href } from "@/lib/modules/router";
+import { Field } from "@elsa-workflows/react-studio-ui/common/field";
+import { ErrorAlert, describeError } from "@elsa-workflows/react-studio-ui/common/error-alert";
+import { useConfirm } from "@elsa-workflows/react-studio-ui/common/confirm-dialog";
+import { href } from "@elsa-workflows/react-studio-sdk/routing";
 import type { RunAlterationsResult } from "../api";
 import { useRetryWorkflows, useRunAlterations, useSubmitAlterationPlan } from "../hooks";
 import type { AlterTarget } from "../dialog-store";

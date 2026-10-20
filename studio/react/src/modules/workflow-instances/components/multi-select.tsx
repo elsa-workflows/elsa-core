@@ -7,8 +7,8 @@ import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Checkbox } from "@elsa-workflows/react-studio-ui/checkbox";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@elsa-workflows/react-studio-ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@elsa-workflows/react-studio-ui/popover";
-import type { SelectOption } from "@/components/common/simple-select";
-import { cn } from "@/lib/utils";
+import type { SelectOption } from "@elsa-workflows/react-studio-ui/common/simple-select";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 
 /** Popover + searchable checkbox list for selecting several values of a filter. */
 export function MultiSelect<T extends string>({

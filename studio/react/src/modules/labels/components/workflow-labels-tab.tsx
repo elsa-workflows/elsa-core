@@ -2,7 +2,7 @@
 
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { describeError, ErrorAlert } from "@/components/common/error-alert";
+import { describeError, ErrorAlert } from "@elsa-workflows/react-studio-ui/common/error-alert";
 import { Checkbox } from "@elsa-workflows/react-studio-ui/checkbox";
 import { Label as FormLabel } from "@elsa-workflows/react-studio-ui/label";
 import { Resources, usePermission, Verbs } from "@elsa-workflows/react-studio-auth/permissions";

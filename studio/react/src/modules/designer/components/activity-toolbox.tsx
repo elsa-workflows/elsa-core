@@ -6,10 +6,10 @@ import { ChevronDown, ChevronRight, GripVertical, PanelLeftClose } from "lucide-
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Input } from "@elsa-workflows/react-studio-ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@elsa-workflows/react-studio-ui/tooltip";
-import { cn } from "@/lib/utils";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 import type { ActivityDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
-import { useDesigner } from "../context";
-import { activityAccentColor } from "../model/icons";
+import { useDesigner } from "@elsa-workflows/react-studio-sdk/designer/context";
+import { activityAccentColor } from "@elsa-workflows/react-studio-sdk/designer/model/icons";
 import { ActivityIcon } from "./activity-icon";
 
 export const ACTIVITY_DRAG_TYPE = "application/x-elsa-activity";

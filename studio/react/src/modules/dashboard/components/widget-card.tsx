@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@elsa-workflows/react-studio-ui/card";
 import { Skeleton } from "@elsa-workflows/react-studio-ui/skeleton";
-import { ErrorAlert } from "@/components/common/error-alert";
-import { cn } from "@/lib/utils";
+import { ErrorAlert } from "@elsa-workflows/react-studio-ui/common/error-alert";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 import type { DashboardCapability } from "../hooks";
 
 /**

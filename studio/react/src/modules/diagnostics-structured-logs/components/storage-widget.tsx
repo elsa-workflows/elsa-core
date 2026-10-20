@@ -2,7 +2,7 @@
 
 import { ScrollText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@elsa-workflows/react-studio-ui/card";
-import { ToneBadge } from "@/components/common/status-badge";
+import { ToneBadge } from "@elsa-workflows/react-studio-ui/common/status-badge";
 import { useStructuredLogStorage } from "../hooks";
 
 /** Dashboard "status" widget for `GET /diagnostics/structured-logs/storage`. Hidden on 404 or error. */

@@ -7,7 +7,7 @@ import { Badge } from "@elsa-workflows/react-studio-ui/badge";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Input } from "@elsa-workflows/react-studio-ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@elsa-workflows/react-studio-ui/popover";
-import { SimpleSelect, type SelectOption } from "@/components/common/simple-select";
+import { SimpleSelect, type SelectOption } from "@elsa-workflows/react-studio-ui/common/simple-select";
 import type { TimestampFilter } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
 
 type Column = TimestampFilter["column"];

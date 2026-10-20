@@ -1,18 +1,18 @@
 "use client";
 
 import { ArrowLeft, CheckCircle2, Eye, Hand, RefreshCw, UserMinus, UserPlus, XCircle } from "lucide-react";
-import Link from "@/lib/navigation/link";
+import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@elsa-workflows/react-studio-ui/card";
-import { ErrorAlert, describeError } from "@/components/common/error-alert";
-import { JsonViewer } from "@/components/common/json-viewer";
-import { KeyValueTable } from "@/components/common/key-value-table";
-import { PageHeader } from "@/components/common/page-header";
-import { Timestamp } from "@/components/common/timestamp";
-import { ToneBadge } from "@/components/common/status-badge";
-import { useConfirm } from "@/components/common/confirm-dialog";
+import { ErrorAlert, describeError } from "@elsa-workflows/react-studio-ui/common/error-alert";
+import { JsonViewer } from "@elsa-workflows/react-studio-ui/common/json-viewer";
+import { KeyValueTable } from "@elsa-workflows/react-studio-ui/common/key-value-table";
+import { PageHeader } from "@elsa-workflows/react-studio-ui/common/page-header";
+import { Timestamp } from "@elsa-workflows/react-studio-ui/common/timestamp";
+import { ToneBadge } from "@elsa-workflows/react-studio-ui/common/status-badge";
+import { useConfirm } from "@elsa-workflows/react-studio-ui/common/confirm-dialog";
 import type { RouteParams } from "@elsa-workflows/react-studio-sdk";
 import { isTerminalStatus, participantLabel, type UserTaskDetail, type UserTaskFormField } from "../api";
 import { AssignTaskDialog } from "../components/assign-task-dialog";

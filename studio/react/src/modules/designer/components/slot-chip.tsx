@@ -3,10 +3,10 @@
 import { ChevronRight, Plus, Trash2 } from "lucide-react";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
-import { useDesigner } from "../context";
-import { activityDisplayText } from "../model/display";
-import { activityAccentColor } from "../model/icons";
-import type { SlotPath } from "../model/containers";
+import { useDesigner } from "@elsa-workflows/react-studio-sdk/designer/context";
+import { activityDisplayText } from "@elsa-workflows/react-studio-sdk/designer/model/display";
+import { activityAccentColor } from "@elsa-workflows/react-studio-sdk/designer/model/icons";
+import type { SlotPath } from "@elsa-workflows/react-studio-sdk/designer/model/containers";
 import { ActivityIcon } from "./activity-icon";
 
 /**

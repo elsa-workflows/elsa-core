@@ -1,4 +1,4 @@
-import Link from "@/lib/navigation/link";
+import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
 import { ShieldAlert, SearchX } from "lucide-react";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 

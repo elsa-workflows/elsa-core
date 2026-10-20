@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
-import { useDesignerState } from "../context";
-import { containerKind } from "../model/containers";
-import { resolveContainer } from "../model/flowchart-ops";
+import { useDesignerState } from "@elsa-workflows/react-studio-sdk/designer/context";
+import { containerKind } from "@elsa-workflows/react-studio-sdk/designer/model/containers";
+import { resolveContainer } from "@elsa-workflows/react-studio-sdk/designer/model/flowchart-ops";
 import { DesignerCanvas, type DesignerCanvasProps } from "./designer-canvas";
 import { SequenceDesigner } from "./sequence-designer";
 import { StateMachineCanvas } from "./state-machine-canvas";

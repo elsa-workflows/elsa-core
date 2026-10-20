@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { cn } from "@/lib/utils";
-import { formatTimestamp } from "@/components/common/timestamp";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
+import { formatTimestamp } from "@elsa-workflows/react-studio-ui/common/timestamp";
 import { sourceIdOf, streamName, stripAnsi, type ConsoleLogLine, type ConsoleLogSource } from "../api";
 
 /** Monospace log listing. Plain scrolling; sticks to the bottom while following. */

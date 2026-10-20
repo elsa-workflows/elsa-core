@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { ApiError } from "@elsa-workflows/react-studio-api-client/http";
-import { useElsaClient, useQueryScope } from "@/lib/api/provider";
+import { useElsaClient, useQueryScope } from "@elsa-workflows/react-studio-api-client/react";
 import { environmentsApi, type EnvironmentsResponse } from "./api";
 
 export const environmentKeys = {

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "@/lib/navigation/link";
+import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
@@ -35,9 +35,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@elsa-workflows/react-studio-ui/tooltip";
-import { cn } from "@/lib/utils";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 import { useWorkflowEditor } from "../editor-context";
-import { useDesignerState } from "@/modules/designer";
+import { useDesignerState } from "@elsa-workflows/react-studio-sdk/designer/index";
 import { WorkflowDefinitionRoutes } from "../routes";
 import { IssuesPopover } from "./issues-popover";
 import { ShortcutsDialog } from "./shortcuts-dialog";

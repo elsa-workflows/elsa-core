@@ -1,4 +1,4 @@
-import { ToneBadge } from "@/components/common/status-badge";
+import { ToneBadge } from "@elsa-workflows/react-studio-ui/common/status-badge";
 import type { UserTaskStatus } from "../api";
 
 type Tone = "neutral" | "info" | "success" | "warning" | "danger";

@@ -1,6 +1,8 @@
 import type { ActivityInput, Expression } from "@elsa-workflows/react-studio-api-client/types/activities";
 import type { InputDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
 
+export type CodeLanguage = "javascript" | "typescript" | "json" | "python" | "liquid" | "csharp" | "sql" | "plaintext";
+
 /** Props every UI-hint editor receives. Editors read/write the wrapped input as a whole. */
 export interface UiHintEditorProps {
   descriptor: InputDescriptor;

@@ -1,6 +1,6 @@
 "use client";
 
-import { JsonViewer } from "@/components/common/json-viewer";
+import { JsonViewer } from "@elsa-workflows/react-studio-ui/common/json-viewer";
 
 function Block({ title, value }: { title: string; value: Record<string, unknown> | undefined }) {
   const empty = !value || Object.keys(value).length === 0;

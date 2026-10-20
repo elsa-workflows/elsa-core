@@ -1,9 +1,9 @@
 "use client";
 
-import { CodeEditor, type CodeLanguage } from "@/components/common/code-editor";
+import { CodeEditor, type CodeLanguage } from "@elsa-workflows/react-studio-ui/common/code-editor";
 import type { UiHintEditorProps } from "../types";
 import { ExpressionEditor } from "../expression-editor";
-import { languageForSyntax } from "../expression";
+import { languageForSyntax } from "@elsa-workflows/react-studio-sdk/activity-expressions";
 import { codeLanguageOf } from "./options";
 
 /** Code/script inputs (e.g. RunJavaScript.Script): the literal itself is edited with a code editor. */

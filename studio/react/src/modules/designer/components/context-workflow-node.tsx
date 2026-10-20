@@ -3,8 +3,8 @@
 import { memo } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import { ArrowUpRight, ChevronsRight, CircleHelp, FileWarning, Loader2, Workflow } from "lucide-react";
-import { cn } from "@/lib/utils";
-import type { ContextWorkflowNode as ContextWorkflowNodeType } from "./decorations";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
+import type { ContextWorkflowNode as ContextWorkflowNodeType } from "@elsa-workflows/react-studio-sdk/designer/decorations";
 
 const kinds = {
   workflow: { icon: Workflow, accent: "var(--primary)", title: "Workflow" },

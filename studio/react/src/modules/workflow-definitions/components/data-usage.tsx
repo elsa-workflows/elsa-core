@@ -2,8 +2,8 @@
 
 import { ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@elsa-workflows/react-studio-ui/popover";
-import { cn } from "@/lib/utils";
-import { dataRefKey, revealActivity, useDesigner, useDesignerState, type DataUsage, type DataUse } from "@/modules/designer";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
+import { dataRefKey, revealActivity, useDesigner, useDesignerState, type DataUsage, type DataUse } from "@elsa-workflows/react-studio-sdk/designer/index";
 
 /**
  * "↑ 1 · ↓ 2" usage summary for a variable/input/output. Hovering highlights the activities on the

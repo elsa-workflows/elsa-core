@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
 import type { ActivityDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
-import { childActivities, findSlotOf, getSlot, listSlots, setSlot } from "../model/containers";
+import { childActivities, findSlotOf, getSlot, listSlots, setSlot } from "@elsa-workflows/react-studio-sdk/designer/model/containers";
 
 const descriptor = {
   typeName: "Elsa.Switch",

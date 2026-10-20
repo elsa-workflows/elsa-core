@@ -5,8 +5,8 @@ import { useState } from "react";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Input } from "@elsa-workflows/react-studio-ui/input";
 import { Textarea } from "@elsa-workflows/react-studio-ui/textarea";
-import { Field } from "@/components/common/field";
-import { SimpleSelect } from "@/components/common/simple-select";
+import { Field } from "@elsa-workflows/react-studio-ui/common/field";
+import { SimpleSelect } from "@elsa-workflows/react-studio-ui/common/simple-select";
 import { AlterationTypes, type Alteration, type AlterationType } from "../api";
 
 /** Draft row: the alteration as typed by the user, before conversion to the API shape. */

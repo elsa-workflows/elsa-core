@@ -1,16 +1,16 @@
 "use client";
 
 import { ArrowLeft, Ban, FlaskConical, KeyRound, Loader2, Pencil, RefreshCw, Save, Trash2, X } from "lucide-react";
-import Link from "@/lib/navigation/link";
-import { useRouter } from "@/lib/navigation";
+import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
+import { useRouter } from "@elsa-workflows/react-studio-sdk/navigation/index";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
-import { useConfirm } from "@/components/common/confirm-dialog";
-import { describeError, ErrorAlert } from "@/components/common/error-alert";
-import { Field } from "@/components/common/field";
-import { KeyValueTable } from "@/components/common/key-value-table";
-import { PageHeader } from "@/components/common/page-header";
-import { Timestamp } from "@/components/common/timestamp";
+import { useConfirm } from "@elsa-workflows/react-studio-ui/common/confirm-dialog";
+import { describeError, ErrorAlert } from "@elsa-workflows/react-studio-ui/common/error-alert";
+import { Field } from "@elsa-workflows/react-studio-ui/common/field";
+import { KeyValueTable } from "@elsa-workflows/react-studio-ui/common/key-value-table";
+import { PageHeader } from "@elsa-workflows/react-studio-ui/common/page-header";
+import { Timestamp } from "@elsa-workflows/react-studio-ui/common/timestamp";
 import { Alert, AlertDescription } from "@elsa-workflows/react-studio-ui/alert";
 import { Badge } from "@elsa-workflows/react-studio-ui/badge";
 import { Button } from "@elsa-workflows/react-studio-ui/button";

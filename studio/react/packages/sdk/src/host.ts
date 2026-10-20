@@ -1,6 +1,7 @@
 import type { StudioModule, StudioModuleExtensions } from "./modules.js";
 import { createElement, type ReactNode } from "react";
 import type { RegisterModule, StudioApi, StudioModuleManifest, StudioSlots } from "./slots.js";
+import type { StudioComponentMap } from "./components.js";
 
 export interface ModuleDiagnostic {
   moduleId: string;
@@ -112,11 +113,16 @@ export class StudioRegistry {
   }
 
   /** Adapts the existing renderer while features migrate to their individual packages. */
+  components(): StudioComponentMap {
+    return Object.fromEntries([...this.slots("components")].reverse().map(item => [item.name, item.component])) as StudioComponentMap;
+  }
+
   studioModules(): StudioModule[] {
     return [...this.modules.values()].sort((a, b) => compare(a.manifest.id, b.manifest.id)).map(module => {
       const own = <K extends keyof StudioSlots>(kind: K) => this.slots(kind).filter(value =>
         module.contributions.some(item => item.kind === kind && item.active && item.value === value));
       const extensions: StudioModuleExtensions = {
+        components: [...own("components")],
         providers: [...own("providers")],
         dashboardWidgets: [...own("dashboardWidgets")], settingsSections: [...own("settingsSections")],
         workflowPropertiesTabs: [...own("workflowPropertiesTabs")], definitionRowActions: [...own("definitionRowActions")],

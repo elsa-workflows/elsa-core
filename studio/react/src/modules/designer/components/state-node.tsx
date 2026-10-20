@@ -3,12 +3,12 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { ChevronRight, CirclePlay, LogIn, LogOut, Plus, TriangleAlert } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 import type { Activity, StateMachineState } from "@elsa-workflows/react-studio-api-client/types/activities";
 import type { ActivityExecutionStats } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
-import { useDesigner, useDesignerState } from "../context";
-import { activityDisplayText } from "../model/display";
-import { selectionId } from "../store";
+import { useDesigner, useDesignerState } from "@elsa-workflows/react-studio-sdk/designer/context";
+import { activityDisplayText } from "@elsa-workflows/react-studio-sdk/designer/model/display";
+import { selectionId } from "@elsa-workflows/react-studio-sdk/designer/store";
 
 export interface StateNodeData extends Record<string, unknown> {
   state: StateMachineState;

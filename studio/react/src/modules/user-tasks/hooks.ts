@@ -4,11 +4,11 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { nanoid } from "nanoid";
 import { useMemo } from "react";
 import { toast } from "sonner";
-import { useElsaClient, useQueryScope } from "@/lib/api/provider";
+import { useElsaClient, useQueryScope } from "@elsa-workflows/react-studio-api-client/react";
 import { ApiError } from "@elsa-workflows/react-studio-api-client/http";
-import { useAuth } from "@/lib/auth/provider";
-import { describeError } from "@/components/common/error-alert";
-import { useStudioConfig } from "@/config/provider";
+import { useAuth } from "@elsa-workflows/react-studio-auth";
+import { describeError } from "@elsa-workflows/react-studio-ui/common/error-alert";
+import { useStudioConfig } from "@elsa-workflows/react-studio-sdk/config-provider";
 import {
   userTasksApi,
   type AssignUserTaskRequest,

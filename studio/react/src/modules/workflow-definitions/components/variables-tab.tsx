@@ -7,13 +7,13 @@ import { Checkbox } from "@elsa-workflows/react-studio-ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@elsa-workflows/react-studio-ui/dialog";
 import { Input } from "@elsa-workflows/react-studio-ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@elsa-workflows/react-studio-ui/table";
-import { Field } from "@/components/common/field";
-import { SimpleSelect } from "@/components/common/simple-select";
-import { useStorageDrivers, useVariableTypes } from "@/lib/api/hooks/descriptors";
+import { Field } from "@elsa-workflows/react-studio-ui/common/field";
+import { SimpleSelect } from "@elsa-workflows/react-studio-ui/common/simple-select";
+import { useStorageDrivers, useVariableTypes } from "@elsa-workflows/react-studio-api-client/hooks/descriptors";
 import type { Variable } from "@elsa-workflows/react-studio-api-client/types/activities";
-import { newActivityId } from "@/modules/designer/model/ids";
+import { newActivityId } from "@elsa-workflows/react-studio-sdk/designer/model/ids";
 import { useWorkflowEditor } from "../editor-context";
-import { useDesigner } from "@/modules/designer";
+import { useDesigner } from "@elsa-workflows/react-studio-sdk/designer/index";
 import { DataUsageChips } from "./data-usage";
 
 const EMPTY: Variable = { id: "", name: "", typeName: "Object", isArray: false, value: undefined, storageDriverTypeName: undefined };

@@ -2,7 +2,7 @@
 
 import { AlertTriangle, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
-import { describeError } from "@/components/common/error-alert";
+import { describeError } from "@elsa-workflows/react-studio-ui/common/error-alert";
 import type { CallContextState } from "./use-call-context";
 
 /** Floating status for the call-context view: loading, counts, empty sides, limits and errors. */

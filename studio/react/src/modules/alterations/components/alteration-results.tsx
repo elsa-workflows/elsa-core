@@ -1,9 +1,9 @@
 "use client";
 
 import { Fragment } from "react";
-import { ToneBadge } from "@/components/common/status-badge";
-import { Timestamp } from "@/components/common/timestamp";
-import { cn } from "@/lib/utils";
+import { ToneBadge } from "@elsa-workflows/react-studio-ui/common/status-badge";
+import { Timestamp } from "@elsa-workflows/react-studio-ui/common/timestamp";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 import { isErrorLevel, logLevelName, type AlterationLogEntry, type RunAlterationsResult } from "../api";
 
 function toneFor(level: AlterationLogEntry["logLevel"]): "neutral" | "warning" | "danger" {

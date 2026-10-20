@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { JsonViewer } from "@/components/common/json-viewer";
-import { KeyValueTable } from "@/components/common/key-value-table";
-import { StatusBadge } from "@/components/common/status-badge";
-import { Timestamp } from "@/components/common/timestamp";
+import { JsonViewer } from "@elsa-workflows/react-studio-ui/common/json-viewer";
+import { KeyValueTable } from "@elsa-workflows/react-studio-ui/common/key-value-table";
+import { StatusBadge } from "@elsa-workflows/react-studio-ui/common/status-badge";
+import { Timestamp } from "@elsa-workflows/react-studio-ui/common/timestamp";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@elsa-workflows/react-studio-ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@elsa-workflows/react-studio-ui/table";
 import type { ActivityExecutionRecord } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";

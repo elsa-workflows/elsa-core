@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@elsa-workflows/react-studio-ui/dialog";
 import { Textarea } from "@elsa-workflows/react-studio-ui/textarea";
-import { Field } from "@/components/common/field";
+import { Field } from "@elsa-workflows/react-studio-ui/common/field";
 
 export function CancelTaskDialog({
   open,

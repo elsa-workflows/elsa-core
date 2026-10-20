@@ -2,14 +2,14 @@
 
 import type { ReactNode } from "react";
 import { ChevronRight, TriangleAlert } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
 import type { ActivityDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
 import type { ActivityExecutionStats } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
-import { useDesigner } from "../context";
-import { listSlots } from "../model/containers";
-import { activityDescription, activityDisplayText } from "../model/display";
-import { activityAccentColor } from "../model/icons";
+import { useDesigner } from "@elsa-workflows/react-studio-sdk/designer/context";
+import { listSlots } from "@elsa-workflows/react-studio-sdk/designer/model/containers";
+import { activityDescription, activityDisplayText } from "@elsa-workflows/react-studio-sdk/designer/model/display";
+import { activityAccentColor } from "@elsa-workflows/react-studio-sdk/designer/model/icons";
 import { ActivityIcon } from "./activity-icon";
 
 /**

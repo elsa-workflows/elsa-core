@@ -1,7 +1,7 @@
 "use client";
 
-import { SimpleSelect } from "@/components/common/simple-select";
-import { useVariableTypes } from "@/lib/api/hooks/descriptors";
+import { SimpleSelect } from "@elsa-workflows/react-studio-ui/common/simple-select";
+import { useVariableTypes } from "@elsa-workflows/react-studio-api-client/hooks/descriptors";
 import type { UiHintEditorProps } from "../types";
 import { ExpressionEditor } from "../expression-editor";
 

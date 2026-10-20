@@ -1,18 +1,18 @@
 "use client";
 
 import { ExternalLink, RefreshCw, Trash2, Wrench } from "lucide-react";
-import { useRouter } from "@/lib/navigation";
+import { useRouter } from "@elsa-workflows/react-studio-sdk/navigation/index";
 import { useState } from "react";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Input } from "@elsa-workflows/react-studio-ui/input";
-import { DataTable, type DataTableColumn } from "@/components/common/data-table";
-import { EmptyState } from "@/components/common/empty-state";
-import { PageHeader } from "@/components/common/page-header";
-import { Timestamp } from "@/components/common/timestamp";
-import { ToneBadge } from "@/components/common/status-badge";
-import { useConfirm } from "@/components/common/confirm-dialog";
-import { describeError } from "@/components/common/error-alert";
-import { href } from "@/lib/modules/router";
+import { DataTable, type DataTableColumn } from "@elsa-workflows/react-studio-ui/common/data-table";
+import { EmptyState } from "@elsa-workflows/react-studio-ui/common/empty-state";
+import { PageHeader } from "@elsa-workflows/react-studio-ui/common/page-header";
+import { Timestamp } from "@elsa-workflows/react-studio-ui/common/timestamp";
+import { ToneBadge } from "@elsa-workflows/react-studio-ui/common/status-badge";
+import { useConfirm } from "@elsa-workflows/react-studio-ui/common/confirm-dialog";
+import { describeError } from "@elsa-workflows/react-studio-ui/common/error-alert";
+import { href } from "@elsa-workflows/react-studio-sdk/routing";
 import { usePermission, Resources, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
 import { useRecentPlanStatuses } from "../hooks";
 import { useAlterationDialogs } from "../dialog-store";

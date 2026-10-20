@@ -2,7 +2,7 @@
 
 import { Terminal } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@elsa-workflows/react-studio-ui/card";
-import { ToneBadge } from "@/components/common/status-badge";
+import { ToneBadge } from "@elsa-workflows/react-studio-ui/common/status-badge";
 import { useConsoleLogStorage } from "../hooks";
 
 /** Dashboard "status" widget. Hidden when the server has no storage endpoint (404) or on error. */

@@ -2,8 +2,8 @@
 
 import { memo } from "react";
 import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, type EdgeProps } from "@xyflow/react";
-import { cn } from "@/lib/utils";
-import type { DecorationEdge } from "./decorations";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
+import type { DecorationEdge } from "@elsa-workflows/react-studio-sdk/designer/decorations";
 
 /** A call between workflows in call-context mode: labelled with the call type, dashed when it closes a cycle. */
 function ContextCallEdgeComponent({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, markerEnd }: EdgeProps<DecorationEdge>) {

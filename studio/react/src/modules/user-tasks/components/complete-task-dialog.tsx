@@ -7,8 +7,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@elsa-workflows/react-studio-ui/input";
 import { Textarea } from "@elsa-workflows/react-studio-ui/textarea";
 import { Checkbox } from "@elsa-workflows/react-studio-ui/checkbox";
-import { Field } from "@/components/common/field";
-import { SimpleSelect } from "@/components/common/simple-select";
+import { Field } from "@elsa-workflows/react-studio-ui/common/field";
+import { SimpleSelect } from "@elsa-workflows/react-studio-ui/common/simple-select";
 import type { UserTaskDetail, UserTaskFormField } from "../api";
 
 function initialValues(fields: UserTaskFormField[]): Record<string, string> {

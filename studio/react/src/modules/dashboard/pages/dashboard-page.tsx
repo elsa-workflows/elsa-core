@@ -2,14 +2,14 @@
 
 import { RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { PageHeader } from "@/components/common/page-header";
-import { Timestamp } from "@/components/common/timestamp";
+import { PageHeader } from "@elsa-workflows/react-studio-ui/common/page-header";
+import { Timestamp } from "@elsa-workflows/react-studio-ui/common/timestamp";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
-import { useActiveServer } from "@/lib/environments/active-server";
-import { useExtensions } from "@/lib/modules/registry";
+import { useActiveServer } from "@elsa-workflows/react-studio-sdk/environments/active-server";
+import { useExtensions } from "@elsa-workflows/react-studio-ui/runtime/module-registry";
 import type { DashboardRange } from "@elsa-workflows/react-studio-sdk";
 import { usePermissions } from "@elsa-workflows/react-studio-auth/permissions";
-import { cn } from "@/lib/utils";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 import { DashboardZones } from "../components/dashboard-zones";
 import { EmptyDashboard } from "../components/empty-dashboard";
 import { RangeToggle } from "../components/range-toggle";

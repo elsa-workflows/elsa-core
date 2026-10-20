@@ -3,10 +3,10 @@
 import { ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 import { Fragment, useState } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@elsa-workflows/react-studio-ui/table";
-import { KeyValueTable } from "@/components/common/key-value-table";
-import { CopyButton } from "@/components/common/copy-button";
-import { formatTimestamp } from "@/components/common/timestamp";
-import { cn } from "@/lib/utils";
+import { KeyValueTable } from "@elsa-workflows/react-studio-ui/common/key-value-table";
+import { CopyButton } from "@elsa-workflows/react-studio-ui/common/copy-button";
+import { formatTimestamp } from "@elsa-workflows/react-studio-ui/common/timestamp";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 import { levelName, type StructuredLogEvent } from "../api";
 import { LevelBadge } from "./level-badge";
 

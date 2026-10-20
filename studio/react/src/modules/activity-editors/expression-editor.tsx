@@ -2,15 +2,15 @@
 
 import { Braces, Code2 } from "lucide-react";
 import type { ReactNode } from "react";
-import { CodeEditor } from "@/components/common/code-editor";
+import { CodeEditor } from "@elsa-workflows/react-studio-ui/common/code-editor";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@elsa-workflows/react-studio-ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@elsa-workflows/react-studio-ui/tooltip";
 import type { ActivityInput } from "@elsa-workflows/react-studio-api-client/types/activities";
 import type { InputDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
-import { expressionText, isBindingSyntax, languageForSyntax, LITERAL, makeInput, OBJECT, syntaxOf } from "./expression";
+import { expressionText, isBindingSyntax, languageForSyntax, LITERAL, makeInput, OBJECT, syntaxOf } from "@elsa-workflows/react-studio-sdk/activity-expressions";
 import { BindingPicker } from "./editors/binding-picker";
-import { expressionCompletions } from "@/modules/designer/model/data-flow";
+import { expressionCompletions } from "@elsa-workflows/react-studio-sdk/designer/model/data-flow";
 import type { UiHintContext } from "./types";
 
 const SYNTAX_LABELS: Record<string, string> = { Literal: "Literal", JavaScript: "JavaScript", CSharp: "C#", Python: "Python", Liquid: "Liquid", Object: "JSON", Variable: "Variable", Input: "Workflow input" };

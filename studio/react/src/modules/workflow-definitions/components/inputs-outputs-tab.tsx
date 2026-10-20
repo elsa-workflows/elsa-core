@@ -8,12 +8,12 @@ import { Checkbox } from "@elsa-workflows/react-studio-ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@elsa-workflows/react-studio-ui/dialog";
 import { Input } from "@elsa-workflows/react-studio-ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@elsa-workflows/react-studio-ui/table";
-import { Field } from "@/components/common/field";
-import { SimpleSelect } from "@/components/common/simple-select";
-import { useStorageDrivers, useVariableTypes } from "@/lib/api/hooks/descriptors";
+import { Field } from "@elsa-workflows/react-studio-ui/common/field";
+import { SimpleSelect } from "@elsa-workflows/react-studio-ui/common/simple-select";
+import { useStorageDrivers, useVariableTypes } from "@elsa-workflows/react-studio-api-client/hooks/descriptors";
 import type { InputDefinition, OutputDefinition } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
 import { useWorkflowEditor } from "../editor-context";
-import { useDesigner } from "@/modules/designer";
+import { useDesigner } from "@elsa-workflows/react-studio-sdk/designer/index";
 import { DataUsageChips } from "./data-usage";
 
 const UI_HINTS = ["singleline", "multiline", "checkbox", "dropdown", "json-editor", "code-editor", "multitext", "datetime-picker"];

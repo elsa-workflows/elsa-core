@@ -1,5 +1,9 @@
 "use client";
 
+import { IconButton } from "@elsa-workflows/react-studio-ui/icon-button";
+import type { DesignerCanvasProps } from "@elsa-workflows/react-studio-sdk/components";
+export type { DesignerCanvasProps } from "@elsa-workflows/react-studio-sdk/components";
+
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type KeyboardEvent } from "react";
 import {
   Background,
@@ -21,13 +25,12 @@ import "@xyflow/react/dist/style.css";
 import { Database, LayoutGrid, Map as MapIcon, Maximize, Minus, MousePointerClick, PanelLeftOpen, Plus, Redo2, Undo2, X } from "lucide-react";
 import { useViewport } from "@xyflow/react";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@elsa-workflows/react-studio-ui/tooltip";
-import { cn } from "@/lib/utils";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 import { DEFAULT_IN_PORT } from "@elsa-workflows/react-studio-api-client/types/activities";
-import { useDesigner, useDesignerState } from "../context";
-import { connectionKey, resolveContainer } from "../model/flowchart-ops";
-import { autoLayout } from "../model/layout";
-import { computePorts } from "../model/ports";
+import { useDesigner, useDesignerState } from "@elsa-workflows/react-studio-sdk/designer/context";
+import { connectionKey, resolveContainer } from "@elsa-workflows/react-studio-sdk/designer/model/flowchart-ops";
+import { autoLayout } from "@elsa-workflows/react-studio-sdk/designer/model/layout";
+import { computePorts } from "@elsa-workflows/react-studio-sdk/designer/model/ports";
 import { ActivityNode, type ActivityFlowNode } from "./activity-node";
 import { readActivityDragData } from "./activity-toolbox";
 import { ConnectionEdge, type ConnectionFlowEdge } from "./connection-edge";
@@ -35,13 +38,13 @@ import { ContextBoxNode } from "./context-box-node";
 import { ContextCallEdge } from "./context-call-edge";
 import { ContextWorkflowNode } from "./context-workflow-node";
 import { DataEdge, type DataFlowEdge } from "./data-edge";
-import { isDecorationId, type CanvasDecorations, type DecorationEdge, type DecorationNode } from "./decorations";
+import { isDecorationId, type CanvasDecorations, type DecorationEdge, type DecorationNode } from "@elsa-workflows/react-studio-sdk/designer/decorations";
 import { DesignerBreadcrumb } from "./designer-breadcrumb";
 import { QuickAddMenu } from "./quick-add-menu";
-import { issuesByActivity, validateWorkflow } from "../model/validation";
+import { issuesByActivity, validateWorkflow } from "@elsa-workflows/react-studio-sdk/designer/model/validation";
 import { isFlowchart, type Flowchart } from "@elsa-workflows/react-studio-api-client/types/activities";
-import { emptyFlowchart } from "../model/flowchart-ops";
-import { snapNode, type HelperLines } from "../model/snapping";
+import { emptyFlowchart } from "@elsa-workflows/react-studio-sdk/designer/model/flowchart-ops";
+import { snapNode, type HelperLines } from "@elsa-workflows/react-studio-sdk/designer/model/snapping";
 
 const nodeTypes = { activity: ActivityNode, contextBox: ContextBoxNode, contextWorkflow: ContextWorkflowNode };
 const edgeTypes = { connection: ConnectionEdge, data: DataEdge, contextCall: ContextCallEdge };
@@ -49,22 +52,6 @@ type CanvasEdge = ConnectionFlowEdge | DataFlowEdge | DecorationEdge;
 type CanvasNode = ActivityFlowNode | DecorationNode;
 const NO_DECORATIONS: CanvasDecorations = { nodes: [], edges: [] };
 
-export interface DesignerCanvasProps {
-  className?: string;
-  /** Shows the mini-map (useful in small panes to hide it). */
-  minimap?: boolean;
-  onToggleMinimap?: () => void;
-  /** When the toolbox is hidden, offers a button to reopen it. */
-  onOpenToolbox?: () => void;
-  /** Extra toolbar buttons rendered next to the built-in ones. */
-  toolbar?: React.ReactNode;
-  /** Called when the user double-clicks a node (instance viewer opens details). */
-  onNodeDoubleClick?: (activityId: string) => void;
-  /** Node ids whose outgoing edges should be highlighted as traversed (instance viewer). */
-  traversedActivityIds?: Set<string>;
-  /** View-only nodes and edges drawn next to the activities (call-context box and external workflows). */
-  decorations?: CanvasDecorations;
-}
 
 /**
  * React Flow canvas bound to the designer store. The store is the single source of truth: nodes and
@@ -576,7 +563,7 @@ export function DesignerCanvas({ className, minimap = true, onToggleMinimap, onO
   );
 }
 
-function dataRoleOf(index: import("../model/data-flow").DataFlowIndex | undefined, key: string, activityId: string): "writer" | "reader" | "both" | undefined {
+function dataRoleOf(index: import("@elsa-workflows/react-studio-sdk/designer/model/data-flow").DataFlowIndex | undefined, key: string, activityId: string): "writer" | "reader" | "both" | undefined {
   const usage = index?.byKey.get(key);
   if (!usage) return undefined;
   const w = usage.writers.some((u) => u.activityId === activityId);
@@ -593,11 +580,4 @@ function ZoomLabel({ onClick }: { onClick: () => void }) {
   );
 }
 
-export function IconButton({ label, children, ...props }: React.ComponentProps<typeof Button> & { label: string }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger render={<Button variant="ghost" size="icon-sm" aria-label={label} {...props} />}>{children}</TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
-    </Tooltip>
-  );
-}
+export { IconButton } from "@elsa-workflows/react-studio-ui/icon-button";

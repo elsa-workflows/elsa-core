@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Badge } from "@elsa-workflows/react-studio-ui/badge";
 import { Input } from "@elsa-workflows/react-studio-ui/input";
 import type { UiHintEditorProps } from "../types";
-import { stringListOf } from "../expression";
+import { stringListOf } from "@elsa-workflows/react-studio-sdk/activity-expressions";
 import { ExpressionEditor } from "../expression-editor";
 
 /** Tag-style list editor used by `multitext`, `http-status-codes` and `dynamic-outcomes`. */

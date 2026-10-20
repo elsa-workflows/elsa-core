@@ -3,9 +3,9 @@
 import { Loader2 } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 import { toast } from "sonner";
-import { describeError } from "@/components/common/error-alert";
-import { Field } from "@/components/common/field";
-import { SimpleSelect } from "@/components/common/simple-select";
+import { describeError } from "@elsa-workflows/react-studio-ui/common/error-alert";
+import { Field } from "@elsa-workflows/react-studio-ui/common/field";
+import { SimpleSelect } from "@elsa-workflows/react-studio-ui/common/simple-select";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@elsa-workflows/react-studio-ui/dialog";
 import { Input } from "@elsa-workflows/react-studio-ui/input";

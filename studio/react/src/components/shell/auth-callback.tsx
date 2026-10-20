@@ -1,10 +1,10 @@
 "use client";
 
-import { studioRoute } from "@/lib/navigation/base-path";
+import { studioRoute } from "@elsa-workflows/react-studio-sdk/navigation/base-path";
 import { useEffect, useState } from "react";
-import { useRouter } from "@/lib/navigation";
+import { useRouter } from "@elsa-workflows/react-studio-sdk/navigation/index";
 import { useAuth } from "@/lib/auth/provider";
-import { FullPageSpinner } from "./full-page-spinner";
+import { FullPageSpinner } from "@elsa-workflows/react-studio-ui/full-page-spinner";
 import { AccessDenied } from "./status-pages";
 
 /** Landing route for redirect-based sign-in (OIDC, external authentication broker). */

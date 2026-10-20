@@ -2,7 +2,7 @@
 
 import { keepPreviousData, useIsFetching, useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
-import { useElsaClient, useQueryScope } from "@/lib/api/provider";
+import { useElsaClient, useQueryScope } from "@elsa-workflows/react-studio-api-client/react";
 import { ApiError } from "@elsa-workflows/react-studio-api-client/http";
 import type { WorkflowInstanceSummary } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
 import type { DashboardRange } from "@elsa-workflows/react-studio-sdk";

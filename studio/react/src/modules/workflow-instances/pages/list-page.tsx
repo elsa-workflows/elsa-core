@@ -1,26 +1,26 @@
 "use client";
 
 import { Ban, RefreshCw, Trash2, X } from "lucide-react";
-import Link from "@/lib/navigation/link";
-import { useRouter } from "@/lib/navigation";
+import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
+import { useRouter } from "@elsa-workflows/react-studio-sdk/navigation/index";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useConfirm } from "@/components/common/confirm-dialog";
-import { DataTable, type DataTableColumn, type SortState } from "@/components/common/data-table";
-import { describeError, ErrorAlert } from "@/components/common/error-alert";
-import { PageHeader } from "@/components/common/page-header";
-import { StatusBadge, ToneBadge } from "@/components/common/status-badge";
-import { Timestamp } from "@/components/common/timestamp";
+import { useConfirm } from "@elsa-workflows/react-studio-ui/common/confirm-dialog";
+import { DataTable, type DataTableColumn, type SortState } from "@elsa-workflows/react-studio-ui/common/data-table";
+import { describeError, ErrorAlert } from "@elsa-workflows/react-studio-ui/common/error-alert";
+import { PageHeader } from "@elsa-workflows/react-studio-ui/common/page-header";
+import { StatusBadge, ToneBadge } from "@elsa-workflows/react-studio-ui/common/status-badge";
+import { Timestamp } from "@elsa-workflows/react-studio-ui/common/timestamp";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Label } from "@elsa-workflows/react-studio-ui/label";
 import { Switch } from "@elsa-workflows/react-studio-ui/switch";
-import { useStudioConfig } from "@/config/provider";
+import { useStudioConfig } from "@elsa-workflows/react-studio-sdk/config-provider";
 import type { OrderDirection } from "@elsa-workflows/react-studio-api-client/types/common";
 import type { ListWorkflowInstancesArgs, TimestampFilter, WorkflowInstanceSummary, WorkflowStatus, WorkflowSubStatus } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
-import { href } from "@/lib/modules/router";
+import { href } from "@elsa-workflows/react-studio-sdk/routing";
 import type { ListActionHelpers } from "@elsa-workflows/react-studio-sdk";
 import { usePermission, Resources, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
-import { useUrlState } from "@/lib/utils/url-state";
+import { useUrlState } from "@elsa-workflows/react-studio-sdk/utils/url-state";
 import { InstanceFilters, type HasIncidents, type InstanceFilterValues } from "../components/instance-filters";
 import { InstanceRowActions } from "../components/instance-row-actions";
 import {

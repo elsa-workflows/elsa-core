@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "@/lib/navigation/link";
-import { cn } from "@/lib/utils";
+import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 
 export interface BarListRow {
   label: string;

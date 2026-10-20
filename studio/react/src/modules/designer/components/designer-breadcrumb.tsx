@@ -3,10 +3,10 @@
 import { Fragment } from "react";
 import { ChevronRight, Home } from "lucide-react";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
-import { useDesigner, useDesignerState } from "../context";
-import { resolveContainer } from "../model/flowchart-ops";
-import { activityDisplayText } from "../model/display";
-import { childActivities, listSlots } from "../model/containers";
+import { useDesigner, useDesignerState } from "@elsa-workflows/react-studio-sdk/designer/context";
+import { resolveContainer } from "@elsa-workflows/react-studio-sdk/designer/model/flowchart-ops";
+import { activityDisplayText } from "@elsa-workflows/react-studio-sdk/designer/model/display";
+import { childActivities, listSlots } from "@elsa-workflows/react-studio-sdk/designer/model/containers";
 
 /** Shows the nesting path (root → If1: Then → …) and lets the user jump back up. */
 export function DesignerBreadcrumb() {

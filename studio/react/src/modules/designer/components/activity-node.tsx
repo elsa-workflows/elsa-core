@@ -3,20 +3,20 @@
 import { memo, useEffect, useRef, useState } from "react";
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
 import { AlertTriangle, ChevronRight, Hourglass, PlayCircle, Plus, TriangleAlert, Zap } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
 import type { ActivityDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
 import type { ActivityExecutionStats } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
 import { isFlowchart } from "@elsa-workflows/react-studio-api-client/types/activities";
-import { activityDescription, activityDisplayText } from "../model/display";
-import { activityAccentColor } from "../model/icons";
+import { activityDescription, activityDisplayText } from "@elsa-workflows/react-studio-sdk/designer/model/display";
+import { activityAccentColor } from "@elsa-workflows/react-studio-sdk/designer/model/icons";
 import { ActivityIcon } from "./activity-icon";
-import { portPropertyName } from "../model/ids";
-import type { ActivityPorts } from "../model/ports";
-import { useDesigner, useDesignerState } from "../context";
+import { portPropertyName } from "@elsa-workflows/react-studio-sdk/designer/model/ids";
+import type { ActivityPorts } from "@elsa-workflows/react-studio-sdk/designer/model/ports";
+import { useDesigner, useDesignerState } from "@elsa-workflows/react-studio-sdk/designer/context";
 import { NodeContextToolbar } from "./node-context-toolbar";
-import type { DesignerIssue } from "../model/validation";
-import type { ActivityDataSummary } from "../model/data-flow";
+import type { DesignerIssue } from "@elsa-workflows/react-studio-sdk/designer/model/validation";
+import type { ActivityDataSummary } from "@elsa-workflows/react-studio-sdk/designer/model/data-flow";
 
 export interface ActivityNodeData extends Record<string, unknown> {
   activity: Activity;

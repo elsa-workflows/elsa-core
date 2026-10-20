@@ -99,3 +99,11 @@ compiles and renders against four packed artifacts without host-source aliases.
 The generated TypeDoc reference is retained by frontend CI. The existing bundled
 renderer uses a temporary declarative adapter; physical RCL discovery, independent
 module ESM/CSS and new designer/editor slot renderers remain under #8845.
+
+The next split preparation moves the common components, configuration/navigation,
+API/query context and designer model/store into the public packages. Designer and
+ActivityEditors provide typed component slots, removing the source import cycle.
+A boundary guard checks every feature file for host aliases and sibling source
+imports. Unit, packed-consumer and host-browser checks pass, and real workflow
+creation, designer render, saved reload and cleanup pass against the reference
+backend. Physical RCL packaging and server-feature discovery are still open.

@@ -1,7 +1,7 @@
 import { differenceInMilliseconds, isValid, parseISO } from "date-fns";
 import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
 import type { ActivityExecutionRecord, ActivityExecutionStats, WorkflowExecutionLogRecord, WorkflowStatus, WorkflowSubStatus } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
-import { indexActivities } from "@/modules/designer";
+import { indexActivities } from "@elsa-workflows/react-studio-sdk/designer/index";
 
 export const WORKFLOW_STATUSES: WorkflowStatus[] = ["Running", "Finished"];
 export const WORKFLOW_SUB_STATUSES: WorkflowSubStatus[] = ["Pending", "Executing", "Suspended", "Finished", "Faulted", "Cancelled", "Interrupted"];

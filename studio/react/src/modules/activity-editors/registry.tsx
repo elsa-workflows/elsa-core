@@ -1,7 +1,7 @@
 "use client";
 
 import type { ComponentType } from "react";
-import { useExtensions } from "@/lib/modules/registry";
+import { useExtensions } from "@elsa-workflows/react-studio-ui/runtime/module-registry";
 import type { UiHintEditorProps } from "./types";
 import { CheckboxEditor } from "./editors/checkbox-editor";
 import { ChecklistEditor } from "./editors/checklist-editor";

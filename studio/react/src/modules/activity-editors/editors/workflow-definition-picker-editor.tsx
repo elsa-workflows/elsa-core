@@ -1,8 +1,8 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { SimpleSelect } from "@/components/common/simple-select";
-import { useElsaClient, useQueryScope } from "@/lib/api/provider";
+import { SimpleSelect } from "@elsa-workflows/react-studio-ui/common/simple-select";
+import { useElsaClient, useQueryScope } from "@elsa-workflows/react-studio-api-client/react";
 import type { UiHintEditorProps } from "../types";
 import { ExpressionEditor } from "../expression-editor";
 

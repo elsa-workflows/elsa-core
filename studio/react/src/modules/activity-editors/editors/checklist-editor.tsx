@@ -4,7 +4,7 @@ import { Checkbox } from "@elsa-workflows/react-studio-ui/checkbox";
 import type { UiHintEditorProps } from "../types";
 import { ExpressionEditor } from "../expression-editor";
 import { selectListItems } from "./options";
-import { stringListOf } from "../expression";
+import { stringListOf } from "@elsa-workflows/react-studio-sdk/activity-expressions";
 
 export function ChecklistEditor(props: UiHintEditorProps) {
   const items = selectListItems(props.descriptor);

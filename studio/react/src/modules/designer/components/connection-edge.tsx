@@ -3,9 +3,9 @@
 import { memo } from "react";
 import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, type Edge, type EdgeProps } from "@xyflow/react";
 import { Plus, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 import type { Connection } from "@elsa-workflows/react-studio-api-client/types/activities";
-import { useDesigner } from "../context";
+import { useDesigner } from "@elsa-workflows/react-studio-sdk/designer/context";
 
 export interface ConnectionEdgeData extends Record<string, unknown> {
   connection: Connection;

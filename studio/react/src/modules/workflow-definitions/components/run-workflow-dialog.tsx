@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "@/lib/navigation";
+import { useRouter } from "@elsa-workflows/react-studio-sdk/navigation/index";
 import { toast } from "sonner";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@elsa-workflows/react-studio-ui/dialog";
 import { Input } from "@elsa-workflows/react-studio-ui/input";
-import { CodeEditor } from "@/components/common/code-editor";
-import { Field } from "@/components/common/field";
-import { describeError } from "@/components/common/error-alert";
+import { CodeEditor } from "@elsa-workflows/react-studio-ui/common/code-editor";
+import { Field } from "@elsa-workflows/react-studio-ui/common/field";
+import { describeError } from "@elsa-workflows/react-studio-ui/common/error-alert";
 import type { WorkflowDefinitionSummary } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
 import { useWorkflowDefinitionMutations } from "../hooks";
 

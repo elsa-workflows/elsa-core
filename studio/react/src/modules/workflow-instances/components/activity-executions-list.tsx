@@ -2,13 +2,13 @@
 
 import { ChevronRight, Loader2 } from "lucide-react";
 import { useMemo } from "react";
-import { EmptyState } from "@/components/common/empty-state";
-import { StatusBadge } from "@/components/common/status-badge";
-import { formatTimestamp } from "@/components/common/timestamp";
+import { EmptyState } from "@elsa-workflows/react-studio-ui/common/empty-state";
+import { StatusBadge } from "@elsa-workflows/react-studio-ui/common/status-badge";
+import { formatTimestamp } from "@elsa-workflows/react-studio-ui/common/timestamp";
 import { Badge } from "@elsa-workflows/react-studio-ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@elsa-workflows/react-studio-ui/collapsible";
 import type { ActivityExecutionRecord } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
-import { cn } from "@/lib/utils";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 import { elapsedMs, executionDisplayText, formatElapsed, groupBy } from "../model";
 
 /** Activity execution records grouped per activity, in first-execution order (the "call stack" view). */

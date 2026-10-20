@@ -2,8 +2,8 @@
 
 import { Plus, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Field } from "@/components/common/field";
-import { SimpleSelect } from "@/components/common/simple-select";
+import { Field } from "@elsa-workflows/react-studio-ui/common/field";
+import { SimpleSelect } from "@elsa-workflows/react-studio-ui/common/simple-select";
 import { Badge } from "@elsa-workflows/react-studio-ui/badge";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Checkbox } from "@elsa-workflows/react-studio-ui/checkbox";

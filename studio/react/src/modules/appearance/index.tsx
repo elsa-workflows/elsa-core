@@ -1,5 +1,5 @@
 import { Palette } from "lucide-react";
-import { settingsSectionNav } from "@/lib/modules/settings";
+import { settingsSectionNav } from "@elsa-workflows/react-studio-ui/runtime/settings";
 import { defineModule, type SettingsSection } from "@elsa-workflows/react-studio-sdk";
 import { AppearancePage } from "./pages/appearance-page";
 import { AppearanceRoutes } from "./routes";

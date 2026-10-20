@@ -1,17 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "@/lib/navigation";
+import { useRouter } from "@elsa-workflows/react-studio-sdk/navigation/index";
 import { toast } from "sonner";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@elsa-workflows/react-studio-ui/dialog";
 import { Input } from "@elsa-workflows/react-studio-ui/input";
 import { Textarea } from "@elsa-workflows/react-studio-ui/textarea";
-import { Field } from "@/components/common/field";
-import { describeError } from "@/components/common/error-alert";
-import { href } from "@/lib/modules/router";
-import { emptyContainer, FLOW_TYPES } from "@/modules/designer";
-import { cn } from "@/lib/utils";
+import { Field } from "@elsa-workflows/react-studio-ui/common/field";
+import { describeError } from "@elsa-workflows/react-studio-ui/common/error-alert";
+import { href } from "@elsa-workflows/react-studio-sdk/routing";
+import { emptyContainer, FLOW_TYPES } from "@elsa-workflows/react-studio-sdk/designer/index";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 
 /** Shared with the branch-slot chooser, so picking a flow reads the same in both places. */
 const ROOT_TYPES = FLOW_TYPES;

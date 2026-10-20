@@ -7,8 +7,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem,
 import { Tooltip, TooltipContent, TooltipTrigger } from "@elsa-workflows/react-studio-ui/tooltip";
 import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
 import type { ActivityDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
-import { useDesigner } from "../context";
-import type { ActivityPorts } from "../model/ports";
+import { useDesigner } from "@elsa-workflows/react-studio-sdk/designer/context";
+import type { ActivityPorts } from "@elsa-workflows/react-studio-sdk/designer/model/ports";
 
 /** Floating actions above the selected node (Camunda's context pad / n8n's node actions). */
 export function NodeContextToolbar({ activity, descriptor, ports, visible }: { activity: Activity; descriptor?: ActivityDescriptor; ports: ActivityPorts; visible: boolean }) {

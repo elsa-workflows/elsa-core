@@ -1,7 +1,7 @@
-import Link from "@/lib/navigation/link";
+import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
 import { ArrowUpRight, FileCode2, LayoutDashboard, ListChecks, type LucideIcon } from "lucide-react";
 import { Card } from "@elsa-workflows/react-studio-ui/card";
-import { EmptyState } from "@/components/common/empty-state";
+import { EmptyState } from "@elsa-workflows/react-studio-ui/common/empty-state";
 import { Resources, usePermissions, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
 import { DashboardLinks } from "../links";
 

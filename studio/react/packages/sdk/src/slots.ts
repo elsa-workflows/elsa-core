@@ -1,6 +1,7 @@
 import type { ComponentType, ReactNode } from "react";
 import type { Activity, ActivityDescriptor } from "@elsa-workflows/react-studio-api-client";
 import type { UiHintContext, UiHintEditorProps } from "./editor-types.js";
+import type { StudioComponentProps } from "./components.js";
 import type {
   DashboardWidget, DefinitionRowAction, InstanceRowAction, InstanceViewerAction,
   ModuleRoute, NavItem, SettingsSection, WorkflowPropertiesTab,
@@ -29,6 +30,7 @@ export interface ExpressionEditorProps {
 
 /** SDK v1 Preview contribution contracts; every contribution has an explicit identity and order. */
 export interface StudioSlots {
+  components: { [K in keyof StudioComponentProps]: Slot & { name: K; component: ComponentType<StudioComponentProps[K]> } }[keyof StudioComponentProps];
   routes: Slot & ModuleRoute;
   navigation: Slot & NavItem;
   dashboardWidgets: Slot & DashboardWidget;

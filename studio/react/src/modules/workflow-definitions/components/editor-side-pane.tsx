@@ -2,8 +2,8 @@
 
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
-import { selectionId, StatePanel, TransitionPanel, useDesignerState } from "@/modules/designer";
-import { ActivityPropertiesPanel } from "@/modules/activity-editors";
+import { selectionId, StatePanel, TransitionPanel, useDesignerState } from "@elsa-workflows/react-studio-sdk/designer/index";
+import { ActivityPropertiesPanel } from "@elsa-workflows/react-studio-sdk/components";
 import { useWorkflowEditor } from "../editor-context";
 import { WorkflowPropertiesPane } from "./workflow-properties-pane";
 

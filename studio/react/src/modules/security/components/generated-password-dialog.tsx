@@ -1,7 +1,7 @@
 "use client";
 
 import { KeyRound } from "lucide-react";
-import { CopyButton } from "@/components/common/copy-button";
+import { CopyButton } from "@elsa-workflows/react-studio-ui/common/copy-button";
 import { Alert, AlertDescription, AlertTitle } from "@elsa-workflows/react-studio-ui/alert";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@elsa-workflows/react-studio-ui/dialog";

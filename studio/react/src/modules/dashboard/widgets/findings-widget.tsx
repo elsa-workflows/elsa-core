@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "@/lib/navigation/link";
+import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
 import { ArrowUpRight, CircleAlert, CircleCheck, Info, OctagonAlert, TriangleAlert, type LucideIcon } from "lucide-react";
 import type { DashboardRange } from "@elsa-workflows/react-studio-sdk";
-import { cn } from "@/lib/utils";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 import type { DashboardFinding, DashboardFindingSeverity } from "../api";
 import { SourceNote, WidgetCard, WidgetEmpty } from "../components/widget-card";
 import { useFallbackInstanceCounts, useNeedsAttention } from "../hooks";

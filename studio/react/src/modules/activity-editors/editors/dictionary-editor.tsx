@@ -5,7 +5,7 @@ import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Input } from "@elsa-workflows/react-studio-ui/input";
 import type { UiHintEditorProps } from "../types";
 import { ExpressionEditor } from "../expression-editor";
-import { OBJECT } from "../expression";
+import { OBJECT } from "@elsa-workflows/react-studio-sdk/activity-expressions";
 
 /** Key/value table stored as a JSON object literal. */
 export function DictionaryEditor(props: UiHintEditorProps) {

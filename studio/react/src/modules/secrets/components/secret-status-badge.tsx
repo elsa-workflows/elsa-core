@@ -1,4 +1,4 @@
-import { ToneBadge } from "@/components/common/status-badge";
+import { ToneBadge } from "@elsa-workflows/react-studio-ui/common/status-badge";
 import type { SecretStatus } from "../api";
 
 const tones = {

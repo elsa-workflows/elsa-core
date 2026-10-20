@@ -1,7 +1,7 @@
 "use client";
 
 import { Alert, AlertDescription } from "@elsa-workflows/react-studio-ui/alert";
-import type { UiHintEditorProps } from "@/modules/activity-editors/types";
+import type { UiHintEditorProps } from "@elsa-workflows/react-studio-sdk/editor-types";
 import { SECRET_EXPRESSION_TYPE, type SecretReference } from "../api";
 import { SecretPicker } from "./secret-picker";
 

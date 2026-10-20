@@ -3,10 +3,10 @@
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Input } from "@elsa-workflows/react-studio-ui/input";
-import { CodeEditor } from "@/components/common/code-editor";
-import { SimpleSelect } from "@/components/common/simple-select";
+import { CodeEditor } from "@elsa-workflows/react-studio-ui/common/code-editor";
+import { SimpleSelect } from "@elsa-workflows/react-studio-ui/common/simple-select";
 import type { UiHintEditorProps } from "../types";
-import { languageForSyntax } from "../expression";
+import { languageForSyntax } from "@elsa-workflows/react-studio-sdk/activity-expressions";
 
 interface SwitchCase {
   label: string;

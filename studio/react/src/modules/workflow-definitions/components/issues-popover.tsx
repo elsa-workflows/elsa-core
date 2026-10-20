@@ -3,8 +3,8 @@
 import { CircleCheck, Info, TriangleAlert } from "lucide-react";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@elsa-workflows/react-studio-ui/popover";
-import { cn } from "@/lib/utils";
-import { revealActivity, useDesigner, useDesignerState, validateWorkflow } from "@/modules/designer";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
+import { revealActivity, useDesigner, useDesignerState, validateWorkflow } from "@elsa-workflows/react-studio-sdk/designer/index";
 import { useMemo } from "react";
 
 /** Live list of client-side findings for the current graph; clicking one selects the activity. */

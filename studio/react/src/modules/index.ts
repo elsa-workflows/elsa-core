@@ -1,3 +1,5 @@
+import { designerModule } from "./designer/module";
+import { activityEditorsModule } from "./activity-editors/module";
 import type { StudioModule } from "@elsa-workflows/react-studio-sdk";
 import { alterationsModule } from "./alterations";
 import { appearanceModule } from "./appearance";
@@ -19,6 +21,8 @@ import { workflowInstancesModule } from "./workflow-instances";
  * studio configuration (and hidden when the backend lacks the feature they need).
  */
 export const studioModules: StudioModule[] = [
+  designerModule,
+  activityEditorsModule,
   dashboardModule,
   workflowDefinitionsModule,
   workflowInstancesModule,

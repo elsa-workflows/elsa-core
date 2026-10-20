@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useSyncExternalStore } from "react";
-import { useStudioConfig } from "@/config/provider";
-import { useElsaClient, useQueryScope } from "@/lib/api/provider";
+import { useStudioConfig } from "@elsa-workflows/react-studio-sdk/config-provider";
+import { useElsaClient, useQueryScope } from "@elsa-workflows/react-studio-api-client/react";
 import { CallGraphService } from "./call-graph-service";
 import { resolveCallGraphConfig, type CallGraphConfig } from "./config";
 

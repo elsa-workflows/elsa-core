@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 
 /*
  * Elsa Workflows branding. Geometry comes from elsa-core/design/logo (Esla_vector-17/20); colours

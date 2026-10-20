@@ -1,17 +1,17 @@
 "use client";
 
 import { ArrowLeft, Check, Monitor, Moon, RotateCcw, Sun } from "lucide-react";
-import Link from "@/lib/navigation/link";
+import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
 import { useTheme } from "next-themes";
 import { useSyncExternalStore } from "react";
-import { PageHeader } from "@/components/common/page-header";
+import { PageHeader } from "@elsa-workflows/react-studio-ui/common/page-header";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@elsa-workflows/react-studio-ui/card";
-import { useStudioConfig } from "@/config/provider";
-import { SettingsRoutes } from "@/lib/modules/settings";
-import { ELSA_THEMES } from "@/lib/theme/elsa-theme";
-import { useElsaTheme } from "@/lib/theme/elsa-theme-provider";
-import { cn } from "@/lib/utils";
+import { useStudioConfig } from "@elsa-workflows/react-studio-sdk/config-provider";
+import { SettingsRoutes } from "@elsa-workflows/react-studio-ui/runtime/settings";
+import { ELSA_THEMES } from "@elsa-workflows/react-studio-sdk/theme/elsa-theme";
+import { useElsaTheme } from "@elsa-workflows/react-studio-sdk/theme/elsa-theme-provider";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 
 const appearances = [
   { id: "light", label: "Light", description: "Always use the light appearance.", icon: Sun },

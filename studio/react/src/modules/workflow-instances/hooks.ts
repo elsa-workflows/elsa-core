@@ -2,9 +2,9 @@
 
 import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef } from "react";
-import { useStudioConfig } from "@/config/provider";
+import { useStudioConfig } from "@elsa-workflows/react-studio-sdk/config-provider";
 import { ApiError } from "@elsa-workflows/react-studio-api-client/http";
-import { useElsaClient, useQueryScope } from "@/lib/api/provider";
+import { useElsaClient, useQueryScope } from "@elsa-workflows/react-studio-api-client/react";
 import type { JournalFilter } from "@elsa-workflows/react-studio-api-client/endpoints/workflow-instances";
 import type { WorkflowDefinitionSummary } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
 import type {

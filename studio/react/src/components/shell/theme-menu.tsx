@@ -13,9 +13,9 @@ import {
   DropdownMenuTrigger,
 } from "@elsa-workflows/react-studio-ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@elsa-workflows/react-studio-ui/tooltip";
-import { ELSA_THEMES } from "@/lib/theme/elsa-theme";
-import { useElsaTheme } from "@/lib/theme/elsa-theme-provider";
-import { cn } from "@/lib/utils";
+import { ELSA_THEMES } from "@elsa-workflows/react-studio-sdk/theme/elsa-theme";
+import { useElsaTheme } from "@elsa-workflows/react-studio-sdk/theme/elsa-theme-provider";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 
 const appearances = [
   { id: "light", label: "Light", icon: Sun },

@@ -3,12 +3,12 @@
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useConfirm } from "@/components/common/confirm-dialog";
-import { DataTable, type DataTableColumn } from "@/components/common/data-table";
-import { describeError, ErrorAlert } from "@/components/common/error-alert";
-import { PageHeader } from "@/components/common/page-header";
+import { useConfirm } from "@elsa-workflows/react-studio-ui/common/confirm-dialog";
+import { DataTable, type DataTableColumn } from "@elsa-workflows/react-studio-ui/common/data-table";
+import { describeError, ErrorAlert } from "@elsa-workflows/react-studio-ui/common/error-alert";
+import { PageHeader } from "@elsa-workflows/react-studio-ui/common/page-header";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
-import { useStudioConfig } from "@/config/provider";
+import { useStudioConfig } from "@elsa-workflows/react-studio-sdk/config-provider";
 import { Resources, usePermission, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
 import type { Label } from "../api";
 import { useDeleteLabel, useLabels } from "../hooks";

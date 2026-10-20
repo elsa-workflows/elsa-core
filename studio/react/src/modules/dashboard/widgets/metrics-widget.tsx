@@ -1,7 +1,7 @@
 "use client";
 
 import { CircleAlert, CircleCheck, CirclePause, CirclePlay, FileCode2, Siren, Timer } from "lucide-react";
-import { ErrorAlert } from "@/components/common/error-alert";
+import { ErrorAlert } from "@elsa-workflows/react-studio-ui/common/error-alert";
 import type { DashboardRange } from "@elsa-workflows/react-studio-sdk";
 import { StatTile, type StatTone } from "../components/stat-tile";
 import { formatCount, formatDuration, parseTimeSpan, RANGE_LABELS } from "../format";

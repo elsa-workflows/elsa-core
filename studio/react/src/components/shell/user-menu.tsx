@@ -13,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@elsa-workflows/react-studio-ui/dropdown-menu";
 import { useAuth } from "@/lib/auth/provider";
-import { useActiveServer } from "@/lib/environments/active-server";
+import { useActiveServer } from "@elsa-workflows/react-studio-sdk/environments/active-server";
 
 export function UserMenu() {
   const { user, strategy, logout } = useAuth();

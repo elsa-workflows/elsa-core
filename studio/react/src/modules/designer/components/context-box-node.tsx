@@ -2,7 +2,7 @@
 
 import { memo } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
-import type { ContextBoxNode as ContextBoxNodeType } from "./decorations";
+import type { ContextBoxNode as ContextBoxNodeType } from "@elsa-workflows/react-studio-sdk/designer/decorations";
 
 /**
  * The grouping box drawn around the current workflow in call-context mode. It sits behind the

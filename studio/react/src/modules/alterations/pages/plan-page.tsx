@@ -1,15 +1,15 @@
 "use client";
 
 import { ArrowLeft, RefreshCw } from "lucide-react";
-import Link from "@/lib/navigation/link";
+import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@elsa-workflows/react-studio-ui/card";
-import { DataTable, type DataTableColumn } from "@/components/common/data-table";
-import { ErrorAlert } from "@/components/common/error-alert";
-import { JsonViewer } from "@/components/common/json-viewer";
-import { KeyValueTable } from "@/components/common/key-value-table";
-import { PageHeader } from "@/components/common/page-header";
-import { Timestamp } from "@/components/common/timestamp";
+import { DataTable, type DataTableColumn } from "@elsa-workflows/react-studio-ui/common/data-table";
+import { ErrorAlert } from "@elsa-workflows/react-studio-ui/common/error-alert";
+import { JsonViewer } from "@elsa-workflows/react-studio-ui/common/json-viewer";
+import { KeyValueTable } from "@elsa-workflows/react-studio-ui/common/key-value-table";
+import { PageHeader } from "@elsa-workflows/react-studio-ui/common/page-header";
+import { Timestamp } from "@elsa-workflows/react-studio-ui/common/timestamp";
 import type { RouteParams } from "@elsa-workflows/react-studio-sdk";
 import type { AlterationJob } from "../api";
 import { AlterationLog } from "../components/alteration-results";

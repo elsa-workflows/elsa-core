@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { CodeEditor } from "@/components/common/code-editor";
+import { CodeEditor } from "@elsa-workflows/react-studio-ui/common/code-editor";
 import type { UiHintEditorProps } from "../types";
 import { ExpressionEditor } from "../expression-editor";
-import { OBJECT } from "../expression";
+import { OBJECT } from "@elsa-workflows/react-studio-sdk/activity-expressions";
 
 /** JSON object literal; the stored expression type is `Object` with the parsed value. */
 export function JsonEditorHint(props: UiHintEditorProps) {

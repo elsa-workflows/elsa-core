@@ -4,16 +4,16 @@ import { useMemo } from "react";
 import { Trash2 } from "lucide-react";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Input } from "@elsa-workflows/react-studio-ui/input";
-import { Field } from "@/components/common/field";
-import { SimpleSelect } from "@/components/common/simple-select";
+import { Field } from "@elsa-workflows/react-studio-ui/common/field";
+import { SimpleSelect } from "@elsa-workflows/react-studio-ui/common/simple-select";
 import { isStateMachine, type ActivityInput } from "@elsa-workflows/react-studio-api-client/types/activities";
 import type { InputDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
-import { useExpressionDescriptors } from "@/lib/api/hooks/descriptors";
-import { ExpressionEditor } from "@/modules/activity-editors/expression-editor";
-import { selectableSyntaxes } from "@/modules/activity-editors/expression";
-import { useDesigner, useDesignerState } from "../context";
-import { resolveContainer } from "../model/flowchart-ops";
-import { selectionId } from "../store";
+import { useExpressionDescriptors } from "@elsa-workflows/react-studio-api-client/hooks/descriptors";
+import { ExpressionEditor } from "@elsa-workflows/react-studio-sdk/components";
+import { selectableSyntaxes } from "@elsa-workflows/react-studio-sdk/activity-expressions";
+import { useDesigner, useDesignerState } from "@elsa-workflows/react-studio-sdk/designer/context";
+import { resolveContainer } from "@elsa-workflows/react-studio-sdk/designer/model/flowchart-ops";
+import { selectionId } from "@elsa-workflows/react-studio-sdk/designer/store";
 import { SlotChip } from "./slot-chip";
 
 const CONDITION_DESCRIPTOR: InputDescriptor = {

@@ -14,15 +14,12 @@ src/
   main.tsx                  fetch runtime configuration, then mount the History API router
   config/                   runtime configuration React provider (ASP.NET resolves the document)
   lib/
-    api/                    TanStack Query provider and host hooks
+    api/                    host adapter for the shared API provider
     auth/                   config/server adapter for the shared auth provider
     environments/           active backend selection (multi-server)
     features/               server feature catalog (GET /features/installed)
-    modules/                enabled-module registry and route matcher
     utils/                  download helpers, URL state
   components/
-    common/                 shared building blocks (DataTable, PageHeader, SearchInput, SimpleSelect,
-                            ConfirmProvider/useConfirm, StatusBadge, Timestamp, CodeEditor, JsonViewer…)
     shell/                  AppShell, sidebar, header, login, auth callback, status pages
   modules/
     index.ts                the list of compiled-in modules (transitional until #8845)
@@ -34,10 +31,10 @@ src/
     <optional>/             labels, secrets, security, environments, alterations, user-tasks, settings,
                             diagnostics…
 packages/
-  sdk/                      typed register(api) contracts, config schema, editor context and host runtime
-  api-client/               HTTP client, endpoint groups and workflow models
+  sdk/                      registration, config, navigation, designer models/context and host runtime
+  api-client/               HTTP client, endpoint groups, workflow models and React/query context
   auth/                     shared authentication strategies, React context and permissions
-  ui/                       shared primitives and theme styles
+  ui/                       primitives, common components, module registry and theme styles
 ```
 
 ## Runtime configuration
@@ -142,11 +139,18 @@ other activity holds one child per Embedded port. `model/containers.ts` addresse
 machine) for the container at the end of it. State machine selection uses `state:<name>` /
 `transition:<index>` ids next to activity ids.
 
-`src/modules/designer` renders a Flowchart with React Flow. The zustand store
+`src/modules/designer` renders a Flowchart with React Flow. The shared SDK store
 (`createDesignerStore(root, readOnly)`) is the single source of truth: nodes/edges are derived from
 the current container and every interaction mutates the flowchart JSON (so undo/redo and save are
 trivial). Use `DesignerProvider` + `DesignerCanvas`; pass `stats` (per node id) to colour execution
 state in read-only mode. Activity port rules live in `model/ports.ts`.
+
+Designer models, store and context live under `packages/sdk/src/designer`.
+The Designer and ActivityEditors implementations register typed component slots;
+definition and instance views access those slots through the SDK. All 205 feature
+source files pass `pnpm check:boundaries`, which rejects host aliases and relative
+imports into sibling modules. Physical RCL asset discovery remains the next step
+under #8845; this refactor alone still uses the bundled entry list.
 
 ## Activity inputs: syntaxes and encodings
 

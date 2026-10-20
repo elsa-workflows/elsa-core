@@ -1,5 +1,5 @@
 import { Badge } from "@elsa-workflows/react-studio-ui/badge";
-import { cn } from "@/lib/utils";
+import { cn } from "@elsa-workflows/react-studio-ui/utils";
 
 const FALLBACK_COLOR = "#6b7280";
 

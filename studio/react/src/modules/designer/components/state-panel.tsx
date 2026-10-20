@@ -5,11 +5,11 @@ import { CirclePlay, Trash2 } from "lucide-react";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Input } from "@elsa-workflows/react-studio-ui/input";
 import { Checkbox } from "@elsa-workflows/react-studio-ui/checkbox";
-import { Field } from "@/components/common/field";
+import { Field } from "@elsa-workflows/react-studio-ui/common/field";
 import { isStateMachine } from "@elsa-workflows/react-studio-api-client/types/activities";
-import { useDesigner, useDesignerState } from "../context";
-import { resolveContainer } from "../model/flowchart-ops";
-import { selectionId } from "../store";
+import { useDesigner, useDesignerState } from "@elsa-workflows/react-studio-sdk/designer/context";
+import { resolveContainer } from "@elsa-workflows/react-studio-sdk/designer/model/flowchart-ops";
+import { selectionId } from "@elsa-workflows/react-studio-sdk/designer/store";
 import { SlotChip } from "./slot-chip";
 
 /** Properties of the selected state: name, initial flag, entry and exit activities, outgoing transitions. */

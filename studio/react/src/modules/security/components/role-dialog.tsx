@@ -3,8 +3,8 @@
 import { Loader2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
-import { describeError } from "@/components/common/error-alert";
-import { Field } from "@/components/common/field";
+import { describeError } from "@elsa-workflows/react-studio-ui/common/error-alert";
+import { Field } from "@elsa-workflows/react-studio-ui/common/field";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@elsa-workflows/react-studio-ui/dialog";
 import { Input } from "@elsa-workflows/react-studio-ui/input";

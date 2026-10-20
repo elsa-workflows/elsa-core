@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import Link from "@/lib/navigation/link";
-import { useRouter } from "@/lib/navigation";
+import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
+import { useRouter } from "@elsa-workflows/react-studio-sdk/navigation/index";
 import { ChevronDown, Copy, Download, Eye, FileUp, MoreHorizontal, Pencil, Play, Plus, Rocket, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@elsa-workflows/react-studio-ui/badge";
@@ -15,22 +15,22 @@ import {
   DropdownMenuTrigger,
 } from "@elsa-workflows/react-studio-ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@elsa-workflows/react-studio-ui/tooltip";
-import { DataTable, type DataTableColumn, type SortState } from "@/components/common/data-table";
-import { useConfirm } from "@/components/common/confirm-dialog";
-import { describeError } from "@/components/common/error-alert";
-import { PageHeader } from "@/components/common/page-header";
-import { SearchInput } from "@/components/common/search-input";
-import { FilterChips } from "@/components/common/filter-chips";
-import { Timestamp } from "@/components/common/timestamp";
-import { useStudioConfig } from "@/config/provider";
+import { DataTable, type DataTableColumn, type SortState } from "@elsa-workflows/react-studio-ui/common/data-table";
+import { useConfirm } from "@elsa-workflows/react-studio-ui/common/confirm-dialog";
+import { describeError } from "@elsa-workflows/react-studio-ui/common/error-alert";
+import { PageHeader } from "@elsa-workflows/react-studio-ui/common/page-header";
+import { SearchInput } from "@elsa-workflows/react-studio-ui/common/search-input";
+import { FilterChips } from "@elsa-workflows/react-studio-ui/common/filter-chips";
+import { Timestamp } from "@elsa-workflows/react-studio-ui/common/timestamp";
+import { useStudioConfig } from "@elsa-workflows/react-studio-sdk/config-provider";
 import type { OrderDirection } from "@elsa-workflows/react-studio-api-client/types/common";
 import type { WorkflowDefinitionSummary } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
-import { useExtensions } from "@/lib/modules/registry";
-import { href } from "@/lib/modules/router";
+import { useExtensions } from "@elsa-workflows/react-studio-ui/runtime/module-registry";
+import { href } from "@elsa-workflows/react-studio-sdk/routing";
 import { Resources, usePermissions, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
-import { downloadBlob, pickFiles } from "@/lib/utils/download";
-import { useUrlState } from "@/lib/utils/url-state";
-import { useElsaClient } from "@/lib/api/provider";
+import { downloadBlob, pickFiles } from "@elsa-workflows/react-studio-sdk/utils/download";
+import { useUrlState } from "@elsa-workflows/react-studio-sdk/utils/url-state";
+import { useElsaClient } from "@elsa-workflows/react-studio-api-client/react";
 import { CreateWorkflowDialog } from "../components/create-workflow-dialog";
 import { RunWorkflowDialog } from "../components/run-workflow-dialog";
 import { useWorkflowDefinitionMutations, useWorkflowDefinitions } from "../hooks";

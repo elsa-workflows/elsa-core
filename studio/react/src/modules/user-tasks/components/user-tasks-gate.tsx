@@ -2,8 +2,8 @@
 
 import { ClipboardCheck, Loader2 } from "lucide-react";
 import type { ReactNode } from "react";
-import { EmptyState } from "@/components/common/empty-state";
-import { describeError } from "@/components/common/error-alert";
+import { EmptyState } from "@elsa-workflows/react-studio-ui/common/empty-state";
+import { describeError } from "@elsa-workflows/react-studio-ui/common/error-alert";
 import { useUserTaskCapabilities } from "../hooks";
 
 /** Renders children only when `GET /user-tasks/capabilities` says the feature is usable; explains otherwise. */
