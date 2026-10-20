@@ -10,7 +10,9 @@ internal sealed class CommitObserver(Barriers barriers) : INotificationHandler<W
     public async Task HandleAsync(WorkflowStateCommitted notification, CancellationToken cancellationToken)
     {
         if (!notification.WorkflowState.Properties.ContainsKey(Journal.PropertyKey))
+        {
             return;
+        }
         var journal = Journal.Read(notification.WorkflowState.Properties);
         Events.Write("native-commit", new
         {
@@ -21,8 +23,12 @@ internal sealed class CommitObserver(Barriers barriers) : INotificationHandler<W
         });
         var armed = journal.Entries.LastOrDefault(x => x.Status == "Armed" && x.ForwardContextId != null);
         if (armed != null)
+        {
             await barriers.ReachAsync($"durable-unacknowledged-reserve-{armed.Slot}", notification.WorkflowExecutionContext);
+        }
         else if (journal.Entries.Count == 0 && notification.WorkflowState.ScheduledActivities.Count > 0)
+        {
             await barriers.ReachAsync("durable-unacknowledged-scope", notification.WorkflowExecutionContext);
+        }
     }
 }

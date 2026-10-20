@@ -115,3 +115,26 @@ failures/errors/skips. The 15 Python tests were also rechecked without native pr
 execution. This narrow inventory integration adds the discovery test and its owning
 document to the experiment's changed-file scope; it does not change the recorded E1
 observations, their hashes, or readiness.
+
+## Post-measurement backend cleanup and fixture style review
+
+Greptile reproduced malformed backend stdout raising before cleanup, leaving the
+backend alive and losing its PID, earlier events and stderr. The controller now
+terminates only its own still-live child in a `finally` path, waits/reaps it, joins
+the stdout/stderr readers, and carries PID/events/stderr plus controller/reader
+errors in a structured failed phase. Both matrix and control runners use the same
+phase helper, so a failure is retained in `evidence.json` and causes a nonzero
+controller exit. Reader completion/failure is signaled even when stdout iteration
+throws. Cheap Python child-process tests cover a valid event followed by malformed
+output and a hanging timeout; they assert child reaping and retained event/stderr
+diagnostics and run no .NET, participant or database process.
+
+The four experiment C# files now brace their conditional bodies as required by
+repository style. `Program.cs` registers `HttpClient` through the host-owned
+singleton factory and uses `using var` for the host while preserving `StopAsync` in
+`finally`. These are style/resource-ownership corrections only; they are not
+byte-identical to the frozen measured fixture source. The r5 source head remains
+`f3d4b31863dc7e2a029d6e93454a25a905e9b813`, and the controls source head remains
+`17a27e78d6c6afaef1b9c1a302b52442d30894f1`. No C# build or native execution was
+repeated for these corrections; the original raw files, 24 evidence hashes and
+summary remain unchanged. E1 remains Partial and M1 Not Ready.

@@ -28,10 +28,14 @@ internal sealed class Journal
     internal static Journal Read(IDictionary<string, object> properties)
     {
         if (!properties.TryGetValue(PropertyKey, out var value))
+        {
             throw new InvalidOperationException("Journal absent; do not manufacture empty recovery state.");
+        }
         var map = value is JsonElement json ? json : JsonSerializer.SerializeToElement(value);
         if (map.GetProperty(nameof(Schema)).GetInt32() != 1)
+        {
             throw new InvalidOperationException("Unsupported journal schema; original state must be retained.");
+        }
         return map.Deserialize<Journal>() ?? throw new InvalidOperationException("Empty journal.");
     }
 

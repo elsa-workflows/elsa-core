@@ -1,4 +1,4 @@
-"""Cheap assertion mutation tests; no .NET process, participant, or database execution."""
+"""Cheap validation and controller-cleanup tests; no .NET, participant, or database execution."""
 import copy
 import hashlib
 import json
@@ -130,6 +130,57 @@ class ValidationTests(unittest.TestCase):
             with self.assertRaises(SystemExit) as error:
                 run.main([directory, "--case", "not-a-case"])
             self.assertEqual(2, error.exception.code)
+
+    def test_backend_malformed_stdout_reaps_child_and_keeps_prior_diagnostics(self):
+        child = (
+            "import json,sys,time; "
+            "sys.stderr.write('synthetic backend stderr\\n'); sys.stderr.flush(); "
+            "print(json.dumps({'kind':'probe','value':{'seen':True}}), flush=True); "
+            "print('not json', flush=True); time.sleep(30)"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaises(run.BackendFailure) as raised:
+                run.backend(Path(directory), "unused", command_override=[sys.executable, "-u", "-c", child])
+        result = raised.exception.result
+        self.assertIn("JSONDecodeError", result["controller_error"])
+        self.assertEqual([{"kind": "probe", "value": {"seen": True}}], result["events"])
+        self.assertIn("synthetic backend stderr", result["stderr"])
+        self.assertTrue(result["cleanup_terminated"])
+        self.assertTrue(result["reaped"])
+        self.assertTrue(result["stdout_reader_completed"])
+        self.assertTrue(result["stderr_reader_completed"])
+        if os.name == "posix":
+            with self.assertRaises(ProcessLookupError):
+                os.kill(result["pid"], 0)
+
+    def test_backend_timeout_reaps_child_and_keeps_stderr(self):
+        child = (
+            "import json,sys,time; "
+            "sys.stderr.write('timeout stderr\\n'); sys.stderr.flush(); "
+            "print(json.dumps({'kind':'probe','value':{'started':True}}), flush=True); "
+            "time.sleep(30)"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaises(run.BackendFailure) as raised:
+                run.backend(Path(directory), "unused", timeout_seconds=1,
+                            command_override=[sys.executable, "-u", "-c", child])
+        result = raised.exception.result
+        self.assertIn("TimeoutError", result["controller_error"])
+        self.assertIn("timeout stderr", result["stderr"])
+        self.assertEqual([{"kind": "probe", "value": {"started": True}}], result["events"])
+        self.assertTrue(result["cleanup_terminated"])
+        self.assertTrue(result["reaped"])
+        self.assertTrue(result["stdout_reader_completed"])
+        self.assertTrue(result["stderr_reader_completed"])
+
+    def test_failed_backend_phase_is_preserved_by_shared_helper(self):
+        diagnostics = {"pid": 42, "events": [{"kind": "before-error"}], "stderr": "diagnostic",
+                       "controller_error": "ValueError: invalid JSON"}
+        with patch.object(run, "backend", side_effect=run.BackendFailure("invalid JSON", diagnostics)):
+            recorded = {}
+            with self.assertRaises(run.BackendFailure):
+                run.run_backend_phase(recorded, "control", Path("."), "unused")
+        self.assertIs(recorded["control"], diagnostics)
 
     def test_explicit_dotnet_host_override(self):
         with patch.dict(os.environ, {"E1_DOTNET": "explicit-host"}), patch.object(run.shutil, "which", return_value="/chosen/dotnet") as which:

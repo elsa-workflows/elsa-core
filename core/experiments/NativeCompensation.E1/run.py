@@ -29,6 +29,14 @@ parser.add_argument("output", type=Path)
 parser.add_argument("--case", choices=("all", *MATRIX_CASES), default="all")
 
 
+class BackendFailure(RuntimeError):
+    """A failed controller phase with its captured child diagnostics intact."""
+
+    def __init__(self, message, result):
+        super().__init__(message)
+        self.result = result
+
+
 def ledger(directory):
     with sqlite3.connect(directory / "participant.db") as db:
         db.row_factory = sqlite3.Row
@@ -53,51 +61,155 @@ def snapshot(directory):
         return {"table": table, "rows": rows}
 
 
-def backend(directory, url, kill_at=None, ambient=False, handoff="Compensated", mode="run"):
-    command = [dotnet_host(), str(DLL), mode, str(directory), url]
-    if mode == "run":
-        command += ["--barriers"]
-    if ambient:
-        command += ["--ambient"]
+def backend(directory, url, kill_at=None, ambient=False, handoff="Compensated", mode="run",
+            timeout_seconds=90, command_override=None):
+    command = command_override or [dotnet_host(), str(DLL), mode, str(directory), url]
+    if command_override is None:
+        if mode == "run":
+            command += ["--barriers"]
+        if ambient:
+            command += ["--ambient"]
     environment = dict(os.environ, E1_HANDOFF=handoff)
-    process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                               text=True, bufsize=1, env=environment)
+    try:
+        process = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                   text=True, bufsize=1, env=environment)
+    except Exception as error:
+        result = {"pid": None, "exit": None, "reaped": True, "killed": False, "cleanup_terminated": False,
+                  "events": [], "stderr": "", "stdout_reader_completed": True,
+                  "stderr_reader_completed": True, "stdout_reader_error": None, "stderr_reader_error": None,
+                  "controller_error": f"{type(error).__name__}: {error}"}
+        raise BackendFailure(result["controller_error"], result) from error
     lines = queue.Queue()
+    reader_errors = []
+    stderr_parts = []
+    stderr_errors = []
+
     def read_lines():
-        for line in process.stdout:
-            lines.put(line)
-        lines.put(None)
-    reader = threading.Thread(target=read_lines, daemon=True)
-    reader.start()
-    events = []
-    deadline = time.monotonic() + 90  # timeout is failure detection, never correctness synchronization
-    killed = False
-    while True:
-        if time.monotonic() > deadline:
-            process.kill()
-            raise RuntimeError(f"Backend timeout; events={events}")
         try:
-            line = lines.get(timeout=1)
-        except queue.Empty:
-            continue
-        if line is None:
-            break
-        event = json.loads(line)
-        events.append(event)
-        if event["kind"] == "barrier":
-            if event["value"]["name"] == kill_at:
-                process.kill()  # SIGKILL: no Dispose/finally/graceful drain
-                killed = True
+            for line in process.stdout:
+                lines.put(("line", line))
+        except Exception as error:
+            reader_errors.append(f"{type(error).__name__}: {error}")
+            lines.put(("reader_error", error))
+        finally:
+            lines.put(("eof", None))
+
+    def read_stderr():
+        try:
+            stderr_parts.append(process.stderr.read())
+        except Exception as error:
+            stderr_errors.append(f"{type(error).__name__}: {error}")
+
+    reader = threading.Thread(target=read_lines, daemon=True)
+    stderr_reader = threading.Thread(target=read_stderr, daemon=True)
+    reader.start()
+    stderr_reader.start()
+    events = []
+    deadline = time.monotonic() + timeout_seconds  # timeout is failure detection, never correctness synchronization
+    killed = False
+    controller_error = None
+    cleanup_terminated = False
+    try:
+        while True:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise TimeoutError(f"Backend timeout after {timeout_seconds}s")
+            try:
+                kind, payload = lines.get(timeout=min(1, remaining))
+            except queue.Empty:
+                continue
+            if kind == "eof":
+                if process.poll() is None:
+                    raise RuntimeError("Backend stdout closed while its child remained live")
                 break
-            process.stdin.write("continue\n")
-            process.stdin.flush()
-    process.wait(timeout=15)
-    stderr = process.stderr.read()
-    reader.join(timeout=5)
-    result = {"pid": process.pid, "exit": process.returncode, "killed": killed, "events": events, "stderr": stderr}
-    if kill_at and not killed:
-        raise RuntimeError(f"Did not reach {kill_at}: {result}")
+            if kind == "reader_error":
+                raise RuntimeError(f"Backend stdout reader failed: {payload}") from payload
+            event = json.loads(payload)
+            events.append(event)
+            if event["kind"] == "barrier":
+                if event["value"]["name"] == kill_at:
+                    if process.poll() is None:
+                        process.kill()  # SIGKILL: no Dispose/finally/graceful drain
+                    killed = True
+                    break
+                process.stdin.write("continue\n")
+                process.stdin.flush()
+    except Exception as error:
+        controller_error = f"{type(error).__name__}: {error}"
+    finally:
+        if process.poll() is None:
+            cleanup_terminated = True
+            try:
+                process.kill()  # Only the child created by this controller is ever terminated.
+            except ProcessLookupError:
+                pass
+        try:
+            process.stdin.close()
+        except (BrokenPipeError, OSError):
+            pass
+        try:
+            process.wait(timeout=15)
+        except subprocess.TimeoutExpired:
+            cleanup_terminated = True
+            try:
+                process.kill()
+            except ProcessLookupError:
+                pass
+            process.wait()
+        reader.join(timeout=5)
+        stderr_reader.join(timeout=5)
+        if reader.is_alive() and controller_error is None:
+            controller_error = "RuntimeError: Backend stdout reader did not finish after child reaping"
+        if stderr_reader.is_alive() and controller_error is None:
+            controller_error = "RuntimeError: Backend stderr reader did not finish after child reaping"
+        for stream in (process.stdout, process.stderr):
+            try:
+                stream.close()
+            except (OSError, ValueError):
+                pass
+        reader.join(timeout=1)
+        stderr_reader.join(timeout=1)
+
+    result = {
+        "pid": process.pid,
+        "exit": process.returncode,
+        "reaped": process.poll() is not None,
+        "killed": killed,
+        "cleanup_terminated": cleanup_terminated,
+        "events": events,
+        "stderr": "".join(stderr_parts),
+        "stdout_reader_completed": not reader.is_alive(),
+        "stderr_reader_completed": not stderr_reader.is_alive(),
+        "stdout_reader_error": reader_errors[0] if reader_errors else None,
+        "stderr_reader_error": stderr_errors[0] if stderr_errors else None,
+        "controller_error": controller_error,
+    }
+    if stderr_errors and result["controller_error"] is None:
+        result["controller_error"] = f"Backend stderr reader failed: {stderr_errors[0]}"
+    if kill_at and not killed and result["controller_error"] is None:
+        result["controller_error"] = f"Backend did not reach requested barrier {kill_at!r}"
+    if result["controller_error"]:
+        raise BackendFailure(result["controller_error"], result)
     return result
+
+
+def run_backend_phase(result, phase, *args, **kwargs):
+    """Attach a failed backend phase before propagating its structured error."""
+    try:
+        phase_result = backend(*args, **kwargs)
+    except BackendFailure as error:
+        result[phase] = error.result
+        raise
+    except Exception as error:
+        phase_result = {"pid": None, "exit": None, "reaped": True, "killed": False,
+                        "cleanup_terminated": False, "events": [], "stderr": "",
+                        "stdout_reader_completed": True, "stderr_reader_completed": True,
+                        "stdout_reader_error": None, "stderr_reader_error": None,
+                        "controller_error": f"{type(error).__name__}: {error}"}
+        result[phase] = phase_result
+        raise BackendFailure(phase_result["controller_error"], phase_result) from error
+    result[phase] = phase_result
+    return phase_result
 
 
 def run_case(name, kill_at=None, ambient=False, no_dedupe=False, fail_undo=False, handoff="Compensated", restart_handoff=None):
@@ -116,10 +228,10 @@ def run_case(name, kill_at=None, ambient=False, no_dedupe=False, fail_undo=False
     result = {"case": name, "kill_at": kill_at, "participant_pid": participant.pid,
               "configuration": {"ambient": ambient, "no_dedupe": no_dedupe, "fail_undo": fail_undo, "handoff": handoff, "restart_handoff": restart_handoff}}
     try:
-        result["first"] = backend(directory, url, kill_at, ambient, handoff)
+        run_backend_phase(result, "first", directory, url, kill_at, ambient, handoff)
         result["after_first"] = {"elsa": snapshot(directory), "participant": ledger(directory)}
         if kill_at:
-            result["restart"] = backend(directory, url, handoff=restart_handoff or handoff)
+            run_backend_phase(result, "restart", directory, url, handoff=restart_handoff or handoff)
         result["final"] = {"elsa": snapshot(directory), "participant": ledger(directory)}
         final_events = result.get("restart", result["first"])["events"]
         final = next((event["value"] for event in final_events if event["kind"] == "result"), None)

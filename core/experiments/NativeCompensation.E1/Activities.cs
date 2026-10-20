@@ -29,10 +29,14 @@ internal sealed class ProbeScope : Container
     protected override async ValueTask ScheduleChildrenAsync(ActivityExecutionContext context)
     {
         if (context.WorkflowExecutionContext.Properties.ContainsKey(Journal.PropertyKey))
+        {
             throw new InvalidOperationException("Scope activation cannot replace an existing obligation.");
+        }
         var journal = new Journal();
         if (Environment.GetEnvironmentVariable("E1_HANDOFF") == "Fault")
+        {
             journal.Handoff = "Fault";
+        }
         journal.Write(context.WorkflowExecutionContext);
         await ScheduleAsync(context, Activities.First());
         await context.GetRequiredService<Barriers>().ReachAsync("scope-activated", context.WorkflowExecutionContext);
@@ -56,7 +60,9 @@ internal sealed class ProbeScope : Container
         if (!effect.Undo)
         {
             if (entry.CompletionOrdinal == null)
+            {
                 entry.CompletionOrdinal = ++journal.CompletionOrdinal;
+            }
             entry.Status = "Applied";
             journal.Write(workflow);
             await ScheduleAsync(context, effect.Slot == 0 ? Activities.ElementAt(1) : Activities.ElementAt(2));
@@ -67,7 +73,9 @@ internal sealed class ProbeScope : Container
             entry.Status = "Compensated";
             var next = journal.Entries.Where(x => x.Status == "Applied").OrderByDescending(x => x.CompletionOrdinal).FirstOrDefault();
             if (next == null)
+            {
                 journal.Phase = "Compensated";
+            }
             journal.Write(workflow);
             await ScheduleAsync(context, next == null ? Activities.Last() : Activities.OfType<ParticipantEffect>().Single(x => x.Slot == next.Slot && x.Undo));
             await context.GetRequiredService<Barriers>().ReachAsync(next == null ? "settled-before-handoff" : "between-handlers", workflow);
@@ -78,7 +86,9 @@ internal sealed class ProbeScope : Container
     {
         var context = signalContext.ReceiverActivityExecutionContext;
         if (signal.FaultedContext.Activity is Handoff)
+        {
             return; // Selected outward fault continues through the native incident path.
+        }
         signalContext.StopPropagation();
         var workflow = context.WorkflowExecutionContext;
         var journal = Journal.Read(workflow.Properties);
@@ -157,9 +167,13 @@ internal sealed class ParticipantEffect : Activity
             journal.Entries.Add(entry);
         }
         if (Undo)
+        {
             entry.UndoContextId = context.Id;
+        }
         else
+        {
             entry.ForwardContextId = context.Id;
+        }
         journal.Write(workflow);
         await barriers.ReachAsync($"before-intent-{Id}", workflow);
         await workflow.CommitAsync();
@@ -176,9 +190,13 @@ internal sealed class ParticipantEffect : Activity
         var receipt = await response.Content.ReadAsStringAsync();
         await barriers.ReachAsync($"participant-committed-{Id}", workflow);
         if (Undo)
+        {
             entry.ProtectedUndoReceipt = protector.Protect(receipt);
+        }
         else
+        {
             entry.ProtectedResult = protector.Protect(receipt);
+        }
         journal.Write(workflow);
         await context.CompleteActivityAsync();
     }
@@ -197,9 +215,13 @@ internal sealed class Handoff : Activity
     {
         var journal = Journal.Read(context.WorkflowExecutionContext.Properties);
         if (journal.Phase != "Compensated" || journal.Entries.Any(x => x.Status != "Compensated"))
+        {
             throw new InvalidOperationException("Unresolved recovery cannot take an outward handoff.");
+        }
         if (journal.Handoff == "Fault")
+        {
             throw new RetainedForwardFailureException(journal.ProtectedOriginalCause!);
+        }
         await context.CompleteActivityAsync();
     }
 }

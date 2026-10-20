@@ -23,3 +23,5 @@ The project adds an experiment-only scope, explicit effect-aware activity, map c
 The `--ambient` case measures Elsa's existing optional `EFCoreWorkflowCommitTransaction`. Cases with it disabled are clearly weaker exploratory snapshot tests and cannot establish cross-store atomicity. The historical r4 scope-activation gap was corrected in r5 by committing the seed and first native work together. The native fault-ownership bookkeeping gap remains exposed. The selected fault handoff uses an explicit retained-cause wrapper, never arbitrary CLR exception reconstruction or a type-specific catch guarantee.
 
 See `REPORT.md` for the measured results and unresolved gates.
+
+Post-measurement review added backend-controller failure cleanup/diagnostics and braces to the experiment C# conditionals. The host now owns disposal of the registered `HttpClient` and retains explicit `StopAsync` teardown. These harness/style/resource-ownership corrections were not .NET-built or natively executed; the measured r5/control source heads remain the ones recorded in `REPORT.md`.

@@ -30,14 +30,14 @@ def run_control(name, output):
     result = {"case": name, "participant_pid": participant.pid}
     try:
         cut = "forward-ack-0" if name in ("missing-work", "callback-owner", "callback-child") else "after-intent-reserve-0"
-        result["first"] = native.backend(directory, url, kill_at=cut)
+        native.run_backend_phase(result, "first", directory, url, kill_at=cut)
         result["before"] = {"elsa": native.snapshot(directory), "participant": native.ledger(directory)}
         if name == "stale-writer":
-            result["control"] = native.backend(directory, url, mode="stale")
+            native.run_backend_phase(result, "control", directory, url, mode="stale")
         elif name == "definition-pin":
             os.environ["E1_GRAPH_VERSION"] = "e1-definition-v2"
             try:
-                result["control"] = native.backend(directory, url)
+                native.run_backend_phase(result, "control", directory, url)
             finally:
                 del os.environ["E1_GRAPH_VERSION"]
         else:
@@ -63,8 +63,9 @@ def run_control(name, output):
                 result["injectedSha256"] = digest(altered)
                 (directory / "injected-snapshot.txt").write_text(altered)
                 db.execute("UPDATE WorkflowInstances SET Data=?", (altered,))
-            result["inspection"] = native.backend(directory, url, mode="inspect")
-            result["control"] = native.backend(directory, url, mode="resave" if name in ("outer-corrupt", "outer-compression") else "run")
+            native.run_backend_phase(result, "inspection", directory, url, mode="inspect")
+            native.run_backend_phase(result, "control", directory, url,
+                                     mode="resave" if name in ("outer-corrupt", "outer-compression") else "run")
             with sqlite3.connect(directory / "elsa.db") as db:
                 raw_after = db.execute("SELECT Data FROM WorkflowInstances").fetchone()[0]
                 result["afterSha256"] = digest(raw_after)

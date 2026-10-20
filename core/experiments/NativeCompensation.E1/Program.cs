@@ -29,13 +29,13 @@ internal static class Program
         Directory.CreateDirectory(directory);
         var participant = args.Length > 2 ? args[2] : "http://127.0.0.1:1";
         var ambient = args.Contains("--ambient");
-        var host = Host.CreateDefaultBuilder()
+        using var host = Host.CreateDefaultBuilder()
             .ConfigureLogging(logging => logging.ClearProviders())
             .ConfigureServices(services =>
             {
                 services.AddSingleton(new Barriers(args.Contains("--barriers")));
                 services.AddNotificationHandler<CommitObserver, WorkflowStateCommitted>(provider => new(provider.GetRequiredService<Barriers>()));
-                services.AddSingleton(new HttpClient { BaseAddress = new Uri(participant) });
+                services.AddSingleton(_ => new HttpClient { BaseAddress = new Uri(participant) });
                 services.AddDataProtection().SetApplicationName("Elsa.NativeCompensation.E1")
                     .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(directory, "keys")));
                 services.AddElsa(elsa => elsa
@@ -115,7 +115,6 @@ internal static class Program
         finally
         {
             await host.StopAsync();
-            host.Dispose();
         }
     }
 }
@@ -130,9 +129,13 @@ internal sealed class Barriers(bool enabled)
     internal async Task ReachAsync(string name, WorkflowExecutionContext context)
     {
         if (!enabled)
+        {
             return;
+        }
         Events.Write("barrier", new { name, journal = Journal.Read(context.Properties) });
         if (await Console.In.ReadLineAsync() != "continue")
+        {
             throw new InvalidOperationException("Controller disconnected at barrier.");
+        }
     }
 }
