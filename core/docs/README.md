@@ -38,3 +38,7 @@ identities. Successful source builds do not authorize package publication or
 source-repository archival; the [first consolidated release policy](../../docs/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md)
 and [artifact proof](../../docs/integration-program/consolidated-package-proof.md)
 retain their separate gates.
+
+## Native compensation design
+
+The [Elsa 3 adaptation design packet](specs/native-compensation/README.md) records #8896's reviewed design and remaining technical gates. Standing owner authorization permits delivery; implementation readiness still depends on the packet's evidence gates.

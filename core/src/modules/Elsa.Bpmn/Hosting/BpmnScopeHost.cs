@@ -6,9 +6,13 @@ using Elsa.Bpmn.Activities;
 using Elsa.Bpmn.Exceptions;
 using Elsa.Bpmn.Signals;
 using Elsa.Extensions;
+using Elsa.Scheduling;
+using Elsa.Scheduling.Bookmarks;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities.Flowchart.Models;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Activities;
+using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Signals;
 using Microsoft.Extensions.Logging;
 
@@ -81,8 +85,14 @@ internal sealed class BpmnScopeHost
     // --- The interpreter's four entry points ---------------------------------------------------------
 
     /// <summary>The scope is beginning.</summary>
-    public ValueTask StartAsync() => EvaluateAsync(memory =>
-        Interpreter.Start(new BpmnStartRequest(Graph, memory.State, Snapshot(memory), ResolveStartSignal())));
+    public async ValueTask StartAsync()
+    {
+        // Resolving by the matched trigger may read the trigger store, so it happens before the synchronous evaluation.
+        var triggeredStart = await ResolveTriggeredStartAsync();
+
+        await EvaluateAsync(memory =>
+            Interpreter.Start(new BpmnStartRequest(Graph, memory.State, Snapshot(memory), triggeredStart ?? ResolveStartSignal())));
+    }
 
     /// <summary>A unit of work finished, reporting zero or more outcome names.</summary>
     public ValueTask OnWorkCompletedAsync(ActivityExecutionContext childContext, object? result) => EvaluateAsync(memory =>
@@ -97,7 +107,7 @@ internal sealed class BpmnScopeHost
         memory.Work.Remove(record);
         memory.SaveWork();
 
-        var outcomeNames = result is Outcomes outcomes ? outcomes.Names : [];
+        var outcomeNames = result is Outcomes outcomes ? outcomes.Names : CallActivityOutcomeNames(record, childContext);
 
         return Interpreter.OnWorkCompleted(new BpmnWorkCompletedRequest(
             Graph, memory.State, Snapshot(memory), record.BindingRef, record.Handle, outcomeNames, record.IterationId));
@@ -178,6 +188,21 @@ internal sealed class BpmnScopeHost
     }
 
     // --- Plumbing ------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// The outcome names a call activity's completed work reports for how its called workflow ended. Only a call
+    /// activity's <see cref="DispatchWorkflow"/> reports them: the same activity bound to any other element keeps
+    /// reporting none, as before.
+    /// </summary>
+    private IReadOnlyCollection<string> CallActivityOutcomeNames(BpmnWorkRecord record, ActivityExecutionContext childContext)
+    {
+        if (childContext.Activity is not DispatchWorkflow || Graph.FindElementByBindingRef(record.BindingRef) is not { } element || !BpmnElementFamilies.IsCallActivity(element))
+        {
+            return [];
+        }
+
+        return BpmnCallActivityOutcomes.For(DispatchWorkflow.GetChildWorkflowSubStatus(childContext));
+    }
 
     private ValueTask EvaluateAsync(Func<BpmnScopeMemory, BpmnEvaluation?> evaluate) =>
         DispatcherOf(_context.WorkflowExecutionContext).PostAsync(async () =>
@@ -352,9 +377,45 @@ internal sealed class BpmnScopeHost
     }
 
     /// <summary>
-    /// The start event a trigger matched, when this scope is the activity whose trigger started the workflow; otherwise
-    /// <c>null</c>, so a direct invocation begins at the plain start events and a nested scope at whatever its
-    /// invocation carries.
+    /// The start event that registered the stored trigger the runtime reports as having started this process, or
+    /// <c>null</c> when this scope was not started by its own trigger, the run carries no trigger hash, or none of the
+    /// start events registered it. <see cref="ResolveStartSignal"/> then decides from the trigger kind.
+    /// </summary>
+    private async ValueTask<BpmnStartSignal?> ResolveTriggeredStartAsync()
+    {
+        if (!_context.IsTriggerOfWorkflow() || _process.Process is not { } process)
+        {
+            return null;
+        }
+
+        var workflowExecutionContext = _context.WorkflowExecutionContext;
+
+        if (workflowExecutionContext.GetTriggerStimulusHash() is not { } stimulusHash)
+        {
+            return null;
+        }
+
+        return await BpmnStartEventResolver.ResolveByStimulusHashAsync(
+            process,
+            stimulusHash,
+            _context.GetRequiredService<IStimulusHasher>(),
+            async () =>
+            {
+                var trigger = await _context.GetRequiredService<ITriggerStore>().FindAsync(new TriggerFilter
+                {
+                    Hash = stimulusHash,
+                    Name = SchedulingStimulusNames.Timer,
+                    WorkflowDefinitionVersionId = workflowExecutionContext.Workflow.Identity.Id
+                }, _context.CancellationToken);
+
+                return trigger?.GetPayload<TimerTriggerPayload>().Interval;
+            });
+    }
+
+    /// <summary>
+    /// The start event a trigger of the kind that fired registered, when this scope is the activity whose trigger
+    /// started the workflow; otherwise <c>null</c>, so a direct invocation begins at the plain start events and a nested
+    /// scope at whatever its invocation carries. The fallback for a run that carries no trigger hash.
     /// </summary>
     private BpmnStartSignal? ResolveStartSignal()
     {

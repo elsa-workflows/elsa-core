@@ -36,7 +36,13 @@ internal class ResumeDispatchWorkflowActivity(IBookmarkQueue bookmarkQueue, ISti
         if (string.IsNullOrWhiteSpace(parentInstanceId))
             return;
 
-        await EnqueueResumeAsync(parentInstanceId, workflowState.Id, workflowState.Output, cancellationToken);
+        // The child's output, plus how it ended: Finished covers a faulted or cancelled child too, and the sub-status says which.
+        var input = new Dictionary<string, object>(workflowState.Output)
+        {
+            [DispatchWorkflow.ChildWorkflowSubStatusInputKey] = workflowState.SubStatus.ToString()
+        };
+
+        await EnqueueResumeAsync(parentInstanceId, workflowState.Id, input, cancellationToken);
     }
 
     public async Task HandleAsync(DispatchWorkflowActivationDenied notification, CancellationToken cancellationToken)
