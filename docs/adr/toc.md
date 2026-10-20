@@ -42,6 +42,7 @@
 * [2026-09-28. Release the consolidated packages in lockstep and cut publishers over at 3.10.0](2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md)
 * [2026-10-08. Durable event admission with isolated local execution](2026-10-08-durable-event-admission-and-isolated-execution.md)
 * [2026-10-08. Give Core, Extensions and Studio separate root directories](2026-10-08-product-directory-boundaries.md)
+* [2026-10-19. Keep native compensation recovery within Elsa 3 runtime and Studio boundaries](2026-10-19-native-compensation-recovery-boundaries.md)
 * [2026-10-20. Accept unbound tasks in BPMN drafts and refuse silent degradation](2026-10-20-bpmn-import-policy.md)
 * [2026-10-20. Build the BPMN modeler on bpmn-js](2026-10-20-bpmn-modeler-on-bpmn-js.md)
 * [2026-10-20. Keep BPMN XML as the source of truth for BPMN workflows](2026-10-20-bpmn-xml-as-source-of-truth.md)

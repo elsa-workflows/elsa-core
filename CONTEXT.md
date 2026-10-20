@@ -182,7 +182,7 @@ _Avoid_: Elsa user invitation, bearer account
 
 ## Native compensation design vocabulary
 
-These domain terms belong to the proposed [Elsa 3 compensation design](core/docs/specs/native-compensation/README.md); they do not announce an implemented capability or freeze public API names.
+These domain terms belong to the [Elsa 3 compensation design](core/docs/specs/native-compensation/README.md). O1–O3 owner policy is accepted, while the physical design and technical guarantees remain proposed or unproved; these terms do not announce an implemented capability or freeze public API names. See the packet's [decision register](core/docs/specs/native-compensation/decisions.md) for current policy and gates.
 
 **Compensation scope**: An authored boundary that associates forward operations with recovery handlers and owns their compensation obligations.
 
@@ -195,6 +195,8 @@ These domain terms belong to the proposed [Elsa 3 compensation design](core/docs
 **Operation key**: The stable participant idempotency key for a logical forward effect. An **undo key** separately identifies its recovery effect; each is reused across its attempts.
 
 **Recovery attempt**: One execution attempt to settle a compensation obligation, with its own identity and causal execution/error evidence.
+
+**Compensated outcome**: The distinct outward result after all required recovery settles. Under accepted O3, a published scope either emits this result or propagates the original fault, never both.
 
 **Recovery capture**: Immutable, versioned occurrence data retained for a handler. It is not a later lookup of mutable workflow variables or the latest output of an activity node.
 

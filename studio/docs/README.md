@@ -64,6 +64,6 @@ Studio commit `f0eeb3c7428443b09512049fe890635fa4f7b427`. The first two
 import dispositions and verification are recorded in the
 [integration-program asset note](../../docs/integration-program/consolidation/studio-document-assets.md).
 
-## Native compensation design
+## Planned native compensation
 
-The [Elsa 3 adaptation design packet](specs/native-compensation/plan.md) records #8896's reviewed design and remaining technical gates. Standing owner authorization permits delivery; implementation readiness still depends on the packet's evidence gates.
+The [Native compensation authoring, inspection and recovery program](../../core/docs/compensation/README.md) is the current program entrypoint for scope, ownership and readiness. The [Studio interaction plan](specs/native-compensation/plan.md) records Studio design details within the reviewed [Elsa 3 adaptation packet](../../core/docs/specs/native-compensation/README.md). Standing owner authorization permits delivery through the remaining technical gates; these plans do not claim implementation or proof.
