@@ -55,9 +55,11 @@ A root scope registers one workflow trigger per start event that declares how th
 
 A process whose start events are all plain (none) start events, which covers most Camunda models, registers no trigger at all. It is started directly, through the workflow execution API, and publishes like any other workflow without a trigger. `BpmnProcess` declares this to the trigger indexer through `TriggerIndexingContext.RegistersNoTriggers`, so the indexer does not store the `null`-payload placeholder it keeps for other triggers that return no payloads.
 
+When one of these triggers starts the workflow, the process begins at the start event that registered it, not at its plain start events. The runtime does not say which of the process's triggers fired, so the scope recovers it from the kind of trigger: an event stimulus (`PublishEvent` or `IEventPublisher`) selects the message and signal starts, and a scheduled start selects the timer starts. Start events of that kind that register the same stimulus are one trigger, and the process begins at the first of them. When start events of that kind register different stimuli, for example two message starts on different names, the process faults with `elsa.bpmn.start.ambiguous-trigger` instead of guessing; model each such start event as its own process (exact resolution is tracked in #8905). A process run directly, through the workflow execution API, still begins at its plain start events.
+
 A start event that declares a message, signal or timer the scope cannot register, such as a timer whose interval is not a positive ISO-8601 duration, is logged and skipped. The scope's other start events still register. If that leaves the scope with nothing to register, publication fails with `Trigger should have a payload`, so the process is not published as though the start had never been declared. Nested scopes (subprocess and event-subprocess bodies, or a scope nested through a `Flowchart`) never register triggers of their own.
 
-Test coverage: `test/integration/Elsa.Bpmn.IntegrationTests/Scenarios/Triggers/BpmnProcessTriggerTests.cs` and `test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Scenarios/Publishing/BpmnStartTriggerPublishTests.cs`.
+Test coverage: `test/integration/Elsa.Bpmn.IntegrationTests/Scenarios/Triggers/BpmnProcessTriggerTests.cs`, `test/integration/Elsa.Bpmn.IntegrationTests/Scenarios/Triggers/BpmnTriggeredStartTests.cs` and `test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Scenarios/Publishing/BpmnStartTriggerPublishTests.cs`.
 
 ## Work Ledger
 
