@@ -37,9 +37,10 @@ Conditions are evaluated by the host, with Elsa's expression engine.
   specification requires. An activity in the same situation also faults. The specification lets the token end there,
   but Elsa treats it as an error so that a process never stops silently. On an exclusive gateway, an outgoing flow with
   no condition that is not the default counts as true, as it does in Camunda.
-- `conditionOutcome` keeps working as it does today. A sequence flow that carries both a `conditionOutcome` and a
-  `conditionExpression` is refused at import with a coded error, because either precedence rule would route some
-  documents differently from what their author meant.
+- `conditionOutcome` keeps working as it does today. A sequence flow that carries both a `conditionOutcome` and an
+  author-written `conditionExpression` is refused at import with a coded error, because either precedence rule would
+  route some documents differently from what their author meant. The `outcome == '...'` expression that the library
+  writes for an outcome flow is the outcome restated, not a second condition, so it does not count.
 - The same callback serves `completionCondition`, standard loops and conditional events once the library supports them.
 
 Until the callback ships, import refuses a document whose flows carry `conditionExpression`, with a coded error,
