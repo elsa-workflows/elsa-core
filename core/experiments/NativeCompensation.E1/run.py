@@ -119,8 +119,10 @@ def backend(directory, url, kill_at=None, ambient=False, handoff="Compensated", 
             except queue.Empty:
                 continue
             if kind == "eof":
-                if process.poll() is None:
-                    raise RuntimeError("Backend stdout closed while its child remained live")
+                try:
+                    process.wait(timeout=max(0, deadline - time.monotonic()))
+                except subprocess.TimeoutExpired as error:
+                    raise TimeoutError(f"Backend did not exit after closing stdout within {timeout_seconds}s") from error
                 break
             if kind == "reader_error":
                 raise RuntimeError(f"Backend stdout reader failed: {payload}") from payload
@@ -162,6 +164,10 @@ def backend(directory, url, kill_at=None, ambient=False, handoff="Compensated", 
             controller_error = "RuntimeError: Backend stdout reader did not finish after child reaping"
         if stderr_reader.is_alive() and controller_error is None:
             controller_error = "RuntimeError: Backend stderr reader did not finish after child reaping"
+        if reader_errors and controller_error is None:
+            controller_error = f"Backend stdout reader failed: {reader_errors[0]}"
+        if stderr_errors and controller_error is None:
+            controller_error = f"Backend stderr reader failed: {stderr_errors[0]}"
         for stream in (process.stdout, process.stderr):
             try:
                 stream.close()

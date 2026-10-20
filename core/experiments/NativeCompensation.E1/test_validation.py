@@ -3,10 +3,12 @@ import copy
 import hashlib
 import json
 import os
+import queue
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import threading
 import unittest
 from unittest.mock import patch
 
@@ -172,6 +174,58 @@ class ValidationTests(unittest.TestCase):
         self.assertTrue(result["reaped"])
         self.assertTrue(result["stdout_reader_completed"])
         self.assertTrue(result["stderr_reader_completed"])
+
+    def test_backend_waits_for_child_exit_after_stdout_eof(self):
+        child = (
+            "import json,os,sys,time; "
+            "print(json.dumps({'kind':'probe','value':{'complete':True}}), flush=True); "
+            "os.close(sys.stdout.fileno()); time.sleep(0.25)"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            result = run.backend(Path(directory), "unused", timeout_seconds=2,
+                                 command_override=[sys.executable, "-u", "-c", child])
+        self.assertEqual([{"kind": "probe", "value": {"complete": True}}], result["events"])
+        self.assertEqual(0, result["exit"])
+        self.assertTrue(result["reaped"])
+        self.assertFalse(result["cleanup_terminated"])
+
+    def test_stdout_reader_error_after_cut_barrier_fails_the_phase(self):
+        class BarrierThenReaderErrorQueue(queue.Queue):
+            def __init__(self):
+                super().__init__()
+                self.reader_error_queued = threading.Event()
+
+            def put(self, item, block=True, timeout=None):
+                super().put(item, block, timeout)
+                if item[0] == "reader_error":
+                    self.reader_error_queued.set()
+
+            def get(self, block=True, timeout=None):
+                item = super().get(block, timeout)
+                if item[0] == "line":
+                    event = json.loads(item[1])
+                    if event.get("kind") == "barrier" and event["value"].get("name") == "cut":
+                        if not self.reader_error_queued.wait(5):
+                            raise AssertionError("Child did not produce the synchronized stdout reader error")
+                return item
+
+        child = (
+            "import os,time; "
+            "os.write(1, b'{\"kind\":\"barrier\",\"value\":{\"name\":\"cut\"}}\\n'); "
+            "time.sleep(0.1); os.write(1, b'\\xff\\n'); "
+            "time.sleep(30)"
+        )
+        with tempfile.TemporaryDirectory() as directory, patch.object(run.queue, "Queue", BarrierThenReaderErrorQueue):
+            with self.assertRaises(run.BackendFailure) as raised:
+                run.backend(Path(directory), "unused", kill_at="cut", timeout_seconds=2,
+                            command_override=[sys.executable, "-u", "-c", child])
+        result = raised.exception.result
+        self.assertIn("UnicodeDecodeError", result["controller_error"])
+        self.assertIn("UnicodeDecodeError", result["stdout_reader_error"])
+        self.assertEqual([{"kind": "barrier", "value": {"name": "cut"}}], result["events"])
+        self.assertTrue(result["cleanup_terminated"])
+        self.assertTrue(result["reaped"])
+        self.assertTrue(result["stdout_reader_completed"])
 
     def test_failed_backend_phase_is_preserved_by_shared_helper(self):
         diagnostics = {"pid": 42, "events": [{"kind": "before-error"}], "stderr": "diagnostic",

@@ -138,3 +138,13 @@ byte-identical to the frozen measured fixture source. The r5 source head remains
 `17a27e78d6c6afaef1b9c1a302b52442d30894f1`. No C# build or native execution was
 repeated for these corrections; the original raw files, 24 evidence hashes and
 summary remain unchanged. E1 remains Partial and M1 Not Ready.
+
+Follow-up controller review now treats stdout EOF as a signal to wait for the child
+to exit within the remaining deadline, rather than terminating a child that closes
+stdout before normal exit. A deadline overrun still terminates and reaps only that
+child. Joined stdout-reader failures are promoted to controller errors even when a
+cut barrier ends event consumption first. Two synthetic Python-child regressions
+cover delayed normal exit after stdout EOF and a synchronized invalid-UTF-8 reader
+failure after a cut barrier. The full cheap validation suite now passes 20 tests,
+including the retained 24 evidence-hash check; no .NET build or native execution was
+run, and no E1 observation or readiness claim changed.
