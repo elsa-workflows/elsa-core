@@ -22,7 +22,7 @@
 // root Directory.Packages.props (elsa-workflows/elsa-core#8906). A deliberate divergence is declared
 // in Studio's Directory.Packages.props as <BpmnModelDivergesFromCoreVersion>, naming the Core version
 // being diverged from, so the next Core bump fails the check again instead of drifting silently.
-// Plain generation only warns about drift.
+// Plain generation only warns about drift. The comparison lives in scripts/bpmn-model-drift.js.
 'use strict';
 
 const fs = require('fs');
@@ -30,6 +30,14 @@ const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
 const { compile } = require('json-schema-to-typescript');
+const {
+    PACKAGE_ID,
+    VERSION_PROPERTY_NAME,
+    readProperty,
+    findCorePin,
+    describeCoreDrift,
+    driftSeverity,
+} = require('./bpmn-model-drift');
 
 const PACKAGES_PROPS_CANDIDATES = [
     path.resolve(__dirname, '..', '..', '..', '..', 'Directory.Packages.props'),
@@ -50,9 +58,6 @@ function resolvePackagesPropsPath() {
 
 const PACKAGES_PROPS_PATH = resolvePackagesPropsPath();
 const OUTPUT_PATH = path.join(__dirname, '..', 'src', 'bpmn', 'types.generated.ts');
-const PACKAGE_ID = 'Bpmn.Model';
-const VERSION_PROPERTY_NAME = 'BpmnModelVersion';
-const DIVERGENCE_PROPERTY_NAME = 'BpmnModelDivergesFromCoreVersion';
 
 // A raw `[k: string]: unknown` (or `any`) index signature is the old hand-written mirror's failure
 // mode: it means some object in the schema lost its shape (usually a missing `additionalProperties:
@@ -62,68 +67,14 @@ const DIVERGENCE_PROPERTY_NAME = 'BpmnModelDivergesFromCoreVersion';
 // against.
 const LOOSE_INDEX_SIGNATURE = /\[k: string\]:\s*(unknown|any)\b/;
 
-function readProperty(name) {
-    const xml = fs.readFileSync(PACKAGES_PROPS_PATH, 'utf8');
-    const match = xml.match(new RegExp(`<${name}>([^<]+)</${name}>`));
-    return match ? match[1].trim() : null;
-}
-
 function readPinnedVersion() {
-    const version = readProperty(VERSION_PROPERTY_NAME);
+    const version = readProperty(fs.readFileSync(PACKAGES_PROPS_PATH, 'utf8'), VERSION_PROPERTY_NAME);
 
     if (!version) {
         throw new Error(`Could not find a <${VERSION_PROPERTY_NAME}>...</${VERSION_PROPERTY_NAME}> property in ${PACKAGES_PROPS_PATH}.`);
     }
 
     return version;
-}
-
-// Core's pin is the nearest Directory.Packages.props above Studio's that names a literal Bpmn.Model
-// version (the root file in the monorepo layout).
-function readCorePin() {
-    const pattern = new RegExp(`<PackageVersion\\s+Include="${PACKAGE_ID.replace('.', '\\.')}"\\s+Version="([^"$]+)"`);
-    let directory = path.dirname(path.dirname(PACKAGES_PROPS_PATH));
-
-    while (true) {
-        const candidate = path.join(directory, 'Directory.Packages.props');
-        const match = fs.existsSync(candidate) && fs.readFileSync(candidate, 'utf8').match(pattern);
-
-        if (match) {
-            return { version: match[1], path: candidate };
-        }
-
-        const parent = path.dirname(directory);
-
-        if (parent === directory) {
-            return null;
-        }
-
-        directory = parent;
-    }
-}
-
-// Returns null when Studio's pin is consistent with Core's, otherwise the reason it is not.
-function describeCoreDrift(studioVersion) {
-    const core = readCorePin();
-    const divergence = readProperty(DIVERGENCE_PROPERTY_NAME);
-
-    if (!core) {
-        return `Could not find Core's ${PACKAGE_ID} pin in any Directory.Packages.props above ${PACKAGES_PROPS_PATH}.`;
-    }
-
-    if (studioVersion === core.version) {
-        return divergence
-            ? `<${DIVERGENCE_PROPERTY_NAME}> is set in ${PACKAGES_PROPS_PATH}, but Studio and Core both pin ${PACKAGE_ID} ${core.version}. Remove the stale override.`
-            : null;
-    }
-
-    if (divergence === core.version) {
-        return null;
-    }
-
-    return `Studio pins ${PACKAGE_ID} ${studioVersion} (${PACKAGES_PROPS_PATH}) but Core pins ${core.version} (${core.path}). `
-        + `Move Studio's <${VERSION_PROPERTY_NAME}> to ${core.version} and regenerate, or, if the divergence is deliberate, `
-        + `set <${DIVERGENCE_PROPERTY_NAME}>${core.version}</${DIVERGENCE_PROPERTY_NAME}> next to it with a comment explaining why.`;
 }
 
 function resolveNuGetGlobalPackagesFolder() {
@@ -206,15 +157,16 @@ async function main() {
     const checkMode = process.argv.includes('--check');
     const version = readPinnedVersion();
     const schemaPath = resolveSchemaPath(version);
-    const drift = describeCoreDrift(version);
+    const drift = describeCoreDrift(fs.readFileSync(PACKAGES_PROPS_PATH, 'utf8'), PACKAGES_PROPS_PATH, findCorePin(PACKAGES_PROPS_PATH));
+    const severity = driftSeverity(drift, checkMode);
 
-    if (drift && checkMode) {
+    if (severity === 'error') {
         console.error(`error: ${drift}`);
         process.exitCode = 1;
         return;
     }
 
-    if (drift) {
+    if (severity === 'warning') {
         console.warn(`warning: ${drift}`);
     }
 
