@@ -10,7 +10,14 @@ namespace Elsa.Studio.Workflows.Domain.Models.Bpmn;
 /// <param name="CapabilityRefusal">
 /// The missing capabilities and offending element ids, for <see cref="BpmnDocumentFailureReason.CapabilityUnsupported"/>.
 /// </param>
-public sealed record BpmnDocumentFailure(BpmnDocumentFailureReason Reason, string Message, BpmnCapabilityRefusal? CapabilityRefusal = null);
+public sealed record BpmnDocumentFailure(BpmnDocumentFailureReason Reason, string Message, BpmnCapabilityRefusal? CapabilityRefusal = null)
+{
+    /// <summary>
+    /// The sequence flows whose expression conditions the server does not evaluate, for
+    /// <see cref="BpmnDocumentFailureReason.ConditionUnsupported"/>.
+    /// </summary>
+    public BpmnConditionRefusal? ConditionRefusal { get; init; }
+}
 
 /// <summary>Why a document <c>GET</c> or <c>PUT</c> did not succeed.</summary>
 public enum BpmnDocumentFailureReason
@@ -55,5 +62,12 @@ public enum BpmnDocumentFailureReason
     MissingETag,
 
     /// <summary>Any other failure; <see cref="BpmnDocumentFailure.Message"/> carries the server's own message.</summary>
-    Unknown
+    Unknown,
+
+    /// <summary>
+    /// The document's sequence flows carry expression conditions the server does not evaluate yet
+    /// (<see cref="BpmnErrorCodes.ImportConditionUnsupported"/>); <see cref="BpmnDocumentFailure.ConditionRefusal"/>
+    /// names them. Declared last so the values of the members above stay as they were.
+    /// </summary>
+    ConditionUnsupported
 }
