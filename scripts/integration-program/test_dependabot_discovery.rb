@@ -210,6 +210,10 @@ class DependabotDiscoveryTests < Minitest::Test
   end
 
   def test_static_project_reference_and_build_import_closure_stays_available
+    REACT_STUDIO_SPIKE_PROJECTS.each do |project|
+      assert_empty project_xml(project).get_elements("//ProjectReference"),
+        "#{project}: the independent spike must compose packed packages only"
+    end
     selected = solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")) +
       [LEGACY_CORE_PROJECT] + REACT_STUDIO_SPIKE_PROJECTS
     closure = selected.flat_map { |project| static_source_closure(project) }.uniq
