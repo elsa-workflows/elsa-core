@@ -1,5 +1,8 @@
 <Project>
   <Import Project="../../../Directory.Build.targets" />
+  <ItemGroup Condition="'$(IsTestProject)' == 'true'">
+    <PackageReference Include="GitHubActionsTestLogger" PrivateAssets="All" />
+  </ItemGroup>
   <!-- Razor's default JSON content discovery includes workspace manifests.
        Publish only the prebuilt feature assets, never Client/package.json. -->
   <Target Name="ExcludeReactClientBuildInputs" BeforeTargets="AssignTargetPaths">
