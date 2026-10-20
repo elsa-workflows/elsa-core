@@ -20,14 +20,28 @@ Option C was chosen over confirming at scope end (closes the recovery window too
 
 M1 includes minimal authored exact-scope Confirm and bounded publication/pre-effect validation. Already-armed invalid/altered instances remain blocked and have no supported M1 operator release path; a separately authorized repair or later accepted control is required. Wider targeting/cascade remains M3. Runtime/persistence and Studio reviewers own technical verification under E1/E3; O1 policy acceptance does not prove those mechanisms or authorize their implementation. Recovery of already-terminal legacy instances remains outside M1.
 
+## Accepted owner decision O2 — compensation-aware cancellation
+
+**Status: Accepted by Sipke on 20 October 2026.** [Program decision record](https://github.com/elsa-workflows/elsa-core/issues/8884#issuecomment-6301313484). Owner instruction: “Adopt option C with those rules for O2. Record the decision in the design packet and program, keep production implementation paused, and walk me through O3 next.”
+
+1. Persist cancellation intent and stop scheduling new forward operations. Accepting the request is distinct from completing cancellation; do not erase armed/in-flight work or recovery progress.
+2. Settle in-flight external effects using the supported participant contract. Provable no-effect, known success and uncertain outcomes remain distinct; a timeout is not no-effect proof. Unknown outcomes wait for safe reconciliation before ordered recovery proceeds.
+3. Recover remaining eligible obligations in the defined order, with Cancelled reported only after required obligations settle. Cancellation never implicitly confirms; already-confirmed effects remain in place.
+4. Compensation failures preserve the cancellation reason and separate recovery errors. Apply bounded retry policy, then visible intervention. No elapsed deadline or exhausted retry budget silently abandons obligations or manufactures Cancelled.
+5. Duplicate cancellation requests do not start another unwind. Durable cancellation intent/progress and stable operation/undo keys survive interruption and restart.
+6. Host shutdown only interrupts/resumes committed work; it does not request business cancellation. Preserve existing behavior outside opted-in compensation workflows.
+7. Studio clearly presents Cancel and compensate with action-specific authority. Ordinary cancel permission alone cannot silently grant compensation authority. Exact routes/permission mapping remain E2 work, without weakening this rule.
+8. Privileged force-stop/abandon is a separate later policy; no force-success or automatic deadline escape is accepted.
+
+Option C was chosen over rejecting cancellation until explicit settlement, and stopping forward work while leaving settlement to a separate decision. The trade-off is that cancellation may remain pending for reconciliation or intervention. Cancellation composition remains M3 and operator UI M4; acceptance does not pull them into M1 or grant implementation readiness. E1–E3 must prove cancellation ordering, preservation of recovery work, restart, disclosure and authority before support. The first candidate cannot advertise cancel-triggered recovery before those gates pass.
+
 ## Remaining owner decisions
 
 | ID | Concrete recommendation and trade-off | Accountable owner / revisit |
 |---|---|---|
-| O2 | A compensation-aware business cancel stops forward work and reaches Cancelled only after required recovery settles; unknown/in-flight work waits. Host shutdown only interrupts/resumes. This preserves obligations but may delay a requested cancel; a privileged force-stop/abandon policy is a later separate choice. | Sipke, before any cancellation-enabled production task. Until accepted/proved, first candidate cannot advertise cancel-triggered recovery. |
 | O3 | Successful recovery emits Compensated; an explicit option can propagate the original fault afterward while retaining the recovery evidence. Paired forward/handler authoring is the recommended interaction. This makes recovery completion distinct from normal forward success, with a deliberate failure-propagation choice. | Sipke, before M1 readiness and public activity/outcome contracts. Elsa 4 policy acceptance is not inherited. |
 
-O2/O3 remain recommendations for owner acceptance. O1 alone is accepted; the physical architecture ADR remains Proposed and E1–E3 remain unproved. Production implementation, spikes, #8891–#8895 and setup #8885/PR #8897 remain paused. No commercial, release or deployment policy is changed.
+O3 remains a recommendation for owner acceptance. O1 and O2 are accepted product policy; the physical architecture ADR remains Proposed and E1–E3 remain unproved. Production implementation, spikes, #8891–#8895 and setup #8885/PR #8897 remain paused. No commercial, release or deployment policy is changed.
 
 ## Technical evidence gates (bounded proposals, no new ready tasks)
 
@@ -43,10 +57,10 @@ No unresolved gate is delegated as product intent for a production worker to gue
 
 | Stage | Minimum integrated outcome | Support boundary / acceptance |
 |---|---|---|
-| M0 (#8896) | Reviewed Elsa 3 design with proposed policies, source adaptation, paired Studio scenarios and gates | This packet; O1 accepted; O2/O3 and E1–E3 stay explicit. No source/schema/API implementation. |
+| M0 (#8896) | Reviewed Elsa 3 design with proposed policies, source adaptation, paired Studio scenarios and gates | This packet; O1/O2 accepted; O3 and E1–E3 stay explicit. No source/schema/API implementation. |
 | M1 (#8891) | Small visually authored serial reservation/rejection/recovery, minimal authored confirmation for the no-fault path, immutable capture/pins and accurate safe inspection | One proven host/provider/participant profile; V1, V2a–e, V3, V4 and V5a; baseline V7 inspection/accessibility controls and V8a preservation/destructive-mutation guards. O1 is accepted; O3 acceptance and a no-fault confirmation walkthrough remain required. Unknown/failed recovery blocks visibly even before full reconciliation/operator UX. No arbitrary activities, parallel/loop/nested/background siblings or broad provider claim. |
 | M2 (#8892) | Explicit uncertainty, safe keyed reconciliation/retry and intervention | Same keys across automatic/operator retries; participant closed-key late-result rule. Durable wait and resumption, original/recovery causes distinct. |
-| M3 (#8893) | Wider explicit compensation/confirmation targeting and late completed-scope compensation, nested/loop identity and cancellation composition | Retention model is chosen now; execute wider behavior under accepted O1, after O2/O3 acceptance and V6. Unsupported combinations rejected. |
+| M3 (#8893) | Wider explicit compensation/confirmation targeting and late completed-scope compensation, nested/loop identity and cancellation composition | Retention model is chosen now; execute wider behavior under accepted O1/O2, after O3 acceptance and V6. Unsupported combinations rejected. |
 | M4 (#8894) | Full accessible operator control and hardened recovery history | Server action/tenant/revision/dedup/audit/disclosure proof; no force-success toggle. Baseline protection already applies at M1. |
 | M5 (#8895) | Qualified supported matrix, upgrade/retention, samples/runbook and release readiness | V1–V8 as applicable, exact-candidate review/checks and independent participant evidence. Release/deploy requires separate authority. |
 

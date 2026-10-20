@@ -44,6 +44,6 @@ The program lead integrates the packet. Runtime/persistence reviewers own the co
 
 ## Acceptance boundary
 
-This packet can be complete as a reviewed design while M1 remains Not Ready: #8896 explicitly permits a bounded evidence-spike proposal when existing source cannot establish a consequential guarantee. E1–E3 are those evidence gates. No production task or spike execution is authorized here. O1 explicit confirmation is accepted by the owner; O2/O3 still require acceptance before affected work. E1–E3 remain unproved, and O1 acceptance alone grants no implementation readiness or production authorization.
+This packet can be complete as a reviewed design while M1 remains Not Ready: #8896 explicitly permits a bounded evidence-spike proposal when existing source cannot establish a consequential guarantee. E1–E3 are those evidence gates. No production task or spike execution is authorized here. O1 explicit confirmation and O2 compensation-aware cancellation are accepted by the owner; O3 still requires acceptance before affected work. E1–E3 remain unproved, and policy acceptance alone grants no implementation readiness or production authorization.
 
 Existing setup records are reused, not copied into a second product PRD. This additive technical packet is necessary because current main has no native compensation contract. No product code is made obsolete or removed. Feature plans remain working documents during delivery; after qualification, move lasting contracts to product documentation/ADRs and retire redundant plan text under the owning program.

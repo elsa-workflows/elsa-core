@@ -16,8 +16,10 @@ The canonical root journal is authoritative for obligations and status. Enrich i
 | RetryRecovery | M2 supported participant/runtime retry; M4 operator UI | Failed/intervention attempt with safe participant retry contract; append attempt, reuse UndoKey and capture; preserve original cause. |
 | ReconcileOperation | M2 supported reconciliation; M4 operator UI | Obtain/validate participant evidence for an uncertain forward or undo outcome; may schedule safe recovery only after the accepted transition. |
 | ConfirmScope | M3 wider command; M4 operator UI | End eligibility under O1; refuse in-flight, failed, uncertain or recovering obligations; preserve audit. |
-| CompensateAndCancel | O2/M3 backend; M4 operator UI | Proposed O2 path; do not conflate host drain with business cancellation. |
+| CompensateAndCancel | Accepted O2 policy; M3 backend, M4 operator UI | Persist intent; stop forward scheduling; settle in-flight/uncertain work and ordered eligible recovery before Cancelled. Never conflate host drain with business cancellation or implicitly confirm. |
 | ManualResolution / Abandon | M4 policy only | M4 policy only; no force-success toggle. A future permitted action must distinguish claimed resolution, participant evidence and unresolved abandonment. |
+
+Accepted O2 requires explicit Cancel and compensate semantics with action-specific authority; existing cancel permission alone cannot authorize compensation. Duplicate requests join the current cancellation/recovery operation rather than creating a second unwind. The exact route/permission mapping remains E2, with no implementation authorization.
 
 M1 supplies only the fault-triggered path and minimal authored Confirm activity following accepted O1, with O3 and technical gates still open. It does not expose these operator commands. An authored Confirm can target only its owned instance/scope through the pinned published workflow; it records workflow actor kind, definition/instance identity and trusted initiator provenance, not an invented operator grant. Operator action permissions cannot be bypassed through an arbitrary cross-instance activity target. All later entrypoints follow this one transition boundary.
 
