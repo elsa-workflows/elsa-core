@@ -63,3 +63,11 @@ All three documents are byte-for-byte copies of the corresponding files at
 Studio commit `f0eeb3c7428443b09512049fe890635fa4f7b427`. The first two
 import dispositions and verification are recorded in the
 [integration-program asset note](../../docs/integration-program/consolidation/studio-document-assets.md).
+
+The React Studio preview is being prepared for 3.11 under
+[#8859](https://github.com/elsa-workflows/elsa-core/issues/8859). Its
+[delivery plan](specs/react-studio-preview/plan.md) tracks the import and package,
+hosting, feature-parity and release gates. The independent
+[modularity spike](../samples/ReactStudio.Modularity/README.md) exercises loading
+React UI modules from packed NuGet packages; it is an architecture proof, not the
+integrated preview. The Blazor Studio remains the default.

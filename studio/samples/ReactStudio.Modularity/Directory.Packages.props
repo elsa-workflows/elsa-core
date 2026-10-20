@@ -1,0 +1,8 @@
+<Project>
+  <Import Project="../../../Directory.Packages.props" />
+  <ItemGroup>
+    <PackageVersion Include="Elsa.ReactStudio.Spike" Version="0.0.1-spike" />
+    <PackageVersion Include="Elsa.ReactStudio.Spike.Labels" Version="0.0.1-spike" />
+    <PackageVersion Include="Example.ReactStudio.Spike.Weather" Version="0.0.1-spike" />
+  </ItemGroup>
+</Project>

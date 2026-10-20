@@ -1,0 +1,6 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Elsa.ReactStudio.Spike" />
+    <EmbeddedResource Include="../client/dist/weather/*" LogicalName="module/%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>
