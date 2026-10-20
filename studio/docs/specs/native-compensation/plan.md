@@ -26,7 +26,7 @@ Each row carries stable opaque StepId, separate editable label and stable Mappin
 
 Row actions: rename, named Move up/Move down controls for reorder, open forward activity, open/edit/remove handler, open capture mapping and remove step after confirmation. Breadcrumbs identify scope, step label and role. Do not use ordinary flow lines to imply that a handler executes on the successful forward path.
 
-The M1 no-fault flow also has a minimal authored Confirm activity after scope Done, with an authored scope reference resolved to the exact retained occurrence. It closes eligible obligations before root completion under proposed O1. The bounded M1 validator rejects a reachable successful exit that omits it, at publication and again before effects. An already-armed invalid/altered instance remains visibly blocked with no supported M1 operator release path; it needs a separately authorized repair or later control. It cannot silently report workflow success. Wider targeting/cascade and operator confirmation remain later milestones.
+The M1 no-fault flow also has a minimal authored Confirm activity after scope Done, with an authored scope reference resolved to the exact retained occurrence. It closes eligible obligations before root completion under accepted O1 policy; runtime/Studio realization remains unproved. The bounded M1 validator rejects a reachable successful exit that omits it, at publication and again before effects. An already-armed invalid/altered instance remains visibly blocked with no supported M1 operator release path; it needs a separately authorized repair or later control. It cannot silently report workflow success. Wider targeting/cascade and operator confirmation remain later milestones.
 
 ## Captured-data mapping
 

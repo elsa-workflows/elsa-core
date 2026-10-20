@@ -1,6 +1,6 @@
 # Qualification plan and design validation
 
-This is a plan, not a test report. No implementation, .NET/browser run or restart proof is delivered by #8896. Candidate provider/host support remains unproved. The design can pass source/scenario/document review while production readiness remains blocked by E1–E3 and owner decisions O1–O3.
+This is a plan, not a test report. No implementation, .NET/browser run or restart proof is delivered by #8896. Candidate provider/host support remains unproved. The design can pass source/scenario/document review while production readiness remains blocked by E1–E3 and remaining owner decisions O2/O3. O1 policy is accepted, with its runtime behavior still to be proved.
 
 ## Common real-journey fixture
 
@@ -35,7 +35,7 @@ For provider or mode support, repeat the material crash/security matrix for the 
 ## M0 design review walkthroughs
 
 - Sequential: arm inventory, acknowledge/capture it, arm delivery, acknowledge/capture it, definite rejection, reserve delivery undo then inventory undo; each P0–P6 boundary has an explicit stored/participant state.
-- No fault (M1, proposed O1/O3): scope Done retains obligations; minimal authored Confirm resolves the exact serial scope occurrence, records confirmation and permits root completion. Without Confirm, publication and pre-effect execution reject the invalid shape. For an already-armed altered/imported invalid instance, preserve a blocked wait and explain the lack of an M1 operator release path. Authored confirmation audits the workflow actor and trusted initiator provenance. Test all paths before M1 support.
+- No fault (M1, accepted O1; O3 still proposed): scope Done retains obligations; minimal authored Confirm resolves the exact serial scope occurrence, records confirmation and permits root completion. Without Confirm, publication and pre-effect execution reject the invalid shape. For an already-armed altered/imported invalid instance, preserve a blocked wait and explain the lack of an M1 operator release path. Authored confirmation audits the workflow actor and trusted initiator provenance. Test all paths before M1 support.
 - Unknown: lose delivery response; do not omit delivery because no Completed event exists. Same-key lookup/closed-key participant rule settles it, otherwise stop without reporting Compensated.
 - Repeated/nested: two iterations of the same authored StepId retain distinct OperationKeys/captures. A completed inner scope's journal stays addressable from the parent even after its context is pruned; confirm/recover affects exact ownership.
 - Safety: missing handler pin cannot use ordinary Published/Latest fallback; invalid profile cannot reach effect code; an operator request without correct tenant/permission/revision/reason cannot reserve work.
