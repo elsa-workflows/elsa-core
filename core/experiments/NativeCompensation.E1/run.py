@@ -6,18 +6,27 @@ import json
 import os
 from pathlib import Path
 import queue
+import shutil
 import sqlite3
 import subprocess
 import sys
 import threading
 import time
 
+from validation import MATRIX_CASES, validate_matrix
+
 HERE = Path(__file__).resolve().parent
 DLL = HERE / "bin/Debug/net10.0/NativeCompensation.E1.dll"
-DOTNET = "/usr/local/share/dotnet/dotnet"  # execute an already-built DLL; no second build/testhost
+def dotnet_host():
+    requested = os.environ.get("E1_DOTNET", "dotnet")
+    resolved = shutil.which(requested)
+    if not resolved:
+        raise RuntimeError(f"Cannot resolve .NET host {requested!r}; set E1_DOTNET to the host used to build the fixture")
+    return resolved
+
 parser = argparse.ArgumentParser()
 parser.add_argument("output", type=Path)
-parser.add_argument("--case", default="all")
+parser.add_argument("--case", choices=("all", *MATRIX_CASES), default="all")
 
 
 def ledger(directory):
@@ -45,7 +54,7 @@ def snapshot(directory):
 
 
 def backend(directory, url, kill_at=None, ambient=False, handoff="Compensated", mode="run"):
-    command = [DOTNET, str(DLL), mode, str(directory), url]
+    command = [dotnet_host(), str(DLL), mode, str(directory), url]
     if mode == "run":
         command += ["--barriers"]
     if ambient:
@@ -115,89 +124,29 @@ def run_case(name, kill_at=None, ambient=False, no_dedupe=False, fail_undo=False
         final_events = result.get("restart", result["first"])["events"]
         final = next((event["value"] for event in final_events if event["kind"] == "result"), None)
         result["observed_result"] = final
-        if not ambient and not fail_undo and kill_at != "fault-owned-before-native-recovery":
-            assert final is not None, final_events
-            assert final["journal"]["Phase"] == "Compensated", final
-            operations = result["final"]["participant"]["operations"]
-            assert len(operations) == 2, operations
-            assert all(row["closed"] == 1 for row in operations), operations
-            assert all(row["undo_effects"] == 1 for row in operations), operations
-            assert operations[0]["reserve_effects"] == 1, operations
-            assert operations[1]["reserve_effects"] > 1 if no_dedupe else operations[1]["reserve_effects"] == 1, operations
-            undo_slots = [next(row["slot"] for row in operations if row["operation_key"] == call["operation_key"])
-                          for call in result["final"]["participant"]["calls"] if call["direction"] == "undo" and call["disposition"] == "effect"]
-            assert undo_slots == [1, 0], undo_slots
-            assert [entry["CompletionOrdinal"] for entry in final["journal"]["Entries"]] == [1, 2], final
-            assert final["incidents"] == (1 if handoff == "Fault" else 0), final
-            if handoff != "Fault":
-                assert all(fault["FaultCount"] == 0 for fault in final["faults"]), final
-                assert final["journal"]["OutwardCount"] == 1, final
-            else:
-                assert final["journal"]["OutwardCount"] == 0, final
-            if kill_at:
-                interrupted_journal = next(event["value"]["journal"] for event in reversed(result["first"]["events"]) if event["kind"] == "barrier")
-                assert interrupted_journal["Seed"] == final["journal"]["Seed"], final
-                for old_entry in interrupted_journal["Entries"]:
-                    restored = next(entry for entry in final["journal"]["Entries"] if entry["Slot"] == old_entry["Slot"])
-                    for field in ("OccurrenceId", "OperationKey", "UndoKey"):
-                        assert old_entry[field] == restored[field], (field, old_entry, restored)
-                stored = result["after_first"]["elsa"].get("rows", [])
-                if stored:
-                    committed_journal = stored[0]["snapshot"]["properties"].get("elsa.experimental.native-compensation.e1", {})
-                    for old_entry in committed_journal.get("Entries", []):
-                        restored = next(entry for entry in final["journal"]["Entries"] if entry["Slot"] == old_entry["Slot"])
-                        for field in ("ProtectedRequest", "ForwardContextId", "UndoContextId"):
-                            if old_entry.get(field):
-                                assert old_entry[field] == restored[field], (field, old_entry, restored)
-        if fail_undo:
-            assert final is not None and final["status"] == "Running" and final["subStatus"] == "Suspended", final
-            assert final["journal"]["Phase"] == "AwaitingIntervention", final
-            assert final["journal"]["ProtectedOriginalCause"] and final["journal"]["ProtectedRecoveryCause"], final
-            assert final["journal"]["OutwardCount"] == 0, final
-        if ambient:
-            assert result["first"]["exit"] == 2, result["first"]
-            assert any("AmbientTransactionWarning" in event["value"].get("Message", "") for event in final_events if event["kind"] == "error"), final_events
-            assert result["final"]["participant"]["calls"] == [], result["final"]["participant"]
-            result["classification"] = "native-provider-gap-observed"
-        elif kill_at == "fault-owned-before-native-recovery":
-            assert final is not None and final["incidents"] == 1 and final["faults"][0]["FaultCount"] == 1, final
-            assert final["journal"]["Phase"] == "Compensated" and final["journal"]["FaultOwnershipReserved"], final
-            result["classification"] = "native-fault-handoff-gap-observed"
-        elif no_dedupe:
-            result["classification"] = "participant-duplicate-risk-observed"
-        else:
-            result["classification"] = "narrow-prototype-checks-passed"
+        result["classification"] = validate_matrix(result)
     except Exception as error:
-        result["assertion_failure"] = str(error)
+        result["assertion_failure"] = str(error) or type(error).__name__
     finally:
         participant.terminate()
         participant.wait(timeout=10)
         result["participant_stderr"] = participant.stderr.read()
         (directory / "evidence.json").write_text(json.dumps(result, indent=2))
     print(json.dumps({"case": name, "observed": result.get("observed_result"), "assertion_failure": result.get("assertion_failure"), "evidence": str(directory / "evidence.json")}))
+    return "assertion_failure" not in result
 
 
-cases = {
-    "baseline": {},
-    "ambient": {"ambient": True},
-    "scope-activated": {"kill_at": "scope-activated"},
-    "unacknowledged-scope": {"kill_at": "durable-unacknowledged-scope"},
-    "before-intent": {"kill_at": "before-intent-reserve-0"},
-    "after-intent": {"kill_at": "after-intent-reserve-0"},
-    "unacknowledged-intent": {"kill_at": "durable-unacknowledged-reserve-0"},
-    "lost-forward-result": {"kill_at": "participant-committed-reserve-1"},
-    "before-undo": {"kill_at": "after-intent-undo-1"},
-    "lost-undo-result": {"kill_at": "participant-committed-undo-1"},
-    "between-handlers": {"kill_at": "between-handlers"},
-    "settled": {"kill_at": "settled-before-handoff"},
-    "settled-fault": {"kill_at": "settled-before-handoff", "handoff": "Fault", "restart_handoff": "Compensated"},
-    "fault-owned": {"kill_at": "fault-owned-before-native-recovery"},
-    "dedupe-disabled": {"kill_at": "participant-committed-reserve-1", "no_dedupe": True},
-    "undo-failure": {"fail_undo": True},
-}
-if __name__ == "__main__":
-    args = parser.parse_args()
+cases = MATRIX_CASES
+
+def main(argv=None):
+    global args
+    args = parser.parse_args(argv)
     args.output.mkdir(parents=True, exist_ok=True)
+    failed = False
     for case, parameters in cases.items():
         if args.case in ("all", case):
-            run_case(case, **parameters)
+            failed = not run_case(case, **parameters) or failed
+    return 1 if failed else 0
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -10,7 +10,7 @@ diff --git a/core/experiments/NativeCompensation.E1/Activities.cs b/core/experim
          await context.GetRequiredService<Barriers>().ReachAsync("scope-activated", context.WorkflowExecutionContext);
 +        await ScheduleAsync(context, Activities.First());
      }
- 
+
      private async ValueTask OnCompletedAsync(ActivityCompletedContext completed)
 diff --git a/core/experiments/NativeCompensation.E1/CommitObserver.cs b/core/experiments/NativeCompensation.E1/CommitObserver.cs
 --- a/core/experiments/NativeCompensation.E1/CommitObserver.cs

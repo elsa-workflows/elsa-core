@@ -80,3 +80,17 @@ Use fresh output directories on reproduction. No database, key-ring, binary buil
 Build attempts are retained in `/tmp/elsa-e1-build*.log`: build 1 failed on harness-only `InputAttribute.IsSensitive`; build 2 failed on missing AddElsa/registry convenience references; build 3 failed on missing EF extension/registry namespaces; build 4 succeeded with zero warnings/errors; build 5 succeeded after prototype activation correction; build 6 succeeded after making the resave diagnostic null-safe, with 22 existing transitive documentation/package-manifest warnings and no errors. Global build-slot waits were respected; unrelated processes were not terminated or bypassed.
 
 Native attempts were retained rather than recast as success: r1 participant rejected HttpClient chunked JSON because the harness assumed Content-Length (zero effects); r2 controller selector/TextIO buffering stalled and its own backend was stopped (no proof counted); r3 baseline passed after a queue-based reader; r4 exposed the prototype's seed-before-first-work gap; r5 corrected that prototype ordering and ran the final matrix. Control r1 proved outer overwrite but its diagnostic then dereferenced the null state; control r2 makes that output null-safe and asserts the exact observed gaps. Python syntax checks and whitespace checks accompany the process fixtures; no broad solution test or browser proof is claimed.
+
+## Review follow-up: assertions rechecked against retained evidence
+
+After frozen candidate `d163c7b285a6f08001a6a9db1dc23a601ff11719`, this harness-only review batch centralizes live-controller and retained-evidence assertions in `validation.py`. It strengthens native status/substatus, exit codes, actual SIGKILL/fresh PID, pre-intent participant absence, persisted cut state, fault-owned undo/closure counts, intervention bookmarks and missing-work/callback-reference outcomes. The exporter now checks the exact expected case-name sets, duplicates and directory/case agreement. Controllers reject unknown case names and exit nonzero on recorded failures; .NET host selection supports `E1_DOTNET` or `PATH`.
+
+The strengthened assertions were rechecked against the original 16 r5 and eight control-r2 raw records. All 24 hashes still match the committed evidence summary. No C# behavior changed, no .NET build or native execution was repeated, and the original execution source heads above remain authoritative. The regenerated summary is byte-identical to the frozen summary; these are new assertions over retained observations, not fresh runtime results. The historical r4 native patch's blank-line whitespace was corrected and its application check was repeated against the recorded f3d source.
+
+Thirteen cheap Python tests cover retained-evidence validation/hashes, mutations of native status/exit/kill/PID/cut-state, missing-work and callback outcomes, missing undo/bookmark evidence, case-set/name/duplicate errors, empty recorded failures, controller failure exit status, host override and protected-summary sanitization:
+
+```sh
+python3 -m unittest discover -s core/experiments/NativeCompensation.E1 -p test_validation.py -v
+```
+
+The tests default to the retained `/tmp` directories above; set `E1_MATRIX_EVIDENCE` and `E1_CONTROL_EVIDENCE` to relocated evidence directories when needed. They launch no .NET or participant process. E1 remains Partial and all previously recorded gates remain open.

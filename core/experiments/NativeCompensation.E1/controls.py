@@ -10,19 +10,18 @@ import subprocess
 import sys
 
 import run as native
+from validation import CONTROL_CASES, validate_control
 
 parser = argparse.ArgumentParser()
 parser.add_argument("output", type=Path)
-options = parser.parse_args()
-options.output.mkdir(parents=True, exist_ok=True)
 
 
 def digest(value):
     return hashlib.sha256(value.encode()).hexdigest()
 
 
-for name in ("stale-writer", "outer-corrupt", "outer-compression", "inner-schema", "missing-work", "callback-owner", "callback-child", "definition-pin"):
-    directory = options.output / name
+def run_control(name, output):
+    directory = output / name
     directory.mkdir()  # Never overwrite prior evidence.
     participant = subprocess.Popen([sys.executable, str(native.HERE / "participant.py"), str(directory / "participant.db")],
                                    stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -71,38 +70,9 @@ for name in ("stale-writer", "outer-corrupt", "outer-compression", "inner-schema
                 result["afterSha256"] = digest(raw_after)
                 result["originalBytesRetainedInRow"] = raw_after == altered
         result["after"] = {"elsa": native.snapshot(directory), "participant": native.ledger(directory)}
-        events = result["control"]["events"]
-        after_rows = result["after"]["elsa"].get("rows", [])
-        after_state = after_rows[0].get("snapshot") if after_rows else None
-        if name == "stale-writer":
-            stale = next(event["value"] for event in events if event["kind"] == "stale-writer")
-            assert stale["staleAccepted"] and stale["canonical"]["Revision"] < stale["newerRevision"], stale
-            assert stale["canonical"]["OwnerToken"] == "synthetic-owner-a" and stale["newerOwner"] == "synthetic-owner-b", stale
-            result["classification"] = "native-write-fence-absent"
-        elif name in ("outer-corrupt", "outer-compression"):
-            inspection = next(event["value"] for event in result["inspection"]["events"] if event["kind"] == "inspect")
-            assert inspection["found"] and inspection["state"] is None, inspection
-            assert after_state is None and not result["originalBytesRetainedInRow"], result
-            assert any(event["kind"] == "resaved" for event in events), events
-            result["classification"] = "native-outer-fallback-destroys-opaque-state-on-resave"
-        elif name == "inner-schema":
-            assert after_state["properties"]["elsa.experimental.native-compensation.e1"]["Schema"] == 999, after_state
-            assert after_state["subStatus"] == "Faulted" and not result["originalBytesRetainedInRow"], after_state
-            assert result["after"]["participant"]["calls"] == [], result["after"]["participant"]
-            result["classification"] = "inner-codec-denies-effect-but-native-terminalizes-and-rewrites"
-        elif name == "missing-work":
-            assert not result["originalBytesRetainedInRow"], result
-            result["classification"] = "native-required-work-reference-omitted"
-        elif name in ("callback-owner", "callback-child"):
-            assert any(row["slot"] == 1 and row["reserve_effects"] == 1 for row in result["after"]["participant"]["operations"]), result["after"]["participant"]
-            assert not result["originalBytesRetainedInRow"], result
-            result["classification"] = "native-callback-reference-omitted-before-new-effect"
-        elif name == "definition-pin":
-            assert after_state["definitionVersionId"] == "e1-definition-v2", after_state
-            assert after_state["properties"]["elsa.experimental.native-compensation.e1"]["DefinitionVersion"] == "e1-definition-v1", after_state
-            result["classification"] = "caller-supplied-mismatched-graph-accepted"
+        result["classification"] = validate_control(result)
     except Exception as error:
-        result["control_error"] = str(error)
+        result["control_error"] = str(error) or type(error).__name__
     finally:
         participant.terminate()
         participant.wait(timeout=10)
@@ -110,3 +80,16 @@ for name in ("stale-writer", "outer-corrupt", "outer-compression", "inner-schema
         (directory / "evidence.json").write_text(json.dumps(result, indent=2))
     print(json.dumps({"case": name, "events": result.get("control", {}).get("events", [])[-1:],
                       "originalBytesRetainedInRow": result.get("originalBytesRetainedInRow"), "control_error": result.get("control_error")}), flush=True)
+
+    return "control_error" not in result
+
+def main(argv=None):
+    options = parser.parse_args(argv)
+    options.output.mkdir(parents=True, exist_ok=True)
+    failed = False
+    for name in sorted(CONTROL_CASES):
+        failed = not run_control(name, options.output) or failed
+    return 1 if failed else 0
+
+if __name__ == "__main__":
+    sys.exit(main())
