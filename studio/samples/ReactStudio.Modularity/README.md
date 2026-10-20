@@ -47,7 +47,7 @@ the same SDK source and explicit deduplication.
 
 Verified on 2026-10-20 with .NET SDK 10.0.402, Node 24.19.0, pnpm 10.33.0 and
 Chromium 154: type checking, all four Vite bundles, three NuGet packs, the consuming
-host build and all three Playwright tests passed. `pnpm audit` reported zero known
+host build and all four Playwright tests passed. `pnpm audit` reported zero known
 vulnerabilities. This is current-instance evidence, not hosted CI or release proof.
 
 ![Third-party Weather sharing the Labels counter and theme, with incompatible modules rejected](../../docs/specs/react-studio-preview/modularity-spike.png)

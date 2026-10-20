@@ -46,6 +46,8 @@ no module project references. Its Playwright tests check:
 - They share React hooks, query-client state and theme context across route navigation.
 - Disabled CShells features contribute no manifest entries or production asset responses.
 - Host/SDK incompatibility is visible, and compatible module routes remain usable.
+- An enabled module that throws while rendering shows its own diagnostic; navigation
+  and other modules remain usable.
 - Module asset URLs include the version; deep links, History API navigation and UI-hint slots work.
 - A nonce CSP permits the import map; Vite assets and WebSocket updates pass through
   the ASP.NET host, and a hot update preserves query state.
