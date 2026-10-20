@@ -48,6 +48,9 @@ and ActivityEditors implementations contributed by their modules. These controls
 are registered through component slots so other modules share their context
 without linking their implementation source.
 
+`UiHintContext.inputs` carries complete workflow input definitions so contributed
+pickers can preserve their type, display and storage metadata on selection.
+
 From `studio/react`, `pnpm docs:api` generates the reference under `docs/api/`.
 `pnpm test:packages` verifies that a separate consumer can install packed packages
 and compile a module using only their exported declarations.

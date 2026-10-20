@@ -18,7 +18,8 @@ export function registerStudioModule(api: StudioApi, module: StudioModule): void
   extensions?.instanceViewerActions?.forEach(item => api.contribute("instanceViewerActions", item));
   extensions?.headerItems?.forEach(item => api.contribute("headerItems", item));
   extensions?.activityTabs?.forEach(item => api.contribute("activityPropertiesTabs", item));
-  Object.entries(extensions?.uiHints ?? {}).forEach(([hint, component]) =>
+  if (extensions?.uiHintContributions) extensions.uiHintContributions.forEach(item => api.contribute("uiHints", item));
+  else Object.entries(extensions?.uiHints ?? {}).forEach(([hint, component]) =>
     api.contribute("uiHints", { id: hint, hint, component }));
   if (module.Provider && !extensions?.providers) api.contribute("providers", { id: "provider", component: module.Provider });
 }

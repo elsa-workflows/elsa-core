@@ -111,6 +111,9 @@ Then:
 
 ### Extension points
 
+The [specialized UI-hint editors](ui-hint-editors.md) document the built-in date/time,
+dynamic outcomes, HTTP status codes and workflow-input controls and their server encodings.
+
 A module can contribute to other parts of the studio without either side importing the other:
 
 | Extension | Where it appears |

@@ -19,9 +19,13 @@ import { SwitchCasesEditor } from "./editors/switch-cases-editor";
 import { TypePickerEditor } from "./editors/type-picker-editor";
 import { VariablePickerEditor } from "./editors/variable-picker-editor";
 import { WorkflowDefinitionPickerEditor } from "./editors/workflow-definition-picker-editor";
+import { DateTimePickerEditor } from "./editors/datetime-picker-editor";
+import { DynamicOutcomesEditor } from "./editors/dynamic-outcomes-editor";
+import { HttpStatusCodesEditor } from "./editors/http-status-codes-editor";
+import { InputPickerEditor } from "./editors/input-picker-editor";
 
 /** Built-in editors keyed by the server's UI hint names (`InputUIHints`). */
-const builtIn: Record<string, ComponentType<UiHintEditorProps>> = {
+export const builtInEditors: Record<string, ComponentType<UiHintEditorProps>> = {
   singleline: SingleLineEditor,
   multiline: MultiLineEditor,
   checkbox: CheckboxEditor,
@@ -29,8 +33,8 @@ const builtIn: Record<string, ComponentType<UiHintEditorProps>> = {
   checklist: ChecklistEditor,
   radiolist: RadioListEditor,
   multitext: MultiTextEditor,
-  "http-status-codes": MultiTextEditor,
-  "dynamic-outcomes": MultiTextEditor,
+  "http-status-codes": HttpStatusCodesEditor,
+  "dynamic-outcomes": DynamicOutcomesEditor,
   "code-editor": CodeEditorHint,
   "expression-editor": CodeEditorHint,
   "json-editor": JsonEditorHint,
@@ -42,13 +46,13 @@ const builtIn: Record<string, ComponentType<UiHintEditorProps>> = {
   "workflow-definition-picker": WorkflowDefinitionPickerEditor,
   "switch-editor": SwitchCasesEditor,
   "flow-switch-editor": SwitchCasesEditor,
-  "datetime-picker": SingleLineEditor,
-  "input-picker": SingleLineEditor,
+  "datetime-picker": DateTimePickerEditor,
+  "input-picker": InputPickerEditor,
 };
 
 /** Resolves the editor for a UI hint, letting modules override or add hints through `extensions.uiHints`. */
 export function useUiHintEditor(uiHint: string | undefined): ComponentType<UiHintEditorProps> {
   const extensions = useExtensions("uiHints");
   const hint = uiHint ?? "singleline";
-  return extensions[hint] ?? builtIn[hint] ?? SingleLineEditor;
+  return extensions[hint] ?? SingleLineEditor;
 }

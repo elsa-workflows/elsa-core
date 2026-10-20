@@ -2,7 +2,7 @@ import { createContext, useContext, type ComponentType, type ReactNode } from "r
 import type { CanvasDecorations } from "./designer/decorations.js";
 import type { ActivityInput, Variable } from "@elsa-workflows/react-studio-api-client/types/activities";
 import type { InputDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
-import type { OutputDefinition } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
+import type { InputDefinition, OutputDefinition } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
 import type { UiHintContext } from "./editor-types.js";
 
 export interface DesignerCanvasProps {
@@ -26,7 +26,7 @@ export interface ActivityPropertiesPanelProps {
   workflowDefinitionId?: string;
   variables: Variable[];
   workflowOutputs: OutputDefinition[];
-  workflowInputs?: { name: string }[];
+  workflowInputs?: InputDefinition[];
 }
 export interface ExpressionControlProps {
   descriptor: InputDescriptor;

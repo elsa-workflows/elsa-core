@@ -132,3 +132,14 @@ scopes. CShells 0.0.31 supplies repeat-safe host shutdown; 0.0.28 could drain an
 disposed provider during framework test teardown. The independent spike remains on
 its receipted dependency version. Full parity, third-party production template,
 container/release publication and source cutover remain separate acceptance gates.
+
+## Specialized activity editors
+
+ActivityEditors now registers the four missing UI hints through the public slot.
+Date/time controls convert local time to the stored instant; dynamic outcomes use
+Object JSON and include fixed designer ports; HTTP code cases preserve embedded
+activities while wrapped integer-array inputs retain their numeric format; input
+selection preserves the complete definition. Unit fixtures cover each editor and
+extension registration. A browser fixture loads the actual ESM entry and exercises
+editing, local-time conversion, read-only behavior and an extension email hint.
+The current frontend suite has 110 unit cases and seven browser cases.

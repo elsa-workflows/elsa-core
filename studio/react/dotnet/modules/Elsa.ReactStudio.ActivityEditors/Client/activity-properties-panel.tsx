@@ -14,7 +14,7 @@ import { EmptyState } from "@elsa-workflows/react-studio-ui/common/empty-state";
 import { useExpressionDescriptors } from "@elsa-workflows/react-studio-api-client/hooks/descriptors";
 import type { Activity, ActivityInput, Variable } from "@elsa-workflows/react-studio-api-client/types/activities";
 import type { InputDescriptor, OutputDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
-import type { OutputDefinition } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
+import type { InputDefinition, OutputDefinition } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
 import { useExtensions } from "@elsa-workflows/react-studio-ui/runtime/module-registry";
 import { useDesigner, useDesignerState } from "@elsa-workflows/react-studio-sdk/designer/context";
 import { activityDisplayText } from "@elsa-workflows/react-studio-sdk/designer/model/display";
@@ -26,7 +26,7 @@ export interface ActivityPropertiesPanelProps {
   workflowDefinitionId?: string;
   variables: Variable[];
   workflowOutputs: OutputDefinition[];
-  workflowInputs?: { name: string }[];
+  workflowInputs?: InputDefinition[];
 }
 
 function inputPropertyName(input: InputDescriptor) {
