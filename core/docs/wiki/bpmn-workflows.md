@@ -232,6 +232,21 @@ capabilities and the offending element ids, rather than persisting a definition 
 runs. `Analyze` never performs this check, since it does not persist; a document that `Analyze` reports cleanly can
 still be refused by `Import` on capability grounds.
 
+### Expression condition refusal
+
+Elsa does not evaluate a sequence flow's standard BPMN `<conditionExpression>` yet (for example `${x > 1}` from Camunda
+Modeler or bpmn.io). The `Bpmn.Interchange` reader turns such a flow into an unconditional one, so the imported workflow
+would route differently from its diagram on every run. `Import` and the document `PUT` therefore refuse a document whose
+flows carry one, with `422 Unprocessable Entity` and the code `bpmn.import.condition-unsupported`, before persisting
+anything. The check covers the whole document, including the bodies of nested subprocesses, and `data.elementIds` lists
+the offending sequence flow ids, sorted. No opt-in overrides this refusal (ADR "Evaluate BPMN conditions with Elsa
+expressions", `docs/adr/2026-10-20-elsa-evaluates-bpmn-conditions.md`). It is lifted once Elsa evaluates these
+expressions with its own expression engine.
+
+A flow conditional on an outcome name through the library's own `vw:conditionOutcome` attribute is still accepted,
+including when it also carries the readable `conditionExpression` the library's writer emits beside it. `Analyze` does
+not refuse: it keeps reporting each expression-conditioned flow as a `Degraded` finding.
+
 ### Duplicate element id refusal
 
 BPMN requires every element id to be unique within a document. `Import` and the document `PUT` both refuse, with
@@ -319,6 +334,7 @@ element that has a stored body but no `bindingRef`, are uncoded.
 | `bpmn.import.capability-unsupported` | `POST bpmn/import`, document `PUT` | 422 | `capabilities: string[]` (missing capability names), `elementIds: string[]` (offending element ids, combined across every missing capability) |
 | `bpmn.import.binding-invalid` | `POST bpmn/import`, document `PUT` | 422 | — |
 | `bpmn.import.duplicate-element-id` | `POST bpmn/import`, document `PUT` | 422 | `elementIds: string[]` (the duplicated ids) |
+| `bpmn.import.condition-unsupported` | `POST bpmn/import`, document `PUT` | 422 | `elementIds: string[]` (the sequence flows that carry an expression condition, across the whole document including nested subprocesses, sorted and distinct) |
 | `bpmn.export.not-imported` | `GET .../export`, document `GET` | 422 | — |
 | `bpmn.export.source-stale` | `GET .../export`, document `GET` | 422 | — |
 | `bpmn.export.source-version-unknown` | `GET .../export`, document `GET` | 422 | — |

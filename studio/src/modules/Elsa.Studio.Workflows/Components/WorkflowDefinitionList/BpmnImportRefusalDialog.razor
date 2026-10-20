@@ -5,29 +5,46 @@
 <MudDialog>
     <DialogContent>
         <MudStack Spacing="4">
-            <MudText Typo="Typo.body2">@Localizer["This deployment does not support every BPMN capability the document requires, so the import was refused."]</MudText>
-
-            <div>
-                <MudText Typo="Typo.subtitle2">@Localizer["Missing capabilities"]</MudText>
-                <MudList T="string" Dense="true">
-                    @foreach (var capabilityName in Refusal.CapabilityNames)
-                    {
-                        <MudListItem>@capabilityName</MudListItem>
-                    }
-                </MudList>
-            </div>
-
-            @if (Refusal.ElementIds.Count > 0)
+            @if (ConditionRefusal is { } conditionRefusal)
             {
+                <MudText Typo="Typo.body2">@Localizer["These sequence flows carry expression conditions, which Elsa does not evaluate yet, so the import was refused. Importing them would run each flow as unconditional, routing the workflow differently from its diagram. Remove the conditions, or make each flow conditional on an outcome with conditionOutcome."]</MudText>
+
                 <div>
-                    <MudText Typo="Typo.subtitle2">@Localizer["Offending elements"]</MudText>
+                    <MudText Typo="Typo.subtitle2">@Localizer["Conditional sequence flows"]</MudText>
                     <MudList T="string" Dense="true">
-                        @foreach (var elementId in Refusal.ElementIds)
+                        @foreach (var flowId in conditionRefusal.FlowIds)
                         {
-                            <MudListItem>@elementId</MudListItem>
+                            <MudListItem>@flowId</MudListItem>
                         }
                     </MudList>
                 </div>
+            }
+            else
+            {
+                <MudText Typo="Typo.body2">@Localizer["This deployment does not support every BPMN capability the document requires, so the import was refused."]</MudText>
+
+                <div>
+                    <MudText Typo="Typo.subtitle2">@Localizer["Missing capabilities"]</MudText>
+                    <MudList T="string" Dense="true">
+                        @foreach (var capabilityName in Refusal.CapabilityNames)
+                        {
+                            <MudListItem>@capabilityName</MudListItem>
+                        }
+                    </MudList>
+                </div>
+
+                @if (Refusal.ElementIds.Count > 0)
+                {
+                    <div>
+                        <MudText Typo="Typo.subtitle2">@Localizer["Offending elements"]</MudText>
+                        <MudList T="string" Dense="true">
+                            @foreach (var elementId in Refusal.ElementIds)
+                            {
+                                <MudListItem>@elementId</MudListItem>
+                            }
+                        </MudList>
+                    </div>
+                }
             }
         </MudStack>
     </DialogContent>
