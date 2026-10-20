@@ -1,0 +1,33 @@
+# Retained #8840 provenance guard; required while the imported history is maintained.
+name: React Studio source validation
+
+on:
+  pull_request:
+    paths:
+      - 'studio/react/**'
+      - 'docs/integration-program/studio-react-source-import.*'
+      - 'scripts/integration-program/*studio_react_source_import.py'
+      - '.github/workflows/studio-react-source-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: studio-react-source-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  provenance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Test rejection of broken import history
+        run: python3 -m unittest discover -s scripts/integration-program -p 'test_verify_studio_react_source_import.py' -v
+      - name: Verify original donor tree and history
+        run: python3 scripts/integration-program/verify_studio_react_source_import.py
