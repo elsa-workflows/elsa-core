@@ -1,9 +1,11 @@
+using System.Collections.Concurrent;
 using Bpmn.Interchange;
 using Elsa.Bpmn.Interchange.IntegrationTests.Support;
 using Elsa.Bpmn.Interchange.Services;
 using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Features.Services;
+using Elsa.Mediator.Contracts;
 using Elsa.Mediator.HostedServices;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
@@ -11,6 +13,7 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Management.Notifications;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
@@ -29,21 +32,29 @@ namespace Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Runtime;
 /// the same stimuli a deployment would send.
 /// </summary>
 /// <remarks>
-/// Nothing starts hosted services in a test container, so the one that carries dispatches -- an asynchronous
-/// <c>PublishEvent</c>, a <c>DispatchWorkflow</c> child -- is started here, and the bookmark queue a finished child
-/// resumes its waiting parent through is drained on every poll rather than left to its recurring task.
+/// Nothing starts hosted services or recurring tasks in a test container, so the two that carry work off the caller's
+/// thread are started here: the background command sender, which runs dispatches -- an asynchronous
+/// <c>PublishEvent</c>, a <c>DispatchWorkflow</c> child -- and the bookmark queue worker, which a finished child resumes
+/// its waiting parent through. The worker wakes on the signal every enqueue raises, as it does in a deployment. Work
+/// that lands off the caller's thread is awaited through the <see cref="WorkflowInstanceSaved"/> notification the
+/// runtime publishes on every save, never by polling the store.
 /// </remarks>
 public sealed class BpmnRuntimeTestHost
 {
     private static readonly TimeSpan WaitTimeout = TimeSpan.FromSeconds(30);
 
     private readonly ITestOutputHelper _testOutputHelper;
+    private readonly WorkflowInstanceSavedSignal _savedSignal = new();
     private readonly BackgroundCommandSenderHostedService _commandSender;
+    private readonly AsyncServiceScope _bookmarkQueueScope;
+    private readonly IBookmarkQueueWorker _bookmarkQueueWorker;
+    private bool _bookmarkQueueWorkerStarted;
 
     public BpmnRuntimeTestHost(ITestOutputHelper testOutputHelper, Action<IModule>? configureElsa = null)
     {
         _testOutputHelper = testOutputHelper;
         Services = new TestApplicationBuilder(testOutputHelper)
+            .ConfigureServices(services => services.AddNotificationHandler<WorkflowInstanceSavedSignal, WorkflowInstanceSaved>(_ => _savedSignal))
             .ConfigureElsa(elsa =>
             {
                 elsa.UseBpmnInterchange();
@@ -52,6 +63,8 @@ public sealed class BpmnRuntimeTestHost
             .Build();
 
         _commandSender = Services.GetServices<IHostedService>().OfType<BackgroundCommandSenderHostedService>().Single();
+        _bookmarkQueueScope = Services.CreateAsyncScope();
+        _bookmarkQueueWorker = _bookmarkQueueScope.ServiceProvider.GetRequiredService<IBookmarkQueueWorker>();
     }
 
     public IServiceProvider Services { get; }
@@ -60,9 +73,31 @@ public sealed class BpmnRuntimeTestHost
     {
         await Services.PopulateRegistriesAsync();
         await _commandSender.StartAsync(CancellationToken.None);
+        _bookmarkQueueWorker.Start();
+        _bookmarkQueueWorkerStarted = true;
     }
 
-    public Task DisposeAsync() => _commandSender.StopAsync(CancellationToken.None);
+    public async Task DisposeAsync()
+    {
+        try
+        {
+            if (_bookmarkQueueWorkerStarted)
+            {
+                _bookmarkQueueWorker.Stop();
+            }
+
+            await _commandSender.StopAsync(CancellationToken.None);
+        }
+        finally
+        {
+            await _bookmarkQueueScope.DisposeAsync();
+
+            if (Services is IAsyncDisposable disposableServices)
+            {
+                await disposableServices.DisposeAsync();
+            }
+        }
+    }
 
     /// <summary>The id of the Elsa activity the binder created for a BPMN element of the given process.</summary>
     public static string WorkActivityId(string processId, string elementId) => $"{processId}:{BpmnXmlReader.DefaultBindingRefPrefix}-{elementId}";
@@ -124,36 +159,53 @@ public sealed class BpmnRuntimeTestHost
     }
 
     /// <summary>
-    /// Polls the instance until it satisfies <paramref name="condition"/>, draining the bookmark queue on every pass,
-    /// and returns its state. Times out by throwing, naming the last state observed.
+    /// Waits until the instance is saved in a state that satisfies <paramref name="condition"/>, and returns that state.
+    /// Times out by throwing, naming the last state observed.
     /// </summary>
     public async Task<WorkflowState> WaitForAsync(string instanceId, Func<WorkflowState, bool> condition)
     {
-        var timeoutAt = DateTimeOffset.UtcNow + WaitTimeout;
-        WorkflowState state;
-
-        do
+        try
         {
-            using (var scope = Services.CreateScope())
-                await scope.ServiceProvider.GetRequiredService<IBookmarkQueueProcessor>().ProcessAsync();
-
-            state = await StateOfAsync(instanceId);
-
-            if (condition(state))
-                return state;
-
-            await Task.Delay(TimeSpan.FromMilliseconds(50));
-        } while (DateTimeOffset.UtcNow < timeoutAt);
-
-        _testOutputHelper.WriteLine($"Instance {instanceId} after {WaitTimeout}: {state.Status}/{state.SubStatus}, bookmarks [{string.Join(", ", state.Bookmarks.Select(bookmark => bookmark.ActivityId))}].");
-        throw new TimeoutException($"Instance {instanceId} did not reach the expected state within {WaitTimeout}. Last observed: {state.Status}/{state.SubStatus}.");
+            var instance = await WaitForInstanceAsync(instance => instance.Id == instanceId && condition(instance.WorkflowState), $"Instance {instanceId}");
+            return instance.WorkflowState;
+        }
+        catch (TimeoutException)
+        {
+            var state = await StateOfAsync(instanceId);
+            _testOutputHelper.WriteLine($"Instance {instanceId} after {WaitTimeout}: {state.Status}/{state.SubStatus}, bookmarks [{string.Join(", ", state.Bookmarks.Select(bookmark => bookmark.ActivityId))}].");
+            throw new TimeoutException($"Instance {instanceId} did not reach the expected state within {WaitTimeout}. Last observed: {state.Status}/{state.SubStatus}.");
+        }
     }
 
-    /// <summary>The instances the given definition has, newest last.</summary>
-    public async Task<IReadOnlyList<WorkflowInstance>> InstancesOfAsync(string definitionId) =>
-        (await Services.GetRequiredService<IWorkflowInstanceStore>().FindManyAsync(new WorkflowInstanceFilter { DefinitionId = definitionId }))
-        .OrderBy(instance => instance.CreatedAt)
-        .ToList();
+    /// <summary>
+    /// Waits until an instance matching <paramref name="match"/> is saved, or returns it straight away when one already
+    /// is. Times out by throwing a <see cref="TimeoutException"/> that names <paramref name="description"/>.
+    /// </summary>
+    public async Task<WorkflowInstance> WaitForInstanceAsync(Func<WorkflowInstance, bool> match, string description)
+    {
+        // Watch before reading the store: a save that lands between the two is then caught by the watch, not lost.
+        var saved = _savedSignal.Watch(match);
+
+        try
+        {
+            var alreadySaved = (await Services.GetRequiredService<IWorkflowInstanceStore>().FindManyAsync(new WorkflowInstanceFilter())).FirstOrDefault(match);
+
+            if (alreadySaved is not null)
+            {
+                return alreadySaved;
+            }
+
+            return await saved.Task.WaitAsync(WaitTimeout);
+        }
+        catch (TimeoutException)
+        {
+            throw new TimeoutException($"{description} was not saved in the expected state within {WaitTimeout}.");
+        }
+        finally
+        {
+            _savedSignal.Unwatch(saved);
+        }
+    }
 
     /// <summary>
     /// The status each activity of the instance last reached, keyed by activity id: which work ran, which was torn
@@ -183,4 +235,32 @@ public sealed class BpmnRuntimeTestHost
     public static bool IsSuspended(WorkflowState state) => state.SubStatus == WorkflowSubStatus.Suspended;
 
     public static bool IsFinished(WorkflowState state) => state.Status == WorkflowStatus.Finished;
+
+    /// <summary>Completes each pending watch the first time an instance it matches is saved.</summary>
+    private sealed class WorkflowInstanceSavedSignal : INotificationHandler<WorkflowInstanceSaved>
+    {
+        private readonly ConcurrentDictionary<TaskCompletionSource<WorkflowInstance>, Func<WorkflowInstance, bool>> _watches = new();
+
+        public TaskCompletionSource<WorkflowInstance> Watch(Func<WorkflowInstance, bool> match)
+        {
+            var saved = new TaskCompletionSource<WorkflowInstance>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _watches[saved] = match;
+            return saved;
+        }
+
+        public void Unwatch(TaskCompletionSource<WorkflowInstance> saved) => _watches.TryRemove(saved, out _);
+
+        public Task HandleAsync(WorkflowInstanceSaved notification, CancellationToken cancellationToken)
+        {
+            foreach (var (saved, match) in _watches)
+            {
+                if (match(notification.WorkflowInstance))
+                {
+                    saved.TrySetResult(notification.WorkflowInstance);
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+    }
 }

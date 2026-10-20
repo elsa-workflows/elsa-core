@@ -92,18 +92,10 @@ public class BpmnCallActivityTests(ITestOutputHelper testOutputHelper) : IAsyncL
 
     private async Task<string> WaitForChildAsync(string parentId, Func<WorkflowState, bool> condition)
     {
-        var timeoutAt = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(30);
+        var child = await _host.WaitForInstanceAsync(
+            instance => instance.DefinitionId == ChildDefinitionId && instance.ParentWorkflowInstanceId == parentId && condition(instance.WorkflowState),
+            $"A '{ChildDefinitionId}' child of {parentId}");
 
-        while (DateTimeOffset.UtcNow < timeoutAt)
-        {
-            var child = (await _host.InstancesOfAsync(ChildDefinitionId)).SingleOrDefault(instance => instance.ParentWorkflowInstanceId == parentId);
-
-            if (child is not null && condition(child.WorkflowState))
-                return child.Id;
-
-            await Task.Delay(TimeSpan.FromMilliseconds(50));
-        }
-
-        throw new TimeoutException($"No '{ChildDefinitionId}' child of {parentId} reached the expected state.");
+        return child.Id;
     }
 }
