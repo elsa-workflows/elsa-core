@@ -19,7 +19,7 @@ Steps run top to bottom. Recovery undoes eligible occurrences newest first.
 2  Reserve delivery       [Reserve delivery]  [Cancel delivery]     [deliveryId -> targetId]
 3  Reject order           [Reject order]      [Add handler]         —
 
-[Add step]     On recovery: [Finish Compensated | Propagate original fault]
+[Add step]     After successful recovery: [Continue with Compensated (default) | Propagate original fault]
 ```
 
 Each row carries stable opaque StepId, separate editable label and stable MappingIds. Renaming/reordering never changes existing runtime identity. Delete/recreate creates a new StepId. Node/activity IDs identify child locations, not logical external operations; one StepId can produce many occurrences and OperationKeys. Draft JSON contains native child activity definitions plus stable IDs/mappings; exact serialized field/public names are not frozen here.
@@ -27,6 +27,8 @@ Each row carries stable opaque StepId, separate editable label and stable Mappin
 Row actions: rename, named Move up/Move down controls for reorder, open forward activity, open/edit/remove handler, open capture mapping and remove step after confirmation. Breadcrumbs identify scope, step label and role. Do not use ordinary flow lines to imply that a handler executes on the successful forward path.
 
 The M1 no-fault flow also has a minimal authored Confirm activity after scope Done, with an authored scope reference resolved to the exact retained occurrence. It closes eligible obligations before root completion under accepted O1 policy; runtime/Studio realization remains unproved. The bounded M1 validator rejects a reachable successful exit that omits it, at publication and again before effects. An already-armed invalid/altered instance remains visibly blocked with no supported M1 operator release path; it needs a separately authorized repair or later control. It cannot silently report workflow success. Wider targeting/cascade and operator confirmation remain later milestones.
+
+Accepted O3 makes the displayed choice a per-scope published-version setting. After durable successful settlement, either continue through the distinct Compensated outcome or propagate the original fault; never run both outward paths. The inspector keeps forward failure and Compensated recovery history visible in either mode. Pending, failed or uncertain recovery cannot report successful compensation. Explain that propagation applies to fault-triggered recovery: an explicit non-cancellation recovery without an original fault uses Compensated even if the setting is enabled. O2 cancellation follows its Cancelled settlement path without inventing a fault. Backend/child-container support for these paths remains E1/E3 proof work, not a component capability claimed here.
 
 ## Captured-data mapping
 

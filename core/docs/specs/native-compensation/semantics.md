@@ -1,6 +1,6 @@
 # Proposed native compensation semantics
 
-These are reviewable design choices, not implemented behavior or an accepted public API. O1/O2 in [decisions](decisions.md) are accepted product policy; O3 remains an owner gate. The physical realization is still proposed and unproved. Identity/storage/commit terms are defined in [persistence](persistence.md); the canonical product requirements remain PRD #8886.
+These are reviewable design choices, not implemented behavior or an accepted public API. O1–O3 in [decisions](decisions.md) are accepted product policy. The physical realization is still proposed and unproved. Identity/storage/commit terms are defined in [persistence](persistence.md); the canonical product requirements remain PRD #8886.
 
 ## Scope and operation model
 
@@ -8,7 +8,7 @@ A scope owns an ordered collection of steps. A step has stable authored StepId, 
 
 A handler may be omitted only for a declared no-effect/pure step in the first profile (for example the definite rejection step). Publication and execution reject a recoverable external-effect step without a qualified handler/participant contract. NoHandler is a truthful non-obligation classification, never synthetic successful undo of an applied external effect. A missing required handler discovered after publication is intervention, not NoHandler. Wider no-compensation-required policies need explicit capability/owner acceptance before support.
 
-Recommended adopted behavior: successful recovery emits outcome `Compensated`. An explicit `faultAfterCompensation` setting can propagate the original fault afterward. Propagation does not delete recovery evidence. A successfully completed forward scope remains eligible until confirmed; body completion and the release of its recovery obligation are different events.
+Accepted O3 policy: persist successful recovery as Compensated, then choose exactly one outward path. The default emits the distinct `Compensated` outcome; an explicit per-scope opt-in instead propagates the original fault through the native parent/fault-handling path, retaining Compensated recovery history. Never run the Compensated continuation and then also raise the fault. The parent/incident policy determines the workflow result; recovery success never rewrites the original forward result as success. Preserve original and recovery causes separately. Pin the choice with the published workflow version; public setting names remain unfrozen. The propagation setting applies only to fault-triggered recovery. Explicit non-cancellation compensation with no original fault emits Compensated even if that setting is enabled; cancellation follows O2 and does not manufacture an original fault. A successfully completed forward scope remains eligible until confirmed; body completion and the release of its recovery obligation are different events.
 
 ## Durable states and transitions
 
@@ -27,7 +27,7 @@ Scope phases: Forward, CompletedEligible, Recovering, AwaitingIntervention, Comp
 | Handler acknowledged success | Compensating -> Compensated; retain receipt and attempt | Advance exactly once; scheduling alone never means success. |
 | Handler fails or outcome is unknown | Record separate recovery error; CompensationFailed or unresolved Compensating/Uncertain | Stop the serial unwind. Keep original cause separate. Await retry/reconciliation/intervention; no parent success. |
 | Safe retry | Append a fresh AttemptId under the same OccurrenceId, OperationKey/UndoKey | Legal only under declared idempotency/no-effect/reconciliation contract; revision and owner checks apply. |
-| Last required handler settled | Recovering -> Compensated | Emit Compensated, then optionally re-raise original fault. Any unresolved entry prevents this transition. |
+| Last required handler settled | Recovering -> Compensated | Persist settlement and the one selected outward handoff; emit Compensated OR propagate the original fault under pinned O3 behavior. Never both. Explicit non-cancellation recovery without an original fault takes Compensated; cancellation follows O2. Any unresolved entry prevents successful settlement/handoff. |
 | Confirm target (minimal authored activity in M1; wider targeting/cascade in M3) | Applied/eligible scope -> Confirmed; record actor/cause | Idempotent, closes eligibility but retains audit. Authored confirmation records workflow actor kind, pinned definition/instance and trusted initiator provenance; it never fabricates a human operator. Refuse while recovery, uncertainty, failed compensation or in-flight effect exists. |
 | Duplicate/stale result | No repeated phase/cursor advancement | Match occurrence, effect direction, attempt and revision; preserve stale evidence safely, reject stale writes. |
 | Shutdown / lost execution ownership | No business confirmation or compensation transition | Stop dispatch; preserve committed work. Resume through accepted native runtime route using the same operation keys. |
