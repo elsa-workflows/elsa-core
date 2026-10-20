@@ -96,3 +96,22 @@ python3 -m unittest discover -s core/experiments/NativeCompensation.E1 -p test_v
 The tests default to the retained `/tmp` directories above; set `E1_MATRIX_EVIDENCE` and `E1_CONTROL_EVIDENCE` to relocated evidence directories when needed. They launch no .NET or participant process. E1 remains Partial and all previously recorded gates remain open.
 
 The final review correction after `0e6f468c40b0e58ae68c84cfa4c45b69f9fac365` resolves hashes under each configured evidence root and case name, rather than following historical absolute paths in the summary. Validation explicitly refuses Python `-O`/`PYTHONOPTIMIZE`, which would remove its assertion gates. The status mutation changes the observed result, result event and persisted state together and verifies rejection by the native expected-status gate. These checks use the unchanged retained records or isolated copies; no fresh native execution/build is implied.
+
+## Import-rehearsal inventory integration correction
+
+CI's Dependabot project-discovery check exposed the new experiment as an unclassified
+out-of-solution manifest. Running `ruby scripts/integration-program/test_dependabot_discovery.rb`
+at `d0ac16665706ac310f96b43a0b007fa586a6d6fe` reproduced the failure: 15 runs,
+7612 assertions, one complete-partition failure naming this project's manifest.
+The correction extends the existing documented probe disposition with an explicit
+Core experiment list, included in the complete unselected union. The regression
+checks each listed experiment is tracked, explicitly `IsPackable=false`, and outside
+`Elsa.sln`; an unlisted future experiment still fails. Documentation is read once and
+its parsed lists are reused. No updater/workflow configuration or production source
+changed, and all batch counts, selectors and feed policy checks remain intact.
+
+After correction, the same Ruby command passes: 16 runs, 7630 assertions, zero
+failures/errors/skips. The 15 Python tests were also rechecked without native process
+execution. This narrow inventory integration adds the discovery test and its owning
+document to the experiment's changed-file scope; it does not change the recorded E1
+observations, their hashes, or readiness.
