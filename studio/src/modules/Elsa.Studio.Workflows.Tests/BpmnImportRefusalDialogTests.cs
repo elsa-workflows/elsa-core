@@ -46,4 +46,19 @@ public sealed class BpmnImportRefusalDialogTests : BunitContext, IAsyncLifetime
         Assert.Contains("Task_2", _dialogProvider.Markup);
     }
 
+    [Fact]
+    public async Task TheDialogRendersTheConditionalFlows_ForAConditionRefusal()
+    {
+        var refusal = new BpmnConditionRefusal(["Flow_A", "Flow_B"]);
+        var dialogService = Services.GetRequiredService<IDialogService>();
+        var parameters = new DialogParameters<BpmnImportRefusalDialog> { { x => x.ConditionRefusal, refusal } };
+        await _dialogProvider.InvokeAsync(() => dialogService.ShowAsync<BpmnImportRefusalDialog>("Import refused", parameters));
+        _dialogProvider.WaitForElement("button");
+
+        Assert.Contains("expression conditions", _dialogProvider.Markup);
+        Assert.Contains("Flow_A", _dialogProvider.Markup);
+        Assert.Contains("Flow_B", _dialogProvider.Markup);
+        Assert.DoesNotContain("Missing capabilities", _dialogProvider.Markup);
+    }
+
 }

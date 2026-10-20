@@ -82,7 +82,7 @@ internal sealed class BpmnScopeHost
 
     /// <summary>The scope is beginning.</summary>
     public ValueTask StartAsync() => EvaluateAsync(memory =>
-        Interpreter.Start(new BpmnStartRequest(Graph, memory.State, Snapshot(memory))));
+        Interpreter.Start(new BpmnStartRequest(Graph, memory.State, Snapshot(memory), ResolveStartSignal())));
 
     /// <summary>A unit of work finished, reporting zero or more outcome names.</summary>
     public ValueTask OnWorkCompletedAsync(ActivityExecutionContext childContext, object? result) => EvaluateAsync(memory =>
@@ -364,6 +364,20 @@ internal sealed class BpmnScopeHost
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// The start event a trigger matched, when this scope is the activity whose trigger started the workflow; otherwise
+    /// <c>null</c>, so a direct invocation begins at the plain start events and a nested scope at whatever its
+    /// invocation carries.
+    /// </summary>
+    private BpmnStartSignal? ResolveStartSignal()
+    {
+        if (!_context.IsTriggerOfWorkflow() || _process.Process is not { } process)
+            return null;
+
+        var startedByEvent = _context.WorkflowExecutionContext.Input.ContainsKey(Event.EventInputWorkflowInputKey);
+        return BpmnStartEventResolver.Resolve(process, startedByEvent);
     }
 
     private BpmnHostSnapshot Snapshot(BpmnScopeMemory memory)
