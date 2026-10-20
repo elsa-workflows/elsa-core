@@ -18,7 +18,7 @@ class SourceImportTests(unittest.TestCase):
         self.run_git("init", "-q")
         self.run_git("config", "user.name", "Fixture")
         self.run_git("config", "user.email", "fixture@example.invalid")
-        (self.root / "host").write_text("host")
+        (self.root / "host").write_text("donor")
         self.run_git("add", ".")
         self.run_git("commit", "-qm", "Core")
         base = git(self.root, "rev-parse", "HEAD")
@@ -58,6 +58,22 @@ class SourceImportTests(unittest.TestCase):
     def test_squashed_import_is_rejected(self):
         self.receipt["importCommit"] = self.receipt["coreBase"]
         with self.assertRaisesRegex(ValueError, "two parents"):
+            self.check_receipt()
+
+    def test_changed_imported_file_is_rejected(self):
+        (self.root / "studio/react/source").write_text("changed during import")
+        self.run_git("commit", "-qam", "Changed import", "--amend")
+        self.receipt["importCommit"] = git(self.root, "rev-parse", "HEAD")
+        with self.assertRaisesRegex(ValueError, "tree differs"):
+            self.check_receipt()
+
+    def test_rename_detection_cannot_hide_an_outside_deletion(self):
+        self.run_git("config", "diff.renames", "true")
+        self.run_git("rm", "host")
+        self.run_git("commit", "--amend", "--no-edit", "-q")
+        self.receipt["importCommit"] = git(self.root, "rev-parse", "HEAD")
+        self.assertIn("R100", git(self.root, "diff", "--name-status", self.receipt["coreBase"], "HEAD"))
+        with self.assertRaisesRegex(ValueError, "outside the destination"):
             self.check_receipt()
 
     def test_import_must_be_in_current_history(self):

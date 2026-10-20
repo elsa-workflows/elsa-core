@@ -26,7 +26,7 @@ def verify(root, receipt):
     require(parents == [base, source], "Import must preserve Core and the original donor as its two parents")
     require(git(root, "rev-parse", source + "^{tree}") == receipt["sourceTree"]
             == git(root, "rev-parse", f"{imported}:{prefix}"), "Imported donor tree differs from the source")
-    changes = git(root, "diff", "--name-only", base, imported).splitlines()
+    changes = git(root, "diff", "--no-renames", "--name-only", base, imported).splitlines()
     require(changes and all(path.startswith(prefix + "/") for path in changes),
             "Import changes files outside the destination")
     git(root, "merge-base", "--is-ancestor", imported, "HEAD")
