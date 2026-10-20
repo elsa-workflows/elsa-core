@@ -41,6 +41,7 @@ export interface ExpressionControlProps {
 
 /** Implementations supplied by the enabled Designer and ActivityEditors modules. */
 export interface StudioComponentProps {
+  Application: Record<string, never>;
   DesignerSurface: DesignerCanvasProps;
   ActivityToolbox: { className?: string; onCollapse?: () => void };
   StatePanel: { stateName: string };
@@ -59,6 +60,7 @@ export function useStudioComponent<K extends keyof StudioComponentProps>(name: K
   return component;
 }
 export function DesignerSurface(props: DesignerCanvasProps) { const Component = useStudioComponent("DesignerSurface"); return <Component {...props} />; }
+export function Application() { const Component = useStudioComponent("Application"); return <Component />; }
 export function ActivityToolbox(props: StudioComponentProps["ActivityToolbox"]) { const Component = useStudioComponent("ActivityToolbox"); return <Component {...props} />; }
 export function StatePanel(props: StudioComponentProps["StatePanel"]) { const Component = useStudioComponent("StatePanel"); return <Component {...props} />; }
 export function TransitionPanel(props: StudioComponentProps["TransitionPanel"]) { const Component = useStudioComponent("TransitionPanel"); return <Component {...props} />; }

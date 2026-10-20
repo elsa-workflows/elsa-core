@@ -12,24 +12,14 @@ and resolves runtime configuration per request.
 ```
 src/
   main.tsx                  fetch runtime configuration, then mount the History API router
-  config/                   runtime configuration React provider (ASP.NET resolves the document)
+  config/                   runtime configuration schema adapter (ASP.NET resolves the document)
   lib/
     api/                    host adapter for the shared API provider
     auth/                   config/server adapter for the shared auth provider
-    environments/           active backend selection (multi-server)
-    features/               server feature catalog (GET /features/installed)
-    utils/                  download helpers, URL state
-  components/
-    shell/                  AppShell, sidebar, header, login, auth callback, status pages
-  modules/
-    index.ts                the list of compiled-in modules (transitional until #8845)
-    dashboard/              core
-    workflow-definitions/   core (list + editor)
-    workflow-instances/     core (list + viewer)
-    designer/               core shared: React Flow canvas, store, toolbox, port rules
-    activity-editors/       core shared: UI-hint editors, expression editor, properties panel
-    <optional>/             labels, secrets, security, environments, alterations, user-tasks, settings,
-                            diagnostics…
+dotnet/modules/
+  Elsa.ReactStudio.*/Client/ feature-local entry, pages, components and styles
+  Elsa.ReactStudio.*/*.cs    CShells feature and module descriptor
+dotnet/Elsa.ReactStudio/     first-party feature selection and host entrypoints
 packages/
   sdk/                      registration, config, navigation, designer models/context and host runtime
   api-client/               HTTP client, endpoint groups, workflow models and React/query context
@@ -66,12 +56,13 @@ Equal-order slots use stable module and contribution IDs, independent of load or
 `pnpm test:packages` compiles and renders an external sample against packed SDK,
 API-client, auth and UI packages, without host aliases.
 
-The imported modules still use `defineModule()` from the public SDK. It adapts their
-declarative definitions into `register(api)`; this adapter and the compiled-in list
-are removed by the physical RCL split in #8845. Existing routes, navigation,
+The imported modules use `defineModule()` from the public SDK. It adapts their
+declarative definitions into `register(api)`. Each RCL exports that entry from
+`Client/entry.tsx`; the host discovers enabled entries through the server manifest.
+Existing routes, navigation,
 dashboard, settings, UI hints, tabs, actions, headers and providers consume that
 adapter. The additional property, expression and designer slot contracts await
-their renderer integration during the split.
+their renderer integration in subsequent Preview parity work.
 
 For example:
 
@@ -91,12 +82,12 @@ Rules:
 - Core modules set `core: true` and ignore the flag; everything else is **off unless enabled** in config.
 - The History API router passes the path to `resolveRoute()`; patterns use `:param` segments.
   Register module routes instead of adding file-system pages.
-- Each module owns `src/modules/<id>/` with `index.tsx` (the `defineModule` export), `api.ts`
+- Each module owns `dotnet/modules/Elsa.ReactStudio.<Feature>/Client/` with `index.tsx` (the `defineModule` export), `api.ts`
   (endpoint group built from `useElsaClient().http`), `hooks.ts` (TanStack Query hooks, keys prefixed
   with `useQueryScope()`), `pages/` and `components/`.
-- Register the module in `src/modules/index.ts`.
+- Register the module descriptor in its CShells feature; see [feature packages](feature-packages.md).
 - Cross-module UI goes through `extensions` and `useExtensions(kind)`; never import another module's
-  pages. Shared code belongs in `src/components/common` or `src/lib`.
+  pages. Shared code belongs in the four public workspace packages.
 - Permissions: use `usePermission(resource, verb)` / `usePermissions()` and the `Resources`/`Verbs`
   constants. The set is *unknown* (allow everything) when the token has no `permissions` claim.
 - A module that is enabled in config but needs a server feature the backend lacks (checked against
@@ -139,7 +130,7 @@ other activity holds one child per Embedded port. `model/containers.ts` addresse
 machine) for the container at the end of it. State machine selection uses `state:<name>` /
 `transition:<index>` ids next to activity ids.
 
-`src/modules/designer` renders a Flowchart with React Flow. The shared SDK store
+`dotnet/modules/Elsa.ReactStudio.Designer/Client` renders a Flowchart with React Flow. The shared SDK store
 (`createDesignerStore(root, readOnly)`) is the single source of truth: nodes/edges are derived from
 the current container and every interaction mutates the flowchart JSON (so undo/redo and save are
 trivial). Use `DesignerProvider` + `DesignerCanvas`; pass `stats` (per node id) to colour execution
@@ -147,14 +138,14 @@ state in read-only mode. Activity port rules live in `model/ports.ts`.
 
 Designer models, store and context live under `packages/sdk/src/designer`.
 The Designer and ActivityEditors implementations register typed component slots;
-definition and instance views access those slots through the SDK. All 205 feature
+definition and instance views access those slots through the SDK. All feature
 source files pass `pnpm check:boundaries`, which rejects host aliases and relative
-imports into sibling modules. Physical RCL asset discovery remains the next step
-under #8845; this refactor alone still uses the bundled entry list.
+imports into sibling modules. Each feature builds to a separate ESM entry and CSS,
+and the server manifest publishes only enabled feature assets.
 
 ## Activity inputs: syntaxes and encodings
 
-`src/modules/activity-editors/expression.ts` is the only place that knows how a wrapped input is
+`dotnet/modules/Elsa.ReactStudio.ActivityEditors/Client/expression.ts` is the only place that knows how a wrapped input is
 encoded. Three cases matter, and all three appear in workflows authored by older Elsa versions:
 
 - **Literal / Object / Json** are edited by the UI-hint editor for the input.
@@ -174,7 +165,7 @@ the input was never set.
 The editor's View menu has a **Call context** toggle (`?context=1` in the URL carries it across
 drill-ins). It draws the current workflow inside a grouping box with its transitive callers on the
 left and callees on the right, using only existing endpoints. Code lives in
-`src/modules/workflow-definitions/call-graph/`:
+`dotnet/modules/Elsa.ReactStudio.WorkflowDefinitions/Client/call-graph/`:
 
 - `edge-extractor.ts` walks one definition's activity tree (iteratively, with a visited set) and
   returns `(caller -> callee, call type, activity id)` edges for Dispatch/Execute Workflow activities.
@@ -197,7 +188,7 @@ Limits and the inspected version are configurable under
 ## Shell header override
 
 A page can replace the app header and drop the content padding with `useShellHeader(node, { fullBleed })`
-from `src/components/shell/shell-chrome.ts` (the workflow editor does this to show a breadcrumb and its
+from `@elsa-workflows/react-studio-ui/shell-chrome` (the workflow editor does this to show a breadcrumb and its
 actions in one row). The node is rendered by the shell, outside the page tree, so wrap it in any context
 providers it needs.
 

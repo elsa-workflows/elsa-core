@@ -1,11 +1,12 @@
 import type { StudioModule, StudioModuleExtensions } from "./modules.js";
-import { createElement, type ReactNode } from "react";
+import { createElement, type ComponentType, type ReactNode } from "react";
+import { isolateModuleComponent } from "./module-boundary.js";
 import type { RegisterModule, StudioApi, StudioModuleManifest, StudioSlots } from "./slots.js";
 import type { StudioComponentMap } from "./components.js";
 
 export interface ModuleDiagnostic {
   moduleId: string;
-  code: "incompatible" | "load-failed" | "registration-failed" | "cleanup-failed";
+  code: "incompatible" | "load-failed" | "registration-failed" | "cleanup-failed" | "render-failed";
   message: string;
 }
 
@@ -36,8 +37,8 @@ export class StudioRegistry {
     this.generations.set(manifest.id, generation);
     const abandoned = this.pending.get(manifest.id);
     this.pending.delete(manifest.id);
-    if (abandoned) this.dispose(abandoned);
     this.messages = this.messages.filter(message => message.moduleId !== manifest.id);
+    if (abandoned) this.dispose(abandoned);
     if (manifest.hostApiVersion !== 1 || manifest.sdkApiVersion !== 1) {
       this.messages.push({ moduleId: manifest.id, code: "incompatible",
         message: `Module ${manifest.id} requires host API ${manifest.hostApiVersion} and SDK API ${manifest.sdkApiVersion}; this Preview provides host API 1 and SDK API 1.` });
@@ -71,6 +72,10 @@ export class StudioRegistry {
         if (pending.contributions.some(item => item.kind === kind && item.value.id === value.id && item.active))
           throw new Error(`Duplicate ${kind} slot: ${value.id}`);
         const copy = Object.assign({}, value);
+        if ("component" in copy) {
+          copy.component = isolateModuleComponent(copy.component as ComponentType<object>, manifest.id, value.id,
+            error => this.messages.push({ moduleId: manifest.id, code: "render-failed", message: messageOf(error) }));
+        }
         Object.freeze(copy);
         const contribution: Contribution = { kind, value: copy, active: true };
         pending.contributions.push(contribution);
@@ -125,9 +130,9 @@ export class StudioRegistry {
         components: [...own("components")],
         providers: [...own("providers")],
         dashboardWidgets: [...own("dashboardWidgets")], settingsSections: [...own("settingsSections")],
-        workflowPropertiesTabs: [...own("workflowPropertiesTabs")], definitionRowActions: [...own("definitionRowActions")],
+        workflowPropertiesTabs: own("workflowPropertiesTabs").map(item => ({ ...item, id: JSON.stringify([module.manifest.id, item.id]) })), definitionRowActions: [...own("definitionRowActions")],
         instanceRowActions: [...own("instanceRowActions")], instanceViewerActions: [...own("instanceViewerActions")],
-        headerItems: [...own("headerItems")], activityTabs: [...own("activityPropertiesTabs")],
+        headerItems: [...own("headerItems")], activityTabs: own("activityPropertiesTabs").map(item => ({ ...item, id: JSON.stringify([module.manifest.id, item.id]) })),
         uiHints: Object.fromEntries(own("uiHints").map(item => [item.hint, item.component])),
       };
       const providers = own("providers");

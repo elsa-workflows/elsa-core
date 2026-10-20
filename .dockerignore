@@ -26,3 +26,5 @@
 studio/react/dist
 studio/react/packages/*/dist
 studio/react/docs/api
+studio/react/module-assets
+studio/react/dotnet/modules/*/wwwroot

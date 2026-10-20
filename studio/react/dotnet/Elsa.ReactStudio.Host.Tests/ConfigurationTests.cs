@@ -83,6 +83,25 @@ public sealed class ConfigurationTests : IDisposable
     }
 
     [Theory]
+    [InlineData("{}", "/elsa/api")]
+    [InlineData("{\"servers\":[{\"url\":\"/explicit\"}]}", "/explicit")]
+    public async Task Host_server_default_only_fills_an_omitted_server_list(string document, string expected)
+    {
+        _environment["STUDIO_CONFIG"] = document;
+        var config = await StudioConfiguration.LoadAsync(_root, "studio.config.json",
+            name => _environment.GetValueOrDefault(name), CancellationToken.None, "/elsa/api");
+        Assert.Equal(expected, config["servers"]![0]!["url"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Explicit_empty_server_list_is_rejected_even_with_a_host_default()
+    {
+        _environment["STUDIO_CONFIG"] = """{"servers":[]}""";
+        await Assert.ThrowsAsync<InvalidDataException>(() => StudioConfiguration.LoadAsync(_root, "studio.config.json",
+            name => _environment.GetValueOrDefault(name), CancellationToken.None, "/elsa/api"));
+    }
+
+    [Theory]
     [InlineData("[]")]
     [InlineData("{}")]
     [InlineData("{\"servers\":[]}")]

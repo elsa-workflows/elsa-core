@@ -6,6 +6,7 @@ RUN --mount=type=secret,id=build-ca \
     npm install --global pnpm@10.33.0
 COPY studio/react/package.json studio/react/pnpm-lock.yaml studio/react/pnpm-workspace.yaml ./
 COPY studio/react/packages ./packages/
+COPY studio/react/dotnet/modules ./dotnet/modules/
 RUN --mount=type=secret,id=build-ca \
     if [ -f /run/secrets/build-ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/build-ca; fi; \
     pnpm install --frozen-lockfile
@@ -22,6 +23,7 @@ COPY studio/src/Directory.Build.props studio/src/Directory.Packages.props studio
 COPY studio/react/dotnet studio/react/dotnet/
 COPY studio/react/studio.config.json studio/react/
 COPY --from=assets /frontend/dist studio/react/dist/
+COPY --from=assets /frontend/module-assets/ studio/react/dotnet/modules/
 RUN --mount=type=secret,id=build-ca \
     if [ -f /run/secrets/build-ca ]; then export SSL_CERT_FILE=/run/secrets/build-ca; fi; \
     dotnet publish studio/react/dotnet/Elsa.ReactStudio.Server/Elsa.ReactStudio.Server.csproj -c Release -o /output -p:UseAppHost=false && \

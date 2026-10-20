@@ -25,6 +25,7 @@ PROJECT_LINE = re.compile(r'^Project\("\{(?P<type>[^}]+)\}"\) = "(?P<name>[^"]+)
 NESTED = re.compile(r"^\s*\{(?P<child>[^}]+)\} = \{(?P<parent>[^}]+)\}\s*$")
 TEST_SUFFIX = re.compile(r"\.(Tests|UnitTests|IntegrationTests|ComponentTests|ConformanceTests)$")
 FOUNDATION, EXTENSIONS, STUDIO, APPS, SAMPLES = "Foundation", "Extensions", "Studio", "Apps", "Samples"
+REACT_STUDIO = "ReactStudio"
 GENERATED_FOLDER_NAMESPACE = uuid.UUID("6f3c1f2e-8d9a-4b8e-9a51-1c2d3e4f5a6b")
 
 
@@ -65,6 +66,8 @@ def read_solution(text: str) -> tuple[list[SolutionProject], dict[str, str], dic
 def source_group(project: SolutionProject, manifest: dict) -> str | None:
     if project.name in manifest["foundation"]:
         return FOUNDATION
+    if any(project.path.startswith(prefix) for prefix in manifest.get("reactStudio", {}).get("paths", [])):
+        return REACT_STUDIO
     for domain, rules in manifest["domains"].items():
         if (project.name in rules.get("names", [])
                 or any(project.name.startswith(prefix) for prefix in rules.get("namePrefixes", []))
@@ -128,7 +131,7 @@ def classify(projects: list[SolutionProject], manifest: dict) -> dict[SolutionPr
 
 
 def folder_path(group: str, is_test: bool, domains: list[str]) -> tuple[str, ...]:
-    base = (EXTENSIONS, group) if group in domains else (group,)
+    base = (STUDIO, REACT_STUDIO) if group == REACT_STUDIO else (EXTENSIONS, group) if group in domains else (group,)
     return base + ("Tests",) if is_test else base
 
 
@@ -244,10 +247,11 @@ def filters(groups: dict[SolutionProject, str], projects: list[SolutionProject],
               "Elsa.Foundation.slnf": closure(members(FOUNDATION))}
     for domain in domains:
         result[f"Elsa.{domain}.slnf"] = closure(members(FOUNDATION, domain))
-    studio = members(FOUNDATION, STUDIO)
+    studio = members(FOUNDATION, STUDIO, REACT_STUDIO)
     if "Elsa.Api.Client" in by_name:
         studio.add(by_name["Elsa.Api.Client"])
     result["Elsa.Studio.slnf"] = closure(studio)
+    result["Elsa.ReactStudio.slnf"] = closure(members(REACT_STUDIO))
     result["Elsa.Extensions.slnf"] = closure(members(*domains, EXTENSIONS))
     result["Elsa.Apps.slnf"] = closure({project for project in projects if project.path.startswith("apps/")})
     return result

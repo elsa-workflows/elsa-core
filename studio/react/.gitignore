@@ -50,3 +50,4 @@ next-env.d.ts
 !/packages/
 /packages/*/dist/
 /docs/api/
+/module-assets/

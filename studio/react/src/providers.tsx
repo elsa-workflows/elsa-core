@@ -10,18 +10,17 @@ import { ElsaApiProvider } from "./lib/api/provider";
 import { AuthProvider } from "@/lib/auth/provider";
 import { ModuleRegistryProvider } from "@elsa-workflows/react-studio-ui/runtime/module-registry";
 import { ElsaThemeProvider } from "@elsa-workflows/react-studio-sdk/theme/elsa-theme-provider";
-import { studioModules } from "@/modules";
 import type { StudioModule } from "@elsa-workflows/react-studio-sdk";
 import { StudioComponentsProvider, type StudioComponentMap } from "@elsa-workflows/react-studio-sdk/components";
 
 export function Providers({
   config,
-  modules = studioModules,
+  modules,
   components = {},
   children,
 }: {
   config: StudioConfig;
-  modules?: StudioModule[];
+  modules: StudioModule[];
   components?: StudioComponentMap;
   children: ReactNode;
 }) {

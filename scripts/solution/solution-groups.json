@@ -137,6 +137,11 @@
       "studio/samples/"
     ]
   },
+  "reactStudio": {
+    "paths": [
+      "studio/react/dotnet/"
+    ]
+  },
   "apps": {
     "paths": [
       "core/src/apps/",

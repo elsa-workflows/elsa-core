@@ -64,9 +64,12 @@ the Studio mount. Explicit configured redirect URIs take precedence. Register th
 complete callback URI with the identity provider.
 
 Forward the entire mount to ASP.NET, including deep links and `studio-config`, and
-forward `/_content/Elsa.ReactStudio.Host/` for versioned JS/CSS. A proxy that preserves
+forward `/_content/Elsa.ReactStudio.*/` for versioned host and feature JS/CSS. A proxy that preserves
 a site prefix must configure ASP.NET's `PathBase` before mapping the endpoints.
 Do not cache HTML or runtime configuration; versioned assets are immutable.
+
+For same-origin Core hosting and server-side module selection, see
+[feature packages and hosting](feature-packages.md).
 
 Workflow data lives in the Elsa server; browser preferences live in local storage.
 Optional module visibility still depends on configuration and backend capabilities.

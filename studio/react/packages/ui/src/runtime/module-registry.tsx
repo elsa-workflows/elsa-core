@@ -7,7 +7,7 @@ import { usePermissions } from "@elsa-workflows/react-studio-auth/permissions";
 import type { NavItem, StudioModule } from "@elsa-workflows/react-studio-sdk";
 
 interface ModuleRegistryValue {
-  /** All modules compiled into the app. */
+  /** All modules activated from the server manifest. */
   all: StudioModule[];
   /** Modules enabled by configuration and available on the current backend. */
   enabled: StudioModule[];

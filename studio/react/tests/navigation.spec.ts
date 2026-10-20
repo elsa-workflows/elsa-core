@@ -60,6 +60,35 @@ test("missing assets return 404 rather than a SPA document", async ({ request })
   expect(response.headers()["content-type"] ?? "").not.toContain("text/html");
 });
 
+test("an incompatible module is rejected before import and a broken contribution leaves the shell usable", async ({ page }) => {
+  let incompatibleFetched = false;
+  await page.route("**/incompatible-module.js", route => {
+    incompatibleFetched = true;
+    return route.fulfill({ contentType: "text/javascript", body: "throw new Error('must not import');" });
+  });
+  await page.route("**/broken-module.js", route => route.fulfill({ contentType: "text/javascript", body: `
+    export function register(api) {
+      api.contribute("headerItems", { id: "broken-header", component: () => { throw new Error("broken header fixture"); } });
+    }
+  ` }));
+  await page.route("**/studio-manifest", async route => {
+    const response = await route.fetch();
+    const manifest = await response.json();
+    manifest.modules.push(
+      { id: "incompatible", version: "1", core: true, hostApiVersion: 2, sdkApiVersion: 1, entry: "/incompatible-module.js" },
+      { id: "broken", version: "1", core: true, hostApiVersion: 1, sdkApiVersion: 1, entry: "/broken-module.js" },
+    );
+    await route.fulfill({ json: manifest });
+  });
+  await page.goto("/studio-preview/");
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await expect(page.getByRole("alert").filter({ hasText: "requires host API 2" })).toBeVisible();
+  await expect(page.getByRole("alert").filter({ hasText: "Module broken could not render broken-header" })).toBeVisible();
+  await page.getByRole("link", { name: "Definitions", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Workflow definitions", exact: true })).toBeVisible();
+  expect(incompatibleFetched).toBe(false);
+});
+
 test("OIDC authorization uses a callback under the host mount", async ({ page }) => {
   await page.route("**/studio-config", route => route.fulfill({ json: {
     servers: [{ url: "http://127.0.0.1:5001/elsa/api" }],

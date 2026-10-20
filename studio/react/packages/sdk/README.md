@@ -30,11 +30,12 @@ run cleanup once, in reverse registration order. Contributions must be made
 during the active `register` call; asynchronous registration is supported.
 
 The SDK includes route, navigation, dashboard, settings, editor, designer, action,
-tab, header and provider contracts. The current bundled host consumes the imported
+tab, header and provider contracts. The host consumes the imported
 Studio's existing slots through an adapter. The additional property, expression
 and designer contracts describe the next renderer integration; declaring a slot
-does not yet make those new renderers available. Physical RCL discovery and
-independent module assets remain part of #8845.
+does not yet make those new renderers available. Enabled RCL features publish
+independent entries through the server manifest. Render boundaries isolate each
+component contribution; load, registration and render failures report module diagnostics.
 
 Modules share the host's React instance. Import workflow models from
 `@elsa-workflows/react-studio-api-client` and editor context from this package;

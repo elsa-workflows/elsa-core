@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "pnpm build:packages && vite --host 127.0.0.1",
     "host": "dotnet run --project dotnet/Elsa.ReactStudio.Server --no-launch-profile --urls http://127.0.0.1:5201 --ReactStudio:ConfigurationFile=../../studio.config.json",
-    "build": "pnpm build:packages && tsc --noEmit && vite build && node scripts/dependency-licenses.mjs",
+    "build": "pnpm build:packages && tsc --noEmit && node scripts/build-assets.mjs && node scripts/dependency-licenses.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "lint": "eslint .",
     "typecheck": "pnpm build:packages && tsc --noEmit",

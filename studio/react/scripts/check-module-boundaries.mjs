@@ -3,16 +3,17 @@ import { dirname, join, relative, resolve } from "node:path";
 import ts from "typescript";
 
 // #8845 invariant: modules consume shared public packages, never host or sibling source.
-const root = resolve("src/modules");
+const root = resolve("dotnet/modules");
+const catalog = JSON.parse(readFileSync("module-catalog.json", "utf8"));
 function files(directory) {
   return readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
     const path = join(directory, entry.name);
-    return entry.isDirectory() ? files(path) : /\.[cm]?tsx?$/.test(entry.name) ? [path] : [];
+    return entry.isDirectory() ? entry.name === "node_modules" ? [] : files(path) : /\.[cm]?tsx?$/.test(entry.name) ? [path] : [];
   });
 }
 let checked = 0;
-for (const module of readdirSync(root, { withFileTypes: true }).filter(entry => entry.isDirectory())) {
-  const directory = join(root, module.name);
+for (const module of catalog) {
+  const directory = resolve(module.client);
   for (const path of files(directory)) {
     for (const { fileName: specifier } of ts.preProcessFile(readFileSync(path, "utf8"), true, true).importedFiles) {
       if (specifier.startsWith("@/")) throw new Error(`${relative(root, path)} imports host source: ${specifier}`);

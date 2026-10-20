@@ -44,4 +44,7 @@
 	  </None>
 	</ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="../../../../studio/react/dotnet/Elsa.ReactStudio/Elsa.ReactStudio.csproj" />
+  </ItemGroup>
 </Project>

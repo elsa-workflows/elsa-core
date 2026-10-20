@@ -18,7 +18,8 @@
       "types": "./dist/*.d.ts",
       "import": "./dist/*.js"
     },
-    "./styles.css": "./src/styles.css"
+    "./styles.css": "./src/styles.css",
+    "./tokens.css": "./src/tokens.css"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json"
