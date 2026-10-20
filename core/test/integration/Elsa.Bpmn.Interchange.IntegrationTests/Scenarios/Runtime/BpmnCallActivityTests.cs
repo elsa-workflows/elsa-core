@@ -135,24 +135,18 @@ public class BpmnCallActivityTests(ITestOutputHelper testOutputHelper) : IAsyncL
         Assert.False((await _host.ActivityStatusesOfAsync(parent)).ContainsKey(WorkActivityId("place-unguarded-order", "Confirm")));
     }
 
-    /// <summary>The failing child the parent called. It finished before the parent could resume, so it is read, not awaited.</summary>
+    /// <summary>The failing child the parent called. It finished before the parent could resume, so it is already saved.</summary>
     private async Task<WorkflowState> FailingChildOfAsync(string parentId) =>
-        (await _host.InstancesOfAsync(FailingChildDefinitionId)).Single(instance => instance.ParentWorkflowInstanceId == parentId).WorkflowState;
+        (await _host.WaitForInstanceAsync(
+            instance => instance.DefinitionId == FailingChildDefinitionId && instance.ParentWorkflowInstanceId == parentId,
+            $"A '{FailingChildDefinitionId}' child of {parentId}")).WorkflowState;
 
     private async Task<string> WaitForChildAsync(string parentId, Func<WorkflowState, bool> condition)
     {
-        var timeoutAt = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(30);
+        var child = await _host.WaitForInstanceAsync(
+            instance => instance.DefinitionId == ChildDefinitionId && instance.ParentWorkflowInstanceId == parentId && condition(instance.WorkflowState),
+            $"A '{ChildDefinitionId}' child of {parentId}");
 
-        while (DateTimeOffset.UtcNow < timeoutAt)
-        {
-            var child = (await _host.InstancesOfAsync(ChildDefinitionId)).SingleOrDefault(instance => instance.ParentWorkflowInstanceId == parentId);
-
-            if (child is not null && condition(child.WorkflowState))
-                return child.Id;
-
-            await Task.Delay(TimeSpan.FromMilliseconds(50));
-        }
-
-        throw new TimeoutException($"No '{ChildDefinitionId}' child of {parentId} reached the expected state.");
+        return child.Id;
     }
 }
