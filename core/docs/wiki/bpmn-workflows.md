@@ -21,7 +21,7 @@ elsa.UseBpmnInterchange();
 
 ### Trying it
 
-The sample host `src/apps/Elsa.Server.Web` has BPMN interchange enabled (`.UseBpmnInterchange()` in its `Program.cs`), so it can be used to try the analyze endpoint against a real server. If you have not already trusted the local ASP.NET Core development certificate, run `dotnet dev-certs https --trust` once, otherwise the `curl` calls below will fail TLS verification. Sign in with one of the development users (e.g. `admin`/`password`, see `appsettings.Development.json`) to obtain a bearer token, then call the endpoint:
+The sample host `core/src/apps/Elsa.Server.Web` has BPMN interchange enabled (`.UseBpmnInterchange()` in its `Program.cs`), so it can be used to try the analyze endpoint against a real server. If you have not already trusted the local ASP.NET Core development certificate, run `dotnet dev-certs https --trust` once, otherwise the `curl` calls below will fail TLS verification. Sign in with one of the development users (e.g. `admin`/`password`, see `appsettings.Development.json`) to obtain a bearer token, then call the endpoint from the repository root:
 
 ```bash
 TOKEN=$(curl -s -X POST https://localhost:5001/elsa/api/identity/login \
@@ -30,7 +30,7 @@ TOKEN=$(curl -s -X POST https://localhost:5001/elsa/api/identity/login \
 
 curl -s -X POST https://localhost:5001/elsa/api/bpmn/analyze \
   -H "Authorization: Bearer $TOKEN" \
-  -F "file=@test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Assets/camunda-order-process.bpmn"
+  -F "file=@core/test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Assets/camunda-order-process.bpmn"
 ```
 
 This returns a JSON body of process ids, element counts, and findings (e.g. informational notes about unbound service tasks or retained vendor extensions).
@@ -83,9 +83,9 @@ The ledger is serialized to JSON as part of the scope's `ActivityExecutionContex
 | `MessagePublish` | Message throw event | `PublishEvent` |
 | `CallProcess` | Call activity | `DispatchWorkflow` |
 | `NestedProcess` | Embedded subprocess | Recursively bound `BpmnProcess` |
-| `UnboundTask` | Service / send / user / script task | Author-declared via `elsa:activityBinding` (see below) |
+| `UnboundTask` | Task, user, service, script, manual or business rule task; a send or receive task without a resolvable message | Author-declared via `elsa:activityBinding` (see below) |
 
-BPMN describes *what* a task is for, not *how* to perform it. An unbound task gets its implementation from an `elsa:activityBinding` vendor extension inside the BPMN element's `<extensionElements>`.
+BPMN describes *what* a task is for, not *how* to perform it. An unbound task gets its implementation from an `elsa:activityBinding` vendor extension inside the BPMN element's `<extensionElements>`. A send or receive task whose `messageRef` resolves to a named message is not unbound: it binds to `MessagePublish` or `MessageWait` like a message throw or catch event. `elsa:activityBinding` is accepted only on an unbound task; the binder refuses one on any other element, such as a gateway, an event, or a send or receive task bound to its message, because nothing would ever run it.
 
 ## The `elsa:` Vendor Extension
 
@@ -157,9 +157,13 @@ whole-definition import and resets them from the document, same as it always has
   dispatched before persist so a rejecting handler fails the request before anything is written; handlers
   may mutate that draft, and the compare-and-swap writes that same instance. If name, description or the
   ETag-covered graph moved in that window the swap is `412` rather than silently overwriting the other
-  write. A lost race is still `412`. The swap is implemented on the in-memory and EF Core definition stores
-  (`IWorkflowDefinitionStore.TryUpdateLatestAsync`). Mongo, Dapper and Event Sourcing providers need the same
-  method before this endpoint is concurrency-safe on those stores.
+  write. A lost race is still `412`. The swap is `IWorkflowDefinitionStore.TryUpdateLatestAsync`, which every
+  definition store in this repository implements: in-memory (one lock), EF Core and Dapper (one database
+  transaction; Dapper's is serializable) and MongoDB (one session transaction with snapshot read concern). MongoDB
+  transactions need a deployment that supports them, such as a replica set: against a standalone server the store
+  throws `NotSupportedException` without writing anything, so the `PUT` fails instead of saving an unguarded
+  edit. A third-party definition store must implement the method with the same guarantee for this
+  endpoint to be concurrency-safe on it.
 
 ### The document endpoints and the JSON payload format
 
@@ -353,10 +357,10 @@ Test coverage: `test/integration/Elsa.Bpmn.IntegrationTests/Scenarios/HostPort/B
 
 A `BpmnProcess` is a `Container` and can be nested inside any Elsa composite activity (e.g. a `Flowchart`). The workflow that hosts it is responsible for marking the outermost scope as the entry point (`IsRootScope = true`). Nested BPMN scopes — embedded subprocesses, event subprocesses — are themselves `BpmnProcess` instances bound as child work by the binder and need no special treatment from the containing workflow.
 
-To find code fast:
+To find code fast, from the repository root:
 
 ```bash
-rg "class BpmnProcess" src/modules
-rg "class BpmnWorkLedger" src/modules
-rg "elsa:activityBinding" test/
+rg "class BpmnProcess" core/src/modules
+rg "class BpmnWorkLedger" core/src/modules
+rg "elsa:activityBinding" core/test/
 ```
