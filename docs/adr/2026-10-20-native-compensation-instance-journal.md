@@ -26,7 +26,7 @@ Completely exclude BPMN implementation reuse, adapters, shared compensation abst
 
 One snapshot boundary minimizes new state representations, but is not proof that every provider atomically saves required stores or rejects stale owners. Existing conditional activity commits, no-op default transaction and opt-in EF wrapper do not establish the selected protocol. E1 must prove the candidate serial local/SQLite profile or select a revised provider/seam before M1 readiness. E2 covers protection/disclosure/retention; E3 covers native child/identity/Studio integration. Unknown remote outcome remains explicit even when local transactions are perfect.
 
-The [evidence map](../../core/docs/specs/native-compensation/evidence.md) pins actual source; [persistence](../../core/docs/specs/native-compensation/persistence.md) specifies the protocol and [verification](../../core/docs/specs/native-compensation/verification.md) supplies crash/security controls. No implementation, provider qualification, restart evidence or public API freeze is claimed by this ADR.
+The [evidence map](../../core/docs/specs/native-compensation/evidence.md) pins actual source; [persistence](../../core/docs/specs/native-compensation/persistence.md) specifies the journal protocol, the [guarded snapshot contract](2026-10-21-native-compensation-guarded-snapshots.md) proposes the native row fence/admission boundary, and [verification](../../core/docs/specs/native-compensation/verification.md) supplies crash/security controls. Both ADRs remain Proposed. No implementation, provider qualification, restart evidence or public API freeze is claimed by this ADR.
 
 ## Revisit
 
