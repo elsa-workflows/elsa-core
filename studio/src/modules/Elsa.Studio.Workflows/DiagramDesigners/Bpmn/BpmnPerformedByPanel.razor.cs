@@ -293,6 +293,8 @@ public partial class BpmnPerformedByPanel : IDisposable
         BpmnDocumentFailureReason.PreconditionRequired => Localizer["The server refused the save because it did not name the revision it replaces, so nothing was saved. Reload and make the change again."],
         BpmnDocumentFailureReason.BindingInvalid => Localizer["The server refused the binding of {0}, so nothing was saved: {1}", string.Join(", ", Session.EditedElementIds.Select(id => $"'{id}'")), failure.Message],
         BpmnDocumentFailureReason.CapabilityUnsupported => Localizer["The server cannot run this process, so nothing was saved: {0}", failure.Message],
+        BpmnDocumentFailureReason.ConditionUnsupported when failure.ConditionRefusal is { } refusal =>
+            Localizer["The process's sequence flows {0} carry expression conditions, which Elsa does not evaluate yet, so nothing was saved.", string.Join(", ", refusal.FlowIds.Select(id => $"'{id}'"))],
         BpmnDocumentFailureReason.NotFound => Localizer["This workflow definition no longer exists."],
         _ => Localizer["The binding changes could not be saved: {0}", failure.Message]
     };

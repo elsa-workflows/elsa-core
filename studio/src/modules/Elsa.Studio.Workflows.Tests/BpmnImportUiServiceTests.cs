@@ -209,6 +209,52 @@ public sealed class BpmnImportUiServiceTests : BunitContext, IAsyncLifetime
     }
 
     [Fact]
+    public async Task ImportFileAsync_ShowsTheRefusalDialogListingTheFlows_AndReturnsAConditionRefusalResult_ForTheCodedRefusal()
+    {
+        const string message = "The document's sequence flows carry expression conditions, which Elsa does not evaluate yet: f2, f3.";
+
+        var dialogService = Services.GetRequiredService<IDialogService>();
+        var localizer = Services.GetRequiredService<ILocalizer>();
+        var interchangeService = new FakeBpmnInterchangeService
+        {
+            AnalyzeResult = new(new BpmnImportAnalysisModel { ProcessIds = ["only-process"] }),
+            ImportResult = new(new ValidationErrors(
+                [new ValidationError(message)],
+                HttpStatusCode.UnprocessableEntity,
+                Code: BpmnErrorCodes.ImportConditionUnsupported,
+                Data: JsonDocument.Parse("""{ "elementIds": ["f2", "f3"] }""").RootElement))
+        };
+        var definitionService = new FakeWorkflowDefinitionService();
+        var service = new BpmnImportUiService(dialogService, localizer, interchangeService, definitionService);
+        var file = new FakeBrowserFile("process.bpmn");
+
+        var importTask = _dialogProvider.InvokeAsync(() => service.ImportFileAsync(file, definitionId: null));
+
+        // The findings dialog.
+        _dialogProvider.WaitForElement("button");
+        await _dialogProvider.InvokeAsync(() => ImportButton().ClickAsync(new MouseEventArgs()));
+
+        // The refusal dialog, listing the flows; closing it lets the import finish.
+        _dialogProvider.WaitForElement("button");
+        Assert.Contains("expression conditions", _dialogProvider.Markup);
+        Assert.Contains("f2", _dialogProvider.Markup);
+        Assert.Contains("f3", _dialogProvider.Markup);
+        await _dialogProvider.InvokeAsync(() => CloseButton().ClickAsync(new MouseEventArgs()));
+
+        var result = await importTask.WaitAsync(Timeout);
+
+        Assert.NotNull(result);
+        Assert.False(result!.IsSuccess);
+        Assert.Equal(WorkflowImportFailureType.ConditionRefusal, result.Failure!.FailureType);
+        Assert.Equal(message, result.Failure.ErrorMessage);
+        Assert.Null(definitionService.RequestedDefinitionId);
+
+        // The caller-side summary path excludes a result already reported in its own dialog.
+        Assert.Empty(BpmnImportBatch.ReportableResults([result]));
+        Assert.True(BpmnImportBatch.AllReported([result]));
+    }
+
+    [Fact]
     public async Task ImportFileAsync_FallsBackToTheServerMessage_ForA422WithAnUnrecognizedCode()
     {
         const string message = "Some other 422 refusal that is not a capability refusal.";

@@ -66,11 +66,27 @@ public class BpmnImportUiService(
                 if (refusal != null)
                 {
                     var message = string.Join(" ", failure.Errors.Select(error => error.ErrorMessage));
-                    await ShowRefusalDialogAsync(refusal);
+                    await ShowRefusalDialogAsync(new DialogParameters<BpmnImportRefusalDialog> { { x => x.Refusal, refusal } });
                     return new()
                     {
                         FileName = file.Name,
                         Failure = new(message, WorkflowImportFailureType.CapabilityRefusal)
+                    };
+                }
+            }
+
+            if (failure.Code == BpmnErrorCodes.ImportConditionUnsupported)
+            {
+                var refusal = BpmnConditionRefusal.FromData(failure.Data);
+
+                if (refusal != null)
+                {
+                    var message = string.Join(" ", failure.Errors.Select(error => error.ErrorMessage));
+                    await ShowRefusalDialogAsync(new DialogParameters<BpmnImportRefusalDialog> { { x => x.ConditionRefusal, refusal } });
+                    return new()
+                    {
+                        FileName = file.Name,
+                        Failure = new(message, WorkflowImportFailureType.ConditionRefusal)
                     };
                 }
             }
@@ -132,9 +148,8 @@ public class BpmnImportUiService(
         return new(results, otherFiles);
     }
 
-    private async Task ShowRefusalDialogAsync(BpmnCapabilityRefusal refusal)
+    private async Task ShowRefusalDialogAsync(DialogParameters<BpmnImportRefusalDialog> parameters)
     {
-        var parameters = new DialogParameters<BpmnImportRefusalDialog> { { x => x.Refusal, refusal } };
         var options = new DialogOptions
         {
             CloseOnEscapeKey = true,

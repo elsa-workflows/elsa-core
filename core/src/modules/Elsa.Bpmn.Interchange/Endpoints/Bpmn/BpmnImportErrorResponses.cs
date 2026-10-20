@@ -65,6 +65,11 @@ internal static class BpmnImportErrorResponses
             await BpmnErrorResponse.SendAsync(httpResponse, CapabilityResponseFor(exception), cancellationToken);
             return null;
         }
+        catch (BpmnConditionUnsupportedException exception)
+        {
+            await BpmnErrorResponse.SendAsync(httpResponse, ConditionUnsupportedResponseFor(exception), cancellationToken);
+            return null;
+        }
 
         if (!result.ImportResult.Succeeded)
         {
@@ -110,6 +115,17 @@ internal static class BpmnImportErrorResponses
             BpmnErrorCodes.ImportDuplicateElementId,
             StatusCodes.Status422UnprocessableEntity,
             new { ElementIds = exception.DuplicateElementIds });
+
+    /// <summary>
+    /// The <see cref="BpmnErrorCodes.ImportConditionUnsupported"/> response for <paramref name="exception"/>, carrying
+    /// the offending sequence flow ids as <c>data.elementIds</c>.
+    /// </summary>
+    internal static BpmnErrorResponse ConditionUnsupportedResponseFor(BpmnConditionUnsupportedException exception) =>
+        BpmnErrorResponse.Create(
+            exception.Message,
+            BpmnErrorCodes.ImportConditionUnsupported,
+            StatusCodes.Status422UnprocessableEntity,
+            new { ElementIds = exception.FlowIds });
 
     /// <summary>
     /// The <see cref="BpmnErrorCodes.ImportCapabilityUnsupported"/> response for <paramref name="exception"/>, as its
