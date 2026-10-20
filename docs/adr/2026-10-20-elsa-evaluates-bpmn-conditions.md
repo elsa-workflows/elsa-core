@@ -31,7 +31,10 @@ Conditions are evaluated by the host, with Elsa's expression engine.
   value selects an Elsa expression type, `javascript`, `csharp` or `liquid`, written as that name, case-insensitively,
   or as a URI whose last path segment is that name. JavaScript is used when neither value is present. A language Elsa
   does not support is refused at import with a coded error, never mapped to another language.
-- A condition that fails to evaluate faults the work that reached it, like any other expression failure in Elsa.
+- A condition that fails to evaluate faults the BPMN scope it belongs to (the process or subprocess) with the
+  expression's error, which Elsa records as an incident like any other expression failure. A gateway or activity whose
+  conditional flows all evaluate false and that has no default flow faults the same way, as the BPMN specification
+  requires. On an exclusive gateway, an outgoing flow with no condition that is not the default counts as true.
 - `conditionOutcome` keeps working as it does today. A sequence flow that carries both a `conditionOutcome` and a
   `conditionExpression` is refused at import with a coded error, because either precedence rule would route some
   documents differently from what their author meant.
