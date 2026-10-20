@@ -196,9 +196,10 @@ restores it from the definition's stored BPMN source:
   stored body with it; nothing of that body is written back, not even under a new element that reuses its
   `bindingRef`. A subprocess element with no stored body — one this edit adds — is written as posted, empty.
 - The subprocess element itself is the posted one: its name, flags, boundary events and multi-instance marker come
-  from the document, and a changed or removed marker is written as posted. (`Bpmn.Interchange` 0.2.0 also keeps a
-  copy of an interpreted marker inside the body it reads; `PUT` drops that copy so it cannot override the posted
-  marker or pile up on every write. `Export` still writes that copy alongside the element's own marker.)
+  from the document, and a changed or removed marker is written as posted. (`Bpmn.Interchange` before 0.3.1 also kept a
+  copy of an interpreted marker inside the body it read, and `Export` wrote it alongside the element's own marker.
+  0.3.1 no longer keeps that copy; `PUT` still drops one if a stored body carries it, so it cannot override the
+  posted marker or pile up on every write.)
 - A subprocess element that has a stored body but no `bindingRef` is refused with `400 Bad Request` before anything
   is persisted: the writer attaches a body through the element's `bindingRef`, so writing it would silently empty
   the subprocess. Send each element back with the `bindingRef` `GET` returned.
