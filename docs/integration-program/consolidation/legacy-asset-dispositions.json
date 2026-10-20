@@ -128,12 +128,12 @@
         "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8495",
         "merge_commit": "dd3903fab232f8cf3255e8b4f0a953e2a081c3c9",
         "active_path": ".github/dependabot.yml",
-        "active_blob": "83e586893f4e58a5f938db815d5478afeb5651b0",
+        "active_blob": "646da5d57cb26a23cbcf0388d76e01df76eb632a",
         "active_mode": "100644",
         "representation": "expanded",
         "active_update": {
-          "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8724",
-          "reason": "PR #8724 replaces the root-solution scheduling unit with five project-parent batches under Task #8636 after actual managed run 38108457632 reached the 55-minute limit. It preserves the complete 356-project selection, all 173 Extensions/Studio projects, the retained testing project and root tool manifest. Each job retains cap 1, permitting up to five version-update proposals that require coordinated shared-file review and affected-product CI. PR #8719 and earlier #8640 remain historical configuration corrections; their reviewed merges do not approve this candidate. Static coverage/import checks are local evidence only; native evaluated versions, terminal managed results, retained-project disposition and configured feed acceptance remain open."
+          "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8925",
+          "reason": "PR #8925 adds a separate weekly npm updater for studio/react with a one-PR cap, preserving all five NuGet scheduling entries unchanged. This updates only the active root configuration representation; the original source pins, merge evidence and Task #8636 acceptance gates remain intact. PR #8724 replaces the root-solution scheduling unit with five project-parent batches under Task #8636 after actual managed run 38108457632 reached the 55-minute limit. It preserves the complete 356-project selection, all 173 Extensions/Studio projects, the retained testing project and root tool manifest. Each job retains cap 1, permitting up to five version-update proposals that require coordinated shared-file review and affected-product CI. PR #8719 and earlier #8640 remain historical configuration corrections; their reviewed merges do not approve this candidate. Static coverage/import checks are local evidence only; native evaluated versions, terminal managed results, retained-project disposition and configured feed acceptance remain open."
         }
       }
     },
@@ -2197,12 +2197,12 @@
         "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8495",
         "merge_commit": "dd3903fab232f8cf3255e8b4f0a953e2a081c3c9",
         "active_path": ".github/dependabot.yml",
-        "active_blob": "83e586893f4e58a5f938db815d5478afeb5651b0",
+        "active_blob": "646da5d57cb26a23cbcf0388d76e01df76eb632a",
         "active_mode": "100644",
         "representation": "expanded",
         "active_update": {
-          "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8724",
-          "reason": "PR #8724 replaces the root-solution scheduling unit with five project-parent batches under Task #8636 after actual managed run 38108457632 reached the 55-minute limit. It preserves the complete 356-project selection, all 173 Extensions/Studio projects, the retained testing project and root tool manifest. Each job retains cap 1, permitting up to five version-update proposals that require coordinated shared-file review and affected-product CI. PR #8719 and earlier #8640 remain historical configuration corrections; their reviewed merges do not approve this candidate. Static coverage/import checks are local evidence only; native evaluated versions, terminal managed results, retained-project disposition and configured feed acceptance remain open."
+          "pr_url": "https://github.com/elsa-workflows/elsa-core/pull/8925",
+          "reason": "PR #8925 adds a separate weekly npm updater for studio/react with a one-PR cap, preserving all five NuGet scheduling entries unchanged. This updates only the active root configuration representation; the original source pins, merge evidence and Task #8636 acceptance gates remain intact. PR #8724 replaces the root-solution scheduling unit with five project-parent batches under Task #8636 after actual managed run 38108457632 reached the 55-minute limit. It preserves the complete 356-project selection, all 173 Extensions/Studio projects, the retained testing project and root tool manifest. Each job retains cap 1, permitting up to five version-update proposals that require coordinated shared-file review and affected-product CI. PR #8719 and earlier #8640 remain historical configuration corrections; their reviewed merges do not approve this candidate. Static coverage/import checks are local evidence only; native evaluated versions, terminal managed results, retained-project disposition and configured feed acceptance remain open."
         }
       }
     },
