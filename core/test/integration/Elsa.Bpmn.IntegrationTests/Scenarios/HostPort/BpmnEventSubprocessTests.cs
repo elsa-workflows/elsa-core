@@ -112,6 +112,58 @@ public class BpmnEventSubprocessTests(ITestOutputHelper testOutputHelper)
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
     }
 
+    [Fact(DisplayName = "A non-interrupting signal-triggered event subprocess runs its body each time the signal arrives, leaving the scope's work running")]
+    public async Task NonInterruptingSignalEventSubprocess_RunsItsBodyAndLeavesTheScopeRunning()
+    {
+        // Arrange
+        await _host.RunAsync(BpmnTestProcesses.SignalEventSubprocess(_host.Log, interrupting: false), typeof(FaultStrategy));
+
+        Assert.Equal(
+            [BpmnTestProcesses.BindingRef("recallListener"), BpmnTestProcesses.BindingRef("work")],
+            _host.Log.Snapshot("liveWork@work"));
+
+        // Act: the signal arrives twice while the scope's own work is still running.
+        await _host.FinishWorkAsync("recallListener");
+        await _host.FinishWorkAsync("recallListener");
+
+        // Assert: the body ran once per signal, and the scope's work was never touched.
+        Assert.Equal(2, _host.Log.Occurrences("executed:handleRecall"));
+        Assert.DoesNotContain("cancelled:work", _host.Log.Entries);
+        Assert.DoesNotContain("executed:after", _host.Log.Entries);
+
+        // Act: the scope's own work finishes.
+        var result = await _host.FinishWorkAsync("work");
+
+        // Assert: the scope carried on down its own path, and retired the listener it re-armed after the last signal.
+        Assert.Contains("executed:after", _host.Log.Entries);
+        Assert.Contains("cancelled:recallListener", _host.Log.Entries);
+        Assert.Empty(_host.LiveWorkOf("scope"));
+        Assert.Empty(result.WorkflowState.Bookmarks);
+        Assert.Empty(result.WorkflowState.Incidents);
+        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+    }
+
+    [Fact(DisplayName = "An interrupting signal-triggered event subprocess stops the scope's work and runs its body instead")]
+    public async Task InterruptingSignalEventSubprocess_StopsTheScopeAndRunsItsBody()
+    {
+        // Arrange
+        await _host.RunAsync(BpmnTestProcesses.SignalEventSubprocess(_host.Log, interrupting: true), typeof(FaultStrategy));
+
+        // Act: the signal arrives while the scope's own work is still running.
+        var result = await _host.FinishWorkAsync("recallListener");
+
+        // Assert: the scope's work was torn down, the body ran once, and the scope's own path never resumed.
+        Assert.Contains("cancelled:work", _host.Log.Entries);
+        Assert.Equal(1, _host.Log.Occurrences("executed:handleRecall"));
+        Assert.DoesNotContain("executed:after", _host.Log.Entries);
+
+        // An interrupting listener is not re-armed: nothing is left for a second signal to resume into.
+        Assert.Empty(_host.LiveWorkOf("scope"));
+        Assert.Empty(result.WorkflowState.Bookmarks);
+        Assert.Empty(result.WorkflowState.Incidents);
+        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+    }
+
     [Fact(DisplayName = "A scope completing with its listener still armed retires it, and the armed work does not survive")]
     public async Task MessageEventSubprocess_RetiresTheStillArmedListenerWhenTheScopeCompletes()
     {

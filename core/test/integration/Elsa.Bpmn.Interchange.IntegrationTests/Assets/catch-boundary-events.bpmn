@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:elsa="https://elsaworkflows.io/schemas/bpmn/v1"
+                  xmlns:vw="https://bpmn.valenceworks.io/schema/bpmn"
+                  id="Definitions_review-order"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:message id="Message_ReviewCompleted" name="ReviewCompleted" />
+  <bpmn:message id="Message_OrderCancelled" name="OrderCancelled" />
+  <bpmn:signal id="Signal_ReminderDue" name="ReminderDue" />
+  <bpmn:process id="review-order" isExecutable="true">
+    <bpmn:startEvent id="Start">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:receiveTask id="AwaitReview" name="Await review" messageRef="Message_ReviewCompleted">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+    </bpmn:receiveTask>
+    <bpmn:serviceTask id="Fulfil" name="Fulfil order">
+      <bpmn:extensionElements>
+        <elsa:activityBinding activityType="Elsa.WriteLine">
+          <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"Fulfilling"}}</elsa:input>
+        </elsa:activityBinding>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="Fulfilled">
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:boundaryEvent id="Cancelled" name="Order cancelled" attachedToRef="AwaitReview" cancelActivity="true">
+      <bpmn:outgoing>Flow_Cancelled</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="Cancelled_Message" messageRef="Message_OrderCancelled" />
+    </bpmn:boundaryEvent>
+    <bpmn:boundaryEvent id="ReminderDue" name="Reminder due" attachedToRef="AwaitReview" cancelActivity="false">
+      <bpmn:outgoing>Flow_Reminder</bpmn:outgoing>
+      <bpmn:signalEventDefinition id="ReminderDue_Signal" signalRef="Signal_ReminderDue" />
+    </bpmn:boundaryEvent>
+    <bpmn:serviceTask id="Refund" name="Refund order">
+      <bpmn:extensionElements>
+        <elsa:activityBinding activityType="Elsa.WriteLine">
+          <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"Refunding"}}</elsa:input>
+        </elsa:activityBinding>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Cancelled</bpmn:incoming>
+      <bpmn:outgoing>Flow_4</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="RemindReviewer" name="Remind reviewer">
+      <bpmn:extensionElements>
+        <elsa:activityBinding activityType="Elsa.WriteLine">
+          <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"Reminding"}}</elsa:input>
+        </elsa:activityBinding>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Reminder</bpmn:incoming>
+      <bpmn:outgoing>Flow_5</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="Refunded">
+      <bpmn:incoming>Flow_4</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="Reminded">
+      <bpmn:incoming>Flow_5</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start" targetRef="AwaitReview" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="AwaitReview" targetRef="Fulfil" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Fulfil" targetRef="Fulfilled" />
+    <bpmn:sequenceFlow id="Flow_Cancelled" sourceRef="Cancelled" targetRef="Refund" />
+    <bpmn:sequenceFlow id="Flow_Reminder" sourceRef="ReminderDue" targetRef="RemindReviewer" />
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="Refund" targetRef="Refunded" />
+    <bpmn:sequenceFlow id="Flow_5" sourceRef="RemindReviewer" targetRef="Reminded" />
+  </bpmn:process>
+</bpmn:definitions>
