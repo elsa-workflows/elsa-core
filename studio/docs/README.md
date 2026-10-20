@@ -66,4 +66,4 @@ import dispositions and verification are recorded in the
 
 ## Native compensation design
 
-The [Elsa 3 adaptation design packet](specs/native-compensation/plan.md) is the design-only #8896 exception. It describes proposed contracts and remaining decisions; production implementation and other program leaves remain paused.
+The [Elsa 3 adaptation design packet](specs/native-compensation/plan.md) records #8896's reviewed design and remaining technical gates. Standing owner authorization permits delivery; implementation readiness still depends on the packet's evidence gates.

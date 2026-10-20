@@ -76,4 +76,4 @@ No unresolved gate is delegated as product intent for a production worker to gue
 
 ## Requirements gate result
 
-Design readiness: satisfied for #8896 by the owner's bounded authorization, available Program/PRD/reference and this task's explicit acceptance. Production readiness: **not satisfied**. Evidence gates, owner policies and the final review/acceptance prevent premature claims. After PR review, reconcile Program/Project from actual head and issue state; do not mark a product milestone Passed or infer downstream readiness because a design document merged.
+Design readiness: satisfied for #8896 by the owner's original #8896 authorization, available Program/PRD/reference and this task's explicit acceptance. Production readiness: **not satisfied**. Evidence gates, owner policies and the final review/acceptance prevent premature claims. After PR review, reconcile Program/Project from actual head and issue state; do not mark a product milestone Passed or infer downstream readiness because a design document merged.
