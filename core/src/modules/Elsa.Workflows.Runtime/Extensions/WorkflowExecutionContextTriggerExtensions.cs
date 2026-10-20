@@ -23,7 +23,9 @@ public static class WorkflowExecutionContextTriggerExtensions
     public static string? GetTriggerStimulusHash(this WorkflowExecutionContext context)
     {
         if (!context.Properties.TryGetValue(TriggerWorkflowProperties.StimulusHash, out var value))
+        {
             return null;
+        }
 
         // A property that went through a JSON hop (a scheduler's job data, for instance) can come back as an element.
         var hash = value switch

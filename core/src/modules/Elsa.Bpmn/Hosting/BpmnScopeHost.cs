@@ -369,12 +369,16 @@ internal sealed class BpmnScopeHost
     private async ValueTask<BpmnStartSignal?> ResolveTriggeredStartAsync()
     {
         if (!_context.IsTriggerOfWorkflow() || _process.Process is not { } process)
+        {
             return null;
+        }
 
         var workflowExecutionContext = _context.WorkflowExecutionContext;
 
         if (workflowExecutionContext.GetTriggerStimulusHash() is not { } stimulusHash)
+        {
             return null;
+        }
 
         return await BpmnStartEventResolver.ResolveByStimulusHashAsync(
             process,

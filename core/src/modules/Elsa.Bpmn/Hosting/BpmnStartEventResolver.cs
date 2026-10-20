@@ -107,19 +107,27 @@ internal static class BpmnStartEventResolver
             {
                 if (EventStimulusOf(eventDefinition) is { } eventName
                     && HashEquals(stimulusHasher.Hash(RuntimeStimulusNames.Event, new EventStimulus(eventName)), stimulusHash))
+                {
                     return new BpmnStartSignal(element.ElementId);
+                }
 
                 if (CronOf(eventDefinition) is { } cron
                     && HashEquals(stimulusHasher.Hash(SchedulingStimulusNames.Cron, new CronTriggerPayload(cron)), stimulusHash))
+                {
                     return new BpmnStartSignal(element.ElementId);
+                }
 
                 if (IntervalOf(eventDefinition) is { } interval)
+                {
                     intervalStarts.Add((element.ElementId, interval));
+                }
             }
         }
 
         if (intervalStarts.Count == 0 || await findTimerInterval() is not { } triggeredInterval)
+        {
             return null;
+        }
 
         var match = intervalStarts.FirstOrDefault(start => start.Interval == triggeredInterval);
         return match.ElementId is null ? null : new BpmnStartSignal(match.ElementId);
