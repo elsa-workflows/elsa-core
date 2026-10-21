@@ -57,10 +57,10 @@ const pascal = (name: string) => name.replace(/(?:^|_)([a-z])/g, (_, letter: str
 function variablePatterns(name: string) {
   const n = escapeRe(name);
   const alias = escapeRe(pascal(name));
-  const readAliases = generatedAccessor.test(name) ? `|\\bVariables?\\.${alias}\\b|\\bget${alias}\\s*\\(` : "";
+  const readAliases = generatedAccessor.test(name) ? `|\\bVariables?\\.${alias}\\b(?!\\s*=(?!=))|\\bget${alias}\\s*\\(` : "";
   const writeAliases = generatedAccessor.test(name) ? `|\\bVariables?\\.${alias}\\s*=[^=]|\\bset${alias}\\s*\\(` : "";
   return {
-    read: new RegExp(`\\b[vV]ariables\\.${n}\\b|\\bget${n}\\s*\\(|\\bgetVariable\\s*\\(\\s*['"\`]${n}['"\`]|\\bVariables?\\.Get(?:<[^>]+>)?\\s*\\(\\s*['"]${n}['"]${readAliases}`),
+    read: new RegExp(`\\b[vV]ariables\\.${n}\\b(?!\\s*=(?!=))|\\bget${n}\\s*\\(|\\bgetVariable\\s*\\(\\s*['"\`]${n}['"\`]|\\bVariables?\\.Get(?:<[^>]+>)?\\s*\\(\\s*['"]${n}['"]${readAliases}`),
     write: new RegExp(`\\bset${n}\\s*\\(|\\bsetVariable\\s*\\(\\s*['"\`]${n}['"\`]|\\b[vV]ariables\\.${n}\\s*=[^=]|\\bVariables?\\.Set\\s*\\(\\s*['"]${n}['"]${writeAliases}`),
   };
 }
