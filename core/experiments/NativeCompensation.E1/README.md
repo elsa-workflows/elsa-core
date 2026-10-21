@@ -24,4 +24,4 @@ The `--ambient` case measures Elsa's existing optional `EFCoreWorkflowCommitTran
 
 See `REPORT.md` for the measured results and unresolved gates.
 
-Post-measurement review added backend-controller failure cleanup/diagnostics and braces to the experiment C# conditionals. The host now owns disposal of the registered `HttpClient` and retains explicit `StopAsync` teardown. These harness/style/resource-ownership corrections were not .NET-built or natively executed; the measured r5/control source heads remain the ones recorded in `REPORT.md`.
+Post-measurement review added backend-controller failure cleanup/diagnostics and braces to the experiment C# conditionals. The host now owns disposal of the registered `HttpClient` and retains explicit `StopAsync` teardown. These harness/style/resource-ownership corrections are outside the frozen native measurements; the measured r5/control source heads remain the ones recorded in `REPORT.md`. The owning PR records later current-head build and review checks separately. Such checks do not repeat the participant/database experiment or qualify E1.
