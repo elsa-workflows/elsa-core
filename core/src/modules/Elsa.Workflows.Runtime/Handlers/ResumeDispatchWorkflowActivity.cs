@@ -5,24 +5,35 @@ using Elsa.Workflows.Runtime.Activities;
 using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Stimuli;
+using Elsa.Workflows.State;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Handlers;
 
 /// <summary>
-/// Resumes any blocking <see cref="DispatchWorkflow"/> activities when its child workflow completes.
+/// Resumes any blocking <see cref="DispatchWorkflow"/> activities when its child workflow completes, including when the child
+/// is cancelled through <see cref="IWorkflowCanceler"/>, which does not publish <see cref="WorkflowExecuted"/>.
 /// </summary>
 [PublicAPI]
 internal class ResumeDispatchWorkflowActivity(IBookmarkQueue bookmarkQueue, IStimulusHasher stimulusHasher, IStimulusSender stimulusSender) :
     INotificationHandler<WorkflowExecuted>,
+    INotificationHandler<WorkflowCancelled>,
     INotificationHandler<DispatchWorkflowActivationDenied>
 {
     private static readonly string ActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<DispatchWorkflow>();
 
-    public async Task HandleAsync(WorkflowExecuted notification, CancellationToken cancellationToken)
-    {
-        var workflowState = notification.WorkflowState;
+    public Task HandleAsync(WorkflowExecuted notification, CancellationToken cancellationToken) =>
+        ResumeParentAsync(notification.WorkflowState, cancellationToken);
 
+    public Task HandleAsync(WorkflowCancelled notification, CancellationToken cancellationToken) =>
+        // Cancelling a workflow that had already finished or faulted leaves its sub-status as it was, and its completion
+        // already resumed the parent through WorkflowExecuted.
+        notification.WorkflowState is { SubStatus: WorkflowSubStatus.Cancelled } workflowState
+            ? ResumeParentAsync(workflowState, cancellationToken)
+            : Task.CompletedTask;
+
+    private async Task ResumeParentAsync(WorkflowState workflowState, CancellationToken cancellationToken)
+    {
         if (workflowState.Status != WorkflowStatus.Finished)
             return;
 
@@ -36,7 +47,13 @@ internal class ResumeDispatchWorkflowActivity(IBookmarkQueue bookmarkQueue, ISti
         if (string.IsNullOrWhiteSpace(parentInstanceId))
             return;
 
-        await EnqueueResumeAsync(parentInstanceId, workflowState.Id, workflowState.Output, cancellationToken);
+        // The child's output, plus how it ended: Finished covers a faulted or cancelled child too, and the sub-status says which.
+        var input = new Dictionary<string, object>(workflowState.Output)
+        {
+            [DispatchWorkflow.ChildWorkflowSubStatusInputKey] = workflowState.SubStatus.ToString()
+        };
+
+        await EnqueueResumeAsync(parentInstanceId, workflowState.Id, input, cancellationToken);
     }
 
     public async Task HandleAsync(DispatchWorkflowActivationDenied notification, CancellationToken cancellationToken)

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:elsa="https://elsaworkflows.io/schemas/bpmn/v1"
+                  xmlns:vw="https://bpmn.valenceworks.io/schema/bpmn"
+                  id="Definitions_payment-race"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:message id="Message_PaymentReceived" name="PaymentReceived" />
+  <bpmn:process id="payment-race" isExecutable="true">
+    <bpmn:startEvent id="Start">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:eventBasedGateway id="Race">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_Payment</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Deadline</bpmn:outgoing>
+    </bpmn:eventBasedGateway>
+    <bpmn:intermediateCatchEvent id="PaymentReceived" name="Payment received">
+      <bpmn:incoming>Flow_Payment</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="PaymentReceived_Message" messageRef="Message_PaymentReceived" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:intermediateCatchEvent id="PaymentDeadline" name="One day passed">
+      <bpmn:incoming>Flow_Deadline</bpmn:incoming>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="PaymentDeadline_Timer">
+        <bpmn:timeDuration>P1D</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:intermediateCatchEvent>
+    <bpmn:serviceTask id="Ship" name="Ship order">
+      <bpmn:extensionElements>
+        <elsa:activityBinding activityType="Elsa.WriteLine">
+          <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"Shipping"}}</elsa:input>
+        </elsa:activityBinding>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_4</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="CancelOrder" name="Cancel order">
+      <bpmn:extensionElements>
+        <elsa:activityBinding activityType="Elsa.WriteLine">
+          <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"Cancelling"}}</elsa:input>
+        </elsa:activityBinding>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+      <bpmn:outgoing>Flow_5</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="Shipped">
+      <bpmn:incoming>Flow_4</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="Cancelled">
+      <bpmn:incoming>Flow_5</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start" targetRef="Race" />
+    <bpmn:sequenceFlow id="Flow_Payment" sourceRef="Race" targetRef="PaymentReceived" />
+    <bpmn:sequenceFlow id="Flow_Deadline" sourceRef="Race" targetRef="PaymentDeadline" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="PaymentReceived" targetRef="Ship" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="PaymentDeadline" targetRef="CancelOrder" />
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="Ship" targetRef="Shipped" />
+    <bpmn:sequenceFlow id="Flow_5" sourceRef="CancelOrder" targetRef="Cancelled" />
+  </bpmn:process>
+</bpmn:definitions>
