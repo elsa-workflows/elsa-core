@@ -366,6 +366,7 @@
         _capabilityCheck?.Cancel();
         _capabilityCheck?.Dispose();
         _capabilityCheck = null;
+        RevokeCapability();
     }
 
     private JsonArray EnsureSteps()

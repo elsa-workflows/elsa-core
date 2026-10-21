@@ -913,7 +913,82 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
 
     private Task OnBpmnDocumentChangedAsync() => InvokeAsync(StateHasChanged);
 
-    private async Task OnGraphUpdated() => await HandleChangesAsync(true);
+    private async Task OnGraphUpdated()
+    {
+        var workflowDefinition = _workflowDefinition;
+        var currentRoot = workflowDefinition?.Root;
+
+        if (workflowDefinition != null && _diagramDesigner != null &&
+            (NativeCompensationDraftCapability.ContainsPotentialScopeMarker(currentRoot) ||
+             NativeCompensationDraftCapability.ContainsPotentialScopeMarker(_diagramDesigner.GetCurrentContainerActivityOrRoot())))
+        {
+            var workflowDefinitionGeneration = _workflowDefinitionGeneration;
+            var definitionId = workflowDefinition.DefinitionId;
+            var documentBackendContextKey = _workflowDefinitionBackendContextKey;
+            var backendContextKey = BackendApiClientProvider.ContextKey;
+
+            bool IsCurrentWorkflowGraphUpdate() =>
+                IsCurrentWorkflowOperation(workflowDefinitionGeneration) &&
+                ReferenceEquals(_workflowDefinition, workflowDefinition) &&
+                string.Equals(_workflowDefinition?.DefinitionId, definitionId, StringComparison.Ordinal) &&
+                string.Equals(BackendApiClientProvider.ContextKey, backendContextKey, StringComparison.Ordinal);
+
+            JsonObject root;
+            try
+            {
+                root = await _diagramDesigner.GetActivityAsync();
+            }
+            catch (Exception) when (!IsCurrentWorkflowGraphUpdate())
+            {
+                return;
+            }
+
+            if (!IsCurrentWorkflowGraphUpdate())
+                return;
+
+            NativeCompensationDraftGraphAnalysis analysis;
+            try
+            {
+                analysis = await NativeDraftGraphClassifier.AnalyzeAsync(root);
+            }
+            catch (Exception) when (!IsCurrentWorkflowGraphUpdate())
+            {
+                return;
+            }
+            catch
+            {
+                analysis = NativeCompensationDraftGraphAnalysis.Indeterminate;
+            }
+
+            if (!IsCurrentWorkflowGraphUpdate())
+                return;
+
+            // A scope-like marker in user data is only a reason to classify the graph. Ordinary data
+            // must retain the existing editor update path, even when the document has no native origin.
+            if (analysis.RequiresNativeProtection)
+            {
+                bool IsCurrentNativeGraphUpdate() =>
+                    IsCurrentWorkflowGraphUpdate() &&
+                    !string.IsNullOrWhiteSpace(documentBackendContextKey) &&
+                    string.Equals(documentBackendContextKey, backendContextKey, StringComparison.Ordinal) &&
+                    string.Equals(_workflowDefinitionBackendContextKey, documentBackendContextKey, StringComparison.Ordinal) &&
+                    string.Equals(NativeCompensationDraftDocumentContext.GetBackendContextKey(workflowDefinition), documentBackendContextKey, StringComparison.Ordinal);
+
+                if (!IsCurrentNativeGraphUpdate())
+                    return;
+
+                workflowDefinition.Root = root;
+
+                if (WorkflowDefinitionUpdated != null)
+                    await WorkflowDefinitionUpdated();
+
+                if (!IsCurrentNativeGraphUpdate())
+                    return;
+            }
+        }
+
+        await HandleChangesAsync(true);
+    }
     
     private async Task OnActivityUpdated(JsonObject activity)
     {

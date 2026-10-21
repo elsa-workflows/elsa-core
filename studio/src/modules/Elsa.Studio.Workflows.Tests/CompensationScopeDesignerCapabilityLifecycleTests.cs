@@ -171,6 +171,45 @@ public sealed class CompensationScopeDesignerCapabilityLifecycleTests : BunitCon
         Assert.Equal(2, _featureProvider.FreshCheckCount);
     }
 
+    [Fact]
+    public async Task DisposedScopeDoesNotSelectAChildAfterPendingGraphUpdateCompletes()
+    {
+        _featureProvider = new TestFreshFeatureProvider((_, _) => Task.FromResult(true));
+        var graphUpdateStarted = NewCompletionSource();
+        var finishGraphUpdate = NewCompletionSource();
+        var selectedActivityCount = 0;
+        var activity = CreateScope();
+        var cut = RenderScope(
+            activity,
+            BackendContextKey,
+            graphUpdated: async () =>
+            {
+                graphUpdateStarted.TrySetResult();
+                await finishGraphUpdate.Task;
+            },
+            activitySelected: _ =>
+            {
+                selectedActivityCount++;
+                return Task.CompletedTask;
+            });
+        cut.WaitForAssertion(() => Assert.NotNull(FindStepNameInput(cut)));
+
+        var step = (System.Text.Json.Nodes.JsonObject)activity["steps"]![0]!;
+        var setChildType = cut.InvokeAsync(() => InvokeSetChildTypeAsync(cut.Instance, step, "forward", "Elsa.WriteLine"));
+        await graphUpdateStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        await cut.InvokeAsync(() =>
+        {
+            cut.Instance.Dispose();
+            return Task.CompletedTask;
+        });
+        finishGraphUpdate.SetResult();
+        await setChildType.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.NotNull(step["forward"]);
+        Assert.Equal(0, selectedActivityCount);
+    }
+
     [Theory]
     [InlineData("read-only")]
     [InlineData("unsupported-shape")]
@@ -309,11 +348,23 @@ public sealed class CompensationScopeDesignerCapabilityLifecycleTests : BunitCon
         Assert.Equal(1, _featureProvider.FreshCheckCount);
     }
 
-    private IRenderedComponent<CompensationScopeDesigner> RenderScope(System.Text.Json.Nodes.JsonObject activity, string documentContextKey, bool isReadOnly = false) =>
-        Render<CompensationScopeDesigner>(parameters => parameters
-            .Add(x => x.Activity, activity)
-            .Add(x => x.DocumentBackendContextKey, documentContextKey)
-            .Add(x => x.IsReadOnly, isReadOnly));
+    private IRenderedComponent<CompensationScopeDesigner> RenderScope(
+        System.Text.Json.Nodes.JsonObject activity,
+        string documentContextKey,
+        bool isReadOnly = false,
+        Func<Task>? graphUpdated = null,
+        Func<System.Text.Json.Nodes.JsonObject, Task>? activitySelected = null) =>
+        Render<CompensationScopeDesigner>(parameters =>
+        {
+            parameters
+                .Add(x => x.Activity, activity)
+                .Add(x => x.DocumentBackendContextKey, documentContextKey)
+                .Add(x => x.IsReadOnly, isReadOnly);
+            if (graphUpdated != null)
+                parameters.Add(x => x.GraphUpdated, EventCallback.Factory.Create(this, graphUpdated));
+            if (activitySelected != null)
+                parameters.Add(x => x.ActivitySelected, EventCallback.Factory.Create<System.Text.Json.Nodes.JsonObject>(this, activitySelected));
+        });
 
     private static Task SetParametersAsync(IRenderedComponent<CompensationScopeDesigner> cut, System.Text.Json.Nodes.JsonObject activity, string documentContextKey, bool isReadOnly = false)
     {
@@ -324,6 +375,12 @@ public sealed class CompensationScopeDesignerCapabilityLifecycleTests : BunitCon
             [nameof(CompensationScopeDesigner.IsReadOnly)] = isReadOnly
         });
         return cut.InvokeAsync(() => cut.Instance.SetParametersAsync(parameters));
+    }
+
+    private static Task InvokeSetChildTypeAsync(CompensationScopeDesigner designer, System.Text.Json.Nodes.JsonObject step, string role, string typeName)
+    {
+        var method = typeof(CompensationScopeDesigner).GetMethod("SetChildTypeAsync", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        return (Task)method.Invoke(designer, [step, role, typeName])!;
     }
 
     private static IElement FindStepNameInput(IRenderedComponent<CompensationScopeDesigner> cut)

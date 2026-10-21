@@ -1,6 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Text.Json.Nodes;
 using Bunit;
+using Elsa.Api.Client.Shared.Models;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Models;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Responses;
@@ -15,7 +17,10 @@ using Elsa.Studio.Workflows.Contracts;
 using Elsa.Studio.Workflows.Domain.Contracts;
 using Elsa.Studio.Workflows.Domain.Models;
 using Elsa.Studio.Workflows.Extensions;
+using Elsa.Studio.Workflows.Shared.Components;
 using Elsa.Studio.Workflows.Tests.Support;
+using Elsa.Studio.Workflows.UI.Contexts;
+using Elsa.Studio.Workflows.UI.Contracts;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.Extensions.DependencyInjection;
@@ -65,6 +70,169 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
         Assert.False(cut.Instance.IsReadOnly);
         Assert.Single(cut.FindComponents<WorkflowEditor>());
         Assert.Equal(1, featureProvider.FreshCheckCount);
+    }
+
+    [Fact]
+    public async Task LocalNativeGraphMutationIsReanalyzedBeforeSelectingAChildWithoutSaving()
+    {
+        await using var context = CreateContext(useRealWorkflowEditor: true);
+        context.Services.AddSingleton<IBackendApiClientProvider>(new MutableBackendApiClientProvider("context-A"));
+        context.Services.AddSingleton<IRemoteFeatureProvider>(new EnabledRemoteFeatureProvider());
+
+        var definition = CreateDefinition("local native mutation", "version-a");
+        definition.Root = CreateNativeCompensationScope();
+        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, "context-A"));
+        var cut = RenderWorkspace(context, definition, definition);
+        cut.WaitForAssertion(() => Assert.False(cut.Instance.IsReadOnly));
+
+        var (editor, diagramDesigner, child) = AddLocalNativeChild(cut);
+
+        Assert.True(cut.Instance.IsReadOnly, "The prior graph analysis must be stale after the local mutation.");
+        await cut.InvokeAsync(() => InvokeWorkflowEditorGraphUpdatedAsync(editor));
+        await cut.InvokeAsync(() => InvokeSelectActivityAsync(editor, child));
+
+        Assert.Equal("write-line-1", editor.SelectedActivityId);
+        Assert.False(cut.Instance.IsReadOnly);
+        Assert.Equal(1, diagramDesigner.ReadRootActivityCallCount);
+        Assert.Same(definition.Root, editor.WorkflowDefinition!.Root);
+        Assert.False(context.Services.GetRequiredService<DelayedWorkflowDefinitionEditorService>().SaveStarted.Task.IsCompleted);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ScopeLikeOrdinaryGraphUpdateKeepsTheOrdinaryPathWithoutCurrentDocumentOrigin(bool bindToStaleOrigin)
+    {
+        await using var context = CreateContext(useRealWorkflowEditor: true);
+        context.Services.AddSingleton<IBackendApiClientProvider>(new MutableBackendApiClientProvider("context-B"));
+        context.Services.AddSingleton<IRemoteFeatureProvider>(new EnabledRemoteFeatureProvider());
+        var classifier = new OrdinaryNativeDraftGraphClassifier();
+        context.Services.AddSingleton<INativeCompensationDraftGraphClassifier>(classifier);
+
+        var definition = CreateDefinition("ordinary scope-like data", "version-a");
+        definition.Root = NativeCompensationDraftTestData.CreateOrdinarySetVariableWithScopeLikeUserData();
+        if (bindToStaleOrigin)
+            Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, "context-A"));
+
+        var cut = RenderWorkspace(context, definition, definition);
+        cut.WaitForAssertion(() => Assert.False(cut.Instance.IsReadOnly));
+        var editor = cut.FindComponent<WorkflowEditor>().Instance;
+        var diagram = cut.FindComponent<DiagramDesignerWrapper>().Instance;
+        typeof(DiagramDesignerWrapper).GetField("_diagramDesigner", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .SetValue(diagram, new FixedRootDiagramDesigner(definition.Root!));
+
+        await cut.InvokeAsync(() => InvokeWorkflowEditorGraphUpdatedAsync(editor));
+
+        Assert.True(GetWorkflowEditorIsDirty(editor));
+        Assert.False(cut.Instance.IsReadOnly);
+        Assert.Single(cut.FindComponents<WorkflowEditor>());
+        Assert.True(classifier.CheckCount == 2, "The initial workspace analysis and editor disambiguation run, but the ordinary update does not notify the native workspace refresh path.");
+        Assert.Equal(bindToStaleOrigin ? "context-A" : null, NativeCompensationDraftDocumentContext.GetBackendContextKey(definition));
+        Assert.False(context.Services.GetRequiredService<DelayedWorkflowDefinitionEditorService>().SaveStarted.Task.IsCompleted);
+    }
+
+    [Fact]
+    public async Task LocalNativeGraphRecheckRetainsEditorWhilePendingAndRevokesItAfterFailure()
+    {
+        await using var context = CreateContext(useRealWorkflowEditor: true);
+        context.Services.AddSingleton<IBackendApiClientProvider>(new MutableBackendApiClientProvider("context-A"));
+        context.Services.AddSingleton<IRemoteFeatureProvider>(new EnabledRemoteFeatureProvider());
+        var classifier = new DeferredNativeDraftGraphClassifier();
+        context.Services.AddSingleton<INativeCompensationDraftGraphClassifier>(classifier);
+
+        var definition = CreateDefinition("local native mutation", "version-a");
+        definition.Root = CreateNativeCompensationScope();
+        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, "context-A"));
+        var cut = RenderWorkspace(context, definition, definition);
+        cut.WaitForAssertion(() => Assert.False(cut.Instance.IsReadOnly));
+
+        var (editor, _, _) = AddLocalNativeChild(cut);
+        var graphUpdate = cut.InvokeAsync(() => InvokeWorkflowEditorGraphUpdatedAsync(editor));
+        await classifier.ThirdCheckStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.False(cut.Instance.IsReadOnly, "A verified same-origin editor stays mounted while its changed graph is rechecked.");
+        Assert.Contains(cut.FindComponents<WorkflowEditor>(), component => ReferenceEquals(component.Instance, editor));
+        Assert.NotEqual("write-line-1", editor.SelectedActivityId);
+
+        classifier.CompleteThird(NativeCompensationDraftGraphAnalysis.Indeterminate);
+        await graphUpdate.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.True(cut.Instance.IsReadOnly);
+        Assert.Empty(cut.FindComponents<WorkflowEditor>());
+        Assert.False(context.Services.GetRequiredService<DelayedWorkflowDefinitionEditorService>().SaveStarted.Task.IsCompleted);
+    }
+
+    [Fact]
+    public async Task LocalNativeGraphRecheckCannotRestoreEditorAfterBackendContextChanges()
+    {
+        await using var context = CreateContext(useRealWorkflowEditor: true);
+        var backend = new MutableBackendApiClientProvider("context-A");
+        context.Services.AddSingleton<IBackendApiClientProvider>(backend);
+        context.Services.AddSingleton<IRemoteFeatureProvider>(new EnabledRemoteFeatureProvider());
+        var classifier = new DeferredNativeDraftGraphClassifier();
+        context.Services.AddSingleton<INativeCompensationDraftGraphClassifier>(classifier);
+
+        var definition = CreateDefinition("local native mutation", "version-a");
+        definition.Root = CreateNativeCompensationScope();
+        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, "context-A"));
+        var cut = RenderWorkspace(context, definition, definition);
+        cut.WaitForAssertion(() => Assert.False(cut.Instance.IsReadOnly));
+
+        var (editor, _, _) = AddLocalNativeChild(cut);
+        var graphUpdate = cut.InvokeAsync(() => InvokeWorkflowEditorGraphUpdatedAsync(editor));
+        await classifier.ThirdCheckStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        backend.ContextKey = "context-B";
+        context.Services.GetRequiredService<IPermissionRefreshSignal>().Raise();
+        cut.WaitForAssertion(() =>
+        {
+            Assert.True(cut.Instance.IsReadOnly);
+            Assert.Empty(cut.FindComponents<WorkflowEditor>());
+        });
+
+        classifier.CompleteThird(new NativeCompensationDraftGraphAnalysis(true, true, false, true));
+        await graphUpdate.WaitAsync(TimeSpan.FromSeconds(5));
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.True(cut.Instance.IsReadOnly);
+            Assert.Empty(cut.FindComponents<WorkflowEditor>());
+            Assert.Equal("context-A", NativeCompensationDraftDocumentContext.GetBackendContextKey(definition));
+        });
+    }
+
+    [Fact]
+    public async Task ObsoleteNativeGraphReadFailureIsIgnoredAfterBackendContextChanges()
+    {
+        await using var context = CreateContext(useRealWorkflowEditor: true);
+        var backend = new MutableBackendApiClientProvider("context-A");
+        context.Services.AddSingleton<IBackendApiClientProvider>(backend);
+        context.Services.AddSingleton<IRemoteFeatureProvider>(new EnabledRemoteFeatureProvider());
+
+        var definition = CreateDefinition("local native mutation", "version-a");
+        definition.Root = CreateNativeCompensationScope();
+        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, "context-A"));
+        var cut = RenderWorkspace(context, definition, definition);
+        cut.WaitForAssertion(() => Assert.False(cut.Instance.IsReadOnly));
+
+        var (editor, diagramDesigner, _) = AddLocalNativeChild(cut, deferDesignerRead: true);
+        var graphUpdate = cut.InvokeAsync(() => InvokeWorkflowEditorGraphUpdatedAsync(editor));
+        await diagramDesigner.ReadRootActivityStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        backend.ContextKey = "context-B";
+        context.Services.GetRequiredService<IPermissionRefreshSignal>().Raise();
+        cut.WaitForAssertion(() =>
+        {
+            Assert.True(cut.Instance.IsReadOnly);
+            Assert.Empty(cut.FindComponents<WorkflowEditor>());
+        });
+
+        diagramDesigner.FailRead(new InvalidOperationException("obsolete designer read"));
+        await graphUpdate.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.True(cut.Instance.IsReadOnly);
+        Assert.Empty(cut.FindComponents<WorkflowEditor>());
+        Assert.False(context.Services.GetRequiredService<DelayedWorkflowDefinitionEditorService>().SaveStarted.Task.IsCompleted);
     }
 
     [Fact]
@@ -601,7 +769,7 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
         Assert.Equal(3, service.FindByDefinitionIdCallCount);
     }
 
-    private static BunitContext CreateContext()
+    private static BunitContext CreateContext(bool useRealWorkflowEditor = false)
     {
         var context = new BunitContext();
         context.JSInterop.Mode = JSRuntimeMode.Loose;
@@ -618,7 +786,14 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
         context.Services.AddSingleton(workflowDefinitionService);
         context.Services.AddSingleton<IActivityRegistry>(NativeCompensationDraftTestData.CreateActivityRegistry());
         context.Services.AddSingleton<IActivityPickerComponentProvider, EmptyActivityPickerComponentProvider>();
-        context.ComponentFactories.Add<WorkflowEditor, TestWorkflowEditor>();
+        if (useRealWorkflowEditor)
+        {
+            context.ComponentFactories.Add<DiagramDesignerWrapper, TestDiagramDesignerWrapper>();
+            context.ComponentFactories.Add<Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.ActivityProperties.ActivityPropertiesPanel, TestActivityPropertiesPanel>();
+            context.Services.AddSingleton<IActivityVisitor, RootOnlyActivityVisitor>();
+        }
+        else
+            context.ComponentFactories.Add<WorkflowEditor, TestWorkflowEditor>();
         context.ComponentFactories.Add<WorkflowDefinitionVersionViewer, TestWorkflowDefinitionVersionViewer>();
         context.ComponentFactories.Add<CodeView, TestCodeView>();
         context.ComponentFactories.Add<WorkflowProperties, TestWorkflowProperties>();
@@ -669,6 +844,36 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
 
     private static System.Text.Json.Nodes.JsonObject CreateNativeCompensationScope() =>
         System.Text.Json.Nodes.JsonNode.Parse("""{"id":"scope-a","nodeId":"scope-a","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}""")!.AsObject();
+
+    private static (WorkflowEditor Editor, FixedRootDiagramDesigner DiagramDesigner, JsonObject Child) AddLocalNativeChild(
+        IRenderedComponent<WorkflowDefinitionWorkspace> workspace, bool deferDesignerRead = false)
+    {
+        var editor = workspace.FindComponent<WorkflowEditor>().Instance;
+        var workflowDefinition = editor.WorkflowDefinition!;
+        var diagram = workspace.FindComponent<DiagramDesignerWrapper>().Instance;
+        var diagramDesigner = new FixedRootDiagramDesigner(workflowDefinition.Root!, deferDesignerRead);
+        typeof(DiagramDesignerWrapper).GetField("_diagramDesigner", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .SetValue(diagram, diagramDesigner);
+
+        // The native canvas mutates the same local graph object before it raises GraphUpdated.
+        var step = new JsonObject
+        {
+            ["stepId"] = "step-1",
+            ["name"] = "Reserve inventory",
+            ["forward"] = new JsonObject
+            {
+                ["id"] = "write-line-1",
+                ["nodeId"] = "scope-a:write-line-1",
+                ["name"] = "WriteLine1",
+                ["type"] = "Elsa.WriteLine",
+                ["version"] = 1
+            },
+            ["handler"] = null,
+            ["mappings"] = new System.Text.Json.Nodes.JsonArray()
+        };
+        ((System.Text.Json.Nodes.JsonArray)workflowDefinition.Root!["steps"]!).Add(step);
+        return (editor, diagramDesigner, (JsonObject)step["forward"]!);
+    }
 
     [Fact]
     public async Task WorkspaceReplacementRejectsAnInFlightSaveResponse()
@@ -736,12 +941,106 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
         return (Task)method.Invoke(workspace, null)!;
     }
 
+    private static Task InvokeWorkflowEditorGraphUpdatedAsync(WorkflowEditor editor)
+    {
+        var method = typeof(WorkflowEditor).GetMethod("OnGraphUpdated", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        return (Task)method.Invoke(editor, null)!;
+    }
+
+    private static Task InvokeSelectActivityAsync(WorkflowEditor editor, System.Text.Json.Nodes.JsonObject activity)
+    {
+        var method = typeof(WorkflowEditor).GetMethod("SelectActivityAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        return (Task)method.Invoke(editor, [activity])!;
+    }
+
+    private static bool GetWorkflowEditorIsDirty(WorkflowEditor editor) =>
+        (bool)typeof(WorkflowEditor).GetProperty("IsDirty", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(editor)!;
+
     private sealed class TestWorkflowEditor : WorkflowEditor
     {
         protected override Task OnAfterRenderAsync(bool firstRender) => Task.CompletedTask;
 
         protected override void BuildRenderTree(RenderTreeBuilder builder)
         {
+        }
+    }
+
+    private sealed class TestActivityPropertiesPanel : Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.ActivityProperties.ActivityPropertiesPanel
+    {
+        protected override Task OnInitializedAsync() => Task.CompletedTask;
+
+        protected override void BuildRenderTree(RenderTreeBuilder builder)
+        {
+        }
+    }
+
+    private sealed class FixedRootDiagramDesigner(JsonObject root, bool deferRead = false) : IDiagramDesigner
+    {
+        private readonly TaskCompletionSource<JsonObject> _deferredRead = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public int ReadRootActivityCallCount { get; private set; }
+        public TaskCompletionSource ReadRootActivityStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task<JsonObject> ReadRootActivityAsync()
+        {
+            ReadRootActivityCallCount++;
+            if (!deferRead)
+                return Task.FromResult(root);
+
+            ReadRootActivityStarted.TrySetResult();
+            return _deferredRead.Task;
+        }
+
+        public void FailRead(Exception exception) => _deferredRead.TrySetException(exception);
+
+        public Task LoadRootActivityAsync(JsonObject activity, IDictionary<string, ActivityStats>? activityStatsMap) => throw new NotSupportedException();
+        public Task UpdateActivityAsync(string id, JsonObject activity) => throw new NotSupportedException();
+        public Task UpdateActivityStatsAsync(string id, ActivityStats stats) => throw new NotSupportedException();
+        public Task SelectActivityAsync(string id) => throw new NotSupportedException();
+        public RenderFragment DisplayDesigner(DisplayContext context) => throw new NotSupportedException();
+    }
+
+    private sealed class RootOnlyActivityVisitor : IActivityVisitor
+    {
+        public Task<ActivityNode> VisitAsync(JsonObject activity, CancellationToken cancellationToken = default) =>
+            Task.FromResult(new ActivityNode(activity));
+    }
+
+    private sealed class DeferredNativeDraftGraphClassifier : INativeCompensationDraftGraphClassifier
+    {
+        private readonly TaskCompletionSource<NativeCompensationDraftGraphAnalysis> _thirdResult = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private int _checkCount;
+
+        public TaskCompletionSource ThirdCheckStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task<NativeCompensationDraftGraphAnalysis> AnalyzeAsync(JsonObject? root, CancellationToken cancellationToken = default)
+        {
+            return Interlocked.Increment(ref _checkCount) switch
+            {
+                1 => Task.FromResult(new NativeCompensationDraftGraphAnalysis(true, true, false, true)),
+                2 => Task.FromResult(new NativeCompensationDraftGraphAnalysis(true, true, false, true)),
+                3 => StartThirdCheck(),
+                _ => Task.FromResult(NativeCompensationDraftGraphAnalysis.Indeterminate)
+            };
+        }
+
+        public void CompleteThird(NativeCompensationDraftGraphAnalysis analysis) => _thirdResult.TrySetResult(analysis);
+
+        private Task<NativeCompensationDraftGraphAnalysis> StartThirdCheck()
+        {
+            ThirdCheckStarted.TrySetResult();
+            return _thirdResult.Task;
+        }
+    }
+
+    private sealed class OrdinaryNativeDraftGraphClassifier : INativeCompensationDraftGraphClassifier
+    {
+        public int CheckCount { get; private set; }
+
+        public Task<NativeCompensationDraftGraphAnalysis> AnalyzeAsync(JsonObject? root, CancellationToken cancellationToken = default)
+        {
+            CheckCount++;
+            return Task.FromResult(NativeCompensationDraftGraphAnalysis.Ordinary);
         }
     }
 

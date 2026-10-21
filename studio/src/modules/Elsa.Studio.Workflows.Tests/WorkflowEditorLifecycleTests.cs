@@ -306,6 +306,9 @@ public sealed class WorkflowEditorLifecycleTests : BunitContext, IAsyncLifetime
         Assert.Equal(backend.ContextKey, _editorService.LastNativeDraftBackendContextKey);
 
         definition.Root["changed"] = true;
+        var diagram = cut.FindComponent<DiagramDesignerWrapper>().Instance;
+        typeof(DiagramDesignerWrapper).GetField("_activityGraph", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .SetValue(diagram, new ActivityGraph(definition.Root, Services.GetRequiredService<IActivityVisitor>()));
         await cut.InvokeAsync(() => InvokeGraphUpdatedAsync(cut.Instance));
         cut.WaitForAssertion(() => Assert.Empty(cut.FindAll("[aria-label='Native compensation publication refusal']")));
     }
