@@ -27,8 +27,9 @@ export function CommitStrategySettings({ activity, readOnly, onChange }: Setting
   const value = (activity.customProperties?.commitStrategyName ?? activity.customProperties?.CommitStrategyName) as string | undefined;
   return <>
     <ErrorAlert error={error} title="Could not load commit strategies" />
+    {isLoading && <p role="status">Loading commit strategies…</p>}
     <Field label="Commit strategy" hint="Inherit the workflow's strategy or override when this activity commits workflow state.">
-      <SimpleSelect aria-label="Commit strategy" value={value} allowEmpty placeholder="Inherit" disabled={readOnly || isLoading || !!error}
+      <SimpleSelect aria-label="Commit strategy" value={value} allowEmpty placeholder="Inherit" disabled={readOnly}
         options={withCurrent(items.map(item => ({ value: item.name, label: item.displayName })), value)}
         onChange={next => onChange(current => {
           // Remove the legacy alias too, so clearing cannot resurrect it.
@@ -54,11 +55,12 @@ export function LogPersistenceSettings({ activity, descriptor, readOnly, onChang
     const name = property ? property.charAt(0).toLowerCase() + property.slice(1) : undefined;
     const value = name ? (configuration[section] as Record<string, PersistenceRule | null> | undefined)?.[name] : configuration[section] as PersistenceRule | null;
     return <PersistenceRuleEditor key={`${section}:${property ?? ""}`} label={label} rule={value} options={options}
-      readOnly={readOnly || isLoading || !!error} syntaxes={syntaxes} context={context}
+      readOnly={readOnly} syntaxes={syntaxes} context={context}
       onChange={next => onChange(current => setPersistenceRule(current, section, property, next))} />;
   };
   return <>
     <ErrorAlert error={error} title="Could not load log persistence strategies" />
+    {isLoading && <p role="status">Loading log persistence strategies…</p>}
     {rule("Default log persistence", "default")}
     {rule("Internal state log persistence", "internalState")}
     {descriptor?.inputs.map(input => rule(`Input: ${input.displayName ?? input.name}`, "inputs", input.name))}
@@ -92,10 +94,11 @@ export function ResilienceSettings({ activity, readOnly, onChange, syntaxes, con
   const query = useQuery({ queryKey: [scope, "resilience", "strategies"], queryFn: ({ signal }) => client.resilience.strategies(signal) });
   const configuration = activity.customProperties?.resilienceStrategy as ResilienceConfiguration | undefined;
   const mode = !configuration ? undefined : configuration.mode === "Expression" || configuration.mode === 1 ? "Expression" : "Identifier";
-  const disabled = readOnly || query.isLoading || query.isError;
+  const disabled = readOnly;
   const write = (next: ResilienceConfiguration | undefined) => onChange(current => setCustomProperty(current, "resilienceStrategy", next));
   return <>
     <ErrorAlert error={query.error} title="Could not load resilience strategies" />
+    {query.isLoading && <p role="status">Loading resilience strategies…</p>}
     <Field label="Resilience mode">
       <SimpleSelect aria-label="Resilience mode" value={mode} allowEmpty placeholder="Default" disabled={disabled}
         options={[{ value: "Identifier", label: "Strategy" }, { value: "Expression", label: "Expression" }]}

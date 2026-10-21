@@ -3,7 +3,9 @@
 The activity properties panel includes the following Blazor-compatible settings.
 All controls honor the designer's read-only state. Changes use the designer store,
 so normal save, undo and redo retain the complete activity and unrelated plugin data.
-Merely opening a tab does not modify a definition.
+Merely opening a tab does not modify a definition. Strategy catalog failures show an
+error while preserving local Inherit/Default, clear and expression editing actions;
+only available catalog options are offered, and read-only mode still disables edits.
 
 | Blazor tab | React tab and visibility | Persisted server contract | Verification |
 | --- | --- | --- | --- |

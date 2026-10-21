@@ -9,6 +9,7 @@ const login = await response.json();
 assert(login.isAuthenticated && login.accessToken, 'Development server authentication failed');
 const client = createElsaClient({ baseUrl, getAuthHeaders: () => ({ Authorization: `Bearer ${login.accessToken}` }) });
 const cleanup = [];
+let primaryError;
 try {
   const name = `SettingsRoundtrip${Date.now()}`;
   const model = { name, variables: [], inputs: [], outputs: [], outcomes: [], customProperties: {}, options: { usableAsActivity: true }, root: { id: 'child-root', type: 'Elsa.Sequence', version: 1, activities: [] } };
@@ -40,8 +41,12 @@ try {
   const versions = await client.workflowDefinitions.list({ definitionIds: [first.definitionId], versionOptions: 'AllVersions', page: 0, pageSize: 10 });
   assert(versions.items.some(item => item.id === second.id && item.version === 2));
   console.log('PASS: actual Core API round-trips commit, logging strategy/expression, resilience expression, task mode, custom data, and the reusable activity version pair');
+} catch (error) {
+  primaryError = error;
+  throw error;
 } finally {
   const results = await Promise.allSettled(cleanup.reverse().map(id => client.workflowDefinitions.delete(id)));
   const failures = results.filter(result => result.status === 'rejected');
-  if (failures.length) throw new AggregateError(failures.map(result => result.reason), 'Temporary definition cleanup failed');
+  if (failures.length) throw new AggregateError([...(primaryError ? [primaryError] : []), ...failures.map(result => result.reason)],
+    primaryError ? 'Settings check and temporary definition cleanup failed' : 'Temporary definition cleanup failed', { cause: primaryError });
 }

@@ -5,11 +5,17 @@ const descriptor = { typeName: "Example.Reusable", name: "Reusable", displayName
 const activity = { id: "child", nodeId: "root:child", type: descriptor.typeName, version: 1, workflowDefinitionId: "reusable", workflowDefinitionVersionId: "version-one",
   message: { typeName: "String", expression: { type: "Literal", value: "keep" } }, customProperties: { plugin: "keep", logPersistenceMode: { inputs: { message: "Include" } } } };
 
-test("activity settings edit current server fields, preserve adjacent data, select a version, and honor read-only", async ({ page }) => {
+for (const catalogFailure of [false, true]) {
+test(catalogFailure ? "catalog failures preserve local clear and expression actions" : "activity settings edit current server fields, preserve adjacent data, select a version, and honor read-only", async ({ page }) => {
+  const fixtureActivity = catalogFailure ? { ...activity, customProperties: { ...activity.customProperties, commitStrategyName: "Always", resilienceStrategy: { mode: "Identifier", strategyId: "retry-three" } } } : activity;
   const errors: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
   await page.route("**/elsa/api/**", async route => {
     const path = new URL(route.request().url()).pathname;
+    if (catalogFailure && ["commit-strategies/activities", "log-persistence-strategies", "resilience/strategies"].some(suffix => path.endsWith(suffix))) {
+      await route.fulfill({ status: 503, json: { title: "Catalog unavailable" } });
+      return;
+    }
     const items = path.endsWith("features/installed") ? [{ name: "Resilience", namespace: "Elsa", fullName: "Elsa.Resilience", displayName: "Resilience" }]
       : path.endsWith("commit-strategies/activities") ? [{ name: "Always", displayName: "Always commit" }]
       : path.endsWith("log-persistence-strategies") ? [{ typeName: "Elsa.Workflows.LogPersistence.Strategies.Include, Elsa.Workflows.Core", displayName: "Include" }, { typeName: "Elsa.Workflows.LogPersistence.Strategies.Exclude, Elsa.Workflows.Core", displayName: "Exclude" }]
@@ -34,7 +40,7 @@ test("activity settings edit current server fields, preserve adjacent data, sele
     import { ActivityPropertiesPanel } from "@elsa-workflows/react-studio-sdk/components";
     import { ActivityRegistry, createDesignerStore, DesignerProvider } from "@elsa-workflows/react-studio-sdk/designer/index";
     import { register as registerEditors } from ${JSON.stringify(originalEntry)};
-    const child = ${JSON.stringify(activity)};
+    const child = ${JSON.stringify(fixtureActivity)};
     const registry = new ActivityRegistry([${JSON.stringify(descriptor)}, {...${JSON.stringify(descriptor)},version:2}]);
     function Fixture() {
       const [store] = useState(()=>{const value=createDesignerStore({id:"root",type:"Elsa.Flowchart",version:1,activities:[child],connections:[]});value.getState().select(["child"]);return value;});
@@ -50,7 +56,37 @@ test("activity settings edit current server fields, preserve adjacent data, sele
   await page.goto("/studio-preview/settings-fixture");
   await expect(page.getByRole("heading", { name: "Activity settings fixture" })).toBeVisible();
   const saved = page.getByTestId("saved-activity");
-  await expect(saved).toHaveText(JSON.stringify(activity));
+  await expect(saved).toHaveText(JSON.stringify(fixtureActivity));
+  if (catalogFailure) {
+    await page.getByRole("tab", { name: "Commit strategy", exact: true }).click();
+    await expect(page.getByRole("alert").filter({ hasText: "Could not load commit strategies" })).toBeVisible();
+    await page.getByRole("combobox", { name: "Commit strategy", exact: true }).click();
+    await page.getByRole("option", { name: "Inherit", exact: true }).click();
+    await expect(saved).not.toContainText('"commitStrategyName"');
+    await page.getByRole("tab", { name: "Log", exact: true }).click();
+    await expect(page.getByRole("alert").filter({ hasText: "Could not load log persistence strategies" })).toBeVisible();
+    await page.getByLabel("Input: Message mode").click();
+    await page.getByRole("option", { name: "Expression", exact: true }).click();
+    await page.getByLabel("Input: Message expression value").click();
+    await page.getByRole("option", { name: "Include", exact: true }).click();
+    await expect(saved).toContainText('"expression":{"type":"Literal","value":"Include"}');
+    await page.getByLabel("Input: Message mode").click();
+    await page.getByRole("option", { name: "Inherit", exact: true }).click();
+    await expect(saved).toContainText('"message":null');
+    await page.getByRole("tab", { name: "Resilience", exact: true }).click();
+    await expect(page.getByRole("alert").filter({ hasText: "Could not load resilience strategies" })).toBeVisible();
+    await page.getByLabel("Resilience mode").click();
+    await page.getByRole("option", { name: "Expression", exact: true }).click();
+    await page.getByLabel("Resilience expression value").fill("fallback-policy");
+    await expect(saved).toContainText('"expression":{"type":"Literal","value":"fallback-policy"}');
+    await page.getByLabel("Resilience mode").click();
+    await page.getByRole("option", { name: "Default", exact: true }).click();
+    await expect(saved).not.toContainText('"resilienceStrategy"');
+    await page.getByRole("button", { name: "Toggle read only", exact: true }).click();
+    await expect(page.getByLabel("Resilience mode")).toBeDisabled();
+    expect(errors).toEqual([]);
+    return;
+  }
   await page.getByRole("tab", { name: "Commit strategy", exact: true }).click();
   await page.getByRole("combobox", { name: "Commit strategy", exact: true }).click();
   await page.getByRole("option", { name: "Always commit", exact: true }).click();
@@ -96,6 +132,8 @@ test("activity settings edit current server fields, preserve adjacent data, sele
   await expect(page.getByRole("combobox", { name: "Commit strategy", exact: true })).toBeDisabled();
   expect(errors).toEqual([]);
 });
+
+}
 
 test("instance retries select an execution, page attempts, and retain details without mixing executions", async ({ page }) => {
   const errors: string[] = [];
