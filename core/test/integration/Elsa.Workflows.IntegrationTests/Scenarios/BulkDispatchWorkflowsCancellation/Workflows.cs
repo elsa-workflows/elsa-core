@@ -40,6 +40,24 @@ public class BulkDispatchAndWaitInForkWorkflow : WorkflowBase
 }
 
 /// <summary>
+/// A parent that bulk-dispatches <see cref="ChildCount"/> <see cref="BlockingChildWorkflow"/> instances, waits for them,
+/// and finishes once each of them has resumed it.
+/// </summary>
+public class BulkDispatchAndWaitWorkflow : WorkflowBase
+{
+    public const int ChildCount = 2;
+
+    protected override void Build(IWorkflowBuilder builder)
+    {
+        builder.Root = new BulkDispatchWorkflows
+        {
+            WorkflowDefinitionId = new(nameof(BlockingChildWorkflow)),
+            Items = new(Enumerable.Range(0, ChildCount).Cast<object>().ToArray())
+        };
+    }
+}
+
+/// <summary>
 /// The <see cref="BulkDispatchAndWaitInForkWorkflow"/> fork, waiting for a single <see cref="FinishingChildWorkflow"/>.
 /// </summary>
 public class BulkDispatchAndWaitForFinishingChildWorkflow : WorkflowBase
