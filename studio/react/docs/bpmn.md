@@ -6,7 +6,9 @@ process IDs identify affected parts. Dropped elements will not run; Degraded
 elements behave differently from their authored definition. A document with more
 than one process requires an explicit process selection before **Import** enables.
 Canceling the dialog persists nothing. Confirming imports the same selected file
-and opens the new draft in the editor.
+and opens a read-only view of the new draft. This view preserves the native
+BPMN root and never normalizes or autosaves it. Export remains available; canvas
+editing is separate work in #8929.
 
 The API remains the source of truth for supported BPMN capabilities. Capability
 refusals list missing capabilities and offending elements. Unsupported expression
@@ -34,7 +36,8 @@ The public API client exposes `client.bpmn.analyze(file, signal)`,
 process/name/definition IDs for API consumers. The UI imports new drafts, so it
 does not overwrite an existing definition.
 
-Browser tests cover findings, process choice, cancellation, capability/condition
+Browser tests cover findings, process choice, cancellation of pending analysis and
+export requests, native-root preservation without autosave, capability/condition
 refusals, stale/missing-source refusals, unknown error fallback and download/reimport.
 To check a disposable real backend, set `ELSA_TEST_API_URL`, `ELSA_TEST_USERNAME`
 and `ELSA_TEST_PASSWORD`, then run `pnpm test:bpmn`. This checks analysis,

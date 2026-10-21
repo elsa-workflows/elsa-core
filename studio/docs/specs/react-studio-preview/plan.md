@@ -205,3 +205,10 @@ cancellation and download/reimport. A disposable real Core check verifies proces
 and flow preservation, stable canonical XML after reimport, structured condition
 refusal and cleanup. Server export can normalize XML and add missing layout, so
 original byte equality is not asserted. Editable BPMN canvas work remains #8929.
+
+BPMN review also verifies the native `Elsa.BpmnProcess` route. It opens a dedicated
+read-only view outside the generic designer, preventing normalization and accidental
+autosave before #8929 provides a native canvas. An actual Core-imported process
+retains its exact root after opening and advancing beyond the autosave interval,
+and still exports. Browser cases abort pending analysis/export on cancellation
+and reject late navigation/download effects.
