@@ -143,6 +143,21 @@ class ValidationTests(unittest.TestCase):
                 run.main([directory, "--case", "not-a-case"])
             self.assertEqual(2, error.exception.code)
 
+    def test_documented_controller_help_commands_start_in_subprocesses(self):
+        experiment_directory = Path(__file__).resolve().parent
+        for script in ("run.py", "controls.py"):
+            with self.subTest(script=script):
+                result = subprocess.run(
+                    [sys.executable, str(experiment_directory / script), "--help"],
+                    cwd=experiment_directory,
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                )
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertIn("usage:", result.stdout.lower())
+                self.assertIn("output", result.stdout)
+
     def test_participant_startup_failures_are_bounded_reaped_and_diagnostic(self):
         children = {
             "premature-exit": (

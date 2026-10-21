@@ -152,7 +152,7 @@ run, and no E1 observation or readiness claim changed.
 
 Control validation also requires the recorded inspection child to exit successfully
 for every control that performs inspection; a negative regression covers all six
-such controls. The cheap suite now has 25 passing tests, with the same retained
+such controls. The cheap suite now has 26 passing tests, with the same retained
 evidence hashes and no change to recorded observations or readiness.
 
 Both controllers now initialize evidence before participant startup and share one
@@ -170,3 +170,7 @@ A synthetic main-thread `KeyboardInterrupt` after a child-ready signal is record
 and rethrown unchanged by both controllers; each still writes evidence and reaps its
 owned child. This exercises interruption during the handshake wait without running
 the fixture participant or changing the retained observations.
+
+Subprocess smoke tests invoke `run.py --help` and `controls.py --help`, catching
+controller entrypoint failures without starting the fixture participant or .NET
+backend.
