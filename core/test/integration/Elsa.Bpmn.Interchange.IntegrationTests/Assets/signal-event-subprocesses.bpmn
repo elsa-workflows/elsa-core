@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:elsa="https://elsaworkflows.io/schemas/bpmn/v1"
+                  xmlns:vw="https://bpmn.valenceworks.io/schema/bpmn"
+                  id="Definitions_track-shipment"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:message id="Message_ShipmentArrived" name="ShipmentArrived" />
+  <bpmn:signal id="Signal_StatusRequested" name="StatusRequested" />
+  <bpmn:signal id="Signal_RecallIssued" name="RecallIssued" />
+  <bpmn:process id="track-shipment" isExecutable="true">
+    <bpmn:startEvent id="Start">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:receiveTask id="AwaitShipment" name="Await shipment" messageRef="Message_ShipmentArrived">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+    </bpmn:receiveTask>
+    <bpmn:serviceTask id="ConfirmDelivery" name="Confirm delivery">
+      <bpmn:extensionElements>
+        <elsa:activityBinding activityType="Elsa.WriteLine">
+          <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"Delivered"}}</elsa:input>
+        </elsa:activityBinding>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="End">
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start" targetRef="AwaitShipment" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="AwaitShipment" targetRef="ConfirmDelivery" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="ConfirmDelivery" targetRef="End" />
+    <bpmn:subProcess id="OnStatusRequested" triggeredByEvent="true">
+      <bpmn:startEvent id="StatusStart" isInterrupting="false">
+        <bpmn:outgoing>OnStatusRequested_Flow_1</bpmn:outgoing>
+        <bpmn:signalEventDefinition id="StatusStart_Signal" signalRef="Signal_StatusRequested" />
+      </bpmn:startEvent>
+      <bpmn:serviceTask id="ReportStatus" name="Report status">
+        <bpmn:extensionElements>
+          <elsa:activityBinding activityType="Elsa.WriteLine">
+            <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"Reporting status"}}</elsa:input>
+          </elsa:activityBinding>
+        </bpmn:extensionElements>
+        <bpmn:incoming>OnStatusRequested_Flow_1</bpmn:incoming>
+        <bpmn:outgoing>OnStatusRequested_Flow_2</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:endEvent id="OnStatusRequested_End">
+        <bpmn:incoming>OnStatusRequested_Flow_2</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="OnStatusRequested_Flow_1" sourceRef="StatusStart" targetRef="ReportStatus" />
+      <bpmn:sequenceFlow id="OnStatusRequested_Flow_2" sourceRef="ReportStatus" targetRef="OnStatusRequested_End" />
+    </bpmn:subProcess>
+    <bpmn:subProcess id="OnRecall" triggeredByEvent="true">
+      <bpmn:startEvent id="RecallStart" isInterrupting="true">
+        <bpmn:outgoing>OnRecall_Flow_1</bpmn:outgoing>
+        <bpmn:signalEventDefinition id="RecallStart_Signal" signalRef="Signal_RecallIssued" />
+      </bpmn:startEvent>
+      <bpmn:serviceTask id="HandleRecall" name="Handle recall">
+        <bpmn:extensionElements>
+          <elsa:activityBinding activityType="Elsa.WriteLine">
+            <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"Recalling"}}</elsa:input>
+          </elsa:activityBinding>
+        </bpmn:extensionElements>
+        <bpmn:incoming>OnRecall_Flow_1</bpmn:incoming>
+        <bpmn:outgoing>OnRecall_Flow_2</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:endEvent id="OnRecall_End">
+        <bpmn:incoming>OnRecall_Flow_2</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="OnRecall_Flow_1" sourceRef="RecallStart" targetRef="HandleRecall" />
+      <bpmn:sequenceFlow id="OnRecall_Flow_2" sourceRef="HandleRecall" targetRef="OnRecall_End" />
+    </bpmn:subProcess>
+  </bpmn:process>
+</bpmn:definitions>

@@ -135,7 +135,7 @@ public class MassTransitWorkflowDispatcher(
             {
                 WorkflowInstanceId = request.WorkflowInstanceId,
                 Input = request.Input,
-                Properties = request.Properties,
+                Properties = TriggerWorkflowProperties.WithStimulusHash(request.Properties, trigger.Hash),
                 CorrelationId = request.CorrelationId
             };
 
