@@ -36,6 +36,9 @@ and designer contracts describe the next renderer integration; declaring a slot
 does not yet make those new renderers available. Enabled RCL features publish
 independent entries through the server manifest. Render boundaries isolate each
 component contribution; load, registration and render failures report module diagnostics.
+A failed provider contribution renders its original children plus the diagnostic,
+so optional provider UI cannot permanently replace the shell. Providers that supply
+required contexts should also isolate their optional UI inside those contexts.
 
 Modules share the host's React instance. Import workflow models from
 `@elsa-workflows/react-studio-api-client` and editor context from this package;

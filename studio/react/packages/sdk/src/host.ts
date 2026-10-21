@@ -74,7 +74,7 @@ export class StudioRegistry {
         const copy = Object.assign({}, value);
         if ("component" in copy) {
           copy.component = isolateModuleComponent(copy.component as ComponentType<object>, manifest.id, value.id,
-            error => this.messages.push({ moduleId: manifest.id, code: "render-failed", message: messageOf(error) }));
+            error => this.messages.push({ moduleId: manifest.id, code: "render-failed", message: messageOf(error) }), kind === "providers");
         }
         Object.freeze(copy);
         const contribution: Contribution = { kind, value: copy, active: true };

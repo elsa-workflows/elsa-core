@@ -115,3 +115,39 @@ test("OIDC authorization uses a callback under the host mount", async ({ page })
   expect(url.searchParams.get("redirect_uri")).toBe("http://127.0.0.1:5201/studio-preview/auth/callback");
   expect(url.searchParams.get("code_challenge_method")).toBe("S256");
 });
+
+test("the preview command serves the built module graph and its import map", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", error => errors.push(error.message));
+  await page.goto("http://127.0.0.1:4173/studio-preview/workflows/definitions");
+  await expect(page.getByRole("heading", { name: "Workflow definitions", exact: true })).toBeVisible();
+  await expect(page.locator('script[type="importmap"]')).toHaveCount(1);
+  await page.getByRole("link", { name: "Dashboard", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("a failing optional provider preserves shell children and navigation", async ({ page }) => {
+  await page.route("**/broken-provider.js", route => route.fulfill({ contentType: "text/javascript", body: `
+    import { createElement as h, Fragment, useState } from "react";
+    function Crash() { throw new Error("optional provider UI failed"); }
+    function Provider({ children }) {
+      const [broken, setBroken] = useState(false);
+      return h(Fragment, null, children, broken ? h(Crash) : h("button", { onClick: () => setBroken(true) }, "Break optional provider"));
+    }
+    export function register(api) { api.contribute("providers", { id: "optional-ui", component: Provider }); }
+  ` }));
+  await page.route("**/studio-manifest", async route => {
+    const response = await route.fetch();
+    const manifest = await response.json();
+    manifest.modules.push({ id: "broken-provider", version: "1", core: true, hostApiVersion: 1, sdkApiVersion: 1, entry: "/broken-provider.js" });
+    await route.fulfill({ json: manifest });
+  });
+  await page.goto("/studio-preview/");
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Break optional provider", exact: true }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "Module broken-provider could not render optional-ui" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
+  await page.getByRole("link", { name: "Definitions", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Workflow definitions", exact: true })).toBeVisible();
+});

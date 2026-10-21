@@ -5,6 +5,7 @@ interface BoundaryProps {
   slotId: string;
   onError: (error: Error) => void;
   children: ReactNode;
+  fallback?: ReactNode;
 }
 
 /** Keeps a failed module contribution from unmounting the surrounding Studio. */
@@ -17,17 +18,18 @@ class ModuleBoundary extends Component<BoundaryProps, { failed: boolean }> {
 
   render() {
     return this.state.failed
-      ? <p role="alert">Module {this.props.moduleId} could not render {this.props.slotId}.</p>
+      ? <>{this.props.fallback}<p role="alert">Module {this.props.moduleId} could not render {this.props.slotId}.</p></>
       : this.props.children;
   }
 }
 
 /** Wraps a module-owned component without adding a DOM element or creating another context instance. */
 export function isolateModuleComponent<P extends object>(component: ComponentType<P>, moduleId: string,
-  slotId: string, onError: (error: Error) => void): ComponentType<P> {
+  slotId: string, onError: (error: Error) => void, preserveChildren = false): ComponentType<P> {
   const Contribution = component;
   return function IsolatedContribution(props: P) {
-    return <ModuleBoundary moduleId={moduleId} slotId={slotId} onError={onError}>
+    return <ModuleBoundary moduleId={moduleId} slotId={slotId} onError={onError}
+      fallback={preserveChildren && "children" in props ? props.children as ReactNode : undefined}>
       <Contribution {...props} />
     </ModuleBoundary>;
   };

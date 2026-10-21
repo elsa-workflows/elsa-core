@@ -14,6 +14,11 @@ dotnet publish dotnet/Elsa.ReactStudio.Server -c Release -o artifacts/server
 dotnet artifacts/server/Elsa.ReactStudio.Server.dll --urls http://0.0.0.0:8080
 ```
 
+For local production preview, run `pnpm build && pnpm preview` and open
+`http://127.0.0.1:4173/studio-preview/`. The preview command builds/runs the ASP.NET
+host so that the production import map, feature manifest and module assets are
+served together. It requires .NET SDK 10 as well as Node/pnpm.
+
 The default mount is `/studio-preview`. Set `ReactStudio:Path` in host configuration
 or pass `--ReactStudio:Path=/` for a dedicated site. The host writes the HTML base
 per request, so the same frontend build supports either mount and deep-link reloads.
