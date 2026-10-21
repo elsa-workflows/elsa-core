@@ -57,6 +57,9 @@ internal static partial class BpmnTestProcesses
     private static BpmnEventDefinition Message(string name) =>
         new(BpmnEventDefinitionTypes.Message, new Dictionary<string, string>(StringComparer.Ordinal) { [BpmnEventDefinitionProperties.Name] = name });
 
+    private static BpmnEventDefinition Signal(string name) =>
+        new(BpmnEventDefinitionTypes.Signal, new Dictionary<string, string>(StringComparer.Ordinal) { [BpmnEventDefinitionProperties.Name] = name });
+
     /// <summary>
     /// An event subprocess: a flow-less subprocess whose bound work is the body, activated by that body's single
     /// start event rather than by a sequence flow. <see cref="BpmnProcessBuilder.SubProcess"/> carries the
@@ -103,5 +106,12 @@ internal static partial class BpmnTestProcesses
     {
         Id = id,
         Log = log
+    };
+
+    private static BpmnTestDecisionWork Decision(string id, BpmnTestLog log, params string[] outcomeNames) => new()
+    {
+        Id = id,
+        Log = log,
+        OutcomeNames = outcomeNames
     };
 }
