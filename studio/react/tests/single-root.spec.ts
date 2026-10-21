@@ -1,10 +1,13 @@
 import { expect, test } from "@playwright/test";
 
-test("opening a single-activity workflow does not autosave a flowchart wrapper or change its native metadata", async ({ page }) => {
-  const originalRoot = { id: "single-root", type: "Elsa.WriteLine", version: 1,
+for (const container of [false, true]) {
+test(`opening a ${container ? "populated Flowchart" : "single-activity workflow"} preserves its root until a graph edit`, async ({ page }) => {
+  const activity = { id: "single-root", type: "Elsa.WriteLine", version: 1,
     text: { typeName: "String", expression: { type: "Literal", value: "Keep this activity" } },
     metadata: { designer: { position: { x: 12, y: 34 }, pluginData: "keep" }, custom: "keep" },
     customProperties: { plugin: { keep: true } } };
+  const originalRoot = container ? { id: "flowchart-root", type: "Elsa.Flowchart", version: 1, activities: [activity], connections: [],
+    customProperties: { plugin: { id: "user-data", type: "UserPayload", metadata: { designer: { size: { width: 123, height: 456 } } } } } } : activity;
   let definition = { id: "single-version", definitionId: "single", name: "Single activity", version: 1, isLatest: true, isPublished: false,
     createdAt: "2026-10-21T00:00:00Z", variables: [], inputs: [], outputs: [], outcomes: [], options: {}, customProperties: {}, root: originalRoot };
   const saves: Record<string, unknown>[] = [];
@@ -32,3 +35,5 @@ test("opening a single-activity workflow does not autosave a flowchart wrapper o
   expect(saves[0].root).toEqual(originalRoot);
   expect(saves[0].name).toBe("Metadata edit");
 });
+
+}
