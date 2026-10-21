@@ -38,3 +38,18 @@ it.each([
     expect.objectContaining({ activityId: "step", property: "text", via: "expression" }),
   ]);
 });
+
+for (const property of ["Variable.Customer", "variables.customer"]) {
+  it.each([
+    [" = 42", 0, 1],
+    [` = ${property} + 1`, 1, 1],
+    [" == 42", 1, 0],
+  ] as const)(`distinguishes reads and writes for ${property}%s`, (suffix, readers, writers) => {
+    const graph = indexDataFlow({ id: "root", type: "Elsa.Sequence", version: 1, activities: [
+      { id: "step", type: "Elsa.WriteLine", version: 1, text: { expression: { type: "CSharp", value: property + suffix } } },
+    ] }, [{ id: "customer-id", name: "customer" }], [], [], ActivityRegistry.Empty);
+    const usage = graph.byKey.get("variable:customer-id")!;
+    expect(usage.readers).toHaveLength(readers);
+    expect(usage.writers).toHaveLength(writers);
+  });
+}
