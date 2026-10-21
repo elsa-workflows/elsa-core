@@ -106,8 +106,8 @@ Only call activities do this. `DispatchWorkflow` itself completes the same way w
 `Flowchart` that waits for a child still continues on `Done` after the child faults. The scope host reads the child's
 final sub-status, which `DispatchWorkflow` records when it resumes, instead.
 
-A child cancelled through the cancellation API does not resume its waiting parent at all, so in practice only a
-faulted child reaches this path today. A child whose activation is denied completes the call activity with
+A child cancelled through the cancellation API resumes its waiting parent as well, and reaches this path with
+`BpmnInterpreter.CallActivityCancelledOutcomeName`. A child whose activation is denied completes the call activity with
 `CannotStart` in its result, as before; it is not mapped to `BpmnInterpreter.CallActivityDispatchFailedOutcomeName`.
 
 Test coverage: `test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Scenarios/Runtime/BpmnCallActivityTests.cs`.
