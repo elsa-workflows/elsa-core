@@ -1,5 +1,5 @@
 
-import { translate } from "@elsa-workflows/react-studio-sdk/localization";
+import { translate, type Translate } from "@elsa-workflows/react-studio-sdk/localization";
 import type { HttpClient } from "@elsa-workflows/react-studio-api-client/http";
 
 /*
@@ -160,18 +160,18 @@ const CAPABILITY_BITS: Record<string, number> = { None: 0, Read: 1, Write: 2, De
  * The fields a store needs. Older servers do not declare any, so the one store that needed a field before this was
  * declarative — `configuration` — gets its descriptor synthesized here, which keeps this studio working against them.
  */
-export function storeFields(store: SecretStoreDescriptor | undefined): SecretStoreFieldDescriptor[] {
+export function storeFields(store: SecretStoreDescriptor | undefined, t: Translate = translate): SecretStoreFieldDescriptor[] {
   if (!store) return [];
   if (store.fields) return store.fields;
   if (store.name !== "configuration") return [];
   return [
     {
       name: "configurationKey",
-      displayName: translate("Configuration key"),
-      description: translate("The server reads the value from this configuration key; nothing is stored in the database."),
+      displayName: t("Configuration key"),
+      description: t("The server reads the value from this configuration key; nothing is stored in the database."),
       kind: "Text",
       required: true,
-      placeholder: translate("Smtp:Password"),
+      placeholder: t("Smtp:Password"),
       options: [],
     },
   ];

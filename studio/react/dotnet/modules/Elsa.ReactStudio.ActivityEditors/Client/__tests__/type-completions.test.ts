@@ -73,3 +73,9 @@ it("handles a large workflow without dropping its last activity output", () => {
   expect(labels).toContain("Variable.Value2999.Greet");
   expect(new Set(labels).size).toBe(labels.length);
 });
+
+it("offers a compile-safe explicit generic C# input getter", () => {
+  const labels = typedCompletions({ variables: [], inputs: [{ name: "Customer", type: "String" }], activities: [] }, "csharp", parseServerTypes("")).map(item => item.label);
+  expect(labels).toContain('Input.Get<object>("Customer")');
+  expect(labels).not.toContain('Input.Get("Customer")');
+});

@@ -20,7 +20,7 @@ export function DynamicOutcomesEditor(props: UiHintEditorProps) {
     };
     const commit = () => {
       const name = draft.trim();
-      if (!name) return;
+      if (!name || items.includes(name) || fixed.includes(name)) { setDraft(""); return; }
       write([...items, name]);
       setDraft("");
     };
