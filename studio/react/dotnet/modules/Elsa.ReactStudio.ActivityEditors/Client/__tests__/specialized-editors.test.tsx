@@ -5,6 +5,8 @@ import type { InputDefinition } from "@elsa-workflows/react-studio-api-client/ty
 import type { UiHintEditorProps } from "@elsa-workflows/react-studio-sdk";
 import { StudioRegistry } from "@elsa-workflows/react-studio-sdk/host";
 import { computePorts } from "@elsa-workflows/react-studio-sdk/designer/model/ports";
+import { indexDataFlow } from "@elsa-workflows/react-studio-sdk/designer/model/data-flow";
+import { ActivityRegistry } from "@elsa-workflows/react-studio-sdk/designer/model/registry";
 import type { ActivityDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
 import { activityEditorsModule } from "../module";
 import { DateTimePickerEditor } from "../editors/datetime-picker-editor";
@@ -15,6 +17,15 @@ import { dateTimeParts, dateTimeValue, fixedOutcomes, inputSelection, parseStatu
   statusCodes, statusCodeValue } from "../editors/editor-values";
 
 const descriptor = (patch: Partial<InputDescriptor> = {}): InputDescriptor => ({ name: "Value", typeName: "Object", ...patch });
+
+it("indexes the exact serialized InputPicker value while retaining descriptions as data", () => {
+  const input: InputDefinition = { name: "Customer", type: "String", description: "Example: variables.other" };
+  const graph = indexDataFlow({ id: "root", type: "Elsa.Sequence", version: 1, activities: [
+    { id: "step", type: "Elsa.WriteLine", version: 1, text: inputSelection(input, descriptor({ isWrapped: true })) },
+  ] }, [{ id: "other-id", name: "other" }], [input], [], ActivityRegistry.Empty);
+  expect(graph.byKey.get("input:Customer")?.readers).toHaveLength(1);
+  expect(graph.byKey.get("variable:other-id")?.readers).toHaveLength(0);
+});
 const props = (input: InputDescriptor, value?: UiHintEditorProps["value"]): UiHintEditorProps => ({
   descriptor: input, value, onChange() {}, syntaxes: ["Object"], readOnly: true,
   context: { activityType: "Example.Activity", activityVersion: 1, activity: {}, variables: [], outputs: [] },

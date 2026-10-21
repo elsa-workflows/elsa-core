@@ -39,7 +39,13 @@ Usable JavaScript input wrapper names preserve exact case (`customer` uses
 `getcustomer()`). The data-usage index recognizes generated PascalCase variable
 properties/getters/setters and generic C# accessors as well as legacy forms.
 A plain property assignment is a write; a reference on its right-hand side or in
-a comparison remains a read.
+a comparison remains a read. Compound assignments and prefix/postfix increment or
+decrement count as both a read and a write.
+Typed variable/input bindings accept picker JSON, reference objects and legacy
+raw ids/names. Their descriptions and other reference metadata remain data rather
+than executable expressions; explicit variable ids take precedence over names.
+Name-based usage hints still use workflow-wide matching; sibling-scope attribution
+is tracked in [#8978](https://github.com/elsa-workflows/elsa-core/issues/8978).
 Cached declarations do not revive removed or renamed workflow
 wrappers. Because the server document does not identify function ownership, unknown
 `get*`/`set*` functions are omitted unless they match current workflow accessors or
