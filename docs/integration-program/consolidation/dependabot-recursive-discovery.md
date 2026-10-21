@@ -121,6 +121,24 @@ Task [#8748](https://github.com/elsa-workflows/elsa-core/issues/8748) retains ni
 
 Templates uses scoped props, CPM, targets and official-only NuGet configuration. Its [source workflow](../../../.github/workflows/templates-source-validation.yml) owns real pack/install/generate/build proof. The [import record](../templates-source-import.md) preserves the exact original 65-file mapping and independent release/publisher handoff. The historical inventory table and five source-package starting-set counts above remain unchanged.
 
+## Temporary Core experiment disposition
+
+Issue [#8930](https://github.com/elsa-workflows/elsa-core/issues/8930) adds this exact
+separately invoked native-runtime process-kill evidence harness:
+
+- `core/experiments/NativeCompensation.E1/NativeCompensation.E1.csproj`
+
+This temporary research project is explicitly nonpackable, remains outside `Elsa.sln`
+and is not a product update input. It adds one manifest to the complete tracked census
+and its explicit unselected/disposition union; it changes none of the five batch counts,
+selectors, feeds or release-unit inventory. The discovery regression reconciles the
+tracked Core experiment manifests against this list and checks explicit
+`IsPackable=false` and absence from the product solution. This is an exact disposition,
+not a blanket exclusion for future projects under the directory. Any addition/removal
+requires reconciling the list. Delete the harness after E1's findings have been adopted
+into the accepted runtime/persistence design and lasting regression tests; its local
+README records that exit condition. E1 evidence and M1 readiness remain separate gates.
+
 ## Central package and build imports
 
 The coverage test walks from each of the 356 selected project manifests to its nearest

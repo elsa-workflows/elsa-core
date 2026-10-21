@@ -1,0 +1,27 @@
+# Native compensation E1 experiment
+
+Temporary evidence harness for [#8930](https://github.com/elsa-workflows/elsa-core/issues/8930), against the native compensation design packet at `51d316882e6a79376145aef1283aa4004a3f400d`.
+Delete this project after E1's findings have been incorporated into an accepted native runtime/persistence design and lasting regression tests. It deliberately stays outside the solution, package/release targets and application startup: a separate console backend is needed for abrupt process-kill evidence. This is experimental evidence, not a compensation product or supported profile.
+
+The backend uses the real `WorkflowRunner`, native activity scheduling and completion callbacks, `FaultSignal` middleware, `DefaultCommitStateHandler`, EF instance store and SQLite provider. The Python controller never implements workflow transitions. A separate Python process owns a separate participant database; HTTP Reserve/Undo/Lookup use stable operation/undo keys and a closed-key rule. Barriers require an explicit controller acknowledgement; timeouts only detect stalled processes. Process interruption uses SIGKILL, without graceful drain.
+
+Build once, then execute the already-built DLL (one local .NET build/testhost at a time):
+
+```sh
+dotnet build core/experiments/NativeCompensation.E1/NativeCompensation.E1.csproj -f net10.0 -p:TargetFrameworks=net10.0
+python3 core/experiments/NativeCompensation.E1/run.py /tmp/elsa-native-compensation-e1-evidence --case baseline
+```
+
+The controller resolves `E1_DOTNET` when set, otherwise `dotnet` from `PATH`. Use the same SDK/runtime host for the build and execution. For an explicit host, set `E1_DOTNET=/absolute/path/to/dotnet` and build with `"$E1_DOTNET" build ...`; the retained evidence used `/usr/local/share/dotnet/dotnet` with SDK 10.0.300. A missing host or unknown `--case` fails before execution. Controllers return a nonzero status for harness/assertion failures while retaining their diagnostics.
+
+Use a fresh output directory for each run; evidence is never overwritten. Omit `--case` to run the matrix. Every case writes exact backend/participant PIDs, barrier events, native commit contexts/work/callbacks, EF snapshot hashes/content, journal revisions and independent participant receipts/counts to `evidence.json`, alongside both SQLite databases and local Data Protection keys. Startup failures also write participant PID/exit/stdout/stderr and cleanup diagnostics when available. All data is synthetic. Keep generated database/key directories outside Git.
+
+Run `controls.py <fresh-output-directory>` for the eight native store/restore negative controls. `summarize.py` exports the final matrix/control observations, including synthetic operation/undo idempotency keys, without protected capture payloads or Data Protection key-ring material; see the report for the exact command. Known native gaps are successful experimental observations, not passing product acceptance. The exporter rejects unexpected harness/assertion failures.
+
+The project adds an experiment-only scope, explicit effect-aware activity, map codec and injection observer. It does not add a global invocation hook, scheduler, persistence transaction or write fence. Scope seed allocation, handler reservation, safe persisted-cause wrapper and pinned handoff are prototypes. The hardcoded graph is not a durable definition repository or proof of exact handler-version resolution. Captures use persisted ASP.NET Data Protection keys and the fixed synthetic protection tuple (`synthetic-tenant`, `e1-synthetic-instance`, `e1-inline-capture-v1`) for this single-instance experiment; this does not prove tenant isolation or a tenant-context accessor. Broad API/log disclosure and authorization remain E2 work.
+
+The `--ambient` case measures Elsa's existing optional `EFCoreWorkflowCommitTransaction`. Cases with it disabled are clearly weaker exploratory snapshot tests and cannot establish cross-store atomicity. The historical r4 scope-activation gap was corrected in r5 by committing the seed and first native work together. The native fault-ownership bookkeeping gap remains exposed. The selected fault handoff uses an explicit retained-cause wrapper, never arbitrary CLR exception reconstruction or a type-specific catch guarantee.
+
+See `REPORT.md` for the measured results and unresolved gates.
+
+Post-measurement review added backend-controller failure cleanup/diagnostics and braces to the experiment C# conditionals. The host now owns disposal of the registered `HttpClient` and retains explicit `StopAsync` teardown. These harness/style/resource-ownership corrections are outside the frozen native measurements; the measured r5/control source heads remain the ones recorded in `REPORT.md`. The owning PR records later current-head build and review checks separately. Such checks do not repeat the participant/database experiment or qualify E1.

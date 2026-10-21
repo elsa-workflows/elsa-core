@@ -116,12 +116,12 @@ public sealed class BpmnRuntimeTestHost
         return definitionId;
     }
 
-    /// <summary>Saves and publishes a workflow built in code under the given definition id.</summary>
-    public async Task PublishAsync(string definitionId, IActivity root)
+    /// <summary>Saves and publishes a workflow built in code under the given definition id, with optional workflow options.</summary>
+    public async Task PublishAsync(string definitionId, IActivity root, WorkflowOptions? options = null)
     {
         var result = await Services.GetRequiredService<IWorkflowDefinitionImporter>().ImportAsync(new()
         {
-            Model = new WorkflowDefinitionModel { DefinitionId = definitionId, Name = definitionId, Root = root },
+            Model = new WorkflowDefinitionModel { DefinitionId = definitionId, Name = definitionId, Root = root, Options = options },
             Publish = true
         });
 
