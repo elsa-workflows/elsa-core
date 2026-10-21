@@ -227,6 +227,11 @@ activities, with measured completion generation below 43 ms median on the develo
 environment. The expression guide states the one-level member scope and distinction
 from language-server diagnostics and full-diagram performance.
 
+Review regressions preserve the runtime's exact input-wrapper case, keep completion
+replacement inside surrounding calls/arrays, exclude saved wrappers that no longer
+match current workflow members, and parse generic CLR declaration names. The guide
+documents the conservative treatment of unknown cached get/set wrappers.
+
 ## Tenant context
 
 Each server now selects fixed, authenticated-claim or configured-choice tenancy.

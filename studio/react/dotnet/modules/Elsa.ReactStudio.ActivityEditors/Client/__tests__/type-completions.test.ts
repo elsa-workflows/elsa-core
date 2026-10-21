@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { parseServerTypes, typedCompletions } from "../type-completions";
 
-const document = `declare function getServerValue(): Customer;
+const document = `declare function lookupServerValue(): Customer;
 declare class Customer {
 Name: string;
 Age?: number;
@@ -25,8 +25,38 @@ for (const [language, member, input, output] of [
   expect(labels).toEqual(expect.arrayContaining([member, input, output]));
   expect(items.find(item => item.label === member)?.detail).toBe("string");
   expect(labels).not.toContain("variables.Removed");
-  if (language === "javascript") expect(labels).toContain("getServerValue");
-  else expect(labels).not.toContain("getServerValue");
+  if (language === "javascript") expect(labels).toContain("lookupServerValue");
+  else expect(labels).not.toContain("lookupServerValue");
+});
+
+it("uses exact-case input wrappers and excludes stale or incorrectly cased saved helpers", () => {
+  const current = { variables: [{ id: "live", name: "live", typeName: "Customer" }],
+    inputs: [{ name: "customer_id", type: "Customer" }, { name: "customer", type: "Customer" }],
+    activities: [{ name: "Lookup", outputs: ["result"] }] };
+  const saved = parseServerTypes(document + `
+declare function getCustomerId(): Customer;
+declare function getCustomer(): Customer;
+declare function getcustomer_id(): Customer;
+declare function getRemovedInput(): Customer;
+declare function setOldVariable(value: Customer);
+declare function getResultFromLookup(): Customer;
+declare function getresultFromLookup(): Customer;
+declare function getLive(): Customer;
+declare function setLive(value: Customer);
+declare function getWorkflowInstanceId(): string;`);
+  const labels = typedCompletions(current, "javascript", saved).map(item => item.label);
+  expect(labels).toEqual(expect.arrayContaining(["getcustomer_id().Name", "getcustomer().Name", "getcustomer_id", "getLive", "setLive", "getresultFromLookup", "getWorkflowInstanceId", "lookupServerValue"]));
+  for (const removed of ["getCustomerId", "getCustomer", "getRemovedInput", "setOldVariable", "getResultFromLookup"]) {
+    expect(labels).not.toContain(removed);
+    expect(labels).not.toContain(removed + "()");
+  }
+});
+
+it("reads generic CLR type names and assembly-qualified workflow variable types", () => {
+  const server = parseServerTypes("declare class List`1 {\nCount: number;\n}\ndeclare var values: List`1;");
+  const current = { variables: [{ id: "values", name: "values", typeName: "System.Collections.Generic.List`1[[System.String, System.Private.CoreLib]], System.Private.CoreLib" }] };
+  expect(typedCompletions(current, "csharp", server).map(item => item.label)).toContain("Variable.Values.Count");
+  expect(typedCompletions(current, "javascript", server).map(item => item.label)).toContain("values.Count");
 });
 
 it("keeps local members when server information is absent and retains Liquid support", () => {

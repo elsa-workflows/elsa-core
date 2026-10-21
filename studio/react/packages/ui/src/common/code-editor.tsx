@@ -26,12 +26,15 @@ export interface CodeCompletion {
 
 function completionExtension(items: CodeCompletion[]): Extension {
   const options = items.map((i) => ({ label: i.label, detail: i.detail, type: i.type ?? "variable" }));
+  // A balanced accessor call can be part of a member chain; an unmatched opening
+  // parenthesis belongs to the surrounding expression and must never be replaced.
+  const wordPattern = /[A-Za-z_$][\w$]*(?:\([^()\n]*\)|\[[^[\]\n]*\])?(?:\.[\w$]+(?:\([^()\n]*\)|\[[^[\]\n]*\])?)*\.?/;
   return autocompletion({
     override: [
       (ctx: CompletionContext) => {
-        const word = ctx.matchBefore(/[\w.$'"()[\]]+/);
+        const word = ctx.matchBefore(wordPattern);
         if (!word || (word.from === word.to && !ctx.explicit)) return null;
-        return { from: word.from, options, validFor: /^[\w.$'"()[\]]*$/ };
+        return { from: word.from, options };
       },
     ],
   });
