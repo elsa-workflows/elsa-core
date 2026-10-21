@@ -16,14 +16,14 @@ import { describeError, ErrorAlert } from "@elsa-workflows/react-studio-ui/commo
 import { useShellHeader } from "@elsa-workflows/react-studio-ui/shell-chrome";
 import { FullPageSpinner } from "@elsa-workflows/react-studio-ui/full-page-spinner";
 import type { RouteParams } from "@elsa-workflows/react-studio-sdk";
-import { isFlowchart, type Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
+import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
 import type { WorkflowDefinition } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
 import { useElsaClient } from "@elsa-workflows/react-studio-api-client/react";
 import { Resources, usePermissions, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
 import { downloadBlob, pickFiles } from "@elsa-workflows/react-studio-sdk/utils/download";
 import { useUrlState } from "@elsa-workflows/react-studio-sdk/utils/url-state";
 import { Network } from "lucide-react";
-import { ActivityToolbox, createDesignerStore, DesignerProvider, DesignerSurface, emptyFlowchart, indexDataFlow, isDesignableContainer, useActivityRegistry } from "@elsa-workflows/react-studio-sdk/designer/index";
+import { ActivityToolbox, childActivities, createDesignerStore, DesignerProvider, DesignerSurface, emptyFlowchart, indexDataFlow, isDesignableContainer, useActivityRegistry } from "@elsa-workflows/react-studio-sdk/designer/index";
 import { CodeView } from "../components/code-view";
 import { BpmnDefinitionView } from "../components/bpmn-definition-view";
 import { EditorHeader, type EditorViewState } from "../components/editor-header";
@@ -129,7 +129,7 @@ function EditorWorkspace({
   // Created once per mount; later changes to `initial` (refetches after autosave) are ignored on purpose.
   const [{ store, originalRoot, initialGraph }] = useState(() => {
     const store = createDesignerStore(normalizeRoot(initial.root), readOnly);
-    return { store, originalRoot: initial.root, initialGraph: graphSnapshot(store.getState().root, !isDesignableContainer(initial.root)) };
+    return { store, originalRoot: initial.root, initialGraph: store.getState().root };
   });
   const [storeVersion, setStoreVersion] = useState(0);
   useEffect(() => store.subscribe((s) => setStoreVersion(s.version)), [store]);
@@ -139,8 +139,8 @@ function EditorWorkspace({
     const root = store.getState().root;
     // A visual wrapper must not change a native workflow merely by opening it or
     // editing its metadata. Persist the adapted graph only after a graph edit.
-    return toModel({ ...definition, root: graphSnapshot(root, !isDesignableContainer(originalRoot)) === initialGraph ? originalRoot : root });
-  }, [definition, store, originalRoot, initialGraph]);
+    return toModel({ ...definition, root: graphSnapshot(root, registry) === graphSnapshot(initialGraph, registry) ? originalRoot : root });
+  }, [definition, store, originalRoot, initialGraph, registry]);
   const serializedNow = useMemo(() => JSON.stringify(currentModel()), [currentModel, storeVersion]); // eslint-disable-line react-hooks/exhaustive-deps
   const isDirty = serializedNow !== savedSnapshot;
   useUnsavedChanges(isDirty && !readOnly);
@@ -439,18 +439,27 @@ function EditorChrome({
   return null;
 }
 
-/** The designer needs a container root (Flowchart, Sequence or StateMachine); anything else is wrapped in a flowchart. */
-function graphSnapshot(root: Activity, virtualWrapper: boolean): string {
-  if (!virtualWrapper || !isFlowchart(root)) return JSON.stringify(root);
-  // React Flow measures the displayed node on mount. That visual size is not an
-  // author edit and must not cause a native root to be saved as its wrapper.
-  return JSON.stringify({ ...root, activities: root.activities.map(activity => {
+/** Compare author edits without treating React Flow's automatic node measurements as edits. */
+function graphSnapshot(root: Activity, registry: ReturnType<typeof useActivityRegistry>["registry"]): string {
+  const activities = new Set<Activity>();
+  const visit = (activity: Activity) => {
+    if (activities.has(activity)) return;
+    activities.add(activity);
+    const descriptor = registry.get(activity.type, activity.version);
+    // Unknown leaf payloads may contain user objects with id/type fields.
+    if (descriptor || isDesignableContainer(activity)) childActivities(activity, descriptor).forEach(visit);
+  };
+  visit(root);
+  return JSON.stringify(root, (_key, value) => {
+    if (!activities.has(value)) return value;
+    const activity = value as Activity;
     const designer = { ...activity.metadata?.designer };
     delete designer.size;
     return { ...activity, metadata: { ...activity.metadata, designer } };
-  }) });
+  });
 }
 
+/** The designer needs a container root; other activities are wrapped for display. */
 function normalizeRoot(root: WorkflowDefinition["root"]): Activity {
   if (isDesignableContainer(root)) return root;
   if (!root || !root.type) return { ...(root as Activity), ...emptyFlowchart(root?.id) };

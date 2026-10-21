@@ -12,7 +12,7 @@ import { liquid } from "@codemirror/lang-liquid";
 import { sql } from "@codemirror/lang-sql";
 import { StreamLanguage } from "@codemirror/language";
 import { csharp } from "@codemirror/legacy-modes/mode/clike";
-import { autocompletion, type CompletionContext } from "@codemirror/autocomplete";
+import { autocompletion, insertCompletionText, type CompletionContext } from "@codemirror/autocomplete";
 import { cn } from "../utils.js";
 import type { Extension } from "@codemirror/state";
 
@@ -48,20 +48,37 @@ function completionExtension(items: CodeCompletion[]): Extension {
         if (!word || (word.from === word.to && !ctx.explicit)) return null;
         let to = ctx.pos;
         if (accessor) {
-          const line = ctx.state.doc.lineAt(accessor.from);
-          let quote = "", escaped = false, depth = 0;
-          for (let pos = accessor.from + accessor.text.indexOf("("); pos < line.to; pos++) {
+          let quote = "", escaped = false, depth = 0, quoteFrom = -1;
+          let quotedEnd = ctx.pos, closedCall = false;
+          let pos = accessor.from + accessor.text.indexOf("(");
+          for (; pos < ctx.state.doc.length; pos++) {
             const char = ctx.state.doc.sliceString(pos, pos + 1);
             if (escaped) { escaped = false; continue; }
             if (quote) {
+              if (char === "\n") {
+                if (quoteFrom < ctx.pos) quotedEnd = Math.max(quotedEnd, pos);
+                break;
+              }
               if (char === "\\") escaped = true;
-              else if (char === quote) quote = "";
-            } else if (char === '"' || char === "'") quote = char;
+              else if (char === quote) {
+                if (quoteFrom < ctx.pos && pos >= ctx.pos) quotedEnd = pos + 1;
+                quote = "";
+              }
+            } else if (char === '"' || char === "'") { quote = char; quoteFrom = pos; }
             else if (char === "(") depth++;
-            else if (char === ")" && --depth === 0) { to = Math.max(to, pos + 1); break; }
+            else if (char === ")" && --depth === 0) { to = Math.max(to, pos + 1); closedCall = true; break; }
+          }
+          if (!closedCall) {
+            if (quote && quoteFrom < ctx.pos && pos === ctx.state.doc.length) quotedEnd = pos;
+            to = Math.max(to, quotedEnd);
           }
         }
-        return { from: word.from, to, options };
+        // Filter only the prefix before the cursor. The suffix can include
+        // whitespace/newlines absent from the completion label.
+        const suffixLength = to - ctx.pos;
+        return { from: word.from, options: suffixLength ? options.map(option => ({ ...option,
+          apply: (view, completion, from, end) => view.dispatch(insertCompletionText(view.state, completion.label, from, end + suffixLength)),
+        })) : options };
       },
     ],
   });
