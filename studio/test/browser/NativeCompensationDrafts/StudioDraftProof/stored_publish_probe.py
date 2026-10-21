@@ -348,7 +348,7 @@ def run_api_proof(capture, database, verifier, python, api_base, deadline, recor
         publish_response = post(
             opener,
             api_base + "/workflow-definitions/" + encoded_id + "/publish",
-            None,
+            {},  # Match the empty JSON request used by Elsa's API client (no body yields HTTP 415).
             token,
             deadline,
             ASSERTION_IDS[0],

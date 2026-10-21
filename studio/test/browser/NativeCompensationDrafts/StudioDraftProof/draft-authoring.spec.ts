@@ -536,7 +536,10 @@ test('native compensation draft persists two paired rows and refuses UI publish'
 
   await assertion('NC-DRAFT-RENAME-AND-REORDER', 'step-rename-or-reorder-unavailable', async () => {
     const firstRow = getStepRow(editor, 0);
-    await firstRow.getByLabel('Step name', { exact: true }).fill('Reserve stock');
+    const renamedStep = firstRow.getByLabel('Step name', { exact: true });
+    await renamedStep.fill('Reserve stock');
+    await renamedStep.press('Tab');
+    await expect(renamedStep).toHaveValue('Reserve stock');
     await firstRow.getByRole('button', { name: 'Move step down', exact: true }).click();
     const stepNames = editor.getByLabel('Step name', { exact: true });
     await expect(stepNames.nth(0)).toHaveValue('Release inventory');
