@@ -161,7 +161,8 @@ public sealed class JsonActivitySerializerTests : IAsyncLifetime
     [Fact]
     public void CompensationDraftWithCaseAliasedTypeIsPreservedWholeAndOpaque()
     {
-        var json = CreateCompensationDraftJson("\"stepId\":\"step-1\",\"forward\":null,\"handler\":null,\"mappings\":[]")
+        var step = """{"stepId":"step-1","forward":null,"handler":null,"mappings":[]}""";
+        var json = CreateCompensationDraftJson(step)
             .Replace("\"type\":\"Elsa.CompensationScope\"", "\"Type\":\"Elsa.CompensationScope\"", StringComparison.Ordinal);
 
         var restored = Assert.IsType<NotFoundActivity>(Serializer.Deserialize(json));
@@ -177,7 +178,7 @@ public sealed class JsonActivitySerializerTests : IAsyncLifetime
     [InlineData("mappings", "Mappings", "[]", "[{\"mappingId\":\"future\"}]")]
     public void CompensationDraftPreservesWholeRawJsonWhenKnownPropertyHasCaseAlias(string propertyName, string aliasName, string canonicalValue, string aliasValue)
     {
-        const string step = "\"stepId\":\"step-1\",\"forward\":null,\"handler\":null,\"mappings\":[]";
+        const string step = "{\"stepId\":\"step-1\",\"forward\":null,\"handler\":null,\"mappings\":[]}";
         var json = CreateCompensationDraftJson(step);
         var ambiguousJson = AddCaseAlias(json, propertyName, aliasName, canonicalValue, aliasValue);
 
