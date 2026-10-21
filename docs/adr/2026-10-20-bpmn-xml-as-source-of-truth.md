@@ -32,6 +32,9 @@ is derived from it on every save and is never edited directly.
   description, variables, inputs, outputs, options and other custom properties, as the document `PUT` does.
 - Add a way to create an empty BPMN workflow: `POST bpmn/definitions` with a name returns a new draft holding a minimal
   process (one plain start event and one end event with DI), so authoring does not depend on uploading a file.
+- The response of `PUT bpmn/definitions/{definitionId}/xml` lists the foreign content the stored document retains
+  (vendor extensions and unknown elements) that the new document no longer has. The save still succeeds; the list lets
+  a client that skipped the designer's acknowledgement step, or a script, see what it dropped.
 - The document `GET`/`PUT` pair stays for compatibility with the shipped Studio. The modeler does not use it.
 
 ## Consequences

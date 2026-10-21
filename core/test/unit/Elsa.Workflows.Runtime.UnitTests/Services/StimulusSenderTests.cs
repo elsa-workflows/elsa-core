@@ -1,4 +1,6 @@
 using Elsa.Workflows;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Messages;
@@ -90,6 +92,36 @@ public class StimulusSenderTests
         await _bookmarkQueue.DidNotReceive().EnqueueAsync(Arg.Any<NewBookmarkQueueItem>(), Arg.Any<CancellationToken>());
     }
 
+    [Fact]
+    public async Task SendAsync_WhenStartingFromStoredTriggers_CarriesEachMatchedTriggersHashInACopyOfTheProperties()
+    {
+        var callerProperties = new Dictionary<string, object> { ["Caller"] = "value" };
+        _stimulusHasher.Hash(ActivityTypeName, Arg.Any<object>(), null).Returns(StimulusHash);
+        var firstTrigger = CreateTrigger("activity-1");
+        var secondTrigger = CreateTrigger("activity-2");
+        _triggerBoundWorkflowService
+            .FindManyAsync(StimulusHash, Arg.Any<CancellationToken>())
+            .Returns([new TriggerBoundWorkflow(CreateWorkflowGraph(), [firstTrigger, secondTrigger])]);
+        var requests = new List<InvokeTriggerRequest>();
+        _triggerInvoker
+            .InvokeAsync(Arg.Do<InvokeTriggerRequest>(requests.Add), Arg.Any<CancellationToken>())
+            .Returns(new StartWorkflowResponse { WorkflowInstanceId = WorkflowInstanceId, Status = WorkflowStatus.Running, SubStatus = WorkflowSubStatus.Suspended });
+        var sender = CreateSender();
+
+        await sender.SendAsync(ActivityTypeName, new object(), new StimulusMetadata { Properties = callerProperties });
+
+        Assert.Equal(2, requests.Count);
+        Assert.All(requests, request =>
+        {
+            Assert.NotNull(request.Properties);
+            Assert.NotSame(callerProperties, request.Properties);
+            Assert.Equal(StimulusHash, request.Properties[TriggerWorkflowProperties.StimulusHash]);
+            Assert.Equal("value", request.Properties["Caller"]);
+        });
+        Assert.NotSame(requests[0].Properties, requests[1].Properties);
+        Assert.False(callerProperties.ContainsKey(TriggerWorkflowProperties.StimulusHash));
+    }
+
     private StimulusSender CreateSender()
     {
         return new(
@@ -99,6 +131,23 @@ public class StimulusSenderTests
             _bookmarkQueue,
             _triggerInvoker,
             NullLogger<StimulusSender>.Instance);
+    }
+
+    private static StoredTrigger CreateTrigger(string activityId) => new()
+    {
+        Id = $"trigger-{activityId}",
+        WorkflowDefinitionId = "workflow",
+        WorkflowDefinitionVersionId = "workflow-version",
+        Name = ActivityTypeName,
+        ActivityId = activityId,
+        Hash = StimulusHash
+    };
+
+    private static WorkflowGraph CreateWorkflowGraph()
+    {
+        var workflow = new Workflow { Id = "workflow" };
+        var root = new ActivityNode(workflow, "Root");
+        return new(workflow, root, [root]);
     }
 
     private static StimulusMetadata CreateMetadata()
