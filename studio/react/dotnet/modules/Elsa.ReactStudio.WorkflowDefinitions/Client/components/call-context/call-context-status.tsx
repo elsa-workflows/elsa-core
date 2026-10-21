@@ -1,5 +1,4 @@
 "use client";
-import { translate } from "@elsa-workflows/react-studio-sdk/localization";
 
 import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
 
@@ -30,8 +29,8 @@ export function CallContextStatus({ state }: { state: CallContextState }) {
   const loading = state.status === "loading";
   const { incoming, outgoing } = state.counts;
   const parts: string[] = [];
-  parts.push(incoming === 0 ? (loading ? translate("finding callers…") : translate("no callers")) : `${incoming} caller${incoming === 1 ? "" : "s"}`);
-  parts.push(outgoing === 0 ? (loading ? translate("finding callees…") : translate("no callees")) : `${outgoing} callee${outgoing === 1 ? "" : "s"}`);
+  parts.push(incoming === 0 ? (loading ? _t("finding callers…") : _t("no callers")) : incoming === 1 ? _t("{{count}} caller", { count: incoming }) : _t("{{count}} callers", { count: incoming }));
+  parts.push(outgoing === 0 ? (loading ? _t("finding callees…") : _t("no callees")) : outgoing === 1 ? _t("{{count}} callee", { count: outgoing }) : _t("{{count}} callees", { count: outgoing }));
   const limits = state.warnings.filter((w) => w.code !== "load-failed");
   return (
     <Pill tone={limits.length || state.truncated.incoming || state.truncated.outgoing ? "warning" : "muted"}>
@@ -39,7 +38,7 @@ export function CallContextStatus({ state }: { state: CallContextState }) {
       <span>{parts.join(" · ")}</span>
       {(state.truncated.incoming || state.truncated.outgoing) && <span>{_t("· some branches not shown (limit)")}</span>}
       {limits.map((w) => (
-        <span key={w.code} title={w.message}>
+        <span key={w.code} title={_t(w.message, w.values)}>
           · {w.code === "timeout" ? _t("timed out") : w.code === "max-requests" ? _t("request limit") : _t("node limit")}
         </span>
       ))}

@@ -75,3 +75,7 @@ The starting Dutch catalog reused nonempty matching entries from
 entries are filled rather than hiding labels. Keep the checked-in catalog as the
 source of truth for React-specific translations. The import does not modify Blazor's
 resource file.
+
+Call-graph warnings retain their catalog key and interpolation values in the cached
+model. Tooltips and caller/callee counts translate when rendered, so switching
+culture updates an already loaded graph without fetching it again.
