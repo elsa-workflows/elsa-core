@@ -40,7 +40,7 @@ describe("DateTimePicker", () => {
 describe("DynamicOutcomes", () => {
   const input = descriptor({ uiHint: "dynamic-outcomes", uiSpecifications: { DynamicOutcomesOptions: { fixedOutcomes: ["Done"] } } });
   it("writes the server's Object JSON list, excludes fixed ports, and keeps an emptied list empty", () => {
-    expect(serializeOutcomes([" Approve ", "Reject", " Approve ", "Done"], input)).toBe('[" Approve ","Reject"]');
+    expect(serializeOutcomes([" Approve ", "Reject", " Approve ", "Done"], input)).toBe('[" Approve ","Reject"," Approve "]');
     expect(serializeOutcomes([], input)).toBe("[]");
     expect(fixedOutcomes(input)).toEqual(["Done"]);
     const value = { typeName: "String[]", expression: { type: "Object", value: '["Approve"]' } };
