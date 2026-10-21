@@ -154,9 +154,6 @@ export function nextActivityName(root: Activity, baseName: string): string {
 
 /** Deep clones an activity with fresh ids and node ids (copy/paste, duplicate). */
 export function cloneActivity(activity: Activity, parentNodeId: string | undefined, root: Activity, baseName?: string): Activity {
-  const id = newActivityId();
-  const copy: Activity = structuredClone({ ...activity, id, nodeId: childNodeId(parentNodeId, id) });
-  if (baseName) copy.name = nextActivityName(root, baseName);
   const reId = (a: Activity, parent: string | undefined): Activity => {
     const nid = newActivityId();
     const out: Activity = { ...a, id: nid, nodeId: childNodeId(parent, nid) };
@@ -184,16 +181,13 @@ export function cloneActivity(activity: Activity, parentNodeId: string | undefin
         transitions: out.transitions.map((t) => ({ ...t, trigger: t.trigger ? reId(t.trigger, out.nodeId) : t.trigger, action: t.action ? reId(t.action, out.nodeId) : t.action })),
       } as StateMachine;
     }
-    for (const [k, v] of Object.entries(out)) {
-      if (v && typeof v === "object" && !Array.isArray(v) && typeof (v as Activity).type === "string" && typeof (v as Activity).id === "string" && k !== "metadata") {
-        out[k] = reId(v as Activity, out.nodeId);
-      }
-    }
-    return out;
+    return childActivities(out).reduce((result, child) => {
+      const slot = findSlotOf(out, child.id);
+      return slot ? setSlot(result, slot, reId(child, out.nodeId)) : result;
+    }, out);
   };
-  // Re-id the children (the top-level copy already has its fresh id).
-  const rebuilt = reId(copy, parentNodeId);
-  return { ...rebuilt, id, nodeId: childNodeId(parentNodeId, id), name: copy.name };
+  const copy = reId(structuredClone(activity), parentNodeId);
+  return baseName ? { ...copy, name: nextActivityName(root, baseName) } : copy;
 }
 
 /** Re-labels node ids under a parent after a move (sequence reorder keeps parent, so this is a no-op there). */

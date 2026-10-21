@@ -1,8 +1,8 @@
 import { afterEach, expect, it } from "vitest";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const generator = fileURLToPath(new URL("../../scripts/create-module.mjs", import.meta.url));
@@ -29,3 +29,24 @@ for (const key of ["studio-version", "npm-version"]) {
     expect(existsSync(join(output, "Module"))).toBe(true);
   });
 }
+
+it.each(["nested", "empty", "symlink"])("rejects %s output within the template before writing", mode => {
+  const sandbox = mkdtempSync(join(tmpdir(), "elsa-template-output-"));
+  temporary.push(sandbox);
+  const script = join(sandbox, "scripts/create-module.mjs");
+  const template = join(sandbox, "samples/module-template");
+  mkdirSync(dirname(script), { recursive: true });
+  cpSync(generator, script);
+  cpSync(fileURLToPath(new URL("../../samples/module-template/", import.meta.url)), template, { recursive: true });
+  let output = join(template, "Host/Generated");
+  if (mode === "empty") mkdirSync(output);
+  if (mode === "symlink") {
+    symlinkSync(template, join(sandbox, "alias"), "dir");
+    output = join(sandbox, "alias/Generated");
+  }
+  const before = readdirSync(template, { recursive: true }).sort();
+  const result = spawnSync(process.execPath, [script, output], { encoding: "utf8", timeout: 5000 });
+  expect(result.status).not.toBe(0);
+  expect(result.stderr).toContain("outside the module template");
+  expect(readdirSync(template, { recursive: true }).sort()).toEqual(before);
+});
