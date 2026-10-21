@@ -15,14 +15,21 @@ internal static class StudioConfiguration
         var document = JsonNode.Parse(text) as JsonObject ?? throw new InvalidDataException("Expected a configuration object");
         Set(document, "title", environment("STUDIO_TITLE"));
 
-        if (environment("STUDIO_SERVER_URL") is { Length: > 0 } serverUrl)
+        var serverUrl = environment("STUDIO_SERVER_URL");
+        var serverName = environment("STUDIO_SERVER_NAME");
+        var tenantId = environment("STUDIO_TENANT_ID");
+        if (!string.IsNullOrEmpty(serverUrl) || !string.IsNullOrEmpty(serverName) || tenantId is not null)
         {
             var servers = document["servers"] as JsonArray ?? new JsonArray();
             var first = servers.FirstOrDefault() as JsonObject;
             first = first?.DeepClone().AsObject() ?? new JsonObject();
-            first["url"] = serverUrl;
-            first["name"] = environment("STUDIO_SERVER_NAME") ?? first["name"]?.GetValue<string>() ?? "Default";
-            Set(first, "tenantId", environment("STUDIO_TENANT_ID"));
+            Set(first, "url", serverUrl);
+            Set(first, "name", serverName);
+            first["name"] ??= "Default";
+            if (tenantId is not null)
+            {
+                first["tenantId"] = tenantId;
+            }
             if (servers.Count == 0)
             {
                 servers.Add(first);

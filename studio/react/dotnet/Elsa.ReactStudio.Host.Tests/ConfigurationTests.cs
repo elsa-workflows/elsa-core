@@ -51,6 +51,19 @@ public sealed class ConfigurationTests : IDisposable
         Assert.True(config["features"]!["secrets"]!["enabled"]!.GetValue<bool>());
     }
 
+    [Theory]
+    [InlineData("STUDIO_SERVER_NAME", "Runtime")]
+    [InlineData("STUDIO_TENANT_ID", "runtime-tenant")]
+    [InlineData("STUDIO_TENANT_ID", "")]
+    public async Task Name_and_tenant_overrides_do_not_require_a_server_url(string name, string value)
+    {
+        _environment[name] = value;
+        var server = (await Load())["servers"]![0]!;
+        Assert.Equal("/elsa/api", server["url"]!.GetValue<string>());
+        Assert.Equal(value, server[name == "STUDIO_SERVER_NAME" ? "name" : "tenantId"]!.GetValue<string>());
+        if (name == "STUDIO_SERVER_NAME") Assert.Equal("tenant-a", server["tenantId"]!.GetValue<string>());
+    }
+
     [Fact]
     public async Task Auth_overrides_preserve_configured_fields()
     {
