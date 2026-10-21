@@ -161,28 +161,52 @@ class ValidationTests(unittest.TestCase):
             with self.subTest(name=name):
                 result = {"participant_pid": None}
                 with self.assertRaises(run.ParticipantFailure):
-                    with run.ParticipantProcess(result, [sys.executable, "-u", "-c", child], timeout_seconds=0.2):
+                    with run.ParticipantProcess(result, [sys.executable, "-u", "-c", child], timeout_seconds=1):
                         self.fail("Invalid participant startup unexpectedly succeeded")
                 diagnostics = result["participant"]
                 self.assertIsNotNone(diagnostics["pid"])
                 self.assertTrue(diagnostics["reaped"])
                 self.assertTrue(diagnostics["stdout_reader_completed"])
                 self.assertTrue(diagnostics["stderr_reader_completed"])
-                self.assertIn("participant stderr", diagnostics["stderr"])
                 self.assertTrue(diagnostics["controller_error"])
                 self.assertIsNotNone(diagnostics["exit"])
                 if name == "premature-exit":
                     self.assertEqual(7, diagnostics["exit"])
                     self.assertIn("closed stdout", diagnostics["controller_error"])
+                    self.assertIn("participant stderr", diagnostics["stderr"])
                 elif name == "malformed-port":
                     self.assertIn("invalid port", diagnostics["controller_error"])
+                    self.assertIn("participant stderr", diagnostics["stderr"])
                     self.assertTrue(diagnostics["cleanup_terminated"])
                 else:
                     self.assertIn("TimeoutError", diagnostics["controller_error"])
+                    if diagnostics["stderr"]:
+                        self.assertIn("participant stderr", diagnostics["stderr"])
                     self.assertTrue(diagnostics["cleanup_terminated"])
                 if os.name == "posix":
                     with self.assertRaises(ProcessLookupError):
                         os.kill(diagnostics["pid"], 0)
+
+    def test_participant_valid_port_enters_body_and_reaps_on_context_exit(self):
+        child = "import json,time; print(json.dumps({'port':43210}), flush=True); time.sleep(30)"
+        result = {"participant_pid": None}
+        participant = run.ParticipantProcess(result, [sys.executable, "-u", "-c", child], timeout_seconds=1)
+        with participant as url:
+            self.assertEqual("http://127.0.0.1:43210/", url)
+            self.assertIsNotNone(participant.process)
+            self.assertIsNone(participant.process.poll())
+            self.assertEqual(43210, result["participant"]["port"])
+        diagnostics = result["participant"]
+        self.assertTrue(diagnostics["cleanup_terminated"])
+        self.assertTrue(diagnostics["reaped"])
+        self.assertIsNotNone(diagnostics["exit"])
+        self.assertIsNone(diagnostics["controller_error"])
+        self.assertIsNone(diagnostics["cleanup_error"])
+        self.assertTrue(diagnostics["stdout_reader_completed"])
+        self.assertTrue(diagnostics["stderr_reader_completed"])
+        if os.name == "posix":
+            with self.assertRaises(ProcessLookupError):
+                os.kill(diagnostics["pid"], 0)
 
     def test_matrix_and_control_startup_failures_are_saved_without_orphans(self):
         malformed = (

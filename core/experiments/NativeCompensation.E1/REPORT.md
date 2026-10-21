@@ -152,7 +152,7 @@ run, and no E1 observation or readiness claim changed.
 
 Control validation also requires the recorded inspection child to exit successfully
 for every control that performs inspection; a negative regression covers all six
-such controls. The cheap suite now has 23 passing tests, with the same retained
+such controls. The cheap suite now has 24 passing tests, with the same retained
 evidence hashes and no change to recorded observations or readiness.
 
 Both controllers now initialize evidence before participant startup and share one
@@ -161,5 +161,7 @@ and reaping. Premature exit, malformed port output and a stalled handshake becom
 recorded controller failures; `evidence.json` is still written with the PID, exit,
 stdout, stderr and cleanup status. Synthetic Python-child regressions exercise those
 failures and both controller evidence paths, then verify the child is reaped. These
-are harness lifecycle checks only; the fixture participant, .NET backend and database
-were not run again. The retained 24 raw evidence hashes and summary are unchanged.
+also verify a valid port enters the controller body before context teardown reaps the
+still-live child. These are harness lifecycle checks only; the fixture participant,
+.NET backend and database were not run again. The retained 24 raw evidence hashes and
+summary are unchanged.

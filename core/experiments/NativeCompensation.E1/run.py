@@ -147,6 +147,7 @@ class ParticipantProcess:
                 try:
                     process.terminate()
                 except ProcessLookupError:
+                    # The owned child exited after poll; wait below still reaps it.
                     pass
                 except OSError as error:
                     cleanup_errors.append(f"Could not terminate participant child: {error}")
@@ -157,6 +158,7 @@ class ParticipantProcess:
                 try:
                     process.kill()
                 except ProcessLookupError:
+                    # The owned child exited before the escalation; wait below still reaps it.
                     pass
                 except OSError as error:
                     cleanup_errors.append(f"Could not kill participant child: {error}")
@@ -174,6 +176,7 @@ class ParticipantProcess:
                     try:
                         stream.close()
                     except (OSError, ValueError):
+                        # A reader or an exited child may already have closed this pipe.
                         pass
             for reader in (self.reader, self.stderr_reader):
                 if reader is not None and reader.ident is not None and reader.is_alive():
