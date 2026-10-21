@@ -1,6 +1,4 @@
 
-import { translate } from "@elsa-workflows/react-studio-sdk/localization";
-
 import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
 import { useEffect, useRef, useState } from "react";
 import { useElsaClient } from "@elsa-workflows/react-studio-api-client/react";
@@ -52,11 +50,12 @@ export function BpmnImportDialog({ onClose, onImported }: { onClose: () => void;
   const [analysis, setAnalysis] = useState<BpmnImportAnalysis>();
   const [processId, setProcessId] = useState("");
   const [busy, setBusy] = useState(false);
+  const [invalidDocument, setInvalidDocument] = useState(false);
   const [error, setError] = useState<unknown>();
   const analyze = async (document: File | undefined) => {
-    setAnalysis(undefined); setError(undefined); setFile(undefined); setProcessId("");
+    setAnalysis(undefined); setInvalidDocument(false); setError(undefined); setFile(undefined); setProcessId("");
     if (!document) return;
-    if (!document.name.toLowerCase().endsWith(".bpmn") || document.size > 10 * 1024 * 1024) { setError(new Error(translate("Select a .bpmn document no larger than 10 MB."))); return; }
+    if (!document.name.toLowerCase().endsWith(".bpmn") || document.size > 10 * 1024 * 1024) { setInvalidDocument(true); return; }
     setBusy(true);
     try {
       const result = await client.bpmn.analyze(document, begin());
@@ -74,6 +73,7 @@ export function BpmnImportDialog({ onClose, onImported }: { onClose: () => void;
     <label htmlFor="bpmn-file">{_t("BPMN document (up to 10 MB)")}</label>
     <Input id="bpmn-file" type="file" accept=".bpmn" disabled={busy} onChange={event => void analyze(event.target.files?.[0])} />
     {busy && <p role="status">{_t("Processing BPMN document…")}</p>}
+    {invalidDocument && <ErrorAlert error={new Error(_t("Select a .bpmn document no larger than 10 MB."))} title={_t("BPMN request failed")} />}
     <Refusal error={error} />
     {analysis && <>
       {analysis.processIds.length > 1 && <label>{_t("Process")}<select aria-label={_t("Process")} value={processId} disabled={busy} onChange={event => setProcessId(event.target.value)}><option value="">{_t("Select a process")}</option>{analysis.processIds.map(id => <option key={id} value={id}>{id}</option>)}</select></label>}

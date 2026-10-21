@@ -33,6 +33,8 @@ function coerce(field: UserTaskFormField, raw: string): unknown {
   return raw;
 }
 
+type ValidationError = { kind: "required"; labels: string[] } | { kind: "json" };
+
 /**
  * Completes a task with one of its configured actions. When the task has a pinned form the
  * fields are rendered from its projection; otherwise an optional free-form JSON payload is offered.
@@ -58,14 +60,14 @@ export function CompleteTaskDialog({
   const [actionKey, setActionKey] = useState(actions[0]?.key ?? "Complete");
   const [values, setValues] = useState(() => initialValues(fields));
   const [json, setJson] = useState("");
-  const [error, setError] = useState<string>();
+  const [error, setError] = useState<ValidationError>();
 
   const submit = async () => {
     let data: unknown = undefined;
     if (fields.length) {
       const missing = fields.filter((f) => f.required && !f.masked && !values[f.key]?.trim());
       if (missing.length) {
-        setError(_t("Required: {{value0}}", { value0: missing.map((f) => f.label).join(", ") }));
+        setError({ kind: "required", labels: missing.map((f) => f.label) });
         return;
       }
       const obj: Record<string, unknown> = {};
@@ -75,7 +77,7 @@ export function CompleteTaskDialog({
       try {
         data = JSON.parse(json);
       } catch {
-        setError(_t("The payload must be valid JSON."));
+        setError({ kind: "json" });
         return;
       }
     }
@@ -105,7 +107,9 @@ export function CompleteTaskDialog({
               <Textarea id="complete-json" rows={5} value={json} onChange={(e) => setJson(e.target.value)} className="font-mono text-xs" placeholder="{ }" />
             </Field>
           )}
-          {error && <p className="text-xs text-destructive">{error}</p>}
+          {error && <p role="alert" className="text-xs text-destructive">{error.kind === "required"
+            ? _t("Required: {{value0}}", { value0: error.labels.join(", ") })
+            : _t("The payload must be valid JSON.")}</p>}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
