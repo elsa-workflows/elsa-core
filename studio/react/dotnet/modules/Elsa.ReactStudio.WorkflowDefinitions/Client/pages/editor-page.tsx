@@ -12,7 +12,7 @@ import { describeError, ErrorAlert } from "@elsa-workflows/react-studio-ui/commo
 import { useShellHeader } from "@elsa-workflows/react-studio-ui/shell-chrome";
 import { FullPageSpinner } from "@elsa-workflows/react-studio-ui/full-page-spinner";
 import type { RouteParams } from "@elsa-workflows/react-studio-sdk";
-import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
+import { isFlowchart, type Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
 import type { WorkflowDefinition } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
 import { useElsaClient } from "@elsa-workflows/react-studio-api-client/react";
 import { Resources, usePermissions, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
@@ -117,12 +117,20 @@ function EditorWorkspace({
   );
 
   // Created once per mount; later changes to `initial` (refetches after autosave) are ignored on purpose.
-  const [store] = useState(() => createDesignerStore(normalizeRoot(initial.root), readOnly));
+  const [{ store, originalRoot, initialGraph }] = useState(() => {
+    const store = createDesignerStore(normalizeRoot(initial.root), readOnly);
+    return { store, originalRoot: initial.root, initialGraph: graphSnapshot(store.getState().root, !isDesignableContainer(initial.root)) };
+  });
   const [storeVersion, setStoreVersion] = useState(0);
   useEffect(() => store.subscribe((s) => setStoreVersion(s.version)), [store]);
 
   // The model that would be saved right now.
-  const currentModel = useCallback(() => toModel({ ...definition, root: store.getState().root }), [definition, store]);
+  const currentModel = useCallback(() => {
+    const root = store.getState().root;
+    // A visual wrapper must not change a native workflow merely by opening it or
+    // editing its metadata. Persist the adapted graph only after a graph edit.
+    return toModel({ ...definition, root: graphSnapshot(root, !isDesignableContainer(originalRoot)) === initialGraph ? originalRoot : root });
+  }, [definition, store, originalRoot, initialGraph]);
   const serializedNow = useMemo(() => JSON.stringify(currentModel()), [currentModel, storeVersion]); // eslint-disable-line react-hooks/exhaustive-deps
   const isDirty = serializedNow !== savedSnapshot;
 
@@ -430,10 +438,21 @@ function EditorChrome({
 }
 
 /** The designer needs a container root (Flowchart, Sequence or StateMachine); anything else is wrapped in a flowchart. */
+function graphSnapshot(root: Activity, virtualWrapper: boolean): string {
+  if (!virtualWrapper || !isFlowchart(root)) return JSON.stringify(root);
+  // React Flow measures the displayed node on mount. That visual size is not an
+  // author edit and must not cause a native root to be saved as its wrapper.
+  return JSON.stringify({ ...root, activities: root.activities.map(activity => {
+    const designer = { ...activity.metadata?.designer };
+    delete designer.size;
+    return { ...activity, metadata: { ...activity.metadata, designer } };
+  }) });
+}
+
 function normalizeRoot(root: WorkflowDefinition["root"]): Activity {
   if (isDesignableContainer(root)) return root;
   if (!root || !root.type) return { ...(root as Activity), ...emptyFlowchart(root?.id) };
   // A single non-container activity as root: show it inside a flowchart so it stays editable.
   const flowchart = emptyFlowchart();
-  return { ...flowchart, activities: [{ ...root, metadata: { ...root.metadata, designer: { position: { x: 80, y: 80 } } } }] };
+  return { ...flowchart, activities: [{ ...root, metadata: { ...root.metadata, designer: { ...root.metadata?.designer, position: root.metadata?.designer?.position ?? { x: 80, y: 80 } } } }] };
 }
