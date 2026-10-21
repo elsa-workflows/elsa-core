@@ -61,13 +61,14 @@ one module contributes a section.
 New extensions use the [SDK v1 Preview](../packages/sdk/README.md) and export
 `register(api)`. The [weather sample](../samples/weather-module/entry.tsx) imports
 only the four public packages and is verified against packed artifacts by
-`pnpm test:packages`. Independent module asset/RCL discovery remains under #8845.
+`pnpm test:packages`. [Feature packages](feature-packages.md) explains the RCL
+layout, server discovery, independent assets and opt-in hosting.
 
-The imported bundled modules use the SDK's transitional `defineModule()` adapter.
+The imported modules use the SDK's declarative `defineModule()` adapter.
 Their source currently has this layout:
 
 ```
-src/modules/<id>/
+dotnet/modules/Elsa.ReactStudio.<Feature>/Client/
   index.tsx     the defineModule export
   routes.ts     route patterns, kept separate so components can import them without a cycle
   api.ts        endpoint group built from the shared HTTP client
@@ -89,7 +90,9 @@ export const labelsModule = defineModule({
 
 Then:
 
-1. Register it in [`src/modules/index.ts`](../src/modules/index.ts). The adapter preserves
+1. Export `register` from `Client/entry.tsx` and register its descriptor in the
+   module's CShells feature. Add first-party builds to `module-catalog.json`.
+   The adapter preserves
    each module's route declaration priority. Explicit route `order` overrides it;
    equal priorities use stable module and slot IDs, independent of load order.
 2. Add `"<id>": { "enabled": true }` to `studio.config.json`.
@@ -100,7 +103,7 @@ Then:
 - Routes are matched by the History API router through the
   module registry, so enabling or disabling a module is enough to add or remove its routes.
 - Cross-module UI goes through `extensions` and `useExtensions(kind)`. Never import another module's
-  pages. Shared code belongs in `src/components/common` or `src/lib`.
+  pages. Shared code belongs in the four public workspace packages.
 - Query keys start with `useQueryScope()`, the active server URL, so switching environments never
   mixes caches.
 - Build pages from the shared building blocks (`PageHeader`, `DataTable`, `SearchInput`,

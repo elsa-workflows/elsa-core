@@ -33,7 +33,8 @@
     "vite.config.ts",
     "vitest.config.ts",
     "playwright.config.ts",
-    "tests"
+    "tests",
+    "dotnet/modules/*/Client"
   ],
   "exclude": [
     "node_modules",

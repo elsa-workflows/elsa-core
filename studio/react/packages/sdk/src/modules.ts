@@ -112,6 +112,7 @@ export interface SettingsSection {
 }
 
 export interface StudioModuleExtensions {
+  components?: StudioSlots["components"][];
   providers?: StudioSlots["providers"][];
   settingsSections?: SettingsSection[];
   dashboardWidgets?: DashboardWidget[];

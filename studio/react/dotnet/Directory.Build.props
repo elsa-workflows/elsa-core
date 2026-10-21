@@ -3,6 +3,15 @@
   <PropertyGroup>
     <Version>3.11.0</Version>
     <Description>Elsa React Studio Preview. Opt-in; the Blazor Studio remains the default.</Description>
+    <!-- The source receipt records no donor license file. Do not turn the
+         repository's default MIT metadata into a grant for imported materials. -->
+    <PackageLicenseExpression />
+    <PackageLicenseFile>SOURCE-NOTICE.md</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)../SOURCE-NOTICE.md" Pack="true" PackagePath="/SOURCE-NOTICE.md" />
+    <None Include="$(MSBuildThisFileDirectory)../README.md" Pack="true" PackagePath="/README.md" />
+  </ItemGroup>
 </Project>

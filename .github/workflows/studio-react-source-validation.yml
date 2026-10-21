@@ -55,6 +55,7 @@ jobs:
         run: |
           pnpm lint
           pnpm typecheck
+          pnpm check:boundaries
           pnpm test
           pnpm test:packages
           pnpm docs:api
@@ -62,13 +63,19 @@ jobs:
           pnpm build
       - name: Build the host on all supported frameworks and test runtime configuration
         run: |
-          dotnet build studio/react/dotnet/Elsa.ReactStudio.Host/Elsa.ReactStudio.Host.csproj
+          dotnet build Elsa.ReactStudio.slnf
           dotnet test studio/react/dotnet/Elsa.ReactStudio.Host.Tests/Elsa.ReactStudio.Host.Tests.csproj --logger trx --results-directory "$RUNNER_TEMP/react-studio-tests"
       - name: Exercise History API navigation through the ASP.NET host
         working-directory: studio/react
         run: |
           pnpm exec playwright install --with-deps chromium
           pnpm test:browser
+      - name: Pack the Preview feature libraries without publishing
+        run: |
+          dotnet pack Elsa.ReactStudio.slnf -c Release \
+            --output "$RUNNER_TEMP/react-studio-packages" -p:Version=3.11.0-preview.${{ github.run_id }}
+          python3 studio/react/scripts/verify-nuget-packages.py \
+            "$RUNNER_TEMP/react-studio-packages" 3.11.0-preview.${{ github.run_id }}
       - name: Build and start the standalone Preview image without publishing
         run: |
           docker build -f studio/react/Dockerfile -t elsa-react-studio:ci .
@@ -103,5 +110,6 @@ jobs:
             ${{ runner.temp }}/react-studio-tests/*.trx
             studio/react/test-results/**
             studio/react/docs/api/**
+            ${{ runner.temp }}/react-studio-packages/*.nupkg
           if-no-files-found: warn
           retention-days: 14

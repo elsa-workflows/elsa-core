@@ -19,9 +19,10 @@ through 3.x. [Source provenance](../../docs/integration-program/studio-react-sou
 retains donor history and attribution; the [delivery record](../docs/specs/react-studio-preview/plan.md)
 tracks production module extraction and remaining Preview requirements.
 
-The host, standalone server and host tests under `dotnet/` deliberately remain outside
-`Elsa.sln` during the #8843 port. They are explicitly covered by the Studio dependency
-inventory. #8845 owns their production solution integration and module packaging.
+The 16 feature libraries, aggregate hosting library, host, standalone server and
+host tests under `dotnet/` belong to `Elsa.sln` and `Elsa.ReactStudio.slnf`.
+Build frontend assets before packing or running browser/endpoint tests.
+See [feature packages and hosting](docs/feature-packages.md).
 
 ## Overview
 
@@ -162,11 +163,9 @@ src/
   lib/
     api/                    TanStack Query provider and host hooks
     auth/                   config/server adapter for the shared auth provider
-    modules/                enabled-module registry and route matcher
-  components/
-    common/                 shared building blocks (DataTable, PageHeader, ConfirmProvider, …)
-    shell/                  app shell, sidebar, header, login
-  modules/                  one folder per feature module
+dotnet/modules/
+  Elsa.ReactStudio.*/Client/ one independent ESM entry and module-owned styles per feature
+dotnet/Elsa.ReactStudio/     feature selection and opt-in hosting
 packages/
   sdk/                      Preview registration contracts and host runtime
   api-client/               HTTP client, typed endpoints and workflow models

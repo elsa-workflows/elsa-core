@@ -32,11 +32,28 @@ class DependabotDiscoveryTests < Minitest::Test
   DOCUMENTED_PROBES = DISCOVERY_DOCUMENTATION.scan(/`(scripts\/[^`]+\.csproj)`/).flatten.sort.freeze
   DOCUMENTED_CORE_EXPERIMENTS = DISCOVERY_DOCUMENTATION.scan(/`(core\/experiments\/[^`]+\.csproj)`/).flatten.sort.freeze
 
-  # #8843 standalone port; joins the production solution in #8845 after module extraction.
-  REACT_STUDIO_PORT_PROJECTS = %w[
+  # #8845 production feature assemblies and their hosts are root solution members.
+  REACT_STUDIO_PROJECTS = %w[
     studio/react/dotnet/Elsa.ReactStudio.Host/Elsa.ReactStudio.Host.csproj
     studio/react/dotnet/Elsa.ReactStudio.Host.Tests/Elsa.ReactStudio.Host.Tests.csproj
     studio/react/dotnet/Elsa.ReactStudio.Server/Elsa.ReactStudio.Server.csproj
+    studio/react/dotnet/Elsa.ReactStudio/Elsa.ReactStudio.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.ActivityEditors/Elsa.ReactStudio.ActivityEditors.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.Alterations/Elsa.ReactStudio.Alterations.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.Appearance/Elsa.ReactStudio.Appearance.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.Dashboard/Elsa.ReactStudio.Dashboard.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.Designer/Elsa.ReactStudio.Designer.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.Diagnostics.ConsoleLogs/Elsa.ReactStudio.Diagnostics.ConsoleLogs.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.Diagnostics.StructuredLogs/Elsa.ReactStudio.Diagnostics.StructuredLogs.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.Environments/Elsa.ReactStudio.Environments.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.Labels/Elsa.ReactStudio.Labels.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.Secrets/Elsa.ReactStudio.Secrets.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.Security/Elsa.ReactStudio.Security.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.Settings/Elsa.ReactStudio.Settings.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.Shell/Elsa.ReactStudio.Shell.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.UserTasks/Elsa.ReactStudio.UserTasks.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.WorkflowDefinitions/Elsa.ReactStudio.WorkflowDefinitions.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.WorkflowInstances/Elsa.ReactStudio.WorkflowInstances.csproj
   ].sort.freeze
 
   def setup
@@ -80,13 +97,13 @@ class DependabotDiscoveryTests < Minitest::Test
       FileUtils.cp(File.join(REPOSITORY_ROOT, path), destination)
     end
     expected = solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")) - APPS_PROJECTS +
-      [LEGACY_CORE_PROJECT] + REACT_STUDIO_SPIKE_PROJECTS + REACT_STUDIO_PORT_PROJECTS
+      [LEGACY_CORE_PROJECT] + REACT_STUDIO_SPIKE_PROJECTS
 
     batches = NUGET_UPDATES.map { |entry| discovered_projects(entry.fetch("directories")) }
     assert_equal expected.sort, batches.flatten.sort, "Reconcile batch selectors when solution membership changes"
     assert_equal batches.flatten.length, batches.flatten.uniq.length, "Project starting sets must not overlap"
-    assert_equal [114, 69, 100, 80, 1], batches.map(&:length)
-    assert_equal 180, batches.flatten.grep(%r{^(extensions|studio)/}).length
+    assert_equal [114, 69, 100, 97, 1], batches.map(&:length)
+    assert_equal 197, batches.flatten.grep(%r{^(extensions|studio)/}).length
     assert_includes batches[2], LEGACY_CORE_PROJECT
     NUGET_UPDATES.each do |entry|
       refute_includes entry.fetch("directories"), "/", "Never select the root solution as a batch"
@@ -118,9 +135,11 @@ class DependabotDiscoveryTests < Minitest::Test
     assert_empty solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")) & REACT_STUDIO_SPIKE_PROJECTS
   end
 
-  def test_react_studio_port_has_an_explicit_development_disposition
-    assert_equal REACT_STUDIO_PORT_PROJECTS, tracked_projects.grep(%r{^studio/react/}).sort
-    assert_empty solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")) & REACT_STUDIO_PORT_PROJECTS
+  def test_react_studio_production_projects_are_in_the_solution_and_focused_filter
+    assert_equal REACT_STUDIO_PROJECTS, tracked_projects.grep(%r{^studio/react/}).sort
+    assert_equal REACT_STUDIO_PROJECTS, solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")).grep(%r{^studio/react/}).sort
+    assert_equal REACT_STUDIO_PROJECTS, JSON.parse(File.read(File.join(REPOSITORY_ROOT,
+      "Elsa.ReactStudio.slnf"))).fetch("solution").fetch("projects").sort
   end
 
   def test_core_experiments_have_an_explicit_temporary_nonproduct_disposition
@@ -211,7 +230,7 @@ class DependabotDiscoveryTests < Minitest::Test
 
   def test_selected_projects_reconcile_central_package_imports
     selected = solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")) +
-      [LEGACY_CORE_PROJECT] + REACT_STUDIO_SPIKE_PROJECTS + REACT_STUDIO_PORT_PROJECTS
+      [LEGACY_CORE_PROJECT] + REACT_STUDIO_SPIKE_PROJECTS
     central_versions = {}
     import_chains = {}
     selected.each do |project|
@@ -242,7 +261,7 @@ class DependabotDiscoveryTests < Minitest::Test
         "#{project}: the independent spike must compose packed packages only"
     end
     selected = solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")) +
-      [LEGACY_CORE_PROJECT] + REACT_STUDIO_SPIKE_PROJECTS + REACT_STUDIO_PORT_PROJECTS
+      [LEGACY_CORE_PROJECT] + REACT_STUDIO_SPIKE_PROJECTS
     closure = selected.flat_map { |project| static_source_closure(project) }.uniq
     references = closure.flat_map do |path|
       project_xml(path).get_elements("//ProjectReference").map do |reference|

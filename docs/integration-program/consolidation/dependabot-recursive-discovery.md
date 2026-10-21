@@ -145,10 +145,13 @@ The temporary React Studio modularity proof under #8839 adds four independent
 Studio sample projects outside `Elsa.sln`: its Runtime, Labels, third-party Weather
 and consuming Host. They are included in the Studio updater's existing recursive
 selector, bringing its starting set to 77 projects. The #8843 Vite port adds three
-explicitly inventoried host/server/test projects under `studio/react/dotnet`, bringing
-the current Studio set to 80. These remain outside the root solution until production
-module extraction and solution integration in #8845. The census names the
-four explicitly and verifies that no new project under that proof root is omitted.
+explicitly inventoried host/server/test projects under `studio/react/dotnet`. The
+#8845 extraction adds 16 feature libraries and one aggregate hosting library, and
+includes all 20 production React projects in `Elsa.sln` and `Elsa.ReactStudio.slnf`.
+The Studio starting set is now 97 projects (197 across Extensions/Studio); the
+five NuGet counts are 114, 69, 100, 97 and 1. The census explicitly names all 20
+production projects and the four independent proof projects, and rejects omissions
+or unexpected root-solution membership for the proof.
 Their scoped central file imports the root package versions for CShells/YARP;
 their sample package IDs resolve only from a local feed. Their package references
 must remain independent of source project references to preserve the proof. Remove

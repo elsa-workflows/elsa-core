@@ -11,11 +11,18 @@ export default defineConfig({
     launchOptions: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
       ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH } : {},
   },
-  webServer: {
-    command: "dotnet run --project dotnet/Elsa.ReactStudio.Server --no-build --no-restore --no-launch-profile --urls http://127.0.0.1:5201",
+  webServer: [{
+    command: "dotnet run --project dotnet/Elsa.ReactStudio.Server --no-build --no-restore --no-launch-profile -p:UseAppHost=false --urls http://127.0.0.1:5201",
     env: { STUDIO_CONFIG_PATH: fixture },
     url: "http://127.0.0.1:5201/studio-preview/studio-config",
     reuseExistingServer: false,
     timeout: 60_000,
-  },
+  }, {
+    command: "pnpm preview",
+    env: { STUDIO_CONFIG_PATH: fixture, Logging__LogLevel__Default: "Warning" },
+    url: "http://127.0.0.1:4173/studio-preview/studio-config",
+    reuseExistingServer: false,
+    timeout: 120_000,
+    stdout: "pipe",
+  }],
 });

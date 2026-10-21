@@ -1,7 +1,10 @@
 # Elsa React Studio API client Preview
 
 Typed Elsa workflow models and the HTTP client used by React Studio. This is an
-unpublished 3.11 Preview workspace package. It has no React or host-source imports.
+unpublished 3.11 Preview workspace package. Its models and HTTP client have no
+React or host-source imports. The optional `/react` subpath provides the shared
+API-client context and TanStack Query cache for Studio modules. The host creates
+the authenticated client and supplies it to that provider.
 
 ```ts
 import { createElsaClient } from "@elsa-workflows/react-studio-api-client";

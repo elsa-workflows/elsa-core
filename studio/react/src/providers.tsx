@@ -4,22 +4,24 @@ import { ThemeProvider } from "next-themes";
 import type { ReactNode } from "react";
 import { Toaster } from "@elsa-workflows/react-studio-ui/sonner";
 import { TooltipProvider } from "@elsa-workflows/react-studio-ui/tooltip";
-import { StudioConfigProvider } from "@/config/provider";
+import { StudioConfigProvider } from "@elsa-workflows/react-studio-sdk/config-provider";
 import type { StudioConfig } from "@/config/schema";
-import { ElsaApiProvider } from "@/lib/api/provider";
+import { ElsaApiProvider } from "./lib/api/provider";
 import { AuthProvider } from "@/lib/auth/provider";
-import { ModuleRegistryProvider } from "@/lib/modules/registry";
-import { ElsaThemeProvider } from "@/lib/theme/elsa-theme-provider";
-import { studioModules } from "@/modules";
+import { ModuleRegistryProvider } from "@elsa-workflows/react-studio-ui/runtime/module-registry";
+import { ElsaThemeProvider } from "@elsa-workflows/react-studio-sdk/theme/elsa-theme-provider";
 import type { StudioModule } from "@elsa-workflows/react-studio-sdk";
+import { StudioComponentsProvider, type StudioComponentMap } from "@elsa-workflows/react-studio-sdk/components";
 
 export function Providers({
   config,
-  modules = studioModules,
+  modules,
+  components = {},
   children,
 }: {
   config: StudioConfig;
-  modules?: StudioModule[];
+  modules: StudioModule[];
+  components?: StudioComponentMap;
   children: ReactNode;
 }) {
   const moduleProviders = modules.flatMap(module =>
@@ -44,7 +46,9 @@ export function Providers({
           <AuthProvider>
             <ElsaApiProvider>
               <ModuleRegistryProvider modules={modules}>
-                <TooltipProvider>{wrapped}</TooltipProvider>
+                <StudioComponentsProvider components={components}>
+                  <TooltipProvider>{wrapped}</TooltipProvider>
+                </StudioComponentsProvider>
                 <Toaster richColors closeButton position="bottom-right" />
               </ModuleRegistryProvider>
             </ElsaApiProvider>

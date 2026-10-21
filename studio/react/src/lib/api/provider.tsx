@@ -1,12 +1,12 @@
 "use client";
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { ElsaApiProvider as SharedElsaApiProvider } from "@elsa-workflows/react-studio-api-client/react";
+export { useElsaClient, useQueryScope } from "@elsa-workflows/react-studio-api-client/react";
+import { useMemo, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth/provider";
-import { useActiveServer } from "@/lib/environments/active-server";
-import { createElsaClient, type ElsaClient } from "@elsa-workflows/react-studio-api-client";
+import { useActiveServer } from "@elsa-workflows/react-studio-sdk/environments/active-server";
+import { createElsaClient } from "@elsa-workflows/react-studio-api-client";
 
-const ElsaClientContext = createContext<ElsaClient | null>(null);
 
 /** Builds one API client for the active server + auth strategy and provides TanStack Query. */
 export function ElsaApiProvider({ children }: { children: ReactNode }) {
@@ -24,30 +24,5 @@ export function ElsaApiProvider({ children }: { children: ReactNode }) {
     [server, strategy],
   );
 
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: { staleTime: 10_000, retry: (count, err) => count < 2 && !(err as { status?: number }).status },
-        },
-      }),
-  );
-
-  return (
-    <QueryClientProvider client={queryClient}>
-      <ElsaClientContext.Provider value={client}>{children}</ElsaClientContext.Provider>
-    </QueryClientProvider>
-  );
-}
-
-export function useElsaClient(): ElsaClient {
-  const ctx = useContext(ElsaClientContext);
-  if (!ctx) throw new Error("useElsaClient must be used inside <ElsaApiProvider>");
-  return ctx;
-}
-
-/** Query-key prefix scoped to the active server so switching environments never mixes caches. */
-export function useQueryScope() {
-  const server = useActiveServer();
-  return server.url;
+  return <SharedElsaApiProvider client={client} scope={server.url}>{children}</SharedElsaApiProvider>;
 }

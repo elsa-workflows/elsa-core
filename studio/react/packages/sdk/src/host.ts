@@ -1,10 +1,12 @@
 import type { StudioModule, StudioModuleExtensions } from "./modules.js";
-import { createElement, type ReactNode } from "react";
+import { createElement, type ComponentType, type ReactNode } from "react";
+import { isolateModuleComponent } from "./module-boundary.js";
 import type { RegisterModule, StudioApi, StudioModuleManifest, StudioSlots } from "./slots.js";
+import type { StudioComponentMap } from "./components.js";
 
 export interface ModuleDiagnostic {
   moduleId: string;
-  code: "incompatible" | "load-failed" | "registration-failed" | "cleanup-failed";
+  code: "incompatible" | "load-failed" | "registration-failed" | "cleanup-failed" | "render-failed";
   message: string;
 }
 
@@ -70,6 +72,10 @@ export class StudioRegistry {
         if (pending.contributions.some(item => item.kind === kind && item.value.id === value.id && item.active))
           throw new Error(`Duplicate ${kind} slot: ${value.id}`);
         const copy = Object.assign({}, value);
+        if ("component" in copy) {
+          copy.component = isolateModuleComponent(copy.component as ComponentType<object>, manifest.id, value.id,
+            error => this.messages.push({ moduleId: manifest.id, code: "render-failed", message: messageOf(error) }), kind === "providers");
+        }
         Object.freeze(copy);
         const contribution: Contribution = { kind, value: copy, active: true };
         pending.contributions.push(contribution);
@@ -112,11 +118,16 @@ export class StudioRegistry {
   }
 
   /** Adapts the existing renderer while features migrate to their individual packages. */
+  components(): StudioComponentMap {
+    return Object.fromEntries([...this.slots("components")].reverse().map(item => [item.name, item.component])) as StudioComponentMap;
+  }
+
   studioModules(): StudioModule[] {
     return [...this.modules.values()].sort((a, b) => compare(a.manifest.id, b.manifest.id)).map(module => {
       const own = <K extends keyof StudioSlots>(kind: K) => this.slots(kind).filter(value =>
         module.contributions.some(item => item.kind === kind && item.active && item.value === value));
       const extensions: StudioModuleExtensions = {
+        components: [...own("components")],
         providers: [...own("providers")],
         dashboardWidgets: [...own("dashboardWidgets")], settingsSections: [...own("settingsSections")],
         workflowPropertiesTabs: own("workflowPropertiesTabs").map(item => ({ ...item, id: JSON.stringify([module.manifest.id, item.id]) })), definitionRowActions: [...own("definitionRowActions")],

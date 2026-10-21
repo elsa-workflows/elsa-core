@@ -8,4 +8,7 @@ public sealed class ReactStudioOptions
 
     /// <summary>Fallback configuration file, relative to the application content root.</summary>
     public string ConfigurationFile { get; set; } = "studio.config.json";
+
+    /// <summary>Backend URL used only when the configuration does not declare servers.</summary>
+    public string? DefaultServerUrl { get; set; }
 }

@@ -20,5 +20,17 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json"
+  },
+  "peerDependencies": {
+    "react": "^19.3.0",
+    "@tanstack/react-query": "^5.104.1"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "@tanstack/react-query": {
+      "optional": true
+    }
   }
 }

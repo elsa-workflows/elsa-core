@@ -6,13 +6,17 @@ namespace Elsa.ReactStudio.Host;
 internal static class StudioConfiguration
 {
     internal static async Task<JsonObject> LoadAsync(string contentRoot, string defaultFile,
-        Func<string, string?> environment, CancellationToken cancellationToken)
+        Func<string, string?> environment, CancellationToken cancellationToken, string? defaultServerUrl = null)
     {
         var inline = environment("STUDIO_CONFIG");
         var file = System.IO.Path.GetFullPath(environment("STUDIO_CONFIG_PATH") ?? defaultFile, contentRoot);
         var text = !string.IsNullOrEmpty(inline) ? inline : File.Exists(file)
             ? await File.ReadAllTextAsync(file, cancellationToken) : "{}";
         var document = JsonNode.Parse(text) as JsonObject ?? throw new InvalidDataException("Expected a configuration object");
+        if (document["servers"] == null && !string.IsNullOrWhiteSpace(defaultServerUrl))
+        {
+            document["servers"] = new JsonArray(new JsonObject { ["name"] = "Default", ["url"] = defaultServerUrl });
+        }
         Set(document, "title", environment("STUDIO_TITLE"));
 
         var serverUrl = environment("STUDIO_SERVER_URL");

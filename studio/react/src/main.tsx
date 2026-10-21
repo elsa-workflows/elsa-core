@@ -1,42 +1,42 @@
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, useLocation } from "react-router-dom";
+import { BrowserRouter } from "react-router-dom";
 import { studioConfigSchema } from "@/config/schema";
 import { Providers } from "./providers";
-import { StudioRouter } from "@/components/shell/studio-router";
-import { LoginPage } from "@/components/shell/login-page";
-import { AuthCallback } from "@/components/shell/auth-callback";
-import { studioBasePath } from "@/lib/navigation/base-path";
-import { registerStudioModule } from "@elsa-workflows/react-studio-sdk";
+import { studioBasePath } from "@elsa-workflows/react-studio-sdk/navigation/base-path";
+import type { RegisterModule, StudioModuleManifest } from "@elsa-workflows/react-studio-sdk";
+import { Application } from "@elsa-workflows/react-studio-sdk/components";
 import { StudioRegistry } from "@elsa-workflows/react-studio-sdk/host";
-import { studioModules } from "@/modules";
-import metadata from "../package.json";
+import catalog from "../module-catalog.json";
 import "./globals.css";
-
-function Application() {
-  const { pathname } = useLocation();
-  if (pathname === "/login") return <LoginPage />;
-  if (pathname === "/auth/callback") return <AuthCallback />;
-  return <StudioRouter path={pathname} />;
-}
 
 async function start() {
   const response = await fetch(new URL("studio-config", document.baseURI), { cache: "no-store" });
   if (!response.ok) throw new Error(`Configuration could not be loaded (${response.status})`);
   const config = studioConfigSchema.parse(await response.json());
   const registry = new StudioRegistry();
-  // The port's bundled modules use the same registration API as independent ESM
-  // entries. #8845 replaces their bundled imports with enabled RCL manifests.
-  await Promise.all(studioModules.map(module => registry.load({
-    id: module.id, name: module.name, description: module.description,
-    core: module.core, requiresServerFeatures: module.requiresServerFeatures,
-    version: metadata.version, hostApiVersion: 1, sdkApiVersion: 1,
-    entry: `${import.meta.url}#${module.id}`,
-  }, async () => ({ register: api => registerStudioModule(api, module) }))));
+  const manifestResponse = await fetch(new URL("studio-manifest", document.baseURI), { cache: "no-store" });
+  if (!manifestResponse.ok) throw new Error(`Studio modules could not be loaded (${manifestResponse.status})`);
+  const manifest = await manifestResponse.json() as { modules: StudioModuleManifest[] };
+  await Promise.all(manifest.modules.filter(module => module.core || config.features[module.id]?.enabled).map(async module => {
+    if (import.meta.env.DEV) {
+      const source = catalog.find(item => item.id === module.id);
+      if (source) module = { ...module, entry: `/${source.client}/entry.tsx`, styles: [] };
+    }
+    const loaded = await registry.load(module, entry => import(/* @vite-ignore */ entry) as Promise<{ register: RegisterModule }>);
+    if (loaded) for (const href of module.styles ?? []) {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = href;
+      document.head.append(link);
+    }
+  }));
+  if (!registry.components().Application) throw new Error("The Studio Shell module could not be activated. " +
+    registry.diagnostics.map(diagnostic => diagnostic.message).join(" "));
   document.title = `${config.title} · Preview`;
   document.documentElement.dataset.elsaTheme = config.ui.theme;
   createRoot(document.getElementById("root")!).render(
     <BrowserRouter basename={studioBasePath() || "/"}>
-      <Providers config={config} modules={registry.studioModules()}>
+      <Providers config={config} modules={registry.studioModules()} components={registry.components()}>
         {registry.diagnostics.length > 0 && <aside role="alert">
           {registry.diagnostics.map((diagnostic, index) => <p key={`${diagnostic.moduleId}:${index}`}>
             {diagnostic.moduleId}: {diagnostic.message}

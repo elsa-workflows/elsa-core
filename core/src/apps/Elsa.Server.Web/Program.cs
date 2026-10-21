@@ -10,6 +10,7 @@ using Elsa.Identity.Multitenancy;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Management;
 using Elsa.Persistence.EFCore.Modules.Runtime;
+using Elsa.ReactStudio;
 using Elsa.Server.Web.Activities;
 using Elsa.Server.Web.ActivityHosts;
 using Elsa.Server.Web.Filters;
@@ -46,6 +47,11 @@ ObjectConverter.StrictMode = true;
 var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
+var useReactStudioPreview = configuration.GetValue("ReactStudio:Enabled", false);
+if (useReactStudioPreview)
+{
+    builder.AddReactStudioPreview();
+}
 var identitySection = configuration.GetSection("Identity");
 var identityTokenSection = identitySection.GetSection("Tokens");
 var ingressRateLimitingSection = configuration.GetSection("IngressRateLimiting");
@@ -295,6 +301,11 @@ if (useSignalR)
 if (useStructuredLogs)
 {
     app.UseStructuredLogs();
+}
+
+if (useReactStudioPreview)
+{
+    app.MapReactStudioPreview();
 }
 
 // Run.

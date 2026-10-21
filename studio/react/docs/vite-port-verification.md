@@ -27,6 +27,6 @@ module extraction, SDK v1, BPMN, localization, tenant switching and release publ
 have their own acceptance criteria in the [epic delivery plan](../../docs/specs/react-studio-preview/plan.md).
 An existing unit-suite pass is not evidence that all of those features are complete.
 
-The standalone development projects remain outside `Elsa.sln` until #8845 integrates
-the production modules. Their exact inventory and central-package closure are covered
-by the existing Studio dependency discovery guard.
+The subsequent #8845 extraction integrates the production projects in `Elsa.sln`
+and `Elsa.ReactStudio.slnf`. Their exact inventory and central-package closure are
+covered by the existing Studio dependency discovery guard.

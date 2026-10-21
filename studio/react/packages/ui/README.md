@@ -6,6 +6,11 @@ as `@elsa-workflows/react-studio-ui/button`, `dialog`, `input`, `select`, `table
 and `tooltip`. The root also exports the common button, input, label, badge and
 card primitives.
 
+The `/common/*` subpaths provide the shared table, field, confirmation, timestamp
+and code-editor components. `/runtime/module-registry` shares enabled-module
+and extension hooks; it consumes the public SDK, API and auth contexts. Feature
+modules use these exports instead of importing another module's source.
+
 The host imports `@elsa-workflows/react-studio-ui/styles.css` once. It contains the
 existing Tailwind v4 theme tokens, five Elsa palettes, light/dark variants and
 retained shadcn stylesheet with its MIT attribution. Components use the host's

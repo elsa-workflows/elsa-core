@@ -4,7 +4,7 @@
     <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../Elsa.ReactStudio.Host/Elsa.ReactStudio.Host.csproj" />
+    <ProjectReference Include="../Elsa.ReactStudio/Elsa.ReactStudio.csproj" />
     <Content Include="../../studio.config.json" Link="studio.config.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

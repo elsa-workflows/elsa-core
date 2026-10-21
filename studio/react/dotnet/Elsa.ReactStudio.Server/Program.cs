@@ -1,13 +1,11 @@
-using Elsa.ReactStudio.Host;
+using Elsa.ReactStudio;
 
 var builder = WebApplication.CreateBuilder(args);
-var app = builder.Build();
 // This executable exists specifically to host the opt-in Preview.
-app.MapReactStudio(options =>
-{
-    options.Path = builder.Configuration["ReactStudio:Path"] ?? "/studio-preview";
-    options.ConfigurationFile = builder.Configuration["ReactStudio:ConfigurationFile"] ?? Path.Combine(AppContext.BaseDirectory, "studio.config.json");
-});
+builder.AddReactStudioPreview();
+var app = builder.Build();
+app.UseRouting();
+app.MapReactStudioPreview();
 app.Run();
 
 public partial class Program;

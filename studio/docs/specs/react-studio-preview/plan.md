@@ -85,8 +85,9 @@ retains their notices; the full npm audit reports zero known vulnerabilities.
 
 The source-validation workflow also builds and starts the standalone Preview image
 without publishing. Local image build and non-root container sign-in, definitions navigation and reload
-pass after configuring the build network’s trusted CA bundle. Production module extraction, SDK v1, opt-in CShells/server integration,
-parity work, publication and final source cutover remain open. See the
+pass after configuring the build network’s trusted CA bundle. The subsequent SDK,
+module and hosting work is recorded below. Parity work, publication and final source
+cutover remain open. See the
 [port verification checklist](../../../react/docs/vite-port-verification.md).
 
 ## SDK extraction
@@ -96,6 +97,38 @@ API client and authentication. The host and imported feature sources consume the
 public exports. Registration tests cover stable ordering, incompatible major
 versions, rollback, replacement, pending activation and cleanup; an external sample
 compiles and renders against four packed artifacts without host-source aliases.
-The generated TypeDoc reference is retained by frontend CI. The existing bundled
-renderer uses a temporary declarative adapter; physical RCL discovery, independent
-module ESM/CSS and new designer/editor slot renderers remain under #8845.
+The generated TypeDoc reference is retained by frontend CI. The imported modules
+use a declarative adapter to register their slots; new designer/editor slot renderers
+remain part of subsequent Preview parity work.
+
+The next split preparation moves the common components, configuration/navigation,
+API/query context and designer model/store into the public packages. Designer and
+ActivityEditors provide typed component slots, removing the source import cycle.
+A boundary guard checks every feature file for host aliases and sibling source
+imports. Unit, packed-consumer and host-browser checks pass, and real workflow
+creation, designer render, saved reload and cleanup pass against the reference
+backend.
+
+## Production feature packages and hosting
+
+Sixteen RCL features now own their client sources and separate ESM/CSS assets. The
+host bootstrap uses the enabled server manifest and shared import map; there is no
+compiled-in frontend module list. The 20 production projects join the root solution
+and `Elsa.ReactStudio.slnf`; the four independent spike projects retain their explicit
+sample disposition. The dependency census passes with 97 Studio projects, 197 across
+Extensions/Studio, without changing the updater selectors.
+
+The production host checks incompatible majors before import, rolls back failed
+registration and isolates component render failures. The shared UI and first-party
+utility classes compile into one stylesheet to preserve responsive rule ordering.
+NUKE builds the frontend before solution compile/test/pack. CI packs all 18 libraries,
+and verifies supported frameworks, embedded entry/CSS, consistent package/assembly
+versions and source notices. Package license metadata retains the donor's observed
+status instead of inheriting an unsupported MIT grant.
+
+Core hosting is opt-in, with `/studio-preview` beside `/elsa/api` and a same-origin
+server default. Preview resolution preserves existing host endpoints and their DI
+scopes. CShells 0.0.31 supplies repeat-safe host shutdown; 0.0.28 could drain an already
+disposed provider during framework test teardown. The independent spike remains on
+its receipted dependency version. Full parity, third-party production template,
+container/release publication and source cutover remain separate acceptance gates.

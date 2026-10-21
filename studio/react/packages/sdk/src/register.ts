@@ -8,6 +8,7 @@ export function registerStudioModule(api: StudioApi, module: StudioModule): void
   module.routes?.forEach((route, order) => api.contribute("routes", { id: route.path, order, ...route }));
   module.nav?.forEach(item => api.contribute("navigation", item));
   const extensions = module.extensions;
+  extensions?.components?.forEach(item => api.contribute("components", item));
   extensions?.providers?.forEach(item => api.contribute("providers", item));
   extensions?.dashboardWidgets?.forEach(item => api.contribute("dashboardWidgets", item));
   extensions?.settingsSections?.forEach(item => api.contribute("settingsSections", item));
