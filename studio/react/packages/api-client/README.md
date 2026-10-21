@@ -47,3 +47,8 @@ returns an XML Blob. Requests use the shared auth, tenant and cancellation behav
 `client.descriptors.javascriptTypeDefinitions(definitionId, activityTypeName,
 propertyName, signal)` returns the server declaration document as text. The optional
 fourth argument cancels the request; existing three-argument calls remain valid.
+
+The shared React provider starts a fresh owned query cache when `scope` changes,
+canceling and clearing its previous queries on disposal. Hosts should include
+server, user and tenant in the scope. An explicit `tenantId: ""` sends an empty
+default-tenant header; `undefined` omits the header.

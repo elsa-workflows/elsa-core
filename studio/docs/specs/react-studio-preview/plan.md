@@ -226,3 +226,14 @@ behavior. The reproducible benchmark covers 3,000 variables, 3,000 inputs and 10
 activities, with measured completion generation below 43 ms median on the development
 environment. The expression guide states the one-level member scope and distinction
 from language-server diagnostics and full-diagram performance.
+
+## Tenant context
+
+Each server now selects fixed, authenticated-claim or configured-choice tenancy.
+Tenant selection reloads the application to clear first- and third-party module
+state and pending browser work; query scopes include server, subject and tenant.
+Unsaved workflows can cancel before a preference changes, with one discard prompt.
+The empty default-tenant ID is distinct from an omitted header. Choices persist
+per server/subject and claims mode rejects missing/ambiguous claims before module
+API requests. The tenancy guide records the reference Core host's account-bound
+resolver and the separate backend authorization needed for selection mode.

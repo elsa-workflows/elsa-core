@@ -3,6 +3,15 @@ import { ApiError, createHttpClient } from "./http.js";
 
 afterEach(() => vi.unstubAllGlobals());
 
+it("distinguishes an explicit default tenant from an unspecified tenant", async () => {
+  const request = vi.fn<typeof fetch>(async () => Response.json({}));
+  vi.stubGlobal("fetch", request);
+  await createHttpClient({ baseUrl: "/api", tenantId: "", getAuthHeaders: () => ({}) }).get("test");
+  expect(request.mock.calls[0][1]).toMatchObject({ headers: { "X-Tenant-Id": "" } });
+  await createHttpClient({ baseUrl: "/api", getAuthHeaders: () => ({}) }).get("test");
+  expect(request.mock.calls[1][1]?.headers).not.toHaveProperty("X-Tenant-Id");
+});
+
 it("sends current authentication, tenant, query values and cancellation to the backend", async () => {
   const request = vi.fn(async () => Response.json({ items: [] }));
   vi.stubGlobal("fetch", request);

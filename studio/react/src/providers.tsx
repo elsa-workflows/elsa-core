@@ -12,6 +12,7 @@ import { ModuleRegistryProvider } from "@elsa-workflows/react-studio-ui/runtime/
 import { ElsaThemeProvider } from "@elsa-workflows/react-studio-sdk/theme/elsa-theme-provider";
 import type { StudioModule } from "@elsa-workflows/react-studio-sdk";
 import { StudioComponentsProvider, type StudioComponentMap } from "@elsa-workflows/react-studio-sdk/components";
+import { TenancyProvider } from "./tenancy-provider";
 
 export function Providers({
   config,
@@ -44,14 +45,16 @@ export function Providers({
       <StudioConfigProvider config={config}>
         <ElsaThemeProvider>
           <AuthProvider>
-            <ElsaApiProvider>
-              <ModuleRegistryProvider modules={modules}>
-                <StudioComponentsProvider components={components}>
-                  <TooltipProvider>{wrapped}</TooltipProvider>
-                </StudioComponentsProvider>
-                <Toaster richColors closeButton position="bottom-right" />
-              </ModuleRegistryProvider>
-            </ElsaApiProvider>
+            <TenancyProvider>
+              <ElsaApiProvider>
+                <ModuleRegistryProvider modules={modules}>
+                  <StudioComponentsProvider components={components}>
+                    <TooltipProvider>{wrapped}</TooltipProvider>
+                  </StudioComponentsProvider>
+                  <Toaster richColors closeButton position="bottom-right" />
+                </ModuleRegistryProvider>
+              </ElsaApiProvider>
+            </TenancyProvider>
           </AuthProvider>
         </ElsaThemeProvider>
       </StudioConfigProvider>

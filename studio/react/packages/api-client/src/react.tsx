@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { ElsaClient } from "./client.js";
 
 const ElsaClientContext = createContext<{ client: ElsaClient; scope: string } | null>(null);
@@ -8,9 +8,17 @@ const ElsaClientContext = createContext<{ client: ElsaClient; scope: string } | 
 export function ElsaApiProvider({ client, scope = client.http.baseUrl, children }: {
   client: ElsaClient; scope?: string; children: ReactNode;
 }) {
+  return <ScopedElsaApiProvider key={scope} client={client} scope={scope}>{children}</ScopedElsaApiProvider>;
+}
+
+function ScopedElsaApiProvider({ client, scope, children }: { client: ElsaClient; scope: string; children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient({ defaultOptions: {
     queries: { staleTime: 10_000, retry: (count, error) => count < 2 && !(error as { status?: number }).status },
   } }));
+  useEffect(() => () => {
+    void queryClient.cancelQueries();
+    queryClient.clear();
+  }, [queryClient]);
   const value = useMemo(() => ({ client, scope }), [client, scope]);
   return <QueryClientProvider client={queryClient}>
     <ElsaClientContext.Provider value={value}>{children}</ElsaClientContext.Provider>

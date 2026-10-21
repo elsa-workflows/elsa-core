@@ -32,6 +32,7 @@ import { WorkflowEditorProvider, type WorkflowEditorContextValue } from "../edit
 import { toModel, useWorkflowDefinition, useWorkflowDefinitionMutations } from "../hooks";
 import { WorkflowDefinitionRoutes } from "../routes";
 import { href } from "@elsa-workflows/react-studio-sdk/routing";
+import { useUnsavedChanges } from "@elsa-workflows/react-studio-sdk/unsaved-changes";
 
 /** Query parameter that carries call-context mode across drill-in navigations. */
 const CONTEXT_PARAM = "context";
@@ -128,6 +129,7 @@ function EditorWorkspace({
   const currentModel = useCallback(() => toModel({ ...definition, root: store.getState().root }), [definition, store]);
   const serializedNow = useMemo(() => JSON.stringify(currentModel()), [currentModel, storeVersion]); // eslint-disable-line react-hooks/exhaustive-deps
   const isDirty = serializedNow !== savedSnapshot;
+  useUnsavedChanges(isDirty && !readOnly);
 
   const save = useCallback(
     async (options?: { publish?: boolean }): Promise<WorkflowDefinition | undefined> => {
@@ -173,16 +175,6 @@ function EditorWorkspace({
       }),
     [store],
   );
-
-  // Warn before leaving the page with unsaved changes.
-  useEffect(() => {
-    if (!isDirty) return;
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-    };
-    window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
-  }, [isDirty]);
 
   // Ctrl/Cmd+S saves.
   useEffect(() => {

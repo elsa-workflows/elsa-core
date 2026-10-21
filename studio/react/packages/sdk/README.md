@@ -57,3 +57,8 @@ pickers can preserve their type, display and storage metadata on selection.
 From `studio/react`, `pnpm docs:api` generates the reference under `docs/api/`.
 `pnpm test:packages` verifies that a separate consumer can install packed packages
 and compile a module using only their exported declarations.
+
+`/tenancy` exposes `useTenant` for the effective tenant and configured choices.
+Independent forms can register dirty state with `useUnsavedChanges` from
+`/unsaved-changes` so tenant and server switches offer cancellation. See
+[tenant configuration and isolation](../../docs/tenancy.md) for host behavior.

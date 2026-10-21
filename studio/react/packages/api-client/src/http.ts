@@ -84,7 +84,7 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
     const headers: Record<string, string> = {
       Accept: "application/json",
       ...(await options.getAuthHeaders()),
-      ...(options.tenantId ? { "X-Tenant-Id": options.tenantId } : {}),
+      ...(options.tenantId !== undefined ? { "X-Tenant-Id": options.tenantId } : {}),
       ...opts.headers,
     };
     let body: BodyInit | undefined;
