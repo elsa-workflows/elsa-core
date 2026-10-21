@@ -117,18 +117,6 @@ public static class NativeCompensationDraftCapability
                                  (!row.TryGetPropertyValue("mappings", out var mappings) || mappings is JsonArray));
     }
 
-    private static bool ContainsCompensationScopeJson(string json)
-    {
-        try
-        {
-            return JsonNode.Parse(json) is { } original && ContainsPotentialScopeMarker(original);
-        }
-        catch (System.Text.Json.JsonException)
-        {
-            return false;
-        }
-    }
-
     private static bool ContainsCompensationScopeActivityRoot(string json)
     {
         try
