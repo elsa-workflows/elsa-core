@@ -46,7 +46,7 @@ To work against several backends at once, see
 ### The server must allow your origin
 
 The studio runs in the browser and calls the Elsa API directly, so the API has to return CORS headers
-permitting `http://localhost:5173`. The reference host in `elsa-core` already allows any origin in
+permitting `http://127.0.0.1:5173` for `pnpm dev`, or `http://127.0.0.1:5201` for the ASP.NET host. The reference host in `elsa-core` already allows any origin in
 development. If sign-in fails with no status code in the network tab, this is almost always the cause,
 and [Troubleshooting](troubleshooting.md#cors-requests-are-blocked) explains how to confirm it.
 
