@@ -109,22 +109,42 @@ public class RemoteWorkflowDefinitionService : IWorkflowDefinitionService
     public async Task<SaveWorkflowDefinitionResponse> PublishAsync(string definitionId, CancellationToken cancellationToken = default)
     {
         var backendContextKey = backendApiClientProvider.ContextKey;
+        var requestContextBinding = backendApiClientProvider as IBackendRequestContextBinding;
+        var requiresRequestContextBinding = requestContextBinding?.SupportsAuthenticatedRequestContextBinding == true;
         var api = await GetApiAsync(cancellationToken);
         EnsureSameBackendContext(backendContextKey, cancellationToken);
         var supportsNativeCompensationDrafts = await NativeCompensationDraftCapability.IsEnabledForContextAsync(
             remoteFeatureProvider, backendApiClientProvider, backendContextKey, cancellationToken);
+        requiresRequestContextBinding |= supportsNativeCompensationDrafts || requestContextBinding?.SupportsAuthenticatedRequestContextBinding == true;
         if (!supportsNativeCompensationDrafts)
         {
-            var definition = await api.GetByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken);
+            WorkflowDefinition? definition;
+            if (requiresRequestContextBinding)
+            {
+                using (requestContextBinding!.BindRequestContext(backendContextKey))
+                    definition = await api.GetByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken);
+            }
+            else
+                definition = await api.GetByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken);
+
             EnsureSameBackendContext(backendContextKey, cancellationToken);
             if (definition != null && NativeCompensationDraftCapability.ContainsCompensationScope(definition.Root))
-                throw new InvalidOperationException("This server does not advertise native compensation draft authoring. The workflow was not published.");
+                throw new NativeCompensationDraftPublishUnavailableException("This server does not advertise native compensation draft authoring. The workflow was not published.");
         }
 
         EnsureSameBackendContext(backendContextKey, cancellationToken);
         await mediator.NotifyAsync(new WorkflowDefinitionIdPublishing(definitionId), cancellationToken);
         EnsureSameBackendContext(backendContextKey, cancellationToken);
-        var response = await api.PublishAsync(definitionId, new(), cancellationToken);
+        SaveWorkflowDefinitionResponse response;
+        requiresRequestContextBinding |= requestContextBinding?.SupportsAuthenticatedRequestContextBinding == true;
+        if (requiresRequestContextBinding)
+        {
+            using (requestContextBinding!.BindRequestContext(backendContextKey))
+                response = await api.PublishAsync(definitionId, new(), cancellationToken);
+        }
+        else
+            response = await api.PublishAsync(definitionId, new(), cancellationToken);
+
         EnsureSameBackendContext(backendContextKey, cancellationToken);
         await mediator.NotifyAsync(new WorkflowDefinitionPublished(response.WorkflowDefinition), cancellationToken);
         return response;
@@ -214,24 +234,44 @@ public class RemoteWorkflowDefinitionService : IWorkflowDefinitionService
     public async Task<BulkPublishWorkflowDefinitionsResponse> BulkPublishAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default)
     {
         var backendContextKey = backendApiClientProvider.ContextKey;
+        var requestContextBinding = backendApiClientProvider as IBackendRequestContextBinding;
+        var requiresRequestContextBinding = requestContextBinding?.SupportsAuthenticatedRequestContextBinding == true;
         var definitionIdList = definitionIds.ToList();
         var api = await GetApiAsync(cancellationToken);
         EnsureSameBackendContext(backendContextKey, cancellationToken);
         var supportsNativeCompensationDrafts = await NativeCompensationDraftCapability.IsEnabledForContextAsync(
             remoteFeatureProvider, backendApiClientProvider, backendContextKey, cancellationToken);
+        requiresRequestContextBinding |= supportsNativeCompensationDrafts || requestContextBinding?.SupportsAuthenticatedRequestContextBinding == true;
         if (!supportsNativeCompensationDrafts)
         {
-            var definitions = await api.GetManyByIdAsync(definitionIdList, cancellationToken);
+            ListResponse<WorkflowDefinition> definitions;
+            if (requiresRequestContextBinding)
+            {
+                using (requestContextBinding!.BindRequestContext(backendContextKey))
+                    definitions = await api.GetManyByIdAsync(definitionIdList, cancellationToken);
+            }
+            else
+                definitions = await api.GetManyByIdAsync(definitionIdList, cancellationToken);
+
             EnsureSameBackendContext(backendContextKey, cancellationToken);
             if (definitions.Items.Any(x => NativeCompensationDraftCapability.ContainsCompensationScope(x.Root)))
-                throw new InvalidOperationException("This server does not advertise native compensation draft authoring. The selected workflows were not published.");
+                throw new NativeCompensationDraftPublishUnavailableException("This server does not advertise native compensation draft authoring. The selected workflows were not published.");
         }
 
         var request = new BulkPublishWorkflowDefinitionsRequest(definitionIdList);
         EnsureSameBackendContext(backendContextKey, cancellationToken);
         await mediator.NotifyAsync(new BulkWorkflowDefinitionsPublishing(request.DefinitionIds), cancellationToken);
         EnsureSameBackendContext(backendContextKey, cancellationToken);
-        var response = await api.BulkPublishAsync(request, cancellationToken);
+        BulkPublishWorkflowDefinitionsResponse response;
+        requiresRequestContextBinding |= requestContextBinding?.SupportsAuthenticatedRequestContextBinding == true;
+        if (requiresRequestContextBinding)
+        {
+            using (requestContextBinding!.BindRequestContext(backendContextKey))
+                response = await api.BulkPublishAsync(request, cancellationToken);
+        }
+        else
+            response = await api.BulkPublishAsync(request, cancellationToken);
+
         EnsureSameBackendContext(backendContextKey, cancellationToken);
         await mediator.NotifyAsync(new BulkWorkflowDefinitionsPublished(response.Published), cancellationToken);
         return response;
@@ -294,6 +334,7 @@ public class RemoteWorkflowDefinitionService : IWorkflowDefinitionService
         Action<SaveWorkflowDefinitionRequest>? configureRequest = null,
         CancellationToken cancellationToken = default)
     {
+        var backendContextKey = backendApiClientProvider.ContextKey;
         var rootActivityTemplate = workflowRootActivityTemplateProvider.Find(rootActivityTemplateKey) ?? workflowRootActivityTemplateProvider.GetDefault();
         var saveRequest = new SaveWorkflowDefinitionRequest
         {
@@ -311,8 +352,12 @@ public class RemoteWorkflowDefinitionService : IWorkflowDefinitionService
 
         configureRequest?.Invoke(saveRequest);
 
-        var backendContextKey = backendApiClientProvider.ContextKey;
-        var containsCompensationDraft = NativeCompensationDraftCapability.ContainsCompensationScope(saveRequest.Model.Root);
+        var request = new SaveWorkflowDefinitionRequest
+        {
+            Model = WorkflowDefinitionModelSnapshot.WithRoot(saveRequest.Model, saveRequest.Model.Root),
+            Publish = saveRequest.Publish
+        };
+        var containsCompensationDraft = NativeCompensationDraftCapability.ContainsCompensationScope(request.Model.Root);
         if (containsCompensationDraft &&
             !await NativeCompensationDraftCapability.IsEnabledForContextAsync(remoteFeatureProvider, backendApiClientProvider, backendContextKey, cancellationToken))
             return new(new ValidationErrors([new("This server does not advertise native compensation draft authoring. The workflow was not saved.")]));
@@ -325,7 +370,16 @@ public class RemoteWorkflowDefinitionService : IWorkflowDefinitionService
         {
             if (containsCompensationDraft)
                 EnsureSameBackendContext(backendContextKey, cancellationToken);
-            var response = await api.SaveAsync(saveRequest, cancellationToken);
+            SaveWorkflowDefinitionResponse response;
+            if (containsCompensationDraft)
+            {
+                var binding = (IBackendRequestContextBinding)backendApiClientProvider;
+                using (binding.BindRequestContext(backendContextKey))
+                    response = await api.SaveAsync(request, cancellationToken);
+            }
+            else
+                response = await api.SaveAsync(request, cancellationToken);
+
             if (containsCompensationDraft)
                 EnsureSameBackendContext(backendContextKey, cancellationToken);
             NativeCompensationDraftDocumentContext.TryBind(response.WorkflowDefinition, backendContextKey);
@@ -333,7 +387,7 @@ public class RemoteWorkflowDefinitionService : IWorkflowDefinitionService
         }
         catch (ApiException e) when (e.StatusCode == HttpStatusCode.BadRequest)
         {
-            var errors = e.GetValidationErrors();
+            var errors = NativeCompensationDraftRefusal.TryGetValidationErrorsFromContent(e.Content, e.StatusCode) ?? e.GetValidationErrors();
             return new(errors);
         }
     }

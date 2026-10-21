@@ -144,8 +144,14 @@ public class WorkflowDefinitionImporter : IWorkflowDefinitionImporter
                 };
             }
 
-            var containsCompensationDraft = JsonNode.Parse(json) is JsonObject workflow &&
-                                            NativeCompensationDraftCapability.ContainsCompensationScope(workflow["root"]);
+            var model = JsonSerializer.Deserialize<WorkflowDefinitionModel>(json, jsonSerializerOptions)!;
+
+            if (options?.DefinitionId != null)
+                model.DefinitionId = options.DefinitionId;
+
+            await mediator.NotifyAsync(new ImportingWorkflowDefinition(model));
+            var requestModel = WorkflowDefinitionModelSnapshot.WithRoot(model, model.Root);
+            var containsCompensationDraft = NativeCompensationDraftCapability.ContainsCompensationScope(requestModel.Root);
             if (containsCompensationDraft)
             {
                 EnsureSameBackendContext(backendContextKey);
@@ -155,16 +161,19 @@ public class WorkflowDefinitionImporter : IWorkflowDefinitionImporter
                         : new OperationCanceledException("The selected backend changed while importing the workflow.");
             }
 
-            var model = JsonSerializer.Deserialize<WorkflowDefinitionModel>(json, jsonSerializerOptions)!;
-
-            if (options?.DefinitionId != null)
-                model.DefinitionId = options.DefinitionId;
-
-            await mediator.NotifyAsync(new ImportingWorkflowDefinition(model));
             EnsureSameBackendContext(backendContextKey);
             var api = await GetApiAsync();
             EnsureSameBackendContext(backendContextKey);
-            var newWorkflowDefinition = await api.ImportAsync(model);
+            WorkflowDefinition newWorkflowDefinition;
+            if (containsCompensationDraft)
+            {
+                var binding = (IBackendRequestContextBinding)backendApiClientProvider;
+                using (binding.BindRequestContext(backendContextKey))
+                    newWorkflowDefinition = await api.ImportAsync(requestModel);
+            }
+            else
+                newWorkflowDefinition = await api.ImportAsync(requestModel);
+
             EnsureSameBackendContext(backendContextKey);
             if (!NativeCompensationDraftDocumentContext.TryBind(newWorkflowDefinition, backendContextKey))
                 throw new OperationCanceledException("The imported workflow is already bound to a different backend context.");

@@ -373,7 +373,16 @@ public partial class WorkflowDefinitionList : IDisposable
             return;
 
         var workflowDefinitionIds = _selectedRows.Select(x => x.DefinitionId).ToList();
-        var response = await WorkflowDefinitionService.BulkPublishAsync(workflowDefinitionIds);
+        BulkPublishWorkflowDefinitionsResponse response;
+        try
+        {
+            response = await WorkflowDefinitionService.BulkPublishAsync(workflowDefinitionIds);
+        }
+        catch (NativeCompensationDraftPublishUnavailableException)
+        {
+            ShowNativeCompensationDraftPublishRefusalWithoutDiagnostics();
+            return;
+        }
 
         if (response.Published.Count > 0)
         {
@@ -563,6 +572,11 @@ public partial class WorkflowDefinitionList : IDisposable
         {
             response = await WorkflowDefinitionService.PublishAsync(definitionId);
         }
+        catch (NativeCompensationDraftPublishUnavailableException)
+        {
+            ShowNativeCompensationDraftPublishRefusalWithoutDiagnostics();
+            return;
+        }
         catch (ApiException exception) when (exception.StatusCode == HttpStatusCode.BadRequest)
         {
             var validationErrors = NativeCompensationDraftRefusal.TryGetValidationErrorsFromContent(exception.Content, exception.StatusCode)
@@ -574,7 +588,7 @@ public partial class WorkflowDefinitionList : IDisposable
             if (requestContextProvider == null)
             {
                 // Without a qualifying request-context binding, show only the fixed refusal and omit all IDs.
-                _nativeCompensationDraftPublishRefusal = new(new([]), null, null, null);
+                ShowNativeCompensationDraftPublishRefusalWithoutDiagnostics();
                 return;
             }
 
@@ -610,6 +624,9 @@ public partial class WorkflowDefinitionList : IDisposable
 
         Reload();
     }
+
+    private void ShowNativeCompensationDraftPublishRefusalWithoutDiagnostics() =>
+        _nativeCompensationDraftPublishRefusal = new(new([]), null, null, null);
 
     protected override void OnParametersSet()
     {

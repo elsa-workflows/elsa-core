@@ -2,6 +2,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
+using Elsa.Api.Client.Extensions;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Responses;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
@@ -9,6 +11,11 @@ using Elsa.Api.Client.Resources.WorkflowDefinitions.Requests;
 using Elsa.Api.Client.Shared.Models;
 using Elsa.Studio.Models;
 using Elsa.Studio.Contracts;
+using Elsa.Studio.Authentication.ElsaIdentity.Contracts;
+using Elsa.Studio.Authentication.ElsaIdentity;
+using Elsa.Studio.Authentication.ElsaIdentity.HttpMessageHandlers;
+using Elsa.Studio.Authentication.ElsaIdentity.Services;
+using Elsa.Studio.Services;
 using Elsa.Studio.Workflows.Domain.Contracts;
 using Elsa.Studio.Workflows.Domain.Notifications;
 using Elsa.Studio.Workflows.Domain.Models;
@@ -17,6 +24,7 @@ using Elsa.Api.Client.Resources.ActivityDescriptors.Models;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Contracts;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Responses;
 using Elsa.Studio.Workflows.DiagramDesigners.CompensationScopes;
+using Microsoft.Extensions.DependencyInjection;
 using Refit;
 using Xunit;
 
@@ -352,6 +360,250 @@ public class NativeCompensationDraftCapabilityTests
         Assert.Equal(0, ((RecordingWorkflowDefinitionsApi)(object)api).ImportCalls);
     }
 
+    [Fact]
+    public async Task ImportReclassifiesMediatorRootMutationAndSendsItsFrozenSnapshot()
+    {
+        var backend = new TestBackendApiClientProvider(new Uri("https://backend.example/"), "context-A");
+        var api = DispatchProxy.Create<IWorkflowDefinitionsApi, RecordingWorkflowDefinitionsApi>();
+        var apiProxy = (RecordingWorkflowDefinitionsApi)(object)api;
+        apiProxy.IsRequestContextBound = () => backend.HasActiveRequestContextBinding;
+        backend.SetApi(api);
+        var mediator = DispatchProxy.Create<IMediator, MutatingImportMediator>();
+        var mediatorProxy = (MutatingImportMediator)(object)mediator;
+        var featureProvider = new DelayedFreshFeatureProvider();
+        var importer = new WorkflowDefinitionImporter(backend, mediator, new AnyWorkflowJsonDetector(), featureProvider);
+        const string workflowJson = """
+            {"name":"original","root":{"id":"write-1","type":"Elsa.WriteLine","version":1}}
+            """;
+
+        var import = importer.ImportJsonAsync("draft.json", workflowJson, null);
+        await featureProvider.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        mediatorProxy.Model!.Root = System.Text.Json.Nodes.JsonNode.Parse("""{"id":"late-write-1","type":"Elsa.WriteLine","version":1}""")!.AsObject();
+        mediatorProxy.Model.Name = "late-name";
+        featureProvider.Complete(true);
+
+        var result = await import;
+
+        Assert.Null(result.Failure);
+        Assert.Equal(1, apiProxy.ImportCalls);
+        Assert.Equal("event-name", apiProxy.ImportedName);
+        Assert.True(apiProxy.ImportWasBound);
+        Assert.True(NativeCompensationDraftCapability.ContainsCompensationScope(apiProxy.ImportedRoot));
+        Assert.Equal("Elsa.CompensationScope", apiProxy.ImportedRoot!["type"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task CreateNewDefinitionSendsTheConfiguredRootSnapshotAfterApiAcquisition()
+    {
+        var backend = new TestBackendApiClientProvider(new Uri("https://backend.example/"), "context-A");
+        var api = DispatchProxy.Create<IWorkflowDefinitionsApi, RecordingWorkflowDefinitionsApi>();
+        var apiProxy = (RecordingWorkflowDefinitionsApi)(object)api;
+        var service = new RemoteWorkflowDefinitionService(
+            backend,
+            new RandomLongIdentityGenerator(),
+            new DefaultWorkflowRootActivityTemplateProvider(),
+            DispatchProxy.Create<IMediator, CompletedMediator>(),
+            new FreshFeatureProvider(false));
+        SaveWorkflowDefinitionRequest? configuredRequest = null;
+
+        var create = service.CreateNewDefinitionAsync("initial", configureRequest: request =>
+        {
+            request.Model.Name = "configured-name";
+            request.Model.Root = System.Text.Json.Nodes.JsonNode.Parse("""{"id":"write-1","type":"Elsa.WriteLine","version":1}""")!.AsObject();
+            configuredRequest = request;
+        });
+        await backend.ApiRequested.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        configuredRequest!.Model.Root = System.Text.Json.Nodes.JsonNode.Parse("""{"id":"scope-1","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}""")!.AsObject();
+        backend.SetApi(api);
+
+        var result = await create;
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal("configured-name", apiProxy.SavedName);
+        Assert.False(NativeCompensationDraftCapability.ContainsCompensationScope(apiProxy.SavedRoot));
+        Assert.Equal("Elsa.WriteLine", apiProxy.SavedRoot!["type"]!.GetValue<string>());
+    }
+
+    [Theory]
+    [InlineData("import")]
+    [InlineData("create")]
+    [InlineData("publish")]
+    [InlineData("bulk-publish")]
+    [InlineData("stored-publish")]
+    [InlineData("stored-bulk-publish")]
+    public async Task NativeWriteUsesTheAuthenticatedTransportBindingBeforeTokenSwitchDispatch(string operation)
+    {
+        using var harness = await AuthenticatedNativeRequestHarness.CreateAsync();
+        var backend = harness.BackendApiClientProvider;
+        var mediator = DispatchProxy.Create<IMediator, CompletedMediator>();
+        var featureProvider = new FreshFeatureProvider(operation is not ("stored-publish" or "stored-bulk-publish"));
+        var service = new RemoteWorkflowDefinitionService(
+            backend,
+            new RandomLongIdentityGenerator(),
+            new DefaultWorkflowRootActivityTemplateProvider(),
+            mediator,
+            featureProvider);
+
+        switch (operation)
+        {
+            case "import":
+                var importer = new WorkflowDefinitionImporter(backend, mediator, new AnyWorkflowJsonDetector(), featureProvider);
+                var importResult = await importer.ImportJsonAsync("draft.json", """
+                    {"root":{"type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}}
+                    """, null);
+                Assert.NotNull(importResult.Failure);
+                break;
+            case "create":
+                await Assert.ThrowsAsync<BackendRequestContextChangedException>(() => service.CreateNewDefinitionAsync(
+                    "native draft",
+                    configureRequest: request => request.Model.Root = System.Text.Json.Nodes.JsonNode.Parse(
+                        """{"type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}""")!.AsObject()));
+                break;
+            case "publish":
+                await Assert.ThrowsAsync<BackendRequestContextChangedException>(() => service.PublishAsync("definition-1"));
+                break;
+            case "bulk-publish":
+                await Assert.ThrowsAsync<BackendRequestContextChangedException>(() => service.BulkPublishAsync(["definition-1"]));
+                break;
+            case "stored-publish":
+                await Assert.ThrowsAsync<BackendRequestContextChangedException>(() => service.PublishAsync("definition-1"));
+                break;
+            case "stored-bulk-publish":
+                await Assert.ThrowsAsync<BackendRequestContextChangedException>(() => service.BulkPublishAsync(["definition-1"]));
+                break;
+        }
+
+        Assert.Equal(1, harness.PrimeTransport.RequestCount);
+        Assert.Equal(0, harness.ApiTransport.RequestCount);
+        Assert.Equal(1, harness.RefreshTokenService.RefreshCalls);
+    }
+
+    [Fact]
+    public async Task StoredNativePublishRefusalUsesTheFeatureOwnedSignal()
+    {
+        var backend = new TestBackendApiClientProvider(new Uri("https://backend.example/"), "context-A");
+        var api = DispatchProxy.Create<IWorkflowDefinitionsApi, RecordingWorkflowDefinitionsApi>();
+        ((RecordingWorkflowDefinitionsApi)(object)api).StoredDefinition = CreateDraft();
+        backend.SetApi(api);
+        var service = new RemoteWorkflowDefinitionService(
+            backend,
+            null!,
+            null!,
+            DispatchProxy.Create<IMediator, CompletedMediator>(),
+            new FreshFeatureProvider(false));
+
+        await Assert.ThrowsAsync<NativeCompensationDraftPublishUnavailableException>(() => service.PublishAsync("definition-1"));
+        Assert.Equal(0, ((RecordingWorkflowDefinitionsApi)(object)api).PublishCalls);
+    }
+
+    [Fact]
+    public async Task BulkStoredNativePublishRefusalUsesTheFeatureOwnedSignal()
+    {
+        var backend = new TestBackendApiClientProvider(new Uri("https://backend.example/"), "context-A");
+        var api = DispatchProxy.Create<IWorkflowDefinitionsApi, RecordingWorkflowDefinitionsApi>();
+        ((RecordingWorkflowDefinitionsApi)(object)api).StoredDefinitions = [CreateDraft()];
+        backend.SetApi(api);
+        var service = new RemoteWorkflowDefinitionService(
+            backend,
+            null!,
+            null!,
+            DispatchProxy.Create<IMediator, CompletedMediator>(),
+            new FreshFeatureProvider(false));
+
+        await Assert.ThrowsAsync<NativeCompensationDraftPublishUnavailableException>(() => service.BulkPublishAsync(["definition-1"]));
+        Assert.Equal(0, ((RecordingWorkflowDefinitionsApi)(object)api).BulkPublishCalls);
+    }
+
+    [Fact]
+    public async Task CreateNativeDraftPreservesTheNativeRefusalCodeFromTheServer()
+    {
+        var backend = new TestBackendApiClientProvider(new Uri("https://backend.example/"), "context-A");
+        var api = DispatchProxy.Create<IWorkflowDefinitionsApi, NativeRefusalWorkflowDefinitionsApi>();
+        var apiProxy = (NativeRefusalWorkflowDefinitionsApi)(object)api;
+        apiProxy.RefusalException = await CreateRefusalApiExceptionAsync("application/json");
+        backend.SetApi(api);
+        var service = new RemoteWorkflowDefinitionService(
+            backend,
+            new RandomLongIdentityGenerator(),
+            new DefaultWorkflowRootActivityTemplateProvider(),
+            DispatchProxy.Create<IMediator, CompletedMediator>(),
+            new FreshFeatureProvider(true));
+
+        var result = await service.CreateNewDefinitionAsync("native draft", configureRequest: request =>
+            request.Model.Root = System.Text.Json.Nodes.JsonNode.Parse(
+                """{"type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}""")!.AsObject());
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(NativeCompensationDraftRefusal.Code, result.Failure!.Code);
+        Assert.Empty(result.Failure.Errors);
+        Assert.Equal(1, apiProxy.SaveCalls);
+    }
+
+    [Theory]
+    [InlineData("publish")]
+    [InlineData("bulk-publish")]
+    public async Task OrdinaryStoredPublicationRemainsCompatibleWithALegacyBackendProvider(string operation)
+    {
+        var api = DispatchProxy.Create<IWorkflowDefinitionsApi, RecordingWorkflowDefinitionsApi>();
+        var apiProxy = (RecordingWorkflowDefinitionsApi)(object)api;
+        var ordinaryDefinition = new WorkflowDefinition
+        {
+            Root = System.Text.Json.Nodes.JsonNode.Parse("""{"type":"Elsa.WriteLine","version":1}""")!.AsObject()
+        };
+        apiProxy.StoredDefinition = ordinaryDefinition;
+        apiProxy.StoredDefinitions = [ordinaryDefinition];
+        var backend = new LegacyTestBackendApiClientProvider(new Uri("https://backend.example/"), "legacy-context", api);
+        var service = new RemoteWorkflowDefinitionService(
+            backend,
+            null!,
+            null!,
+            DispatchProxy.Create<IMediator, CompletedMediator>(),
+            new FreshFeatureProvider(false));
+
+        if (operation == "publish")
+            await service.PublishAsync("definition-1");
+        else
+            await service.BulkPublishAsync(["definition-1"]);
+
+        Assert.Equal(operation == "publish" ? 1 : 0, apiProxy.PublishCalls);
+        Assert.Equal(operation == "bulk-publish" ? 1 : 0, apiProxy.BulkPublishCalls);
+    }
+
+    [Theory]
+    [InlineData("publish")]
+    [InlineData("bulk-publish")]
+    public async Task StoredPublicationDoesNotDowngradeAfterRequestBindingQualificationDrops(string operation)
+    {
+        var backend = new TestBackendApiClientProvider(new Uri("https://backend.example/"), "context-A");
+        var api = DispatchProxy.Create<IWorkflowDefinitionsApi, RecordingWorkflowDefinitionsApi>();
+        var apiProxy = (RecordingWorkflowDefinitionsApi)(object)api;
+        var ordinaryDefinition = new WorkflowDefinition
+        {
+            Root = System.Text.Json.Nodes.JsonNode.Parse("""{"type":"Elsa.WriteLine","version":1}""")!.AsObject()
+        };
+        apiProxy.StoredDefinition = ordinaryDefinition;
+        apiProxy.StoredDefinitions = [ordinaryDefinition];
+        apiProxy.IsRequestContextBound = () => backend.HasActiveRequestContextBinding;
+        backend.SetApi(api);
+        var mediator = DispatchProxy.Create<IMediator, BindingDroppingMediator>();
+        ((BindingDroppingMediator)(object)mediator).Backend = backend;
+        var service = new RemoteWorkflowDefinitionService(
+            backend,
+            null!,
+            null!,
+            mediator,
+            new FreshFeatureProvider(false));
+
+        if (operation == "publish")
+            await Assert.ThrowsAsync<BackendRequestContextChangedException>(() => service.PublishAsync("definition-1"));
+        else
+            await Assert.ThrowsAsync<BackendRequestContextChangedException>(() => service.BulkPublishAsync(["definition-1"]));
+
+        Assert.True(apiProxy.StoredReadWasBound);
+        Assert.Equal(0, apiProxy.PublishCalls);
+        Assert.Equal(0, apiProxy.BulkPublishCalls);
+    }
+
     [Theory]
     [InlineData("""{"type":"Elsa.CompensationScope","version":1}""")]
     [InlineData("""{"type":"Elsa.NotFoundActivity","originalActivityJson":"{\"type\":\"Elsa.CompensationScope\",\"version\":9}"}""")]
@@ -549,6 +801,15 @@ public class NativeCompensationDraftCapabilityTests
         }
     }
 
+    private sealed class LegacyTestBackendApiClientProvider(Uri url, string contextKey, object api) : IBackendApiClientProvider
+    {
+        public Uri Url { get; } = url;
+        public string ContextKey { get; } = contextKey;
+
+        public ValueTask<T> GetApiAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(CancellationToken cancellationToken = default) where T : class =>
+            new((T)api);
+    }
+
     private sealed class TestBackendApiClientProvider(Uri url, string contextKey) : IBackendApiClientProvider, IBackendRequestContextBinding
     {
         private readonly TaskCompletionSource<object> _api = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -556,14 +817,15 @@ public class NativeCompensationDraftCapabilityTests
         public Uri Url { get; } = url;
         public string ContextKey { get; set; } = contextKey;
         public TaskCompletionSource<bool> ApiRequested { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        public bool SupportsAuthenticatedRequestContextBinding => true;
+        public bool IsRequestContextBindingSupported { get; set; } = true;
+        public bool SupportsAuthenticatedRequestContextBinding => IsRequestContextBindingSupported;
         public bool HasActiveRequestContextBinding => _boundContext.Value != null;
 
         public void RegisterAuthenticatedRequestTransport(IBackendRequestContextEpochSource? epochSource) { }
 
         public IDisposable BindRequestContext(string expectedContextKey)
         {
-            if (expectedContextKey != ContextKey)
+            if (!SupportsAuthenticatedRequestContextBinding || expectedContextKey != ContextKey)
                 throw new BackendRequestContextChangedException();
             var previous = _boundContext.Value;
             _boundContext.Value = expectedContextKey;
@@ -590,6 +852,190 @@ public class NativeCompensationDraftCapabilityTests
         }
     }
 
+    private sealed class AuthenticatedNativeRequestHarness : IDisposable
+    {
+        private readonly ServiceProvider _services;
+        private readonly BlazorServiceAccessor _blazorServiceAccessor;
+
+        private AuthenticatedNativeRequestHarness(
+            ServiceProvider services,
+            BlazorServiceAccessor blazorServiceAccessor,
+            DefaultBackendApiClientProvider backendApiClientProvider,
+            MutableJwtAccessor tokenAccessor,
+            SwitchingRefreshTokenService refreshTokenService,
+            AuthenticatedRequestRecordingHandler primeTransport,
+            AuthenticatedRequestRecordingHandler apiTransport)
+        {
+            _services = services;
+            _blazorServiceAccessor = blazorServiceAccessor;
+            BackendApiClientProvider = backendApiClientProvider;
+            TokenAccessor = tokenAccessor;
+            RefreshTokenService = refreshTokenService;
+            PrimeTransport = primeTransport;
+            ApiTransport = apiTransport;
+        }
+
+        public DefaultBackendApiClientProvider BackendApiClientProvider { get; }
+        public MutableJwtAccessor TokenAccessor { get; }
+        public SwitchingRefreshTokenService RefreshTokenService { get; }
+        public AuthenticatedRequestRecordingHandler PrimeTransport { get; }
+        public AuthenticatedRequestRecordingHandler ApiTransport { get; }
+
+        public static async Task<AuthenticatedNativeRequestHarness> CreateAsync()
+        {
+            var signal = new PermissionRefreshSignal();
+            var tokenAccessor = new MutableJwtAccessor(CreateToken("user-a", DateTimeOffset.UtcNow.AddHours(1)));
+            var refreshTokenService = new SwitchingRefreshTokenService(tokenAccessor);
+            var tokenProvider = new JwtTokenProvider(
+                tokenAccessor,
+                new JwtParser(),
+                new ImmediateSingleFlightCoordinator(),
+                refreshTokenService,
+                [signal]);
+            var blazorServiceAccessor = new BlazorServiceAccessor();
+            var primeTransport = new AuthenticatedRequestRecordingHandler();
+            var apiTransport = new AuthenticatedRequestRecordingHandler();
+            var services = new ServiceCollection();
+            services.AddLogging();
+            services.AddSingleton<IPermissionRefreshSignal>(signal);
+            services.AddSingleton<IRemoteBackendAccessor>(new FixedRemoteBackendAccessor());
+            services.AddSingleton<IBlazorServiceAccessor>(blazorServiceAccessor);
+            services.AddSingleton<ITokenProvider>(tokenProvider);
+            services.AddSingleton<IBackendApiClientProvider>(serviceProvider => new DefaultBackendApiClientProvider(
+                serviceProvider.GetRequiredService<IRemoteBackendAccessor>(),
+                serviceProvider.GetRequiredService<IBlazorServiceAccessor>(),
+                serviceProvider,
+                null,
+                signal));
+            services.AddTransient<ElsaIdentityAuthenticatingApiHttpMessageHandler>();
+            services.AddDefaultApiClients(options =>
+            {
+                options.BaseAddress = new Uri("https://backend.example/");
+                options.AuthenticationHandler = typeof(ElsaIdentityAuthenticatingApiHttpMessageHandler);
+                options.ConfigureHttpClientBuilder += builder => builder.ConfigurePrimaryHttpMessageHandler(_ => apiTransport);
+                options.ConfigureRetryPolicy = null;
+            });
+
+            var serviceProvider = services.BuildServiceProvider();
+            blazorServiceAccessor.Services = serviceProvider;
+            var backendApiClientProvider = (DefaultBackendApiClientProvider)serviceProvider.GetRequiredService<IBackendApiClientProvider>();
+            var harness = new AuthenticatedNativeRequestHarness(
+                serviceProvider,
+                blazorServiceAccessor,
+                backendApiClientProvider,
+                tokenAccessor,
+                refreshTokenService,
+                primeTransport,
+                apiTransport);
+
+            using (var invoker = new HttpMessageInvoker(new ElsaIdentityAuthenticatingApiHttpMessageHandler(blazorServiceAccessor)
+                   {
+                       InnerHandler = primeTransport
+                   }))
+            using (var request = new HttpRequestMessage(HttpMethod.Get, "https://backend.example/prime"))
+            using (var response = await invoker.SendAsync(request, CancellationToken.None))
+            {
+                Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+            }
+
+            tokenAccessor.Token = CreateToken("user-a", DateTimeOffset.UtcNow.AddSeconds(30));
+            refreshTokenService.RefreshedToken = CreateToken("user-b", DateTimeOffset.UtcNow.AddHours(1));
+            Assert.True(backendApiClientProvider.SupportsAuthenticatedRequestContextBinding);
+            return harness;
+        }
+
+        public void Dispose()
+        {
+            _blazorServiceAccessor.Services = null!;
+            _services.Dispose();
+        }
+
+        private static string CreateToken(string subject, DateTimeOffset expiresAt)
+        {
+            var payload = JsonSerializer.Serialize(new Dictionary<string, object?>
+            {
+                ["sub"] = subject,
+                ["exp"] = expiresAt.ToUnixTimeSeconds()
+            });
+            var encoded = Convert.ToBase64String(Encoding.UTF8.GetBytes(payload))
+                .TrimEnd('=')
+                .Replace('+', '-')
+                .Replace('/', '_');
+            return $"header.{encoded}.signature";
+        }
+    }
+
+    private sealed class MutableJwtAccessor(string? token) : IJwtAccessor
+    {
+        public string? Token { get; set; } = token;
+
+        public ValueTask<string?> ReadTokenAsync(string name) => ValueTask.FromResult(Token);
+
+        public ValueTask WriteTokenAsync(string name, string token)
+        {
+            Token = token;
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask ClearTokenAsync(string name)
+        {
+            Token = null;
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    private sealed class SwitchingRefreshTokenService(MutableJwtAccessor tokenAccessor) : IRefreshTokenService
+    {
+        public string RefreshedToken { get; set; } = string.Empty;
+        public int RefreshCalls { get; private set; }
+
+        public async Task<Elsa.Api.Client.Resources.Identity.Responses.LoginResponse> RefreshTokenAsync(CancellationToken cancellationToken)
+        {
+            RefreshCalls++;
+            await tokenAccessor.WriteTokenAsync(TokenNames.AccessToken, RefreshedToken);
+            return new(true, RefreshedToken, "refresh-token");
+        }
+    }
+
+    private sealed class ImmediateSingleFlightCoordinator : ISingleFlightCoordinator
+    {
+        public Task<T> RunAsync<T>(Func<CancellationToken, Task<T>> action, CancellationToken cancellationToken) => action(cancellationToken);
+    }
+
+    private sealed class FixedRemoteBackendAccessor : IRemoteBackendAccessor
+    {
+        public RemoteBackend RemoteBackend { get; } = new(new Uri("https://backend.example/"));
+        public string ContextKey => "tenant-a|https://backend.example/";
+    }
+
+    private sealed class AuthenticatedRequestRecordingHandler : HttpMessageHandler
+    {
+        public int RequestCount { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            RequestCount++;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NoContent) { RequestMessage = request });
+        }
+    }
+
+    private class MutatingImportMediator : DispatchProxy
+    {
+        public WorkflowDefinitionModel? Model { get; private set; }
+
+        protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
+        {
+            if (args?.FirstOrDefault() is ImportingWorkflowDefinition notification)
+            {
+                Model = notification.WorkflowDefinition;
+                Model.Name = "event-name";
+                Model.Root = System.Text.Json.Nodes.JsonNode.Parse("""{"id":"scope-1","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}""")!.AsObject();
+            }
+
+            return Task.CompletedTask;
+        }
+    }
+
     private class GatedMediator : DispatchProxy
     {
         public TaskCompletionSource<bool> Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -604,6 +1050,17 @@ public class NativeCompensationDraftCapabilityTests
         }
     }
 
+    private class BindingDroppingMediator : DispatchProxy
+    {
+        public TestBackendApiClientProvider Backend { get; set; } = null!;
+
+        protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
+        {
+            Backend.IsRequestContextBindingSupported = false;
+            return Task.CompletedTask;
+        }
+    }
+
     private class RecordingWorkflowDefinitionsApi : DispatchProxy
     {
         public int SaveCalls { get; private set; }
@@ -611,25 +1068,49 @@ public class NativeCompensationDraftCapabilityTests
         public int PublishCalls { get; private set; }
         public int BulkPublishCalls { get; private set; }
         public System.Text.Json.Nodes.JsonNode? SavedRoot { get; private set; }
+        public System.Text.Json.Nodes.JsonNode? ImportedRoot { get; private set; }
+        public string? SavedName { get; private set; }
+        public string? ImportedName { get; private set; }
+        public bool ImportWasBound { get; private set; }
+        public bool StoredReadWasBound { get; private set; }
+        public Func<bool>? IsRequestContextBound { get; set; }
+        public WorkflowDefinition? StoredDefinition { get; set; }
+        public ICollection<WorkflowDefinition> StoredDefinitions { get; set; } = [];
 
         protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
         {
+            if (targetMethod?.Name == nameof(IWorkflowDefinitionsApi.GetByDefinitionIdAsync))
+            {
+                StoredReadWasBound = IsRequestContextBound?.Invoke() == true;
+                return Task.FromResult<WorkflowDefinition?>(StoredDefinition);
+            }
+
+            if (targetMethod?.Name == nameof(IWorkflowDefinitionsApi.GetManyByIdAsync))
+            {
+                StoredReadWasBound = IsRequestContextBound?.Invoke() == true;
+                return Task.FromResult(new ListResponse<WorkflowDefinition>(StoredDefinitions, StoredDefinitions.Count));
+            }
+
             if (targetMethod?.Name == nameof(IWorkflowDefinitionsApi.ImportAsync))
             {
                 ImportCalls++;
+                var model = (WorkflowDefinitionModel)args![0]!;
+                ImportedRoot = model.Root?.DeepClone();
+                ImportedName = model.Name;
+                ImportWasBound = IsRequestContextBound?.Invoke() == true;
                 return Task.FromResult(new WorkflowDefinition());
             }
 
             if (targetMethod?.Name == nameof(IWorkflowDefinitionsApi.PublishAsync))
             {
                 PublishCalls++;
-                return Task.FromException<SaveWorkflowDefinitionResponse>(new InvalidOperationException("Unexpected workflow publication."));
+                return Task.FromResult(new SaveWorkflowDefinitionResponse(new WorkflowDefinition(), false, 0));
             }
 
             if (targetMethod?.Name == nameof(IWorkflowDefinitionsApi.BulkPublishAsync))
             {
                 BulkPublishCalls++;
-                return Task.FromException<BulkPublishWorkflowDefinitionsResponse>(new InvalidOperationException("Unexpected workflow publication."));
+                return Task.FromResult(new BulkPublishWorkflowDefinitionsResponse([], [], [], []));
             }
 
             if (targetMethod?.Name != nameof(IWorkflowDefinitionsApi.SaveAsync))
@@ -638,6 +1119,7 @@ public class NativeCompensationDraftCapabilityTests
             SaveCalls++;
             var request = (SaveWorkflowDefinitionRequest)args![0]!;
             SavedRoot = request.Model.Root?.DeepClone();
+            SavedName = request.Model.Name;
             var definition = new WorkflowDefinition { Root = request.Model.Root! };
             return Task.FromResult(new SaveWorkflowDefinitionResponse(definition, false, 0));
         }

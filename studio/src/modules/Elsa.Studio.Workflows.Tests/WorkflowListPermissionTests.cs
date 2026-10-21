@@ -17,6 +17,7 @@ using Elsa.Studio.Workflows.Components.WorkflowDefinitionList;
 using Elsa.Studio.Workflows.Components.WorkflowInstanceList;
 using Elsa.Studio.Workflows.Components.WorkflowInstanceList.Components;
 using Elsa.Studio.Workflows.Domain.Contracts;
+using Elsa.Studio.Workflows.Domain.Models;
 using Elsa.Studio.Workflows.Extensions;
 using Elsa.Studio.Workflows.Tests.Support;
 using Microsoft.AspNetCore.Components;
@@ -110,6 +111,54 @@ public sealed class WorkflowListPermissionTests : BunitContext, IAsyncLifetime
         Assert.DoesNotContain("server-private-message", summary.TextContent);
         Assert.Contains(JSInterop.Invocations, invocation => invocation.Identifier == "Blazor._internal.domWrapper.focus");
         Assert.Equal(1, definitionService.PublishCallCount);
+    }
+
+    [Fact]
+    public async Task DefinitionList_ClientNativePublishRefusalShowsSafeSummaryWithoutIdentifiers()
+    {
+        var definitionService = (WorkflowDefinitionServiceProxy)Services.GetRequiredService<IWorkflowDefinitionService>();
+        definitionService.PublishException = new NativeCompensationDraftPublishUnavailableException(
+            "This server does not advertise native compensation draft authoring.");
+        var cut = RenderList<WorkflowDefinitionList>(DefinitionName, "workflows/*:*");
+
+        await ClickRowPublishAsync(cut);
+
+        var summary = cut.WaitForElement("[aria-label='Native compensation publication refusal'][role='alert'][tabindex='-1']");
+        Assert.Contains("Native compensation drafts cannot be published.", summary.TextContent);
+        Assert.DoesNotContain("scope-17", summary.TextContent);
+        Assert.DoesNotContain("step-9", summary.TextContent);
+        Assert.DoesNotContain("order-process", summary.TextContent);
+        Assert.DoesNotContain("server-private-message", summary.TextContent);
+        Assert.Equal(1, definitionService.PublishCallCount);
+    }
+
+    [Fact]
+    public async Task DefinitionList_ClientNativeBulkPublishRefusalShowsSafeSummaryWithoutIdentifiers()
+    {
+        var dialogs = Render<MudDialogProvider>();
+        var definitionService = (WorkflowDefinitionServiceProxy)Services.GetRequiredService<IWorkflowDefinitionService>();
+        definitionService.PublishException = new NativeCompensationDraftPublishUnavailableException(
+            "Server refusal contained scope-17, step-9, and order-process.");
+        var cut = RenderList<WorkflowDefinitionList>(DefinitionName, "workflows/*:*");
+        Assert.Single(cut.FindAll("tbody input[type=checkbox]")).Change(true);
+        var publishItem = Popovers.OpenMenu(cut.FindAll("button").Single(button => button.TextContent.Contains("Bulk actions")))
+            .Single(item => item.TextContent.Trim() == "Publish");
+        Task? publishTask = null;
+
+        await cut.InvokeAsync(() =>
+        {
+            publishTask = publishItem.ClickAsync(new MouseEventArgs());
+        });
+        dialogs.WaitForAssertion(() => Assert.Contains("Publish selected workflows?", dialogs.Markup));
+        dialogs.FindAll("button").Single(x => x.TextContent.Trim() == "Publish").Click();
+        await publishTask!.WaitAsync(TimeSpan.FromSeconds(5));
+
+        var summary = cut.WaitForElement("[aria-label='Native compensation publication refusal'][role='alert'][tabindex='-1']");
+        Assert.Contains("Native compensation drafts cannot be published.", summary.TextContent);
+        Assert.DoesNotContain("scope-17", summary.TextContent);
+        Assert.DoesNotContain("step-9", summary.TextContent);
+        Assert.DoesNotContain("order-process", summary.TextContent);
+        Assert.Equal(1, definitionService.BulkPublishCallCount);
     }
 
     [Fact]
@@ -260,8 +309,9 @@ public sealed class WorkflowListPermissionTests : BunitContext, IAsyncLifetime
     {
         private static readonly Link[] PublishLinks = [new("/publish", "publish", "POST"), new("/bulk-publish", "bulk-publish", "POST")];
 
-        public ApiException? PublishException { get; set; }
+        public Exception? PublishException { get; set; }
         public int PublishCallCount { get; private set; }
+        public int BulkPublishCallCount { get; private set; }
 
         protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
         {
@@ -279,6 +329,14 @@ public sealed class WorkflowListPermissionTests : BunitContext, IAsyncLifetime
                 if (PublishException != null)
                     throw PublishException;
                 return Task.FromResult(new SaveWorkflowDefinitionResponse(new WorkflowDefinition(), false, 0));
+            }
+
+            if (targetMethod.Name == nameof(IWorkflowDefinitionService.BulkPublishAsync))
+            {
+                BulkPublishCallCount++;
+                if (PublishException != null)
+                    throw PublishException;
+                return Task.FromResult(new BulkPublishWorkflowDefinitionsResponse([], [], [], []));
             }
 
             throw new InvalidOperationException($"Unexpected call to {targetMethod.DeclaringType!.Name}.{targetMethod.Name}.");
