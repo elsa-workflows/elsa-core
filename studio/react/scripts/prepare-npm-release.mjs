@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -29,8 +29,13 @@ try {
     cpSync(join(original, "dist"), join(staged, "dist"), { recursive: true });
     cpSync(join(original, "README.md"), join(staged, "README.md"));
     cpSync(join(root, "SOURCE-NOTICE.md"), join(staged, "SOURCE-NOTICE.md"));
+    if (short === "ui") {
+      mkdirSync(join(staged, "src"));
+      for (const file of readdirSync(join(original, "src")).filter(file => file.endsWith(".css")))
+        cpSync(join(original, "src", file), join(staged, "src", file));
+    }
     const manifest = JSON.parse(readFileSync(join(original, "package.json"), "utf8"));
-    Object.assign(manifest, { version, private: false, files: ["dist", "README.md", "SOURCE-NOTICE.md"],
+    Object.assign(manifest, { version, private: false, files: [...manifest.files, "SOURCE-NOTICE.md"],
       license: "SEE LICENSE IN SOURCE-NOTICE.md", publishConfig: { access: "public" },
       repository: { type: "git", url: "git+https://github.com/elsa-workflows/elsa-core.git", directory: `studio/react/packages/${short}` },
     });

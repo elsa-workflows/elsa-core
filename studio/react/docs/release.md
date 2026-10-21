@@ -44,7 +44,9 @@ pnpm test:packages --npm-feed /tmp/react-studio-npm
 
 Use a clean committed checkout and a fresh output directory. Uncommitted source is
 rejected so the bundle cannot misidentify its source revision. The consumer check installs those exact tarballs and
-compiles/renders an external module. To verify the generated RCL and host, first
+compiles/renders an external module, then imports the UI style/token exports and
+builds their theme and component utilities with Vite/Tailwind. Staging preserves
+the package file lists, including CSS dependencies such as shadcn.css. To verify the generated RCL and host, first
 pack `Elsa.ReactStudio.slnf` at the matching version, then run:
 
 ```sh

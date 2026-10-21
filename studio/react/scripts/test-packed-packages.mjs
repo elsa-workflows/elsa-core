@@ -36,6 +36,8 @@ try {
     private: true, type: "module", dependencies: {
       ...dependencies, react: installed.dependencies.react, "react-dom": installed.dependencies["react-dom"],
       "lucide-react": installed.dependencies["lucide-react"], "@types/react": reactTypes.version,
+    }, devDependencies: { vite: installed.devDependencies.vite,
+      "@tailwindcss/vite": installed.devDependencies["@tailwindcss/vite"], tailwindcss: installed.devDependencies.tailwindcss,
     }, pnpm: { overrides: dependencies },
   }));
   writeFileSync(join(consumer, "tsconfig.json"), JSON.stringify({ compilerOptions: {
@@ -61,7 +63,14 @@ registry.remove("weather");
 if (registry.slots("headerItems").length) throw new Error("Packed module did not unregister");
 `);
   execFileSync(process.execPath, ["smoke.mjs"], { cwd: consumer, stdio: "inherit" });
-  console.log("PASS: external module compiled and rendered using four packed public packages");
+  writeFileSync(join(consumer, "styles.js"), 'import "@elsa-workflows/react-studio-ui/styles.css";\nimport "@elsa-workflows/react-studio-ui/tokens.css";\n');
+  writeFileSync(join(consumer, "index.html"), '<script type="module" src="/styles.js"></script>');
+  writeFileSync(join(consumer, "vite.config.mjs"), 'import tailwindcss from "@tailwindcss/vite";\nexport default { plugins: [tailwindcss()], build: { outDir: "style-dist" } };\n');
+  run(["exec", "vite", "build"], consumer);
+  const cssFiles = readdirSync(join(consumer, "style-dist/assets")).filter(name => name.endsWith(".css"));
+  const css = cssFiles.map(name => readFileSync(join(consumer, "style-dist/assets", name), "utf8")).join("\n");
+  if (!css.includes("--background") || !css.includes(".inline-flex")) throw new Error("Packed UI stylesheet did not build its theme and component utilities");
+  console.log("PASS: external module compiled/rendered and exported UI styles built using four packed public packages");
 } finally {
   rmSync(temporary, { recursive: true, force: true });
 }

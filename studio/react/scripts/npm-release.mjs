@@ -37,6 +37,11 @@ export function readBundle(directory, expectedSource) {
     }
     const notice = execFileSync("tar", ["-xOf", file, "package/SOURCE-NOTICE.md"], { encoding: "utf8" });
     if (!notice.includes("no license file")) throw new Error(`Missing source notice: ${item.name}`);
+    const entries = new Set(execFileSync("tar", ["-tf", file], { encoding: "utf8" }).trim().split("\n"));
+    for (const target of Object.values(manifest.exports)) {
+      if (typeof target === "string" && target.endsWith(".css") && !entries.has(`package/${target.replace(/^\.\//, "")}`))
+        throw new Error(`Missing exported stylesheet in ${item.name}: ${target}`);
+    }
   }
   return bundle;
 }

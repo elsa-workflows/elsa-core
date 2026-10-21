@@ -318,3 +318,10 @@ pnpm cache and a third-party NuGet fallback cache; the new Studio packages still
 from the supplied local feeds. Four policy/integrity regressions, all four npm publish
 --dry-run commands, script lint and actionlint passed. Live registry preflight, remote
 CI/review and publication remain separate acceptance steps.
+
+The packed-consumer check also builds the UI's exported styles.css/tokens.css with
+Vite/Tailwind and checks theme/component CSS. It reproduced an omitted stylesheet
+export before the staging fix. Staging now preserves package file declarations and
+copies the UI CSS, including shadcn.css; bundle validation rejects missing exported
+stylesheets. Live registry preflight and the four-package npm dry run passed after
+egress recovered; no package was published.
