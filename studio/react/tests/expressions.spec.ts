@@ -44,7 +44,10 @@ async function complete(page: Page, prefix: string, label: string, expected = la
   const editor = page.locator(".cm-content");
   const cursor = prefix.indexOf("|");
   await editor.fill(prefix.replace("|", ""));
-  if (cursor >= 0) for (let i = 0; i < prefix.length - cursor - 1; i++) await editor.press("ArrowLeft");
+  if (cursor >= 0) {
+    await editor.press("Control+Home");
+    for (let i = 0; i < cursor; i++) await editor.press("ArrowRight");
+  }
   if (beforeClosingParenthesis) await editor.press("ArrowLeft");
   await editor.press("Control+Space");
   const option = page.getByRole("option").filter({ has: page.getByText(label, { exact: true }) });
@@ -60,6 +63,7 @@ test("C# highlights syntax and all three languages complete server members, inpu
   await complete(page, "Input.Customer.", "Input.Customer.Name");
   await complete(page, "Input.G", 'Input.Get<object>("Customer")');
   await complete(page, 'Input.Get<object>("Cus|")', 'Input.Get<object>("Customer")');
+  await complete(page, 'Input.Get<object>("Cus|"\n)', 'Input.Get<object>("Customer")');
   await complete(page, "someFunction(Variable.C", "Variable.Customer", "someFunction(Variable.Customer");
   await complete(page, "[Variable.C", "Variable.Customer", "[Variable.Customer");
   await complete(page, "Out", 'Output.From("Lookup", "Result")');
@@ -87,6 +91,9 @@ test("quoted accessor completion replaces its existing suffix and preserves encl
   await complete(page, 'Math.Max(Output.From("Lookup", "Res|"), 1)', 'Output.From("Lookup", "Result")', 'Math.Max(Output.From("Lookup", "Result"), 1)');
   await page.getByRole("button", { name: "JavaScript", exact: true }).click();
   await complete(page, 'getInput("Cus|")', 'getInput("Customer")');
+  await complete(page, 'getInput("Cus|"', 'getInput("Customer")');
+  await complete(page, 'getInput("Cus|tomer', 'getInput("Customer")');
+  await complete(page, 'Math.max(getInput("Cus|"\n), 1)', 'getInput("Customer")', 'Math.max(getInput("Customer"), 1)');
   await complete(page, 'Math.max(getOutputFrom("Lookup", "Res|"), 1)', 'getOutputFrom("Lookup", "Result")', 'Math.max(getOutputFrom("Lookup", "Result"), 1)');
   await page.getByRole("button", { name: "Python", exact: true }).click();
   await complete(page, 'input.Get("Cus|")', 'input.Get("Customer")');
