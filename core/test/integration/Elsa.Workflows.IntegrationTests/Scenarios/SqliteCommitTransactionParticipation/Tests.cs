@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json.Nodes;
 using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
+using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Persistence.EFCore.Modules.Management;
 using Elsa.Persistence.EFCore.Modules.Runtime;
 using Elsa.Tenants.Options;
@@ -14,6 +15,7 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
+using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.State;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -50,6 +52,7 @@ public sealed class Tests(ITestOutputHelper output)
         Assert.DoesNotContain(firstBookmarkId, after.BookmarkIds);
         Assert.NotEqual(firstBookmarkId, Assert.Single(after.BookmarkIds));
         AssertVariable(await fixture.ReadWorkflowStateAsync(started.State.Id), started.VariableId, "resumed");
+        Assert.True(after.ExecutionLogCount > before.ExecutionLogCount);
         Assert.True(after.ActivityExecutionRecordCount > before.ActivityExecutionRecordCount);
 
         var commit = Assert.Single(fixture.Commands.GetCompletedCommitAttempts(fixture.Commands.LastCommitAttemptId));
@@ -108,7 +111,7 @@ public sealed class Tests(ITestOutputHelper output)
         Assert.Contains("\"Data\"", commit.WorkflowInstanceUpdateSql, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("WorkflowInstances", commit.WorkflowInstanceUpdateSql, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("TenantId", commit.WorkflowInstanceUpdateSql, StringComparison.OrdinalIgnoreCase);
-        Assert.True(commit.ParameterNames.Contains(fixture.Commands.ExpectedDataParameterName, StringComparer.OrdinalIgnoreCase));
+        Assert.Contains(commit.ParameterNames, parameter => string.Equals(parameter, fixture.Commands.ExpectedDataParameterName, StringComparison.OrdinalIgnoreCase));
         Assert.Contains(commit.ConditionalUpdate!.Method, new[] { "ReaderExecutingAsync", "NonQueryExecutingAsync" });
         AssertResumeSnapshotUpdatesUseExpectedData(fixture.Commands.GetResumeCommitAttempts(), initial.DataHash);
         Assert.Equal(1, fixture.TransactionState.RolledBackTransactions);
@@ -256,11 +259,11 @@ internal sealed class NativeCommitFixture : IAsyncDisposable
             await runtime.Database.ExecuteSqlRawAsync(runtime.Database.GenerateCreateScript());
         }
 
-        var workflow = await serviceProvider.GetRequiredService<IWorkflowBuilderFactory>()
+        var builtWorkflow = await serviceProvider.GetRequiredService<IWorkflowBuilderFactory>()
             .CreateBuilder()
             .BuildWorkflowAsync<NativeCommitWorkflow>();
 
-        return new(connection, connectionString, serviceProvider, workflow, commands, transactionState);
+        return new(connection, connectionString, serviceProvider, builtWorkflow.Workflow, commands, transactionState);
     }
 
     public async Task<StartedWorkflow> StartAsync()
@@ -402,7 +405,7 @@ internal sealed class SharedCommitTransactionState(SqliteCommitCommandIntercepto
     public long BeginCommitAttempt(DbTransaction? transaction)
     {
         Transaction = transaction;
-        CurrentCommitAttemptId = commands.BeginCommitAttempt(transaction);
+        CurrentCommitAttemptId = Commands.BeginCommitAttempt(transaction);
         return CurrentCommitAttemptId;
     }
 
@@ -410,7 +413,7 @@ internal sealed class SharedCommitTransactionState(SqliteCommitCommandIntercepto
     {
         Transaction = null;
         CurrentCommitAttemptId = 0;
-        commands.EndCommitAttempt();
+        Commands.EndCommitAttempt();
     }
 }
 
@@ -470,7 +473,12 @@ internal sealed class SharedSqliteCommitTransaction(SqliteConnection connection,
         }
 
         await using var command = connection.CreateCommand();
-        command.Transaction = transaction;
+        if (transaction != null && transaction is not SqliteTransaction)
+        {
+            throw new InvalidOperationException("The active provider transaction is not a Microsoft.Data.Sqlite transaction.");
+        }
+
+        command.Transaction = (SqliteTransaction?)transaction;
         command.CommandText = "SELECT changes()";
         state.ConditionalUpdateRowsAffected = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken));
     }
