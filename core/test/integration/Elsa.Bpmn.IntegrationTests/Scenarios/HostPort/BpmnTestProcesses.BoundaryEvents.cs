@@ -120,4 +120,36 @@ internal static partial class BpmnTestProcesses
 
         return Scope("scope", definition, nested, Immediate("after", log), Immediate("notify", log));
     }
+
+    /// <summary>
+    /// A message or signal boundary event on a long-running task, interrupting or not, each path leading to its own
+    /// work.
+    /// </summary>
+    /// <remarks>
+    /// The boundary's listener is blocking work a test finishes, which is what "the message arrived" or "the signal was
+    /// broadcast" means to the host. The task blocks too, so the boundary fires while its host is still running and the
+    /// difference between interrupting and non-interrupting is whether that host survives the fire.
+    /// </remarks>
+    private static BpmnProcess CatchBoundary(BpmnTestLog log, BpmnEventDefinition trigger, bool interrupting)
+    {
+        var definition = new BpmnProcessBuilder("catch-boundary")
+            .StartEvent("start")
+            .Task("task", bindingRef: BindingRef("task"))
+            .Task("afterTask", bindingRef: BindingRef("afterTask"))
+            .EndEvent("end")
+            .BoundaryEvent("caught", attachedTo: "task", eventDefinition: trigger, interrupting: interrupting, bindingRef: BindingRef("caught"))
+            .Task("onCaught", bindingRef: BindingRef("onCaught"))
+            .EndEvent("caughtEnd")
+            .ConnectSequence("start", "task", "afterTask", "end")
+            .ConnectSequence("caught", "onCaught", "caughtEnd")
+            .Build();
+
+        return Scope("scope", definition, Blocking("task", log), Immediate("afterTask", log), Blocking("caught", log), Immediate("onCaught", log));
+    }
+
+    /// <summary>A message boundary event on a long-running task. See <see cref="CatchBoundary"/>.</summary>
+    public static BpmnProcess MessageBoundary(BpmnTestLog log, bool interrupting) => CatchBoundary(log, Message("OrderAmended"), interrupting);
+
+    /// <summary>A signal boundary event on a long-running task. See <see cref="CatchBoundary"/>.</summary>
+    public static BpmnProcess SignalBoundary(BpmnTestLog log, bool interrupting) => CatchBoundary(log, Signal("RecallIssued"), interrupting);
 }
