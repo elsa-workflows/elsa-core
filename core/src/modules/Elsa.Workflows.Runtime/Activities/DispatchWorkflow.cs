@@ -35,6 +35,7 @@ public class DispatchWorkflow : Activity<object>
 {
     private const string WaitedChildInstanceIdKey = "WaitedChildInstanceId";
     private const string ChildWorkflowSubStatusKey = "ChildWorkflowSubStatus";
+    private const string ChildActivationDeniedKey = "ChildActivationDenied";
 
     /// <summary>
     /// The resume input key under which <see cref="Handlers.ResumeDispatchWorkflowActivity"/> passes the waited-for child's final
@@ -203,6 +204,17 @@ public class DispatchWorkflow : Activity<object>
     internal static WorkflowSubStatus? GetChildWorkflowSubStatus(ActivityExecutionContext context) =>
         Enum.TryParse<WorkflowSubStatus>(context.GetProperty<string>(ChildWorkflowSubStatusKey), out var subStatus) ? subStatus : null;
 
+    /// <summary>
+    /// Whether this activity completed because the activation of the child it was waiting for was denied, so the child
+    /// never started. Recorded when the activity resumes with the <c>CannotStart</c> result described on this type.
+    /// </summary>
+    /// <remarks>
+    /// As with <see cref="GetChildWorkflowSubStatus"/>, the activity completes the same way either way; this lets the BPMN
+    /// host tell a call whose child could not be started from one whose child finished.
+    /// </remarks>
+    /// <param name="context">The execution context of a <see cref="DispatchWorkflow"/> activity.</param>
+    internal static bool IsChildActivationDenied(ActivityExecutionContext context) => context.GetProperty<bool>(ChildActivationDeniedKey);
+
     private async ValueTask OnChildWorkflowCompletedAsync(ActivityExecutionContext context)
     {
         var input = context.WorkflowInput;
@@ -213,10 +225,21 @@ public class DispatchWorkflow : Activity<object>
             input.Remove(ChildWorkflowSubStatusInputKey);
             context.SetProperty(ChildWorkflowSubStatusKey, childSubStatus?.ToString());
         }
+        // A denied activation resumes with CannotStart and the instance id this activity reserved for the child, and no
+        // sub-status, since no child ran. Matching the id keeps a finished child's own output from reading as a denial.
+        else if (IsActivationDenial(context, input))
+        {
+            context.SetProperty(ChildActivationDeniedKey, true);
+        }
 
         context.Set(Result, input);
         await context.CompleteActivityAsync();
     }
+
+    private static bool IsActivationDenial(ActivityExecutionContext context, IDictionary<string, object> input) =>
+        input.TryGetValue("CannotStart", out var cannotStart) && cannotStart is true
+        && input.TryGetValue("WorkflowInstanceId", out var instanceId)
+        && string.Equals(instanceId?.ToString(), context.GetProperty<string>(WaitedChildInstanceIdKey), StringComparison.Ordinal);
 
     /// <summary>
     /// Cancels the child this activity was waiting for. When this burst dispatched it through the transactional outbox,
