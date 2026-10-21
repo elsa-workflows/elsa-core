@@ -30,6 +30,7 @@ export function parseServerTypes(document: string): ServerTypes {
 
 const pascal = (name: string) => name.replace(/(?:^|_)([a-z])/g, (_, letter: string) => letter.toUpperCase());
 const identifier = /^[A-Za-z_][\w]*$/;
+const generatedAccessor = /^[A-Za-z][A-Za-z0-9]*$/;
 
 // CommonFunctionsDefinitionProvider's get/set functions are independent of saved
 // workflow members. Unknown get*/set* declarations cannot be distinguished from
@@ -57,8 +58,8 @@ export function typedCompletions(context: Pick<UiHintContext, "variables" | "inp
   const js = language === "javascript" || language === "typescript";
   const currentAccessors = new Set(commonAccessors);
   for (const variable of context.variables) {
-    if (identifier.test(variable.name)) root(`${language === "csharp" ? "Variable." + pascal(variable.name) : "variables." + variable.name}`, variable.typeName);
-    if (js && identifier.test(variable.name)) {
+    if (language === "csharp" ? generatedAccessor.test(variable.name) : identifier.test(variable.name)) root(`${language === "csharp" ? "Variable." + pascal(variable.name) : "variables." + variable.name}`, variable.typeName);
+    if (js && generatedAccessor.test(variable.name)) {
       const name = pascal(variable.name);
       root(`get${name}()`, variable.typeName);
       currentAccessors.add(`get${name}`);
@@ -66,11 +67,11 @@ export function typedCompletions(context: Pick<UiHintContext, "variables" | "inp
     }
   }
   for (const input of context.inputs ?? []) {
-    if (js && identifier.test(input.name)) {
+    if (js && generatedAccessor.test(input.name)) {
       root(`get${input.name}()`, input.type);
       currentAccessors.add(`get${input.name}`);
     }
-    if (language === "csharp" && identifier.test(input.name)) root(`Input.${input.name}`, input.type);
+    if (language === "csharp" && generatedAccessor.test(input.name)) root(`Input.${input.name}`, input.type);
     if (language === "python") root(`input.Get(${JSON.stringify(input.name)})`, input.type);
   }
   if (js) {
