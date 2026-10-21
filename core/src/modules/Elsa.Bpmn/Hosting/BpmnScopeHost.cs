@@ -90,6 +90,11 @@ internal sealed class BpmnScopeHost
     /// <summary>The scope is beginning.</summary>
     public async ValueTask StartAsync()
     {
+        // A scope that no other BPMN scope started is where a run begins: every body it can reach is built now, so a
+        // body that cannot run is refused before anything has run rather than when a token first reaches it.
+        if (InvocationCorrelation.Count == 0)
+            BpmnProcessGraphs.BuildAll(_process);
+
         // Resolving by the matched trigger may read the trigger store, so it happens before the synchronous evaluation.
         var triggeredStart = await ResolveTriggeredStartAsync();
 
@@ -497,15 +502,5 @@ internal sealed class BpmnScopeHost
     private IReadOnlyDictionary<string, string> InvocationCorrelation =>
         BpmnScopeMemory.Read<Dictionary<string, string>>(_context, InvocationCorrelationPropertyKey) ?? NoCorrelation;
 
-    private BpmnGraph BuildGraph()
-    {
-        var definition = _process.Process
-                         ?? throw new InvalidOperationException($"BPMN process activity '{_process.Id}' has no process definition to execute.");
-
-        // Every binding the definition declares, with the nested definition attached where the bound activity is
-        // itself a BPMN scope. The graph validator reads that for an event subprocess body's start trigger.
-        var boundWork = BpmnBoundWork.Derive(definition, bindingRef => (_process.FindWorkActivity(bindingRef) as BpmnProcess)?.Process);
-
-        return BpmnGraph.Build(definition, boundWork, Capabilities);
-    }
+    private BpmnGraph BuildGraph() => BpmnProcessGraphs.Build(_process);
 }

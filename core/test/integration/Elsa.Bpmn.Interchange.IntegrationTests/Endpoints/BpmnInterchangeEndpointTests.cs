@@ -273,6 +273,24 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     }
 
     [Fact]
+    public async Task Import_OfADocumentWithASubprocessBodyThatCannotRun_ReturnsUnprocessableEntityAndCreatesNoDefinition()
+    {
+        // Import builds the graph of every body the process can reach, as the runtime does when a run starts.
+        var definitionId = Guid.NewGuid().ToString("N");
+
+        using var content = new MultipartFormDataContent();
+        AddBpmnFile(content, ReadAsset("invalid-nested-body.bpmn"), "file");
+        content.Add(new StringContent(definitionId), "DefinitionId");
+        var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Equal(BpmnErrorCodes.ImportProcessInvalid, CodeOf(body));
+        Assert.Contains("Inner_Decide", body);
+        Assert.Null(await FindLatestOrDefaultAsync(definitionId));
+    }
+
+    [Fact]
     public async Task Import_OfADocumentWithConditionOutcomeFlows_ReturnsOk()
     {
         // vw:conditionOutcome is the library's own condition, which Bpmn.Semantics does evaluate — including when the

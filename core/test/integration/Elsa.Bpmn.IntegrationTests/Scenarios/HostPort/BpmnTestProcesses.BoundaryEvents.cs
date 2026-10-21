@@ -161,6 +161,30 @@ internal static partial class BpmnTestProcesses
         return Scope("scope", definition, nested, Immediate("after", log), Immediate("subRecover", log));
     }
 
+    /// <summary>
+    /// A task, then an embedded subprocess whose body can never run: its two gateways route a token around a cycle on
+    /// which nothing can wait, which <c>Bpmn.Semantics</c> refuses when it builds the body's graph.
+    /// </summary>
+    public static BpmnProcess SubprocessWithABodyThatCannotRun(BpmnTestLog log)
+    {
+        var body = new BpmnProcessBuilder("never-waiting-cycle-body")
+            .StartEvent("subStart")
+            .ExclusiveGateway("loopA")
+            .ExclusiveGateway("loopB")
+            .ConnectSequence("subStart", "loopA", "loopB", "loopA")
+            .Build();
+
+        var definition = new BpmnProcessBuilder("subprocess-with-a-body-that-cannot-run")
+            .StartEvent("start")
+            .Task("first", bindingRef: BindingRef("first"))
+            .SubProcess("sub", bindingRef: BindingRef("sub"))
+            .EndEvent("end")
+            .ConnectSequence("start", "first", "sub", "end")
+            .Build();
+
+        return Scope("scope", definition, Immediate("first", log), Scope("sub", body));
+    }
+
     /// <summary>A task that fails with nothing to catch it.</summary>
     public static BpmnProcess UncaughtError(BpmnTestLog log)
     {

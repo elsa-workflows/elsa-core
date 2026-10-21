@@ -322,6 +322,17 @@ the offending sequence flow ids, sorted, and no opt-in overrides either refusal:
 A flow conditional on an outcome name through the library's own `vw:conditionOutcome` attribute keeps working as
 before. `Analyze` does not refuse.
 
+### Process build refusal
+
+Each subprocess body runs as its own scope, with its own graph. `Import` and the document `PUT` build the graph of the
+process and of every subprocess body it can reach, at any depth, through `Elsa.Bpmn.Hosting.BpmnProcessGraphs`, and
+refuse a document `Bpmn.Semantics` refuses to build, with `422 Unprocessable Entity` and the code
+`bpmn.import.process-invalid`, before persisting anything. Examples are a cycle on which nothing can wait, a default
+flow that does not leave its element, and an event subprocess body without exactly one start event. The message is the
+library's own and names the elements. A run does the same when it starts: a root BPMN scope builds every body it can
+reach before anything runs, so a definition stored before this check faults at its start rather than when a token
+first reaches the broken subprocess.
+
 ### Duplicate element id refusal
 
 BPMN requires every element id to be unique within a document. `Import` and the document `PUT` both refuse, with
@@ -409,6 +420,7 @@ element that has a stored body but no `bindingRef`, are uncoded.
 | `bpmn.import.capability-unsupported` | `POST bpmn/import`, document `PUT` | 422 | `capabilities: string[]` (missing capability names), `elementIds: string[]` (offending element ids, combined across every missing capability) |
 | `bpmn.import.binding-invalid` | `POST bpmn/import`, document `PUT` | 422 | — |
 | `bpmn.import.duplicate-element-id` | `POST bpmn/import`, document `PUT` | 422 | `elementIds: string[]` (the duplicated ids) |
+| `bpmn.import.process-invalid` | `POST bpmn/import`, document `PUT` | 422 | — |
 | `bpmn.import.condition-language-unsupported` | `POST bpmn/import`, document `PUT` | 422 | `elementIds: string[]` (the sequence flows whose expression is in a language Elsa does not evaluate, across the whole document including nested subprocesses, sorted and distinct) |
 | `bpmn.import.condition-conflict` | `POST bpmn/import`, document `PUT` | 422 | `elementIds: string[]` (the sequence flows that carry both an outcome and an author-written expression, across the whole document including nested subprocesses, sorted and distinct) |
 | `bpmn.export.not-imported` | `GET .../export`, document `GET` | 422 | — |

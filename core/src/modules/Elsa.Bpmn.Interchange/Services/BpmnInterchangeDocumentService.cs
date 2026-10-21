@@ -87,10 +87,10 @@ namespace Elsa.Bpmn.Interchange.Services;
 /// is the static half of the same check <c>BpmnGraph.Build</c> performs at first execution: it needs only the
 /// definition, not bound work or a host snapshot. Running it at import means an unrunnable diagram is rejected before
 /// it is ever persisted, naming the missing capability and the elements that need it, rather than surfacing as an
-/// incident the first time the workflow runs. <c>BpmnGraph.Build</c> itself is deliberately not called here: building
-/// the graph also validates structural invariants that belong to the runtime module's own execution path
-/// (<c>Elsa.Bpmn.Hosting.BpmnScopeHost</c>), and re-running that here would duplicate it outside the module that owns
-/// it.
+/// incident the first time the workflow runs. After binding, import also builds the graph of the process and of every
+/// subprocess body it can reach through <see cref="BpmnProcessGraphs"/>, the runtime module's own build, which the scope
+/// host runs when a run starts; a process that could never run is refused with
+/// <see cref="BpmnErrorCodes.ImportProcessInvalid"/> rather than faulting on its first run.
 /// </para>
 /// <para>
 /// <b>Conditions Elsa cannot evaluate as written are refused here too, and nothing opts out of it.</b> Elsa evaluates a
@@ -208,6 +208,7 @@ public sealed class BpmnInterchangeDocumentService(
     /// <exception cref="BpmnInterchangeException">The document cannot be read, or declares more than one process and <paramref name="processId"/> does not pick one.</exception>
     /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
     /// <exception cref="BpmnConditionRefusedException">A sequence flow carries a condition Elsa cannot evaluate as written.</exception>
+    /// <exception cref="BpmnProcessInvalidException">The process, or a subprocess body it can reach, cannot run.</exception>
     /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
     public Task<BpmnDocumentImportResult> ImportAsync(string xml, string? definitionId, string? name, string? processId, CancellationToken cancellationToken) =>
         ImportCoreAsync(xml, definitionId, name, processId, preserveMetadataFrom: null, expectedETag: null, compareAndSwap: false, cancellationToken);
@@ -244,6 +245,7 @@ public sealed class BpmnInterchangeDocumentService(
     /// <exception cref="BpmnInterchangeException">The document cannot be read, or declares more than one process and <paramref name="processId"/> does not pick one.</exception>
     /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
     /// <exception cref="BpmnConditionRefusedException">A sequence flow carries a condition Elsa cannot evaluate as written.</exception>
+    /// <exception cref="BpmnProcessInvalidException">The process, or a subprocess body it can reach, cannot run.</exception>
     /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
     private async Task<BpmnDocumentImportResult> ImportCoreAsync(
         string xml,
@@ -269,6 +271,7 @@ public sealed class BpmnInterchangeDocumentService(
         EnsureConditionsEvaluable(result);
 
         var process = binder.Bind(rootDefinition, result.Bindings);
+        EnsureProcessBuilds(process);
 
         // Whoever composes a bound scope into a workflow says explicitly that it is an entry point; an import is
         // exactly that, for the process the caller asked to import.
@@ -587,6 +590,7 @@ public sealed class BpmnInterchangeDocumentService(
     /// </exception>
     /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
     /// <exception cref="BpmnConditionRefusedException">A sequence flow carries a condition Elsa cannot evaluate as written.</exception>
+    /// <exception cref="BpmnProcessInvalidException">The process, or a subprocess body it can reach, cannot run.</exception>
     /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
     public async Task<BpmnDocumentImportResult> ImportDocumentAsync(
         BpmnDefinitions document,
@@ -1037,6 +1041,23 @@ public sealed class BpmnInterchangeDocumentService(
 
         static IReadOnlyList<string> SortedDistinct(IEnumerable<string> flowIds) =>
             flowIds.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
+    }
+
+    /// <summary>
+    /// Refuses a process that could never run: builds its graph and the graph of every subprocess body it can reach, as
+    /// the runtime does when a run starts (see <see cref="BpmnProcessGraphs"/>).
+    /// </summary>
+    /// <exception cref="BpmnProcessInvalidException">The process or a body it can reach cannot run.</exception>
+    internal static void EnsureProcessBuilds(BpmnProcess process)
+    {
+        try
+        {
+            BpmnProcessGraphs.BuildAll(process);
+        }
+        catch (BpmnExecutionException exception)
+        {
+            throw new BpmnProcessInvalidException(exception.Message, exception);
+        }
     }
 
     /// <summary>

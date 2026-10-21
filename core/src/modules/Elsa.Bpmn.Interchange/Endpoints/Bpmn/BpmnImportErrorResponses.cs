@@ -65,6 +65,11 @@ internal static class BpmnImportErrorResponses
             await BpmnErrorResponse.SendAsync(httpResponse, CapabilityResponseFor(exception), cancellationToken);
             return null;
         }
+        catch (BpmnProcessInvalidException exception)
+        {
+            await BpmnErrorResponse.SendAsync(httpResponse, ProcessInvalidResponseFor(exception), cancellationToken);
+            return null;
+        }
         catch (BpmnConditionRefusedException exception)
         {
             await BpmnErrorResponse.SendAsync(httpResponse, ConditionRefusedResponseFor(exception), cancellationToken);
@@ -100,6 +105,10 @@ internal static class BpmnImportErrorResponses
     /// </summary>
     internal static BpmnErrorResponse PreconditionFailedResponseFor(BpmnDocumentPreconditionFailedException exception) =>
         BpmnErrorResponse.Create(exception.Message, BpmnErrorCodes.DocumentPreconditionFailed, StatusCodes.Status412PreconditionFailed);
+
+    /// <summary>The <see cref="BpmnErrorCodes.ImportProcessInvalid"/> response for <paramref name="exception"/>.</summary>
+    internal static BpmnErrorResponse ProcessInvalidResponseFor(BpmnProcessInvalidException exception) =>
+        BpmnErrorResponse.Create(exception.Message, BpmnErrorCodes.ImportProcessInvalid, StatusCodes.Status422UnprocessableEntity);
 
     /// <summary>The <see cref="BpmnErrorCodes.ImportBindingInvalid"/> response for <paramref name="exception"/>.</summary>
     internal static BpmnErrorResponse BindingInvalidResponseFor(BpmnBindingException exception) =>

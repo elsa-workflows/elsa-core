@@ -196,6 +196,22 @@ public class BpmnProcessTests(ITestOutputHelper testOutputHelper)
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
     }
 
+    [Fact(DisplayName = "A subprocess body that cannot run is refused before the process runs anything")]
+    public async Task SubprocessBodyThatCannotRun_IsRefusedBeforeAnythingRuns()
+    {
+        // The body's graph used to be built only when a token reached the subprocess, after "first" had already run.
+        // The root now builds every body it can reach before it starts.
+
+        // Act
+        var result = await _host.RunAsync(BpmnTestProcesses.SubprocessWithABodyThatCannotRun(_host.Log), typeof(FaultStrategy));
+
+        // Assert
+        Assert.Empty(_host.Log.Entries);
+        Assert.Equal(WorkflowSubStatus.Faulted, result.WorkflowState.SubStatus);
+        var incident = Assert.Single(result.WorkflowState.Incidents);
+        Assert.Contains("loopA", incident.Exception!.Message);
+    }
+
     [Fact(DisplayName = "A collection-mode multi-instance runs one instance per item of a container-scoped variable")]
     public async Task CollectionMultiInstance_ReadsTheScopeVariable()
     {
