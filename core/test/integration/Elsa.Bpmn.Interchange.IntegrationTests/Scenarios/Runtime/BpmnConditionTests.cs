@@ -44,6 +44,64 @@ public class BpmnConditionTests(ITestOutputHelper testOutputHelper) : IAsyncLife
         }
     }
 
+    [Theory(DisplayName = "A condition takes its flow when it evaluates to true, and leaves it to the default when false")]
+    [InlineData(true, "Yes")]
+    [InlineData(false, "No")]
+    public async Task BooleanCondition_Routes(bool value, string expectedTask)
+    {
+        // Arrange
+        var definitionId = await _host.ImportAndPublishAsync("expression-condition-input-value.bpmn");
+
+        // Act
+        var instanceId = await _host.StartAsync(definitionId, input: new Dictionary<string, object> { ["value"] = value });
+        var finished = await _host.WaitForAsync(instanceId, IsFinished);
+
+        // Assert
+        Assert.Equal(WorkflowSubStatus.Finished, finished.SubStatus);
+        var statuses = await _host.ActivityStatusesOfAsync(instanceId);
+        Assert.True(statuses.ContainsKey(WorkActivityId("condition-input-value", expectedTask)));
+    }
+
+    [Theory(DisplayName = "A condition that evaluates to something other than a boolean faults the process instead of choosing a flow")]
+    [InlineData(1)]
+    [InlineData("oops")]
+    [InlineData("true")]
+    public async Task NonBooleanCondition_FaultsTheProcess(object value)
+    {
+        // Arrange
+        var definitionId = await _host.ImportAndPublishAsync("expression-condition-input-value.bpmn");
+
+        // Act
+        var instanceId = await _host.StartAsync(definitionId, input: new Dictionary<string, object> { ["value"] = value });
+        var finished = await _host.WaitForAsync(instanceId, IsFinished);
+
+        // Assert: neither flow was taken.
+        Assert.Equal(WorkflowSubStatus.Faulted, finished.SubStatus);
+        var incident = Assert.Single(finished.Incidents);
+        Assert.StartsWith("bpmn.condition.failed", incident.Message);
+        Assert.Contains("not a boolean", incident.Message);
+
+        var statuses = await _host.ActivityStatusesOfAsync(instanceId);
+        Assert.False(statuses.ContainsKey(WorkActivityId("condition-input-value", "Yes")));
+        Assert.False(statuses.ContainsKey(WorkActivityId("condition-input-value", "No")));
+    }
+
+    [Fact(DisplayName = "A Liquid condition that renders the text true takes its flow")]
+    public async Task LiquidCondition_Routes()
+    {
+        // Arrange
+        var definitionId = await _host.ImportAndPublishAsync("expression-condition-liquid.bpmn");
+
+        // Act
+        var instanceId = await _host.StartAsync(definitionId);
+        var finished = await _host.WaitForAsync(instanceId, IsFinished);
+
+        // Assert
+        Assert.Equal(WorkflowSubStatus.Finished, finished.SubStatus);
+        Assert.Empty(finished.Incidents);
+        Assert.True((await _host.ActivityStatusesOfAsync(instanceId)).ContainsKey(WorkActivityId("condition-liquid", "Yes")));
+    }
+
     [Fact(DisplayName = "A condition that cannot be evaluated faults the process with the expression's error")]
     public async Task FailingCondition_FaultsTheProcess()
     {

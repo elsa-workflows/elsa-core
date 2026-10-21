@@ -83,17 +83,42 @@ internal sealed class BpmnScopeConditions(ActivityExecutionContext context) : IB
             return BpmnConditionResult.Failed(null, $"The condition on sequence flow '{request.FlowId}' is written in '{request.Language}', which Elsa does not evaluate.");
         }
 
+        object? value;
+
         try
         {
+            // Evaluated as object, not bool: converting to bool would turn 1 into true and 'oops' into false, and let a
+            // malformed condition choose a branch while the workflow reports success.
             var evaluator = context.GetRequiredService<IExpressionEvaluator>();
-            var holds = await evaluator.EvaluateAsync<bool>(new Expression(expressionType, request.Body), context.ExpressionExecutionContext);
-            return BpmnConditionResult.Of(holds);
+            value = await evaluator.EvaluateAsync(new Expression(expressionType, request.Body), typeof(object), context.ExpressionExecutionContext);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             return BpmnConditionResult.Failed(null, $"The condition on sequence flow '{request.FlowId}' could not be evaluated: {exception.Message}");
         }
+
+        return AsBoolean(value, expressionType) is { } holds
+            ? BpmnConditionResult.Of(holds)
+            : BpmnConditionResult.Failed(null, $"The condition on sequence flow '{request.FlowId}' evaluated to {Describe(value)}, not a boolean.");
     }
+
+    /// <summary>
+    /// The boolean a condition evaluated to, or <c>null</c> when it is not one. Liquid renders text, so a Liquid
+    /// condition answers with the text <c>true</c> or <c>false</c>; every other language must return a boolean.
+    /// </summary>
+    private static bool? AsBoolean(object? value, string expressionType) => value switch
+    {
+        bool boolean => boolean,
+        string text when string.Equals(expressionType, "Liquid", StringComparison.Ordinal) && bool.TryParse(text.Trim(), out var parsed) => parsed,
+        _ => null
+    };
+
+    private static string Describe(object? value) => value switch
+    {
+        null => "null",
+        string text => $"the text '{text}'",
+        _ => $"{value} ({value.GetType().Name})"
+    };
 }
 
 /// <summary>

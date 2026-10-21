@@ -288,9 +288,11 @@ asked, in what order, and what the answers mean for routing; Elsa only answers e
   condition that is not the default counts as true. An inclusive gateway and an activity take every flow whose
   condition holds, plus every flow with no condition. The default flow is taken only when nothing else is. Without one, the scope faults: a gateway with
   `bpmn.gateway.no-flow-selected`, any other element with `bpmn.flow.none-taken`.
+- **Result.** A condition must evaluate to a boolean; nothing is converted, so `1` or `'yes'` is not true. Liquid
+  renders text, so a Liquid condition answers with the text `true` or `false`.
 - **Failure.** A condition that throws or does not evaluate to a boolean faults its BPMN scope (the process or the
-  subprocess) with `bpmn.condition.failed`, naming the flow and the expression's error, which Elsa records as an
-  incident like any other fault.
+  subprocess) with `bpmn.condition.failed`, naming the flow and the expression's error or result, which Elsa records
+  as an incident like any other fault.
 
 `Import` and the document `PUT` refuse two kinds of condition, with `422 Unprocessable Entity`, before persisting
 anything. The check covers the whole document, including the bodies of nested subprocesses, `data.elementIds` lists
