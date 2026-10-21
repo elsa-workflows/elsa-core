@@ -157,10 +157,6 @@ async function verifyInteractiveStudioShell(page: Page): Promise<void> {
 async function openCompensationScope(page: Page): Promise<Locator> {
   const graph = page.locator('.flowchart-diagram-designer-wrapper .x6-graph');
   await graph.waitFor({ state: 'visible', timeout: 8_000 });
-  // The fixture drops the new scope at the canvas center, leaving this top-left margin empty.
-  // A normal click clears X6's creation selection box before the activity's double-click action.
-  await graph.click({ position: { x: 24, y: 24 } });
-
   const scopeType = page.locator('.flowchart-diagram-designer-wrapper .activity-type')
     .filter({ hasText: /^\s*Compensation\s+Scope\s*$/i })
     .first();
@@ -168,6 +164,10 @@ async function openCompensationScope(page: Page): Promise<Locator> {
     'xpath=ancestor-or-self::*[contains(concat(" ", normalize-space(@class), " "), " elsa-activity ")][1]'
   );
   await scopeActivity.waitFor({ state: 'visible', timeout: 8_000 });
+  // The trusted drop can finish after the graph first appears. Clicking early lets X6 select
+  // the new node afterward, restoring the selection box which intercepts the node double-click.
+  // This top-left margin is empty because the fixture drops the scope at the canvas center.
+  await graph.click({ position: { x: 24, y: 24 } });
   await scopeActivity.dblclick();
   const editor = page.getByRole('region', { name: 'Compensation draft editor', exact: true });
   await editor.waitFor({ state: 'visible', timeout: 8_000 });
