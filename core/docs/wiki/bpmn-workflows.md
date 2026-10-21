@@ -55,7 +55,9 @@ A root scope registers one workflow trigger per start event that declares how th
 
 A process whose start events are all plain (none) start events, which covers most Camunda models, registers no trigger at all. It is started directly, through the workflow execution API, and publishes like any other workflow without a trigger. `BpmnProcess` declares this to the trigger indexer through `TriggerIndexingContext.RegistersNoTriggers`, so the indexer does not store the `null`-payload placeholder it keeps for other triggers that return no payloads.
 
-When one of these triggers starts the workflow, the process begins at the start event that registered it, not at its plain start events. The runtime does not say which of the process's triggers fired, so the scope recovers it from the kind of trigger: an event stimulus (`PublishEvent` or `IEventPublisher`) selects the message and signal starts, and a scheduled start selects the timer starts. Start events of that kind that register the same stimulus are one trigger, and the process begins at the first of them. When start events of that kind register different stimuli, for example two message starts on different names, the process faults with `elsa.bpmn.start.ambiguous-trigger` instead of guessing; model each such start event as its own process (exact resolution is tracked in #8905). A process run directly, through the workflow execution API, still begins at its plain start events.
+When one of these triggers starts the workflow, the process begins at the start event that registered it, not at its plain start events. The runtime reports which stored trigger fired (`WorkflowExecutionContext.GetTriggerStimulusHash()`, see [Workflow Runtime](workflow-runtime.md#triggers-and-bookmarks)), and the scope begins at the start event whose registered stimulus has that hash, so two message starts on different names, or two timer starts on different intervals, each begin their own path. Message, signal and cron starts are matched by hashing the stimulus the start event registers; an interval timer's stored trigger carries the instant it was indexed, which is part of its hash, so its interval is read back from the stored trigger instead. Start events that register the same stimulus are one trigger, and the process begins at the first of them.
+
+A run that carries no trigger hash, because it was started directly with the process as its trigger activity or was dispatched before the runtime recorded the hash, falls back to the kind of trigger: an event stimulus (`PublishEvent` or `IEventPublisher`) selects the message and signal starts, and a scheduled start selects the timer starts. When start events of that kind register different stimuli, that fallback cannot tell them apart and the process faults with `elsa.bpmn.start.ambiguous-trigger` instead of guessing. A process run directly, through the workflow execution API, still begins at its plain start events.
 
 A start event that declares a message, signal or timer the scope cannot register, such as a timer whose interval is not a positive ISO-8601 duration, is logged and skipped. The scope's other start events still register. If that leaves the scope with nothing to register, publication fails with `Trigger should have a payload`, so the process is not published as though the start had never been declared. Nested scopes (subprocess and event-subprocess bodies, or a scope nested through a `Flowchart`) never register triggers of their own.
 
@@ -88,6 +90,30 @@ The ledger is serialized to JSON as part of the scope's `ActivityExecutionContex
 | `UnboundTask` | Task, user, service, script, manual or business rule task; a send or receive task without a resolvable message | Author-declared via `elsa:activityBinding` (see below) |
 
 BPMN describes *what* a task is for, not *how* to perform it. An unbound task gets its implementation from an `elsa:activityBinding` vendor extension inside the BPMN element's `<extensionElements>`. A send or receive task whose `messageRef` resolves to a named message is not unbound: it binds to `MessagePublish` or `MessageWait` like a message throw or catch event. `elsa:activityBinding` is accepted only on an unbound task; the binder refuses one on any other element, such as a gateway, an event, or a send or receive task bound to its message, because nothing would ever run it.
+
+### Call activity failure
+
+A waiting call activity takes its normal outgoing flow only when the called workflow finishes successfully. When the
+called workflow faults, the scope host reports the call activity's work as completed with
+`BpmnInterpreter.CallActivityFaultedOutcomeName`, and with `BpmnInterpreter.CallActivityCancelledOutcomeName` when its
+final sub-status is `Cancelled`. When the called workflow never starts because its activation strategy denies the new
+instance (the dispatch returns `CannotStart`), it reports `BpmnInterpreter.CallActivityDispatchFailedOutcomeName`. The
+interpreter routes that failure the way BPMN routes an error:
+
+1. an error boundary event attached to the call activity fires and its path is taken;
+2. otherwise the scope's error event subprocess starts;
+3. otherwise the process faults with `bpmn.call-activity.faulted` (or `bpmn.call-activity.cancelled`, or
+   `bpmn.call-activity.dispatch-failed`).
+
+Only call activities do this. `DispatchWorkflow` itself completes the same way whatever its child's sub-status, so a
+`Flowchart` that waits for a child still continues on `Done` after the child faults, and after its activation is denied,
+with `CannotStart` in its result. The scope host reads how the child ended, which `DispatchWorkflow` records when it
+resumes, instead.
+
+A child cancelled through the cancellation API resumes its waiting parent as well, and reaches this path with
+`BpmnInterpreter.CallActivityCancelledOutcomeName`.
+
+Test coverage: `test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Scenarios/Runtime/BpmnCallActivityTests.cs`.
 
 ## The `elsa:` Vendor Extension
 
@@ -194,9 +220,10 @@ restores it from the definition's stored BPMN source:
   stored body with it; nothing of that body is written back, not even under a new element that reuses its
   `bindingRef`. A subprocess element with no stored body — one this edit adds — is written as posted, empty.
 - The subprocess element itself is the posted one: its name, flags, boundary events and multi-instance marker come
-  from the document, and a changed or removed marker is written as posted. (`Bpmn.Interchange` 0.2.0 also keeps a
-  copy of an interpreted marker inside the body it reads; `PUT` drops that copy so it cannot override the posted
-  marker or pile up on every write. `Export` still writes that copy alongside the element's own marker.)
+  from the document, and a changed or removed marker is written as posted. (`Bpmn.Interchange` before 0.3.1 also kept a
+  copy of an interpreted marker inside the body it read, and `Export` wrote it alongside the element's own marker.
+  0.3.1 no longer keeps that copy; `PUT` still drops one if a stored body carries it, so it cannot override the
+  posted marker or pile up on every write.)
 - A subprocess element that has a stored body but no `bindingRef` is refused with `400 Bad Request` before anything
   is persisted: the writer attaches a body through the element's `bindingRef`, so writing it would silently empty
   the subprocess. Send each element back with the `bindingRef` `GET` returned.
