@@ -222,7 +222,7 @@ export function expressionCompletions(
       add(`getInput(${quote(i.name)})`, "workflow input", "function");
     }
     if ((language === "csharp" || language === "liquid") && identifier.test(i.name)) add(`Input.${i.name}`, "workflow input");
-    if (language === "csharp") add(`Input.Get(${quote(i.name)})`, "workflow input", "function");
+    if (language === "csharp") add(`Input.Get<object>(${quote(i.name)})`, "workflow input", "function");
     if (language === "python") add(`input.Get(${quote(i.name)})`, "workflow input", "function");
   }
   for (const a of activities) for (const o of a.outputs) {

@@ -58,6 +58,8 @@ test("C# highlights syntax and all three languages complete server members, inpu
   await expect(page.locator(".cm-line span").filter({ hasText: /^var$/ })).toBeVisible();
   await complete(page, "Variable.Customer.", "Variable.Customer.Name");
   await complete(page, "Input.Customer.", "Input.Customer.Name");
+  await complete(page, "Input.G", 'Input.Get<object>("Customer")');
+  await complete(page, 'Input.Get<object>("Cus|")', 'Input.Get<object>("Customer")');
   await complete(page, "someFunction(Variable.C", "Variable.Customer", "someFunction(Variable.Customer");
   await complete(page, "[Variable.C", "Variable.Customer", "[Variable.Customer");
   await complete(page, "Out", 'Output.From("Lookup", "Result")');

@@ -16,7 +16,11 @@ if (!/^[A-Z][A-Za-z0-9]*$/.test(options.name) || !/^[A-Za-z][A-Za-z0-9]*(?:\.[A-
   throw new Error("Use a PascalCase module name and a dot-separated C# company namespace.");
 const reserved = new Set("abstract as base bool break byte case catch char checked class const continue decimal default delegate do double else enum event explicit extern false finally fixed float for foreach goto if implicit in int interface internal is lock long namespace new null object operator out override params private protected public readonly ref return sbyte sealed short sizeof stackalloc static string struct switch this throw true try typeof uint ulong unchecked unsafe ushort using virtual void volatile while".split(" "));
 if (options.company.split(".").some(segment => reserved.has(segment))) throw new Error("Company namespace segments cannot be reserved C# keywords.");
-for (const key of ["studio-version", "npm-version"]) if (!/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(options[key])) throw new Error(`Invalid ${key}`);
+for (const key of ["studio-version", "npm-version"]) {
+  const match = options[key].match(/^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$/);
+  if (!match || match[4]?.split(".").some(identifier => /^\d+$/.test(identifier) && identifier.length > 1 && identifier.startsWith("0")))
+    throw new Error(`Invalid ${key}`);
+}
 if (existsSync(output) && readdirSync(output).length !== 0) throw new Error("Output must be a new or empty directory; existing files are never overwritten.");
 const kebab = options.name.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
 const companyId = options.company.toLowerCase().replaceAll(".", "-");
