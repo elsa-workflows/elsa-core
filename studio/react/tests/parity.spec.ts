@@ -8,7 +8,10 @@ async function editorFixture(page: Page) {
       { id: "alpha", nodeId: "root:alpha", type: "Elsa.WriteLine", version: 1, name: "Alpha1", metadata: { designer: { position: { x: 0, y: 0 } } } },
       { id: "beta", nodeId: "root:beta", type: "Elsa.WriteLine", version: 1, name: "Beta1", metadata: { designer: { position: { x: 280, y: 0 } } } },
     ], connections: [{ source: { activity: "alpha", port: "Done" }, target: { activity: "beta", port: "In" } }] } };
-  let versions = [{ ...definition, id: "version-one", version: 1, isLatest: false, isPublished: true }, { ...definition, id: "version-two", version: 2, isLatest: false }, definition];
+  const historical = { ...structuredClone(definition), id: "version-one", name: "Historical workflow", version: 1, isLatest: false, isPublished: true };
+  historical.root.activities = [{ id: "historical", type: "Elsa.WriteLine", version: 1, name: "HistoricalOnly", metadata: { designer: { position: { x: 0, y: 0 } } } }];
+  historical.root.connections = [];
+  let versions = [historical, { ...definition, id: "version-two", version: 2, isLatest: false }, definition];
   const deleted: string[] = [];
   await page.route("**/elsa/api/**", async route => {
     const request = route.request();
@@ -84,8 +87,16 @@ test("version viewing is read-only and deletion targets the selected draft versi
   await versions.getByRole("row").filter({ hasText: "v1" }).getByRole("button", { name: "View", exact: true }).click();
   await expect(page).toHaveURL(/version=1/);
   await expect(page.locator(".react-flow").first()).toBeVisible();
-  await expect(field(page.getByRole("tabpanel", { name: "Properties", exact: true }), "Name").getByRole("textbox")).toHaveAttribute("readonly", "");
+  const name = field(page.getByRole("tabpanel", { name: "Properties", exact: true }), "Name").getByRole("textbox");
+  await expect(name).toHaveAttribute("readonly", "");
+  await expect(name).toHaveValue("Historical workflow");
+  await expect(page.locator('.react-flow__node[data-id="historical"]')).toBeVisible();
+  await expect(page.locator('.react-flow__node[data-id="alpha"]')).toHaveCount(0);
   await page.goto("/studio-preview/workflows/definitions/parity/edit");
+  await expect(name).toHaveValue("Parity workflow");
+  await expect(name).not.toHaveAttribute("readonly", "");
+  await expect(page.locator('.react-flow__node[data-id="alpha"]')).toBeVisible();
+  await expect(page.locator('.react-flow__node[data-id="historical"]')).toHaveCount(0);
   await page.getByRole("tab", { name: "Versions", exact: true }).click();
   await page.getByRole("tabpanel", { name: "Versions", exact: true }).getByRole("row").filter({ hasText: "v2" }).getByRole("button", { name: "Delete", exact: true }).click();
   await page.getByRole("alertdialog").getByRole("button", { name: "Delete", exact: true }).click();
