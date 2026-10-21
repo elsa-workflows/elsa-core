@@ -79,3 +79,9 @@ resource file.
 Call-graph warnings retain their catalog key and interpolation values in the cached
 model. Tooltips and caller/callee counts translate when rendered, so switching
 culture updates an already loaded graph without fetching it again.
+
+Client validation messages update with the selected language even after validation
+has failed, including status-code inputs, task completion, alteration drafts,
+BPMN file selection and browser-storage recovery. Switching language preserves
+unsaved values and selected actions. Server-owned diagnostics and field labels
+remain as supplied by the server.

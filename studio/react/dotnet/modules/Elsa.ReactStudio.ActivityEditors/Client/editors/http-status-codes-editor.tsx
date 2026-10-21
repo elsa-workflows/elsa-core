@@ -10,7 +10,7 @@ import { LiteralControl } from "./literal-control";
 export function HttpStatusCodesEditor(props: UiHintEditorProps) {
   const _t = useTranslation();
   const [draft, setDraft] = useState("");
-  const [error, setError] = useState<string>();
+  const [invalid, setInvalid] = useState(false);
   return <LiteralControl props={props} syntax="Object">{({ value, onChange }) => {
     const items = statusCodes(value ?? props.descriptor.defaultValue);
     const write = (codes: number[]) => {
@@ -19,9 +19,9 @@ export function HttpStatusCodesEditor(props: UiHintEditorProps) {
     const commit = () => {
       if (!draft.trim()) return;
       const code = parseStatusCode(draft);
-      if (code === undefined) { setError(_t("Enter an HTTP status code from 100 to 599.")); return; }
+      if (code === undefined) { setInvalid(true); return; }
       write([...items, code]);
-      setDraft(""); setError(undefined);
+      setDraft(""); setInvalid(false);
     };
     return <div className="flex flex-col gap-2">
       <div className="flex flex-wrap gap-1">
@@ -30,10 +30,10 @@ export function HttpStatusCodesEditor(props: UiHintEditorProps) {
             onClick={() => write(items.filter(other => other !== code))}>×</button>}
         </Badge>)}
       </div>
-      {!props.readOnly && <Input value={draft} inputMode="numeric" aria-label={_t("New HTTP status code")} aria-invalid={!!error}
-        placeholder={_t("HTTP status code")} onChange={event => { setDraft(event.target.value); setError(undefined); }}
+      {!props.readOnly && <Input value={draft} inputMode="numeric" aria-label={_t("New HTTP status code")} aria-invalid={invalid}
+        placeholder={_t("HTTP status code")} onChange={event => { setDraft(event.target.value); setInvalid(false); }}
         onBlur={commit} onKeyDown={event => { if (event.key === "Enter" || event.key === ",") { event.preventDefault(); commit(); } }} />}
-      {error && <p role="alert">{error}</p>}
+      {invalid && <p role="alert">{_t("Enter an HTTP status code from 100 to 599.")}</p>}
     </div>;
   }}</LiteralControl>;
 }
