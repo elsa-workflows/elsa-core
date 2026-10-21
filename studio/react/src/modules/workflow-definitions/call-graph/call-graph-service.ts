@@ -1,6 +1,6 @@
-import type { Activity } from "@/lib/api/types/activities";
-import type { PagedList } from "@/lib/api/types/common";
-import type { WorkflowDefinition, WorkflowDefinitionSummary } from "@/lib/api/types/workflow-definitions";
+import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
+import type { PagedList } from "@elsa-workflows/react-studio-api-client/types/common";
+import type { WorkflowDefinition, WorkflowDefinitionSummary } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
 import { DEFAULT_CALL_GRAPH_CONFIG, type CallGraphConfig } from "./config";
 import { extractCallEdges } from "./edge-extractor";
 import type { CallGraph, CallGraphNode, CallGraphWarning } from "./types";

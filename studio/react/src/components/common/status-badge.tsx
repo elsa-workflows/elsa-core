@@ -1,6 +1,6 @@
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@elsa-workflows/react-studio-ui/badge";
 import { cn } from "@/lib/utils";
-import type { ActivityStatus, WorkflowStatus, WorkflowSubStatus } from "@/lib/api/types/workflow-instances";
+import type { ActivityStatus, WorkflowStatus, WorkflowSubStatus } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
 
 type Tone = "neutral" | "info" | "success" | "warning" | "danger";
 

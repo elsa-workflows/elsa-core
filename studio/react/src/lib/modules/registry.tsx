@@ -3,7 +3,7 @@
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { useStudioConfig } from "@/config/provider";
 import { useRemoteFeatures } from "@/lib/features/remote-features";
-import { usePermissions } from "@/lib/permissions";
+import { usePermissions } from "@elsa-workflows/react-studio-auth/permissions";
 import type { NavItem, StudioModule } from "./types";
 
 interface ModuleRegistryValue {

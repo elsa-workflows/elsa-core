@@ -1,5 +1,5 @@
-import type { Activity, Connection, Flowchart, Sequence, StateMachine } from "@/lib/api/types/activities";
-import { FLOWCHART_TYPE, isFlowchart, isSequence, isStateMachine, SEQUENCE_TYPE, STATE_MACHINE_TYPE } from "@/lib/api/types/activities";
+import type { Activity, Connection, Flowchart, Sequence, StateMachine } from "@elsa-workflows/react-studio-api-client/types/activities";
+import { FLOWCHART_TYPE, isFlowchart, isSequence, isStateMachine, SEQUENCE_TYPE, STATE_MACHINE_TYPE } from "@elsa-workflows/react-studio-api-client/types/activities";
 import { childActivities, findSlotOf, getSlot, isDesignableContainer, setSlot, type SlotPath } from "./containers";
 import { childNodeId, newActivityId } from "./ids";
 

@@ -1,9 +1,9 @@
 "use client";
 
 import { createStore, type StoreApi } from "zustand";
-import type { Activity, Connection, Flowchart, Sequence, StateMachine, StateMachineState, StateTransition } from "@/lib/api/types/activities";
-import { isFlowchart, isSequence, isStateMachine } from "@/lib/api/types/activities";
-import type { ActivityDescriptor } from "@/lib/api/types/descriptors";
+import type { Activity, Connection, Flowchart, Sequence, StateMachine, StateMachineState, StateTransition } from "@elsa-workflows/react-studio-api-client/types/activities";
+import { isFlowchart, isSequence, isStateMachine } from "@elsa-workflows/react-studio-api-client/types/activities";
+import type { ActivityDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
 import { childActivities, getSlot, setSlot, type SlotPath } from "./model/containers";
 import {
   cloneActivity,

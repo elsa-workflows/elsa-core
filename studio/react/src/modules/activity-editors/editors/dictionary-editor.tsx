@@ -1,8 +1,8 @@
 "use client";
 
 import { Plus, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Input } from "@elsa-workflows/react-studio-ui/input";
 import type { UiHintEditorProps } from "../types";
 import { ExpressionEditor } from "../expression-editor";
 import { OBJECT } from "../expression";

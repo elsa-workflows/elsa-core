@@ -1,7 +1,7 @@
 "use client";
 
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { DashboardRange } from "@/lib/modules/types";
+import { Tabs, TabsList, TabsTrigger } from "@elsa-workflows/react-studio-ui/tabs";
+import type { DashboardRange } from "@elsa-workflows/react-studio-sdk";
 
 export const DASHBOARD_RANGES: DashboardRange[] = ["1h", "24h", "7d"];
 

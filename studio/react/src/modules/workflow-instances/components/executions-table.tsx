@@ -5,9 +5,9 @@ import { JsonViewer } from "@/components/common/json-viewer";
 import { KeyValueTable } from "@/components/common/key-value-table";
 import { StatusBadge } from "@/components/common/status-badge";
 import { Timestamp } from "@/components/common/timestamp";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import type { ActivityExecutionRecord } from "@/lib/api/types/workflow-instances";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@elsa-workflows/react-studio-ui/sheet";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@elsa-workflows/react-studio-ui/table";
+import type { ActivityExecutionRecord } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
 import { elapsedMs, executionDisplayText, formatElapsed } from "../model";
 
 function Section({ title, value }: { title: string; value: unknown }) {

@@ -1,8 +1,8 @@
 "use client";
 
 import { LogOut, User } from "lucide-react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@elsa-workflows/react-studio-ui/avatar";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +11,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@elsa-workflows/react-studio-ui/dropdown-menu";
 import { useAuth } from "@/lib/auth/provider";
 import { useActiveServer } from "@/lib/environments/active-server";
 

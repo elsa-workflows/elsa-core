@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Activity } from "@/lib/api/types/activities";
-import { isFlowchart } from "@/lib/api/types/activities";
+import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
+import { isFlowchart } from "@elsa-workflows/react-studio-api-client/types/activities";
 import {
   ACTIVITY_CONTEXT_HANDLE,
   CONTEXT_BOX_ID,

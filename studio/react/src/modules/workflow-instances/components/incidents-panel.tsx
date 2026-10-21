@@ -3,8 +3,8 @@
 import { AlertTriangle, ChevronRight } from "lucide-react";
 import { EmptyState } from "@/components/common/empty-state";
 import { Timestamp } from "@/components/common/timestamp";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import type { WorkflowIncident } from "@/lib/api/types/workflow-instances";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@elsa-workflows/react-studio-ui/collapsible";
+import type { WorkflowIncident } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
 
 function stackOf(incident: WorkflowIncident) {
   return incident.exception?.stackTrace;

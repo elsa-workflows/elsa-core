@@ -1,5 +1,5 @@
 import { LayoutDashboard } from "lucide-react";
-import { defineModule, NavGroups } from "@/lib/modules/types";
+import { defineModule, NavGroups } from "@elsa-workflows/react-studio-sdk";
 import { DashboardPage } from "./pages/dashboard-page";
 import { builtInDashboardWidgets } from "./widgets";
 

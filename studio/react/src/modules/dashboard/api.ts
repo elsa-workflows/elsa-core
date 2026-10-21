@@ -1,5 +1,5 @@
-import type { HttpClient } from "@/lib/api/http";
-import type { DashboardRange } from "@/lib/modules/types";
+import type { HttpClient } from "@elsa-workflows/react-studio-api-client/http";
+import type { DashboardRange } from "@elsa-workflows/react-studio-sdk";
 
 /**
  * Endpoint group for `Elsa.Dashboard.Api` (`/dashboard/*`). Older servers do not ship it and answer

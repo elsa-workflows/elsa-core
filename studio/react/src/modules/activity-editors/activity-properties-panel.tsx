@@ -2,19 +2,19 @@
 
 import { createElement, useMemo, useState } from "react";
 import { Info } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@elsa-workflows/react-studio-ui/checkbox";
+import { Input } from "@elsa-workflows/react-studio-ui/input";
+import { ScrollArea } from "@elsa-workflows/react-studio-ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@elsa-workflows/react-studio-ui/tabs";
+import { Textarea } from "@elsa-workflows/react-studio-ui/textarea";
 import { Field } from "@/components/common/field";
 import { KeyValueTable } from "@/components/common/key-value-table";
 import { SimpleSelect } from "@/components/common/simple-select";
 import { EmptyState } from "@/components/common/empty-state";
 import { useExpressionDescriptors } from "@/lib/api/hooks/descriptors";
-import type { Activity, ActivityInput, Variable } from "@/lib/api/types/activities";
-import type { InputDescriptor, OutputDescriptor } from "@/lib/api/types/descriptors";
-import type { OutputDefinition } from "@/lib/api/types/workflow-definitions";
+import type { Activity, ActivityInput, Variable } from "@elsa-workflows/react-studio-api-client/types/activities";
+import type { InputDescriptor, OutputDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
+import type { OutputDefinition } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
 import { useExtensions } from "@/lib/modules/registry";
 import { useDesigner, useDesignerState } from "@/modules/designer/context";
 import { activityDisplayText } from "@/modules/designer/model/display";
@@ -37,6 +37,7 @@ function inputPropertyName(input: InputDescriptor) {
 export function ActivityPropertiesPanel({ workflowDefinitionId, variables, workflowOutputs, workflowInputs = [] }: ActivityPropertiesPanelProps) {
   const { registry, dataFlow } = useDesigner();
   const activity = useDesignerState((s) => s.selectedActivity());
+  const root = useDesignerState((s) => s.root);
   // Select stable references only (a fresh array from the selector would re-render forever).
   const containerActivities = useDesignerState((s) => s.children());
   const selectedId = useDesignerState((s) => s.selectedIds[0]);
@@ -142,7 +143,8 @@ export function ActivityPropertiesPanel({ workflowDefinitionId, variables, workf
           </TabsContent>
           {extraTabs.map((t) => (
             <TabsContent key={t.id} value={t.id} className="p-3">
-              <t.component />
+              <t.component activity={activity} context={{ root, selected: [activity], readOnly,
+                updateActivity: (id, patch) => updateActivity(id, current => ({ ...current, ...patch })) }} />
             </TabsContent>
           ))}
           <TabsContent value="info" className="flex flex-col gap-4 p-3">

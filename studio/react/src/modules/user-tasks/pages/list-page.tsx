@@ -3,9 +3,9 @@
 import { ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { useRouter } from "@/lib/navigation";
 import { useCallback, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Input } from "@elsa-workflows/react-studio-ui/input";
+import { Switch } from "@elsa-workflows/react-studio-ui/switch";
 import { DataTable, type DataTableColumn } from "@/components/common/data-table";
 import { ErrorAlert } from "@/components/common/error-alert";
 import { Field } from "@/components/common/field";

@@ -1,6 +1,6 @@
 import { Tag } from "lucide-react";
-import { defineModule, NavGroups } from "@/lib/modules/types";
-import { Resources, Verbs } from "@/lib/permissions";
+import { defineModule, NavGroups } from "@elsa-workflows/react-studio-sdk";
+import { Resources, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
 import { WorkflowLabelsTab } from "./components/workflow-labels-tab";
 import { LabelsPage } from "./pages/labels-page";
 

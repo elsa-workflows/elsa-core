@@ -22,3 +22,7 @@
 **/artifacts
 **/*.nupkg
 **/*.snupkg
+# React Studio builds these outputs inside its asset stage.
+studio/react/dist
+studio/react/packages/*/dist
+studio/react/docs/api

@@ -3,13 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "@/lib/navigation";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@elsa-workflows/react-studio-ui/dialog";
+import { Input } from "@elsa-workflows/react-studio-ui/input";
 import { CodeEditor } from "@/components/common/code-editor";
 import { Field } from "@/components/common/field";
 import { describeError } from "@/components/common/error-alert";
-import type { WorkflowDefinitionSummary } from "@/lib/api/types/workflow-definitions";
+import type { WorkflowDefinitionSummary } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
 import { useWorkflowDefinitionMutations } from "../hooks";
 
 /** Runs (dispatches) a published workflow with optional JSON input and a correlation id. */

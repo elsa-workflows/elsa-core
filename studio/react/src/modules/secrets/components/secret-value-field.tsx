@@ -1,8 +1,8 @@
 "use client";
 
 import { Field } from "@/components/common/field";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@elsa-workflows/react-studio-ui/input";
+import { Textarea } from "@elsa-workflows/react-studio-ui/textarea";
 
 const MULTILINE_HINTS = ["multiline", "multi-line", "pem", "certificate", "key", "json", "textarea"];
 

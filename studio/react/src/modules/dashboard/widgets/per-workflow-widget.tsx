@@ -1,6 +1,6 @@
 "use client";
 
-import type { DashboardRange } from "@/lib/modules/types";
+import type { DashboardRange } from "@elsa-workflows/react-studio-sdk";
 import { BarList } from "../components/bar-list";
 import { WidgetCard, WidgetEmpty } from "../components/widget-card";
 import { useInstancesPerWorkflow } from "../hooks";

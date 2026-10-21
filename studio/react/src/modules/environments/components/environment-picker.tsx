@@ -2,7 +2,7 @@
 
 import { Check, ChevronDown, Server } from "lucide-react";
 import { useMemo } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,7 +11,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@elsa-workflows/react-studio-ui/dropdown-menu";
 import { useStudioConfig } from "@/config/provider";
 import { useActiveServerStore } from "@/lib/environments/active-server";
 import { cn } from "@/lib/utils";

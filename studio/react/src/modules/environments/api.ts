@@ -1,4 +1,4 @@
-import type { HttpClient } from "@/lib/api/http";
+import type { HttpClient } from "@elsa-workflows/react-studio-api-client/http";
 
 /** An environment advertised by the server (`GET /environments`). The API names the URL `serverUrl`. */
 export interface ServerEnvironment {

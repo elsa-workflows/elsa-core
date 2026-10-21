@@ -2,9 +2,9 @@
 
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@elsa-workflows/react-studio-ui/dialog";
+import { Input } from "@elsa-workflows/react-studio-ui/input";
 import { Field } from "@/components/common/field";
 import { SimpleSelect } from "@/components/common/simple-select";
 import { ErrorAlert } from "@/components/common/error-alert";

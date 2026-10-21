@@ -1,5 +1,5 @@
-import type { HttpClient } from "@/lib/api/http";
-import type { TimestampFilter, WorkflowStatus, WorkflowSubStatus } from "@/lib/api/types/workflow-instances";
+import type { HttpClient } from "@elsa-workflows/react-studio-api-client/http";
+import type { TimestampFilter, WorkflowStatus, WorkflowSubStatus } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
 
 /**
  * Alteration types registered by `Elsa.Alterations`. Serialized polymorphically with a `type`

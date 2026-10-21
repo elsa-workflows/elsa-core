@@ -1,0 +1,32 @@
+{
+  "name": "@elsa-workflows/react-studio-sdk",
+  "version": "3.11.0",
+  "private": true,
+  "type": "module",
+  "description": "Elsa React Studio Preview sdk",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@elsa-workflows/react-studio-api-client": "workspace:*",
+    "zod": "^4.6.6"
+  },
+  "peerDependencies": {
+    "react": "^19.3.0",
+    "lucide-react": "^1.55.0"
+  }
+}

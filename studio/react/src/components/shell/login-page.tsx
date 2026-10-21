@@ -5,13 +5,13 @@ import { useEffect, useState, type FormEvent } from "react";
 import { ExternalLink, Loader2 } from "lucide-react";
 import { BrandLogo, BrandMark } from "./brand-mark";
 import { LoginIllustration } from "./login-illustration";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@elsa-workflows/react-studio-ui/card";
+import { Input } from "@elsa-workflows/react-studio-ui/input";
 import { Field } from "@/components/common/field";
 import { useStudioConfig } from "@/config/provider";
 import { useAuth } from "@/lib/auth/provider";
-import type { ElsaExternalAuthStrategy, LoginMethod } from "@/lib/auth/strategies/elsa-external";
+import type { ElsaExternalAuthStrategy, LoginMethod } from "@elsa-workflows/react-studio-auth/strategies/elsa-external";
 import { useActiveServer } from "@/lib/environments/active-server";
 import { FullPageSpinner } from "./full-page-spinner";
 

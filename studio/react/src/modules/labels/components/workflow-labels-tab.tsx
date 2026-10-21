@@ -3,10 +3,10 @@
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { describeError, ErrorAlert } from "@/components/common/error-alert";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label as FormLabel } from "@/components/ui/label";
-import { Resources, usePermission, Verbs } from "@/lib/permissions";
-import { useWorkflowEditor } from "@/modules/workflow-definitions/editor-context";
+import { Checkbox } from "@elsa-workflows/react-studio-ui/checkbox";
+import { Label as FormLabel } from "@elsa-workflows/react-studio-ui/label";
+import { Resources, usePermission, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
+import { useWorkflowEditor } from "@elsa-workflows/react-studio-sdk";
 import { useAllLabels, useDefinitionLabels, useSetDefinitionLabels } from "../hooks";
 import { LabelSwatch } from "./label-badge";
 

@@ -1,5 +1,5 @@
 import { GitBranch, ListOrdered, Workflow, type LucideIcon } from "lucide-react";
-import { FLOWCHART_TYPE, SEQUENCE_TYPE, STATE_MACHINE_TYPE } from "@/lib/api/types/activities";
+import { FLOWCHART_TYPE, SEQUENCE_TYPE, STATE_MACHINE_TYPE } from "@elsa-workflows/react-studio-api-client/types/activities";
 
 /**
  * The three container types a workflow — or any branch of one — can be built from.

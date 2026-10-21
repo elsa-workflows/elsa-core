@@ -1,8 +1,8 @@
 "use client";
 
 import { ChevronRight, Plus, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import type { Activity } from "@/lib/api/types/activities";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
 import { useDesigner } from "../context";
 import { activityDisplayText } from "../model/display";
 import { activityAccentColor } from "../model/icons";

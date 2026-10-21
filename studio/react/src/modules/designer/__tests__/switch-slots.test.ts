@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { Activity } from "@/lib/api/types/activities";
-import type { ActivityDescriptor } from "@/lib/api/types/descriptors";
+import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
+import type { ActivityDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
 import { cloneActivity, emptyFlowchart, indexActivities } from "../model/flowchart-ops";
 import { childActivities, findSlotOf, getSlot, listSlots, setSlot } from "../model/containers";
 

@@ -45,3 +45,8 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 /dotnet/**/wwwroot/
+
+# The root ignores NuGet packages/. These are authored npm workspace packages.
+!/packages/
+/packages/*/dist/
+/docs/api/

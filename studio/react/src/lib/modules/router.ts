@@ -28,16 +28,19 @@ export function matchPath(pattern: string, path: string): RouteParams | undefine
   return p.length === s.length ? params : undefined;
 }
 
-/** Resolves the first enabled module route that matches. Static segments win over parameters by declaration order. */
+/** Resolves enabled routes by explicit order and stable module/slot IDs. */
 export function resolveRoute(modules: StudioModule[], path: string): RouteMatch | undefined {
-  for (const mod of modules) {
-    for (const route of mod.routes ?? []) {
-      const params = matchPath(route.path, path);
-      if (params) return { module: mod, route, params };
-    }
+  const routes = modules.flatMap(module => (module.routes ?? []).map(route => ({ module, route })));
+  routes.sort((a, b) => (a.route.order ?? 0) - (b.route.order ?? 0) ||
+    compare(a.module.id, b.module.id) || compare(a.route.id ?? a.route.path, b.route.id ?? b.route.path));
+  for (const { module, route } of routes) {
+    const params = matchPath(route.path, path);
+    if (params) return { module, route, params };
   }
   return undefined;
 }
+
+function compare(a: string, b: string) { return a < b ? -1 : a > b ? 1 : 0; }
 
 /** Builds a concrete href from a pattern, e.g. `href("/workflows/definitions/:id/edit", { id })`. */
 export function href(pattern: string, params: RouteParams = {}) {

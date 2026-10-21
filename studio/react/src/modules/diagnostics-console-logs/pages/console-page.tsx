@@ -2,9 +2,9 @@
 
 import { Pause, Play, RefreshCw } from "lucide-react";
 import { useCallback, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Input } from "@elsa-workflows/react-studio-ui/input";
+import { Switch } from "@elsa-workflows/react-studio-ui/switch";
 import { ErrorAlert } from "@/components/common/error-alert";
 import { Field } from "@/components/common/field";
 import { PageHeader } from "@/components/common/page-header";

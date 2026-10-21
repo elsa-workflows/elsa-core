@@ -2,9 +2,9 @@
 
 import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Input } from "@elsa-workflows/react-studio-ui/input";
+import { Textarea } from "@elsa-workflows/react-studio-ui/textarea";
 import { Field } from "@/components/common/field";
 import { SimpleSelect } from "@/components/common/simple-select";
 import { AlterationTypes, type Alteration, type AlterationType } from "../api";

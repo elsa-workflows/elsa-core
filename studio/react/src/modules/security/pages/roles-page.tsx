@@ -8,8 +8,8 @@ import { DataTable, type DataTableColumn } from "@/components/common/data-table"
 import { describeError, ErrorAlert } from "@/components/common/error-alert";
 import { PageHeader } from "@/components/common/page-header";
 import { SearchInput } from "@/components/common/search-input";
-import { Button } from "@/components/ui/button";
-import { Resources, usePermission, Verbs } from "@/lib/permissions";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Resources, usePermission, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
 import type { IdentityRole, RoleDeletionImpact } from "../api";
 import { useDeleteRole, useRoleDeletionImpact, useRoles } from "../hooks";
 import { DeletionBlockedDialog } from "../components/deletion-blocked-dialog";

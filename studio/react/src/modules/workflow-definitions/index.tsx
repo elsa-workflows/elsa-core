@@ -1,6 +1,6 @@
 import { FileCode2, Workflow } from "lucide-react";
-import { defineModule, NavGroups } from "@/lib/modules/types";
-import { Resources, Verbs } from "@/lib/permissions";
+import { defineModule, NavGroups } from "@elsa-workflows/react-studio-sdk";
+import { Resources, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
 import { WorkflowDefinitionsListPage } from "./pages/list-page";
 import { WorkflowDefinitionEditorPage } from "./pages/editor-page";
 import { WorkflowDefinitionRoutes } from "./routes";

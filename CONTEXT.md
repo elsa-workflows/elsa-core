@@ -142,6 +142,17 @@ _Avoid_: Broker security invariant
 An Elsa-owned protection for the broker and its clients that connection administrators cannot weaken through Studio.
 _Avoid_: Provider Trust Setting
 
+## React Studio
+
+**Studio Module**:
+A React Studio feature that exports `register(api)` and contributes UI through the Preview SDK. Its lifetime owns its contributions and cleanup.
+
+**Contribution Slot**:
+A typed place where a Studio Module adds a route, navigation item, editor, panel, action or other UI. Contributions have stable IDs and explicit ordering.
+
+**Studio Module Manifest**:
+The server-provided identity, version, host/SDK API requirements and asset locations for a Studio Module. The host checks compatibility before importing its entry.
+
 ## User Tasks
 
 **User Task Definition**:

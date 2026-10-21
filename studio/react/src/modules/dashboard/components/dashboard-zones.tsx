@@ -2,7 +2,7 @@
 
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { ErrorAlert } from "@/components/common/error-alert";
-import type { DashboardRange, DashboardWidget, DashboardZone } from "@/lib/modules/types";
+import type { DashboardRange, DashboardWidget, DashboardZone } from "@elsa-workflows/react-studio-sdk";
 import { cn } from "@/lib/utils";
 
 /**

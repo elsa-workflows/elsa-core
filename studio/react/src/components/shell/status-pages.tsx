@@ -1,6 +1,6 @@
 import Link from "@/lib/navigation/link";
 import { ShieldAlert, SearchX } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
 
 export function AccessDenied({ message }: { message?: string }) {
   return (

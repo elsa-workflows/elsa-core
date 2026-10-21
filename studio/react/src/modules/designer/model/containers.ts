@@ -1,6 +1,6 @@
-import type { Activity, Flowchart, Sequence, StateMachine } from "@/lib/api/types/activities";
-import { FLOWCHART_TYPE, isFlowchart, isSequence, isStateMachine, SEQUENCE_TYPE, STATE_MACHINE_TYPE } from "@/lib/api/types/activities";
-import type { ActivityDescriptor } from "@/lib/api/types/descriptors";
+import type { Activity, Flowchart, Sequence, StateMachine } from "@elsa-workflows/react-studio-api-client/types/activities";
+import { FLOWCHART_TYPE, isFlowchart, isSequence, isStateMachine, SEQUENCE_TYPE, STATE_MACHINE_TYPE } from "@elsa-workflows/react-studio-api-client/types/activities";
+import type { ActivityDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
 
 /**
  * How an activity holds children, as elsa-core defines it:

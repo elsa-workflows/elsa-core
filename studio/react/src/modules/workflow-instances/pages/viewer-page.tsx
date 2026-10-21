@@ -11,15 +11,15 @@ import { useConfirm } from "@/components/common/confirm-dialog";
 import { describeError, ErrorAlert } from "@/components/common/error-alert";
 import { PageHeader } from "@/components/common/page-header";
 import { StatusBadge, ToneBadge } from "@/components/common/status-badge";
-import { Button } from "@/components/ui/button";
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { Activity } from "@/lib/api/types/activities";
-import type { ActivityExecutionStats, WorkflowInstance } from "@/lib/api/types/workflow-instances";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@elsa-workflows/react-studio-ui/resizable";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@elsa-workflows/react-studio-ui/tabs";
+import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
+import type { ActivityExecutionStats, WorkflowInstance } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
 import { href } from "@/lib/modules/router";
 import { useExtensions } from "@/lib/modules/registry";
-import type { ListActionHelpers, RouteParams } from "@/lib/modules/types";
-import { usePermissions, Resources, Verbs } from "@/lib/permissions";
+import type { ListActionHelpers, RouteParams } from "@elsa-workflows/react-studio-sdk";
+import { usePermissions, Resources, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
 import {
   createDesignerStore,
   DesignerSurface,

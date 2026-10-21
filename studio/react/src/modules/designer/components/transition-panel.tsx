@@ -2,12 +2,12 @@
 
 import { useMemo } from "react";
 import { Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Input } from "@elsa-workflows/react-studio-ui/input";
 import { Field } from "@/components/common/field";
 import { SimpleSelect } from "@/components/common/simple-select";
-import { isStateMachine, type ActivityInput } from "@/lib/api/types/activities";
-import type { InputDescriptor } from "@/lib/api/types/descriptors";
+import { isStateMachine, type ActivityInput } from "@elsa-workflows/react-studio-api-client/types/activities";
+import type { InputDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
 import { useExpressionDescriptors } from "@/lib/api/hooks/descriptors";
 import { ExpressionEditor } from "@/modules/activity-editors/expression-editor";
 import { selectableSyntaxes } from "@/modules/activity-editors/expression";

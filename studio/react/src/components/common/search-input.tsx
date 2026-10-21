@@ -2,8 +2,8 @@
 
 import { Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Input } from "@elsa-workflows/react-studio-ui/input";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { cn } from "@/lib/utils";
 
 /** Debounced search box; `onChange` fires after the user pauses typing. */

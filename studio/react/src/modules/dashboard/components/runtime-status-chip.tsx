@@ -1,5 +1,5 @@
 import { ToneBadge } from "@/components/common/status-badge";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@elsa-workflows/react-studio-ui/tooltip";
 import type { DashboardRuntimeStatus } from "../api";
 import type { DashboardCapability } from "../hooks";
 

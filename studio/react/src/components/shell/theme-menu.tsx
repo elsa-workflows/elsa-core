@@ -2,7 +2,7 @@
 
 import { Check, Monitor, Moon, Palette, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { Button } from "@/components/ui/button";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,8 +11,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+} from "@elsa-workflows/react-studio-ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@elsa-workflows/react-studio-ui/tooltip";
 import { ELSA_THEMES } from "@/lib/theme/elsa-theme";
 import { useElsaTheme } from "@/lib/theme/elsa-theme-provider";
 import { cn } from "@/lib/utils";

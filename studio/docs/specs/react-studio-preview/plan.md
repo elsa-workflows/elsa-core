@@ -88,3 +88,14 @@ without publishing. Local image build and non-root container sign-in, definition
 pass after configuring the build network’s trusted CA bundle. Production module extraction, SDK v1, opt-in CShells/server integration,
 parity work, publication and final source cutover remain open. See the
 [port verification checklist](../../../react/docs/vite-port-verification.md).
+
+## SDK extraction
+
+Four unpublished pnpm packages now own the Preview module contracts, shared UI,
+API client and authentication. The host and imported feature sources consume their
+public exports. Registration tests cover stable ordering, incompatible major
+versions, rollback, replacement, pending activation and cleanup; an external sample
+compiles and renders against four packed artifacts without host-source aliases.
+The generated TypeDoc reference is retained by frontend CI. The existing bundled
+renderer uses a temporary declarative adapter; physical RCL discovery, independent
+module ESM/CSS and new designer/editor slot renderers remain under #8845.

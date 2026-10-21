@@ -8,9 +8,9 @@ import { DataTable, type DataTableColumn } from "@/components/common/data-table"
 import { describeError, ErrorAlert } from "@/components/common/error-alert";
 import { PageHeader } from "@/components/common/page-header";
 import { SearchInput } from "@/components/common/search-input";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Resources, usePermission, Verbs } from "@/lib/permissions";
+import { Badge } from "@elsa-workflows/react-studio-ui/badge";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Resources, usePermission, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
 import type { IdentityUser } from "../api";
 import { useDeleteUser, useRoles, useUsers } from "../hooks";
 import { GeneratedPasswordDialog } from "../components/generated-password-dialog";

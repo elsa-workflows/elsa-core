@@ -1,8 +1,8 @@
 "use client";
 
 import { SimpleSelect } from "@/components/common/simple-select";
-import type { ActivityInput } from "@/lib/api/types/activities";
-import type { InputDescriptor } from "@/lib/api/types/descriptors";
+import type { ActivityInput } from "@elsa-workflows/react-studio-api-client/types/activities";
+import type { InputDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
 import { INPUT, VARIABLE } from "../expression";
 import type { UiHintContext } from "../types";
 

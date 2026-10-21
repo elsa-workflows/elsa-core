@@ -1,0 +1,24 @@
+{
+  "name": "@elsa-workflows/react-studio-api-client",
+  "version": "3.11.0",
+  "private": true,
+  "type": "module",
+  "description": "Elsa React Studio Preview api-client",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./*": {
+      "types": "./dist/*.d.ts",
+      "import": "./dist/*.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  }
+}

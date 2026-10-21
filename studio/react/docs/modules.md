@@ -58,7 +58,13 @@ one module contributes a section.
 
 ## Adding a module
 
-A module is a plain object created with `defineModule()`. Create `src/modules/<id>/` with this layout:
+New extensions use the [SDK v1 Preview](../packages/sdk/README.md) and export
+`register(api)`. The [weather sample](../samples/weather-module/entry.tsx) imports
+only the four public packages and is verified against packed artifacts by
+`pnpm test:packages`. Independent module asset/RCL discovery remains under #8845.
+
+The imported bundled modules use the SDK's transitional `defineModule()` adapter.
+Their source currently has this layout:
 
 ```
 src/modules/<id>/
@@ -83,14 +89,15 @@ export const labelsModule = defineModule({
 
 Then:
 
-1. Register it in [`src/modules/index.ts`](../src/modules/index.ts). Order matters: it decides route
-   resolution order.
+1. Register it in [`src/modules/index.ts`](../src/modules/index.ts). The adapter preserves
+   each module's route declaration priority. Explicit route `order` overrides it;
+   equal priorities use stable module and slot IDs, independent of load order.
 2. Add `"<id>": { "enabled": true }` to `studio.config.json`.
-3. If the module introduces a new permission resource, add it to `Resources` in `src/lib/permissions`.
+3. Use the permission types and checks from the public SDK/auth packages.
 
 ### Rules
 
-- Never add files under `src/app/` for a module. Routes are matched by the catch-all page through the
+- Routes are matched by the History API router through the
   module registry, so enabling or disabling a module is enough to add or remove its routes.
 - Cross-module UI goes through `extensions` and `useExtensions(kind)`. Never import another module's
   pages. Shared code belongs in `src/components/common` or `src/lib`.

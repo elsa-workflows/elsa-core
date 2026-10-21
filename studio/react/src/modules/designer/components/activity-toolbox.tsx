@@ -3,11 +3,11 @@
 import { useMemo, useState, type DragEvent } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { ChevronDown, ChevronRight, GripVertical, PanelLeftClose } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Input } from "@elsa-workflows/react-studio-ui/input";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@elsa-workflows/react-studio-ui/tooltip";
 import { cn } from "@/lib/utils";
-import type { ActivityDescriptor } from "@/lib/api/types/descriptors";
+import type { ActivityDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
 import { useDesigner } from "../context";
 import { activityAccentColor } from "../model/icons";
 import { ActivityIcon } from "./activity-icon";

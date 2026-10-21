@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useElsaClient, useQueryScope } from "@/lib/api/provider";
-import type { ListWorkflowDefinitionsArgs, SaveWorkflowDefinitionRequest, WorkflowDefinition } from "@/lib/api/types/workflow-definitions";
+import type { ListWorkflowDefinitionsArgs, SaveWorkflowDefinitionRequest, WorkflowDefinition } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
 
 export const definitionKeys = {
   all: (scope: string) => [scope, "workflow-definitions"] as const,

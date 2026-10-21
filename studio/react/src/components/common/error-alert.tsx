@@ -1,6 +1,6 @@
 import { AlertCircle } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ApiError } from "@/lib/api/http";
+import { Alert, AlertDescription, AlertTitle } from "@elsa-workflows/react-studio-ui/alert";
+import { ApiError } from "@elsa-workflows/react-studio-api-client/http";
 
 export function describeError(error: unknown): string {
   if (error instanceof ApiError) {

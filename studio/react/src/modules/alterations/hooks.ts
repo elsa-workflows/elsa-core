@@ -3,7 +3,7 @@
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { useElsaClient, useQueryScope } from "@/lib/api/provider";
-import { ApiError } from "@/lib/api/http";
+import { ApiError } from "@elsa-workflows/react-studio-api-client/http";
 import { useStudioConfig } from "@/config/provider";
 import {
   alterationsApi,

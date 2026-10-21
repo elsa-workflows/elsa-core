@@ -1,4 +1,4 @@
-import type { ActivityDescriptor } from "@/lib/api/types/descriptors";
+import type { ActivityDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
 
 /** Fast lookup over activity descriptors by type name (+ version). */
 export class ActivityRegistry {

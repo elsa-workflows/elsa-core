@@ -1,5 +1,5 @@
-import type { Activity } from "@/lib/api/types/activities";
-import type { WorkflowDefinition, WorkflowDefinitionSummary } from "@/lib/api/types/workflow-definitions";
+import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
+import type { WorkflowDefinition, WorkflowDefinitionSummary } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
 import type { CallGraphApi } from "../call-graph-service";
 import type { CallGraph, CallGraphNode } from "../types";
 

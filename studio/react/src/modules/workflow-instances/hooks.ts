@@ -3,16 +3,16 @@
 import { keepPreviousData, useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef } from "react";
 import { useStudioConfig } from "@/config/provider";
-import { ApiError } from "@/lib/api/http";
+import { ApiError } from "@elsa-workflows/react-studio-api-client/http";
 import { useElsaClient, useQueryScope } from "@/lib/api/provider";
-import type { JournalFilter } from "@/lib/api/endpoints/workflow-instances";
-import type { WorkflowDefinitionSummary } from "@/lib/api/types/workflow-definitions";
+import type { JournalFilter } from "@elsa-workflows/react-studio-api-client/endpoints/workflow-instances";
+import type { WorkflowDefinitionSummary } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
 import type {
   ActivityExecutionRecord,
   ActivityExecutionStats,
   ListWorkflowInstancesArgs,
   WorkflowExecutionLogRecord,
-} from "@/lib/api/types/workflow-instances";
+} from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
 import { statsFromRecords } from "./model";
 
 const JOURNAL_PAGE_SIZE = 100;

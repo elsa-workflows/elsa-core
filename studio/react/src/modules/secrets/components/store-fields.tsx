@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { Field } from "@/components/common/field";
 import { SimpleSelect } from "@/components/common/simple-select";
-import { Input } from "@/components/ui/input";
+import { Input } from "@elsa-workflows/react-studio-ui/input";
 import { storeFields, type SecretStoreDescriptor, type SecretStoreFieldDescriptor } from "../api";
 
 export interface StoreFieldsState {

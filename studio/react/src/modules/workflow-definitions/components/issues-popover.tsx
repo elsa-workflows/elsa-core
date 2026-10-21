@@ -1,8 +1,8 @@
 "use client";
 
 import { CircleCheck, Info, TriangleAlert } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@elsa-workflows/react-studio-ui/popover";
 import { cn } from "@/lib/utils";
 import { revealActivity, useDesigner, useDesignerState, validateWorkflow } from "@/modules/designer";
 import { useMemo } from "react";

@@ -2,11 +2,11 @@
 
 import Link from "@/lib/navigation/link";
 import { differenceInMilliseconds, parseISO } from "date-fns";
-import { Button } from "@/components/ui/button";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { StatusBadge } from "@/components/common/status-badge";
 import { Timestamp } from "@/components/common/timestamp";
-import type { DashboardRange } from "@/lib/modules/types";
-import type { WorkflowInstanceSummary } from "@/lib/api/types/workflow-instances";
+import type { DashboardRange } from "@elsa-workflows/react-studio-sdk";
+import type { WorkflowInstanceSummary } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
 import type { DashboardRecentActivityItem } from "../api";
 import { LinesSkeleton, SourceNote, WidgetCard, WidgetEmpty } from "../components/widget-card";
 import { formatDuration, parseTimeSpan, RANGE_LABELS } from "../format";

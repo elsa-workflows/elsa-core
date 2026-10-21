@@ -1,7 +1,7 @@
-import type { ElsaClient } from "@/lib/api/client";
-import type { PermissionResourceDescriptor } from "@/lib/api/endpoints/identity";
+import type { ElsaClient } from "@elsa-workflows/react-studio-api-client/client";
+import type { PermissionResourceDescriptor } from "@elsa-workflows/react-studio-api-client/endpoints/identity";
 
-export type { IdentityRole, IdentityUser, PermissionResourceDescriptor, RoleDeletionImpact } from "@/lib/api/endpoints/identity";
+export type { IdentityRole, IdentityUser, PermissionResourceDescriptor, RoleDeletionImpact } from "@elsa-workflows/react-studio-api-client/endpoints/identity";
 
 /**
  * The security module reuses the core identity endpoint group (`client.identity`); this function only

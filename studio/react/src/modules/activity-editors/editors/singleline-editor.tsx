@@ -1,6 +1,6 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
+import { Input } from "@elsa-workflows/react-studio-ui/input";
 import type { UiHintEditorProps } from "../types";
 import { ExpressionEditor } from "../expression-editor";
 

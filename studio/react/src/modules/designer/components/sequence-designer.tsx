@@ -2,9 +2,9 @@
 
 import { useMemo, useRef, useState, type DragEvent } from "react";
 import { ArrowDown, GripVertical, MousePointerClick, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { cn } from "@/lib/utils";
-import { isSequence, type Activity, type Sequence } from "@/lib/api/types/activities";
+import { isSequence, type Activity, type Sequence } from "@elsa-workflows/react-studio-api-client/types/activities";
 import { useDesigner, useDesignerState } from "../context";
 import { resolveContainer } from "../model/flowchart-ops";
 import { computePorts } from "../model/ports";

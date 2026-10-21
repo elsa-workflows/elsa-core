@@ -1,7 +1,7 @@
 "use client";
 
 import { ScrollText } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@elsa-workflows/react-studio-ui/card";
 import { ToneBadge } from "@/components/common/status-badge";
 import { useStructuredLogStorage } from "../hooks";
 
