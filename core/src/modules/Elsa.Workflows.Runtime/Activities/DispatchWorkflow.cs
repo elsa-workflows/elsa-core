@@ -237,7 +237,8 @@ public class DispatchWorkflow : Activity<object>
     }
 
     private static bool IsActivationDenial(ActivityExecutionContext context, IDictionary<string, object> input) =>
-        input.TryGetValue("CannotStart", out var cannotStart) && cannotStart is true
+        // Compared as text, like the sub-status above, so a value that came back through serialization still matches.
+        input.TryGetValue("CannotStart", out var cannotStart) && string.Equals(cannotStart?.ToString(), bool.TrueString, StringComparison.OrdinalIgnoreCase)
         && input.TryGetValue("WorkflowInstanceId", out var instanceId)
         && string.Equals(instanceId?.ToString(), context.GetProperty<string>(WaitedChildInstanceIdKey), StringComparison.Ordinal);
 
