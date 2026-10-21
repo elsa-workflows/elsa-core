@@ -6,6 +6,7 @@ using Elsa.Api.Client.Resources.Features.Models;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Workflows.DiagramDesigners.CompensationScopes;
 using Elsa.Studio.Workflows.Domain.Contracts;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
 using MudBlazor.Services;
@@ -49,9 +50,7 @@ public sealed class CompensationScopeDesignerCapabilityLifecycleTests : BunitCon
         cut.WaitForAssertion(() => Assert.NotNull(FindStepNameInput(cut)));
         var originalInputId = FindStepNameInputId(cut);
 
-        cut.Render(parameters => parameters
-            .Add(x => x.Activity, activity)
-            .Add(x => x.DocumentBackendContextKey, BackendContextKey));
+        var revalidation = SetParametersAsync(cut, activity, BackendContextKey);
         await secondCheckStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
         var inputDuringRevalidation = FindStepNameInput(cut);
@@ -61,11 +60,9 @@ public sealed class CompensationScopeDesignerCapabilityLifecycleTests : BunitCon
         Assert.Equal(originalInputId, FindStepNameInputId(cut));
 
         pendingCheck.SetResult(false);
-        cut.WaitForAssertion(() =>
-        {
-            Assert.DoesNotContain(cut.FindAll("label"), label => label.TextContent.Trim() == "Step name");
-            Assert.Contains("cannot verify safe native compensation draft authoring", cut.Markup, StringComparison.OrdinalIgnoreCase);
-        });
+        await revalidation;
+        Assert.DoesNotContain(cut.FindAll("label"), label => label.TextContent.Trim() == "Step name");
+        Assert.Contains("cannot verify safe native compensation draft authoring", cut.Markup, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -84,21 +81,16 @@ public sealed class CompensationScopeDesignerCapabilityLifecycleTests : BunitCon
         cut.WaitForAssertion(() => Assert.NotNull(FindStepNameInput(cut)));
         var originalInputId = FindStepNameInputId(cut);
 
-        cut.Render(parameters => parameters
-            .Add(x => x.Activity, activity)
-            .Add(x => x.DocumentBackendContextKey, BackendContextKey)
-            .Add(x => x.IsReadOnly, false));
+        var revalidation = SetParametersAsync(cut, activity, BackendContextKey);
         await secondCheckStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.Equal(originalInputId, FindStepNameInputId(cut));
         FindStepNameInput(cut).Change("Typed while checking");
         Assert.Equal("Typed while checking", activity["steps"]![0]!["name"]!.GetValue<string>());
 
         pendingCheck.SetResult(true);
-        cut.WaitForAssertion(() =>
-        {
-            Assert.Equal(originalInputId, FindStepNameInputId(cut));
-            Assert.Equal("Typed while checking", activity["steps"]![0]!["name"]!.GetValue<string>());
-        });
+        await revalidation;
+        Assert.Equal(originalInputId, FindStepNameInputId(cut));
+        Assert.Equal("Typed while checking", activity["steps"]![0]!["name"]!.GetValue<string>());
         Assert.DoesNotContain("cannot verify safe native compensation draft authoring", cut.Markup, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -117,18 +109,15 @@ public sealed class CompensationScopeDesignerCapabilityLifecycleTests : BunitCon
         var cut = RenderScope(activity, BackendContextKey);
         cut.WaitForAssertion(() => Assert.NotNull(FindStepNameInput(cut)));
 
-        cut.Render(parameters => parameters
-            .Add(x => x.Activity, activity)
-            .Add(x => x.DocumentBackendContextKey, BackendContextKey));
+        var obsoleteCheck = SetParametersAsync(cut, activity, BackendContextKey);
         await obsoleteRegistryLoadStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
-        cut.Render(parameters => parameters
-            .Add(x => x.Activity, activity)
-            .Add(x => x.DocumentBackendContextKey, BackendContextKey));
-        cut.WaitForAssertion(() => Assert.Equal(2, _featureProvider.FreshCheckCount));
+        var currentCheck = SetParametersAsync(cut, activity, BackendContextKey);
+        await currentCheck;
+        Assert.Equal(2, _featureProvider.FreshCheckCount);
 
         obsoleteRegistryLoad.SetResult();
-        await Task.Yield();
+        await obsoleteCheck;
         Assert.Equal(2, _featureProvider.FreshCheckCount);
         Assert.NotNull(FindStepNameInput(cut));
     }
@@ -148,24 +137,36 @@ public sealed class CompensationScopeDesignerCapabilityLifecycleTests : BunitCon
         var cut = RenderScope(activity, BackendContextKey);
         cut.WaitForAssertion(() => Assert.NotNull(FindStepNameInput(cut)));
 
-        cut.Render(parameters => parameters
-            .Add(x => x.Activity, activity)
-            .Add(x => x.DocumentBackendContextKey, BackendContextKey));
+        var obsoleteCheck = SetParametersAsync(cut, activity, BackendContextKey);
         await secondCheckStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
         _backend.ContextKey = "context-B";
-        cut.Render(parameters => parameters
-            .Add(x => x.Activity, activity)
-            .Add(x => x.DocumentBackendContextKey, BackendContextKey));
+        await SetParametersAsync(cut, activity, BackendContextKey);
         Assert.DoesNotContain(cut.FindAll("label"), label => label.TextContent.Trim() == "Step name");
 
         pendingCheck.SetResult(true);
-        await Task.Yield();
-        cut.WaitForAssertion(() =>
+        await obsoleteCheck;
+        Assert.DoesNotContain(cut.FindAll("label"), label => label.TextContent.Trim() == "Step name");
+        Assert.Contains("cannot verify safe native compensation draft authoring", cut.Markup, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(2, _featureProvider.FreshCheckCount);
+    }
+
+    [Fact]
+    public async Task FailedSameContextRecheckRevokesThePreviouslyVerifiedEditor()
+    {
+        _featureProvider = new TestFreshFeatureProvider((count, _) => count switch
         {
-            Assert.DoesNotContain(cut.FindAll("label"), label => label.TextContent.Trim() == "Step name");
-            Assert.Contains("cannot verify safe native compensation draft authoring", cut.Markup, StringComparison.OrdinalIgnoreCase);
+            1 => Task.FromResult(true),
+            _ => Task.FromException<bool>(new InvalidOperationException("Feature check failed."))
         });
+        var activity = CreateScope();
+        var cut = RenderScope(activity, BackendContextKey);
+        cut.WaitForAssertion(() => Assert.NotNull(FindStepNameInput(cut)));
+
+        await SetParametersAsync(cut, activity, BackendContextKey);
+
+        Assert.DoesNotContain(cut.FindAll("label"), label => label.TextContent.Trim() == "Step name");
+        Assert.Contains("cannot verify safe native compensation draft authoring", cut.Markup, StringComparison.OrdinalIgnoreCase);
         Assert.Equal(2, _featureProvider.FreshCheckCount);
     }
 
@@ -212,10 +213,7 @@ public sealed class CompensationScopeDesignerCapabilityLifecycleTests : BunitCon
                 break;
         }
 
-        cut.Render(parameters => parameters
-            .Add(x => x.Activity, activity)
-            .Add(x => x.DocumentBackendContextKey, documentContextKey)
-            .Add(x => x.IsReadOnly, isReadOnly));
+        var parameterUpdate = SetParametersAsync(cut, activity, documentContextKey, isReadOnly);
 
         Assert.DoesNotContain(cut.FindAll("label"), label => label.TextContent.Trim() == "Step name");
         if (change == "read-only")
@@ -224,6 +222,7 @@ public sealed class CompensationScopeDesignerCapabilityLifecycleTests : BunitCon
             pendingCheck.SetResult(true);
         }
 
+        await parameterUpdate;
         cut.WaitForAssertion(() =>
         {
             Assert.DoesNotContain(cut.FindAll("label"), label => label.TextContent.Trim() == "Step name");
@@ -286,6 +285,17 @@ public sealed class CompensationScopeDesignerCapabilityLifecycleTests : BunitCon
             .Add(x => x.Activity, activity)
             .Add(x => x.DocumentBackendContextKey, documentContextKey)
             .Add(x => x.IsReadOnly, isReadOnly));
+
+    private static Task SetParametersAsync(IRenderedComponent<CompensationScopeDesigner> cut, System.Text.Json.Nodes.JsonObject activity, string documentContextKey, bool isReadOnly = false)
+    {
+        var parameters = ParameterView.FromDictionary(new Dictionary<string, object?>
+        {
+            [nameof(CompensationScopeDesigner.Activity)] = activity,
+            [nameof(CompensationScopeDesigner.DocumentBackendContextKey)] = documentContextKey,
+            [nameof(CompensationScopeDesigner.IsReadOnly)] = isReadOnly
+        });
+        return cut.InvokeAsync(() => cut.Instance.SetParametersAsync(parameters));
+    }
 
     private static IElement FindStepNameInput(IRenderedComponent<CompensationScopeDesigner> cut)
     {
