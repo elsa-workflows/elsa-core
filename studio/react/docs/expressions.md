@@ -31,6 +31,14 @@ or Python. An unavailable endpoint, rejected permission or declaration larger th
 usable. The local suggestions reflect current editor state; server descriptions
 reflect the saved definition and the server's installed type providers.
 
+Input wrapper names preserve the input's exact case (`customer_id` uses
+`getcustomer_id()`). Cached declarations do not revive removed or renamed workflow
+wrappers. Because the server document does not identify function ownership, unknown
+`get*`/`set*` functions are omitted unless they match current workflow accessors or
+the server's stable common helpers. Custom providers can still offer other function
+names; omitted functions remain usable when typed manually. Generic CLR type names
+such as ``List`1`` are read in the same format emitted by the server.
+
 ## Performance check
 
 Run `pnpm benchmark:expressions` to reproduce the #8854 completion-generation

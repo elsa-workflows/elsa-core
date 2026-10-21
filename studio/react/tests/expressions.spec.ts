@@ -6,7 +6,7 @@ async function fixture(page: Page, unavailable = false) {
     if (route.request().url().includes("scripting/javascript/type-definitions/fixture")) {
       calls++;
       expect(route.request().postDataJSON()).toEqual({ activityTypeName: "Example.Activity", propertyName: "Value" });
-      await route.fulfill(unavailable ? { status: 503, json: { message: "Unavailable" } } : { contentType: "application/x-typescript", body: "declare class Customer {\nName: string;\n}\ndeclare function getServerValue(): string;" });
+      await route.fulfill(unavailable ? { status: 503, json: { message: "Unavailable" } } : { contentType: "application/x-typescript", body: "declare class Customer {\nName: string;\n}\ndeclare function lookupServerValue(): string;\ndeclare function getCustomerId(): Customer;" });
     } else await route.fulfill({ json: { items: [], totalCount: 0 } });
   });
   let originalEntry = "";
@@ -22,7 +22,7 @@ async function fixture(page: Page, unavailable = false) {
     import { createElement as h, useState } from "react";
     import { useExtensions } from "@elsa-workflows/react-studio-ui/runtime/module-registry";
     import { register as registerEditors } from ${JSON.stringify(originalEntry)};
-    const context = {workflowDefinitionId:"fixture",activityType:"Example.Activity",activityVersion:1,activity:{id:"activity"},variables:[{id:"customer",name:"customer",typeName:"Customer"}],outputs:[],inputs:[{name:"Customer",type:"Customer"}],activities:[{name:"Lookup",outputs:["Result"]}]};
+    const context = {workflowDefinitionId:"fixture",activityType:"Example.Activity",activityVersion:1,activity:{id:"activity"},variables:[{id:"customer",name:"customer",typeName:"Customer"}],outputs:[],inputs:[{name:"Customer",type:"Customer"},{name:"customer_id",type:"Customer"}],activities:[{name:"Lookup",outputs:["Result"]}]};
     function Fixture() {
       const hints = useExtensions("uiHints");
       const [value,setValue] = useState({typeName:"String",expression:{type:"CSharp",value:"var count = 1;"}});
@@ -40,14 +40,15 @@ async function fixture(page: Page, unavailable = false) {
   return () => calls;
 }
 
-async function complete(page: Page, prefix: string, label: string) {
+async function complete(page: Page, prefix: string, label: string, expected = label, beforeClosingParenthesis = false) {
   const editor = page.locator(".cm-content");
   await editor.fill(prefix);
+  if (beforeClosingParenthesis) await editor.press("ArrowLeft");
   await editor.press("Control+Space");
   const option = page.getByRole("option").filter({ has: page.getByText(label, { exact: true }) });
   await expect(option).toBeVisible();
   await option.click();
-  await expect(page.getByTestId("value")).toHaveText(label);
+  await expect(page.getByTestId("value")).toHaveText(expected);
 }
 
 test("C# highlights syntax and all three languages complete server members, inputs and outputs without refetching on edits", async ({ page }) => {
@@ -55,12 +56,15 @@ test("C# highlights syntax and all three languages complete server members, inpu
   await expect(page.locator(".cm-line span").filter({ hasText: /^var$/ })).toBeVisible();
   await complete(page, "Variable.Customer.", "Variable.Customer.Name");
   await complete(page, "Input.Customer.", "Input.Customer.Name");
+  await complete(page, "someFunction(Variable.C", "Variable.Customer", "someFunction(Variable.Customer");
+  await complete(page, "[Variable.C", "Variable.Customer", "[Variable.Customer");
   await complete(page, "Out", 'Output.From("Lookup", "Result")');
   await page.getByRole("button", { name: "JavaScript", exact: true }).click();
   await complete(page, "variables.customer.", "variables.customer.Name");
   await complete(page, "getIn", 'getInput("Customer")');
   await complete(page, "getOut", 'getOutputFrom("Lookup", "Result")');
-  await complete(page, "getServer", "getServerValue");
+  await complete(page, "someFunction(getcustomer_id().N)", "getcustomer_id().Name", "someFunction(getcustomer_id().Name)", true);
+  await complete(page, "lookupServer", "lookupServerValue");
   await page.getByRole("button", { name: "Python", exact: true }).click();
   await complete(page, "variables.customer.", "variables.customer.Name");
   await complete(page, "input.G", 'input.Get("Customer")');

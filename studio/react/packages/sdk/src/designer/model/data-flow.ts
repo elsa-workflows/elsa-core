@@ -218,7 +218,7 @@ export function expressionCompletions(
   }
   for (const i of inputs) {
     if (language === "javascript") {
-      if (identifier.test(i.name)) add(`get${pascal(i.name)}()`, "workflow input", "function");
+      if (identifier.test(i.name)) add(`get${i.name}()`, "workflow input", "function");
       add(`getInput(${quote(i.name)})`, "workflow input", "function");
     }
     if ((language === "csharp" || language === "liquid") && identifier.test(i.name)) add(`Input.${i.name}`, "workflow input");
