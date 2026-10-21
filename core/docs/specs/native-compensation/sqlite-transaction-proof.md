@@ -1,10 +1,25 @@
 # SQLite native commit transaction proof
 
-Status: bounded provider experiment; the focused four-case run passed at source head `e704c6fddbce8f76fab55af4e3d70b5cdc082268` using .NET SDK `10.0.300` and .NET runtime `10.0.8`. The measured test assets resolve EF Core, EF Core SQLite and Microsoft.Data.Sqlite.Core `10.0.9`. This report is not a provider qualification, a shipped compare-and-swap guarantee, or an E1/M1 pass.
+Status: bounded provider experiment; the latest focused four-case run passed at source head `825e15dcb41977aa8d7025564f746a3298f4f134` using .NET SDK `10.0.300` and .NET runtime `10.0.8`. The measured test assets resolve EF Core, EF Core SQLite and Microsoft.Data.Sqlite.Core `10.0.9`. This report is not a provider qualification, a shipped compare-and-swap guarantee, or an E1/M1 pass.
 
 ## Question and result so far
 
 This experiment asks whether a test-only adapter can make Elsa's existing `DefaultCommitStateHandler` commit its correctness-dependent writes through one EF Core SQLite connection and transaction, and whether a real zero-row final snapshot update then rolls earlier writes back. It also records the provider's native ambient-transaction behavior.
+
+### Current measurement at `825e15d` (attempt 10)
+
+The focused four-case command completed with 4 passed, 0 failed, 0 skipped (4 seconds test duration). The connection-pooling correction retained the same expected outcomes: shared transaction commit, shared transaction rollback on the real zero-row conflict, partial writes with the adapter disabled, and an unsupported ambient transaction that fails before writes.
+
+| Case | Fresh state before | Staged immediately before conditional update | Conditional update | Independent fresh state after |
+| --- | --- | --- | --- | --- |
+| Shared-transaction success | Data `6636F5240B6C99FEC5FE0AC72BE5B972DAF51102CE903C21E5F53A828B000DF2`; bookmarks 1, execution logs 6, activity records 4 | Same preimage hash; bookmarks 1 (staged bookmark identity differs, asserted), execution logs 12, activity records 6; DB transaction present, ambient absent | Expected preimage is the before-state hash; attempted Data `AC40D5825526008491A5A1DEA7BA98CF37C57B68A5A276869265093F7A6D36D6`; SQLite returned a row; callback `ReaderExecutingAsync` | Data `AC40D5825526008491A5A1DEA7BA98CF37C57B68A5A276869265093F7A6D36D6`; bookmarks 1, execution logs 12, activity records 6 |
+| Shared-transaction conflict rollback | Newer B Data `ACAE1C528A1FF78EE5CD741D43979A564CA17F9848F11B0E1C822A3DD8686523`; bookmarks 1, execution logs 6, activity records 4 | B's data hash unchanged; staged bookmark identity differs, execution logs 12, activity records 6; DB transaction present, ambient absent | Expected stale A `DC5E5CFC2C6E225116C8250DA22D5F1FE63F3FD783DE574538B9789E92C11D50`; attempted Data `AF41FD00FB3AD422A46B1DD5C6C8A0AD7B26A81891722F068EE9DCA23BAC8C1D`; SQLite returned zero rows; callback `ReaderExecutingAsync` | B's data hash unchanged; old bookmark identity and counts restored (1, 6, 4) |
+| Transaction-disabled conflict | Newer B Data `7A5FAEF612232F27361C7BC0B2C9D6BD3ACC47B09BF584C562FF24DE41CC982B`; bookmarks 1, execution logs 6, activity records 4 | B's data hash unchanged; staged bookmark identity differs, execution logs 12, activity records 6; no DB transaction, ambient absent | Expected stale A `091EF42458AED9B46B93494EE6F2DC4807BE5C6846D99F42BECF48CA0BC0F847`; attempted Data `0600BAB9A72D485196B8A71A8D1A5CD7F7BC1FDC09B1A30B37315B305E078DA1`; SQLite returned zero rows; callback `ReaderExecutingAsync` | B's data hash unchanged; replacement bookmark and partial log writes remain (1, 12, 6) |
+| Native ambient transaction | Workflow instances, bookmarks, execution logs, activity records: 0 | Initial commit stopped by EF Core `AmbientTransactionWarning`; no staged command snapshot | No final conditional update reached | Independent counts remain 0, 0, 0, 0 |
+
+The passing TRX is `/tmp/elsa-8936-825e-trx/sqlite-commit-proof-825e.trx` (SHA-256 `1818a8f2d8e23cb738f92dc428f816519bbc048f0b38a3da8f9fddac7cf681a3`); the console log is `/tmp/elsa-8936-sqlite-proof-test-825e.log` (SHA-256 `8de9bc9f2fc0af82a5ccd387c4993eac86a82e14380e3dece9614d857d940cfa`). Full conditional SQL and variable values remain in the raw artifacts only; no serialized state or database file is checked in.
+
+### Historical measurement at `e704c6f` (attempt 9)
 
 At source head `e704c6fddbce8f76fab55af4e3d70b5cdc082268`, the focused four-case command completed with 4 passed, 0 failed, 0 skipped (7 seconds test duration). Build succeeded with existing warnings in untouched Identity and Admission source. The success and real conditional-conflict cases observed shared-transaction participation and rollback; the transaction-disabled case demonstrated partial writes; the ambient case stopped at EF Core's unsupported-provider warning. The passing TRX retained these sanitized measurements:
 
@@ -17,7 +32,7 @@ At source head `e704c6fddbce8f76fab55af4e3d70b5cdc082268`, the focused four-case
 
 The code also independently reloads and asserts the built-in inline variable representation in each applicable case; variable values are intentionally omitted from retained output. Data hashes above are shortened for readability; full SQL and variable values are not copied into this report. The retained artifact is `/tmp/elsa-8936-e704-trx/sqlite-commit-proof-e704.trx` (SHA-256 `90f462ba4f7c76e69f2fd4e9a6d1c7cb5e28b67bf1ddc3b17da2d895814d4b91`); the console log is `/tmp/elsa-8936-sqlite-proof-test-e704.log` (SHA-256 `52f5a1f87507f7b20548d0aa0988c120fb8a9f2c704355c8ab3677fe12ed85a9`). These raw artifacts remain outside the repository because they contain full parameterized SQL, diagnostics/stack traces and local environment paths. Inspection of the matching-hash artifacts found no serialized workflow Data or variable values.
 
-The fixture now disables SQLite connection pooling so disposing its connections releases the temporary database file on platforms that retain pooled handles. This lifecycle correction postdates the measured `e704c6f` source and does not change or replace its recorded results. A new focused run at the corrected source head is pending as attempt 10; the prior nine logs and the `e704c6f` artifacts remain preserved.
+The fixture sets `Pooling=False` so provider-pooled handles do not remain after the fixture disposes its connections, addressing temporary-file deletion failures on Windows. Attempt 10 ran on the current macOS host; no Windows test is claimed. This lifecycle correction postdates and does not replace the historical `e704c6f` measurements. The nine prior logs and both earlier TRX artifacts remain preserved.
 
 ## Scope and method
 
@@ -57,6 +72,7 @@ All attempts are preserved under `/tmp/elsa-8936-sqlite-proof-test-*.log`. Earli
 | `bf0ac63` | `/tmp/elsa-8936-sqlite-proof-test-bf0ac63.log` | 3 passed, 0 failed after correcting the nested variable representation; no ambient test or retained numeric output yet. |
 | `c02308c` | `/tmp/elsa-8936-sqlite-proof-test-c02308c.log` | 4 passed, 0 failed in the focused filter; passing-test numeric output was not retained by the console logger. |
 | `e704c6f` | `/tmp/elsa-8936-sqlite-proof-test-e704.log`; TRX `/tmp/elsa-8936-e704-trx/sqlite-commit-proof-e704.trx` | 4 passed, 0 failed, 0 skipped; sanitized numeric measurements above retained by TRX. |
+| `825e15d` | `/tmp/elsa-8936-sqlite-proof-test-825e.log`; TRX `/tmp/elsa-8936-825e-trx/sqlite-commit-proof-825e.trx` | 4 passed, 0 failed, 0 skipped; pooling-disabled fixture and current measurements above. |
 
 The prior successful run used:
 
@@ -64,13 +80,19 @@ The prior successful run used:
 /Users/sipke/.local/share/dotnet-build-slots/bin/dotnet test core/test/integration/Elsa.Workflows.IntegrationTests/Elsa.Workflows.IntegrationTests.csproj --no-restore --filter FullyQualifiedName~SqliteCommitTransactionParticipation -m:1 -nologo
 ```
 
-The exact final command was:
+The attempt 9 command was:
 
 ```text
 /Users/sipke/.local/share/dotnet-build-slots/bin/dotnet test core/test/integration/Elsa.Workflows.IntegrationTests/Elsa.Workflows.IntegrationTests.csproj --no-restore --filter FullyQualifiedName~SqliteCommitTransactionParticipation -m:1 -nologo --logger 'trx;LogFileName=sqlite-commit-proof-e704.trx' --results-directory /tmp/elsa-8936-e704-trx
 ```
 
-The source candidate adds the output needed to retain those measurements through the TRX logger and fixes synchronous context disposal if transaction enlistment throws. No broad integration suite, full compensation matrix, or Studio journey is claimed.
+The attempt 10 command at source head `825e15dcb41977aa8d7025564f746a3298f4f134` was:
+
+```text
+/Users/sipke/.local/share/dotnet-build-slots/bin/dotnet test core/test/integration/Elsa.Workflows.IntegrationTests/Elsa.Workflows.IntegrationTests.csproj --no-restore --filter FullyQualifiedName~SqliteCommitTransactionParticipation -m:1 -nologo --logger 'trx;LogFileName=sqlite-commit-proof-825e.trx' --results-directory /tmp/elsa-8936-825e-trx
+```
+
+Attempt 9 added sanitized passing-output capture and synchronous context disposal if transaction enlistment throws. Attempt 10 changes only the fixture's SQLite pooling setting. No broad integration suite, full compensation matrix, or Studio journey is claimed.
 
 ## Disposition and next readiness gates
 
