@@ -140,6 +140,72 @@ public sealed class JsonActivitySerializerTests : IAsyncLifetime
         Assert.Equal(1, mapping.GetProperty("values")[0].GetProperty("items")[0].GetInt32());
     }
 
+    [Fact]
+    public void CompensationDraftPreservesWholeRawJsonWhenForwardAliasContainsUnavailablePin()
+    {
+        var step = $$"""{"stepId":"step-1","Forward":{{CreateWriteLineJson("forward-future", 99)}},"handler":null,"mappings":[]}""";
+        var json = CreateCompensationDraftJson(step);
+
+        AssertOpaqueCompensationDraftRoundTrips(json);
+    }
+
+    [Fact]
+    public void CompensationDraftPreservesWholeRawJsonWhenForwardAndForwardAliasConflict()
+    {
+        var step = $$"""{"stepId":"step-1","forward":{{CreateWriteLineJson("forward-pinned", 1)}},"Forward":{{CreateWriteLineJson("forward-future", 99)}},"handler":null,"mappings":[]}""";
+        var json = CreateCompensationDraftJson(step);
+
+        AssertOpaqueCompensationDraftRoundTrips(json);
+    }
+
+    [Fact]
+    public void CompensationDraftWithCaseAliasedTypeIsPreservedWholeAndOpaque()
+    {
+        var json = CreateCompensationDraftJson("\"stepId\":\"step-1\",\"forward\":null,\"handler\":null,\"mappings\":[]")
+            .Replace("\"type\":\"Elsa.CompensationScope\"", "\"Type\":\"Elsa.CompensationScope\"", StringComparison.Ordinal);
+
+        var restored = Assert.IsType<NotFoundActivity>(Serializer.Deserialize(json));
+
+        Assert.Equal(json, restored.OriginalActivityJson);
+        AssertOpaqueSerializedCompensationDraft(Serializer, restored, json);
+    }
+
+    [Theory]
+    [InlineData("draftSchemaVersion", "DraftSchemaVersion", "1", "2")]
+    [InlineData("onForwardFault", "OnForwardFault", "\"Compensated\"", "\"PropagateOriginalFault\"")]
+    [InlineData("stepId", "StepId", "\"step-1\"", "\"replacement-step\"")]
+    [InlineData("mappings", "Mappings", "[]", "[{\"mappingId\":\"future\"}]")]
+    public void CompensationDraftPreservesWholeRawJsonWhenKnownPropertyHasCaseAlias(string propertyName, string aliasName, string canonicalValue, string aliasValue)
+    {
+        const string step = "\"stepId\":\"step-1\",\"forward\":null,\"handler\":null,\"mappings\":[]";
+        var json = CreateCompensationDraftJson(step);
+        var ambiguousJson = AddCaseAlias(json, propertyName, aliasName, canonicalValue, aliasValue);
+
+        AssertOpaqueCompensationDraftRoundTrips(ambiguousJson);
+    }
+
+    [Theory]
+    [InlineData("type", "Type", "\"Elsa.WriteLine\"", "\"Elsa.FutureWriteLine\"")]
+    [InlineData("version", "Version", "1", "99")]
+    public void CompensationDraftPreservesWholeRawJsonWhenChildPinHasCaseAlias(string propertyName, string aliasName, string canonicalValue, string aliasValue)
+    {
+        var child = AddCaseAlias(CreateWriteLineJson("forward-1", 1), propertyName, aliasName, canonicalValue, aliasValue);
+        var step = $$"""{"stepId":"step-1","forward":{{child}},"handler":null,"mappings":[]}""";
+        var json = CreateCompensationDraftJson(step);
+
+        AssertOpaqueCompensationDraftRoundTrips(json);
+    }
+
+    [Fact]
+    public void OrdinaryActivityWithUnknownVersionStillUsesLatestFallback()
+    {
+        var json = "{\"id\":\"write-1\",\"type\":\"Elsa.WriteLine\",\"version\":99}";
+
+        var restored = Assert.IsType<WriteLine>(Serializer.Deserialize(json));
+
+        Assert.Equal(99, restored.Version);
+    }
+
     [Theory]
     [InlineData(false, true)]
     [InlineData(false, false)]
@@ -233,6 +299,40 @@ public sealed class JsonActivitySerializerTests : IAsyncLifetime
         Assert.Equal(expectedY, position.GetProperty("y").GetInt32());
     }
 
+    private void AssertOpaqueCompensationDraftRoundTrips(string json)
+    {
+        var activity = Assert.IsType<NotFoundActivity>(Serializer.Deserialize(json));
+        Assert.Equal(CompensationScope.ActivityTypeName, activity.MissingTypeName);
+        Assert.Equal(json, activity.OriginalActivityJson);
+
+        AssertOpaqueSerializedCompensationDraft(Serializer, activity, json);
+    }
+
+    private static void AssertOpaqueSerializedCompensationDraft(IActivitySerializer serializer, NotFoundActivity activity, string json)
+    {
+        var serialized = serializer.Serialize(activity);
+        using var document = JsonDocument.Parse(serialized);
+        Assert.Equal(json, document.RootElement.GetProperty("originalActivityJson").GetString());
+
+        var restored = Assert.IsType<NotFoundActivity>(serializer.Deserialize(serialized));
+        Assert.Equal(json, restored.OriginalActivityJson);
+    }
+
+    private static string CreateCompensationDraftJson(string stepJson) =>
+        $$"""{"id":"scope-1","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"onForwardFault":"Compensated","steps":[{{stepJson}}]}""";
+
+    private static string CreateWriteLineJson(string id, int version) =>
+        $$"""{"id":"{{id}}","type":"Elsa.WriteLine","version":{{version}}}""";
+
+    private static string AddCaseAlias(string json, string propertyName, string aliasName, string canonicalValue, string aliasValue)
+    {
+        var canonicalProperty = $"{JsonSerializer.Serialize(propertyName)}:{canonicalValue}";
+        var ambiguousProperty = $"{canonicalProperty},{JsonSerializer.Serialize(aliasName)}:{aliasValue}";
+        var ambiguousJson = json.Replace(canonicalProperty, ambiguousProperty, StringComparison.Ordinal);
+        Assert.NotEqual(json, ambiguousJson);
+        return ambiguousJson;
+    }
+
     [Theory]
     [InlineData("null")]
     [InlineData("\"future\"")]
@@ -298,16 +398,16 @@ public sealed class JsonActivitySerializerTests : IAsyncLifetime
         await using var producer = await CreatePinTestServicesAsync(1);
         await using var consumer = await CreatePinTestServicesAsync(1);
         var serializer = producer.GetRequiredService<IActivitySerializer>();
-        var json = ChangeOwnedMemberCase(serializer.Serialize(CreatePinTestScope(1, includeProperty: true, includeField: true, includeConditional: true)), includeProperty: true, includeField: true, includeConditional: true);
+        var json = serializer.Serialize(CreatePinTestScope(1, includeProperty: true, includeField: true, includeConditional: true));
         using var document = JsonDocument.Parse(json);
-        var holder = document.RootElement.GetProperty("steps")[0].GetProperty("forward").GetProperty("HOLDER");
+        var holder = document.RootElement.GetProperty("steps")[0].GetProperty("forward").GetProperty("holder");
 
-        Assert.Equal("Test.VersionedNestedActivity", holder.GetProperty("PRIVATEGETTERACTIVITY").GetProperty("type").GetString());
-        Assert.Equal(1, holder.GetProperty("PRIVATEGETTERACTIVITY").GetProperty("version").GetInt32());
-        Assert.Equal("Test.VersionedNestedActivity", holder.GetProperty("FIELDACTIVITY").GetProperty("type").GetString());
-        Assert.Equal(1, holder.GetProperty("FIELDACTIVITY").GetProperty("version").GetInt32());
-        Assert.Equal("Test.VersionedNestedActivity", holder.GetProperty("CONDITIONALACTIVITY").GetProperty("type").GetString());
-        Assert.Equal(1, holder.GetProperty("CONDITIONALACTIVITY").GetProperty("version").GetInt32());
+        Assert.Equal("Test.VersionedNestedActivity", holder.GetProperty("privateGetterActivity").GetProperty("type").GetString());
+        Assert.Equal(1, holder.GetProperty("privateGetterActivity").GetProperty("version").GetInt32());
+        Assert.Equal("Test.VersionedNestedActivity", holder.GetProperty("fieldActivity").GetProperty("type").GetString());
+        Assert.Equal(1, holder.GetProperty("fieldActivity").GetProperty("version").GetInt32());
+        Assert.Equal("Test.VersionedNestedActivity", holder.GetProperty("conditionalActivity").GetProperty("type").GetString());
+        Assert.Equal(1, holder.GetProperty("conditionalActivity").GetProperty("version").GetInt32());
 
         var restored = Assert.IsType<CompensationScope>(consumer.GetRequiredService<IActivitySerializer>().Deserialize(json));
         var restoredComposite = Assert.IsType<JsonIncludeActivityComposite>(Assert.Single(restored.Steps).Forward);
@@ -326,7 +426,6 @@ public sealed class JsonActivitySerializerTests : IAsyncLifetime
         await using var consumer = await CreatePinTestServicesAsync(1);
         var json = producer.GetRequiredService<IActivitySerializer>()
             .Serialize(CreatePinTestScope(2, includeProperty, includeField, includeConditional));
-        json = ChangeOwnedMemberCase(json, includeProperty, includeField, includeConditional);
 
         var restored = Assert.IsType<NotFoundActivity>(consumer.GetRequiredService<IActivitySerializer>().Deserialize(json));
 
@@ -334,6 +433,28 @@ public sealed class JsonActivitySerializerTests : IAsyncLifetime
         Assert.Equal(json, restored.OriginalActivityJson);
         Assert.IsType<NotFoundActivity>(consumer.GetRequiredService<IActivitySerializer>().Deserialize(
             consumer.GetRequiredService<IActivitySerializer>().Serialize(restored)));
+    }
+
+    [Theory]
+    [InlineData("holder", "HOLDER")]
+    [InlineData("privateGetterActivity", "PRIVATEGETTERACTIVITY")]
+    [InlineData("fieldActivity", "FIELDACTIVITY")]
+    [InlineData("conditionalActivity", "CONDITIONALACTIVITY")]
+    public async Task CompensationDraftPreservesWholeDraftWhenTypedOwnedMemberHasNoncanonicalCase(string propertyName, string aliasName)
+    {
+        await using var producer = await CreatePinTestServicesAsync(1);
+        await using var consumer = await CreatePinTestServicesAsync(1);
+        var json = producer.GetRequiredService<IActivitySerializer>()
+            .Serialize(CreatePinTestScope(1, includeProperty: true, includeField: true, includeConditional: true));
+        var aliasedJson = json.Replace($"\"{propertyName}\":", $"\"{aliasName}\":", StringComparison.Ordinal);
+        Assert.NotEqual(json, aliasedJson);
+
+        var serializer = consumer.GetRequiredService<IActivitySerializer>();
+        var restored = Assert.IsType<NotFoundActivity>(serializer.Deserialize(aliasedJson));
+
+        Assert.Equal(CompensationScope.ActivityTypeName, restored.MissingTypeName);
+        Assert.Equal(aliasedJson, restored.OriginalActivityJson);
+        AssertOpaqueSerializedCompensationDraft(serializer, restored, aliasedJson);
     }
 
     [Fact]
@@ -346,10 +467,12 @@ public sealed class JsonActivitySerializerTests : IAsyncLifetime
         var ambiguousJson = json.Replace("\"privateGetterActivity\":", "\"PRIVATEGETTERACTIVITY\":null,\"privateGetterActivity\":", StringComparison.Ordinal);
         Assert.NotEqual(json, ambiguousJson);
 
-        var restored = Assert.IsType<NotFoundActivity>(consumer.GetRequiredService<IActivitySerializer>().Deserialize(ambiguousJson));
+        var serializer = consumer.GetRequiredService<IActivitySerializer>();
+        var restored = Assert.IsType<NotFoundActivity>(serializer.Deserialize(ambiguousJson));
 
         Assert.Equal(CompensationScope.ActivityTypeName, restored.MissingTypeName);
         Assert.Equal(ambiguousJson, restored.OriginalActivityJson);
+        AssertOpaqueSerializedCompensationDraft(serializer, restored, ambiguousJson);
     }
 
     [Fact]
@@ -369,18 +492,6 @@ public sealed class JsonActivitySerializerTests : IAsyncLifetime
         Assert.Equal(child.Alias, restoredChild.Alias);
         Assert.Equal(child.Number, restoredChild.Number);
         Assert.Equal(child.RetainedNull, restoredChild.RetainedNull);
-    }
-
-    private static string ChangeOwnedMemberCase(string json, bool includeProperty, bool includeField, bool includeConditional = false)
-    {
-        json = json.Replace("\"holder\":", "\"HOLDER\":", StringComparison.Ordinal);
-        if (includeProperty)
-            json = json.Replace("\"privateGetterActivity\":", "\"PRIVATEGETTERACTIVITY\":", StringComparison.Ordinal);
-        if (includeField)
-            json = json.Replace("\"fieldActivity\":", "\"FIELDACTIVITY\":", StringComparison.Ordinal);
-        if (includeConditional)
-            json = json.Replace("\"conditionalActivity\":", "\"CONDITIONALACTIVITY\":", StringComparison.Ordinal);
-        return json;
     }
 
     [Fact]
