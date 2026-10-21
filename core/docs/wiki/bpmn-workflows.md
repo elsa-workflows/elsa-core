@@ -110,8 +110,8 @@ Only call activities do this. `DispatchWorkflow` itself completes the same way w
 with `CannotStart` in its result. The scope host reads how the child ended, which `DispatchWorkflow` records when it
 resumes, instead.
 
-A child cancelled through the cancellation API does not resume its waiting parent at all, so in practice only a
-faulted child or a denied activation reaches this path today.
+A child cancelled through the cancellation API resumes its waiting parent as well, and reaches this path with
+`BpmnInterpreter.CallActivityCancelledOutcomeName`.
 
 Test coverage: `test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Scenarios/Runtime/BpmnCallActivityTests.cs`.
 

@@ -6,6 +6,7 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Activities;
 using Elsa.Workflows.State;
@@ -17,8 +18,8 @@ namespace Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Runtime;
 
 /// <summary>
 /// A BPMN call activity, which the binder binds to <c>DispatchWorkflow</c> on its <c>calledElement</c>, run end to end
-/// against a real child workflow: waiting for the child, fire-and-forget, a child that faults, and a child whose
-/// activation is denied.
+/// against a real child workflow: waiting for the child, fire-and-forget, a child that faults, a child that is cancelled,
+/// and a child whose activation is denied.
 /// </summary>
 /// <remarks>
 /// The child blocks on an event of its own, so "the parent is waiting for it" is a state the test can observe before
@@ -142,6 +143,28 @@ public class BpmnCallActivityTests(ITestOutputHelper testOutputHelper) : IAsyncL
         Assert.Equal(typeof(BpmnScopeFaultException), incident.Exception?.Type);
         Assert.StartsWith(BpmnInterpreter.CallActivityFaultedFaultCode, incident.Message);
         Assert.False((await _host.ActivityStatusesOfAsync(parent)).ContainsKey(WorkActivityId("place-unguarded-order", "Confirm")));
+    }
+
+    [Fact(DisplayName = "A call activity whose called workflow is cancelled reports the cancelled outcome, which faults the process with no catcher")]
+    public async Task CallActivity_ChildCancelled_ReportsTheCancelledOutcome()
+    {
+        // Arrange: the parent is waiting on the call activity for its suspended child.
+        var definitionId = await _host.ImportAndPublishAsync("call-activity-wait.bpmn");
+        var parent = await _host.StartAsync(definitionId);
+        var child = await WaitForChildAsync(parent, IsSuspended);
+
+        // Act: cancel the child, the way the cancellation API does.
+        Assert.True(await _host.Services.GetRequiredService<IWorkflowCancellationService>().CancelWorkflowAsync(child));
+
+        // Assert: the child was cancelled, and the parent resumed with the call activity's cancelled outcome. Nothing
+        // catches it, so the process faulted with the cancelled fault code and never took the normal outgoing flow.
+        Assert.Equal(WorkflowSubStatus.Cancelled, (await _host.WaitForAsync(child, IsFinished)).SubStatus);
+
+        var finished = await _host.WaitForAsync(parent, IsFinished);
+        Assert.Equal(WorkflowSubStatus.Faulted, finished.SubStatus);
+        var incident = Assert.Single(finished.Incidents);
+        Assert.StartsWith(BpmnInterpreter.CallActivityCancelledFaultCode, incident.Message);
+        Assert.False((await _host.ActivityStatusesOfAsync(parent)).ContainsKey(WorkActivityId("place-order", "Confirm")));
     }
 
     [Fact(DisplayName = "A call activity whose called workflow's activation is denied routes the error boundary on the call activity instead of its normal flow")]

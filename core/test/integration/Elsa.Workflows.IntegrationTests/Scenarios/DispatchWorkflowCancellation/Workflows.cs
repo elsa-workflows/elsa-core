@@ -45,6 +45,19 @@ public class FinishingChildWorkflow : WorkflowBase
     }
 }
 
+/// <summary>A parent that dispatches <see cref="BlockingChildWorkflow"/>, waits for it, and finishes once it is resumed.</summary>
+public class DispatchAndWaitWorkflow : WorkflowBase
+{
+    protected override void Build(IWorkflowBuilder builder)
+    {
+        builder.Root = new DispatchWorkflow
+        {
+            WorkflowDefinitionId = new(nameof(BlockingChildWorkflow)),
+            WaitForCompletion = new(true)
+        };
+    }
+}
+
 /// <summary>
 /// A parent that dispatches <see cref="BlockingChildWorkflow"/> and waits for it on one fork branch, and blocks on a
 /// second branch the test resumes. The fork waits for any branch, so resuming the second one completes the fork and
