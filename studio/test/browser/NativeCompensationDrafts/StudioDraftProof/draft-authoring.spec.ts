@@ -386,9 +386,30 @@ test('native compensation draft persists two paired rows and refuses UI publish'
 
   await assertion('NC-DRAFT-LOGIN', 'normal-login-failed', async () => {
     await page.goto('/login');
-    await page.getByLabel('User name', { exact: true }).fill(adminUsername);
-    await page.getByLabel('Password', { exact: true }).fill(adminPassword);
-    await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+    const username = page.getByLabel('User name', { exact: true });
+    const password = page.getByLabel('Password', { exact: true });
+    const signIn = page.getByRole('button', { name: 'Sign in', exact: true });
+
+    // Prerendered fields are visible before the Server circuit can handle events. Empty-submit validation
+    // exercises the managed click path without reaching credential validation; wait for its DOM state.
+    await expect.poll(async () => {
+      const valuesBefore = [await username.inputValue(), await password.inputValue()];
+      if (valuesBefore.some(value => value !== ''))
+        return { valuesBefore, valuesAfter: valuesBefore, invalid: [null, null] };
+
+      await signIn.click();
+      const valuesAfter = [await username.inputValue(), await password.inputValue()];
+      const invalid = [await username.getAttribute('aria-invalid'), await password.getAttribute('aria-invalid')];
+      return { valuesBefore, valuesAfter, invalid };
+    }, {
+      message: 'Wait for interactive login validation before entering credentials',
+      timeout: 15_000,
+      intervals: [100, 250, 500]
+    }).toEqual({ valuesBefore: ['', ''], valuesAfter: ['', ''], invalid: ['true', 'true'] });
+
+    await username.fill(adminUsername);
+    await password.fill(adminPassword);
+    await signIn.click();
     await page.waitForURL(url => !url.pathname.endsWith('/login'), { timeout: 15_000 });
   });
 
