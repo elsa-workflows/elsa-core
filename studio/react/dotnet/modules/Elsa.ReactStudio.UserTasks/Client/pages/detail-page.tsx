@@ -46,10 +46,10 @@ function UserTaskDetailView({ taskId }: { taskId: string }) {
   const [dialog, setDialog] = useState<"complete" | "assign" | "cancel" | null>(null);
   const op = useUserTaskOperation(() => setDialog(null));
 
-  const run = async (variables: Parameters<typeof op.mutateAsync>[0], success: string) => {
+  const run = async (variables: Parameters<typeof op.mutateAsync>[0], success: () => string) => {
     try {
       const res = await op.mutateAsync(variables);
-      toast.success(res.status === "Accepted" ? translate("{{value0}} (processing in the background).", { value0: success }) : success);
+      toast.success(res.status === "Accepted" ? translate("{{value0}} (processing in the background).", { value0: success() }) : success());
       setDialog(null);
     } catch {
       // Already reported by the mutation's onError.
@@ -90,12 +90,12 @@ function UserTaskDetailView({ taskId }: { taskId: string }) {
         actions={
           <>
             {can("claim") && (
-              <Button size="sm" onClick={() => task && run({ op: "claim", taskId, expectedRevision: task.revision }, "Task claimed.")} disabled={op.isPending}>
+              <Button size="sm" onClick={() => task && run({ op: "claim", taskId, expectedRevision: task.revision }, () => translate("Task claimed."))} disabled={op.isPending}>
                 <Hand data-icon="inline-start" />
                 {_t("Claim")}</Button>
             )}
             {can("release") && (
-              <Button size="sm" variant="outline" onClick={() => task && run({ op: "release", taskId, expectedRevision: task.revision }, "Task released.")} disabled={op.isPending}>
+              <Button size="sm" variant="outline" onClick={() => task && run({ op: "release", taskId, expectedRevision: task.revision }, () => translate("Task released."))} disabled={op.isPending}>
                 <UserMinus data-icon="inline-start" />
                 {_t("Release")}</Button>
             )}
@@ -121,7 +121,7 @@ function UserTaskDetailView({ taskId }: { taskId: string }) {
                 disabled={op.isPending}
                 onClick={async () => {
                   if (task && (await confirm({ title: _t("Retry form resolution?"), description: task.healthCode ?? undefined })))
-                    run({ op: "retryResolution", taskId, expectedRevision: task.revision }, "Resolution retried.");
+                    run({ op: "retryResolution", taskId, expectedRevision: task.revision }, () => translate("Resolution retried."));
                 }}
               >
                 <RefreshCw data-icon="inline-start" />
@@ -279,7 +279,7 @@ function UserTaskDetailView({ taskId }: { taskId: string }) {
           open
           onOpenChange={(o) => !o && setDialog(null)}
           isPending={op.isPending}
-          onSubmit={(actionKey, data) => run({ op: "complete", taskId, expectedRevision: task.revision, actionKey, data }, "Task completed.")}
+          onSubmit={(actionKey, data) => run({ op: "complete", taskId, expectedRevision: task.revision, actionKey, data }, () => translate("Task completed."))}
         />
       )}
       {task && dialog === "assign" && (
@@ -288,11 +288,11 @@ function UserTaskDetailView({ taskId }: { taskId: string }) {
           onOpenChange={(o) => !o && setDialog(null)}
           isPending={op.isPending}
           participantPicker={!!capabilities?.participantPicker}
-          onSubmit={(assignee, reason) => run({ op: "assign", taskId, expectedRevision: task.revision, assignee, reason }, `Task assigned to ${participantLabel(assignee)}.`)}
+          onSubmit={(assignee, reason) => run({ op: "assign", taskId, expectedRevision: task.revision, assignee, reason }, () => translate("Task assigned to {{participant}}.", { participant: participantLabel(assignee) }))}
         />
       )}
       {task && dialog === "cancel" && (
-        <CancelTaskDialog open onOpenChange={(o) => !o && setDialog(null)} isPending={op.isPending} onSubmit={(reason) => run({ op: "cancel", taskId, expectedRevision: task.revision, reason }, "Task cancelled.")} />
+        <CancelTaskDialog open onOpenChange={(o) => !o && setDialog(null)} isPending={op.isPending} onSubmit={(reason) => run({ op: "cancel", taskId, expectedRevision: task.revision, reason }, () => translate("Task cancelled."))} />
       )}
     </div>
   );

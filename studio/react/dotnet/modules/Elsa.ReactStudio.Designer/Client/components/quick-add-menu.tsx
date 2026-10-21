@@ -178,7 +178,7 @@ function QuickAddPanel({
         <CommandList className="max-h-none h-[calc(100%-2.75rem)]">
           <CommandEmpty>{_t("No activities match.")}</CommandEmpty>
           {!query && recent.length > 0 && (
-            <CommandGroup heading="Recently used">
+            <CommandGroup heading={_t("Recently used")}>
               {recent.map((d) => (
                 <Item key={`recent-${d.typeName}`} d={d} onSelect={() => pick(d)} />
               ))}

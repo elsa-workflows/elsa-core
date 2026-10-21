@@ -65,7 +65,9 @@ Built-in resources live in `packages/sdk/src/locales/en.json` and `nl.json` and 
 inside the SDK tarball. Run `pnpm localization:extract` after adding translation
 calls or marked metadata, then translate the new Dutch entries. Run
 `pnpm localization:check` to reject missing/empty entries, mismatched interpolation,
-unused entries and unexternalized JSX text/display attributes. This check covers
+unused entries, unexternalized JSX text/display attributes and direct toast literals.
+The check does not follow arbitrary callback/dictionary data flow; those display
+paths still require review. This check covers
 the client-owned interface, not server-provided messages or external modules.
 
 The starting Dutch catalog reused nonempty matching entries from
