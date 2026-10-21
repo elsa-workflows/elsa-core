@@ -39,11 +39,10 @@ public static class BpmnErrorCodes
 
     /// <summary>
     /// <c>bpmn/import</c> and the document <c>PUT</c> refuse a document whose sequence flows carry a standard BPMN
-    /// <c>conditionExpression</c> — anywhere in it, subprocess bodies included — because nothing evaluates those
-    /// expressions yet: the reader turns each such flow into an unconditional one, so the imported workflow would route
-    /// differently from its diagram. A flow conditional on an outcome through the library's own
-    /// <c>conditionOutcome</c> attribute is unaffected. Unlike other import findings, no opt-in overrides this refusal.
-    /// <c>bpmn/analyze</c> keeps reporting these flows as findings without refusing. Carries <c>data.elementIds</c>
+    /// <c>conditionExpression</c> — anywhere in it, subprocess bodies included — because nothing in Elsa evaluates
+    /// those expressions yet, so the imported workflow could not route as its diagram says. A flow conditional on an
+    /// outcome through the library's own <c>conditionOutcome</c> attribute is unaffected. Unlike other import findings,
+    /// no opt-in overrides this refusal. <c>bpmn/analyze</c> does not refuse. Carries <c>data.elementIds</c>
     /// (the offending sequence flow ids, sorted and distinct).
     /// </summary>
     public const string ImportConditionUnsupported = "bpmn.import.condition-unsupported";

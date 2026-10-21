@@ -287,9 +287,11 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     }
 
     [Fact]
-    public async Task Analyze_OfADocumentWithExpressionConditions_ReturnsOkAndStillReportsTheDegradedFindings()
+    public async Task Analyze_OfADocumentWithExpressionConditions_ReturnsOkWithoutDegradingTheFlows()
     {
-        // Analyze is a preview: it reports what an import would cost and never refuses for it.
+        // Analyze is a preview: it reports what an import would cost and never refuses for it. Since Bpmn.Interchange
+        // 0.4.0 the reader keeps an expression condition on the model instead of dropping it, so it no longer reports
+        // the flows as Degraded; import refuses them while nothing in Elsa evaluates them.
         using var content = new MultipartFormDataContent();
         AddBpmnFile(content, ReadAsset("expression-condition.bpmn"), "file");
 
@@ -297,11 +299,10 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        var degradedFlowIds = document.RootElement.GetProperty("issues").EnumerateArray()
+        var degradedElementIds = document.RootElement.GetProperty("issues").EnumerateArray()
             .Where(issue => issue.GetProperty("severity").GetString() == "Degraded")
-            .Select(issue => issue.GetProperty("elementId").GetString())
-            .Order(StringComparer.Ordinal);
-        Assert.Equal(new[] { "f2", "f3" }, degradedFlowIds);
+            .Select(issue => issue.GetProperty("elementId").GetString());
+        Assert.Empty(degradedElementIds);
     }
 
     [Fact]

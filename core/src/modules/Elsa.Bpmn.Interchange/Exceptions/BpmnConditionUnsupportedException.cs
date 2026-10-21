@@ -5,8 +5,8 @@ namespace Elsa.Bpmn.Interchange.Exceptions;
 /// deployment evaluates yet.
 /// </summary>
 /// <remarks>
-/// <c>Bpmn.Interchange</c> reads such a flow as unconditional and reports it only as a Degraded finding, so importing the
-/// document would persist a workflow that routes differently from its diagram on every run. Per
+/// Nothing in Elsa evaluates such an expression yet, so importing the document would persist a workflow that cannot
+/// route as its diagram says. Per
 /// <c>docs/adr/2026-10-20-elsa-evaluates-bpmn-conditions.md</c> the document is refused instead, and no opt-in overrides
 /// the refusal, until the library's condition-evaluation callback lets Elsa evaluate the expressions itself.
 /// </remarks>

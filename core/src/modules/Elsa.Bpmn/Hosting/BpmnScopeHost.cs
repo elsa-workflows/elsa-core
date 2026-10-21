@@ -110,7 +110,10 @@ internal sealed class BpmnScopeHost
         var outcomeNames = result is Outcomes outcomes ? outcomes.Names : CallActivityOutcomeNames(record, childContext);
 
         return Interpreter.OnWorkCompleted(new BpmnWorkCompletedRequest(
-            Graph, memory.State, Snapshot(memory), record.BindingRef, record.Handle, outcomeNames, record.IterationId));
+            Graph, memory.State, Snapshot(memory), record.BindingRef, record.Handle, outcomeNames, record.IterationId)
+        {
+            WorkTokenId = record.TokenId
+        });
     });
 
     /// <summary>A nested scope this one invoked signalled outward.</summary>
@@ -137,7 +140,10 @@ internal sealed class BpmnScopeHost
                 return null;
 
             return Interpreter.OnWorkSignalled(new BpmnWorkSignalledRequest(
-                Graph, memory.State, Snapshot(memory), record.BindingRef, record.Handle, signal.Code, signal.Payload, record.IterationId));
+                Graph, memory.State, Snapshot(memory), record.BindingRef, record.Handle, signal.Code, signal.Payload, record.IterationId)
+            {
+                WorkTokenId = record.TokenId
+            });
         });
     }
 
@@ -162,15 +168,21 @@ internal sealed class BpmnScopeHost
         memory.Work.Remove(record);
         memory.SaveWork();
 
+        // The iteration and the token id name the failed unit among several live instances of one binding: without
+        // either, the interpreter refuses a fault it cannot pin on exactly one of them.
         var evaluation = Interpreter.OnWorkFaulted(new BpmnWorkFaultedRequest(
-            Graph, memory.State, Snapshot(memory), record.BindingRef, record.Handle, signal.Exception.Message));
+            Graph, memory.State, Snapshot(memory), record.BindingRef, record.Handle, signal.Exception.Message)
+        {
+            FaultedIterationId = record.IterationId,
+            WorkTokenId = record.TokenId
+        });
 
         ProjectDiagnostics(evaluation.State, memory.State);
 
         memory.State = evaluation.State.Prune();
         memory.SaveState();
 
-        if (evaluation.Disposition is not BpmnErrorDisposition.Caught)
+        if (evaluation.ErrorDisposition is not BpmnErrorDisposition.Caught)
             return;
 
         signalContext.StopPropagation();

@@ -302,8 +302,8 @@ internal static partial class BpmnTestProcesses
         return RefusedEventSubprocessScope("two-start-events", log, ("evtSub", body, "handleError"));
     }
 
-    /// <summary>Two error-triggered event subprocesses in one scope, which the library refuses.</summary>
-    public static BpmnProcess TwoErrorEventSubprocesses(BpmnTestLog log)
+    /// <summary>Two code-less catch-all error-triggered event subprocesses in one scope, which the library refuses.</summary>
+    public static BpmnProcess TwoCatchAllErrorEventSubprocesses(BpmnTestLog log)
     {
         BpmnProcessDefinition Body(string prefix) => new BpmnProcessBuilder($"{prefix}-error-event-subprocess-body")
             .Element(EventSubprocessStart($"{prefix}Start", Error()))
@@ -313,7 +313,7 @@ internal static partial class BpmnTestProcesses
             .Build();
 
         return RefusedEventSubprocessScope(
-            "two-error-event-subprocesses",
+            "two-catch-all-error-event-subprocesses",
             log,
             ("evtSubA", Body("first"), "firstHandle"),
             ("evtSubB", Body("second"), "secondHandle"));

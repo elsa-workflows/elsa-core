@@ -70,6 +70,39 @@ internal static partial class BpmnTestProcesses
         return Scope("scope", definition, nested, Immediate("after", log), Immediate("subRecover", log));
     }
 
+    /// <summary>
+    /// A task that fails inside an embedded subprocess, with an error boundary event on the task inside the body. The
+    /// root runs two tasks before the subprocess, so the subprocess's own tokens and the root's are numbered apart: a
+    /// catcher found through the root's token instead of the body's would miss (valence-works/bpmn#32).
+    /// </summary>
+    public static BpmnProcess ErrorBoundaryInsideSubprocess(BpmnTestLog log)
+    {
+        var body = new BpmnProcessBuilder("error-boundary-inside-subprocess-body")
+            .StartEvent("subStart")
+            .Task("subRisky", bindingRef: BindingRef("subRisky"))
+            .EndEvent("subEnd")
+            .BoundaryEvent("subRiskyOops", attachedTo: "subRisky", eventDefinition: new BpmnEventDefinition(BpmnEventDefinitionTypes.Error))
+            .Task("subRecover", bindingRef: BindingRef("subRecover"))
+            .EndEvent("subRecovered")
+            .ConnectSequence("subStart", "subRisky", "subEnd")
+            .ConnectSequence("subRiskyOops", "subRecover", "subRecovered")
+            .Build();
+
+        var definition = new BpmnProcessBuilder("error-boundary-inside-subprocess")
+            .StartEvent("start")
+            .Task("first", bindingRef: BindingRef("first"))
+            .Task("second", bindingRef: BindingRef("second"))
+            .SubProcess("sub", bindingRef: BindingRef("sub"))
+            .Task("after", bindingRef: BindingRef("after"))
+            .EndEvent("end")
+            .ConnectSequence("start", "first", "second", "sub", "after", "end")
+            .Build();
+
+        var nested = Scope("sub", body, Faulting("subRisky", log), Immediate("subRecover", log));
+
+        return Scope("scope", definition, Immediate("first", log), Immediate("second", log), nested, Immediate("after", log));
+    }
+
     /// <summary>A task that fails with nothing to catch it.</summary>
     public static BpmnProcess UncaughtError(BpmnTestLog log)
     {
