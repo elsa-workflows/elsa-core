@@ -13,6 +13,10 @@ internal sealed class NativeCommitWorkflow : WorkflowBase
         {
             Activities =
             {
+                new SetVariable<string>(value, "created")
+                {
+                    Id = "SetInitialValue"
+                },
                 new Event("first") { Id = "FirstEvent" },
                 new SetVariable<string>(value, "resumed")
                 {

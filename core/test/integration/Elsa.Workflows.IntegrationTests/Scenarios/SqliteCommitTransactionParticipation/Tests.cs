@@ -65,7 +65,7 @@ public sealed class Tests(ITestOutputHelper output)
         Assert.Contains(commit.CorrectnessWrites, write => write.Table == "WorkflowExecutionLogRecords");
         AssertBookmarkDiffPrecedesSnapshotUpdate(commit);
         Assert.Equal(before.DataHash, commit.ConditionalUpdateExpectedDataHash);
-        Assert.Contains(commit.ConditionalUpdate!.Method, new[] { "ReaderExecutingAsync", "NonQueryExecutingAsync" });
+        AssertConditionalUpdateCommand(output, commit.ConditionalUpdate!, before.DataHash, fixture.Commands.ExpectedDataParameterName);
         AssertResumeSnapshotUpdatesUseExpectedData(fixture.Commands.GetResumeCommitAttempts(), before.DataHash);
         Assert.True(fixture.TransactionState.ConditionalUpdateRowsAffected is > 0);
         Assert.Equal(fixture.TransactionState.CommittedTransactions, fixture.TransactionState.CompletedTransactions);
@@ -90,6 +90,7 @@ public sealed class Tests(ITestOutputHelper output)
 
         fixture.Commands.ArmConditionalSnapshotUpdate(initial.Data);
         var (result, error) = await fixture.TryResumeAsync(started);
+        WriteResumeCommandObservations(output, fixture.Commands.GetResumeCommitAttempts());
         var after = await fixture.ReadSnapshotAsync(started.State.Id);
         var survivor = await fixture.ReadWorkflowStateAsync(started.State.Id);
 
@@ -113,11 +114,10 @@ public sealed class Tests(ITestOutputHelper output)
         Assert.Contains(commit.CorrectnessWrites, write => write.ContextType == typeof(RuntimeElsaDbContext));
         AssertBookmarkDiffPrecedesSnapshotUpdate(commit);
         Assert.Equal(initial.DataHash, commit.ConditionalUpdateExpectedDataHash);
-        Assert.Contains("\"Data\"", commit.WorkflowInstanceUpdateSql, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("WorkflowInstances", commit.WorkflowInstanceUpdateSql, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("TenantId", commit.WorkflowInstanceUpdateSql, StringComparison.OrdinalIgnoreCase);
         Assert.Contains(commit.ParameterNames, parameter => string.Equals(parameter, fixture.Commands.ExpectedDataParameterName, StringComparison.OrdinalIgnoreCase));
-        Assert.Contains(commit.ConditionalUpdate!.Method, new[] { "ReaderExecutingAsync", "NonQueryExecutingAsync" });
+        AssertConditionalUpdateCommand(output, commit.ConditionalUpdate!, initial.DataHash, fixture.Commands.ExpectedDataParameterName);
         AssertResumeSnapshotUpdatesUseExpectedData(fixture.Commands.GetResumeCommitAttempts(), initial.DataHash);
         Assert.Equal(1, fixture.TransactionState.RolledBackTransactions);
     }
@@ -136,6 +136,7 @@ public sealed class Tests(ITestOutputHelper output)
         fixture.Commands.ArmConditionalSnapshotUpdate(initial.Data);
 
         var (result, error) = await fixture.TryResumeAsync(started);
+        WriteResumeCommandObservations(output, fixture.Commands.GetResumeCommitAttempts());
         var after = await fixture.ReadSnapshotAsync(started.State.Id);
         var survivor = await fixture.ReadWorkflowStateAsync(started.State.Id);
 
@@ -156,6 +157,7 @@ public sealed class Tests(ITestOutputHelper output)
         Assert.False(commit.AllCorrectnessWritesUsedSharedConnectionAndTransaction);
         AssertBookmarkDiffPrecedesSnapshotUpdate(commit);
         Assert.Equal(initial.DataHash, commit.ConditionalUpdateExpectedDataHash);
+        AssertConditionalUpdateCommand(output, commit.ConditionalUpdate!, initial.DataHash, fixture.Commands.ExpectedDataParameterName);
         AssertResumeSnapshotUpdatesUseExpectedData(fixture.Commands.GetResumeCommitAttempts(), initial.DataHash);
         Assert.Equal(0, fixture.TransactionState.RolledBackTransactions);
     }
@@ -168,6 +170,25 @@ public sealed class Tests(ITestOutputHelper output)
 
         Assert.True(deleteIndex >= 0 && insertIndex >= 0 && updateIndex > deleteIndex && updateIndex > insertIndex,
             "The final workflow snapshot write must follow both the bookmark delete and insert commands.");
+    }
+
+    private static void AssertConditionalUpdateCommand(ITestOutputHelper output, SqliteCommitCommandInterceptor.CommandObservation command, string expectedDataHash, string expectedDataParameterName)
+    {
+        Assert.Equal(expectedDataHash, command.ExpectedDataHash);
+        Assert.Contains($"\"Data\" = {expectedDataParameterName}", command.Sql, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(command.CallbackMethods, method => method is "ReaderExecutingAsync" or "NonQueryExecutingAsync");
+        output.WriteLine($"Conditional update command {command.CommandId}, context {command.ContextType?.FullName}, callbacks: {string.Join(", ", command.CallbackMethods)}");
+        output.WriteLine($"Conditional update SQL: {command.Sql}");
+    }
+
+    private static void WriteResumeCommandObservations(ITestOutputHelper output, IEnumerable<SqliteCommitCommandInterceptor.CommitObservation> commits)
+    {
+        foreach (var command in commits.SelectMany(commit => commit.CorrectnessWrites)
+                     .Where(write => write.Table == "WorkflowInstances" && write.Sql.TrimStart().StartsWith("UPDATE", StringComparison.OrdinalIgnoreCase)))
+        {
+            output.WriteLine($"Workflow snapshot command {command.CommandId}, context {command.ContextType?.FullName}, callbacks: {string.Join(", ", command.CallbackMethods)}, expected Data hash: {command.ExpectedDataHash}");
+            output.WriteLine($"Workflow snapshot SQL: {command.Sql}");
+        }
     }
 
     private static void AssertResumeSnapshotUpdatesUseExpectedData(IEnumerable<SqliteCommitCommandInterceptor.CommitObservation> commits, string expectedDataHash)
@@ -234,14 +255,23 @@ internal sealed class NativeCommitFixture : IAsyncDisposable
             services.AddSingleton(transactionState);
             services.AddSingleton(connection);
 
+            // The combined management EF feature fans its options callback into three EF registrations.
+            // Configure the stores separately so the interceptor is attached only to instance writes.
             services.AddElsa(elsa => elsa
                 .UseScheduling()
-                .UseWorkflowManagement(management => management.UseEntityFrameworkCore(persistence =>
-                {
-                    persistence.UseSqlite(connectionString);
-                    persistence.DbContextOptionsBuilder = (_, options) => options.UseSqlite(connection).AddInterceptors(commands);
-                    persistence.RunMigrations = false;
-                }))
+                .UseWorkflowManagement(management => management
+                    .UseWorkflowDefinitions(definitions => definitions.UseEntityFrameworkCore(persistence =>
+                    {
+                        persistence.UseSqlite(connectionString);
+                        persistence.DbContextOptionsBuilder = (_, options) => options.UseSqlite(connection);
+                        persistence.RunMigrations = false;
+                    }))
+                    .UseWorkflowInstances(instances => instances.UseEntityFrameworkCore(persistence =>
+                    {
+                        persistence.UseSqlite(connectionString);
+                        persistence.DbContextOptionsBuilder = (_, options) => options.UseSqlite(connection).AddInterceptors(commands);
+                        persistence.RunMigrations = false;
+                    })))
                 .UseWorkflows()
                 .UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore(persistence =>
                 {
@@ -265,11 +295,15 @@ internal sealed class NativeCommitFixture : IAsyncDisposable
             // The registry population queries management stores, so create both schemas first.
             await using (var management = await serviceProvider.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>().CreateDbContextAsync())
             {
+                Assert.True(management.IsTenantFilteringEnabled);
+                Assert.Equal(TenantId, management.TenantId);
                 await management.Database.ExecuteSqlRawAsync(management.Database.GenerateCreateScript());
             }
 
             await using (var runtime = await serviceProvider.GetRequiredService<IDbContextFactory<RuntimeElsaDbContext>>().CreateDbContextAsync())
             {
+                Assert.True(runtime.IsTenantFilteringEnabled);
+                Assert.Equal(TenantId, runtime.TenantId);
                 await runtime.Database.ExecuteSqlRawAsync(runtime.Database.GenerateCreateScript());
             }
 
@@ -596,7 +630,6 @@ internal sealed class SqliteCommitCommandInterceptor : DbCommandInterceptor
     private long _commitAttemptId;
     private long _activeCommitAttemptId;
     private long _resumeFirstCommitAttemptId;
-    private readonly List<CommandObservation> _commands = [];
     private readonly Dictionary<long, CommitObservation> _commits = [];
 
     public long LastCommitAttemptId => _commitAttemptId;
@@ -673,10 +706,16 @@ internal sealed class SqliteCommitCommandInterceptor : DbCommandInterceptor
             var expectedData = _expectedData;
             if (expectedData != null && (ConditionalUpdateWasApplied || current.BookmarkDeleteSeen && current.BookmarkInsertSeen))
             {
-                AddExpectedDataPredicate(command, expectedData);
+                EnsureExpectedDataPredicate(command, expectedData);
+                var boundExpectedData = GetExpectedDataParameterValue(command);
+                if (!string.Equals(boundExpectedData, expectedData, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException("The SQLite update predicate parameter did not match the expected canonical state.");
+                }
+
                 ConditionalCommitAttemptId = ConditionalCommitAttemptId == 0 ? current.Id : ConditionalCommitAttemptId;
                 ConditionalUpdateWasApplied = true;
-                expectedDataHash = Hash(expectedData);
+                expectedDataHash = Hash(boundExpectedData);
                 current.ConditionalUpdateExpectedDataHash ??= expectedDataHash;
             }
 
@@ -687,13 +726,27 @@ internal sealed class SqliteCommitCommandInterceptor : DbCommandInterceptor
 
         if (current != null && table is "Bookmarks" or "WorkflowInstances" or "ActivityExecutionRecords" or "WorkflowExecutionLogRecords")
         {
-            var observation = new CommandObservation(current.Id, table, method, eventData.Context?.GetType(), command.Connection, command.Transaction, command.CommandText, expectedDataHash);
-            _commands.Add(observation);
-            current.CorrectnessWrites.Add(observation);
+            var contextType = eventData.Context?.GetType();
+            var commandKey = (contextType, eventData.CommandId);
+            if (!current.CommandObservations.TryGetValue(commandKey, out var observation))
+            {
+                observation = new CommandObservation(current.Id, eventData.CommandId, table, method, contextType, command.Connection, command.Transaction, command.CommandText, expectedDataHash);
+                current.CommandObservations.Add(commandKey, observation);
+                current.CorrectnessWrites.Add(observation);
+            }
+            else
+            {
+                observation.CallbackMethods.Add(method);
+                observation.ExpectedDataHash ??= expectedDataHash;
+            }
+
             if (expectedDataHash != null)
             {
                 current.ConditionalUpdate ??= observation;
-                current.ConditionalUpdates.Add(observation);
+                if (!current.ConditionalUpdates.Contains(observation))
+                {
+                    current.ConditionalUpdates.Add(observation);
+                }
                 current.ConditionalUpdateExpectedDataHash ??= expectedDataHash;
             }
             current.AllCorrectnessWritesUsedSharedConnectionAndTransaction &= current.SharedTransaction != null &&
@@ -702,22 +755,37 @@ internal sealed class SqliteCommitCommandInterceptor : DbCommandInterceptor
         }
     }
 
-    private static void AddExpectedDataPredicate(DbCommand command, string expectedData)
+    private static void EnsureExpectedDataPredicate(DbCommand command, string expectedData)
     {
         var sql = command.CommandText;
-        var returningIndex = sql.IndexOf("RETURNING", StringComparison.OrdinalIgnoreCase);
-        var whereIndex = sql.IndexOf("WHERE", StringComparison.OrdinalIgnoreCase);
-        if (whereIndex < 0)
+        var predicate = $"\"Data\" = {ExpectedDataParameter}";
+        if (!sql.Contains(predicate, StringComparison.OrdinalIgnoreCase))
         {
-            throw new InvalidOperationException("The native WorkflowInstances update had no WHERE predicate.");
+            var returningIndex = sql.IndexOf("RETURNING", StringComparison.OrdinalIgnoreCase);
+            var whereIndex = sql.IndexOf("WHERE", StringComparison.OrdinalIgnoreCase);
+            if (whereIndex < 0)
+            {
+                throw new InvalidOperationException("The native WorkflowInstances update had no WHERE predicate.");
+            }
+
+            var insertionIndex = returningIndex < 0 ? sql.Length : returningIndex;
+            command.CommandText = $"{sql[..insertionIndex].TrimEnd()} AND {predicate} {sql[insertionIndex..]}";
         }
 
-        var insertionIndex = returningIndex < 0 ? sql.Length : returningIndex;
-        command.CommandText = $"{sql[..insertionIndex].TrimEnd()} AND \"Data\" = {ExpectedDataParameter} {sql[insertionIndex..]}";
-        var parameter = command.CreateParameter();
-        parameter.ParameterName = ExpectedDataParameter;
-        parameter.Value = expectedData;
-        command.Parameters.Add(parameter);
+        var parameterExists = command.Parameters.Cast<DbParameter>().Any(parameter => string.Equals(parameter.ParameterName, ExpectedDataParameter, StringComparison.OrdinalIgnoreCase));
+        if (!parameterExists)
+        {
+            var parameter = command.CreateParameter();
+            parameter.ParameterName = ExpectedDataParameter;
+            parameter.Value = expectedData;
+            command.Parameters.Add(parameter);
+        }
+    }
+
+    private static string GetExpectedDataParameterValue(DbCommand command)
+    {
+        var parameter = command.Parameters.Cast<DbParameter>().SingleOrDefault(parameter => string.Equals(parameter.ParameterName, ExpectedDataParameter, StringComparison.OrdinalIgnoreCase));
+        return parameter?.Value as string ?? throw new InvalidOperationException("The SQLite update predicate parameter was missing or not text.");
     }
 
     private static string Hash(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
@@ -730,8 +798,17 @@ internal sealed class SqliteCommitCommandInterceptor : DbCommandInterceptor
 
     private static bool StartsWithVerb(string sql, string verb) => sql.TrimStart().StartsWith(verb, StringComparison.OrdinalIgnoreCase);
 
-    internal sealed record CommandObservation(long CommitAttemptId, string Table, string Method, Type? ContextType, DbConnection? Connection, DbTransaction? Transaction, string Sql, string? ExpectedDataHash)
+    internal sealed class CommandObservation(long commitAttemptId, Guid commandId, string table, string method, Type? contextType, DbConnection? connection, DbTransaction? transaction, string sql, string? expectedDataHash)
     {
+        public long CommitAttemptId { get; } = commitAttemptId;
+        public Guid CommandId { get; } = commandId;
+        public string Table { get; } = table;
+        public Type? ContextType { get; } = contextType;
+        public DbConnection? Connection { get; } = connection;
+        public DbTransaction? Transaction { get; } = transaction;
+        public string Sql { get; } = sql;
+        public string? ExpectedDataHash { get; set; } = expectedDataHash;
+        public List<string> CallbackMethods { get; } = [method];
     }
 
     internal sealed class CommitObservation(long id, DbTransaction? sharedTransaction)
@@ -746,6 +823,7 @@ internal sealed class SqliteCommitCommandInterceptor : DbCommandInterceptor
         public string? ConditionalUpdateExpectedDataHash { get; set; }
         public CommandObservation? ConditionalUpdate { get; set; }
         public IReadOnlyCollection<string> ParameterNames { get; set; } = [];
+        public Dictionary<(Type? ContextType, Guid CommandId), CommandObservation> CommandObservations { get; } = [];
         public List<CommandObservation> CorrectnessWrites { get; } = [];
         public List<CommandObservation> ConditionalUpdates { get; } = [];
     }
