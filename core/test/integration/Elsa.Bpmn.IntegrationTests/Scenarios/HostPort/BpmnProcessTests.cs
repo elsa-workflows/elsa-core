@@ -138,6 +138,64 @@ public class BpmnProcessTests(ITestOutputHelper testOutputHelper)
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
     }
 
+    [Fact(DisplayName = "A coded fault is caught by the error boundary that declares its code, ahead of the catch-all")]
+    public async Task CodedFault_IsCaughtByTheBoundaryForItsCode()
+    {
+        // The FaultException's code is the BPMN error the work raised; a catcher that declares it wins over a catch-all.
+
+        // Act
+        var result = await _host.RunAsync(BpmnTestProcesses.CodedErrorBoundaries(_host.Log, code: "PAY-01", boundaryCode: "PAY-01", withCatchAll: true), typeof(FaultStrategy));
+
+        // Assert
+        Assert.Contains("executed:handleCoded", _host.Log.Entries);
+        Assert.DoesNotContain("executed:handleAny", _host.Log.Entries);
+        Assert.Empty(result.WorkflowState.Incidents);
+        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+    }
+
+    [Fact(DisplayName = "A coded fault passes over an error boundary for another code and reaches the catch-all")]
+    public async Task CodedFault_PassesOverABoundaryForAnotherCode()
+    {
+        // Act
+        var result = await _host.RunAsync(BpmnTestProcesses.CodedErrorBoundaries(_host.Log, code: "PAY-02", boundaryCode: "PAY-01", withCatchAll: true), typeof(FaultStrategy));
+
+        // Assert
+        Assert.Contains("executed:handleAny", _host.Log.Entries);
+        Assert.DoesNotContain("executed:handleCoded", _host.Log.Entries);
+        Assert.Empty(result.WorkflowState.Incidents);
+        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+    }
+
+    [Fact(DisplayName = "A fault with no code is not caught by an error boundary that declares one")]
+    public async Task UncodedFault_IsNotCaughtByACodedBoundary()
+    {
+        // An ordinary exception names no BPMN error, so only a catch-all catches it; with none, it is an incident.
+
+        // Act
+        var result = await _host.RunAsync(BpmnTestProcesses.CodedErrorBoundaries(_host.Log, code: null, boundaryCode: "PAY-01", withCatchAll: false), typeof(FaultStrategy));
+
+        // Assert
+        Assert.DoesNotContain("executed:handleCoded", _host.Log.Entries);
+        Assert.Single(result.WorkflowState.Incidents);
+        Assert.Equal(WorkflowSubStatus.Faulted, result.WorkflowState.SubStatus);
+    }
+
+    [Fact(DisplayName = "An error end event nothing in a subprocess catches is caught by the boundary on the subprocess that declares its code")]
+    public async Task ErrorEndEventInASubprocess_IsCaughtByItsCodeInTheEnclosingScope()
+    {
+        // The body faults with bpmn.error.thrown and the error's code; the enclosing scope reports that code as the
+        // error its subprocess raised.
+
+        // Act
+        var result = await _host.RunAsync(BpmnTestProcesses.ErrorEndEventCaughtByTheEnclosingScope(_host.Log, "SHIP-01"), typeof(FaultStrategy));
+
+        // Assert
+        Assert.Contains("executed:subRecover", _host.Log.Entries);
+        Assert.DoesNotContain("executed:after", _host.Log.Entries);
+        Assert.Empty(result.WorkflowState.Incidents);
+        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+    }
+
     [Fact(DisplayName = "A collection-mode multi-instance runs one instance per item of a container-scoped variable")]
     public async Task CollectionMultiInstance_ReadsTheScopeVariable()
     {
