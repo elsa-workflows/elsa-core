@@ -41,7 +41,8 @@ public sealed class Tests(ITestOutputHelper output)
         var before = await fixture.ReadSnapshotAsync(started.State.Id);
         var firstBookmarkId = Assert.Single(before.BookmarkIds);
 
-        AssertVariable(await fixture.ReadWorkflowStateAsync(started.State.Id), started.VariableId, "created");
+        AssertVariable(before.State, started.VariableId, "created", fixture.WorkflowNodeId);
+        AssertVariable(await fixture.ReadWorkflowStateAsync(started.State.Id), started.VariableId, "created", fixture.WorkflowNodeId);
 
         fixture.Commands.ArmConditionalSnapshotUpdate(before.Data);
         var resumed = await fixture.ResumeAsync(started);
@@ -51,7 +52,8 @@ public sealed class Tests(ITestOutputHelper output)
         Assert.Single(after.BookmarkIds);
         Assert.DoesNotContain(firstBookmarkId, after.BookmarkIds);
         Assert.NotEqual(firstBookmarkId, Assert.Single(after.BookmarkIds));
-        AssertVariable(await fixture.ReadWorkflowStateAsync(started.State.Id), started.VariableId, "resumed");
+        AssertVariable(after.State, started.VariableId, "resumed", fixture.WorkflowNodeId);
+        AssertVariable(await fixture.ReadWorkflowStateAsync(started.State.Id), started.VariableId, "resumed", fixture.WorkflowNodeId);
         Assert.True(after.ExecutionLogCount > before.ExecutionLogCount);
         Assert.True(after.ActivityExecutionRecordCount > before.ActivityExecutionRecordCount);
 
@@ -86,7 +88,8 @@ public sealed class Tests(ITestOutputHelper output)
         await fixture.WriteNewerVariableStateAsync(started.State.Id, started.VariableId, "newer-wins");
         var newer = await fixture.ReadSnapshotAsync(started.State.Id);
         Assert.NotEqual(initial.DataHash, newer.DataHash);
-        AssertVariable(await fixture.ReadWorkflowStateAsync(started.State.Id), started.VariableId, "newer-wins");
+        AssertVariable(newer.State, started.VariableId, "newer-wins", fixture.WorkflowNodeId);
+        AssertVariable(await fixture.ReadWorkflowStateAsync(started.State.Id), started.VariableId, "newer-wins", fixture.WorkflowNodeId);
 
         fixture.Commands.ArmConditionalSnapshotUpdate(initial.Data);
         var (result, error) = await fixture.TryResumeAsync(started);
@@ -101,7 +104,8 @@ public sealed class Tests(ITestOutputHelper output)
         Assert.Equal(newer.DataHash, after.DataHash);
         Assert.Equal(newer.BookmarkIds, after.BookmarkIds);
         Assert.Equal(oldBookmarkId, Assert.Single(after.BookmarkIds));
-        Assert.Equal("newer-wins", GetVariable(survivor, started.VariableId));
+        Assert.Equal("newer-wins", GetVariable(survivor, started.VariableId, fixture.WorkflowNodeId));
+        AssertVariable(after.State, started.VariableId, "newer-wins", fixture.WorkflowNodeId);
         Assert.Equal(oldLogCount, after.ExecutionLogCount);
         Assert.Equal(initial.ActivityExecutionRecordCount, after.ActivityExecutionRecordCount);
 
@@ -147,7 +151,8 @@ public sealed class Tests(ITestOutputHelper output)
         Assert.Equal(newer.DataHash, after.DataHash);
         Assert.DoesNotContain(oldBookmarkId, after.BookmarkIds);
         Assert.Single(after.BookmarkIds);
-        Assert.Equal("newer-wins", GetVariable(survivor, started.VariableId));
+        Assert.Equal("newer-wins", GetVariable(survivor, started.VariableId, fixture.WorkflowNodeId));
+        AssertVariable(after.State, started.VariableId, "newer-wins", fixture.WorkflowNodeId);
         Assert.True(after.ActivityExecutionRecordCount > initial.ActivityExecutionRecordCount);
 
         var commit = Assert.Single(fixture.Commands.GetCompletedCommitAttempts(fixture.Commands.ConditionalCommitAttemptId));
@@ -201,13 +206,26 @@ public sealed class Tests(ITestOutputHelper output)
         Assert.All(updates, update => Assert.Equal(expectedDataHash, update.ExpectedDataHash));
     }
 
-    private static void AssertVariable(WorkflowState state, string id, string expected) => Assert.Equal(expected, GetVariable(state, id));
+    private static void AssertVariable(WorkflowState state, string id, string expected, string workflowNodeId) =>
+        Assert.Equal(expected, GetVariable(state, id, workflowNodeId));
 
-    private static string? GetVariable(WorkflowState state, string id)
+    private static string? GetVariable(WorkflowState state, string id, string workflowNodeId) =>
+        PersistedWorkflowVariables.GetOwnerDictionary(state, id, workflowNodeId).GetValueOrDefault(id)?.GetValue<string>();
+}
+
+internal static class PersistedWorkflowVariables
+{
+    public static VariablesDictionary GetOwnerDictionary(WorkflowState state, string variableId, string workflowNodeId)
     {
-        Assert.True(state.Properties.TryGetValue(WorkflowInstanceStorageDriver.VariablesDictionaryStateKey, out var value));
-        var variables = Assert.IsType<VariablesDictionary>(value);
-        return variables.GetValueOrDefault(id)?.GetValue<string>();
+        // WorkflowInstanceStorageDriver stores the dictionary on the activity context supplied by
+        // VariablePersistenceManager, so it lives in the serialized context state, not state.Properties.
+        var owners = state.ActivityExecutionContexts
+            .Where(context => context.Properties.TryGetValue(WorkflowInstanceStorageDriver.VariablesDictionaryStateKey, out var value) &&
+                              value is VariablesDictionary variables && variables.ContainsKey(variableId))
+            .ToList();
+        var owner = Assert.Single(owners);
+        Assert.Equal(workflowNodeId, owner.ScheduledActivityNodeId);
+        return Assert.IsType<VariablesDictionary>(owner.Properties[WorkflowInstanceStorageDriver.VariablesDictionaryStateKey]);
     }
 }
 
@@ -233,6 +251,7 @@ internal sealed class NativeCommitFixture : IAsyncDisposable
 
     public SqliteCommitCommandInterceptor Commands { get; }
     public SharedCommitTransactionState TransactionState { get; }
+    public string WorkflowNodeId => _workflow.Workflow.NodeId;
 
     public static async Task<NativeCommitFixture> CreateAsync(ITestOutputHelper output)
     {
@@ -347,10 +366,8 @@ internal sealed class NativeCommitFixture : IAsyncDisposable
         var manager = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceManager>();
         var instance = await manager.FindByIdAsync(instanceId);
         Assert.NotNull(instance);
-        instance.WorkflowState.Properties[WorkflowInstanceStorageDriver.VariablesDictionaryStateKey] = new VariablesDictionary
-        {
-            [variableId] = JsonValue.Create(newerValue)!
-        };
+        var variables = PersistedWorkflowVariables.GetOwnerDictionary(instance.WorkflowState, variableId, WorkflowNodeId);
+        variables[variableId] = JsonValue.Create(newerValue)!;
         await manager.SaveAsync(instance.WorkflowState, CancellationToken.None);
     }
 
@@ -432,7 +449,8 @@ internal sealed class NativeCommitFixture : IAsyncDisposable
             activityExecutionRecordCount = (long)(await command.ExecuteScalarAsync())!;
         }
 
-        return new(data, Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(data))), bookmarkIds, executionLogCount, activityExecutionRecordCount);
+        var state = _services.GetRequiredService<IWorkflowStateSerializer>().Deserialize(data);
+        return new(data, Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(data))), bookmarkIds, executionLogCount, activityExecutionRecordCount, state);
     }
 
     private static async Task AssertTenantIdsAsync(SqliteConnection connection, string tableName, string instanceId)
@@ -484,7 +502,7 @@ internal sealed class NativeCommitFixture : IAsyncDisposable
     }
 
     public sealed record StartedWorkflow(WorkflowState State, string VariableId);
-    public sealed record DatabaseSnapshot(string Data, string DataHash, IReadOnlyList<string> BookmarkIds, long ExecutionLogCount, long ActivityExecutionRecordCount);
+    public sealed record DatabaseSnapshot(string Data, string DataHash, IReadOnlyList<string> BookmarkIds, long ExecutionLogCount, long ActivityExecutionRecordCount, WorkflowState State);
 }
 
 internal sealed class SharedCommitTransactionState(SqliteCommitCommandInterceptor commands)
