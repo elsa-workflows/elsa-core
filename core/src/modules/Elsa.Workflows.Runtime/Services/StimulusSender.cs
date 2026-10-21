@@ -65,7 +65,9 @@ public class StimulusSender(
                     Workflow = workflow,
                     ActivityId = trigger.ActivityId,
                     Input = input,
-                    Properties = properties,
+                    // Tells the started workflow which of its trigger activity's stored triggers matched. Each request
+                    // gets its own copy, so the caller's dictionary is never written to.
+                    Properties = TriggerWorkflowProperties.WithStimulusHash(properties, trigger.Hash),
                     ParentWorkflowInstanceId = parentId
                 };
 
