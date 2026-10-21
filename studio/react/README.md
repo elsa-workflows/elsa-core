@@ -70,6 +70,7 @@ New to the project? Start with the [Getting started guide](docs/getting-started.
 | [Module authoring](docs/module-authoring.md) | Generate, package and verify an independent extension. |
 | [BPMN interchange](docs/bpmn.md) | Import findings/refusals and export imported workflows. |
 | [Expressions](docs/expressions.md) | C# highlighting and server-backed workflow member completion. |
+| [Tenancy](docs/tenancy.md) | Claims, tenant selection and refreshing module state. |
 | [Parity audit](docs/parity.md) | Verified editor behavior, evidence boundaries and linked Preview gaps. |
 | [Activity settings](docs/activity-settings.md) | Commit, log persistence, resilience, task and version settings; instance retry history. |
 | [Designer](docs/designer.md) | Containers, the quick-add palette, data flow, call context, keyboard shortcuts. |

@@ -67,6 +67,15 @@ export const authConfigSchema = z.object({
 });
 export type AuthConfig = z.infer<typeof authConfigSchema>;
 
+export const tenancyConfigSchema = z.object({
+  mode: z.enum(["fixed", "claims", "selection"]).default("fixed"),
+  claimType: z.string().min(1).default("http://schemas.microsoft.com/identity/claims/tenantid"),
+  tenants: z.array(z.object({ id: z.string(), name: z.string().min(1) })).default([]),
+}).superRefine((value, context) => {
+  if (value.mode === "selection" && value.tenants.length === 0) context.addIssue({ code: "custom", message: "Tenant selection requires at least one configured tenant." });
+  if (new Set(value.tenants.map(tenant => tenant.id)).size !== value.tenants.length) context.addIssue({ code: "custom", message: "Configured tenant IDs must be unique." });
+});
+
 export const serverConfigSchema = z.object({
   /** Display name for this backend (shown in the environment switcher). */
   name: z.string().default("Default"),
@@ -74,8 +83,10 @@ export const serverConfigSchema = z.object({
   url: z.string().min(1),
   /** Optional tenant id sent as `X-Tenant-Id` header. */
   tenantId: z.string().optional(),
+  /** Fixed header (default), authenticated claim, or an explicitly configured selection. */
+  tenancy: tenancyConfigSchema.prefault({}),
 });
-export type ServerConfig = z.infer<typeof serverConfigSchema>;
+export type ServerConfig = Omit<z.infer<typeof serverConfigSchema>, "tenancy"> & { tenancy?: z.infer<typeof tenancyConfigSchema> };
 
 export const featureFlagSchema = z.object({
   enabled: z.boolean().default(true),
@@ -110,5 +121,5 @@ export const studioConfigSchema = z.object({
     })
     .prefault({}),
 });
-export type StudioConfig = z.infer<typeof studioConfigSchema>;
+export type StudioConfig = Omit<z.infer<typeof studioConfigSchema>, "servers"> & { servers: ServerConfig[] };
 export type StudioConfigInput = z.input<typeof studioConfigSchema>;

@@ -14,6 +14,8 @@ import {
 } from "@elsa-workflows/react-studio-ui/dropdown-menu";
 import { useStudioConfig } from "@elsa-workflows/react-studio-sdk/config-provider";
 import { useActiveServerStore } from "@elsa-workflows/react-studio-sdk/environments/active-server";
+import { approveNavigation, hasUnsavedChanges } from "@elsa-workflows/react-studio-sdk/unsaved-changes";
+import { reloadStudioContext } from "@elsa-workflows/react-studio-sdk/navigation/reload";
 import { cn } from "@elsa-workflows/react-studio-ui/utils";
 import { environmentUrl, normalizeUrl } from "../api";
 import { useServerEnvironments } from "../hooks";
@@ -29,6 +31,14 @@ export function EnvironmentPicker() {
   const index = useActiveServerStore((s) => s.index);
   const setIndex = useActiveServerStore((s) => s.setIndex);
   const remote = useServerEnvironments();
+  const switchServer = (target: number) => {
+    if (target === index) return;
+    if (hasUnsavedChanges() && !window.confirm("Switch server and discard unsaved changes?")) return;
+    reloadStudioContext(() => {
+      approveNavigation();
+      setIndex(target);
+    });
+  };
   const active = servers[index] ?? servers[0];
 
   const remoteEnvironments = useMemo(() => {
@@ -54,7 +64,7 @@ export function EnvironmentPicker() {
         <DropdownMenuGroup>
           <DropdownMenuLabel>Configured servers</DropdownMenuLabel>
           {servers.map((server, i) => (
-            <DropdownMenuItem key={`${server.url}-${i}`} onClick={() => setIndex(i)} className="items-start">
+            <DropdownMenuItem key={`${server.url}-${i}`} onClick={() => switchServer(i)} className="items-start">
               <Check className={cn("mt-0.5", i === index ? "opacity-100" : "opacity-0")} />
               <div className="min-w-0 flex flex-col">
                 <span className="truncate">{server.name}</span>
@@ -74,7 +84,7 @@ export function EnvironmentPicker() {
                   <DropdownMenuItem
                     key={env.name}
                     disabled={target === undefined}
-                    onClick={() => target !== undefined && setIndex(target)}
+                    onClick={() => target !== undefined && switchServer(target)}
                     className="items-start"
                     title={target === undefined ? "Not in the studio configuration; add it to servers[] to make it selectable." : undefined}
                   >

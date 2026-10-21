@@ -231,3 +231,20 @@ Review regressions preserve the runtime's exact input-wrapper case, keep complet
 replacement inside surrounding calls/arrays, exclude saved wrappers that no longer
 match current workflow members, and parse generic CLR declaration names. The guide
 documents the conservative treatment of unknown cached get/set wrappers.
+
+## Tenant context
+
+Each server now selects fixed, authenticated-claim or configured-choice tenancy.
+Tenant selection reloads the application to clear first- and third-party module
+state and pending browser work; query scopes include server, subject and tenant.
+Unsaved workflows can cancel before a preference changes, with one discard prompt.
+The empty default-tenant ID is distinct from an omitted header. Choices persist
+per server/subject and claims mode rejects missing/ambiguous claims before module
+API requests. The tenancy guide records the reference Core host's account-bound
+resolver and the separate backend authorization needed for selection mode.
+
+Review regressions coordinate a single pending context reload, preserve queries
+during React StrictMode's effect replay while disposing true unmounts, and retain
+the last authenticated scope across an intermediate missing-claim error. The
+hosted A/missing/B case verifies that module-level dialog state cannot revive in
+another tenant. Dirty server switches retain one discard prompt.

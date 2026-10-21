@@ -41,7 +41,8 @@ list is configuration only.
 |---|---|---|
 | `url` | Yes | Base URL of the Elsa API, including the route prefix (usually `/elsa/api`). |
 | `name` | No | Label shown in the environment picker. Defaults to `Default`. |
-| `tenantId` | No | Sent as the `X-Tenant-Id` header on every request. |
+| `tenantId` | No | Fixed tenant header, or initial configured selection. An empty string explicitly selects Elsa's default tenant. |
+| `tenancy` | No | `fixed` (default), `claims`, or configured `selection`; see [tenant configuration](tenancy.md). |
 
 With two or more servers configured, an environment picker appears in the header, provided the
 `environments` module is enabled. The first entry is active by default.

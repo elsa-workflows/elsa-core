@@ -10,6 +10,7 @@ import { useShellChrome } from "@elsa-workflows/react-studio-ui/shell-chrome";
 import { StudioSidebar } from "./studio-sidebar";
 import { ThemeMenu } from "./theme-menu";
 import { UserMenu } from "./user-menu";
+import { TenantPicker } from "./tenant-picker";
 
 export function AppShell({ title, children }: { title?: string; children: ReactNode }) {
   const headerItems = useExtensions("headerItems");
@@ -37,6 +38,7 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
               ))}
               <Separator orientation="vertical" className="mx-1 h-5" />
               <ThemeMenu />
+              <TenantPicker />
               <UserMenu />
             </div>
           </header>
