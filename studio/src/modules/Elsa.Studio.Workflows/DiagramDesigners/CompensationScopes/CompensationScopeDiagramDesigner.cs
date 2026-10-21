@@ -10,6 +10,7 @@ namespace Elsa.Studio.Workflows.DiagramDesigners.CompensationScopes;
 
 public sealed class CompensationScopeDiagramDesigner : IDiagramDesigner
 {
+    private static readonly string[] OwnedChildProperties = ["forward", "handler"];
     private JsonObject _scope = [];
     private string? _documentBackendContextKey;
     private EventCallback _graphUpdatedCallback;
@@ -30,7 +31,7 @@ public sealed class CompensationScopeDiagramDesigner : IDiagramDesigner
         }
         else
         {
-            updated = ReplaceChild(_scope, id, activity);
+            updated = ReplaceChild(id, activity);
         }
 
         if (updated && _graphUpdatedCallback.HasDelegate)
@@ -60,25 +61,23 @@ public sealed class CompensationScopeDiagramDesigner : IDiagramDesigner
         };
     }
 
-    private static bool ReplaceChild(JsonNode? node, string id, JsonObject replacement)
+    private bool ReplaceChild(string id, JsonObject replacement)
     {
-        if (node is JsonObject obj)
-        {
-            if (obj.IsActivity() && string.Equals(obj.GetId(), id, StringComparison.Ordinal))
-            {
-                ReplaceContents(obj, replacement);
-                return true;
-            }
+        if (_scope["steps"] is not JsonArray steps)
+            return false;
 
-            foreach (var child in obj.Select(x => x.Value))
-                if (ReplaceChild(child, id, replacement))
-                    return true;
-        }
-        else if (node is JsonArray array)
+        foreach (var step in steps.OfType<JsonObject>())
         {
-            foreach (var child in array)
-                if (ReplaceChild(child, id, replacement))
+            foreach (var childProperty in OwnedChildProperties)
+            {
+                if (step[childProperty] is JsonObject child &&
+                    child.IsActivity() &&
+                    string.Equals(child.GetId(), id, StringComparison.Ordinal))
+                {
+                    ReplaceContents(child, replacement);
                     return true;
+                }
+            }
         }
 
         return false;
