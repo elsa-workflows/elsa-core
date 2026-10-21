@@ -52,23 +52,54 @@ const pascal = (name: string) => name.replace(/(?:^|_)([a-z])/g, (_, letter: str
 /**
  * Patterns under which expressions reference a variable in Elsa 3:
  * Includes direct containers, runtime-generated PascalCase aliases and generic
- * getters/setters. Reads vs writes are distinguished by the setter forms.
+ * getters/setters. Property mutations and setter calls identify writes.
  */
 function variablePatterns(name: string) {
   const n = escapeRe(name);
-  const alias = escapeRe(pascal(name));
-  const readAliases = generatedAccessor.test(name) ? `|\\bVariables?\\.${alias}\\b(?!\\s*=(?!=))|\\bget${alias}\\s*\\(` : "";
-  const writeAliases = generatedAccessor.test(name) ? `|\\bVariables?\\.${alias}\\s*=[^=]|\\bset${alias}\\s*\\(` : "";
+  const argument = `(?:${escapeRe(JSON.stringify(name))}|['\`]${n}['\`])`;
+  const properties = [`\\b[vV]ariables\\.${n}\\b`];
+  const getters = [`\\bget${n}\\s*\\(`];
+  const setters = [`\\bset${n}\\s*\\(`];
+  if (generatedAccessor.test(name)) {
+    const alias = escapeRe(pascal(name));
+    properties.push(`\\bVariables?\\.${alias}\\b`);
+    getters.push(`\\bget${alias}\\s*\\(`);
+    setters.push(`\\bset${alias}\\s*\\(`);
+  }
+  const property = `(?:${properties.join("|")})`;
+  const assignment = String.raw`(?:=(?!=|>)|(?:\*\*|>>>?|<<|\?\?|&&|\|\||[+\-*/%&|^])=)`;
+  const update = String.raw`(?:\+\+|--)`;
   return {
-    read: new RegExp(`\\b[vV]ariables\\.${n}\\b(?!\\s*=(?!=))|\\bget${n}\\s*\\(|\\bgetVariable\\s*\\(\\s*['"\`]${n}['"\`]|\\bVariables?\\.Get(?:<[^>]+>)?\\s*\\(\\s*['"]${n}['"]${readAliases}`),
-    write: new RegExp(`\\bset${n}\\s*\\(|\\bsetVariable\\s*\\(\\s*['"\`]${n}['"\`]|\\b[vV]ariables\\.${n}\\s*=[^=]|\\bVariables?\\.Set\\s*\\(\\s*['"]${n}['"]${writeAliases}`),
+    read: new RegExp(`${property}(?!\\s*=(?!=))|${getters.join("|")}|\\bgetVariable\\s*\\(\\s*${argument}|\\b(?:Variables?\\.Get(?:<[^>]+>)?|variables\\.get)\\s*\\(\\s*${argument}`),
+    write: new RegExp(`${property}\\s*(?:${assignment}|${update})|${update}\\s*${property}|${setters.join("|")}|\\bsetVariable\\s*\\(\\s*${argument}|\\bVariables?\\.Set\\s*\\(\\s*${argument}`),
   };
 }
 
 /** JS `input.Name` / `getName()` / `getInput('Name')`, Liquid/C# `Input.Name`, `Inputs.Name`. */
 function inputPattern(name: string) {
   const n = escapeRe(name);
-  return new RegExp(`\\b[iI]nputs?\\.${n}\\b|\\bget${n}\\s*\\(|\\bgetInput\\s*\\(\\s*['"\`]${n}['"\`]|\\bInputs?\\.Get(?:<[^>]+>)?\\s*\\(\\s*['"]${n}['"]`);
+  const argument = `(?:${escapeRe(JSON.stringify(name))}|['\`]${n}['\`])`;
+  return new RegExp(`\\b[iI]nputs?\\.${n}\\b|\\bget${n}\\s*\\(|\\bgetInput\\s*\\(\\s*${argument}|\\b[iI]nputs?\\.Get(?:<[^>]+>)?\\s*\\(\\s*${argument}`);
+}
+
+/** Pickers can store a reference object or its JSON serialization; older models use a raw id/name. */
+function bindingReference(value: unknown): string | { id?: string; name?: string } | undefined {
+  if (typeof value === "string") {
+    const text = value;
+    try {
+      const parsed: unknown = JSON.parse(text);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) value = parsed;
+      else return text;
+    } catch {
+      return text;
+    }
+  }
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const reference = value as Record<string, unknown>;
+  return {
+    id: typeof reference.id === "string" ? reference.id : undefined,
+    name: typeof reference.name === "string" ? reference.name : undefined,
+  };
 }
 
 /** Collects every string that could be an expression inside an activity's properties (one level deep is enough: wrapped inputs). */
@@ -80,7 +111,7 @@ function expressionTexts(activity: Activity): { property: string; text: string }
     if (typeof (value as Activity).type === "string" && typeof (value as Activity).id === "string") continue; // a child activity, not an input
     const wrapped = value as { expression?: { type?: string; value?: unknown } };
     const expr = wrapped.expression;
-    if (expr && typeof expr.value === "string" && expr.type !== "Literal" && expr.type !== "Object") out.push({ property: prop, text: expr.value });
+    if (expr && typeof expr.value === "string" && !["Literal", "Object", "Variable", "Input"].includes(expr.type ?? "")) out.push({ property: prop, text: expr.value });
     // Switch / FlowSwitch cases carry their own expressions.
     if (Array.isArray(value)) {
       for (const item of value as { condition?: { value?: unknown } }[]) {
@@ -173,12 +204,14 @@ export function indexDataFlow(
         const expr = (value as { expression?: { type?: string; value?: unknown } } | undefined)?.expression;
         if (!expr || typeof expr !== "object") continue;
         if (expr.type === "Variable") {
-          const id = typeof expr.value === "string" ? expr.value : (expr.value as { id?: string } | undefined)?.id;
-          const usage = allVariables.find((v) => v.id === id || v.name === id);
+          const reference = bindingReference(expr.value);
+          const id = typeof reference === "string" ? reference : reference?.id;
+          const usage = allVariables.find((v) => v.id === id) ?? (typeof reference === "string" ? allVariables.find((v) => v.name === reference) : undefined);
           if (usage) note(byKey.get(refKey("variable", usage.id))!, "readers", { ...base, property: prop, via: "expression" });
         }
         if (expr.type === "Input") {
-          const name = typeof expr.value === "string" ? expr.value : (expr.value as { name?: string } | undefined)?.name;
+          const reference = bindingReference(expr.value);
+          const name = typeof reference === "string" ? reference : reference?.name;
           const usage = name ? byKey.get(refKey("input", name)) : undefined;
           if (usage) note(usage, "readers", { ...base, property: prop, via: "expression" });
         }
