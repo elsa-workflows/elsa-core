@@ -78,6 +78,47 @@ internal static partial class BpmnTestProcesses
     }
 
     /// <summary>
+    /// A parallel split into a long-running task and an escalation throw, caught by an interrupting escalation-triggered
+    /// event subprocess on the same scope.
+    /// </summary>
+    /// <remarks>
+    /// Both branches are reached in the one evaluation that starts the scope, so the long-running task's
+    /// <c>StartWork</c> is issued and its token is cancelled by the interrupting catcher before the host has applied a
+    /// single command. That is the shape valence-works/bpmn#33 describes: work stopped in the evaluation that started
+    /// it, which must not reach the host at all.
+    /// </remarks>
+    public static BpmnProcess InterruptingEscalationAlongsideLongRunningWork(BpmnTestLog log)
+    {
+        var handlerBody = new BpmnProcessBuilder("interrupting-escalation-event-subprocess-body")
+            .Element(EventSubprocessStart("escStart", Escalation("OVERDUE")))
+            .Task("handleEscalation", bindingRef: BindingRef("handleEscalation"))
+            .EndEvent("escEnd")
+            .ConnectSequence("escStart", "handleEscalation", "escEnd")
+            .Build();
+
+        var definition = new BpmnProcessBuilder("interrupting-escalation-alongside-long-running-work")
+            .StartEvent("start")
+            .ParallelGateway("split")
+            .Task("longRunning", bindingRef: BindingRef("longRunning"))
+            .EndEvent("longEnd")
+            .IntermediateThrowEvent("escalate", Escalation("OVERDUE"))
+            .EndEvent("escalateEnd")
+            .Element(EventSubprocess("evtSub"))
+            .ConnectSequence("start", "split")
+            .Connect("split", "longRunning")
+            .Connect("split", "escalate")
+            .Connect("longRunning", "longEnd")
+            .Connect("escalate", "escalateEnd")
+            .Build();
+
+        return Scope(
+            "scope",
+            definition,
+            Blocking("longRunning", log),
+            Scope("evtSub", handlerBody, Blocking("handleEscalation", log)));
+    }
+
+    /// <summary>
     /// A non-interrupting message-triggered event subprocess: a listener armed at scope start, and a body that runs
     /// each time the listener fires while the scope's own long-running work is still going.
     /// </summary>
@@ -116,6 +157,42 @@ internal static partial class BpmnTestProcesses
             Blocking("work", log),
             Blocking("nudgeListener", log),
             Scope("evtSub", body, Immediate("handleNudge", log)));
+    }
+
+    /// <summary>
+    /// A signal-triggered event subprocess, interrupting or not, alongside the scope's own long-running work and the
+    /// work that follows it.
+    /// </summary>
+    /// <remarks>
+    /// The listener is the scope-listener binding, standing in for a real signal subscription; firing it is a test
+    /// finishing it. <c>work</c> blocks so the scope is still running when the signal arrives, and <c>after</c> is the
+    /// work only an uninterrupted scope ever reaches.
+    /// </remarks>
+    public static BpmnProcess SignalEventSubprocess(BpmnTestLog log, bool interrupting)
+    {
+        var body = new BpmnProcessBuilder("signal-event-subprocess-body")
+            .Element(EventSubprocessStart("recallStart", Signal("RecallIssued"), interrupting))
+            .Task("handleRecall", bindingRef: BindingRef("handleRecall"))
+            .EndEvent("recallEnd")
+            .ConnectSequence("recallStart", "handleRecall", "recallEnd")
+            .Build();
+
+        var definition = new BpmnProcessBuilder("signal-event-subprocess")
+            .StartEvent("start")
+            .Task("work", bindingRef: BindingRef("work"))
+            .Task("after", bindingRef: BindingRef("after"))
+            .EndEvent("end")
+            .Element(EventSubprocess("evtSub", listenerBindingRef: BindingRef("recallListener")))
+            .ConnectSequence("start", "work", "after", "end")
+            .Build();
+
+        return Scope(
+            "scope",
+            definition,
+            Blocking("work", log),
+            Immediate("after", log),
+            Blocking("recallListener", log),
+            Scope("evtSub", body, Immediate("handleRecall", log)));
     }
 
     /// <summary>

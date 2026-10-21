@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:elsa="https://elsaworkflows.io/schemas/bpmn/v1"
+                  xmlns:vw="https://bpmn.valenceworks.io/schema/bpmn"
+                  id="Definitions_announce-payment"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:message id="Message_PaymentReceived" name="PaymentReceived" />
+  <bpmn:process id="announce-payment" isExecutable="true">
+    <bpmn:startEvent id="Start">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:intermediateThrowEvent id="AnnouncePayment" name="Announce payment">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="AnnouncePayment_Message" messageRef="Message_PaymentReceived" />
+    </bpmn:intermediateThrowEvent>
+    <bpmn:endEvent id="End">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start" targetRef="AnnouncePayment" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="AnnouncePayment" targetRef="End" />
+  </bpmn:process>
+</bpmn:definitions>
