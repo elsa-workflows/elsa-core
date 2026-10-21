@@ -405,8 +405,13 @@ test('native compensation draft persists two paired rows and refuses UI publish'
   });
 
   await assertion('NC-DRAFT-SCOPE-OPENED-VIA-UI', 'scope-picker-or-double-click-unavailable', async () => {
-    const search = page.getByPlaceholder('Search', { exact: true });
+    const search = page.getByPlaceholder('Search...', { exact: true });
     await search.fill('Compensation');
+    const flowCategory = page.getByRole('button', { name: 'Flow', exact: true });
+    await requireVisible(flowCategory);
+    if (await flowCategory.getAttribute('aria-expanded') !== 'true')
+      await flowCategory.click();
+    await expect(flowCategory).toHaveAttribute('aria-expanded', 'true');
     const scopeCard = page.locator('.cursor-grab').filter({ hasText: /compensation scope/i }).first();
     await scopeCard.waitFor({ state: 'visible' });
     await scopeCard.dragTo(page.locator('.flowchart-diagram-designer-wrapper'));
@@ -460,7 +465,7 @@ test('native compensation draft persists two paired rows and refuses UI publish'
   await assertion('NC-DRAFT-RENAME-AND-REORDER', 'step-rename-or-reorder-unavailable', async () => {
     const firstRow = getStepRow(editor, 0);
     await firstRow.getByLabel('Step name', { exact: true }).fill('Reserve stock');
-    await firstRow.getByRole('button', { name: 'Move down', exact: true }).click();
+    await firstRow.getByRole('button', { name: 'Move step down', exact: true }).click();
     const stepNames = editor.getByLabel('Step name', { exact: true });
     await expect(stepNames.nth(0)).toHaveValue('Release inventory');
     await expect(stepNames.nth(1)).toHaveValue('Reserve stock');
