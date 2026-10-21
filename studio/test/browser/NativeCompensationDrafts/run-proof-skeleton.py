@@ -974,6 +974,7 @@ def run():
         if not clean:
             raise StopProof("source-tree-is-not-clean")
 
+        startup_source_dir = source_root / "scripts" / "native-compensation-draft-proof" / "StudioProofDataProtectionStartup"
         state["harnessSha256"] = {
             "dotnetWrapper": sha256_file(dotnet),
             "nodeExecutable": sha256_file(node),
@@ -986,9 +987,9 @@ def run():
             "typescriptConfig": sha256_file(typescript_config),
             "proofSupervisor": sha256_file(HERE / "run-proof-skeleton.py"),
             "storedPublishProbe": sha256_file(stored_publish_probe),
-            "startupSource": sha256_file(HERE / "StudioProofDataProtectionStartup" /
+            "startupSource": sha256_file(startup_source_dir /
                                           "StudioProofDataProtectionStartup.cs"),
-            "startupProject": sha256_file(HERE / "StudioProofDataProtectionStartup" /
+            "startupProject": sha256_file(startup_source_dir /
                                            "StudioProofDataProtectionStartup.csproj"),
         }
         username = os.environ.get(ADMIN_USER)
