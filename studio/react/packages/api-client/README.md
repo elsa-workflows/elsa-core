@@ -33,3 +33,11 @@ returns paged retry records; the ID is an activity execution record ID, not a gr
 activity ID. Both methods share the HTTP client's current authentication and tenant.
 `CommitStrategyDescriptor` models the commit catalogs' `name` field; other strategy
 catalogs retain their `typeName` field.
+
+## BPMN interchange
+
+`client.bpmn.analyze(file, signal)` returns process IDs, element counts and typed
+findings. `client.bpmn.import(file, { processId, name, definitionId }, signal)`
+uses multipart upload; every option is optional. `client.bpmn.export(id, signal)`
+returns an XML Blob. Requests use the shared auth, tenant and cancellation behavior.
+`ApiError.problem.raw` preserves the server's stable refusal code/data envelope.

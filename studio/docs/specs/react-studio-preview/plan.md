@@ -193,3 +193,15 @@ Preview descriptions/tags, notices, all three frameworks and embedded assets;
 an actual 3.10.0 pack produces no React packages. Existing publication-selection
 and workflow-gate checks still pass. The try guide and release preparation notes
 are under Studio docs. This prepares packages without publishing them.
+
+## BPMN interchange
+
+Workflow definitions now imports BPMN through the existing server interchange API,
+shows Info/Degraded/Dropped findings and requires process selection for multi-process
+documents. Structured capability and expression-condition refusals retain server
+messages and offending IDs. Row actions export after a binding/expression warning,
+with absent/unknown-version/stale-source refusals. Browser tests cover the flow,
+cancellation and download/reimport. A disposable real Core check verifies process
+and flow preservation, stable canonical XML after reimport, structured condition
+refusal and cleanup. Server export can normalize XML and add missing layout, so
+original byte equality is not asserted. Editable BPMN canvas work remains #8929.
