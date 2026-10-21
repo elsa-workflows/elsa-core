@@ -81,6 +81,9 @@ public static class JsonActivityConstructorContextHelper
     /// </summary>
     private static void StripTypeMetadata(JsonNode node)
     {
+        if (node is JsonObject compensationScope && IsCompensationScope(compensationScope))
+            return;
+
         switch (node)
         {
             case JsonObject obj:
@@ -88,7 +91,7 @@ public static class JsonActivityConstructorContextHelper
                 foreach (var key in obj.Select(kvp => kvp.Key).ToList())
                 {
                     var child = obj[key];
-                    if (child is JsonObject wrapper && wrapper.ContainsKey("_type"))
+                    if (child is JsonObject wrapper && wrapper.ContainsKey("_type") && !IsCompensationScope(wrapper))
                     {
                         // If it has an "items" array, replace the whole property with that array
                         if (wrapper["items"] is JsonArray items)
@@ -120,7 +123,7 @@ public static class JsonActivityConstructorContextHelper
                 for (var i = 0; i < arr.Count; i++)
                 {
                     var element = arr[i];
-                    if (element is JsonObject w && w.ContainsKey("_type"))
+                    if (element is JsonObject w && w.ContainsKey("_type") && !IsCompensationScope(w))
                     {
                         if (w["items"] is JsonArray items)
                         {
@@ -148,6 +151,11 @@ public static class JsonActivityConstructorContextHelper
                 break;
         }
     }
+
+    private static bool IsCompensationScope(JsonObject obj) =>
+        obj["type"] is JsonValue typeValue &&
+        typeValue.TryGetValue<string>(out var typeName) &&
+        string.Equals(typeName, CompensationScope.ActivityTypeName, StringComparison.Ordinal);
 
     private static void StripCompensationScopeChildActivityMetadata(JsonNode node)
     {

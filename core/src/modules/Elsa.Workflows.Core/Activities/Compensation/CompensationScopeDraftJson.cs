@@ -49,7 +49,9 @@ internal static class CompensationScopeDraftJson
                 if (!step.TryGetProperty(role, out var child) || child.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
                     continue;
 
-                if (!IsPinnedActivityTree(child, activityRegistry, serializerOptions))
+                // Legacy constructor cleanup interprets this metadata recursively. Keep an
+                // ambiguous child payload in the whole opaque scope rather than rewrite it.
+                if (ContainsTypeMetadata(child) || !IsPinnedActivityTree(child, activityRegistry, serializerOptions))
                     return false;
             }
         }
@@ -60,6 +62,24 @@ internal static class CompensationScopeDraftJson
             return false;
 
         return true;
+    }
+
+    private static bool ContainsTypeMetadata(JsonElement value)
+    {
+        if (value.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var property in value.EnumerateObject())
+            {
+                if (string.Equals(property.Name, "_type", StringComparison.Ordinal) || ContainsTypeMetadata(property.Value))
+                    return true;
+            }
+        }
+        else if (value.ValueKind == JsonValueKind.Array)
+        {
+            return value.EnumerateArray().Any(ContainsTypeMetadata);
+        }
+
+        return false;
     }
 
     private static bool IsPinnedActivityTree(JsonElement activity, IActivityRegistry activityRegistry, JsonSerializerOptions serializerOptions)

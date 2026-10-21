@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Elsa.Common;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
@@ -19,6 +20,125 @@ namespace Elsa.Workflows.Management.UnitTests.Services;
 
 public class WorkflowDefinitionPublisherCompensationDraftTests
 {
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task MaterializingStoredDefinitionPreservesOpaqueChildPayloadInNestedCompensationScope(bool scopeUsesItemsWrapper)
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddElsa(elsa => elsa.UseWorkflowManagement(management =>
+        {
+            management.AddActivity<Sequence>();
+            management.AddActivity<WriteLine>();
+            management.AddActivity<CompensationScope>();
+            management.UseFailOnValidationErrors(false);
+        }));
+        await using var serviceProvider = services.BuildServiceProvider();
+        await using var serviceScope = serviceProvider.CreateAsyncScope();
+        var scopedServices = serviceScope.ServiceProvider;
+        var activityRegistry = scopedServices.GetRequiredService<IActivityRegistry>();
+        await activityRegistry.RegisterAsync<Sequence>();
+        await activityRegistry.RegisterAsync<WriteLine>();
+        await activityRegistry.RegisterAsync<CompensationScope>();
+        activityRegistry.Register(new ActivityDescriptor
+        {
+            TypeName = "Test.OpaquePayloadActivity",
+            ClrType = typeof(OpaquePayloadActivity),
+            Version = 1,
+            Constructor = context => context.CreateActivity<OpaquePayloadActivity>()
+        });
+
+        var serializer = scopedServices.GetRequiredService<IActivitySerializer>();
+        using var futurePayload = JsonDocument.Parse("""{"_type":"FuturePayload","items":[{"_type":"FutureItem","values":[1,2]}]}""");
+        using var ordinaryMetadata = JsonDocument.Parse("""{"_type":"LegacyMetadata","value":7}""");
+        using var scopeItems = JsonDocument.Parse("""[{"_type":"FutureScopeItem","values":[3,4]}]""");
+        using var scopeValues = JsonDocument.Parse("""[{"_type":"FutureScopeValue","items":[5,6]}]""");
+        var scopeExtensionData = new Dictionary<string, JsonElement>
+        {
+            ["_type"] = JsonSerializer.SerializeToElement("FutureScopeExtension"),
+            [scopeUsesItemsWrapper ? "items" : "values"] = (scopeUsesItemsWrapper ? scopeItems : scopeValues).RootElement.Clone()
+        };
+        var opaqueScope = new CompensationScope
+        {
+            Id = "opaque-scope",
+            AdditionalProperties = scopeExtensionData,
+            Steps =
+            [
+                new CompensationStep
+                {
+                    StepId = "opaque-step",
+                    Forward = new OpaquePayloadActivity
+                    {
+                        Id = "future-child",
+                        Type = "Test.OpaquePayloadActivity",
+                        Version = 1,
+                        AdditionalProperties = new Dictionary<string, JsonElement>
+                        {
+                            ["opaque"] = futurePayload.RootElement.Clone()
+                        }
+                    }
+                }
+            ]
+        };
+        var validScope = new CompensationScope
+        {
+            Id = "valid-scope",
+            Steps = [new CompensationStep { StepId = "valid-step", Forward = new WriteLine("hello") { Id = "valid-child" } }]
+        };
+        var ordinaryPayloadActivity = new OpaquePayloadActivity
+        {
+            Id = "ordinary-payload",
+            Type = "Test.OpaquePayloadActivity",
+            Version = 1,
+            AdditionalProperties = new Dictionary<string, JsonElement>
+            {
+                ["opaque"] = ordinaryMetadata.RootElement.Clone()
+            }
+        };
+        var sourceJson = serializer.Serialize(new Sequence { Id = "root", Activities = [validScope, opaqueScope, ordinaryPayloadActivity] });
+        using var sourceDocument = JsonDocument.Parse(sourceJson);
+        var expectedOpaqueScopeJson = sourceDocument.RootElement.GetProperty("activities")[1].GetRawText();
+        var workflowDefinitionService = scopedServices.GetRequiredService<IWorkflowDefinitionService>();
+        var storedData = sourceJson;
+
+        for (var roundtrip = 0; roundtrip < 2; roundtrip++)
+        {
+            var definition = new WorkflowDefinition
+            {
+                Id = "version-1",
+                DefinitionId = "definition-1",
+                Version = 1,
+                MaterializerName = JsonWorkflowMaterializer.MaterializerName,
+                StringData = storedData
+            };
+            var graph = await workflowDefinitionService.MaterializeWorkflowAsync(definition);
+            var root = Assert.IsType<Sequence>(graph.Workflow.Root);
+            Assert.IsType<CompensationScope>(root.Activities.First());
+            var opaque = Assert.IsType<NotFoundActivity>(root.Activities.ElementAt(1));
+            var ordinaryPayload = Assert.IsType<OpaquePayloadActivity>(root.Activities.ElementAt(2));
+            var ordinaryValue = ordinaryPayload.AdditionalProperties!["opaque"];
+            Assert.Equal(JsonValueKind.Object, ordinaryValue.ValueKind);
+            Assert.False(ordinaryValue.TryGetProperty("_type", out _));
+            Assert.Equal(7, ordinaryValue.GetProperty("value").GetInt32());
+            Assert.Equal(CompensationScope.ActivityTypeName, opaque.MissingTypeName);
+            Assert.Equal(expectedOpaqueScopeJson, opaque.OriginalActivityJson);
+
+            using var preservedScope = JsonDocument.Parse(opaque.OriginalActivityJson);
+            Assert.Equal("FutureScopeExtension", preservedScope.RootElement.GetProperty("_type").GetString());
+            var wrapperItems = preservedScope.RootElement.GetProperty(scopeUsesItemsWrapper ? "items" : "values");
+            Assert.Equal(scopeUsesItemsWrapper ? "FutureScopeItem" : "FutureScopeValue", wrapperItems[0].GetProperty("_type").GetString());
+            Assert.Equal(2, (scopeUsesItemsWrapper
+                ? wrapperItems[0].GetProperty("values")
+                : wrapperItems[0].GetProperty("items")).GetArrayLength());
+            var payload = preservedScope.RootElement.GetProperty("steps")[0].GetProperty("forward").GetProperty("opaque");
+            Assert.Equal("FuturePayload", payload.GetProperty("_type").GetString());
+            Assert.Equal(2, payload.GetProperty("items")[0].GetProperty("values").GetArrayLength());
+
+            storedData = serializer.Serialize(root);
+        }
+    }
+
     [Fact]
     public async Task Publish_RefusesNestedOpaqueCompensationEvenWhenValidationErrorsAreIgnored()
     {
@@ -153,5 +273,11 @@ public class WorkflowDefinitionPublisherCompensationDraftTests
         Assert.Equal(new[] { "forward-1" }, CompensationDraftTestData.GetDataArray(Assert.Single(result.ValidationErrors, error => CompensationDraftTestData.GetDataString(error, "role") == "forward"), "relatedActivityIds"));
         Assert.Equal(new[] { "handler-1" }, CompensationDraftTestData.GetDataArray(Assert.Single(result.ValidationErrors, error => CompensationDraftTestData.GetDataString(error, "role") == "handler"), "relatedActivityIds"));
         Assert.Equal(new[] { "mapping-1" }, CompensationDraftTestData.GetDataArray(Assert.Single(result.ValidationErrors, error => CompensationDraftTestData.GetDataString(error, "role") == "mapping"), "mappingIds"));
+    }
+
+    public sealed class OpaquePayloadActivity : Activity
+    {
+        [JsonExtensionData]
+        public IDictionary<string, JsonElement>? AdditionalProperties { get; set; }
     }
 }
