@@ -195,13 +195,15 @@ internal sealed class NativeCommitFixture : IAsyncDisposable
     private const string TenantId = "tenant-8936-sqlite-proof";
     private readonly SqliteConnection _connection;
     private readonly string _connectionString;
+    private readonly string _databasePath;
     private readonly ServiceProvider _services;
     private readonly WorkflowGraph _workflow;
 
-    private NativeCommitFixture(SqliteConnection connection, string connectionString, ServiceProvider services, WorkflowGraph workflow, SqliteCommitCommandInterceptor commands, SharedCommitTransactionState transactionState)
+    private NativeCommitFixture(SqliteConnection connection, string connectionString, string databasePath, ServiceProvider services, WorkflowGraph workflow, SqliteCommitCommandInterceptor commands, SharedCommitTransactionState transactionState)
     {
         _connection = connection;
         _connectionString = connectionString;
+        _databasePath = databasePath;
         _services = services;
         _workflow = workflow;
         Commands = commands;
@@ -216,60 +218,90 @@ internal sealed class NativeCommitFixture : IAsyncDisposable
         var databasePath = Path.Combine(Path.GetTempPath(), $"elsa-8936-{Guid.NewGuid():N}.sqlite");
         var connectionString = $"Data Source={databasePath}";
         var connection = new SqliteConnection(connectionString);
-        await connection.OpenAsync();
+        ServiceProvider? serviceProvider = null;
 
-        var commands = new SqliteCommitCommandInterceptor();
-        var transactionState = new SharedCommitTransactionState(commands);
-        var services = new ServiceCollection();
-        services.AddSingleton<IConfiguration, ConfigurationManager>();
-        services.AddLogging(logging => logging.AddProvider(new XunitLoggerProvider(output)).SetMinimumLevel(LogLevel.Warning));
-        services.AddSingleton<ITenantAccessor>(new TestTenantAccessor(TenantId));
-        services.Configure<TenantsOptions>(options => options.IsEnabled = true);
-        services.AddSingleton(commands);
-        services.AddSingleton(transactionState);
-        services.AddSingleton(connection);
-
-        services.AddElsa(elsa => elsa
-            .UseScheduling()
-            .UseWorkflowManagement(management => management.UseEntityFrameworkCore(persistence =>
-            {
-                persistence.UseSqlite(connectionString);
-                persistence.DbContextOptionsBuilder = (_, options) => options.UseSqlite(connection).AddInterceptors(commands);
-                persistence.RunMigrations = false;
-            }))
-            .UseWorkflows()
-            .UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore(persistence =>
-            {
-                persistence.UseSqlite(connectionString);
-                persistence.DbContextOptionsBuilder = (_, options) => options.UseSqlite(connection).AddInterceptors(commands);
-                persistence.RunMigrations = false;
-                persistence.UseWorkflowCommitTransaction = false;
-            }))
-            .AddWorkflow<NativeCommitWorkflow>());
-
-        services.Decorate<IDbContextFactory<ManagementElsaDbContext>, SharedTransactionDbContextFactory<ManagementElsaDbContext>>();
-        services.Decorate<IDbContextFactory<RuntimeElsaDbContext>, SharedTransactionDbContextFactory<RuntimeElsaDbContext>>();
-        services.Replace(ServiceDescriptor.Scoped<IWorkflowCommitTransaction, SharedSqliteCommitTransaction>());
-
-        var serviceProvider = services.BuildServiceProvider();
-        await serviceProvider.PopulateRegistriesAsync();
-
-        await using (var management = await serviceProvider.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>().CreateDbContextAsync())
+        try
         {
-            await management.Database.ExecuteSqlRawAsync(management.Database.GenerateCreateScript());
-        }
+            await connection.OpenAsync();
 
-        await using (var runtime = await serviceProvider.GetRequiredService<IDbContextFactory<RuntimeElsaDbContext>>().CreateDbContextAsync())
+            var commands = new SqliteCommitCommandInterceptor();
+            var transactionState = new SharedCommitTransactionState(commands);
+            var services = new ServiceCollection();
+            services.AddSingleton<IConfiguration, ConfigurationManager>();
+            services.AddLogging(logging => logging.AddProvider(new XunitLoggerProvider(output)).SetMinimumLevel(LogLevel.Warning));
+            services.AddSingleton<ITenantAccessor>(new TestTenantAccessor(TenantId));
+            services.Configure<TenantsOptions>(options => options.IsEnabled = true);
+            services.AddSingleton(commands);
+            services.AddSingleton(transactionState);
+            services.AddSingleton(connection);
+
+            services.AddElsa(elsa => elsa
+                .UseScheduling()
+                .UseWorkflowManagement(management => management.UseEntityFrameworkCore(persistence =>
+                {
+                    persistence.UseSqlite(connectionString);
+                    persistence.DbContextOptionsBuilder = (_, options) => options.UseSqlite(connection).AddInterceptors(commands);
+                    persistence.RunMigrations = false;
+                }))
+                .UseWorkflows()
+                .UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore(persistence =>
+                {
+                    persistence.UseSqlite(connectionString);
+                    persistence.DbContextOptionsBuilder = (_, options) => options.UseSqlite(connection).AddInterceptors(commands);
+                    persistence.RunMigrations = false;
+                    persistence.UseWorkflowCommitTransaction = false;
+                }))
+                .AddWorkflow<NativeCommitWorkflow>());
+
+            services.Decorate<IDbContextFactory<ManagementElsaDbContext>, SharedTransactionDbContextFactory<ManagementElsaDbContext>>();
+            services.Decorate<IDbContextFactory<RuntimeElsaDbContext>, SharedTransactionDbContextFactory<RuntimeElsaDbContext>>();
+            services.Replace(ServiceDescriptor.Scoped<IWorkflowCommitTransaction, SharedSqliteCommitTransaction>());
+
+            serviceProvider = services.BuildServiceProvider();
+
+            // The registry population queries management stores, so create both schemas first.
+            await using (var management = await serviceProvider.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>().CreateDbContextAsync())
+            {
+                await management.Database.ExecuteSqlRawAsync(management.Database.GenerateCreateScript());
+            }
+
+            await using (var runtime = await serviceProvider.GetRequiredService<IDbContextFactory<RuntimeElsaDbContext>>().CreateDbContextAsync())
+            {
+                await runtime.Database.ExecuteSqlRawAsync(runtime.Database.GenerateCreateScript());
+            }
+
+            await serviceProvider.PopulateRegistriesAsync();
+
+            var builtWorkflow = await serviceProvider.GetRequiredService<IWorkflowBuilderFactory>()
+                .CreateBuilder()
+                .BuildWorkflowAsync<NativeCommitWorkflow>();
+            var workflowGraph = await serviceProvider.GetRequiredService<IWorkflowGraphBuilder>().BuildAsync(builtWorkflow);
+
+            return new(connection, connectionString, databasePath, serviceProvider, workflowGraph, commands, transactionState);
+        }
+        catch
         {
-            await runtime.Database.ExecuteSqlRawAsync(runtime.Database.GenerateCreateScript());
+            try
+            {
+                if (serviceProvider != null)
+                {
+                    await serviceProvider.DisposeAsync();
+                }
+            }
+            finally
+            {
+                try
+                {
+                    await connection.DisposeAsync();
+                }
+                finally
+                {
+                    DeleteDatabaseFiles(databasePath);
+                }
+            }
+
+            throw;
         }
-
-        var builtWorkflow = await serviceProvider.GetRequiredService<IWorkflowBuilderFactory>()
-            .CreateBuilder()
-            .BuildWorkflowAsync<NativeCommitWorkflow>();
-        var workflowGraph = await serviceProvider.GetRequiredService<IWorkflowGraphBuilder>().BuildAsync(builtWorkflow);
-
-        return new(connection, connectionString, serviceProvider, workflowGraph, commands, transactionState);
     }
 
     public async Task<StartedWorkflow> StartAsync()
@@ -339,24 +371,29 @@ internal sealed class NativeCommitFixture : IAsyncDisposable
         string data;
         await using (var command = connection.CreateCommand())
         {
-            command.CommandText = "SELECT \"Data\" FROM \"WorkflowInstances\" WHERE \"Id\" = $instanceId AND \"TenantId\" = $tenantId";
+            command.CommandText = "SELECT \"Data\", \"TenantId\" FROM \"WorkflowInstances\" WHERE \"Id\" = $instanceId";
             command.Parameters.AddWithValue("$instanceId", instanceId);
-            command.Parameters.AddWithValue("$tenantId", TenantId);
-            data = (string)(await command.ExecuteScalarAsync())!;
+            await using var reader = await command.ExecuteReaderAsync();
+            Assert.True(await reader.ReadAsync(), "The workflow instance row should exist in the independent database connection.");
+            data = reader.GetString(0);
+            Assert.Equal(TenantId, reader.GetString(1));
         }
 
         var bookmarkIds = new List<string>();
         await using (var command = connection.CreateCommand())
         {
-            command.CommandText = "SELECT \"Id\" FROM \"Bookmarks\" WHERE \"WorkflowInstanceId\" = $instanceId AND \"TenantId\" = $tenantId ORDER BY \"Id\"";
+            command.CommandText = "SELECT \"Id\", \"TenantId\" FROM \"Bookmarks\" WHERE \"WorkflowInstanceId\" = $instanceId ORDER BY \"Id\"";
             command.Parameters.AddWithValue("$instanceId", instanceId);
-            command.Parameters.AddWithValue("$tenantId", TenantId);
             await using var reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
+                Assert.Equal(TenantId, reader.GetString(1));
                 bookmarkIds.Add(reader.GetString(0));
             }
         }
+
+        await AssertTenantIdsAsync(connection, "WorkflowExecutionLogRecords", instanceId);
+        await AssertTenantIdsAsync(connection, "ActivityExecutionRecords", instanceId);
 
         long executionLogCount;
         await using (var command = connection.CreateCommand())
@@ -379,13 +416,42 @@ internal sealed class NativeCommitFixture : IAsyncDisposable
         return new(data, Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(data))), bookmarkIds, executionLogCount, activityExecutionRecordCount);
     }
 
+    private static async Task AssertTenantIdsAsync(SqliteConnection connection, string tableName, string instanceId)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = $"SELECT DISTINCT \"TenantId\" FROM \"{tableName}\" WHERE \"WorkflowInstanceId\" = $instanceId";
+        command.Parameters.AddWithValue("$instanceId", instanceId);
+        await using var reader = await command.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            Assert.Equal(TenantId, reader.IsDBNull(0) ? null : reader.GetString(0));
+        }
+    }
+
     public async ValueTask DisposeAsync()
     {
-        await _services.DisposeAsync();
-        await _connection.DisposeAsync();
+        try
+        {
+            await _services.DisposeAsync();
+        }
+        finally
+        {
+            try
+            {
+                await _connection.DisposeAsync();
+            }
+            finally
+            {
+                DeleteDatabaseFiles(_databasePath);
+            }
+        }
+    }
+
+    private static void DeleteDatabaseFiles(string databasePath)
+    {
         foreach (var suffix in new[] { "", "-wal", "-shm" })
         {
-            var path = _connection.DataSource + suffix;
+            var path = databasePath + suffix;
             if (File.Exists(path))
             {
                 File.Delete(path);
