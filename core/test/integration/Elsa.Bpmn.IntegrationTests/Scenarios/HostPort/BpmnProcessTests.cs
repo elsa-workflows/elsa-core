@@ -107,6 +107,37 @@ public class BpmnProcessTests(ITestOutputHelper testOutputHelper)
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
     }
 
+    [Fact(DisplayName = "An error boundary inside a subprocess catches a failure there, however the scopes' tokens are numbered")]
+    public async Task ErrorBoundaryInsideSubprocess_CatchesTheFailure()
+    {
+        // valence-works/bpmn#32, reported against Elsa as #8834: the failure was resolved against the root's token,
+        // so the boundary inside the body caught it only when the two scopes' token ids happened to coincide.
+
+        // Act
+        var result = await _host.RunAsync(BpmnTestProcesses.ErrorBoundaryInsideSubprocess(_host.Log), typeof(FaultStrategy));
+
+        // Assert
+        Assert.Equal(["executed:first", "executed:second", "executed:subRisky", "cancelled:subRisky", "executed:subRecover", "executed:after"], _host.Log.Entries);
+        Assert.Equal(ActivityStatus.Canceled, StatusOf(result, "subRisky"));
+        Assert.Empty(result.WorkflowState.Incidents);
+        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+    }
+
+    [Fact(DisplayName = "A failing instance of a parallel multi-instance task is told apart from its live sibling, and its error boundary catches it")]
+    public async Task FailingParallelMultiInstance_IsPinnedOnItsOwnInstance()
+    {
+        // #8834: two instances of one binding are live when the first fails. Bpmn.Semantics 0.4.0 refuses a fault it
+        // cannot pin on exactly one of them, so the host must name the failed instance by its iteration and token id.
+
+        // Act
+        var result = await _host.RunAsync(BpmnTestProcesses.ParallelMultiInstanceTaskWithErrorBoundary(_host.Log), typeof(FaultStrategy));
+
+        // Assert
+        Assert.Equal(1, _host.Log.Occurrences("executed:recover"));
+        Assert.Empty(result.WorkflowState.Incidents);
+        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+    }
+
     [Fact(DisplayName = "A collection-mode multi-instance runs one instance per item of a container-scoped variable")]
     public async Task CollectionMultiInstance_ReadsTheScopeVariable()
     {

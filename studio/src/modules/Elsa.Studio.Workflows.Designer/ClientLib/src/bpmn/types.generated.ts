@@ -1,11 +1,12 @@
 // GENERATED FILE -- do not edit by hand.
-// Source: Bpmn.Model 0.3.1, payload format 1.1.0, schema/bpmn-payload.schema.json.
+// Source: Bpmn.Model 0.4.0, payload format 1.5.0, schema/bpmn-payload.schema.json.
 // Regenerate with: npm run generate:bpmn-types (from src/modules/Elsa.Studio.Workflows.Designer/ClientLib).
 // See scripts/generate-bpmn-types.js.
 /**
- * Version 1.1.0 of the payload format owned by Bpmn.Model. Generated from the model; do not edit by hand. See ADR 0005.
+ * Version 1.5.0 of the payload format owned by Bpmn.Model. Generated from the model; do not edit by hand. See ADRs 0005 and 0007.
  */
-export type BPMNPayloadFormat = (BpmnDefinitions | BpmnExecutionState)
+export type BPMNPayloadFormat = (BpmnDefinitions | BpmnExecutionState | BpmnWorkBinding)
+export type BpmnWorkBinding = (TimerWait | MessageWait | SignalWait | MessagePublish | CallProcess | NestedProcess | UnboundTask)
 
 export interface BpmnDefinitions {
 id?: (string | null)
@@ -20,6 +21,7 @@ signals: BpmnSignalDeclaration[]
 errors: BpmnErrorDeclaration[]
 escalations: BpmnEscalationDeclaration[]
 extensions: BpmnExtensions
+expressionLanguage?: (string | null)
 }
 export interface BpmnCollaboration {
 id?: (string | null)
@@ -82,6 +84,7 @@ sequenceFlows: BpmnSequenceFlow[]
 lanes: BpmnLane[]
 variables: BpmnVariableDeclaration[]
 extensions: BpmnExtensions
+expressionLanguage?: (string | null)
 }
 export interface BpmnElement {
 elementId: string
@@ -123,6 +126,12 @@ targetRef: string
 name?: (string | null)
 conditionOutcome?: (string | null)
 isDefault: boolean
+conditionExpression?: (BpmnConditionExpression | null)
+extensions: BpmnExtensions
+}
+export interface BpmnConditionExpression {
+body: string
+language?: (string | null)
 extensions: BpmnExtensions
 }
 export interface BpmnLane {
@@ -266,6 +275,63 @@ export interface BpmnPendingFault {
 faultCode: string
 message: string
 }
+export interface TimerWait {
+kind: "timerWait"
+isoDuration: string
+processId: string
+elementId: string
+bindingRef: string
+slot: BpmnBindingSlot
+}
+export interface MessageWait {
+kind: "messageWait"
+messageName: string
+processId: string
+elementId: string
+bindingRef: string
+slot: BpmnBindingSlot
+}
+export interface SignalWait {
+kind: "signalWait"
+signalName: string
+processId: string
+elementId: string
+bindingRef: string
+slot: BpmnBindingSlot
+}
+export interface MessagePublish {
+kind: "messagePublish"
+messageName: string
+processId: string
+elementId: string
+bindingRef: string
+slot: BpmnBindingSlot
+}
+export interface CallProcess {
+kind: "callProcess"
+calledElement?: (string | null)
+waitForCompletion: boolean
+processId: string
+elementId: string
+bindingRef: string
+slot: BpmnBindingSlot
+}
+export interface NestedProcess {
+kind: "nestedProcess"
+definition: BpmnProcessDefinition
+processId: string
+elementId: string
+bindingRef: string
+slot: BpmnBindingSlot
+}
+export interface UnboundTask {
+kind: "unboundTask"
+taskType: string
+processId: string
+elementId: string
+bindingRef: string
+slot: BpmnBindingSlot
+}
 
 /**
  * Serialized as an integer: the model declares no JsonStringEnumConverter.
@@ -311,7 +377,10 @@ EventSubprocessCompleted = 19,
 CallActivityFailureRouted = 20,
 ScopeListenerArmed = 21,
 ScopeListenerFired = 22,
-ScopeListenerRetired = 23
+ScopeListenerRetired = 23,
+ConditionEvaluated = 24,
+ErrorThrown = 25,
+ErrorCaught = 26
 }
 /**
  * Serialized as an integer: the model declares no JsonStringEnumConverter.
@@ -320,5 +389,12 @@ export enum BpmnCompensableStatus {
 Registered = 0,
 Claimed = 1,
 Compensated = 2
+}
+/**
+ * Serialized as an integer: the model declares no JsonStringEnumConverter.
+ */
+export enum BpmnBindingSlot {
+Primary = 0,
+ScopeListener = 1
 }
 

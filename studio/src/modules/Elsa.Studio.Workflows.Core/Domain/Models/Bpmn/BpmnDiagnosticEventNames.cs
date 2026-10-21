@@ -95,4 +95,13 @@ public static class BpmnDiagnosticEventNames
 
     /// <summary>A message, signal or timer triggered scope listener was retired.</summary>
     public const string ScopeListenerRetired = "ScopeListenerRetired";
+
+    /// <summary>The host's condition evaluator answered one sequence flow's condition expression.</summary>
+    public const string ConditionEvaluated = "ConditionEvaluated";
+
+    /// <summary>An error end event threw its error.</summary>
+    public const string ErrorThrown = "ErrorThrown";
+
+    /// <summary>An error boundary event or an error event subprocess caught an error.</summary>
+    public const string ErrorCaught = "ErrorCaught";
 }

@@ -93,10 +93,10 @@ namespace Elsa.Bpmn.Interchange.Services;
 /// it.
 /// </para>
 /// <para>
-/// <b>Expression conditions are refused here too, and nothing opts out of it.</b> A sequence flow's standard
-/// <c>conditionExpression</c> is read as unconditional because nothing evaluates it yet, so import refuses the document
-/// (see <see cref="EnsureNoExpressionConditions"/>) rather than persisting a workflow that routes differently from its
-/// diagram. <see cref="Analyze"/> keeps reporting those flows as findings.
+/// <b>Expression conditions are refused here too, and nothing opts out of it.</b> Nothing in Elsa evaluates a sequence
+/// flow's standard <c>conditionExpression</c> yet, so import refuses the document (see
+/// <see cref="EnsureNoExpressionConditions"/>) rather than persisting a workflow that cannot route as its diagram says.
+/// <see cref="Analyze"/> refuses nothing.
 /// </para>
 /// </remarks>
 public sealed class BpmnInterchangeDocumentService(
@@ -184,7 +184,8 @@ public sealed class BpmnInterchangeDocumentService(
         BpmnHostCapabilities.SubtreeCancellation,
         BpmnHostCapabilities.ScopeSignalling,
         BpmnHostCapabilities.IterationScopes,
-        BpmnHostCapabilities.ScopeVariables
+        BpmnHostCapabilities.ScopeVariables,
+        BpmnHostCapabilities.ConditionEvaluation
     ];
 
     /// <summary>
@@ -264,8 +265,10 @@ public sealed class BpmnInterchangeDocumentService(
 
         var rootDefinition = ResolveRootDefinition(result.Definitions, processId);
 
-        EnsureCapabilitiesSatisfied(rootDefinition, result.Bindings);
+        // Before the capability check: a flow with an expression condition also needs the condition-evaluation
+        // capability Elsa does not declare yet, and this refusal names the flows and the way out.
         EnsureNoExpressionConditions(xml, result);
+        EnsureCapabilitiesSatisfied(rootDefinition, result.Bindings);
 
         var process = binder.Bind(rootDefinition, result.Bindings);
 
@@ -988,21 +991,18 @@ public sealed class BpmnInterchangeDocumentService(
     /// </summary>
     /// <remarks>
     /// <para>
-    /// Nothing evaluates such an expression yet, so <see cref="BpmnXmlReader"/> reads the flow as unconditional; the
-    /// workflow would route differently from its diagram on every run. Per
-    /// <c>docs/adr/2026-10-20-elsa-evaluates-bpmn-conditions.md</c> the document is refused rather than imported with
-    /// its conditions removed, and no opt-in overrides that. <see cref="Analyze"/> does not call this: a preview reports
-    /// the same flows as Degraded findings and refuses nothing.
+    /// Nothing in Elsa evaluates such an expression yet, so the workflow could not route as its diagram says. Per
+    /// <c>docs/adr/2026-10-20-elsa-evaluates-bpmn-conditions.md</c> the document is refused, and no opt-in overrides
+    /// that. It runs before the capability check, which would also refuse the document for the condition-evaluation
+    /// capability Elsa does not declare, so the refusal names the flows and the way out. <see cref="Analyze"/> does not
+    /// call this: a preview refuses nothing.
     /// </para>
     /// <para>
-    /// The reader's own finding for such a flow carries only a severity, an element id and a sentence of text — no
-    /// stable kind — and the <c>conditionExpression</c> itself is consumed rather than retained on the model, so neither
-    /// says structurally that a flow lost a condition. So the read model decides which flows exist and which are
-    /// conditional on an outcome (resolving the vendor namespace exactly as the read did), across every top-level
-    /// process and every nested process body, and the XML text the read came from — the same text, which
-    /// <see cref="BpmnXmlReader"/> parses the same way — decides, namespace-aware, which of the remaining flows declare
-    /// a <c>conditionExpression</c> child. The document is checked whole, not only the process being imported, like
-    /// <see cref="EnsureElementIdsUnique"/>.
+    /// The read model decides which flows exist and which are conditional on an outcome (resolving the vendor namespace
+    /// exactly as the read did), across every top-level process and every nested process body, and the XML text the
+    /// read came from — the same text, which <see cref="BpmnXmlReader"/> parses the same way — decides,
+    /// namespace-aware, which of the remaining flows declare a <c>conditionExpression</c> child. The document is checked
+    /// whole, not only the process being imported, like <see cref="EnsureElementIdsUnique"/>.
     /// </para>
     /// </remarks>
     /// <exception cref="BpmnConditionUnsupportedException">A sequence flow carries an expression condition.</exception>

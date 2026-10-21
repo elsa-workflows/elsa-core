@@ -113,6 +113,7 @@ internal sealed class BpmnCommandApplier(ActivityExecutionContext scopeContext, 
             Handle = memory.Work.NextHandle(),
             BindingRef = start.BindingRef,
             IterationId = start.IterationScope?.IterationId,
+            TokenId = start.TokenId,
             ElementId = start.ElementId,
             ChildContextId = childContext.Id
         });

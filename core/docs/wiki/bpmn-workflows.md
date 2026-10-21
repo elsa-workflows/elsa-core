@@ -98,12 +98,16 @@ called workflow faults, the scope host reports the call activity's work as compl
 `BpmnInterpreter.CallActivityFaultedOutcomeName`, and with `BpmnInterpreter.CallActivityCancelledOutcomeName` when its
 final sub-status is `Cancelled`. When the called workflow never starts because its activation strategy denies the new
 instance (the dispatch returns `CannotStart`), it reports `BpmnInterpreter.CallActivityDispatchFailedOutcomeName`. The
-interpreter routes that failure the way BPMN routes an error:
+interpreter routes that failure the way BPMN routes an error with no code:
 
-1. an error boundary event attached to the call activity fires and its path is taken;
-2. otherwise the scope's error event subprocess starts;
+1. a catch-all error boundary event (one that declares no error code) attached to the call activity fires and its path
+   is taken;
+2. otherwise the scope's catch-all error event subprocess starts;
 3. otherwise the process faults with `bpmn.call-activity.faulted` (or `bpmn.call-activity.cancelled`, or
    `bpmn.call-activity.dispatch-failed`).
+
+Since `Bpmn.Semantics` 0.4.0 an error catcher that declares a code catches only an error with that code, and none of
+these failures carries one, so a coded catcher does not catch them.
 
 Only call activities do this. `DispatchWorkflow` itself completes the same way whatever its child's sub-status, so a
 `Flowchart` that waits for a child still continues on `Done` after the child faults, and after its activation is denied,
@@ -268,17 +272,17 @@ still be refused by `Import` on capability grounds.
 ### Expression condition refusal
 
 Elsa does not evaluate a sequence flow's standard BPMN `<conditionExpression>` yet (for example `${x > 1}` from Camunda
-Modeler or bpmn.io). The `Bpmn.Interchange` reader turns such a flow into an unconditional one, so the imported workflow
-would route differently from its diagram on every run. `Import` and the document `PUT` therefore refuse a document whose
-flows carry one, with `422 Unprocessable Entity` and the code `bpmn.import.condition-unsupported`, before persisting
-anything. The check covers the whole document, including the bodies of nested subprocesses, and `data.elementIds` lists
+Modeler or bpmn.io), so the imported workflow could not route as its diagram says. `Import` and the document `PUT`
+therefore refuse a document whose flows carry one, with `422 Unprocessable Entity` and the code
+`bpmn.import.condition-unsupported`, before persisting anything. The check covers the whole document, including the bodies of nested subprocesses, and `data.elementIds` lists
 the offending sequence flow ids, sorted. No opt-in overrides this refusal (ADR "Evaluate BPMN conditions with Elsa
 expressions", `docs/adr/2026-10-20-elsa-evaluates-bpmn-conditions.md`). It is lifted once Elsa evaluates these
 expressions with its own expression engine.
 
 A flow conditional on an outcome name through the library's own `vw:conditionOutcome` attribute is still accepted,
 including when it also carries the readable `conditionExpression` the library's writer emits beside it. `Analyze` does
-not refuse: it keeps reporting each expression-conditioned flow as a `Degraded` finding.
+not refuse. Since `Bpmn.Interchange` 0.4.0 the reader keeps the expression on the model instead of dropping it, so
+`Analyze` no longer reports these flows as `Degraded`.
 
 ### Duplicate element id refusal
 
