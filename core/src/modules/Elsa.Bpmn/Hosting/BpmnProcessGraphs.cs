@@ -1,8 +1,5 @@
 using Bpmn.Semantics;
 using Elsa.Bpmn.Activities;
-using Elsa.Workflows;
-using Elsa.Workflows.Activities;
-using Elsa.Workflows.Activities.Flowchart.Activities;
 
 namespace Elsa.Bpmn.Hosting;
 
@@ -20,9 +17,9 @@ namespace Elsa.Bpmn.Hosting;
 public static class BpmnProcessGraphs
 {
     /// <summary>
-    /// Builds the graph of <paramref name="process"/> and of every subprocess body it can reach, at any depth, and
-    /// discards them. A BPMN process composed into a container bound as work, such as a <c>Flowchart</c>, counts as
-    /// reachable too.
+    /// Builds the graph of <paramref name="process"/> and of every subprocess body bound as its work, at any depth, and
+    /// discards them. Those are the bodies a binder produces; at run time the scope host also builds every process
+    /// composed into other work, through <see cref="BuildEach"/>.
     /// </summary>
     /// <exception cref="BpmnExecutionException">A process or body is structurally invalid; the message names it.</exception>
     /// <exception cref="BpmnCapabilityException">A process or body needs a capability this runtime does not declare.</exception>
@@ -36,7 +33,7 @@ public static class BpmnProcessGraphs
         {
             _ = Build(scope);
 
-            foreach (var nested in scope.WorkBindings.Keys.Select(scope.FindWorkActivity).SelectMany(ScopesWithin))
+            foreach (var nested in scope.WorkBindings.Keys.Select(scope.FindWorkActivity).OfType<BpmnProcess>())
             {
                 if (visited.Add(nested))
                 {
@@ -46,18 +43,16 @@ public static class BpmnProcessGraphs
         }
     }
 
-    /// <summary>
-    /// The BPMN scopes that bound work is or composes: the work itself when it is a scope, else the scopes inside it when
-    /// it is a container such as a <c>Flowchart</c> (D11), at any depth. A flowchart's <c>Start</c> is a port of its own,
-    /// so it counts even when <c>Activities</c> does not list it. Any other activity is opaque.
-    /// </summary>
-    private static IEnumerable<BpmnProcess> ScopesWithin(IActivity? activity) => activity switch
+    /// <summary>Builds the graph of each of <paramref name="processes"/> once, and discards them.</summary>
+    /// <exception cref="BpmnExecutionException">A process is structurally invalid; the message names it.</exception>
+    /// <exception cref="BpmnCapabilityException">A process needs a capability this runtime does not declare.</exception>
+    internal static void BuildEach(IEnumerable<BpmnProcess> processes)
     {
-        BpmnProcess scope => [scope],
-        Flowchart flowchart => flowchart.Activities.Prepend(flowchart.Start).SelectMany(ScopesWithin),
-        Container container => container.Activities.SelectMany(ScopesWithin),
-        _ => []
-    };
+        foreach (var process in processes.Distinct<BpmnProcess>(ReferenceEqualityComparer.Instance))
+        {
+            _ = Build(process);
+        }
+    }
 
     /// <summary>Builds the graph of <paramref name="process"/> alone.</summary>
     internal static BpmnGraph Build(BpmnProcess process)

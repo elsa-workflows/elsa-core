@@ -1,7 +1,7 @@
 using Bpmn.Model;
 using Elsa.Bpmn.Activities;
 using Elsa.Bpmn.IntegrationTests.Scenarios.HostPort.Activities;
-using Elsa.Workflows.Activities.Flowchart.Activities;
+using Elsa.Workflows;
 
 namespace Elsa.Bpmn.IntegrationTests.Scenarios.HostPort;
 
@@ -187,13 +187,12 @@ internal static partial class BpmnTestProcesses
     }
 
     /// <summary>
-    /// A task, then a task whose work is a <c>Flowchart</c> composing a BPMN process that can never run (the same
-    /// cycle on which nothing can wait). The composed process is a root scope of its own, so it builds its graph only
-    /// when the flowchart starts it; the outer scope is the one that can refuse it before anything runs. The flowchart
-    /// reaches the process through its <c>Start</c> port, and also lists it in <c>Activities</c> when
-    /// <paramref name="listedInActivities"/> is set.
+    /// A task, then a task whose work composes a BPMN process that can never run (the same cycle on which nothing can
+    /// wait) through <paramref name="compose"/>, which wraps the process in another activity with the id
+    /// <c>wrapped</c>. The composed process is a root scope of its own, so it builds its graph only when its wrapper
+    /// starts it; the outer scope is the one that can refuse it before anything runs.
     /// </summary>
-    public static BpmnProcess FlowchartComposingAProcessThatCannotRun(BpmnTestLog log, bool listedInActivities)
+    public static BpmnProcess ComposedProcessThatCannotRun(BpmnTestLog log, Func<BpmnProcess, IActivity> compose)
     {
         var composed = new BpmnProcessBuilder("never-waiting-cycle")
             .StartEvent("innerStart")
@@ -202,7 +201,7 @@ internal static partial class BpmnTestProcesses
             .ConnectSequence("innerStart", "loopA", "loopB", "loopA")
             .Build();
 
-        var definition = new BpmnProcessBuilder("flowchart-composing-a-process-that-cannot-run")
+        var definition = new BpmnProcessBuilder("composed-process-that-cannot-run")
             .StartEvent("start")
             .Task("first", bindingRef: BindingRef("first"))
             .Task("wrapped", bindingRef: BindingRef("wrapped"))
@@ -210,19 +209,7 @@ internal static partial class BpmnTestProcesses
             .ConnectSequence("start", "first", "wrapped", "end")
             .Build();
 
-        var inner = Scope("inner", composed);
-        var wrapped = new Flowchart
-        {
-            Id = "wrapped",
-            Start = inner
-        };
-
-        if (listedInActivities)
-        {
-            wrapped.Activities.Add(inner);
-        }
-
-        return Scope("scope", definition, Immediate("first", log), wrapped);
+        return Scope("scope", definition, Immediate("first", log), compose(Scope("inner", composed)));
     }
 
     /// <summary>A task that fails with nothing to catch it.</summary>

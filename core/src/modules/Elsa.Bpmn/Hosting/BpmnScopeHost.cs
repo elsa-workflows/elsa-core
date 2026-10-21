@@ -90,11 +90,11 @@ internal sealed class BpmnScopeHost
     /// <summary>The scope is beginning.</summary>
     public async ValueTask StartAsync()
     {
-        // A scope that no other BPMN scope started is where a run begins: every body it can reach is built now, so a
+        // A scope that no other BPMN scope started is where a run begins: every scope it can reach is built now, so a
         // body that cannot run is refused before anything has run rather than when a token first reaches it.
         if (InvocationCorrelation.Count == 0)
         {
-            BpmnProcessGraphs.BuildAll(_process);
+            BpmnProcessGraphs.BuildEach(ScopesBeneath());
         }
 
         // Resolving by the matched trigger may read the trigger store, so it happens before the synchronous evaluation.
@@ -220,6 +220,18 @@ internal sealed class BpmnScopeHost
     }
 
     // --- Plumbing ------------------------------------------------------------------------------------
+
+    /// <summary>
+    /// This scope and every BPMN scope beneath it in the workflow graph: its subprocess bodies, and any process composed
+    /// into other work (D11), such as a <c>Flowchart</c> or an <c>If</c> branch. Elsa's own port resolvers built that
+    /// graph, so it reaches every port an activity has. A composed process is a root scope of its own and would otherwise
+    /// build only when its wrapper starts it.
+    /// </summary>
+    private IEnumerable<BpmnProcess> ScopesBeneath() =>
+        (_context.WorkflowExecutionContext.FindNodeByActivity(_process)?.Descendants() ?? [])
+        .Select(node => node.Activity)
+        .OfType<BpmnProcess>()
+        .Prepend(_process);
 
     /// <summary>
     /// The outcome names a call activity's completed work reports for how its called workflow ended. Only a call
