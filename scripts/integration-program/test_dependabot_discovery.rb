@@ -18,6 +18,10 @@ class DependabotDiscoveryTests < Minitest::Test
     "scripts/solution/solution-groups.json"))).fetch("independentProducts").fetch("templates").freeze
   TEMPLATES_PROJECTS = (TEMPLATES.fetch("projects") + TEMPLATES.fetch("buildData")).sort.freeze
   LEGACY_CORE_PROJECT = "extensions/src/Elsa.Testing.Extensions/Elsa.Testing.Extensions.csproj"
+  DISCOVERY_DOCUMENTATION = File.read(File.join(REPOSITORY_ROOT,
+    "docs/integration-program/consolidation/dependabot-recursive-discovery.md")).freeze
+  DOCUMENTED_PROBES = DISCOVERY_DOCUMENTATION.scan(/`(scripts\/[^`]+\.csproj)`/).flatten.sort.freeze
+  DOCUMENTED_CORE_EXPERIMENTS = DISCOVERY_DOCUMENTATION.scan(/`(core\/experiments\/[^`]+\.csproj)`/).flatten.sort.freeze
 
   def setup
     @workspace = Dir.mktmpdir("dependabot-discovery-")
@@ -74,7 +78,8 @@ class DependabotDiscoveryTests < Minitest::Test
       unselected = case product
       when "apps" then APPS_PROJECTS
       when "templates" then TEMPLATES_PROJECTS
-      else ["core/test/TlsSmoke/TlsSmoke.csproj"].select { |path| path.start_with?("#{product}/") }
+      else (["core/test/TlsSmoke/TlsSmoke.csproj"] + DOCUMENTED_CORE_EXPERIMENTS)
+        .select { |path| path.start_with?("#{product}/") }.sort
       end
       assert_equal unselected,
         projects.select { |path| path.start_with?("#{product}/") } - expected,
@@ -83,13 +88,24 @@ class DependabotDiscoveryTests < Minitest::Test
     assert_includes expected, "build/_build.csproj"
     # These are version-pinned historical/contract probes, not product update inputs.
     # The complete list is reconciled in the discovery documentation under #8636.
-    documented_probes = File.read(File.join(REPOSITORY_ROOT,
-      "docs/integration-program/consolidation/dependabot-recursive-discovery.md"))
-      .scan(/`(scripts\/[^`]+\.csproj)`/).flatten.sort
-    assert_equal projects.grep(%r{^scripts/}).sort, documented_probes
-    assert_equal (APPS_PROJECTS + TEMPLATES_PROJECTS + ["core/test/TlsSmoke/TlsSmoke.csproj"] + documented_probes).sort,
+    assert_equal projects.grep(%r{^scripts/}).sort, DOCUMENTED_PROBES
+    assert_equal (APPS_PROJECTS + TEMPLATES_PROJECTS + ["core/test/TlsSmoke/TlsSmoke.csproj"] +
+      DOCUMENTED_PROBES + DOCUMENTED_CORE_EXPERIMENTS).sort,
       (projects - expected).sort
     assert_empty expected - projects, "Solution entries must name tracked manifests"
+  end
+
+  def test_core_experiments_have_an_explicit_temporary_nonproduct_disposition
+    assert_equal tracked_projects.grep(%r{^core/experiments/}).sort, DOCUMENTED_CORE_EXPERIMENTS,
+      "Every Core experiment needs its own documented disposition; do not ignore the directory"
+    assert_equal DOCUMENTED_CORE_EXPERIMENTS.uniq.length, DOCUMENTED_CORE_EXPERIMENTS.length
+    solution = solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln"))
+    assert_empty solution & DOCUMENTED_CORE_EXPERIMENTS,
+      "Temporary research must stay outside the product solution"
+    DOCUMENTED_CORE_EXPERIMENTS.each do |project|
+      assert_equal ["false"], project_xml(project).get_elements("//IsPackable").map(&:text),
+        "#{project} must explicitly remain nonpackable"
+    end
   end
 
   def test_apps_have_an_explicit_independent_consumer_disposition
@@ -103,9 +119,7 @@ class DependabotDiscoveryTests < Minitest::Test
     assert_equal ["false"], targets.get_elements("//IsPackable").map(&:text)
     assert_equal ["$(MSBuildThisFileDirectory)NuGet.Config"], targets.get_elements("//RestoreConfigFile").map(&:text)
     assert_empty targets.get_elements("//Import"), "Apps must not import root source/pack policy"
-    assert_includes File.read(File.join(REPOSITORY_ROOT,
-      "docs/integration-program/consolidation/dependabot-recursive-discovery.md")),
-      "independent released-package consumers"
+    assert_includes DISCOVERY_DOCUMENTATION, "independent released-package consumers"
   end
 
   def test_templates_have_an_explicit_independent_build_and_data_disposition
