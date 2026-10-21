@@ -54,3 +54,7 @@ output of the 10,000th activity. Browser coverage checks syntax highlighting,
 server members, inputs/outputs in all three languages, request reuse, read-only
 mode, server-failure fallback and saving while a type request remains pending. CI reports the benchmark without asserting a
 hardware-dependent time limit.
+
+C# name-based input completion uses `Input.Get<object>("Name")`: the runtime
+requires the explicit type argument to `Get<T>`. Generated `Input.Name` properties
+remain available for valid identifiers and retain their declared types.

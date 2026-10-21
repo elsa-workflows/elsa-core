@@ -6,7 +6,7 @@ async function fixture(page: Page, unavailable = false) {
     if (route.request().url().includes("scripting/javascript/type-definitions/fixture")) {
       calls++;
       expect(route.request().postDataJSON()).toEqual({ activityTypeName: "Example.Activity", propertyName: "Value" });
-      await route.fulfill(unavailable ? { status: 503, json: { message: "Unavailable" } } : { contentType: "application/x-typescript", body: "declare class Customer {\nName: string;\n}\ndeclare function lookupServerValue(): string;\ndeclare function getCustomerId(): Customer;" });
+      await route.fulfill(unavailable ? { status: 503, json: { message: "Unavailable" } } : { contentType: "application/x-typescript", body: "declare class Customer {\nName: string;\n}\ndeclare function lookupServerValue(): string;\ndeclare function getCustomerId(): Customer;\ndeclare function setCustomer(value: Customer): void;" });
     } else await route.fulfill({ json: { items: [], totalCount: 0 } });
   });
   let originalEntry = "";
@@ -42,7 +42,12 @@ async function fixture(page: Page, unavailable = false) {
 
 async function complete(page: Page, prefix: string, label: string, expected = label, beforeClosingParenthesis = false) {
   const editor = page.locator(".cm-content");
-  await editor.fill(prefix);
+  const cursor = prefix.indexOf("|");
+  await editor.fill(prefix.replace("|", ""));
+  if (cursor >= 0) {
+    await editor.press("Control+Home");
+    for (let i = 0; i < cursor; i++) await editor.press("ArrowRight");
+  }
   if (beforeClosingParenthesis) await editor.press("ArrowLeft");
   await editor.press("Control+Space");
   const option = page.getByRole("option").filter({ has: page.getByText(label, { exact: true }) });
@@ -56,6 +61,9 @@ test("C# highlights syntax and all three languages complete server members, inpu
   await expect(page.locator(".cm-line span").filter({ hasText: /^var$/ })).toBeVisible();
   await complete(page, "Variable.Customer.", "Variable.Customer.Name");
   await complete(page, "Input.Customer.", "Input.Customer.Name");
+  await complete(page, "Input.G", 'Input.Get<object>("Customer")');
+  await complete(page, 'Input.Get<object>("Cus|")', 'Input.Get<object>("Customer")');
+  await complete(page, 'Input.Get<object>("Cus|"\n)', 'Input.Get<object>("Customer")');
   await complete(page, "someFunction(Variable.C", "Variable.Customer", "someFunction(Variable.Customer");
   await complete(page, "[Variable.C", "Variable.Customer", "[Variable.Customer");
   await complete(page, "Out", 'Output.From("Lookup", "Result")');
@@ -76,6 +84,26 @@ test("C# highlights syntax and all three languages complete server members, inpu
   expect(calls()).toBe(1);
   await page.getByRole("button", { name: "Toggle read only", exact: true }).click();
   await expect(page.locator(".cm-content")).toHaveAttribute("contenteditable", "false");
+});
+
+test("quoted accessor completion replaces its existing suffix and preserves enclosing expressions", async ({ page }) => {
+  await fixture(page);
+  await complete(page, 'Math.Max(Output.From("Lookup", "Res|"), 1)', 'Output.From("Lookup", "Result")', 'Math.Max(Output.From("Lookup", "Result"), 1)');
+  await page.getByRole("button", { name: "JavaScript", exact: true }).click();
+  await complete(page, 'getInput("Cus|")', 'getInput("Customer")');
+  await complete(page, 'getInput("Cus|"', 'getInput("Customer")');
+  await complete(page, 'getInput("Cus|tomer', 'getInput("Customer")');
+  await complete(page, 'Math.max(getInput("Cus|"\n), 1)', 'getInput("Customer")', 'Math.max(getInput("Customer"), 1)');
+  await complete(page, 'Math.max(getOutputFrom("Lookup", "Res|"), 1)', 'getOutputFrom("Lookup", "Result")', 'Math.max(getOutputFrom("Lookup", "Result"), 1)');
+  await page.getByRole("button", { name: "Python", exact: true }).click();
+  await complete(page, 'input.Get("Cus|")', 'input.Get("Customer")');
+});
+
+test("setter value arguments retain ordinary variable completion", async ({ page }) => {
+  await fixture(page);
+  await page.getByRole("button", { name: "JavaScript", exact: true }).click();
+  await complete(page, "setCustomer(variables.c", "variables.customer", "setCustomer(variables.customer");
+  await complete(page, 'getOutputFrom("Lookup", variables.c', "variables.customer", 'getOutputFrom("Lookup", variables.customer');
 });
 
 test("server type failure leaves local workflow member completion usable", async ({ page }) => {

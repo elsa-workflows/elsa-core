@@ -9,7 +9,7 @@ async function fixture(page: Page, subject?: string) {
     const key = "elsa-studio:auth:" + encodeURIComponent(api);
     if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({ accessToken: jwt }));
   }, { api, jwt: token(subject) });
-  await page.route("**/studio-config", route => route.fulfill({ json: { servers: [{ name: "Development", url: api }], auth: { provider: subject ? "elsa-identity" : "none" }, features: { settings: { enabled: true }, appearance: { enabled: true }, "user-tasks": { enabled: true }, "diagnostics-console-logs": { enabled: true }, "diagnostics-structured-logs": { enabled: true } } } }));
+  await page.route("**/studio-config", route => route.fulfill({ json: { servers: [{ name: "Development", url: api }], auth: { provider: subject ? "elsa-identity" : "none" }, features: { secrets: { enabled: true }, settings: { enabled: true }, appearance: { enabled: true }, "user-tasks": { enabled: true }, "diagnostics-console-logs": { enabled: true }, "diagnostics-structured-logs": { enabled: true } } } }));
   const definition = { id: "version", definitionId: "localization", name: "Settings", version: 1, isLatest: true, isPublished: false, createdAt: "2026-10-21T00:00:00Z", variables: [], inputs: [], outputs: [], outcomes: [], options: {}, customProperties: {},
     root: { id: "root", type: "Elsa.Flowchart", version: 1, connections: [], activities: [{ id: "child", type: "Elsa.WriteLine", version: 1, text: { typeName: "String", expression: { type: "CSharp", value: '"Settings"' } } }] } };
   await page.route("**/elsa/api/**", async route => {
@@ -18,6 +18,7 @@ async function fixture(page: Page, subject?: string) {
       { name: "ConsoleLogs", namespace: "Elsa.Diagnostics.ConsoleLogs.ShellFeatures", fullName: "Elsa.Diagnostics.ConsoleLogs.ShellFeatures.ConsoleLogs" },
       { name: "StructuredLogs", namespace: "Elsa.Diagnostics.StructuredLogs.ShellFeatures", fullName: "Elsa.Diagnostics.StructuredLogs.ShellFeatures.StructuredLogs" },
       { name: "UserTasks", namespace: "Elsa", fullName: "Elsa.UserTasks" },
+      { name: "Secrets", namespace: "Elsa", fullName: "Elsa.Secrets" },
     ] } }); return; }
     if (path.includes("scripting/javascript/type-definitions")) { await route.fulfill({ contentType: "application/x-typescript", body: "" }); return; }
     if (path.includes("/diagnostics/") && path.endsWith("/sources")) { await route.fulfill({ json: [] }); return; }
@@ -157,4 +158,24 @@ test("BPMN client refusal explanations translate while retaining server diagnost
   await dialog.locator('input[type="file"]').setInputFiles({ name: "sample.bpmn", mimeType: "application/xml", buffer: Buffer.from('<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"><process id="first"/></definitions>') });
   await expect(dialog.getByText("Deze implementatie ondersteunt niet alle BPMN-mogelijkheden die het document vereist. Het importeren is geweigerd.", { exact: true })).toBeVisible();
   await expect(dialog.getByText("Server-specific explanation", { exact: true })).toBeVisible();
+});
+
+
+test("an open secret form translates legacy store fields without losing entered values", async ({ page }) => {
+  await fixture(page);
+  await page.route(`${api}/secrets/descriptors`, route => route.fulfill({ json: {
+    types: [{ name: "text", displayName: "Server text type", description: "", editorHint: "text", supportedStoreNames: ["configuration"] }],
+    stores: [{ name: "configuration", displayName: "Server configuration", description: "", capabilities: "Read", isReadOnly: true, requiresValue: false }],
+  } }));
+  await page.goto("/studio-preview/security/secrets");
+  await page.getByRole("button", { name: "Create secret", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Configuration key").fill("Smtp:Password");
+  // Exercise a live culture notification while the modal owns focus.
+  await page.evaluate(async () => {
+    const { studioI18n } = await import("@elsa-workflows/react-studio-sdk/localization");
+    await studioI18n.changeLanguage("nl");
+  });
+  await expect(dialog.getByLabel("Configuratiesleutel")).toHaveValue("Smtp:Password");
+  await expect(dialog.getByText("De server leest de waarde uit deze configuratiesleutel; er wordt niets in de database opgeslagen.", { exact: true })).toBeVisible();
 });

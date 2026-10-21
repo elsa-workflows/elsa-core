@@ -225,7 +225,7 @@ export function expressionCompletions(
       add(`getInput(${quote(i.name)})`, details.input, "function");
     }
     if ((language === "csharp" || language === "liquid") && identifier.test(i.name)) add(`Input.${i.name}`, details.input);
-    if (language === "csharp") add(`Input.Get(${quote(i.name)})`, details.input, "function");
+    if (language === "csharp") add(`Input.Get<object>(${quote(i.name)})`, details.input, "function");
     if (language === "python") add(`input.Get(${quote(i.name)})`, details.input, "function");
   }
   const outputAccessor = language === "javascript" ? "getOutputFrom" : language === "csharp" ? "Output.From" : language === "python" ? "output.Get" : undefined;
