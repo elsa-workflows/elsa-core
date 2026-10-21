@@ -93,3 +93,5 @@ canceling/accepting dirty-workflow navigation, claim headers and missing-claim
 request blocking. Unit coverage verifies policy precedence, invalid selections,
 default IDs and preference identity. These UI tests stub backend data; they do not
 change or certify a deployment's tenant authorization policy.
+
+Pending API requests revalidate their originating scope after the response arrives and after its body is read. A changed scope rejects both stale data and stale errors, and a stale 401 never starts a token refresh.

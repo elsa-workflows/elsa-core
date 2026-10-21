@@ -1,5 +1,5 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { basename, dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const args = process.argv.slice(2);
@@ -21,12 +21,19 @@ for (const key of ["studio-version", "npm-version"]) {
   if (!match || match[4]?.split(".").some(identifier => /^\d+$/.test(identifier) && identifier.length > 1 && identifier.startsWith("0")))
     throw new Error(`Invalid ${key}`);
 }
+const template = realpathSync(fileURLToPath(new URL("../samples/module-template/", import.meta.url)));
+// Resolve the nearest existing parent too, so symlink aliases cannot write into the source.
+let existing = output;
+const missing = [];
+while (!existsSync(existing)) { missing.unshift(basename(existing)); existing = dirname(existing); }
+const canonicalOutput = resolve(realpathSync(existing), ...missing);
+if (canonicalOutput === template || canonicalOutput.startsWith(template + sep))
+  throw new Error("Output must be outside the module template.");
 if (existsSync(output) && readdirSync(output).length !== 0) throw new Error("Output must be a new or empty directory; existing files are never overwritten.");
 const kebab = options.name.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
 const companyId = options.company.toLowerCase().replaceAll(".", "-");
 const replacements = { __NAME__: options.name, __COMPANY__: options.company, __PACKAGE_ID__: `${options.company}.ReactStudio.${options.name}`,
   __MODULE_ID__: `${companyId}-${kebab}`, __NPM_NAME__: `@${companyId}/react-studio-${kebab}-client`, __STUDIO_VERSION__: options["studio-version"], __NPM_VERSION__: options["npm-version"] };
-const template = fileURLToPath(new URL("../samples/module-template/", import.meta.url));
 function copy(directory, relative = "") {
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     const path = join(relative, entry.name);
