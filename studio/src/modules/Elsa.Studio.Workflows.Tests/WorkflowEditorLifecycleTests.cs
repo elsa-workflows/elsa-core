@@ -82,6 +82,23 @@ public sealed class WorkflowEditorLifecycleTests : BunitContext, IAsyncLifetime
         Assert.Single(cut.FindAll("button[aria-label='Publish workflow']"));
     }
 
+    [Fact]
+    public async Task SaveUsesOrdinaryServiceForScopeLikeInputAndMetadataOnAnOrdinaryActivity()
+    {
+        var definition = CreateDefinition("ordinary-data");
+        definition.Root = NativeCompensationDraftTestData.CreateOrdinarySetVariableWithScopeLikeUserData();
+        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, _backendProvider.ContextKey));
+        var cut = RenderEditor(definition, () => Task.CompletedTask);
+
+        var saveTask = InvokeSaveAsync(cut.Instance, null, null);
+        var pendingSave = await _editorService.SaveStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.Equal(1, _editorService.OrdinarySaveCalls);
+        Assert.Equal(0, _editorService.NativeDraftSaveCalls);
+        pendingSave.CompleteFailure();
+        await saveTask.WaitAsync(TimeSpan.FromSeconds(5));
+    }
+
     [Theory]
     [InlineData(new[] { "workflows/definitions:view" }, true, false)]
     [InlineData(new[] { "workflows/definitions:view", "workflows/definitions:retract" }, true, true)]
@@ -531,12 +548,20 @@ public sealed class WorkflowEditorLifecycleTests : BunitContext, IAsyncLifetime
     {
         public bool LastNativeDraftPublish { get; private set; }
         public string? LastNativeDraftBackendContextKey { get; private set; }
+        public int OrdinarySaveCalls { get; private set; }
+        public int NativeDraftSaveCalls { get; private set; }
 
         public TaskCompletionSource<PendingSave> SaveStarted { get; } = NewCompletionSource<PendingSave>();
         public TaskCompletionSource<PendingSave> SecondSaveStarted { get; } = NewCompletionSource<PendingSave>();
         public TaskCompletionSource<PendingRetract> RetractStarted { get; } = NewCompletionSource<PendingRetract>();
 
         public Task<Result<SaveWorkflowDefinitionResponse, ValidationErrors>> SaveAsync(WorkflowDefinition workflowDefinition, bool publish, Func<WorkflowDefinition, Task>? workflowSavedCallback = null, CancellationToken cancellationToken = default)
+        {
+            OrdinarySaveCalls++;
+            return StartSave(workflowSavedCallback);
+        }
+
+        private Task<Result<SaveWorkflowDefinitionResponse, ValidationErrors>> StartSave(Func<WorkflowDefinition, Task>? workflowSavedCallback)
         {
             var pending = new PendingSave(workflowSavedCallback);
             if (!SaveStarted.TrySetResult(pending))
@@ -546,9 +571,10 @@ public sealed class WorkflowEditorLifecycleTests : BunitContext, IAsyncLifetime
 
         public Task<Result<SaveWorkflowDefinitionResponse, ValidationErrors>> SaveNativeCompensationDraftAsync(WorkflowDefinition workflowDefinition, bool publish, string expectedBackendContextKey, Func<WorkflowDefinition, Task>? workflowSavedCallback = null, CancellationToken cancellationToken = default)
         {
+            NativeDraftSaveCalls++;
             LastNativeDraftPublish = publish;
             LastNativeDraftBackendContextKey = expectedBackendContextKey;
-            return SaveAsync(workflowDefinition, publish, workflowSavedCallback, cancellationToken);
+            return StartSave(workflowSavedCallback);
         }
 
         public Task<SaveWorkflowDefinitionResponse> PublishAsync(WorkflowDefinition workflowDefinition, Func<WorkflowDefinition, Task>? workflowPublishedCallback = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();

@@ -15,6 +15,7 @@ using Elsa.Studio.Workflows.Contracts;
 using Elsa.Studio.Workflows.Domain.Contracts;
 using Elsa.Studio.Workflows.Domain.Models;
 using Elsa.Studio.Workflows.Extensions;
+using Elsa.Studio.Workflows.Tests.Support;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.Extensions.DependencyInjection;
@@ -194,6 +195,24 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
             Assert.Empty(cut.FindComponents<WorkflowEditor>());
             Assert.Single(cut.FindComponents<WorkflowDefinitionVersionViewer>());
         });
+    }
+
+    [Fact]
+    public async Task WorkspaceKeepsScopeLikeOrdinaryInputAndMetadataAsEditableOrdinaryActivityData()
+    {
+        await using var context = CreateContext();
+        var featureProvider = new EnabledRemoteFeatureProvider(false);
+        var (_, cut) = RenderOrdinaryOriginBoundWorkspace(
+            context,
+            featureProvider,
+            NativeCompensationDraftTestData.CreateOrdinarySetVariableWithScopeLikeUserData());
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.False(cut.Instance.IsReadOnly);
+            Assert.Single(cut.FindComponents<WorkflowEditor>());
+        });
+        Assert.Equal(0, featureProvider.FreshCheckCount);
     }
 
     [Fact]
@@ -592,12 +611,12 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
     };
 
     private static (WorkflowDefinition Definition, IRenderedComponent<WorkflowDefinitionWorkspace> Workspace) RenderOrdinaryOriginBoundWorkspace(
-        BunitContext context, EnabledRemoteFeatureProvider featureProvider)
+        BunitContext context, EnabledRemoteFeatureProvider featureProvider, System.Text.Json.Nodes.JsonObject? root = null)
     {
         context.Services.AddSingleton<IBackendApiClientProvider>(new MutableBackendApiClientProvider("context-A"));
         context.Services.AddSingleton<IRemoteFeatureProvider>(featureProvider);
         var definition = CreateDefinition("ordinary definition", "version-a");
-        definition.Root = System.Text.Json.Nodes.JsonNode.Parse("""{"id":"write-1","nodeId":"write-1","type":"Elsa.WriteLine","version":1}""")!.AsObject();
+        definition.Root = root ?? System.Text.Json.Nodes.JsonNode.Parse("""{"id":"write-1","nodeId":"write-1","type":"Elsa.WriteLine","version":1}""")!.AsObject();
         Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, "context-A"));
         return (definition, RenderWorkspace(context, definition, definition));
     }
