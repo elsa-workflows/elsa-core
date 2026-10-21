@@ -331,7 +331,8 @@ refuse a document `Bpmn.Semantics` refuses to build, with `422 Unprocessable Ent
 flow that does not leave its element, and an event subprocess body without exactly one start event. The message is the
 library's own and names the elements. A run does the same when it starts: a root BPMN scope builds every body it can
 reach before anything runs, so a definition stored before this check faults at its start rather than when a token
-first reaches the broken subprocess.
+first reaches the broken subprocess. A BPMN process composed into a `Flowchart` (or another container) bound as work
+counts as reachable too.
 
 ### Duplicate element id refusal
 

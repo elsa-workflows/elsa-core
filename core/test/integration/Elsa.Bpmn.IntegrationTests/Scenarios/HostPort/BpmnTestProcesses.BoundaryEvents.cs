@@ -1,6 +1,7 @@
 using Bpmn.Model;
 using Elsa.Bpmn.Activities;
 using Elsa.Bpmn.IntegrationTests.Scenarios.HostPort.Activities;
+using Elsa.Workflows.Activities.Flowchart.Activities;
 
 namespace Elsa.Bpmn.IntegrationTests.Scenarios.HostPort;
 
@@ -183,6 +184,39 @@ internal static partial class BpmnTestProcesses
             .Build();
 
         return Scope("scope", definition, Immediate("first", log), Scope("sub", body));
+    }
+
+    /// <summary>
+    /// A task, then a task whose work is a <c>Flowchart</c> composing a BPMN process that can never run (the same
+    /// cycle on which nothing can wait). The composed process is a root scope of its own, so it builds its graph only
+    /// when the flowchart starts it; the outer scope is the one that can refuse it before anything runs.
+    /// </summary>
+    public static BpmnProcess FlowchartComposingAProcessThatCannotRun(BpmnTestLog log)
+    {
+        var composed = new BpmnProcessBuilder("never-waiting-cycle")
+            .StartEvent("innerStart")
+            .ExclusiveGateway("loopA")
+            .ExclusiveGateway("loopB")
+            .ConnectSequence("innerStart", "loopA", "loopB", "loopA")
+            .Build();
+
+        var definition = new BpmnProcessBuilder("flowchart-composing-a-process-that-cannot-run")
+            .StartEvent("start")
+            .Task("first", bindingRef: BindingRef("first"))
+            .Task("wrapped", bindingRef: BindingRef("wrapped"))
+            .EndEvent("end")
+            .ConnectSequence("start", "first", "wrapped", "end")
+            .Build();
+
+        var inner = Scope("inner", composed);
+        var wrapped = new Flowchart
+        {
+            Id = "wrapped",
+            Start = inner,
+            Activities = { inner }
+        };
+
+        return Scope("scope", definition, Immediate("first", log), wrapped);
     }
 
     /// <summary>A task that fails with nothing to catch it.</summary>

@@ -1,5 +1,7 @@
 using Bpmn.Semantics;
 using Elsa.Bpmn.Activities;
+using Elsa.Workflows;
+using Elsa.Workflows.Activities;
 
 namespace Elsa.Bpmn.Hosting;
 
@@ -18,7 +20,8 @@ public static class BpmnProcessGraphs
 {
     /// <summary>
     /// Builds the graph of <paramref name="process"/> and of every subprocess body it can reach, at any depth, and
-    /// discards them.
+    /// discards them. A BPMN process composed into a container bound as work, such as a <c>Flowchart</c>, counts as
+    /// reachable too.
     /// </summary>
     /// <exception cref="BpmnExecutionException">A process or body is structurally invalid; the message names it.</exception>
     /// <exception cref="BpmnCapabilityException">A process or body needs a capability this runtime does not declare.</exception>
@@ -32,7 +35,7 @@ public static class BpmnProcessGraphs
         {
             _ = Build(scope);
 
-            foreach (var nested in scope.WorkBindings.Keys.Select(scope.FindWorkActivity).OfType<BpmnProcess>())
+            foreach (var nested in scope.WorkBindings.Keys.Select(scope.FindWorkActivity).SelectMany(ScopesWithin))
             {
                 if (visited.Add(nested))
                 {
@@ -41,6 +44,17 @@ public static class BpmnProcessGraphs
             }
         }
     }
+
+    /// <summary>
+    /// The BPMN scopes that bound work is or composes: the work itself when it is a scope, else the scopes inside it when
+    /// it is a container such as a <c>Flowchart</c> (D11), at any depth. Any other activity is opaque.
+    /// </summary>
+    private static IEnumerable<BpmnProcess> ScopesWithin(IActivity? activity) => activity switch
+    {
+        BpmnProcess scope => [scope],
+        Container container => container.Activities.SelectMany(ScopesWithin),
+        _ => []
+    };
 
     /// <summary>Builds the graph of <paramref name="process"/> alone.</summary>
     internal static BpmnGraph Build(BpmnProcess process)

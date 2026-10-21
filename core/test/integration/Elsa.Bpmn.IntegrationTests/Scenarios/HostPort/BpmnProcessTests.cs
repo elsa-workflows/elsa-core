@@ -212,6 +212,22 @@ public class BpmnProcessTests(ITestOutputHelper testOutputHelper)
         Assert.Contains("loopA", incident.Exception!.Message);
     }
 
+    [Fact(DisplayName = "A BPMN process that cannot run, composed into a flowchart bound as work, is refused before anything runs")]
+    public async Task FlowchartComposingAProcessThatCannotRun_IsRefusedBeforeAnythingRuns()
+    {
+        // The composed process is a root scope of its own, so it used to build its graph only when the flowchart
+        // started it, after "first" had already run.
+
+        // Act
+        var result = await _host.RunAsync(BpmnTestProcesses.FlowchartComposingAProcessThatCannotRun(_host.Log), typeof(FaultStrategy));
+
+        // Assert
+        Assert.Empty(_host.Log.Entries);
+        Assert.Equal(WorkflowSubStatus.Faulted, result.WorkflowState.SubStatus);
+        var incident = Assert.Single(result.WorkflowState.Incidents);
+        Assert.Contains("loopA", incident.Exception!.Message);
+    }
+
     [Fact(DisplayName = "A collection-mode multi-instance runs one instance per item of a container-scoped variable")]
     public async Task CollectionMultiInstance_ReadsTheScopeVariable()
     {
