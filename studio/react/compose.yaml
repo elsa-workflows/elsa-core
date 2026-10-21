@@ -22,6 +22,8 @@ services:
     build:
       context: ../..
       dockerfile: studio/react/Dockerfile
+      args:
+        ELSA_VERSION: ${ELSA_REACT_STUDIO_VERSION:-3.11.0}
     ports:
       - "127.0.0.1:${ELSA_STUDIO_PORT:-5201}:8080"
     environment:

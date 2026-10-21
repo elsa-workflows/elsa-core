@@ -72,7 +72,8 @@ uses the reference host's development identity and permissive CORS policy; use
 your own authentication, signing keys and CORS policy for a deployed service.
 SQLite data persists in the `server-data` volume across restarts.
 
-Set `ELSA_SERVER_PORT` or `ELSA_STUDIO_PORT` before starting to change the ports.
+Set `ELSA_REACT_STUDIO_VERSION` to pass a preview/release version to the Studio
+image build (default `3.11.0`). Set `ELSA_SERVER_PORT` or `ELSA_STUDIO_PORT` before starting to change the ports.
 The API URL uses the published host port because requests come from the browser.
 The Studio starts independently of API readiness; wait for the server's startup
 log if the first sign-in request arrives while migrations are running.

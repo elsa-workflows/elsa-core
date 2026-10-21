@@ -17,8 +17,7 @@ The image is Linux AMD64; other architectures have not been validated.
 To build and exercise the same version locally:
 
 ```sh
-docker build -f studio/react/Dockerfile \
-  --build-arg ELSA_VERSION=3.11.0-preview.1 -t elsa-react-studio:preview .
+export ELSA_REACT_STUDIO_VERSION=3.11.0-preview.1
 docker compose -f studio/react/compose.yaml up --build -d
 ```
 

@@ -18,10 +18,18 @@ while (!ready && Date.now() < deadline) {
 }
 if (!ready) throw new Error("Compose reference backend did not accept its Development account");
 
-const config = await fetch(`${origin}/studio-preview/studio-config`).then(response => {
-  if (!response.ok) throw new Error(`Studio runtime configuration failed: ${response.status}`);
-  return response.json();
-});
+const studioDeadline = Date.now() + 60_000;
+let config;
+let studioFailure;
+while (!config && Date.now() < studioDeadline) {
+  try {
+    const response = await fetch(`${origin}/studio-preview/studio-config`, { signal: AbortSignal.timeout(2000) });
+    if (!response.ok) throw new Error(`Studio runtime configuration failed: ${response.status}`);
+    config = await response.json();
+  } catch (error) { studioFailure = error; }
+  if (!config) await new Promise(resolve => setTimeout(resolve, 500));
+}
+if (!config) throw new Error("Compose Studio did not become ready", { cause: studioFailure });
 if (config.servers[0].url !== api || config.auth.provider !== "elsa-identity" || !config.title.includes("Preview"))
   throw new Error("Compose STUDIO_* overrides were not applied");
 
