@@ -39,6 +39,6 @@ source-repository archival; the [first consolidated release policy](../../docs/a
 and [artifact proof](../../docs/integration-program/consolidated-package-proof.md)
 retain their separate gates.
 
-## Native compensation design
+## Planned native compensation
 
-The [Elsa 3 adaptation design packet](specs/native-compensation/README.md) records #8896's reviewed design and remaining technical gates. Standing owner authorization permits delivery; implementation readiness still depends on the packet's evidence gates.
+The [Native compensation and saga recovery delivery program](compensation/README.md) is the current program entrypoint for scope, ownership and readiness. Its [Elsa 3 adaptation design packet](specs/native-compensation/README.md) records the reviewed design and remaining technical gates. Standing owner authorization permits delivery through those gates; the proposal does not claim implementation or proof.

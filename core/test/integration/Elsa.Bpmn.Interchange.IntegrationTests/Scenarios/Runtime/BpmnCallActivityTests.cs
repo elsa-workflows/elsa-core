@@ -1,7 +1,16 @@
+using Bpmn.Semantics;
+using Elsa.Bpmn.Exceptions;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Runtime;
+using Elsa.Workflows.Runtime.ActivationValidators;
 using Elsa.Workflows.Runtime.Activities;
 using Elsa.Workflows.State;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 using static Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Runtime.BpmnRuntimeTestHost;
 
@@ -9,7 +18,8 @@ namespace Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Runtime;
 
 /// <summary>
 /// A BPMN call activity, which the binder binds to <c>DispatchWorkflow</c> on its <c>calledElement</c>, run end to end
-/// against a real child workflow: waiting for the child, and fire-and-forget.
+/// against a real child workflow: waiting for the child, fire-and-forget, a child that faults, a child that is cancelled,
+/// and a child whose activation is denied.
 /// </summary>
 /// <remarks>
 /// The child blocks on an event of its own, so "the parent is waiting for it" is a state the test can observe before
@@ -19,6 +29,8 @@ public class BpmnCallActivityTests(ITestOutputHelper testOutputHelper) : IAsyncL
 {
     private const string ChildDefinitionId = "ship-order";
     private const string ChildReleaseEvent = "ShipmentHandedOver";
+    private const string FailingChildDefinitionId = "ship-order-failing";
+    private const string SingletonChildDefinitionId = "ship-order-singleton";
 
     private readonly BpmnRuntimeTestHost _host = new(testOutputHelper);
 
@@ -33,6 +45,8 @@ public class BpmnCallActivityTests(ITestOutputHelper testOutputHelper) : IAsyncL
                 new WriteLine("Shipped")
             }
         });
+        await _host.PublishAsync(FailingChildDefinitionId, Fault.Create("SHIP-01", "Shipping", "Business", "The carrier rejected the shipment."));
+        await _host.PublishAsync(SingletonChildDefinitionId, new Event(ChildReleaseEvent), new WorkflowOptions { ActivationStrategyType = typeof(SingletonStrategy) });
     }
 
     public Task DisposeAsync() => _host.DisposeAsync();
@@ -89,6 +103,132 @@ public class BpmnCallActivityTests(ITestOutputHelper testOutputHelper) : IAsyncL
         var child = await WaitForChildAsync(parent, IsSuspended);
         Assert.True(IsSuspended(await _host.StateOfAsync(child)));
     }
+
+    [Fact(DisplayName = "A call activity whose called workflow faults routes the error boundary on the call activity instead of its normal flow")]
+    public async Task CallActivity_ChildFaults_RoutesTheErrorBoundary()
+    {
+        // Arrange
+        var definitionId = await _host.ImportAndPublishAsync("call-activity-failing-child.bpmn");
+
+        // Act
+        var parent = await _host.StartAsync(definitionId);
+        var finished = await _host.WaitForAsync(parent, IsFinished);
+
+        // Assert: the child faulted, and the parent took the error boundary's path rather than the call activity's
+        // normal outgoing flow, then finished cleanly.
+        Assert.Equal(WorkflowSubStatus.Faulted, (await FailingChildOfAsync(parent)).SubStatus);
+        Assert.Equal(WorkflowSubStatus.Finished, finished.SubStatus);
+        Assert.Empty(finished.Incidents);
+
+        var statuses = await _host.ActivityStatusesOfAsync(parent);
+        Assert.Equal(ActivityStatus.Completed, statuses[WorkActivityId("place-risky-order", "CompensateCustomer")]);
+        Assert.False(statuses.ContainsKey(WorkActivityId("place-risky-order", "Confirm")));
+    }
+
+    [Fact(DisplayName = "A call activity whose called workflow faults, with no error catcher, faults the process")]
+    public async Task CallActivity_ChildFaults_WithoutACatcher_FaultsTheProcess()
+    {
+        // Arrange
+        var definitionId = await _host.ImportAndPublishAsync("call-activity-failing-child-uncaught.bpmn");
+
+        // Act
+        var parent = await _host.StartAsync(definitionId);
+        var finished = await _host.WaitForAsync(parent, IsFinished);
+
+        // Assert: nothing caught the child's failure, so the process faulted with the call activity's fault code and
+        // never took the normal outgoing flow.
+        Assert.Equal(WorkflowSubStatus.Faulted, (await FailingChildOfAsync(parent)).SubStatus);
+        Assert.Equal(WorkflowSubStatus.Faulted, finished.SubStatus);
+        var incident = Assert.Single(finished.Incidents);
+        Assert.Equal(typeof(BpmnScopeFaultException), incident.Exception?.Type);
+        Assert.StartsWith(BpmnInterpreter.CallActivityFaultedFaultCode, incident.Message);
+        Assert.False((await _host.ActivityStatusesOfAsync(parent)).ContainsKey(WorkActivityId("place-unguarded-order", "Confirm")));
+    }
+
+    [Fact(DisplayName = "A call activity whose called workflow is cancelled reports the cancelled outcome, which faults the process with no catcher")]
+    public async Task CallActivity_ChildCancelled_ReportsTheCancelledOutcome()
+    {
+        // Arrange: the parent is waiting on the call activity for its suspended child.
+        var definitionId = await _host.ImportAndPublishAsync("call-activity-wait.bpmn");
+        var parent = await _host.StartAsync(definitionId);
+        var child = await WaitForChildAsync(parent, IsSuspended);
+
+        // Act: cancel the child, the way the cancellation API does.
+        Assert.True(await _host.Services.GetRequiredService<IWorkflowCancellationService>().CancelWorkflowAsync(child));
+
+        // Assert: the child was cancelled, and the parent resumed with the call activity's cancelled outcome. Nothing
+        // catches it, so the process faulted with the cancelled fault code and never took the normal outgoing flow.
+        Assert.Equal(WorkflowSubStatus.Cancelled, (await _host.WaitForAsync(child, IsFinished)).SubStatus);
+
+        var finished = await _host.WaitForAsync(parent, IsFinished);
+        Assert.Equal(WorkflowSubStatus.Faulted, finished.SubStatus);
+        var incident = Assert.Single(finished.Incidents);
+        Assert.StartsWith(BpmnInterpreter.CallActivityCancelledFaultCode, incident.Message);
+        Assert.False((await _host.ActivityStatusesOfAsync(parent)).ContainsKey(WorkActivityId("place-order", "Confirm")));
+    }
+
+    [Fact(DisplayName = "A call activity whose called workflow's activation is denied routes the error boundary on the call activity instead of its normal flow")]
+    public async Task CallActivity_ChildActivationDenied_RoutesTheErrorBoundary()
+    {
+        // Arrange: a running instance of the singleton child makes its activation strategy refuse another one.
+        var definitionId = await _host.ImportAndPublishAsync("call-activity-denied-child.bpmn");
+        var runningChild = await StartRunningSingletonChildAsync();
+
+        // Act
+        var parent = await _host.StartAsync(definitionId);
+        var finished = await _host.WaitForAsync(parent, IsFinished);
+
+        // Assert: no child was created for the parent, and the parent took the error boundary's path rather than the
+        // call activity's normal outgoing flow, then finished cleanly.
+        Assert.Equal(runningChild, Assert.Single(await SingletonChildrenAsync()).Id);
+        Assert.Equal(WorkflowSubStatus.Finished, finished.SubStatus);
+        Assert.Empty(finished.Incidents);
+
+        var statuses = await _host.ActivityStatusesOfAsync(parent);
+        Assert.Equal(ActivityStatus.Completed, statuses[WorkActivityId("place-denied-order", "CompensateCustomer")]);
+        Assert.False(statuses.ContainsKey(WorkActivityId("place-denied-order", "Confirm")));
+    }
+
+    [Fact(DisplayName = "A call activity whose called workflow's activation is denied, with no error catcher, faults the process")]
+    public async Task CallActivity_ChildActivationDenied_WithoutACatcher_FaultsTheProcess()
+    {
+        // Arrange
+        var definitionId = await _host.ImportAndPublishAsync("call-activity-denied-child-uncaught.bpmn");
+        var runningChild = await StartRunningSingletonChildAsync();
+
+        // Act
+        var parent = await _host.StartAsync(definitionId);
+        var finished = await _host.WaitForAsync(parent, IsFinished);
+
+        // Assert: nothing caught the refused call, so the process faulted with the dispatch-failed fault code and never
+        // took the normal outgoing flow.
+        Assert.Equal(runningChild, Assert.Single(await SingletonChildrenAsync()).Id);
+        Assert.Equal(WorkflowSubStatus.Faulted, finished.SubStatus);
+        var incident = Assert.Single(finished.Incidents);
+        Assert.Equal(typeof(BpmnScopeFaultException), incident.Exception?.Type);
+        Assert.Equal("bpmn.call-activity.dispatch-failed", BpmnInterpreter.CallActivityDispatchFailedFaultCode);
+        Assert.StartsWith(BpmnInterpreter.CallActivityDispatchFailedFaultCode, incident.Message);
+        Assert.False((await _host.ActivityStatusesOfAsync(parent)).ContainsKey(WorkActivityId("place-denied-unguarded-order", "Confirm")));
+    }
+
+    /// <summary>Starts the one instance of the singleton child its activation strategy allows, and leaves it running.</summary>
+    private async Task<string> StartRunningSingletonChildAsync()
+    {
+        var instanceId = await _host.StartAsync(SingletonChildDefinitionId);
+        Assert.Equal(WorkflowStatus.Running, (await _host.StateOfAsync(instanceId)).Status);
+        return instanceId;
+    }
+
+    /// <summary>Every instance of the singleton child, however it was started.</summary>
+    private async Task<IReadOnlyCollection<WorkflowInstance>> SingletonChildrenAsync() =>
+        (await _host.Services.GetRequiredService<IWorkflowInstanceStore>()
+            .FindManyAsync(new WorkflowInstanceFilter { DefinitionId = SingletonChildDefinitionId })).ToList();
+
+    /// <summary>The failing child the parent called. It finished before the parent could resume, so it is already saved.</summary>
+    private async Task<WorkflowState> FailingChildOfAsync(string parentId) =>
+        (await _host.WaitForInstanceAsync(
+            instance => instance.DefinitionId == FailingChildDefinitionId && instance.ParentWorkflowInstanceId == parentId,
+            $"A '{FailingChildDefinitionId}' child of {parentId}")).WorkflowState;
 
     private async Task<string> WaitForChildAsync(string parentId, Func<WorkflowState, bool> condition)
     {
