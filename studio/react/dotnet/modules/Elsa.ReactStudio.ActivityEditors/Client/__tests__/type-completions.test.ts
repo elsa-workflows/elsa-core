@@ -45,8 +45,8 @@ declare function getLive(): Customer;
 declare function setLive(value: Customer);
 declare function getWorkflowInstanceId(): string;`);
   const labels = typedCompletions(current, "javascript", saved).map(item => item.label);
-  expect(labels).toEqual(expect.arrayContaining(["getcustomer_id().Name", "getcustomer().Name", "getcustomer_id", "getLive", "setLive", "getresultFromLookup", "getWorkflowInstanceId", "lookupServerValue"]));
-  for (const removed of ["getCustomerId", "getCustomer", "getRemovedInput", "setOldVariable", "getResultFromLookup"]) {
+  expect(labels).toEqual(expect.arrayContaining(['getInput("customer_id")', "getcustomer().Name", "getLive", "setLive", "getresultFromLookup", "getWorkflowInstanceId", "lookupServerValue"]));
+  for (const removed of ["getcustomer_id", "getCustomerId", "getCustomer", "getRemovedInput", "setOldVariable", "getResultFromLookup"]) {
     expect(labels).not.toContain(removed);
     expect(labels).not.toContain(removed + "()");
   }
@@ -78,4 +78,13 @@ it("offers a compile-safe explicit generic C# input getter", () => {
   const labels = typedCompletions({ variables: [], inputs: [{ name: "Customer", type: "String" }], activities: [] }, "csharp", parseServerTypes("")).map(item => item.label);
   expect(labels).toContain('Input.Get<object>("Customer")');
   expect(labels).not.toContain('Input.Get("Customer")');
+});
+
+it("does not add typed C# members for runtime-ineligible variable or input names", () => {
+  const current = { variables: [{ id: "customer", name: "customer_id", typeName: "Customer" }], inputs: [{ name: "input_id", type: "Customer" }] };
+  const labels = typedCompletions(current, "csharp", parseServerTypes(document)).map(item => item.label);
+  expect(labels).toContain('Variable.Get("customer_id")');
+  expect(labels).not.toContain("Variable.CustomerId.Name");
+  expect(labels).not.toContain("Variable.CustomerId");
+  expect(labels).not.toContain("Input.input_id.Name");
 });
