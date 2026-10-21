@@ -75,7 +75,7 @@ test("C# highlights syntax and all three languages complete server members, inpu
   await complete(page, "getOut", 'getOutputFrom("Lookup", "Result")');
   await complete(page, 'getOutputFrom("Lookup", "Res', 'getOutputFrom("Lookup", "Result")');
   await complete(page, 'Math.max(getOutputFrom("Lookup", "Res', 'getOutputFrom("Lookup", "Result")', 'Math.max(getOutputFrom("Lookup", "Result")');
-  await complete(page, "someFunction(getcustomer_id().N)", "getcustomer_id().Name", "someFunction(getcustomer_id().Name)", true);
+  await complete(page, "someFunction(getCustomer().N)", "getCustomer().Name", "someFunction(getCustomer().Name)", true);
   await complete(page, "lookupServer", "lookupServerValue");
   await page.getByRole("button", { name: "Python", exact: true }).click();
   await complete(page, "variables.customer.", "variables.customer.Name");
