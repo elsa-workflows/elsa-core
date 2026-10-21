@@ -5,6 +5,7 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Activities.Compensation;
 using Elsa.Workflows.Activities.StateMachine.Activities;
 using Elsa.Workflows.Activities.StateMachine.Models;
+using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Serialization.Converters;
@@ -29,6 +30,7 @@ public sealed class JsonActivitySerializerTests : IAsyncLifetime
     {
         var registry = _services.GetRequiredService<IActivityRegistry>();
         await registry.RegisterAsync<Sequence>();
+        await registry.RegisterAsync<If>();
         await registry.RegisterAsync<WriteLine>();
         await registry.RegisterAsync<CompensationScope>();
         await registry.RegisterAsync<StateMachine>();
@@ -85,6 +87,35 @@ public sealed class JsonActivitySerializerTests : IAsyncLifetime
     }
 
     [Fact]
+    public void NestedOrdinaryActivitiesPreserveNullsAndExplicitJsonIgnoreConditions()
+    {
+        var conditional = new If { Id = "if-1" };
+        var generated = new GeneratedActivity
+        {
+            Id = "generated-1",
+            Type = "Test.Generated",
+            Version = 2,
+            Omitted = null,
+            ConditionalNull = null,
+            RetainedNull = null,
+            Number = 0
+        };
+        var sequence = new Sequence { Id = "sequence-1", Activities = [conditional, generated] };
+
+        using var document = JsonDocument.Parse(Serializer.Serialize(sequence));
+        var activities = document.RootElement.GetProperty("activities");
+        var serializedIf = activities[0];
+        var serializedGenerated = activities[1];
+
+        Assert.Equal(JsonValueKind.Null, serializedIf.GetProperty("then").ValueKind);
+        Assert.Equal(JsonValueKind.Null, serializedIf.GetProperty("else").ValueKind);
+        Assert.Equal(JsonValueKind.Null, serializedGenerated.GetProperty("omitted").ValueKind);
+        Assert.False(serializedGenerated.TryGetProperty("conditionalNull", out _));
+        Assert.Equal(JsonValueKind.Null, serializedGenerated.GetProperty("retainedNull").ValueKind);
+        Assert.False(serializedGenerated.TryGetProperty("number", out _));
+    }
+
+    [Fact]
     public void CompensationScopeDraftRoundTripPreservesMappingsAndExtensionData()
     {
         const string json = """
@@ -110,6 +141,99 @@ public sealed class JsonActivitySerializerTests : IAsyncLifetime
     }
 
     [Theory]
+    [InlineData(false, true)]
+    [InlineData(false, false)]
+    [InlineData(true, true)]
+    [InlineData(true, false)]
+    public void UnsupportedCompensationDraftPreservesRawJsonAndOuterDesignerMetadata(bool wrapped, bool unsupportedVersion)
+    {
+        var version = unsupportedVersion ? 2 : 1;
+        var draftSchemaVersion = unsupportedVersion ? 1 : 2;
+        var originalScopePosition = new { x = 10, y = 20 };
+        var wrapperPosition = new { x = 30, y = 40 };
+        var originalScopeJson = JsonSerializer.Serialize(new
+        {
+            id = "scope-1",
+            type = CompensationScope.ActivityTypeName,
+            version,
+            draftSchemaVersion,
+            steps = Array.Empty<object>(),
+            metadata = new { designer = new { position = originalScopePosition, size = new { width = 220, height = 80 } } }
+        });
+        var json = wrapped
+            ? JsonSerializer.Serialize(new
+            {
+                id = "placeholder-1",
+                type = ActivityTypeNameHelper.GenerateTypeName<NotFoundActivity>(),
+                version = 1,
+                metadata = new { designer = new { position = wrapperPosition, size = new { width = 320, height = 120 } } },
+                originalActivityJson = originalScopeJson
+            })
+            : originalScopeJson;
+        var expectedPosition = wrapped ? wrapperPosition : originalScopePosition;
+
+        var activity = Assert.IsType<NotFoundActivity>(Serializer.Deserialize(json));
+        Assert.Equal("scope-1", activity.Id);
+        Assert.Equal(CompensationScope.ActivityTypeName, activity.MissingTypeName);
+        Assert.Equal(originalScopeJson, activity.OriginalActivityJson);
+        AssertDesignerPosition(activity, expectedPosition.x, expectedPosition.y);
+
+        var serialized = Serializer.Serialize(activity);
+        using var serializedDocument = JsonDocument.Parse(serialized);
+        Assert.Equal(originalScopeJson, serializedDocument.RootElement.GetProperty("originalActivityJson").GetString());
+        var serializedPosition = serializedDocument.RootElement.GetProperty("metadata").GetProperty("designer").GetProperty("position");
+        Assert.Equal(expectedPosition.x, serializedPosition.GetProperty("x").GetInt32());
+        Assert.Equal(expectedPosition.y, serializedPosition.GetProperty("y").GetInt32());
+
+        var restored = Assert.IsType<NotFoundActivity>(Serializer.Deserialize(serialized));
+        Assert.Equal(originalScopeJson, restored.OriginalActivityJson);
+        AssertDesignerPosition(restored, expectedPosition.x, expectedPosition.y);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void MalformedOpaqueCompensationMetadataDoesNotPreventRoundTrip(bool wrapped)
+    {
+        var originalScopeJson = wrapped
+            ? """
+              {"id":"scope-1","type":"Elsa.CompensationScope","version":2,"draftSchemaVersion":1,"steps":[],"metadata":{"designer":{"position":{"x":11,"y":12}}}}
+              """
+            : """
+              {"id":"scope-1","type":"Elsa.CompensationScope","version":2,"draftSchemaVersion":1,"steps":[],"metadata":[]}
+              """;
+        using var malformedMetadata = JsonDocument.Parse("[]");
+        var json = wrapped
+            ? JsonSerializer.Serialize(new
+            {
+                type = ActivityTypeNameHelper.GenerateTypeName<NotFoundActivity>(),
+                version = 1,
+                metadata = malformedMetadata.RootElement,
+                originalActivityJson = originalScopeJson
+            })
+            : originalScopeJson;
+
+        var activity = Assert.IsType<NotFoundActivity>(Serializer.Deserialize(json));
+        Assert.Equal(originalScopeJson, activity.OriginalActivityJson);
+        if (wrapped)
+            AssertDesignerPosition(activity, 11, 12);
+
+        var serialized = Serializer.Serialize(activity);
+        var restored = Assert.IsType<NotFoundActivity>(Serializer.Deserialize(serialized));
+        Assert.Equal(originalScopeJson, restored.OriginalActivityJson);
+        if (wrapped)
+            AssertDesignerPosition(restored, 11, 12);
+    }
+
+    private static void AssertDesignerPosition(NotFoundActivity activity, int expectedX, int expectedY)
+    {
+        var designer = Assert.IsType<JsonElement>(activity.Metadata["designer"]);
+        var position = designer.GetProperty("position");
+        Assert.Equal(expectedX, position.GetProperty("x").GetInt32());
+        Assert.Equal(expectedY, position.GetProperty("y").GetInt32());
+    }
+
+    [Theory]
     [InlineData("null")]
     [InlineData("\"future\"")]
     [InlineData("{}")]
@@ -119,9 +243,11 @@ public sealed class JsonActivitySerializerTests : IAsyncLifetime
                    ",\"draftSchemaVersion\":1,\"steps\":[],\"metadata\":{\"future\":[1,2]}}";
 
         var activity = Assert.IsType<NotFoundActivity>(Serializer.Deserialize(json));
+        Assert.Equal(0, activity.MissingTypeVersion);
         Assert.Equal("scope-1", activity.Id);
         Assert.Equal(CompensationScope.ActivityTypeName, activity.MissingTypeName);
         Assert.Equal(json, activity.OriginalActivityJson);
+
         var restored = Assert.IsType<NotFoundActivity>(Serializer.Deserialize(Serializer.Serialize(activity)));
         Assert.Equal(json, restored.OriginalActivityJson);
     }
@@ -349,6 +475,9 @@ public sealed class JsonActivitySerializerTests : IAsyncLifetime
         public string CollisionAlias { get; set; } = "alias";
 
         public string? Omitted { get; set; }
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? ConditionalNull { get; set; }
 
         [JsonIgnore(Condition = JsonIgnoreCondition.Never)]
         public string? RetainedNull { get; set; }

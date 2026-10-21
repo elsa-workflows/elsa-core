@@ -123,7 +123,20 @@ public class ActivityJsonConverter(
         notFoundActivity.MissingTypeVersion = missingTypeVersion.Value;
         notFoundActivity.OriginalActivityJson = activityRoot.GetRawText();
 
-        if (!isOpaqueCompensationScope && outerRoot.TryGetProperty("metadata", out var metadataElement))
+        if (isOpaqueCompensationScope)
+        {
+            var metadata = CopyMetadata(activityRoot) ?? new Dictionary<string, object>();
+            var outerMetadata = CopyMetadata(outerRoot);
+            if (outerMetadata != null)
+            {
+                foreach (var (key, value) in outerMetadata)
+                    metadata[key] = value;
+            }
+
+            if (metadata.Count > 0)
+                notFoundActivity.Metadata = metadata;
+        }
+        else if (outerRoot.TryGetProperty("metadata", out var metadataElement))
         {
             var metadata = JsonSerializer.Deserialize<IDictionary<string, object>>(metadataElement.GetRawText(), options);
             if (metadata != null)
@@ -133,6 +146,18 @@ public class ActivityJsonConverter(
         notFoundActivity.SetDisplayText($"Not Found: {missingTypeName}");
         notFoundActivity.SetDescription($"Could not find activity type {missingTypeName} with version {missingTypeVersion}");
         return notFoundActivity;
+    }
+
+    private static Dictionary<string, object>? CopyMetadata(JsonElement activityRoot)
+    {
+        if (!activityRoot.TryGetProperty("metadata", out var metadataElement) || metadataElement.ValueKind != JsonValueKind.Object)
+            return null;
+
+        var metadata = new Dictionary<string, object>(StringComparer.Ordinal);
+        foreach (var property in metadataElement.EnumerateObject())
+            metadata[property.Name] = property.Value.Clone();
+
+        return metadata;
     }
 
     /// <inheritdoc />

@@ -45,7 +45,7 @@ public class ActivityWriter(IActivityRegistry activityRegistry, SyntheticPropert
 
         foreach (var property in properties)
         {
-            var ignoreCondition = property.GetCustomAttribute<JsonIgnoreAttribute>()?.Condition ?? options.DefaultIgnoreCondition;
+            var ignoreCondition = property.GetCustomAttribute<JsonIgnoreAttribute>()?.Condition ?? JsonIgnoreCondition.Never;
             if (ignoreCondition == JsonIgnoreCondition.Always)
                 continue;
 
