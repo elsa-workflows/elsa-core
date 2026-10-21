@@ -1,0 +1,41 @@
+diff --git a/core/experiments/NativeCompensation.E1/Activities.cs b/core/experiments/NativeCompensation.E1/Activities.cs
+--- a/core/experiments/NativeCompensation.E1/Activities.cs
++++ b/core/experiments/NativeCompensation.E1/Activities.cs
+@@ -37,8 +37,9 @@ internal sealed class ProbeScope : Container
+         if (Environment.GetEnvironmentVariable("E1_HANDOFF") == "Fault")
+             journal.Handoff = "Fault";
+         journal.Write(context.WorkflowExecutionContext);
+-        await ScheduleAsync(context, Activities.First());
++        await context.WorkflowExecutionContext.CommitAsync();
+         await context.GetRequiredService<Barriers>().ReachAsync("scope-activated", context.WorkflowExecutionContext);
++        await ScheduleAsync(context, Activities.First());
+     }
+
+     private async ValueTask OnCompletedAsync(ActivityCompletedContext completed)
+diff --git a/core/experiments/NativeCompensation.E1/CommitObserver.cs b/core/experiments/NativeCompensation.E1/CommitObserver.cs
+--- a/core/experiments/NativeCompensation.E1/CommitObserver.cs
++++ b/core/experiments/NativeCompensation.E1/CommitObserver.cs
+@@ -24,7 +24,5 @@ internal sealed class CommitObserver(Barriers barriers) : INotificationHandler<Work
+         var armed = journal.Entries.LastOrDefault(x => x.Status == "Armed" && x.ForwardContextId != null);
+         if (armed != null)
+             await barriers.ReachAsync($"durable-unacknowledged-reserve-{armed.Slot}", notification.WorkflowExecutionContext);
+-        else if (journal.Entries.Count == 0 && notification.WorkflowState.ScheduledActivities.Count > 0)
+-            await barriers.ReachAsync("durable-unacknowledged-scope", notification.WorkflowExecutionContext);
+     }
+ }
+diff --git a/core/experiments/NativeCompensation.E1/Program.cs b/core/experiments/NativeCompensation.E1/Program.cs
+--- a/core/experiments/NativeCompensation.E1/Program.cs
++++ b/core/experiments/NativeCompensation.E1/Program.cs
+@@ -67,12 +67,6 @@ internal static class Program
+                 Events.Write("inspect", new { found = existing != null, state = existing?.WorkflowState });
+                 return 0;
+             }
+-            if (args[0] == "resave")
+-            {
+-                await store.SaveAsync(existing ?? throw new InvalidOperationException("Expected saved instance."));
+-                Events.Write("resaved", new { existing.Id, stateId = existing.WorkflowState.Id, propertyCount = existing.WorkflowState.Properties.Count });
+-                return 0;
+-            }
+             if (args[0] == "stale")
+             {
+                 var stale = existing ?? throw new InvalidOperationException("Expected saved instance.");
