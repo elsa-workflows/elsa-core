@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { cn } from "@elsa-workflows/react-studio-ui/utils";
 import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
@@ -12,13 +14,14 @@ export interface DonutSlice {
 
 /** Inline SVG donut with a centred total and a legend; colours come from the status tokens. */
 export function DonutChart({ slices, total, centerLabel, className }: { slices: DonutSlice[]; total?: number; centerLabel?: string; className?: string }) {
+  const _t = useTranslation();
   const sum = total ?? slices.reduce((a, s) => a + s.value, 0);
   const r = 42;
   const c = 2 * Math.PI * r;
   let offset = 0;
   return (
     <div className={cn("flex items-center gap-6", className)}>
-      <svg viewBox="0 0 120 120" className="size-36 shrink-0 -rotate-90" role="img" aria-label={`${sum} instances by status`}>
+      <svg viewBox="0 0 120 120" className="size-36 shrink-0 -rotate-90" role="img" aria-label={_t("{{value0}} instances by status", { value0: sum })}>
         <circle cx="60" cy="60" r={r} fill="none" stroke="var(--muted)" strokeWidth="14" />
         {sum > 0 &&
           slices
@@ -38,7 +41,7 @@ export function DonutChart({ slices, total, centerLabel, className }: { slices: 
                   strokeDashoffset={-offset}
                   strokeLinecap="butt"
                 >
-                  <title>{`${s.label}: ${s.value}`}</title>
+                  <title>{_t("{{value0}}: {{value1}}", { value0: s.label, value1: s.value })}</title>
                 </circle>
               );
               offset += len;
@@ -49,7 +52,7 @@ export function DonutChart({ slices, total, centerLabel, className }: { slices: 
             {sum}
           </text>
           <text x="60" y="74" textAnchor="middle" className="fill-muted-foreground text-[9px] uppercase tracking-wider">
-            {centerLabel ?? "total"}
+            {centerLabel ?? _t("total")}
           </text>
         </g>
       </svg>

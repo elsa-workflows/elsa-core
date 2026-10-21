@@ -1,3 +1,5 @@
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
 import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
 import { ArrowUpRight, FileCode2, LayoutDashboard, ListChecks, type LucideIcon } from "lucide-react";
 import { Card } from "@elsa-workflows/react-studio-ui/card";
@@ -7,19 +9,20 @@ import { DashboardLinks } from "../links";
 
 /** Welcome state when no dashboard widget is visible (none registered, or the user lacks every permission). */
 export function EmptyDashboard() {
+  const _t = useTranslation();
   const permissions = usePermissions();
   const shortcuts: { href: string; label: string; description: string; icon: LucideIcon; visible: boolean }[] = [
     {
       href: DashboardLinks.definitions,
-      label: "Workflow definitions",
-      description: "Design, publish and run workflows.",
+      label: _t("Workflow definitions"),
+      description: _t("Design, publish and run workflows."),
       icon: FileCode2,
       visible: permissions.has(Resources.workflowDefinitions, Verbs.view),
     },
     {
       href: DashboardLinks.instances,
-      label: "Workflow instances",
-      description: "Inspect running and finished workflows.",
+      label: _t("Workflow instances"),
+      description: _t("Inspect running and finished workflows."),
       icon: ListChecks,
       visible: permissions.has(Resources.workflowInstances, Verbs.view),
     },
@@ -29,8 +32,8 @@ export function EmptyDashboard() {
     <div className="flex flex-col gap-4">
       <EmptyState
         icon={LayoutDashboard}
-        title="Welcome to Elsa Studio"
-        description="There is nothing to show on the dashboard yet. Modules can contribute widgets here; in the meantime jump straight to your workflows."
+        title={_t("Welcome to Elsa Studio")}
+        description={_t("There is nothing to show on the dashboard yet. Modules can contribute widgets here; in the meantime jump straight to your workflows.")}
       />
       {shortcuts.length > 0 && (
         <div className="grid gap-3 sm:grid-cols-2">

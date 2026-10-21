@@ -1,4 +1,6 @@
 "use client"
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import * as React from "react"
 import { Avatar as AvatarPrimitive } from "@base-ui/react/avatar"
@@ -11,6 +13,7 @@ function Avatar({
 }: AvatarPrimitive.Root.Props & {
   size?: "default" | "sm" | "lg"
 }) {
+  useTranslation();
   return (
     <AvatarPrimitive.Root
       data-slot="avatar"
@@ -25,6 +28,7 @@ function Avatar({
 }
 
 function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props) {
+  useTranslation();
   return (
     <AvatarPrimitive.Image
       data-slot="avatar-image"
@@ -41,6 +45,7 @@ function AvatarFallback({
   className,
   ...props
 }: AvatarPrimitive.Fallback.Props) {
+  useTranslation();
   return (
     <AvatarPrimitive.Fallback
       data-slot="avatar-fallback"
@@ -54,6 +59,7 @@ function AvatarFallback({
 }
 
 function AvatarBadge({ className, ...props }: React.ComponentProps<"span">) {
+  useTranslation();
   return (
     <span
       data-slot="avatar-badge"
@@ -70,6 +76,7 @@ function AvatarBadge({ className, ...props }: React.ComponentProps<"span">) {
 }
 
 function AvatarGroup({ className, ...props }: React.ComponentProps<"div">) {
+  useTranslation();
   return (
     <div
       data-slot="avatar-group"
@@ -86,6 +93,7 @@ function AvatarGroupCount({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  useTranslation();
   return (
     <div
       data-slot="avatar-group-count"

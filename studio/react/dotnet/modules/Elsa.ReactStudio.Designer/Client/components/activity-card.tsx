@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import type { ReactNode } from "react";
 import { ChevronRight, TriangleAlert } from "lucide-react";
@@ -37,6 +39,7 @@ export function ActivityCard({
   warning?: string;
   className?: string;
 }) {
+  const _t = useTranslation();
   const { store } = useDesigner();
   const accent = activityAccentColor(descriptor);
   const title = activityDisplayText(activity, descriptor);
@@ -94,7 +97,7 @@ export function ActivityCard({
               store.getState().enter({ activityId: activity.id, slot: "" });
             }}
           >
-            Open <ChevronRight className="inline size-3" />
+            {_t("Open")}{" "}<ChevronRight className="inline size-3" />
           </button>
         )}
       </div>
@@ -113,7 +116,7 @@ export function ActivityCard({
             >
               <span className="font-medium">{s.label}</span>
               <span className="flex items-center gap-1 text-muted-foreground">
-                {s.child ? activityDisplayText(s.child) : "empty"}
+                {s.child ? activityDisplayText(s.child) : _t("empty")}
                 <ChevronRight className="size-3" />
               </span>
             </button>

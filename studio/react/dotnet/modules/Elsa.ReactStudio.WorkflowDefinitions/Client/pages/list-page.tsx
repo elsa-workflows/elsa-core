@@ -1,4 +1,8 @@
 "use client";
+import { translate } from "@elsa-workflows/react-studio-sdk/localization";
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { useCallback, useMemo, useState } from "react";
 import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
@@ -40,6 +44,7 @@ import { WorkflowDefinitionRoutes } from "../routes";
 const SORT_KEYS: Record<string, "Name" | "Created" | "Version"> = { Name: "Name", Created: "Created", Version: "Version" };
 
 export function WorkflowDefinitionsListPage() {
+  const _t = useTranslation();
   const config = useStudioConfig();
   const url = useUrlState();
   const router = useRouter();
@@ -121,7 +126,7 @@ export function WorkflowDefinitionsListPage() {
         model: { ...model, definitionId: undefined, id: undefined, version: undefined, name: `${full.name ?? "Workflow"} (copy)` },
         publish: false,
       });
-      toast.success("Workflow duplicated");
+      toast.success(_t("Workflow duplicated"));
       router.push(href(WorkflowDefinitionRoutes.edit, { definitionId: result.workflowDefinition.definitionId }));
     } catch (e) {
       toast.error(describeError(e));
@@ -129,15 +134,15 @@ export function WorkflowDefinitionsListPage() {
   };
 
   const deleteOne = async (d: WorkflowDefinitionSummary) => {
-    if (!(await confirm({ title: `Delete "${d.name ?? d.definitionId}"?`, description: "All versions and their instances' references will be removed. This cannot be undone.", destructive: true, confirmLabel: "Delete" }))) return;
-    await run("Workflow deleted", () => mutations.remove.mutateAsync(d.definitionId));
+    if (!(await confirm({ title: _t("Delete \"{{value0}}\"?", { value0: d.name ?? d.definitionId }), description: _t("All versions and their instances' references will be removed. This cannot be undone."), destructive: true, confirmLabel: _t("Delete") }))) return;
+    await run(translate("Workflow deleted"), () => mutations.remove.mutateAsync(d.definitionId));
   };
 
   const bulk = async (kind: "delete" | "publish" | "retract" | "export") => {
     const ids = [...selected];
     if (ids.length === 0) return;
     if (kind === "delete") {
-      if (!(await confirm({ title: `Delete ${ids.length} workflow(s)?`, description: "This cannot be undone.", destructive: true, confirmLabel: "Delete" }))) return;
+      if (!(await confirm({ title: _t("Delete {{value0}} workflow(s)?", { value0: ids.length }), description: _t("This cannot be undone."), destructive: true, confirmLabel: _t("Delete") }))) return;
       await run(`Deleted ${ids.length} workflow(s)`, () => mutations.bulkDelete.mutateAsync(ids));
     } else if (kind === "publish") {
       await run(`Published ${ids.length} workflow(s)`, () => mutations.bulkPublish.mutateAsync(ids));
@@ -160,12 +165,12 @@ export function WorkflowDefinitionsListPage() {
   const columns: DataTableColumn<WorkflowDefinitionSummary>[] = [
     {
       id: "name",
-      header: "Name",
+      header: _t("Name"),
       sortKey: "Name",
       cell: (d) => (
         <div className="min-w-0">
           <Link href={href(WorkflowDefinitionRoutes.edit, { definitionId: d.definitionId })} className="font-medium hover:underline">
-            {d.name ?? <span className="text-muted-foreground italic">(unnamed)</span>}
+            {d.name ?? <span className="text-muted-foreground italic">{_t("(unnamed)")}</span>}
           </Link>
           <div className="truncate text-xs text-muted-foreground font-mono">{d.definitionId}</div>
         </div>
@@ -173,7 +178,7 @@ export function WorkflowDefinitionsListPage() {
     },
     {
       id: "description",
-      header: "Description",
+      header: _t("Description"),
       hideable: true,
       className: "max-w-md",
       cell: (d) =>
@@ -186,16 +191,16 @@ export function WorkflowDefinitionsListPage() {
           <span className="text-muted-foreground">–</span>
         ),
     },
-    { id: "latest", header: "Latest", sortKey: "Version", hideable: true, cell: (d) => <Badge variant="outline">v{d.version}</Badge> },
+    { id: "latest", header: _t("Latest"), sortKey: "Version", hideable: true, cell: (d) => <Badge variant="outline">{_t("v")}{d.version}</Badge> },
     {
       id: "published",
-      header: "Published",
+      header: _t("Published"),
       cell: (d) => {
         const v = d.isPublished ? d.version : publishedVersionById.get(d.definitionId);
-        return v ? <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-transparent">v{v}</Badge> : <span className="text-muted-foreground">–</span>;
+        return v ? <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-transparent">{_t("v")}{v}</Badge> : <span className="text-muted-foreground">–</span>;
       },
     },
-    { id: "created", header: "Created", sortKey: "Created", hideable: true, cell: (d) => <Timestamp value={d.createdAt} relative /> },
+    { id: "created", header: _t("Created"), sortKey: "Created", hideable: true, cell: (d) => <Timestamp value={d.createdAt} relative /> },
     {
       id: "actions",
       header: "",
@@ -205,37 +210,32 @@ export function WorkflowDefinitionsListPage() {
         const publishedVersion = d.isPublished ? d.version : publishedVersionById.get(d.definitionId);
         return (
           <DropdownMenu>
-            <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Actions" onClick={(e) => e.stopPropagation()} />}>
+            <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label={_t("Actions")} onClick={(e) => e.stopPropagation()} />}>
               <MoreHorizontal />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
               <DropdownMenuItem onClick={() => router.push(href(WorkflowDefinitionRoutes.edit, { definitionId: d.definitionId }))}>
-                {rowReadOnly ? <Eye /> : <Pencil />} {rowReadOnly ? "View" : "Edit"}
+                {rowReadOnly ? <Eye /> : <Pencil />} {rowReadOnly ? _t("View") : _t("Edit")}
               </DropdownMenuItem>
               {canExecute && publishedVersion && (
                 <DropdownMenuItem onClick={() => setRunTarget(d)}>
-                  <Play /> Run
-                </DropdownMenuItem>
+                  <Play /> {_t("Run")}</DropdownMenuItem>
               )}
               {canCreate && !listReadOnly && (
                 <DropdownMenuItem onClick={() => void duplicate(d)}>
-                  <Copy /> Duplicate
-                </DropdownMenuItem>
+                  <Copy /> {_t("Duplicate")}</DropdownMenuItem>
               )}
               <DropdownMenuItem onClick={() => void exportDefinition(d)}>
-                <Download /> Export
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setBpmnExportId(d.definitionId)}><Download /> Export BPMN</DropdownMenuItem>
+                <Download /> {_t("Export")}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setBpmnExportId(d.definitionId)}><Download /> {_t("Export BPMN")}</DropdownMenuItem>
               {!listReadOnly && (canPublish || canRetract) && <DropdownMenuSeparator />}
               {!listReadOnly && canPublish && !d.isPublished && (
-                <DropdownMenuItem onClick={() => void run("Workflow published", () => mutations.publish.mutateAsync(d.definitionId))}>
-                  <Rocket /> Publish
-                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => void run(translate("Workflow published"), () => mutations.publish.mutateAsync(d.definitionId))}>
+                  <Rocket /> {_t("Publish")}</DropdownMenuItem>
               )}
               {!listReadOnly && canRetract && publishedVersion && (
-                <DropdownMenuItem onClick={() => void run("Workflow unpublished", () => mutations.retract.mutateAsync(d.definitionId))}>
-                  <Undo2 /> Unpublish
-                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => void run(translate("Workflow unpublished"), () => mutations.retract.mutateAsync(d.definitionId))}>
+                  <Undo2 /> {_t("Unpublish")}</DropdownMenuItem>
               )}
               {rowExtensions
                 .filter((a) => (!a.permissions || permissions.hasAny(a.permissions)) && (a.isVisible?.(d) ?? true))
@@ -248,8 +248,7 @@ export function WorkflowDefinitionsListPage() {
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem variant="destructive" onClick={() => void deleteOne(d)}>
-                    <Trash2 /> Delete
-                  </DropdownMenuItem>
+                    <Trash2 /> {_t("Delete")}</DropdownMenuItem>
                 </>
               )}
             </DropdownMenuContent>
@@ -262,42 +261,40 @@ export function WorkflowDefinitionsListPage() {
   return (
     <div className="flex flex-col gap-3">
       <PageHeader
-        title="Workflow definitions"
-        description={latest.data ? `${latest.data.totalCount} definition(s)` : undefined}
+        title={_t("Workflow definitions")}
+        description={latest.data ? _t("{{value0}} definition(s)", { value0: latest.data.totalCount }) : undefined}
         actions={
           <>
             {selected.size > 0 && (
               <DropdownMenu>
                 <DropdownMenuTrigger render={<Button variant="outline" />}>
-                  Bulk actions ({selected.size}) <ChevronDown />
+                  {_t("Bulk actions (")}{selected.size}) <ChevronDown />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  {canPublish && !listReadOnly && <DropdownMenuItem onClick={() => void bulk("publish")}><Rocket /> Publish</DropdownMenuItem>}
-                  {canRetract && !listReadOnly && <DropdownMenuItem onClick={() => void bulk("retract")}><Undo2 /> Unpublish</DropdownMenuItem>}
-                  <DropdownMenuItem onClick={() => void bulk("export")}><Download /> Export</DropdownMenuItem>
+                  {canPublish && !listReadOnly && <DropdownMenuItem onClick={() => void bulk("publish")}><Rocket /> {_t("Publish")}</DropdownMenuItem>}
+                  {canRetract && !listReadOnly && <DropdownMenuItem onClick={() => void bulk("retract")}><Undo2 /> {_t("Unpublish")}</DropdownMenuItem>}
+                  <DropdownMenuItem onClick={() => void bulk("export")}><Download /> {_t("Export")}</DropdownMenuItem>
                   {canDelete && !listReadOnly && (
                     <>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem variant="destructive" onClick={() => void bulk("delete")}><Trash2 /> Delete</DropdownMenuItem>
+                      <DropdownMenuItem variant="destructive" onClick={() => void bulk("delete")}><Trash2 /> {_t("Delete")}</DropdownMenuItem>
                     </>
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-            {permissions.has(Resources.workflowDefinitions, Verbs.write) && !listReadOnly && <Button variant="outline" onClick={() => setBpmnImportOpen(true)}><FileUp /> Import BPMN</Button>}
+            {permissions.has(Resources.workflowDefinitions, Verbs.write) && !listReadOnly && <Button variant="outline" onClick={() => setBpmnImportOpen(true)}><FileUp /> {_t("Import BPMN")}</Button>}
             {canCreate && !listReadOnly && (
               <div className="flex">
                 <Button className="rounded-r-none" onClick={() => setCreateOpen(true)}>
-                  <Plus /> Create workflow
-                </Button>
+                  <Plus /> {_t("Create workflow")}</Button>
                 <DropdownMenu>
-                  <DropdownMenuTrigger render={<Button className="rounded-l-none border-l border-primary-foreground/20 px-1.5" aria-label="More" />}>
+                  <DropdownMenuTrigger render={<Button className="rounded-l-none border-l border-primary-foreground/20 px-1.5" aria-label={_t("More")} />}>
                     <ChevronDown />
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => void importFiles()}>
-                      <FileUp /> Import JSON / ZIP
-                    </DropdownMenuItem>
+                      <FileUp /> {_t("Import JSON / ZIP")}</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
@@ -307,8 +304,7 @@ export function WorkflowDefinitionsListPage() {
       >
         {listReadOnly && (
           <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
-            The server runs in read-only mode: definitions can be viewed but not changed.
-          </div>
+            {_t("The server runs in read-only mode: definitions can be viewed but not changed.")}</div>
         )}
       </PageHeader>
 
@@ -316,14 +312,14 @@ export function WorkflowDefinitionsListPage() {
         columnsStorageKey="workflow-definitions"
         toolbar={
           <>
-            <SearchInput value={search} onChange={(v) => url.set({ search: v, page: 0 })} placeholder="Search by name, description or id…" className="w-full max-w-md" />
+            <SearchInput value={search} onChange={(v) => url.set({ search: v, page: 0 })} placeholder={_t("Search by name, description or id…")} className="w-full max-w-md" />
             <FilterChips
               value={scope}
               onChange={(v) => url.set({ scope: v === "all" ? undefined : v, page: 0 })}
               options={[
-                { value: "all", label: "All" },
-                { value: "published", label: "Published" },
-                { value: "drafts", label: "Drafts" },
+                { value: "all", label: _t("All") },
+                { value: "published", label: _t("Published") },
+                { value: "drafts", label: _t("Drafts") },
               ]}
             />
           </>
@@ -332,7 +328,7 @@ export function WorkflowDefinitionsListPage() {
         rows={latest.data?.items ?? []}
         rowKey={(d) => d.definitionId}
         isLoading={latest.isFetching}
-        emptyMessage={search ? "No workflows match your search." : "No workflow definitions yet. Create one to get started."}
+        emptyMessage={search ? _t("No workflows match your search.") : _t("No workflow definitions yet. Create one to get started.")}
         selection={{ selected, onChange: setSelected }}
         sort={sort}
         onSortChange={(s) => url.set({ orderBy: s.key, orderDirection: s.direction })}

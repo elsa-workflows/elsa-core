@@ -1,3 +1,5 @@
+
+import { translate, useTranslation } from "./localization.js";
 import { Component, type ComponentType, type ReactNode } from "react";
 
 interface BoundaryProps {
@@ -18,7 +20,7 @@ class ModuleBoundary extends Component<BoundaryProps, { failed: boolean }> {
 
   render() {
     return this.state.failed
-      ? <>{this.props.fallback}<p role="alert">Module {this.props.moduleId} could not render {this.props.slotId}.</p></>
+      ? <>{this.props.fallback}<p role="alert">{translate("Module")}{" "}{this.props.moduleId} {translate("could not render")}{" "}{this.props.slotId}.</p></>
       : this.props.children;
   }
 }
@@ -28,6 +30,7 @@ export function isolateModuleComponent<P extends object>(component: ComponentTyp
   slotId: string, onError: (error: Error) => void, preserveChildren = false): ComponentType<P> {
   const Contribution = component;
   return function IsolatedContribution(props: P) {
+  useTranslation();
     return <ModuleBoundary moduleId={moduleId} slotId={slotId} onError={onError}
       fallback={preserveChildren && "children" in props ? props.children as ReactNode : undefined}>
       <Contribution {...props} />

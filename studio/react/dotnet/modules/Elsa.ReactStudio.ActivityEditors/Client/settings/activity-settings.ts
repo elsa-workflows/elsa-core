@@ -1,3 +1,5 @@
+
+import { translate } from "@elsa-workflows/react-studio-sdk/localization";
 import type { Activity, Expression } from "@elsa-workflows/react-studio-api-client/types/activities";
 import type { WorkflowDefinitionSummary } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
 
@@ -43,7 +45,7 @@ export function setPersistenceRule(activity: Activity, section: "default" | "int
   const current = persistenceConfiguration(activity);
   const updated = rule ? activity : clearLegacyRule(activity, section, property);
   if (section === "inputs" || section === "outputs") {
-    if (!property) throw new Error("A property name is required for input/output persistence");
+    if (!property) throw new Error(translate("A property name is required for input/output persistence"));
     const name = property.charAt(0).toLowerCase() + property.slice(1);
     const next = { ...current[section] };
     // The runtime falls back from null to legacy data, so clear that one
@@ -55,7 +57,7 @@ export function setPersistenceRule(activity: Activity, section: "default" | "int
 }
 
 export function applyActivityVersion(activity: Activity, version: WorkflowDefinitionSummary): Activity {
-  if (activity.workflowDefinitionId !== version.definitionId) throw new Error("The version belongs to another workflow definition");
+  if (activity.workflowDefinitionId !== version.definitionId) throw new Error(translate("The version belongs to another workflow definition"));
   return { ...activity, version: version.version, workflowDefinitionVersionId: version.id };
 }
 

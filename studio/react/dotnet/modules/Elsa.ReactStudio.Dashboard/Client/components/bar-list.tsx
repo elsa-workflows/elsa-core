@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
 import { cn } from "@elsa-workflows/react-studio-ui/utils";
@@ -14,6 +16,7 @@ export interface BarListRow {
 
 /** Horizontal bar list; the longest bar fills the row. Good for "per workflow" comparisons. */
 export function BarList({ rows, className, color = "var(--status-success)" }: { rows: BarListRow[]; className?: string; color?: string }) {
+  const _t = useTranslation();
   const max = Math.max(1, ...rows.map((r) => r.value));
   return (
     <ol className={cn("flex flex-col gap-2", className)}>
@@ -29,7 +32,7 @@ export function BarList({ rows, className, color = "var(--status-success)" }: { 
                 {r.segments?.map((seg, i) => (
                   <span
                     key={seg.label}
-                    title={`${seg.label}: ${seg.value}`}
+                    title={_t("{{value0}}: {{value1}}", { value0: seg.label, value1: seg.value })}
                     style={{
                       width: `${r.value ? (seg.value / r.value) * 100 : 0}%`,
                       background: seg.color,

@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
 import { usePathname, useRouter } from "@elsa-workflows/react-studio-sdk/navigation/index";
@@ -45,6 +47,7 @@ function hasActiveChild(item: NavItem, pathname: string): boolean {
 
 /** Icon in a tinted tile; the tile turns primary when the item is active. */
 function IconTile({ item, active }: { item: NavItem; active: boolean }) {
+  useTranslation();
   if (!item.icon) return null;
   return (
     <span
@@ -59,6 +62,7 @@ function IconTile({ item, active }: { item: NavItem; active: boolean }) {
 }
 
 export function StudioSidebar() {
+  const _t = useTranslation();
   const config = useStudioConfig();
   const server = useActiveServer();
   const pathname = usePathname();
@@ -91,7 +95,7 @@ export function StudioSidebar() {
             <SidebarMenuButton size="lg" render={<Link href="/" />} className="hover:bg-transparent">
               <BrandMark className="size-8 shrink-0 shadow-sm" />
               <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                <span className="truncate font-semibold tracking-tight">{config.title} <span className="text-xs font-normal text-muted-foreground">Preview</span></span>
+                <span className="truncate font-semibold tracking-tight">{config.title} <span className="text-xs font-normal text-muted-foreground">{_t("Preview")}</span></span>
                 <span className="flex items-center gap-1.5 truncate text-[11px] text-muted-foreground">
                   <span className="relative flex size-2">
                     <span className="absolute inline-flex size-full animate-ping rounded-full bg-status-success opacity-50" />
@@ -107,15 +111,14 @@ export function StudioSidebar() {
           <div className="px-1 pb-1 pt-1.5 group-data-[collapsible=icon]:px-0">
             {collapsed ? (
               <Tooltip>
-                <TooltipTrigger render={<Button size="icon-sm" className="mx-auto flex" aria-label="New workflow" onClick={() => router.push("/workflows/definitions?create=1")} />}>
+                <TooltipTrigger render={<Button size="icon-sm" className="mx-auto flex" aria-label={_t("New workflow")} onClick={() => router.push("/workflows/definitions?create=1")} />}>
                   <Plus />
                 </TooltipTrigger>
-                <TooltipContent side="right">New workflow</TooltipContent>
+                <TooltipContent side="right">{_t("New workflow")}</TooltipContent>
               </Tooltip>
             ) : (
               <Button size="sm" className="w-full justify-start shadow-sm" onClick={() => router.push("/workflows/definitions?create=1")}>
-                <Plus /> New workflow
-              </Button>
+                <Plus /> {_t("New workflow")}</Button>
             )}
           </div>
         )}
@@ -124,7 +127,7 @@ export function StudioSidebar() {
       <SidebarContent className="gap-0 pt-1">
         {groups.map((group) => (
           <SidebarGroup key={group.id} className="py-1.5">
-            <SidebarGroupLabel className="eyebrow h-7 px-2">{group.label}</SidebarGroupLabel>
+            <SidebarGroupLabel className="eyebrow h-7 px-2">{_t(group.label)}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="gap-0.5">
                 {group.items.map((item) => {
@@ -189,18 +192,18 @@ export function StudioSidebar() {
           </Avatar>
           <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
             <div className="truncate text-sm font-medium">{name}</div>
-            <div className="truncate text-[11px] text-muted-foreground">{user?.roles?.length ? user.roles.join(", ") : strategy.kind === "none" ? "No authentication" : "Signed in"}</div>
+            <div className="truncate text-[11px] text-muted-foreground">{user?.roles?.length ? user.roles.join(", ") : strategy.kind === "none" ? _t("No authentication") : _t("Signed in")}</div>
           </div>
           {strategy.interactive && (
             <Tooltip>
-              <TooltipTrigger render={<Button variant="ghost" size="icon-xs" aria-label="Sign out" onClick={() => void logout()} className="text-muted-foreground group-data-[collapsible=icon]:hidden" />}>
+              <TooltipTrigger render={<Button variant="ghost" size="icon-xs" aria-label={_t("Sign out")} onClick={() => void logout()} className="text-muted-foreground group-data-[collapsible=icon]:hidden" />}>
                 <LogOut />
               </TooltipTrigger>
-              <TooltipContent side="right">Sign out</TooltipContent>
+              <TooltipContent side="right">{_t("Sign out")}</TooltipContent>
             </Tooltip>
           )}
         </div>
-        <div className="px-2 pb-1 text-[10px] text-muted-foreground group-data-[collapsible=icon]:hidden">Elsa Workflows 3 · Studio</div>
+        <div className="px-2 pb-1 text-[10px] text-muted-foreground group-data-[collapsible=icon]:hidden">{_t("Elsa Workflows 3 · Studio")}</div>
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

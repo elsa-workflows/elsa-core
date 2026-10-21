@@ -1,4 +1,6 @@
 "use client"
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip"
 import { cn } from "cn"
@@ -7,6 +9,7 @@ function TooltipProvider({
   delay = 0,
   ...props
 }: TooltipPrimitive.Provider.Props) {
+  useTranslation();
   return (
     <TooltipPrimitive.Provider
       data-slot="tooltip-provider"
@@ -17,10 +20,12 @@ function TooltipProvider({
 }
 
 function Tooltip({ ...props }: TooltipPrimitive.Root.Props) {
+  useTranslation();
   return <TooltipPrimitive.Root data-slot="tooltip" {...props} />
 }
 
 function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props) {
+  useTranslation();
   return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />
 }
 
@@ -37,6 +42,7 @@ function TooltipContent({
     TooltipPrimitive.Positioner.Props,
     "align" | "alignOffset" | "side" | "sideOffset"
   >) {
+  useTranslation();
   return (
     <TooltipPrimitive.Portal>
       <TooltipPrimitive.Positioner

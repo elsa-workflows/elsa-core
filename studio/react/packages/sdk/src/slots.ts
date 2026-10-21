@@ -30,6 +30,8 @@ export interface ExpressionEditorProps {
 
 /** SDK v1 Preview contribution contracts; every contribution has an explicit identity and order. */
 export interface StudioSlots {
+  /** Resources are namespaced to their owning module; English is the fallback. */
+  translations: Slot & { culture: string; messages: Readonly<Record<string, string>> };
   components: { [K in keyof StudioComponentProps]: Slot & { name: K; component: ComponentType<StudioComponentProps[K]> } }[keyof StudioComponentProps];
   routes: Slot & ModuleRoute;
   navigation: Slot & NavItem;

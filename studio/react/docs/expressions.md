@@ -44,8 +44,8 @@ such as ``List`1`` are read in the same format emitted by the server.
 Run `pnpm benchmark:expressions` to reproduce the #8854 completion-generation
 measurement. It builds a context with 3,000 variables, 3,000 inputs and 10,000
 activities, warms up once and reports the median of five runs. On the development
-environment with Node 24.19, C# produced 38,000 suggestions in 42.6 ms, JavaScript
-47,000 in 41.3 ms, and Python 35,000 in 25.1 ms. This measures completion generation;
+environment with Node 24.19 and localized descriptions, C# produced 38,000 suggestions
+in 95.8 ms, JavaScript 47,000 in 79.6 ms, and Python 35,000 in 63.8 ms. This measures completion generation;
 it is not a measurement of rendering an entire workflow diagram.
 
 Type parsing and completion construction are memoized, and the CodeMirror extension

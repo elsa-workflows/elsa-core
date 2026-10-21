@@ -1,4 +1,6 @@
 "use client"
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import * as React from "react"
 import { Dialog as SheetPrimitive } from "@base-ui/react/dialog"
@@ -8,22 +10,27 @@ import { Button } from "@elsa-workflows/react-studio-ui/button"
 import { XIcon } from "lucide-react"
 
 function Sheet({ ...props }: SheetPrimitive.Root.Props) {
+  useTranslation();
   return <SheetPrimitive.Root data-slot="sheet" {...props} />
 }
 
 function SheetTrigger({ ...props }: SheetPrimitive.Trigger.Props) {
+  useTranslation();
   return <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />
 }
 
 function SheetClose({ ...props }: SheetPrimitive.Close.Props) {
+  useTranslation();
   return <SheetPrimitive.Close data-slot="sheet-close" {...props} />
 }
 
 function SheetPortal({ ...props }: SheetPrimitive.Portal.Props) {
+  useTranslation();
   return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />
 }
 
 function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
+  useTranslation();
   return (
     <SheetPrimitive.Backdrop
       data-slot="sheet-overlay"
@@ -46,6 +53,7 @@ function SheetContent({
   side?: "top" | "right" | "bottom" | "left"
   showCloseButton?: boolean
 }) {
+  const _t = useTranslation();
   return (
     <SheetPortal>
       <SheetOverlay />
@@ -72,7 +80,7 @@ function SheetContent({
           >
             <XIcon
             />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">{_t("Close")}</span>
           </SheetPrimitive.Close>
         )}
       </SheetPrimitive.Popup>
@@ -81,6 +89,7 @@ function SheetContent({
 }
 
 function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
+  useTranslation();
   return (
     <div
       data-slot="sheet-header"
@@ -91,6 +100,7 @@ function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
+  useTranslation();
   return (
     <div
       data-slot="sheet-footer"
@@ -101,6 +111,7 @@ function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 function SheetTitle({ className, ...props }: SheetPrimitive.Title.Props) {
+  useTranslation();
   return (
     <SheetPrimitive.Title
       data-slot="sheet-title"
@@ -117,6 +128,7 @@ function SheetDescription({
   className,
   ...props
 }: SheetPrimitive.Description.Props) {
+  useTranslation();
   return (
     <SheetPrimitive.Description
       data-slot="sheet-description"

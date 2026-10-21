@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Plus, X } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -29,6 +31,7 @@ export function PermissionEditor({
   isLoading?: boolean;
   disabled?: boolean;
 }) {
+  const _t = useTranslation();
   const [category, setCategory] = useState<string | undefined>();
   const [resource, setResource] = useState<string | undefined>();
   const [custom, setCustom] = useState("");
@@ -57,7 +60,7 @@ export function PermissionEditor({
   return (
     <div className="flex flex-col gap-4">
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Category">
+        <Field label={_t("Category")}>
           <SimpleSelect
             value={category}
             onChange={(v) => {
@@ -65,16 +68,16 @@ export function PermissionEditor({
               setResource(undefined);
             }}
             options={categories.map((c) => ({ value: c.category, label: c.category }))}
-            placeholder={isLoading ? "Loading…" : "Pick a category"}
+            placeholder={isLoading ? _t("Loading…") : _t("Pick a category")}
             disabled={disabled || isLoading || categories.length === 0}
           />
         </Field>
-        <Field label="Resource">
+        <Field label={_t("Resource")}>
           <SimpleSelect
             value={resource}
             onChange={setResource}
             options={(activeCategory?.resources ?? []).map((r) => ({ value: r.resource, label: r.displayName, description: r.resource }))}
-            placeholder={activeCategory ? "Pick a resource" : "Pick a category first"}
+            placeholder={activeCategory ? _t("Pick a resource") : _t("Pick a category first")}
             disabled={disabled || !activeCategory}
           />
         </Field>
@@ -95,8 +98,8 @@ export function PermissionEditor({
                 <div key={verb} className="flex items-center gap-2">
                   <Checkbox id={id} checked={tokens.has(token)} onCheckedChange={(c) => setToken(token, c === true)} disabled={disabled} />
                   <Label htmlFor={id} className="font-normal">
-                    {verb === ANY_VERB ? "all verbs (*)" : verb}
-                    {descriptor.nonCoreVerbs.includes(verb) && <span className="text-xs text-muted-foreground">(module)</span>}
+                    {verb === ANY_VERB ? _t("all verbs (*)") : verb}
+                    {descriptor.nonCoreVerbs.includes(verb) && <span className="text-xs text-muted-foreground">{_t("(module)")}</span>}
                   </Label>
                 </div>
               );
@@ -105,12 +108,12 @@ export function PermissionEditor({
         </div>
       )}
 
-      <Field label="Custom token" hint="For wildcards the catalog cannot express, e.g. workflows/*:view or *:*.">
+      <Field label={_t("Custom token")} hint={_t("For wildcards the catalog cannot express, e.g. workflows/*:view or *:*.")}>
         <div className="flex gap-2">
           <Input
             value={custom}
             onChange={(e) => setCustom(e.target.value)}
-            placeholder="resource:verb"
+            placeholder={_t("resource:verb")}
             disabled={disabled}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
@@ -121,14 +124,13 @@ export function PermissionEditor({
           />
           <Button type="button" variant="outline" onClick={addCustom} disabled={disabled || !splitPermissionToken(custom.trim())}>
             <Plus />
-            Add
-          </Button>
+            {_t("Add")}</Button>
         </div>
       </Field>
 
-      <Field label={`Granted permissions (${value.length})`}>
+      <Field label={_t("Granted permissions ({{value0}})", { value0: value.length })}>
         {sorted.length === 0 ? (
-          <p className="text-xs text-muted-foreground">No permissions granted. Users in this role can only access what every principal can.</p>
+          <p className="text-xs text-muted-foreground">{_t("No permissions granted. Users in this role can only access what every principal can.")}</p>
         ) : (
           <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto">
             {sorted.map((token) => (
@@ -137,7 +139,7 @@ export function PermissionEditor({
                 <button
                   type="button"
                   className="rounded-full hover:bg-foreground/10 p-0.5"
-                  aria-label={`Remove ${token}`}
+                  aria-label={_t("Remove {{value0}}", { value0: token })}
                   onClick={() => setToken(token, false)}
                   disabled={disabled}
                 >

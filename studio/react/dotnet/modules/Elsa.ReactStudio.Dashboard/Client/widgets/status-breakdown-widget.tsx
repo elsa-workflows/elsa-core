@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import type { DashboardRange } from "@elsa-workflows/react-studio-sdk";
 import { DonutChart } from "../components/donut-chart";
@@ -9,6 +11,7 @@ import { RANGE_LABELS } from "../format";
 
 /** Instances by status as a donut, from the overview (or the core-API counts on older servers). */
 export function StatusBreakdownWidget({ range }: { range: DashboardRange }) {
+  const _t = useTranslation();
   const overview = useDashboardOverview(range);
   const fallback = useFallbackInstanceCounts();
   const capability = overview.capability ?? fallback.capability;
@@ -18,23 +21,23 @@ export function StatusBreakdownWidget({ range }: { range: DashboardRange }) {
 
   const slices = counts
     ? [
-        { label: "Executing", value: Math.max(0, counts.running - counts.suspended), color: "var(--status-info)", href: DashboardLinks.instancesWhere({ subStatus: "Executing" }) },
-        { label: "Suspended", value: counts.suspended, color: "var(--status-warning)", href: DashboardLinks.instancesWhere({ subStatus: "Suspended" }) },
-        { label: "Completed", value: counts.completed, color: "var(--status-success)", href: DashboardLinks.instancesWhere({ subStatus: "Finished" }) },
-        { label: "Faulted", value: counts.faulted, color: "var(--status-danger)", href: DashboardLinks.instancesWhere({ subStatus: "Faulted" }) },
+        { label: _t("Executing"), value: Math.max(0, counts.running - counts.suspended), color: "var(--status-info)", href: DashboardLinks.instancesWhere({ subStatus: "Executing" }) },
+        { label: _t("Suspended"), value: counts.suspended, color: "var(--status-warning)", href: DashboardLinks.instancesWhere({ subStatus: "Suspended" }) },
+        { label: _t("Completed"), value: counts.completed, color: "var(--status-success)", href: DashboardLinks.instancesWhere({ subStatus: "Finished" }) },
+        { label: _t("Faulted"), value: counts.faulted, color: "var(--status-danger)", href: DashboardLinks.instancesWhere({ subStatus: "Faulted" }) },
       ]
     : [];
 
   return (
     <WidgetCard
-      title="Instances by status"
-      description={capability === "fallback" ? "All time" : RANGE_LABELS[range]}
+      title={_t("Instances by status")}
+      description={capability === "fallback" ? _t("All time") : _t(RANGE_LABELS[range])}
       isLoading={isLoading}
       error={error}
       contentClassName="flex flex-col justify-center gap-3"
     >
       <DonutChart slices={slices} centerLabel="instances" />
-      <SourceNote capability={capability}>Counts cover all instances; the Dashboard API would scope them to the selected range.</SourceNote>
+      <SourceNote capability={capability}>{_t("Counts cover all instances; the Dashboard API would scope them to the selected range.")}</SourceNote>
     </WidgetCard>
   );
 }

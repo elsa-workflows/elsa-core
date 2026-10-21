@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { ChevronRight, Loader2 } from "lucide-react";
 import { useMemo } from "react";
@@ -23,15 +25,15 @@ export function ActivityExecutionsList({
   selectedActivityId?: string;
   onSelect: (record: ActivityExecutionRecord) => void;
 }) {
+  const _t = useTranslation();
   const groups = useMemo(() => [...groupBy(records, (r) => r.activityNodeId).entries()], [records]);
 
   if (isLoading)
     return (
       <div className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
-        <Loader2 className="size-4 animate-spin" /> Loading executions…
-      </div>
+        <Loader2 className="size-4 animate-spin" /> {_t("Loading executions…")}</div>
     );
-  if (groups.length === 0) return <EmptyState title="No activity executions" className="m-3 p-6" />;
+  if (groups.length === 0) return <EmptyState title={_t("No activity executions")} className="m-3 p-6" />;
 
   return (
     <div className="flex flex-col py-1">
@@ -65,7 +67,7 @@ export function ActivityExecutionsList({
                       className="flex w-full items-center justify-between gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted/60"
                     >
                       <span className="tabular-nums text-muted-foreground">{formatTimestamp(r.startedAt, "HH:mm:ss.SSS")}</span>
-                      <span className="tabular-nums">{r.completedAt ? formatElapsed(elapsedMs(r.startedAt, r.completedAt)) : "running"}</span>
+                      <span className="tabular-nums">{r.completedAt ? formatElapsed(elapsedMs(r.startedAt, r.completedAt)) : _t("running")}</span>
                       <StatusBadge status={r.status} className="h-4 px-1.5 text-[10px]" />
                     </button>
                   </li>

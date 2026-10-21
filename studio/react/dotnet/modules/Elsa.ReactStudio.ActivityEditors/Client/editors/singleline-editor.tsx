@@ -1,10 +1,13 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Input } from "@elsa-workflows/react-studio-ui/input";
 import type { UiHintEditorProps } from "../types";
 import { ExpressionEditor } from "../expression-editor";
 
 export function SingleLineEditor(props: UiHintEditorProps) {
+  useTranslation();
   const { descriptor, readOnly } = props;
   const numeric = /^(Int32|Int64|Long|Double|Decimal|Single|Int16|Byte)$/.test(descriptor.typeName);
   return (

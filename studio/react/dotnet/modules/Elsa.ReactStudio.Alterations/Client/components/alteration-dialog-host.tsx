@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import type { ReactNode } from "react";
 import { useAlterationDialogs } from "../dialog-store";
@@ -7,6 +9,7 @@ import { RetryFaultedDialog } from "./retry-faulted-dialog";
 
 /** Module provider: mounts the alteration dialogs once so list/viewer actions can open them. */
 export function AlterationDialogHost({ children }: { children: ReactNode }) {
+  useTranslation();
   const { alter, retry, close } = useAlterationDialogs();
   return (
     <>

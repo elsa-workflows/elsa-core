@@ -1,4 +1,6 @@
 "use client";
+import { message, useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { AlertTriangle, Ban, CheckCircle2, ChevronRight, Circle, ChevronsDownUp, ChevronsUpDown, Loader2, PauseCircle, type LucideIcon } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -37,11 +39,11 @@ import {
 const DEFAULT_EXPANDED_DEPTH = 2;
 
 const STATUS: Record<JournalSpanStatus, { icon: LucideIcon; className: string; label: string }> = {
-  completed: { icon: CheckCircle2, className: "text-emerald-600 dark:text-emerald-400", label: "Completed" },
-  faulted: { icon: AlertTriangle, className: "text-red-600 dark:text-red-400", label: "Faulted" },
-  suspended: { icon: PauseCircle, className: "text-amber-600 dark:text-amber-400", label: "Suspended" },
-  cancelled: { icon: Ban, className: "text-muted-foreground", label: "Cancelled" },
-  running: { icon: Circle, className: "text-sky-600 dark:text-sky-400", label: "Running" },
+  completed: { icon: CheckCircle2, className: "text-emerald-600 dark:text-emerald-400", label: message("Completed") },
+  faulted: { icon: AlertTriangle, className: "text-red-600 dark:text-red-400", label: message("Faulted") },
+  suspended: { icon: PauseCircle, className: "text-amber-600 dark:text-amber-400", label: message("Suspended") },
+  cancelled: { icon: Ban, className: "text-muted-foreground", label: message("Cancelled") },
+  running: { icon: Circle, className: "text-sky-600 dark:text-sky-400", label: message("Running") },
 };
 
 const EVENT_TONE: Record<string, string> = {
@@ -71,6 +73,7 @@ export function JournalTree({
   isLoading: boolean;
   fetchNextPage: () => void;
 }) {
+  const _t = useTranslation();
   const [hideContainers, setHideContainers] = useState(true);
   /** Only the subtrees the reader has actually toggled; everything else follows the depth default. */
   const [overrides, setOverrides] = useState<Record<string, boolean>>({});
@@ -138,40 +141,38 @@ export function JournalTree({
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center justify-between gap-2 border-b px-3 py-2 text-xs text-muted-foreground">
         <span>
-          {spanCount} {spanCount === 1 ? "activity" : "activities"}
-          {totalCount > records.length ? ` · ${records.length} of ${totalCount} events` : ""}
+          {spanCount} {spanCount === 1 ? _t("activity") : _t("activities")}
+          {totalCount > records.length ? _t(" · {{value0}} of {{value1}} events", { value0: records.length, value1: totalCount }) : ""}
         </span>
         <div className="flex items-center gap-1">
           {hasNesting && (
             <>
-              <Button variant="ghost" size="icon-sm" aria-label="Expand all" title="Expand all" onClick={() => setAll(false)}>
+              <Button variant="ghost" size="icon-sm" aria-label={_t("Expand all")} title={_t("Expand all")} onClick={() => setAll(false)}>
                 <ChevronsUpDown />
               </Button>
-              <Button variant="ghost" size="icon-sm" aria-label="Collapse all" title="Collapse all" onClick={() => setAll(true)}>
+              <Button variant="ghost" size="icon-sm" aria-label={_t("Collapse all")} title={_t("Collapse all")} onClick={() => setAll(true)}>
                 <ChevronsDownUp />
               </Button>
             </>
           )}
           <Switch id="journal-hide-containers" size="sm" checked={hideContainers} onCheckedChange={setHideContainers} className="ml-1" />
           <Label htmlFor="journal-hide-containers" className="font-normal text-xs">
-            Hide containers
-          </Label>
+            {_t("Hide containers")}</Label>
         </div>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {isLoading ? (
           <div className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" /> Loading journal…
-          </div>
+            <Loader2 className="size-4 animate-spin" /> {_t("Loading journal…")}</div>
         ) : rows.length === 0 ? (
           <EmptyState
-            title="No journal entries"
-            description={hideContainers && records.length > 0 ? "Only the engine's own containers ran so far. Turn off “Hide containers” to see them." : undefined}
+            title={_t("No journal entries")}
+            description={hideContainers && records.length > 0 ? _t("Only the engine's own containers ran so far. Turn off “Hide containers” to see them.") : undefined}
             className="m-3 p-6"
           />
         ) : (
-          <ol ref={listRef} role="tree" aria-label="Workflow journal" className="flex flex-col py-1">
+          <ol ref={listRef} role="tree" aria-label={_t("Workflow journal")} className="flex flex-col py-1">
             {rows.map(({ span, depth }, index) => (
               <JournalRow
                 key={span.key}
@@ -196,8 +197,7 @@ export function JournalTree({
           <div className="p-2">
             <Button variant="outline" size="sm" className="w-full" onClick={fetchNextPage} disabled={isFetchingNextPage}>
               {isFetchingNextPage ? <Loader2 className="animate-spin" /> : null}
-              Load more
-            </Button>
+              {_t("Load more")}</Button>
           </div>
         )}
       </div>
@@ -228,6 +228,7 @@ function JournalRow({
   onActivate: () => void;
   onKeyDown: (e: React.KeyboardEvent) => void;
 }) {
+  const _t = useTranslation();
   const { icon: Icon, className, label } = STATUS[span.status];
   const hasChildren = span.children.length > 0;
 
@@ -258,7 +259,7 @@ function JournalRow({
           <button
             type="button"
             tabIndex={-1}
-            aria-label={collapsed ? `Expand ${span.name}` : `Collapse ${span.name}`}
+            aria-label={collapsed ? _t("Expand {{value0}}", { value0: span.name }) : _t("Collapse {{value0}}", { value0: span.name })}
             onClick={(e) => {
               e.stopPropagation();
               onToggle();
@@ -271,7 +272,7 @@ function JournalRow({
           <span className="size-3.5 shrink-0" aria-hidden />
         )}
         <Icon className={cn("size-4 shrink-0", className)} aria-hidden />
-        <span className="min-w-0 flex-1 truncate font-medium" title={`${span.name} · ${span.activityType}`}>
+        <span className="min-w-0 flex-1 truncate font-medium" title={_t("{{value0}} · {{value1}}", { value0: span.name, value1: span.activityType })}>
           {span.name}
         </span>
         {hasChildren && collapsed && <span className="shrink-0 text-[11px] text-muted-foreground tabular-nums">{countDescendants(span)}</span>}
@@ -279,43 +280,43 @@ function JournalRow({
         {!!span.suspendedMs && (
           <span
             className="flex shrink-0 items-center gap-0.5 text-[11px] text-amber-600 tabular-nums dark:text-amber-400"
-            title={`Suspended for ${formatElapsed(span.suspendedMs)}`}
+            title={_t("Suspended for {{value0}}", { value0: formatElapsed(span.suspendedMs) })}
           >
             <PauseCircle className="size-3" aria-hidden />
             {formatElapsed(span.suspendedMs)}
           </span>
         )}
         <span className="shrink-0 text-xs text-muted-foreground tabular-nums" title={durationTitle(span)}>
-          {span.durationMs === undefined ? label : formatElapsed(span.activeMs ?? span.durationMs)}
+          {span.durationMs === undefined ? _t(label) : formatElapsed(span.activeMs ?? span.durationMs)}
         </span>
       </div>
 
       {detailOpen && (
         <div className="border-y bg-muted/30 px-3 py-2 text-xs" style={{ paddingLeft: `${1.75 + depth * 0.875}rem` }}>
           <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-muted-foreground">
-            <dt>Type</dt>
+            <dt>{_t("Type")}</dt>
             <dd className="truncate font-mono text-[11px] text-foreground" title={span.activityType}>
               {span.activityType}
             </dd>
-            <dt>Status</dt>
-            <dd className={className}>{label}</dd>
+            <dt>{_t("Status")}</dt>
+            <dd className={className}>{_t(label)}</dd>
             {span.activeMs !== undefined && (
               <>
-                <dt>Ran</dt>
+                <dt>{_t("Ran")}</dt>
                 <dd className="text-foreground tabular-nums">{formatElapsed(span.activeMs)}</dd>
               </>
             )}
             {!!span.suspendedMs && (
               <>
-                <dt>Waited</dt>
+                <dt>{_t("Waited")}</dt>
                 <dd className="tabular-nums text-amber-600 dark:text-amber-400">{formatElapsed(span.suspendedMs)}</dd>
-                <dt>Elapsed</dt>
+                <dt>{_t("Elapsed")}</dt>
                 <dd className="text-foreground tabular-nums">{formatElapsed(span.durationMs)}</dd>
               </>
             )}
             {offsetMs !== undefined && offsetMs > 0 && (
               <>
-                <dt>Offset</dt>
+                <dt>{_t("Offset")}</dt>
                 <dd className="text-foreground tabular-nums">+{formatElapsed(offsetMs)}</dd>
               </>
             )}
@@ -333,14 +334,14 @@ function JournalRow({
                       <span className="font-medium text-foreground">{event.eventName}</span>
                       <span className="shrink-0 text-muted-foreground tabular-nums">
                         {formatTimestamp(event.timestamp, "HH:mm:ss.SSS")}
-                        {since ? ` · +${formatElapsed(since)}` : ""}
+                        {since ? _t(" · +{{value0}}", { value0: formatElapsed(since) }) : ""}
                       </span>
                     </div>
                     {event.message && <p className="text-muted-foreground">{event.message}</p>}
                     {exception && (
                       <p className="mt-0.5 font-mono text-[11px] break-words text-red-600 dark:text-red-400">
                         {exception.type}
-                        {exception.message && exception.message !== event.message ? `: ${exception.message}` : ""}
+                        {exception.message && exception.message !== event.message ? _t(": {{value0}}", { value0: exception.message }) : ""}
                       </p>
                     )}
                   </div>

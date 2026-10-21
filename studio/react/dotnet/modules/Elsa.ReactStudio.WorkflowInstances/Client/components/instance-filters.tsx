@@ -1,4 +1,6 @@
 "use client";
+import { message, useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { SearchInput } from "@elsa-workflows/react-studio-ui/common/search-input";
 import { SimpleSelect, type SelectOption } from "@elsa-workflows/react-studio-ui/common/simple-select";
@@ -21,8 +23,8 @@ export interface InstanceFilterValues {
 const STATUS_OPTIONS: SelectOption<WorkflowStatus>[] = WORKFLOW_STATUSES.map((s) => ({ value: s, label: s }));
 const SUB_STATUS_OPTIONS: SelectOption<WorkflowSubStatus>[] = WORKFLOW_SUB_STATUSES.map((s) => ({ value: s, label: s }));
 const INCIDENT_OPTIONS: SelectOption<HasIncidents>[] = [
-  { value: "true", label: "With incidents" },
-  { value: "false", label: "Without incidents" },
+  { value: "true", label: message("With incidents") },
+  { value: "false", label: message("Without incidents") },
 ];
 
 export function InstanceFilters({
@@ -34,18 +36,19 @@ export function InstanceFilters({
   onChange: (patch: Partial<InstanceFilterValues>) => void;
   definitionOptions: SelectOption<string>[];
 }) {
+  const _t = useTranslation();
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <SearchInput value={value.search} onChange={(search) => onChange({ search })} placeholder="Search id, correlation id, name…" className="w-64" />
-      <MultiSelect label="Workflow" value={value.definitionIds} onChange={(definitionIds) => onChange({ definitionIds })} options={definitionOptions} searchPlaceholder="Search workflows…" />
-      <MultiSelect label="Status" value={value.statuses} onChange={(statuses) => onChange({ statuses })} options={STATUS_OPTIONS} />
-      <MultiSelect label="Sub-status" value={value.subStatuses} onChange={(subStatuses) => onChange({ subStatuses })} options={SUB_STATUS_OPTIONS} />
+      <SearchInput value={value.search} onChange={(search) => onChange({ search })} placeholder={_t("Search id, correlation id, name…")} className="w-64" />
+      <MultiSelect label={_t("Workflow")} value={value.definitionIds} onChange={(definitionIds) => onChange({ definitionIds })} options={definitionOptions} searchPlaceholder={_t("Search workflows…")} />
+      <MultiSelect label={_t("Status")} value={value.statuses} onChange={(statuses) => onChange({ statuses })} options={STATUS_OPTIONS.map(option => ({ ...option, label: _t(option.label) }))} />
+      <MultiSelect label={_t("Sub-status")} value={value.subStatuses} onChange={(subStatuses) => onChange({ subStatuses })} options={SUB_STATUS_OPTIONS.map(option => ({ ...option, label: _t(option.label) }))} />
       <SimpleSelect
         size="sm"
         className="w-44"
         value={value.hasIncidents}
-        options={INCIDENT_OPTIONS}
-        placeholder="Incidents: any"
+        options={INCIDENT_OPTIONS.map(option => ({ ...option, label: _t(option.label) }))}
+        placeholder={_t("Incidents: any")}
         allowEmpty
         onChange={(hasIncidents) => onChange({ hasIncidents })}
       />

@@ -1,15 +1,17 @@
 "use client";
+import { message } from "../localization.js";
+
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 /** The five Elsa Studio theme packs; colours live in `src/app/globals.css`. */
 export const ELSA_THEMES = [
-  { id: "classic", label: "Classic", description: "Sky blue on neutral slate", swatch: "#0EA5E9" },
-  { id: "workflow-constellation", label: "Constellation", description: "Deep blue with violet accents", swatch: "#315EBD" },
-  { id: "workflow-aurora", label: "Aurora", description: "Ocean blue with teal accents", swatch: "#0868BD" },
-  { id: "execution-timeline", label: "Execution Timeline", description: "Steel blue, understated", swatch: "#3977B7" },
-  { id: "human-automation", label: "Human Automation", description: "Warm paper with copper accents", swatch: "#245EA8" },
+  { id: "classic", label: message("Classic"), description: message("Sky blue on neutral slate"), swatch: "#0EA5E9" },
+  { id: "workflow-constellation", label: message("Constellation"), description: message("Deep blue with violet accents"), swatch: "#315EBD" },
+  { id: "workflow-aurora", label: message("Aurora"), description: message("Ocean blue with teal accents"), swatch: "#0868BD" },
+  { id: "execution-timeline", label: message("Execution Timeline"), description: message("Steel blue, understated"), swatch: "#3977B7" },
+  { id: "human-automation", label: message("Human Automation"), description: message("Warm paper with copper accents"), swatch: "#245EA8" },
 ] as const;
 
 export type ElsaThemeId = (typeof ELSA_THEMES)[number]["id"];

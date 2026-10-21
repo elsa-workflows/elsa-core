@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Checkbox } from "@elsa-workflows/react-studio-ui/checkbox";
 import { Label } from "@elsa-workflows/react-studio-ui/label";
@@ -16,7 +18,8 @@ export function RoleChecklist({
   onChange: (next: string[]) => void;
   disabled?: boolean;
 }) {
-  if (roles.length === 0) return <p className="text-xs text-muted-foreground">No roles defined yet.</p>;
+  const _t = useTranslation();
+  if (roles.length === 0) return <p className="text-xs text-muted-foreground">{_t("No roles defined yet.")}</p>;
 
   const toggle = (name: string, checked: boolean) => {
     const set = new Set(selected);
@@ -41,7 +44,7 @@ export function RoleChecklist({
               {role.name}
               {role.permissions.length > 0 && (
                 <span className="text-xs text-muted-foreground">
-                  ({role.permissions.length} permission{role.permissions.length === 1 ? "" : "s"})
+                  ({role.permissions.length} {_t("permission")}{role.permissions.length === 1 ? "" : _t("s")})
                 </span>
               )}
             </Label>

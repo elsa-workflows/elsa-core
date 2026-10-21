@@ -1,3 +1,5 @@
+
+import { message } from "@elsa-workflows/react-studio-sdk/localization";
 import { ListChecks, Workflow } from "lucide-react";
 import { defineModule, NavGroups } from "@elsa-workflows/react-studio-sdk";
 import { RunningCountBadge } from "./components/running-count-badge";
@@ -20,33 +22,33 @@ export {
 
 export const workflowInstancesModule = defineModule({
   id: "workflow-instances",
-  name: "Workflow instances",
+  name: message("Workflow instances"),
   core: true,
   routes: [
     {
       path: WorkflowInstanceRoutes.list,
       component: WorkflowInstancesListPage,
-      title: "Workflow instances",
+      title: message("Workflow instances"),
       permissions: [{ resource: Resources.workflowInstances, verb: Verbs.view }],
     },
     {
       path: WorkflowInstanceRoutes.view,
       component: WorkflowInstanceViewerPage,
-      title: "Workflow instance",
+      title: message("Workflow instance"),
       permissions: [{ resource: Resources.workflowInstances, verb: Verbs.view }],
     },
   ],
   nav: [
     {
       id: "workflows",
-      label: "Workflows",
+      label: message("Workflows"),
       icon: Workflow,
       group: NavGroups.general.id,
       order: 10,
       children: [
         {
           id: "workflow-instances",
-          label: "Instances",
+          label: message("Instances"),
           href: WorkflowInstanceRoutes.list,
           icon: ListChecks,
           order: 10,

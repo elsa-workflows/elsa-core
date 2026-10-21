@@ -1,10 +1,13 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Textarea } from "@elsa-workflows/react-studio-ui/textarea";
 import type { UiHintEditorProps } from "../types";
 import { ExpressionEditor } from "../expression-editor";
 
 export function MultiLineEditor(props: UiHintEditorProps) {
+  useTranslation();
   return (
     <ExpressionEditor {...props}>
       {({ value, onChange }) => (

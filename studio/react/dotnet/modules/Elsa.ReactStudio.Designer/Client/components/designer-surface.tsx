@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { useMemo } from "react";
 import { useDesignerState } from "@elsa-workflows/react-studio-sdk/designer/context";
@@ -13,6 +15,7 @@ import { StateMachineCanvas } from "./state-machine-canvas";
  * breadcrumb): React Flow canvas for flowcharts and state machines, an ordered list for sequences.
  */
 export function DesignerSurface(props: DesignerCanvasProps) {
+  useTranslation();
   const root = useDesignerState((s) => s.root);
   const path = useDesignerState((s) => s.path);
   const kind = useMemo(() => containerKind(resolveContainer(root, path) ?? root), [root, path]);

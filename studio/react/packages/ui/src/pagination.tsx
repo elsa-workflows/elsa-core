@@ -1,3 +1,5 @@
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
 import * as React from "react"
 import { cn } from "cn"
 
@@ -5,10 +7,11 @@ import { Button } from "@elsa-workflows/react-studio-ui/button"
 import { ChevronLeftIcon, ChevronRightIcon, MoreHorizontalIcon } from "lucide-react"
 
 function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
+  const _t = useTranslation();
   return (
     <nav
       role="navigation"
-      aria-label="pagination"
+      aria-label={_t("pagination")}
       data-slot="pagination"
       className={cn("mx-auto flex w-full justify-center", className)}
       {...props}
@@ -20,6 +23,7 @@ function PaginationContent({
   className,
   ...props
 }: React.ComponentProps<"ul">) {
+  useTranslation();
   return (
     <ul
       data-slot="pagination-content"
@@ -30,6 +34,7 @@ function PaginationContent({
 }
 
 function PaginationItem({ ...props }: React.ComponentProps<"li">) {
+  useTranslation();
   return <li data-slot="pagination-item" {...props} />
 }
 
@@ -44,6 +49,7 @@ function PaginationLink({
   size = "icon",
   ...props
 }: PaginationLinkProps) {
+  useTranslation();
   return (
     <Button
       variant={isActive ? "outline" : "ghost"}
@@ -67,9 +73,10 @@ function PaginationPrevious({
   text = "Previous",
   ...props
 }: React.ComponentProps<typeof PaginationLink> & { text?: string }) {
+  const _t = useTranslation();
   return (
     <PaginationLink
-      aria-label="Go to previous page"
+      aria-label={_t("Go to previous page")}
       size="default"
       className={cn("pl-1.5!", className)}
       {...props}
@@ -85,9 +92,10 @@ function PaginationNext({
   text = "Next",
   ...props
 }: React.ComponentProps<typeof PaginationLink> & { text?: string }) {
+  const _t = useTranslation();
   return (
     <PaginationLink
-      aria-label="Go to next page"
+      aria-label={_t("Go to next page")}
       size="default"
       className={cn("pr-1.5!", className)}
       {...props}
@@ -102,6 +110,7 @@ function PaginationEllipsis({
   className,
   ...props
 }: React.ComponentProps<"span">) {
+  const _t = useTranslation();
   return (
     <span
       aria-hidden
@@ -114,7 +123,7 @@ function PaginationEllipsis({
     >
       <MoreHorizontalIcon
       />
-      <span className="sr-only">More pages</span>
+      <span className="sr-only">{_t("More pages")}</span>
     </span>
   )
 }

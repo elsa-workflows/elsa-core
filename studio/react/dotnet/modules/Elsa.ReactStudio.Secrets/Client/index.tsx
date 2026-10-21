@@ -1,3 +1,5 @@
+
+import { message } from "@elsa-workflows/react-studio-sdk/localization";
 import { KeyRound } from "lucide-react";
 import { defineModule, NavGroups } from "@elsa-workflows/react-studio-sdk";
 import { Resources, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
@@ -15,16 +17,16 @@ export { SECRET_EXPRESSION_TYPE, type SecretModel, type SecretReference } from "
 export const secretsModule = defineModule({
   id: "secrets",
   name: "Secrets",
-  description: "Encrypted credentials workflows reference by name.",
+  description: message("Encrypted credentials workflows reference by name."),
   requiresServerFeatures: ["Elsa.Secrets"],
   routes: [
-    { path: SecretRoutes.list, component: SecretsPage, title: "Secrets", permissions: [{ resource: Resources.secrets, verb: Verbs.view }] },
-    { path: SecretRoutes.detail, component: SecretDetailPage, title: "Secret", permissions: [{ resource: Resources.secrets, verb: Verbs.view }] },
+    { path: SecretRoutes.list, component: SecretsPage, title: message("Secrets"), permissions: [{ resource: Resources.secrets, verb: Verbs.view }] },
+    { path: SecretRoutes.detail, component: SecretDetailPage, title: message("Secret"), permissions: [{ resource: Resources.secrets, verb: Verbs.view }] },
   ],
   nav: [
     {
       id: "secrets",
-      label: "Secrets",
+      label: message("Secrets"),
       href: SecretRoutes.list,
       icon: KeyRound,
       group: NavGroups.administration.id,

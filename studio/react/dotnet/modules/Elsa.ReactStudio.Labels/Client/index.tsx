@@ -1,3 +1,5 @@
+
+import { message } from "@elsa-workflows/react-studio-sdk/localization";
 import { Tag } from "lucide-react";
 import { defineModule, NavGroups } from "@elsa-workflows/react-studio-sdk";
 import { Resources, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
@@ -11,13 +13,13 @@ export { LabelBadge, LabelSwatch } from "./components/label-badge";
 export const labelsModule = defineModule({
   id: "labels",
   name: "Labels",
-  description: "Tag workflow definitions with coloured labels.",
+  description: message("Tag workflow definitions with coloured labels."),
   requiresServerFeatures: ["Elsa.Labels"],
-  routes: [{ path: LabelRoutes.list, component: LabelsPage, title: "Labels", permissions: [{ resource: Resources.labels, verb: Verbs.view }] }],
+  routes: [{ path: LabelRoutes.list, component: LabelsPage, title: message("Labels"), permissions: [{ resource: Resources.labels, verb: Verbs.view }] }],
   nav: [
     {
       id: "labels",
-      label: "Labels",
+      label: message("Labels"),
       href: LabelRoutes.list,
       icon: Tag,
       group: NavGroups.administration.id,
@@ -26,6 +28,6 @@ export const labelsModule = defineModule({
     },
   ],
   extensions: {
-    workflowPropertiesTabs: [{ id: "labels", label: "Labels", order: 50, component: WorkflowLabelsTab }],
+    workflowPropertiesTabs: [{ id: "labels", label: message("Labels"), order: 50, component: WorkflowLabelsTab }],
   },
 });

@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -19,6 +21,7 @@ import { useDashboardOverview, useFallbackInstanceCounts, useRefreshDashboard } 
 const DEFAULT_RANGE: DashboardRange = "24h";
 
 export function DashboardPage() {
+  const _t = useTranslation();
   const [range, setRange] = useState<DashboardRange>(DEFAULT_RANGE);
   const server = useActiveServer();
   const permissions = usePermissions();
@@ -37,7 +40,7 @@ export function DashboardPage() {
   return (
     <div className="flex flex-col gap-2">
       <PageHeader
-        title="Dashboard"
+        title={_t("Dashboard")}
         description={
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className="font-medium text-foreground">{backendName}</span>
@@ -45,7 +48,7 @@ export function DashboardPage() {
             <RuntimeStatusChip runtime={overview.data?.runtime} capability={capability} />
             {updatedAt > 0 && (
               <span className="text-xs">
-                Updated <Timestamp value={new Date(updatedAt)} relative />
+                {_t("Updated")}{" "}<Timestamp value={new Date(updatedAt)} relative />
               </span>
             )}
           </span>
@@ -53,7 +56,7 @@ export function DashboardPage() {
         actions={
           <>
             <RangeToggle value={range} onChange={setRange} />
-            <Button variant="outline" size="icon" aria-label="Refresh" onClick={() => void refresh()} disabled={isFetching}>
+            <Button variant="outline" size="icon" aria-label={_t("Refresh")} onClick={() => void refresh()} disabled={isFetching}>
               <RefreshCw className={cn(isFetching && "animate-spin")} />
             </Button>
           </>
@@ -67,6 +70,7 @@ export function DashboardPage() {
 
 /** Re-renders the page every 15 s so the "Updated … ago" label keeps up between refetches. */
 function RelativeTimeTicker() {
+  useTranslation();
   const [, setTick] = useState(0);
   useEffect(() => {
     const id = window.setInterval(() => setTick((t) => t + 1), 15_000);

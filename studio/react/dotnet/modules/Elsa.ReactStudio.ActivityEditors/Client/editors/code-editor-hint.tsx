@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { type CodeLanguage } from "@elsa-workflows/react-studio-ui/common/code-editor";
 import type { UiHintEditorProps } from "../types";
@@ -9,6 +11,7 @@ import { codeLanguageOf } from "./options";
 
 /** Code/script inputs (e.g. RunJavaScript.Script): the literal itself is edited with a code editor. */
 export function CodeEditorHint(props: UiHintEditorProps) {
+  useTranslation();
   const spec = codeLanguageOf(props.descriptor);
   const language = (spec as CodeLanguage | undefined) ?? languageForSyntax(props.descriptor.defaultSyntax);
   return (

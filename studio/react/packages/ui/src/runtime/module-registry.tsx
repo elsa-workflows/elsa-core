@@ -1,10 +1,15 @@
 "use client";
+import { translate } from "@elsa-workflows/react-studio-sdk/localization";
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { useStudioConfig } from "@elsa-workflows/react-studio-sdk/config-provider";
 import { useRemoteFeatures } from "./remote-features.js";
 import { usePermissions } from "@elsa-workflows/react-studio-auth/permissions";
 import type { NavItem, StudioModule } from "@elsa-workflows/react-studio-sdk";
+import { localizeModule } from "./localize-module.js";
 
 interface ModuleRegistryValue {
   /** All modules activated from the server manifest. */
@@ -18,6 +23,7 @@ interface ModuleRegistryValue {
 const ModuleRegistryContext = createContext<ModuleRegistryValue | null>(null);
 
 export function ModuleRegistryProvider({ modules, children }: { modules: StudioModule[]; children: ReactNode }) {
+  const t = useTranslation();
   const config = useStudioConfig();
   const { catalog, isResolved, isError } = useRemoteFeatures();
 
@@ -29,8 +35,8 @@ export function ModuleRegistryProvider({ modules, children }: { modules: StudioM
         // When the catalog can't be read (older backend, 404) fall back to the configuration flag alone.
         if (isError) return true;
         return m.requiresServerFeatures.every((f) => catalog.has(f));
-      }),
-    [modules, config.features, catalog, isError],
+      }).map(module => localizeModule(module, t)),
+    [modules, config.features, catalog, isError, t],
   );
 
   const value = useMemo(() => ({ all: modules, enabled, featuresResolved: isResolved }), [modules, enabled, isResolved]);
@@ -39,7 +45,7 @@ export function ModuleRegistryProvider({ modules, children }: { modules: StudioM
 
 export function useModules(): ModuleRegistryValue {
   const ctx = useContext(ModuleRegistryContext);
-  if (!ctx) throw new Error("useModules must be used inside <ModuleRegistryProvider>");
+  if (!ctx) throw new Error(translate("useModules must be used inside <ModuleRegistryProvider>"));
   return ctx;
 }
 

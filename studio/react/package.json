@@ -18,7 +18,9 @@
     "test:module": "pnpm build:packages && node scripts/test-module-template.mjs",
     "test:bpmn": "pnpm build:packages && node scripts/test-bpmn-roundtrip.mjs",
     "benchmark:expressions": "pnpm build:packages && node scripts/benchmark-expression-completions.mjs",
-    "check:boundaries": "node scripts/check-module-boundaries.mjs"
+    "check:boundaries": "node scripts/check-module-boundaries.mjs",
+    "localization:extract": "node scripts/localization-catalog.mjs --write",
+    "localization:check": "node scripts/localization-catalog.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -57,7 +59,9 @@
     "zod": "^4.6.6",
     "zustand": "^5.0.15",
     "@elsa-workflows/react-studio-auth": "workspace:*",
-    "@elsa-workflows/react-studio-ui": "workspace:*"
+    "@elsa-workflows/react-studio-ui": "workspace:*",
+    "i18next": "^26.5.3",
+    "react-i18next": "^17.1.0"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",
@@ -74,7 +78,8 @@
     "typescript": "^5",
     "typescript-eslint": "^8",
     "vite": "7.3.7",
-    "vitest": "^5.0.4"
+    "vitest": "^5.0.4",
+    "jsdom": "^29.1.1"
   },
   "packageManager": "pnpm@10.33.0",
   "type": "module"

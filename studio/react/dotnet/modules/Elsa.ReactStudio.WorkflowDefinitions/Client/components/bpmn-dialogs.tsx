@@ -1,3 +1,7 @@
+
+import { translate } from "@elsa-workflows/react-studio-sdk/localization";
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
 import { useEffect, useRef, useState } from "react";
 import { useElsaClient } from "@elsa-workflows/react-studio-api-client/react";
 import { ApiError } from "@elsa-workflows/react-studio-api-client/http";
@@ -10,6 +14,7 @@ import { downloadBlob } from "@elsa-workflows/react-studio-sdk/utils/download";
 
 /** Stable server codes select explanations; unknown envelopes retain the server message. */
 function Refusal({ error }: { error: unknown }) {
+  const _t = useTranslation();
   const raw = error instanceof ApiError ? error.problem.raw : undefined;
   const envelope = raw && typeof raw === "object" ? raw as Record<string, unknown> : {};
   const data = envelope.data && typeof envelope.data === "object" ? envelope.data as Record<string, unknown> : {};
@@ -26,9 +31,9 @@ function Refusal({ error }: { error: unknown }) {
   const message = typeof envelope.code === "string" ? messages[envelope.code] : undefined;
   return <>
     {message && <p role="alert">{message}</p>}
-    {!!capabilities.length && <div><h3>Missing capabilities</h3><ul>{capabilities.map(item => <li key={item}>{item}</li>)}</ul></div>}
-    {!!elements.length && <div><h3>{envelope.code === "bpmn.import.condition-unsupported" ? "Conditional sequence flows" : "Offending elements"}</h3><ul>{elements.map(item => <li key={item}>{item}</li>)}</ul></div>}
-    <ErrorAlert error={error} title="BPMN request failed" />
+    {!!capabilities.length && <div><h3>{_t("Missing capabilities")}</h3><ul>{capabilities.map(item => <li key={item}>{item}</li>)}</ul></div>}
+    {!!elements.length && <div><h3>{envelope.code === "bpmn.import.condition-unsupported" ? _t("Conditional sequence flows") : _t("Offending elements")}</h3><ul>{elements.map(item => <li key={item}>{item}</li>)}</ul></div>}
+    <ErrorAlert error={error} title={_t("BPMN request failed")} />
   </>;
 }
 
@@ -40,6 +45,7 @@ function useRequest() {
 
 /** Mounted only while open: closing cancels work and discards the selected document. */
 export function BpmnImportDialog({ onClose, onImported }: { onClose: () => void; onImported: (result: BpmnImportResult) => void }) {
+  const _t = useTranslation();
   const client = useElsaClient();
   const begin = useRequest();
   const [file, setFile] = useState<File>();
@@ -50,7 +56,7 @@ export function BpmnImportDialog({ onClose, onImported }: { onClose: () => void;
   const analyze = async (document: File | undefined) => {
     setAnalysis(undefined); setError(undefined); setFile(undefined); setProcessId("");
     if (!document) return;
-    if (!document.name.toLowerCase().endsWith(".bpmn") || document.size > 10 * 1024 * 1024) { setError(new Error("Select a .bpmn document no larger than 10 MB.")); return; }
+    if (!document.name.toLowerCase().endsWith(".bpmn") || document.size > 10 * 1024 * 1024) { setError(new Error(translate("Select a .bpmn document no larger than 10 MB."))); return; }
     setBusy(true);
     try {
       const result = await client.bpmn.analyze(document, begin());
@@ -64,20 +70,21 @@ export function BpmnImportDialog({ onClose, onImported }: { onClose: () => void;
     catch (failure) { setError(failure); } finally { setBusy(false); }
   };
   return <Dialog open onOpenChange={open => { if (!open) onClose(); }}><DialogContent className="max-h-[85vh] overflow-y-auto">
-    <DialogHeader><DialogTitle>Import BPMN</DialogTitle><DialogDescription>Review findings before importing. Dropped elements will not run; Degraded elements do not run exactly as authored.</DialogDescription></DialogHeader>
-    <label htmlFor="bpmn-file">BPMN document (up to 10 MB)</label>
+    <DialogHeader><DialogTitle>{_t("Import BPMN")}</DialogTitle><DialogDescription>{_t("Review findings before importing. Dropped elements will not run; Degraded elements do not run exactly as authored.")}</DialogDescription></DialogHeader>
+    <label htmlFor="bpmn-file">{_t("BPMN document (up to 10 MB)")}</label>
     <Input id="bpmn-file" type="file" accept=".bpmn" disabled={busy} onChange={event => void analyze(event.target.files?.[0])} />
-    {busy && <p role="status">Processing BPMN document…</p>}
+    {busy && <p role="status">{_t("Processing BPMN document…")}</p>}
     <Refusal error={error} />
     {analysis && <>
-      {analysis.processIds.length > 1 && <label>Process<select aria-label="Process" value={processId} disabled={busy} onChange={event => setProcessId(event.target.value)}><option value="">Select a process</option>{analysis.processIds.map(id => <option key={id} value={id}>{id}</option>)}</select></label>}
-      {analysis.issues.length === 0 ? <p>No findings. This document reads without loss.</p> : [...new Set(analysis.issues.map(issue => issue.severity))].map(severity => <section key={severity}><h3>{severity}</h3><ul>{analysis.issues.filter(issue => issue.severity === severity).map((issue, index) => <li key={index}>{issue.elementId && <strong>[{issue.elementId}] </strong>}{issue.message}{issue.processId && <span> (process {issue.processId})</span>}</li>)}</ul></section>)}
+      {analysis.processIds.length > 1 && <label>{_t("Process")}<select aria-label={_t("Process")} value={processId} disabled={busy} onChange={event => setProcessId(event.target.value)}><option value="">{_t("Select a process")}</option>{analysis.processIds.map(id => <option key={id} value={id}>{id}</option>)}</select></label>}
+      {analysis.issues.length === 0 ? <p>{_t("No findings. This document reads without loss.")}</p> : [...new Set(analysis.issues.map(issue => issue.severity))].map(severity => <section key={severity}><h3>{severity}</h3><ul>{analysis.issues.filter(issue => issue.severity === severity).map((issue, index) => <li key={index}>{issue.elementId && <strong>[{issue.elementId}] </strong>}{issue.message}{issue.processId && <span> {_t("(process")}{" "}{issue.processId})</span>}</li>)}</ul></section>)}
     </>}
-    <DialogFooter><Button variant="outline" onClick={onClose}>Cancel</Button><Button disabled={busy || !analysis || (analysis.processIds.length > 1 && !processId)} onClick={() => void submit()}>Import</Button></DialogFooter>
+    <DialogFooter><Button variant="outline" onClick={onClose}>{_t("Cancel")}</Button><Button disabled={busy || !analysis || (analysis.processIds.length > 1 && !processId)} onClick={() => void submit()}>{_t("Import")}</Button></DialogFooter>
   </DialogContent></Dialog>;
 }
 
 export function BpmnExportDialog({ definitionId, onClose }: { definitionId: string; onClose: () => void }) {
+  const _t = useTranslation();
   const client = useElsaClient();
   const begin = useRequest();
   const [busy, setBusy] = useState(false);
@@ -88,8 +95,8 @@ export function BpmnExportDialog({ definitionId, onClose }: { definitionId: stri
     catch (failure) { setError(failure); } finally { setBusy(false); }
   };
   return <Dialog open onOpenChange={open => { if (!open) onClose(); }}><DialogContent>
-    <DialogHeader><DialogTitle>Export BPMN</DialogTitle><DialogDescription>The exported file contains this workflow&apos;s binding configuration and expressions. Only current, unchanged imported BPMN source can be exported.</DialogDescription></DialogHeader>
+    <DialogHeader><DialogTitle>{_t("Export BPMN")}</DialogTitle><DialogDescription>{_t("The exported file contains this workflow's binding configuration and expressions. Only current, unchanged imported BPMN source can be exported.")}</DialogDescription></DialogHeader>
     <Refusal error={error} />
-    <DialogFooter><Button variant="outline" onClick={onClose}>Cancel</Button><Button disabled={busy} onClick={() => void submit()}>{busy ? "Exporting…" : "Export"}</Button></DialogFooter>
+    <DialogFooter><Button variant="outline" onClick={onClose}>{_t("Cancel")}</Button><Button disabled={busy} onClick={() => void submit()}>{busy ? _t("Exporting…") : _t("Export")}</Button></DialogFooter>
   </DialogContent></Dialog>;
 }

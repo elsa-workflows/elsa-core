@@ -1,4 +1,6 @@
 "use client";
+import { translate, useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { ErrorAlert } from "@elsa-workflows/react-studio-ui/common/error-alert";
@@ -26,6 +28,7 @@ const ACTIVITY_ROW_HEIGHT = "lg:h-[34rem]";
  * widget contributed by another module can never take the page down.
  */
 export function DashboardZones({ widgets, range }: { widgets: DashboardWidget[]; range: DashboardRange }) {
+  const _t = useTranslation();
   const zone = (z: DashboardZone) => widgets.filter((w) => w.zone === z);
   const metrics = zone("metrics");
   const trend = zone("trend");
@@ -39,7 +42,7 @@ export function DashboardZones({ widgets, range }: { widgets: DashboardWidget[];
   return (
     <div className="flex flex-col gap-4">
       {metrics.length > 0 && (
-        <section aria-label="Metrics" className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
+        <section aria-label={_t("Metrics")} className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
           {metrics.map((w) => (
             <WidgetBoundary key={w.id} id={w.id}>
               <w.component range={range} />
@@ -47,9 +50,9 @@ export function DashboardZones({ widgets, range }: { widgets: DashboardWidget[];
           ))}
         </section>
       )}
-      <Stack widgets={trend} range={range} label="Trends" />
+      <Stack widgets={trend} range={range} label={_t("Trends")} />
       {primary.length > 0 && (
-        <section aria-label="Primary" className={cn("grid gap-4 lg:grid-cols-2", PRIMARY_ROW_HEIGHT)}>
+        <section aria-label={_t("Primary")} className={cn("grid gap-4 lg:grid-cols-2", PRIMARY_ROW_HEIGHT)}>
           {primary.map((w) => (
             <WidgetBoundary key={w.id} id={w.id}>
               <w.component range={range} />
@@ -61,23 +64,24 @@ export function DashboardZones({ widgets, range }: { widgets: DashboardWidget[];
         <div className={cn("grid gap-4 lg:grid-cols-3", ACTIVITY_ROW_HEIGHT)}>
           {activity.length > 0 && (
             <div className={cn("min-h-0", side.length > 0 ? "lg:col-span-2" : "lg:col-span-3")}>
-              <Stack widgets={activity} range={range} label="Activity" fill />
+              <Stack widgets={activity} range={range} label={_t("Activity")} fill />
             </div>
           )}
           {side.length > 0 && (
             <div className={cn("min-h-0", activity.length > 0 ? "lg:col-span-1" : "lg:col-span-3")}>
-              <Stack widgets={side} range={range} label="Findings" fill />
+              <Stack widgets={side} range={range} label={_t("Findings")} fill />
             </div>
           )}
         </div>
       )}
-      <Stack widgets={status} range={range} label="Status" />
+      <Stack widgets={status} range={range} label={_t("Status")} />
     </div>
   );
 }
 
 /** `fill` stretches the stack to its row, letting the last widget absorb whatever height is left. */
 function Stack({ widgets, range, label, fill }: { widgets: DashboardWidget[]; range: DashboardRange; label: string; fill?: boolean }) {
+  useTranslation();
   if (widgets.length === 0) return null;
   return (
     <section aria-label={label} className={cn("flex flex-col gap-4", fill && "lg:h-full")}>
@@ -104,7 +108,7 @@ class WidgetBoundary extends Component<{ id: string; children: ReactNode }, { er
   }
 
   render() {
-    if (this.state.error) return <ErrorAlert error={this.state.error} title={`Widget "${this.props.id}" failed to render`} />;
+    if (this.state.error) return <ErrorAlert error={this.state.error} title={translate("Widget \"{{value0}}\" failed to render", { value0: this.props.id })} />;
     return this.props.children;
   }
 }

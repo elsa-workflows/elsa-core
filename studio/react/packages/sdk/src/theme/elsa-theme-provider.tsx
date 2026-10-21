@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "../localization.js";
+
 
 import { useEffect, type ReactNode } from "react";
 import { useStudioConfig } from "../config-provider.js";
@@ -6,6 +8,7 @@ import { ELSA_THEME_ATTRIBUTE, useElsaThemeStore, type ElsaThemeId } from "./els
 
 /** Applies the active Elsa theme pack as an attribute on `<html>`; light/dark stays with next-themes. */
 export function ElsaThemeProvider({ children }: { children: ReactNode }) {
+  useTranslation();
   const config = useStudioConfig();
   const chosen = useElsaThemeStore((s) => s.theme);
   const active: ElsaThemeId = chosen ?? config.ui.theme;

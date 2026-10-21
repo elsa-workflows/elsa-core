@@ -1,3 +1,5 @@
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
 import * as React from "react"
 import { mergeProps } from "@base-ui/react/merge-props"
 import { useRender } from "@base-ui/react/use-render"
@@ -5,9 +7,10 @@ import { cn } from "cn"
 import { ChevronRightIcon, MoreHorizontalIcon } from "lucide-react"
 
 function Breadcrumb({ className, ...props }: React.ComponentProps<"nav">) {
+  const _t = useTranslation();
   return (
     <nav
-      aria-label="breadcrumb"
+      aria-label={_t("breadcrumb")}
       data-slot="breadcrumb"
       className={cn(className)}
       {...props}
@@ -16,6 +19,7 @@ function Breadcrumb({ className, ...props }: React.ComponentProps<"nav">) {
 }
 
 function BreadcrumbList({ className, ...props }: React.ComponentProps<"ol">) {
+  useTranslation();
   return (
     <ol
       data-slot="breadcrumb-list"
@@ -29,6 +33,7 @@ function BreadcrumbList({ className, ...props }: React.ComponentProps<"ol">) {
 }
 
 function BreadcrumbItem({ className, ...props }: React.ComponentProps<"li">) {
+  useTranslation();
   return (
     <li
       data-slot="breadcrumb-item"
@@ -43,6 +48,7 @@ function BreadcrumbLink({
   render,
   ...props
 }: useRender.ComponentProps<"a">) {
+  useTranslation();
   return useRender({
     defaultTagName: "a",
     props: mergeProps<"a">(
@@ -59,6 +65,7 @@ function BreadcrumbLink({
 }
 
 function BreadcrumbPage({ className, ...props }: React.ComponentProps<"span">) {
+  useTranslation();
   return (
     <span
       data-slot="breadcrumb-page"
@@ -76,6 +83,7 @@ function BreadcrumbSeparator({
   className,
   ...props
 }: React.ComponentProps<"li">) {
+  useTranslation();
   return (
     <li
       data-slot="breadcrumb-separator"
@@ -95,6 +103,7 @@ function BreadcrumbEllipsis({
   className,
   ...props
 }: React.ComponentProps<"span">) {
+  const _t = useTranslation();
   return (
     <span
       data-slot="breadcrumb-ellipsis"
@@ -108,7 +117,7 @@ function BreadcrumbEllipsis({
     >
       <MoreHorizontalIcon
       />
-      <span className="sr-only">More</span>
+      <span className="sr-only">{_t("More")}</span>
     </span>
   )
 }

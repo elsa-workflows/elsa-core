@@ -1,3 +1,5 @@
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
 import { cn } from "@elsa-workflows/react-studio-ui/utils";
 
 /*
@@ -15,6 +17,7 @@ const MARK_LEAF_RIGHT = "M120.76,56.74V61A26.49,26.49,0,0,1,103,79.91,45.07,45.0
 
 /** The mark only: white rounded square, blue leaves, dark outline. */
 function Mark() {
+  useTranslation();
   return (
     <>
       <rect x="34.75" y="34.75" width="93.6" height="93.6" rx="16.8" fill="#fff" />
@@ -27,8 +30,9 @@ function Mark() {
 
 /** The Elsa Workflows mark, square. */
 export function BrandMark({ className }: { className?: string }) {
+  const _t = useTranslation();
   return (
-    <svg viewBox="34.75 34.75 93.6 93.6" className={cn("size-8", className)} role="img" aria-label="Elsa Workflows">
+    <svg viewBox="34.75 34.75 93.6 93.6" className={cn("size-8", className)} role="img" aria-label={_t("Elsa Workflows")}>
       <Mark />
     </svg>
   );
@@ -49,8 +53,9 @@ const WORD_DOT = "M314.06,102.14a7.32,7.32,0,0,1-5.44-2.27,7.89,7.89,0,0,1,0-11,
  * parent a light text colour (e.g. `text-sidebar-foreground`) and the logo adapts; the dot stays blue.
  */
 export function BrandLogo({ className }: { className?: string }) {
+  const _t = useTranslation();
   return (
-    <svg viewBox="27 28 296 94" className={cn("h-12 w-auto", className)} role="img" aria-label="Elsa Workflows">
+    <svg viewBox="27 28 296 94" className={cn("h-12 w-auto", className)} role="img" aria-label={_t("Elsa Workflows")}>
       {/* The wordmark vector places the mark 7.67 units left/up of the icon vector. */}
       <g transform="translate(-7.67 -6.62)">
         <Mark />

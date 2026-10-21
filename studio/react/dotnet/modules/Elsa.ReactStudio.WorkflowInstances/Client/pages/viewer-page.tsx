@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { ReactFlowProvider } from "@xyflow/react";
 import { Ban, FileCode2, Loader2, RefreshCw, Trash2 } from "lucide-react";
@@ -54,6 +56,7 @@ import { activityNodeIds } from "../model";
 import { WorkflowInstanceRoutes } from "../routes";
 
 export function WorkflowInstanceViewerPage({ params }: { params: RouteParams }) {
+  const _t = useTranslation();
   const id = params.id;
   const router = useRouter();
   const confirm = useConfirm();
@@ -88,10 +91,10 @@ export function WorkflowInstanceViewerPage({ params }: { params: RouteParams }) 
 
   const handleCancel = async () => {
     if (!instance) return;
-    if (!(await confirm({ title: "Cancel workflow instance?", description: `Instance ${instance.id} will be cancelled.`, confirmLabel: "Cancel instance" }))) return;
+    if (!(await confirm({ title: _t("Cancel workflow instance?"), description: _t("Instance {{value0}} will be cancelled.", { value0: instance.id }), confirmLabel: _t("Cancel instance") }))) return;
     try {
       await cancel.mutateAsync(instance.id);
-      toast.success("Workflow instance cancelled.");
+      toast.success(_t("Workflow instance cancelled."));
     } catch (e) {
       toast.error(describeError(e));
     }
@@ -99,10 +102,10 @@ export function WorkflowInstanceViewerPage({ params }: { params: RouteParams }) 
 
   const handleDelete = async () => {
     if (!instance) return;
-    if (!(await confirm({ title: "Delete workflow instance?", description: "This cannot be undone.", confirmLabel: "Delete", destructive: true }))) return;
+    if (!(await confirm({ title: _t("Delete workflow instance?"), description: _t("This cannot be undone."), confirmLabel: _t("Delete"), destructive: true }))) return;
     try {
       await remove.mutateAsync(instance.id);
-      toast.success("Workflow instance deleted.");
+      toast.success(_t("Workflow instance deleted."));
       router.push(WorkflowInstanceRoutes.list);
     } catch (e) {
       toast.error(describeError(e));
@@ -112,10 +115,9 @@ export function WorkflowInstanceViewerPage({ params }: { params: RouteParams }) 
   if (instanceQuery.isLoading)
     return (
       <div className="flex items-center gap-2 p-6 text-sm text-muted-foreground">
-        <Loader2 className="size-4 animate-spin" /> Loading workflow instance…
-      </div>
+        <Loader2 className="size-4 animate-spin" /> {_t("Loading workflow instance…")}</div>
     );
-  if (instanceQuery.error) return <ErrorAlert error={instanceQuery.error} title="Could not load workflow instance" />;
+  if (instanceQuery.error) return <ErrorAlert error={instanceQuery.error} title={_t("Could not load workflow instance")} />;
   if (!instance) return null;
 
   const running = instance.status === "Running";
@@ -132,19 +134,17 @@ export function WorkflowInstanceViewerPage({ params }: { params: RouteParams }) 
             <span className="font-mono">{instance.id}</span>
             <StatusBadge status={instance.subStatus} />
             {instanceQuery.isPolling && (
-              <span className="text-xs font-normal text-muted-foreground" title="Polling for changes">
-                live
-              </span>
+              <span className="text-xs font-normal text-muted-foreground" title={_t("Polling for changes")}>
+                {_t("live")}</span>
             )}
           </span>
         }
-        description={definition ? `${definition.name ?? instance.definitionId} · v${instance.version}` : `${instance.definitionId} · v${instance.version}`}
+        description={definition ? _t("{{value0}} · v{{value1}}", { value0: definition.name ?? instance.definitionId, value1: instance.version }) : _t("{{value0}} · v{{value1}}", { value0: instance.definitionId, value1: instance.version })}
         actions={
           <>
             <Button variant="outline" size="sm" onClick={() => void refresh()} disabled={instanceQuery.isFetching}>
               <RefreshCw className={instanceQuery.isFetching ? "animate-spin" : undefined} />
-              Refresh
-            </Button>
+              {_t("Refresh")}</Button>
             {extensions.map(({ id: actionId, label, icon: Icon, onSelect }) => (
               <Button key={actionId} variant="outline" size="sm" onClick={() => void onSelect(instance, helpers)}>
                 {Icon && <Icon />}
@@ -154,24 +154,21 @@ export function WorkflowInstanceViewerPage({ params }: { params: RouteParams }) 
             {canCancel && running && (
               <Button variant="outline" size="sm" onClick={() => void handleCancel()} disabled={cancel.isPending}>
                 <Ban />
-                Cancel
-              </Button>
+                {_t("Cancel")}</Button>
             )}
             <Button variant="outline" size="sm" nativeButton={false} render={<Link href={href(WorkflowDefinitionRoutes.edit, { definitionId: instance.definitionId })} />}>
               <FileCode2 />
-              Edit workflow definition
-            </Button>
+              {_t("Edit workflow definition")}</Button>
             {canDelete && (
               <Button variant="destructive" size="sm" onClick={() => void handleDelete()} disabled={remove.isPending}>
                 <Trash2 />
-                Delete
-              </Button>
+                {_t("Delete")}</Button>
             )}
           </>
         }
       />
 
-      {definitionQuery.error && <ErrorAlert error={definitionQuery.error} title="Could not load the workflow definition" />}
+      {definitionQuery.error && <ErrorAlert error={definitionQuery.error} title={_t("Could not load the workflow definition")} />}
 
       {store && root ? (
         <ReactFlowProvider>
@@ -190,8 +187,7 @@ export function WorkflowInstanceViewerPage({ params }: { params: RouteParams }) 
       ) : (
         !definitionQuery.error && (
           <div className="flex items-center gap-2 p-6 text-sm text-muted-foreground">
-            <Loader2 className="size-4 animate-spin" /> Loading workflow definition…
-          </div>
+            <Loader2 className="size-4 animate-spin" /> {_t("Loading workflow definition…")}</div>
         )
       )}
     </div>
@@ -227,6 +223,7 @@ function ViewerBody({
   executions: ReturnType<typeof useActivityExecutions>;
   variables: ReturnType<typeof useInstanceVariables>;
 }) {
+  const _t = useTranslation();
   const selectedIds = useDesignerState((s) => s.selectedIds);
   const [leftTab, setLeftTab] = useState("journal");
   const [rightTab, setRightTab] = useState("details");
@@ -251,11 +248,9 @@ function ViewerBody({
         <Tabs value={leftTab} onValueChange={(v) => setLeftTab(String(v))} className="h-full min-h-0 gap-0">
           <TabsList variant="line" className="w-full justify-start border-b px-2">
             <TabsTrigger value="journal" className="flex-none">
-              Journal
-            </TabsTrigger>
+              {_t("Journal")}</TabsTrigger>
             <TabsTrigger value="executions" className="flex-none">
-              Call stack
-            </TabsTrigger>
+              {_t("Call stack")}</TabsTrigger>
           </TabsList>
           <TabsContent value="journal" className="min-h-0 flex-1">
             <JournalTree
@@ -295,18 +290,14 @@ function ViewerBody({
         <Tabs value={rightTab} onValueChange={(v) => setRightTab(String(v))} className="h-full min-h-0 gap-0">
           <TabsList variant="line" className="w-full justify-start border-b px-2">
             <TabsTrigger value="details" className="flex-none">
-              Details
-            </TabsTrigger>
+              {_t("Details")}</TabsTrigger>
             <TabsTrigger value="incidents" className="flex-none">
-              Incidents
-              {incidents.length > 0 && <ToneBadge tone="danger" className="h-4 px-1.5 text-[10px]">{incidents.length}</ToneBadge>}
+              {_t("Incidents")}{incidents.length > 0 && <ToneBadge tone="danger" className="h-4 px-1.5 text-[10px]">{incidents.length}</ToneBadge>}
             </TabsTrigger>
             <TabsTrigger value="variables" className="flex-none">
-              Variables
-            </TabsTrigger>
+              {_t("Variables")}</TabsTrigger>
             <TabsTrigger value="io" className="flex-none">
-              Input/Output
-            </TabsTrigger>
+              {_t("Input/Output")}</TabsTrigger>
           </TabsList>
           <TabsContent value="details" className="min-h-0 flex-1 overflow-y-auto">
             <InstanceDetails instance={instance} definitionName={definitionName} />

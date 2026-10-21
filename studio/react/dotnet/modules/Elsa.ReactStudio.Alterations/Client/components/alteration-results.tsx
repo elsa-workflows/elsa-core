@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Fragment } from "react";
 import { ToneBadge } from "@elsa-workflows/react-studio-ui/common/status-badge";
@@ -14,7 +16,8 @@ function toneFor(level: AlterationLogEntry["logLevel"]): "neutral" | "warning" |
 }
 
 export function AlterationLog({ entries, className }: { entries: AlterationLogEntry[] | null | undefined; className?: string }) {
-  if (!entries?.length) return <p className={cn("text-xs text-muted-foreground", className)}>No log entries.</p>;
+  const _t = useTranslation();
+  if (!entries?.length) return <p className={cn("text-xs text-muted-foreground", className)}>{_t("No log entries.")}</p>;
   return (
     <div className={cn("grid grid-cols-[auto_auto_1fr] gap-x-3 gap-y-1 text-xs", className)}>
       {entries.map((e, i) => (
@@ -37,15 +40,16 @@ export function AlterationLog({ entries, className }: { entries: AlterationLogEn
 
 /** Renders the per-instance outcome of `POST /alterations/run` or `/alterations/workflows/retry`. */
 export function AlterationResults({ results }: { results: RunAlterationsResult[] }) {
-  if (results.length === 0) return <p className="text-sm text-muted-foreground">No workflow instances matched; nothing was altered.</p>;
+  const _t = useTranslation();
+  if (results.length === 0) return <p className="text-sm text-muted-foreground">{_t("No workflow instances matched; nothing was altered.")}</p>;
   return (
     <div className="flex flex-col gap-3">
       {results.map((r) => (
         <div key={r.workflowInstanceId} className="rounded-lg border p-3 flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-mono text-xs truncate">{r.workflowInstanceId}</span>
-            <ToneBadge tone={r.isSuccessful ? "success" : "danger"}>{r.isSuccessful ? "Succeeded" : "Failed"}</ToneBadge>
-            {r.workflowHasScheduledWork && <ToneBadge tone="info">Scheduled work dispatched</ToneBadge>}
+            <ToneBadge tone={r.isSuccessful ? "success" : "danger"}>{r.isSuccessful ? _t("Succeeded") : _t("Failed")}</ToneBadge>
+            {r.workflowHasScheduledWork && <ToneBadge tone="info">{_t("Scheduled work dispatched")}</ToneBadge>}
           </div>
           <AlterationLog entries={r.log?.logEntries} />
         </div>

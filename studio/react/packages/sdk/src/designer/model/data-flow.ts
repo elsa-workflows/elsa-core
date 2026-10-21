@@ -3,6 +3,7 @@ import { isFlowchart, isSequence } from "@elsa-workflows/react-studio-api-client
 import { childActivities } from "./containers.js";
 import type { InputDefinition, OutputDefinition } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
 import type { ActivityRegistry } from "./registry.js";
+import { translate, type Translate } from "../../localization.js";
 
 /** A named piece of workflow data that activities can read or write. */
 export type DataKind = "variable" | "input" | "output";
@@ -197,37 +198,40 @@ export function expressionCompletions(
   inputs: { name: string }[],
   activities: { name: string; outputs: string[] }[],
   language: "javascript" | "csharp" | "python" | "liquid" | "plaintext",
+  t: Translate = translate,
 ): { label: string; detail: string; type: string }[] {
   const items: { label: string; detail: string; type: string }[] = [];
   const add = (label: string, detail: string, type = "variable") => items.push({ label, detail, type });
   const identifier = /^[A-Za-z_][\w]*$/;
   const pascal = (name: string) => name.replace(/(?:^|_)([a-z])/g, (_, letter: string) => letter.toUpperCase());
   const quote = (value: string) => JSON.stringify(value);
+  const details = { variable: t("variable"), getter: t("variable getter"), setter: t("variable setter"), input: t("workflow input") };
   for (const v of variables) {
-    if ((language === "javascript" || language === "python") && identifier.test(v.name)) add(`variables.${v.name}`, "variable");
+    if ((language === "javascript" || language === "python") && identifier.test(v.name)) add(`variables.${v.name}`, details.variable);
     if (language === "csharp") {
-      if (identifier.test(v.name)) add(`Variable.${pascal(v.name)}`, "variable");
-      add(`Variable.Get(${quote(v.name)})`, "variable", "function");
+      if (identifier.test(v.name)) add(`Variable.${pascal(v.name)}`, details.variable);
+      add(`Variable.Get(${quote(v.name)})`, details.variable, "function");
     }
-    if (language === "liquid" && identifier.test(v.name)) add(`Variables.${v.name}`, "variable");
-    if (language === "python") add(`variables.get(${quote(v.name)})`, "variable", "function");
+    if (language === "liquid" && identifier.test(v.name)) add(`Variables.${v.name}`, details.variable);
+    if (language === "python") add(`variables.get(${quote(v.name)})`, details.variable, "function");
     if (language === "javascript" && identifier.test(v.name)) {
-      add(`get${pascal(v.name)}()`, "variable getter", "function");
-      add(`set${pascal(v.name)}(value)`, "variable setter", "function");
+      add(`get${pascal(v.name)}()`, details.getter, "function");
+      add(`set${pascal(v.name)}(value)`, details.setter, "function");
     }
   }
   for (const i of inputs) {
     if (language === "javascript") {
-      if (identifier.test(i.name)) add(`get${i.name}()`, "workflow input", "function");
-      add(`getInput(${quote(i.name)})`, "workflow input", "function");
+      if (identifier.test(i.name)) add(`get${i.name}()`, details.input, "function");
+      add(`getInput(${quote(i.name)})`, details.input, "function");
     }
-    if ((language === "csharp" || language === "liquid") && identifier.test(i.name)) add(`Input.${i.name}`, "workflow input");
-    if (language === "csharp") add(`Input.Get(${quote(i.name)})`, "workflow input", "function");
-    if (language === "python") add(`input.Get(${quote(i.name)})`, "workflow input", "function");
+    if ((language === "csharp" || language === "liquid") && identifier.test(i.name)) add(`Input.${i.name}`, details.input);
+    if (language === "csharp") add(`Input.Get(${quote(i.name)})`, details.input, "function");
+    if (language === "python") add(`input.Get(${quote(i.name)})`, details.input, "function");
   }
-  for (const a of activities) for (const o of a.outputs) {
-    const fn = language === "javascript" ? "getOutputFrom" : language === "csharp" ? "Output.From" : language === "python" ? "output.Get" : undefined;
-    if (fn) add(`${fn}(${quote(a.name)}, ${quote(o)})`, `output of ${a.name}`, "function");
+  const outputAccessor = language === "javascript" ? "getOutputFrom" : language === "csharp" ? "Output.From" : language === "python" ? "output.Get" : undefined;
+  if (outputAccessor) for (const activity of activities) {
+    const detail = t("output of {{name}}", { name: activity.name });
+    for (const output of activity.outputs) add(`${outputAccessor}(${quote(activity.name)}, ${quote(output)})`, detail, "function");
   }
   return items;
 }

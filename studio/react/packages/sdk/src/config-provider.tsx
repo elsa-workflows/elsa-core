@@ -1,4 +1,8 @@
 "use client";
+import { translate } from "./localization.js";
+
+import { useTranslation } from "./localization.js";
+
 
 import { createContext, useContext, type ReactNode } from "react";
 import type { StudioConfig } from "./config.js";
@@ -6,12 +10,13 @@ import type { StudioConfig } from "./config.js";
 const StudioConfigContext = createContext<StudioConfig | null>(null);
 
 export function StudioConfigProvider({ config, children }: { config: StudioConfig; children: ReactNode }) {
+  useTranslation();
   return <StudioConfigContext.Provider value={config}>{children}</StudioConfigContext.Provider>;
 }
 
 export function useStudioConfig(): StudioConfig {
   const ctx = useContext(StudioConfigContext);
-  if (!ctx) throw new Error("useStudioConfig must be used inside <StudioConfigProvider>");
+  if (!ctx) throw new Error(translate("useStudioConfig must be used inside <StudioConfigProvider>"));
   return ctx;
 }
 

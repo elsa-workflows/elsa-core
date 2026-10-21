@@ -1,4 +1,6 @@
 "use client"
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import * as React from "react"
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
@@ -8,18 +10,22 @@ import { Button } from "@elsa-workflows/react-studio-ui/button"
 import { XIcon } from "lucide-react"
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
+  useTranslation();
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
 }
 
 function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
+  useTranslation();
   return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
 }
 
 function DialogPortal({ ...props }: DialogPrimitive.Portal.Props) {
+  useTranslation();
   return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
 }
 
 function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
+  useTranslation();
   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />
 }
 
@@ -27,6 +33,7 @@ function DialogOverlay({
   className,
   ...props
 }: DialogPrimitive.Backdrop.Props) {
+  useTranslation();
   return (
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
@@ -47,6 +54,7 @@ function DialogContent({
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
 }) {
+  const _t = useTranslation();
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -72,7 +80,7 @@ function DialogContent({
           >
             <XIcon
             />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">{_t("Close")}</span>
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Popup>
@@ -81,6 +89,7 @@ function DialogContent({
 }
 
 function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
+  useTranslation();
   return (
     <div
       data-slot="dialog-header"
@@ -98,6 +107,7 @@ function DialogFooter({
 }: React.ComponentProps<"div"> & {
   showCloseButton?: boolean
 }) {
+  const _t = useTranslation();
   return (
     <div
       data-slot="dialog-footer"
@@ -110,14 +120,14 @@ function DialogFooter({
       {children}
       {showCloseButton && (
         <DialogPrimitive.Close render={<Button variant="outline" />}>
-          Close
-        </DialogPrimitive.Close>
+          {_t("Close")}</DialogPrimitive.Close>
       )}
     </div>
   )
 }
 
 function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
+  useTranslation();
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
@@ -134,6 +144,7 @@ function DialogDescription({
   className,
   ...props
 }: DialogPrimitive.Description.Props) {
+  useTranslation();
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"

@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { memo } from "react";
 import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, type EdgeProps } from "@xyflow/react";
@@ -7,6 +9,7 @@ import type { DecorationEdge } from "@elsa-workflows/react-studio-sdk/designer/d
 
 /** A call between workflows in call-context mode: labelled with the call type, dashed when it closes a cycle. */
 function ContextCallEdgeComponent({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, markerEnd }: EdgeProps<DecorationEdge>) {
+  useTranslation();
   const [path, labelX, labelY] = getSmoothStepPath({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, borderRadius: 10 });
   const back = !!data?.back;
   return (

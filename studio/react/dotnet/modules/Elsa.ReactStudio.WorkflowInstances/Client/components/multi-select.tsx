@@ -1,4 +1,8 @@
 "use client";
+import { translate } from "@elsa-workflows/react-studio-sdk/localization";
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Check, ChevronsUpDown, X } from "lucide-react";
 import { useState } from "react";
@@ -17,7 +21,7 @@ export function MultiSelect<T extends string>({
   onChange,
   options,
   searchPlaceholder = "Search…",
-  emptyMessage = "No results.",
+  emptyMessage = translate("No results."),
   className,
 }: {
   label: string;
@@ -28,6 +32,7 @@ export function MultiSelect<T extends string>({
   emptyMessage?: string;
   className?: string;
 }) {
+  const _t = useTranslation();
   const [open, setOpen] = useState(false);
   const selected = new Set(value);
 
@@ -70,8 +75,7 @@ export function MultiSelect<T extends string>({
             <div className="border-t p-1">
               <Button variant="ghost" size="sm" className="w-full justify-start" onClick={() => onChange([])}>
                 <X className="size-3.5" />
-                Clear selection
-              </Button>
+                {_t("Clear selection")}</Button>
             </div>
           )}
         </Command>

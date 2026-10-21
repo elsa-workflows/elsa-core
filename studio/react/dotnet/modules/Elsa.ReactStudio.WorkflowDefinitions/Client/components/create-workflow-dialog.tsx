@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { useState } from "react";
 import { useRouter } from "@elsa-workflows/react-studio-sdk/navigation/index";
@@ -20,6 +22,7 @@ import { WorkflowDefinitionRoutes } from "../routes";
 
 /** Creates a new definition with an empty flowchart and opens it in the editor. */
 export function CreateWorkflowDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const _t = useTranslation();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [rootType, setRootType] = useState<string>(ROOT_TYPES[0].type);
@@ -56,8 +59,8 @@ export function CreateWorkflowDialog({ open, onOpenChange }: { open: boolean; on
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Create workflow</DialogTitle>
-          <DialogDescription>Give the workflow a name. You can change everything later.</DialogDescription>
+          <DialogTitle>{_t("Create workflow")}</DialogTitle>
+          <DialogDescription>{_t("Give the workflow a name. You can change everything later.")}</DialogDescription>
         </DialogHeader>
         <form
           className="flex flex-col gap-4"
@@ -66,13 +69,13 @@ export function CreateWorkflowDialog({ open, onOpenChange }: { open: boolean; on
             void submit();
           }}
         >
-          <Field label="Name" required htmlFor="wf-name">
+          <Field label={_t("Name")} required htmlFor="wf-name">
             <Input id="wf-name" value={name} onChange={(e) => setName(e.target.value)} autoFocus required />
           </Field>
-          <Field label="Description" htmlFor="wf-desc">
+          <Field label={_t("Description")} htmlFor="wf-desc">
             <Textarea id="wf-desc" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} />
           </Field>
-          <Field label="Designer">
+          <Field label={_t("Designer")}>
             <div className="grid grid-cols-3 gap-2" role="radiogroup">
               {ROOT_TYPES.map((r) => (
                 <button
@@ -84,19 +87,17 @@ export function CreateWorkflowDialog({ open, onOpenChange }: { open: boolean; on
                   className={cn("flex flex-col items-start gap-1 rounded-lg border p-2.5 text-left transition-colors hover:bg-accent", rootType === r.type ? "border-primary bg-accent" : "border-border")}
                 >
                   <r.icon className={cn("size-4", rootType === r.type ? "text-primary" : "text-muted-foreground")} />
-                  <span className="text-sm font-medium">{r.label}</span>
-                  <span className="text-[11px] leading-snug text-muted-foreground">{r.description}</span>
+                  <span className="text-sm font-medium">{_t(r.label)}</span>
+                  <span className="text-[11px] leading-snug text-muted-foreground">{_t(r.description)}</span>
                 </button>
               ))}
             </div>
           </Field>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
+              {_t("Cancel")}</Button>
             <Button type="submit" disabled={!name.trim() || save.isPending}>
-              Create
-            </Button>
+              {_t("Create")}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

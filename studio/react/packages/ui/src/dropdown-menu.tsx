@@ -1,4 +1,6 @@
 "use client"
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import * as React from "react"
 import { Menu as MenuPrimitive } from "@base-ui/react/menu"
@@ -6,14 +8,17 @@ import { cn } from "cn"
 import { ChevronRightIcon, CheckIcon } from "lucide-react"
 
 function DropdownMenu({ ...props }: MenuPrimitive.Root.Props) {
+  useTranslation();
   return <MenuPrimitive.Root data-slot="dropdown-menu" {...props} />
 }
 
 function DropdownMenuPortal({ ...props }: MenuPrimitive.Portal.Props) {
+  useTranslation();
   return <MenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />
 }
 
 function DropdownMenuTrigger({ ...props }: MenuPrimitive.Trigger.Props) {
+  useTranslation();
   return <MenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />
 }
 
@@ -29,6 +34,7 @@ function DropdownMenuContent({
     MenuPrimitive.Positioner.Props,
     "align" | "alignOffset" | "side" | "sideOffset"
   >) {
+  useTranslation();
   return (
     <MenuPrimitive.Portal>
       <MenuPrimitive.Positioner
@@ -49,6 +55,7 @@ function DropdownMenuContent({
 }
 
 function DropdownMenuGroup({ ...props }: MenuPrimitive.Group.Props) {
+  useTranslation();
   return <MenuPrimitive.Group data-slot="dropdown-menu-group" {...props} />
 }
 
@@ -59,6 +66,7 @@ function DropdownMenuLabel({
 }: MenuPrimitive.GroupLabel.Props & {
   inset?: boolean
 }) {
+  useTranslation();
   return (
     <MenuPrimitive.GroupLabel
       data-slot="dropdown-menu-label"
@@ -81,6 +89,7 @@ function DropdownMenuItem({
   inset?: boolean
   variant?: "default" | "destructive"
 }) {
+  useTranslation();
   return (
     <MenuPrimitive.Item
       data-slot="dropdown-menu-item"
@@ -96,6 +105,7 @@ function DropdownMenuItem({
 }
 
 function DropdownMenuSub({ ...props }: MenuPrimitive.SubmenuRoot.Props) {
+  useTranslation();
   return <MenuPrimitive.SubmenuRoot data-slot="dropdown-menu-sub" {...props} />
 }
 
@@ -107,6 +117,7 @@ function DropdownMenuSubTrigger({
 }: MenuPrimitive.SubmenuTrigger.Props & {
   inset?: boolean
 }) {
+  useTranslation();
   return (
     <MenuPrimitive.SubmenuTrigger
       data-slot="dropdown-menu-sub-trigger"
@@ -131,6 +142,7 @@ function DropdownMenuSubContent({
   className,
   ...props
 }: React.ComponentProps<typeof DropdownMenuContent>) {
+  useTranslation();
   return (
     <DropdownMenuContent
       data-slot="dropdown-menu-sub-content"
@@ -153,6 +165,7 @@ function DropdownMenuCheckboxItem({
 }: MenuPrimitive.CheckboxItem.Props & {
   inset?: boolean
 }) {
+  useTranslation();
   return (
     <MenuPrimitive.CheckboxItem
       data-slot="dropdown-menu-checkbox-item"
@@ -179,6 +192,7 @@ function DropdownMenuCheckboxItem({
 }
 
 function DropdownMenuRadioGroup({ ...props }: MenuPrimitive.RadioGroup.Props) {
+  useTranslation();
   return (
     <MenuPrimitive.RadioGroup
       data-slot="dropdown-menu-radio-group"
@@ -195,6 +209,7 @@ function DropdownMenuRadioItem({
 }: MenuPrimitive.RadioItem.Props & {
   inset?: boolean
 }) {
+  useTranslation();
   return (
     <MenuPrimitive.RadioItem
       data-slot="dropdown-menu-radio-item"
@@ -223,6 +238,7 @@ function DropdownMenuSeparator({
   className,
   ...props
 }: MenuPrimitive.Separator.Props) {
+  useTranslation();
   return (
     <MenuPrimitive.Separator
       data-slot="dropdown-menu-separator"
@@ -236,6 +252,7 @@ function DropdownMenuShortcut({
   className,
   ...props
 }: React.ComponentProps<"span">) {
+  useTranslation();
   return (
     <span
       data-slot="dropdown-menu-shortcut"

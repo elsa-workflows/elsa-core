@@ -1,4 +1,6 @@
 "use client";
+import { translate } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
@@ -239,12 +241,12 @@ function subtitleOf(node: ContextNode): string | undefined {
     case "workflow":
       return node.version !== undefined ? `v${node.version}${node.isPublished === false ? " · draft" : ""}` : undefined;
     case "missing":
-      return "not found";
+      return translate("not found");
     case "unresolved":
-      return "target set by expression";
+      return translate("target set by expression");
     case "pending":
       return "loading…";
     case "truncated":
-      return node.hiddenCount ? "collapsed" : "limit reached";
+      return node.hiddenCount ? "collapsed" : translate("limit reached");
   }
 }

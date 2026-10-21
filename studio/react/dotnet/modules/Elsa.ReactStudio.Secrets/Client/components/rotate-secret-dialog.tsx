@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Loader2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
@@ -23,6 +25,7 @@ export function RotateSecretDialog({
   descriptors: SecretDescriptorsResponse | undefined;
   onClose: () => void;
 }) {
+  useTranslation();
   return (
     <Dialog open={!!secret} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">
@@ -33,6 +36,7 @@ export function RotateSecretDialog({
 }
 
 function RotateSecretForm({ secret, descriptors, close }: { secret: SecretModel; descriptors: SecretDescriptorsResponse | undefined; close: () => void }) {
+  const _t = useTranslation();
   const type = descriptors?.types.find((t) => t.name === secret.typeName);
   const store = descriptors?.stores.find((s) => s.name === secret.storeName);
   const storeFields = useStoreFields(store);
@@ -53,7 +57,7 @@ function RotateSecretForm({ secret, descriptors, close }: { secret: SecretModel;
         metadata: storeFields.metadata,
         expiresAt: toIsoOrNull(expiresAt),
       });
-      toast.success(`Secret "${secret.name}" rotated to version ${updated.currentVersion ?? "?"}`);
+      toast.success(_t("Secret \"{{value0}}\" rotated to version {{value1}}", { value0: secret.name, value1: updated.currentVersion ?? "?" }));
       close();
     } catch (err) {
       toast.error(describeError(err));
@@ -63,26 +67,23 @@ function RotateSecretForm({ secret, descriptors, close }: { secret: SecretModel;
   return (
     <form onSubmit={submit} className="contents">
       <DialogHeader>
-        <DialogTitle>Rotate {secret.name}</DialogTitle>
+        <DialogTitle>{_t("Rotate")}{" "}{secret.name}</DialogTitle>
         <DialogDescription>
-          Creates version {(secret.currentVersion ?? 0) + 1}. Workflows resolve the new value on their next run; the old one is retired.
-        </DialogDescription>
+          {_t("Creates version")}{" "}{(secret.currentVersion ?? 0) + 1}{_t(". Workflows resolve the new value on their next run; the old one is retired.")}</DialogDescription>
       </DialogHeader>
       <div className="flex flex-col gap-4">
         <StoreFields state={storeFields} idPrefix="rotate" />
-        {requiresValue && <SecretValueField value={value} onChange={setValue} editorHint={type?.editorHint} label="New value" hint={valueHintFor(store)} required />}
-        <Field label="Expires at" htmlFor="rotate-expires" hint="Optional.">
+        {requiresValue && <SecretValueField value={value} onChange={setValue} editorHint={type?.editorHint} label={_t("New value")} hint={valueHintFor(store)} required />}
+        <Field label={_t("Expires at")} htmlFor="rotate-expires" hint={_t("Optional.")}>
           <Input id="rotate-expires" type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
         </Field>
       </div>
       <DialogFooter>
         <Button type="button" variant="outline" onClick={close} disabled={rotate.isPending}>
-          Cancel
-        </Button>
+          {_t("Cancel")}</Button>
         <Button type="submit" disabled={!canSubmit || rotate.isPending}>
           {rotate.isPending && <Loader2 className="animate-spin" />}
-          Rotate
-        </Button>
+          {_t("Rotate")}</Button>
       </DialogFooter>
     </form>
   );

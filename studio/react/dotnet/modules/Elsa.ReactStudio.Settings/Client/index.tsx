@@ -1,3 +1,5 @@
+
+import { message } from "@elsa-workflows/react-studio-sdk/localization";
 import { SettingsRoutes } from "@elsa-workflows/react-studio-ui/runtime/settings";
 import { defineModule } from "@elsa-workflows/react-studio-sdk";
 import { SettingsPage } from "./pages/settings-page";
@@ -14,6 +16,6 @@ export { useSettingsSections } from "./pages/settings-page";
 export const settingsModule = defineModule({
   id: "settings",
   name: "Settings",
-  description: "Overview of the configurable capabilities installed in this studio.",
-  routes: [{ path: SettingsRoutes.overview, component: SettingsPage, title: "Settings" }],
+  description: message("Overview of the configurable capabilities installed in this studio."),
+  routes: [{ path: SettingsRoutes.overview, component: SettingsPage, title: message("Settings") }],
 });

@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { useMemo } from "react";
 import { describeError } from "@elsa-workflows/react-studio-ui/common/error-alert";
@@ -24,6 +26,7 @@ export interface SecretPickerProps {
 
 /** Select over the secrets the server deems compatible (`POST /secrets/picker`). Never shows values. */
 export function SecretPicker({ value, onChange, typeNames, storeNames, scope, includeInactive, placeholder, disabled, className, size }: SecretPickerProps) {
+  const _t = useTranslation();
   const request = useMemo<SecretPickerRequest>(
     () => ({ typeNames: typeNames ?? [], storeNames: storeNames ?? [], scope: scope || undefined, activeOnly: !includeInactive }),
     [typeNames, storeNames, scope, includeInactive],
@@ -34,9 +37,9 @@ export function SecretPicker({ value, onChange, typeNames, storeNames, scope, in
   // Keep a value that is not (or no longer) in the list selectable so the editor never silently drops it.
   const options = useMemo(() => {
     const list = items.map((s) => ({ value: s.name, label: s.displayName && s.displayName !== s.name ? `${s.displayName} (${s.name})` : s.name, description: s.description }));
-    if (value && !items.some((s) => s.name === value)) list.unshift({ value, label: `${value} (not found)`, description: undefined });
+    if (value && !items.some((s) => s.name === value)) list.unshift({ value, label: _t("{{value0}} (not found)", { value0: value }), description: undefined });
     return list;
-  }, [items, value]);
+  }, [items, value, _t]);
 
   return (
     <div className={className}>
@@ -44,7 +47,7 @@ export function SecretPicker({ value, onChange, typeNames, storeNames, scope, in
         value={value}
         onChange={(name) => onChange(name, items.find((s) => s.name === name))}
         options={options}
-        placeholder={query.isLoading ? "Loading secrets…" : query.isError ? "Secrets unavailable" : (placeholder ?? "Select a secret…")}
+        placeholder={query.isLoading ? _t("Loading secrets…") : query.isError ? _t("Secrets unavailable") : (placeholder ?? _t("Select a secret…"))}
         disabled={disabled || query.isLoading}
         allowEmpty
         size={size}

@@ -1,4 +1,6 @@
 "use client";
+import { message, useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
 import { useState } from "react";
@@ -12,10 +14,10 @@ import { useWorkflowHotspots } from "../hooks";
 import { DashboardLinks } from "../links";
 
 const METRICS: { value: DashboardHotspotMetric; label: string; column: string }[] = [
-  { value: "Faults", label: "Faults", column: "Faults" },
-  { value: "Incidents", label: "Incidents", column: "Incidents" },
-  { value: "Executions", label: "Executions", column: "Runs" },
-  { value: "Duration", label: "Duration", column: "Avg. duration" },
+  { value: "Faults", label: message("Faults"), column: "Faults" },
+  { value: "Incidents", label: message("Incidents"), column: "Incidents" },
+  { value: "Executions", label: message("Executions"), column: "Runs" },
+  { value: "Duration", label: message("Duration"), column: "Avg. duration" },
 ];
 
 /**
@@ -23,6 +25,7 @@ const METRICS: { value: DashboardHotspotMetric; label: string; column: string }[
  * Hidden on servers without the Dashboard API (there is no cheap core-API equivalent).
  */
 export function WorkflowHotspotsWidget({ range }: { range: DashboardRange }) {
+  const _t = useTranslation();
   const [metric, setMetric] = useState<DashboardHotspotMetric>("Faults");
   const hotspots = useWorkflowHotspots(range, metric);
   if (hotspots.capability === "fallback") return null;
@@ -32,9 +35,9 @@ export function WorkflowHotspotsWidget({ range }: { range: DashboardRange }) {
 
   return (
     <WidgetCard
-      title="Workflow hotspots"
-      description={RANGE_LABELS[range]}
-      action={<SimpleSelect size="sm" className="w-32" value={metric} options={METRICS} onChange={(v) => v && setMetric(v)} />}
+      title={_t("Workflow hotspots")}
+      description={_t(RANGE_LABELS[range])}
+      action={<SimpleSelect size="sm" className="w-32" value={metric} options={METRICS.map(option => ({ ...option, label: _t(option.label) }))} onChange={(v) => v && setMetric(v)} />}
       isLoading={hotspots.isLoading}
       error={hotspots.error}
       skeleton={<LinesSkeleton lines={5} />}
@@ -42,14 +45,14 @@ export function WorkflowHotspotsWidget({ range }: { range: DashboardRange }) {
       contentClassName="px-0"
     >
       {items.length === 0 ? (
-        <WidgetEmpty>No hotspots in this range.</WidgetEmpty>
+        <WidgetEmpty>{_t("No hotspots in this range.")}</WidgetEmpty>
       ) : (
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="pl-4">Workflow</TableHead>
-              <TableHead className="text-right">{column}</TableHead>
-              {metric !== "Duration" && <TableHead className="hidden text-right pr-4 sm:table-cell">Avg. duration</TableHead>}
+              <TableHead className="pl-4">{_t("Workflow")}</TableHead>
+              <TableHead className="text-right">{_t(column)}</TableHead>
+              {metric !== "Duration" && <TableHead className="hidden text-right pr-4 sm:table-cell">{_t("Avg. duration")}</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>

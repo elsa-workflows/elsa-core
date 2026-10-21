@@ -1,3 +1,5 @@
+
+import { translate } from "./localization.js";
 import { createContext, useContext } from "react";
 import { tenancyConfigSchema, type ServerConfig } from "./config.js";
 
@@ -28,7 +30,7 @@ export function resolveTenant(server: ServerConfig, user: TenantIdentity | undef
   if (policy.mode === "fixed") return { ...context, tenantId: server.tenantId };
   if (policy.mode === "claims") {
     const claim = user?.claims?.[policy.claimType] ?? (policy.claimType === "http://schemas.microsoft.com/identity/claims/tenantid" ? user?.tenantId : undefined);
-    return typeof claim === "string" ? { ...context, tenantId: claim } : { ...context, error: "Your account does not specify a tenant." };
+    return typeof claim === "string" ? { ...context, tenantId: claim } : { ...context, error: translate("Your account does not specify a tenant.") };
   }
   const configured = policy.tenants.map(tenant => tenant.id);
   return { ...context, tenantId: [selected, server.tenantId, configured[0]].find(id => id !== undefined && configured.includes(id)) };

@@ -7,7 +7,7 @@ guide and sample implement [#8852](https://github.com/elsa-workflows/elsa-core/i
 
 ## Generate and build the sample
 
-Install .NET SDK 10, Node.js 22.12 or newer and pnpm 10.33. From `studio/react`, run:
+Install .NET SDK 10, Node.js 22.13 or newer and pnpm 10.33. From `studio/react`, run:
 
 ```sh
 node scripts/create-module.mjs /tmp/weather-module --company Acme --name Weather

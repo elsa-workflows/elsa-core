@@ -1,4 +1,6 @@
 "use client";
+import { translate, useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Pause, Play, RefreshCw } from "lucide-react";
 import { useCallback, useState } from "react";
@@ -22,9 +24,10 @@ function toIso(local: string | undefined): string | undefined {
   return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
 }
 
-const limitOptions = ["100", "250", "500", "1000", "2000"].map((v) => ({ value: v, label: `${v} lines` }));
+const limitOptions = ["100", "250", "500", "1000", "2000"].map((v) => ({ value: v, label: translate("{{value0}} lines", { value0: v }) }));
 
 export function ConsoleLogsPage() {
+  const _t = useTranslation();
   const url = useUrlState();
   const sourceId = url.get("source");
   const stream = url.get("stream") as ConsoleStream | undefined;
@@ -59,64 +62,63 @@ export function ConsoleLogsPage() {
   return (
     <div className="flex flex-col gap-3 h-full">
       <PageHeader
-        title="Console"
-        description="Recent stdout/stderr lines captured from the server."
+        title={_t("Console")}
+        description={_t("Recent stdout/stderr lines captured from the server.")}
         actions={
           <>
             <Button variant={follow ? "default" : "outline"} size="sm" onClick={() => toggleFollow(!follow)}>
               {follow ? <Pause data-icon="inline-start" /> : <Play data-icon="inline-start" />}
-              {follow ? "Following" : "Follow"}
+              {follow ? _t("Following") : _t("Follow")}
             </Button>
             <Button variant="outline" size="sm" onClick={() => recent.refetch()} disabled={recent.isFetching}>
               <RefreshCw data-icon="inline-start" className={recent.isFetching ? "animate-spin" : undefined} />
-              Refresh
-            </Button>
+              {_t("Refresh")}</Button>
           </>
         }
       >
         <div className="flex flex-wrap items-end gap-2">
-          <SearchInput value={text} onChange={onSearch} placeholder="Filter text" className="w-72" />
+          <SearchInput value={text} onChange={onSearch} placeholder={_t("Filter text")} className="w-72" />
           <SimpleSelect
             className="w-56"
-            placeholder="All sources"
+            placeholder={_t("All sources")}
             allowEmpty
             value={sourceId}
-            options={sourceList.map((s) => ({ value: s.id, label: `${s.displayName}${healthName(s.health) !== "Connected" ? ` (${healthName(s.health).toLowerCase()})` : ""}` }))}
+            options={sourceList.map((s) => ({ value: s.id, label: _t("{{value0}}{{value1}}", { value0: s.displayName, value1: healthName(s.health) !== "Connected" ? ` (${healthName(s.health).toLowerCase()})` : "" }) }))}
             onChange={(v) => url.set({ source: v })}
           />
           <SimpleSelect
             className="w-32"
-            placeholder="Both streams"
+            placeholder={_t("Both streams")}
             allowEmpty
             value={stream}
             options={[
-              { value: "stdout", label: "stdout" },
-              { value: "stderr", label: "stderr" },
+              { value: "stdout", label: _t("stdout") },
+              { value: "stderr", label: _t("stderr") },
             ]}
             onChange={(v) => url.set({ stream: v })}
           />
-          <Field label="From" htmlFor="cl-from">
+          <Field label={_t("From")} htmlFor="cl-from">
             <Input id="cl-from" type="datetime-local" value={from ?? ""} onChange={(e) => url.set({ from: e.target.value })} className="w-52" />
           </Field>
-          <Field label="To" htmlFor="cl-to">
+          <Field label={_t("To")} htmlFor="cl-to">
             <Input id="cl-to" type="datetime-local" value={to ?? ""} onChange={(e) => url.set({ to: e.target.value })} className="w-52" />
           </Field>
           <SimpleSelect className="w-32" value={String(limit)} options={limitOptions} onChange={(v) => url.set({ limit: v })} />
-          <Field inline label="Wrap" htmlFor="cl-wrap">
+          <Field inline label={_t("Wrap")} htmlFor="cl-wrap">
             <Switch id="cl-wrap" checked={wrap} onCheckedChange={setWrap} />
           </Field>
-          <Field inline label="Compact" htmlFor="cl-compact">
+          <Field inline label={_t("Compact")} htmlFor="cl-compact">
             <Switch id="cl-compact" checked={compact} onCheckedChange={setCompact} />
           </Field>
         </div>
       </PageHeader>
 
-      <ErrorAlert error={recent.error} title="Could not load console logs" />
-      <ErrorAlert error={sources.error} title="Could not load log sources" />
+      <ErrorAlert error={recent.error} title={_t("Could not load console logs")} />
+      <ErrorAlert error={sources.error} title={_t("Could not load log sources")} />
 
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        <span className="tabular-nums">{lines.length} lines</span>
-        {dropped > 0 && <ToneBadge tone="warning">{dropped} dropped</ToneBadge>}
+        <span className="tabular-nums">{lines.length} {_t("lines")}</span>
+        {dropped > 0 && <ToneBadge tone="warning">{dropped} {_t("dropped")}</ToneBadge>}
         {sourceList.map((s) => (
           <ToneBadge key={s.id} tone={healthName(s.health) === "Connected" ? "success" : healthName(s.health) === "Stale" ? "warning" : "neutral"}>
             {s.displayName}

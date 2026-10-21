@@ -1,3 +1,5 @@
+
+import { translate } from "@elsa-workflows/react-studio-sdk/localization";
 import type { HttpClient } from "@elsa-workflows/react-studio-api-client/http";
 
 /*
@@ -165,11 +167,11 @@ export function storeFields(store: SecretStoreDescriptor | undefined): SecretSto
   return [
     {
       name: "configurationKey",
-      displayName: "Configuration key",
-      description: "The server reads the value from this configuration key; nothing is stored in the database.",
+      displayName: translate("Configuration key"),
+      description: translate("The server reads the value from this configuration key; nothing is stored in the database."),
       kind: "Text",
       required: true,
-      placeholder: "Smtp:Password",
+      placeholder: translate("Smtp:Password"),
       options: [],
     },
   ];

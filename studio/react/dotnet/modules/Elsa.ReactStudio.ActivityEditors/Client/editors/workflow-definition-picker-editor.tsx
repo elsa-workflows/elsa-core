@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { useQuery } from "@tanstack/react-query";
 import { SimpleSelect } from "@elsa-workflows/react-studio-ui/common/simple-select";
@@ -7,6 +9,7 @@ import type { UiHintEditorProps } from "../types";
 import { ExpressionEditor } from "../expression-editor";
 
 export function WorkflowDefinitionPickerEditor(props: UiHintEditorProps) {
+  useTranslation();
   const client = useElsaClient();
   const scope = useQueryScope();
   const { data } = useQuery({

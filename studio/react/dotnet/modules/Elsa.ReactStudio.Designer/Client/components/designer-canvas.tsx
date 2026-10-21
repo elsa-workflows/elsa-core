@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { IconButton } from "@elsa-workflows/react-studio-ui/icon-button";
 import type { DesignerCanvasProps } from "@elsa-workflows/react-studio-sdk/components";
@@ -59,6 +61,7 @@ const NO_DECORATIONS: CanvasDecorations = { nodes: [], edges: [] };
  * flowchart mutation so undo/redo and serialization stay trivial.
  */
 export function DesignerCanvas({ className, minimap = true, onToggleMinimap, onOpenToolbox, toolbar, onNodeDoubleClick, traversedActivityIds, decorations = NO_DECORATIONS }: DesignerCanvasProps) {
+  const _t = useTranslation();
   const { store, registry, stats, dataFlow } = useDesigner();
   const showDataFlow = useDesignerState((s) => s.showDataFlow);
   const dataHighlight = useDesignerState((s) => s.dataHighlight);
@@ -75,7 +78,7 @@ export function DesignerCanvas({ className, minimap = true, onToggleMinimap, onO
 
   const resolved = useMemo(() => resolveContainer(root, path), [root, path]);
   const container = useMemo<Flowchart>(() => (isFlowchart(resolved) ? resolved : emptyFlowchart("__none__")), [resolved]);
-  const issues = useMemo(() => (readOnly ? new Map() : issuesByActivity(validateWorkflow(root, registry))), [root, registry, readOnly]);
+  const issues = useMemo(() => (readOnly ? new Map() : issuesByActivity(validateWorkflow(root, registry, _t))), [root, registry, readOnly, _t]);
 
   const nodes = useMemo<ActivityFlowNode[]>(
     () =>
@@ -458,26 +461,26 @@ export function DesignerCanvas({ className, minimap = true, onToggleMinimap, onO
         )}
         {minimap && <MiniMap pannable zoomable position="bottom-right" className="!bg-background/80" />}
         <Panel position="bottom-left" className="flex items-center gap-0.5 rounded-lg border bg-card/95 p-0.5 shadow-sm backdrop-blur">
-          <IconButton label="Zoom out" onClick={() => flow.zoomOut({ duration: 150 })}>
+          <IconButton label={_t("Zoom out")} onClick={() => flow.zoomOut({ duration: 150 })}>
             <Minus />
           </IconButton>
           <ZoomLabel onClick={() => flow.zoomTo(1, { duration: 150 })} />
-          <IconButton label="Zoom in" onClick={() => flow.zoomIn({ duration: 150 })}>
+          <IconButton label={_t("Zoom in")} onClick={() => flow.zoomIn({ duration: 150 })}>
             <Plus />
           </IconButton>
           <span className="mx-0.5 h-4 w-px bg-border" />
-          <IconButton label="Zoom to fit" onClick={() => flow.fitView({ padding: 0.2, duration: 200, maxZoom: 1 })}>
+          <IconButton label={_t("Zoom to fit")} onClick={() => flow.fitView({ padding: 0.2, duration: 200, maxZoom: 1 })}>
             <Maximize />
           </IconButton>
           {onToggleMinimap && (
-            <IconButton label={minimap ? "Hide mini-map" : "Show mini-map"} onClick={onToggleMinimap} className={minimap ? "text-foreground" : "text-muted-foreground"}>
+            <IconButton label={minimap ? _t("Hide mini-map") : _t("Show mini-map")} onClick={onToggleMinimap} className={minimap ? "text-foreground" : "text-muted-foreground"}>
               <MapIcon />
             </IconButton>
           )}
         </Panel>
         <Panel position="top-left" className="flex items-center gap-1">
           {onOpenToolbox && (
-            <IconButton label="Show toolbox" onClick={onOpenToolbox} className="rounded-lg border bg-card/95 shadow-sm backdrop-blur">
+            <IconButton label={_t("Show toolbox")} onClick={onOpenToolbox} className="rounded-lg border bg-card/95 shadow-sm backdrop-blur">
               <PanelLeftOpen />
             </IconButton>
           )}
@@ -486,8 +489,7 @@ export function DesignerCanvas({ className, minimap = true, onToggleMinimap, onO
         {connectFrom && (
           <Panel position="top-center" className="flex items-center gap-2 rounded-full border border-status-success/40 bg-card/95 px-3 py-1 text-xs shadow-sm backdrop-blur">
             <span className="port-dot bg-status-success ring-0" />
-            Click the step to connect <span className="font-medium">{connectFrom.port}</span> to
-            <Button variant="ghost" size="icon-xs" aria-label="Cancel connecting" onClick={() => store.getState().startConnect(undefined)}>
+            {_t("Click the step to connect")}{" "}<span className="font-medium">{connectFrom.port}</span> {_t("to")}<Button variant="ghost" size="icon-xs" aria-label={_t("Cancel connecting")} onClick={() => store.getState().startConnect(undefined)}>
               <X />
             </Button>
           </Panel>
@@ -498,10 +500,9 @@ export function DesignerCanvas({ className, minimap = true, onToggleMinimap, onO
               <span className="flex size-12 items-center justify-center rounded-xl bg-accent text-primary">
                 <MousePointerClick className="size-6" />
               </span>
-              <div className="text-sm font-semibold">Start with a trigger or an action</div>
+              <div className="text-sm font-semibold">{_t("Start with a trigger or an action")}</div>
               <p className="text-xs text-muted-foreground">
-                Add an activity and keep going with the <span className="font-medium text-foreground">+</span> next to each step. You can also drag from the toolbox or double-click the canvas.
-              </p>
+                {_t("Add an activity and keep going with the")}{" "}<span className="font-medium text-foreground">+</span> {_t("next to each step. You can also drag from the toolbox or double-click the canvas.")}</p>
               <Button
                 size="sm"
                 onClick={(e) => {
@@ -509,8 +510,7 @@ export function DesignerCanvas({ className, minimap = true, onToggleMinimap, onO
                   openQuickAddAt(rect ? rect.left + rect.width / 2 : e.clientX, rect ? rect.top + rect.height / 2 : e.clientY);
                 }}
               >
-                <Plus /> Add activity
-              </Button>
+                <Plus /> {_t("Add activity")}</Button>
             </div>
           </Panel>
         )}
@@ -526,24 +526,23 @@ export function DesignerCanvas({ className, minimap = true, onToggleMinimap, onO
                   if (rect) openQuickAddAt(rect.left + rect.width / 2, rect.top + rect.height / 2);
                 }}
               >
-                <Plus /> Add
-                <kbd className="ml-1 rounded border bg-muted px-1 text-[10px] font-mono text-muted-foreground">A</kbd>
+                <Plus /> {_t("Add")}<kbd className="ml-1 rounded border bg-muted px-1 text-[10px] font-mono text-muted-foreground">{_t("A")}</kbd>
               </Button>
               <span className="mx-0.5 h-5 w-px bg-border" />
-              <IconButton label="Undo (⌘Z)" onClick={() => store.getState().undo()} disabled={!canUndo}>
+              <IconButton label={_t("Undo (⌘Z)")} onClick={() => store.getState().undo()} disabled={!canUndo}>
                 <Undo2 />
               </IconButton>
-              <IconButton label="Redo (⇧⌘Z)" onClick={() => store.getState().redo()} disabled={!canRedo}>
+              <IconButton label={_t("Redo (⇧⌘Z)")} onClick={() => store.getState().redo()} disabled={!canRedo}>
                 <Redo2 />
               </IconButton>
-              <IconButton label="Auto layout" onClick={runAutoLayout}>
+              <IconButton label={_t("Auto layout")} onClick={runAutoLayout}>
                 <LayoutGrid />
               </IconButton>
             </>
           )}
           {dataFlow && (
             <IconButton
-              label={showDataFlow ? "Hide data flow" : "Show data flow (variables, inputs, outputs)"}
+              label={showDataFlow ? _t("Hide data flow") : _t("Show data flow (variables, inputs, outputs)")}
               onClick={() => store.getState().setShowDataFlow(!showDataFlow)}
               className={showDataFlow ? "bg-accent text-primary" : undefined}
             >
@@ -551,7 +550,7 @@ export function DesignerCanvas({ className, minimap = true, onToggleMinimap, onO
             </IconButton>
           )}
           {readOnly && (
-            <IconButton label="Zoom to fit" onClick={() => flow.fitView({ padding: 0.2, duration: 200, maxZoom: 1 })}>
+            <IconButton label={_t("Zoom to fit")} onClick={() => flow.fitView({ padding: 0.2, duration: 200, maxZoom: 1 })}>
               <Maximize />
             </IconButton>
           )}
@@ -572,9 +571,10 @@ function dataRoleOf(index: import("@elsa-workflows/react-studio-sdk/designer/mod
 }
 
 function ZoomLabel({ onClick }: { onClick: () => void }) {
+  const _t = useTranslation();
   const { zoom } = useViewport();
   return (
-    <button type="button" onClick={onClick} title="Reset zoom to 100%" className="w-11 rounded text-center text-[11px] tabular-nums text-muted-foreground hover:bg-accent hover:text-foreground">
+    <button type="button" onClick={onClick} title={_t("Reset zoom to 100%")} className="w-11 rounded text-center text-[11px] tabular-nums text-muted-foreground hover:bg-accent hover:text-foreground">
       {Math.round(zoom * 100)}%
     </button>
   );

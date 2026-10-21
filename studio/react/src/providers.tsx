@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { ThemeProvider } from "next-themes";
 import type { ReactNode } from "react";
@@ -13,6 +15,7 @@ import { ElsaThemeProvider } from "@elsa-workflows/react-studio-sdk/theme/elsa-t
 import type { StudioModule } from "@elsa-workflows/react-studio-sdk";
 import { StudioComponentsProvider, type StudioComponentMap } from "@elsa-workflows/react-studio-sdk/components";
 import { TenancyProvider } from "./tenancy-provider";
+import { LocalizationProvider } from "./localization-provider";
 
 export function Providers({
   config,
@@ -25,6 +28,7 @@ export function Providers({
   components?: StudioComponentMap;
   children: ReactNode;
 }) {
+  useTranslation();
   const moduleProviders = modules.flatMap(module =>
     (module.extensions?.providers ?? (module.Provider ? [{ id: "provider", order: 0, component: module.Provider }] : []))
       .map(provider => ({ ...provider, moduleId: module.id })));
@@ -45,6 +49,7 @@ export function Providers({
       <StudioConfigProvider config={config}>
         <ElsaThemeProvider>
           <AuthProvider>
+            <LocalizationProvider modules={modules}>
             <TenancyProvider>
               <ElsaApiProvider>
                 <ModuleRegistryProvider modules={modules}>
@@ -55,6 +60,7 @@ export function Providers({
                 </ModuleRegistryProvider>
               </ElsaApiProvider>
             </TenancyProvider>
+            </LocalizationProvider>
           </AuthProvider>
         </ElsaThemeProvider>
       </StudioConfigProvider>

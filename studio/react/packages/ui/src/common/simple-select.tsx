@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@elsa-workflows/react-studio-ui/select";
 import { cn } from "../utils.js";
@@ -17,7 +19,7 @@ export function SimpleSelect<T extends string>({
   value,
   onChange,
   options,
-  placeholder = "Select…",
+  placeholder,
   className,
   size = "default",
   disabled,
@@ -37,9 +39,12 @@ export function SimpleSelect<T extends string>({
   id?: string;
   "aria-label"?: string;
 }) {
+  const t = useTranslation();
   const EMPTY = "__none__";
+  const generic = placeholder === undefined || placeholder === "Select…";
+  const displayPlaceholder = generic ? t("Select…") : placeholder;
   // The empty entry reads as the placeholder ("Incidents: any", "Not captured"…) rather than a bare "(none)".
-  const all = allowEmpty ? [{ value: EMPTY as T, label: placeholder === "Select…" ? "(none)" : placeholder }, ...options] : options;
+  const all = allowEmpty ? [{ value: EMPTY as T, label: generic ? t("(none)") : displayPlaceholder }, ...options] : options;
   const items = Object.fromEntries(all.map((o) => [o.value, o.label]));
   return (
     <Select
@@ -49,7 +54,7 @@ export function SimpleSelect<T extends string>({
       disabled={disabled}
     >
       <SelectTrigger id={id} aria-label={ariaLabel} className={cn("w-full", className)} size={size}>
-        <SelectValue placeholder={placeholder} />
+        <SelectValue placeholder={displayPlaceholder} />
       </SelectTrigger>
       <SelectContent>
         {all.map((o) => (

@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Check, ChevronDown, Server } from "lucide-react";
 import { useMemo } from "react";
@@ -27,13 +29,14 @@ import { useServerEnvironments } from "../hooks";
  * only point at configured entries).
  */
 export function EnvironmentPicker() {
+  const _t = useTranslation();
   const { servers } = useStudioConfig();
   const index = useActiveServerStore((s) => s.index);
   const setIndex = useActiveServerStore((s) => s.setIndex);
   const remote = useServerEnvironments();
   const switchServer = (target: number) => {
     if (target === index) return;
-    if (hasUnsavedChanges() && !window.confirm("Switch server and discard unsaved changes?")) return;
+    if (hasUnsavedChanges() && !window.confirm(_t("Switch server and discard unsaved changes?"))) return;
     reloadStudioContext(() => {
       approveNavigation();
       setIndex(target);
@@ -55,14 +58,14 @@ export function EnvironmentPicker() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="outline" size="sm" aria-label="Switch environment" className="max-w-56" />}>
+      <DropdownMenuTrigger render={<Button variant="outline" size="sm" aria-label={_t("Switch environment")} className="max-w-56" />}>
         <Server className="text-muted-foreground" />
         <span className="truncate">{active.name}</span>
         <ChevronDown className="text-muted-foreground" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72">
         <DropdownMenuGroup>
-          <DropdownMenuLabel>Configured servers</DropdownMenuLabel>
+          <DropdownMenuLabel>{_t("Configured servers")}</DropdownMenuLabel>
           {servers.map((server, i) => (
             <DropdownMenuItem key={`${server.url}-${i}`} onClick={() => switchServer(i)} className="items-start">
               <Check className={cn("mt-0.5", i === index ? "opacity-100" : "opacity-0")} />
@@ -77,7 +80,7 @@ export function EnvironmentPicker() {
           <>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuLabel>Advertised by {active.name}</DropdownMenuLabel>
+              <DropdownMenuLabel>{_t("Advertised by")}{" "}{active.name}</DropdownMenuLabel>
               {remoteEnvironments.map((env) => {
                 const target = env.configuredIndex;
                 return (
@@ -86,13 +89,13 @@ export function EnvironmentPicker() {
                     disabled={target === undefined}
                     onClick={() => target !== undefined && switchServer(target)}
                     className="items-start"
-                    title={target === undefined ? "Not in the studio configuration; add it to servers[] to make it selectable." : undefined}
+                    title={target === undefined ? _t("Not in the studio configuration; add it to servers[] to make it selectable.") : undefined}
                   >
                     <Check className={cn("mt-0.5", target !== undefined && target === index ? "opacity-100" : "opacity-0")} />
                     <div className="min-w-0 flex flex-col">
                       <span className="truncate">
                         {env.name}
-                        {env.isDefault && <span className="ml-1 text-xs text-muted-foreground">(default)</span>}
+                        {env.isDefault && <span className="ml-1 text-xs text-muted-foreground">{_t("(default)")}</span>}
                       </span>
                       <span className="truncate text-xs text-muted-foreground">{environmentUrl(env)}</span>
                     </div>

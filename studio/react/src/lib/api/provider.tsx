@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { ElsaApiProvider as SharedElsaApiProvider } from "@elsa-workflows/react-studio-api-client/react";
 export { useElsaClient, useQueryScope } from "@elsa-workflows/react-studio-api-client/react";
@@ -11,6 +13,7 @@ import { useTenant, tenantIdentityKey } from "@elsa-workflows/react-studio-sdk/t
 
 /** Builds one API client for the active server + auth strategy and provides TanStack Query. */
 export function ElsaApiProvider({ children }: { children: ReactNode }) {
+  useTranslation();
   const server = useActiveServer();
   const { strategy, user } = useAuth();
   const { tenantId } = useTenant();

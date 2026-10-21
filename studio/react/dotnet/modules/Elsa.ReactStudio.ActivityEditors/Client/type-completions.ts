@@ -1,3 +1,5 @@
+
+import { translate, type Translate } from "@elsa-workflows/react-studio-sdk/localization";
 import { expressionCompletions } from "@elsa-workflows/react-studio-sdk/designer/model/data-flow";
 import type { UiHintContext } from "./types";
 import type { CodeCompletion } from "@elsa-workflows/react-studio-ui/common/code-editor";
@@ -9,7 +11,7 @@ interface ServerTypes { types: Map<string, Member[]>; functions: CodeCompletion[
 /** Parses the line-oriented declaration format emitted by TypeDefinitionDocumentRenderer.
  * Unknown TypeScript syntax is ignored; this never executes server-provided code. */
 export function parseServerTypes(document: string): ServerTypes {
-  if (document.length > 2_000_000) throw new Error("Server type information exceeds 2 MB.");
+  if (document.length > 2_000_000) throw new Error(translate("Server type information exceeds 2 MB."));
   const result: ServerTypes = { types: new Map(), functions: [], globals: [] };
   let members: Member[] | undefined;
   for (const line of document.split(/\r?\n/)) {
@@ -40,10 +42,10 @@ const commonAccessors = new Set([
 ]);
 
 /** One-level typed members keep completion construction linear in workflow size. */
-export function typedCompletions(context: Pick<UiHintContext, "variables" | "inputs" | "activities"> | undefined, language: CodeLanguage, server: ServerTypes): CodeCompletion[] {
+export function typedCompletions(context: Pick<UiHintContext, "variables" | "inputs" | "activities"> | undefined, language: CodeLanguage, server: ServerTypes, t: Translate = translate): CodeCompletion[] {
   if (!context) return [];
   const completionLanguage = language === "typescript" ? "javascript" : language === "json" || language === "sql" ? "plaintext" : language;
-  const local = expressionCompletions(context.variables, context.inputs ?? [], context.activities ?? [], completionLanguage);
+  const local = expressionCompletions(context.variables, context.inputs ?? [], context.activities ?? [], completionLanguage, t);
   const items = new Map<string, CodeCompletion>(local.map(item => [item.label, item]));
   if (!["javascript", "typescript", "csharp", "python"].includes(language)) return local;
   const add = (label: string, detail: string, type = "variable") => items.set(label, { label, detail, type });

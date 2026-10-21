@@ -1,4 +1,8 @@
 "use client";
+import { translate } from "@elsa-workflows/react-studio-sdk/localization";
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Ban, RefreshCw, Trash2, X } from "lucide-react";
 import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
@@ -47,6 +51,7 @@ function useListFromUrl<T extends string>(getAll: (key: string) => string[], key
 }
 
 export function WorkflowInstancesListPage() {
+  const _t = useTranslation();
   const router = useRouter();
   const confirm = useConfirm();
   const config = useStudioConfig();
@@ -127,20 +132,20 @@ export function WorkflowInstancesListPage() {
   // --- actions ---
   const handleCancel = useCallback(
     async (instance: WorkflowInstanceSummary) => {
-      if (!(await confirm({ title: "Cancel workflow instance?", description: `Instance ${instance.id} will be cancelled.`, confirmLabel: "Cancel instance" }))) return;
+      if (!(await confirm({ title: _t("Cancel workflow instance?"), description: _t("Instance {{value0}} will be cancelled.", { value0: instance.id }), confirmLabel: _t("Cancel instance") }))) return;
       try {
         await cancelOne(instance.id);
-        toast.success("Workflow instance cancelled.");
+        toast.success(_t("Workflow instance cancelled."));
       } catch (e) {
         toast.error(describeError(e));
       }
     },
-    [confirm, cancelOne],
+    [confirm, cancelOne, _t],
   );
 
   const handleDelete = useCallback(
     async (instance: WorkflowInstanceSummary) => {
-      if (!(await confirm({ title: "Delete workflow instance?", description: `Instance ${instance.id} will be permanently deleted.`, confirmLabel: "Delete", destructive: true }))) return;
+      if (!(await confirm({ title: _t("Delete workflow instance?"), description: _t("Instance {{value0}} will be permanently deleted.", { value0: instance.id }), confirmLabel: _t("Delete"), destructive: true }))) return;
       try {
         await deleteOne(instance.id);
         setSelected((s) => {
@@ -148,20 +153,20 @@ export function WorkflowInstancesListPage() {
           next.delete(instance.id);
           return next;
         });
-        toast.success("Workflow instance deleted.");
+        toast.success(_t("Workflow instance deleted."));
       } catch (e) {
         toast.error(describeError(e));
       }
     },
-    [confirm, deleteOne],
+    [confirm, deleteOne, _t],
   );
 
   const handleBulkCancel = async () => {
     const ids = [...selected];
-    if (!(await confirm({ title: `Cancel ${ids.length} workflow instance(s)?`, confirmLabel: "Cancel instances" }))) return;
+    if (!(await confirm({ title: _t("Cancel {{value0}} workflow instance(s)?", { value0: ids.length }), confirmLabel: _t("Cancel instances") }))) return;
     try {
       const result = await cancelMany.mutateAsync(ids);
-      toast.success(`${result?.cancelled ?? ids.length} workflow instance(s) cancelled.`);
+      toast.success(_t("{{value0}} workflow instance(s) cancelled.", { value0: result?.cancelled ?? ids.length }));
     } catch (e) {
       toast.error(describeError(e));
     }
@@ -169,11 +174,11 @@ export function WorkflowInstancesListPage() {
 
   const handleBulkDelete = async () => {
     const ids = [...selected];
-    if (!(await confirm({ title: `Delete ${ids.length} workflow instance(s)?`, description: "This cannot be undone.", confirmLabel: "Delete", destructive: true }))) return;
+    if (!(await confirm({ title: _t("Delete {{value0}} workflow instance(s)?", { value0: ids.length }), description: _t("This cannot be undone."), confirmLabel: _t("Delete"), destructive: true }))) return;
     try {
       const result = await deleteMany.mutateAsync(ids);
       setSelected(new Set());
-      toast.success(`${result?.deleted ?? ids.length} workflow instance(s) deleted.`);
+      toast.success(_t("{{value0}} workflow instance(s) deleted.", { value0: result?.deleted ?? ids.length }));
     } catch (e) {
       toast.error(describeError(e));
     }
@@ -185,7 +190,7 @@ export function WorkflowInstancesListPage() {
     () => [
       {
         id: "id",
-        header: "ID",
+        header: _t("ID"),
         cell: (r) => (
           <Link href={href(WorkflowInstanceRoutes.view, { id: r.id })} className="font-mono text-xs text-primary hover:underline" onClick={(e) => e.stopPropagation()}>
             {r.id}
@@ -195,25 +200,25 @@ export function WorkflowInstancesListPage() {
       {
         id: "correlationId",
         hideable: true,
-        header: "Correlation ID",
+        header: translate("Correlation ID"),
         cell: (r) => (r.correlationId ? <span className="font-mono text-xs">{r.correlationId}</span> : <span className="text-muted-foreground">–</span>),
       },
-      { id: "workflow", header: "Workflow", cell: (r) => <span className="truncate">{nameOf(r.definitionId)}</span> },
+      { id: "workflow", header: _t("Workflow"), cell: (r) => <span className="truncate">{nameOf(r.definitionId)}</span> },
       { id: "version",
-        hideable: true, header: "Version", cell: (r) => <span className="tabular-nums">{r.version}</span>, className: "text-right", headerClassName: "text-right" },
+        hideable: true, header: _t("Version"), cell: (r) => <span className="tabular-nums">{r.version}</span>, className: "text-right", headerClassName: "text-right" },
       { id: "name",
-        hideable: true, header: "Name", sortKey: "Name", cell: (r) => r.name ?? <span className="text-muted-foreground">–</span> },
-      { id: "status", header: "Status", cell: (r) => <StatusBadge status={r.subStatus} /> },
+        hideable: true, header: _t("Name"), sortKey: "Name", cell: (r) => r.name ?? <span className="text-muted-foreground">–</span> },
+      { id: "status", header: _t("Status"), cell: (r) => <StatusBadge status={r.subStatus} /> },
       {
         id: "incidents",
-        header: "Incidents",
+        header: _t("Incidents"),
         cell: (r) => (r.incidentCount > 0 ? <ToneBadge tone="danger">{r.incidentCount}</ToneBadge> : <span className="text-muted-foreground tabular-nums">0</span>),
       },
-      { id: "created", header: "Created", sortKey: "Created", cell: (r) => <Timestamp value={r.createdAt} /> },
+      { id: "created", header: _t("Created"), sortKey: "Created", cell: (r) => <Timestamp value={r.createdAt} /> },
       { id: "updated",
-        hideable: true, header: "Updated", sortKey: "UpdatedAt", cell: (r) => <Timestamp value={r.updatedAt} /> },
+        hideable: true, header: _t("Updated"), sortKey: "UpdatedAt", cell: (r) => <Timestamp value={r.updatedAt} /> },
       { id: "finished",
-        hideable: true, header: "Finished", sortKey: "Finished", cell: (r) => <Timestamp value={r.finishedAt} /> },
+        hideable: true, header: _t("Finished"), sortKey: "Finished", cell: (r) => <Timestamp value={r.finishedAt} /> },
       {
         id: "actions",
         header: "",
@@ -222,7 +227,7 @@ export function WorkflowInstancesListPage() {
         cell: (r) => <InstanceRowActions instance={r} helpers={helpers} onCancel={handleCancel} onDelete={handleDelete} />,
       },
     ],
-    [nameOf, helpers, handleCancel, handleDelete],
+    [nameOf, helpers, handleCancel, handleDelete, _t],
   );
 
   const sort: SortState = { key: orderBy, direction: orderDirection };
@@ -231,44 +236,39 @@ export function WorkflowInstancesListPage() {
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
-        title="Workflow instances"
-        description={totalCount > 0 ? `${totalCount} instance${totalCount === 1 ? "" : "s"}` : undefined}
+        title={_t("Workflow instances")}
+        description={totalCount > 0 ? (totalCount === 1 ? _t("{{count}} instance", { count: totalCount }) : _t("{{count}} instances", { count: totalCount })) : undefined}
         actions={
           <div className="flex items-center gap-1 rounded-lg border bg-card p-0.5">
             <Label htmlFor="instances-poll" className="flex items-center gap-2 px-2 text-xs font-normal text-muted-foreground">
               <Switch id="instances-poll" size="sm" checked={polling} onCheckedChange={(checked) => setPolling(checked)} />
-              Auto refresh
-            </Label>
+              {_t("Auto refresh")}</Label>
             <span className="h-4 w-px bg-border" />
             <Button variant="ghost" size="sm" onClick={() => void list.refetch()} disabled={list.isFetching}>
               <RefreshCw className={list.isFetching ? "animate-spin" : undefined} />
-              Refresh
-            </Button>
+              {_t("Refresh")}</Button>
           </div>
         }
       />
 
-      {list.error && <ErrorAlert error={list.error} title="Could not load workflow instances" />}
+      {list.error && <ErrorAlert error={list.error} title={_t("Could not load workflow instances")} />}
 
       {selected.size > 0 && (
         <div className="flex flex-wrap items-center gap-2 rounded-lg border bg-muted/40 px-3 py-2 text-sm">
-          <span className="font-medium">{selected.size} selected</span>
+          <span className="font-medium">{selected.size} {_t("selected")}</span>
           {canCancel && (
             <Button variant="outline" size="sm" onClick={() => void handleBulkCancel()} disabled={cancelMany.isPending}>
               <Ban />
-              Cancel
-            </Button>
+              {_t("Cancel")}</Button>
           )}
           {canDelete && (
             <Button variant="destructive" size="sm" onClick={() => void handleBulkDelete()} disabled={deleteMany.isPending}>
               <Trash2 />
-              Delete
-            </Button>
+              {_t("Delete")}</Button>
           )}
           <Button variant="ghost" size="sm" className="ml-auto" onClick={() => setSelected(new Set())}>
             <X />
-            Clear selection
-          </Button>
+            {_t("Clear selection")}</Button>
         </div>
       )}
 
@@ -284,7 +284,7 @@ export function WorkflowInstancesListPage() {
                 className="text-muted-foreground"
                 onClick={() => onFilterChange({ search: "", definitionIds: [], statuses: [], subStatuses: [], hasIncidents: undefined, timestampFilters: [] })}
               >
-                <X /> Clear {activeFilterCount} filter{activeFilterCount === 1 ? "" : "s"}
+                <X /> {_t("Clear")}{" "}{activeFilterCount} {_t("filter")}{activeFilterCount === 1 ? "" : _t("s")}
               </Button>
             )}
           </div>
@@ -293,7 +293,7 @@ export function WorkflowInstancesListPage() {
         rows={rows}
         rowKey={(r) => r.id}
         isLoading={list.isLoading}
-        emptyMessage="No workflow instances match the current filters."
+        emptyMessage={_t("No workflow instances match the current filters.")}
         selection={canDelete || canCancel ? { selected, onChange: setSelected } : undefined}
         sort={sort}
         onSortChange={onSortChange}

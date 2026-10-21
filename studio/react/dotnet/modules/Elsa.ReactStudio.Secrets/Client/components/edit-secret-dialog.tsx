@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Loader2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
@@ -14,6 +16,7 @@ import { useUpdateSecret } from "../hooks";
 
 /** Edits the mutable metadata (display name, description). Everything else is fixed or rotated. */
 export function EditSecretDialog({ secret, onClose }: { secret: SecretModel | null; onClose: () => void }) {
+  useTranslation();
   return (
     <Dialog open={!!secret} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-md">{secret && <EditSecretForm key={secret.name} secret={secret} close={onClose} />}</DialogContent>
@@ -22,6 +25,7 @@ export function EditSecretDialog({ secret, onClose }: { secret: SecretModel | nu
 }
 
 function EditSecretForm({ secret, close }: { secret: SecretModel; close: () => void }) {
+  const _t = useTranslation();
   const [displayName, setDisplayName] = useState(secret.displayName ?? "");
   const [description, setDescription] = useState(secret.description ?? "");
   const update = useUpdateSecret();
@@ -30,7 +34,7 @@ function EditSecretForm({ secret, close }: { secret: SecretModel; close: () => v
     e.preventDefault();
     try {
       await update.mutateAsync({ name: secret.name, displayName: displayName.trim() || undefined, description: description.trim() || undefined });
-      toast.success(`Secret "${secret.name}" updated`);
+      toast.success(_t("Secret \"{{value0}}\" updated", { value0: secret.name }));
       close();
     } catch (err) {
       toast.error(describeError(err));
@@ -40,33 +44,31 @@ function EditSecretForm({ secret, close }: { secret: SecretModel; close: () => v
   return (
     <form onSubmit={submit} className="contents">
       <DialogHeader>
-        <DialogTitle>Edit {secret.name}</DialogTitle>
-        <DialogDescription>Only metadata can be edited here. Use Rotate to replace the value.</DialogDescription>
+        <DialogTitle>{_t("Edit")}{" "}{secret.name}</DialogTitle>
+        <DialogDescription>{_t("Only metadata can be edited here. Use Rotate to replace the value.")}</DialogDescription>
       </DialogHeader>
       <div className="flex flex-col gap-4">
-        <Field label="Display name" htmlFor="edit-secret-display-name">
+        <Field label={_t("Display name")} htmlFor="edit-secret-display-name">
           <Input id="edit-secret-display-name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
         </Field>
-        <Field label="Description" htmlFor="edit-secret-description">
+        <Field label={_t("Description")} htmlFor="edit-secret-description">
           <Textarea id="edit-secret-description" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
         </Field>
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          <dt>Type</dt>
+          <dt>{_t("Type")}</dt>
           <dd>{secret.typeName}</dd>
-          <dt>Store</dt>
+          <dt>{_t("Store")}</dt>
           <dd>{secret.storeName}</dd>
-          <dt>Scope</dt>
+          <dt>{_t("Scope")}</dt>
           <dd>{secret.scope || "–"}</dd>
         </dl>
       </div>
       <DialogFooter>
         <Button type="button" variant="outline" onClick={close} disabled={update.isPending}>
-          Cancel
-        </Button>
+          {_t("Cancel")}</Button>
         <Button type="submit" disabled={update.isPending}>
           {update.isPending && <Loader2 className="animate-spin" />}
-          Save
-        </Button>
+          {_t("Save")}</Button>
       </DialogFooter>
     </form>
   );

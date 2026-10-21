@@ -1,4 +1,8 @@
 "use client";
+import { translate } from "../localization.js";
+
+import { useTranslation } from "../localization.js";
+
 
 import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { useStore } from "zustand";
@@ -42,13 +46,14 @@ export function DesignerProvider({
   activityLink?: (activity: Activity) => ActivityLink | undefined;
   children: ReactNode;
 }) {
+  useTranslation();
   const value = useMemo(() => ({ store, registry, stats, dataFlow, activityLink }), [store, registry, stats, dataFlow, activityLink]);
   return <DesignerContext.Provider value={value}>{children}</DesignerContext.Provider>;
 }
 
 export function useDesigner(): DesignerContextValue {
   const ctx = useContext(DesignerContext);
-  if (!ctx) throw new Error("useDesigner must be used inside <DesignerProvider>");
+  if (!ctx) throw new Error(translate("useDesigner must be used inside <DesignerProvider>"));
   return ctx;
 }
 

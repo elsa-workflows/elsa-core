@@ -1,4 +1,6 @@
 "use client"
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import * as React from "react"
 import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog"
@@ -7,16 +9,19 @@ import { cn } from "cn"
 import { Button } from "@elsa-workflows/react-studio-ui/button"
 
 function AlertDialog({ ...props }: AlertDialogPrimitive.Root.Props) {
+  useTranslation();
   return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />
 }
 
 function AlertDialogTrigger({ ...props }: AlertDialogPrimitive.Trigger.Props) {
+  useTranslation();
   return (
     <AlertDialogPrimitive.Trigger data-slot="alert-dialog-trigger" {...props} />
   )
 }
 
 function AlertDialogPortal({ ...props }: AlertDialogPrimitive.Portal.Props) {
+  useTranslation();
   return (
     <AlertDialogPrimitive.Portal data-slot="alert-dialog-portal" {...props} />
   )
@@ -26,6 +31,7 @@ function AlertDialogOverlay({
   className,
   ...props
 }: AlertDialogPrimitive.Backdrop.Props) {
+  useTranslation();
   return (
     <AlertDialogPrimitive.Backdrop
       data-slot="alert-dialog-overlay"
@@ -45,6 +51,7 @@ function AlertDialogContent({
 }: AlertDialogPrimitive.Popup.Props & {
   size?: "default" | "sm"
 }) {
+  useTranslation();
   return (
     <AlertDialogPortal>
       <AlertDialogOverlay />
@@ -65,6 +72,7 @@ function AlertDialogHeader({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  useTranslation();
   return (
     <div
       data-slot="alert-dialog-header"
@@ -81,6 +89,7 @@ function AlertDialogFooter({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  useTranslation();
   return (
     <div
       data-slot="alert-dialog-footer"
@@ -97,6 +106,7 @@ function AlertDialogMedia({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  useTranslation();
   return (
     <div
       data-slot="alert-dialog-media"
@@ -113,6 +123,7 @@ function AlertDialogTitle({
   className,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Title>) {
+  useTranslation();
   return (
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
@@ -129,6 +140,7 @@ function AlertDialogDescription({
   className,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Description>) {
+  useTranslation();
   return (
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"
@@ -145,6 +157,7 @@ function AlertDialogAction({
   className,
   ...props
 }: React.ComponentProps<typeof Button>) {
+  useTranslation();
   return (
     <Button
       data-slot="alert-dialog-action"
@@ -161,6 +174,7 @@ function AlertDialogCancel({
   ...props
 }: AlertDialogPrimitive.Close.Props &
   Pick<React.ComponentProps<typeof Button>, "variant" | "size">) {
+  useTranslation();
   return (
     <AlertDialogPrimitive.Close
       data-slot="alert-dialog-cancel"

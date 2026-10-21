@@ -1,5 +1,8 @@
 "use client";
 
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
+
 import { useMemo, useRef, useState, type DragEvent } from "react";
 import { ArrowDown, GripVertical, MousePointerClick, Plus } from "lucide-react";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
@@ -19,6 +22,7 @@ import { readActivityDragData } from "./activity-toolbox";
  * dragging a card or with the insert buttons. A terminal step (End, Finish) ends the sequence early.
  */
 export function SequenceDesigner() {
+  const _t = useTranslation();
   const { store, registry, stats } = useDesigner();
   const root = useDesignerState((s) => s.root);
   const path = useDesignerState((s) => s.path);
@@ -52,7 +56,7 @@ export function SequenceDesigner() {
     <div className="relative flex h-full min-h-0 flex-col overflow-auto bg-canvas" onClick={() => store.getState().select([])}>
       <div className="sticky top-0 z-10 flex items-center gap-2 p-3">
         <DesignerBreadcrumb />
-        <span className="ml-auto rounded-full border bg-card/95 px-2 py-0.5 text-[11px] text-muted-foreground shadow-sm">Sequence · runs top to bottom</span>
+        <span className="ml-auto rounded-full border bg-card/95 px-2 py-0.5 text-[11px] text-muted-foreground shadow-sm">{_t("Sequence · runs top to bottom")}</span>
       </div>
       <div ref={listRef} className="mx-auto flex w-full max-w-md flex-col items-stretch px-4 pb-16 pt-2" onClick={(e) => e.stopPropagation()}>
         {items.length === 0 && (
@@ -60,12 +64,11 @@ export function SequenceDesigner() {
             <span className="flex size-12 items-center justify-center rounded-xl bg-accent text-primary">
               <MousePointerClick className="size-6" />
             </span>
-            <div className="text-sm font-semibold">Add the first step</div>
-            <p className="text-xs text-muted-foreground">Steps run one after another. Use the + buttons to insert, drag cards to reorder.</p>
+            <div className="text-sm font-semibold">{_t("Add the first step")}</div>
+            <p className="text-xs text-muted-foreground">{_t("Steps run one after another. Use the + buttons to insert, drag cards to reorder.")}</p>
             {!readOnly && (
               <Button size="sm" onClick={(e) => openAdd(e, 0)}>
-                <Plus /> Add step
-              </Button>
+                <Plus /> {_t("Add step")}</Button>
             )}
           </div>
         )}
@@ -106,8 +109,7 @@ export function SequenceDesigner() {
         {items.length > 0 && !readOnly && (
           <div className="flex justify-center pt-1" onDragOver={(e) => e.preventDefault()} onDrop={(e) => onDropFromToolbox(e, items.length)}>
             <Button variant="outline" size="sm" onClick={(e) => openAdd(e, items.length)}>
-              <Plus /> Add step
-            </Button>
+              <Plus /> {_t("Add step")}</Button>
           </div>
         )}
       </div>
@@ -149,6 +151,7 @@ function SequenceRow({
   registryGet: (a: Activity) => ReturnType<ReturnType<typeof useDesigner>["registry"]["get"]>;
   isLast: boolean;
 }) {
+  const _t = useTranslation();
   const { store } = useDesigner();
   const descriptor = registryGet(activity);
   const terminal = descriptor?.isTerminal === true;
@@ -170,7 +173,7 @@ function SequenceRow({
       >
         {isDragOver && <div className="absolute -top-1.5 left-0 right-0 h-0.5 rounded bg-primary" />}
         {!readOnly && (
-          <span className="absolute -left-6 top-1/2 -translate-y-1/2 cursor-grab text-muted-foreground opacity-0 transition-opacity group-hover/row:opacity-100" title="Drag to reorder">
+          <span className="absolute -left-6 top-1/2 -translate-y-1/2 cursor-grab text-muted-foreground opacity-0 transition-opacity group-hover/row:opacity-100" title={_t("Drag to reorder")}>
             <GripVertical className="size-4" />
           </span>
         )}
@@ -198,12 +201,13 @@ function SequenceRow({
 }
 
 function InsertButton({ onClick, floating }: { onClick: (e: React.MouseEvent) => void; floating?: boolean }) {
+  const _t = useTranslation();
   return (
     <button
       type="button"
       onClick={onClick}
-      title="Insert step here"
-      aria-label="Insert step here"
+      title={_t("Insert step here")}
+      aria-label={_t("Insert step here")}
       className={cn(
         "flex size-5 items-center justify-center rounded-full border bg-card text-muted-foreground shadow-sm transition-opacity hover:border-primary hover:text-primary",
         floating ? "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 group-hover/row:opacity-100" : "mb-2",

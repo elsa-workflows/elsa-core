@@ -109,6 +109,13 @@ try {
   await expect(page.getByText("Clear skies for Anonymous.", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Refresh forecast", exact: true }).click();
   await expect(page.getByRole("status").filter({ hasText: "Refreshes: 1" })).toBeVisible();
+  await page.getByLabel("Language", { exact: true }).click();
+  await page.getByRole("option", { name: "Dutch", exact: true }).click();
+  await expect(page.getByText("Een heldere hemel voor Anonymous.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Vernieuwingen: 1" })).toBeVisible();
+  await page.getByLabel("Taal", { exact: true }).click();
+  await page.getByRole("option", { name: "Engels", exact: true }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Refreshes: 1" })).toBeVisible();
   const modules = await (await page.request.get(origin + "/studio-preview/studio-manifest")).json();
   const weather = modules.modules.find(module => module.id === "acme-weather");
   if (!weather) throw new Error("Packed third-party module is absent from server manifest");

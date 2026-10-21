@@ -1,4 +1,8 @@
 "use client";
+import { translate } from "@elsa-workflows/react-studio-sdk/localization";
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
 import {
@@ -35,6 +39,7 @@ const ConfirmContext = createContext<ChoiceFn | null>(null);
 
 /** Promise-based confirmation: `if (await confirm({ title: "Delete?" })) …`. */
 export function ConfirmProvider({ children }: { children: ReactNode }) {
+  const _t = useTranslation();
   const [state, setState] = useState<ConfirmOptions | null>(null);
   const resolver = useRef<(v: ConfirmChoice) => void>(null);
 
@@ -61,7 +66,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             {state?.description && <AlertDialogDescription>{state.description}</AlertDialogDescription>}
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => finish("cancel")}>{state?.cancelLabel ?? "Cancel"}</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => finish("cancel")}>{state?.cancelLabel ?? _t("Cancel")}</AlertDialogCancel>
             {state?.alternateLabel && (
               <AlertDialogAction className={cn(buttonVariants({ variant: state.alternateDestructive ? "destructive" : "outline" }))} onClick={() => finish("alternate")}>
                 {state.alternateLabel}
@@ -71,7 +76,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
               className={cn(state?.destructive && buttonVariants({ variant: "destructive" }))}
               onClick={() => finish("confirm")}
             >
-              {state?.confirmLabel ?? "Confirm"}
+              {state?.confirmLabel ?? _t("Confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -83,7 +88,7 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
 /** Three-way prompt (Confirm / alternate / Cancel) sharing the same dialog as `useConfirm`. */
 export function useConfirmChoice(): ChoiceFn {
   const ctx = useContext(ConfirmContext);
-  if (!ctx) throw new Error("useConfirmChoice must be used inside <ConfirmProvider>");
+  if (!ctx) throw new Error(translate("useConfirmChoice must be used inside <ConfirmProvider>"));
   return ctx;
 }
 

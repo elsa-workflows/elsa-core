@@ -1,4 +1,8 @@
 "use client";
+import { translate } from "@elsa-workflows/react-studio-sdk/localization";
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { IconButton } from "@elsa-workflows/react-studio-ui/icon-button";
 
@@ -42,6 +46,7 @@ const FROM_PARAM = "from";
 const AUTOSAVE_DELAY_MS = 2000;
 
 export function WorkflowDefinitionEditorPage({ params }: { params: RouteParams }) {
+  const _t = useTranslation();
   const url = useUrlState();
   const requestedVersion = url.get("version");
   const versionOptions = requestedVersion ? String(Number(requestedVersion)) : "Latest";
@@ -50,10 +55,10 @@ export function WorkflowDefinitionEditorPage({ params }: { params: RouteParams }
   const fromId = url.get(FROM_PARAM);
   const { registry, isLoading: registryLoading, error: registryError } = useActivityRegistry();
 
-  if (definition.isLoading) return <FullPageSpinner label="Loading workflow…" />;
+  if (definition.isLoading) return <FullPageSpinner label={_t("Loading workflow…")} />;
   if (!definition.error && definition.data?.root?.type === "Elsa.BpmnProcess") return <BpmnDefinitionView definition={definition.data} />;
-  if (registryLoading) return <FullPageSpinner label="Loading workflow…" />;
-  if (definition.error || registryError) return <ErrorAlert error={definition.error ?? registryError} title="Could not load the workflow" />;
+  if (registryLoading) return <FullPageSpinner label={_t("Loading workflow…")} />;
+  if (definition.error || registryError) return <ErrorAlert error={definition.error ?? registryError} title={_t("Could not load the workflow")} />;
   if (!definition.data) return null;
 
   // Keyed by definition + requested version, not by version id: saving a published workflow creates
@@ -92,6 +97,7 @@ function EditorWorkspace({
   /** The workflow the user navigated from (step link or call-context drill-in), for the back button. */
   fromDefinitionId?: string;
 }) {
+  const _t = useTranslation();
   const permissions = usePermissions();
   const client = useElsaClient();
   const router = useRouter();
@@ -139,7 +145,7 @@ function EditorWorkspace({
         const model = currentModel();
         const result = await mutations.save.mutateAsync({ model, publish: options?.publish ?? false });
         const saved = result.workflowDefinition;
-        if (result.validationErrors?.length) toast.warning("Saved with validation errors", { description: result.validationErrors.join("\n") });
+        if (result.validationErrors?.length) toast.warning(_t("Saved with validation errors"), { description: result.validationErrors.join("\n") });
         // Keep the user's graph; only adopt server-assigned identity/version fields.
         setDefinition((d) => ({ ...d, id: saved.id, version: saved.version, isLatest: saved.isLatest, isPublished: saved.isPublished, createdAt: saved.createdAt }));
         setSavedSnapshot(JSON.stringify(model));
@@ -153,7 +159,7 @@ function EditorWorkspace({
         setSaving(false);
       }
     },
-    [currentModel, mutations.save, readOnly, callGraph, definition.definitionId],
+    [currentModel, mutations.save, readOnly, callGraph, definition.definitionId, _t],
   );
 
   // Autosave after a pause in editing.
@@ -190,14 +196,14 @@ function EditorWorkspace({
 
   const publish = async () => {
     const saved = await save({ publish: true });
-    if (saved) toast.success(`Published version ${saved.version}`);
+    if (saved) toast.success(_t("Published version {{value0}}", { value0: saved.version }));
   };
 
   const unpublish = async () => {
     try {
       const result = await mutations.retract.mutateAsync(definition.definitionId);
       setDefinition((d) => ({ ...d, isPublished: result.workflowDefinition.isPublished }));
-      toast.success("Workflow unpublished");
+      toast.success(_t("Workflow unpublished"));
     } catch (e) {
       toast.error(describeError(e));
     }
@@ -219,14 +225,14 @@ function EditorWorkspace({
     try {
       const parsed = JSON.parse(await file.text()) as WorkflowDefinition;
       applyDefinition({ ...parsed, definitionId: definition.definitionId, id: definition.id, version: definition.version });
-      toast.success("Definition imported into the editor; save to persist.");
+      toast.success(_t("Definition imported into the editor; save to persist."));
     } catch (e) {
       toast.error(describeError(e));
     }
   };
 
   const saveAs = async () => {
-    const name = window.prompt("Name for the copy", `${definition.name ?? "Workflow"} (copy)`);
+    const name = window.prompt(translate("Name for the copy"), `${definition.name ?? "Workflow"} (copy)`);
     if (!name) return;
     try {
       const model = currentModel();
@@ -269,10 +275,10 @@ function EditorWorkspace({
       if (target.startsWith(pathname)) return;
       if (isDirty && !readOnly) {
         const choice = await choose({
-          title: "Unsaved changes",
-          description: "Save this workflow before opening the other one? Discarding reverts the editor to the last saved version.",
-          confirmLabel: "Save",
-          alternateLabel: "Discard",
+          title: _t("Unsaved changes"),
+          description: _t("Save this workflow before opening the other one? Discarding reverts the editor to the last saved version."),
+          confirmLabel: _t("Save"),
+          alternateLabel: _t("Discard"),
           alternateDestructive: true,
         });
         if (choice === "cancel") return;
@@ -288,7 +294,7 @@ function EditorWorkspace({
       }
       router.push(target);
     },
-    [pathname, showContext, isDirty, readOnly, choose, save, initial, store, callGraph, definition.definitionId, router],
+    [pathname, showContext, isDirty, readOnly, choose, save, initial, store, callGraph, definition.definitionId, router, _t],
   );
 
   const onOpenFromContext = useCallback((id: string) => void openDefinition(id), [openDefinition]);
@@ -300,14 +306,14 @@ function EditorWorkspace({
       if (!call?.targetId || call.targetId === definition.definitionId) return undefined;
       const known = callGraph.graph.nodes.get(call.targetId)?.name;
       const targetId = call.targetId;
-      return { label: `Open ${known ?? "target workflow"}`, onOpen: () => void openDefinition(targetId) };
+      return { label: _t("Open {{value0}}", { value0: known ?? "target workflow" }), onOpen: () => void openDefinition(targetId) };
     },
-    [definition.definitionId, callGraph, openDefinition],
+    [definition.definitionId, callGraph, openDefinition, _t],
   );
 
   const backTo = useMemo(
-    () => (fromDefinitionId ? { label: `Back to ${fromDefinition.data?.name ?? "previous workflow"}`, onClick: () => void openDefinition(fromDefinitionId, { rememberOrigin: false }) } : undefined),
-    [fromDefinitionId, fromDefinition.data?.name, openDefinition],
+    () => (fromDefinitionId ? { label: _t("Back to {{value0}}", { value0: fromDefinition.data?.name ?? "previous workflow" }), onClick: () => void openDefinition(fromDefinitionId, { rememberOrigin: false }) } : undefined),
+    [fromDefinitionId, fromDefinition.data?.name, openDefinition, _t],
   );
   const callContext = useCallContext({
     enabled: showContext && view === "designer",
@@ -364,7 +370,7 @@ function EditorWorkspace({
                       decorations={showContext ? callContext.decorations : undefined}
                       toolbar={
                         <IconButton
-                          label={showContext ? "Hide call context" : "Show call context (callers & callees)"}
+                          label={showContext ? _t("Hide call context") : _t("Show call context (callers & callees)")}
                           onClick={() => patchView({ showContext: !showContext })}
                           className={showContext ? "bg-accent text-primary" : undefined}
                         >
@@ -411,6 +417,7 @@ function EditorChrome({
   registry: ReturnType<typeof useActivityRegistry>["registry"];
   dataFlow: ReturnType<typeof indexDataFlow>;
 }) {
+  useTranslation();
   // Rebuilt on every render on purpose: the shell only re-renders its own header, and the
   // page's element identity stays stable, so this cannot loop.
   const header = (

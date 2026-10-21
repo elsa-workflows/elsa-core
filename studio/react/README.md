@@ -44,7 +44,7 @@ hidden automatically when the connected backend does not have the matching featu
 
 ## Quick start
 
-**Prerequisites:** .NET SDK 10, Node.js 22.12 or newer, pnpm 10, and a running Elsa server with CORS open to the
+**Prerequisites:** .NET SDK 10, Node.js 22.13 or newer, pnpm 10, and a running Elsa server with CORS open to the
 studio's origin.
 
 ```bash
@@ -71,6 +71,7 @@ New to the project? Start with the [Getting started guide](docs/getting-started.
 | [BPMN interchange](docs/bpmn.md) | Import findings/refusals and export imported workflows. |
 | [Expressions](docs/expressions.md) | C# highlighting and server-backed workflow member completion. |
 | [Tenancy](docs/tenancy.md) | Claims, tenant selection and refreshing module state. |
+| [Localization](docs/localization.md) | Languages, account preferences and packaged module translations. |
 | [Parity audit](docs/parity.md) | Verified editor behavior, evidence boundaries and linked Preview gaps. |
 | [Activity settings](docs/activity-settings.md) | Commit, log persistence, resilience, task and version settings; instance retry history. |
 | [Designer](docs/designer.md) | Containers, the quick-add palette, data flow, call context, keyboard shortcuts. |

@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Loader2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
@@ -17,6 +19,7 @@ const DEFAULT_COLOR = "#3b82f6";
 const HEX_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
 export function LabelDialog({ open, onOpenChange, label }: { open: boolean; onOpenChange: (open: boolean) => void; label?: Label }) {
+  useTranslation();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -27,6 +30,7 @@ export function LabelDialog({ open, onOpenChange, label }: { open: boolean; onOp
 }
 
 function LabelForm({ label, close }: { label?: Label; close: () => void }) {
+  const _t = useTranslation();
   const isEdit = !!label;
   const [name, setName] = useState(label?.name ?? "");
   const [description, setDescription] = useState(label?.description ?? "");
@@ -41,10 +45,10 @@ function LabelForm({ label, close }: { label?: Label; close: () => void }) {
     try {
       if (label) {
         await update.mutateAsync({ id: label.id, ...body });
-        toast.success(`Label "${body.name}" updated`);
+        toast.success(_t("Label \"{{value0}}\" updated", { value0: body.name }));
       } else {
         await create.mutateAsync(body);
-        toast.success(`Label "${body.name}" created`);
+        toast.success(_t("Label \"{{value0}}\" created", { value0: body.name }));
       }
       close();
     } catch (err) {
@@ -55,17 +59,17 @@ function LabelForm({ label, close }: { label?: Label; close: () => void }) {
   return (
     <form onSubmit={submit} className="contents">
       <DialogHeader>
-        <DialogTitle>{isEdit ? `Edit label ${label.name}` : "Create label"}</DialogTitle>
-        <DialogDescription>Labels tag workflow definitions so they can be grouped and filtered.</DialogDescription>
+        <DialogTitle>{isEdit ? _t("Edit label {{value0}}", { value0: label.name }) : _t("Create label")}</DialogTitle>
+        <DialogDescription>{_t("Labels tag workflow definitions so they can be grouped and filtered.")}</DialogDescription>
       </DialogHeader>
       <div className="flex flex-col gap-4">
-        <Field label="Name" required htmlFor="label-name" hint="Names are unique, case-insensitively.">
+        <Field label={_t("Name")} required htmlFor="label-name" hint={_t("Names are unique, case-insensitively.")}>
           <Input id="label-name" value={name} onChange={(e) => setName(e.target.value)} required maxLength={255} autoComplete="off" />
         </Field>
-        <Field label="Description" htmlFor="label-description">
+        <Field label={_t("Description")} htmlFor="label-description">
           <Textarea id="label-description" value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
         </Field>
-        <Field label="Colour" htmlFor="label-color">
+        <Field label={_t("Colour")} htmlFor="label-color">
           <div className="flex items-center gap-2">
             <input
               id="label-color"
@@ -73,14 +77,14 @@ function LabelForm({ label, close }: { label?: Label; close: () => void }) {
               value={color}
               onChange={(e) => setColor(e.target.value)}
               className="size-8 cursor-pointer rounded-md border border-input bg-transparent p-0.5"
-              aria-label="Pick colour"
+              aria-label={_t("Pick colour")}
             />
             <Input
               value={color}
               onChange={(e) => setColor(e.target.value)}
               pattern="#[0-9a-fA-F]{6}"
               className="w-32 font-mono"
-              aria-label="Colour hex value"
+              aria-label={_t("Colour hex value")}
             />
             <LabelSwatch color={HEX_PATTERN.test(color) ? color : undefined} className="size-5" />
           </div>
@@ -88,11 +92,10 @@ function LabelForm({ label, close }: { label?: Label; close: () => void }) {
       </div>
       <DialogFooter>
         <Button type="button" variant="outline" onClick={close} disabled={pending}>
-          Cancel
-        </Button>
+          {_t("Cancel")}</Button>
         <Button type="submit" disabled={pending || !name.trim() || !HEX_PATTERN.test(color)}>
           {pending && <Loader2 className="animate-spin" />}
-          {isEdit ? "Save" : "Create"}
+          {isEdit ? _t("Save") : _t("Create")}
         </Button>
       </DialogFooter>
     </form>

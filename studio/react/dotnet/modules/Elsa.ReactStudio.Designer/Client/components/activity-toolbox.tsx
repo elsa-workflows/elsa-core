@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { useMemo, useState, type DragEvent } from "react";
 import { useReactFlow } from "@xyflow/react";
@@ -31,6 +33,7 @@ export function readActivityDragData(e: DragEvent): { typeName: string; version:
 
 /** Activity palette grouped by category; items can be dragged onto the canvas or clicked to add at the viewport centre. */
 export function ActivityToolbox({ className, onCollapse }: { className?: string; onCollapse?: () => void }) {
+  const _t = useTranslation();
   const { registry, store } = useDesigner();
   const [search, setSearch] = useState("");
   // Categories start collapsed so the toolbox reads as a short index; a search expands the matches.
@@ -70,18 +73,18 @@ export function ActivityToolbox({ className, onCollapse }: { className?: string;
   return (
     <div className={cn("flex h-full min-h-0 flex-col", className)}>
       <div className="flex items-center gap-1 p-2">
-        <Input placeholder="Search activities…" value={search} onChange={(e) => setSearch(e.target.value)} className="h-8 bg-background" />
+        <Input placeholder={_t("Search activities…")} value={search} onChange={(e) => setSearch(e.target.value)} className="h-8 bg-background" />
         {onCollapse && (
           <Tooltip>
-            <TooltipTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Hide toolbox" onClick={onCollapse} className="shrink-0 text-muted-foreground" />}>
+            <TooltipTrigger render={<Button variant="ghost" size="icon-sm" aria-label={_t("Hide toolbox")} onClick={onCollapse} className="shrink-0 text-muted-foreground" />}>
               <PanelLeftClose />
             </TooltipTrigger>
-            <TooltipContent>Hide toolbox</TooltipContent>
+            <TooltipContent>{_t("Hide toolbox")}</TooltipContent>
           </Tooltip>
         )}
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-1 pb-2">
-        {groups.length === 0 && <p className="px-2 py-4 text-xs text-muted-foreground">No activities match.</p>}
+        {groups.length === 0 && <p className="px-2 py-4 text-xs text-muted-foreground">{_t("No activities match.")}</p>}
         {groups.map(({ category, items }) => {
           const isCollapsed = !search && !expanded[category];
           return (
@@ -118,7 +121,7 @@ export function ActivityToolbox({ className, onCollapse }: { className?: string;
                       <TooltipContent side="right" className="max-w-xs">
                         <div className="font-medium">{d.displayName}</div>
                         {d.description && <div className="text-xs opacity-80">{d.description}</div>}
-                        <div className="mt-1 text-[10px] opacity-60">{d.typeName} v{d.version} · drag onto the canvas or double-click</div>
+                        <div className="mt-1 text-[10px] opacity-60">{d.typeName} {_t("v")}{d.version} {_t("· drag onto the canvas or double-click")}</div>
                       </TooltipContent>
                     </Tooltip>
                   );
@@ -127,7 +130,7 @@ export function ActivityToolbox({ className, onCollapse }: { className?: string;
           );
         })}
       </div>
-      <div className="border-t px-3 py-1.5 text-[11px] text-muted-foreground">Drag onto the canvas or double-click to add</div>
+      <div className="border-t px-3 py-1.5 text-[11px] text-muted-foreground">{_t("Drag onto the canvas or double-click to add")}</div>
     </div>
   );
 }

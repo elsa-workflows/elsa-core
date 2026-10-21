@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Alert, AlertDescription } from "@elsa-workflows/react-studio-ui/alert";
 import type { UiHintEditorProps } from "@elsa-workflows/react-studio-sdk/editor-types";
@@ -32,6 +34,7 @@ export function secretNameOf(value: unknown): string | undefined {
  * `SecretReference` shape `SecretExpressionHandler` expects on the server.
  */
 export function SecretPickerEditor({ descriptor, value, onChange, readOnly }: UiHintEditorProps) {
+  const _t = useTranslation();
   const options = readOptions(descriptor.options);
   const expression = value?.expression;
   const isSecretExpression = !expression || expression.type === SECRET_EXPRESSION_TYPE;
@@ -42,8 +45,7 @@ export function SecretPickerEditor({ descriptor, value, onChange, readOnly }: Ui
       {!isSecretExpression && (
         <Alert>
           <AlertDescription>
-            This input currently uses a {expression.type} expression. Picking a secret replaces it.
-          </AlertDescription>
+            {_t("This input currently uses a")}{" "}{expression.type} {_t("expression. Picking a secret replaces it.")}</AlertDescription>
         </Alert>
       )}
       <SecretPicker

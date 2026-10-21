@@ -1,4 +1,6 @@
 "use client";
+import { message, useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { format, isValid, parseISO } from "date-fns";
 import { CalendarClock, Plus, Trash2 } from "lucide-react";
@@ -14,18 +16,18 @@ type Column = TimestampFilter["column"];
 type Operator = TimestampFilter["operator"];
 
 const COLUMNS: SelectOption<Column>[] = [
-  { value: "CreatedAt", label: "Created" },
-  { value: "UpdatedAt", label: "Updated" },
-  { value: "FinishedAt", label: "Finished" },
+  { value: "CreatedAt", label: message("Created") },
+  { value: "UpdatedAt", label: message("Updated") },
+  { value: "FinishedAt", label: message("Finished") },
 ];
 
 const OPERATORS: SelectOption<Operator>[] = [
-  { value: "Is", label: "is" },
-  { value: "IsNot", label: "is not" },
-  { value: "LessThan", label: "before" },
-  { value: "LessThanOrEqual", label: "on or before" },
-  { value: "GreaterThan", label: "after" },
-  { value: "GreaterThanOrEqual", label: "on or after" },
+  { value: "Is", label: message("is") },
+  { value: "IsNot", label: message("is not") },
+  { value: "LessThan", label: message("before") },
+  { value: "LessThanOrEqual", label: message("on or before") },
+  { value: "GreaterThan", label: message("after") },
+  { value: "GreaterThanOrEqual", label: message("on or after") },
 ];
 
 interface DraftRow {
@@ -53,6 +55,7 @@ const newRow = (): DraftRow => ({ column: "CreatedAt", operator: "GreaterThanOrE
 
 /** Repeatable column / operator / date-time rows that become `timestampFilters` on Apply. */
 export function DateFilterPopover({ value, onChange }: { value: TimestampFilter[]; onChange: (next: TimestampFilter[]) => void }) {
+  const _t = useTranslation();
   const [open, setOpen] = useState(false);
   const [rows, setRows] = useState<DraftRow[]>(() => (value.length ? toDraft(value) : [newRow()]));
 
@@ -68,8 +71,7 @@ export function DateFilterPopover({ value, onChange }: { value: TimestampFilter[
     >
       <PopoverTrigger render={<Button variant="outline" size="sm" className="gap-1.5 font-normal" />}>
         <CalendarClock className="size-3.5" />
-        Dates
-        {value.length > 0 && (
+        {_t("Dates")}{value.length > 0 && (
           <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
             {value.length}
           </Badge>
@@ -79,21 +81,20 @@ export function DateFilterPopover({ value, onChange }: { value: TimestampFilter[
         <div className="flex flex-col gap-2">
           {rows.map((row, i) => (
             <div key={i} className="grid grid-cols-[7rem_8rem_1fr_auto] items-center gap-1.5">
-              <SimpleSelect size="sm" value={row.column} options={COLUMNS} onChange={(v) => v && update(i, { column: v })} />
-              <SimpleSelect size="sm" value={row.operator} options={OPERATORS} onChange={(v) => v && update(i, { operator: v })} />
+              <SimpleSelect size="sm" value={row.column} options={COLUMNS.map(option => ({ ...option, label: _t(option.label) }))} onChange={(v) => v && update(i, { column: v })} />
+              <SimpleSelect size="sm" value={row.operator} options={OPERATORS.map(option => ({ ...option, label: _t(option.label) }))} onChange={(v) => v && update(i, { operator: v })} />
               <Input type="datetime-local" className="h-7 text-xs" value={row.local} onChange={(e) => update(i, { local: e.target.value })} />
-              <Button variant="ghost" size="icon-sm" aria-label="Remove" onClick={() => setRows((r) => r.filter((_, j) => j !== i))}>
+              <Button variant="ghost" size="icon-sm" aria-label={_t("Remove")} onClick={() => setRows((r) => r.filter((_, j) => j !== i))}>
                 <Trash2 />
               </Button>
             </div>
           ))}
-          {rows.length === 0 && <p className="text-xs text-muted-foreground">No date filters.</p>}
+          {rows.length === 0 && <p className="text-xs text-muted-foreground">{_t("No date filters.")}</p>}
         </div>
         <div className="flex items-center justify-between gap-2 pt-1">
           <Button variant="ghost" size="sm" onClick={() => setRows((r) => [...r, newRow()])}>
             <Plus className="size-3.5" />
-            Add
-          </Button>
+            {_t("Add")}</Button>
           <div className="flex items-center gap-1.5">
             <Button
               variant="ghost"
@@ -104,8 +105,7 @@ export function DateFilterPopover({ value, onChange }: { value: TimestampFilter[
                 setOpen(false);
               }}
             >
-              Clear
-            </Button>
+              {_t("Clear")}</Button>
             <Button
               size="sm"
               onClick={() => {
@@ -113,8 +113,7 @@ export function DateFilterPopover({ value, onChange }: { value: TimestampFilter[
                 setOpen(false);
               }}
             >
-              Apply
-            </Button>
+              {_t("Apply")}</Button>
           </div>
         </div>
       </PopoverContent>

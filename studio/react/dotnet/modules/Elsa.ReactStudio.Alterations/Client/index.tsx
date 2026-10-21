@@ -1,3 +1,5 @@
+
+import { message } from "@elsa-workflows/react-studio-sdk/localization";
 import { Wrench } from "lucide-react";
 import { defineModule, NavGroups } from "@elsa-workflows/react-studio-sdk";
 import { Resources, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
@@ -17,17 +19,17 @@ const view = { resource: Resources.alterations, verb: Verbs.view };
 export const alterationsModule = defineModule({
   id: "alterations",
   name: "Alterations",
-  description: "Alter running workflow instances and follow alteration plans.",
+  description: message("Alter running workflow instances and follow alteration plans."),
   requiresServerFeatures: ["Elsa.Alterations"],
   Provider: AlterationDialogHost,
   routes: [
-    { path: AlterationRoutes.plans, component: AlterationPlansPage, title: "Alteration plans", permissions: [view] },
-    { path: AlterationRoutes.plan, component: AlterationPlanPage, title: "Alteration plan", permissions: [view] },
+    { path: AlterationRoutes.plans, component: AlterationPlansPage, title: message("Alteration plans"), permissions: [view] },
+    { path: AlterationRoutes.plan, component: AlterationPlanPage, title: message("Alteration plan"), permissions: [view] },
   ],
   nav: [
     {
       id: "alterations",
-      label: "Alterations",
+      label: message("Alterations"),
       href: AlterationRoutes.plans,
       icon: Wrench,
       group: NavGroups.general.id,
@@ -39,7 +41,7 @@ export const alterationsModule = defineModule({
     instanceRowActions: [
       {
         id: "alterations:alter",
-        label: "Alter…",
+        label: message("Alter…"),
         icon: Wrench,
         permissions: [execute],
         isVisible: (instance) => instance.status === "Running",
@@ -57,7 +59,7 @@ export const alterationsModule = defineModule({
     instanceViewerActions: [
       {
         id: "alterations:alter",
-        label: "Alter",
+        label: message("Alter"),
         icon: Wrench,
         permissions: [execute],
         isVisible: (instance) => instance.status === "Running",

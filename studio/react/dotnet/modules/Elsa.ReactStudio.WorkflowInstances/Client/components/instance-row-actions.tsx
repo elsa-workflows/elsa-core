@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Ban, Eye, MoreHorizontal, Trash2 } from "lucide-react";
 import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
@@ -28,6 +30,7 @@ export function InstanceRowActions({
   onCancel: (instance: WorkflowInstanceSummary) => void;
   onDelete: (instance: WorkflowInstanceSummary) => void;
 }) {
+  const _t = useTranslation();
   const permissions = usePermissions();
   const canCancel = permissions.has(Resources.workflowInstances, Verbs.cancel);
   const canDelete = permissions.has(Resources.workflowInstances, Verbs.delete);
@@ -37,19 +40,17 @@ export function InstanceRowActions({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Actions" onClick={(e) => e.stopPropagation()} />}>
+      <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label={_t("Actions")} onClick={(e) => e.stopPropagation()} />}>
         <MoreHorizontal />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44" onClick={(e) => e.stopPropagation()}>
         <DropdownMenuItem render={<Link href={href(WorkflowInstanceRoutes.view, { id: instance.id })} />}>
           <Eye />
-          View
-        </DropdownMenuItem>
+          {_t("View")}</DropdownMenuItem>
         {canCancel && (
           <DropdownMenuItem disabled={!!instance.finishedAt} onClick={() => onCancel(instance)}>
             <Ban />
-            Cancel
-          </DropdownMenuItem>
+            {_t("Cancel")}</DropdownMenuItem>
         )}
         {extensions.length > 0 && <DropdownMenuSeparator />}
         {extensions.map(({ id, label, icon: Icon, onSelect }) => (
@@ -63,8 +64,7 @@ export function InstanceRowActions({
             <DropdownMenuSeparator />
             <DropdownMenuItem variant="destructive" onClick={() => onDelete(instance)}>
               <Trash2 />
-              Delete
-            </DropdownMenuItem>
+              {_t("Delete")}</DropdownMenuItem>
           </>
         )}
       </DropdownMenuContent>

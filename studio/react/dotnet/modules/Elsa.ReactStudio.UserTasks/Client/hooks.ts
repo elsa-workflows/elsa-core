@@ -1,4 +1,6 @@
 "use client";
+import { translate } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { nanoid } from "nanoid";
@@ -132,7 +134,7 @@ export function useUserTaskOperation(onConflict?: () => void) {
         case "retryResolution":
           return api.retryResolution(v.taskId, base);
         case "assign":
-          if (!v.assignee) throw new Error("An assignee is required.");
+          if (!v.assignee) throw new Error(translate("An assignee is required."));
           return api.assign(v.taskId, { ...base, assignee: v.assignee } satisfies AssignUserTaskRequest);
         case "schedule":
           return api.schedule(v.taskId, { ...base, priority: v.priority, dueAt: v.dueAt } satisfies ScheduleUserTaskRequest);
@@ -148,7 +150,7 @@ export function useUserTaskOperation(onConflict?: () => void) {
     },
     onError: (error, v) => {
       if (isConflict(error)) {
-        toast.warning(`${describeError(error)} The task has been reloaded.`);
+        toast.warning(translate("{{value0}} The task has been reloaded.", { value0: describeError(error) }));
         queryClient.invalidateQueries({ queryKey: [...userTasksKey(scope), "task", v.taskId] });
         queryClient.invalidateQueries({ queryKey: [...userTasksKey(scope), "list"] });
         onConflict?.();

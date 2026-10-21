@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { SimpleSelect } from "@elsa-workflows/react-studio-ui/common/simple-select";
 import type { ActivityInput } from "@elsa-workflows/react-studio-api-client/types/activities";
@@ -28,6 +30,7 @@ export function BindingPicker({
   context?: UiHintContext;
   readOnly?: boolean;
 }) {
+  const _t = useTranslation();
   const stored = (value?.expression?.value ?? undefined) as Record<string, unknown> | undefined;
 
   if (syntax === VARIABLE) {
@@ -38,8 +41,8 @@ export function BindingPicker({
         value={selectedId}
         allowEmpty
         disabled={readOnly}
-        placeholder={variables.length ? "Select a variable…" : "No variables declared"}
-        options={variables.map((v) => ({ value: v.id, label: `${v.name} (${v.typeName})` }))}
+        placeholder={variables.length ? _t("Select a variable…") : _t("No variables declared")}
+        options={variables.map((v) => ({ value: v.id, label: _t("{{value0}} ({{value1}})", { value0: v.name, value1: v.typeName }) }))}
         onChange={(id) => {
           const variable = variables.find((v) => v.id === id);
           if (!variable) return onChange(undefined);
@@ -58,7 +61,7 @@ export function BindingPicker({
       value={selectedName}
       allowEmpty
       disabled={readOnly}
-      placeholder={inputs.length ? "Select a workflow input…" : "No workflow inputs declared"}
+      placeholder={inputs.length ? _t("Select a workflow input…") : _t("No workflow inputs declared")}
       options={inputs.map((i) => ({ value: i.name, label: i.name }))}
       onChange={(name) => {
         if (!name) return onChange(undefined);

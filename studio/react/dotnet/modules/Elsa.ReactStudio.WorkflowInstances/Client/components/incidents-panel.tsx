@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { AlertTriangle, ChevronRight } from "lucide-react";
 import { EmptyState } from "@elsa-workflows/react-studio-ui/common/empty-state";
@@ -11,7 +13,8 @@ function stackOf(incident: WorkflowIncident) {
 }
 
 export function IncidentsPanel({ incidents, onSelectActivity }: { incidents: WorkflowIncident[]; onSelectActivity?: (activityId: string) => void }) {
-  if (incidents.length === 0) return <EmptyState title="No incidents" description="This instance has not faulted." className="m-3 p-6" />;
+  const _t = useTranslation();
+  if (incidents.length === 0) return <EmptyState title={_t("No incidents")} description={_t("This instance has not faulted.")} className="m-3 p-6" />;
   return (
     <ul className="flex flex-col gap-2 p-3">
       {incidents.map((incident, i) => {
@@ -40,8 +43,7 @@ export function IncidentsPanel({ incidents, onSelectActivity }: { incidents: Wor
                   <Collapsible className="mt-2">
                     <CollapsibleTrigger className="group flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
                       <ChevronRight className="size-3 transition-transform group-data-panel-open:rotate-90" />
-                      Stack trace
-                    </CollapsibleTrigger>
+                      {_t("Stack trace")}</CollapsibleTrigger>
                     <CollapsibleContent>
                       <pre className="mt-1 max-h-64 overflow-auto whitespace-pre-wrap rounded bg-muted/60 p-2 font-mono text-[11px]">{stack}</pre>
                     </CollapsibleContent>

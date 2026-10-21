@@ -1,3 +1,5 @@
+
+import { translate } from "@elsa-workflows/react-studio-sdk/localization";
 import { Home, Settings } from "lucide-react";
 import { NavGroups, type NavItem, type SettingsSection } from "@elsa-workflows/react-studio-sdk";
 
@@ -15,12 +17,12 @@ export const SettingsNavId = "settings";
 export function settingsSectionNav(section: SettingsSection): NavItem {
   return {
     id: SettingsNavId,
-    label: "Settings",
+    label: translate("Settings"),
     icon: Settings,
     group: NavGroups.administration.id,
     order: 900,
     children: [
-      { id: "settings-overview", label: "Overview", href: SettingsRoutes.overview, icon: Home, order: Number.MIN_SAFE_INTEGER, match: "exact" },
+      { id: "settings-overview", label: translate("Overview"), href: SettingsRoutes.overview, icon: Home, order: Number.MIN_SAFE_INTEGER, match: "exact" },
       {
         id: `settings-${section.id}`,
         label: section.label,

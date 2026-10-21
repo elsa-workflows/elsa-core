@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { ArrowRight, Settings, SlidersHorizontal } from "lucide-react";
 import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
@@ -44,15 +46,16 @@ export function useSettingsSections(): SettingsSection[] {
 }
 
 export function SettingsPage() {
+  const _t = useTranslation();
   const sections = useSettingsSections();
   return (
     <div className="flex flex-col gap-4">
-      <PageHeader title="Settings" description="Configure installed Elsa Studio capabilities. Each section owns its data and authorization rules." />
+      <PageHeader title={_t("Settings")} description={_t("Configure installed Elsa Studio capabilities. Each section owns its data and authorization rules.")} />
       {sections.length === 0 ? (
         <EmptyState
           icon={SlidersHorizontal}
-          title="No settings sections are available to your account"
-          description="Modules add sections here through the settingsSections extension. Enable such a module in the studio configuration, or ask an administrator for access."
+          title={_t("No settings sections are available to your account")}
+          description={_t("Modules add sections here through the settingsSections extension. Enable such a module in the studio configuration, or ask an administrator for access.")}
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -72,7 +75,7 @@ export function SettingsPage() {
                 <CardContent className="flex-1" />
                 <CardFooter>
                   <Button variant="outline" size="sm" nativeButton={false} render={<Link href={section.href} />}>
-                    Open {section.label}
+                    {_t("Open")}{" "}{section.label}
                     <ArrowRight data-icon="inline-end" />
                   </Button>
                 </CardFooter>

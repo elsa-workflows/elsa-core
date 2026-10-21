@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
@@ -16,6 +18,7 @@ import { LabelDialog } from "../components/label-dialog";
 import { LabelSwatch } from "../components/label-badge";
 
 export function LabelsPage() {
+  const _t = useTranslation();
   const config = useStudioConfig();
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(config.ui.defaultPageSize);
@@ -29,15 +32,15 @@ export function LabelsPage() {
 
   const onDelete = async (label: Label) => {
     const ok = await confirm({
-      title: `Delete label "${label.name}"?`,
-      description: "The label is removed from every workflow definition it is applied to.",
-      confirmLabel: "Delete",
+      title: _t("Delete label \"{{value0}}\"?", { value0: label.name }),
+      description: _t("The label is removed from every workflow definition it is applied to."),
+      confirmLabel: _t("Delete"),
       destructive: true,
     });
     if (!ok) return;
     try {
       await remove.mutateAsync(label.id);
-      toast.success(`Label "${label.name}" deleted`);
+      toast.success(_t("Label \"{{value0}}\" deleted", { value0: label.name }));
     } catch (err) {
       toast.error(describeError(err));
     }
@@ -45,8 +48,8 @@ export function LabelsPage() {
 
   const columns: DataTableColumn<Label>[] = [
     { id: "color", header: "", width: "2.5rem", cell: (l) => <LabelSwatch color={l.color} className="size-4" /> },
-    { id: "name", header: "Name", cell: (l) => <span className="font-medium">{l.name}</span> },
-    { id: "description", header: "Description", cell: (l) => l.description || <span className="text-muted-foreground">–</span> },
+    { id: "name", header: _t("Name"), cell: (l) => <span className="font-medium">{l.name}</span> },
+    { id: "description", header: _t("Description"), cell: (l) => l.description || <span className="text-muted-foreground">–</span> },
     {
       id: "actions",
       header: "",
@@ -55,12 +58,12 @@ export function LabelsPage() {
       cell: (l) => (
         <div className="flex justify-end gap-1">
           {canUpdate && (
-            <Button variant="ghost" size="icon-sm" aria-label={`Edit ${l.name}`} onClick={() => setDialog({ open: true, label: l })}>
+            <Button variant="ghost" size="icon-sm" aria-label={_t("Edit {{value0}}", { value0: l.name })} onClick={() => setDialog({ open: true, label: l })}>
               <Pencil />
             </Button>
           )}
           {canDelete && (
-            <Button variant="ghost" size="icon-sm" aria-label={`Delete ${l.name}`} onClick={() => void onDelete(l)}>
+            <Button variant="ghost" size="icon-sm" aria-label={_t("Delete {{value0}}", { value0: l.name })} onClick={() => void onDelete(l)}>
               <Trash2 />
             </Button>
           )}
@@ -72,24 +75,23 @@ export function LabelsPage() {
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
-        title="Labels"
-        description="Tags you can apply to workflow definitions."
+        title={_t("Labels")}
+        description={_t("Tags you can apply to workflow definitions.")}
         actions={
           canCreate && (
             <Button onClick={() => setDialog({ open: true })}>
               <Plus />
-              Create label
-            </Button>
+              {_t("Create label")}</Button>
           )
         }
       />
-      <ErrorAlert error={labels.error} title="Labels could not be loaded" />
+      <ErrorAlert error={labels.error} title={_t("Labels could not be loaded")} />
       <DataTable
         columns={columns}
         rows={labels.data?.items ?? []}
         rowKey={(l) => l.id}
         isLoading={labels.isLoading}
-        emptyMessage="No labels yet."
+        emptyMessage={_t("No labels yet.")}
         paging={{
           page,
           pageSize,

@@ -1,4 +1,6 @@
 "use client";
+import { message, useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Braces, Code2 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -12,7 +14,7 @@ import { expressionText, isBindingSyntax, languageForSyntax, LITERAL, makeInput,
 import { BindingPicker } from "./editors/binding-picker";
 import type { UiHintContext } from "./types";
 
-const SYNTAX_LABELS: Record<string, string> = { Literal: "Literal", JavaScript: "JavaScript", CSharp: "C#", Python: "Python", Liquid: "Liquid", Object: "JSON", Variable: "Variable", Input: "Workflow input" };
+const SYNTAX_LABELS: Record<string, string> = { Literal: message("Literal"), JavaScript: "JavaScript", CSharp: "C#", Python: "Python", Liquid: "Liquid", Object: "JSON", Variable: message("Variable"), Input: message("Workflow input") };
 
 /**
  * Wraps a literal control with a syntax switcher. In `Literal` mode the child control edits the raw
@@ -39,6 +41,7 @@ export function ExpressionEditor({
   literalSyntax?: typeof LITERAL | typeof OBJECT;
   context?: UiHintContext;
 }) {
+  const _t = useTranslation();
   const current = syntaxOf(value, descriptor);
   const language = languageForSyntax(current);
   const isLiteral = current === LITERAL || current === OBJECT || current === "Json";
@@ -75,23 +78,23 @@ export function ExpressionEditor({
             readOnly={readOnly}
             context={context}
             propertyName={descriptor.name}
-            placeholder={`${SYNTAX_LABELS[current] ?? current} expression`}
+            placeholder={_t("{{value0}} expression", { value0: _t(SYNTAX_LABELS[current] ?? current) })}
           />
         )}
       </div>
       {options.length > 1 && (
         <DropdownMenu>
           <Tooltip>
-            <TooltipTrigger render={<DropdownMenuTrigger render={<Button variant="outline" size="icon-sm" disabled={readOnly} aria-label="Syntax" />} />}>
-              {isBinding ? <Braces /> : isLiteral ? <span className="text-[10px] font-semibold">{literalSyntax === OBJECT ? "{}" : "Aa"}</span> : <Code2 />}
+            <TooltipTrigger render={<DropdownMenuTrigger render={<Button variant="outline" size="icon-sm" disabled={readOnly} aria-label={_t("Syntax")} />} />}>
+              {isBinding ? <Braces /> : isLiteral ? <span className="text-[10px] font-semibold">{literalSyntax === OBJECT ? "{}" : _t("Aa")}</span> : <Code2 />}
             </TooltipTrigger>
-            <TooltipContent>Syntax: {SYNTAX_LABELS[current] ?? current}</TooltipContent>
+            <TooltipContent>{_t("Syntax:")}{" "}{_t(SYNTAX_LABELS[current] ?? current)}</TooltipContent>
           </Tooltip>
           <DropdownMenuContent align="end">
             <DropdownMenuRadioGroup value={isLiteral ? literalSyntax : current} onValueChange={(v) => setSyntax(String(v))}>
               {options.map((s) => (
                 <DropdownMenuRadioItem key={s} value={s}>
-                  {SYNTAX_LABELS[s] ?? s}
+                  {_t(SYNTAX_LABELS[s] ?? s)}
                 </DropdownMenuRadioItem>
               ))}
             </DropdownMenuRadioGroup>

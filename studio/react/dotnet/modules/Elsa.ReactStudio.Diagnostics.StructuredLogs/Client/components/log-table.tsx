@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { ChevronDown, ChevronRight, Loader2 } from "lucide-react";
 import { Fragment, useState } from "react";
@@ -15,6 +17,7 @@ function entries(map: Record<string, string | null> | null | undefined) {
 }
 
 function MapBlock({ title, map }: { title: string; map: Record<string, string | null> | null | undefined }) {
+  useTranslation();
   const rows = entries(map);
   if (rows.length === 0) return null;
   return (
@@ -26,18 +29,20 @@ function MapBlock({ title, map }: { title: string; map: Record<string, string | 
 }
 
 function Id({ label, value }: { label: string; value: string | null | undefined }) {
+  const _t = useTranslation();
   if (!value) return null;
   return (
     <span className="inline-flex items-center gap-1 text-xs">
       <span className="text-muted-foreground">{label}</span>
       <span className="font-mono">{value}</span>
-      <CopyButton value={value} label={`Copy ${label}`} />
+      <CopyButton value={value} label={_t("Copy {{value0}}", { value0: label })} />
     </span>
   );
 }
 
 /** Table of structured log entries with an expandable detail row per entry. */
 export function StructuredLogTable({ items, isLoading, className }: { items: StructuredLogEvent[]; isLoading?: boolean; className?: string }) {
+  const _t = useTranslation();
   const [open, setOpen] = useState<Set<string>>(() => new Set());
   const toggle = (id: string) =>
     setOpen((s) => {
@@ -53,10 +58,10 @@ export function StructuredLogTable({ items, isLoading, className }: { items: Str
         <TableHeader>
           <TableRow>
             <TableHead className="w-6" />
-            <TableHead className="w-40">Timestamp</TableHead>
-            <TableHead className="w-14">Level</TableHead>
-            <TableHead className="w-64">Source</TableHead>
-            <TableHead>Message</TableHead>
+            <TableHead className="w-40">{_t("Timestamp")}</TableHead>
+            <TableHead className="w-14">{_t("Level")}</TableHead>
+            <TableHead className="w-64">{_t("Source")}</TableHead>
+            <TableHead>{_t("Message")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -64,14 +69,12 @@ export function StructuredLogTable({ items, isLoading, className }: { items: Str
             <TableRow>
               <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                 <Loader2 className="inline size-4 animate-spin mr-2" />
-                Loading
-              </TableCell>
+                {_t("Loading")}</TableCell>
             </TableRow>
           ) : items.length === 0 ? (
             <TableRow>
               <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                No log entries match the current filters.
-              </TableCell>
+                {_t("No log entries match the current filters.")}</TableCell>
             </TableRow>
           ) : (
             items.map((e) => {
@@ -101,27 +104,27 @@ export function StructuredLogTable({ items, isLoading, className }: { items: Str
                       <TableCell colSpan={5} className="bg-muted/30 p-4">
                         <div className="flex flex-col gap-4 text-sm">
                           <div className="flex flex-wrap gap-x-5 gap-y-1">
-                            <Id label="trace" value={e.traceId} />
-                            <Id label="span" value={e.spanId} />
-                            <Id label="correlation" value={e.correlationId} />
-                            <Id label="instance" value={e.workflowInstanceId} />
-                            <Id label="definition" value={e.workflowDefinitionId} />
-                            <Id label="tenant" value={e.tenantId} />
-                            <Id label="source" value={e.sourceId} />
-                            {typeof e.eventId === "number" && e.eventId !== 0 && <Id label="event id" value={String(e.eventId)} />}
-                            <Id label="seq" value={String(e.sequence)} />
+                            <Id label={_t("trace")} value={e.traceId} />
+                            <Id label={_t("span")} value={e.spanId} />
+                            <Id label={_t("correlation")} value={e.correlationId} />
+                            <Id label={_t("instance")} value={e.workflowInstanceId} />
+                            <Id label={_t("definition")} value={e.workflowDefinitionId} />
+                            <Id label={_t("tenant")} value={e.tenantId} />
+                            <Id label={_t("source")} value={e.sourceId} />
+                            {typeof e.eventId === "number" && e.eventId !== 0 && <Id label={_t("event id")} value={String(e.eventId)} />}
+                            <Id label={_t("seq")} value={String(e.sequence)} />
                           </div>
                           {e.messageTemplate && e.messageTemplate !== e.message && (
                             <div className="flex flex-col gap-1">
-                              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Template</h4>
+                              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{_t("Template")}</h4>
                               <code className="font-mono text-xs break-all">{e.messageTemplate}</code>
                             </div>
                           )}
-                          <MapBlock title="Properties" map={e.properties} />
-                          <MapBlock title="Scopes" map={e.scopes} />
+                          <MapBlock title={_t("Properties")} map={e.properties} />
+                          <MapBlock title={_t("Scopes")} map={e.scopes} />
                           {e.exception && (
                             <div className="flex flex-col gap-1">
-                              <h4 className="text-xs font-semibold text-destructive uppercase tracking-wide">Exception</h4>
+                              <h4 className="text-xs font-semibold text-destructive uppercase tracking-wide">{_t("Exception")}</h4>
                               <div className="text-xs">
                                 <span className="font-mono">{e.exception.type}</span>: {e.exception.message}
                               </div>

@@ -1,3 +1,5 @@
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
 import type { ReactNode } from "react";
 import { cn } from "../utils.js";
 
@@ -17,6 +19,7 @@ export function PageHeader({
   className?: string;
   children?: ReactNode;
 }) {
+  useTranslation();
   return (
     <div className={cn("flex flex-col gap-3 pb-4", className)}>
       <div className="flex flex-wrap items-start justify-between gap-3">

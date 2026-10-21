@@ -1,3 +1,5 @@
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
 import type { ReactNode } from "react";
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@elsa-workflows/react-studio-ui/card";
 import { Skeleton } from "@elsa-workflows/react-studio-ui/skeleton";
@@ -37,6 +39,7 @@ export function WidgetCard({
   scroll?: boolean;
   children?: ReactNode;
 }) {
+  const _t = useTranslation();
   return (
     <Card className={cn("h-full node-card", className)}>
       <CardHeader className="border-b border-dashed pb-3">
@@ -48,15 +51,16 @@ export function WidgetCard({
         {action && <CardAction>{action}</CardAction>}
       </CardHeader>
       <CardContent className={cn("min-h-0 flex-1", scroll && "overflow-y-auto overscroll-contain", contentClassName)}>
-        {error ? <ErrorAlert error={error} title="Could not load" /> : isLoading ? (skeleton ?? <LinesSkeleton />) : children}
+        {error ? <ErrorAlert error={error} title={_t("Could not load")} /> : isLoading ? (skeleton ?? <LinesSkeleton />) : children}
       </CardContent>
     </Card>
   );
 }
 
 export function LinesSkeleton({ lines = 3 }: { lines?: number }) {
+  const _t = useTranslation();
   return (
-    <div className="flex flex-col gap-2.5" aria-busy="true" aria-label="Loading">
+    <div className="flex flex-col gap-2.5" aria-busy="true" aria-label={_t("Loading")}>
       {Array.from({ length: lines }, (_, i) => (
         <Skeleton key={i} className="h-4" style={{ width: `${88 - i * 14}%` }} />
       ))}
@@ -66,10 +70,12 @@ export function LinesSkeleton({ lines = 3 }: { lines?: number }) {
 
 /** Short, muted note explaining what the fallback source cannot provide. */
 export function SourceNote({ capability, children }: { capability: DashboardCapability | undefined; children: ReactNode }) {
+  useTranslation();
   if (capability !== "fallback") return null;
   return <p className="text-xs text-muted-foreground">{children}</p>;
 }
 
 export function WidgetEmpty({ children }: { children: ReactNode }) {
+  useTranslation();
   return <p className="py-6 text-center text-sm text-muted-foreground">{children}</p>;
 }

@@ -1,9 +1,12 @@
 "use client"
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import * as React from "react"
 import { cn } from "cn"
 
 function Table({ className, ...props }: React.ComponentProps<"table">) {
+  useTranslation();
   return (
     <div
       data-slot="table-container"
@@ -19,6 +22,7 @@ function Table({ className, ...props }: React.ComponentProps<"table">) {
 }
 
 function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
+  useTranslation();
   return (
     <thead
       data-slot="table-header"
@@ -29,6 +33,7 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
 }
 
 function TableBody({ className, ...props }: React.ComponentProps<"tbody">) {
+  useTranslation();
   return (
     <tbody
       data-slot="table-body"
@@ -39,6 +44,7 @@ function TableBody({ className, ...props }: React.ComponentProps<"tbody">) {
 }
 
 function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
+  useTranslation();
   return (
     <tfoot
       data-slot="table-footer"
@@ -52,6 +58,7 @@ function TableFooter({ className, ...props }: React.ComponentProps<"tfoot">) {
 }
 
 function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
+  useTranslation();
   return (
     <tr
       data-slot="table-row"
@@ -65,6 +72,7 @@ function TableRow({ className, ...props }: React.ComponentProps<"tr">) {
 }
 
 function TableHead({ className, ...props }: React.ComponentProps<"th">) {
+  useTranslation();
   return (
     <th
       data-slot="table-head"
@@ -78,6 +86,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
 }
 
 function TableCell({ className, ...props }: React.ComponentProps<"td">) {
+  useTranslation();
   return (
     <td
       data-slot="table-cell"
@@ -94,6 +103,7 @@ function TableCaption({
   className,
   ...props
 }: React.ComponentProps<"caption">) {
+  useTranslation();
   return (
     <caption
       data-slot="table-caption"

@@ -1,10 +1,13 @@
 "use client"
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Radio as RadioPrimitive } from "@base-ui/react/radio"
 import { RadioGroup as RadioGroupPrimitive } from "@base-ui/react/radio-group"
 import { cn } from "cn"
 
 function RadioGroup({ className, ...props }: RadioGroupPrimitive.Props) {
+  useTranslation();
   return (
     <RadioGroupPrimitive
       data-slot="radio-group"
@@ -15,6 +18,7 @@ function RadioGroup({ className, ...props }: RadioGroupPrimitive.Props) {
 }
 
 function RadioGroupItem({ className, ...props }: RadioPrimitive.Root.Props) {
+  useTranslation();
   return (
     <RadioPrimitive.Root
       data-slot="radio-group-item"

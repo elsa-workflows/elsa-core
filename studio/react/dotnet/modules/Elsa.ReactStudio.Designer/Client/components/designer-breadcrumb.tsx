@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Fragment } from "react";
 import { ChevronRight, Home } from "lucide-react";
@@ -10,6 +12,7 @@ import { childActivities, listSlots } from "@elsa-workflows/react-studio-sdk/des
 
 /** Shows the nesting path (root → If1: Then → …) and lets the user jump back up. */
 export function DesignerBreadcrumb() {
+  const _t = useTranslation();
   const { registry } = useDesigner();
   const root = useDesignerState((s) => s.root);
   const path = useDesignerState((s) => s.path);
@@ -28,10 +31,9 @@ export function DesignerBreadcrumb() {
 
   return (
     <div className="flex items-center gap-0.5 rounded-lg border bg-card/95 px-1 py-0.5 text-xs shadow-sm backdrop-blur">
-      <Button variant="ghost" size="xs" onClick={() => navigateTo(0)} disabled={path.length === 0} aria-label="Root">
+      <Button variant="ghost" size="xs" onClick={() => navigateTo(0)} disabled={path.length === 0} aria-label={_t("Root")}>
         <Home className="size-3" />
-        Root
-      </Button>
+        {_t("Root")}</Button>
       {crumbs.map((c) => (
         <Fragment key={c.depth}>
           <ChevronRight className="size-3 text-muted-foreground" />

@@ -1,3 +1,7 @@
+
+import { translate } from "./localization.js";
+
+import { useTranslation } from "./localization.js";
 import { createContext, useContext, type ComponentType, type ReactNode } from "react";
 import type { CanvasDecorations } from "./designer/decorations.js";
 import type { ActivityInput, Variable } from "@elsa-workflows/react-studio-api-client/types/activities";
@@ -52,17 +56,25 @@ export interface StudioComponentProps {
 export type StudioComponentMap = { [K in keyof StudioComponentProps]?: ComponentType<StudioComponentProps[K]> };
 const ComponentsContext = createContext<StudioComponentMap>({});
 export function StudioComponentsProvider({ components, children }: { components: StudioComponentMap; children: ReactNode }) {
+  useTranslation();
   return <ComponentsContext.Provider value={components}>{children}</ComponentsContext.Provider>;
 }
 export function useStudioComponent<K extends keyof StudioComponentProps>(name: K): ComponentType<StudioComponentProps[K]> {
   const component = useContext(ComponentsContext)[name];
-  if (!component) throw new Error(`Studio component ${name} requires its server feature to be enabled`);
+  if (!component) throw new Error(translate("Studio component {{value0}} requires its server feature to be enabled", { value0: name }));
   return component;
 }
-export function DesignerSurface(props: DesignerCanvasProps) { const Component = useStudioComponent("DesignerSurface"); return <Component {...props} />; }
-export function Application() { const Component = useStudioComponent("Application"); return <Component />; }
-export function ActivityToolbox(props: StudioComponentProps["ActivityToolbox"]) { const Component = useStudioComponent("ActivityToolbox"); return <Component {...props} />; }
-export function StatePanel(props: StudioComponentProps["StatePanel"]) { const Component = useStudioComponent("StatePanel"); return <Component {...props} />; }
-export function TransitionPanel(props: StudioComponentProps["TransitionPanel"]) { const Component = useStudioComponent("TransitionPanel"); return <Component {...props} />; }
-export function ActivityPropertiesPanel(props: ActivityPropertiesPanelProps) { const Component = useStudioComponent("ActivityPropertiesPanel"); return <Component {...props} />; }
-export function ExpressionEditor(props: ExpressionControlProps) { const Component = useStudioComponent("ExpressionEditor"); return <Component {...props} />; }
+export function DesignerSurface(props: DesignerCanvasProps) {
+  useTranslation(); const Component = useStudioComponent("DesignerSurface"); return <Component {...props} />; }
+export function Application() {
+  useTranslation(); const Component = useStudioComponent("Application"); return <Component />; }
+export function ActivityToolbox(props: StudioComponentProps["ActivityToolbox"]) {
+  useTranslation(); const Component = useStudioComponent("ActivityToolbox"); return <Component {...props} />; }
+export function StatePanel(props: StudioComponentProps["StatePanel"]) {
+  useTranslation(); const Component = useStudioComponent("StatePanel"); return <Component {...props} />; }
+export function TransitionPanel(props: StudioComponentProps["TransitionPanel"]) {
+  useTranslation(); const Component = useStudioComponent("TransitionPanel"); return <Component {...props} />; }
+export function ActivityPropertiesPanel(props: ActivityPropertiesPanelProps) {
+  useTranslation(); const Component = useStudioComponent("ActivityPropertiesPanel"); return <Component {...props} />; }
+export function ExpressionEditor(props: ExpressionControlProps) {
+  useTranslation(); const Component = useStudioComponent("ExpressionEditor"); return <Component {...props} />; }

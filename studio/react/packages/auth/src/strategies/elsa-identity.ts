@@ -1,3 +1,5 @@
+
+import { translate } from "@elsa-workflows/react-studio-sdk/localization";
 import type { AuthConfig } from "@elsa-workflows/react-studio-sdk/config";
 import { readTokens, writeTokens } from "../storage.js";
 import { BaseAuthStrategy, isJwtExpired, userFromJwt, type PasswordCredentials } from "../types.js";
@@ -73,9 +75,9 @@ export class ElsaIdentityAuthStrategy extends BaseAuthStrategy {
         method: "POST",
         headers: { Authorization: `Bearer ${tokens.refreshToken}`, Accept: "application/json" },
       });
-      if (!res.ok) throw new Error(`refresh failed (${res.status})`);
+      if (!res.ok) throw new Error(translate("refresh failed ({{value0}})", { value0: res.status }));
       const data = (await res.json()) as LoginResponse;
-      if (!data.isAuthenticated || !data.accessToken) throw new Error("refresh rejected");
+      if (!data.isAuthenticated || !data.accessToken) throw new Error(translate("refresh rejected"));
       writeTokens(this.scope, { accessToken: data.accessToken, refreshToken: data.refreshToken });
       this.setSnapshot({ status: "authenticated", user: userFromJwt(data.accessToken) });
       return true;
@@ -87,7 +89,7 @@ export class ElsaIdentityAuthStrategy extends BaseAuthStrategy {
   }
 
   async login(credentials?: PasswordCredentials) {
-    if (!credentials) throw new Error("Credentials are required.");
+    if (!credentials) throw new Error(translate("Credentials are required."));
     const res = await fetch(this.url(this.options.loginPath), {
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
@@ -95,8 +97,8 @@ export class ElsaIdentityAuthStrategy extends BaseAuthStrategy {
     });
     const data = res.ok ? ((await res.json()) as LoginResponse) : undefined;
     if (!res.ok || !data?.isAuthenticated || !data.accessToken) {
-      this.setSnapshot({ status: "unauthenticated", error: "Invalid username or password." });
-      throw new Error("Invalid username or password.");
+      this.setSnapshot({ status: "unauthenticated", error: translate("Invalid username or password.") });
+      throw new Error(translate("Invalid username or password."));
     }
     writeTokens(this.scope, { accessToken: data.accessToken, refreshToken: data.refreshToken });
     this.setSnapshot({ status: "authenticated", user: userFromJwt(data.accessToken) });
