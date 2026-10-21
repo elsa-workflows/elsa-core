@@ -17,13 +17,15 @@ internal static class CompensationScopeDraftJson
 {
     public static bool IsRecognizedScope(JsonElement activity) =>
         activity.ValueKind == JsonValueKind.Object &&
-        activity.TryGetProperty("type", out var type) &&
-        type.ValueKind == JsonValueKind.String &&
-        string.Equals(type.GetString(), CompensationScope.ActivityTypeName, StringComparison.Ordinal);
+        activity.EnumerateObject().Any(property =>
+            string.Equals(property.Name, "type", StringComparison.OrdinalIgnoreCase) &&
+            property.Value.ValueKind == JsonValueKind.String &&
+            string.Equals(property.Value.GetString(), CompensationScope.ActivityTypeName, StringComparison.Ordinal));
 
     public static bool IsMaterializable(JsonElement scope, IActivityRegistry activityRegistry, JsonSerializerOptions serializerOptions)
     {
         if (!IsRecognizedScope(scope) ||
+            !HasCanonicalSerializablePropertyNames(scope, typeof(CompensationScope), serializerOptions) ||
             !HasExactVersion(scope, CompensationScope.ActivityTypeName, 1, activityRegistry) ||
             !TryGetInt32(scope, "draftSchemaVersion", out var schemaVersion) ||
             schemaVersion != CompensationScope.CurrentDraftSchemaVersion ||
@@ -35,6 +37,7 @@ internal static class CompensationScopeDraftJson
         foreach (var step in steps.EnumerateArray())
         {
             if (step.ValueKind != JsonValueKind.Object ||
+                !HasCanonicalSerializablePropertyNames(step, typeof(CompensationStep), serializerOptions) ||
                 !step.TryGetProperty("stepId", out var stepId) ||
                 stepId.ValueKind != JsonValueKind.String ||
                 string.IsNullOrWhiteSpace(stepId.GetString()) ||
@@ -103,7 +106,8 @@ internal static class CompensationScopeDraftJson
 
     private static bool HasPinnedOwnedActivityDescendants(JsonElement value, Type containerType, IActivityRegistry activityRegistry, JsonSerializerOptions serializerOptions)
     {
-        if (!TryGetSerializableProperties(containerType, serializerOptions, out var properties))
+        if (!TryGetSerializableProperties(containerType, serializerOptions, out var properties) ||
+            !HasCanonicalSerializablePropertyNames(value, properties))
             return false;
 
         foreach (var property in properties)
@@ -118,6 +122,29 @@ internal static class CompensationScopeDraftJson
                 continue;
 
             if (!HasPinnedOwnedActivityValues(childValue, property.PropertyType, activityRegistry, serializerOptions))
+                return false;
+        }
+
+        return true;
+    }
+
+    private static bool HasCanonicalSerializablePropertyNames(JsonElement value, Type containerType, JsonSerializerOptions serializerOptions) =>
+        TryGetSerializableProperties(containerType, serializerOptions, out var properties) &&
+        HasCanonicalSerializablePropertyNames(value, properties);
+
+    private static bool HasCanonicalSerializablePropertyNames(JsonElement value, IReadOnlyList<JsonPropertyInfo> properties)
+    {
+        if (value.ValueKind != JsonValueKind.Object)
+            return false;
+
+        foreach (var property in properties)
+        {
+            if (!TryGetUniqueSerializableProperty(value, property.Name, caseInsensitive: true, out _, out var found))
+                return false;
+
+            // The typed serializer accepts case aliases. A supported draft must use the exact
+            // name emitted by its serializer, with only one occurrence of each known member.
+            if (found && !value.TryGetProperty(property.Name, out _))
                 return false;
         }
 
