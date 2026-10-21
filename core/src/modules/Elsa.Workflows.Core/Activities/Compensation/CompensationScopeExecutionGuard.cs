@@ -22,14 +22,11 @@ internal static class CompensationScopeExecutionGuard
 
         if (!observation.NeedsClassification)
         {
-            if (!observation.ActivitiesAreCacheable)
-            {
-                DemandExecutableByScanning(workflowGraph);
-                return;
-            }
-
             DemandExecutableByScanning(workflowGraph);
-            CompensationScopeExecutionState.RecordCompletedScan(observation, activitiesAreCacheable: true);
+
+            if (observation.ActivitiesAreCacheable)
+                CompensationScopeExecutionState.RecordCompletedScan(observation, activitiesAreCacheable: true);
+
             return;
         }
 
@@ -40,10 +37,7 @@ internal static class CompensationScopeExecutionGuard
                 activitiesAreCacheable = false;
 
             if (IsCompensationScope(node.Activity))
-            {
-                CompensationScopeExecutionState.RecordUncacheableScan(observation);
                 throw new InvalidOperationException(CompensationScope.DraftOnlyRefusalMessage);
-            }
         }
 
         CompensationScopeExecutionState.RecordCompletedScan(observation, activitiesAreCacheable);

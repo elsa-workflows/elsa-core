@@ -1,7 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Activities.Compensation;
+using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Exceptions;
 using JetBrains.Annotations;
 
@@ -39,8 +39,7 @@ public class NotFoundActivity : CodeActivity
         {
             var previousType = _missingTypeName;
             _missingTypeName = value;
-            if (!string.Equals(previousType, value, StringComparison.Ordinal))
-                CompensationScopeExecutionState.OnMissingActivityTypeChanged(previousType, value);
+            CompensationScopeExecutionState.OnDiscriminatorChanged(previousType, value);
         }
     }
     

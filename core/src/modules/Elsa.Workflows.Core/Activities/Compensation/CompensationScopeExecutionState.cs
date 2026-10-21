@@ -19,13 +19,7 @@ internal static class CompensationScopeExecutionState
     private static readonly MethodInfo? ActivityTypeGetter = typeof(Activity).GetProperty(nameof(Activity.Type))?.GetMethod;
     private static readonly MethodInfo? ActivityTypeSetter = typeof(Activity).GetProperty(nameof(Activity.Type))?.SetMethod;
 
-    internal static void OnActivityTypeChanged(string? previousType, string? currentType)
-    {
-        if (IsCompensationScopeType(previousType) != IsCompensationScopeType(currentType))
-            DiscriminatorEpoch.Increment();
-    }
-
-    internal static void OnMissingActivityTypeChanged(string? previousType, string? currentType)
+    internal static void OnDiscriminatorChanged(string? previousType, string? currentType)
     {
         if (IsCompensationScopeType(previousType) != IsCompensationScopeType(currentType))
             DiscriminatorEpoch.Increment();
@@ -58,13 +52,6 @@ internal static class CompensationScopeExecutionState
 
     internal static bool IsActivityTypeCacheable(IActivity activity) =>
         ActivityTypeCacheabilityByClrType.GetValue(activity.GetType(), static type => new ActivityTypeCacheability(ClassifyActivityType(type))).IsCacheable;
-
-    internal static void RecordUncacheableScan(CacheObservation observation)
-    {
-        if (observation.IsEnabled && observation.NeedsClassification &&
-            observation.Nodes.Revision.TryGetValue(out var currentNodeRevision) && currentNodeRevision == observation.NodeRevision)
-            observation.Cache.SetClassification(observation.NodeRevision, isCacheable: false);
-    }
 
     internal static void RecordCompletedScan(CacheObservation observation, bool activitiesAreCacheable)
     {

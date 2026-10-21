@@ -55,8 +55,7 @@ public abstract class Activity : IActivity, ISignalHandler
         {
             var previousType = _type;
             _type = value;
-            if (!string.Equals(previousType, value, StringComparison.Ordinal))
-                CompensationScopeExecutionState.OnActivityTypeChanged(previousType, value);
+            CompensationScopeExecutionState.OnDiscriminatorChanged(previousType, value);
         }
     }
 

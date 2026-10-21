@@ -78,7 +78,7 @@ public class WorkflowExecutionGuardCacheTests : IAsyncLifetime
             nonGenericList.RemoveAt(appendedIndex);
 
             // Collection<T> remains backed by a List<T>, so active enumeration still detects mutation.
-            var enumerator = nodes.GetEnumerator();
+            using var enumerator = nodes.GetEnumerator();
             Assert.True(enumerator.MoveNext());
             nodes.Add(scopeNode);
             Assert.Throws<InvalidOperationException>(() => enumerator.MoveNext());
