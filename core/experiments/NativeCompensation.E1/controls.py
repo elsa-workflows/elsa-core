@@ -68,8 +68,12 @@ def run_control(name, output):
                     result["originalBytesRetainedInRow"] = raw_after == altered
             result["after"] = {"elsa": native.snapshot(directory), "participant": native.ledger(directory)}
             result["classification"] = validate_control(result)
-    except Exception as error:
+    except BaseException as error:
         result["control_error"] = str(error) or type(error).__name__
+        if not isinstance(error, Exception):
+            result["control_error"] = f"{type(error).__name__}: {error}"
+            result["interruption"] = {"type": type(error).__name__, "message": str(error)}
+            raise
     finally:
         participant_error = result.get("participant", {}).get("controller_error")
         if participant_error:

@@ -349,6 +349,218 @@ class ValidationTests(unittest.TestCase):
         self.assertTrue(result["stdout_reader_completed"])
         self.assertTrue(result["stderr_reader_completed"])
 
+    def test_backend_interrupts_are_saved_and_reraised_by_both_controllers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for controller in ("matrix", "controls"):
+                for interruption_type, interruption_message in (
+                    (KeyboardInterrupt, "synthetic backend interrupt"),
+                    (SystemExit, "synthetic backend exit"),
+                ):
+                    with self.subTest(controller=controller, interruption=interruption_type.__name__):
+                        output = root / f"{controller}-{interruption_type.__name__}"
+                        output.mkdir()
+                        ready = output / "backend-ready"
+                        interruption = interruption_type(interruption_message)
+                        participant = "import json,time; print(json.dumps({'port':43210}), flush=True); time.sleep(30)"
+                        backend_child = (
+                            "import json,pathlib,sys,time; "
+                            "sys.stderr.write('synthetic backend stderr\\n'); sys.stderr.flush(); "
+                            "print(json.dumps({'kind':'synthetic-progress','value':{'started':True}}), flush=True); "
+                            f"pathlib.Path({str(ready)!r}).write_text('ready'); time.sleep(30)"
+                        )
+                        original_backend = run.backend
+                        original_get = run.queue.Queue.get
+                        interrupted_queues = set()
+
+                        def backend_with_owned_python_child(*args, **kwargs):
+                            kwargs["command_override"] = [sys.executable, "-u", "-c", backend_child]
+                            return original_backend(*args, **kwargs)
+
+                        def interrupt_after_first_backend_event(instance, block=True, timeout=None):
+                            if id(instance) in interrupted_queues:
+                                deadline = time.monotonic() + 3
+                                while not ready.exists() and time.monotonic() < deadline:
+                                    time.sleep(0.01)
+                                if not ready.exists():
+                                    raise AssertionError("Synthetic backend did not reach its event wait")
+                                raise interruption
+
+                            item = original_get(instance, block=block, timeout=timeout)
+                            if item[0] == "line":
+                                try:
+                                    event = json.loads(item[1])
+                                except (TypeError, json.JSONDecodeError):
+                                    event = None
+                                if isinstance(event, dict) and event.get("kind") == "synthetic-progress":
+                                    interrupted_queues.add(id(instance))
+                            return item
+
+                        with patch.object(run, "participant_command", return_value=[sys.executable, "-u", "-c", participant]), \
+                             patch.object(run, "backend", side_effect=backend_with_owned_python_child), \
+                             patch.object(run.queue.Queue, "get", new=interrupt_after_first_backend_event):
+                            if controller == "matrix":
+                                with patch.object(run, "args", SimpleNamespace(output=output), create=True):
+                                    with self.assertRaises(interruption_type) as raised:
+                                        run.run_case("backend-interruption")
+                                evidence = json.loads((output / "backend-interruption" / "evidence.json").read_text())
+                                failure_key = "assertion_failure"
+                            else:
+                                with self.assertRaises(interruption_type) as raised:
+                                    controls.run_control("backend-interruption", output)
+                                evidence = json.loads((output / "backend-interruption" / "evidence.json").read_text())
+                                failure_key = "control_error"
+
+                        self.assertIs(interruption, raised.exception)
+                        self.assertIn(interruption_type.__name__, evidence[failure_key])
+                        self.assertEqual(interruption_type.__name__, evidence["interruption"]["type"])
+                        self.assertEqual(interruption_message, evidence["interruption"]["message"])
+                        self.assertEqual(
+                            {"kind": "synthetic-progress", "value": {"started": True}},
+                            evidence["first"]["events"][0],
+                        )
+                        phase = evidence["first"]
+                        self.assertIsNotNone(phase["pid"])
+                        self.assertIn("synthetic backend stderr", phase["stderr"])
+                        self.assertIn(interruption_type.__name__, phase["controller_error"])
+                        self.assertIsNotNone(phase["exit"])
+                        self.assertTrue(phase["cleanup_terminated"])
+                        self.assertTrue(phase["reaped"])
+                        self.assertTrue(phase["stdout_reader_completed"])
+                        self.assertTrue(phase["stderr_reader_completed"])
+
+    def test_backend_reaps_its_child_when_a_reader_cannot_start(self):
+        original_popen = subprocess.Popen
+        original_start = threading.Thread.start
+        for failed_start in (1, 2):
+            for interruption in (RuntimeError("synthetic reader start failure"), KeyboardInterrupt("synthetic reader start interrupt")):
+                with self.subTest(failed_start=failed_start, failure=type(interruption).__name__):
+                    processes = []
+                    start_count = 0
+
+                    def start_reader(thread):
+                        nonlocal start_count
+                        start_count += 1
+                        if start_count == failed_start:
+                            raise interruption
+                        return original_start(thread)
+
+                    def create_process(*args, **kwargs):
+                        process = original_popen(*args, **kwargs)
+                        processes.append(process)
+                        return process
+
+                    try:
+                        with patch.object(run.subprocess, "Popen", side_effect=create_process), \
+                             patch.object(threading.Thread, "start", new=start_reader):
+                            expected_error = run.BackendFailure if isinstance(interruption, Exception) else KeyboardInterrupt
+                            with self.assertRaises(expected_error) as raised:
+                                run.backend(Path("."), "unused", command_override=[sys.executable, "-c", "import time; time.sleep(30)"])
+                        if isinstance(interruption, Exception):
+                            result = raised.exception.result
+                        else:
+                            self.assertIs(interruption, raised.exception)
+                            result = getattr(raised.exception, run.BACKEND_RESULT_ATTRIBUTE)
+                        self.assertEqual(processes[0].pid, result["pid"])
+                        self.assertTrue(result["reaped"])
+                        self.assertIsNotNone(processes[0].poll())
+                        self.assertIn(str(interruption), result["controller_error"])
+                    finally:
+                        for process in processes:
+                            if process.poll() is None:
+                                process.kill()
+                            process.wait(timeout=5)
+
+    def test_unreaped_backend_cleanup_uses_finite_waits_and_keeps_live_pipes_open(self):
+        release_readers = threading.Event()
+
+        class BlockingStream:
+            def __init__(self):
+                self.close_calls = 0
+
+            def __iter__(self):
+                release_readers.wait()
+                return iter(())
+
+            def read(self):
+                release_readers.wait()
+                return ""
+
+            def close(self):
+                self.close_calls += 1
+
+        class UnkillableProcess:
+            def __init__(self):
+                self.pid = 987654
+                self.returncode = None
+                self.args = ["synthetic-unkillable-child"]
+                self.stdout = BlockingStream()
+                self.stderr = BlockingStream()
+                self.stdin = SimpleNamespace(close=lambda: None)
+                self.wait_timeouts = []
+                self.kill_calls = 0
+
+            def poll(self):
+                return None
+
+            def kill(self):
+                self.kill_calls += 1
+
+            def terminate(self):
+                pass
+
+            def wait(self, timeout=None):
+                self.wait_timeouts.append(timeout)
+                if timeout is None:
+                    raise AssertionError("Backend cleanup called process.wait without a timeout")
+                raise subprocess.TimeoutExpired(self.args, timeout)
+
+        process = UnkillableProcess()
+        existing_threads = set(threading.enumerate())
+        original_join = threading.Thread.join
+        join_timeouts = []
+
+        def bounded_join(_thread, timeout=None):
+            join_timeouts.append(timeout)
+
+        try:
+            participant_process = UnkillableProcess()
+            with patch.object(run.subprocess, "Popen", side_effect=[process, participant_process]), \
+                 patch.object(threading.Thread, "join", new=bounded_join):
+                with self.assertRaises(run.BackendFailure) as raised:
+                    run.backend(Path("."), "unused", timeout_seconds=0.01, command_override=["synthetic"])
+
+                participant_result = {"participant_pid": None}
+                with self.assertRaises(run.ParticipantFailure):
+                    with run.ParticipantProcess(participant_result, ["synthetic"], timeout_seconds=0.01):
+                        self.fail("Synthetic unkillable participant unexpectedly reported a port")
+        finally:
+            release_readers.set()
+            for thread in set(threading.enumerate()) - existing_threads:
+                original_join(thread, timeout=1)
+
+        self.assertTrue(process.wait_timeouts)
+        self.assertTrue(all(timeout is not None and 0 <= timeout < float("inf") for timeout in process.wait_timeouts))
+        self.assertTrue(participant_process.wait_timeouts)
+        self.assertTrue(all(timeout is not None and 0 <= timeout < float("inf") for timeout in participant_process.wait_timeouts))
+        self.assertTrue(join_timeouts)
+        self.assertTrue(all(timeout is not None and 0 <= timeout < float("inf") for timeout in join_timeouts))
+        self.assertGreaterEqual(process.kill_calls, 1)
+        self.assertEqual(0, process.stdout.close_calls)
+        self.assertEqual(0, process.stderr.close_calls)
+        result = raised.exception.result
+        self.assertFalse(result["reaped"])
+        self.assertFalse(result["stdout_reader_completed"])
+        self.assertFalse(result["stderr_reader_completed"])
+        self.assertIn("not reaped after kill", result["cleanup_error"])
+        self.assertIn("cleanup failed", result["controller_error"])
+        self.assertFalse(participant_result["participant"]["reaped"])
+        self.assertFalse(participant_result["participant"]["stdout_reader_completed"])
+        self.assertFalse(participant_result["participant"]["stderr_reader_completed"])
+        self.assertIn("not reaped after kill", participant_result["participant"]["cleanup_error"])
+        self.assertEqual(0, participant_process.stdout.close_calls)
+        self.assertEqual(0, participant_process.stderr.close_calls)
+
     def test_backend_waits_for_child_exit_after_stdout_eof(self):
         child = (
             "import json,os,sys,time; "

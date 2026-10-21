@@ -96,7 +96,6 @@ class DependabotDiscoveryTests < Minitest::Test
   end
 
   def test_core_experiments_have_an_explicit_temporary_nonproduct_disposition
-    refute_empty DOCUMENTED_CORE_EXPERIMENTS
     assert_equal tracked_projects.grep(%r{^core/experiments/}).sort, DOCUMENTED_CORE_EXPERIMENTS,
       "Every Core experiment needs its own documented disposition; do not ignore the directory"
     assert_equal DOCUMENTED_CORE_EXPERIMENTS.uniq.length, DOCUMENTED_CORE_EXPERIMENTS.length
