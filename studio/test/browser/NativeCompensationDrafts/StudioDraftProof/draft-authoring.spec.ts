@@ -193,8 +193,10 @@ async function setSelectedChildLiteral(page: Page, row: Locator, childRole: 'for
   const inputsTab = page.getByRole('tab', { name: 'Input', exact: true });
   await inputsTab.waitFor({ state: 'visible', timeout: 8_000 });
   await inputsTab.click();
-  const textInput = page.getByLabel('Text', { exact: true });
-  await textInput.waitFor({ state: 'visible', timeout: 8_000 });
+  const textLabel = page.locator('.mud-input-label-inputcontrol').filter({ hasText: /^\s*Text\s*$/ });
+  await expect(textLabel).toHaveCount(1);
+  const textInput = textLabel.locator('xpath=..').locator('input:visible, textarea:visible');
+  await expect(textInput).toHaveCount(1);
   await textInput.fill(value);
   await textInput.press('Tab');
   await expect(textInput).toHaveValue(value);
