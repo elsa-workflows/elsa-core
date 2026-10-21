@@ -329,7 +329,7 @@ internal sealed class NativeCommitFixture : IAsyncDisposable
     public static async Task<NativeCommitFixture> CreateAsync(ITestOutputHelper output, bool useNativeAmbientTransaction = false)
     {
         var databasePath = Path.Combine(Path.GetTempPath(), $"elsa-8936-{Guid.NewGuid():N}.sqlite");
-        var connectionString = $"Data Source={databasePath}";
+        var connectionString = $"Data Source={databasePath};Pooling=False";
         var connection = new SqliteConnection(connectionString);
         ServiceProvider? serviceProvider = null;
 
