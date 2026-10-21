@@ -19,7 +19,7 @@ No BPMN implementation reuse, adapters, shared compensation abstractions or depe
 | [Data and persistence](persistence.md) | Identities, retained/protected captures, strict versions, root snapshot protocol, atomicity and recovery gates. |
 | [Guarded native snapshots](guarded-snapshot.md) | Proposed storage-owned marker, receipt, tenant/revision/epoch fence, fail-closed outer hydration, mutation-path enforcement and bounded E1 transaction proof. |
 | [Recovery API and security](recovery-api.md) | Safe read model, commands, authorization, audit, concurrency and disclosure. |
-| [Native Core and Studio caller contract (E3)](e3-studio-contract.md) | Source-grounded owned-child model/traversal, strict pins, bindings, actual publish diagnostics, E2-safe Studio read path, and first tracer/proof handoff. |
+| [Native Core and Studio caller contract (E3)](e3-studio-contract.md) | Source-grounded owned-child model/traversal, pre-fallback pins, declared mapping semantics, mandatory publish refusal, E2-safe causal Studio reads, and the gated tracer/restart proof handoff. |
 | [Studio interaction contract](../../../../studio/docs/specs/native-compensation/plan.md) | Authoring, captures, publication diagnostics, execution navigation, accessible states and host integration. |
 | [Verification plan](verification.md) | Real browser/backend/store/participant restart demonstrations and negative controls; no pass is implied. |
 | [Review record](review.md) | Independent findings, corrections and the limits of design review. |
