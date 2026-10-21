@@ -71,16 +71,22 @@ public sealed class InputsTabReadOnlyWorkspaceTests : BunitContext
         cut.WaitForAssertion(() => AssertEditorIsReadOnly(cut, expected: true, expectedValue: "edited while writable"));
     }
 
-    private IRenderedComponent<InputsTab> RenderInputsTab() => Render<InputsTab>(CreateParameters());
+    private IRenderedComponent<InputsTab> RenderInputsTab() => Render<InputsTab>(parameters =>
+    {
+        parameters.AddCascadingValue<IWorkspace>(_workspace);
+        AddInputsTabParameters(parameters);
+    });
 
-    private void SetInputsTabParameters(IRenderedComponent<InputsTab> cut) => cut.SetParametersAndRender(CreateParameters());
+    private void SetInputsTabParameters(IRenderedComponent<InputsTab> cut) => cut.Render(AddInputsTabParameters);
 
-    private Action<ComponentParameterCollectionBuilder<InputsTab>> CreateParameters() => parameters => parameters
-        .AddCascadingValue<IWorkspace>(_workspace)
-        .Add(x => x.WorkflowDefinition, _workflowDefinition)
-        .Add(x => x.Activity, _activity)
-        .Add(x => x.ActivityDescriptor, _activityDescriptor)
-        .Add(x => x.OnActivityUpdated, _ => Task.CompletedTask);
+    private void AddInputsTabParameters(ComponentParameterCollectionBuilder<InputsTab> parameters)
+    {
+        parameters
+            .Add(x => x.WorkflowDefinition, _workflowDefinition)
+            .Add(x => x.Activity, _activity)
+            .Add(x => x.ActivityDescriptor, _activityDescriptor)
+            .Add(x => x.OnActivityUpdated, _ => Task.CompletedTask);
+    }
 
     private static void AssertEditorIsReadOnly(IRenderedComponent<InputsTab> cut, bool expected, string expectedValue)
     {
