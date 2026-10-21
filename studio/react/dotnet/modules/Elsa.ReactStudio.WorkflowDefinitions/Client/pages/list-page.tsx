@@ -31,6 +31,7 @@ import { Resources, usePermissions, Verbs } from "@elsa-workflows/react-studio-a
 import { downloadBlob, pickFiles } from "@elsa-workflows/react-studio-sdk/utils/download";
 import { useUrlState } from "@elsa-workflows/react-studio-sdk/utils/url-state";
 import { useElsaClient } from "@elsa-workflows/react-studio-api-client/react";
+import { BpmnExportDialog, BpmnImportDialog } from "../components/bpmn-dialogs";
 import { CreateWorkflowDialog } from "../components/create-workflow-dialog";
 import { RunWorkflowDialog } from "../components/run-workflow-dialog";
 import { useWorkflowDefinitionMutations, useWorkflowDefinitions } from "../hooks";
@@ -56,6 +57,8 @@ export function WorkflowDefinitionsListPage() {
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [createOpen, setCreateOpen] = useState(() => url.get("create") === "1");
+  const [bpmnImportOpen, setBpmnImportOpen] = useState(false);
+  const [bpmnExportId, setBpmnExportId] = useState<string>();
   const [runTarget, setRunTarget] = useState<WorkflowDefinitionSummary | null>(null);
 
   const latest = useWorkflowDefinitions({
@@ -222,6 +225,7 @@ export function WorkflowDefinitionsListPage() {
               <DropdownMenuItem onClick={() => void exportDefinition(d)}>
                 <Download /> Export
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setBpmnExportId(d.definitionId)}><Download /> Export BPMN</DropdownMenuItem>
               {!listReadOnly && (canPublish || canRetract) && <DropdownMenuSeparator />}
               {!listReadOnly && canPublish && !d.isPublished && (
                 <DropdownMenuItem onClick={() => void run("Workflow published", () => mutations.publish.mutateAsync(d.definitionId))}>
@@ -280,6 +284,7 @@ export function WorkflowDefinitionsListPage() {
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
+            {permissions.has(Resources.workflowDefinitions, Verbs.write) && !listReadOnly && <Button variant="outline" onClick={() => setBpmnImportOpen(true)}><FileUp /> Import BPMN</Button>}
             {canCreate && !listReadOnly && (
               <div className="flex">
                 <Button className="rounded-r-none" onClick={() => setCreateOpen(true)}>
@@ -335,6 +340,8 @@ export function WorkflowDefinitionsListPage() {
         onRowClick={(d) => router.push(href(WorkflowDefinitionRoutes.edit, { definitionId: d.definitionId }))}
       />
 
+      {bpmnImportOpen && <BpmnImportDialog onClose={() => setBpmnImportOpen(false)} onImported={result => { setBpmnImportOpen(false); void latest.refetch(); router.push(href(WorkflowDefinitionRoutes.edit, { definitionId: result.definitionId })); }} />}
+      {bpmnExportId && <BpmnExportDialog definitionId={bpmnExportId} onClose={() => setBpmnExportId(undefined)} />}
       <CreateWorkflowDialog open={createOpen} onOpenChange={setCreateOpen} />
       <RunWorkflowDialog definition={runTarget} onOpenChange={(o) => !o && setRunTarget(null)} />
     </div>

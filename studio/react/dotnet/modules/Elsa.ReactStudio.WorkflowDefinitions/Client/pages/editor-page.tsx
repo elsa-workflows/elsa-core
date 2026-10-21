@@ -21,6 +21,7 @@ import { useUrlState } from "@elsa-workflows/react-studio-sdk/utils/url-state";
 import { Network } from "lucide-react";
 import { ActivityToolbox, childActivities, createDesignerStore, DesignerProvider, DesignerSurface, emptyFlowchart, indexDataFlow, isDesignableContainer, useActivityRegistry } from "@elsa-workflows/react-studio-sdk/designer/index";
 import { CodeView } from "../components/code-view";
+import { BpmnDefinitionView } from "../components/bpmn-definition-view";
 import { EditorHeader, type EditorViewState } from "../components/editor-header";
 import { EditorSidePane } from "../components/editor-side-pane";
 import { RunWorkflowDialog } from "../components/run-workflow-dialog";
@@ -48,7 +49,9 @@ export function WorkflowDefinitionEditorPage({ params }: { params: RouteParams }
   const fromId = url.get(FROM_PARAM);
   const { registry, isLoading: registryLoading, error: registryError } = useActivityRegistry();
 
-  if (definition.isLoading || registryLoading) return <FullPageSpinner label="Loading workflow…" />;
+  if (definition.isLoading) return <FullPageSpinner label="Loading workflow…" />;
+  if (!definition.error && definition.data?.root?.type === "Elsa.BpmnProcess") return <BpmnDefinitionView definition={definition.data} />;
+  if (registryLoading) return <FullPageSpinner label="Loading workflow…" />;
   if (definition.error || registryError) return <ErrorAlert error={definition.error ?? registryError} title="Could not load the workflow" />;
   if (!definition.data) return null;
 

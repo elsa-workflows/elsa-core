@@ -1,4 +1,5 @@
 import { descriptorsApi } from "./endpoints/descriptors.js";
+import { bpmnApi } from "./endpoints/bpmn.js";
 import { identityApi } from "./endpoints/identity.js";
 import { resilienceApi } from "./endpoints/resilience.js";
 import { workflowDefinitionsApi } from "./endpoints/workflow-definitions.js";
@@ -18,6 +19,7 @@ export function createElsaClient(options: HttpClientOptions) {
     descriptors: descriptorsApi(http),
     identity: identityApi(http),
     resilience: resilienceApi(http),
+    bpmn: bpmnApi(http),
   };
 }
 
