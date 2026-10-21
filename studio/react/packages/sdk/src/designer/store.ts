@@ -169,9 +169,19 @@ export function createDesignerStore(initialRoot: Activity, readOnly = false): De
     const buildActivity = (descriptor: ActivityDescriptor, parentNodeId: string | undefined, extra?: Partial<Activity>, position?: { x: number; y: number }): Activity => {
       const id = newActivityId();
       const container = get().container();
+      const construction = { ...descriptor.constructionProperties };
+      if (descriptor.customProperties?.RootType === "WorkflowDefinitionActivity") {
+        // The server catalog uses CLR property names. Activity JSON uses camelCase;
+        // retaining both spellings can leave an old definition-version ID behind.
+        construction.workflowDefinitionId ??= construction.WorkflowDefinitionId;
+        construction.workflowDefinitionVersionId ??= construction.WorkflowDefinitionVersionId;
+        delete construction.WorkflowDefinitionId;
+        delete construction.WorkflowDefinitionVersionId;
+        delete construction.Version;
+      }
       const base: Activity = {
         ...(emptyContainer(descriptor.typeName, parentNodeId) ?? {}),
-        ...descriptor.constructionProperties,
+        ...construction,
         id,
         nodeId: childNodeId(parentNodeId, id),
         type: descriptor.typeName,

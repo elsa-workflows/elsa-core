@@ -21,6 +21,8 @@ import { activityDisplayText } from "@elsa-workflows/react-studio-sdk/designer/m
 import { selectableSyntaxes } from "@elsa-workflows/react-studio-sdk/activity-expressions";
 import { useUiHintEditor } from "./registry";
 import type { UiHintContext } from "./types";
+import { useRemoteFeatures } from "@elsa-workflows/react-studio-ui/runtime/remote-features";
+import { CommitStrategySettings, LogPersistenceSettings, ResilienceSettings, TaskSettings, VersionSettings } from "./settings/settings-tabs";
 
 export interface ActivityPropertiesPanelProps {
   workflowDefinitionId?: string;
@@ -51,6 +53,7 @@ export function ActivityPropertiesPanel({ workflowDefinitionId, variables, workf
   const readOnly = useDesignerState((s) => s.readOnly);
   const updateActivity = useDesignerState((s) => s.updateActivity);
   const extraTabs = useExtensions("activityTabs");
+  const features = useRemoteFeatures();
   const { items: expressionDescriptors } = useExpressionDescriptors();
   const syntaxes = useMemo(() => selectableSyntaxes(expressionDescriptors), [expressionDescriptors]);
   const [tab, setTab] = useState("input");
@@ -74,6 +77,11 @@ export function ActivityPropertiesPanel({ workflowDefinitionId, variables, workf
     activities: siblingActivities,
   };
   const dataSummary = dataFlow?.byActivity.get(activity.id);
+  const isTask = descriptor?.kind === "Task";
+  const isWorkflowActivity = descriptor?.customProperties?.RootType === "WorkflowDefinitionActivity";
+  const isResilient = descriptor?.customProperties?.Resilient === true && (features.catalog.has("Elsa.Resilience") || features.isError);
+  const settingsProps = { activity, readOnly, onChange: update };
+  const visibleTab = (tab === "task" && !isTask) || (tab === "version" && !isWorkflowActivity) || (tab === "resilience" && !isResilient) ? "input" : tab;
 
   const inputs = [...(descriptor?.inputs ?? [])].filter((i) => i.isBrowsable !== false).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   const outputs = (descriptor?.outputs ?? []).filter((o) => o.isBrowsable !== false);
@@ -86,11 +94,16 @@ export function ActivityPropertiesPanel({ workflowDefinitionId, variables, workf
           <div className="truncate text-xs text-muted-foreground">{descriptor?.displayName ?? activity.type}</div>
         </div>
       </div>
-      <Tabs value={tab} onValueChange={(v) => setTab(String(v))} className="flex min-h-0 flex-1 flex-col">
+      <Tabs value={visibleTab} onValueChange={(v) => setTab(String(v))} className="flex min-h-0 flex-1 flex-col">
         <TabsList className="mx-3 mt-2 w-[calc(100%-1.5rem)] justify-start overflow-x-auto [&>*]:shrink-0">
           <TabsTrigger value="input">Input</TabsTrigger>
           <TabsTrigger value="output">Output</TabsTrigger>
           <TabsTrigger value="common">Common</TabsTrigger>
+          <TabsTrigger value="commit">Commit strategy</TabsTrigger>
+          <TabsTrigger value="log">Log</TabsTrigger>
+          {isTask && <TabsTrigger value="task">Task</TabsTrigger>}
+          {isResilient && <TabsTrigger value="resilience">Resilience</TabsTrigger>}
+          {isWorkflowActivity && <TabsTrigger value="version">Version</TabsTrigger>}
           {extraTabs.map((t) => (
             <TabsTrigger key={t.id} value={t.id}>
               {t.label}
@@ -133,14 +146,13 @@ export function ActivityPropertiesPanel({ workflowDefinitionId, variables, workf
                 />
               </Field>
             )}
-            <Field inline label="Run asynchronously" hint="Schedule the activity on a background worker instead of running it inline.">
-              <Checkbox
-                checked={activity.customProperties?.runAsynchronously === true}
-                disabled={readOnly}
-                onCheckedChange={(c) => update((a) => ({ ...a, customProperties: { ...a.customProperties, runAsynchronously: c === true } }))}
-              />
-            </Field>
+            {!isTask && <TaskSettings {...settingsProps} />}
           </TabsContent>
+          <TabsContent value="commit" className="flex flex-col gap-4 p-3"><CommitStrategySettings {...settingsProps} /></TabsContent>
+          <TabsContent value="log" className="flex flex-col gap-4 p-3"><LogPersistenceSettings {...settingsProps} descriptor={descriptor} context={context} syntaxes={syntaxes} /></TabsContent>
+          {isTask && <TabsContent value="task" className="p-3"><TaskSettings {...settingsProps} /></TabsContent>}
+          {isResilient && <TabsContent value="resilience" className="flex flex-col gap-4 p-3"><ResilienceSettings {...settingsProps} context={context} syntaxes={syntaxes} /></TabsContent>}
+          {isWorkflowActivity && <TabsContent value="version" className="flex flex-col gap-4 p-3"><VersionSettings key={String(activity.workflowDefinitionId)} {...settingsProps} /></TabsContent>}
           {extraTabs.map((t) => (
             <TabsContent key={t.id} value={t.id} className="p-3">
               <t.component activity={activity} context={{ root, selected: [activity], readOnly,

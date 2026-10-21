@@ -143,3 +143,14 @@ selection preserves the complete definition. Unit fixtures cover each editor and
 extension registration. A browser fixture loads the actual ESM entry and exercises
 editing, local-time conversion, read-only behavior and an extension email hint.
 The current frontend suite has 110 unit cases and seven browser cases.
+
+
+## Activity settings and retries
+
+ActivityEditors now includes commit strategy, log persistence, resilience, task and
+workflow-activity version tabs. WorkflowInstances includes paged retry history per
+activity execution, with details and permission checks. The [Blazor parity checklist](../../../react/docs/activity-settings.md)
+records the wire contracts, visibility and verification boundaries. Browser fixtures
+exercise the actual production modules; a local reference-backend check verifies
+save/reload of each setting and a published reusable activity's paired version IDs.
+This does not close the broader partial-parity or release acceptance gates.

@@ -7,3 +7,4 @@ export type * from "./types/common.js";
 export type * from "./types/descriptors.js";
 export type * from "./types/workflow-definitions.js";
 export type * from "./types/workflow-instances.js";
+export type * from "./types/resilience.js";

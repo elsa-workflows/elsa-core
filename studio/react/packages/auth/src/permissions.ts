@@ -71,6 +71,7 @@ export const Resources = {
   workflowInstances: "workflows/instances",
   workflowRuntime: "workflows/runtime",
   workflowTests: "workflows/tests",
+  resilienceRetries: "resilience/retries",
   alterations: "alterations",
   labels: "labels",
   secrets: "secrets",
