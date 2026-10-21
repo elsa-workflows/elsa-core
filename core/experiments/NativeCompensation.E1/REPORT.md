@@ -93,7 +93,7 @@ Fifteen cheap Python tests cover retained-evidence validation/hashes, relocated 
 python3 -m unittest discover -s core/experiments/NativeCompensation.E1 -p test_validation.py -v
 ```
 
-The tests default to the retained `/tmp` directories above; set `E1_MATRIX_EVIDENCE` and `E1_CONTROL_EVIDENCE` to relocated evidence directories when needed. They launch no .NET or participant process. E1 remains Partial and all previously recorded gates remain open.
+The tests default to the retained `/tmp` directories above; set `E1_MATRIX_EVIDENCE` and `E1_CONTROL_EVIDENCE` to relocated evidence directories when needed. At that point they launched no .NET or fixture-participant process; later synthetic child-process coverage is documented below. E1 remains Partial and all previously recorded gates remain open.
 
 The final review correction after `0e6f468c40b0e58ae68c84cfa4c45b69f9fac365` resolves hashes under each configured evidence root and case name, rather than following historical absolute paths in the summary. Validation explicitly refuses Python `-O`/`PYTHONOPTIMIZE`, which would remove its assertion gates. The status mutation changes the observed result, result event and persisted state together and verifies rejection by the native expected-status gate. These checks use the unchanged retained records or isolated copies; no fresh native execution/build is implied.
 
@@ -152,5 +152,14 @@ run, and no E1 observation or readiness claim changed.
 
 Control validation also requires the recorded inspection child to exit successfully
 for every control that performs inspection; a negative regression covers all six
-such controls. The cheap suite now has 21 passing tests, with the same retained
+such controls. The cheap suite now has 23 passing tests, with the same retained
 evidence hashes and no change to recorded observations or readiness.
+
+Both controllers now initialize evidence before participant startup and share one
+owned-process helper for the bounded port handshake, stdout/stderr capture, teardown
+and reaping. Premature exit, malformed port output and a stalled handshake become
+recorded controller failures; `evidence.json` is still written with the PID, exit,
+stdout, stderr and cleanup status. Synthetic Python-child regressions exercise those
+failures and both controller evidence paths, then verify the child is reaped. These
+are harness lifecycle checks only; the fixture participant, .NET backend and database
+were not run again. The retained 24 raw evidence hashes and summary are unchanged.

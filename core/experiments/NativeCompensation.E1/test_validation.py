@@ -1,4 +1,4 @@
-"""Cheap validation and controller-cleanup tests; no .NET, participant, or database execution."""
+"""Cheap validation/controller-cleanup tests; synthetic children only, no fixture participant or database."""
 import copy
 import hashlib
 import json
@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -140,6 +141,84 @@ class ValidationTests(unittest.TestCase):
             with self.assertRaises(SystemExit) as error:
                 run.main([directory, "--case", "not-a-case"])
             self.assertEqual(2, error.exception.code)
+
+    def test_participant_startup_failures_are_bounded_reaped_and_diagnostic(self):
+        children = {
+            "premature-exit": (
+                "import sys; sys.stderr.write('premature participant stderr\\n'); "
+                "sys.stderr.flush(); sys.exit(7)"
+            ),
+            "malformed-port": (
+                "import sys,time; sys.stderr.write('malformed participant stderr\\n'); "
+                "sys.stderr.flush(); print('{\\\"port\\\":\\\"invalid\\\"}', flush=True); time.sleep(30)"
+            ),
+            "stalled-handshake": (
+                "import sys,time; sys.stderr.write('stalled participant stderr\\n'); "
+                "sys.stderr.flush(); time.sleep(30)"
+            ),
+        }
+        for name, child in children.items():
+            with self.subTest(name=name):
+                result = {"participant_pid": None}
+                with self.assertRaises(run.ParticipantFailure):
+                    with run.ParticipantProcess(result, [sys.executable, "-u", "-c", child], timeout_seconds=0.2):
+                        self.fail("Invalid participant startup unexpectedly succeeded")
+                diagnostics = result["participant"]
+                self.assertIsNotNone(diagnostics["pid"])
+                self.assertTrue(diagnostics["reaped"])
+                self.assertTrue(diagnostics["stdout_reader_completed"])
+                self.assertTrue(diagnostics["stderr_reader_completed"])
+                self.assertIn("participant stderr", diagnostics["stderr"])
+                self.assertTrue(diagnostics["controller_error"])
+                self.assertIsNotNone(diagnostics["exit"])
+                if name == "premature-exit":
+                    self.assertEqual(7, diagnostics["exit"])
+                    self.assertIn("closed stdout", diagnostics["controller_error"])
+                elif name == "malformed-port":
+                    self.assertIn("invalid port", diagnostics["controller_error"])
+                    self.assertTrue(diagnostics["cleanup_terminated"])
+                else:
+                    self.assertIn("TimeoutError", diagnostics["controller_error"])
+                    self.assertTrue(diagnostics["cleanup_terminated"])
+                if os.name == "posix":
+                    with self.assertRaises(ProcessLookupError):
+                        os.kill(diagnostics["pid"], 0)
+
+    def test_matrix_and_control_startup_failures_are_saved_without_orphans(self):
+        malformed = (
+            "import time; print('{\\\"port\\\":null}', flush=True); time.sleep(30)"
+        )
+        stalled = "import sys,time; sys.stderr.write('control startup stderr\\n'); sys.stderr.flush(); time.sleep(30)"
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            matrix_output = root / "matrix"
+            matrix_output.mkdir()
+            participant_factory = run.ParticipantProcess
+            with patch.object(run, "args", SimpleNamespace(output=matrix_output), create=True), \
+                 patch.object(run, "participant_command", return_value=[sys.executable, "-u", "-c", malformed]), \
+                 patch.object(run, "ParticipantProcess", side_effect=lambda result, command:
+                              participant_factory(result, command, timeout_seconds=1)):
+                self.assertFalse(run.run_case("startup-failure"))
+            matrix_evidence = json.loads((matrix_output / "startup-failure" / "evidence.json").read_text())
+            self.assertIn("assertion_failure", matrix_evidence)
+            self.assertIn("invalid port", matrix_evidence["participant"]["controller_error"])
+            self.assertTrue(matrix_evidence["participant"]["reaped"])
+
+            control_output = root / "controls"
+            control_output.mkdir()
+            with patch.object(controls.native, "participant_command", return_value=[sys.executable, "-u", "-c", stalled]), \
+                 patch.object(controls.native, "ParticipantProcess", side_effect=lambda result, command:
+                              participant_factory(result, command, timeout_seconds=1)):
+                self.assertFalse(controls.run_control("startup-failure", control_output))
+            control_evidence = json.loads((control_output / "startup-failure" / "evidence.json").read_text())
+            self.assertIn("control_error", control_evidence)
+            self.assertIn("TimeoutError", control_evidence["participant"]["controller_error"])
+            self.assertIn("control startup stderr", control_evidence["participant"]["stderr"])
+            self.assertTrue(control_evidence["participant"]["reaped"])
+            for evidence in (matrix_evidence, control_evidence):
+                if os.name == "posix":
+                    with self.assertRaises(ProcessLookupError):
+                        os.kill(evidence["participant"]["pid"], 0)
 
     def test_backend_malformed_stdout_reaps_child_and_keeps_prior_diagnostics(self):
         child = (

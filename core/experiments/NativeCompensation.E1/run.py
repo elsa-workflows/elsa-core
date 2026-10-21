@@ -37,6 +37,165 @@ class BackendFailure(RuntimeError):
         self.result = result
 
 
+class ParticipantFailure(RuntimeError):
+    """A failed participant startup/cleanup with its captured diagnostics intact."""
+
+    def __init__(self, message, result):
+        super().__init__(message)
+        self.result = result
+
+
+def participant_command(directory, no_dedupe=False, fail_undo=False):
+    command = [sys.executable, str(HERE / "participant.py"), str(directory / "participant.db")]
+    if no_dedupe:
+        command.append("--no-dedupe")
+    if fail_undo:
+        command.append("--fail-undo")
+    return command
+
+
+class ParticipantProcess:
+    """Own participant startup, bounded port handshake, teardown and diagnostics."""
+
+    def __init__(self, result, command, timeout_seconds=5):
+        self.result = result
+        self.command = command
+        self.timeout_seconds = timeout_seconds
+        self.process = None
+        self.lines = queue.Queue()
+        self.stdout_lines = []
+        self.stderr_parts = []
+        self.reader_errors = []
+        self.stderr_errors = []
+        self.reader = None
+        self.stderr_reader = None
+        self.stopped = False
+        self.diagnostics = result.setdefault("participant", {
+            "pid": None, "exit": None, "reaped": True, "killed": False,
+            "cleanup_terminated": False, "port": None, "stdout": [], "stderr": "",
+            "stdout_reader_completed": True, "stderr_reader_completed": True,
+            "stdout_reader_error": None, "stderr_reader_error": None,
+            "controller_error": None, "cleanup_error": None,
+        })
+
+    def __enter__(self):
+        try:
+            self.process = subprocess.Popen(self.command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                            text=True, bufsize=1)
+            self.diagnostics["pid"] = self.process.pid
+            self.diagnostics["reaped"] = False
+            self.result["participant_pid"] = self.process.pid
+            self.reader = threading.Thread(target=self._read_stdout, daemon=True)
+            self.stderr_reader = threading.Thread(target=self._read_stderr, daemon=True)
+            self.reader.start()
+            self.stderr_reader.start()
+            try:
+                kind, payload = self.lines.get(timeout=self.timeout_seconds)
+            except queue.Empty as error:
+                raise TimeoutError(f"Participant port handshake timed out after {self.timeout_seconds}s") from error
+            if kind == "reader_error":
+                raise RuntimeError(f"Participant stdout reader failed: {payload}") from payload
+            if kind == "eof":
+                raise RuntimeError("Participant closed stdout before reporting its port")
+            try:
+                message = json.loads(payload)
+            except json.JSONDecodeError as error:
+                raise RuntimeError(f"Participant startup output was not JSON: {error}") from error
+            port = message.get("port") if isinstance(message, dict) else None
+            if isinstance(port, bool) or not isinstance(port, int) or not 1 <= port <= 65535:
+                raise RuntimeError(f"Participant startup reported an invalid port: {port!r}")
+            self.diagnostics["port"] = port
+            return f"http://127.0.0.1:{port}/"
+        except Exception as error:
+            message = f"{type(error).__name__}: {error}"
+            self.diagnostics["controller_error"] = message
+            self._stop()
+            raise ParticipantFailure(message, self.result) from error
+
+    def __exit__(self, error_type, error, traceback):
+        self._stop()
+        if error_type is None and self.diagnostics["cleanup_error"]:
+            raise ParticipantFailure(self.diagnostics["cleanup_error"], self.result)
+        return False
+
+    def _read_stdout(self):
+        try:
+            for line in self.process.stdout:
+                self.stdout_lines.append(line.rstrip("\r\n"))
+                self.lines.put(("line", line))
+        except Exception as error:
+            self.reader_errors.append(f"{type(error).__name__}: {error}")
+            self.lines.put(("reader_error", error))
+        finally:
+            self.lines.put(("eof", None))
+
+    def _read_stderr(self):
+        try:
+            self.stderr_parts.append(self.process.stderr.read())
+        except Exception as error:
+            self.stderr_errors.append(f"{type(error).__name__}: {error}")
+
+    def _stop(self):
+        if self.stopped:
+            return
+        self.stopped = True
+        cleanup_errors = []
+        process = self.process
+        if process is not None:
+            if process.poll() is None:
+                self.diagnostics["cleanup_terminated"] = True
+                try:
+                    process.terminate()
+                except ProcessLookupError:
+                    pass
+                except OSError as error:
+                    cleanup_errors.append(f"Could not terminate participant child: {error}")
+            try:
+                process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                self.diagnostics["killed"] = True
+                try:
+                    process.kill()
+                except ProcessLookupError:
+                    pass
+                except OSError as error:
+                    cleanup_errors.append(f"Could not kill participant child: {error}")
+                try:
+                    process.wait(timeout=5)
+                except subprocess.TimeoutExpired as error:
+                    cleanup_errors.append(f"Participant child was not reaped after kill: {error}")
+            for reader in (self.reader, self.stderr_reader):
+                if reader is not None and reader.ident is not None:
+                    reader.join(timeout=5)
+                    if reader.is_alive():
+                        cleanup_errors.append(f"Participant {reader.name} did not finish after child reaping")
+            for stream in (process.stdout, process.stderr):
+                if stream is not None:
+                    try:
+                        stream.close()
+                    except (OSError, ValueError):
+                        pass
+            for reader in (self.reader, self.stderr_reader):
+                if reader is not None and reader.ident is not None and reader.is_alive():
+                    reader.join(timeout=1)
+            self.diagnostics.update({
+                "exit": process.returncode,
+                "reaped": process.poll() is not None,
+                "stdout": self.stdout_lines,
+                "stderr": "".join(self.stderr_parts),
+                "stdout_reader_completed": self.reader is None or self.reader.ident is None or not self.reader.is_alive(),
+                "stderr_reader_completed": self.stderr_reader is None or self.stderr_reader.ident is None or not self.stderr_reader.is_alive(),
+                "stdout_reader_error": self.reader_errors[0] if self.reader_errors else None,
+                "stderr_reader_error": self.stderr_errors[0] if self.stderr_errors else None,
+            })
+            self.result["participant_stderr"] = self.diagnostics["stderr"]
+            if self.reader_errors:
+                cleanup_errors.append(f"Participant stdout reader failed: {self.reader_errors[0]}")
+            if self.stderr_errors:
+                cleanup_errors.append(f"Participant stderr reader failed: {self.stderr_errors[0]}")
+        self.diagnostics["cleanup_error"] = "; ".join(cleanup_errors) or None
+
+
 def ledger(directory):
     with sqlite3.connect(directory / "participant.db") as db:
         db.row_factory = sqlite3.Row
@@ -227,32 +386,23 @@ def run_case(name, kill_at=None, ambient=False, no_dedupe=False, fail_undo=False
     if directory.exists():
         raise RuntimeError(f"Refusing to replace evidence directory {directory}")
     directory.mkdir()
-    command = [sys.executable, str(HERE / "participant.py"), str(directory / "participant.db")]
-    if no_dedupe:
-        command += ["--no-dedupe"]
-    if fail_undo:
-        command += ["--fail-undo"]
-    participant = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    port = json.loads(participant.stdout.readline())["port"]
-    url = f"http://127.0.0.1:{port}/"
-    result = {"case": name, "kill_at": kill_at, "participant_pid": participant.pid,
-              "configuration": {"ambient": ambient, "no_dedupe": no_dedupe, "fail_undo": fail_undo, "handoff": handoff, "restart_handoff": restart_handoff}}
+    result = {"case": name, "kill_at": kill_at, "participant_pid": None, "participant_stderr": "",
+              "configuration": {"ambient": ambient, "no_dedupe": no_dedupe, "fail_undo": fail_undo,
+                                "handoff": handoff, "restart_handoff": restart_handoff}}
     try:
-        run_backend_phase(result, "first", directory, url, kill_at, ambient, handoff)
-        result["after_first"] = {"elsa": snapshot(directory), "participant": ledger(directory)}
-        if kill_at:
-            run_backend_phase(result, "restart", directory, url, handoff=restart_handoff or handoff)
-        result["final"] = {"elsa": snapshot(directory), "participant": ledger(directory)}
-        final_events = result.get("restart", result["first"])["events"]
-        final = next((event["value"] for event in final_events if event["kind"] == "result"), None)
-        result["observed_result"] = final
-        result["classification"] = validate_matrix(result)
+        with ParticipantProcess(result, participant_command(directory, no_dedupe, fail_undo)) as url:
+            run_backend_phase(result, "first", directory, url, kill_at, ambient, handoff)
+            result["after_first"] = {"elsa": snapshot(directory), "participant": ledger(directory)}
+            if kill_at:
+                run_backend_phase(result, "restart", directory, url, handoff=restart_handoff or handoff)
+            result["final"] = {"elsa": snapshot(directory), "participant": ledger(directory)}
+            final_events = result.get("restart", result["first"])["events"]
+            final = next((event["value"] for event in final_events if event["kind"] == "result"), None)
+            result["observed_result"] = final
+            result["classification"] = validate_matrix(result)
     except Exception as error:
         result["assertion_failure"] = str(error) or type(error).__name__
     finally:
-        participant.terminate()
-        participant.wait(timeout=10)
-        result["participant_stderr"] = participant.stderr.read()
         (directory / "evidence.json").write_text(json.dumps(result, indent=2))
     print(json.dumps({"case": name, "observed": result.get("observed_result"), "assertion_failure": result.get("assertion_failure"), "evidence": str(directory / "evidence.json")}))
     return "assertion_failure" not in result
