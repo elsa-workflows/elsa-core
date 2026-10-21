@@ -1,0 +1,4 @@
+artifacts/
+client/dist/
+client/test-results/
+client/playwright-report/

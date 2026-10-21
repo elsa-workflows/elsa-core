@@ -47,6 +47,7 @@
 * [2026-10-20. Build the BPMN modeler on bpmn-js](2026-10-20-bpmn-modeler-on-bpmn-js.md)
 * [2026-10-20. Keep BPMN XML as the source of truth for BPMN workflows](2026-10-20-bpmn-xml-as-source-of-truth.md)
 * [2026-10-20. Evaluate BPMN conditions with Elsa expressions](2026-10-20-elsa-evaluates-bpmn-conditions.md)
+* [2026-10-20. Deliver the React Studio preview as modular NuGet packages](2026-10-20-modular-react-studio-preview.md)
 * [2026-10-20. Retain native compensation obligations in the workflow instance](2026-10-20-native-compensation-instance-journal.md)
 * [2026-10-20. Build one BPMN modeler module for both Studios](2026-10-20-one-bpmn-modeler-for-both-studios.md)
 * [2026-10-20. Publish the supported BPMN subset as a tested matrix](2026-10-20-published-bpmn-support-matrix.md)

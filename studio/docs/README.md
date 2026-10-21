@@ -64,6 +64,14 @@ Studio commit `f0eeb3c7428443b09512049fe890635fa4f7b427`. The first two
 import dispositions and verification are recorded in the
 [integration-program asset note](../../docs/integration-program/consolidation/studio-document-assets.md).
 
+The React Studio preview is being prepared for 3.11 under
+[#8859](https://github.com/elsa-workflows/elsa-core/issues/8859). Its
+[delivery plan](specs/react-studio-preview/plan.md) tracks the import and package,
+hosting, feature-parity and release gates. The independent
+[modularity spike](../samples/ReactStudio.Modularity/README.md) exercises loading
+React UI modules from packed NuGet packages; it is an architecture proof, not the
+integrated preview. The Blazor Studio remains the default.
+
 ## Planned native compensation
 
 The [Native compensation authoring, inspection and recovery program](../../core/docs/compensation/README.md) is the current program entrypoint for scope, ownership and readiness. The [Studio interaction plan](specs/native-compensation/plan.md) records Studio design details within the reviewed [Elsa 3 adaptation packet](../../core/docs/specs/native-compensation/README.md). Standing owner authorization permits delivery through the remaining technical gates; these plans do not claim implementation or proof.

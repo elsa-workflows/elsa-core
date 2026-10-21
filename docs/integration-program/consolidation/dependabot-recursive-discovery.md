@@ -141,6 +141,17 @@ README records that exit condition. E1 evidence and M1 readiness remain separate
 
 ## Central package and build imports
 
+The temporary React Studio modularity proof under #8839 adds four independent
+Studio sample projects outside `Elsa.sln`: its Runtime, Labels, third-party Weather
+and consuming Host. They are included in the Studio updater's existing recursive
+selector, bringing its current starting set to 77 projects. The census names the
+four explicitly and verifies that no new project under that proof root is omitted.
+Their scoped central file imports the root package versions for CShells/YARP;
+their sample package IDs resolve only from a local feed. Their package references
+must remain independent of source project references to preserve the proof. Remove
+this temporary disposition when production React Studio coverage replaces #8839's
+sample. The historical inventory tables above predate this addition.
+
 The coverage test walks from each of the 356 selected project manifests to its nearest
 `Directory.Packages.props`, then follows the literal import chain. Core and build reach
 the root central file (207 PackageVersion elements); Extensions reaches
