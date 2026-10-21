@@ -23,7 +23,7 @@ test("specialized and extension UI hints edit their server values through regist
       const [readOnly, setReadOnly] = useState(false);
       const [values, setValues] = useState({
         date: {typeName:"DateTime",expression:{type:"Literal",value:"2026-10-20T15:30:45.000Z"}},
-        outcomes: {typeName:"String[]",expression:{type:"Object",value:'["Approve"]'}},
+        outcomes: {typeName:"String[]",expression:{type:"Object",value:'[" Approve "]'}},
         statuses: [{statusCode:200,activity:{id:"preserved-child",type:"Elsa.Sequence",version:1}},{statusCode:404}],
       });
       const context = {activityType:"Example.Activity",activityVersion:1,activity:{id:"fixture"},variables:[],outputs:[],inputs};
@@ -59,8 +59,9 @@ test("specialized and extension UI hints edit their server values through regist
   await page.getByLabel("Scheduled date").fill("");
   await expect(page.getByTestId("date-value")).toHaveText(JSON.stringify({ typeName: "DateTime", expression: { type: "Literal", value: "" } }));
 
-  await page.getByLabel("New outcome", { exact: true }).fill("Reject");
+  await page.getByLabel("New outcome", { exact: true }).fill(" Reject ");
   await page.getByLabel("New outcome", { exact: true }).press("Enter");
+  await expect(page.getByTestId("outcomes-value")).toHaveText(JSON.stringify({ typeName: "String[]", expression: { type: "Object", value: '[" Approve ","Reject"]' } }));
   await page.getByRole("button", { name: "Remove outcome Approve" }).click();
   await expect(page.getByTestId("outcomes-value")).toHaveText(JSON.stringify({
     typeName: "String[]", expression: { type: "Object", value: '["Reject"]' },

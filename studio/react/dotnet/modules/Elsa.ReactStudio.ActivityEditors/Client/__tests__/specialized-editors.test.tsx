@@ -40,7 +40,7 @@ describe("DateTimePicker", () => {
 describe("DynamicOutcomes", () => {
   const input = descriptor({ uiHint: "dynamic-outcomes", uiSpecifications: { DynamicOutcomesOptions: { fixedOutcomes: ["Done"] } } });
   it("writes the server's Object JSON list, excludes fixed ports, and keeps an emptied list empty", () => {
-    expect(serializeOutcomes([" Approve ", "Reject", "Approve", "Done", ""], input)).toBe('["Approve","Reject"]');
+    expect(serializeOutcomes([" Approve ", "Reject", " Approve ", "Done"], input)).toBe('[" Approve ","Reject"]');
     expect(serializeOutcomes([], input)).toBe("[]");
     expect(fixedOutcomes(input)).toEqual(["Done"]);
     const value = { typeName: "String[]", expression: { type: "Object", value: '["Approve"]' } };
@@ -52,6 +52,19 @@ describe("DynamicOutcomes", () => {
     const ports = computePorts(activity, { inputs: [input], ports: [] } as unknown as ActivityDescriptor);
     expect(ports.outPorts.map(port => port.name)).toEqual(["Approve", "Done"]);
   });
+});
+
+it("keeps saved outcome names connected when adding and removing another outcome", () => {
+  const input = descriptor({ name: "Outcomes", defaultSyntax: "Object", uiHint: "dynamic-outcomes" });
+  const definition = { inputs: [input], ports: [] } as unknown as ActivityDescriptor;
+  const connection = { source: { activity: "choice", port: " Approve " }, target: { activity: "next", port: "In" } };
+  const original = { id: "choice", type: "Example.Decision", version: 1, outcomes: { typeName: "String[]", expression: { type: "Object", value: '[" Approve "]' } } };
+  const added = { ...original, outcomes: { ...original.outcomes, expression: { type: "Object", value: serializeOutcomes([" Approve ", "Reject"], input) } } };
+  const removed = { ...added, outcomes: { ...added.outcomes, expression: { type: "Object", value: serializeOutcomes([" Approve "], input) } } };
+  for (const activity of [added, removed]) {
+    expect(computePorts(activity, definition).outPorts.map(port => port.name)).toContain(connection.source.port);
+  }
+  expect(original.outcomes.expression.value).toBe('[" Approve "]');
 });
 
 describe("HttpStatusCodes", () => {

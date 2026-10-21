@@ -15,7 +15,9 @@ hints at the default priority `0` replace them, regardless of module ID.
 | `input-picker` | Select or clear a declared workflow input | Wrapped `Input` expression contains the complete serialized input definition; unwrapped properties retain the object |
 
 Dynamic outcomes also update designer ports from either array or JSON-string values,
-including the descriptor's `DynamicOutcomesOptions.fixedOutcomes`. The input picker
+including the descriptor's `DynamicOutcomesOptions.fixedOutcomes`. Only newly entered
+outcomes are trimmed; saved names retain their exact spelling so existing connection
+endpoints remain attached when another outcome is added or removed. The input picker
 receives full input definitions through the SDK editor context, including display,
 type and storage metadata.
 

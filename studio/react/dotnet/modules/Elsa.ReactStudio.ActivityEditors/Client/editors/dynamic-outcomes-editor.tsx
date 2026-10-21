@@ -16,8 +16,9 @@ export function DynamicOutcomesEditor(props: UiHintEditorProps) {
       onChange(props.descriptor.isWrapped === false ? JSON.parse(serialized) : serialized);
     };
     const commit = () => {
-      if (!draft.trim()) return;
-      write([...items, draft]);
+      const name = draft.trim();
+      if (!name) return;
+      write([...items, name]);
       setDraft("");
     };
     return <div className="flex flex-col gap-2">
