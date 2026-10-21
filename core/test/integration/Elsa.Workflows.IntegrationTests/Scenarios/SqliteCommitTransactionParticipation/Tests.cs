@@ -59,7 +59,10 @@ public sealed class Tests(ITestOutputHelper output)
         Assert.True(commit.BookmarkDeleteSeen);
         Assert.True(commit.BookmarkInsertSeen);
         Assert.True(commit.WorkflowInstanceUpdateSeen);
-        Assert.True(commit.AllCorrectnessWritesUsedSharedTransaction);
+        Assert.True(commit.AllCorrectnessWritesUsedSharedConnectionAndTransaction);
+        Assert.Contains(commit.CorrectnessWrites, write => write.ContextType == typeof(ManagementElsaDbContext));
+        Assert.Contains(commit.CorrectnessWrites, write => write.ContextType == typeof(RuntimeElsaDbContext));
+        Assert.Contains(commit.CorrectnessWrites, write => write.Table == "WorkflowExecutionLogRecords");
         AssertBookmarkDiffPrecedesSnapshotUpdate(commit);
         Assert.Equal(before.DataHash, commit.ConditionalUpdateExpectedDataHash);
         Assert.Contains(commit.ConditionalUpdate!.Method, new[] { "ReaderExecutingAsync", "NonQueryExecutingAsync" });
@@ -105,7 +108,9 @@ public sealed class Tests(ITestOutputHelper output)
         Assert.True(commit.BookmarkDeleteSeen);
         Assert.True(commit.BookmarkInsertSeen);
         Assert.True(commit.WorkflowInstanceUpdateSeen);
-        Assert.True(commit.AllCorrectnessWritesUsedSharedTransaction);
+        Assert.True(commit.AllCorrectnessWritesUsedSharedConnectionAndTransaction);
+        Assert.Contains(commit.CorrectnessWrites, write => write.ContextType == typeof(ManagementElsaDbContext));
+        Assert.Contains(commit.CorrectnessWrites, write => write.ContextType == typeof(RuntimeElsaDbContext));
         AssertBookmarkDiffPrecedesSnapshotUpdate(commit);
         Assert.Equal(initial.DataHash, commit.ConditionalUpdateExpectedDataHash);
         Assert.Contains("\"Data\"", commit.WorkflowInstanceUpdateSql, StringComparison.OrdinalIgnoreCase);
@@ -148,7 +153,7 @@ public sealed class Tests(ITestOutputHelper output)
         Assert.True(commit.BookmarkDeleteSeen);
         Assert.True(commit.BookmarkInsertSeen);
         Assert.True(commit.WorkflowInstanceUpdateSeen);
-        Assert.False(commit.AllCorrectnessWritesUsedSharedTransaction);
+        Assert.False(commit.AllCorrectnessWritesUsedSharedConnectionAndTransaction);
         AssertBookmarkDiffPrecedesSnapshotUpdate(commit);
         Assert.Equal(initial.DataHash, commit.ConditionalUpdateExpectedDataHash);
         AssertResumeSnapshotUpdatesUseExpectedData(fixture.Commands.GetResumeCommitAttempts(), initial.DataHash);
@@ -262,8 +267,9 @@ internal sealed class NativeCommitFixture : IAsyncDisposable
         var builtWorkflow = await serviceProvider.GetRequiredService<IWorkflowBuilderFactory>()
             .CreateBuilder()
             .BuildWorkflowAsync<NativeCommitWorkflow>();
+        var workflowGraph = await serviceProvider.GetRequiredService<IWorkflowGraphBuilder>().BuildAsync(builtWorkflow);
 
-        return new(connection, connectionString, serviceProvider, builtWorkflow.Workflow, commands, transactionState);
+        return new(connection, connectionString, serviceProvider, workflowGraph, commands, transactionState);
     }
 
     public async Task<StartedWorkflow> StartAsync()
@@ -519,7 +525,8 @@ internal sealed class SharedTransactionDbContextFactory<TContext>(IDbContextFact
         }
 
         context.Database.UseTransaction(state.Transaction);
-        if (!ReferenceEquals(context.Database.CurrentTransaction?.GetDbTransaction(), state.Transaction))
+        if (!ReferenceEquals(context.Database.CurrentTransaction?.GetDbTransaction(), state.Transaction) ||
+            !ReferenceEquals(context.Database.GetDbConnection(), state.Transaction.Connection))
         {
             throw new InvalidOperationException("The EF context did not enlist in the active shared SQLite transaction.");
         }
@@ -573,23 +580,23 @@ internal sealed class SqliteCommitCommandInterceptor : DbCommandInterceptor
 
     public override ValueTask<InterceptionResult<int>> NonQueryExecutingAsync(DbCommand command, CommandEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
     {
-        Observe(command, "NonQueryExecutingAsync");
+        Observe(command, eventData, "NonQueryExecutingAsync");
         return ValueTask.FromResult(result);
     }
 
     public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result, CancellationToken cancellationToken = default)
     {
-        Observe(command, "ReaderExecutingAsync");
+        Observe(command, eventData, "ReaderExecutingAsync");
         return ValueTask.FromResult(result);
     }
 
     public override ValueTask<InterceptionResult<object>> ScalarExecutingAsync(DbCommand command, CommandEventData eventData, InterceptionResult<object> result, CancellationToken cancellationToken = default)
     {
-        Observe(command, "ScalarExecutingAsync");
+        Observe(command, eventData, "ScalarExecutingAsync");
         return ValueTask.FromResult(result);
     }
 
-    private void Observe(DbCommand command, string method)
+    private void Observe(DbCommand command, CommandEventData eventData, string method)
     {
         var sql = command.CommandText;
         var current = _commits.GetValueOrDefault(_activeCommitAttemptId);
@@ -624,7 +631,7 @@ internal sealed class SqliteCommitCommandInterceptor : DbCommandInterceptor
 
         if (current != null && table is "Bookmarks" or "WorkflowInstances" or "ActivityExecutionRecords" or "WorkflowExecutionLogRecords")
         {
-            var observation = new CommandObservation(current.Id, table, method, command.Transaction, command.CommandText, expectedDataHash);
+            var observation = new CommandObservation(current.Id, table, method, eventData.Context?.GetType(), command.Connection, command.Transaction, command.CommandText, expectedDataHash);
             _commands.Add(observation);
             current.CorrectnessWrites.Add(observation);
             if (expectedDataHash != null)
@@ -633,8 +640,9 @@ internal sealed class SqliteCommitCommandInterceptor : DbCommandInterceptor
                 current.ConditionalUpdates.Add(observation);
                 current.ConditionalUpdateExpectedDataHash ??= expectedDataHash;
             }
-            current.AllCorrectnessWritesUsedSharedTransaction &= current.SharedTransaction != null &&
-                ReferenceEquals(command.Transaction, current.SharedTransaction);
+            current.AllCorrectnessWritesUsedSharedConnectionAndTransaction &= current.SharedTransaction != null &&
+                ReferenceEquals(command.Transaction, current.SharedTransaction) &&
+                ReferenceEquals(command.Connection, current.SharedTransaction.Connection);
         }
     }
 
@@ -666,7 +674,7 @@ internal sealed class SqliteCommitCommandInterceptor : DbCommandInterceptor
 
     private static bool StartsWithVerb(string sql, string verb) => sql.TrimStart().StartsWith(verb, StringComparison.OrdinalIgnoreCase);
 
-    internal sealed record CommandObservation(long CommitAttemptId, string Table, string Method, DbTransaction? Transaction, string Sql, string? ExpectedDataHash)
+    internal sealed record CommandObservation(long CommitAttemptId, string Table, string Method, Type? ContextType, DbConnection? Connection, DbTransaction? Transaction, string Sql, string? ExpectedDataHash)
     {
     }
 
@@ -677,7 +685,7 @@ internal sealed class SqliteCommitCommandInterceptor : DbCommandInterceptor
         public bool BookmarkDeleteSeen { get; set; }
         public bool BookmarkInsertSeen { get; set; }
         public bool WorkflowInstanceUpdateSeen { get; set; }
-        public bool AllCorrectnessWritesUsedSharedTransaction { get; set; } = true;
+        public bool AllCorrectnessWritesUsedSharedConnectionAndTransaction { get; set; } = true;
         public string WorkflowInstanceUpdateSql { get; set; } = "";
         public string? ConditionalUpdateExpectedDataHash { get; set; }
         public CommandObservation? ConditionalUpdate { get; set; }
