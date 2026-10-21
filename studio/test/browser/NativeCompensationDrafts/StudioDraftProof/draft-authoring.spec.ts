@@ -180,10 +180,12 @@ function getStepRow(editor: Locator, index: number): Locator {
 }
 
 async function chooseWriteLine(page: Page, row: Locator, fieldLabel: 'Forward activity' | 'Inline handler'): Promise<void> {
+  const field = row.locator('.mud-select').filter({ hasText: fieldLabel });
   await row.getByLabel(fieldLabel, { exact: true }).click();
-  const option = page.getByRole('option').filter({ hasText: /write\s*line/i }).first();
+  const option = page.locator('.mud-popover-open').getByText('WriteLine', { exact: true }).first();
   await option.waitFor({ state: 'visible', timeout: 8_000 });
   await option.click();
+  await expect(field.getByText('WriteLine', { exact: true })).toBeVisible();
 }
 
 async function setSelectedChildLiteral(page: Page, row: Locator, childRole: 'forward' | 'handler', value: string): Promise<void> {
@@ -505,8 +507,6 @@ test('native compensation draft persists two paired rows and refuses UI publish'
       const row = getStepRow(editor, index);
       await chooseWriteLine(page, row, 'Forward activity');
       await chooseWriteLine(page, row, 'Inline handler');
-      await requireVisible(row.getByLabel('Forward activity', { exact: true }));
-      await requireVisible(row.getByLabel('Inline handler', { exact: true }));
     }
   });
 
