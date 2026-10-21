@@ -42,7 +42,7 @@ test("specialized and extension UI hints edit their server values through regist
     }
     export function register(api) {
       registerEditors(api);
-      api.contribute("uiHints",{id:"email-address",hint:"singleline",order:-100,component:props=>h("input",{
+      api.contribute("uiHints",{id:"email-address",hint:"singleline",component:props=>h("input",{
         type:"email","aria-label":"Extension email",readOnly:props.readOnly,value:props.value?.expression?.value??"",
         onChange:event=>props.onChange({typeName:"String",expression:{type:"Literal",value:event.target.value}})})});
       api.contribute("routes",{id:"editors-fixture",path:"/editors-fixture",component:Fixture});

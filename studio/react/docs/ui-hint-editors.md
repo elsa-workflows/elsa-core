@@ -4,7 +4,8 @@ ActivityEditors contributes its built-in editors through the SDK `uiHints` slot.
 Extension packages use the same slot; the HTTP and email examples in the tests
 exercise the same renderer, rather than a separate list of extension controls.
 Overrides retain slot ordering: a smaller `order` wins, followed by stable module
-and contribution IDs. Use an explicit priority when replacing a built-in hint.
+and contribution IDs. Built-in hints use fallback priority `1000`, so extension
+hints at the default priority `0` replace them, regardless of module ID.
 
 | Hint | Editing behavior | Server value |
 | --- | --- | --- |

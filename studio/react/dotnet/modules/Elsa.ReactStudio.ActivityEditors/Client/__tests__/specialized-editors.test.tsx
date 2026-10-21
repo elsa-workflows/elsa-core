@@ -106,3 +106,15 @@ it("registers the four specialized editors and extension hints through the same 
   const Email = registry.studioModules().find(module => module.id === "email-extension")!.extensions!.uiHints!["email-address"];
   expect(renderToStaticMarkup(<Email {...props(descriptor())} />)).toContain('type="email"');
 });
+
+
+it("lets a default-order external hint override a built-in even when its owner sorts later", async () => {
+  const registry = new StudioRegistry();
+  await registry.load({ id: "activity-editors", version: "1", hostApiVersion: 1, sdkApiVersion: 1, entry: "editors.js" },
+    async () => ({ register: activityEditorsModule.register }));
+  await registry.load({ id: "z-custom", version: "1", hostApiVersion: 1, sdkApiVersion: 1, entry: "custom.js" }, async () => ({
+    register(api) { api.contribute("uiHints", { id: "override", hint: "singleline", component: () => <input type="email" /> }); },
+  }));
+  const winner = registry.slots("uiHints").find(slot => slot.hint === "singleline")!;
+  expect(renderToStaticMarkup(<winner.component {...props(descriptor())} />)).toContain('type="email"');
+});
