@@ -405,15 +405,18 @@ test('native compensation draft persists two paired rows and refuses UI publish'
   });
 
   await assertion('NC-DRAFT-SCOPE-OPENED-VIA-UI', 'scope-picker-or-double-click-unavailable', async () => {
-    const search = page.getByPlaceholder('Search...', { exact: true });
+    const search = page.getByLabel('Search...', { exact: true });
     await search.fill('Compensation');
-    const flowCategory = page.getByRole('button', { name: 'Flow', exact: true });
-    await requireVisible(flowCategory);
-    if (await flowCategory.getAttribute('aria-expanded') !== 'true')
-      await flowCategory.click();
-    await expect(flowCategory).toHaveAttribute('aria-expanded', 'true');
-    const scopeCard = page.locator('.cursor-grab').filter({ hasText: /compensation scope/i }).first();
-    await scopeCard.waitFor({ state: 'visible' });
+    const tree = page.locator('.mud-treeview');
+    const flowCategoryLabel = tree.locator('.mud-treeview-item-label')
+      .filter({ hasText: /^\s*Flow\s*$/ });
+    const scopeCard = tree.locator('.mud-treeview-item[draggable="true"]')
+      .filter({ hasText: /^\s*Compensation Scope\s*$/i });
+    await requireVisible(flowCategoryLabel);
+    if (!(await scopeCard.isVisible())) {
+      await flowCategoryLabel.click();
+    }
+    await requireVisible(scopeCard);
     await scopeCard.dragTo(page.locator('.flowchart-diagram-designer-wrapper'));
     editor = await openCompensationScope(page);
     await requireVisible(editor.getByRole('button', { name: 'Add compensation step', exact: true }));
