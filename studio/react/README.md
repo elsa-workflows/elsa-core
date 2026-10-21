@@ -67,6 +67,7 @@ New to the project? Start with the [Getting started guide](docs/getting-started.
 | [Getting started](docs/getting-started.md) | Install, run, connect to a server, first sign-in. |
 | [Configuration](docs/configuration.md) | **Adding servers**, authentication providers, feature flags, theming, environment variables. |
 | [Modules](docs/modules.md) | What every module does, how to enable it, and how to build a new one. |
+| [Module authoring](docs/module-authoring.md) | Generate, package and verify an independent extension. |
 | [Parity audit](docs/parity.md) | Verified editor behavior, evidence boundaries and linked Preview gaps. |
 | [Activity settings](docs/activity-settings.md) | Commit, log persistence, resilience, task and version settings; instance retry history. |
 | [Designer](docs/designer.md) | Containers, the quick-add palette, data flow, call context, keyboard shortcuts. |

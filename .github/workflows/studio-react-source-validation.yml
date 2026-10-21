@@ -76,6 +76,9 @@ jobs:
             --output "$RUNNER_TEMP/react-studio-packages" -p:Version=3.11.0-preview.${{ github.run_id }}
           python3 studio/react/scripts/verify-nuget-packages.py \
             "$RUNNER_TEMP/react-studio-packages" 3.11.0-preview.${{ github.run_id }}
+      - name: Generate and verify an independently packaged third-party module
+        working-directory: studio/react
+        run: pnpm test:module --nuget-feed "$RUNNER_TEMP/react-studio-packages" --studio-version 3.11.0-preview.${{ github.run_id }}
       - name: Build and start the standalone Preview image without publishing
         run: |
           docker build -f studio/react/Dockerfile -t elsa-react-studio:ci .
