@@ -1,0 +1,41 @@
+# Guard compensation-aware snapshots at the native persistence boundary
+
+- Status: Proposed
+- Date: 2026-10-21
+- Owners: Elsa 3 program lead with runtime and persistence reviewers
+- Related: [guarded snapshot contract](../../core/docs/specs/native-compensation/guarded-snapshot.md), [root instance journal ADR](2026-10-20-native-compensation-instance-journal.md), [E1 report #8932](https://github.com/elsa-workflows/elsa-core/pull/8932), [existing shared-transaction request #7973](https://github.com/elsa-workflows/elsa-core/issues/7973)
+
+## Context
+
+E1's actual EF/SQLite controls reproduce stale full-row overwrite and destructive null-state resave after outer snapshot decode failure. A journal revision stored only inside workflow-state Data cannot prevent either failure. Existing store signatures have no expected revision or owner receipt, generic Save/Update/bulk paths are unconditional, and normal runtime commits write bookmarks and variables before instance state. E1 is Partial, M1 is Not Ready, and the physical root-journal ADR remains Proposed.
+
+The source audit is pinned to 2513472e49437aa9688a0436240348858e83fdbf. The E1 report in #8932 is unmerged evidence, not a provider qualification or production implementation.
+
+## Options
+
+1. Keep guard state only in root journal Properties. Rejected: corrupt/unreadable outer Data removes the only detectable marker, and embedded revision/owner values are not checked by the database write.
+2. Add a separate CAS helper but leave ordinary store mutations unchanged. Rejected: Save, Update, SaveMany, interruption, import, alteration and delete paths can still replace or discard a protected instance.
+3. Add a narrow opt-in guarded persistence capability backed by row-owned metadata, typed pre-hydration admission, commit-time tenant/revision/epoch predicates, and mandatory enforcement for all Core mutation paths on marked rows. Recommended for review; exact API and schema remain open.
+4. Add a generic shared-connection/unit-of-work platform as part of compensation. Deferred: #7973 already owns the broader persistence seam. Compensation must qualify only the bounded required-store transaction profile and link that work.
+
+## Proposed direction
+
+Use additive storage metadata outside serialized Data: a guard-format marker, monotonic storage revision, owner epoch/identity, and canonical transition commit receipt. Keep these distinct from workflow-definition Version and logical journal revision. The store reads marker and raw snapshot before normal deserialization; it either returns valid admitted state with a store-issued opaque receipt or a safe typed nonterminal blocked result while preserving original bytes. Every protected write checks instance, exact trusted owner tenant, supported guard format, expected storage revision and owner epoch in the database write itself; a zero-row result is conflict, not success.
+
+Persistence must issue and durably expose the exact transition ID/hash to the trusted runtime before an uncertain write can begin, bound to an exact protected-preimage fingerprint covering the canonical snapshot, protected row fields and required participating state. Keep the pending identity/fingerprint and original expected revision across owner claims; a claim may advance current row revision only when the complete protected preimage is proven unchanged, and cannot overwrite the pending intent. If committed, preserve its original committed revision separately. Interrupt/status or other protected-state mutation must first reconcile or refuse while an intent is pending. If state changed, block the old intent; after proving it did not commit, any new intent starts from newly admitted current state and preserves business operation keys/obligations. If the ID is not known or discoverable by canonical transition hash, remain blocked. The first guarded profile requires `TenantsOptions.IsEnabled == true` plus trusted server tenant context; the original E1 fixture with filtering disabled is not qualification. Default-tenant operation requires explicit host configuration, and guarded use with filtering disabled is deferred to E2 review.
+
+Keep the existing IWorkflowInstanceStore interface unchanged. A separate optional capability may serve guarded paths; old providers and unmarked rows retain existing behavior. If the capability is absent, protected publication/activation is rejected before effects. The owning persistence layer must also reject old Save/Update/SaveMany/import/alteration/interrupt/delete paths for marked rows unless a supported guarded transition is supplied. Current dispatch processing sends before cleanup, deletes the outbox row before marker removal and catches/logs cleanup failure. Reject guarded dispatch before Send until receipt-checked handoff/cleanup plus durable retry/dedup is qualified; the existing outbox is not the compensation recovery ledger. This is a proposed compatibility boundary, not a frozen public API.
+
+Admit a new owner epoch only after positive local supervisor proof that the previous process stopped and no competing local owner remains. Do not infer process death from timeout or heartbeat. Do not claim the row epoch fences a paused remote request; stable participant keys and later uncertainty/reconciliation guarantees remain separate.
+
+The guarded snapshot update must not be committed after correctness-dependent bookmark/variable/work writes outside a transaction. E1 must qualify the exact required record set through a provider-supported shared transaction or stop and propose a durable repair protocol/revised provider. For candidate SQLite, cross-context EF transactions require the same DbConnection and DbTransaction; SQLite does not support System.Transactions. Reuse #7973 for the broad shared-connection seam rather than duplicating it here.
+
+## Consequences and gates
+
+- M1/E1 remains blocked until actual stale-revision and stale-epoch rejection, pre-hydration fail-closed behavior, raw-byte preservation, current-process restart ownership, mutation-bypass negatives, trusted tenant controls, unknown-commit receipt reconciliation, legacy compatibility and required-store transaction rollback are independently demonstrated. The guarded profile explicitly requires tenant filtering enabled and rejects guarded dispatch before Send until outbox handoff/cleanup/retry behavior is qualified.
+- Unknown commit acknowledgement cannot trigger an effect. Persistence supplies a durable prepared ID/hash and protected-preimage fingerprint before the uncertain write; reconcile the exact persisted intent under current ownership. Owner claims preserve pending identity and original expected revision as current row revision advances; preserve an original committed revision only when a committed receipt exists. Rebind is permitted only after proving intervening writes were ownership-metadata-only and the protected preimage is identical. A participant operation key is not a database commit receipt.
+- Asterisk-agnostic read visibility is not a mutation owner. Default-tenant null/empty compatibility is explicit; request tenant input is never authority.
+- M2 still owns remote unknown-outcome reconciliation and late participant results. M3 owns nesting, loops and cancellation composition; M4 owns operator commands; M5 owns provider/upgrade/retention qualification.
+- No production API, schema, migration, implementation, provider support, distributed lease or M1 readiness is accepted by this Proposed ADR. The physical instance-journal ADR stays Proposed until E1–E3 evidence and review pass.
+
+Before any implementation DoR, runtime/persistence reviewers must settle the narrow capability/API, row schema, migration/backout, protected-preimage fingerprint/rebind protocol and receipt protocol; security must review tenant and outbox rejection boundaries; the program lead records the review and proof plan. Revisit after bounded E1 persistence/transaction proof and independent Core API review, including positive ownership-only rebind and negative protected-state-change controls. If the native store cannot reject all old writes to marked rows while preserving existing provider compatibility, do not enable guarded activation; present the smallest supported native seam or a revised provider boundary for review.
