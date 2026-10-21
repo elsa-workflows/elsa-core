@@ -8,10 +8,11 @@ The Playwright journey signs in through the normal ElsaIdentity UI in a fresh co
 
 ## Toolchain and isolation
 
-Use macOS with Python 3.11+, Node, the lockfile-pinned Playwright Chromium, and the repository-compatible .NET SDK. Process ownership verification uses macOS libproc; this launcher does not claim Linux/Windows cleanup support. Build these projects from one clean, frozen source head, serially through the configured .NET build wrapper:
+Use macOS with Python 3.11+, Node, the lockfile-pinned Playwright Chromium, and the repository-compatible .NET SDK. Process ownership verification uses macOS libproc; this launcher does not claim Linux/Windows cleanup support. Prepare these projects from one clean, frozen source head, serially through the configured .NET build wrapper:
 
 - `core/src/apps/Elsa.ModularServer.Web/Elsa.ModularServer.Web.csproj` for `net10.0`.
-- `studio/src/hosts/Elsa.Studio.Host.Server/Elsa.Studio.Host.Server.csproj` for `net10.0`.
+- Publish `studio/src/hosts/Elsa.Studio.Host.Server/Elsa.Studio.Host.Server.csproj` for `net10.0` to a private external output directory. Supply that published directory as `--studio-output`; a copied build directory does not contain the static assets required by this isolated Production host.
+- Build `studio/src/hosts/Elsa.Studio.Host.Wasm/Elsa.Studio.Host.Wasm.csproj` for `net10.0` as the separate host-compatibility check.
 - `scripts/native-compensation-draft-proof/StudioProofDataProtectionStartup/StudioProofDataProtectionStartup.csproj`.
 
 Provision `StudioDraftProof` dependencies with `npm ci --ignore-scripts --no-audit --no-fund`, using isolated npm configuration/cache and a private browser cache. Run its `typecheck` script before launching. Do not copy local credentials or settings into the fixture. The startup library is non-packable and configures an isolated temporary Data Protection key ring through the standard hosting-startup seam; it adds no product setting.

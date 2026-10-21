@@ -24,7 +24,7 @@ The browser-process capture remains private. Playwright records CDP `SystemInfo.
 
 ## Required inputs and build provenance
 
-The supervisor requires explicit absolute `--dotnet` and `--node` paths, compiled Core/Studio/startup paths, loopback ports, `--scratch-parent`, and `--build-manifest`. The scratch parent must be outside this fixture, the Elsa source checkout, and the receipt directory; each invocation creates a private `runs/` child there. The receipt directory stays outside the source checkout and private scratch. Runtime output is copied before launch; source hosts are not built by the supervisor.
+The supervisor requires explicit absolute `--dotnet` and `--node` paths, compiled Core/Studio/startup paths, loopback ports, `--scratch-parent`, and `--build-manifest`. The Server Studio directory must be published output containing its static web assets, since the isolated host runs in Production; copying ordinary build output can start the host while its scripts and styles return 404. The scratch parent must be outside this fixture, the Elsa source checkout, and the receipt directory; each invocation creates a private `runs/` child there. The receipt directory stays outside the source checkout and private scratch. Runtime output is copied before launch; source hosts are not built by the supervisor.
 
 The external build manifest is mode `0600` JSON with this compact schema:
 
