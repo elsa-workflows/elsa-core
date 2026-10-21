@@ -44,23 +44,31 @@ function escapeRe(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+// Generated C#/JavaScript wrappers accept alphanumeric names only. An underscore
+// is a valid language identifier but is rejected by the runtime name validator.
+const generatedAccessor = /^[A-Za-z][A-Za-z0-9]*$/;
+const pascal = (name: string) => name.replace(/(?:^|_)([a-z])/g, (_, letter: string) => letter.toUpperCase());
+
 /**
  * Patterns under which expressions reference a variable in Elsa 3:
- * JavaScript/Python `variables.Name`, C#/Liquid `Variables.Name`, JS `getName()` / `setName()`,
- * `getVariable('Name')` / `setVariable('Name', …)`. Reads vs writes are distinguished by the setter forms.
+ * Includes direct containers, runtime-generated PascalCase aliases and generic
+ * getters/setters. Reads vs writes are distinguished by the setter forms.
  */
 function variablePatterns(name: string) {
   const n = escapeRe(name);
+  const alias = escapeRe(pascal(name));
+  const readAliases = generatedAccessor.test(name) ? `|\\bVariables?\\.${alias}\\b|\\bget${alias}\\s*\\(` : "";
+  const writeAliases = generatedAccessor.test(name) ? `|\\bVariables?\\.${alias}\\s*=[^=]|\\bset${alias}\\s*\\(` : "";
   return {
-    read: new RegExp(`\\b[vV]ariables\\.${n}\\b|\\bget${n}\\s*\\(|\\bgetVariable\\s*\\(\\s*['"\`]${n}['"\`]`),
-    write: new RegExp(`\\bset${n}\\s*\\(|\\bsetVariable\\s*\\(\\s*['"\`]${n}['"\`]|\\b[vV]ariables\\.${n}\\s*=[^=]`),
+    read: new RegExp(`\\b[vV]ariables\\.${n}\\b|\\bget${n}\\s*\\(|\\bgetVariable\\s*\\(\\s*['"\`]${n}['"\`]|\\bVariables?\\.Get(?:<[^>]+>)?\\s*\\(\\s*['"]${n}['"]${readAliases}`),
+    write: new RegExp(`\\bset${n}\\s*\\(|\\bsetVariable\\s*\\(\\s*['"\`]${n}['"\`]|\\b[vV]ariables\\.${n}\\s*=[^=]|\\bVariables?\\.Set\\s*\\(\\s*['"]${n}['"]${writeAliases}`),
   };
 }
 
 /** JS `input.Name` / `getName()` / `getInput('Name')`, Liquid/C# `Input.Name`, `Inputs.Name`. */
 function inputPattern(name: string) {
   const n = escapeRe(name);
-  return new RegExp(`\\b[iI]nputs?\\.${n}\\b|\\bget${n}\\s*\\(|\\bgetInput\\s*\\(\\s*['"\`]${n}['"\`]`);
+  return new RegExp(`\\b[iI]nputs?\\.${n}\\b|\\bget${n}\\s*\\(|\\bgetInput\\s*\\(\\s*['"\`]${n}['"\`]|\\bInputs?\\.Get(?:<[^>]+>)?\\s*\\(\\s*['"]${n}['"]`);
 }
 
 /** Collects every string that could be an expression inside an activity's properties (one level deep is enough: wrapped inputs). */
@@ -201,27 +209,26 @@ export function expressionCompletions(
   const items: { label: string; detail: string; type: string }[] = [];
   const add = (label: string, detail: string, type = "variable") => items.push({ label, detail, type });
   const identifier = /^[A-Za-z_][\w]*$/;
-  const pascal = (name: string) => name.replace(/(?:^|_)([a-z])/g, (_, letter: string) => letter.toUpperCase());
   const quote = (value: string) => JSON.stringify(value);
   for (const v of variables) {
     if ((language === "javascript" || language === "python") && identifier.test(v.name)) add(`variables.${v.name}`, "variable");
     if (language === "csharp") {
-      if (identifier.test(v.name)) add(`Variable.${pascal(v.name)}`, "variable");
+      if (generatedAccessor.test(v.name)) add(`Variable.${pascal(v.name)}`, "variable");
       add(`Variable.Get(${quote(v.name)})`, "variable", "function");
     }
     if (language === "liquid" && identifier.test(v.name)) add(`Variables.${v.name}`, "variable");
     if (language === "python") add(`variables.get(${quote(v.name)})`, "variable", "function");
-    if (language === "javascript" && identifier.test(v.name)) {
+    if (language === "javascript" && generatedAccessor.test(v.name)) {
       add(`get${pascal(v.name)}()`, "variable getter", "function");
       add(`set${pascal(v.name)}(value)`, "variable setter", "function");
     }
   }
   for (const i of inputs) {
     if (language === "javascript") {
-      if (identifier.test(i.name)) add(`get${i.name}()`, "workflow input", "function");
+      if (generatedAccessor.test(i.name)) add(`get${i.name}()`, "workflow input", "function");
       add(`getInput(${quote(i.name)})`, "workflow input", "function");
     }
-    if ((language === "csharp" || language === "liquid") && identifier.test(i.name)) add(`Input.${i.name}`, "workflow input");
+    if ((language === "csharp" && generatedAccessor.test(i.name)) || (language === "liquid" && identifier.test(i.name))) add(`Input.${i.name}`, "workflow input");
     if (language === "csharp") add(`Input.Get<object>(${quote(i.name)})`, "workflow input", "function");
     if (language === "python") add(`input.Get(${quote(i.name)})`, "workflow input", "function");
   }

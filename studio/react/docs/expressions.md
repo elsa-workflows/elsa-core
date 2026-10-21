@@ -31,8 +31,14 @@ or Python. An unavailable endpoint, rejected permission or declaration larger th
 usable. The local suggestions reflect current editor state; server descriptions
 reflect the saved definition and the server's installed type providers.
 
-Input wrapper names preserve the input's exact case (`customer_id` uses
-`getcustomer_id()`). Cached declarations do not revive removed or renamed workflow
+Generated variable wrappers and C# input properties require alphanumeric names,
+matching the runtime validator; an underscore is not sufficient just because it
+forms a valid language identifier. Use `Variable.Get("customer_id")`,
+`Input.Get<object>("input_id")` or JavaScript `getInput("input_id")` for those names.
+Usable JavaScript input wrapper names preserve exact case (`customer` uses
+`getcustomer()`). The data-usage index recognizes generated PascalCase variable
+properties/getters/setters and generic C# accessors as well as legacy forms.
+Cached declarations do not revive removed or renamed workflow
 wrappers. Because the server document does not identify function ownership, unknown
 `get*`/`set*` functions are omitted unless they match current workflow accessors or
 the server's stable common helpers. Custom providers can still offer other function
@@ -57,4 +63,4 @@ hardware-dependent time limit.
 
 C# name-based input completion uses `Input.Get<object>("Name")`: the runtime
 requires the explicit type argument to `Get<T>`. Generated `Input.Name` properties
-remain available for valid identifiers and retain their declared types.
+remain available for runtime-supported alphanumeric names and retain their declared types.
