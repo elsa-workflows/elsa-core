@@ -2,6 +2,7 @@ using System.Data.Common;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Nodes;
+using System.Transactions;
 using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Persistence.EFCore.Extensions;
@@ -68,6 +69,8 @@ public sealed class Tests(ITestOutputHelper output)
         AssertBookmarkDiffPrecedesSnapshotUpdate(commit);
         Assert.Equal(before.DataHash, commit.ConditionalUpdateExpectedDataHash);
         AssertConditionalUpdateCommand(output, commit.ConditionalUpdate!, before.DataHash, fixture.Commands.ExpectedDataParameterName);
+        Assert.Equal(true, commit.ConditionalUpdate!.ReturnedRows);
+        AssertStagedSnapshot(commit, before.DataHash, before.BookmarkIds, before.ExecutionLogCount, before.ActivityExecutionRecordCount, "created", "resumed", transactionPresent: true, ambientTransactionPresent: false);
         AssertResumeSnapshotUpdatesUseExpectedData(fixture.Commands.GetResumeCommitAttempts(), before.DataHash);
         Assert.True(fixture.TransactionState.ConditionalUpdateRowsAffected is > 0);
         Assert.Equal(fixture.TransactionState.CommittedTransactions, fixture.TransactionState.CompletedTransactions);
@@ -84,7 +87,6 @@ public sealed class Tests(ITestOutputHelper output)
         var oldLogCount = initial.ExecutionLogCount;
 
         // A second native manager/context writes a newer valid state before the stale execution begins.
-        // Variables are inline in WorkflowState.Properties through WorkflowInstanceStorageDriver.
         await fixture.WriteNewerVariableStateAsync(started.State.Id, started.VariableId, "newer-wins");
         var newer = await fixture.ReadSnapshotAsync(started.State.Id);
         Assert.NotEqual(initial.DataHash, newer.DataHash);
@@ -122,6 +124,8 @@ public sealed class Tests(ITestOutputHelper output)
         Assert.Contains("TenantId", commit.WorkflowInstanceUpdateSql, StringComparison.OrdinalIgnoreCase);
         Assert.Contains(commit.ParameterNames, parameter => string.Equals(parameter, fixture.Commands.ExpectedDataParameterName, StringComparison.OrdinalIgnoreCase));
         AssertConditionalUpdateCommand(output, commit.ConditionalUpdate!, initial.DataHash, fixture.Commands.ExpectedDataParameterName);
+        Assert.Equal(false, commit.ConditionalUpdate!.ReturnedRows);
+        AssertStagedSnapshot(commit, newer.DataHash, initial.BookmarkIds, initial.ExecutionLogCount, initial.ActivityExecutionRecordCount, "newer-wins", "resumed", transactionPresent: true, ambientTransactionPresent: false);
         AssertResumeSnapshotUpdatesUseExpectedData(fixture.Commands.GetResumeCommitAttempts(), initial.DataHash);
         Assert.Equal(1, fixture.TransactionState.RolledBackTransactions);
     }
@@ -163,8 +167,31 @@ public sealed class Tests(ITestOutputHelper output)
         AssertBookmarkDiffPrecedesSnapshotUpdate(commit);
         Assert.Equal(initial.DataHash, commit.ConditionalUpdateExpectedDataHash);
         AssertConditionalUpdateCommand(output, commit.ConditionalUpdate!, initial.DataHash, fixture.Commands.ExpectedDataParameterName);
+        Assert.Equal(false, commit.ConditionalUpdate!.ReturnedRows);
+        AssertStagedSnapshot(commit, newer.DataHash, initial.BookmarkIds, initial.ExecutionLogCount, initial.ActivityExecutionRecordCount, "newer-wins", "resumed", transactionPresent: false, ambientTransactionPresent: false);
         AssertResumeSnapshotUpdatesUseExpectedData(fixture.Commands.GetResumeCommitAttempts(), initial.DataHash);
         Assert.Equal(0, fixture.TransactionState.RolledBackTransactions);
+    }
+
+    [Fact(DisplayName = "SQLite ambient transaction warning stops the native commit before any state is written")]
+    public async Task NativeAmbientTransaction_UnsupportedProviderWarningStopsInitialCommit()
+    {
+        await using var fixture = await NativeCommitFixture.CreateAsync(output, useNativeAmbientTransaction: true);
+        const string instanceId = "sqlite-ambient-unsupported-8936";
+        var (started, error, _) = await fixture.TryStartAsync(instanceId);
+
+        Assert.Null(started);
+        var warning = Assert.IsType<InvalidOperationException>(error);
+        Assert.Contains("Microsoft.EntityFrameworkCore.Database.Transaction.AmbientTransactionWarning", warning.Message, StringComparison.Ordinal);
+        Assert.Contains("current provider does not support ambient transactions", warning.Message, StringComparison.Ordinal);
+
+        var writes = await fixture.ReadWorkflowWriteCountsAsync(instanceId);
+        output.WriteLine($"Initial native commit stopped by EF ambient warning: {warning.Message}");
+        output.WriteLine($"Independent database counts after failure: {writes}");
+        Assert.Equal(0, writes.WorkflowInstances);
+        Assert.Equal(0, writes.Bookmarks);
+        Assert.Equal(0, writes.ExecutionLogs);
+        Assert.Equal(0, writes.ActivityExecutionRecords);
     }
 
     private static void AssertBookmarkDiffPrecedesSnapshotUpdate(SqliteCommitCommandInterceptor.CommitObservation commit)
@@ -191,7 +218,7 @@ public sealed class Tests(ITestOutputHelper output)
         foreach (var command in commits.SelectMany(commit => commit.CorrectnessWrites)
                      .Where(write => write.Table == "WorkflowInstances" && write.Sql.TrimStart().StartsWith("UPDATE", StringComparison.OrdinalIgnoreCase)))
         {
-            output.WriteLine($"Workflow snapshot command {command.CommandId}, context {command.ContextType?.FullName}, callbacks: {string.Join(", ", command.CallbackMethods)}, expected Data hash: {command.ExpectedDataHash}");
+            output.WriteLine($"Workflow snapshot command {command.CommandId}, context {command.ContextType?.FullName}, callbacks: {string.Join(", ", command.CallbackMethods)}, expected Data hash: {command.ExpectedDataHash}, attempted Data hash: {command.AttemptedDataHash}");
             output.WriteLine($"Workflow snapshot SQL: {command.Sql}");
         }
     }
@@ -204,6 +231,31 @@ public sealed class Tests(ITestOutputHelper output)
 
         Assert.NotEmpty(updates);
         Assert.All(updates, update => Assert.Equal(expectedDataHash, update.ExpectedDataHash));
+    }
+
+    private static void AssertStagedSnapshot(
+        SqliteCommitCommandInterceptor.CommitObservation commit,
+        string expectedDataHash,
+        IReadOnlyCollection<string> oldBookmarkIds,
+        long oldExecutionLogCount,
+        long oldActivityExecutionRecordCount,
+        string expectedDatabaseVariableValue,
+        string expectedAttemptedVariableValue,
+        bool transactionPresent,
+        bool ambientTransactionPresent)
+    {
+        var update = Assert.IsType<SqliteCommitCommandInterceptor.CommandObservation>(commit.ConditionalUpdate);
+        var snapshot = Assert.IsType<SqliteCommitCommandInterceptor.StagedDatabaseSnapshot>(update.StagedSnapshot);
+        Assert.Equal(expectedDataHash, snapshot.DataHash);
+        Assert.DoesNotContain(Assert.Single(oldBookmarkIds), snapshot.BookmarkIds);
+        Assert.Single(snapshot.BookmarkIds);
+        Assert.True(snapshot.ExecutionLogCount > oldExecutionLogCount);
+        Assert.True(snapshot.ActivityExecutionRecordCount > oldActivityExecutionRecordCount);
+        Assert.Equal(expectedDatabaseVariableValue, snapshot.VariableValue);
+        Assert.Equal(expectedAttemptedVariableValue, update.AttemptedVariableValue);
+        Assert.NotEqual(snapshot.DataHash, update.AttemptedDataHash);
+        Assert.Equal(transactionPresent, snapshot.TransactionPresent);
+        Assert.Equal(ambientTransactionPresent, update.AmbientTransactionPresent);
     }
 
     private static void AssertVariable(WorkflowState state, string id, string expected, string workflowNodeId) =>
@@ -253,7 +305,7 @@ internal sealed class NativeCommitFixture : IAsyncDisposable
     public SharedCommitTransactionState TransactionState { get; }
     public string WorkflowNodeId => _workflow.Workflow.NodeId;
 
-    public static async Task<NativeCommitFixture> CreateAsync(ITestOutputHelper output)
+    public static async Task<NativeCommitFixture> CreateAsync(ITestOutputHelper output, bool useNativeAmbientTransaction = false)
     {
         var databasePath = Path.Combine(Path.GetTempPath(), $"elsa-8936-{Guid.NewGuid():N}.sqlite");
         var connectionString = $"Data Source={databasePath}";
@@ -288,28 +340,60 @@ internal sealed class NativeCommitFixture : IAsyncDisposable
                     .UseWorkflowInstances(instances => instances.UseEntityFrameworkCore(persistence =>
                     {
                         persistence.UseSqlite(connectionString);
-                        persistence.DbContextOptionsBuilder = (_, options) => options.UseSqlite(connection).AddInterceptors(commands);
+                        persistence.DbContextOptionsBuilder = (_, options) =>
+                        {
+                            if (useNativeAmbientTransaction)
+                            {
+                                options.UseSqlite(connectionString).AddInterceptors(commands);
+                            }
+                            else
+                            {
+                                options.UseSqlite(connection).AddInterceptors(commands);
+                            }
+                        };
                         persistence.RunMigrations = false;
                     })))
                 .UseWorkflows()
                 .UseWorkflowRuntime(runtime => runtime.UseEntityFrameworkCore(persistence =>
                 {
                     persistence.UseSqlite(connectionString);
-                    persistence.DbContextOptionsBuilder = (_, options) => options.UseSqlite(connection).AddInterceptors(commands);
+                    persistence.DbContextOptionsBuilder = (_, options) =>
+                    {
+                        if (useNativeAmbientTransaction)
+                        {
+                            options.UseSqlite(connectionString).AddInterceptors(commands);
+                        }
+                        else
+                        {
+                            options.UseSqlite(connection).AddInterceptors(commands);
+                        }
+                    };
                     persistence.RunMigrations = false;
-                    persistence.UseWorkflowCommitTransaction = false;
+                    persistence.UseWorkflowCommitTransaction = useNativeAmbientTransaction;
                 }))
                 .AddWorkflow<NativeCommitWorkflow>());
 
             // Elsa registers DefaultTenantAccessor during AddElsa; override it for this synthetic tenant.
             services.Replace(ServiceDescriptor.Singleton<ITenantAccessor>(new TestTenantAccessor(TenantId)));
 
-            services.Decorate<IDbContextFactory<ManagementElsaDbContext>, SharedTransactionDbContextFactory<ManagementElsaDbContext>>();
-            services.Decorate<IDbContextFactory<RuntimeElsaDbContext>, SharedTransactionDbContextFactory<RuntimeElsaDbContext>>();
-            services.Replace(ServiceDescriptor.Scoped<IWorkflowCommitTransaction, SharedSqliteCommitTransaction>());
+            if (useNativeAmbientTransaction)
+            {
+                services.Decorate<IWorkflowCommitTransaction, ObservedAmbientCommitTransaction>();
+            }
+            else
+            {
+                services.Decorate<IDbContextFactory<ManagementElsaDbContext>, SharedTransactionDbContextFactory<ManagementElsaDbContext>>();
+                services.Decorate<IDbContextFactory<RuntimeElsaDbContext>, SharedTransactionDbContextFactory<RuntimeElsaDbContext>>();
+                services.Replace(ServiceDescriptor.Scoped<IWorkflowCommitTransaction, SharedSqliteCommitTransaction>());
+            }
 
             serviceProvider = services.BuildServiceProvider();
             Assert.Equal(TenantId, serviceProvider.GetRequiredService<ITenantAccessor>().TenantId);
+            if (useNativeAmbientTransaction)
+            {
+                var observed = Assert.IsType<ObservedAmbientCommitTransaction>(serviceProvider.GetRequiredService<IWorkflowCommitTransaction>());
+                Assert.IsType<EFCoreWorkflowCommitTransaction>(observed.Inner);
+            }
 
             // The registry population queries management stores, so create both schemas first.
             await using (var management = await serviceProvider.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>().CreateDbContextAsync())
@@ -344,13 +428,33 @@ internal sealed class NativeCommitFixture : IAsyncDisposable
 
     public async Task<StartedWorkflow> StartAsync()
     {
-        var instanceId = $"sqlite-commit-{Guid.NewGuid():N}";
+        var (started, error, _) = await TryStartAsync();
+        if (error != null)
+        {
+            throw error;
+        }
+
+        return started!;
+    }
+
+    public async Task<(StartedWorkflow? Started, Exception? Error, string InstanceId)> TryStartAsync(string? instanceId = null)
+    {
+        instanceId ??= $"sqlite-commit-{Guid.NewGuid():N}";
         await using var scope = _services.CreateAsyncScope();
         var runner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
-        var result = await runner.RunAsync(_workflow, new RunWorkflowOptions { WorkflowInstanceId = instanceId });
+        RunWorkflowResult result;
+        try
+        {
+            result = await runner.RunAsync(_workflow, new RunWorkflowOptions { WorkflowInstanceId = instanceId });
+        }
+        catch (Exception exception)
+        {
+            return (null, exception, instanceId);
+        }
+
         var variable = Assert.Single(_workflow.Workflow.Variables);
         Assert.Equal(typeof(WorkflowInstanceStorageDriver), variable.StorageDriverType);
-        return new(result.WorkflowState, variable.Id);
+        return (new(result.WorkflowState, variable.Id), null, instanceId);
     }
 
     public async Task<WorkflowState> ReadWorkflowStateAsync(string instanceId)
@@ -384,7 +488,11 @@ internal sealed class NativeCommitFixture : IAsyncDisposable
     public async Task<(RunWorkflowResult? Result, Exception? Error)> TryResumeAsync(StartedWorkflow started)
     {
         var bookmark = Assert.Single(started.State.Bookmarks);
-        Commands.BeginResumeCapture();
+        Commands.BeginResumeCapture(
+            started.State.Id,
+            started.VariableId,
+            WorkflowNodeId,
+            _services.GetRequiredService<IWorkflowStateSerializer>());
 
         await using var scope = _services.CreateAsyncScope();
         var runner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
@@ -453,6 +561,26 @@ internal sealed class NativeCommitFixture : IAsyncDisposable
         return new(data, Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(data))), bookmarkIds, executionLogCount, activityExecutionRecordCount, state);
     }
 
+    public async Task<WorkflowWriteCounts> ReadWorkflowWriteCountsAsync(string instanceId)
+    {
+        await using var connection = new SqliteConnection(_connectionString);
+        await connection.OpenAsync();
+
+        var workflowInstances = await CountRowsAsync(connection, "WorkflowInstances", "Id", instanceId);
+        var bookmarks = await CountRowsAsync(connection, "Bookmarks", "WorkflowInstanceId", instanceId);
+        var executionLogs = await CountRowsAsync(connection, "WorkflowExecutionLogRecords", "WorkflowInstanceId", instanceId);
+        var activityExecutionRecords = await CountRowsAsync(connection, "ActivityExecutionRecords", "WorkflowInstanceId", instanceId);
+        return new(workflowInstances, bookmarks, executionLogs, activityExecutionRecords);
+    }
+
+    private static async Task<long> CountRowsAsync(SqliteConnection connection, string tableName, string idColumn, string instanceId)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = $"SELECT COUNT(*) FROM \"{tableName}\" WHERE \"{idColumn}\" = $instanceId";
+        command.Parameters.AddWithValue("$instanceId", instanceId);
+        return (long)(await command.ExecuteScalarAsync())!;
+    }
+
     private static async Task AssertTenantIdsAsync(SqliteConnection connection, string tableName, string instanceId)
     {
         await using var command = connection.CreateCommand();
@@ -503,6 +631,7 @@ internal sealed class NativeCommitFixture : IAsyncDisposable
 
     public sealed record StartedWorkflow(WorkflowState State, string VariableId);
     public sealed record DatabaseSnapshot(string Data, string DataHash, IReadOnlyList<string> BookmarkIds, long ExecutionLogCount, long ActivityExecutionRecordCount, WorkflowState State);
+    public sealed record WorkflowWriteCounts(long WorkflowInstances, long Bookmarks, long ExecutionLogs, long ActivityExecutionRecords);
 }
 
 internal sealed class SharedCommitTransactionState(SqliteCommitCommandInterceptor commands)
@@ -600,6 +729,27 @@ internal sealed class SharedSqliteCommitTransaction(SqliteConnection connection,
     private bool CommandsExecutedConditionalUpdate() => state.Commands.HasConditionalUpdate(state.CurrentCommitAttemptId);
 }
 
+internal sealed class ObservedAmbientCommitTransaction(IWorkflowCommitTransaction inner, SharedCommitTransactionState state) : IWorkflowCommitTransaction
+{
+    public IWorkflowCommitTransaction Inner => inner;
+
+    public async Task ExecuteAsync(Func<CancellationToken, Task> operation, CancellationToken cancellationToken = default)
+    {
+        // This observer preserves the production EFCoreWorkflowCommitTransaction implementation;
+        // it only labels interceptor observations and does not provide SQLite transaction support.
+        state.BeginCommitAttempt(null);
+        try
+        {
+            await inner.ExecuteAsync(operation, cancellationToken);
+        }
+        finally
+        {
+            state.EndCommitAttempt();
+            state.CompletedTransactions++;
+        }
+    }
+}
+
 internal sealed class SharedTransactionDbContextFactory<TContext>(IDbContextFactory<TContext> inner, SharedCommitTransactionState state) : IDbContextFactory<TContext>
     where TContext : DbContext
 {
@@ -645,6 +795,10 @@ internal sealed class SqliteCommitCommandInterceptor : DbCommandInterceptor
 {
     private const string ExpectedDataParameter = "$expectedCanonicalData";
     private string? _expectedData;
+    private string? _capturedInstanceId;
+    private string? _capturedVariableId;
+    private string? _capturedWorkflowNodeId;
+    private IWorkflowStateSerializer? _stateSerializer;
     private long _commitAttemptId;
     private long _activeCommitAttemptId;
     private long _resumeFirstCommitAttemptId;
@@ -658,17 +812,21 @@ internal sealed class SqliteCommitCommandInterceptor : DbCommandInterceptor
     public long BeginCommitAttempt(DbTransaction? sharedTransaction)
     {
         var id = ++_commitAttemptId;
-        _commits[id] = new CommitObservation(id, sharedTransaction);
+        _commits[id] = new CommitObservation(id, sharedTransaction, _capturedInstanceId);
         _activeCommitAttemptId = id;
         return id;
     }
 
     public void EndCommitAttempt() => _activeCommitAttemptId = 0;
 
-    public void BeginResumeCapture()
+    public void BeginResumeCapture(string instanceId, string variableId, string workflowNodeId, IWorkflowStateSerializer stateSerializer)
     {
         // BeginCommitAttempt, called by the real commit handler adapter, starts each exact
         // DefaultCommitStateHandler operation. No test-side persistence calls use this scope.
+        _capturedInstanceId = instanceId;
+        _capturedVariableId = variableId;
+        _capturedWorkflowNodeId = workflowNodeId;
+        _stateSerializer = stateSerializer;
         ConditionalCommitAttemptId = 0;
         ConditionalUpdateWasApplied = false;
         _resumeFirstCommitAttemptId = _commitAttemptId + 1;
@@ -694,6 +852,16 @@ internal sealed class SqliteCommitCommandInterceptor : DbCommandInterceptor
     public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result, CancellationToken cancellationToken = default)
     {
         Observe(command, eventData, "ReaderExecutingAsync");
+        return ValueTask.FromResult(result);
+    }
+
+    public override ValueTask<DbDataReader> ReaderExecutedAsync(DbCommand command, CommandExecutedEventData eventData, DbDataReader result, CancellationToken cancellationToken = default)
+    {
+        var current = _commits.GetValueOrDefault(_activeCommitAttemptId);
+        var commandKey = (eventData.Context?.GetType(), eventData.CommandId);
+        if (current != null && current.CommandObservations.TryGetValue(commandKey, out var observation) && observation.ExpectedDataHash != null)
+            observation.ReturnedRows = result.HasRows;
+
         return ValueTask.FromResult(result);
     }
 
@@ -748,7 +916,7 @@ internal sealed class SqliteCommitCommandInterceptor : DbCommandInterceptor
             var commandKey = (contextType, eventData.CommandId);
             if (!current.CommandObservations.TryGetValue(commandKey, out var observation))
             {
-                observation = new CommandObservation(current.Id, eventData.CommandId, table, method, contextType, command.Connection, command.Transaction, command.CommandText, expectedDataHash);
+                observation = new CommandObservation(current.Id, eventData.CommandId, table, method, contextType, command.Connection, command.Transaction, command.CommandText, expectedDataHash, Transaction.Current != null);
                 current.CommandObservations.Add(commandKey, observation);
                 current.CorrectnessWrites.Add(observation);
             }
@@ -760,6 +928,9 @@ internal sealed class SqliteCommitCommandInterceptor : DbCommandInterceptor
 
             if (expectedDataHash != null)
             {
+                observation.AttemptedDataHash ??= CaptureAttemptedDataHash(command);
+                observation.AttemptedVariableValue ??= CaptureAttemptedVariableValue(command);
+                observation.StagedSnapshot ??= CaptureStagedSnapshot(command.Connection, command.Transaction, current.InstanceId!);
                 current.ConditionalUpdate ??= observation;
                 if (!current.ConditionalUpdates.Contains(observation))
                 {
@@ -808,6 +979,88 @@ internal sealed class SqliteCommitCommandInterceptor : DbCommandInterceptor
 
     private static string Hash(string value) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
 
+    private StagedDatabaseSnapshot CaptureStagedSnapshot(DbConnection? connection, DbTransaction? transaction, string instanceId)
+    {
+        var data = ReadScalar(connection, transaction, "SELECT \"Data\" FROM \"WorkflowInstances\" WHERE \"Id\" = $instanceId", instanceId) as string
+                   ?? throw new InvalidOperationException("The staged WorkflowInstances row was not visible on the command connection.");
+        var databaseVariableValue = DeserializeVariableValue(data);
+        var bookmarks = new List<string>();
+        using (var command = CreateCommand(connection, transaction, "SELECT \"Id\" FROM \"Bookmarks\" WHERE \"WorkflowInstanceId\" = $instanceId ORDER BY \"Id\"", instanceId))
+        using (var reader = command.ExecuteReader())
+        {
+            while (reader.Read())
+            {
+                bookmarks.Add(reader.GetString(0));
+            }
+        }
+
+        var executionLogCount = Convert.ToInt64(ReadScalar(connection, transaction, "SELECT COUNT(*) FROM \"WorkflowExecutionLogRecords\" WHERE \"WorkflowInstanceId\" = $instanceId", instanceId));
+        var activityExecutionRecordCount = Convert.ToInt64(ReadScalar(connection, transaction, "SELECT COUNT(*) FROM \"ActivityExecutionRecords\" WHERE \"WorkflowInstanceId\" = $instanceId", instanceId));
+        return new(Hash(data), bookmarks, executionLogCount, activityExecutionRecordCount, databaseVariableValue, transaction != null);
+    }
+
+    private string CaptureAttemptedDataHash(DbCommand command)
+    {
+        var data = GetStringParameterForDataAssignment(command);
+        return Hash(data);
+    }
+
+    private string CaptureAttemptedVariableValue(DbCommand command) => DeserializeVariableValue(GetStringParameterForDataAssignment(command));
+
+    private string DeserializeVariableValue(string data)
+    {
+        var state = (_stateSerializer ?? throw new InvalidOperationException("The workflow state serializer was not configured for commit observation.")).Deserialize(data);
+        var variableId = _capturedVariableId ?? throw new InvalidOperationException("The variable id was not configured for commit observation.");
+        var workflowNodeId = _capturedWorkflowNodeId ?? throw new InvalidOperationException("The workflow node id was not configured for commit observation.");
+        var variables = PersistedWorkflowVariables.GetOwnerDictionary(state, variableId, workflowNodeId);
+        return variables[variableId].GetValue<string>()
+               ?? throw new InvalidOperationException("The persisted workflow variable had no string value.");
+    }
+
+    private static string GetStringParameterForDataAssignment(DbCommand command)
+    {
+        var setClause = System.Text.RegularExpressions.Regex.Match(
+            command.CommandText,
+            "\\bSET\\s+(?<assignments>.*?)(?:\\bWHERE\\b|\\bRETURNING\\b)",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Singleline);
+        if (!setClause.Success)
+        {
+            throw new InvalidOperationException("The conditional WorkflowInstances update did not contain a SET clause.");
+        }
+
+        var assignment = System.Text.RegularExpressions.Regex.Match(
+            setClause.Groups["assignments"].Value,
+            "\"Data\"\\s*=\\s*(?<parameter>[@:$][A-Za-z0-9_]+)",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        if (!assignment.Success)
+        {
+            throw new InvalidOperationException("The conditional WorkflowInstances update did not bind its serialized Data value.");
+        }
+
+        var parameterName = assignment.Groups["parameter"].Value;
+        return command.Parameters.Cast<DbParameter>()
+                   .SingleOrDefault(parameter => string.Equals(parameter.ParameterName, parameterName, StringComparison.OrdinalIgnoreCase))?.Value as string
+               ?? throw new InvalidOperationException("The conditional WorkflowInstances update Data parameter was missing or not text.");
+    }
+
+    private static object? ReadScalar(DbConnection? connection, DbTransaction? transaction, string sql, string instanceId)
+    {
+        using var command = CreateCommand(connection, transaction, sql, instanceId);
+        return command.ExecuteScalar();
+    }
+
+    private static DbCommand CreateCommand(DbConnection? connection, DbTransaction? transaction, string sql, string instanceId)
+    {
+        var command = connection?.CreateCommand() ?? throw new InvalidOperationException("The intercepted EF command has no connection.");
+        command.Transaction = transaction;
+        command.CommandText = sql;
+        var parameter = command.CreateParameter();
+        parameter.ParameterName = "$instanceId";
+        parameter.Value = instanceId;
+        command.Parameters.Add(parameter);
+        return command;
+    }
+
     private static string? GetTable(string sql)
     {
         var match = System.Text.RegularExpressions.Regex.Match(sql, "^\\s*(?:INSERT\\s+INTO|UPDATE|DELETE\\s+FROM)\\s+\"?(?<table>[A-Za-z0-9_]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
@@ -816,7 +1069,7 @@ internal sealed class SqliteCommitCommandInterceptor : DbCommandInterceptor
 
     private static bool StartsWithVerb(string sql, string verb) => sql.TrimStart().StartsWith(verb, StringComparison.OrdinalIgnoreCase);
 
-    internal sealed class CommandObservation(long commitAttemptId, Guid commandId, string table, string method, Type? contextType, DbConnection? connection, DbTransaction? transaction, string sql, string? expectedDataHash)
+    internal sealed class CommandObservation(long commitAttemptId, Guid commandId, string table, string method, Type? contextType, DbConnection? connection, DbTransaction? transaction, string sql, string? expectedDataHash, bool ambientTransactionPresent)
     {
         public long CommitAttemptId { get; } = commitAttemptId;
         public Guid CommandId { get; } = commandId;
@@ -826,13 +1079,21 @@ internal sealed class SqliteCommitCommandInterceptor : DbCommandInterceptor
         public DbTransaction? Transaction { get; } = transaction;
         public string Sql { get; } = sql;
         public string? ExpectedDataHash { get; set; } = expectedDataHash;
+        public string? AttemptedDataHash { get; set; }
+        public string? AttemptedVariableValue { get; set; }
+        public bool AmbientTransactionPresent { get; } = ambientTransactionPresent;
+        public bool? ReturnedRows { get; set; }
+        public StagedDatabaseSnapshot? StagedSnapshot { get; set; }
         public List<string> CallbackMethods { get; } = [method];
     }
 
-    internal sealed class CommitObservation(long id, DbTransaction? sharedTransaction)
+    internal sealed record StagedDatabaseSnapshot(string DataHash, IReadOnlyList<string> BookmarkIds, long ExecutionLogCount, long ActivityExecutionRecordCount, string VariableValue, bool TransactionPresent);
+
+    internal sealed class CommitObservation(long id, DbTransaction? sharedTransaction, string? instanceId)
     {
         public long Id { get; } = id;
         public DbTransaction? SharedTransaction { get; } = sharedTransaction;
+        public string? InstanceId { get; } = instanceId;
         public bool BookmarkDeleteSeen { get; set; }
         public bool BookmarkInsertSeen { get; set; }
         public bool WorkflowInstanceUpdateSeen { get; set; }
