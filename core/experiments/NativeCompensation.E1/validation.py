@@ -8,6 +8,9 @@ import signal
 
 KEY = "elsa.experimental.native-compensation.e1"
 CONTROL_CASES = frozenset(("stale-writer", "outer-corrupt", "outer-compression", "inner-schema", "missing-work", "callback-owner", "callback-child", "definition-pin"))
+INSPECTION_CONTROL_CASES = frozenset((
+    "outer-corrupt", "outer-compression", "inner-schema", "missing-work", "callback-owner", "callback-child"
+))
 
 MATRIX_CASES = {
     "baseline": {},
@@ -183,6 +186,9 @@ def validate_control(result):
     assert "assertion_failure" not in result and "control_error" not in result, "Recorded controller failure"
     assert_interruption(result, result["control"])
     assert result["control"]["exit"] == (2 if name == "inner-schema" else 0)
+    if name in INSPECTION_CONTROL_CASES:
+        assert "inspection" in result, "Expected inspection phase was not recorded"
+        assert result["inspection"]["exit"] == 0, "Inspection process did not exit successfully"
     events = result["control"]["events"]
     after_rows = result["after"]["elsa"].get("rows", [])
     after_state = after_rows[0].get("snapshot") if after_rows else None

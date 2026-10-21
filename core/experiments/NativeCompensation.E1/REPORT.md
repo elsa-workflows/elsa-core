@@ -145,6 +145,12 @@ stdout before normal exit. A deadline overrun still terminates and reaps only th
 child. Joined stdout-reader failures are promoted to controller errors even when a
 cut barrier ends event consumption first. Two synthetic Python-child regressions
 cover delayed normal exit after stdout EOF and a synchronized invalid-UTF-8 reader
-failure after a cut barrier. The full cheap validation suite now passes 20 tests,
+failure after a cut barrier. At that review point, the full cheap validation suite
+passed 20 tests,
 including the retained 24 evidence-hash check; no .NET build or native execution was
 run, and no E1 observation or readiness claim changed.
+
+Control validation also requires the recorded inspection child to exit successfully
+for every control that performs inspection; a negative regression covers all six
+such controls. The cheap suite now has 21 passing tests, with the same retained
+evidence hashes and no change to recorded observations or readiness.

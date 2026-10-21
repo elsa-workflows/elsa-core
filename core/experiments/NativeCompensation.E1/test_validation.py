@@ -15,7 +15,7 @@ from unittest.mock import patch
 import controls
 import run
 import summarize
-from validation import KEY, load_evidence, validate_control, validate_matrix
+from validation import INSPECTION_CONTROL_CASES, KEY, load_evidence, validate_control, validate_matrix
 
 MATRIX = Path(os.environ.get("E1_MATRIX_EVIDENCE", "/tmp/elsa-e1-r5"))
 CONTROLS = Path(os.environ.get("E1_CONTROL_EVIDENCE", "/tmp/elsa-e1-controls-r2"))
@@ -83,6 +83,14 @@ class ValidationTests(unittest.TestCase):
 
     def test_callback_settled_obligation_is_rejected(self):
         self.rejected("callback-owner", lambda r: r["after"]["participant"]["operations"][0].update(closed=1), True)
+
+    def test_nonzero_inspection_exit_is_rejected_for_every_inspection_control(self):
+        for name in sorted(INSPECTION_CONTROL_CASES):
+            with self.subTest(name=name):
+                candidate = copy.deepcopy(record(name, control=True))
+                candidate["inspection"]["exit"] = 7
+                with self.assertRaisesRegex(AssertionError, "Inspection process did not exit successfully"):
+                    validate_control(candidate)
 
     def test_bad_native_status_is_rejected(self):
         candidate = copy.deepcopy(record("baseline"))
