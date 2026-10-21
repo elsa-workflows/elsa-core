@@ -133,27 +133,51 @@
     private JsonArray Steps => Activity["steps"] as JsonArray ?? [];
     private bool IsEditable => _canEdit &&
                                !string.IsNullOrWhiteSpace(DocumentBackendContextKey) &&
+                               BackendApiClientProvider is IBackendRequestContextBinding { SupportsAuthenticatedRequestContextBinding: true } &&
                                _capabilityBackendContextKey == BackendApiClientProvider.ContextKey &&
                                DocumentBackendContextKey == BackendApiClientProvider.ContextKey &&
                                !IsReadOnly;
 
     protected override async Task OnParametersSetAsync()
     {
+        var backendContextKey = BackendApiClientProvider.ContextKey;
+        var hasSupportedShape = IsSupportedSchema(Activity);
+        var canRetainVerifiedEditor = hasSupportedShape &&
+                                      _isReady &&
+                                      _canEdit &&
+                                      !IsReadOnly &&
+                                      _capabilityBackendContextKey == backendContextKey &&
+                                      DocumentBackendContextKey == backendContextKey &&
+                                      BackendApiClientProvider is IBackendRequestContextBinding { SupportsAuthenticatedRequestContextBinding: true } &&
+                                      AreChildPinsSupported(Activity, ActivityRegistry);
+
         _capabilityCheck?.Cancel();
         _capabilityCheck?.Dispose();
         var cancellationSource = new CancellationTokenSource();
         _capabilityCheck = cancellationSource;
-        _isReady = false;
-        _canEdit = false;
-        _capabilityBackendContextKey = null;
-        _isOpaque = !IsSupportedSchema(Activity);
+        _isOpaque = !hasSupportedShape;
         if (_isOpaque)
         {
             _isReady = true;
+            RevokeCapability();
             return;
         }
 
-        var backendContextKey = BackendApiClientProvider.ContextKey;
+        // Keep the already verified editor mounted only during a same-origin recheck. A negative or failed result
+        // below still makes it read-only; this local continuity never authorizes a backend write.
+        if (!canRetainVerifiedEditor)
+        {
+            _isReady = false;
+            RevokeCapability();
+        }
+
+        if (!HasCurrentDocumentContext(backendContextKey))
+        {
+            _isReady = true;
+            RevokeCapability();
+            return;
+        }
+
         try
         {
             await ActivityRegistry.EnsureLoadedAsync(cancellationSource.Token);
@@ -162,11 +186,40 @@
         {
             return;
         }
+        catch
+        {
+            if (ReferenceEquals(_capabilityCheck, cancellationSource))
+            {
+                _isReady = true;
+                RevokeCapability();
+            }
+            return;
+        }
+
+        // A registry may ignore cancellation. Do not let a superseded check replace state owned by
+        // a newer parameter set, and revalidate the live immutable document origin before using it.
+        if (!ReferenceEquals(_capabilityCheck, cancellationSource))
+            return;
+
+        if (!HasCurrentDocumentContext(backendContextKey))
+        {
+            _isReady = true;
+            RevokeCapability();
+            return;
+        }
+
         _activityDescriptors = ActivityRegistry.List()
             .Where(IsSupportedActivityDescriptor)
             .OrderBy(x => x.DisplayName ?? x.Name, StringComparer.Ordinal)
             .ToArray();
         _isOpaque = !AreChildPinsSupported(Activity, ActivityRegistry);
+        if (_isOpaque)
+        {
+            _isReady = true;
+            RevokeCapability();
+            return;
+        }
+
         _capabilityBackendContextKey = backendContextKey;
         bool capabilityEnabled;
         try
@@ -178,13 +231,41 @@
         {
             return;
         }
-        if (!ReferenceEquals(_capabilityCheck, cancellationSource) ||
-            BackendApiClientProvider.ContextKey != backendContextKey ||
-            DocumentBackendContextKey != backendContextKey)
+        catch
+        {
+            if (ReferenceEquals(_capabilityCheck, cancellationSource))
+            {
+                _isReady = true;
+                RevokeCapability();
+            }
+            return;
+        }
+
+        if (!ReferenceEquals(_capabilityCheck, cancellationSource))
             return;
 
-        _canEdit = !_isOpaque && capabilityEnabled && !IsReadOnly;
+        if (!HasCurrentDocumentContext(backendContextKey) || IsReadOnly)
+        {
+            _isReady = true;
+            RevokeCapability();
+            return;
+        }
+
+        _isOpaque = !IsSupportedSchema(Activity) || !AreChildPinsSupported(Activity, ActivityRegistry);
+        _canEdit = !_isOpaque && capabilityEnabled;
         _isReady = true;
+    }
+
+    private bool HasCurrentDocumentContext(string backendContextKey) =>
+        !string.IsNullOrWhiteSpace(DocumentBackendContextKey) &&
+        DocumentBackendContextKey == backendContextKey &&
+        BackendApiClientProvider.ContextKey == backendContextKey &&
+        BackendApiClientProvider is IBackendRequestContextBinding { SupportsAuthenticatedRequestContextBinding: true };
+
+    private void RevokeCapability()
+    {
+        _canEdit = false;
+        _capabilityBackendContextKey = null;
     }
 
     private async Task AddStepAsync()
