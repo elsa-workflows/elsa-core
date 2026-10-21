@@ -107,7 +107,7 @@ public class EnvironmentsModuleTests : IDisposable
     {
         using var harness = AuthenticatedRequestHarness.Create();
         using var invoker = harness.CreateInvoker();
-        await invoker.SendAsync(new HttpRequestMessage(HttpMethod.Get, "https://backend.example/features"), CancellationToken.None);
+        await SendAndDisposeAsync(invoker, HttpMethod.Get, "https://backend.example/features");
         Assert.True(harness.Binding.SupportsAuthenticatedRequestContextBinding);
         var originalContextKey = harness.BackendProvider.ContextKey;
         using var binding = harness.Binding.BindRequestContext(originalContextKey);
@@ -115,7 +115,7 @@ public class EnvironmentsModuleTests : IDisposable
         harness.RefreshTokenService.RefreshedToken = harness.CreateToken("user-b", DateTimeOffset.UtcNow.AddHours(1));
 
         await Assert.ThrowsAsync<BackendRequestContextChangedException>(() =>
-            invoker.SendAsync(new HttpRequestMessage(HttpMethod.Post, "https://backend.example/workflow-definitions"), CancellationToken.None));
+            SendAndDisposeAsync(invoker, HttpMethod.Post, "https://backend.example/workflow-definitions"));
 
         Assert.NotEqual(originalContextKey, harness.BackendProvider.ContextKey);
         Assert.Equal(1, harness.InnerHandler.RequestCount);
@@ -127,7 +127,7 @@ public class EnvironmentsModuleTests : IDisposable
     {
         using var harness = AuthenticatedRequestHarness.Create();
         using var invoker = harness.CreateInvoker();
-        await invoker.SendAsync(new HttpRequestMessage(HttpMethod.Get, "https://backend.example/features"), CancellationToken.None);
+        await SendAndDisposeAsync(invoker, HttpMethod.Get, "https://backend.example/features");
         var originalContextKey = harness.BackendProvider.ContextKey;
         using var binding = harness.Binding.BindRequestContext(originalContextKey);
         harness.TokenAccessor.Token = harness.CreateToken("user-b", harness.TokenExpiresAt);
@@ -154,7 +154,7 @@ public class EnvironmentsModuleTests : IDisposable
         using var invoker = harness.CreateInvoker();
 
         // Qualify the actual ElsaIdentity transport and observe identity A before binding.
-        await invoker.SendAsync(new HttpRequestMessage(HttpMethod.Get, "https://backend.example/features"), CancellationToken.None);
+        await SendAndDisposeAsync(invoker, HttpMethod.Get, "https://backend.example/features");
         var originalContextKey = harness.BackendProvider.ContextKey;
         using var binding = harness.Binding.BindRequestContext(originalContextKey);
         harness.TokenAccessor.Token = harness.CreateToken("user-b", harness.TokenExpiresAt);
@@ -259,7 +259,7 @@ public class EnvironmentsModuleTests : IDisposable
         using var invoker = new HttpMessageInvoker(handler);
 
         await Assert.ThrowsAsync<BackendRequestContextChangedException>(() =>
-            invoker.SendAsync(new HttpRequestMessage(HttpMethod.Post, "https://backend.example/workflow-definitions"), CancellationToken.None));
+            SendAndDisposeAsync(invoker, HttpMethod.Post, "https://backend.example/workflow-definitions"));
 
         Assert.Equal(0, innerHandler.RequestCount);
         Assert.True(backendProvider.SupportsAuthenticatedRequestContextBinding);
@@ -272,7 +272,7 @@ public class EnvironmentsModuleTests : IDisposable
     {
         using var harness = AuthenticatedRequestHarness.Create();
         using var invoker = harness.CreateInvoker();
-        await invoker.SendAsync(new HttpRequestMessage(HttpMethod.Get, "https://backend.example/features"), CancellationToken.None);
+        await SendAndDisposeAsync(invoker, HttpMethod.Get, "https://backend.example/features");
         var originalContextKey = harness.BackendProvider.ContextKey;
         using var binding = harness.Binding.BindRequestContext(originalContextKey);
         harness.TokenAccessor.Token = harness.CreateToken("user-a", harness.TokenExpiresAt, new Dictionary<string, object?>
@@ -294,7 +294,7 @@ public class EnvironmentsModuleTests : IDisposable
     {
         using var harness = AuthenticatedRequestHarness.Create();
         using var invoker = harness.CreateInvoker();
-        await invoker.SendAsync(new HttpRequestMessage(HttpMethod.Get, "https://backend.example/features"), CancellationToken.None);
+        await SendAndDisposeAsync(invoker, HttpMethod.Get, "https://backend.example/features");
         var originalContextKey = harness.BackendProvider.ContextKey;
         using var binding = harness.Binding.BindRequestContext(originalContextKey);
         var lifecycleClaims = new Dictionary<string, object?>
@@ -306,7 +306,7 @@ public class EnvironmentsModuleTests : IDisposable
         harness.TokenAccessor.Token = harness.CreateToken("user-a", DateTimeOffset.UtcNow.AddMinutes(-10), lifecycleClaims);
         harness.RefreshTokenService.RefreshedToken = harness.CreateToken("user-a", DateTimeOffset.UtcNow.AddHours(1), lifecycleClaims);
 
-        await invoker.SendAsync(new HttpRequestMessage(HttpMethod.Post, "https://backend.example/workflow-definitions"), CancellationToken.None);
+        await SendAndDisposeAsync(invoker, HttpMethod.Post, "https://backend.example/workflow-definitions");
 
         Assert.Equal(originalContextKey, harness.BackendProvider.ContextKey);
         Assert.Equal(2, harness.InnerHandler.RequestCount);
@@ -317,12 +317,12 @@ public class EnvironmentsModuleTests : IDisposable
     {
         using var harness = AuthenticatedRequestHarness.Create();
         using var invoker = harness.CreateInvoker();
-        await invoker.SendAsync(new HttpRequestMessage(HttpMethod.Get, "https://backend.example/features"), CancellationToken.None);
+        await SendAndDisposeAsync(invoker, HttpMethod.Get, "https://backend.example/features");
         using (harness.Binding.BindRequestContext(harness.BackendProvider.ContextKey))
         {
             harness.TokenAccessor.Token = null;
             await Assert.ThrowsAsync<BackendRequestContextChangedException>(() =>
-                invoker.SendAsync(new HttpRequestMessage(HttpMethod.Post, "https://backend.example/workflow-definitions"), CancellationToken.None));
+                SendAndDisposeAsync(invoker, HttpMethod.Post, "https://backend.example/workflow-definitions"));
         }
 
         Assert.Equal(1, harness.InnerHandler.RequestCount);
@@ -338,7 +338,7 @@ public class EnvironmentsModuleTests : IDisposable
     {
         using var harness = AuthenticatedRequestHarness.Create();
         using var invoker = harness.CreateInvoker();
-        await invoker.SendAsync(new HttpRequestMessage(HttpMethod.Get, "https://backend.example/features"), CancellationToken.None);
+        await SendAndDisposeAsync(invoker, HttpMethod.Get, "https://backend.example/features");
         using var writeRequest = new HttpRequestMessage(HttpMethod.Post, "https://backend.example/workflow-definitions");
         using (harness.Binding.BindRequestContext(harness.BackendProvider.ContextKey))
         {
@@ -360,13 +360,13 @@ public class EnvironmentsModuleTests : IDisposable
     {
         using var harness = AuthenticatedRequestHarness.Create();
         using var invoker = harness.CreateInvoker();
-        await invoker.SendAsync(new HttpRequestMessage(HttpMethod.Get, "https://backend.example/features"), CancellationToken.None);
+        await SendAndDisposeAsync(invoker, HttpMethod.Get, "https://backend.example/features");
         var contextKey = harness.BackendProvider.ContextKey;
         using (harness.Binding.BindRequestContext(contextKey))
         {
             Assert.True(harness.Binding.HasActiveRequestContextBinding);
             using (harness.Binding.BindRequestContext(contextKey))
-                await invoker.SendAsync(new HttpRequestMessage(HttpMethod.Post, "https://backend.example/workflow-definitions"), CancellationToken.None);
+                await SendAndDisposeAsync(invoker, HttpMethod.Post, "https://backend.example/workflow-definitions");
             Assert.True(harness.Binding.HasActiveRequestContextBinding);
         }
 
@@ -387,10 +387,16 @@ public class EnvironmentsModuleTests : IDisposable
         using var handler = new ElsaIdentityAuthenticatingApiHttpMessageHandler(accessor) { InnerHandler = innerHandler };
         using var invoker = new HttpMessageInvoker(handler);
 
-        await invoker.SendAsync(new HttpRequestMessage(HttpMethod.Get, "https://backend.example/ordinary"), CancellationToken.None);
+        await SendAndDisposeAsync(invoker, HttpMethod.Get, "https://backend.example/ordinary");
 
         Assert.Equal(1, innerHandler.RequestCount);
         Assert.Equal("Bearer", innerHandler.LastRequest!.Headers.Authorization?.Scheme);
+    }
+
+    private static async Task SendAndDisposeAsync(HttpMessageInvoker invoker, HttpMethod method, string url)
+    {
+        using var request = new HttpRequestMessage(method, url);
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
     }
 
     private sealed class AuthenticatedRequestHarness : IDisposable

@@ -392,6 +392,7 @@ def terminate_verified_browser_processes(ownership_path, runner_pid, runner_birt
         try:
             os.kill(record["pid"], signal.SIGTERM)
         except ProcessLookupError:
+            # The owned process may exit between identity verification and signal delivery.
             pass
         except OSError:
             return False
@@ -412,6 +413,7 @@ def terminate_verified_browser_processes(ownership_path, runner_pid, runner_birt
         try:
             os.kill(record["pid"], signal.SIGKILL)
         except ProcessLookupError:
+            # The owned process may exit between identity verification and signal delivery.
             pass
         except OSError:
             return False
@@ -526,6 +528,7 @@ def terminate_verified_runner_only(process, runner_birth):
         try:
             os.kill(process.pid, signal.SIGKILL)
         except ProcessLookupError:
+            # The owned process may exit between identity verification and signal delivery.
             pass
         except OSError:
             return False
@@ -646,25 +649,31 @@ def stop_all(children):
         try:
             os.killpg(pgid, signal.SIGTERM)
         except ProcessLookupError:
+            # The owned process may exit between identity verification and signal delivery.
             pass
         except OSError:
             try:
                 process.terminate()
             except ProcessLookupError:
+                # The owned process may exit between identity verification and signal delivery.
                 pass
             except OSError:
+                # The final process/group absence check below still decides cleanup success.
                 pass
         time.sleep(0.4)
         try:
             os.killpg(pgid, signal.SIGKILL)
         except ProcessLookupError:
+            # The owned process may exit between identity verification and signal delivery.
             pass
         except OSError:
             try:
                 process.kill()
             except ProcessLookupError:
+                # The owned process may exit between identity verification and signal delivery.
                 pass
             except OSError:
+                # The final process/group absence check below still decides cleanup success.
                 pass
         try:
             process.wait(timeout=2)

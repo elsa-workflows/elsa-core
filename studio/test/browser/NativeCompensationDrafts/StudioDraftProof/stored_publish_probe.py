@@ -10,7 +10,6 @@ import math
 import os
 import sqlite3
 import subprocess
-import sys
 import time
 import urllib.error
 import urllib.parse
