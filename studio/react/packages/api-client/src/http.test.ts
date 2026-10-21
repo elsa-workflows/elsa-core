@@ -58,3 +58,55 @@ it("leaves multipart content boundaries to the browser and handles no-content re
   expect(await client.post("import", form)).toBeUndefined();
   expect(request).toHaveBeenCalledWith("/api/import", expect.objectContaining({ body: form, headers: { Accept: "application/json" } }));
 });
+
+for (const status of [200, 204, 401]) {
+  it(`rejects scope changes while awaiting HTTP ${status}, before consuming a response or refreshing`, async () => {
+    let current = true;
+    const scopeError = new Error("Request scope changed");
+    const refresh = vi.fn(async () => true);
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      await Promise.resolve();
+      current = false;
+      return new Response(status === 200 ? "{}" : null, { status });
+    }));
+    const client = createHttpClient({ baseUrl: "/api", getAuthHeaders: () => ({}), onUnauthorized: refresh,
+      validateRequestScope: () => { if (!current) throw scopeError; } });
+    await expect(client.get("test")).rejects.toBe(scopeError);
+    expect(refresh).not.toHaveBeenCalled();
+  });
+}
+
+for (const mode of ["json", "text", "blob", "problem"] as const) {
+  it(`rejects scope changes while consuming a ${mode} response`, async () => {
+    let current = true;
+    const scopeError = new Error("Request scope changed");
+    const response = new Response('{"subject":"old-account"}', { status: mode === "problem" ? 400 : 200 });
+    if (mode === "blob") vi.spyOn(response, "blob").mockImplementation(async () => {
+      await Promise.resolve(); current = false; return new Blob(["old-account"]);
+    });
+    else vi.spyOn(response, "text").mockImplementation(async () => {
+      await Promise.resolve(); current = false; return '{"subject":"old-account"}';
+    });
+    vi.stubGlobal("fetch", vi.fn(async () => response));
+    const client = createHttpClient({ baseUrl: "/api", getAuthHeaders: () => ({}),
+      validateRequestScope: () => { if (!current) throw scopeError; } });
+    await expect(client.get("test", { parse: mode === "problem" ? "json" : mode })).rejects.toBe(scopeError);
+  });
+}
+
+for (const phase of ["credentials", "fetch", "refresh", "body"] as const) {
+  for (const changed of [false, true]) {
+    it(`${phase} rejection ${changed ? "reports the changed scope" : "preserves the same-scope AbortError"}`, async () => {
+      let current = true;
+      const scopeError = new Error("Request scope changed");
+      const originalError = new DOMException("Canceled", "AbortError");
+      const fail = async () => { await Promise.resolve(); current = !changed; throw originalError; };
+      const response = new Response("{}", { status: phase === "refresh" ? 401 : 200 });
+      if (phase === "body") vi.spyOn(response, "text").mockImplementation(fail);
+      vi.stubGlobal("fetch", phase === "fetch" ? vi.fn(fail) : vi.fn(async () => response));
+      const client = createHttpClient({ baseUrl: "/api", getAuthHeaders: phase === "credentials" ? fail : () => ({}),
+        onUnauthorized: fail, validateRequestScope: () => { if (!current) throw scopeError; } });
+      await expect(client.get("test")).rejects.toBe(changed ? scopeError : originalError);
+    });
+  }
+}

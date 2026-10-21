@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 for (const container of [false, true]) {
 test(`opening a ${container ? "populated Flowchart" : "single-activity workflow"} preserves its root until a graph edit`, async ({ page }) => {
+  await page.clock.install();
   const activity = { id: "single-root", type: "Elsa.WriteLine", version: 1,
     text: { typeName: "String", expression: { type: "Literal", value: "Keep this activity" } },
     metadata: { designer: { position: { x: 12, y: 34 }, pluginData: "keep" }, custom: "keep" },
@@ -25,12 +26,14 @@ test(`opening a ${container ? "populated Flowchart" : "single-activity workflow"
     await route.fulfill({ json });
   });
   await page.goto("/studio-preview/workflows/definitions/single/edit");
-  await expect(page.locator('.react-flow__node[data-id="single-root"]')).toBeVisible();
-  // The production autosave delay is two seconds; observe beyond it.
-  await page.waitForTimeout(3000);
+  const node = page.locator('.react-flow__node[data-id="single-root"]');
+  // Explicit dimensions are written after React Flow reports its measurement.
+  await expect(node).toHaveAttribute("style", /width:\s*[1-9][0-9]*(?:\.[0-9]+)?px/);
+  await page.clock.runFor(3000);
   expect(saves).toEqual([]);
   const properties = page.getByRole("tabpanel", { name: "Properties", exact: true });
   await properties.locator("label").filter({ hasText: /^Name[*]?$/ }).locator("..").getByRole("textbox").fill("Metadata edit");
+  await page.clock.runFor(3000);
   await expect.poll(() => saves.length).toBe(1);
   expect(saves[0].root).toEqual(originalRoot);
   expect(saves[0].name).toBe("Metadata edit");

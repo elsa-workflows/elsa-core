@@ -83,38 +83,45 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
 
   async function request<T>(method: string, path: string, opts: RequestOptions = {}, retried = false): Promise<T> {
     options.validateRequestScope?.();
-    const url = `${baseUrl}/${path.replace(/^\/+/, "")}${buildQuery(opts.query)}`;
-    const headers: Record<string, string> = {
-      Accept: "application/json",
-      ...(await options.getAuthHeaders()),
-      ...(options.tenantId !== undefined ? { "X-Tenant-Id": options.tenantId } : {}),
-      ...opts.headers,
-    };
-    let body: BodyInit | undefined;
-    if (opts.body instanceof FormData) {
-      body = opts.body; // the browser sets the multipart boundary itself
-    } else if (opts.body !== undefined) {
-      headers["Content-Type"] = "application/json";
-      body = JSON.stringify(opts.body);
-    }
+    try {
+      const url = `${baseUrl}/${path.replace(/^\/+/, "")}${buildQuery(opts.query)}`;
+      const headers: Record<string, string> = {
+        Accept: "application/json",
+        ...(await options.getAuthHeaders()),
+        ...(options.tenantId !== undefined ? { "X-Tenant-Id": options.tenantId } : {}),
+        ...opts.headers,
+      };
+      let body: BodyInit | undefined;
+      if (opts.body instanceof FormData) {
+        body = opts.body; // the browser sets the multipart boundary itself
+      } else if (opts.body !== undefined) {
+        headers["Content-Type"] = "application/json";
+        body = JSON.stringify(opts.body);
+      }
 
-    options.validateRequestScope?.();
-    const res = await fetch(url, { method, headers, body, signal: opts.signal });
-
-    if (res.status === 401 && !retried && options.onUnauthorized) {
-      const refreshed = await options.onUnauthorized();
       options.validateRequestScope?.();
-      if (refreshed) return request<T>(method, path, opts, true);
+      const res = await fetch(url, { method, headers, body, signal: opts.signal });
+      options.validateRequestScope?.();
+
+      if (res.status === 401 && !retried && options.onUnauthorized) {
+        const refreshed = await options.onUnauthorized();
+        options.validateRequestScope?.();
+        if (refreshed) return await request<T>(method, path, opts, true);
+      }
+
+      if (!res.ok) throw new ApiError(await toProblem(res));
+
+      const parse = opts.parse ?? "json";
+      if (parse === "none" || res.status === 204) return undefined as T;
+      if (parse === "text") return (await res.text()) as T;
+      if (parse === "blob") return (await res.blob()) as T;
+      const text = await res.text();
+      return (text ? JSON.parse(text) : undefined) as T;
+    } finally {
+      // Awaited bodies, failed requests and retries can finish after the account
+      // changes. Validate before exposing either their data or their error.
+      options.validateRequestScope?.();
     }
-
-    if (!res.ok) throw new ApiError(await toProblem(res));
-
-    const parse = opts.parse ?? "json";
-    if (parse === "none" || res.status === 204) return undefined as T;
-    if (parse === "text") return (await res.text()) as T;
-    if (parse === "blob") return (await res.blob()) as T;
-    const text = await res.text();
-    return (text ? JSON.parse(text) : undefined) as T;
   }
 
   return {

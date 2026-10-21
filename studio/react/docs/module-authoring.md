@@ -19,6 +19,7 @@ dotnet pack Module/Module.csproj -c Release -o artifacts/packages
 ```
 
 The generator accepts a new or empty output directory and never overwrites files.
+Output must be outside the source template, including paths through symbolic links.
 Use `--studio-version` and `--npm-version` to select matching published versions;
 the default is 3.11.0. The SDK packages are currently unpublished, so the default
 registry install requires the release work in #8858. To verify the sample now,
