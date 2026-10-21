@@ -46,7 +46,7 @@ jobs:
         run: git merge-base --is-ancestor HEAD origin/main
 
   image:
-    needs: prepare
+    needs: [prepare, npm-build]
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     environment: ${{ inputs.publish && 'react-studio-release' || '' }}
@@ -84,3 +84,80 @@ jobs:
           path: ${{ runner.temp }}/react-studio-preview.tar
           if-no-files-found: error
           retention-days: 7
+
+  npm-build:
+    name: Prepare and install the exact npm release artifacts
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build and prepare public tarballs without changing workspace manifests
+        working-directory: studio/react
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          npm install --global pnpm@10.33.0
+          pnpm install --frozen-lockfile
+          pnpm build
+          node scripts/prepare-npm-release.mjs "$VERSION" "$RUNNER_TEMP/react-studio-npm"
+          node scripts/test-npm-release.mjs "$RUNNER_TEMP/react-studio-npm"
+          pnpm test:packages --npm-feed "$RUNNER_TEMP/react-studio-npm"
+      - name: Preflight registry versions and npm publication without publishing
+        if: inputs.publish || contains(inputs.version, '-preview.')
+        working-directory: studio/react
+        run: node scripts/publish-npm-release.mjs "$RUNNER_TEMP/react-studio-npm" --dry-run
+      - name: Pack matching NuGet libraries and verify installation in the generated module
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+        run: |
+          dotnet pack Elsa.ReactStudio.slnf -c Release -p:Version="$VERSION" --output "$RUNNER_TEMP/react-studio-nuget"
+          python3 studio/react/scripts/verify-nuget-packages.py "$RUNNER_TEMP/react-studio-nuget" "$VERSION"
+          cd studio/react
+          pnpm exec playwright install --with-deps chromium
+          pnpm test:module --nuget-feed "$RUNNER_TEMP/react-studio-nuget" --studio-version "$VERSION" --npm-feed "$RUNNER_TEMP/react-studio-npm"
+      - name: Verify source manifests and lockfile remained unchanged
+        run: git diff --exit-code HEAD --
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: react-studio-npm-${{ needs.prepare.outputs.version }}
+          path: ${{ runner.temp }}/react-studio-npm/*
+          if-no-files-found: error
+          retention-days: 7
+
+  npm-publish:
+    name: Release publishes the verified tarballs with npm provenance
+    if: inputs.publish
+    needs: [prepare, npm-build, image]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: react-studio-release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+          # No registry-url/token injection: npm uses its GitHub OIDC trusted publisher.
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: react-studio-npm-${{ needs.prepare.outputs.version }}
+          path: ${{ runner.temp }}/react-studio-npm
+      - name: Check trusted-publishing support and publish with provenance
+        env:
+          REACT_STUDIO_PUBLISH_ENABLED: ${{ vars.REACT_STUDIO_PUBLISH_ENABLED }}
+        run: |
+          node -e 'const [major, minor, patch] = require("node:child_process").execFileSync("npm", ["--version"], {encoding:"utf8"}).trim().split(".").map(Number); if (major < 11 || (major === 11 && (minor < 5 || (minor === 5 && patch < 1)))) throw new Error("Trusted publishing requires npm >= 11.5.1");'
+          node studio/react/scripts/publish-npm-release.mjs "$RUNNER_TEMP/react-studio-npm"

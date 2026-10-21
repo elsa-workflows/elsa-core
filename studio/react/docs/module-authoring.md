@@ -99,3 +99,9 @@ release. Module asset URLs include the package assembly informational version an
 use immutable caching: increase your NuGet version whenever shipped JS/CSS changes.
 Do not replace published package contents under an existing version. Review your
 module's metadata, notices and license before distribution.
+
+
+Release uses the same generator checks with exact npm tarballs and matching NuGet
+versions before publication. See [release preparation](release.md) for the artifact
+format, installation commands and provenance/preview gates. Source workspace packages
+remain private until that separately approved release path is used.

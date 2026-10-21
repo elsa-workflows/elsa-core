@@ -3,7 +3,12 @@ import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync }
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
+import { readBundle } from "./npm-release.mjs";
+
 const root = process.cwd();
+const args = process.argv.slice(2);
+const releasedDirectory = args.includes("--npm-feed") ? resolve(args[args.indexOf("--npm-feed") + 1]) : undefined;
+const released = releasedDirectory ? readBundle(releasedDirectory) : undefined;
 const temporary = mkdtempSync(join(tmpdir(), "elsa-react-studio-consumer-"));
 const pnpm = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
 function run(args, cwd) {
@@ -17,10 +22,11 @@ try {
   for (const name of ["api-client", "sdk", "auth", "ui"]) {
     const directory = join(root, "packages", name);
     const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8"));
-    run(["pack", "--pack-destination", temporary], directory);
-    const archive = readdirSync(temporary).find(file => file === `${manifest.name.replace("@", "").replace("/", "-")}-${manifest.version}.tgz`);
+    if (!released) run(["pack", "--pack-destination", temporary], directory);
+    const feed = releasedDirectory ?? temporary;
+    const archive = readdirSync(feed).find(file => file === `${manifest.name.replace("@", "").replace("/", "-")}-${released?.version ?? manifest.version}.tgz`);
     if (!archive) throw new Error(`Missing packed artifact for ${manifest.name}`);
-    dependencies[manifest.name] = `file:${join(temporary, archive)}`;
+    dependencies[manifest.name] = `file:${join(feed, archive)}`;
   }
   const installed = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
   const reactTypes = JSON.parse(readFileSync(join(root, "node_modules/@types/react/package.json"), "utf8"));
@@ -30,6 +36,8 @@ try {
     private: true, type: "module", dependencies: {
       ...dependencies, react: installed.dependencies.react, "react-dom": installed.dependencies["react-dom"],
       "lucide-react": installed.dependencies["lucide-react"], "@types/react": reactTypes.version,
+    }, devDependencies: { vite: installed.devDependencies.vite,
+      "@tailwindcss/vite": installed.devDependencies["@tailwindcss/vite"], tailwindcss: installed.devDependencies.tailwindcss,
     }, pnpm: { overrides: dependencies },
   }));
   writeFileSync(join(consumer, "tsconfig.json"), JSON.stringify({ compilerOptions: {
@@ -55,7 +63,15 @@ registry.remove("weather");
 if (registry.slots("headerItems").length) throw new Error("Packed module did not unregister");
 `);
   execFileSync(process.execPath, ["smoke.mjs"], { cwd: consumer, stdio: "inherit" });
-  console.log("PASS: external module compiled and rendered using four packed public packages");
+  writeFileSync(join(consumer, "styles.js"), 'import "./style-exports.css";\n');
+  writeFileSync(join(consumer, "style-exports.css"), '@import "@elsa-workflows/react-studio-ui/styles.css";\n@import "@elsa-workflows/react-studio-ui/tokens.css";\n');
+  writeFileSync(join(consumer, "index.html"), '<script type="module" src="/styles.js"></script>');
+  writeFileSync(join(consumer, "vite.config.mjs"), 'import tailwindcss from "@tailwindcss/vite";\nexport default { plugins: [tailwindcss()], build: { outDir: "style-dist" } };\n');
+  run(["exec", "vite", "build"], consumer);
+  const cssFiles = readdirSync(join(consumer, "style-dist/assets")).filter(name => name.endsWith(".css"));
+  const css = cssFiles.map(name => readFileSync(join(consumer, "style-dist/assets", name), "utf8")).join("\n");
+  if (!css.includes("--background") || !css.includes(".inline-flex")) throw new Error("Packed UI stylesheet did not build its theme and component utilities");
+  console.log("PASS: external module compiled/rendered and exported UI styles built using four packed public packages");
 } finally {
   rmSync(temporary, { recursive: true, force: true });
 }

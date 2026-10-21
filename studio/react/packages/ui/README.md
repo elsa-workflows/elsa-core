@@ -20,3 +20,9 @@ share the host's React and provider instances.
 A separately built module must include its own Tailwind source scan when adding
 utilities beyond the shared primitives. Do not depend on the host scanning an
 external module's source files at runtime.
+
+
+The lower-level `tokens.css` export contains Tailwind `@theme`/`@apply` rules. Import
+it from a CSS entry after your Tailwind import so its utilities have that context.
+`styles.css` already imports Tailwind, tokens and shadcn styles; host applications
+normally import it once, while extension modules inherit the host's styles.

@@ -71,6 +71,7 @@ New to the project? Start with the [Getting started guide](docs/getting-started.
 | [BPMN interchange](docs/bpmn.md) | Import findings/refusals and export imported workflows. |
 | [Expressions](docs/expressions.md) | C# highlighting and server-backed workflow member completion. |
 | [Tenancy](docs/tenancy.md) | Claims, tenant selection and refreshing module state. |
+| [Release preparation](docs/release.md) | Verified npm/image artifacts and Release publication gates. |
 | [Localization](docs/localization.md) | Languages, account preferences and packaged module translations. |
 | [Parity audit](docs/parity.md) | Verified editor behavior, evidence boundaries and linked Preview gaps. |
 | [Activity settings](docs/activity-settings.md) | Commit, log persistence, resilience, task and version settings; instance retry history. |
