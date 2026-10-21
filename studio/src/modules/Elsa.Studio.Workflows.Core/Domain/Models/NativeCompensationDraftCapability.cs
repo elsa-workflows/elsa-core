@@ -41,6 +41,36 @@ public static class NativeCompensationDraftCapability
         provider is IRemoteFeatureProviderWithFreshCheck freshProvider &&
         await freshProvider.IsEnabledFreshOrDefaultAsync(RemoteFeatureName, cancellationToken);
 
+    public static async Task<bool> IsEnabledForContextAsync(
+        IRemoteFeatureProvider? provider,
+        IBackendApiClientProvider backendApiClientProvider,
+        string expectedBackendContextKey,
+        CancellationToken cancellationToken = default)
+    {
+        if (!string.Equals(backendApiClientProvider.ContextKey, expectedBackendContextKey, StringComparison.Ordinal))
+            return false;
+
+        var enabled = await IsEnabledAsync(provider, cancellationToken);
+        return enabled && string.Equals(backendApiClientProvider.ContextKey, expectedBackendContextKey, StringComparison.Ordinal);
+    }
+
+    public static bool HasSupportedDraftShape(JsonNode? node)
+    {
+        if (node is not JsonObject scope ||
+            GetString(scope, "type") != "Elsa.CompensationScope" ||
+            GetInt32(scope, "version") != 1 ||
+            GetInt32(scope, "draftSchemaVersion") != 1 ||
+            scope["steps"] is not JsonArray steps ||
+            GetString(scope, "onForwardFault") is not (null or CompensatedHandoff or PropagateOriginalFaultHandoff))
+            return false;
+
+        var stepIds = new HashSet<string>(StringComparer.Ordinal);
+        return steps.All(step => step is JsonObject row &&
+                                 GetString(row, "stepId") is { } stepId &&
+                                 !string.IsNullOrWhiteSpace(stepId) &&
+                                 stepIds.Add(stepId));
+    }
+
     private static bool ContainsCompensationScopeJson(string json)
     {
         try
@@ -55,4 +85,7 @@ public static class NativeCompensationDraftCapability
 
     private static string? GetString(JsonObject value, string propertyName) =>
         value[propertyName] is JsonValue jsonValue && jsonValue.TryGetValue<string>(out var result) ? result : null;
+
+    private static int? GetInt32(JsonObject value, string propertyName) =>
+        value[propertyName] is JsonValue jsonValue && jsonValue.TryGetValue<int>(out var result) ? result : null;
 }

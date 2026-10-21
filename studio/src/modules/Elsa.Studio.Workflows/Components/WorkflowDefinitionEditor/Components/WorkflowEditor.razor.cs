@@ -176,7 +176,7 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
 
         _bpmnElementSelected = EventCallback.Factory.Create<BpmnElementSelection?>(this, OnBpmnElementSelectedAsync);
         _workflowDefinition = WorkflowDefinition;
-        _workflowDefinitionBackendContextKey = BackendApiClientProvider.ContextKey;
+        _workflowDefinitionBackendContextKey = GetWorkflowDefinitionBackendContextKey(_workflowDefinition);
         AdoptServerDefinition(_workflowDefinition);
 
         await ActivityRegistry.EnsureLoadedAsync();
@@ -199,7 +199,7 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
         InvalidateWorkflowDefinitionOperations();
 
         var workflowDefinition = _workflowDefinition = WorkflowDefinition;
-        _workflowDefinitionBackendContextKey = BackendApiClientProvider.ContextKey;
+        _workflowDefinitionBackendContextKey = GetWorkflowDefinitionBackendContextKey(workflowDefinition);
         var expectedWorkflowDefinitionGeneration = _workflowDefinitionGeneration;
         AdoptServerDefinition(workflowDefinition);
 
@@ -553,7 +553,7 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
         var isNewImport = !ReferenceEquals(_lastImportedWorkflowDefinition, workflowDefinition);
         _lastImportedWorkflowDefinition = workflowDefinition;
         if (isNewImport)
-            _workflowDefinitionBackendContextKey = BackendApiClientProvider.ContextKey;
+            _workflowDefinitionBackendContextKey = GetWorkflowDefinitionBackendContextKey(workflowDefinition);
         await SetWorkflowDefinitionAsync(workflowDefinition, isNewImport);
 
         if (isNewImport && workflowDefinition.Root != null)
@@ -567,6 +567,11 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
 
         _workflowDefinition.Root = await _diagramDesigner.GetActivityAsync();
         return _workflowDefinition;
+    }
+
+    private string? GetWorkflowDefinitionBackendContextKey(WorkflowDefinition? workflowDefinition)
+    {
+        return NativeCompensationDraftDocumentContext.GetBackendContextKey(workflowDefinition);
     }
 
     /// <summary>

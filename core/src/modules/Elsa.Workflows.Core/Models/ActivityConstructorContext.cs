@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Activities.Compensation;
 using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Memory;
 using Humanizer;
@@ -38,8 +39,12 @@ public static class JsonActivityConstructorContextHelper
         // 2) Parse into a JsonNode so we can mutate
         var node = JsonNode.Parse(raw)!;
 
-        // 3) Strip out any "_type" metadata wrappers
-        StripTypeMetadata(node);
+        // 3) Strip out any "_type" metadata wrappers. Compensation scopes retain their raw
+        // mappings and extension JSON; only their owned activity children need constructor cleanup.
+        if (type == typeof(CompensationScope))
+            StripCompensationScopeChildActivityMetadata(node);
+        else
+            StripTypeMetadata(node);
 
         // 4) Get a cleaned JSON string
         var cleanedJson = node.ToJsonString(new(JsonSerializerDefaults.Web));
@@ -141,6 +146,21 @@ public static class JsonActivityConstructorContextHelper
             // primitives—nothing to do
             default:
                 break;
+        }
+    }
+
+    private static void StripCompensationScopeChildActivityMetadata(JsonNode node)
+    {
+        if (node is not JsonObject scope || scope["steps"] is not JsonArray steps)
+            return;
+
+        foreach (var step in steps.OfType<JsonObject>())
+        {
+            foreach (var propertyName in new[] { "forward", "handler" })
+            {
+                if (step[propertyName] is { } activity)
+                    StripTypeMetadata(activity);
+            }
         }
     }
 

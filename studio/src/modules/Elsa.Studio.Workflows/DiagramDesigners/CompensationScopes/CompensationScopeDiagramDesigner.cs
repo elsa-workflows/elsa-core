@@ -1,6 +1,5 @@
 using System.Text.Json.Nodes;
 using Elsa.Api.Client.Extensions;
-using Elsa.Studio.Contracts;
 using Elsa.Studio.Workflows.Domain.Models;
 using Elsa.Studio.Workflows.UI.Contexts;
 using Elsa.Studio.Workflows.UI.Contracts;
@@ -9,15 +8,14 @@ using Microsoft.AspNetCore.Components;
 
 namespace Elsa.Studio.Workflows.DiagramDesigners.CompensationScopes;
 
-public sealed class CompensationScopeDiagramDesigner(IBackendApiClientProvider backendApiClientProvider) : IDiagramDesigner
+public sealed class CompensationScopeDiagramDesigner : IDiagramDesigner
 {
     private JsonObject _scope = [];
-    private string _documentBackendContextKey = "";
+    private string? _documentBackendContextKey;
 
     public Task LoadRootActivityAsync(JsonObject activity, IDictionary<string, ActivityStats>? activityStatsMap)
     {
         _scope = activity;
-        _documentBackendContextKey = backendApiClientProvider.ContextKey;
         return Task.CompletedTask;
     }
 
@@ -40,12 +38,13 @@ public sealed class CompensationScopeDiagramDesigner(IBackendApiClientProvider b
     public RenderFragment DisplayDesigner(DisplayContext context)
     {
         _scope = context.Activity;
+        _documentBackendContextKey = NativeCompensationDraftDocumentContext.GetBackendContextKey(context.WorkflowDefinition);
         return builder =>
         {
             builder.OpenComponent<CompensationScopeDesigner>(0);
             builder.AddAttribute(1, nameof(CompensationScopeDesigner.Activity), _scope);
             builder.AddAttribute(2, nameof(CompensationScopeDesigner.IsReadOnly), context.IsReadOnly);
-            builder.AddAttribute(3, nameof(CompensationScopeDesigner.DocumentBackendContextKey), _documentBackendContextKey);
+            builder.AddAttribute(3, nameof(CompensationScopeDesigner.DocumentBackendContextKey), _documentBackendContextKey ?? "");
             builder.AddAttribute(4, nameof(CompensationScopeDesigner.ActivitySelected), context.ActivitySelectedCallback);
             builder.AddAttribute(5, nameof(CompensationScopeDesigner.GraphUpdated), context.GraphUpdatedCallback);
             builder.CloseComponent();

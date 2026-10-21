@@ -92,7 +92,9 @@ public class ActivityJsonConverter(
         missingTypeName ??= activityRoot.TryGetProperty("type", out var typeElement) && typeElement.ValueKind == JsonValueKind.String
             ? typeElement.GetString()!
             : "Unknown";
-        missingTypeVersion ??= activityRoot.TryGetProperty("version", out var versionElement) && versionElement.TryGetInt32(out var version)
+        missingTypeVersion ??= activityRoot.TryGetProperty("version", out var versionElement) &&
+                               versionElement.ValueKind == JsonValueKind.Number &&
+                               versionElement.TryGetInt32(out var version)
             ? version
             : 0;
 

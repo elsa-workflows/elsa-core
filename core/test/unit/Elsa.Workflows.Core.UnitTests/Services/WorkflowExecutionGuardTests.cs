@@ -5,6 +5,7 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Activities.Compensation;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Pipelines.ActivityExecution;
@@ -455,6 +456,29 @@ public class WorkflowExecutionGuardTests : IAsyncLifetime
 
         await invoker.InvokeAsync(_activityContext);
         Assert.True(middlewareCalls > 0);
+    }
+
+    [Fact]
+    public async Task ActivityInvokerRechecksAfterHostAuthorizationBeforeCreatingChildContextOrApplyingInput()
+    {
+        var middlewareCalls = 0;
+        ActivityMiddlewareDelegate Count(ActivityMiddlewareDelegate next) => context =>
+        {
+            middlewareCalls++;
+            return next(context);
+        };
+        var invoker = new ActivityInvoker(new ActivityExecutionPipeline(_context.ServiceProvider, builder => builder.Use(Count)),
+            new ActivityLoggerStateGenerator(), NullLogger<ActivityInvoker>.Instance);
+        var options = new ActivityInvocationOptions { Input = new Dictionary<string, object> { ["Text"] = "must not be applied" } };
+        var contextCount = _context.ActivityExecutionContexts.Count;
+        _guard.OnAuthorize = () => AddGraphActivity(new CompensationScope());
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => invoker.InvokeAsync(_context, new WriteLine("target"), options));
+
+        Assert.Equal(CompensationScope.DraftOnlyRefusalMessage, exception.Message);
+        Assert.Equal(contextCount, _context.ActivityExecutionContexts.Count);
+        Assert.Equal("must not be applied", options.Input["Text"]);
+        Assert.Equal(0, middlewareCalls);
     }
 
     private ActivityNode AddGraphActivity(IActivity activity)

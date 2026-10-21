@@ -72,6 +72,16 @@ public class WorkflowCloningDialogService(
             IsReadonly = false
         };
 
+        if (NativeCompensationDraftCapability.ContainsCompensationScope(newDefinition.Root) &&
+            !NativeCompensationDraftDocumentContext.Copy(workflowDefinition, newDefinition))
+        {
+            var errors = new ValidationErrors([new("This compensation draft has no verified backend origin. Reload the workflow before saving a copy.")]);
+            UserMessageService.ShowSnackbarTextMessage(string.Join(Environment.NewLine, errors.Errors), Severity.Error);
+            return new(errors);
+        }
+        if (!NativeCompensationDraftCapability.ContainsCompensationScope(newDefinition.Root))
+            NativeCompensationDraftDocumentContext.Copy(workflowDefinition, newDefinition);
+
         var result = await WorkflowDefinitionEditorService.SaveAsync(newDefinition, false, async definition =>
         {
             UserMessageService.ShowSnackbarTextMessage(Localizer[$"{type} successfully saved."], Severity.Success);

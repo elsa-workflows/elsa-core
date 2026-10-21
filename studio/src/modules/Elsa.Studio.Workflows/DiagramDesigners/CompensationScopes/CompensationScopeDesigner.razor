@@ -132,6 +132,7 @@
 
     private JsonArray Steps => Activity["steps"] as JsonArray ?? [];
     private bool IsEditable => _canEdit &&
+                               !string.IsNullOrWhiteSpace(DocumentBackendContextKey) &&
                                _capabilityBackendContextKey == BackendApiClientProvider.ContextKey &&
                                DocumentBackendContextKey == BackendApiClientProvider.ContextKey &&
                                !IsReadOnly;
@@ -299,18 +300,13 @@
     private static bool HasMappings(JsonObject step) => step["mappings"] is JsonArray mappings && mappings.Count > 0;
 
     private static bool IsSupportedSchema(JsonObject scope) =>
-        GetString(scope, "type") == "Elsa.CompensationScope" &&
-        GetInt32(scope, "version") == 1 &&
-        GetInt32(scope, "draftSchemaVersion") == 1 &&
-        scope["steps"] is JsonArray steps &&
-        steps.All(step => step is JsonObject row && !string.IsNullOrWhiteSpace(GetString(row, "stepId"))) &&
-        (GetString(scope, "onForwardFault") is null or NativeCompensationDraftCapability.CompensatedHandoff or NativeCompensationDraftCapability.PropagateOriginalFaultHandoff);
+        NativeCompensationDraftCapability.HasSupportedDraftShape(scope);
 
     private static bool AreChildPinsSupported(JsonObject scope, IActivityRegistry registry) =>
         scope["steps"] is JsonArray steps && steps.All(step => step is JsonObject row &&
             ChildRoles.All(role => row[role] is not JsonObject child || IsSupportedPinnedActivity(child, registry)));
 
-    private static bool IsSupportedPinnedActivity(JsonObject activity, IActivityRegistry registry)
+    internal static bool IsSupportedPinnedActivity(JsonObject activity, IActivityRegistry registry)
     {
         var typeName = GetString(activity, "type");
         var version = GetInt32(activity, "version");
@@ -320,7 +316,8 @@
             activity.ContainsKey("workflowDefinitionId") || activity.ContainsKey("workflowDefinitionVersionId"))
             return false;
 
-        return activity.All(property => IsSupportedPinnedValue(property.Value, registry));
+        var inputNames = descriptor.Inputs.Select(input => input.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return activity.All(property => inputNames.Contains(property.Key) || IsSupportedPinnedValue(property.Value, registry));
     }
 
     private static bool IsSupportedPinnedValue(JsonNode? value, IActivityRegistry registry)

@@ -85,7 +85,7 @@ public sealed class JsonActivitySerializerTests : IAsyncLifetime
     public void CompensationScopeDraftRoundTripPreservesMappingsAndExtensionData()
     {
         const string json = """
-            {"id":"scope-1","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"scopeExtension":{"future":true},"steps":[{"stepId":"step-1","name":"row","forward":null,"handler":null,"mappings":[{"mappingId":"mapping-1","source":"capture path","futureMapping":7}],"stepExtension":["future"]}]}
+            {"id":"scope-1","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"scopeExtension":{"_type":"FutureScopeExtension","items":[{"_type":"FutureItem","values":[1,2]}]},"steps":[{"stepId":"step-1","name":"row","forward":null,"handler":null,"mappings":[{"_type":"FutureMapping","items":[{"mappingId":"mapping-1","source":"capture path","futureMapping":7}],"values":[{"_type":"NestedMapping","items":[1]}]}],"stepExtension":{"_type":"FutureStepExtension","values":["future"]}}]}
             """;
 
         var scope = Assert.IsType<CompensationScope>(Serializer.Deserialize(json));
@@ -93,13 +93,17 @@ public sealed class JsonActivitySerializerTests : IAsyncLifetime
         var root = roundTrip.RootElement;
         var step = root.GetProperty("steps")[0];
 
-        Assert.True(root.GetProperty("scopeExtension").GetProperty("future").GetBoolean());
+        Assert.Equal("FutureScopeExtension", root.GetProperty("scopeExtension").GetProperty("_type").GetString());
+        Assert.Equal(2, root.GetProperty("scopeExtension").GetProperty("items")[0].GetProperty("values").GetArrayLength());
         Assert.Equal("step-1", step.GetProperty("stepId").GetString());
-        Assert.Equal("future", step.GetProperty("stepExtension")[0].GetString());
+        Assert.Equal("FutureStepExtension", step.GetProperty("stepExtension").GetProperty("_type").GetString());
+        Assert.Equal("future", step.GetProperty("stepExtension").GetProperty("values")[0].GetString());
         var mapping = step.GetProperty("mappings")[0];
-        Assert.Equal("mapping-1", mapping.GetProperty("mappingId").GetString());
-        Assert.Equal("capture path", mapping.GetProperty("source").GetString());
-        Assert.Equal(7, mapping.GetProperty("futureMapping").GetInt32());
+        Assert.Equal("FutureMapping", mapping.GetProperty("_type").GetString());
+        Assert.Equal("mapping-1", mapping.GetProperty("items")[0].GetProperty("mappingId").GetString());
+        Assert.Equal("capture path", mapping.GetProperty("items")[0].GetProperty("source").GetString());
+        Assert.Equal(7, mapping.GetProperty("items")[0].GetProperty("futureMapping").GetInt32());
+        Assert.Equal(1, mapping.GetProperty("values")[0].GetProperty("items")[0].GetInt32());
     }
 
     [Fact]

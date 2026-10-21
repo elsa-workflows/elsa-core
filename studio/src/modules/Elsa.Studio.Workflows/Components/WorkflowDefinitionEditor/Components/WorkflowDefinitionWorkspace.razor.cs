@@ -30,6 +30,8 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
     private long _workflowDefinitionReloadVersion;
     private long _compensationCapabilityGeneration;
     private bool _nativeCompensationDraftCapabilityEnabled;
+    private bool _isReloadingNativeCompensationDraft;
+    private string? _nativeCompensationDraftReloadError;
     private string? _compensationCapabilityContextKey;
     private string? _compensationDocumentContextKey;
     private CancellationTokenSource? _compensationCapabilityCheck;
@@ -39,6 +41,7 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
     [Inject] private IWorkflowDefinitionService WorkflowDefinitionService { get; set; } = null!;
     [Inject] private IRemoteFeatureProvider RemoteFeatureProvider { get; set; } = null!;
     [Inject] private IBackendApiClientProvider BackendApiClientProvider { get; set; } = null!;
+    [Inject] private IPermissionRefreshSignal PermissionRefreshSignal { get; set; } = null!;
     [Inject] private IOptions<WorkflowDefinitionOptions> WorkflowDefinitionOptions { get; set; } = null!;
 
     /// Gets or sets the workflow definition to edit.
@@ -68,10 +71,15 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
     /// <remarks>A user who cannot save workflow definitions gets the read-only viewer and read-only properties.</remarks>
     public bool IsReadOnly => _selectedWorkflowDefinition.GetIsReadOnly() || !Permissions.CanWriteDefinitions() ||
                               (NativeCompensationDraftCapability.ContainsCompensationScope(_selectedWorkflowDefinition?.Root) &&
-                               (!HasNativeCompensationDraftCapability || _compensationDocumentContextKey != BackendApiClientProvider.ContextKey));
+                               (!HasNativeCompensationDraftCapability || _compensationDocumentContextKey == null ||
+                                _compensationDocumentContextKey != BackendApiClientProvider.ContextKey));
 
     private bool HasNativeCompensationDraftCapability =>
         _nativeCompensationDraftCapabilityEnabled && _compensationCapabilityContextKey == BackendApiClientProvider.ContextKey;
+
+    private bool IsNativeCompensationDraftContextStale =>
+        NativeCompensationDraftCapability.ContainsCompensationScope(_selectedWorkflowDefinition?.Root) &&
+        (_compensationDocumentContextKey == null || _compensationDocumentContextKey != BackendApiClientProvider.ContextKey);
 
     /// <inheritdoc />
     public bool HasWorkflowEditPermission => (_selectedWorkflowDefinition?.Links?.Count(l => l.Rel == "publish") ?? 0) > 0;
@@ -91,7 +99,8 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
         _lastIncomingSelectedWorkflowDefinition = SelectedWorkflowDefinition;
         _workflowDefinition = WorkflowDefinition;
         _selectedWorkflowDefinition = SelectedWorkflowDefinition ?? _workflowDefinition;
-        _compensationDocumentContextKey = BackendApiClientProvider.ContextKey;
+        _compensationDocumentContextKey = GetCompensationDocumentContextKey(_selectedWorkflowDefinition);
+        PermissionRefreshSignal.Raised += OnBackendContextChanged;
     }
 
     /// <inheritdoc />
@@ -112,7 +121,7 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
             _workflowDefinition = WorkflowDefinition;
 
         _selectedWorkflowDefinition = SelectedWorkflowDefinition ?? _workflowDefinition;
-        _compensationDocumentContextKey = BackendApiClientProvider.ContextKey;
+        _compensationDocumentContextKey = GetCompensationDocumentContextKey(_selectedWorkflowDefinition);
         _workflowDefinitionReloadVersion++;
         _nativeCompensationDraftCapabilityEnabled = false;
         _compensationCapabilityContextKey = null;
@@ -121,7 +130,9 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
     }
 
     /// <inheritdoc />
-    protected override async Task OnParametersSetAsync()
+    protected override Task OnParametersSetAsync() => RefreshNativeCompensationDraftCapabilityAsync();
+
+    private async Task RefreshNativeCompensationDraftCapabilityAsync()
     {
         _compensationCapabilityCheck?.Cancel();
         _compensationCapabilityCheck?.Dispose();
@@ -140,13 +151,14 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
         var backendContextKey = BackendApiClientProvider.ContextKey;
         _compensationCapabilityContextKey = backendContextKey;
         _nativeCompensationDraftCapabilityEnabled = false;
-        if (_compensationDocumentContextKey != backendContextKey)
+        if (_compensationDocumentContextKey == null || _compensationDocumentContextKey != backendContextKey)
             return;
 
         bool capabilityEnabled;
         try
         {
-            capabilityEnabled = await NativeCompensationDraftCapability.IsEnabledAsync(RemoteFeatureProvider, cancellationSource.Token);
+            capabilityEnabled = await NativeCompensationDraftCapability.IsEnabledForContextAsync(
+                RemoteFeatureProvider, BackendApiClientProvider, backendContextKey, cancellationSource.Token);
         }
         catch (OperationCanceledException) when (cancellationSource.IsCancellationRequested)
         {
@@ -161,8 +173,79 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
         _nativeCompensationDraftCapabilityEnabled = capabilityEnabled;
     }
 
+    private void OnBackendContextChanged() => _ = InvokeAsync(async () =>
+    {
+        if (!NativeCompensationDraftCapability.ContainsCompensationScope(_selectedWorkflowDefinition?.Root))
+            return;
+
+        if (WorkflowEditor != null)
+            WorkflowEditor.InvalidateWorkflowDefinitionOperations();
+
+        _workflowDefinitionReloadVersion++;
+        _nativeCompensationDraftCapabilityEnabled = false;
+        _compensationCapabilityContextKey = null;
+        _nativeCompensationDraftReloadError = null;
+        await RefreshNativeCompensationDraftCapabilityAsync();
+        StateHasChanged();
+    });
+
+    private async Task ReloadNativeCompensationDraftAsync()
+    {
+        if (_selectedWorkflowDefinition == null || string.IsNullOrWhiteSpace(_selectedWorkflowDefinition.DefinitionId))
+        {
+            _nativeCompensationDraftReloadError = "This draft has no saved workflow definition to reload.";
+            return;
+        }
+
+        var expectedBackendContextKey = BackendApiClientProvider.ContextKey;
+        _isReloadingNativeCompensationDraft = true;
+        _nativeCompensationDraftReloadError = null;
+
+        try
+        {
+            var definition = await WorkflowDefinitionService.FindByDefinitionIdAsync(
+                _selectedWorkflowDefinition.DefinitionId, VersionOptions.Latest);
+
+            if (BackendApiClientProvider.ContextKey != expectedBackendContextKey ||
+                definition == null ||
+                NativeCompensationDraftDocumentContext.GetBackendContextKey(definition) != expectedBackendContextKey)
+            {
+                _nativeCompensationDraftReloadError = "The workflow could not be reloaded from the current backend context. The local draft remains available if you return to its original context.";
+                return;
+            }
+
+            if (WorkflowEditor != null)
+                WorkflowEditor.InvalidateWorkflowDefinitionOperations();
+
+            _workflowDefinition = definition;
+            _selectedWorkflowDefinition = definition;
+            _compensationDocumentContextKey = expectedBackendContextKey;
+            _workflowDefinitionReloadVersion++;
+            await RefreshNativeCompensationDraftCapabilityAsync();
+        }
+        catch (OperationCanceledException)
+        {
+            _nativeCompensationDraftReloadError = "The backend context changed while reloading. The local draft remains available if you return to its original context.";
+        }
+        catch (Exception)
+        {
+            _nativeCompensationDraftReloadError = "The workflow could not be reloaded from the current backend context. The local draft remains available if you return to its original context.";
+        }
+        finally
+        {
+            _isReloadingNativeCompensationDraft = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private string? GetCompensationDocumentContextKey(WorkflowDefinition? definition)
+    {
+        return NativeCompensationDraftDocumentContext.GetBackendContextKey(definition);
+    }
+
     public void Dispose()
     {
+        PermissionRefreshSignal.Raised -= OnBackendContextChanged;
         _compensationCapabilityGeneration++;
         _compensationCapabilityCheck?.Cancel();
         _compensationCapabilityCheck?.Dispose();
@@ -180,9 +263,14 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
 
         _workflowDefinitionReloadVersion++;
         _selectedWorkflowDefinition = workflowDefinition;
+        _compensationDocumentContextKey = GetCompensationDocumentContextKey(workflowDefinition);
+        _nativeCompensationDraftCapabilityEnabled = false;
+        _compensationCapabilityContextKey = null;
 
         if (workflowDefinition.IsLatest)
             _workflowDefinition = workflowDefinition;
+
+        await RefreshNativeCompensationDraftCapabilityAsync();
 
         if (WorkflowDefinitionVersionSelected != null)
             await WorkflowDefinitionVersionSelected(_selectedWorkflowDefinition);

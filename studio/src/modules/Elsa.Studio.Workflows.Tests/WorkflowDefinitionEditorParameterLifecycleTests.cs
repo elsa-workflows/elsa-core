@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Bunit;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Models;
@@ -43,6 +44,80 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
             .Add(x => x.SelectedWorkflowDefinition, initialDefinition));
 
         Assert.Same(selectedDefinition, cut.Instance.GetSelectedDefinition());
+    }
+
+    [Fact]
+    public async Task WorkspaceHidesAnOriginBoundCompensationDraftAfterContextSwitchUntilExplicitReload()
+    {
+        await using var context = CreateContext();
+        var backend = new MutableBackendApiClientProvider("context-A");
+        context.Services.AddSingleton<IBackendApiClientProvider>(backend);
+        context.Services.AddSingleton<IRemoteFeatureProvider>(new EnabledRemoteFeatureProvider());
+        var definitionService = (WorkflowDefinitionServiceProxy)context.Services.GetServices<IWorkflowDefinitionService>().Last();
+        var originalDefinition = CreateDefinition("origin A draft", "version-a");
+        originalDefinition.Root = System.Text.Json.Nodes.JsonNode.Parse("""{"id":"scope-a","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}""")!.AsObject();
+        Assert.True(NativeCompensationDraftDocumentContext.TryBind(originalDefinition, "context-A"));
+        var cut = RenderWorkspace(context, originalDefinition, originalDefinition);
+
+        Assert.Single(cut.FindComponents<WorkflowEditor>());
+        backend.ContextKey = "context-B";
+        context.Services.GetRequiredService<IPermissionRefreshSignal>().Raise();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("This compensation draft was loaded from a different backend context", cut.Markup, StringComparison.OrdinalIgnoreCase);
+            Assert.Empty(cut.FindComponents<WorkflowEditor>());
+            Assert.Empty(cut.FindComponents<CodeView>());
+            Assert.Empty(cut.FindComponents<WorkflowProperties>());
+            Assert.Same(originalDefinition, cut.Instance.GetSelectedDefinition());
+            Assert.Equal("context-A", NativeCompensationDraftDocumentContext.GetBackendContextKey(originalDefinition));
+        });
+
+        var reloadedDefinition = CreateDefinition("current B draft", "version-b");
+        reloadedDefinition.Root = System.Text.Json.Nodes.JsonNode.Parse("""{"id":"scope-b","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}""")!.AsObject();
+        definitionService.FindResultFactory = _ =>
+        {
+            NativeCompensationDraftDocumentContext.TryBind(reloadedDefinition, backend.ContextKey);
+            return reloadedDefinition;
+        };
+        var reloadButton = cut.FindAll("button").Single(button => button.TextContent.Contains("Reload from current backend", StringComparison.OrdinalIgnoreCase));
+        await reloadButton.ClickAsync();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Same(reloadedDefinition, cut.Instance.GetSelectedDefinition());
+            Assert.Equal("context-B", NativeCompensationDraftDocumentContext.GetBackendContextKey(reloadedDefinition));
+            Assert.Single(cut.FindComponents<WorkflowEditor>());
+        });
+        Assert.Equal("context-A", NativeCompensationDraftDocumentContext.GetBackendContextKey(originalDefinition));
+    }
+
+    [Fact]
+    public async Task OrdinaryDefinitionKeepsItsLoadOriginIfItGainsACompensationScopeAfterContextSwitch()
+    {
+        await using var context = CreateContext();
+        var backend = new MutableBackendApiClientProvider("context-A");
+        context.Services.AddSingleton<IBackendApiClientProvider>(backend);
+        context.Services.AddSingleton<IRemoteFeatureProvider>(new EnabledRemoteFeatureProvider());
+        var definition = CreateDefinition("ordinary definition", "version-a");
+        definition.Root = System.Text.Json.Nodes.JsonNode.Parse("""{"id":"write-1","type":"Elsa.WriteLine","version":1}""")!.AsObject();
+        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, "context-A"));
+        var cut = RenderWorkspace(context, definition, definition);
+
+        backend.ContextKey = "context-B";
+        context.Services.GetRequiredService<IPermissionRefreshSignal>().Raise();
+        definition.Root = System.Text.Json.Nodes.JsonNode.Parse("""{"id":"scope-a","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}""")!.AsObject();
+        cut.Render(parameters => parameters
+            .Add(x => x.WorkflowDefinition, definition)
+            .Add(x => x.SelectedWorkflowDefinition, definition));
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("This compensation draft was loaded from a different backend context", cut.Markup, StringComparison.OrdinalIgnoreCase);
+            Assert.Empty(cut.FindComponents<WorkflowEditor>());
+            Assert.Same(definition, cut.Instance.GetSelectedDefinition());
+            Assert.Equal("context-A", NativeCompensationDraftDocumentContext.GetBackendContextKey(definition));
+        });
     }
 
     [Fact]
@@ -384,6 +459,25 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
         public void MarkStale()
         {
         }
+    }
+
+    private sealed class MutableBackendApiClientProvider(string contextKey) : IBackendApiClientProvider
+    {
+        public Uri Url { get; } = new("https://backend.example/");
+        public string ContextKey { get; set; } = contextKey;
+
+        public ValueTask<T> GetApiAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(CancellationToken cancellationToken = default) where T : class =>
+            throw new InvalidOperationException("The workspace lifecycle test must not create a backend client.");
+    }
+
+    private sealed class EnabledRemoteFeatureProvider : IRemoteFeatureProvider, IRemoteFeatureProviderWithFreshCheck
+    {
+        public Task<bool> IsEnabledAsync(string featureName, CancellationToken cancellationToken = default) => Task.FromResult(true);
+
+        public Task<IEnumerable<Elsa.Api.Client.Resources.Features.Models.FeatureDescriptor>> ListAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult<IEnumerable<Elsa.Api.Client.Resources.Features.Models.FeatureDescriptor>>([]);
+
+        public Task<bool> IsEnabledFreshAsync(string featureName, CancellationToken cancellationToken = default) => Task.FromResult(true);
     }
 
     private class WorkflowDefinitionServiceProxy : DispatchProxy

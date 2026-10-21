@@ -1,18 +1,17 @@
 using System.Text.Json.Nodes;
 using Elsa.Api.Client.Extensions;
-using Elsa.Studio.Contracts;
 using Elsa.Studio.Workflows.UI.Contracts;
 
 namespace Elsa.Studio.Workflows.DiagramDesigners.CompensationScopes;
 
-public sealed class CompensationScopeDiagramDesignerProvider(IBackendApiClientProvider backendApiClientProvider) : IDiagramDesignerProvider
+public sealed class CompensationScopeDiagramDesignerProvider : IDiagramDesignerProvider
 {
     public double Priority => 20;
 
     public bool GetSupportsActivity(JsonObject activity) =>
         activity.GetTypeName() == "Elsa.CompensationScope" || IsOpaqueCompensationScope(activity);
 
-    public IDiagramDesigner GetEditor() => new CompensationScopeDiagramDesigner(backendApiClientProvider);
+    public IDiagramDesigner GetEditor() => new CompensationScopeDiagramDesigner();
 
     private static bool IsOpaqueCompensationScope(JsonObject activity)
     {

@@ -19,6 +19,7 @@ public class ActivityInvoker(
     {
         CompensationScopeExecutionGuard.DemandExecutable(workflowExecutionContext);
         await DemandUnownedAsync(workflowExecutionContext);
+        CompensationScopeExecutionGuard.DemandExecutable(workflowExecutionContext);
         return await InvokeCoreAsync(workflowExecutionContext, activity, options, false);
     }
 
@@ -64,6 +65,7 @@ public class ActivityInvoker(
     {
         CompensationScopeExecutionGuard.DemandExecutable(activityExecutionContext.WorkflowExecutionContext);
         await DemandUnownedAsync(activityExecutionContext.WorkflowExecutionContext);
+        CompensationScopeExecutionGuard.DemandExecutable(activityExecutionContext.WorkflowExecutionContext);
         await InvokeCoreAsync(activityExecutionContext, false);
     }
 

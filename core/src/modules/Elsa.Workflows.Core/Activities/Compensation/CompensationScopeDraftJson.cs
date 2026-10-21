@@ -1,4 +1,6 @@
+using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
@@ -26,12 +28,14 @@ internal static class CompensationScopeDraftJson
             steps.ValueKind != JsonValueKind.Array)
             return false;
 
+        var stepIds = new HashSet<string>(StringComparer.Ordinal);
         foreach (var step in steps.EnumerateArray())
         {
             if (step.ValueKind != JsonValueKind.Object ||
                 !step.TryGetProperty("stepId", out var stepId) ||
                 stepId.ValueKind != JsonValueKind.String ||
-                string.IsNullOrWhiteSpace(stepId.GetString()))
+                string.IsNullOrWhiteSpace(stepId.GetString()) ||
+                !stepIds.Add(stepId.GetString()!))
                 return false;
 
             if (step.TryGetProperty("mappings", out var mappings) && mappings.ValueKind != JsonValueKind.Array)
@@ -71,36 +75,49 @@ internal static class CompensationScopeDraftJson
             IsWorkflowDefinitionActivity(descriptor))
             return false;
 
-        foreach (var property in activity.EnumerateObject())
+        foreach (var childProperty in GetActivityChildProperties(descriptor))
         {
-            if (!IsPinnedActivityValue(property.Value, activityRegistry))
+            if (!activity.TryGetProperty(childProperty.Name, out var childValue) || childValue.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+                continue;
+
+            if (childProperty.IsCollection)
+            {
+                if (childValue.ValueKind != JsonValueKind.Array ||
+                    childValue.EnumerateArray().Any(child => !IsPinnedActivityTree(child, activityRegistry)))
+                    return false;
+            }
+            else if (!IsPinnedActivityTree(childValue, activityRegistry))
                 return false;
         }
 
         return true;
     }
 
-    private static bool IsPinnedActivityValue(JsonElement value, IActivityRegistry activityRegistry)
+    private static IEnumerable<(string Name, bool IsCollection)> GetActivityChildProperties(ActivityDescriptor descriptor)
     {
-        switch (value.ValueKind)
+        foreach (var property in descriptor.ClrType.GetProperties(BindingFlags.Instance | BindingFlags.Public))
         {
-            case JsonValueKind.Object:
-                if (value.TryGetProperty("type", out var type) && type.ValueKind == JsonValueKind.String)
-                    return IsPinnedActivityTree(value, activityRegistry);
+            if (property.GetIndexParameters().Length != 0)
+                continue;
 
-                foreach (var property in value.EnumerateObject())
-                    if (!IsPinnedActivityValue(property.Value, activityRegistry))
-                        return false;
-                return true;
+            var propertyType = property.PropertyType;
+            var isCollection = false;
+            if (!typeof(IActivity).IsAssignableFrom(propertyType))
+            {
+                var elementType = propertyType.IsArray
+                    ? propertyType.GetElementType()
+                    : propertyType.GetInterfaces()
+                        .Append(propertyType)
+                        .Where(type => type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                        .Select(type => type.GetGenericArguments()[0])
+                        .FirstOrDefault();
+                if (elementType == null || !typeof(IActivity).IsAssignableFrom(elementType))
+                    continue;
+                isCollection = true;
+            }
 
-            case JsonValueKind.Array:
-                foreach (var item in value.EnumerateArray())
-                    if (!IsPinnedActivityValue(item, activityRegistry))
-                        return false;
-                return true;
-
-            default:
-                return true;
+            var jsonName = property.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? JsonNamingPolicy.CamelCase.ConvertName(property.Name);
+            yield return (jsonName, isCollection);
         }
     }
 

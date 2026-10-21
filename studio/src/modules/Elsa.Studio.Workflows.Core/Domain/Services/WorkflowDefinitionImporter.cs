@@ -18,12 +18,30 @@ namespace Elsa.Studio.Workflows.Domain.Services;
 /// <summary>
 /// A workflow definition service that uses a remote backend to retrieve workflow definitions.
 /// </summary>
-public class WorkflowDefinitionImporter(
-    IBackendApiClientProvider backendApiClientProvider,
-    IMediator mediator,
-    IWorkflowJsonDetector workflowJsonDetector,
-    IRemoteFeatureProvider? remoteFeatureProvider = null) : IWorkflowDefinitionImporter
+public class WorkflowDefinitionImporter : IWorkflowDefinitionImporter
 {
+    private readonly IBackendApiClientProvider backendApiClientProvider;
+    private readonly IMediator mediator;
+    private readonly IWorkflowJsonDetector workflowJsonDetector;
+    private readonly IRemoteFeatureProvider? remoteFeatureProvider;
+
+    public WorkflowDefinitionImporter(IBackendApiClientProvider backendApiClientProvider, IMediator mediator, IWorkflowJsonDetector workflowJsonDetector)
+        : this(backendApiClientProvider, mediator, workflowJsonDetector, null)
+    {
+    }
+
+    public WorkflowDefinitionImporter(
+        IBackendApiClientProvider backendApiClientProvider,
+        IMediator mediator,
+        IWorkflowJsonDetector workflowJsonDetector,
+        IRemoteFeatureProvider? remoteFeatureProvider)
+    {
+        this.backendApiClientProvider = backendApiClientProvider;
+        this.mediator = mediator;
+        this.workflowJsonDetector = workflowJsonDetector;
+        this.remoteFeatureProvider = remoteFeatureProvider;
+    }
+
     private async Task<IWorkflowDefinitionsApi> GetApiAsync(CancellationToken cancellationToken = default)
     {
         return await backendApiClientProvider.GetApiAsync<IWorkflowDefinitionsApi>(cancellationToken);
@@ -111,6 +129,7 @@ public class WorkflowDefinitionImporter(
     public async Task<WorkflowImportResult> ImportJsonAsync(string fileName, string json, ImportOptions? options)
     {
         var jsonSerializerOptions = CreateJsonSerializerOptions();
+        var backendContextKey = backendApiClientProvider.ContextKey;
 
         try
         {
@@ -125,10 +144,16 @@ public class WorkflowDefinitionImporter(
                 };
             }
 
-            if (JsonNode.Parse(json) is JsonObject workflow &&
-                NativeCompensationDraftCapability.ContainsCompensationScope(workflow["root"]) &&
-                !await NativeCompensationDraftCapability.IsEnabledAsync(remoteFeatureProvider))
-                throw new InvalidOperationException("This server does not advertise native compensation draft authoring. The workflow was not imported.");
+            var containsCompensationDraft = JsonNode.Parse(json) is JsonObject workflow &&
+                                            NativeCompensationDraftCapability.ContainsCompensationScope(workflow["root"]);
+            if (containsCompensationDraft)
+            {
+                EnsureSameBackendContext(backendContextKey);
+                if (!await NativeCompensationDraftCapability.IsEnabledForContextAsync(remoteFeatureProvider, backendApiClientProvider, backendContextKey))
+                    throw backendApiClientProvider.ContextKey == backendContextKey
+                        ? new InvalidOperationException("This server does not advertise native compensation draft authoring. The workflow was not imported.")
+                        : new OperationCanceledException("The selected backend changed while importing the workflow.");
+            }
 
             var model = JsonSerializer.Deserialize<WorkflowDefinitionModel>(json, jsonSerializerOptions)!;
 
@@ -136,8 +161,13 @@ public class WorkflowDefinitionImporter(
                 model.DefinitionId = options.DefinitionId;
 
             await mediator.NotifyAsync(new ImportingWorkflowDefinition(model));
+            EnsureSameBackendContext(backendContextKey);
             var api = await GetApiAsync();
+            EnsureSameBackendContext(backendContextKey);
             var newWorkflowDefinition = await api.ImportAsync(model);
+            EnsureSameBackendContext(backendContextKey);
+            if (!NativeCompensationDraftDocumentContext.TryBind(newWorkflowDefinition, backendContextKey))
+                throw new OperationCanceledException("The imported workflow is already bound to a different backend context.");
 
             if (options?.ImportedCallback != null)
                 await options.ImportedCallback(newWorkflowDefinition);
@@ -173,5 +203,11 @@ public class WorkflowDefinitionImporter(
         options.Converters.Add(new JsonStringEnumConverter());
         options.Converters.Add(new VersionOptionsJsonConverter());
         return options;
+    }
+
+    private void EnsureSameBackendContext(string expected)
+    {
+        if (!string.Equals(backendApiClientProvider.ContextKey, expected, StringComparison.Ordinal))
+            throw new OperationCanceledException("The selected backend changed while importing the workflow.");
     }
 }

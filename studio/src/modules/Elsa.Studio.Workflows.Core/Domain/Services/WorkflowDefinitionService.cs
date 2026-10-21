@@ -18,13 +18,37 @@ namespace Elsa.Studio.Workflows.Domain.Services;
 /// <summary>
 /// A workflow definition service that uses a remote backend to retrieve workflow definitions.
 /// </summary>
-public class RemoteWorkflowDefinitionService(
-    IBackendApiClientProvider backendApiClientProvider,
-    IIdentityGenerator identityGenerator,
-    IWorkflowRootActivityTemplateProvider workflowRootActivityTemplateProvider,
-    IMediator mediator,
-    IRemoteFeatureProvider? remoteFeatureProvider = null) : IWorkflowDefinitionService
+public class RemoteWorkflowDefinitionService : IWorkflowDefinitionService
 {
+    private readonly IBackendApiClientProvider backendApiClientProvider;
+    private readonly IIdentityGenerator identityGenerator;
+    private readonly IWorkflowRootActivityTemplateProvider workflowRootActivityTemplateProvider;
+    private readonly IMediator mediator;
+    private readonly IRemoteFeatureProvider? remoteFeatureProvider;
+
+    public RemoteWorkflowDefinitionService(
+        IBackendApiClientProvider backendApiClientProvider,
+        IIdentityGenerator identityGenerator,
+        IWorkflowRootActivityTemplateProvider workflowRootActivityTemplateProvider,
+        IMediator mediator)
+        : this(backendApiClientProvider, identityGenerator, workflowRootActivityTemplateProvider, mediator, null)
+    {
+    }
+
+    public RemoteWorkflowDefinitionService(
+        IBackendApiClientProvider backendApiClientProvider,
+        IIdentityGenerator identityGenerator,
+        IWorkflowRootActivityTemplateProvider workflowRootActivityTemplateProvider,
+        IMediator mediator,
+        IRemoteFeatureProvider? remoteFeatureProvider)
+    {
+        this.backendApiClientProvider = backendApiClientProvider;
+        this.identityGenerator = identityGenerator;
+        this.workflowRootActivityTemplateProvider = workflowRootActivityTemplateProvider;
+        this.mediator = mediator;
+        this.remoteFeatureProvider = remoteFeatureProvider;
+    }
+
     /// <inheritdoc />
     public async Task<PagedListResponse<WorkflowDefinitionSummary>> ListAsync(ListWorkflowDefinitionsRequest request, VersionOptions? versionOptions = null, CancellationToken cancellationToken = default)
     {
@@ -35,22 +59,35 @@ public class RemoteWorkflowDefinitionService(
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindByDefinitionIdAsync(string definitionId, VersionOptions? versionOptions = null, CancellationToken cancellationToken = default)
     {
+        var backendContextKey = backendApiClientProvider.ContextKey;
         var api = await GetApiAsync(cancellationToken);
-        return await api.GetByDefinitionIdAsync(definitionId, versionOptions, cancellationToken);
+        EnsureSameBackendContext(backendContextKey, cancellationToken);
+        var definition = await api.GetByDefinitionIdAsync(definitionId, versionOptions, cancellationToken);
+        BindReadDefinition(definition, backendContextKey, cancellationToken);
+        return definition;
     }
 
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindByIdAsync(string id, CancellationToken cancellationToken = default)
     {
+        var backendContextKey = backendApiClientProvider.ContextKey;
         var api = await GetApiAsync(cancellationToken);
-        return await api.GetByIdAsync(id, cancellationToken);
+        EnsureSameBackendContext(backendContextKey, cancellationToken);
+        var definition = await api.GetByIdAsync(id, cancellationToken);
+        BindReadDefinition(definition, backendContextKey, cancellationToken);
+        return definition;
     }
 
     /// <inheritdoc />
     public async Task<IEnumerable<WorkflowDefinition>> FindManyByIdAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
     {
+        var backendContextKey = backendApiClientProvider.ContextKey;
         var api = await GetApiAsync(cancellationToken);
+        EnsureSameBackendContext(backendContextKey, cancellationToken);
         var response = await api.GetManyByIdAsync(ids.ToList(), cancellationToken);
+        EnsureSameBackendContext(backendContextKey, cancellationToken);
+        foreach (var definition in response.Items)
+            BindReadDefinition(definition, backendContextKey, cancellationToken);
         return response.Items;
     }
 
@@ -71,16 +108,24 @@ public class RemoteWorkflowDefinitionService(
     /// <inheritdoc />
     public async Task<SaveWorkflowDefinitionResponse> PublishAsync(string definitionId, CancellationToken cancellationToken = default)
     {
-        if (!await NativeCompensationDraftCapability.IsEnabledAsync(remoteFeatureProvider, cancellationToken))
+        var backendContextKey = backendApiClientProvider.ContextKey;
+        var api = await GetApiAsync(cancellationToken);
+        EnsureSameBackendContext(backendContextKey, cancellationToken);
+        var supportsNativeCompensationDrafts = await NativeCompensationDraftCapability.IsEnabledForContextAsync(
+            remoteFeatureProvider, backendApiClientProvider, backendContextKey, cancellationToken);
+        if (!supportsNativeCompensationDrafts)
         {
-            var definition = await FindByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken);
+            var definition = await api.GetByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken);
+            EnsureSameBackendContext(backendContextKey, cancellationToken);
             if (definition != null && NativeCompensationDraftCapability.ContainsCompensationScope(definition.Root))
                 throw new InvalidOperationException("This server does not advertise native compensation draft authoring. The workflow was not published.");
         }
 
-        var api = await GetApiAsync(cancellationToken);
+        EnsureSameBackendContext(backendContextKey, cancellationToken);
         await mediator.NotifyAsync(new WorkflowDefinitionIdPublishing(definitionId), cancellationToken);
+        EnsureSameBackendContext(backendContextKey, cancellationToken);
         var response = await api.PublishAsync(definitionId, new(), cancellationToken);
+        EnsureSameBackendContext(backendContextKey, cancellationToken);
         await mediator.NotifyAsync(new WorkflowDefinitionPublished(response.WorkflowDefinition), cancellationToken);
         return response;
     }
@@ -168,18 +213,26 @@ public class RemoteWorkflowDefinitionService(
     /// <inheritdoc />
     public async Task<BulkPublishWorkflowDefinitionsResponse> BulkPublishAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default)
     {
+        var backendContextKey = backendApiClientProvider.ContextKey;
         var definitionIdList = definitionIds.ToList();
-        if (!await NativeCompensationDraftCapability.IsEnabledAsync(remoteFeatureProvider, cancellationToken))
+        var api = await GetApiAsync(cancellationToken);
+        EnsureSameBackendContext(backendContextKey, cancellationToken);
+        var supportsNativeCompensationDrafts = await NativeCompensationDraftCapability.IsEnabledForContextAsync(
+            remoteFeatureProvider, backendApiClientProvider, backendContextKey, cancellationToken);
+        if (!supportsNativeCompensationDrafts)
         {
-            var definitions = await FindManyByIdAsync(definitionIdList, cancellationToken);
-            if (definitions.Any(x => NativeCompensationDraftCapability.ContainsCompensationScope(x.Root)))
+            var definitions = await api.GetManyByIdAsync(definitionIdList, cancellationToken);
+            EnsureSameBackendContext(backendContextKey, cancellationToken);
+            if (definitions.Items.Any(x => NativeCompensationDraftCapability.ContainsCompensationScope(x.Root)))
                 throw new InvalidOperationException("This server does not advertise native compensation draft authoring. The selected workflows were not published.");
         }
 
         var request = new BulkPublishWorkflowDefinitionsRequest(definitionIdList);
-        var api = await GetApiAsync(cancellationToken);
+        EnsureSameBackendContext(backendContextKey, cancellationToken);
         await mediator.NotifyAsync(new BulkWorkflowDefinitionsPublishing(request.DefinitionIds), cancellationToken);
+        EnsureSameBackendContext(backendContextKey, cancellationToken);
         var response = await api.BulkPublishAsync(request, cancellationToken);
+        EnsureSameBackendContext(backendContextKey, cancellationToken);
         await mediator.NotifyAsync(new BulkWorkflowDefinitionsPublished(response.Published), cancellationToken);
         return response;
     }
@@ -258,15 +311,24 @@ public class RemoteWorkflowDefinitionService(
 
         configureRequest?.Invoke(saveRequest);
 
-        if (NativeCompensationDraftCapability.ContainsCompensationScope(saveRequest.Model.Root) &&
-            !await NativeCompensationDraftCapability.IsEnabledAsync(remoteFeatureProvider, cancellationToken))
+        var backendContextKey = backendApiClientProvider.ContextKey;
+        var containsCompensationDraft = NativeCompensationDraftCapability.ContainsCompensationScope(saveRequest.Model.Root);
+        if (containsCompensationDraft &&
+            !await NativeCompensationDraftCapability.IsEnabledForContextAsync(remoteFeatureProvider, backendApiClientProvider, backendContextKey, cancellationToken))
             return new(new ValidationErrors([new("This server does not advertise native compensation draft authoring. The workflow was not saved.")]));
 
         var api = await GetApiAsync(cancellationToken);
+        if (containsCompensationDraft)
+            EnsureSameBackendContext(backendContextKey, cancellationToken);
 
         try
         {
+            if (containsCompensationDraft)
+                EnsureSameBackendContext(backendContextKey, cancellationToken);
             var response = await api.SaveAsync(saveRequest, cancellationToken);
+            if (containsCompensationDraft)
+                EnsureSameBackendContext(backendContextKey, cancellationToken);
+            NativeCompensationDraftDocumentContext.TryBind(response.WorkflowDefinition, backendContextKey);
             return new(response.WorkflowDefinition);
         }
         catch (ApiException e) when (e.StatusCode == HttpStatusCode.BadRequest)
@@ -324,5 +386,18 @@ public class RemoteWorkflowDefinitionService(
     private async Task<IExecuteWorkflowApi> GetExecuteWorkflowApiAsync(CancellationToken cancellationToken = default)
     {
         return await backendApiClientProvider.GetApiAsync<IExecuteWorkflowApi>(cancellationToken);
+    }
+
+    private void BindReadDefinition(WorkflowDefinition? definition, string backendContextKey, CancellationToken cancellationToken)
+    {
+        EnsureSameBackendContext(backendContextKey, cancellationToken);
+        if (definition != null && !NativeCompensationDraftDocumentContext.TryBind(definition, backendContextKey))
+            throw new OperationCanceledException("The workflow definition was already bound to a different backend context.", cancellationToken);
+    }
+
+    private void EnsureSameBackendContext(string expected, CancellationToken cancellationToken)
+    {
+        if (!string.Equals(backendApiClientProvider.ContextKey, expected, StringComparison.Ordinal))
+            throw new OperationCanceledException("The selected backend changed while loading or saving the workflow definition.", cancellationToken);
     }
 }
