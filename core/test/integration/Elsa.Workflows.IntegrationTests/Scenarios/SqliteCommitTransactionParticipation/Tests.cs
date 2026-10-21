@@ -281,25 +281,7 @@ internal sealed class NativeCommitFixture : IAsyncDisposable
         }
         catch
         {
-            try
-            {
-                if (serviceProvider != null)
-                {
-                    await serviceProvider.DisposeAsync();
-                }
-            }
-            finally
-            {
-                try
-                {
-                    await connection.DisposeAsync();
-                }
-                finally
-                {
-                    DeleteDatabaseFiles(databasePath);
-                }
-            }
-
+            await CleanupAsync(serviceProvider, connection, databasePath);
             throw;
         }
     }
@@ -428,21 +410,26 @@ internal sealed class NativeCommitFixture : IAsyncDisposable
         }
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync() => CleanupAsync(_services, _connection, _databasePath);
+
+    private static async ValueTask CleanupAsync(ServiceProvider? serviceProvider, SqliteConnection connection, string databasePath)
     {
         try
         {
-            await _services.DisposeAsync();
+            if (serviceProvider != null)
+            {
+                await serviceProvider.DisposeAsync();
+            }
         }
         finally
         {
             try
             {
-                await _connection.DisposeAsync();
+                await connection.DisposeAsync();
             }
             finally
             {
-                DeleteDatabaseFiles(_databasePath);
+                DeleteDatabaseFiles(databasePath);
             }
         }
     }
