@@ -42,11 +42,11 @@ function RetryAttempts({ executionId, workflowInstanceId }: { executionId: strin
         </TableRow>)}</TableBody>
       </Table>}
       {attempt && <JsonViewer value={attempt.details} />}
-      <div className="flex items-center gap-2">
-        <Button size="sm" variant="outline" disabled={page === 0 || query.isFetching} onClick={() => { setSelected(undefined); setPage(value => value - 1); }}>Previous attempts</Button>
-        <span className="text-sm">{query.data.totalCount} attempts</span>
-        <Button size="sm" variant="outline" disabled={query.isFetching || (page + 1) * pageSize >= query.data.totalCount} onClick={() => { setSelected(undefined); setPage(value => value + 1); }}>Next attempts</Button>
-      </div>
     </>}
+    {(query.data || page > 0) && <div className="flex items-center gap-2">
+        <Button size="sm" variant="outline" disabled={page === 0 || query.isFetching} onClick={() => { setSelected(undefined); setPage(value => value - 1); }}>Previous attempts</Button>
+        {query.data && <span className="text-sm">{query.data.totalCount} attempts</span>}
+        <Button size="sm" variant="outline" disabled={query.isFetching || !query.data || (page + 1) * pageSize >= query.data.totalCount} onClick={() => { setSelected(undefined); setPage(value => value + 1); }}>Next attempts</Button>
+    </div>}
   </>;
 }

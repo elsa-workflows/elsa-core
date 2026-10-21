@@ -135,7 +135,7 @@ test(catalogFailure ? "catalog failures preserve local clear and expression acti
 
 }
 
-test("instance retries select an execution, page attempts, and retain details without mixing executions", async ({ page }) => {
+for (const failNextPage of [false, true]) test(`instance retries select executions and recover paging (failed page: ${failNextPage})`, async ({ page }) => {
   const errors: string[] = [];
   const calls: string[] = [];
   page.on("pageerror", error => errors.push(error.message));
@@ -154,6 +154,7 @@ test("instance retries select an execution, page attempts, and retain details wi
       calls.push(`${path}?${url.searchParams}`);
       const latest = path.endsWith("execution-latest");
       const skip = Number(url.searchParams.get("skip"));
+      if (failNextPage && skip > 0) { await route.fulfill({ status: 503, json: { message: "Retry page unavailable" } }); return; }
       json = { items: latest ? Array.from({ length: skip === 0 ? 10 : 1 }, (_, index) => ({ id: `attempt-${skip + index}`, activityInstanceId: "execution-latest", attemptNumber: skip + index,
         retryDelay: "00:00:01", details: { exception: "Temporary failure", custom: "Preserved details" } })) : [], totalCount: latest ? 11 : 0 };
     }
@@ -166,8 +167,15 @@ test("instance retries select an execution, page attempts, and retain details wi
   await page.getByRole("button", { name: "Details for attempt 0", exact: true }).click();
   await expect(page.getByText("Preserved details", { exact: false })).toBeVisible();
   await page.getByRole("button", { name: "Next attempts", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Details for attempt 10", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Next attempts", exact: true })).toBeDisabled();
+  if (failNextPage) {
+    await expect(page.getByText("Could not load retry attempts", { exact: true })).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole("button", { name: "Next attempts", exact: true })).toBeDisabled();
+    await page.getByRole("button", { name: "Previous attempts", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Details for attempt 0", exact: true })).toBeVisible();
+  } else {
+    await expect(page.getByRole("button", { name: "Details for attempt 10", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Next attempts", exact: true })).toBeDisabled();
+  }
   await page.getByLabel("Retry activity execution").click();
   await page.getByRole("option", { name: /execution-first/ }).click();
   await expect(page.getByText("No retry attempts for this execution.", { exact: true })).toBeVisible();
