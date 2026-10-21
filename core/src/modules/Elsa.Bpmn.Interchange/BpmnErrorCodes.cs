@@ -38,6 +38,14 @@ public static class BpmnErrorCodes
     public const string ImportDuplicateElementId = "bpmn.import.duplicate-element-id";
 
     /// <summary>
+    /// <c>bpmn/import</c> and the document <c>PUT</c> refuse a document whose process, or a subprocess body it can reach
+    /// at any depth, cannot run: building its graph refuses it, for example for a cycle on which nothing can wait, or an
+    /// event subprocess body without exactly one start event. The message is <c>Bpmn.Semantics</c>' own and names the
+    /// elements. No opt-in overrides this refusal.
+    /// </summary>
+    public const string ImportProcessInvalid = "bpmn.import.process-invalid";
+
+    /// <summary>
     /// No longer sent. Before Elsa evaluated condition expressions, <c>bpmn/import</c> and the document <c>PUT</c>
     /// refused a document whose sequence flows carried a standard BPMN <c>conditionExpression</c> with this code.
     /// </summary>

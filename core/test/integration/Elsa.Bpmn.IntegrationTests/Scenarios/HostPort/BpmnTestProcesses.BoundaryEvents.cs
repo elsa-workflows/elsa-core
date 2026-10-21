@@ -1,6 +1,7 @@
 using Bpmn.Model;
 using Elsa.Bpmn.Activities;
 using Elsa.Bpmn.IntegrationTests.Scenarios.HostPort.Activities;
+using Elsa.Workflows;
 
 namespace Elsa.Bpmn.IntegrationTests.Scenarios.HostPort;
 
@@ -159,6 +160,56 @@ internal static partial class BpmnTestProcesses
         var nested = Scope("sub", body, Immediate("subWork", log));
 
         return Scope("scope", definition, nested, Immediate("after", log), Immediate("subRecover", log));
+    }
+
+    /// <summary>
+    /// A task, then an embedded subprocess whose body can never run: its two gateways route a token around a cycle on
+    /// which nothing can wait, which <c>Bpmn.Semantics</c> refuses when it builds the body's graph.
+    /// </summary>
+    public static BpmnProcess SubprocessWithABodyThatCannotRun(BpmnTestLog log)
+    {
+        var body = new BpmnProcessBuilder("never-waiting-cycle-body")
+            .StartEvent("subStart")
+            .ExclusiveGateway("loopA")
+            .ExclusiveGateway("loopB")
+            .ConnectSequence("subStart", "loopA", "loopB", "loopA")
+            .Build();
+
+        var definition = new BpmnProcessBuilder("subprocess-with-a-body-that-cannot-run")
+            .StartEvent("start")
+            .Task("first", bindingRef: BindingRef("first"))
+            .SubProcess("sub", bindingRef: BindingRef("sub"))
+            .EndEvent("end")
+            .ConnectSequence("start", "first", "sub", "end")
+            .Build();
+
+        return Scope("scope", definition, Immediate("first", log), Scope("sub", body));
+    }
+
+    /// <summary>
+    /// A task, then a task whose work composes a BPMN process that can never run (the same cycle on which nothing can
+    /// wait) through <paramref name="compose"/>, which wraps the process in another activity with the id
+    /// <c>wrapped</c>. The composed process is a root scope of its own, so it builds its graph only when its wrapper
+    /// starts it; the outer scope is the one that can refuse it before anything runs.
+    /// </summary>
+    public static BpmnProcess ComposedProcessThatCannotRun(BpmnTestLog log, Func<BpmnProcess, IActivity> compose)
+    {
+        var composed = new BpmnProcessBuilder("never-waiting-cycle")
+            .StartEvent("innerStart")
+            .ExclusiveGateway("loopA")
+            .ExclusiveGateway("loopB")
+            .ConnectSequence("innerStart", "loopA", "loopB", "loopA")
+            .Build();
+
+        var definition = new BpmnProcessBuilder("composed-process-that-cannot-run")
+            .StartEvent("start")
+            .Task("first", bindingRef: BindingRef("first"))
+            .Task("wrapped", bindingRef: BindingRef("wrapped"))
+            .EndEvent("end")
+            .ConnectSequence("start", "first", "wrapped", "end")
+            .Build();
+
+        return Scope("scope", definition, Immediate("first", log), compose(Scope("inner", composed)));
     }
 
     /// <summary>A task that fails with nothing to catch it.</summary>

@@ -41,7 +41,7 @@
         <bpmn:incoming>Tx_Flow_3</bpmn:incoming>
         <bpmn:cancelEventDefinition id="Cancel_End" />
       </bpmn:endEvent>
-      <bpmn:exclusiveGateway id="Tx_Decide" name="Confirmed?" default="Tx_Flow_2">
+      <bpmn:exclusiveGateway id="Tx_Decide" name="Confirmed?" default="Tx_Flow_4">
         <bpmn:incoming>Tx_Flow_2</bpmn:incoming>
         <bpmn:outgoing>Tx_Flow_3</bpmn:outgoing>
         <bpmn:outgoing>Tx_Flow_4</bpmn:outgoing>

@@ -1,6 +1,9 @@
+using Elsa.Bpmn.Activities;
 using Elsa.Common.Models;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Activities.Flowchart.Activities;
 using Elsa.Workflows.IncidentStrategies;
 using Elsa.Workflows.Models;
 using Xunit.Abstractions;
@@ -194,6 +197,48 @@ public class BpmnProcessTests(ITestOutputHelper testOutputHelper)
         Assert.DoesNotContain("executed:after", _host.Log.Entries);
         Assert.Empty(result.WorkflowState.Incidents);
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+    }
+
+    [Fact(DisplayName = "A subprocess body that cannot run is refused before the process runs anything")]
+    public async Task SubprocessBodyThatCannotRun_IsRefusedBeforeAnythingRuns()
+    {
+        // The body's graph used to be built only when a token reached the subprocess, after "first" had already run.
+        // The root now builds every body it can reach before it starts.
+
+        // Act
+        var result = await _host.RunAsync(BpmnTestProcesses.SubprocessWithABodyThatCannotRun(_host.Log), typeof(FaultStrategy));
+
+        // Assert
+        Assert.Empty(_host.Log.Entries);
+        Assert.Equal(WorkflowSubStatus.Faulted, result.WorkflowState.SubStatus);
+        var incident = Assert.Single(result.WorkflowState.Incidents);
+        Assert.Contains("loopA", incident.Exception!.Message);
+    }
+
+    [Theory(DisplayName = "A BPMN process that cannot run, composed into other work, is refused before anything runs")]
+    [InlineData("flowchart activity")]
+    [InlineData("flowchart start only")]
+    [InlineData("if branch")]
+    public async Task ComposedProcessThatCannotRun_IsRefusedBeforeAnythingRuns(string composition)
+    {
+        // The composed process is a root scope of its own, so it used to build its graph only when its wrapper started
+        // it, after "first" had already run. The root now finds it through whatever ports the wrapper has.
+        Func<BpmnProcess, IActivity> compose = composition switch
+        {
+            "flowchart activity" => inner => new Flowchart { Id = "wrapped", Start = inner, Activities = { inner } },
+            "flowchart start only" => inner => new Flowchart { Id = "wrapped", Start = inner },
+            "if branch" => inner => new If(() => true) { Id = "wrapped", Then = inner },
+            _ => throw new ArgumentOutOfRangeException(nameof(composition), composition, null)
+        };
+
+        // Act
+        var result = await _host.RunAsync(BpmnTestProcesses.ComposedProcessThatCannotRun(_host.Log, compose), typeof(FaultStrategy));
+
+        // Assert
+        Assert.Empty(_host.Log.Entries);
+        Assert.Equal(WorkflowSubStatus.Faulted, result.WorkflowState.SubStatus);
+        var incident = Assert.Single(result.WorkflowState.Incidents);
+        Assert.Contains("loopA", incident.Exception!.Message);
     }
 
     [Fact(DisplayName = "A collection-mode multi-instance runs one instance per item of a container-scoped variable")]
