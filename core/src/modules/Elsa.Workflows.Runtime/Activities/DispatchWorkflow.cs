@@ -76,6 +76,8 @@ public class DispatchWorkflow : Activity<object>
 
     /// <summary>
     /// True to wait for the child workflow to complete before completing this activity, false to "fire and forget".
+    /// A waiting activity completes once the child is finished, whether it finished successfully, faulted or was cancelled,
+    /// including a cancellation through the cancellation API.
     /// </summary>
     [Input(Description = "Wait for the child workflow to complete before completing this activity.")]
     public Input<bool> WaitForCompletion { get; set; } = null!;
