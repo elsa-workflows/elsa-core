@@ -52,6 +52,7 @@ var configuration = builder.Configuration;
 configuration.AddJsonFile("appsettings.Local.json", true, true);
 
 // Register Razor services.
+builder.Services.AddResponseCompression();
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor(options =>
 {
