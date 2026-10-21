@@ -1,0 +1,639 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-geist-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  /* Elsa extras */
+  --color-brand: var(--elsa-primary);
+  --color-brand-secondary: var(--elsa-secondary);
+  --color-canvas: var(--elsa-canvas);
+  --color-status-info: var(--status-info);
+  --color-status-success: var(--status-success);
+  --color-status-warning: var(--status-warning);
+  --color-status-danger: var(--status-danger);
+  --color-status-neutral: var(--status-neutral);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* Shared, theme-independent tokens */
+:root {
+  --radius: 0.5rem;
+  --status-info: #0284c7;
+  --status-success: #059669;
+  --status-warning: #d97706;
+  --status-danger: #dc2626;
+  --status-neutral: #64748b;
+}
+.dark {
+  --status-info: #38bdf8;
+  --status-success: #34d399;
+  --status-warning: #fbbf24;
+  --status-danger: #f87171;
+  --status-neutral: #94a3b8;
+}
+
+/* ---- Elsa theme: classic ---- */
+:root[data-elsa-theme="classic"] {
+  --background: #FFFFFF;
+  --foreground: #0F172A;
+  --card: #F8FAFC;
+  --card-foreground: #0F172A;
+  --popover: #F8FAFC;
+  --popover-foreground: #0F172A;
+  --primary: #0EA5E9;
+  --primary-foreground: #FFFFFF;
+  --secondary: color-mix(in oklab, #E2E8F0 55%, #F8FAFC);
+  --secondary-foreground: #0F172A;
+  --muted: color-mix(in oklab, #E2E8F0 42%, #FFFFFF);
+  --muted-foreground: #64748B;
+  --accent: color-mix(in oklab, #0EA5E9 10%, #F8FAFC);
+  --accent-foreground: #0F172A;
+  --destructive: #DC2626;
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #0EA5E9;
+  --sidebar: #F8FAFC;
+  --sidebar-foreground: #0F172A;
+  --sidebar-primary: #0EA5E9;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: color-mix(in oklab, #0EA5E9 11%, #F8FAFC);
+  --sidebar-accent-foreground: #0F172A;
+  --sidebar-border: #E2E8F0;
+  --sidebar-ring: #0EA5E9;
+  --elsa-primary: #0EA5E9;
+  --elsa-secondary: #64748B;
+  --elsa-canvas: color-mix(in oklab, #FFFFFF 70%, #F8FAFC);
+  --elsa-canvas-dot: color-mix(in oklab, #E2E8F0 85%, #64748B);
+  --chart-1: #0EA5E9;
+  --chart-2: #64748B;
+  --chart-3: #059669;
+  --chart-4: #D97706;
+  --chart-5: #DC2626;
+}
+:root[data-elsa-theme="classic"].dark {
+  --background: #0F172A;
+  --foreground: #F8FAFC;
+  --card: #182234;
+  --card-foreground: #F8FAFC;
+  --popover: #182234;
+  --popover-foreground: #F8FAFC;
+  --primary: color-mix(in oklab, #0EA5E9 78%, white);
+  --primary-foreground: #0B1220;
+  --secondary: color-mix(in oklab, #334155 55%, #182234);
+  --secondary-foreground: #F8FAFC;
+  --muted: color-mix(in oklab, #334155 42%, #0F172A);
+  --muted-foreground: #AAB7CA;
+  --accent: color-mix(in oklab, #0EA5E9 16%, #182234);
+  --accent-foreground: #F8FAFC;
+  --destructive: #F87171;
+  --border: #334155;
+  --input: #334155;
+  --ring: color-mix(in oklab, #0EA5E9 78%, white);
+  --sidebar: #0F172A;
+  --sidebar-foreground: #F8FAFC;
+  --sidebar-primary: color-mix(in oklab, #0EA5E9 78%, white);
+  --sidebar-primary-foreground: #0B1220;
+  --sidebar-accent: color-mix(in oklab, #0EA5E9 18%, #0F172A);
+  --sidebar-accent-foreground: #F8FAFC;
+  --sidebar-border: #334155;
+  --sidebar-ring: color-mix(in oklab, #0EA5E9 78%, white);
+  --elsa-primary: color-mix(in oklab, #0EA5E9 78%, white);
+  --elsa-secondary: #AAB7CA;
+  --elsa-canvas: color-mix(in oklab, #0F172A 80%, black);
+  --elsa-canvas-dot: color-mix(in oklab, #334155 85%, #AAB7CA);
+  --chart-1: color-mix(in oklab, #0EA5E9 78%, white);
+  --chart-2: #AAB7CA;
+  --chart-3: #34D399;
+  --chart-4: #FBBF24;
+  --chart-5: #F87171;
+}
+
+/* ---- Elsa theme: workflow-constellation ---- */
+:root[data-elsa-theme="workflow-constellation"] {
+  --background: #F5F8FF;
+  --foreground: #17233B;
+  --card: #FFFFFF;
+  --card-foreground: #17233B;
+  --popover: #FFFFFF;
+  --popover-foreground: #17233B;
+  --primary: #315EBD;
+  --primary-foreground: #FFFFFF;
+  --secondary: color-mix(in oklab, #D7E0F2 55%, #FFFFFF);
+  --secondary-foreground: #17233B;
+  --muted: color-mix(in oklab, #D7E0F2 42%, #F5F8FF);
+  --muted-foreground: #60708D;
+  --accent: color-mix(in oklab, #315EBD 10%, #FFFFFF);
+  --accent-foreground: #17233B;
+  --destructive: #DC2626;
+  --border: #D7E0F2;
+  --input: #D7E0F2;
+  --ring: #315EBD;
+  --sidebar: #EFF4FF;
+  --sidebar-foreground: #17233B;
+  --sidebar-primary: #315EBD;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: color-mix(in oklab, #315EBD 11%, #EFF4FF);
+  --sidebar-accent-foreground: #17233B;
+  --sidebar-border: #D7E0F2;
+  --sidebar-ring: #315EBD;
+  --elsa-primary: #315EBD;
+  --elsa-secondary: #6E56CF;
+  --elsa-canvas: color-mix(in oklab, #F5F8FF 70%, #FFFFFF);
+  --elsa-canvas-dot: color-mix(in oklab, #D7E0F2 85%, #60708D);
+  --chart-1: #315EBD;
+  --chart-2: #6E56CF;
+  --chart-3: #059669;
+  --chart-4: #D97706;
+  --chart-5: #DC2626;
+}
+:root[data-elsa-theme="workflow-constellation"].dark {
+  --background: #07142E;
+  --foreground: #F5F8FF;
+  --card: #0C1D3D;
+  --card-foreground: #F5F8FF;
+  --popover: #0C1D3D;
+  --popover-foreground: #F5F8FF;
+  --primary: color-mix(in oklab, #315EBD 78%, white);
+  --primary-foreground: #0B1220;
+  --secondary: color-mix(in oklab, #29416C 55%, #0C1D3D);
+  --secondary-foreground: #F5F8FF;
+  --muted: color-mix(in oklab, #29416C 42%, #07142E);
+  --muted-foreground: #A9B9D6;
+  --accent: color-mix(in oklab, #315EBD 16%, #0C1D3D);
+  --accent-foreground: #F5F8FF;
+  --destructive: #F87171;
+  --border: #29416C;
+  --input: #29416C;
+  --ring: color-mix(in oklab, #315EBD 78%, white);
+  --sidebar: #091833;
+  --sidebar-foreground: #F5F8FF;
+  --sidebar-primary: color-mix(in oklab, #315EBD 78%, white);
+  --sidebar-primary-foreground: #0B1220;
+  --sidebar-accent: color-mix(in oklab, #315EBD 18%, #091833);
+  --sidebar-accent-foreground: #F5F8FF;
+  --sidebar-border: #29416C;
+  --sidebar-ring: color-mix(in oklab, #315EBD 78%, white);
+  --elsa-primary: color-mix(in oklab, #315EBD 78%, white);
+  --elsa-secondary: #A99CF5;
+  --elsa-canvas: color-mix(in oklab, #07142E 80%, black);
+  --elsa-canvas-dot: color-mix(in oklab, #29416C 85%, #A9B9D6);
+  --chart-1: color-mix(in oklab, #315EBD 78%, white);
+  --chart-2: #A99CF5;
+  --chart-3: #34D399;
+  --chart-4: #FBBF24;
+  --chart-5: #F87171;
+}
+
+/* ---- Elsa theme: workflow-aurora ---- */
+:root[data-elsa-theme="workflow-aurora"] {
+  --background: #F4FAFD;
+  --foreground: #122430;
+  --card: #FFFFFF;
+  --card-foreground: #122430;
+  --popover: #FFFFFF;
+  --popover-foreground: #122430;
+  --primary: #0868BD;
+  --primary-foreground: #FFFFFF;
+  --secondary: color-mix(in oklab, #D1E4EA 55%, #FFFFFF);
+  --secondary-foreground: #122430;
+  --muted: color-mix(in oklab, #D1E4EA 42%, #F4FAFD);
+  --muted-foreground: #58717F;
+  --accent: color-mix(in oklab, #0868BD 10%, #FFFFFF);
+  --accent-foreground: #122430;
+  --destructive: #DC2626;
+  --border: #D1E4EA;
+  --input: #D1E4EA;
+  --ring: #0868BD;
+  --sidebar: #ECF7FB;
+  --sidebar-foreground: #122430;
+  --sidebar-primary: #0868BD;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: color-mix(in oklab, #0868BD 11%, #ECF7FB);
+  --sidebar-accent-foreground: #122430;
+  --sidebar-border: #D1E4EA;
+  --sidebar-ring: #0868BD;
+  --elsa-primary: #0868BD;
+  --elsa-secondary: #087F8C;
+  --elsa-canvas: color-mix(in oklab, #F4FAFD 70%, #FFFFFF);
+  --elsa-canvas-dot: color-mix(in oklab, #D1E4EA 85%, #58717F);
+  --chart-1: #0868BD;
+  --chart-2: #087F8C;
+  --chart-3: #059669;
+  --chart-4: #D97706;
+  --chart-5: #DC2626;
+}
+:root[data-elsa-theme="workflow-aurora"].dark {
+  --background: #071B26;
+  --foreground: #F1FAFC;
+  --card: #0D2733;
+  --card-foreground: #F1FAFC;
+  --popover: #0D2733;
+  --popover-foreground: #F1FAFC;
+  --primary: color-mix(in oklab, #0868BD 78%, white);
+  --primary-foreground: #0B1220;
+  --secondary: color-mix(in oklab, #284653 55%, #0D2733);
+  --secondary-foreground: #F1FAFC;
+  --muted: color-mix(in oklab, #284653 42%, #071B26);
+  --muted-foreground: #A7C0C9;
+  --accent: color-mix(in oklab, #0868BD 16%, #0D2733);
+  --accent-foreground: #F1FAFC;
+  --destructive: #F87171;
+  --border: #284653;
+  --input: #284653;
+  --ring: color-mix(in oklab, #0868BD 78%, white);
+  --sidebar: #09212C;
+  --sidebar-foreground: #F1FAFC;
+  --sidebar-primary: color-mix(in oklab, #0868BD 78%, white);
+  --sidebar-primary-foreground: #0B1220;
+  --sidebar-accent: color-mix(in oklab, #0868BD 18%, #09212C);
+  --sidebar-accent-foreground: #F1FAFC;
+  --sidebar-border: #284653;
+  --sidebar-ring: color-mix(in oklab, #0868BD 78%, white);
+  --elsa-primary: color-mix(in oklab, #0868BD 78%, white);
+  --elsa-secondary: #6BC6CC;
+  --elsa-canvas: color-mix(in oklab, #071B26 80%, black);
+  --elsa-canvas-dot: color-mix(in oklab, #284653 85%, #A7C0C9);
+  --chart-1: color-mix(in oklab, #0868BD 78%, white);
+  --chart-2: #6BC6CC;
+  --chart-3: #34D399;
+  --chart-4: #FBBF24;
+  --chart-5: #F87171;
+}
+
+/* ---- Elsa theme: execution-timeline ---- */
+:root[data-elsa-theme="execution-timeline"] {
+  --background: #F5F7F9;
+  --foreground: #202A35;
+  --card: #FFFFFF;
+  --card-foreground: #202A35;
+  --popover: #FFFFFF;
+  --popover-foreground: #202A35;
+  --primary: #3977B7;
+  --primary-foreground: #FFFFFF;
+  --secondary: color-mix(in oklab, #D9E0E7 55%, #FFFFFF);
+  --secondary-foreground: #202A35;
+  --muted: color-mix(in oklab, #D9E0E7 42%, #F5F7F9);
+  --muted-foreground: #637181;
+  --accent: color-mix(in oklab, #3977B7 10%, #FFFFFF);
+  --accent-foreground: #202A35;
+  --destructive: #DC2626;
+  --border: #D9E0E7;
+  --input: #D9E0E7;
+  --ring: #3977B7;
+  --sidebar: #F0F3F6;
+  --sidebar-foreground: #202A35;
+  --sidebar-primary: #3977B7;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: color-mix(in oklab, #3977B7 11%, #F0F3F6);
+  --sidebar-accent-foreground: #202A35;
+  --sidebar-border: #D9E0E7;
+  --sidebar-ring: #3977B7;
+  --elsa-primary: #3977B7;
+  --elsa-secondary: #596B7D;
+  --elsa-canvas: color-mix(in oklab, #F5F7F9 70%, #FFFFFF);
+  --elsa-canvas-dot: color-mix(in oklab, #D9E0E7 85%, #637181);
+  --chart-1: #3977B7;
+  --chart-2: #596B7D;
+  --chart-3: #059669;
+  --chart-4: #D97706;
+  --chart-5: #DC2626;
+}
+:root[data-elsa-theme="execution-timeline"].dark {
+  --background: #10161D;
+  --foreground: #F3F6F8;
+  --card: #18212B;
+  --card-foreground: #F3F6F8;
+  --popover: #18212B;
+  --popover-foreground: #F3F6F8;
+  --primary: color-mix(in oklab, #3977B7 78%, white);
+  --primary-foreground: #0B1220;
+  --secondary: color-mix(in oklab, #35414D 55%, #18212B);
+  --secondary-foreground: #F3F6F8;
+  --muted: color-mix(in oklab, #35414D 42%, #10161D);
+  --muted-foreground: #AFBAC5;
+  --accent: color-mix(in oklab, #3977B7 16%, #18212B);
+  --accent-foreground: #F3F6F8;
+  --destructive: #F87171;
+  --border: #35414D;
+  --input: #35414D;
+  --ring: color-mix(in oklab, #3977B7 78%, white);
+  --sidebar: #141B23;
+  --sidebar-foreground: #F3F6F8;
+  --sidebar-primary: color-mix(in oklab, #3977B7 78%, white);
+  --sidebar-primary-foreground: #0B1220;
+  --sidebar-accent: color-mix(in oklab, #3977B7 18%, #141B23);
+  --sidebar-accent-foreground: #F3F6F8;
+  --sidebar-border: #35414D;
+  --sidebar-ring: color-mix(in oklab, #3977B7 78%, white);
+  --elsa-primary: color-mix(in oklab, #3977B7 78%, white);
+  --elsa-secondary: #AEBAC6;
+  --elsa-canvas: color-mix(in oklab, #10161D 80%, black);
+  --elsa-canvas-dot: color-mix(in oklab, #35414D 85%, #AFBAC5);
+  --chart-1: color-mix(in oklab, #3977B7 78%, white);
+  --chart-2: #AEBAC6;
+  --chart-3: #34D399;
+  --chart-4: #FBBF24;
+  --chart-5: #F87171;
+}
+
+/* ---- Elsa theme: human-automation ---- */
+:root[data-elsa-theme="human-automation"] {
+  --background: #F7F4EF;
+  --foreground: #252B33;
+  --card: #FFFCF8;
+  --card-foreground: #252B33;
+  --popover: #FFFCF8;
+  --popover-foreground: #252B33;
+  --primary: #245EA8;
+  --primary-foreground: #FFFFFF;
+  --secondary: color-mix(in oklab, #DDD5CA 55%, #FFFCF8);
+  --secondary-foreground: #252B33;
+  --muted: color-mix(in oklab, #DDD5CA 42%, #F7F4EF);
+  --muted-foreground: #5F6875;
+  --accent: color-mix(in oklab, #245EA8 10%, #FFFCF8);
+  --accent-foreground: #252B33;
+  --destructive: #DC2626;
+  --border: #DDD5CA;
+  --input: #DDD5CA;
+  --ring: #245EA8;
+  --sidebar: #F1ECE4;
+  --sidebar-foreground: #252B33;
+  --sidebar-primary: #245EA8;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: color-mix(in oklab, #245EA8 11%, #F1ECE4);
+  --sidebar-accent-foreground: #252B33;
+  --sidebar-border: #DDD5CA;
+  --sidebar-ring: #245EA8;
+  --elsa-primary: #245EA8;
+  --elsa-secondary: #A15C38;
+  --elsa-canvas: color-mix(in oklab, #F7F4EF 70%, #FFFCF8);
+  --elsa-canvas-dot: color-mix(in oklab, #DDD5CA 85%, #5F6875);
+  --chart-1: #245EA8;
+  --chart-2: #A15C38;
+  --chart-3: #059669;
+  --chart-4: #D97706;
+  --chart-5: #DC2626;
+}
+:root[data-elsa-theme="human-automation"].dark {
+  --background: #111820;
+  --foreground: #F4F1EC;
+  --card: #18212B;
+  --card-foreground: #F4F1EC;
+  --popover: #18212B;
+  --popover-foreground: #F4F1EC;
+  --primary: color-mix(in oklab, #245EA8 78%, white);
+  --primary-foreground: #0B1220;
+  --secondary: color-mix(in oklab, #34404D 55%, #18212B);
+  --secondary-foreground: #F4F1EC;
+  --muted: color-mix(in oklab, #34404D 42%, #111820);
+  --muted-foreground: #AEB7C3;
+  --accent: color-mix(in oklab, #245EA8 16%, #18212B);
+  --accent-foreground: #F4F1EC;
+  --destructive: #F87171;
+  --border: #34404D;
+  --input: #34404D;
+  --ring: color-mix(in oklab, #245EA8 78%, white);
+  --sidebar: #141C25;
+  --sidebar-foreground: #F4F1EC;
+  --sidebar-primary: color-mix(in oklab, #245EA8 78%, white);
+  --sidebar-primary-foreground: #0B1220;
+  --sidebar-accent: color-mix(in oklab, #245EA8 18%, #141C25);
+  --sidebar-accent-foreground: #F4F1EC;
+  --sidebar-border: #34404D;
+  --sidebar-ring: color-mix(in oklab, #245EA8 78%, white);
+  --elsa-primary: color-mix(in oklab, #245EA8 78%, white);
+  --elsa-secondary: #D89A78;
+  --elsa-canvas: color-mix(in oklab, #111820 80%, black);
+  --elsa-canvas-dot: color-mix(in oklab, #34404D 85%, #AEB7C3);
+  --chart-1: color-mix(in oklab, #245EA8 78%, white);
+  --chart-2: #D89A78;
+  --chart-3: #34D399;
+  --chart-4: #FBBF24;
+  --chart-5: #F87171;
+}
+
+/* Fallback when no theme attribute is present (SSR before hydration): classic */
+:root:not([data-elsa-theme]) {
+  --background: #ffffff; --foreground: #0f172a; --card: #f8fafc; --card-foreground: #0f172a; --popover: #ffffff; --popover-foreground: #0f172a;
+  --primary: #0ea5e9; --primary-foreground: #ffffff; --secondary: #eef2f6; --secondary-foreground: #0f172a; --muted: #f1f5f9; --muted-foreground: #64748b;
+  --accent: #eaf6fd; --accent-foreground: #0f172a; --destructive: #dc2626; --border: #e2e8f0; --input: #e2e8f0; --ring: #0ea5e9;
+  --sidebar: #f8fafc; --sidebar-foreground: #0f172a; --sidebar-primary: #0ea5e9; --sidebar-primary-foreground: #ffffff; --sidebar-accent: #e6f4fb; --sidebar-accent-foreground: #0f172a; --sidebar-border: #e2e8f0; --sidebar-ring: #0ea5e9;
+  --elsa-primary: #0ea5e9; --elsa-secondary: #64748b; --elsa-canvas: #fbfcfd; --elsa-canvas-dot: #cbd5e1;
+  --chart-1: #0ea5e9; --chart-2: #64748b; --chart-3: #059669; --chart-4: #d97706; --chart-5: #dc2626;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans antialiased;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--primary) 25%, transparent);
+  }
+  h1, h2, h3 {
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer components {
+  /* Opt-in dot-grid, used only where a drawing surface is implied (not on page backgrounds). */
+  .diagram-grid {
+    background-color: var(--elsa-canvas);
+    background-image: radial-gradient(circle, var(--elsa-canvas-dot) 1px, transparent 1.2px);
+    background-size: 20px 20px;
+  }
+  /* A card that reads like a diagram node: crisp border, soft shadow, optional accent rail. */
+  .node-card {
+    @apply rounded-lg border bg-card text-card-foreground;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 0 0 1px color-mix(in oklab, var(--border) 60%, transparent) inset;
+  }
+  .dark .node-card {
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.35);
+  }
+  .accent-rail {
+    position: relative;
+  }
+  .accent-rail::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 10px;
+    bottom: 10px;
+    width: 3px;
+    border-radius: 999px;
+    background: var(--rail-color, var(--primary));
+  }
+  .eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground;
+  }
+  .port-dot {
+    @apply inline-block size-2 rounded-full ring-2 ring-background;
+  }
+}
+
+/* ---------- React Flow theming ---------- */
+.react-flow {
+  --xy-background-color: var(--elsa-canvas);
+  --xy-background-pattern-color: color-mix(in oklab, var(--elsa-canvas-dot) 60%, transparent);
+  --xy-edge-stroke: color-mix(in oklab, var(--muted-foreground) 70%, var(--border));
+  --xy-edge-stroke-selected: var(--primary);
+  --xy-edge-stroke-width: 2;
+  --xy-connectionline-stroke: var(--primary);
+  --xy-connectionline-stroke-width: 2;
+  --xy-minimap-background-color: var(--card);
+  --xy-minimap-mask-background-color: color-mix(in oklab, var(--primary) 8%, transparent);
+  --xy-minimap-node-background-color: color-mix(in oklab, var(--primary) 55%, var(--border));
+  --xy-controls-button-background-color: var(--card);
+  --xy-controls-button-background-color-hover: var(--accent);
+  --xy-controls-button-color: var(--foreground);
+  --xy-controls-button-border-color: var(--border);
+  --xy-handle-background-color: var(--primary);
+  --xy-handle-border-color: var(--card);
+  --xy-selection-background-color: color-mix(in oklab, var(--primary) 10%, transparent);
+  --xy-selection-border: 1px dashed var(--primary);
+  --xy-node-boxshadow-selected: none;
+}
+.react-flow__controls {
+  @apply rounded-lg border shadow-sm overflow-hidden;
+}
+.react-flow__controls-button {
+  border-bottom: 1px solid var(--border) !important;
+}
+.react-flow__controls-button:last-child {
+  border-bottom: none !important;
+}
+.react-flow__controls-button svg {
+  fill: currentColor;
+}
+.react-flow__minimap {
+  @apply rounded-lg border shadow-sm;
+}
+.react-flow__edge-path {
+  transition: stroke 120ms ease;
+}
+.react-flow__edge.selected .react-flow__edge-path,
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke: var(--primary);
+}
+.react-flow__edge.traversed .react-flow__edge-path {
+  stroke: var(--status-success);
+  stroke-dasharray: 6 4;
+  animation: elsa-dash 1.2s linear infinite;
+}
+@keyframes elsa-dash {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+/* Login illustration: a pulse travels each connection (paths are normalised to pathLength=100; the
+   dash period is 400 so each pulse is on screen for ~28% of the cycle), and nodes flash on arrival. */
+.elsa-flow-pulse {
+  stroke-dasharray: 14 386;
+  stroke-dashoffset: 14;
+  opacity: 1;
+  animation: elsa-flow 8s linear infinite;
+}
+.elsa-flow-pulse-halo {
+  opacity: 0.28;
+  filter: blur(2px);
+}
+@keyframes elsa-flow {
+  from {
+    stroke-dashoffset: 14;
+  }
+  to {
+    stroke-dashoffset: -386;
+  }
+}
+.elsa-node-pulse {
+  opacity: 0;
+  animation: elsa-node-pulse 8s ease-out infinite;
+}
+@keyframes elsa-node-pulse {
+  0% {
+    opacity: 0;
+  }
+  2% {
+    opacity: 0.9;
+  }
+  14% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .elsa-flow-pulse,
+  .elsa-flow-pulse-halo,
+  .elsa-node-pulse {
+    animation: none;
+    opacity: 0;
+  }
+}
+.react-flow__attribution {
+  display: none;
+}
+
+/* Scrollbars: slim and themed */
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--muted-foreground) 35%, transparent);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}

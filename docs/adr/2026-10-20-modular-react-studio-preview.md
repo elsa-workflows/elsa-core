@@ -16,7 +16,8 @@ in child issue titles and the original decision predate the release-train change
 ## Proposed decision
 
 Import the React Studio, with history and attribution preserved, under `studio/react/`
-after the license and employer-clearance requirements of #8842 are met. Use a pnpm
+with the task owner’s authorization to proceed and removal of the employer-clearance
+requirement on 2026-10-20. Record actual source license status in the import receipt. Use a pnpm
 workspace for the Vite SPA, host, SDK, UI kit, API client, authentication and modules.
 
 Use distinct NuGet IDs `Elsa.ReactStudio.*` and npm IDs
@@ -65,7 +66,7 @@ The Vite port and public SDK can proceed against an exercised loading model. Sha
 dependencies must stay external in module builds and be pinned by the host, so
 independent module bundles do not create competing React or SDK contexts.
 
-The import cannot merge before license/employer clearance. Its receipt must verify
+The task owner removed the employer-clearance gate. The import receipt must verify
 the exact donor tree and ancestry, and preserve post-snapshot commits. Finalizing
 this ADR with the import PR must retain the distinction between this bounded proof
 and production package/host verification.

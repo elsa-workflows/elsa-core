@@ -53,6 +53,7 @@ Prefer targeted `dotnet test <project>` commands while iterating, then run a bro
 - `core/src/apps/`, `core/src/clients/`, `core/src/common/`, `core/src/modules/`: Core hosts, clients, shared infrastructure and modules.
 - `core/test/`: Core unit, integration, component and performance tests.
 - `extensions/src/`, `extensions/test/`, `extensions/docs/`, `extensions/samples/`: Extensions-owned code, tests, documentation and samples.
+- `studio/react/`: React Studio Preview frontend and host; read its contributor guidance.
 - `studio/src/`, `studio/test/`, `studio/docs/`, `studio/samples/`: Studio-owned code, tests, documentation and samples. Read [Studio contributor guidance](studio/src/AGENTS.md) for Studio modules, hosts, frameworks and tests.
 - `apps/src/`, `apps/scripts/`, `apps/docs/`: official net10 application/image hosts, container policy tests and source-import guidance. Read [Apps agent guidance](apps/AGENTS.md). Apps consumes released packages and does not add Core NuGet release units.
 - `templates/src/`, `templates/test/`, `templates/docs/`: independent Elsa 3 .NET project-template pack, smoke tests and contributor guidance. Embedded starter project files are data; keep all Templates projects outside root `Elsa.sln` packing.

@@ -23,8 +23,8 @@ when the epic closes. Do not copy private strategy documents into the public rep
 | Issue | Delivery | Dependency | Evidence required |
 | --- | --- | --- | --- |
 | [#8839](https://github.com/elsa-workflows/elsa-core/issues/8839) | Modularity spike | None | Packed modules, one React runtime, feature/version gates, versioned assets, nonce CSP, proxied HMR and Playwright; ADR outcome |
-| [#8842](https://github.com/elsa-workflows/elsa-core/issues/8842) | License and employer clearance | Maintainer/contributor | MIT license in donor and linked written Nexxbiz clearance; compatible dependency scan |
-| [#8840](https://github.com/elsa-workflows/elsa-core/issues/8840) | History-preserving import | Clearance | Unchanged donor tree at `studio/react/`, original commit ancestry, import receipt/verifier/tests/workflow, source-tip preservation and reviewed cutover |
+| [#8842](https://github.com/elsa-workflows/elsa-core/issues/8842) | License and dependency compatibility | Maintainer/contributor | Record actual donor license status; compatible dependency scan; employer-clearance requirement removed by task owner |
+| [#8840](https://github.com/elsa-workflows/elsa-core/issues/8840) | History-preserving import | Spike | Unchanged donor tree at `studio/react/`, original commit ancestry, import receipt/verifier/tests/workflow, source-tip preservation and reviewed cutover |
 | [#8841](https://github.com/elsa-workflows/elsa-core/issues/8841) | Architecture decision | Spike; lands with import | Dated ADR, package IDs, 3.11 Preview policy, opt-in delivery, Blazor default and generated TOC |
 | [#8843](https://github.com/elsa-workflows/elsa-core/issues/8843) | Next.js to Vite SPA | Spike and import | No Next dependency/imports; deep links; host-resolved runtime configuration; Vitest and feature checklist |
 | [#8844](https://github.com/elsa-workflows/elsa-core/issues/8844) | SDK v1, UI kit, API and auth packages | Spike | Public typed slots, deterministic ordering, compatibility diagnostics, generated Preview API documentation |
@@ -52,17 +52,18 @@ spike's acceptance behaviors; the [proposed ADR](../../../../docs/adr/2026-10-20
 records the outcome and limits. This does not import donor code, implement SDK v1,
 or close the epic.
 
-The donor checkout has no MIT LICENSE. The provided strategy documents still assign
-license/employer clearance to the maintainer; they do not contain the written clearance.
-The import must preserve donor attribution/history and wait for those requirements.
-The original snapshot time was 2026-10-19 09:00 Europe/Amsterdam; establish the exact
-source refs from Git and retain all subsequent work in the import receipt. Do not
-archive the source repository before the import is reviewed and merged.
+The task owner removed the employer-clearance requirement on 2026-10-20 and
+explicitly authorized the import and adaptation. The donor contains no license file;
+the import receipt records this without inventing a donor MIT grant or changing
+copyright attribution. The original donor tree and all 14 commits are retained in
+the import merge. The remote main tip matched the planned 2026-10-19 09:00
+Europe/Amsterdam snapshot; no post-snapshot commits existed at import time.
+Source archival and the redirect follow independent import review and merge.
 
 GitHub API access was restored on 2026-10-20. The epic and spike are assigned to
 the connected account, `sfmskywalker`, and the initial implementation is under review
 in [#8923](https://github.com/elsa-workflows/elsa-core/pull/8923). Required Greptile
-and automatic CodeRabbit reviews were requested/started. The source remains unimported;
+and automatic CodeRabbit reviews were requested/started. The source import is recorded in the [receipt](../../../../docs/integration-program/studio-react-source-import.md);
 the epic and child issues are not closed by this record.
 
 Feedz and Google Fonts access also recovered. The unchanged reference server builds,

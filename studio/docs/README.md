@@ -1,5 +1,10 @@
 # Elsa Studio documentation
 
+The opt-in [React Studio Preview](../react/README.md) lives under `studio/react/`.
+Its [source import receipt](../../docs/integration-program/studio-react-source-import.md)
+preserves the original tree and history; the [delivery plan](specs/react-studio-preview/plan.md)
+tracks the remaining Preview requirements.
+
 Studio's backend-facing clients, Blazor modules and hosts live under
 [`studio/src`](../src), with browser fixtures under [`studio/test`](../test),
 existing .NET tests beside their modules/framework under `studio/src/`, and samples under
