@@ -155,6 +155,12 @@ async function verifyInteractiveStudioShell(page: Page): Promise<void> {
 }
 
 async function openCompensationScope(page: Page): Promise<Locator> {
+  const graph = page.locator('.flowchart-diagram-designer-wrapper .x6-graph');
+  await graph.waitFor({ state: 'visible', timeout: 8_000 });
+  // The fixture drops the new scope at the canvas center, leaving this top-left margin empty.
+  // A normal click clears X6's creation selection box before the activity's double-click action.
+  await graph.click({ position: { x: 24, y: 24 } });
+
   const scopeType = page.locator('.flowchart-diagram-designer-wrapper .activity-type')
     .filter({ hasText: /^\s*Compensation\s+Scope\s*$/i })
     .first();
@@ -485,9 +491,12 @@ test('native compensation draft persists two paired rows and refuses UI publish'
     for (let index = 0; index < initialSteps.length; index++) {
       await expect(addStep).toBeEnabled();
       await addStep.focus();
+      await expect(addStep).toBeFocused();
       await addStep.press('Enter');
       await expect(stepNames).toHaveCount(index + 1);
       await stepNames.nth(index).fill(initialSteps[index].stepName);
+      await stepNames.nth(index).press('Tab');
+      await expect(stepNames.nth(index)).toHaveValue(initialSteps[index].stepName);
     }
   });
 
