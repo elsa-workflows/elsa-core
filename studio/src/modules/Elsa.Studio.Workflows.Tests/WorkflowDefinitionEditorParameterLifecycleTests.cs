@@ -50,15 +50,8 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
     public async Task WorkspacePreflightsCapabilityForAnOrdinaryOriginBoundDefinitionBeforeItsFirstNativeScope()
     {
         await using var context = CreateContext();
-        var backend = new MutableBackendApiClientProvider("context-A");
         var featureProvider = new EnabledRemoteFeatureProvider();
-        context.Services.AddSingleton<IBackendApiClientProvider>(backend);
-        context.Services.AddSingleton<IRemoteFeatureProvider>(featureProvider);
-        var definition = CreateDefinition("ordinary definition", "version-a");
-        definition.Root = System.Text.Json.Nodes.JsonNode.Parse("""{"id":"write-1","nodeId":"write-1","type":"Elsa.WriteLine","version":1}""")!.AsObject();
-        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, "context-A"));
-
-        var cut = RenderWorkspace(context, definition, definition);
+        var (definition, cut) = RenderOrdinaryOriginBoundWorkspace(context, featureProvider);
 
         Assert.Equal(1, featureProvider.FreshCheckCount);
         Assert.False(cut.Instance.IsReadOnly);
@@ -77,14 +70,8 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
     public async Task WorkspaceRetriesACompletedNegativeCapabilityCheckForTheSameOrigin()
     {
         await using var context = CreateContext();
-        var backend = new MutableBackendApiClientProvider("context-A");
         var featureProvider = new EnabledRemoteFeatureProvider(false);
-        context.Services.AddSingleton<IBackendApiClientProvider>(backend);
-        context.Services.AddSingleton<IRemoteFeatureProvider>(featureProvider);
-        var definition = CreateDefinition("ordinary definition", "version-a");
-        definition.Root = System.Text.Json.Nodes.JsonNode.Parse("""{"id":"write-1","nodeId":"write-1","type":"Elsa.WriteLine","version":1}""")!.AsObject();
-        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, "context-A"));
-        var cut = RenderWorkspace(context, definition, definition);
+        var (definition, cut) = RenderOrdinaryOriginBoundWorkspace(context, featureProvider);
 
         Assert.Equal(1, featureProvider.FreshCheckCount);
         definition.Root = CreateNativeCompensationScope();
@@ -105,14 +92,8 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
     public async Task WorkspaceAdoptsValidOriginFromAnInternalNativeSaveResponseBeforeRendering()
     {
         await using var context = CreateContext();
-        var backend = new MutableBackendApiClientProvider("context-A");
         var featureProvider = new EnabledRemoteFeatureProvider();
-        context.Services.AddSingleton<IBackendApiClientProvider>(backend);
-        context.Services.AddSingleton<IRemoteFeatureProvider>(featureProvider);
-        var definition = CreateDefinition("ordinary definition", "version-a");
-        definition.Root = System.Text.Json.Nodes.JsonNode.Parse("""{"id":"write-1","nodeId":"write-1","type":"Elsa.WriteLine","version":1}""")!.AsObject();
-        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, "context-A"));
-        var cut = RenderWorkspace(context, definition, definition);
+        var (definition, cut) = RenderOrdinaryOriginBoundWorkspace(context, featureProvider);
 
         definition.Root = CreateNativeCompensationScope();
         Assert.False(cut.Instance.IsReadOnly);
@@ -137,14 +118,8 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
     public async Task RepeatedCapabilityRefreshDoesNotCancelTheFreshCheckForAnAdoptedSaveResponse()
     {
         await using var context = CreateContext();
-        var backend = new MutableBackendApiClientProvider("context-A");
         var featureProvider = new EnabledRemoteFeatureProvider();
-        context.Services.AddSingleton<IBackendApiClientProvider>(backend);
-        context.Services.AddSingleton<IRemoteFeatureProvider>(featureProvider);
-        var definition = CreateDefinition("ordinary definition", "version-a");
-        definition.Root = System.Text.Json.Nodes.JsonNode.Parse("""{"id":"write-1","nodeId":"write-1","type":"Elsa.WriteLine","version":1}""")!.AsObject();
-        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, "context-A"));
-        var cut = RenderWorkspace(context, definition, definition);
+        var (definition, cut) = RenderOrdinaryOriginBoundWorkspace(context, featureProvider);
 
         definition.Root = CreateNativeCompensationScope();
         var editor = cut.FindComponent<WorkflowEditor>().Instance;
@@ -178,14 +153,8 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
     public async Task WorkspaceHidesNativeDraftWhenAnInternalReplacementHasAStaleOrigin()
     {
         await using var context = CreateContext();
-        var backend = new MutableBackendApiClientProvider("context-A");
         var featureProvider = new EnabledRemoteFeatureProvider();
-        context.Services.AddSingleton<IBackendApiClientProvider>(backend);
-        context.Services.AddSingleton<IRemoteFeatureProvider>(featureProvider);
-        var definition = CreateDefinition("ordinary definition", "version-a");
-        definition.Root = System.Text.Json.Nodes.JsonNode.Parse("""{"id":"write-1","nodeId":"write-1","type":"Elsa.WriteLine","version":1}""")!.AsObject();
-        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, "context-A"));
-        var cut = RenderWorkspace(context, definition, definition);
+        var (definition, cut) = RenderOrdinaryOriginBoundWorkspace(context, featureProvider);
 
         definition.Root = CreateNativeCompensationScope();
         var editor = cut.FindComponent<WorkflowEditor>().Instance;
@@ -211,14 +180,8 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
     public async Task WorkspaceKeepsFirstNativeScopeReadOnlyWhenFreshCapabilityIsUnavailable()
     {
         await using var context = CreateContext();
-        var backend = new MutableBackendApiClientProvider("context-A");
         var featureProvider = new EnabledRemoteFeatureProvider(false);
-        context.Services.AddSingleton<IBackendApiClientProvider>(backend);
-        context.Services.AddSingleton<IRemoteFeatureProvider>(featureProvider);
-        var definition = CreateDefinition("ordinary definition", "version-a");
-        definition.Root = System.Text.Json.Nodes.JsonNode.Parse("""{"id":"write-1","type":"Elsa.WriteLine","version":1}""")!.AsObject();
-        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, "context-A"));
-        var cut = RenderWorkspace(context, definition, definition);
+        var (definition, cut) = RenderOrdinaryOriginBoundWorkspace(context, featureProvider);
 
         definition.Root = CreateNativeCompensationScope();
         cut.Render(parameters => parameters
@@ -627,6 +590,17 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
         IsLatest = true,
         Links = [new(string.Empty, "publish", string.Empty)]
     };
+
+    private static (WorkflowDefinition Definition, IRenderedComponent<WorkflowDefinitionWorkspace> Workspace) RenderOrdinaryOriginBoundWorkspace(
+        BunitContext context, EnabledRemoteFeatureProvider featureProvider)
+    {
+        context.Services.AddSingleton<IBackendApiClientProvider>(new MutableBackendApiClientProvider("context-A"));
+        context.Services.AddSingleton<IRemoteFeatureProvider>(featureProvider);
+        var definition = CreateDefinition("ordinary definition", "version-a");
+        definition.Root = System.Text.Json.Nodes.JsonNode.Parse("""{"id":"write-1","nodeId":"write-1","type":"Elsa.WriteLine","version":1}""")!.AsObject();
+        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, "context-A"));
+        return (definition, RenderWorkspace(context, definition, definition));
+    }
 
     private static System.Text.Json.Nodes.JsonObject CreateNativeCompensationScope() =>
         System.Text.Json.Nodes.JsonNode.Parse("""{"id":"scope-a","nodeId":"scope-a","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}""")!.AsObject();
