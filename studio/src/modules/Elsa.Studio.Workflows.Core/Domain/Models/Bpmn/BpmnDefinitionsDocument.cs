@@ -4,7 +4,7 @@ namespace Elsa.Studio.Workflows.Domain.Models.Bpmn;
 
 /// <summary>
 /// Reads the library-format <c>bpmnDefinitions</c> document the <c>bpmn/definitions/{definitionId}/document</c>
-/// endpoints exchange (<c>Bpmn.Model</c> payload format 1.0.0; Studio's generated <c>BpmnDefinitions</c> type in the
+/// endpoints exchange (<c>Bpmn.Model</c> payload format 1.1.0; Studio's generated <c>BpmnDefinitions</c> type in the
 /// Designer ClientLib's <c>src/bpmn/types.generated.ts</c> describes it). The document is held as a
 /// <see cref="JsonObject"/> and edited in place, so everything Studio does not touch — foreign extensions, foreign
 /// attributes, documentation, BPMN DI — goes back to the server exactly as it came.

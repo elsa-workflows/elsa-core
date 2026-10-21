@@ -34,6 +34,15 @@ namespace Elsa.Workflows.Runtime.Activities;
 public class DispatchWorkflow : Activity<object>
 {
     private const string WaitedChildInstanceIdKey = "WaitedChildInstanceId";
+    private const string ChildWorkflowSubStatusKey = "ChildWorkflowSubStatus";
+    private const string ChildActivationDeniedKey = "ChildActivationDenied";
+
+    /// <summary>
+    /// The resume input key under which <see cref="Handlers.ResumeDispatchWorkflowActivity"/> passes the waited-for child's final
+    /// sub-status beside its output. The activity takes it out of the input before the input becomes <see cref="Result"/>,
+    /// so the result stays exactly the child's output.
+    /// </summary>
+    internal const string ChildWorkflowSubStatusInputKey = "Elsa:DispatchWorkflow:ChildWorkflowSubStatus";
 
     /// <inheritdoc />
     public DispatchWorkflow([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
@@ -68,6 +77,8 @@ public class DispatchWorkflow : Activity<object>
 
     /// <summary>
     /// True to wait for the child workflow to complete before completing this activity, false to "fire and forget".
+    /// A waiting activity completes once the child is finished, whether it finished successfully, faulted or was cancelled,
+    /// including a cancellation through the cancellation API.
     /// </summary>
     [Input(Description = "Wait for the child workflow to complete before completing this activity.")]
     public Input<bool> WaitForCompletion { get; set; } = null!;
@@ -178,12 +189,60 @@ public class DispatchWorkflow : Activity<object>
         return instanceId;
     }
 
+    /// <summary>
+    /// The sub-status the child workflow finished with, recorded when this activity resumed after waiting for it:
+    /// <see cref="WorkflowSubStatus.Finished"/>, <see cref="WorkflowSubStatus.Faulted"/> or <see cref="WorkflowSubStatus.Cancelled"/>.
+    /// </summary>
+    /// <remarks>
+    /// The activity completes the same way whatever the child's sub-status, so a flowchart continues after a faulted child
+    /// exactly as after a successful one. This lets the BPMN host, which binds a call activity to this activity, read how
+    /// the child ended while it handles the activity's completion.
+    /// </remarks>
+    /// <param name="context">The execution context of a <see cref="DispatchWorkflow"/> activity.</param>
+    /// <returns>
+    /// The child's final sub-status, or <c>null</c> when the activity did not wait for its child, has not resumed yet, or
+    /// completed because the child's activation was denied.
+    /// </returns>
+    internal static WorkflowSubStatus? GetChildWorkflowSubStatus(ActivityExecutionContext context) =>
+        Enum.TryParse<WorkflowSubStatus>(context.GetProperty<string>(ChildWorkflowSubStatusKey), out var subStatus) ? subStatus : null;
+
+    /// <summary>
+    /// Whether this activity completed because the activation of the child it was waiting for was denied, so the child
+    /// never started. Recorded when the activity resumes with the <c>CannotStart</c> result described on this type.
+    /// </summary>
+    /// <remarks>
+    /// As with <see cref="GetChildWorkflowSubStatus"/>, the activity completes the same way either way; this lets the BPMN
+    /// host tell a call whose child could not be started from one whose child finished.
+    /// </remarks>
+    /// <param name="context">The execution context of a <see cref="DispatchWorkflow"/> activity.</param>
+    internal static bool IsChildActivationDenied(ActivityExecutionContext context) => context.GetProperty<bool>(ChildActivationDeniedKey);
+
     private async ValueTask OnChildWorkflowCompletedAsync(ActivityExecutionContext context)
     {
         var input = context.WorkflowInput;
+
+        // The resume handler passes the child's sub-status beside its output. Record it, and keep it out of the result.
+        if (input.TryGetValue(ChildWorkflowSubStatusInputKey, out var childSubStatus))
+        {
+            input.Remove(ChildWorkflowSubStatusInputKey);
+            context.SetProperty(ChildWorkflowSubStatusKey, childSubStatus?.ToString());
+        }
+        // A denied activation resumes with CannotStart and the instance id this activity reserved for the child, and no
+        // sub-status, since no child ran. Matching the id keeps a finished child's own output from reading as a denial.
+        else if (IsActivationDenial(context, input))
+        {
+            context.SetProperty(ChildActivationDeniedKey, true);
+        }
+
         context.Set(Result, input);
         await context.CompleteActivityAsync();
     }
+
+    private static bool IsActivationDenial(ActivityExecutionContext context, IDictionary<string, object> input) =>
+        // Compared as text, like the sub-status above, so a value that came back through serialization still matches.
+        input.TryGetValue("CannotStart", out var cannotStart) && string.Equals(cannotStart?.ToString(), bool.TrueString, StringComparison.OrdinalIgnoreCase)
+        && input.TryGetValue("WorkflowInstanceId", out var instanceId)
+        && string.Equals(instanceId?.ToString(), context.GetProperty<string>(WaitedChildInstanceIdKey), StringComparison.Ordinal);
 
     /// <summary>
     /// Cancels the child this activity was waiting for. When this burst dispatched it through the transactional outbox,
