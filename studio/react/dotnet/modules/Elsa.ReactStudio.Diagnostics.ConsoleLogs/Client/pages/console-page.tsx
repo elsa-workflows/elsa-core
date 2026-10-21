@@ -1,5 +1,5 @@
 "use client";
-import { translate, useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
 
 
 import { Pause, Play, RefreshCw } from "lucide-react";
@@ -24,10 +24,10 @@ function toIso(local: string | undefined): string | undefined {
   return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
 }
 
-const limitOptions = ["100", "250", "500", "1000", "2000"].map((v) => ({ value: v, label: translate("{{value0}} lines", { value0: v }) }));
 
 export function ConsoleLogsPage() {
   const _t = useTranslation();
+  const limitOptions = ["100", "250", "500", "1000", "2000"].map((v) => ({ value: v, label: _t("{{value0}} lines", { value0: v }) }));
   const url = useUrlState();
   const sourceId = url.get("source");
   const stream = url.get("stream") as ConsoleStream | undefined;

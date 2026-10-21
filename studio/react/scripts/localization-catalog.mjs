@@ -12,7 +12,7 @@ function files(directory) {
     return entry.isDirectory() ? files(path) : /\.tsx?$/.test(path) && !/\.test\.|\.d\.ts$/.test(path) ? [path] : [];
   });
 }
-const attributes = new Set(["title", "placeholder", "aria-label", "aria-description", "alt", "label", "description", "hint", "eyebrow", "searchPlaceholder", "emptyText", "confirmLabel", "cancelLabel", "alternateLabel", "loadingText", "helperText", "tooltip", "emptyMessage", "caption", "message"]);
+const attributes = new Set(["heading", "title", "placeholder", "aria-label", "aria-description", "alt", "label", "description", "hint", "eyebrow", "searchPlaceholder", "emptyText", "confirmLabel", "cancelLabel", "alternateLabel", "loadingText", "helperText", "tooltip", "emptyMessage", "caption", "message"]);
 const keys = new Set();
 const errors = [];
 for (const path of ["src", "packages/sdk/src", "packages/ui/src", "packages/auth/src", "dotnet/modules"].flatMap(name => files(join(root, name)))) {
@@ -24,7 +24,15 @@ for (const path of ["src", "packages/sdk/src", "packages/ui/src", "packages/auth
       if (key && (ts.isStringLiteral(key) || ts.isNoSubstitutionTemplateLiteral(key))) keys.add(key.text);
     }
     if (ts.isJsxText(node) && /[A-Za-z]/.test(node.text)) report(node, "UI text needs a translation call");
-    if (ts.isJsxAttribute(node) && attributes.has(node.name.getText(source)) && node.initializer && ts.isStringLiteral(node.initializer) && /[A-Za-z]/.test(node.initializer.text) && !/^https?:\/\//.test(node.initializer.text)) report(node, "UI attribute needs a translation call");
+    if (ts.isJsxAttribute(node) && attributes.has(node.name.getText(source)) && node.initializer) {
+      const value = ts.isJsxExpression(node.initializer) ? node.initializer.expression : node.initializer;
+      if (value && (ts.isStringLiteral(value) || ts.isNoSubstitutionTemplateLiteral(value)) && /[A-Za-z]/.test(value.text) && !/^https?:\/\//.test(value.text)) report(node, "UI attribute needs a translation call");
+    }
+    if (ts.isJsxExpression(node) && !ts.isJsxAttribute(node.parent) && node.expression && (ts.isStringLiteral(node.expression) || ts.isNoSubstitutionTemplateLiteral(node.expression)) && /[A-Za-z]/.test(node.expression.text)) report(node, "UI display string needs a translation call");
+    if (ts.isCallExpression(node) && /^toast\.(success|error|warning|info|message)$/.test(node.expression.getText(source))) {
+      const value = node.arguments[0];
+      if (value && (ts.isStringLiteral(value) || ts.isNoSubstitutionTemplateLiteral(value) || ts.isTemplateExpression(value))) report(node, "Toast text needs a translation call");
+    }
     ts.forEachChild(node, visit);
   }
   visit(source);

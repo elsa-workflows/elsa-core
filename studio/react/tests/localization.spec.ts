@@ -9,12 +9,18 @@ async function fixture(page: Page, subject?: string) {
     const key = "elsa-studio:auth:" + encodeURIComponent(api);
     if (!localStorage.getItem(key)) localStorage.setItem(key, JSON.stringify({ accessToken: jwt }));
   }, { api, jwt: token(subject) });
-  await page.route("**/studio-config", route => route.fulfill({ json: { servers: [{ name: "Development", url: api }], auth: { provider: subject ? "elsa-identity" : "none" }, features: { settings: { enabled: true }, appearance: { enabled: true } } } }));
+  await page.route("**/studio-config", route => route.fulfill({ json: { servers: [{ name: "Development", url: api }], auth: { provider: subject ? "elsa-identity" : "none" }, features: { settings: { enabled: true }, appearance: { enabled: true }, "user-tasks": { enabled: true }, "diagnostics-console-logs": { enabled: true }, "diagnostics-structured-logs": { enabled: true } } } }));
   const definition = { id: "version", definitionId: "localization", name: "Settings", version: 1, isLatest: true, isPublished: false, createdAt: "2026-10-21T00:00:00Z", variables: [], inputs: [], outputs: [], outcomes: [], options: {}, customProperties: {},
     root: { id: "root", type: "Elsa.Flowchart", version: 1, connections: [], activities: [{ id: "child", type: "Elsa.WriteLine", version: 1, text: { typeName: "String", expression: { type: "CSharp", value: '"Settings"' } } }] } };
   await page.route("**/elsa/api/**", async route => {
     const path = new URL(route.request().url()).pathname;
+    if (path.endsWith("/features/installed")) { await route.fulfill({ json: { items: [
+      { name: "ConsoleLogs", namespace: "Elsa.Diagnostics.ConsoleLogs.ShellFeatures", fullName: "Elsa.Diagnostics.ConsoleLogs.ShellFeatures.ConsoleLogs" },
+      { name: "StructuredLogs", namespace: "Elsa.Diagnostics.StructuredLogs.ShellFeatures", fullName: "Elsa.Diagnostics.StructuredLogs.ShellFeatures.StructuredLogs" },
+      { name: "UserTasks", namespace: "Elsa", fullName: "Elsa.UserTasks" },
+    ] } }); return; }
     if (path.includes("scripting/javascript/type-definitions")) { await route.fulfill({ contentType: "application/x-typescript", body: "" }); return; }
+    if (path.includes("/diagnostics/") && path.endsWith("/sources")) { await route.fulfill({ json: [] }); return; }
     let json: unknown = { items: [], totalCount: 0 };
     if (path.endsWith("workflow-definitions") && route.request().method() === "GET") json = { items: [definition], totalCount: 1 };
     else if (path.endsWith("workflow-definitions/by-definition-id/localization")) json = definition;
@@ -102,4 +108,53 @@ test("independent module resources share the culture while preserving component 
   await expect(page.getByTestId("fallback")).toHaveText("English fallback");
   await expect(page.getByRole("link", { name: "Weer", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Instellingen", exact: true })).toBeVisible();
+});
+
+
+test("log count selectors follow live culture changes after their modules loaded", async ({ page }) => {
+  await fixture(page);
+  await page.goto("/studio-preview/diagnostics/console?limit=250");
+  await expect(page.getByRole("combobox").filter({ hasText: "250 lines" })).toBeVisible();
+  await dutch(page);
+  await expect(page.getByRole("combobox").filter({ hasText: "250 regels" })).toBeVisible();
+  await page.getByLabel("Taal", { exact: true }).click();
+  await page.getByRole("option", { name: "Engels", exact: true }).click();
+  await page.goto("/studio-preview/diagnostics/structured-logs");
+  await expect(page.getByRole("combobox").filter({ hasText: "250 entries" })).toBeVisible();
+  await dutch(page);
+  await expect(page.getByRole("combobox").filter({ hasText: "250 regels" })).toBeVisible();
+});
+
+
+test("task completion notices use the culture at response time and retain the task title", async ({ page }) => {
+  await fixture(page);
+  let respond!: () => void;
+  const completed = new Promise<void>(resolve => { respond = resolve; });
+  await page.route(`${api}/user-tasks/**`, async route => {
+    const path = new URL(route.request().url()).pathname;
+    if (path.endsWith("/claim")) {
+      await completed;
+      await route.fulfill({ json: { status: "Accepted" } });
+    } else if (path.endsWith("/capabilities")) await route.fulfill({ json: { enabled: true, canList: true, canRead: true, canClaim: true } });
+    else await route.fulfill({ json: { id: "culture", title: "Task claimed.", status: "Available", priority: 0, tags: [], allowedActions: ["claim"], revision: 1, actions: [], disclosure: { canViewHistory: false }, createdAt: "2026-10-21T00:00:00Z", updatedAt: "2026-10-21T00:00:00Z" } });
+  });
+  await page.goto("/studio-preview/workflows/user-tasks/culture");
+  await expect(page.getByRole("heading").filter({ hasText: "Task claimed." })).toBeVisible();
+  await page.getByRole("button", { name: "Claim", exact: true }).click();
+  await dutch(page);
+  respond();
+  await expect(page.getByText("Taak geclaimd. (wordt op de achtergrond verwerkt).", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading").filter({ hasText: "Task claimed." })).toBeVisible();
+});
+
+test("BPMN client refusal explanations translate while retaining server diagnostics", async ({ page }) => {
+  await fixture(page);
+  await page.route("**/bpmn/analyze", route => route.fulfill({ status: 422, json: { code: "bpmn.import.capability-unsupported", message: "Server-specific explanation" } }));
+  await page.goto("/studio-preview/workflows/definitions");
+  await dutch(page);
+  await page.getByRole("button", { name: "BPMN importeren", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await dialog.locator('input[type="file"]').setInputFiles({ name: "sample.bpmn", mimeType: "application/xml", buffer: Buffer.from('<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"><process id="first"/></definitions>') });
+  await expect(dialog.getByText("Deze implementatie ondersteunt niet alle BPMN-mogelijkheden die het document vereist. Het importeren is geweigerd.", { exact: true })).toBeVisible();
+  await expect(dialog.getByText("Server-specific explanation", { exact: true })).toBeVisible();
 });

@@ -253,7 +253,7 @@ another tenant. Dirty server switches retain one discard prompt.
 ## Localization
 
 The shared SDK now supplies i18next-backed hooks and English/Dutch catalogs for
-1,201 built-in messages. Nonempty matching Blazor Dutch resources were reused;
+1,213 built-in messages. Nonempty matching Blazor Dutch resources were reused;
 React-specific and blank source entries were translated. A catalog check rejects
 empty/missing messages, mismatched interpolation and raw JSX display text.
 
@@ -268,6 +268,13 @@ Hosted browser cases cover account preferences, dialogs, unsaved workflow state,
 independent module resources, namespace isolation and fallback. A real development
 React StrictMode unit case verifies query-cache retention through effect replay
 and disposal on true unmount; production browser bundles do not replay effects.
+
+Review regressions derive log-count options at render time, translate deferred task
+notices in the culture active when the operation completes, and externalize QuickAdd
+headings/BPMN refusal explanations. Hosted cases cover these behaviors and preserve
+user task titles and original server diagnostics. Literal display/heading/toast
+checks supplement catalog validation; arbitrary callback/dictionary flows require
+manual review. The revised catalog has 1,213 messages.
 
 ## Container delivery preparation
 

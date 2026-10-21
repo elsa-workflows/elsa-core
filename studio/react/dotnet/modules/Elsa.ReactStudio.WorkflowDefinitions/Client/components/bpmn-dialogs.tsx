@@ -22,11 +22,11 @@ function Refusal({ error }: { error: unknown }) {
   const capabilities = strings(data.capabilities);
   const elements = strings(data.elementIds);
   const messages: Record<string, string> = {
-    "bpmn.import.capability-unsupported": "This deployment does not support every BPMN capability the document requires. Import was refused.",
-    "bpmn.import.condition-unsupported": "These sequence flows carry expression conditions that Elsa does not evaluate. Import was refused to prevent unconditional routing. Remove the conditions or use conditionOutcome.",
-    "bpmn.export.not-imported": "This workflow has no recorded BPMN source to export.",
-    "bpmn.export.source-version-unknown": "The recorded BPMN source version is unknown, so a current export cannot be verified.",
-    "bpmn.export.source-stale": "The workflow changed after import. Export was refused because the recorded BPMN source is stale.",
+    "bpmn.import.capability-unsupported": _t("This deployment does not support every BPMN capability the document requires. Import was refused."),
+    "bpmn.import.condition-unsupported": _t("These sequence flows carry expression conditions that Elsa does not evaluate. Import was refused to prevent unconditional routing. Remove the conditions or use conditionOutcome."),
+    "bpmn.export.not-imported": _t("This workflow has no recorded BPMN source to export."),
+    "bpmn.export.source-version-unknown": _t("The recorded BPMN source version is unknown, so a current export cannot be verified."),
+    "bpmn.export.source-stale": _t("The workflow changed after import. Export was refused because the recorded BPMN source is stale."),
   };
   const message = typeof envelope.code === "string" ? messages[envelope.code] : undefined;
   return <>

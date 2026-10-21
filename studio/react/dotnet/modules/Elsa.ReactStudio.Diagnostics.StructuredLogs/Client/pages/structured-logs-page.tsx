@@ -1,5 +1,5 @@
 "use client";
-import { translate, useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
 
 
 import { Pause, Play, RefreshCw } from "lucide-react";
@@ -23,10 +23,10 @@ function toIso(local: string | undefined): string | undefined {
   return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
 }
 
-const takeOptions = ["100", "250", "500", "1000"].map((v) => ({ value: v, label: translate("{{value0}} entries", { value0: v }) }));
 
 export function StructuredLogsPage() {
   const _t = useTranslation();
+  const takeOptions = ["100", "250", "500", "1000"].map((v) => ({ value: v, label: _t("{{value0}} entries", { value0: v }) }));
   const url = useUrlState();
   const level = url.get("level") as StructuredLogLevel | undefined;
   const sourceId = url.get("source");
