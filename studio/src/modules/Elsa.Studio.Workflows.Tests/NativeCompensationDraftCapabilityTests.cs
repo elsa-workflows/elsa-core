@@ -218,6 +218,65 @@ public class NativeCompensationDraftCapabilityTests
     }
 
     [Fact]
+    public async Task LegacyEditorServiceConstructorSavesScopeLikeOrdinaryInputThroughOrdinaryRoute()
+    {
+        var backend = new TestBackendApiClientProvider(new Uri("https://backend.example/"), "context-A");
+        var api = DispatchProxy.Create<IWorkflowDefinitionsApi, RecordingWorkflowDefinitionsApi>();
+        backend.SetApi(api);
+        var definition = new WorkflowDefinition
+        {
+            Root = Support.NativeCompensationDraftTestData.CreateLegacySetVariableWithScopeLikeLiteralAndMetadata()
+        };
+        var originalRoot = definition.Root!.ToJsonString();
+        var service = new WorkflowDefinitionEditorService(backend, DispatchProxy.Create<IMediator, CompletedMediator>());
+
+        var result = await service.SaveAsync(definition, false);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(1, ((RecordingWorkflowDefinitionsApi)(object)api).SaveCalls);
+        Assert.Equal(originalRoot, ((RecordingWorkflowDefinitionsApi)(object)api).SavedRoot!.ToJsonString());
+        Assert.False(backend.HasActiveRequestContextBinding);
+    }
+
+    [Theory]
+    [InlineData("""{"id":"sequence-1","type":"Elsa.Sequence","version":1,"activities":[{"id":"scope-1","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}] }""")]
+    [InlineData("""{"id":"flowchart-1","type":"Elsa.Flowchart","version":1,"activities":{"scope-1":{"id":"scope-1","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}} }""")]
+    [InlineData("""{"id":"if-1","type":"Elsa.If","version":1,"then":{"id":"scope-1","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]} }""")]
+    public async Task LegacyEditorServiceConstructorRejectsNestedNativeScopeBeforeSave(string rootJson)
+    {
+        var backend = new TestBackendApiClientProvider(new Uri("https://backend.example/"), "context-A");
+        var api = DispatchProxy.Create<IWorkflowDefinitionsApi, RecordingWorkflowDefinitionsApi>();
+        backend.SetApi(api);
+        var definition = new WorkflowDefinition { Root = System.Text.Json.Nodes.JsonNode.Parse(rootJson)!.AsObject() };
+        var service = new WorkflowDefinitionEditorService(backend, DispatchProxy.Create<IMediator, CompletedMediator>());
+
+        var result = await service.SaveAsync(definition, false);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(0, ((RecordingWorkflowDefinitionsApi)(object)api).SaveCalls);
+    }
+
+    [Fact]
+    public async Task LegacyRemoteServiceConstructorRejectsNestedNativeScopeBeforePublishing()
+    {
+        var backend = new TestBackendApiClientProvider(new Uri("https://backend.example/"), "context-A");
+        var api = DispatchProxy.Create<IWorkflowDefinitionsApi, RecordingWorkflowDefinitionsApi>();
+        ((RecordingWorkflowDefinitionsApi)(object)api).StoredDefinition = new()
+        {
+            DefinitionId = "definition-1",
+            Root = System.Text.Json.Nodes.JsonNode.Parse("""
+                {"id":"sequence-1","type":"Elsa.Sequence","version":1,"activities":[{"id":"scope-1","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}]}
+                """)!.AsObject()
+        };
+        backend.SetApi(api);
+        var service = new RemoteWorkflowDefinitionService(backend, null!, null!, DispatchProxy.Create<IMediator, CompletedMediator>());
+
+        await Assert.ThrowsAsync<NativeCompensationDraftPublishUnavailableException>(() => service.PublishAsync("definition-1"));
+
+        Assert.Equal(0, ((RecordingWorkflowDefinitionsApi)(object)api).PublishCalls);
+    }
+
+    [Fact]
     public async Task SaveRejectsContextSwitchDuringApiAcquisitionBeforeMediatorOrWrite()
     {
         var backend = new TestBackendApiClientProvider(new Uri("https://backend.example/"), "context-A");
@@ -348,7 +407,7 @@ public class NativeCompensationDraftCapabilityTests
             new AnyWorkflowJsonDetector(),
             new FreshFeatureProvider(true));
         const string workflowJson = """
-            {"root":{"type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}}
+            {"root":{"id":"scope-1","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}}
             """;
 
         var import = importer.ImportJsonAsync("draft.json", workflowJson, null);
@@ -450,7 +509,7 @@ public class NativeCompensationDraftCapabilityTests
             case "import":
                 var importer = new WorkflowDefinitionImporter(backend, mediator, new AnyWorkflowJsonDetector(), featureProvider);
                 var importResult = await importer.ImportJsonAsync("draft.json", """
-                    {"root":{"type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}}
+                    {"root":{"id":"scope-1","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}}
                     """, null);
                 Assert.NotNull(importResult.Failure);
                 break;
@@ -458,7 +517,7 @@ public class NativeCompensationDraftCapabilityTests
                 await Assert.ThrowsAsync<BackendRequestContextChangedException>(() => service.CreateNewDefinitionAsync(
                     "native draft",
                     configureRequest: request => request.Model.Root = System.Text.Json.Nodes.JsonNode.Parse(
-                        """{"type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}""")!.AsObject()));
+                        """{"id":"scope-1","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}""")!.AsObject()));
                 break;
             case "publish":
                 await Assert.ThrowsAsync<BackendRequestContextChangedException>(() => service.PublishAsync("definition-1"));
@@ -519,6 +578,50 @@ public class NativeCompensationDraftCapabilityTests
     }
 
     [Fact]
+    public async Task LegacyBulkPublishContinuesPastMissingTargetAndPreservesCanonicalNotFoundResult()
+    {
+        var (backend, api, service) = CreateLegacyBulkPublishHarness();
+        api.StoredReadExceptionsByDefinitionId["missing"] = await CreateApiExceptionAsync(HttpStatusCode.NotFound);
+        api.StoredDefinitionsByDefinitionId["ordinary"] = new()
+        {
+            Id = "ordinary:3",
+            DefinitionId = "ordinary",
+            Root = System.Text.Json.Nodes.JsonNode.Parse("""{"type":"Elsa.WriteLine","version":1}""")!.AsObject()
+        };
+        api.BulkPublishResponse = new([], [], ["missing"], []);
+        var definitionIds = new[] { "missing", "ordinary" };
+
+        var response = await service.BulkPublishAsync(definitionIds);
+
+        Assert.Equal(definitionIds, api.DefinitionIdReads);
+        Assert.Equal(definitionIds, api.BulkPublishRequestIds);
+        Assert.Equal(1, api.BulkPublishCalls);
+        Assert.Equal("missing", response.NotFound.Single());
+        Assert.All(api.StoredReadBindingStates, Assert.True);
+        Assert.True(api.BulkPublishWasBound);
+        Assert.False(backend.HasActiveRequestContextBinding);
+    }
+
+    [Fact]
+    public async Task LegacyBulkPublishStopsWhenNativeTargetFollowsMissingTarget()
+    {
+        var (_, api, service) = CreateLegacyBulkPublishHarness();
+        api.StoredReadExceptionsByDefinitionId["missing"] = await CreateApiExceptionAsync(HttpStatusCode.NotFound);
+        api.StoredDefinitionsByDefinitionId["native"] = new()
+        {
+            Id = "native:4",
+            DefinitionId = "native",
+            Root = CreateDraft().Root
+        };
+
+        await Assert.ThrowsAsync<NativeCompensationDraftPublishUnavailableException>(() =>
+            service.BulkPublishAsync(["missing", "native"]));
+
+        Assert.Equal(new[] { "missing", "native" }, api.DefinitionIdReads);
+        Assert.Equal(0, api.BulkPublishCalls);
+    }
+
+    [Fact]
     public async Task CreateNativeDraftPreservesTheNativeRefusalCodeFromTheServer()
     {
         var backend = new TestBackendApiClientProvider(new Uri("https://backend.example/"), "context-A");
@@ -535,7 +638,7 @@ public class NativeCompensationDraftCapabilityTests
 
         var result = await service.CreateNewDefinitionAsync("native draft", configureRequest: request =>
             request.Model.Root = System.Text.Json.Nodes.JsonNode.Parse(
-                """{"type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}""")!.AsObject());
+                """{"id":"scope-1","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}""")!.AsObject());
 
         Assert.False(result.IsSuccess);
         Assert.Equal(NativeCompensationDraftRefusal.Code, result.Failure!.Code);
@@ -700,6 +803,22 @@ public class NativeCompensationDraftCapabilityTests
         Assert.Equal(0, apiProxy.PublishCalls);
     }
 
+    private (TestBackendApiClientProvider Backend, RecordingWorkflowDefinitionsApi Api, RemoteWorkflowDefinitionService Service) CreateLegacyBulkPublishHarness()
+    {
+        var backend = new TestBackendApiClientProvider(new Uri("https://backend.example/"), "context-A");
+        var api = DispatchProxy.Create<IWorkflowDefinitionsApi, RecordingWorkflowDefinitionsApi>();
+        var apiProxy = (RecordingWorkflowDefinitionsApi)(object)api;
+        apiProxy.IsRequestContextBound = () => backend.HasActiveRequestContextBinding;
+        backend.SetApi(api);
+        var service = new RemoteWorkflowDefinitionService(
+            backend,
+            null!,
+            null!,
+            DispatchProxy.Create<IMediator, CompletedMediator>(),
+            new FreshFeatureProvider(false));
+        return (backend, apiProxy, service);
+    }
+
     [Theory]
     [InlineData("""{"type":"Elsa.CompensationScope","version":1}""")]
     [InlineData("""{"type":"Elsa.NotFoundActivity","originalActivityJson":"{\"type\":\"Elsa.CompensationScope\",\"version\":9}"}""")]
@@ -742,6 +861,17 @@ public class NativeCompensationDraftCapabilityTests
 
         Assert.True(new CompensationScopeActivityResolver().GetSupportsActivity(activity));
         Assert.True(new CompensationScopeDiagramDesignerProvider().GetSupportsActivity(activity));
+    }
+
+    [Fact]
+    public void OrdinaryNotFoundActivityWithScopeLikeInputDataIsNotAnOpaqueCompensationScope()
+    {
+        var activity = System.Text.Json.Nodes.JsonNode.Parse("""
+            {"type":"Elsa.NotFoundActivity","missingTypeName":"Elsa.SetVariable","originalActivityJson":"{\"type\":\"Elsa.SetVariable\",\"version\":1,\"value\":{\"type\":\"Elsa.CompensationScope\",\"version\":1,\"draftSchemaVersion\":1,\"steps\":[]}}"}
+            """)!.AsObject();
+
+        Assert.False(NativeCompensationDraftCapability.IsOpaqueCompensationScope(activity));
+        Assert.False(new CompensationScopeActivityResolver().GetSupportsActivity(activity));
     }
 
     [Theory]
@@ -1228,6 +1358,9 @@ public class NativeCompensationDraftCapabilityTests
         public ICollection<WorkflowDefinition> StoredDefinitions { get; set; } = [];
         public IDictionary<string, WorkflowDefinition> StoredDefinitionsByDefinitionId { get; set; } = new Dictionary<string, WorkflowDefinition>(StringComparer.Ordinal);
         public ApiException? StoredReadException { get; set; }
+        public IDictionary<string, ApiException> StoredReadExceptionsByDefinitionId { get; set; } = new Dictionary<string, ApiException>(StringComparer.Ordinal);
+        public BulkPublishWorkflowDefinitionsResponse? BulkPublishResponse { get; set; }
+        public List<string> BulkPublishRequestIds { get; } = [];
         public List<string> DefinitionIdReads { get; } = [];
         public List<string> VersionIdReads { get; } = [];
 
@@ -1239,6 +1372,8 @@ public class NativeCompensationDraftCapabilityTests
                 StoredReadBindingStates.Add(StoredReadWasBound);
                 var definitionId = (string)args![0]!;
                 DefinitionIdReads.Add(definitionId);
+                if (StoredReadExceptionsByDefinitionId.TryGetValue(definitionId, out var definitionReadException))
+                    return Task.FromException<WorkflowDefinition?>(definitionReadException);
                 if (StoredReadException != null)
                     return Task.FromException<WorkflowDefinition?>(StoredReadException);
 
@@ -1281,8 +1416,9 @@ public class NativeCompensationDraftCapabilityTests
             if (targetMethod?.Name == nameof(IWorkflowDefinitionsApi.BulkPublishAsync))
             {
                 BulkPublishCalls++;
+                BulkPublishRequestIds.AddRange(((BulkPublishWorkflowDefinitionsRequest)args![0]!).DefinitionIds);
                 BulkPublishWasBound = IsRequestContextBound?.Invoke() == true;
-                return Task.FromResult(new BulkPublishWorkflowDefinitionsResponse([], [], [], []));
+                return Task.FromResult(BulkPublishResponse ?? new BulkPublishWorkflowDefinitionsResponse([], [], [], []));
             }
 
             if (targetMethod?.Name != nameof(IWorkflowDefinitionsApi.SaveAsync))

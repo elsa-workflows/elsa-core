@@ -25,13 +25,14 @@ public class RemoteWorkflowDefinitionService : IWorkflowDefinitionService
     private readonly IWorkflowRootActivityTemplateProvider workflowRootActivityTemplateProvider;
     private readonly IMediator mediator;
     private readonly IRemoteFeatureProvider? remoteFeatureProvider;
+    private readonly INativeCompensationDraftGraphClassifier nativeDraftGraphClassifier;
 
     public RemoteWorkflowDefinitionService(
         IBackendApiClientProvider backendApiClientProvider,
         IIdentityGenerator identityGenerator,
         IWorkflowRootActivityTemplateProvider workflowRootActivityTemplateProvider,
         IMediator mediator)
-        : this(backendApiClientProvider, identityGenerator, workflowRootActivityTemplateProvider, mediator, null)
+        : this(backendApiClientProvider, identityGenerator, workflowRootActivityTemplateProvider, mediator, null, new NativeCompensationDraftGraphClassifier())
     {
     }
 
@@ -41,12 +42,24 @@ public class RemoteWorkflowDefinitionService : IWorkflowDefinitionService
         IWorkflowRootActivityTemplateProvider workflowRootActivityTemplateProvider,
         IMediator mediator,
         IRemoteFeatureProvider? remoteFeatureProvider)
+        : this(backendApiClientProvider, identityGenerator, workflowRootActivityTemplateProvider, mediator, remoteFeatureProvider, new NativeCompensationDraftGraphClassifier())
+    {
+    }
+
+    public RemoteWorkflowDefinitionService(
+        IBackendApiClientProvider backendApiClientProvider,
+        IIdentityGenerator identityGenerator,
+        IWorkflowRootActivityTemplateProvider workflowRootActivityTemplateProvider,
+        IMediator mediator,
+        IRemoteFeatureProvider? remoteFeatureProvider,
+        INativeCompensationDraftGraphClassifier nativeDraftGraphClassifier)
     {
         this.backendApiClientProvider = backendApiClientProvider;
         this.identityGenerator = identityGenerator;
         this.workflowRootActivityTemplateProvider = workflowRootActivityTemplateProvider;
         this.mediator = mediator;
         this.remoteFeatureProvider = remoteFeatureProvider;
+        this.nativeDraftGraphClassifier = nativeDraftGraphClassifier;
     }
 
     /// <inheritdoc />
@@ -119,8 +132,13 @@ public class RemoteWorkflowDefinitionService : IWorkflowDefinitionService
         if (!supportsNativeCompensationDrafts)
         {
             var definition = await ReadLegacyPublishTargetAsync(api, definitionId, backendContextKey, requiresRequestContextBinding, cancellationToken);
-            if (definition != null && NativeCompensationDraftCapability.ContainsCompensationScope(definition.Root))
-                throw new NativeCompensationDraftPublishUnavailableException("This server does not advertise native compensation draft authoring. The workflow was not published.");
+            if (definition != null)
+            {
+                var analysis = await nativeDraftGraphClassifier.AnalyzeAsync(definition.Root, cancellationToken);
+                EnsureSameBackendContext(backendContextKey, cancellationToken);
+                if (analysis.RequiresNativeProtection)
+                    throw new NativeCompensationDraftPublishUnavailableException("This server does not advertise native compensation draft authoring. The workflow was not published.");
+            }
         }
 
         EnsureSameBackendContext(backendContextKey, cancellationToken);
@@ -237,9 +255,14 @@ public class RemoteWorkflowDefinitionService : IWorkflowDefinitionService
         {
             foreach (var definitionId in definitionIdList)
             {
-                var definition = await ReadLegacyPublishTargetAsync(api, definitionId, backendContextKey, requiresRequestContextBinding, cancellationToken);
-                if (definition != null && NativeCompensationDraftCapability.ContainsCompensationScope(definition.Root))
-                    throw new NativeCompensationDraftPublishUnavailableException("This server does not advertise native compensation draft authoring. The selected workflows were not published.");
+                var definition = await ReadLegacyBulkPublishTargetAsync(api, definitionId, backendContextKey, requiresRequestContextBinding, cancellationToken);
+                if (definition != null)
+                {
+                    var analysis = await nativeDraftGraphClassifier.AnalyzeAsync(definition.Root, cancellationToken);
+                    EnsureSameBackendContext(backendContextKey, cancellationToken);
+                    if (analysis.RequiresNativeProtection)
+                        throw new NativeCompensationDraftPublishUnavailableException("This server does not advertise native compensation draft authoring. The selected workflows were not published.");
+                }
             }
         }
 
@@ -342,7 +365,11 @@ public class RemoteWorkflowDefinitionService : IWorkflowDefinitionService
             Model = WorkflowDefinitionModelSnapshot.WithRoot(saveRequest.Model, saveRequest.Model.Root),
             Publish = saveRequest.Publish
         };
-        var containsCompensationDraft = NativeCompensationDraftCapability.ContainsCompensationScope(request.Model.Root);
+        var analysis = await nativeDraftGraphClassifier.AnalyzeAsync(request.Model.Root, cancellationToken);
+        EnsureSameBackendContext(backendContextKey, cancellationToken);
+        if (analysis.MustRejectProtectedWrite)
+            return new(new ValidationErrors([new("This workflow contains a native compensation scope Studio cannot safely classify or save.")]));
+        var containsCompensationDraft = analysis.ContainsCompensationScope;
         if (containsCompensationDraft &&
             !await NativeCompensationDraftCapability.IsEnabledForContextAsync(remoteFeatureProvider, backendApiClientProvider, backendContextKey, cancellationToken))
             return new(new ValidationErrors([new("This server does not advertise native compensation draft authoring. The workflow was not saved.")]));
@@ -458,6 +485,26 @@ public class RemoteWorkflowDefinitionService : IWorkflowDefinitionService
 
         EnsureSameBackendContext(expectedBackendContextKey, cancellationToken);
         return definition;
+    }
+
+    private async Task<WorkflowDefinition?> ReadLegacyBulkPublishTargetAsync(
+        IWorkflowDefinitionsApi api,
+        string definitionId,
+        string expectedBackendContextKey,
+        bool requiresRequestContextBinding,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await ReadLegacyPublishTargetAsync(api, definitionId, expectedBackendContextKey, requiresRequestContextBinding, cancellationToken);
+        }
+        catch (ApiException exception) when (exception.StatusCode == HttpStatusCode.NotFound)
+        {
+            // BulkPublish is defined to collect missing IDs in its response. An optional preflight read
+            // must leave that reporting to the canonical bulk endpoint while retaining the context guard.
+            EnsureSameBackendContext(expectedBackendContextKey, cancellationToken);
+            return null;
+        }
     }
 
     private void EnsureSameBackendContext(string expected, CancellationToken cancellationToken)

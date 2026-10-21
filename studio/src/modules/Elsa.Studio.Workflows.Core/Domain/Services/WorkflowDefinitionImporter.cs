@@ -24,9 +24,10 @@ public class WorkflowDefinitionImporter : IWorkflowDefinitionImporter
     private readonly IMediator mediator;
     private readonly IWorkflowJsonDetector workflowJsonDetector;
     private readonly IRemoteFeatureProvider? remoteFeatureProvider;
+    private readonly INativeCompensationDraftGraphClassifier nativeDraftGraphClassifier;
 
     public WorkflowDefinitionImporter(IBackendApiClientProvider backendApiClientProvider, IMediator mediator, IWorkflowJsonDetector workflowJsonDetector)
-        : this(backendApiClientProvider, mediator, workflowJsonDetector, null)
+        : this(backendApiClientProvider, mediator, workflowJsonDetector, null, new NativeCompensationDraftGraphClassifier())
     {
     }
 
@@ -35,11 +36,22 @@ public class WorkflowDefinitionImporter : IWorkflowDefinitionImporter
         IMediator mediator,
         IWorkflowJsonDetector workflowJsonDetector,
         IRemoteFeatureProvider? remoteFeatureProvider)
+        : this(backendApiClientProvider, mediator, workflowJsonDetector, remoteFeatureProvider, new NativeCompensationDraftGraphClassifier())
+    {
+    }
+
+    public WorkflowDefinitionImporter(
+        IBackendApiClientProvider backendApiClientProvider,
+        IMediator mediator,
+        IWorkflowJsonDetector workflowJsonDetector,
+        IRemoteFeatureProvider? remoteFeatureProvider,
+        INativeCompensationDraftGraphClassifier nativeDraftGraphClassifier)
     {
         this.backendApiClientProvider = backendApiClientProvider;
         this.mediator = mediator;
         this.workflowJsonDetector = workflowJsonDetector;
         this.remoteFeatureProvider = remoteFeatureProvider;
+        this.nativeDraftGraphClassifier = nativeDraftGraphClassifier;
     }
 
     private async Task<IWorkflowDefinitionsApi> GetApiAsync(CancellationToken cancellationToken = default)
@@ -151,7 +163,11 @@ public class WorkflowDefinitionImporter : IWorkflowDefinitionImporter
 
             await mediator.NotifyAsync(new ImportingWorkflowDefinition(model));
             var requestModel = WorkflowDefinitionModelSnapshot.WithRoot(model, model.Root);
-            var containsCompensationDraft = NativeCompensationDraftCapability.ContainsCompensationScope(requestModel.Root);
+            var analysis = await nativeDraftGraphClassifier.AnalyzeAsync(requestModel.Root);
+            EnsureSameBackendContext(backendContextKey);
+            if (analysis.MustRejectProtectedWrite)
+                throw new InvalidOperationException("The imported workflow contains a native compensation scope Studio cannot safely classify or import.");
+            var containsCompensationDraft = analysis.ContainsCompensationScope;
             if (containsCompensationDraft)
             {
                 EnsureSameBackendContext(backendContextKey);

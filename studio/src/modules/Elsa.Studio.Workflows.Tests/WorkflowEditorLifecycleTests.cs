@@ -51,7 +51,7 @@ public sealed class WorkflowEditorLifecycleTests : BunitContext, IAsyncLifetime
         Services.AddSingleton<IBackendApiClientProvider>(_backendProvider);
         Services.AddSingleton<ILocalizer, TestLocalizer>();
         Services.AddSingleton<IWorkflowDefinitionEditorService>(_editorService);
-        Services.AddSingleton<IActivityRegistry, NoOpActivityRegistry>();
+        Services.AddSingleton<IActivityRegistry>(NativeCompensationDraftTestData.CreateActivityRegistry());
         Services.AddSingleton<IDomAccessor, NoOpDomAccessor>();
         Services.AddSingleton(_userMessageService);
         Services.AddSingleton<IUserMessageService>(_userMessageService);

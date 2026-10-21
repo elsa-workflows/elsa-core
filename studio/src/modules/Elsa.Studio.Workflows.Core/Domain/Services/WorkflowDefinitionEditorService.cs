@@ -23,9 +23,10 @@ public class WorkflowDefinitionEditorService : IWorkflowDefinitionEditorService,
     private readonly IBackendApiClientProvider backendApiClientProvider;
     private readonly IMediator mediator;
     private readonly IRemoteFeatureProvider? remoteFeatureProvider;
+    private readonly INativeCompensationDraftGraphClassifier nativeDraftGraphClassifier;
 
     public WorkflowDefinitionEditorService(IBackendApiClientProvider backendApiClientProvider, IMediator mediator)
-        : this(backendApiClientProvider, mediator, null)
+        : this(backendApiClientProvider, mediator, null, new NativeCompensationDraftGraphClassifier())
     {
     }
 
@@ -33,10 +34,20 @@ public class WorkflowDefinitionEditorService : IWorkflowDefinitionEditorService,
         IBackendApiClientProvider backendApiClientProvider,
         IMediator mediator,
         IRemoteFeatureProvider? remoteFeatureProvider)
+        : this(backendApiClientProvider, mediator, remoteFeatureProvider, new NativeCompensationDraftGraphClassifier())
+    {
+    }
+
+    public WorkflowDefinitionEditorService(
+        IBackendApiClientProvider backendApiClientProvider,
+        IMediator mediator,
+        IRemoteFeatureProvider? remoteFeatureProvider,
+        INativeCompensationDraftGraphClassifier nativeDraftGraphClassifier)
     {
         this.backendApiClientProvider = backendApiClientProvider;
         this.mediator = mediator;
         this.remoteFeatureProvider = remoteFeatureProvider;
+        this.nativeDraftGraphClassifier = nativeDraftGraphClassifier;
     }
 
     /// <inheritdoc />
@@ -62,8 +73,11 @@ public class WorkflowDefinitionEditorService : IWorkflowDefinitionEditorService,
         // Classify and send one owned snapshot. The editor root is mutable JSON and may change while
         // API acquisition or mediator callbacks are awaiting; the request must not inherit unchecked edits.
         var rootSnapshot = workflowDefinition.Root?.DeepClone().AsObject();
-        var containsCompensationDraft = NativeCompensationDraftCapability.ContainsCompensationScope(rootSnapshot);
-        if (containsCompensationDraft && NativeCompensationDraftCapability.ContainsUnsupportedCompensationScopeShape(rootSnapshot))
+        var analysis = await nativeDraftGraphClassifier.AnalyzeAsync(rootSnapshot, cancellationToken);
+        if (!analysis.IsComplete && analysis.HasPotentialScopeMarker)
+            return new(new ValidationErrors([new("This workflow contains a native compensation scope Studio cannot safely classify or edit. The workflow was not saved.")]));
+        var containsCompensationDraft = analysis.ContainsCompensationScope;
+        if (containsCompensationDraft && analysis.ContainsUnsupportedScope)
             return new(new ValidationErrors([new("This workflow contains a native compensation scope Studio cannot safely edit. The workflow was not saved.")]));
 
         var draftOriginContextKey = containsCompensationDraft
@@ -198,7 +212,11 @@ public class WorkflowDefinitionEditorService : IWorkflowDefinitionEditorService,
     /// <inheritdoc />
     public async Task<SaveWorkflowDefinitionResponse> PublishAsync(WorkflowDefinition workflowDefinition, Func<WorkflowDefinition, Task>? workflowPublishedCallback = null, CancellationToken cancellationToken = default)
     {
-        var containsCompensationDraft = NativeCompensationDraftCapability.ContainsCompensationScope(workflowDefinition.Root);
+        var rootSnapshot = workflowDefinition.Root?.DeepClone().AsObject();
+        var analysis = await nativeDraftGraphClassifier.AnalyzeAsync(rootSnapshot, cancellationToken);
+        if (!analysis.IsComplete && analysis.HasPotentialScopeMarker)
+            throw new InvalidOperationException("This workflow contains a native compensation scope Studio cannot safely classify or publish.");
+        var containsCompensationDraft = analysis.ContainsCompensationScope;
         var draftOriginContextKey = containsCompensationDraft
             ? NativeCompensationDraftDocumentContext.GetBackendContextKey(workflowDefinition)
             : null;

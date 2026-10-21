@@ -99,6 +99,7 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
     public string? SelectedActivityId { get; private set; }
 
     [Inject] private IWorkflowDefinitionEditorService WorkflowDefinitionEditorService { get; set; } = null!;
+    [Inject] private INativeCompensationDraftGraphClassifier NativeDraftGraphClassifier { get; set; } = null!;
     [Inject] private IWorkflowDefinitionImporter WorkflowDefinitionImporter { get; set; } = null!;
     [Inject] private IActivityVisitor ActivityVisitor { get; set; } = null!;
     [Inject] private IActivityRegistry ActivityRegistry { get; set; } = null!;
@@ -309,7 +310,10 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
             workflowDefinition.Root = root;
         }
 
-        var containsCompensationDraft = NativeCompensationDraftCapability.ContainsCompensationScope(workflowDefinition.Root);
+        var analysis = await NativeDraftGraphClassifier.AnalyzeAsync(workflowDefinition.Root);
+        if (analysis.MustRejectProtectedWrite)
+            return new(new ValidationErrors([new("This workflow contains a native compensation scope Studio cannot safely classify or edit. The workflow was not saved.")]));
+        var containsCompensationDraft = analysis.ContainsCompensationScope;
         if (containsCompensationDraft && _workflowDefinitionBackendContextKey != BackendApiClientProvider.ContextKey)
             return new(new ValidationErrors([new(Localizer["This compensation draft was loaded from a different backend context. Reload the workflow before saving."])]));
 

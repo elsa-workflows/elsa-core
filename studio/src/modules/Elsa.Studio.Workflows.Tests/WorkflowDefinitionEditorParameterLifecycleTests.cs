@@ -90,6 +90,51 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
     }
 
     [Fact]
+    public async Task WorkspaceImmediatelyDisablesNativeEditingWhenRequestBindingSupportIsLost()
+    {
+        await using var context = CreateContext();
+        var featureProvider = new EnabledRemoteFeatureProvider();
+        var (definition, cut) = RenderOrdinaryOriginBoundWorkspace(context, featureProvider);
+        definition.Root = CreateNativeCompensationScope();
+        cut.Render(parameters => parameters
+            .Add(x => x.WorkflowDefinition, definition)
+            .Add(x => x.SelectedWorkflowDefinition, definition));
+
+        cut.WaitForAssertion(() => Assert.False(cut.Instance.IsReadOnly));
+        var backend = (MutableBackendApiClientProvider)context.Services.GetRequiredService<IBackendApiClientProvider>();
+        backend.SupportsAuthenticatedRequestContextBinding = false;
+
+        cut.Render(parameters => parameters
+            .Add(x => x.WorkflowDefinition, definition)
+            .Add(x => x.SelectedWorkflowDefinition, definition));
+
+        Assert.True(cut.Instance.IsReadOnly);
+        Assert.Empty(cut.FindComponents<WorkflowEditor>());
+    }
+
+    [Fact]
+    public async Task WorkspaceRevokesCachedCapabilityWhenFreshRecheckFails()
+    {
+        await using var context = CreateContext();
+        var featureProvider = new EnabledRemoteFeatureProvider();
+        var (definition, cut) = RenderOrdinaryOriginBoundWorkspace(context, featureProvider);
+        definition.Root = CreateNativeCompensationScope();
+        cut.Render(parameters => parameters
+            .Add(x => x.WorkflowDefinition, definition)
+            .Add(x => x.SelectedWorkflowDefinition, definition));
+        cut.WaitForAssertion(() => Assert.False(cut.Instance.IsReadOnly));
+        featureProvider.FreshCheck = () => Task.FromException<bool>(new InvalidOperationException("fresh check failed"));
+
+        await cut.InvokeAsync(() => InvokeCapabilityRefreshAsync(cut.Instance, force: true));
+        cut.Render(parameters => parameters
+            .Add(x => x.WorkflowDefinition, definition)
+            .Add(x => x.SelectedWorkflowDefinition, definition));
+
+        Assert.True(cut.Instance.IsReadOnly);
+        Assert.Empty(cut.FindComponents<WorkflowEditor>());
+    }
+
+    [Fact]
     public async Task WorkspaceAdoptsValidOriginFromAnInternalNativeSaveResponseBeforeRendering()
     {
         await using var context = CreateContext();
@@ -97,6 +142,7 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
         var (definition, cut) = RenderOrdinaryOriginBoundWorkspace(context, featureProvider);
 
         definition.Root = CreateNativeCompensationScope();
+        await cut.InvokeAsync(() => InvokeWorkflowDefinitionUpdatedAsync(cut.Instance));
         Assert.False(cut.Instance.IsReadOnly);
         var editor = cut.FindComponent<WorkflowEditor>().Instance;
         var saveTask = InvokeSaveAsync(editor);
@@ -212,7 +258,7 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
             Assert.False(cut.Instance.IsReadOnly);
             Assert.Single(cut.FindComponents<WorkflowEditor>());
         });
-        Assert.Equal(0, featureProvider.FreshCheckCount);
+        Assert.Equal(1, featureProvider.FreshCheckCount);
     }
 
     [Fact]
@@ -570,7 +616,7 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
         context.Services.AddSingleton<IWorkflowDefinitionEditorService>(editorService);
         var workflowDefinitionService = DispatchProxy.Create<IWorkflowDefinitionService, WorkflowDefinitionServiceProxy>();
         context.Services.AddSingleton(workflowDefinitionService);
-        context.Services.AddSingleton<IActivityRegistry, NoOpActivityRegistry>();
+        context.Services.AddSingleton<IActivityRegistry>(NativeCompensationDraftTestData.CreateActivityRegistry());
         context.Services.AddSingleton<IActivityPickerComponentProvider, EmptyActivityPickerComponentProvider>();
         context.ComponentFactories.Add<WorkflowEditor, TestWorkflowEditor>();
         context.ComponentFactories.Add<WorkflowDefinitionVersionViewer, TestWorkflowDefinitionVersionViewer>();
@@ -678,10 +724,16 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
         return (Task)method.Invoke(editor, new object?[] { null, null })!;
     }
 
-    private static Task InvokeCapabilityRefreshAsync(WorkflowDefinitionWorkspace workspace)
+    private static Task InvokeCapabilityRefreshAsync(WorkflowDefinitionWorkspace workspace, bool force = false)
     {
         var method = typeof(WorkflowDefinitionWorkspace).GetMethod("RefreshNativeCompensationDraftCapabilityAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        return (Task)method.Invoke(workspace, [false])!;
+        return (Task)method.Invoke(workspace, [force])!;
+    }
+
+    private static Task InvokeWorkflowDefinitionUpdatedAsync(WorkflowDefinitionWorkspace workspace)
+    {
+        var method = typeof(WorkflowDefinitionWorkspace).GetMethod("OnWorkflowDefinitionUpdated", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        return (Task)method.Invoke(workspace, null)!;
     }
 
     private sealed class TestWorkflowEditor : WorkflowEditor
@@ -747,7 +799,7 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
         private readonly AsyncLocal<string?> _boundContext = new();
         public Uri Url { get; } = new("https://backend.example/");
         public string ContextKey { get; set; } = contextKey;
-        public bool SupportsAuthenticatedRequestContextBinding => true;
+        public bool SupportsAuthenticatedRequestContextBinding { get; set; } = true;
         public bool HasActiveRequestContextBinding => _boundContext.Value != null;
 
         public void RegisterAuthenticatedRequestTransport(IBackendRequestContextEpochSource? epochSource) { }

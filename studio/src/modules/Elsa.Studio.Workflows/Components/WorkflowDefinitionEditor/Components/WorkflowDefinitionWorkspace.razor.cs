@@ -29,17 +29,26 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
     private WorkflowDefinition? _lastIncomingSelectedWorkflowDefinition;
     private long _workflowDefinitionReloadVersion;
     private long _compensationCapabilityGeneration;
+    private long _nativeGraphAnalysisGeneration;
     private bool _nativeCompensationDraftCapabilityEnabled;
     private bool _nativeCompensationDraftContextInvalidated;
     private bool _isReloadingNativeCompensationDraft;
+    private bool _nativeGraphAnalysisPending;
     private string? _nativeCompensationDraftReloadError;
     private string? _compensationCapabilityContextKey;
     private string? _compensationDocumentContextKey;
+    private string? _nativeGraphAnalysisBackendContextKey;
+    private string? _nativeGraphAnalysisDocumentContextKey;
+    private string? _nativeGraphAnalysisDefinitionId;
+    private JsonObject? _nativeGraphAnalysisRootSnapshot;
+    private NativeCompensationDraftGraphAnalysis _nativeGraphAnalysis = NativeCompensationDraftGraphAnalysis.Ordinary;
     private CancellationTokenSource? _compensationCapabilityCheck;
+    private CancellationTokenSource? _nativeGraphAnalysisCheck;
     private WorkflowEditor WorkflowEditor { get; set; } = null!;
     private CodeView CodeView { get; set; } = null!;
 
     [Inject] private IWorkflowDefinitionService WorkflowDefinitionService { get; set; } = null!;
+    [Inject] private INativeCompensationDraftGraphClassifier NativeDraftGraphClassifier { get; set; } = null!;
     [Inject] private IRemoteFeatureProvider RemoteFeatureProvider { get; set; } = null!;
     [Inject] private IBackendApiClientProvider BackendApiClientProvider { get; set; } = null!;
     [Inject] private IPermissionRefreshSignal PermissionRefreshSignal { get; set; } = null!;
@@ -77,25 +86,53 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
         get
         {
             var root = _selectedWorkflowDefinition?.Root;
-            if (!NativeCompensationDraftCapability.ContainsCompensationScope(root))
+            if (!NativeCompensationDraftCapability.ContainsPotentialScopeMarker(root))
                 return false;
 
-            return NativeCompensationDraftCapability.ContainsUnsupportedCompensationScopeShape(root) ||
-                   !HasNativeCompensationDraftCapability || _compensationDocumentContextKey == null ||
-                   _compensationDocumentContextKey != BackendApiClientProvider.ContextKey;
+            if (!IsNativeGraphAnalysisCurrent && !CanRetainVerifiedNativeAnalysisDuringRecheck)
+                return true;
+
+            if (!_nativeGraphAnalysis.RequiresNativeProtection)
+                return false;
+
+            return _nativeGraphAnalysis.MustRejectProtectedWrite || !HasNativeCompensationDraftCapability ||
+                   _compensationDocumentContextKey == null || _compensationDocumentContextKey != BackendApiClientProvider.ContextKey;
         }
     }
 
     private bool IsNativeCompensationDraftOpaqueOrUnsupported =>
-        NativeCompensationDraftCapability.ContainsUnsupportedCompensationScopeShape(_selectedWorkflowDefinition?.Root);
+        !IsNativeGraphAnalysisCurrent && !CanRetainVerifiedNativeAnalysisDuringRecheck ||
+        _nativeGraphAnalysis.MustRejectProtectedWrite;
+
+    private bool HasAnalyzedNativeCompensationScope => _nativeGraphAnalysis.ContainsCompensationScope;
 
     private bool HasNativeCompensationDraftCapability =>
-        _nativeCompensationDraftCapabilityEnabled && _compensationCapabilityContextKey == BackendApiClientProvider.ContextKey;
+        _nativeCompensationDraftCapabilityEnabled && _compensationCapabilityContextKey == BackendApiClientProvider.ContextKey &&
+        BackendApiClientProvider is IBackendRequestContextBinding { SupportsAuthenticatedRequestContextBinding: true };
 
     private bool IsNativeCompensationDraftContextStale =>
-        NativeCompensationDraftCapability.ContainsCompensationScope(_selectedWorkflowDefinition?.Root) &&
+        (_nativeGraphAnalysis.RequiresNativeProtection || _nativeGraphAnalysisPending &&
+            NativeCompensationDraftCapability.ContainsPotentialScopeMarker(_selectedWorkflowDefinition?.Root)) &&
         (_nativeCompensationDraftContextInvalidated || _compensationDocumentContextKey == null ||
          _compensationDocumentContextKey != BackendApiClientProvider.ContextKey);
+
+    private bool IsNativeGraphAnalysisCurrent =>
+        string.Equals(_nativeGraphAnalysisBackendContextKey, BackendApiClientProvider.ContextKey, StringComparison.Ordinal) &&
+        string.Equals(_nativeGraphAnalysisDocumentContextKey, _compensationDocumentContextKey, StringComparison.Ordinal) &&
+        string.Equals(_nativeGraphAnalysisDefinitionId, _selectedWorkflowDefinition?.DefinitionId, StringComparison.Ordinal) &&
+        JsonNode.DeepEquals(_nativeGraphAnalysisRootSnapshot, _selectedWorkflowDefinition?.Root);
+
+    private bool CanRetainVerifiedNativeAnalysisDuringRecheck =>
+        _nativeGraphAnalysisPending && _nativeGraphAnalysis.IsComplete && _nativeGraphAnalysis.ContainsCompensationScope &&
+        HasVerifiedNativeAnalysisForCurrentOrigin;
+
+    private bool HasVerifiedNativeAnalysisForCurrentOrigin =>
+        _nativeGraphAnalysis.IsComplete && _nativeGraphAnalysis.ContainsCompensationScope &&
+        !_nativeCompensationDraftContextInvalidated && _compensationDocumentContextKey != null &&
+        _compensationDocumentContextKey == BackendApiClientProvider.ContextKey &&
+        _nativeGraphAnalysisBackendContextKey == BackendApiClientProvider.ContextKey &&
+        _nativeGraphAnalysisDocumentContextKey == _compensationDocumentContextKey &&
+        _nativeGraphAnalysisDefinitionId == _selectedWorkflowDefinition?.DefinitionId;
 
     /// <inheritdoc />
     public bool HasWorkflowEditPermission => (_selectedWorkflowDefinition?.Links?.Count(l => l.Rel == "publish") ?? 0) > 0;
@@ -138,7 +175,7 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
 
         _selectedWorkflowDefinition = SelectedWorkflowDefinition ?? _workflowDefinition;
         _compensationDocumentContextKey = GetCompensationDocumentContextKey(_selectedWorkflowDefinition);
-        _nativeCompensationDraftContextInvalidated = NativeCompensationDraftCapability.ContainsCompensationScope(_selectedWorkflowDefinition?.Root) &&
+        _nativeCompensationDraftContextInvalidated = _nativeGraphAnalysis.RequiresNativeProtection &&
                                                      _nativeCompensationDraftContextInvalidated &&
                                                      _compensationDocumentContextKey != BackendApiClientProvider.ContextKey;
         _workflowDefinitionReloadVersion++;
@@ -149,7 +186,84 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
     }
 
     /// <inheritdoc />
-    protected override Task OnParametersSetAsync() => RefreshNativeCompensationDraftCapabilityAsync();
+    protected override async Task OnParametersSetAsync()
+    {
+        await RefreshNativeCompensationDraftCapabilityAsync();
+        await RefreshNativeCompensationDraftGraphAnalysisAsync();
+    }
+
+    private async Task RefreshNativeCompensationDraftGraphAnalysisAsync(bool force = false)
+    {
+        var root = _selectedWorkflowDefinition?.Root;
+        if (!NativeCompensationDraftCapability.ContainsPotentialScopeMarker(root))
+        {
+            CancelNativeGraphAnalysisCheck();
+            _nativeGraphAnalysis = NativeCompensationDraftGraphAnalysis.Ordinary;
+            _nativeGraphAnalysisRootSnapshot = root?.DeepClone().AsObject();
+            _nativeGraphAnalysisBackendContextKey = null;
+            _nativeGraphAnalysisDocumentContextKey = _compensationDocumentContextKey;
+            _nativeGraphAnalysisDefinitionId = _selectedWorkflowDefinition?.DefinitionId;
+            _nativeGraphAnalysisPending = false;
+            return;
+        }
+
+        if (!force && IsNativeGraphAnalysisCurrent && !_nativeGraphAnalysisPending)
+            return;
+
+        var backendContextKey = BackendApiClientProvider.ContextKey;
+        var documentContextKey = _compensationDocumentContextKey;
+        var definitionId = _selectedWorkflowDefinition?.DefinitionId;
+        var rootSnapshot = root?.DeepClone().AsObject();
+        var canRetain = HasVerifiedNativeAnalysisForCurrentOrigin;
+
+        CancelNativeGraphAnalysisCheck();
+        var cancellationSource = new CancellationTokenSource();
+        _nativeGraphAnalysisCheck = cancellationSource;
+        var generation = ++_nativeGraphAnalysisGeneration;
+        _nativeGraphAnalysisPending = true;
+        if (!canRetain)
+            _nativeGraphAnalysis = NativeCompensationDraftGraphAnalysis.Indeterminate;
+
+        NativeCompensationDraftGraphAnalysis analysis;
+        try
+        {
+            analysis = await NativeDraftGraphClassifier.AnalyzeAsync(rootSnapshot, cancellationSource.Token);
+        }
+        catch (OperationCanceledException) when (cancellationSource.IsCancellationRequested)
+        {
+            ReleaseNativeGraphAnalysisCheck(cancellationSource);
+            return;
+        }
+        catch
+        {
+            analysis = NativeCompensationDraftGraphAnalysis.Indeterminate;
+        }
+
+        var isCurrentCheck = generation == _nativeGraphAnalysisGeneration &&
+                             ReferenceEquals(_nativeGraphAnalysisCheck, cancellationSource);
+        ReleaseNativeGraphAnalysisCheck(cancellationSource);
+
+        if (!isCurrentCheck || BackendApiClientProvider.ContextKey != backendContextKey ||
+            _compensationDocumentContextKey != documentContextKey ||
+            _selectedWorkflowDefinition?.DefinitionId != definitionId ||
+            !JsonNode.DeepEquals(rootSnapshot, _selectedWorkflowDefinition?.Root))
+        {
+            if (generation == _nativeGraphAnalysisGeneration)
+            {
+                _nativeGraphAnalysisPending = false;
+                _nativeGraphAnalysis = NativeCompensationDraftGraphAnalysis.Indeterminate;
+            }
+
+            return;
+        }
+
+        _nativeGraphAnalysis = analysis;
+        _nativeGraphAnalysisRootSnapshot = rootSnapshot;
+        _nativeGraphAnalysisBackendContextKey = backendContextKey;
+        _nativeGraphAnalysisDocumentContextKey = documentContextKey;
+        _nativeGraphAnalysisDefinitionId = definitionId;
+        _nativeGraphAnalysisPending = false;
+    }
 
     private async Task RefreshNativeCompensationDraftCapabilityAsync(bool force = false)
     {
@@ -207,8 +321,7 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
         }
         catch
         {
-            ReleaseNativeCompensationDraftCapabilityCheck(cancellationSource);
-            throw;
+            capabilityEnabled = false;
         }
 
         var isCurrentCheck = generation == _compensationCapabilityGeneration &&
@@ -236,9 +349,25 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
         cancellationSource.Dispose();
     }
 
+    private void CancelNativeGraphAnalysisCheck()
+    {
+        _nativeGraphAnalysisGeneration++;
+        _nativeGraphAnalysisCheck?.Cancel();
+        _nativeGraphAnalysisCheck?.Dispose();
+        _nativeGraphAnalysisCheck = null;
+    }
+
+    private void ReleaseNativeGraphAnalysisCheck(CancellationTokenSource cancellationSource)
+    {
+        if (ReferenceEquals(_nativeGraphAnalysisCheck, cancellationSource))
+            _nativeGraphAnalysisCheck = null;
+
+        cancellationSource.Dispose();
+    }
+
     private void OnBackendContextChanged() => _ = InvokeAsync(async () =>
     {
-        if (NativeCompensationDraftCapability.ContainsCompensationScope(_selectedWorkflowDefinition?.Root))
+        if (_nativeGraphAnalysis.RequiresNativeProtection)
         {
             _nativeCompensationDraftContextInvalidated = true;
             if (WorkflowEditor != null)
@@ -252,6 +381,7 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
         _compensationCapabilityContextKey = null;
         StateHasChanged();
         await RefreshNativeCompensationDraftCapabilityAsync();
+        await RefreshNativeCompensationDraftGraphAnalysisAsync();
         StateHasChanged();
     });
 
@@ -289,6 +419,7 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
             _nativeCompensationDraftContextInvalidated = false;
             _workflowDefinitionReloadVersion++;
             await RefreshNativeCompensationDraftCapabilityAsync();
+            await RefreshNativeCompensationDraftGraphAnalysisAsync(force: true);
         }
         catch (OperationCanceledException)
         {
@@ -317,6 +448,10 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
         _compensationCapabilityCheck?.Cancel();
         _compensationCapabilityCheck?.Dispose();
         _compensationCapabilityCheck = null;
+        _nativeGraphAnalysisGeneration++;
+        _nativeGraphAnalysisCheck?.Cancel();
+        _nativeGraphAnalysisCheck?.Dispose();
+        _nativeGraphAnalysisCheck = null;
     }
 
     /// Displays the specified workflow definition version.
@@ -331,7 +466,7 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
         _workflowDefinitionReloadVersion++;
         _selectedWorkflowDefinition = workflowDefinition;
         _compensationDocumentContextKey = GetCompensationDocumentContextKey(workflowDefinition);
-        _nativeCompensationDraftContextInvalidated = NativeCompensationDraftCapability.ContainsCompensationScope(workflowDefinition.Root) &&
+        _nativeCompensationDraftContextInvalidated = _nativeGraphAnalysis.RequiresNativeProtection &&
                                                      _nativeCompensationDraftContextInvalidated &&
                                                      _compensationDocumentContextKey != BackendApiClientProvider.ContextKey;
         _nativeCompensationDraftCapabilityEnabled = false;
@@ -341,6 +476,7 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
             _workflowDefinition = workflowDefinition;
 
         await RefreshNativeCompensationDraftCapabilityAsync();
+        await RefreshNativeCompensationDraftGraphAnalysisAsync();
 
         if (WorkflowDefinitionVersionSelected != null)
             await WorkflowDefinitionVersionSelected(_selectedWorkflowDefinition);
@@ -389,6 +525,7 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
         _compensationDocumentContextKey = GetCompensationDocumentContextKey(_selectedWorkflowDefinition);
         if (isDefinitionReplacement)
             await RefreshNativeCompensationDraftCapabilityAsync(force: true);
+        await RefreshNativeCompensationDraftGraphAnalysisAsync(force: isDefinitionReplacement);
         await InvokeAsync(StateHasChanged);
     }
 

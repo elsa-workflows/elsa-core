@@ -16,26 +16,8 @@ public static class NativeCompensationDraftCapability
 
     public static bool ContainsCompensationScope(JsonNode? node)
     {
-        if (node is JsonObject activity)
-        {
-            if (GetString(activity, "type") == "Elsa.CompensationScope")
-                return true;
-
-            if (GetString(activity, "type") == "Elsa.NotFoundActivity")
-            {
-                if (GetString(activity, "missingTypeName") == "Elsa.CompensationScope")
-                    return true;
-
-                if (activity["originalActivityJson"] is JsonValue originalValue &&
-                    originalValue.TryGetValue<string>(out var originalJson) &&
-                    ContainsCompensationScopeJson(originalJson))
-                    return true;
-            }
-
-            return activity.Any(x => ContainsCompensationScope(x.Value));
-        }
-
-        return node is JsonArray array && array.Any(ContainsCompensationScope);
+        return node is JsonObject activity &&
+               (IsCompensationScopeActivity(GetString(activity, "type")) || IsOpaqueCompensationScope(activity));
     }
 
     public static bool IsOpaqueCompensationScope(JsonObject activity)
@@ -46,21 +28,37 @@ public static class NativeCompensationDraftCapability
         return GetString(activity, "missingTypeName") == "Elsa.CompensationScope" ||
                activity["originalActivityJson"] is JsonValue originalValue &&
                originalValue.TryGetValue<string>(out var originalJson) &&
-               ContainsCompensationScopeJson(originalJson);
+               ContainsCompensationScopeActivityRoot(originalJson);
     }
 
     public static bool ContainsUnsupportedCompensationScopeShape(JsonNode? node)
     {
-        if (node is JsonObject activity)
+        return node is JsonObject activity &&
+               (IsOpaqueCompensationScope(activity) ||
+                IsCompensationScopeActivity(GetString(activity, "type")) && !HasSupportedDraftShape(activity));
+    }
+
+    /// <summary>
+    /// Cheap marker precheck only. A positive result means the contextual graph classifier must inspect
+    /// the document; it does not establish that the marker is an activity edge.
+    /// </summary>
+    public static bool ContainsPotentialScopeMarker(JsonNode? node)
+    {
+        if (node is JsonObject obj)
         {
-            if (IsOpaqueCompensationScope(activity) ||
-                GetString(activity, "type") == "Elsa.CompensationScope" && !HasSupportedDraftShape(activity))
+            if (IsCompensationScopeActivity(GetString(obj, "type")) ||
+                string.Equals(GetString(obj, "type"), "Elsa.NotFoundActivity", StringComparison.Ordinal) &&
+                IsCompensationScopeActivity(GetString(obj, "missingTypeName")))
                 return true;
 
-            return activity.Any(x => ContainsUnsupportedCompensationScopeShape(x.Value));
+            if (string.Equals(GetString(obj, "type"), "Elsa.NotFoundActivity", StringComparison.Ordinal) &&
+                TryParseOriginalActivity(obj, out var original) && ContainsPotentialScopeMarker(original))
+                return true;
+
+            return obj.Any(property => ContainsPotentialScopeMarker(property.Value));
         }
 
-        return node is JsonArray array && array.Any(ContainsUnsupportedCompensationScopeShape);
+        return node is JsonArray array && array.Any(ContainsPotentialScopeMarker);
     }
 
     public static async Task<bool> IsEnabledAsync(IRemoteFeatureProvider? provider, CancellationToken cancellationToken = default) =>
@@ -123,7 +121,37 @@ public static class NativeCompensationDraftCapability
     {
         try
         {
-            return JsonNode.Parse(json) is { } original && ContainsCompensationScope(original);
+            return JsonNode.Parse(json) is { } original && ContainsPotentialScopeMarker(original);
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return false;
+        }
+    }
+
+    private static bool ContainsCompensationScopeActivityRoot(string json)
+    {
+        try
+        {
+            return JsonNode.Parse(json) is JsonObject activity &&
+                   (IsCompensationScopeActivity(GetString(activity, "type")) || IsOpaqueCompensationScope(activity));
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return false;
+        }
+    }
+
+    internal static bool TryParseOriginalActivity(JsonObject activity, out JsonNode? original)
+    {
+        original = null;
+        if (activity["originalActivityJson"] is not JsonValue value || !value.TryGetValue<string>(out var json))
+            return false;
+
+        try
+        {
+            original = JsonNode.Parse(json);
+            return original != null;
         }
         catch (System.Text.Json.JsonException)
         {
