@@ -20,12 +20,14 @@ public class WorkflowCanceler(
         await DemandUnownedAsync(workflowState.Id, cancellationToken);
         var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(serviceProvider, workflowGraph, workflowState, cancellationToken: cancellationToken);
         using var executionScope = WorkflowExecutionScope.Begin(workflowExecutionContext);
-        await CancelWorkflowAsync(workflowExecutionContext, cancellationToken);
-        return workflowStateExtractor.Extract(workflowExecutionContext);
+        return await CancelAsync(workflowExecutionContext, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task CancelWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken = default)
+    public Task CancelWorkflowAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken = default) =>
+        CancelAsync(workflowExecutionContext, cancellationToken);
+
+    private async Task<WorkflowState> CancelAsync(WorkflowExecutionContext workflowExecutionContext, CancellationToken cancellationToken)
     {
         var guard = serviceProvider.GetService(typeof(IWorkflowExecutionGuard)) as IWorkflowExecutionGuard ?? workflowExecutionContext.GetService<IWorkflowExecutionGuard>();
         if (guard != null)
@@ -41,7 +43,9 @@ public class WorkflowCanceler(
         pipelineBuilder.ReplaceTerminal<CancelWorkflowMiddleware>();
         var pipeline = pipelineBuilder.Build();
         await pipeline(workflowExecutionContext);
-        await mediator.SendAsync(new WorkflowCancelled(workflowExecutionContext.Id), cancellationToken);
+        var workflowState = workflowStateExtractor.Extract(workflowExecutionContext);
+        await mediator.SendAsync(new WorkflowCancelled(workflowExecutionContext.Id) { WorkflowState = workflowState }, cancellationToken);
+        return workflowState;
     }
 
     private async ValueTask DemandUnownedAsync(string instanceId, CancellationToken cancellationToken)
