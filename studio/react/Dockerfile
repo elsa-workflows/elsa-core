@@ -16,6 +16,7 @@ RUN --mount=type=secret,id=build-ca \
     pnpm build
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+ARG ELSA_VERSION=3.11.0
 WORKDIR /source
 COPY Directory.Build.props Directory.Build.targets Directory.Packages.props NuGet.Config icon.png ./
 COPY build/ConsolidatedPackageProof.targets build/
@@ -26,12 +27,13 @@ COPY --from=assets /frontend/dist studio/react/dist/
 COPY --from=assets /frontend/module-assets/ studio/react/dotnet/modules/
 RUN --mount=type=secret,id=build-ca \
     if [ -f /run/secrets/build-ca ]; then export SSL_CERT_FILE=/run/secrets/build-ca; fi; \
-    dotnet publish studio/react/dotnet/Elsa.ReactStudio.Server/Elsa.ReactStudio.Server.csproj -c Release -o /output -p:UseAppHost=false && \
+    dotnet publish studio/react/dotnet/Elsa.ReactStudio.Server/Elsa.ReactStudio.Server.csproj -c Release -o /output -p:UseAppHost=false -p:Version=$ELSA_VERSION && \
     chmod -R a+rX /output
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+ARG ELSA_VERSION=3.11.0
 LABEL org.opencontainers.image.title="Elsa React Studio Preview" \
-      org.opencontainers.image.version="3.11.0" \
+      org.opencontainers.image.version="$ELSA_VERSION" \
       org.opencontainers.image.source="https://github.com/elsa-workflows/elsa-core"
 WORKDIR /app
 ENV ASPNETCORE_HTTP_PORTS=8080

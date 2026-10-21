@@ -1,0 +1,86 @@
+# Release-owned preparation for #8857/#8858. Publication is inert until the
+# release program enables REACT_STUDIO_PUBLISH_ENABLED and protects the
+# react-studio-release environment with Release reviewers and tag restrictions.
+name: React Studio Preview release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Lockstep version (3.11.0-preview.N first, then 3.11.0)
+        required: true
+        type: string
+      publish:
+        description: Publish the approved matching release tag (requires Release cutover)
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: react-studio-release
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.selection.outputs.version }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate version and publication authority
+        id: selection
+        env:
+          VERSION: ${{ inputs.version }}
+          PUBLISH: ${{ inputs.publish }}
+          PUBLISH_ENABLED: ${{ vars.REACT_STUDIO_PUBLISH_ENABLED }}
+        run: python3 studio/react/scripts/validate-release-selection.py
+      - name: Require the publication tag to be merged into main
+        if: inputs.publish
+        run: git merge-base --is-ancestor HEAD origin/main
+
+  image:
+    needs: prepare
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    environment: ${{ inputs.publish && 'react-studio-release' || '' }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - name: Log in to Docker Hub after Release approval
+        if: inputs.publish
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          username: ${{ secrets.DOCKER_USER }}
+          password: ${{ secrets.DOCKER_PASS }}
+      - name: Build the exact Preview image with provenance and SBOM
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          file: studio/react/Dockerfile
+          platforms: linux/amd64
+          push: ${{ inputs.publish }}
+          outputs: ${{ !inputs.publish && format('type=oci,dest={0}/react-studio-preview.tar', runner.temp) || '' }}
+          tags: elsaworkflows/elsa-react-studio:${{ needs.prepare.outputs.version }}
+          build-args: ELSA_VERSION=${{ needs.prepare.outputs.version }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.ref.name=${{ github.ref_name }}
+          provenance: mode=max
+          sbom: true
+      - name: Retain the prepared image without publishing
+        if: '!inputs.publish'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: react-studio-image-${{ needs.prepare.outputs.version }}
+          path: ${{ runner.temp }}/react-studio-preview.tar
+          if-no-files-found: error
+          retention-days: 7
