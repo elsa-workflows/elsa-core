@@ -395,17 +395,21 @@ test('native compensation draft persists two paired rows and refuses UI publish'
     await expect.poll(async () => {
       const valuesBefore = [await username.inputValue(), await password.inputValue()];
       if (valuesBefore.some(value => value !== ''))
-        return { valuesBefore, valuesAfter: valuesBefore, invalid: [null, null] };
+        return { emptyBefore: false, emptyAfter: false, usernameInvalid: false, passwordInvalid: false };
 
       await signIn.click();
       const valuesAfter = [await username.inputValue(), await password.inputValue()];
-      const invalid = [await username.getAttribute('aria-invalid'), await password.getAttribute('aria-invalid')];
-      return { valuesBefore, valuesAfter, invalid };
+      return {
+        emptyBefore: true,
+        emptyAfter: valuesAfter.every(value => value === ''),
+        usernameInvalid: (await username.getAttribute('aria-invalid')) === 'true',
+        passwordInvalid: (await password.getAttribute('aria-invalid')) === 'true'
+      };
     }, {
       message: 'Wait for interactive login validation before entering credentials',
       timeout: 15_000,
       intervals: [100, 250, 500]
-    }).toEqual({ valuesBefore: ['', ''], valuesAfter: ['', ''], invalid: ['true', 'true'] });
+    }).toEqual({ emptyBefore: true, emptyAfter: true, usernameInvalid: true, passwordInvalid: true });
 
     await username.fill(adminUsername);
     await password.fill(adminPassword);
