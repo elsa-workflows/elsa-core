@@ -103,6 +103,27 @@ public sealed class TreeviewActivityPickerTests : BunitContext, IAsyncLifetime
         Assert.Equal(1, _featureProvider.FreshCheckCount);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CategoryDragStartDoesNotClearTheLeafPayload(bool native)
+    {
+        _featureProvider.Enabled = native;
+        Render<MudPopoverProvider>();
+        var cut = Render<ActivityPicker>();
+        var dragDropManager = new DragDropManager();
+        cut.Instance.DragDropManager = dragDropManager;
+        var descriptor = native ? _compensationScope : _ordinaryActivity;
+
+        await cut.InvokeAsync(() => InvokeDragStartAsync(cut.Instance, descriptor));
+        Assert.Same(descriptor, dragDropManager.Payload);
+
+        // MudTreeViewItem raises dragstart on its parent category as the event bubbles.
+        await cut.InvokeAsync(() => InvokeDragStartAsync(cut.Instance, null));
+
+        Assert.Same(descriptor, dragDropManager.Payload);
+    }
+
     [Fact]
     public async Task NativeDragstartDoesNotWaitForAnotherFeatureCheck()
     {
@@ -162,7 +183,7 @@ public sealed class TreeviewActivityPickerTests : BunitContext, IAsyncLifetime
         }
     }
 
-    private static Task InvokeDragStartAsync(ActivityPicker picker, ActivityDescriptor descriptor) =>
+    private static Task InvokeDragStartAsync(ActivityPicker picker, ActivityDescriptor? descriptor) =>
         (Task)typeof(ActivityPicker).GetMethod("OnDragStart", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
             .Invoke(picker, [descriptor])!;
 

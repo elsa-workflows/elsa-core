@@ -138,10 +138,14 @@ public partial class ActivityPicker
 
     private Task OnDragStart(ActivityDescriptor? activityDescriptor)
     {
+        // Category items bubble the same dragstart event as their activity children. They do not
+        // own a descriptor, so leave the leaf's payload untouched.
+        if (activityDescriptor == null)
+            return Task.CompletedTask;
+
         // Native descriptors can only be dragged if they survived the current filtered picker view.
         // Creation boundaries repeat the fresh check, so dragstart stays synchronous and cannot lose a drop.
-        var nativeDescriptorIsOffered = activityDescriptor == null ||
-                                        !NativeCompensationDraftCapability.IsCompensationScopeActivity(activityDescriptor.TypeName) ||
+        var nativeDescriptorIsOffered = !NativeCompensationDraftCapability.IsCompensationScopeActivity(activityDescriptor.TypeName) ||
                                         ActivityDescriptors.Any(x => ReferenceEquals(x, activityDescriptor));
         DragDropManager.Payload = nativeDescriptorIsOffered ? activityDescriptor : null;
         return Task.CompletedTask;
