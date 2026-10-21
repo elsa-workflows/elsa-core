@@ -91,6 +91,8 @@ public class BulkDispatchWorkflows : Activity
 
     /// <summary>
     /// True to wait for the child workflow to complete before completing this activity, false to "fire and forget".
+    /// A waiting activity counts a child once it is finished, whether it finished successfully, faulted or was cancelled,
+    /// including a cancellation through the cancellation API.
     /// </summary>
     [Input(
         Description = "Wait for the dispatched workflows to complete before completing this activity.",
