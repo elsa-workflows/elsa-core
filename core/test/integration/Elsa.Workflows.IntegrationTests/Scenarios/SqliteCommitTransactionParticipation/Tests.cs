@@ -392,6 +392,7 @@ internal sealed class SharedCommitTransactionState(SqliteCommitCommandIntercepto
 {
     public SqliteCommitCommandInterceptor Commands { get; } = commands;
     public DbTransaction? Transaction { get; set; }
+    public long CurrentCommitAttemptId { get; private set; }
     public bool UseSharedTransaction { get; set; } = true;
     public int CompletedTransactions { get; set; }
     public int CommittedTransactions { get; set; }
@@ -401,12 +402,14 @@ internal sealed class SharedCommitTransactionState(SqliteCommitCommandIntercepto
     public long BeginCommitAttempt(DbTransaction? transaction)
     {
         Transaction = transaction;
-        return commands.BeginCommitAttempt(transaction);
+        CurrentCommitAttemptId = commands.BeginCommitAttempt(transaction);
+        return CurrentCommitAttemptId;
     }
 
     public void EndCommitAttempt()
     {
         Transaction = null;
+        CurrentCommitAttemptId = 0;
         commands.EndCommitAttempt();
     }
 }
@@ -472,7 +475,7 @@ internal sealed class SharedSqliteCommitTransaction(SqliteConnection connection,
         state.ConditionalUpdateRowsAffected = Convert.ToInt32(await command.ExecuteScalarAsync(cancellationToken));
     }
 
-    private bool CommandsExecutedConditionalUpdate() => state.Commands.ConditionalUpdateWasApplied;
+    private bool CommandsExecutedConditionalUpdate() => state.Commands.HasConditionalUpdate(state.CurrentCommitAttemptId);
 }
 
 internal sealed class SharedTransactionDbContextFactory<TContext>(IDbContextFactory<TContext> inner, SharedCommitTransactionState state) : IDbContextFactory<TContext>
@@ -556,6 +559,9 @@ internal sealed class SqliteCommitCommandInterceptor : DbCommandInterceptor
 
     public IReadOnlyList<CommitObservation> GetResumeCommitAttempts() =>
         _commits.Values.Where(x => x.Id >= _resumeFirstCommitAttemptId).OrderBy(x => x.Id).ToArray();
+
+    public bool HasConditionalUpdate(long commitAttemptId) =>
+        _commits.TryGetValue(commitAttemptId, out var commit) && commit.ConditionalUpdates.Count > 0;
 
     public override ValueTask<InterceptionResult<int>> NonQueryExecutingAsync(DbCommand command, CommandEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
     {
