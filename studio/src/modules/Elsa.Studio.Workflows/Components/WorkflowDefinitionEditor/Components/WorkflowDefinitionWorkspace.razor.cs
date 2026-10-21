@@ -151,27 +151,48 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
     /// <inheritdoc />
     protected override Task OnParametersSetAsync() => RefreshNativeCompensationDraftCapabilityAsync();
 
-    private async Task RefreshNativeCompensationDraftCapabilityAsync()
+    private async Task RefreshNativeCompensationDraftCapabilityAsync(bool force = false)
     {
-        _compensationCapabilityCheck?.Cancel();
-        _compensationCapabilityCheck?.Dispose();
-        _compensationCapabilityCheck = null;
-
-        if (!NativeCompensationDraftCapability.ContainsCompensationScope(_selectedWorkflowDefinition?.Root))
+        var documentContextKey = _compensationDocumentContextKey;
+        if (documentContextKey == null)
         {
+            CancelNativeCompensationDraftCapabilityCheck();
             _nativeCompensationDraftCapabilityEnabled = false;
             _compensationCapabilityContextKey = null;
             return;
         }
 
+        var backendContextKey = BackendApiClientProvider.ContextKey;
+        var canRetainCapability = _nativeCompensationDraftCapabilityEnabled &&
+                                  _compensationCapabilityContextKey == backendContextKey &&
+                                  !_nativeCompensationDraftContextInvalidated;
+        if (documentContextKey != backendContextKey)
+        {
+            CancelNativeCompensationDraftCapabilityCheck();
+            _nativeCompensationDraftCapabilityEnabled = false;
+            _compensationCapabilityContextKey = null;
+            return;
+        }
+
+        if (!force && canRetainCapability)
+            return;
+
+        if (!force && _compensationCapabilityCheck is { IsCancellationRequested: false } &&
+            _compensationCapabilityContextKey == backendContextKey)
+            return;
+
+        CancelNativeCompensationDraftCapabilityCheck();
+        _compensationCapabilityContextKey = backendContextKey;
+
         var cancellationSource = new CancellationTokenSource();
         _compensationCapabilityCheck = cancellationSource;
         var generation = ++_compensationCapabilityGeneration;
-        var backendContextKey = BackendApiClientProvider.ContextKey;
-        _compensationCapabilityContextKey = backendContextKey;
-        _nativeCompensationDraftCapabilityEnabled = false;
-        if (_compensationDocumentContextKey == null || _compensationDocumentContextKey != backendContextKey)
-            return;
+
+        // Check an ordinary, origin-bound document before it can gain its first native scope. Once a
+        // fresh result exists for this backend, retain it while a server save response is adopted or
+        // the graph first exposes the scope; clearing it mid-interaction would unmount the editor.
+        if (!canRetainCapability)
+            _nativeCompensationDraftCapabilityEnabled = false;
 
         bool capabilityEnabled;
         try
@@ -181,30 +202,54 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
         }
         catch (OperationCanceledException) when (cancellationSource.IsCancellationRequested)
         {
+            ReleaseNativeCompensationDraftCapabilityCheck(cancellationSource);
             return;
         }
+        catch
+        {
+            ReleaseNativeCompensationDraftCapabilityCheck(cancellationSource);
+            throw;
+        }
 
-        if (generation != _compensationCapabilityGeneration ||
-            !ReferenceEquals(_compensationCapabilityCheck, cancellationSource) ||
-            BackendApiClientProvider.ContextKey != backendContextKey)
+        var isCurrentCheck = generation == _compensationCapabilityGeneration &&
+                             ReferenceEquals(_compensationCapabilityCheck, cancellationSource);
+        ReleaseNativeCompensationDraftCapabilityCheck(cancellationSource);
+
+        if (!isCurrentCheck || BackendApiClientProvider.ContextKey != backendContextKey)
             return;
 
         _nativeCompensationDraftCapabilityEnabled = capabilityEnabled && !_nativeCompensationDraftContextInvalidated;
     }
 
+    private void CancelNativeCompensationDraftCapabilityCheck()
+    {
+        _compensationCapabilityCheck?.Cancel();
+        _compensationCapabilityCheck?.Dispose();
+        _compensationCapabilityCheck = null;
+    }
+
+    private void ReleaseNativeCompensationDraftCapabilityCheck(CancellationTokenSource cancellationSource)
+    {
+        if (ReferenceEquals(_compensationCapabilityCheck, cancellationSource))
+            _compensationCapabilityCheck = null;
+
+        cancellationSource.Dispose();
+    }
+
     private void OnBackendContextChanged() => _ = InvokeAsync(async () =>
     {
-        if (!NativeCompensationDraftCapability.ContainsCompensationScope(_selectedWorkflowDefinition?.Root))
-            return;
+        if (NativeCompensationDraftCapability.ContainsCompensationScope(_selectedWorkflowDefinition?.Root))
+        {
+            _nativeCompensationDraftContextInvalidated = true;
+            if (WorkflowEditor != null)
+                WorkflowEditor.InvalidateWorkflowDefinitionOperations();
 
-        _nativeCompensationDraftContextInvalidated = true;
-        if (WorkflowEditor != null)
-            WorkflowEditor.InvalidateWorkflowDefinitionOperations();
+            _workflowDefinitionReloadVersion++;
+            _nativeCompensationDraftReloadError = null;
+        }
 
-        _workflowDefinitionReloadVersion++;
         _nativeCompensationDraftCapabilityEnabled = false;
         _compensationCapabilityContextKey = null;
-        _nativeCompensationDraftReloadError = null;
         StateHasChanged();
         await RefreshNativeCompensationDraftCapabilityAsync();
         StateHasChanged();
@@ -337,8 +382,13 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
 
     private async Task OnWorkflowDefinitionUpdated()
     {
-        _workflowDefinition = WorkflowEditor.WorkflowDefinition!;
+        var updatedWorkflowDefinition = WorkflowEditor.WorkflowDefinition!;
+        var isDefinitionReplacement = !ReferenceEquals(_selectedWorkflowDefinition, updatedWorkflowDefinition);
+        _workflowDefinition = updatedWorkflowDefinition;
         _selectedWorkflowDefinition = _workflowDefinition;
+        _compensationDocumentContextKey = GetCompensationDocumentContextKey(_selectedWorkflowDefinition);
+        if (isDefinitionReplacement)
+            await RefreshNativeCompensationDraftCapabilityAsync(force: true);
         await InvokeAsync(StateHasChanged);
     }
 

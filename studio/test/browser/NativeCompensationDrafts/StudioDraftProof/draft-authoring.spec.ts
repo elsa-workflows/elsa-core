@@ -188,6 +188,7 @@ async function setSelectedChildLiteral(page: Page, row: Locator, childRole: 'for
   const textInput = page.getByLabel('Text', { exact: true });
   await textInput.waitFor({ state: 'visible', timeout: 8_000 });
   await textInput.fill(value);
+  await textInput.press('Tab');
   await expect(textInput).toHaveValue(value);
 }
 

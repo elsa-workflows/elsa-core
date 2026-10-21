@@ -1,6 +1,8 @@
 ﻿using Elsa.Api.Client.Resources.ActivityDescriptors.Models;
+using Elsa.Studio.Contracts;
 using Elsa.Studio.Workflows.Domain.Contracts;
 using Elsa.Studio.Workflows.Domain.Extensions;
+using Elsa.Studio.Workflows.Domain.Models;
 using Elsa.Studio.Workflows.Models;
 using Elsa.Studio.Workflows.UI.Contracts;
 using Microsoft.AspNetCore.Components;
@@ -15,6 +17,7 @@ public partial class ActivityPicker
 {
     private bool _expanded;
     private string _searchText = "";
+    private long _dragGeneration;
     private MudTreeView<string> _treeView = null!;
     private readonly List<ITreeItemData<string>> _treeItemData = [];
 
@@ -27,6 +30,8 @@ public partial class ActivityPicker
 
     [Inject] private IActivityRegistry ActivityRegistry { get; set; } = default!;
     [Inject] private IActivityDisplaySettingsRegistry ActivityDisplaySettingsRegistry { get; set; } = default!;
+    [Inject] private IRemoteFeatureProvider RemoteFeatureProvider { get; set; } = default!;
+    [Inject] private IBackendApiClientProvider BackendApiClientProvider { get; set; } = default!;
 
 
     /// <inheritdoc />
@@ -38,7 +43,15 @@ public partial class ActivityPicker
     private async Task Refresh()
     {
         await ActivityRegistry.EnsureLoadedAsync();
-        ActivityDescriptors = ActivityRegistry.ListBrowsable();
+        var descriptors = ActivityRegistry.ListBrowsable();
+        var backendContextKey = BackendApiClientProvider.ContextKey;
+        var supportsCompensationDrafts =
+            await NativeCompensationDraftCapability.IsEnabledForContextAsync(
+                RemoteFeatureProvider, BackendApiClientProvider, backendContextKey) &&
+            BackendApiClientProvider.ContextKey == backendContextKey;
+        ActivityDescriptors = supportsCompensationDrafts
+            ? descriptors
+            : descriptors.Where(x => !string.Equals(x.TypeName, "Elsa.CompensationScope", StringComparison.Ordinal));
         BuildTree();
         StateHasChanged();
     }
@@ -124,8 +137,27 @@ public partial class ActivityPicker
         return Task.FromResult(item.CategoryPath.Contains(_searchText, StringComparison.OrdinalIgnoreCase) || (item.Text?.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ?? false));
     }
 
-    private void OnDragStart(ActivityDescriptor activityDescriptor)
+    private async Task OnDragStart(ActivityDescriptor? activityDescriptor)
     {
+        var dragGeneration = ++_dragGeneration;
+        // A newer drag owns the shared payload, even while an older native capability check is pending.
+        DragDropManager.Payload = null;
+
+        if (activityDescriptor == null)
+            return;
+
+        if (string.Equals(activityDescriptor.TypeName, "Elsa.CompensationScope", StringComparison.Ordinal))
+        {
+            var backendContextKey = BackendApiClientProvider.ContextKey;
+            if (!await NativeCompensationDraftCapability.IsEnabledForContextAsync(
+                    RemoteFeatureProvider, BackendApiClientProvider, backendContextKey) ||
+                BackendApiClientProvider.ContextKey != backendContextKey)
+                return;
+        }
+
+        if (dragGeneration != _dragGeneration)
+            return;
+
         DragDropManager.Payload = activityDescriptor;
     }
 }

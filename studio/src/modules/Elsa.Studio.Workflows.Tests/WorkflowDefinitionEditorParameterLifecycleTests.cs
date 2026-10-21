@@ -47,6 +47,193 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
     }
 
     [Fact]
+    public async Task WorkspacePreflightsCapabilityForAnOrdinaryOriginBoundDefinitionBeforeItsFirstNativeScope()
+    {
+        await using var context = CreateContext();
+        var backend = new MutableBackendApiClientProvider("context-A");
+        var featureProvider = new EnabledRemoteFeatureProvider();
+        context.Services.AddSingleton<IBackendApiClientProvider>(backend);
+        context.Services.AddSingleton<IRemoteFeatureProvider>(featureProvider);
+        var definition = CreateDefinition("ordinary definition", "version-a");
+        definition.Root = System.Text.Json.Nodes.JsonNode.Parse("""{"id":"write-1","nodeId":"write-1","type":"Elsa.WriteLine","version":1}""")!.AsObject();
+        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, "context-A"));
+
+        var cut = RenderWorkspace(context, definition, definition);
+
+        Assert.Equal(1, featureProvider.FreshCheckCount);
+        Assert.False(cut.Instance.IsReadOnly);
+
+        definition.Root = CreateNativeCompensationScope();
+        cut.Render(parameters => parameters
+            .Add(x => x.WorkflowDefinition, definition)
+            .Add(x => x.SelectedWorkflowDefinition, definition));
+
+        Assert.False(cut.Instance.IsReadOnly);
+        Assert.Single(cut.FindComponents<WorkflowEditor>());
+        Assert.Equal(1, featureProvider.FreshCheckCount);
+    }
+
+    [Fact]
+    public async Task WorkspaceRetriesACompletedNegativeCapabilityCheckForTheSameOrigin()
+    {
+        await using var context = CreateContext();
+        var backend = new MutableBackendApiClientProvider("context-A");
+        var featureProvider = new EnabledRemoteFeatureProvider(false);
+        context.Services.AddSingleton<IBackendApiClientProvider>(backend);
+        context.Services.AddSingleton<IRemoteFeatureProvider>(featureProvider);
+        var definition = CreateDefinition("ordinary definition", "version-a");
+        definition.Root = System.Text.Json.Nodes.JsonNode.Parse("""{"id":"write-1","nodeId":"write-1","type":"Elsa.WriteLine","version":1}""")!.AsObject();
+        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, "context-A"));
+        var cut = RenderWorkspace(context, definition, definition);
+
+        Assert.Equal(1, featureProvider.FreshCheckCount);
+        definition.Root = CreateNativeCompensationScope();
+        featureProvider.Enabled = true;
+        cut.Render(parameters => parameters
+            .Add(x => x.WorkflowDefinition, definition)
+            .Add(x => x.SelectedWorkflowDefinition, definition));
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.False(cut.Instance.IsReadOnly);
+            Assert.Single(cut.FindComponents<WorkflowEditor>());
+        });
+        Assert.Equal(2, featureProvider.FreshCheckCount);
+    }
+
+    [Fact]
+    public async Task WorkspaceAdoptsValidOriginFromAnInternalNativeSaveResponseBeforeRendering()
+    {
+        await using var context = CreateContext();
+        var backend = new MutableBackendApiClientProvider("context-A");
+        var featureProvider = new EnabledRemoteFeatureProvider();
+        context.Services.AddSingleton<IBackendApiClientProvider>(backend);
+        context.Services.AddSingleton<IRemoteFeatureProvider>(featureProvider);
+        var definition = CreateDefinition("ordinary definition", "version-a");
+        definition.Root = System.Text.Json.Nodes.JsonNode.Parse("""{"id":"write-1","nodeId":"write-1","type":"Elsa.WriteLine","version":1}""")!.AsObject();
+        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, "context-A"));
+        var cut = RenderWorkspace(context, definition, definition);
+
+        definition.Root = CreateNativeCompensationScope();
+        Assert.False(cut.Instance.IsReadOnly);
+        var editor = cut.FindComponent<WorkflowEditor>().Instance;
+        var saveTask = InvokeSaveAsync(editor);
+        var pendingSave = await context.Services.GetRequiredService<DelayedWorkflowDefinitionEditorService>().SaveStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var savedDefinition = CreateDefinition("saved native definition", "version-b");
+        savedDefinition.Root = CreateNativeCompensationScope();
+        Assert.True(NativeCompensationDraftDocumentContext.TryBind(savedDefinition, "context-A"));
+
+        await pendingSave.CompleteSuccessAsync(savedDefinition);
+        await saveTask.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.Same(savedDefinition, cut.Instance.GetSelectedDefinition());
+        Assert.Equal("context-A", NativeCompensationDraftDocumentContext.GetBackendContextKey(savedDefinition));
+        Assert.False(cut.Instance.IsReadOnly);
+        Assert.Single(cut.FindComponents<WorkflowEditor>());
+        Assert.Equal(2, featureProvider.FreshCheckCount);
+    }
+
+    [Fact]
+    public async Task RepeatedCapabilityRefreshDoesNotCancelTheFreshCheckForAnAdoptedSaveResponse()
+    {
+        await using var context = CreateContext();
+        var backend = new MutableBackendApiClientProvider("context-A");
+        var featureProvider = new EnabledRemoteFeatureProvider();
+        context.Services.AddSingleton<IBackendApiClientProvider>(backend);
+        context.Services.AddSingleton<IRemoteFeatureProvider>(featureProvider);
+        var definition = CreateDefinition("ordinary definition", "version-a");
+        definition.Root = System.Text.Json.Nodes.JsonNode.Parse("""{"id":"write-1","nodeId":"write-1","type":"Elsa.WriteLine","version":1}""")!.AsObject();
+        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, "context-A"));
+        var cut = RenderWorkspace(context, definition, definition);
+
+        definition.Root = CreateNativeCompensationScope();
+        var editor = cut.FindComponent<WorkflowEditor>().Instance;
+        var saveTask = InvokeSaveAsync(editor);
+        var pendingSave = await context.Services.GetRequiredService<DelayedWorkflowDefinitionEditorService>().SaveStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var savedDefinition = CreateDefinition("saved native definition", "version-b");
+        savedDefinition.Root = CreateNativeCompensationScope();
+        Assert.True(NativeCompensationDraftDocumentContext.TryBind(savedDefinition, "context-A"));
+        var capabilityResponse = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        featureProvider.FreshCheck = () => capabilityResponse.Task;
+
+        var saveResponseTask = pendingSave.CompleteSuccessAsync(savedDefinition);
+        await featureProvider.DeferredCheckStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        await cut.InvokeAsync(() => InvokeCapabilityRefreshAsync(cut.Instance));
+        capabilityResponse.SetResult(false);
+        await saveResponseTask.WaitAsync(TimeSpan.FromSeconds(5));
+        await saveTask.WaitAsync(TimeSpan.FromSeconds(5));
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.True(cut.Instance.IsReadOnly);
+            Assert.Empty(cut.FindComponents<WorkflowEditor>());
+            Assert.Single(cut.FindComponents<WorkflowDefinitionVersionViewer>());
+            Assert.Same(savedDefinition, cut.Instance.GetSelectedDefinition());
+        });
+        Assert.Equal(2, featureProvider.FreshCheckCount);
+    }
+
+    [Fact]
+    public async Task WorkspaceHidesNativeDraftWhenAnInternalReplacementHasAStaleOrigin()
+    {
+        await using var context = CreateContext();
+        var backend = new MutableBackendApiClientProvider("context-A");
+        var featureProvider = new EnabledRemoteFeatureProvider();
+        context.Services.AddSingleton<IBackendApiClientProvider>(backend);
+        context.Services.AddSingleton<IRemoteFeatureProvider>(featureProvider);
+        var definition = CreateDefinition("ordinary definition", "version-a");
+        definition.Root = System.Text.Json.Nodes.JsonNode.Parse("""{"id":"write-1","nodeId":"write-1","type":"Elsa.WriteLine","version":1}""")!.AsObject();
+        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, "context-A"));
+        var cut = RenderWorkspace(context, definition, definition);
+
+        definition.Root = CreateNativeCompensationScope();
+        var editor = cut.FindComponent<WorkflowEditor>().Instance;
+        var saveTask = InvokeSaveAsync(editor);
+        var pendingSave = await context.Services.GetRequiredService<DelayedWorkflowDefinitionEditorService>().SaveStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var staleDefinition = CreateDefinition("stale native definition", "version-b");
+        staleDefinition.Root = CreateNativeCompensationScope();
+        Assert.True(NativeCompensationDraftDocumentContext.TryBind(staleDefinition, "context-B"));
+
+        await pendingSave.CompleteSuccessAsync(staleDefinition);
+        await saveTask.WaitAsync(TimeSpan.FromSeconds(5));
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("This compensation draft was loaded from a different backend context", cut.Markup, StringComparison.OrdinalIgnoreCase);
+            Assert.Empty(cut.FindComponents<WorkflowEditor>());
+            Assert.Same(staleDefinition, cut.Instance.GetSelectedDefinition());
+            Assert.Equal("context-B", NativeCompensationDraftDocumentContext.GetBackendContextKey(staleDefinition));
+        });
+    }
+
+    [Fact]
+    public async Task WorkspaceKeepsFirstNativeScopeReadOnlyWhenFreshCapabilityIsUnavailable()
+    {
+        await using var context = CreateContext();
+        var backend = new MutableBackendApiClientProvider("context-A");
+        var featureProvider = new EnabledRemoteFeatureProvider(false);
+        context.Services.AddSingleton<IBackendApiClientProvider>(backend);
+        context.Services.AddSingleton<IRemoteFeatureProvider>(featureProvider);
+        var definition = CreateDefinition("ordinary definition", "version-a");
+        definition.Root = System.Text.Json.Nodes.JsonNode.Parse("""{"id":"write-1","type":"Elsa.WriteLine","version":1}""")!.AsObject();
+        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, "context-A"));
+        var cut = RenderWorkspace(context, definition, definition);
+
+        definition.Root = CreateNativeCompensationScope();
+        cut.Render(parameters => parameters
+            .Add(x => x.WorkflowDefinition, definition)
+            .Add(x => x.SelectedWorkflowDefinition, definition));
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.True(cut.Instance.IsReadOnly);
+            Assert.Empty(cut.FindComponents<WorkflowEditor>());
+            Assert.Single(cut.FindComponents<WorkflowDefinitionVersionViewer>());
+        });
+    }
+
+    [Fact]
     public async Task WorkspaceHidesAnOriginBoundCompensationDraftAfterContextSwitchUntilExplicitReload()
     {
         await using var context = CreateContext();
@@ -441,6 +628,9 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
         Links = [new(string.Empty, "publish", string.Empty)]
     };
 
+    private static System.Text.Json.Nodes.JsonObject CreateNativeCompensationScope() =>
+        System.Text.Json.Nodes.JsonNode.Parse("""{"id":"scope-a","nodeId":"scope-a","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}""")!.AsObject();
+
     [Fact]
     public async Task WorkspaceReplacementRejectsAnInFlightSaveResponse()
     {
@@ -493,6 +683,12 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
     {
         var method = typeof(WorkflowEditor).GetMethod("RetractAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
         return (Task)method.Invoke(editor, new object?[] { null, null })!;
+    }
+
+    private static Task InvokeCapabilityRefreshAsync(WorkflowDefinitionWorkspace workspace)
+    {
+        var method = typeof(WorkflowDefinitionWorkspace).GetMethod("RefreshNativeCompensationDraftCapabilityAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        return (Task)method.Invoke(workspace, [false])!;
     }
 
     private sealed class TestWorkflowEditor : WorkflowEditor
@@ -587,14 +783,29 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
         }
     }
 
-    private sealed class EnabledRemoteFeatureProvider : IRemoteFeatureProvider, IRemoteFeatureProviderWithFreshCheck
+    private sealed class EnabledRemoteFeatureProvider(bool enabled = true) : IRemoteFeatureProvider, IRemoteFeatureProviderWithFreshCheck
     {
+        public bool Enabled { get; set; } = enabled;
+        public Func<Task<bool>>? FreshCheck { get; set; }
+        public TaskCompletionSource DeferredCheckStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public int FreshCheckCount { get; private set; }
+
         public Task<bool> IsEnabledAsync(string featureName, CancellationToken cancellationToken = default) => Task.FromResult(true);
 
         public Task<IEnumerable<Elsa.Api.Client.Resources.Features.Models.FeatureDescriptor>> ListAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult<IEnumerable<Elsa.Api.Client.Resources.Features.Models.FeatureDescriptor>>([]);
 
-        public Task<bool> IsEnabledFreshAsync(string featureName, CancellationToken cancellationToken = default) => Task.FromResult(true);
+        public Task<bool> IsEnabledFreshAsync(string featureName, CancellationToken cancellationToken = default)
+        {
+            FreshCheckCount++;
+            if (FreshCheck is { } freshCheck)
+            {
+                DeferredCheckStarted.TrySetResult();
+                return freshCheck();
+            }
+
+            return Task.FromResult(Enabled);
+        }
     }
 
     private sealed class DeferredFreshFeatureProvider : IRemoteFeatureProvider, IRemoteFeatureProviderWithFreshCheck
@@ -653,7 +864,7 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
         }
     }
 
-    private sealed class DelayedWorkflowDefinitionEditorService : IWorkflowDefinitionEditorService
+    private sealed class DelayedWorkflowDefinitionEditorService : IWorkflowDefinitionEditorService, IContextBoundWorkflowDefinitionEditorService
     {
         public TaskCompletionSource<PendingSave> SaveStarted { get; } = NewCompletionSource<PendingSave>();
         public TaskCompletionSource<PendingRetract> RetractStarted { get; } = NewCompletionSource<PendingRetract>();
@@ -664,6 +875,9 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
             SaveStarted.TrySetResult(pending);
             return pending.Completion.Task;
         }
+
+        public Task<Result<SaveWorkflowDefinitionResponse, ValidationErrors>> SaveNativeCompensationDraftAsync(WorkflowDefinition workflowDefinition, bool publish, string expectedBackendContextKey, Func<WorkflowDefinition, Task>? workflowSavedCallback = null, CancellationToken cancellationToken = default) =>
+            SaveAsync(workflowDefinition, publish, workflowSavedCallback, cancellationToken);
 
         public Task<SaveWorkflowDefinitionResponse> PublishAsync(WorkflowDefinition workflowDefinition, Func<WorkflowDefinition, Task>? workflowPublishedCallback = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
 

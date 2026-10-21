@@ -19,6 +19,7 @@ public partial class ActivityPicker
     public Func<string, string> CategoryDisplayResolver { get; set; } = null!;
 
     private string _searchText = "";
+    private long _dragGeneration;
 
     private IEnumerable<IGrouping<string, ActivityDescriptor>> GroupedActivityDescriptors
     {
@@ -73,13 +74,22 @@ public partial class ActivityPicker
 
     private async Task OnDragStart(ActivityDescriptor activityDescriptor)
     {
-        if (string.Equals(activityDescriptor.TypeName, "Elsa.CompensationScope", StringComparison.Ordinal) &&
-            !await NativeCompensationDraftCapability.IsEnabledForContextAsync(
-                RemoteFeatureProvider, BackendApiClientProvider, BackendApiClientProvider.ContextKey))
+        var dragGeneration = ++_dragGeneration;
+        // Clear any earlier drag before the awaited fresh check. A quick drop must not reuse an old payload.
+        DragDropManager.Payload = null;
+
+        var isCompensationScope = string.Equals(activityDescriptor.TypeName, "Elsa.CompensationScope", StringComparison.Ordinal);
+        if (isCompensationScope)
         {
-            DragDropManager.Payload = null;
-            return;
+            var backendContextKey = BackendApiClientProvider.ContextKey;
+            if (!await NativeCompensationDraftCapability.IsEnabledForContextAsync(
+                    RemoteFeatureProvider, BackendApiClientProvider, backendContextKey) ||
+                BackendApiClientProvider.ContextKey != backendContextKey)
+                return;
         }
+
+        if (dragGeneration != _dragGeneration)
+            return;
 
         DragDropManager.Payload = activityDescriptor;
     }
