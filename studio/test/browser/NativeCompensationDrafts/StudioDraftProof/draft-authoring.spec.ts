@@ -126,6 +126,34 @@ async function requireVisible(locator: Locator): Promise<void> {
   }
 }
 
+async function waitForDrawerState(drawer: Locator, expectedOpen: boolean): Promise<void> {
+  await expect.poll(async () =>
+    drawer.evaluate(element => element.classList.contains('mud-drawer--open')), {
+      message: 'Wait for the managed navigation drawer state',
+      timeout: 8_000,
+      intervals: [50, 100, 250]
+    }).toBe(expectedOpen);
+}
+
+async function verifyInteractiveStudioShell(page: Page): Promise<void> {
+  const toggle = page.getByRole('button', { name: 'Toggle navigation', exact: true });
+  const drawer = page.locator('.studio-drawer');
+  await requireVisible(toggle);
+  await drawer.waitFor({ state: 'attached', timeout: 8_000 });
+
+  const initiallyOpen = await drawer.evaluate(element => element.classList.contains('mud-drawer--open'));
+  try {
+    await toggle.click();
+    await waitForDrawerState(drawer, !initiallyOpen);
+  } finally {
+    const isOpen = await drawer.evaluate(element => element.classList.contains('mud-drawer--open')).catch(() => initiallyOpen);
+    if (isOpen !== initiallyOpen) {
+      await toggle.click();
+      await waitForDrawerState(drawer, initiallyOpen);
+    }
+  }
+}
+
 async function openCompensationScope(page: Page): Promise<Locator> {
   const scopeType = page.locator('.flowchart-diagram-designer-wrapper .activity-type')
     .filter({ hasText: /^\s*Compensation\s+Scope\s*$/i })
@@ -375,6 +403,8 @@ test.beforeEach(async ({ browser }) => {
 
 test('native compensation draft persists two paired rows and refuses UI publish', async ({ page }) => {
   test.setTimeout(150_000);
+  page.setDefaultTimeout(8_000);
+  page.setDefaultNavigationTimeout(15_000);
   await persistSafeResults();
 
   const workflowName = 'native-compensation-draft-' + randomUUID();
@@ -420,6 +450,7 @@ test('native compensation draft persists two paired rows and refuses UI publish'
   await assertion('NC-DRAFT-CREATE', 'workflow-create-or-navigation-failed', async () => {
     await page.goto('/workflows/definitions');
     await requireVisible(page.getByRole('heading', { name: 'Workflow definitions Editor' }));
+    await verifyInteractiveStudioShell(page);
     await page.getByRole('button', { name: 'Create workflow', exact: true }).click();
     const dialog = page.getByRole('dialog');
     await dialog.getByLabel('Name', { exact: true }).fill(workflowName);
@@ -451,6 +482,7 @@ test('native compensation draft persists two paired rows and refuses UI publish'
     const addStep = editor.getByRole('button', { name: 'Add compensation step', exact: true });
     const stepNames = editor.getByLabel('Step name', { exact: true });
     for (let index = 0; index < initialSteps.length; index++) {
+      await expect(addStep).toBeEnabled();
       await addStep.focus();
       await addStep.press('Enter');
       await expect(stepNames).toHaveCount(index + 1);
