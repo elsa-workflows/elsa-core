@@ -6,7 +6,7 @@ Status: proposed design for [#8896](https://github.com/elsa-workflows/elsa-core/
 
 Use Blazor components in focused Studio modules and existing activity descriptor/input/output editors. The StateMachine custom designer, embedded-activity resolver and validation are the precedent for owned forward/handler children; X6 activity-port providers map diagram connections, not paired composite slots. Extend the owning Workflows module through public contracts and notifications; do not reach into unrelated module internals. Preserve existing package/activity/serialization identities and supported Server/WebAssembly boundaries.
 
-The Elsa 4 paired-step semantics are reused, not its React/Vite components, structure facets, `enterSlotScope` APIs or runtime projections. E3 in the Core decision register must verify native child traversal/serialization and exact extension placement before code is ready.
+The Elsa 4 paired-step semantics are reused, not its React/Vite components, structure facets, `enterSlotScope` APIs or runtime projections. The reviewed E3 contract identifies native child traversal/serialization and exact extension placement for a bounded effect-free authoring prerequisite; its implementation must verify them through explicit draft round-trip, negative-publication and child-execution-refusal tests. Effect-capable M1 activation and acceptance still require integrated E1–E3 proof.
 
 ## Authoring — sequential
 
