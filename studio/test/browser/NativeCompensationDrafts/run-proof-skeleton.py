@@ -283,10 +283,15 @@ def refresh_browser_ownership(capture_path, ownership_path, runner_pid, runner_b
                 ownership["browserProcessSeen"] = True
             info = table.get(pid)
             if info is None:
-                if process_info(pid) is not None:
-                    raise StopProof("browser-process-identity-unreadable")
-                continue
-            if info["birthUnixMicros"] > observed_at * 1000:
+                info = read_owned_process_info(pid)
+                if info is None:
+                    continue
+                if info["birthUnixMicros"] > observed_at * 1000:
+                    # Do not add a PID reused after the CDP observation to the
+                    # table used for descendant ownership discovery.
+                    continue
+                table[pid] = info
+            elif info["birthUnixMicros"] > observed_at * 1000:
                 # This numeric PID was reused after the CDP observation. Never signal it.
                 continue
             related = ((info["pgid"] == runner_pid and info["sid"] == runner_pid) or
