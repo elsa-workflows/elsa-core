@@ -358,6 +358,13 @@ jobs:
         with:
           dotnet-version: 10.x
 
+      # NUKE builds the embedded React assets before Compile and Pack. Keep the
+      # existing 3.10 release base; React packages are eligible starting at 3.11.
+      - name: Set up Node for React Studio assets
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+
       - name: Compile+Pack
         run: ./build.sh Compile+Pack --version "${VERSION}" --analyseCode true
 

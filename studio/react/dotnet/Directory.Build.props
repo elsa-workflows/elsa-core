@@ -3,6 +3,7 @@
   <PropertyGroup>
     <Version>3.11.0</Version>
     <Description>Elsa React Studio Preview. Opt-in; the Blazor Studio remains the default.</Description>
+    <PackageTags>Elsa;ReactStudio;Preview</PackageTags>
     <!-- The source receipt records no donor license file. Do not turn the
          repository's default MIT metadata into a grant for imported materials. -->
     <PackageLicenseExpression />
