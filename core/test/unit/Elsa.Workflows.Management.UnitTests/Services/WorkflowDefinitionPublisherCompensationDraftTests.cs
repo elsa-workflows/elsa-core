@@ -305,14 +305,15 @@ public class WorkflowDefinitionPublisherCompensationDraftTests
         };
 
         var graph = await workflowDefinitionService.MaterializeWorkflowAsync(definition);
-        var opaqueScope = Assert.IsType<NotFoundActivity>(Assert.Single(graph.Nodes.Select(node => node.Activity).Where(activity => activity.Id == "scope-1")));
+        var opaqueScope = Assert.IsType<NotFoundActivity>(Assert.Single(graph.Nodes.Select(node => node.Activity), activity => activity.Id == "scope-1"));
         Assert.Equal(scopeJson, opaqueScope.OriginalActivityJson);
 
         var result = await scopedServices.GetRequiredService<IWorkflowDefinitionPublisher>().PublishAsync(definition);
 
         Assert.False(result.Succeeded);
-        Assert.Equal(CompensationScope.DraftOnlyDiagnosticCode, Assert.Single(result.ValidationErrors).Code);
-        Assert.Equal("scope-1", result.ValidationErrors[0].ActivityId);
+        var diagnostic = Assert.Single(result.ValidationErrors);
+        Assert.Equal(CompensationScope.DraftOnlyDiagnosticCode, diagnostic.Code);
+        Assert.Equal("scope-1", diagnostic.ActivityId);
     }
 
     public sealed class OpaquePayloadActivity : Activity
