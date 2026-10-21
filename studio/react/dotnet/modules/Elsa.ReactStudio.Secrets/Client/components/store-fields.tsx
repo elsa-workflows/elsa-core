@@ -34,7 +34,8 @@ const defaultsFor = (fields: SecretStoreFieldDescriptor[]) =>
  * used to carry, so any store — including ones this studio has never heard of — gets a usable form.
  */
 export function useStoreFields(store: SecretStoreDescriptor | undefined): StoreFieldsState {
-  const fields = useMemo(() => storeFields(store), [store]);
+  const t = useTranslation();
+  const fields = useMemo(() => storeFields(store, t), [store, t]);
   const [values, setValues] = useState<Record<string, string>>(() => defaultsFor(fields));
 
   // Switching stores swaps the whole set of fields, so stale values must not carry over. Adjusting during render rather

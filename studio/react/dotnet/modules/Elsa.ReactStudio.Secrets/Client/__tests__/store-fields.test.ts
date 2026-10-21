@@ -18,6 +18,7 @@ describe("storeFields", () => {
     });
 
     expect(storeFields(declared).map((f) => f.name)).toEqual(["vaultName"]);
+    expect(storeFields(declared, () => { throw new Error("Server descriptors must remain unchanged"); })).toBe(declared.fields);
   });
 
   it("declares nothing for a store with an empty field list", () => {
@@ -25,9 +26,10 @@ describe("storeFields", () => {
   });
 
   it("synthesizes the configuration key for servers predating store-declared fields", () => {
-    const field = storeFields(store({ name: "configuration", isReadOnly: true }))[0];
+    const field = storeFields(store({ name: "configuration", isReadOnly: true }), message => `Translated: ${message}`)[0];
 
     expect(field.name).toBe("configurationKey");
+    expect(field.displayName).toBe("Translated: Configuration key");
     expect(field.required).toBe(true);
   });
 
