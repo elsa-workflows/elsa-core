@@ -90,13 +90,24 @@ public static class CompensationDraftPublishDiagnostics
         try
         {
             using var document = JsonDocument.Parse(json);
-            var root = document.RootElement;
-            if (root.ValueKind != JsonValueKind.Object ||
-                !root.TryGetProperty("type", out var type) ||
-                type.ValueKind != JsonValueKind.String ||
-                !string.Equals(type.GetString(), CompensationScope.ActivityTypeName, StringComparison.Ordinal))
-                return false;
+            return TryReadOpaqueScope(document.RootElement, out steps);
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
 
+    private static bool TryReadOpaqueScope(JsonElement root, out IEnumerable<StepDiagnosticData> steps)
+    {
+        steps = [];
+        if (root.ValueKind != JsonValueKind.Object)
+            return false;
+
+        if (root.TryGetProperty("type", out var type) &&
+            type.ValueKind == JsonValueKind.String &&
+            string.Equals(type.GetString(), CompensationScope.ActivityTypeName, StringComparison.Ordinal))
+        {
             if (!root.TryGetProperty("steps", out var rawSteps) || rawSteps.ValueKind != JsonValueKind.Array)
                 return true;
 
@@ -112,10 +123,10 @@ public static class CompensationDraftPublishDiagnostics
                 .ToArray();
             return true;
         }
-        catch (JsonException)
-        {
-            return true;
-        }
+
+        return root.TryGetProperty("originalActivityJson", out var original) &&
+               original.ValueKind == JsonValueKind.String &&
+               TryReadOpaqueScope(original.GetString(), out steps);
     }
 
     private static string[] ReadMappingIds(JsonElement step)

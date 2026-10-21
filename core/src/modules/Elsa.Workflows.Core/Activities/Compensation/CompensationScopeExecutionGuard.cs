@@ -40,6 +40,8 @@ internal static class CompensationScopeExecutionGuard
         {
             using var document = JsonDocument.Parse(json);
             var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object)
+                return false;
 
             if (root.TryGetProperty("type", out var type) &&
                 type.ValueKind == JsonValueKind.String &&

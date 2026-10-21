@@ -167,6 +167,97 @@ public sealed class JsonActivitySerializerTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task CompensationDraftRoundTripsExactPinsInJsonIncludedPocoMembers()
+    {
+        await using var producer = await CreatePinTestServicesAsync(1);
+        await using var consumer = await CreatePinTestServicesAsync(1);
+        var serializer = producer.GetRequiredService<IActivitySerializer>();
+        var json = ChangeOwnedMemberCase(serializer.Serialize(CreatePinTestScope(1, includeProperty: true, includeField: true, includeConditional: true)), includeProperty: true, includeField: true, includeConditional: true);
+        using var document = JsonDocument.Parse(json);
+        var holder = document.RootElement.GetProperty("steps")[0].GetProperty("forward").GetProperty("HOLDER");
+
+        Assert.Equal("Test.VersionedNestedActivity", holder.GetProperty("PRIVATEGETTERACTIVITY").GetProperty("type").GetString());
+        Assert.Equal(1, holder.GetProperty("PRIVATEGETTERACTIVITY").GetProperty("version").GetInt32());
+        Assert.Equal("Test.VersionedNestedActivity", holder.GetProperty("FIELDACTIVITY").GetProperty("type").GetString());
+        Assert.Equal(1, holder.GetProperty("FIELDACTIVITY").GetProperty("version").GetInt32());
+        Assert.Equal("Test.VersionedNestedActivity", holder.GetProperty("CONDITIONALACTIVITY").GetProperty("type").GetString());
+        Assert.Equal(1, holder.GetProperty("CONDITIONALACTIVITY").GetProperty("version").GetInt32());
+
+        var restored = Assert.IsType<CompensationScope>(consumer.GetRequiredService<IActivitySerializer>().Deserialize(json));
+        var restoredComposite = Assert.IsType<JsonIncludeActivityComposite>(Assert.Single(restored.Steps).Forward);
+        Assert.Equal("property-child", restoredComposite.Holder.ReadPrivateGetterActivity()!.Id);
+        Assert.Equal("field-child", restoredComposite.Holder.FieldActivity!.Id);
+        Assert.Equal("conditional-child", restoredComposite.Holder.ConditionalActivity!.Id);
+    }
+
+    [Theory]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    [InlineData(false, false, true)]
+    public async Task CompensationDraftPreservesWholeDraftWhenJsonIncludedPocoMemberHasUnavailablePin(bool includeProperty, bool includeField, bool includeConditional)
+    {
+        await using var producer = await CreatePinTestServicesAsync(2);
+        await using var consumer = await CreatePinTestServicesAsync(1);
+        var json = producer.GetRequiredService<IActivitySerializer>()
+            .Serialize(CreatePinTestScope(2, includeProperty, includeField, includeConditional));
+        json = ChangeOwnedMemberCase(json, includeProperty, includeField, includeConditional);
+
+        var restored = Assert.IsType<NotFoundActivity>(consumer.GetRequiredService<IActivitySerializer>().Deserialize(json));
+
+        Assert.Equal(CompensationScope.ActivityTypeName, restored.MissingTypeName);
+        Assert.Equal(json, restored.OriginalActivityJson);
+        Assert.IsType<NotFoundActivity>(consumer.GetRequiredService<IActivitySerializer>().Deserialize(
+            consumer.GetRequiredService<IActivitySerializer>().Serialize(restored)));
+    }
+
+    [Fact]
+    public async Task CompensationDraftPreservesWholeDraftWhenOwnedMemberHasCaseAmbiguity()
+    {
+        await using var producer = await CreatePinTestServicesAsync(1);
+        await using var consumer = await CreatePinTestServicesAsync(1);
+        var json = producer.GetRequiredService<IActivitySerializer>()
+            .Serialize(CreatePinTestScope(1, includeProperty: true, includeField: false));
+        var ambiguousJson = json.Replace("\"privateGetterActivity\":", "\"PRIVATEGETTERACTIVITY\":null,\"privateGetterActivity\":", StringComparison.Ordinal);
+        Assert.NotEqual(json, ambiguousJson);
+
+        var restored = Assert.IsType<NotFoundActivity>(consumer.GetRequiredService<IActivitySerializer>().Deserialize(ambiguousJson));
+
+        Assert.Equal(CompensationScope.ActivityTypeName, restored.MissingTypeName);
+        Assert.Equal(ambiguousJson, restored.OriginalActivityJson);
+    }
+
+    [Fact]
+    public void CompensationDraftChildPreservesClrSerializationMetadata()
+    {
+        var child = new GeneratedActivity
+        {
+            Id = "child-1", Type = "Test.Generated", Version = 2,
+            Alias = "authored alias", Number = 7, RetainedNull = "authored retained value"
+        };
+        child.SyntheticProperties["Text"] = new Input<string>("authored text");
+        var scope = new CompensationScope { Id = "scope-1", Steps = [new CompensationStep { StepId = "step-1", Forward = child }] };
+
+        var restored = Assert.IsType<CompensationScope>(Serializer.Deserialize(Serializer.Serialize(scope)));
+        var restoredChild = Assert.IsType<GeneratedActivity>(Assert.Single(restored.Steps).Forward);
+
+        Assert.Equal(child.Alias, restoredChild.Alias);
+        Assert.Equal(child.Number, restoredChild.Number);
+        Assert.Equal(child.RetainedNull, restoredChild.RetainedNull);
+    }
+
+    private static string ChangeOwnedMemberCase(string json, bool includeProperty, bool includeField, bool includeConditional = false)
+    {
+        json = json.Replace("\"holder\":", "\"HOLDER\":", StringComparison.Ordinal);
+        if (includeProperty)
+            json = json.Replace("\"privateGetterActivity\":", "\"PRIVATEGETTERACTIVITY\":", StringComparison.Ordinal);
+        if (includeField)
+            json = json.Replace("\"fieldActivity\":", "\"FIELDACTIVITY\":", StringComparison.Ordinal);
+        if (includeConditional)
+            json = json.Replace("\"conditionalActivity\":", "\"CONDITIONALACTIVITY\":", StringComparison.Ordinal);
+        return json;
+    }
+
+    [Fact]
     public void OrdinaryObjectsRetainTheirSerialization()
     {
         using var document = JsonDocument.Parse(Serializer.Serialize(new { Message = "hello", Count = 3 }));
@@ -264,5 +355,92 @@ public sealed class JsonActivitySerializerTests : IAsyncLifetime
 
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public int Number { get; set; } = 42;
+    }
+
+    private static async Task<ServiceProvider> CreatePinTestServicesAsync(int nestedActivityVersion)
+    {
+        var services = new ServiceCollection();
+        services.AddElsa();
+        var serviceProvider = services.BuildServiceProvider();
+        var registry = serviceProvider.GetRequiredService<IActivityRegistry>();
+        await registry.RegisterAsync<CompensationScope>();
+        await registry.RegisterAsync<Sequence>();
+        registry.Register(new ActivityDescriptor
+        {
+            TypeName = "Test.JsonIncludeActivityComposite",
+            ClrType = typeof(JsonIncludeActivityComposite),
+            Version = 1,
+            Constructor = context => context.CreateActivity<JsonIncludeActivityComposite>()
+        });
+        registry.Register(new ActivityDescriptor
+        {
+            TypeName = "Test.VersionedNestedActivity",
+            ClrType = typeof(VersionedNestedActivity),
+            Version = nestedActivityVersion,
+            Constructor = context => context.CreateActivity<VersionedNestedActivity>()
+        });
+        return serviceProvider;
+    }
+
+    private static CompensationScope CreatePinTestScope(int nestedActivityVersion, bool includeProperty, bool includeField, bool includeConditional = false)
+    {
+        var holder = new JsonIncludeActivityHolder();
+        if (includeProperty)
+            holder.SetPrivateGetterActivity(CreateVersionedNestedActivity("property-child", nestedActivityVersion));
+        if (includeField)
+            holder.FieldActivity = CreateVersionedNestedActivity("field-child", nestedActivityVersion);
+        if (includeConditional)
+            holder.ConditionalActivity = CreateVersionedNestedActivity("conditional-child", nestedActivityVersion);
+
+        return new CompensationScope
+        {
+            Id = "scope-1",
+            Steps =
+            [
+                new CompensationStep
+                {
+                    StepId = "step-1",
+                    Forward = new JsonIncludeActivityComposite
+                    {
+                        Id = "composite-1",
+                        Type = "Test.JsonIncludeActivityComposite",
+                        Version = 1,
+                        Holder = holder
+                    }
+                }
+            ]
+        };
+    }
+
+    private static VersionedNestedActivity CreateVersionedNestedActivity(string id, int version) => new()
+    {
+        Id = id,
+        Type = "Test.VersionedNestedActivity",
+        Version = version
+    };
+
+    public sealed class JsonIncludeActivityComposite : Composite
+    {
+        public JsonIncludeActivityHolder Holder { get; set; } = new();
+    }
+
+    public sealed class JsonIncludeActivityHolder
+    {
+        [JsonInclude]
+        public IActivity? PrivateGetterActivity { private get; set; }
+
+        [JsonInclude]
+        public IActivity? FieldActivity = null;
+
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public IActivity? ConditionalActivity { get; set; }
+
+        public void SetPrivateGetterActivity(IActivity activity) => PrivateGetterActivity = activity;
+
+        public IActivity? ReadPrivateGetterActivity() => PrivateGetterActivity;
+    }
+
+    public sealed class VersionedNestedActivity : Activity
+    {
     }
 }

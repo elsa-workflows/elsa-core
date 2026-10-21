@@ -45,7 +45,8 @@ public class ActivityWriter(IActivityRegistry activityRegistry, SyntheticPropert
 
         foreach (var property in properties)
         {
-            if (property.GetCustomAttribute<JsonIgnoreAttribute>() != null)
+            var ignoreCondition = property.GetCustomAttribute<JsonIgnoreAttribute>()?.Condition ?? options.DefaultIgnoreCondition;
+            if (ignoreCondition == JsonIgnoreCondition.Always)
                 continue;
 
             if (excludeChildren)
@@ -61,6 +62,11 @@ public class ActivityWriter(IActivityRegistry activityRegistry, SyntheticPropert
                 continue;
 
             var input = property.GetValue(value);
+
+            if (input == null && ignoreCondition is JsonIgnoreCondition.WhenWritingNull or JsonIgnoreCondition.WhenWritingDefault ||
+                ignoreCondition == JsonIgnoreCondition.WhenWritingDefault && property.PropertyType.IsValueType &&
+                Equals(input, Activator.CreateInstance(property.PropertyType)))
+                continue;
 
             if (property.GetCustomAttribute<JsonExtensionDataAttribute>() != null)
             {
@@ -84,7 +90,8 @@ public class ActivityWriter(IActivityRegistry activityRegistry, SyntheticPropert
                 continue;
             }
 
-            var propName = options.PropertyNamingPolicy?.ConvertName(property.Name) ?? property.Name;
+            var propName = property.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ??
+                           options.PropertyNamingPolicy?.ConvertName(property.Name) ?? property.Name;
             writer.WritePropertyName(propName);
 
             if (input == null)

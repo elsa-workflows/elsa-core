@@ -40,15 +40,15 @@ public class CompensationDraftPublishDiagnosticsTests
         var graph = new WorkflowGraph(new Workflow(root), rootNode, [rootNode, scopeNode]);
 
         var diagnostics = CompensationDraftPublishDiagnostics.Create(graph);
-        var byRole = diagnostics.ToDictionary(GetRole);
+        var byRole = diagnostics.ToDictionary(error => CompensationDraftTestData.GetDataString(error, "role"));
 
         Assert.Equal(new[] { "forward", "handler", "mapping", "scope" }, byRole.Keys.Order().ToArray());
         Assert.All(diagnostics, diagnostic => Assert.Equal(CompensationDraftPublishDiagnostics.Code, diagnostic.Code));
-        Assert.Equal("scope-1", GetDataString(byRole["scope"], "scopeActivityId"));
-        Assert.Equal("step-1", GetDataString(byRole["forward"], "stepId"));
-        Assert.Equal("forward-activity", GetDataArray(byRole["forward"], "relatedActivityIds").Single());
-        Assert.Equal("handler-activity", GetDataArray(byRole["handler"], "relatedActivityIds").Single());
-        Assert.Equal("mapping-1", GetDataArray(byRole["mapping"], "mappingIds").Single());
+        Assert.Equal("scope-1", CompensationDraftTestData.GetDataString(byRole["scope"], "scopeActivityId"));
+        Assert.Equal("step-1", CompensationDraftTestData.GetDataString(byRole["forward"], "stepId"));
+        Assert.Equal("forward-activity", CompensationDraftTestData.GetDataArray(byRole["forward"], "relatedActivityIds").Single());
+        Assert.Equal("handler-activity", CompensationDraftTestData.GetDataArray(byRole["handler"], "relatedActivityIds").Single());
+        Assert.Equal("mapping-1", CompensationDraftTestData.GetDataArray(byRole["mapping"], "mappingIds").Single());
 
         var serialized = JsonSerializer.Serialize(diagnostics);
         Assert.DoesNotContain("private row label", serialized, StringComparison.Ordinal);
@@ -76,17 +76,27 @@ public class CompensationDraftPublishDiagnosticsTests
         Assert.Equal("opaque-scope", diagnostic.ActivityId);
     }
 
-    private static string GetRole(WorkflowValidationError error) => GetDataString(error, "role");
-
-    private static string GetDataString(WorkflowValidationError error, string propertyName)
+    [Theory]
+    [InlineData("not-json")]
+    [InlineData("null")]
+    [InlineData("[]")]
+    [InlineData("42")]
+    [InlineData("\"future\"")]
+    [InlineData("{\"type\":\"Elsa.UnknownActivity\",\"originalActivityJson\":\"[]\"}")]
+    public void Create_LeavesOrdinaryOpaqueActivitiesUnchanged(string originalActivityJson)
     {
-        using var document = JsonDocument.Parse(JsonSerializer.Serialize(error.Data));
-        return document.RootElement.GetProperty(propertyName).GetString()!;
+        var root = new Sequence { Id = "root" };
+        var rootNode = new ActivityNode(root, "root");
+        var unknownNode = new ActivityNode(new NotFoundActivity(missingTypeName: "Elsa.UnknownActivity")
+        {
+            Id = "ordinary-unknown",
+            OriginalActivityJson = originalActivityJson
+        }, "unknown");
+        unknownNode.AddParent(rootNode);
+        rootNode.AddChild(unknownNode);
+        var graph = new WorkflowGraph(new Workflow(root), rootNode, [rootNode, unknownNode]);
+
+        Assert.Empty(CompensationDraftPublishDiagnostics.Create(graph));
     }
 
-    private static string[] GetDataArray(WorkflowValidationError error, string propertyName)
-    {
-        using var document = JsonDocument.Parse(JsonSerializer.Serialize(error.Data));
-        return document.RootElement.GetProperty(propertyName).EnumerateArray().Select(x => x.GetString()!).ToArray();
-    }
 }

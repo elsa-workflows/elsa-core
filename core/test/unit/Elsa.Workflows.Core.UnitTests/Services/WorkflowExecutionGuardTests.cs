@@ -295,8 +295,15 @@ public class WorkflowExecutionGuardTests : IAsyncLifetime
         Assert.Equal(0, middlewareCalls);
     }
 
-    [Fact]
-    public async Task WorkflowPublicDelegatesCheckBeforeHostAuthorizationAndUseCurrentGraphAtInvocation()
+    [Theory]
+    [InlineData("not-json")]
+    [InlineData("null")]
+    [InlineData("[]")]
+    [InlineData("42")]
+    [InlineData("\"future\"")]
+    [InlineData("{\"type\":\"Elsa.UnknownActivity\",\"originalActivityJson\":\"null\"}")]
+    [InlineData("{\"type\":\"Elsa.UnknownActivity\",\"originalActivityJson\":\"\\\"future\\\"\"}")]
+    public async Task WorkflowPublicDelegatesCheckBeforeHostAuthorizationAndUseCurrentGraphAtInvocation(string ordinaryOriginalActivityJson)
     {
         var calls = 0;
         WorkflowMiddlewareDelegate Count(WorkflowMiddlewareDelegate next) => context =>
@@ -336,7 +343,7 @@ public class WorkflowExecutionGuardTests : IAsyncLifetime
         foreach (var invoke in delegates)
             await invoke(_context);
         Assert.True(calls > 0);
-        var unrelatedUnknown = AddGraphActivity(new NotFoundActivity(missingTypeName: "Elsa.UnknownActivity") { OriginalActivityJson = "not-json" });
+        var unrelatedUnknown = AddGraphActivity(new NotFoundActivity(missingTypeName: "Elsa.UnknownActivity") { OriginalActivityJson = ordinaryOriginalActivityJson });
         foreach (var invoke in delegates)
             await invoke(_context);
         Assert.True(calls > delegates.Length);

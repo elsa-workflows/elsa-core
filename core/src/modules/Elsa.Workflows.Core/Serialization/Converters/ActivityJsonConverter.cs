@@ -48,7 +48,7 @@ public class ActivityJsonConverter(
             hasProtectedScope = CompensationScopeDraftJson.IsRecognizedScope(protectedScopeRoot);
         }
 
-        if (hasProtectedScope && !CompensationScopeDraftJson.IsMaterializable(protectedScopeRoot, activityRegistry))
+        if (hasProtectedScope && !CompensationScopeDraftJson.IsMaterializable(protectedScopeRoot, activityRegistry, clonedOptions))
         {
             var opaqueScope = CreateNotFoundActivity(protectedScopeRoot, activityRoot, clonedOptions);
             wrappedOriginalDocument?.Dispose();

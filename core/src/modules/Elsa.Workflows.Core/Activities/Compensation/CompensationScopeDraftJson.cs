@@ -2,6 +2,8 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
+using Elsa.Expressions.Models;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
@@ -19,7 +21,7 @@ internal static class CompensationScopeDraftJson
         type.ValueKind == JsonValueKind.String &&
         string.Equals(type.GetString(), CompensationScope.ActivityTypeName, StringComparison.Ordinal);
 
-    public static bool IsMaterializable(JsonElement scope, IActivityRegistry activityRegistry)
+    public static bool IsMaterializable(JsonElement scope, IActivityRegistry activityRegistry, JsonSerializerOptions serializerOptions)
     {
         if (!IsRecognizedScope(scope) ||
             !HasExactVersion(scope, CompensationScope.ActivityTypeName, 1, activityRegistry) ||
@@ -47,7 +49,7 @@ internal static class CompensationScopeDraftJson
                 if (!step.TryGetProperty(role, out var child) || child.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
                     continue;
 
-                if (!IsPinnedActivityTree(child, activityRegistry))
+                if (!IsPinnedActivityTree(child, activityRegistry, serializerOptions))
                     return false;
             }
         }
@@ -60,7 +62,7 @@ internal static class CompensationScopeDraftJson
         return true;
     }
 
-    private static bool IsPinnedActivityTree(JsonElement activity, IActivityRegistry activityRegistry)
+    private static bool IsPinnedActivityTree(JsonElement activity, IActivityRegistry activityRegistry, JsonSerializerOptions serializerOptions)
     {
         if (activity.ValueKind != JsonValueKind.Object ||
             !activity.TryGetProperty("type", out var typeElement) || typeElement.ValueKind != JsonValueKind.String)
@@ -76,32 +78,58 @@ internal static class CompensationScopeDraftJson
             IsWorkflowDefinitionActivity(descriptor))
             return false;
 
-        return HasPinnedOwnedActivityDescendants(activity, descriptor.ClrType, activityRegistry);
+        return HasPinnedOwnedActivityDescendants(activity, descriptor.ClrType, activityRegistry, serializerOptions);
     }
 
-    private static bool HasPinnedOwnedActivityDescendants(JsonElement value, Type containerType, IActivityRegistry activityRegistry)
+    private static bool HasPinnedOwnedActivityDescendants(JsonElement value, Type containerType, IActivityRegistry activityRegistry, JsonSerializerOptions serializerOptions)
     {
-        foreach (var property in GetSerializableProperties(containerType))
+        if (!TryGetSerializableProperties(containerType, serializerOptions, out var properties))
+            return false;
+
+        foreach (var property in properties)
         {
-            if (!HasOwnedActivityDescendant(property.PropertyType, new HashSet<Type>()))
+            if (!HasOwnedActivityDescendant(property.PropertyType, new HashSet<Type>(), serializerOptions))
                 continue;
 
-            var jsonName = property.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? JsonNamingPolicy.CamelCase.ConvertName(property.Name);
-            if (!value.TryGetProperty(jsonName, out var childValue) || childValue.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+            if (!TryGetUniqueSerializableProperty(value, property.Name, serializerOptions.PropertyNameCaseInsensitive, out var childValue, out var hasChildValue))
+                return false;
+
+            if (!hasChildValue || childValue.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
                 continue;
 
-            if (!HasPinnedOwnedActivityValues(childValue, property.PropertyType, activityRegistry))
+            if (!HasPinnedOwnedActivityValues(childValue, property.PropertyType, activityRegistry, serializerOptions))
                 return false;
         }
 
         return true;
     }
 
-    private static bool HasPinnedOwnedActivityValues(JsonElement value, Type valueType, IActivityRegistry activityRegistry)
+    private static bool TryGetUniqueSerializableProperty(JsonElement value, string propertyName, bool caseInsensitive, out JsonElement propertyValue, out bool found)
+    {
+        propertyValue = default;
+        found = false;
+        var comparison = caseInsensitive ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+
+        foreach (var property in value.EnumerateObject())
+        {
+            if (!string.Equals(property.Name, propertyName, comparison))
+                continue;
+
+            if (found)
+                return false;
+
+            found = true;
+            propertyValue = property.Value;
+        }
+
+        return true;
+    }
+
+    private static bool HasPinnedOwnedActivityValues(JsonElement value, Type valueType, IActivityRegistry activityRegistry, JsonSerializerOptions serializerOptions)
     {
         valueType = Nullable.GetUnderlyingType(valueType) ?? valueType;
         if (typeof(IActivity).IsAssignableFrom(valueType))
-            return IsPinnedActivityTree(value, activityRegistry);
+            return IsPinnedActivityTree(value, activityRegistry, serializerOptions);
 
         if (TryGetEnumerableElementType(valueType, out var elementType))
         {
@@ -109,33 +137,43 @@ internal static class CompensationScopeDraftJson
                 return false;
 
             return value.EnumerateArray().All(item => item.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined ||
-                                                    HasPinnedOwnedActivityValues(item, elementType, activityRegistry));
+                                                    HasPinnedOwnedActivityValues(item, elementType, activityRegistry, serializerOptions));
         }
 
-        if (!HasOwnedActivityDescendant(valueType, new HashSet<Type>()))
+        if (!HasOwnedActivityDescendant(valueType, new HashSet<Type>(), serializerOptions))
             return true;
 
-        return value.ValueKind == JsonValueKind.Object && HasPinnedOwnedActivityDescendants(value, valueType, activityRegistry);
+        return value.ValueKind == JsonValueKind.Object && HasPinnedOwnedActivityDescendants(value, valueType, activityRegistry, serializerOptions);
     }
 
-    private static bool HasOwnedActivityDescendant(Type type, HashSet<Type> visited)
+    private static bool HasOwnedActivityDescendant(Type type, HashSet<Type> visited, JsonSerializerOptions serializerOptions)
     {
         type = Nullable.GetUnderlyingType(type) ?? type;
         if (typeof(IActivity).IsAssignableFrom(type))
             return true;
 
         if (type == typeof(string) || type.IsPrimitive || type.IsEnum || type == typeof(decimal) || type == typeof(JsonElement) ||
-            typeof(JsonDocument).IsAssignableFrom(type) || typeof(JsonNode).IsAssignableFrom(type) || typeof(Delegate).IsAssignableFrom(type))
+            type == typeof(object) || type == typeof(DateTime) || type == typeof(DateTimeOffset) || type == typeof(DateOnly) ||
+            type == typeof(TimeOnly) || type == typeof(TimeSpan) || type == typeof(Guid) || type == typeof(Uri) || type == typeof(Type) ||
+            typeof(JsonDocument).IsAssignableFrom(type) || typeof(JsonNode).IsAssignableFrom(type) || typeof(Delegate).IsAssignableFrom(type) ||
+            typeof(Input).IsAssignableFrom(type) || typeof(Expression).IsAssignableFrom(type))
             return false;
 
         if (TryGetEnumerableElementType(type, out var elementType))
-            return HasOwnedActivityDescendant(elementType, visited);
+            return HasOwnedActivityDescendant(elementType, visited, serializerOptions);
 
         if ((!type.IsClass && !type.IsValueType && !type.IsInterface) || !visited.Add(type))
             return false;
 
-        var containsActivity = GetSerializableProperties(type)
-            .Any(property => HasOwnedActivityDescendant(property.PropertyType, visited));
+        if (!TryGetSerializableProperties(type, serializerOptions, out var properties))
+        {
+            visited.Remove(type);
+            // A custom converter owns an opaque JSON shape. If this declared member is
+            // present, the caller cannot prove that it contains no activity pins.
+            return true;
+        }
+
+        var containsActivity = properties.Any(property => HasOwnedActivityDescendant(property.PropertyType, visited, serializerOptions));
         visited.Remove(type);
         return containsActivity;
     }
@@ -157,11 +195,31 @@ internal static class CompensationScopeDraftJson
         return true;
     }
 
-    private static IEnumerable<PropertyInfo> GetSerializableProperties(Type type)
+    private static bool TryGetSerializableProperties(Type type, JsonSerializerOptions serializerOptions, out IReadOnlyList<JsonPropertyInfo> properties)
     {
-        return type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
-            .Where(property => property.GetMethod?.IsPublic == true && property.GetIndexParameters().Length == 0)
-            .Where(property => property.GetCustomAttribute<JsonIgnoreAttribute>() is not { Condition: not JsonIgnoreCondition.Never });
+        JsonTypeInfo typeInfo;
+        try
+        {
+            typeInfo = serializerOptions.GetTypeInfo(type);
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or NotSupportedException)
+        {
+            properties = [];
+            return false;
+        }
+
+        if (typeInfo.Kind != JsonTypeInfoKind.Object)
+        {
+            properties = [];
+            return false;
+        }
+
+        properties = typeInfo.Properties
+            .Where(property => property.Get != null && !property.IsExtensionData)
+            .Where(property => property.AttributeProvider is not MemberInfo member ||
+                               member.GetCustomAttribute<JsonIgnoreAttribute>()?.Condition != JsonIgnoreCondition.Always)
+            .ToArray();
+        return true;
     }
 
     private static bool HasExactVersion(JsonElement activity, string typeName, int expectedVersion, IActivityRegistry activityRegistry) =>
