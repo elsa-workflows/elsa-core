@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Activity } from "@/lib/api/types/activities";
 import type { ActivityDescriptor } from "@/lib/api/types/descriptors";
+import { cloneActivity, emptyFlowchart, indexActivities } from "../model/flowchart-ops";
 import { childActivities, findSlotOf, getSlot, listSlots, setSlot } from "../model/containers";
 
 const descriptor = {
@@ -64,4 +65,31 @@ describe("Switch case slots", () => {
   it("leaves a Switch with no cases to its Default alone", () => {
     expect(listSlots(switchActivity([]), descriptor).map((s) => s.slot)).toEqual(["default"]);
   });
+});
+
+it("copying a Switch gives every branch descendant fresh IDs and preserves original lookup and internal links", () => {
+  const branch = { ...emptyFlowchart("branch"), nodeId: "sw:branch", start: "first", activities: [
+    { id: "first", nodeId: "sw:branch:first", type: "Elsa.WriteLine", version: 1 },
+    { id: "last", nodeId: "sw:branch:last", type: "Elsa.WriteLine", version: 1 },
+  ], connections: [{ source: { activity: "first", port: "Done" }, target: { activity: "last", port: "In" } }] };
+  const original = switchActivity([{ label: "Gold", activity: branch }], { id: "fallback", type: "Elsa.WriteLine", version: 1 });
+  original.nodeId = "root:sw";
+  const before = structuredClone(original);
+  const root = { ...emptyFlowchart("root"), activities: [original] };
+  const copy = cloneActivity(original, "root", root, "Switch");
+  const copiedBranch = getSlot(copy, "cases.0.activity") as typeof branch;
+  const copiedFirst = copiedBranch.activities[0];
+  expect(copy.id).not.toBe(original.id);
+  expect(copy.nodeId).toBe(`root:${copy.id}`);
+  expect(copiedBranch.id).not.toBe(branch.id);
+  expect(copiedBranch.nodeId).toBe(`${copy.nodeId}:${copiedBranch.id}`);
+  expect(copiedFirst.id).not.toBe("first");
+  expect(copiedFirst.nodeId).toBe(`${copiedBranch.nodeId}:${copiedFirst.id}`);
+  expect(copiedBranch.start).toBe(copiedFirst.id);
+  expect(copiedBranch.connections[0]).toEqual({ source: { activity: copiedFirst.id, port: "Done" }, target: { activity: copiedBranch.activities[1].id, port: "In" } });
+  expect(getSlot(copy, "default")?.id).not.toBe("fallback");
+  const index = indexActivities({ ...root, activities: [original, copy] });
+  expect(index.get("first")?.activity).toBe(branch.activities[0]);
+  expect(index.get(copiedFirst.id)?.activity).toBe(copiedFirst);
+  expect(original).toEqual(before);
 });
