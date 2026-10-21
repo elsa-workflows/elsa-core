@@ -35,6 +35,11 @@ Assets are served from `/_content/{PackageId}/{AssemblyVersion}/entry.js` and
 Both host and feature NuGet packs reject missing frontend assets. Production hosts
 consume the prebuilt assets and need no Node runtime.
 
+These packages first join the root release at 3.11.0. Packing an older release
+version excludes them; the existing 3.10 stream is preserved. Preview versions and
+plain 3.11.0 use matching package/assembly versions, with Preview descriptions,
+tags, README and UI. See the [release preparation notes](../../docs/releases/3.11.0-react-studio-preview.md).
+
 ## Standalone hosting and feature selection
 
 The standalone executable calls `builder.AddReactStudioPreview()` and

@@ -182,3 +182,14 @@ NuGet feeds and exercises both contributions in Chromium. It verifies saved data
 read-only behavior, immutable asset caching and feature removal. CI runs the check
 after packing the Preview libraries. This is local package-consumption evidence;
 registry publication and the final Preview release remain separate work.
+
+## Release packaging preparation
+
+The root package workflow now installs Node 22 for NUKE's asset build. The existing
+3.10 release base remains in place; evaluated MSBuild policy excludes React
+packages below 3.11.0 and includes 3.11 previews/plain releases. Package and assembly
+versions must match. All 18 plain 3.11.0 packages pass the artifact verifier with
+Preview descriptions/tags, notices, all three frameworks and embedded assets;
+an actual 3.10.0 pack produces no React packages. Existing publication-selection
+and workflow-gate checks still pass. The try guide and release preparation notes
+are under Studio docs. This prepares packages without publishing them.

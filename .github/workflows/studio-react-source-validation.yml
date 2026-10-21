@@ -72,6 +72,7 @@ jobs:
           pnpm test:browser
       - name: Pack the Preview feature libraries without publishing
         run: |
+          python3 studio/react/scripts/test-package-version-policy.py
           dotnet pack Elsa.ReactStudio.slnf -c Release \
             --output "$RUNNER_TEMP/react-studio-packages" -p:Version=3.11.0-preview.${{ github.run_id }}
           python3 studio/react/scripts/verify-nuget-packages.py \

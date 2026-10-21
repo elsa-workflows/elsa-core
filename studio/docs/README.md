@@ -1,6 +1,8 @@
 # Elsa Studio documentation
 
 The opt-in [React Studio Preview](../react/README.md) lives under `studio/react/`.
+Start with [Try the React Studio Preview](try-react-studio-preview.md) and its
+[3.11 release preparation notes](releases/3.11.0-react-studio-preview.md).
 Its [source import receipt](../../docs/integration-program/studio-react-source-import.md)
 preserves the original tree and history; the [delivery plan](specs/react-studio-preview/plan.md)
 tracks the remaining Preview requirements.

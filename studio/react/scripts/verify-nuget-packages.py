@@ -28,6 +28,7 @@ def verify(directory: Path, version: str) -> None:
             require(path.name == f"{identity}.{version}.nupkg", (identity, "package filename"))
             require(metadata["version"].text == version, identity)
             require("Preview" in metadata["description"].text, identity)
+            require("Preview" in metadata["tags"].text.replace(";", " ").split(), (identity, "Preview package tag"))
             require(metadata["license"].attrib["type"] == "file", identity)
             require(metadata["license"].text == "SOURCE-NOTICE.md", identity)
             require("no license file" in package.read("SOURCE-NOTICE.md").decode(), identity)
