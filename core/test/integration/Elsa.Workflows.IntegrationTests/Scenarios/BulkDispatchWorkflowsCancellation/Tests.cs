@@ -1,8 +1,6 @@
 using Elsa.Workflows.IntegrationTests.Scenarios.DispatchWorkflowCancellation;
-using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Messages;
-using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
@@ -103,7 +101,7 @@ public class Tests(ITestOutputHelper testOutputHelper) : ChildWorkflowCancellati
         // Act: cancel the first child, the way the cancellation API does. The test host runs no bookmark queue worker, so
         // deliver the resume the child's cancellation queued for its parent.
         Assert.True(await cancellationService.CancelWorkflowAsync(childIds[0]));
-        await WaitForInstanceAsync(childIds[0], IsFinished);
+        await WaitForChildrenAsync(parentId, nameof(BlockingChildWorkflow), childCount, child => child.Id != childIds[0] || IsFinished(child));
         await Services.GetRequiredService<IBookmarkQueueProcessor>().ProcessAsync();
 
         // Assert: the cancelled child counted as one finished child, so the parent still waits for the other one.
@@ -111,7 +109,7 @@ public class Tests(ITestOutputHelper testOutputHelper) : ChildWorkflowCancellati
 
         // Act: cancel the second child too.
         Assert.True(await cancellationService.CancelWorkflowAsync(childIds[1]));
-        await WaitForInstanceAsync(childIds[1], IsFinished);
+        await WaitForChildrenAsync(parentId, nameof(BlockingChildWorkflow), childCount, IsFinished);
         await Services.GetRequiredService<IBookmarkQueueProcessor>().ProcessAsync();
 
         // Assert: both children were cancelled, and the parent's BulkDispatchWorkflows completed, as it does for children
@@ -145,23 +143,6 @@ public class Tests(ITestOutputHelper testOutputHelper) : ChildWorkflowCancellati
         var parent = await ExportStateAsync(parentId);
         Assert.Equal(WorkflowSubStatus.Suspended, parent.SubStatus);
         Assert.Empty(parent.Incidents);
-    }
-
-    /// <summary>Polls the store until the instance satisfies the condition.</summary>
-    private async Task WaitForInstanceAsync(string instanceId, Func<WorkflowState, bool> condition)
-    {
-        var store = Services.GetRequiredService<IWorkflowInstanceStore>();
-        var timeoutAt = DateTimeOffset.UtcNow + TimeSpan.FromSeconds(30);
-
-        while (DateTimeOffset.UtcNow < timeoutAt)
-        {
-            if (await store.FindAsync(new() { Id = instanceId }) is { } instance && condition(instance.WorkflowState))
-                return;
-
-            await Task.Delay(TimeSpan.FromMilliseconds(50));
-        }
-
-        throw new TimeoutException($"Workflow instance {instanceId} did not reach the expected state.");
     }
 
     /// <summary>Resumes the parent's proceed branch, which completes the inner fork and cancels its waiting bulk activity.</summary>
