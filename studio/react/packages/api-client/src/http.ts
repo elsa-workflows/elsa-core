@@ -27,6 +27,8 @@ export class ApiError extends Error {
 export interface HttpClientOptions {
   baseUrl: string;
   tenantId?: string;
+  /** Rejects a pending request when its originating account or tenant is no longer current. */
+  validateRequestScope?: () => void;
   /** Supplies authentication headers for each request. */
   getAuthHeaders: () => Promise<Record<string, string>> | Record<string, string>;
   /**
@@ -80,6 +82,7 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
   const baseUrl = options.baseUrl.replace(/\/+$/, "");
 
   async function request<T>(method: string, path: string, opts: RequestOptions = {}, retried = false): Promise<T> {
+    options.validateRequestScope?.();
     const url = `${baseUrl}/${path.replace(/^\/+/, "")}${buildQuery(opts.query)}`;
     const headers: Record<string, string> = {
       Accept: "application/json",
@@ -95,10 +98,12 @@ export function createHttpClient(options: HttpClientOptions): HttpClient {
       body = JSON.stringify(opts.body);
     }
 
+    options.validateRequestScope?.();
     const res = await fetch(url, { method, headers, body, signal: opts.signal });
 
     if (res.status === 401 && !retried && options.onUnauthorized) {
       const refreshed = await options.onUnauthorized();
+      options.validateRequestScope?.();
       if (refreshed) return request<T>(method, path, opts, true);
     }
 

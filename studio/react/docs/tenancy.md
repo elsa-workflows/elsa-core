@@ -58,6 +58,11 @@ reloads the application. Query scopes include server, subject and tenant; replac
 a scope destroys its owned query cache and cancels its queries.
 
 Modules receive the shared client, so API calls use the effective tenant header.
+The client checks the originating account and effective tenant before credentials,
+immediately before sending, and after a 401 refresh. If that scope changes or a
+required tenant claim disappears, it cancels the pending operation instead of
+sending its existing payload with another account or tenant. A same-scope refresh,
+including an explicit default-tenant claim, preserves the operation.
 `useTenant` and `TenantProvider` are public SDK exports from `/tenancy`. Modules
 with independent forms can register dirty state with `useUnsavedChanges` from
 `/unsaved-changes`. Hosts that confirm discarding changes can call
