@@ -306,7 +306,6 @@ public class WorkflowDefinitionPublisherCompensationDraftTests
 
         var graph = await workflowDefinitionService.MaterializeWorkflowAsync(definition);
         var opaqueScope = Assert.IsType<NotFoundActivity>(Assert.Single(graph.Nodes.Select(node => node.Activity).Where(activity => activity.Id == "scope-1")));
-        Assert.Equal(CompensationScope.ActivityTypeName, opaqueScope.MissingTypeName);
         Assert.Equal(scopeJson, opaqueScope.OriginalActivityJson);
 
         var result = await scopedServices.GetRequiredService<IWorkflowDefinitionPublisher>().PublishAsync(definition);

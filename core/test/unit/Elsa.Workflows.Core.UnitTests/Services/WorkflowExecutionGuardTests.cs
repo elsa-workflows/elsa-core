@@ -1,6 +1,8 @@
 using Elsa.Common;
+using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Testing.Shared;
+using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Activities.Compensation;
 using Elsa.Workflows.CommitStates;
@@ -209,12 +211,21 @@ public class WorkflowExecutionGuardTests : IAsyncLifetime
     [Fact]
     public async Task RunnerRejectsTypedOpaqueAndIdentityOnlyScopesBeforeContextCreation()
     {
+        var serializationServices = new ServiceCollection();
+        serializationServices.AddElsa();
+        await using var serializationProvider = serializationServices.BuildServiceProvider();
+        var scopeSerializer = serializationProvider.GetRequiredService<IActivitySerializer>();
+        const string aliasedScopeJson = """{"id":"scope-alias","Type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}""";
+        var aliasedScope = Assert.IsType<NotFoundActivity>(scopeSerializer.Deserialize(aliasedScopeJson));
+        Assert.Equal(aliasedScopeJson, aliasedScope.OriginalActivityJson);
+
         foreach (var scope in new IActivity[]
                  {
                      new CompensationScope(),
                      new CompensationScope { Type = "Elsa.OtherActivity" },
                      new NotFoundActivity(missingTypeName: CompensationScope.ActivityTypeName) { OriginalActivityJson = "not-json" },
-                     new NotFoundActivity(missingTypeName: CompensationScope.ActivityTypeName)
+                     new NotFoundActivity(missingTypeName: CompensationScope.ActivityTypeName),
+                     aliasedScope
                  })
         {
             var scopeNode = AddGraphActivity(scope);
