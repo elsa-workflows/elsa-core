@@ -7,6 +7,7 @@ using Elsa.Studio.Contracts;
 using Elsa.Studio.Workflows.DiagramDesigners.CompensationScopes;
 using Elsa.Studio.Workflows.Domain.Contracts;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
 using MudBlazor.Services;
@@ -262,6 +263,34 @@ public sealed class CompensationScopeDesignerCapabilityLifecycleTests : BunitCon
     }
 
     [Fact]
+    public async Task StepControlsHaveAccessibleNamesAndReorderingPreservesStepIds()
+    {
+        _featureProvider = new TestFreshFeatureProvider((_, _) => Task.FromResult(true));
+        var activity = CreateTwoStepScope();
+        var cut = RenderScope(activity, BackendContextKey);
+        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll("button[aria-label='Move step down']").Count));
+
+        var moveUpButtons = cut.FindAll("button[aria-label='Move step up']");
+        var moveDownButtons = cut.FindAll("button[aria-label='Move step down']");
+        var removeButtons = cut.FindAll("button[aria-label='Remove step']");
+        Assert.Equal(2, moveUpButtons.Count);
+        Assert.Equal(2, moveDownButtons.Count);
+        Assert.Equal(2, removeButtons.Count);
+        Assert.True(moveUpButtons[0].HasAttribute("disabled"));
+        Assert.False(moveUpButtons[1].HasAttribute("disabled"));
+        Assert.False(moveDownButtons[0].HasAttribute("disabled"));
+        Assert.True(moveDownButtons[1].HasAttribute("disabled"));
+
+        await cut.InvokeAsync(() => moveDownButtons[0].ClickAsync(new MouseEventArgs()));
+
+        var steps = (System.Text.Json.Nodes.JsonArray)activity["steps"]!;
+        Assert.Equal("step-2", steps[0]!["stepId"]!.GetValue<string>());
+        Assert.Equal("step-1", steps[1]!["stepId"]!.GetValue<string>());
+        Assert.Equal("Second step", steps[0]!["name"]!.GetValue<string>());
+        Assert.Equal("First step", steps[1]!["name"]!.GetValue<string>());
+    }
+
+    [Fact]
     public void LiveAuthBindingRevocationBlocksEditsBeforeTheNextRender()
     {
         _featureProvider = new TestFreshFeatureProvider((_, _) => Task.FromResult(true));
@@ -307,6 +336,10 @@ public sealed class CompensationScopeDesignerCapabilityLifecycleTests : BunitCon
 
     private static System.Text.Json.Nodes.JsonObject CreateScope() => System.Text.Json.Nodes.JsonNode.Parse("""
         {"id":"scope-1","nodeId":"scope-1","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[{"stepId":"step-1","name":"Initial step","forward":null,"handler":null,"mappings":[]}]}
+        """)!.AsObject();
+
+    private static System.Text.Json.Nodes.JsonObject CreateTwoStepScope() => System.Text.Json.Nodes.JsonNode.Parse("""
+        {"id":"scope-1","nodeId":"scope-1","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[{"stepId":"step-1","name":"First step","forward":null,"handler":null,"mappings":[]},{"stepId":"step-2","name":"Second step","forward":null,"handler":null,"mappings":[]}]}
         """)!.AsObject();
 
     private static async Task<T> SignalAndReturn<T>(TaskCompletionSource started, Task<T> result)

@@ -73,6 +73,15 @@ public sealed class WorkflowEditorLifecycleTests : BunitContext, IAsyncLifetime
         Assert.Equal(canRun, actions.Contains(Icons.Material.Filled.PlayArrow));
     }
 
+    [Fact]
+    public void Toolbar_PublishButtonHasAnAccessibleNameWhenAuthorized()
+    {
+        var cut = RenderEditor(CreateDefinition("publish"), () => Task.CompletedTask,
+            StubPermissionService.Grants(["workflows/definitions:view", "workflows/definitions:publish"]));
+
+        Assert.Single(cut.FindAll("button[aria-label='Publish workflow']"));
+    }
+
     [Theory]
     [InlineData(new[] { "workflows/definitions:view" }, true, false)]
     [InlineData(new[] { "workflows/definitions:view", "workflows/definitions:retract" }, true, true)]

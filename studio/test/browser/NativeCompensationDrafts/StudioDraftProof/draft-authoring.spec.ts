@@ -182,10 +182,10 @@ function getStepRow(editor: Locator, index: number): Locator {
 async function chooseWriteLine(page: Page, row: Locator, fieldLabel: 'Forward activity' | 'Inline handler'): Promise<void> {
   const field = row.locator('.mud-select').filter({ hasText: fieldLabel });
   await row.getByLabel(fieldLabel, { exact: true }).click();
-  const option = page.locator('.mud-popover-open').getByText('WriteLine', { exact: true }).first();
+  const option = page.locator('.mud-popover-open').getByText(/^\s*write\s*line\s*$/i).first();
   await option.waitFor({ state: 'visible', timeout: 8_000 });
   await option.click();
-  await expect(field.getByText('WriteLine', { exact: true })).toBeVisible();
+  await expect(field.getByText(/^\s*write\s*line\s*$/i)).toBeVisible();
 }
 
 async function setSelectedChildLiteral(page: Page, row: Locator, childRole: 'forward' | 'handler', value: string): Promise<void> {

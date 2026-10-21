@@ -70,11 +70,11 @@
                         <MudTextField T="string" Label="Step name" Value='@GetString(step, "name")'
                                       ValueChanged="@(value => RenameStepAsync(step, value))" ReadOnly="@(!IsEditable)"
                                       Dense="true" Variant="MudBlazor.Variant.Outlined" Class="flex-grow-1" />
-                        <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowUp" AriaLabel="Move step up"
+                        <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowUp" aria-label="Move step up"
                                        Disabled="@(!IsEditable || stepIndex == 0)" OnClick="@(() => MoveStepAsync(stepIndex, -1))" />
-                        <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowDown" AriaLabel="Move step down"
+                        <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowDown" aria-label="Move step down"
                                        Disabled="@(!IsEditable || stepIndex == Steps.Count - 1)" OnClick="@(() => MoveStepAsync(stepIndex, 1))" />
-                        <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" AriaLabel="Remove step"
+                        <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" aria-label="Remove step"
                                        Disabled="@(!IsEditable)" OnClick="@(() => RemoveStepAsync(stepIndex))" />
                     </MudStack>
 
