@@ -2,6 +2,7 @@ using Bpmn.Semantics;
 using Elsa.Bpmn.Activities;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Activities.Flowchart.Activities;
 
 namespace Elsa.Bpmn.Hosting;
 
@@ -47,11 +48,13 @@ public static class BpmnProcessGraphs
 
     /// <summary>
     /// The BPMN scopes that bound work is or composes: the work itself when it is a scope, else the scopes inside it when
-    /// it is a container such as a <c>Flowchart</c> (D11), at any depth. Any other activity is opaque.
+    /// it is a container such as a <c>Flowchart</c> (D11), at any depth. A flowchart's <c>Start</c> is a port of its own,
+    /// so it counts even when <c>Activities</c> does not list it. Any other activity is opaque.
     /// </summary>
     private static IEnumerable<BpmnProcess> ScopesWithin(IActivity? activity) => activity switch
     {
         BpmnProcess scope => [scope],
+        Flowchart flowchart => flowchart.Activities.Prepend(flowchart.Start).SelectMany(ScopesWithin),
         Container container => container.Activities.SelectMany(ScopesWithin),
         _ => []
     };

@@ -212,14 +212,16 @@ public class BpmnProcessTests(ITestOutputHelper testOutputHelper)
         Assert.Contains("loopA", incident.Exception!.Message);
     }
 
-    [Fact(DisplayName = "A BPMN process that cannot run, composed into a flowchart bound as work, is refused before anything runs")]
-    public async Task FlowchartComposingAProcessThatCannotRun_IsRefusedBeforeAnythingRuns()
+    [Theory(DisplayName = "A BPMN process that cannot run, composed into a flowchart bound as work, is refused before anything runs")]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task FlowchartComposingAProcessThatCannotRun_IsRefusedBeforeAnythingRuns(bool listedInActivities)
     {
         // The composed process is a root scope of its own, so it used to build its graph only when the flowchart
-        // started it, after "first" had already run.
+        // started it, after "first" had already run. The flowchart's Start port reaches it even when Activities does not.
 
         // Act
-        var result = await _host.RunAsync(BpmnTestProcesses.FlowchartComposingAProcessThatCannotRun(_host.Log), typeof(FaultStrategy));
+        var result = await _host.RunAsync(BpmnTestProcesses.FlowchartComposingAProcessThatCannotRun(_host.Log, listedInActivities), typeof(FaultStrategy));
 
         // Assert
         Assert.Empty(_host.Log.Entries);

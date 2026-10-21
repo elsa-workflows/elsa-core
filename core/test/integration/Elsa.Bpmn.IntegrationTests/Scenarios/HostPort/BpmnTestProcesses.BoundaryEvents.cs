@@ -189,9 +189,11 @@ internal static partial class BpmnTestProcesses
     /// <summary>
     /// A task, then a task whose work is a <c>Flowchart</c> composing a BPMN process that can never run (the same
     /// cycle on which nothing can wait). The composed process is a root scope of its own, so it builds its graph only
-    /// when the flowchart starts it; the outer scope is the one that can refuse it before anything runs.
+    /// when the flowchart starts it; the outer scope is the one that can refuse it before anything runs. The flowchart
+    /// reaches the process through its <c>Start</c> port, and also lists it in <c>Activities</c> when
+    /// <paramref name="listedInActivities"/> is set.
     /// </summary>
-    public static BpmnProcess FlowchartComposingAProcessThatCannotRun(BpmnTestLog log)
+    public static BpmnProcess FlowchartComposingAProcessThatCannotRun(BpmnTestLog log, bool listedInActivities)
     {
         var composed = new BpmnProcessBuilder("never-waiting-cycle")
             .StartEvent("innerStart")
@@ -212,9 +214,13 @@ internal static partial class BpmnTestProcesses
         var wrapped = new Flowchart
         {
             Id = "wrapped",
-            Start = inner,
-            Activities = { inner }
+            Start = inner
         };
+
+        if (listedInActivities)
+        {
+            wrapped.Activities.Add(inner);
+        }
 
         return Scope("scope", definition, Immediate("first", log), wrapped);
     }
