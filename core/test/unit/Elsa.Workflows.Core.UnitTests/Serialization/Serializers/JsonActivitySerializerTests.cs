@@ -167,8 +167,20 @@ public sealed class JsonActivitySerializerTests : IAsyncLifetime
 
         var restored = Assert.IsType<NotFoundActivity>(Serializer.Deserialize(json));
 
+        Assert.Equal(CompensationScope.ActivityTypeName, restored.MissingTypeName);
         Assert.Equal(json, restored.OriginalActivityJson);
         AssertOpaqueSerializedCompensationDraft(Serializer, restored, json);
+
+        var root = new Sequence { Id = "root" };
+        var rootNode = new ActivityNode(root, "root");
+        var scopeNode = new ActivityNode(restored, "scope-1");
+        scopeNode.AddParent(rootNode);
+        rootNode.AddChild(scopeNode);
+        var graph = new WorkflowGraph(new Workflow(root), rootNode, [rootNode, scopeNode]);
+
+        var exception = Assert.Throws<InvalidOperationException>(() => CompensationScopeExecutionGuard.DemandExecutable(graph));
+
+        Assert.Equal(CompensationScope.DraftOnlyRefusalMessage, exception.Message);
     }
 
     [Theory]

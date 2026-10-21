@@ -275,6 +275,47 @@ public class WorkflowDefinitionPublisherCompensationDraftTests
         Assert.Equal(new[] { "mapping-1" }, CompensationDraftTestData.GetDataArray(Assert.Single(result.ValidationErrors, error => CompensationDraftTestData.GetDataString(error, "role") == "mapping"), "mappingIds"));
     }
 
+    [Fact]
+    public async Task Publish_RefusesTypeAliasedOpaqueCompensationInTheMaterializedWholeGraph()
+    {
+        const string scopeJson = """{"id":"scope-1","Type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}""";
+        var workflowJson = $$"""{"id":"root","type":"Elsa.Sequence","version":1,"activities":[{{scopeJson}}]}""";
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddElsa(elsa => elsa.UseWorkflowManagement(management =>
+        {
+            management.AddActivity<Sequence>();
+            management.AddActivity<CompensationScope>();
+            management.UseFailOnValidationErrors(false);
+        }));
+        await using var serviceProvider = services.BuildServiceProvider();
+        await using var serviceScope = serviceProvider.CreateAsyncScope();
+        var scopedServices = serviceScope.ServiceProvider;
+        var activityRegistry = scopedServices.GetRequiredService<IActivityRegistry>();
+        await activityRegistry.RegisterAsync<Sequence>();
+        await activityRegistry.RegisterAsync<CompensationScope>();
+        var workflowDefinitionService = scopedServices.GetRequiredService<IWorkflowDefinitionService>();
+        var definition = new WorkflowDefinition
+        {
+            Id = "version-1",
+            DefinitionId = "definition-1",
+            Version = 1,
+            MaterializerName = JsonWorkflowMaterializer.MaterializerName,
+            StringData = workflowJson
+        };
+
+        var graph = await workflowDefinitionService.MaterializeWorkflowAsync(definition);
+        var opaqueScope = Assert.IsType<NotFoundActivity>(Assert.Single(graph.Nodes.Select(node => node.Activity).Where(activity => activity.Id == "scope-1")));
+        Assert.Equal(CompensationScope.ActivityTypeName, opaqueScope.MissingTypeName);
+        Assert.Equal(scopeJson, opaqueScope.OriginalActivityJson);
+
+        var result = await scopedServices.GetRequiredService<IWorkflowDefinitionPublisher>().PublishAsync(definition);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(CompensationScope.DraftOnlyDiagnosticCode, Assert.Single(result.ValidationErrors).Code);
+        Assert.Equal("scope-1", result.ValidationErrors[0].ActivityId);
+    }
+
     public sealed class OpaquePayloadActivity : Activity
     {
         [JsonExtensionData]
