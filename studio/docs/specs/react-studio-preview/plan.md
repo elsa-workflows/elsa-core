@@ -165,3 +165,20 @@ checks for IDs, nested clones and edge preservation. Confirmed gaps are tracked 
 #8940 (workflow log persistence), #8941 (variable test values), #8942 (Applications/API
 keys), #8943 (HTTP ports/embedded branches) and #8944 (batch paste names). The retained
 sanitized observations identify the audited source head and real API boundaries.
+
+## Third-party module authoring
+
+The sample generator creates a standalone RCL and host using package references
+only. Its widget and activity tab use the shared public UI/auth/API contexts,
+scoped CSS, immutable custom-property updates and read-only editor context.
+The [authoring guide](../../../react/docs/module-authoring.md) covers generation,
+slot ordering, compatibility majors, feature enablement, packaging and cache-safe
+versioning. Template source files carry a `.template` suffix and are project data,
+outside the root solution and release inventory.
+
+An integration check generates outside the repository, installs four packed npm
+packages, builds all three RCL frameworks, packs it, restores a host from local
+NuGet feeds and exercises both contributions in Chromium. It verifies saved data,
+read-only behavior, immutable asset caching and feature removal. CI runs the check
+after packing the Preview libraries. This is local package-consumption evidence;
+registry publication and the final Preview release remain separate work.

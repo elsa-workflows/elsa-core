@@ -15,6 +15,7 @@
     "build:packages": "pnpm --filter \"./packages/*\" run build",
     "docs:api": "pnpm build:packages && typedoc",
     "test:packages": "pnpm build:packages && node scripts/test-packed-packages.mjs",
+    "test:module": "pnpm build:packages && node scripts/test-module-template.mjs",
     "check:boundaries": "node scripts/check-module-boundaries.mjs"
   },
   "dependencies": {
