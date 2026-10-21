@@ -32,9 +32,9 @@ public static class BpmnProcessGraphs
         {
             _ = Build(scope);
 
-            foreach (var bindingRef in scope.WorkBindings.Keys)
+            foreach (var nested in scope.WorkBindings.Keys.Select(scope.FindWorkActivity).OfType<BpmnProcess>())
             {
-                if (scope.FindWorkActivity(bindingRef) is BpmnProcess nested && visited.Add(nested))
+                if (visited.Add(nested))
                 {
                     pending.Push(nested);
                 }
