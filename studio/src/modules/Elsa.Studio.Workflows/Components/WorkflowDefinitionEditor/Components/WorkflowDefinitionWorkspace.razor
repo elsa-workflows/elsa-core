@@ -1,5 +1,6 @@
 @using BlazorMonaco.Editor
 @using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.WorkflowProperties
+@using Elsa.Studio.Workflows.Domain.Models
 @using Orientation = Radzen.Orientation
 @inherits StudioComponentBase
 @using Elsa.Studio.Workflows.Services
@@ -62,6 +63,12 @@
                         }
                         else
                         {
+                            @if (NativeCompensationDraftCapability.ContainsCompensationScope(_selectedWorkflowDefinition.Root) && !HasNativeCompensationDraftCapability)
+                            {
+                                <MudAlert Severity="Severity.Warning" Variant="MudBlazor.Variant.Filled" Square="true" Class="py-1">
+                                    @Localizer["This server does not advertise native compensation draft authoring. The compensation workflow is read-only and cannot be saved here."]
+                                </MudAlert>
+                            }
                             <WorkflowDefinitionVersionViewer @key="_selectedWorkflowDefinition.DefinitionId"
                                                              WorkflowDefinition="_selectedWorkflowDefinition"
                                                              WorkflowDefinitionExecuted="WorkflowDefinitionExecuted"

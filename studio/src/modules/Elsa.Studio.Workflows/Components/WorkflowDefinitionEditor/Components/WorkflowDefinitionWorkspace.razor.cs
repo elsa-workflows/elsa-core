@@ -1,8 +1,11 @@
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Api.Client.Shared.Models;
 using Elsa.Studio.Authorization;
+using Elsa.Studio.Contracts;
+using Elsa.Studio.Extensions;
 using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.Models;
 using Elsa.Studio.Workflows.Domain.Contracts;
+using Elsa.Studio.Workflows.Domain.Models;
 using Elsa.Studio.Workflows.Extensions;
 using Elsa.Studio.Workflows.UI.Contracts;
 using Microsoft.AspNetCore.Components;
@@ -14,7 +17,7 @@ using System.Text.Json.Nodes;
 namespace Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components;
 
 /// A workspace for editing a workflow definition.
-public partial class WorkflowDefinitionWorkspace : IWorkspace
+public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
 {
     private bool _autoSave;
     private bool _autoApply;
@@ -25,10 +28,17 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace
     private WorkflowDefinition? _lastIncomingWorkflowDefinition;
     private WorkflowDefinition? _lastIncomingSelectedWorkflowDefinition;
     private long _workflowDefinitionReloadVersion;
+    private long _compensationCapabilityGeneration;
+    private bool _nativeCompensationDraftCapabilityEnabled;
+    private string? _compensationCapabilityContextKey;
+    private string? _compensationDocumentContextKey;
+    private CancellationTokenSource? _compensationCapabilityCheck;
     private WorkflowEditor WorkflowEditor { get; set; } = null!;
     private CodeView CodeView { get; set; } = null!;
 
     [Inject] private IWorkflowDefinitionService WorkflowDefinitionService { get; set; } = null!;
+    [Inject] private IRemoteFeatureProvider RemoteFeatureProvider { get; set; } = null!;
+    [Inject] private IBackendApiClientProvider BackendApiClientProvider { get; set; } = null!;
     [Inject] private IOptions<WorkflowDefinitionOptions> WorkflowDefinitionOptions { get; set; } = null!;
 
     /// Gets or sets the workflow definition to edit.
@@ -56,7 +66,12 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace
 
     /// <inheritdoc />
     /// <remarks>A user who cannot save workflow definitions gets the read-only viewer and read-only properties.</remarks>
-    public bool IsReadOnly => _selectedWorkflowDefinition.GetIsReadOnly() || !Permissions.CanWriteDefinitions();
+    public bool IsReadOnly => _selectedWorkflowDefinition.GetIsReadOnly() || !Permissions.CanWriteDefinitions() ||
+                              (NativeCompensationDraftCapability.ContainsCompensationScope(_selectedWorkflowDefinition?.Root) &&
+                               (!HasNativeCompensationDraftCapability || _compensationDocumentContextKey != BackendApiClientProvider.ContextKey));
+
+    private bool HasNativeCompensationDraftCapability =>
+        _nativeCompensationDraftCapabilityEnabled && _compensationCapabilityContextKey == BackendApiClientProvider.ContextKey;
 
     /// <inheritdoc />
     public bool HasWorkflowEditPermission => (_selectedWorkflowDefinition?.Links?.Count(l => l.Rel == "publish") ?? 0) > 0;
@@ -76,6 +91,7 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace
         _lastIncomingSelectedWorkflowDefinition = SelectedWorkflowDefinition;
         _workflowDefinition = WorkflowDefinition;
         _selectedWorkflowDefinition = SelectedWorkflowDefinition ?? _workflowDefinition;
+        _compensationDocumentContextKey = BackendApiClientProvider.ContextKey;
     }
 
     /// <inheritdoc />
@@ -96,7 +112,61 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace
             _workflowDefinition = WorkflowDefinition;
 
         _selectedWorkflowDefinition = SelectedWorkflowDefinition ?? _workflowDefinition;
+        _compensationDocumentContextKey = BackendApiClientProvider.ContextKey;
         _workflowDefinitionReloadVersion++;
+        _nativeCompensationDraftCapabilityEnabled = false;
+        _compensationCapabilityContextKey = null;
+        _compensationCapabilityGeneration++;
+        _compensationCapabilityCheck?.Cancel();
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        _compensationCapabilityCheck?.Cancel();
+        _compensationCapabilityCheck?.Dispose();
+        _compensationCapabilityCheck = null;
+
+        if (!NativeCompensationDraftCapability.ContainsCompensationScope(_selectedWorkflowDefinition?.Root))
+        {
+            _nativeCompensationDraftCapabilityEnabled = false;
+            _compensationCapabilityContextKey = null;
+            return;
+        }
+
+        var cancellationSource = new CancellationTokenSource();
+        _compensationCapabilityCheck = cancellationSource;
+        var generation = ++_compensationCapabilityGeneration;
+        var backendContextKey = BackendApiClientProvider.ContextKey;
+        _compensationCapabilityContextKey = backendContextKey;
+        _nativeCompensationDraftCapabilityEnabled = false;
+        if (_compensationDocumentContextKey != backendContextKey)
+            return;
+
+        bool capabilityEnabled;
+        try
+        {
+            capabilityEnabled = await NativeCompensationDraftCapability.IsEnabledAsync(RemoteFeatureProvider, cancellationSource.Token);
+        }
+        catch (OperationCanceledException) when (cancellationSource.IsCancellationRequested)
+        {
+            return;
+        }
+
+        if (generation != _compensationCapabilityGeneration ||
+            !ReferenceEquals(_compensationCapabilityCheck, cancellationSource) ||
+            BackendApiClientProvider.ContextKey != backendContextKey)
+            return;
+
+        _nativeCompensationDraftCapabilityEnabled = capabilityEnabled;
+    }
+
+    public void Dispose()
+    {
+        _compensationCapabilityGeneration++;
+        _compensationCapabilityCheck?.Cancel();
+        _compensationCapabilityCheck?.Dispose();
+        _compensationCapabilityCheck = null;
     }
 
     /// Displays the specified workflow definition version.

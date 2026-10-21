@@ -4,6 +4,8 @@ Status: Proposed design for [#8953](https://github.com/elsa-workflows/elsa-core/
 
 This contract settles the bounded native Core/Studio caller shape for the first authored compensation scope. It keeps public DTO, endpoint, and permission names open until their real callers are implemented and reviewed. The Studio [interaction plan](../../../../studio/docs/specs/native-compensation/plan.md) remains canonical for user interaction; this document owns the source-grounded Core serialization/traversal, pinning, publish-diagnostic, and recovery-read caller contracts.
 
+The effect-free authoring prerequisite in #8956 implements a version-1 `Elsa.CompensationScope` draft with strict raw-pin preservation, paired Studio authoring, additive stable-ID publication diagnostics, and mandatory publication/execution refusal. This bounded slice has no positive publish or owned-child execution path. The broader Core contract remains unqualified for E1–E3, persistence, participants, recovery, and M1 activation; integrated storage, host, and browser evidence is still required.
+
 ## Verified seams and E3 implications
 
 | Current source and capability at the pinned revision | Proposed E3 implication |

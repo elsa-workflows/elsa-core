@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Net.Mime;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Elsa.Api.Client.Converters;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
@@ -17,7 +18,11 @@ namespace Elsa.Studio.Workflows.Domain.Services;
 /// <summary>
 /// A workflow definition service that uses a remote backend to retrieve workflow definitions.
 /// </summary>
-public class WorkflowDefinitionImporter(IBackendApiClientProvider backendApiClientProvider, IMediator mediator, IWorkflowJsonDetector workflowJsonDetector) : IWorkflowDefinitionImporter
+public class WorkflowDefinitionImporter(
+    IBackendApiClientProvider backendApiClientProvider,
+    IMediator mediator,
+    IWorkflowJsonDetector workflowJsonDetector,
+    IRemoteFeatureProvider? remoteFeatureProvider = null) : IWorkflowDefinitionImporter
 {
     private async Task<IWorkflowDefinitionsApi> GetApiAsync(CancellationToken cancellationToken = default)
     {
@@ -119,6 +124,11 @@ public class WorkflowDefinitionImporter(IBackendApiClientProvider backendApiClie
                     Failure = new("Invalid schema", WorkflowImportFailureType.InvalidSchema)
                 };
             }
+
+            if (JsonNode.Parse(json) is JsonObject workflow &&
+                NativeCompensationDraftCapability.ContainsCompensationScope(workflow["root"]) &&
+                !await NativeCompensationDraftCapability.IsEnabledAsync(remoteFeatureProvider))
+                throw new InvalidOperationException("This server does not advertise native compensation draft authoring. The workflow was not imported.");
 
             var model = JsonSerializer.Deserialize<WorkflowDefinitionModel>(json, jsonSerializerOptions)!;
 

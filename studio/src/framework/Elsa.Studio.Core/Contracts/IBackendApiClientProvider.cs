@@ -13,6 +13,11 @@ public interface IBackendApiClientProvider
     Uri Url { get; }
 
     /// <summary>
+    /// Gets an opaque key that changes when the selected backend context changes, even if its URL is unchanged.
+    /// </summary>
+    string ContextKey => Url.ToString();
+
+    /// <summary>
     /// Gets an API client from the backend connection provider.
     /// </summary>
     /// <typeparam name="T">The API client type.</typeparam>

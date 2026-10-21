@@ -1,0 +1,349 @@
+@using System.Text.Json
+@using System.Text.Json.Nodes
+@using Elsa.Api.Client.Resources.ActivityDescriptors.Models
+@using Elsa.Studio.Contracts
+@using Elsa.Studio.Workflows.Domain.Contracts
+@using Elsa.Studio.Workflows.Domain.Models
+@using Elsa.Studio.Workflows.Domain.Services
+@using Elsa.Studio.Extensions
+@using Humanizer
+@using MudBlazor
+@implements IDisposable
+@inject IActivityRegistry ActivityRegistry
+@inject IIdentityGenerator IdentityGenerator
+@inject IActivityNameGenerator ActivityNameGenerator
+@inject IRemoteFeatureProvider RemoteFeatureProvider
+@inject IBackendApiClientProvider BackendApiClientProvider
+
+<MudStack Spacing="2" Class="pa-4" role="region" aria-label="Compensation draft editor">
+    <MudAlert Severity="Severity.Info" Variant="MudBlazor.Variant.Outlined">
+        Draft only. This scope does not run its forward or handler activities and cannot be published.
+    </MudAlert>
+
+    @if (_isOpaque)
+    {
+        <MudAlert Severity="Severity.Warning" Variant="MudBlazor.Variant.Outlined">
+            This compensation draft is preserved as opaque, read-only data because its scope or child version is unsupported.
+        </MudAlert>
+    }
+    else if (!_isReady)
+    {
+        <MudProgressLinear Indeterminate="true" aria-label="Checking compensation draft support" />
+    }
+    else if (!_canEdit)
+    {
+        <MudAlert Severity="Severity.Warning" Variant="MudBlazor.Variant.Outlined">
+            The server does not advertise native compensation draft authoring. This scope is read-only and cannot be saved here.
+        </MudAlert>
+    }
+    else
+    {
+        <MudSelect T="string" Label="On forward fault" Value='@(GetString(Activity, "onForwardFault") ?? NativeCompensationDraftCapability.CompensatedHandoff)'
+                   ValueChanged="OnFaultHandoffChangedAsync" Disabled="@(!IsEditable)" Dense="true" Variant="MudBlazor.Variant.Outlined">
+            <MudSelectItem Value="@NativeCompensationDraftCapability.CompensatedHandoff">Compensated</MudSelectItem>
+            <MudSelectItem Value="@NativeCompensationDraftCapability.PropagateOriginalFaultHandoff">Propagate original fault</MudSelectItem>
+        </MudSelect>
+
+        <MudStack Row="true" AlignItems="MudBlazor.AlignItems.Center">
+            <MudText Typo="Typo.h6">Compensation steps</MudText>
+            <MudSpacer />
+            <MudButton Variant="MudBlazor.Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="AddStepAsync" Disabled="@(!IsEditable)" aria-label="Add compensation step">
+                Add step
+            </MudButton>
+        </MudStack>
+
+        @if (Steps.Count == 0)
+        {
+            <MudText Color="Color.Secondary">No steps yet. Add a step to author a paired forward and handler activity.</MudText>
+        }
+
+        @for (var index = 0; index < Steps.Count; index++)
+        {
+            var step = Steps[index] as JsonObject;
+            if (step == null)
+                continue;
+            var stepIndex = index;
+            <MudPaper @key='GetString(step, "stepId")' Outlined="true" Class="pa-3">
+                <MudStack Spacing="2">
+                    <MudStack Row="true" AlignItems="MudBlazor.AlignItems.Center">
+                        <MudTextField T="string" Label="Step name" Value='@GetString(step, "name")'
+                                      ValueChanged="@(value => RenameStepAsync(step, value))" ReadOnly="@(!IsEditable)"
+                                      Dense="true" Variant="MudBlazor.Variant.Outlined" Class="flex-grow-1" />
+                        <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowUp" AriaLabel="Move step up"
+                                       Disabled="@(!IsEditable || stepIndex == 0)" OnClick="@(() => MoveStepAsync(stepIndex, -1))" />
+                        <MudIconButton Icon="@Icons.Material.Filled.KeyboardArrowDown" AriaLabel="Move step down"
+                                       Disabled="@(!IsEditable || stepIndex == Steps.Count - 1)" OnClick="@(() => MoveStepAsync(stepIndex, 1))" />
+                        <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline" AriaLabel="Remove step"
+                                       Disabled="@(!IsEditable)" OnClick="@(() => RemoveStepAsync(stepIndex))" />
+                    </MudStack>
+
+                    @foreach (var role in ChildRoles)
+                    {
+                        var childRole = role;
+                        var child = step[childRole] as JsonObject;
+                        <MudStack Row="true" AlignItems="MudBlazor.AlignItems.Center">
+                            <MudSelect T="string" Label="@(childRole == "forward" ? "Forward activity" : "Inline handler")"
+                                       Value='@GetString(child, "type")'
+                                       ValueChanged="@(type => SetChildTypeAsync(step, childRole, type))"
+                                       Disabled="@(!IsEditable)" Clearable="true" Dense="true" Variant="MudBlazor.Variant.Outlined" Class="flex-grow-1">
+                                @foreach (var descriptor in _activityDescriptors)
+                                {
+                                    <MudSelectItem Value="@descriptor.TypeName">@(descriptor.DisplayName ?? descriptor.Name)</MudSelectItem>
+                                }
+                            </MudSelect>
+                            @if (child != null)
+                            {
+                                <MudButton Variant="MudBlazor.Variant.Text" StartIcon="@Icons.Material.Filled.Tune"
+                                           Disabled="@(!IsEditable)" OnClick="@(() => SelectChildAsync(child))"
+                                           aria-label="@($"Select {childRole} activity properties")">
+                                    Edit properties
+                                </MudButton>
+                            }
+                        </MudStack>
+                    }
+
+                    @if (HasMappings(step))
+                    {
+                        <MudAlert Severity="Severity.Info" Variant="MudBlazor.Variant.Text" Dense="true">
+                            Existing capture mappings are preserved and read-only in this draft editor.
+                        </MudAlert>
+                    }
+                </MudStack>
+            </MudPaper>
+        }
+    }
+</MudStack>
+
+@code {
+    private static readonly string[] ChildRoles = ["forward", "handler"];
+    private IReadOnlyCollection<ActivityDescriptor> _activityDescriptors = [];
+    private bool _isReady;
+    private bool _isOpaque;
+    private bool _canEdit;
+    private string? _capabilityBackendContextKey;
+    private CancellationTokenSource? _capabilityCheck;
+
+    [Parameter, EditorRequired] public JsonObject Activity { get; set; } = [];
+    [Parameter] public string DocumentBackendContextKey { get; set; } = "";
+    [Parameter] public bool IsReadOnly { get; set; }
+    [Parameter] public EventCallback<JsonObject> ActivitySelected { get; set; }
+    [Parameter] public EventCallback GraphUpdated { get; set; }
+
+    private JsonArray Steps => Activity["steps"] as JsonArray ?? [];
+    private bool IsEditable => _canEdit &&
+                               _capabilityBackendContextKey == BackendApiClientProvider.ContextKey &&
+                               DocumentBackendContextKey == BackendApiClientProvider.ContextKey &&
+                               !IsReadOnly;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _capabilityCheck?.Cancel();
+        _capabilityCheck?.Dispose();
+        var cancellationSource = new CancellationTokenSource();
+        _capabilityCheck = cancellationSource;
+        _isReady = false;
+        _canEdit = false;
+        _capabilityBackendContextKey = null;
+        _isOpaque = !IsSupportedSchema(Activity);
+        if (_isOpaque)
+        {
+            _isReady = true;
+            return;
+        }
+
+        var backendContextKey = BackendApiClientProvider.ContextKey;
+        try
+        {
+            await ActivityRegistry.EnsureLoadedAsync(cancellationSource.Token);
+        }
+        catch (OperationCanceledException) when (cancellationSource.IsCancellationRequested)
+        {
+            return;
+        }
+        _activityDescriptors = ActivityRegistry.List()
+            .Where(IsSupportedActivityDescriptor)
+            .OrderBy(x => x.DisplayName ?? x.Name, StringComparer.Ordinal)
+            .ToArray();
+        _isOpaque = !AreChildPinsSupported(Activity, ActivityRegistry);
+        _capabilityBackendContextKey = backendContextKey;
+        bool capabilityEnabled;
+        try
+        {
+            capabilityEnabled = await NativeCompensationDraftCapability.IsEnabledAsync(RemoteFeatureProvider, cancellationSource.Token);
+        }
+        catch (OperationCanceledException) when (cancellationSource.IsCancellationRequested)
+        {
+            return;
+        }
+        if (!ReferenceEquals(_capabilityCheck, cancellationSource) ||
+            BackendApiClientProvider.ContextKey != backendContextKey ||
+            DocumentBackendContextKey != backendContextKey)
+            return;
+
+        _canEdit = !_isOpaque && capabilityEnabled && !IsReadOnly;
+        _isReady = true;
+    }
+
+    private async Task AddStepAsync()
+    {
+        if (!IsEditable)
+            return;
+
+        var steps = EnsureSteps();
+        steps.Add(new JsonObject
+        {
+            ["stepId"] = Guid.NewGuid().ToString("N"),
+            ["name"] = $"Step {steps.Count + 1}",
+            ["forward"] = null,
+            ["handler"] = null,
+            ["mappings"] = new JsonArray()
+        });
+        await NotifyChangedAsync();
+    }
+
+    private async Task RenameStepAsync(JsonObject step, string? name)
+    {
+        if (!IsEditable)
+            return;
+        step["name"] = name;
+        await NotifyChangedAsync();
+    }
+
+    private async Task MoveStepAsync(int index, int offset)
+    {
+        var steps = Activity["steps"] as JsonArray;
+        var destination = index + offset;
+        if (!IsEditable || steps == null || index < 0 || index >= steps.Count || destination < 0 || destination >= steps.Count)
+            return;
+
+        var step = steps[index];
+        steps.RemoveAt(index);
+        steps.Insert(destination, step);
+        await NotifyChangedAsync();
+    }
+
+    private async Task RemoveStepAsync(int index)
+    {
+        var steps = Activity["steps"] as JsonArray;
+        if (!IsEditable || steps == null || index < 0 || index >= steps.Count)
+            return;
+
+        steps.RemoveAt(index);
+        await NotifyChangedAsync();
+    }
+
+    private async Task SetChildTypeAsync(JsonObject step, string role, string? typeName)
+    {
+        if (!IsEditable)
+            return;
+
+        var descriptor = _activityDescriptors.FirstOrDefault(x => x.TypeName == typeName);
+        if (descriptor == null)
+        {
+            step[role] = null;
+            await NotifyChangedAsync();
+            return;
+        }
+
+        var id = IdentityGenerator.GenerateId();
+        var child = new JsonObject
+        {
+            ["id"] = id,
+            ["nodeId"] = $"{GetString(Activity, "nodeId") ?? GetString(Activity, "id")}:{id}",
+            ["name"] = ActivityNameGenerator.GenerateNextName(EnumerateChildActivities(Steps), descriptor),
+            ["type"] = descriptor.TypeName,
+            ["version"] = descriptor.Version
+        };
+        foreach (var property in descriptor.ConstructionProperties)
+            child[property.Key.Camelize()] = JsonSerializer.SerializeToNode(property.Value);
+
+        step[role] = child;
+        await NotifyChangedAsync();
+        await SelectChildAsync(child);
+    }
+
+    private async Task OnFaultHandoffChangedAsync(string value)
+    {
+        if (!IsEditable || value is not (NativeCompensationDraftCapability.CompensatedHandoff or NativeCompensationDraftCapability.PropagateOriginalFaultHandoff))
+            return;
+        Activity["onForwardFault"] = value;
+        await NotifyChangedAsync();
+    }
+
+    private Task SelectChildAsync(JsonObject child) => IsEditable ? ActivitySelected.InvokeAsync(child) : Task.CompletedTask;
+
+    private async Task NotifyChangedAsync()
+    {
+        await GraphUpdated.InvokeAsync();
+    }
+
+    public void Dispose()
+    {
+        _capabilityCheck?.Cancel();
+        _capabilityCheck?.Dispose();
+        _capabilityCheck = null;
+    }
+
+    private JsonArray EnsureSteps()
+    {
+        if (Activity["steps"] is JsonArray steps)
+            return steps;
+        Activity["steps"] = new JsonArray();
+        return (JsonArray)Activity["steps"]!;
+    }
+
+    private static IEnumerable<JsonObject> EnumerateChildActivities(JsonArray steps) =>
+        steps.OfType<JsonObject>().SelectMany(step => ChildRoles.Select(role => step[role]).OfType<JsonObject>());
+
+    private static bool HasMappings(JsonObject step) => step["mappings"] is JsonArray mappings && mappings.Count > 0;
+
+    private static bool IsSupportedSchema(JsonObject scope) =>
+        GetString(scope, "type") == "Elsa.CompensationScope" &&
+        GetInt32(scope, "version") == 1 &&
+        GetInt32(scope, "draftSchemaVersion") == 1 &&
+        scope["steps"] is JsonArray steps &&
+        steps.All(step => step is JsonObject row && !string.IsNullOrWhiteSpace(GetString(row, "stepId"))) &&
+        (GetString(scope, "onForwardFault") is null or NativeCompensationDraftCapability.CompensatedHandoff or NativeCompensationDraftCapability.PropagateOriginalFaultHandoff);
+
+    private static bool AreChildPinsSupported(JsonObject scope, IActivityRegistry registry) =>
+        scope["steps"] is JsonArray steps && steps.All(step => step is JsonObject row &&
+            ChildRoles.All(role => row[role] is not JsonObject child || IsSupportedPinnedActivity(child, registry)));
+
+    private static bool IsSupportedPinnedActivity(JsonObject activity, IActivityRegistry registry)
+    {
+        var typeName = GetString(activity, "type");
+        var version = GetInt32(activity, "version");
+        var descriptor = typeName == null || version == null ? null : registry.Find(typeName, version);
+        if (descriptor == null || !IsSupportedActivityDescriptor(descriptor) ||
+            string.IsNullOrWhiteSpace(GetString(activity, "id")) ||
+            activity.ContainsKey("workflowDefinitionId") || activity.ContainsKey("workflowDefinitionVersionId"))
+            return false;
+
+        return activity.All(property => IsSupportedPinnedValue(property.Value, registry));
+    }
+
+    private static bool IsSupportedPinnedValue(JsonNode? value, IActivityRegistry registry)
+    {
+        if (value is JsonObject obj)
+        {
+            if (GetString(obj, "type") != null && GetString(obj, "id") != null)
+                return IsSupportedPinnedActivity(obj, registry);
+            return obj.All(x => IsSupportedPinnedValue(x.Value, registry));
+        }
+
+        return value is not JsonArray array || array.All(item => IsSupportedPinnedValue(item, registry));
+    }
+
+    private static bool IsSupportedActivityDescriptor(ActivityDescriptor descriptor) =>
+        descriptor.TypeName != "Elsa.CompensationScope" &&
+        descriptor.TypeName != "Elsa.NotFoundActivity" &&
+        (!descriptor.CustomProperties.TryGetValue("RootType", out var rootType) ||
+         rootType?.ToString() != "WorkflowDefinitionActivity");
+
+    private static int? GetInt32(JsonObject obj, string key) =>
+        obj[key] is JsonValue value && value.TryGetValue<int>(out var result) ? result : null;
+
+    private static string? GetString(JsonObject? obj, string key) =>
+        obj?[key] is JsonValue value && value.TryGetValue<string>(out var result) ? result : null;
+}

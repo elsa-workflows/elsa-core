@@ -1,6 +1,8 @@
 ﻿using Elsa.Api.Client.Resources.ActivityDescriptors.Models;
 using Elsa.Studio.Contracts;
+using Elsa.Studio.Extensions;
 using Elsa.Studio.Workflows.Domain.Contracts;
+using Elsa.Studio.Workflows.Domain.Models;
 using Elsa.Studio.Workflows.Domain.Extensions;
 using Elsa.Studio.Workflows.Models;
 using Elsa.Studio.Workflows.UI.Contracts;
@@ -45,6 +47,7 @@ public partial class ActivityPicker
     [Inject] private IActivityRegistry ActivityRegistry { get; set; } = default!;
     [Inject] private IActivityDisplaySettingsRegistry ActivityDisplaySettingsRegistry { get; set; } = default!;
     [Inject] private IMediator Mediator { get; set; } = default!;
+    [Inject] private IRemoteFeatureProvider RemoteFeatureProvider { get; set; } = default!;
 
     private IEnumerable<ActivityDescriptor> ActivityDescriptors { get; set; } = new List<ActivityDescriptor>();
 
@@ -57,12 +60,23 @@ public partial class ActivityPicker
     private async Task Refresh()
     {
         await ActivityRegistry.EnsureLoadedAsync();
-        ActivityDescriptors = ActivityRegistry.ListBrowsable();
+        var descriptors = ActivityRegistry.ListBrowsable();
+        var supportsCompensationDrafts = await NativeCompensationDraftCapability.IsEnabledAsync(RemoteFeatureProvider);
+        ActivityDescriptors = supportsCompensationDrafts
+            ? descriptors
+            : descriptors.Where(x => !string.Equals(x.TypeName, "Elsa.CompensationScope", StringComparison.Ordinal));
         StateHasChanged();
     }
 
-    private void OnDragStart(ActivityDescriptor activityDescriptor)
+    private async Task OnDragStart(ActivityDescriptor activityDescriptor)
     {
+        if (string.Equals(activityDescriptor.TypeName, "Elsa.CompensationScope", StringComparison.Ordinal) &&
+            !await NativeCompensationDraftCapability.IsEnabledAsync(RemoteFeatureProvider))
+        {
+            DragDropManager.Payload = null;
+            return;
+        }
+
         DragDropManager.Payload = activityDescriptor;
     }
 }

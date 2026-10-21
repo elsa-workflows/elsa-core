@@ -2,6 +2,7 @@
 using Elsa.Common.Serialization;
 using Elsa.Expressions.Services;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Activities.Compensation;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Services;
@@ -69,6 +70,98 @@ public sealed class ActivityJsonConverterTests
         Assert.Equal(expectedJsonDoc.RootElement.ToString(), actualJsonDoc.RootElement.ToString());
         Assert.True(notFoundActivity.Metadata.ContainsKey("displayText"));
         Assert.True(notFoundActivity.Metadata.ContainsKey("description"));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void When_DeserializeCompensationScopeWithUnsupportedPin_Then_PreservesItOpaque(bool wrapped)
+    {
+        const string compensationScopeJson = """
+            {"id":"scope-1","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}
+            """;
+        var activityRegistry = Substitute.For<IActivityRegistry>();
+        activityRegistry.Find(NotFoundActivityTypeName).Returns(new ActivityDescriptor { Constructor = _ => new(new NotFoundActivity()) });
+        activityRegistry.Find(CompensationScope.ActivityTypeName).Returns(new ActivityDescriptor
+        {
+            Version = 2,
+            Constructor = _ => new(new CompensationScope())
+        });
+        activityRegistry.Find(CompensationScope.ActivityTypeName, 1).Returns((ActivityDescriptor?)null);
+
+        var json = wrapped
+            ? JsonSerializer.Serialize(new { type = NotFoundActivityTypeName, version = 1, originalActivityJson = compensationScopeJson })
+            : compensationScopeJson;
+        var result = Assert.IsType<NotFoundActivity>(Execute(CreateSut(activityRegistry), json));
+
+        using var expected = JsonDocument.Parse(compensationScopeJson);
+        using var actual = JsonDocument.Parse(result.OriginalActivityJson);
+        Assert.Equal(expected.RootElement.GetRawText(), actual.RootElement.GetRawText());
+        Assert.Equal(CompensationScope.ActivityTypeName, result.MissingTypeName);
+        Assert.Equal(1, result.MissingTypeVersion);
+    }
+
+    [Fact]
+    public void When_DeserializeCompensationScopeWithUnavailableChildPin_Then_PreservesTheWholeScopeOpaque()
+    {
+        var compensationScopeJson = $$"""
+            {"id":"scope-1","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[{"stepId":"step-1","forward":{"id":"forward-1","type":"{{WriteLineActivityTypeName}}","version":1},"handler":null,"mappings":[]}]}
+            """;
+        var activityRegistry = Substitute.For<IActivityRegistry>();
+        activityRegistry.Find(NotFoundActivityTypeName).Returns(new ActivityDescriptor { Constructor = _ => new(new NotFoundActivity()) });
+        activityRegistry.Find(CompensationScope.ActivityTypeName).Returns(new ActivityDescriptor { Version = 1 });
+        activityRegistry.Find(CompensationScope.ActivityTypeName, 1).Returns(new ActivityDescriptor { Version = 1 });
+        activityRegistry.Find(WriteLineActivityTypeName).Returns(new ActivityDescriptor { Version = 2 });
+        activityRegistry.Find(WriteLineActivityTypeName, 1).Returns((ActivityDescriptor?)null);
+
+        var result = Assert.IsType<NotFoundActivity>(Execute(CreateSut(activityRegistry), compensationScopeJson));
+
+        using var expected = JsonDocument.Parse(compensationScopeJson);
+        using var actual = JsonDocument.Parse(result.OriginalActivityJson);
+        Assert.Equal(expected.RootElement.GetRawText(), actual.RootElement.GetRawText());
+        Assert.Equal(CompensationScope.ActivityTypeName, result.MissingTypeName);
+        Assert.Equal(1, result.MissingTypeVersion);
+    }
+
+    [Fact]
+    public void When_DeserializeCompensationScopeWithNullMappings_Then_PreservesTheWholeScopeOpaque()
+    {
+        const string compensationScopeJson = """
+            {"id":"scope-1","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[{"stepId":"step-1","forward":null,"handler":null,"mappings":null}]}
+            """;
+        var activityRegistry = Substitute.For<IActivityRegistry>();
+        activityRegistry.Find(NotFoundActivityTypeName).Returns(new ActivityDescriptor { Constructor = _ => new(new NotFoundActivity()) });
+        activityRegistry.Find(CompensationScope.ActivityTypeName).Returns(new ActivityDescriptor { Version = 1 });
+        activityRegistry.Find(CompensationScope.ActivityTypeName, 1).Returns(new ActivityDescriptor { Version = 1 });
+
+        var result = Assert.IsType<NotFoundActivity>(Execute(CreateSut(activityRegistry), compensationScopeJson));
+
+        using var expected = JsonDocument.Parse(compensationScopeJson);
+        using var actual = JsonDocument.Parse(result.OriginalActivityJson);
+        Assert.Equal(expected.RootElement.GetRawText(), actual.RootElement.GetRawText());
+        Assert.Equal(JsonValueKind.Null, actual.RootElement.GetProperty("steps")[0].GetProperty("mappings").ValueKind);
+    }
+
+    [Fact]
+    public void When_DeserializeCompensationScopeWithUnavailableNestedChildPinWithoutId_Then_PreservesTheWholeScopeOpaque()
+    {
+        const string template = """
+            {"id":"scope-1","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[{"stepId":"step-1","forward":{"id":"forward-1","type":"WRITE_LINE_TYPE","version":2,"customProperties":{"nested":{"type":"WRITE_LINE_TYPE","version":1}}},"handler":null,"mappings":[]}]}
+            """;
+        var compensationScopeJson = template.Replace("WRITE_LINE_TYPE", WriteLineActivityTypeName, StringComparison.Ordinal);
+        var activityRegistry = Substitute.For<IActivityRegistry>();
+        activityRegistry.Find(NotFoundActivityTypeName).Returns(new ActivityDescriptor { Constructor = _ => new(new NotFoundActivity()) });
+        activityRegistry.Find(CompensationScope.ActivityTypeName).Returns(new ActivityDescriptor { Version = 1 });
+        activityRegistry.Find(CompensationScope.ActivityTypeName, 1).Returns(new ActivityDescriptor { Version = 1 });
+        activityRegistry.Find(WriteLineActivityTypeName).Returns(new ActivityDescriptor { Version = 2 });
+        activityRegistry.Find(WriteLineActivityTypeName, 2).Returns(new ActivityDescriptor { Version = 2, Constructor = _ => new(WriteLineActivity) });
+        activityRegistry.Find(WriteLineActivityTypeName, 1).Returns((ActivityDescriptor?)null);
+
+        var result = Assert.IsType<NotFoundActivity>(Execute(CreateSut(activityRegistry), compensationScopeJson));
+
+        using var expected = JsonDocument.Parse(compensationScopeJson);
+        using var actual = JsonDocument.Parse(result.OriginalActivityJson);
+        Assert.Equal(expected.RootElement.GetRawText(), actual.RootElement.GetRawText());
     }
 
     [Fact]
@@ -339,14 +432,16 @@ public sealed class ActivityJsonConverterTests
             .GetService(typeof(ILogger<ActivityJsonConverter>))!
             .Returns(CreateLogger<ActivityJsonConverter>());
 
+        var activityWriter = new ActivityWriter(
+            activityRegistry,
+            new(expressionDescriptorRegistry),
+            CreateLogger<ActivityWriter>());
+        serviceProvider.GetService(typeof(ActivityWriter)).Returns(activityWriter);
+
         return new(
             activityRegistry,
             expressionDescriptorRegistry,
-            new(
-                activityRegistry,
-                new(expressionDescriptorRegistry),
-                CreateLogger<ActivityWriter>()
-            ),
+            activityWriter,
             serviceProvider
         );
     }

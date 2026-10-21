@@ -1,3 +1,5 @@
+using Elsa.Workflows.Activities.Compensation;
+
 namespace Elsa.Workflows.Pipelines.ActivityExecution;
 
 /// <inheritdoc />
@@ -28,11 +30,15 @@ public class ActivityExecutionPipelinePipelineBuilder(IServiceProvider servicePr
     internal static ActivityMiddlewareDelegate Guard(ActivityMiddlewareDelegate pipeline, IServiceProvider serviceProvider) => async context =>
     {
         var workflow = context.WorkflowExecutionContext;
+        CompensationScopeExecutionGuard.DemandExecutable(workflow);
         var guard = serviceProvider.GetService(typeof(IWorkflowExecutionGuard)) as IWorkflowExecutionGuard ?? workflow.GetService<IWorkflowExecutionGuard>();
         if (guard != null)
         {
             await guard.AuthorizeAsync(workflow, WorkflowExecutionEntryPoint.DirectPipeline);
         }
+
+        // Host authorization callbacks may mutate the workflow graph.
+        CompensationScopeExecutionGuard.DemandExecutable(workflow);
         await pipeline(context);
     };
 

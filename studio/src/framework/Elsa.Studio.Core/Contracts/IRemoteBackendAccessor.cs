@@ -11,4 +11,9 @@ public interface IRemoteBackendAccessor
     /// Gets or sets the current backend.
     /// </summary>
     RemoteBackend RemoteBackend { get; }
+
+    /// <summary>
+    /// Gets an opaque identity for the selected backend context.
+    /// </summary>
+    string ContextKey => RemoteBackend.Url.ToString();
 }

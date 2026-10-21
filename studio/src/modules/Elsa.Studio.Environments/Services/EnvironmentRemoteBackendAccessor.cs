@@ -20,4 +20,7 @@ public class EnvironmentRemoteBackendAccessor(
 {
     /// <inheritdoc />
     public RemoteBackend RemoteBackend => new(environmentService.CurrentEnvironment?.Url ?? options.Value.Url);
+
+    /// <inheritdoc />
+    public string ContextKey => $"{environmentService.CurrentEnvironment?.Name ?? "default"}|{RemoteBackend.Url}";
 }

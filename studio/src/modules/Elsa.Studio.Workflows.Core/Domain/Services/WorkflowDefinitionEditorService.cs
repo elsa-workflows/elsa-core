@@ -18,11 +18,55 @@ namespace Elsa.Studio.Workflows.Domain.Services;
 /// <summary>
 /// A workflow definition service that uses a remote backend to retrieve workflow definitions.
 /// </summary>
-public class WorkflowDefinitionEditorService(IBackendApiClientProvider backendApiClientProvider, IMediator mediator) : IWorkflowDefinitionEditorService
+public class WorkflowDefinitionEditorService : IWorkflowDefinitionEditorService, IContextBoundWorkflowDefinitionEditorService
 {
-    /// <inheritdoc />
-    public async Task<Result<SaveWorkflowDefinitionResponse, ValidationErrors>> SaveAsync(WorkflowDefinition workflowDefinition, bool publish, Func<WorkflowDefinition, Task>? workflowSavedCallback = null, CancellationToken cancellationToken = default)
+    private readonly IBackendApiClientProvider backendApiClientProvider;
+    private readonly IMediator mediator;
+    private readonly IRemoteFeatureProvider? remoteFeatureProvider;
+
+    public WorkflowDefinitionEditorService(IBackendApiClientProvider backendApiClientProvider, IMediator mediator)
+        : this(backendApiClientProvider, mediator, null)
     {
+    }
+
+    public WorkflowDefinitionEditorService(
+        IBackendApiClientProvider backendApiClientProvider,
+        IMediator mediator,
+        IRemoteFeatureProvider? remoteFeatureProvider)
+    {
+        this.backendApiClientProvider = backendApiClientProvider;
+        this.mediator = mediator;
+        this.remoteFeatureProvider = remoteFeatureProvider;
+    }
+
+    /// <inheritdoc />
+    public Task<Result<SaveWorkflowDefinitionResponse, ValidationErrors>> SaveAsync(WorkflowDefinition workflowDefinition, bool publish, Func<WorkflowDefinition, Task>? workflowSavedCallback = null, CancellationToken cancellationToken = default) =>
+        SaveCoreAsync(workflowDefinition, publish, null, workflowSavedCallback, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<Result<SaveWorkflowDefinitionResponse, ValidationErrors>> SaveNativeCompensationDraftAsync(
+        WorkflowDefinition workflowDefinition,
+        bool publish,
+        string expectedBackendContextKey,
+        Func<WorkflowDefinition, Task>? workflowSavedCallback = null,
+        CancellationToken cancellationToken = default) =>
+        SaveCoreAsync(workflowDefinition, publish, expectedBackendContextKey, workflowSavedCallback, cancellationToken);
+
+    private async Task<Result<SaveWorkflowDefinitionResponse, ValidationErrors>> SaveCoreAsync(
+        WorkflowDefinition workflowDefinition,
+        bool publish,
+        string? expectedBackendContextKey,
+        Func<WorkflowDefinition, Task>? workflowSavedCallback,
+        CancellationToken cancellationToken)
+    {
+        var containsCompensationDraft = NativeCompensationDraftCapability.ContainsCompensationScope(workflowDefinition.Root);
+        if (containsCompensationDraft &&
+            !await NativeCompensationDraftCapability.IsEnabledAsync(remoteFeatureProvider, cancellationToken))
+            return new(new ValidationErrors([new("This server does not advertise native compensation draft authoring. The workflow was not saved.")]));
+
+        if (containsCompensationDraft && expectedBackendContextKey != null && expectedBackendContextKey != backendApiClientProvider.ContextKey)
+            return DraftContextChanged();
+
         var request = new SaveWorkflowDefinitionRequest
         {
             Model = new WorkflowDefinitionModel
@@ -56,6 +100,8 @@ public class WorkflowDefinitionEditorService(IBackendApiClientProvider backendAp
         };
 
         var api = await GetApiAsync(cancellationToken);
+        if (containsCompensationDraft && expectedBackendContextKey != null && expectedBackendContextKey != backendApiClientProvider.ContextKey)
+            return DraftContextChanged();
 
         try
         {
@@ -77,11 +123,18 @@ public class WorkflowDefinitionEditorService(IBackendApiClientProvider backendAp
             if (request.Publish == true) await mediator.NotifyAsync(new WorkflowDefinitionPublishingFailed(workflowDefinition, errors), cancellationToken);
             return new(errors);
         }
+
+        static Result<SaveWorkflowDefinitionResponse, ValidationErrors> DraftContextChanged() =>
+            new(new ValidationErrors([new("This compensation draft was loaded from a different backend context. Reload the workflow before saving.")]));
     }
 
     /// <inheritdoc />
     public async Task<SaveWorkflowDefinitionResponse> PublishAsync(WorkflowDefinition workflowDefinition, Func<WorkflowDefinition, Task>? workflowPublishedCallback = null, CancellationToken cancellationToken = default)
     {
+        if (NativeCompensationDraftCapability.ContainsCompensationScope(workflowDefinition.Root) &&
+            !await NativeCompensationDraftCapability.IsEnabledAsync(remoteFeatureProvider, cancellationToken))
+            throw new InvalidOperationException("This server does not advertise native compensation draft authoring. The workflow was not published.");
+
         var api = await GetApiAsync(cancellationToken);
         await mediator.NotifyAsync(new WorkflowDefinitionPublishing(workflowDefinition), cancellationToken);
         var response = await api.PublishAsync(workflowDefinition.DefinitionId, new PublishWorkflowDefinitionRequest(), cancellationToken);

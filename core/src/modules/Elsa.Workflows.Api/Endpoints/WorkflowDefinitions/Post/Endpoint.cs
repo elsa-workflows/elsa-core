@@ -59,6 +59,10 @@ internal class Post(
                 draft.DefinitionId = definitionId;
         }
 
+        // The memory store may return its retained draft by reference. Stage request
+        // data on a detached copy so a rejected Save + Publish cannot mutate stored rows.
+        draft = draft!.ShallowClone();
+
         var authorizationResult = await authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(draft), AuthorizationPolicies.NotReadOnlyPolicy);
 
         if (!authorizationResult.Succeeded)
@@ -104,6 +108,9 @@ internal class Post(
 
             if (!result.Succeeded)
             {
+                if (await CompensationDraftPublishFailure.TrySendAsync(HttpContext, result.ValidationErrors, cancellationToken))
+                    return;
+
                 foreach (var validationError in result.ValidationErrors)
                     AddError(validationError.Message);
 

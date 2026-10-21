@@ -1,3 +1,5 @@
+using Elsa.Workflows.Activities.Compensation;
+
 namespace Elsa.Workflows.Pipelines.WorkflowExecution;
 
 /// <inheritdoc />
@@ -46,12 +48,15 @@ public class WorkflowExecutionPipelineBuilder : IWorkflowExecutionPipelineBuilde
     {
         return async context =>
         {
+            CompensationScopeExecutionGuard.DemandExecutable(context);
             var guard = serviceProvider.GetService(typeof(IWorkflowExecutionGuard)) as IWorkflowExecutionGuard ?? context.GetService<IWorkflowExecutionGuard>();
             if (guard != null)
             {
                 await guard.AuthorizeAsync(context, WorkflowExecutionEntryPoint.DirectPipeline);
             }
 
+            // Host authorization callbacks may mutate the workflow graph.
+            CompensationScopeExecutionGuard.DemandExecutable(context);
             await pipeline(context);
         };
     }

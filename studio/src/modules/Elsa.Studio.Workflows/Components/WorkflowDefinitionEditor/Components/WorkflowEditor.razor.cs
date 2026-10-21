@@ -45,6 +45,7 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
     private bool _isDirty;
     private bool _disposed;
     private WorkflowDefinition? _lastImportedWorkflowDefinition;
+    private string? _workflowDefinitionBackendContextKey;
     private long _workflowDefinitionGeneration;
     private long _progressOperationSequence;
     private long? _progressOperationOwner;
@@ -175,6 +176,7 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
 
         _bpmnElementSelected = EventCallback.Factory.Create<BpmnElementSelection?>(this, OnBpmnElementSelectedAsync);
         _workflowDefinition = WorkflowDefinition;
+        _workflowDefinitionBackendContextKey = BackendApiClientProvider.ContextKey;
         AdoptServerDefinition(_workflowDefinition);
 
         await ActivityRegistry.EnsureLoadedAsync();
@@ -197,6 +199,7 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
         InvalidateWorkflowDefinitionOperations();
 
         var workflowDefinition = _workflowDefinition = WorkflowDefinition;
+        _workflowDefinitionBackendContextKey = BackendApiClientProvider.ContextKey;
         var expectedWorkflowDefinitionGeneration = _workflowDefinitionGeneration;
         AdoptServerDefinition(workflowDefinition);
 
@@ -293,11 +296,21 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
             workflowDefinition.Root = root;
         }
 
-        var result = await WorkflowDefinitionEditorService.SaveAsync(workflowDefinition, publish, async definition =>
+        var containsCompensationDraft = NativeCompensationDraftCapability.ContainsCompensationScope(workflowDefinition.Root);
+        if (containsCompensationDraft && _workflowDefinitionBackendContextKey != BackendApiClientProvider.ContextKey)
+            return new(new ValidationErrors([new(Localizer["This compensation draft was loaded from a different backend context. Reload the workflow before saving."])]));
+
+        var saveCallback = async (WorkflowDefinition definition) =>
         {
-            if (IsCurrentWorkflowOperation(workflowDefinitionGeneration))
+            if (IsCurrentWorkflowOperation(workflowDefinitionGeneration) &&
+                (!containsCompensationDraft || _workflowDefinitionBackendContextKey == BackendApiClientProvider.ContextKey))
                 await SetWorkflowDefinitionAsync(definition);
-        });
+        };
+        var result = containsCompensationDraft
+            ? WorkflowDefinitionEditorService is IContextBoundWorkflowDefinitionEditorService contextBoundService && _workflowDefinitionBackendContextKey is { } expectedContextKey
+                ? await contextBoundService.SaveNativeCompensationDraftAsync(workflowDefinition, publish, expectedContextKey, saveCallback)
+                : new(new ValidationErrors([new(Localizer["This Studio cannot save compensation drafts with backend context binding."])]))
+            : await WorkflowDefinitionEditorService.SaveAsync(workflowDefinition, publish, saveCallback);
 
         if (IsCurrentWorkflowOperation(workflowDefinitionGeneration))
         {
@@ -539,6 +552,8 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
     {
         var isNewImport = !ReferenceEquals(_lastImportedWorkflowDefinition, workflowDefinition);
         _lastImportedWorkflowDefinition = workflowDefinition;
+        if (isNewImport)
+            _workflowDefinitionBackendContextKey = BackendApiClientProvider.ContextKey;
         await SetWorkflowDefinitionAsync(workflowDefinition, isNewImport);
 
         if (isNewImport && workflowDefinition.Root != null)

@@ -1,6 +1,7 @@
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Pipelines.ActivityExecution;
 using Elsa.Workflows.Telemetry;
+using Elsa.Workflows.Activities.Compensation;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows;
@@ -16,12 +17,14 @@ public class ActivityInvoker(
     /// <inheritdoc />
     public async Task<ActivityExecutionContext> InvokeAsync(WorkflowExecutionContext workflowExecutionContext, IActivity activity, ActivityInvocationOptions? options = null)
     {
+        CompensationScopeExecutionGuard.DemandExecutable(workflowExecutionContext);
         await DemandUnownedAsync(workflowExecutionContext);
         return await InvokeCoreAsync(workflowExecutionContext, activity, options, false);
     }
 
     internal async Task<ActivityExecutionContext> InvokeAuthorizedAsync(WorkflowExecutionContext context, IActivity activity, ActivityInvocationOptions options)
     {
+        CompensationScopeExecutionGuard.DemandExecutable(context);
         if (!WorkflowExecutionPhase.Contains(context) || pipeline.GetType() != typeof(ActivityExecutionPipeline))
         {
             throw new InvalidOperationException("Activity execution requires the internal authorized scheduler lane.");
@@ -59,6 +62,7 @@ public class ActivityInvoker(
     /// <inheritdoc />
     public async Task InvokeAsync(ActivityExecutionContext activityExecutionContext)
     {
+        CompensationScopeExecutionGuard.DemandExecutable(activityExecutionContext.WorkflowExecutionContext);
         await DemandUnownedAsync(activityExecutionContext.WorkflowExecutionContext);
         await InvokeCoreAsync(activityExecutionContext, false);
     }

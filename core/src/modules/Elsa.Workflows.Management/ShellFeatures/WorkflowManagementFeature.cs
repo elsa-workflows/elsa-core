@@ -45,7 +45,8 @@ namespace Elsa.Workflows.Management.ShellFeatures;
         typeof(global::Elsa.Common.ShellFeatures.SystemClockFeature),
         typeof(global::Elsa.Workflows.ShellFeatures.WorkflowsFeature),
         typeof(WorkflowDefinitionsFeature),
-        typeof(WorkflowInstancesFeature)
+        typeof(WorkflowInstancesFeature),
+        typeof(global::Elsa.NativeCompensationDraftAuthoringV1Feature)
     ])]
 [UsedImplicitly]
 public class WorkflowManagementFeature : IShellFeature

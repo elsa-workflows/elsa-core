@@ -65,6 +65,25 @@ public class EnvironmentsModuleTests : IDisposable
     }
 
     [Fact]
+    public void BackendContextKey_ChangesWhenSameUrlEnvironmentIsSelected()
+    {
+        var environments = _serviceProvider.GetRequiredService<IEnvironmentService>();
+        var sameUrl = new Uri("https://shared.example/");
+        environments.SetEnvironments(
+        [
+            new ServerEnvironment { Name = "Tenant A", Url = sameUrl },
+            new ServerEnvironment { Name = "Tenant B", Url = sameUrl }
+        ], "Tenant A");
+        var apiClientProvider = _serviceProvider.GetRequiredService<IBackendApiClientProvider>();
+        var initialContextKey = apiClientProvider.ContextKey;
+
+        environments.SetCurrentEnvironment("Tenant B");
+
+        Assert.Equal(sameUrl, apiClientProvider.Url);
+        Assert.NotEqual(initialContextKey, apiClientProvider.ContextKey);
+    }
+
+    [Fact]
     public void AddEnvironmentsModule_DoesNotRegisterStartupTask()
     {
         Assert.Empty(_serviceProvider.GetServices<IStartupTask>());

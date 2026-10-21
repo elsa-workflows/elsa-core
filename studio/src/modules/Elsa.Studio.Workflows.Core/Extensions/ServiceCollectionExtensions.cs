@@ -50,6 +50,7 @@ public static class ServiceCollectionExtensions
             .AddScoped<IActivityPortService, DefaultActivityPortService>()
             .AddScoped<IActivityVisitor, DefaultActivityVisitor>()
             .AddScoped<IActivityResolver, StateMachineActivityResolver>()
+            .AddScoped<IActivityResolver, CompensationScopeActivityResolver>()
             .AddScoped<IActivityResolver, DefaultActivityResolver>()
             .AddScoped<IWorkflowJsonDetector, CompatWorkflowJsonDetector>()
             .AddScoped<IBpmnInterchangeService, RemoteBpmnInterchangeService>()

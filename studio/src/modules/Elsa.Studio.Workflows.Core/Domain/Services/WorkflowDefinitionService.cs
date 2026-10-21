@@ -22,7 +22,8 @@ public class RemoteWorkflowDefinitionService(
     IBackendApiClientProvider backendApiClientProvider,
     IIdentityGenerator identityGenerator,
     IWorkflowRootActivityTemplateProvider workflowRootActivityTemplateProvider,
-    IMediator mediator) : IWorkflowDefinitionService
+    IMediator mediator,
+    IRemoteFeatureProvider? remoteFeatureProvider = null) : IWorkflowDefinitionService
 {
     /// <inheritdoc />
     public async Task<PagedListResponse<WorkflowDefinitionSummary>> ListAsync(ListWorkflowDefinitionsRequest request, VersionOptions? versionOptions = null, CancellationToken cancellationToken = default)
@@ -70,6 +71,13 @@ public class RemoteWorkflowDefinitionService(
     /// <inheritdoc />
     public async Task<SaveWorkflowDefinitionResponse> PublishAsync(string definitionId, CancellationToken cancellationToken = default)
     {
+        if (!await NativeCompensationDraftCapability.IsEnabledAsync(remoteFeatureProvider, cancellationToken))
+        {
+            var definition = await FindByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken);
+            if (definition != null && NativeCompensationDraftCapability.ContainsCompensationScope(definition.Root))
+                throw new InvalidOperationException("This server does not advertise native compensation draft authoring. The workflow was not published.");
+        }
+
         var api = await GetApiAsync(cancellationToken);
         await mediator.NotifyAsync(new WorkflowDefinitionIdPublishing(definitionId), cancellationToken);
         var response = await api.PublishAsync(definitionId, new(), cancellationToken);
@@ -160,7 +168,15 @@ public class RemoteWorkflowDefinitionService(
     /// <inheritdoc />
     public async Task<BulkPublishWorkflowDefinitionsResponse> BulkPublishAsync(IEnumerable<string> definitionIds, CancellationToken cancellationToken = default)
     {
-        var request = new BulkPublishWorkflowDefinitionsRequest(definitionIds);
+        var definitionIdList = definitionIds.ToList();
+        if (!await NativeCompensationDraftCapability.IsEnabledAsync(remoteFeatureProvider, cancellationToken))
+        {
+            var definitions = await FindManyByIdAsync(definitionIdList, cancellationToken);
+            if (definitions.Any(x => NativeCompensationDraftCapability.ContainsCompensationScope(x.Root)))
+                throw new InvalidOperationException("This server does not advertise native compensation draft authoring. The selected workflows were not published.");
+        }
+
+        var request = new BulkPublishWorkflowDefinitionsRequest(definitionIdList);
         var api = await GetApiAsync(cancellationToken);
         await mediator.NotifyAsync(new BulkWorkflowDefinitionsPublishing(request.DefinitionIds), cancellationToken);
         var response = await api.BulkPublishAsync(request, cancellationToken);
@@ -241,6 +257,10 @@ public class RemoteWorkflowDefinitionService(
         };
 
         configureRequest?.Invoke(saveRequest);
+
+        if (NativeCompensationDraftCapability.ContainsCompensationScope(saveRequest.Model.Root) &&
+            !await NativeCompensationDraftCapability.IsEnabledAsync(remoteFeatureProvider, cancellationToken))
+            return new(new ValidationErrors([new("This server does not advertise native compensation draft authoring. The workflow was not saved.")]));
 
         var api = await GetApiAsync(cancellationToken);
 

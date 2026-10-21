@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Activities.Compensation;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Serialization.Converters;
@@ -27,6 +28,7 @@ public sealed class JsonActivitySerializerTests : IAsyncLifetime
         var registry = _services.GetRequiredService<IActivityRegistry>();
         await registry.RegisterAsync<Sequence>();
         await registry.RegisterAsync<WriteLine>();
+        await registry.RegisterAsync<CompensationScope>();
         registry.Register(new ActivityDescriptor
         {
             TypeName = "Test.Generated",
@@ -77,6 +79,27 @@ public sealed class JsonActivitySerializerTests : IAsyncLifetime
         Assert.Equal(activity.Type, restored.Type);
         using var document = JsonDocument.Parse(Serializer.Serialize(restored));
         Assert.Equal("hello", document.RootElement.GetProperty("text").GetProperty("expression").GetProperty("value").GetString());
+    }
+
+    [Fact]
+    public void CompensationScopeDraftRoundTripPreservesMappingsAndExtensionData()
+    {
+        const string json = """
+            {"id":"scope-1","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"scopeExtension":{"future":true},"steps":[{"stepId":"step-1","name":"row","forward":null,"handler":null,"mappings":[{"mappingId":"mapping-1","source":"capture path","futureMapping":7}],"stepExtension":["future"]}]}
+            """;
+
+        var scope = Assert.IsType<CompensationScope>(Serializer.Deserialize(json));
+        using var roundTrip = JsonDocument.Parse(Serializer.Serialize(scope));
+        var root = roundTrip.RootElement;
+        var step = root.GetProperty("steps")[0];
+
+        Assert.True(root.GetProperty("scopeExtension").GetProperty("future").GetBoolean());
+        Assert.Equal("step-1", step.GetProperty("stepId").GetString());
+        Assert.Equal("future", step.GetProperty("stepExtension")[0].GetString());
+        var mapping = step.GetProperty("mappings")[0];
+        Assert.Equal("mapping-1", mapping.GetProperty("mappingId").GetString());
+        Assert.Equal("capture path", mapping.GetProperty("source").GetString());
+        Assert.Equal(7, mapping.GetProperty("futureMapping").GetInt32());
     }
 
     [Fact]
