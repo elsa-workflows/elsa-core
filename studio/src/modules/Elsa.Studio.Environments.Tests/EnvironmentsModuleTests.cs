@@ -140,6 +140,131 @@ public class EnvironmentsModuleTests : IDisposable
         Assert.Equal(1, harness.InnerHandler.RequestCount);
     }
 
+    [Fact]
+    public async Task ConcurrentBoundWriteIsStoppedWhileIdentityChangeSignalIsBlocked()
+    {
+        var signalRaised = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseSignal = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var harness = AuthenticatedRequestHarness.Create(signal => signal.Raised += () =>
+        {
+            signalRaised.TrySetResult();
+            if (!releaseSignal.Task.Wait(TimeSpan.FromSeconds(5)))
+                throw new TimeoutException("The test did not release the blocked permission refresh signal.");
+        });
+        using var invoker = harness.CreateInvoker();
+
+        // Qualify the actual ElsaIdentity transport and observe identity A before binding.
+        await invoker.SendAsync(new HttpRequestMessage(HttpMethod.Get, "https://backend.example/features"), CancellationToken.None);
+        var originalContextKey = harness.BackendProvider.ContextKey;
+        using var binding = harness.Binding.BindRequestContext(originalContextKey);
+        harness.TokenAccessor.Token = harness.CreateToken("user-b", harness.TokenExpiresAt);
+
+        using var firstWrite = new HttpRequestMessage(HttpMethod.Post, "https://backend.example/workflow-definitions");
+        var firstWriteTask = Task.Run(() => invoker.SendAsync(firstWrite, CancellationToken.None));
+        Exception? firstWriteError = null;
+
+        try
+        {
+            await signalRaised.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.NotEqual(originalContextKey, harness.BackendProvider.ContextKey);
+
+            // The first call has stored B's fingerprint but has not reached the provider's
+            // signal subscriber. A second B observation must already see the invalidation.
+            using var secondWrite = new HttpRequestMessage(HttpMethod.Post, "https://backend.example/workflow-definitions");
+            await Assert.ThrowsAsync<BackendRequestContextChangedException>(() => invoker.SendAsync(secondWrite, CancellationToken.None));
+
+            Assert.Null(secondWrite.Headers.Authorization);
+            Assert.Equal(1, harness.InnerHandler.RequestCount);
+        }
+        finally
+        {
+            releaseSignal.TrySetResult();
+            try
+            {
+                await firstWriteTask.WaitAsync(TimeSpan.FromSeconds(5));
+            }
+            catch (Exception exception)
+            {
+                firstWriteError = exception;
+            }
+        }
+
+        Assert.IsType<BackendRequestContextChangedException>(firstWriteError);
+    }
+
+    [Fact]
+    public void BoundValidationRejectsAReplacedAndRestoredTransportSource()
+    {
+        using var harness = AuthenticatedRequestHarness.Create();
+        var sourceA = new TestEpochSource();
+        var sourceB = new TestEpochSource();
+        var initialContextKey = harness.BackendProvider.ContextKey;
+
+        harness.BackendProvider.RegisterAuthenticatedRequestTransport(sourceA);
+        var sourceAContextKey = harness.BackendProvider.ContextKey;
+        Assert.Equal(initialContextKey, sourceAContextKey);
+        using var binding = harness.Binding.BindRequestContext(sourceAContextKey);
+
+        harness.BackendProvider.RegisterAuthenticatedRequestTransport(sourceB);
+        var sourceBContextKey = harness.BackendProvider.ContextKey;
+        Assert.NotEqual(sourceAContextKey, sourceBContextKey);
+
+        harness.BackendProvider.RegisterAuthenticatedRequestTransport(sourceA);
+        var restoredSourceAContextKey = harness.BackendProvider.ContextKey;
+        Assert.NotEqual(sourceAContextKey, restoredSourceAContextKey);
+        Assert.NotEqual(sourceBContextKey, restoredSourceAContextKey);
+
+        using (harness.Binding.BindRequestContext(restoredSourceAContextKey))
+        {
+            Assert.Throws<BackendRequestContextChangedException>(() =>
+                harness.BackendProvider.ValidateBoundRequestContext(sourceB));
+            harness.BackendProvider.ValidateBoundRequestContext(sourceA);
+        }
+
+        harness.BackendProvider.RegisterAuthenticatedRequestTransport(null);
+        var contextWithoutTransport = harness.BackendProvider.ContextKey;
+        Assert.NotEqual(restoredSourceAContextKey, contextWithoutTransport);
+        Assert.False(harness.BackendProvider.SupportsAuthenticatedRequestContextBinding);
+        harness.BackendProvider.RegisterAuthenticatedRequestTransport(sourceA);
+        Assert.NotEqual(contextWithoutTransport, harness.BackendProvider.ContextKey);
+        Assert.True(harness.BackendProvider.SupportsAuthenticatedRequestContextBinding);
+    }
+
+    [Fact]
+    public async Task RequestRejectsTokenSourceWhenGlobalTransportIsRestoredBeforeValidation()
+    {
+        var signal = new PermissionRefreshSignal();
+        var blazorServiceAccessor = new BlazorServiceAccessor();
+        using var clientServices = new ServiceCollection().BuildServiceProvider();
+        using var backendProvider = new DefaultBackendApiClientProvider(
+            new FixedRemoteBackendAccessor(),
+            blazorServiceAccessor,
+            clientServices,
+            null,
+            signal);
+        using var tokenProvider = new RestoringTokenProvider(backendProvider, new TestEpochSource(), signal);
+        using var services = new ServiceCollection()
+            .AddSingleton<ITokenProvider>(tokenProvider)
+            .AddSingleton<IBackendApiClientProvider>(backendProvider)
+            .BuildServiceProvider();
+        blazorServiceAccessor.Services = services;
+        var sourceA = new TestEpochSource();
+        backendProvider.RegisterAuthenticatedRequestTransport(sourceA);
+        using var binding = backendProvider.BindRequestContext(backendProvider.ContextKey);
+        var innerHandler = new RecordingHandler();
+        using var handler = new ElsaIdentityAuthenticatingApiHttpMessageHandler(blazorServiceAccessor)
+        {
+            InnerHandler = innerHandler
+        };
+        using var invoker = new HttpMessageInvoker(handler);
+
+        await Assert.ThrowsAsync<BackendRequestContextChangedException>(() =>
+            invoker.SendAsync(new HttpRequestMessage(HttpMethod.Post, "https://backend.example/workflow-definitions"), CancellationToken.None));
+
+        Assert.Equal(0, innerHandler.RequestCount);
+        Assert.True(backendProvider.SupportsAuthenticatedRequestContextBinding);
+    }
+
     [Theory]
     [InlineData("tenant-b", "stamp-a")]
     [InlineData("tenant-a", "stamp-b")]
@@ -298,7 +423,7 @@ public class EnvironmentsModuleTests : IDisposable
         public RecordingHandler InnerHandler { get; }
         public DateTimeOffset TokenExpiresAt { get; }
 
-        public static AuthenticatedRequestHarness Create()
+        public static AuthenticatedRequestHarness Create(Action<IPermissionRefreshSignal>? registerBeforeBackendProvider = null)
         {
             var tokenExpiresAt = DateTimeOffset.UtcNow.AddHours(1);
             var initialToken = CreateTokenPayload("user-a", tokenExpiresAt, new Dictionary<string, object?>
@@ -309,6 +434,7 @@ public class EnvironmentsModuleTests : IDisposable
             var tokenAccessor = new MutableJwtAccessor(initialToken);
             var refreshTokenService = new RefreshTokenService(tokenAccessor);
             var signal = new PermissionRefreshSignal();
+            registerBeforeBackendProvider?.Invoke(signal);
             var blazorServiceAccessor = new BlazorServiceAccessor();
             var services = new ServiceCollection();
             services.AddSingleton<IPermissionRefreshSignal>(signal);
@@ -414,6 +540,34 @@ public class EnvironmentsModuleTests : IDisposable
     private sealed class StaticTokenProvider : ITokenProvider
     {
         public Task<string?> GetAccessTokenAsync(CancellationToken cancellationToken = default) => Task.FromResult<string?>("ordinary-test-token");
+    }
+
+    private sealed class TestEpochSource : IBackendRequestContextEpochSource
+    {
+        public long IdentityGeneration { get; set; }
+
+        public bool UsesPermissionRefreshSignal(IPermissionRefreshSignal signal) => true;
+    }
+
+    private sealed class RestoringTokenProvider(
+        DefaultBackendApiClientProvider backendProvider,
+        IBackendRequestContextEpochSource restoredSource,
+        IPermissionRefreshSignal permissionRefreshSignal) : ITokenProvider, IBackendRequestContextEpochSource, IDisposable
+    {
+        private IDisposable? _restoredBinding;
+
+        public long IdentityGeneration => 0;
+
+        public bool UsesPermissionRefreshSignal(IPermissionRefreshSignal signal) => ReferenceEquals(permissionRefreshSignal, signal);
+
+        public Task<string?> GetAccessTokenAsync(CancellationToken cancellationToken = default)
+        {
+            backendProvider.RegisterAuthenticatedRequestTransport(restoredSource);
+            _restoredBinding = backendProvider.BindRequestContext(backendProvider.ContextKey);
+            return Task.FromResult<string?>("test-token");
+        }
+
+        public void Dispose() => Interlocked.Exchange(ref _restoredBinding, null)?.Dispose();
     }
 
     [Fact]

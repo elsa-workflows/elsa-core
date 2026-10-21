@@ -78,7 +78,7 @@ public static class NativeCompensationDraftCapability
     {
         try
         {
-            return JsonNode.Parse(json) is JsonObject original && GetString(original, "type") == "Elsa.CompensationScope";
+            return JsonNode.Parse(json) is { } original && ContainsCompensationScope(original);
         }
         catch (System.Text.Json.JsonException)
         {

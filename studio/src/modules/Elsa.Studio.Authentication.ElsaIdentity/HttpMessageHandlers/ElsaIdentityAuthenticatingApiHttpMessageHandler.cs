@@ -19,11 +19,12 @@ public class ElsaIdentityAuthenticatingApiHttpMessageHandler(IBlazorServiceAcces
         var sp = blazorServiceAccessor.Services;
         var authenticationProvider = sp.GetService<ITokenProvider>();
         var requestContextBinding = sp.GetService<IBackendApiClientProvider>() as IBackendRequestContextBinding;
-        requestContextBinding?.RegisterAuthenticatedRequestTransport(authenticationProvider as IBackendRequestContextEpochSource);
+        var requestEpochSource = authenticationProvider as IBackendRequestContextEpochSource;
+        requestContextBinding?.RegisterAuthenticatedRequestTransport(requestEpochSource);
 
         if (authenticationProvider == null)
         {
-            requestContextBinding?.ValidateBoundRequestContext();
+            requestContextBinding?.ValidateBoundRequestContext(null);
             return await base.SendAsync(request, cancellationToken);
         }
 
@@ -31,11 +32,14 @@ public class ElsaIdentityAuthenticatingApiHttpMessageHandler(IBlazorServiceAcces
         var accessToken = await authenticationProvider.GetAccessTokenAsync(cancellationToken);
 
         if (string.IsNullOrWhiteSpace(accessToken))
+        {
             requestContextBinding?.RegisterAuthenticatedRequestTransport(null);
+            requestEpochSource = null;
+        }
 
         // Token acquisition can observe a changed identity or no usable token. Validate only
         // after that callback has completed and before attaching its token or dispatching the request.
-        requestContextBinding?.ValidateBoundRequestContext();
+        requestContextBinding?.ValidateBoundRequestContext(requestEpochSource);
 
         if (!string.IsNullOrWhiteSpace(accessToken))
             request.Headers.Authorization = new("Bearer", accessToken);

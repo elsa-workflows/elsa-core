@@ -5,11 +5,16 @@ namespace Elsa.Studio.Contracts;
 /// </summary>
 /// <remarks>
 /// This is an optional contract for features that need to bind a write to the identity used when a
-/// document was loaded. Implementations must signal identity or authorization changes through the
-/// same circuit-scoped <see cref="IPermissionRefreshSignal"/> observed by the backend client provider.
+/// document was loaded. Implementations advance the generation atomically with observing an identity
+/// or authorization change, before a token acquisition can return a token for that observation.
+/// Consumers read the generation as the request authority; signaling the same circuit-scoped
+/// <see cref="IPermissionRefreshSignal"/> observed by the backend client provider is supplemental invalidation.
 /// </remarks>
 public interface IBackendRequestContextEpochSource
 {
+    /// <summary>Gets the monotonically increasing identity epoch observed by this source.</summary>
+    long IdentityGeneration { get; }
+
     /// <summary>Returns whether this source raises the specified circuit signal for identity changes.</summary>
     bool UsesPermissionRefreshSignal(IPermissionRefreshSignal signal);
 }
@@ -35,8 +40,8 @@ public interface IBackendRequestContextBinding
     /// <summary>Starts a request binding to the expected backend context until the returned scope is disposed.</summary>
     IDisposable BindRequestContext(string expectedContextKey);
 
-    /// <summary>Validates the active binding after authentication token acquisition and before dispatch.</summary>
-    void ValidateBoundRequestContext();
+    /// <summary>Validates the active binding against the source that returned the request token.</summary>
+    void ValidateBoundRequestContext(IBackendRequestContextEpochSource? requestEpochSource);
 }
 
 /// <summary>Indicates that an authenticated request no longer matches its bound backend context.</summary>

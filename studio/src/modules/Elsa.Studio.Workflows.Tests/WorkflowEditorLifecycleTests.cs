@@ -504,7 +504,7 @@ public sealed class WorkflowEditorLifecycleTests : BunitContext, IAsyncLifetime
             return new NoopDisposable();
         }
 
-        public void ValidateBoundRequestContext()
+        public void ValidateBoundRequestContext(IBackendRequestContextEpochSource? requestEpochSource)
         {
         }
 

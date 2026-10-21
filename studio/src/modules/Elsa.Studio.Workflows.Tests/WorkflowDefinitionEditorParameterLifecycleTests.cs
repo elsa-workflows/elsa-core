@@ -530,7 +530,7 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
             return new ActionScope(() => _boundContext.Value = previous);
         }
 
-        public void ValidateBoundRequestContext()
+        public void ValidateBoundRequestContext(IBackendRequestContextEpochSource? requestEpochSource)
         {
             if (_boundContext.Value is { } expected && expected != ContextKey)
                 throw new BackendRequestContextChangedException();

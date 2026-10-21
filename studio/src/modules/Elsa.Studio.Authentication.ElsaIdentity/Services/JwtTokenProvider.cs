@@ -36,6 +36,10 @@ public class JwtTokenProvider(
     private readonly object _identityObservationLock = new();
     private byte[]? _observedIdentityFingerprint;
     private bool _hasObservedIdentity;
+    private long _identityGeneration;
+
+    /// <inheritdoc />
+    public long IdentityGeneration => Volatile.Read(ref _identityGeneration);
 
     /// <inheritdoc />
     public bool UsesPermissionRefreshSignal(IPermissionRefreshSignal signal) => refreshSignals.Any(x => ReferenceEquals(x, signal));
@@ -59,7 +63,8 @@ public class JwtTokenProvider(
         {
             // Refresh failed: clear local tokens so the app can transition to unauthenticated state.
             await jwtAccessor.ClearTokensAsync();
-            NotifyRefresh();
+            if (!ObserveAccessToken(null))
+                NotifyRefresh();
             return null;
         }
 
@@ -69,7 +74,7 @@ public class JwtTokenProvider(
         return refreshedToken;
     }
 
-    private void ObserveAccessToken(string? accessToken)
+    private bool ObserveAccessToken(string? accessToken)
     {
         byte[]? fingerprint = null;
         var parseFailed = false;
@@ -81,6 +86,9 @@ public class JwtTokenProvider(
         lock (_identityObservationLock)
         {
             changed = _hasObservedIdentity && !FingerprintsEqual(_observedIdentityFingerprint, fingerprint);
+            if (changed || parseFailed)
+                Volatile.Write(ref _identityGeneration, checked(_identityGeneration + 1));
+
             _observedIdentityFingerprint = fingerprint;
             _hasObservedIdentity = true;
         }
@@ -89,6 +97,8 @@ public class JwtTokenProvider(
         // native binding on every parse failure, even when the previous observation was also invalid.
         if (changed || parseFailed)
             NotifyRefresh();
+
+        return changed || parseFailed;
     }
 
     private bool TryCreateIdentityFingerprint(string accessToken, out byte[]? fingerprint)

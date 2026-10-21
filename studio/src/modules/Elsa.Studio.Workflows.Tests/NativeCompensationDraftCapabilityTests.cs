@@ -607,10 +607,33 @@ public class NativeCompensationDraftCapabilityTests
     [Theory]
     [InlineData("""{"type":"Elsa.CompensationScope","version":1}""")]
     [InlineData("""{"type":"Elsa.NotFoundActivity","originalActivityJson":"{\"type\":\"Elsa.CompensationScope\",\"version\":9}"}""")]
+    [InlineData("""{"type":"Elsa.NotFoundActivity","originalActivityJson":"{\"type\":\"Elsa.NotFoundActivity\",\"originalActivityJson\":\"{\\\"type\\\":\\\"Elsa.CompensationScope\\\",\\\"version\\\":9}\"}"}""")]
     [InlineData("""{"type":"Elsa.NotFoundActivity","missingTypeName":"Elsa.CompensationScope"}""")]
     public void ContainsCompensationScope_RecognizesTypedAndOpaqueScopes(string json)
     {
         Assert.True(NativeCompensationDraftCapability.ContainsCompensationScope(System.Text.Json.Nodes.JsonNode.Parse(json)));
+    }
+
+    [Fact]
+    public async Task NestedNotFoundCompensationScopeIsRefusedBeforeOrdinarySave()
+    {
+        var backend = new ContextBackendApiClientProvider(new Uri("https://backend.example/"), "context-A");
+        var featureProvider = new FreshFeatureProvider(true);
+        var service = new WorkflowDefinitionEditorService(backend, DispatchProxy.Create<IMediator, CompletedMediator>(), featureProvider);
+        var definition = new WorkflowDefinition
+        {
+            Root = System.Text.Json.Nodes.JsonNode.Parse("""
+                {"type":"Elsa.NotFoundActivity","originalActivityJson":"{\"type\":\"Elsa.NotFoundActivity\",\"originalActivityJson\":\"{\\\"type\\\":\\\"Elsa.CompensationScope\\\",\\\"version\\\":9}\"}"}
+                """)!.AsObject()
+        };
+        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, "context-A"));
+
+        var result = await service.SaveAsync(definition, false);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(1, featureProvider.FreshChecks);
+        Assert.Equal(0, backend.ApiRequests);
+        Assert.Contains("native compensation draft authoring", result.Failure!.Errors.Single().ErrorMessage, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -832,7 +855,7 @@ public class NativeCompensationDraftCapabilityTests
             return new ActionScope(() => _boundContext.Value = previous);
         }
 
-        public void ValidateBoundRequestContext()
+        public void ValidateBoundRequestContext(IBackendRequestContextEpochSource? requestEpochSource)
         {
             if (_boundContext.Value is { } expected && expected != ContextKey)
                 throw new BackendRequestContextChangedException();

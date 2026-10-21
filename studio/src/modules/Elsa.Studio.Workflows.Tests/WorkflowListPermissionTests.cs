@@ -382,7 +382,7 @@ public sealed class WorkflowListPermissionTests : BunitContext, IAsyncLifetime
             return new NoopDisposable();
         }
 
-        public void ValidateBoundRequestContext()
+        public void ValidateBoundRequestContext(IBackendRequestContextEpochSource? requestEpochSource)
         {
         }
 
