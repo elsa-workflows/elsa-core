@@ -242,3 +242,9 @@ The empty default-tenant ID is distinct from an omitted header. Choices persist
 per server/subject and claims mode rejects missing/ambiguous claims before module
 API requests. The tenancy guide records the reference Core host's account-bound
 resolver and the separate backend authorization needed for selection mode.
+
+Review regressions coordinate a single pending context reload, preserve queries
+during React StrictMode's effect replay while disposing true unmounts, and retain
+the last authenticated scope across an intermediate missing-claim error. The
+hosted A/missing/B case verifies that module-level dialog state cannot revive in
+another tenant. Dirty server switches retain one discard prompt.

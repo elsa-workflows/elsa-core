@@ -62,3 +62,6 @@ and compile a module using only their exported declarations.
 Independent forms can register dirty state with `useUnsavedChanges` from
 `/unsaved-changes` so tenant and server switches offer cancellation. See
 [tenant configuration and isolation](../../docs/tenancy.md) for host behavior.
+Hosts coordinate context changes with `reloadStudioContext` from
+`/navigation/reload`; its preparation callback runs after marking the reload
+pending, preventing duplicate navigation from synchronous context observers.

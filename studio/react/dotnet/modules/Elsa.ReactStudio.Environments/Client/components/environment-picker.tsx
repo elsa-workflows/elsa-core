@@ -15,7 +15,7 @@ import {
 import { useStudioConfig } from "@elsa-workflows/react-studio-sdk/config-provider";
 import { useActiveServerStore } from "@elsa-workflows/react-studio-sdk/environments/active-server";
 import { approveNavigation, hasUnsavedChanges } from "@elsa-workflows/react-studio-sdk/unsaved-changes";
-import { studioBasePath } from "@elsa-workflows/react-studio-sdk/navigation/base-path";
+import { reloadStudioContext } from "@elsa-workflows/react-studio-sdk/navigation/reload";
 import { cn } from "@elsa-workflows/react-studio-ui/utils";
 import { environmentUrl, normalizeUrl } from "../api";
 import { useServerEnvironments } from "../hooks";
@@ -34,9 +34,10 @@ export function EnvironmentPicker() {
   const switchServer = (target: number) => {
     if (target === index) return;
     if (hasUnsavedChanges() && !window.confirm("Switch server and discard unsaved changes?")) return;
-    setIndex(target);
-    approveNavigation();
-    window.location.assign((studioBasePath() || "") + "/");
+    reloadStudioContext(() => {
+      approveNavigation();
+      setIndex(target);
+    });
   };
   const active = servers[index] ?? servers[0];
 

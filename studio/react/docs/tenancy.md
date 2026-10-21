@@ -64,6 +64,15 @@ with independent forms can register dirty state with `useUnsavedChanges` from
 `approveNavigation` immediately before navigating, preserving the ordinary browser
 guard for later navigations.
 
+`reloadStudioContext` from `/navigation/reload` coordinates a single context reload.
+Its preparation callback runs after marking navigation pending, so a synchronous
+server-store update cannot race a second reload. The last valid authenticated
+context is retained above the missing-claim error view: moving from tenant A through
+a missing claim to tenant B still reloads before B's modules mount. If a native
+unsaved-changes prompt cancels an automatic account-context reload, module UI remains
+blocked until the reload is retried. Query-cache disposal distinguishes a true
+unmount from React StrictMode's effect replay.
+
 ## Backend configuration
 
 The backend remains responsible for tenant resolution and authorization. Selection

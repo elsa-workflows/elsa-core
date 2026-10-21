@@ -15,10 +15,17 @@ function ScopedElsaApiProvider({ client, scope, children }: { client: ElsaClient
   const [queryClient] = useState(() => new QueryClient({ defaultOptions: {
     queries: { staleTime: 10_000, retry: (count, error) => count < 2 && !(error as { status?: number }).status },
   } }));
-  useEffect(() => () => {
-    void queryClient.cancelQueries();
-    queryClient.clear();
-  }, [queryClient]);
+  const [lifetime] = useState(() => ({ generation: 0 }));
+  useEffect(() => {
+    const generation = ++lifetime.generation;
+    return () => queueMicrotask(() => {
+      // StrictMode immediately replays setup after cleanup with the same client.
+      // Only an actual unmount leaves this generation current.
+      if (lifetime.generation !== generation) return;
+      void queryClient.cancelQueries();
+      queryClient.clear();
+    });
+  }, [queryClient, lifetime]);
   const value = useMemo(() => ({ client, scope }), [client, scope]);
   return <QueryClientProvider client={queryClient}>
     <ElsaClientContext.Provider value={value}>{children}</ElsaClientContext.Provider>
