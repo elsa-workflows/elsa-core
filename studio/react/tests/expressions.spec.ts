@@ -59,10 +59,14 @@ test("C# highlights syntax and all three languages complete server members, inpu
   await complete(page, "someFunction(Variable.C", "Variable.Customer", "someFunction(Variable.Customer");
   await complete(page, "[Variable.C", "Variable.Customer", "[Variable.Customer");
   await complete(page, "Out", 'Output.From("Lookup", "Result")');
+  await complete(page, 'Output.From("Lookup", "Res', 'Output.From("Lookup", "Result")');
+  await complete(page, 'Math.Max(Output.From("Lookup", "Res', 'Output.From("Lookup", "Result")', 'Math.Max(Output.From("Lookup", "Result")');
   await page.getByRole("button", { name: "JavaScript", exact: true }).click();
   await complete(page, "variables.customer.", "variables.customer.Name");
   await complete(page, "getIn", 'getInput("Customer")');
   await complete(page, "getOut", 'getOutputFrom("Lookup", "Result")');
+  await complete(page, 'getOutputFrom("Lookup", "Res', 'getOutputFrom("Lookup", "Result")');
+  await complete(page, 'Math.max(getOutputFrom("Lookup", "Res', 'getOutputFrom("Lookup", "Result")', 'Math.max(getOutputFrom("Lookup", "Result")');
   await complete(page, "someFunction(getcustomer_id().N)", "getcustomer_id().Name", "someFunction(getcustomer_id().Name)", true);
   await complete(page, "lookupServer", "lookupServerValue");
   await page.getByRole("button", { name: "Python", exact: true }).click();

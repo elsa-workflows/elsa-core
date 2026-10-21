@@ -26,13 +26,22 @@ export interface CodeCompletion {
 
 function completionExtension(items: CodeCompletion[]): Extension {
   const options = items.map((i) => ({ label: i.label, detail: i.detail, type: i.type ?? "variable" }));
+  const calls = new Set(items.flatMap(item => {
+    const name = item.label.match(/^([\w$]+(?:\.[\w$]+)*)\((?!\))/)?.[1];
+    return name ? [name] : [];
+  }));
   // A balanced accessor call can be part of a member chain; an unmatched opening
   // parenthesis belongs to the surrounding expression and must never be replaced.
   const wordPattern = /[A-Za-z_$][\w$]*(?:\([^()\n]*\)|\[[^[\]\n]*\])?(?:\.[\w$]+(?:\([^()\n]*\)|\[[^[\]\n]*\])?)*\.?/;
   return autocompletion({
     override: [
       (ctx: CompletionContext) => {
-        const word = ctx.matchBefore(wordPattern);
+        // When the cursor is inside a known accessor's unfinished arguments,
+        // replace that accessor as a whole rather than inserting it in a string.
+        // Quoted names may themselves contain parentheses or escaped quotes.
+        const call = ctx.matchBefore(/[\w$]+(?:\.[\w$]+)*\((?:"(?:\\.|[^"\\])*"?|'(?:\\.|[^'\\])*'?|[^()'"\n])*/);
+        const head = call?.text.slice(0, call.text.indexOf("("));
+        const word = head && calls.has(head) ? call : ctx.matchBefore(wordPattern);
         if (!word || (word.from === word.to && !ctx.explicit)) return null;
         return { from: word.from, options };
       },
