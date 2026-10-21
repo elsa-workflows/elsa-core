@@ -1,3 +1,4 @@
+import { studioUrl } from "@/lib/navigation/base-path";
 import type { AuthConfig } from "@/config/schema";
 import { readTokens, writeTokens } from "../storage";
 import { BaseAuthStrategy, isJwtExpired, userFromJwt, type PasswordCredentials } from "../types";
@@ -56,7 +57,7 @@ export class ElsaExternalAuthStrategy extends BaseAuthStrategy {
   }
 
   private redirectUri() {
-    const uri = this.options.redirectUri ?? "/auth/callback";
+    const uri = this.options.redirectUri ?? studioUrl("/auth/callback");
     return /^https?:\/\//i.test(uri) ? uri : `${window.location.origin}${uri}`;
   }
 
@@ -183,7 +184,7 @@ export class ElsaExternalAuthStrategy extends BaseAuthStrategy {
       code_verifier: stored.verifier,
     });
     this.store(data);
-    window.history.replaceState({}, "", stored.returnTo ?? "/");
+    window.history.replaceState({}, "", stored.returnTo ?? studioUrl("/"));
   }
 
   async logout() {

@@ -31,3 +31,74 @@ jobs:
         run: python3 -m unittest discover -s scripts/integration-program -p 'test_verify_studio_react_source_import.py' -v
       - name: Verify original donor tree and history
         run: python3 scripts/integration-program/verify_studio_react_source_import.py
+
+  frontend-and-host:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: '10.0.x'
+      - name: Install pinned pnpm and frozen dependencies
+        working-directory: studio/react
+        run: |
+          npm install --global pnpm@10.33.0
+          pnpm install --frozen-lockfile
+      - name: Check frontend and build with dependency notices
+        working-directory: studio/react
+        run: |
+          pnpm lint
+          pnpm typecheck
+          pnpm test
+          pnpm audit
+          pnpm build
+      - name: Build the host on all supported frameworks and test runtime configuration
+        run: |
+          dotnet build studio/react/dotnet/Elsa.ReactStudio.Host/Elsa.ReactStudio.Host.csproj
+          dotnet test studio/react/dotnet/Elsa.ReactStudio.Host.Tests/Elsa.ReactStudio.Host.Tests.csproj --logger trx --results-directory "$RUNNER_TEMP/react-studio-tests"
+      - name: Exercise History API navigation through the ASP.NET host
+        working-directory: studio/react
+        run: |
+          pnpm exec playwright install --with-deps chromium
+          pnpm test:browser
+      - name: Build and start the standalone Preview image without publishing
+        run: |
+          docker build -f studio/react/Dockerfile -t elsa-react-studio:ci .
+          test "$(docker inspect elsa-react-studio:ci --format '{{.Config.User}}')" != '0'
+          test -n "$(docker inspect elsa-react-studio:ci --format '{{.Config.User}}')"
+          docker run -d --name react-studio-preview -p 127.0.0.1:5202:8080 \
+            -e STUDIO_SERVER_URL=http://127.0.0.1:5001/elsa/api \
+            -e STUDIO_TITLE='Container Preview' -e STUDIO_AUTH_PROVIDER=none elsa-react-studio:ci
+          trap 'docker logs react-studio-preview; docker rm -f react-studio-preview' EXIT
+          curl --fail --silent --show-error --retry 30 --retry-all-errors --retry-delay 1 \
+            http://127.0.0.1:5202/studio-preview/studio-config > "$RUNNER_TEMP/container-config.json"
+          python3 - <<'PY'
+          import json, re, urllib.request
+          config = json.load(open(__import__('os').environ['RUNNER_TEMP'] + '/container-config.json'))
+          assert config['title'] == 'Container Preview' and config['auth']['provider'] == 'none'
+          origin = 'http://127.0.0.1:5202'
+          html = urllib.request.urlopen(origin + '/studio-preview/workflows/definitions').read().decode()
+          assert '<base href="/studio-preview/"' in html
+          asset = re.search(r'src="([^"]+\.js)"', html).group(1)
+          response = urllib.request.urlopen(origin + asset)
+          assert response.status == 200 and len(response.read()) > 1000
+          assert urllib.request.urlopen(origin + '/studio-preview/THIRD-PARTY-NOTICES.txt').status == 200
+          PY
+      - name: Verify source remained unchanged
+        run: git diff --exit-code HEAD --
+      - name: Retain validation results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: react-studio-validation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/react-studio-tests/*.trx
+            studio/react/test-results/**
+          if-no-files-found: warn
+          retention-days: 14

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/lib/navigation/link";
 import { cn } from "@/lib/utils";
 
 export interface BarListRow {

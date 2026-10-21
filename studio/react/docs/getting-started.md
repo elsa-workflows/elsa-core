@@ -6,19 +6,25 @@ This guide takes you from a clone to a signed-in studio connected to an Elsa ser
 
 | Requirement | Version | Notes |
 |---|---|---|
-| Node.js | 22 or newer | The Docker image is built on `node:22-alpine`. |
+| Node.js | 22.12 or newer | Used to build Vite assets. |
+| .NET SDK | 10 | Runs the ASP.NET host. |
 | pnpm | 10 | The repository pins `pnpm@10.33.0` through `packageManager`. |
 | Elsa server | 3.x | Must expose the REST API and allow the studio's origin through CORS. |
 
 ## Install and run
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
+pnpm build
+pnpm host
+# Another terminal in studio/react:
 pnpm dev
 ```
 
-The studio starts on <http://localhost:3000>. The development server reads `studio.config.json` on
-every request, so configuration changes need only a browser reload, not a restart.
+The Vite development server uses port 5173 and proxies runtime configuration to the
+ASP.NET host on port 5201. The host also serves production assets under `/studio-preview`.
+It reads `studio.config.json` on each configuration request, so file changes need a
+browser reload. Rebuild the frontend and restart the host after changing production assets.
 
 ## Point it at a server
 
@@ -40,7 +46,7 @@ To work against several backends at once, see
 ### The server must allow your origin
 
 The studio runs in the browser and calls the Elsa API directly, so the API has to return CORS headers
-permitting `http://localhost:3000`. The reference host in `elsa-core` already allows any origin in
+permitting `http://127.0.0.1:5173` for `pnpm dev`, or `http://127.0.0.1:5201` for the ASP.NET host. The reference host in `elsa-core` already allows any origin in
 development. If sign-in fails with no status code in the network tab, this is almost always the cause,
 and [Troubleshooting](troubleshooting.md#cors-requests-are-blocked) explains how to confirm it.
 
@@ -78,5 +84,5 @@ legitimately show fewer sidebar entries than one pointed at a full installation.
 ```bash
 pnpm test          # unit tests
 pnpm lint          # ESLint
-npx tsc --noEmit   # type check
+pnpm typecheck   # type check
 ```

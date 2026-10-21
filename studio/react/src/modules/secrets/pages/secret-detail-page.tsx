@@ -1,8 +1,8 @@
 "use client";
 
 import { ArrowLeft, Ban, FlaskConical, KeyRound, Loader2, Pencil, RefreshCw, Save, Trash2, X } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import Link from "@/lib/navigation/link";
+import { useRouter } from "@/lib/navigation";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { useConfirm } from "@/components/common/confirm-dialog";

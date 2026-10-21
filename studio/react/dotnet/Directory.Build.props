@@ -1,0 +1,8 @@
+<Project>
+  <Import Project="../../src/Directory.Build.props" />
+  <PropertyGroup>
+    <Version>3.11.0</Version>
+    <Description>Elsa React Studio Preview. Opt-in; the Blazor Studio remains the default.</Description>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+</Project>

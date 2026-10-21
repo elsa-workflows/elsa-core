@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowRight, Settings, SlidersHorizontal } from "lucide-react";
-import Link from "next/link";
+import Link from "@/lib/navigation/link";
 import { useMemo } from "react";
 import { EmptyState } from "@/components/common/empty-state";
 import { PageHeader } from "@/components/common/page-header";

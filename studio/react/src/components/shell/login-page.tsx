@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "@/lib/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { ExternalLink, Loader2 } from "lucide-react";
 import { BrandLogo, BrandMark } from "./brand-mark";

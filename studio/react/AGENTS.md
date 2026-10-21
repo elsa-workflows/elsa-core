@@ -1,9 +1,13 @@
-<!-- BEGIN:nextjs-agent-rules -->
+# React Studio Preview
 
-## This is NOT the Next.js you know
+Read the repository root guidance and quality principles. This is a Vite SPA, with
+runtime configuration resolved by the ASP.NET host. Do not add Next.js APIs or load
+server environment variables in browser code. Keep the configuration schema and
+STUDIO_* compatibility documented in docs/configuration.md.
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+From this directory use pnpm install --frozen-lockfile, pnpm lint, pnpm typecheck,
+pnpm test, and pnpm build. Browser tests exercise the actual ASP.NET host.
 
-This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
-
-<!-- END:nextjs-agent-rules -->
+The immutable original tree is retained at the import commit recorded in
+../../docs/integration-program/studio-react-source-import.json.
+Subsequent adaptations must not rewrite donor history or attribution.

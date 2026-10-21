@@ -1,3 +1,4 @@
+import { studioUrl } from "@/lib/navigation/base-path";
 import { UserManager, WebStorageStateStore, type User } from "oidc-client-ts";
 import type { AuthConfig } from "@/config/schema";
 import { BaseAuthStrategy, userFromJwt } from "../types";
@@ -29,8 +30,8 @@ export class OidcAuthStrategy extends BaseAuthStrategy {
       authority: this.options.authority,
       client_id: this.options.clientId,
       scope: this.options.scope,
-      redirect_uri: absolute(this.options.redirectUri ?? "/auth/callback", origin),
-      post_logout_redirect_uri: absolute(this.options.postLogoutRedirectUri ?? "/", origin),
+      redirect_uri: absolute(this.options.redirectUri ?? studioUrl("/auth/callback"), origin),
+      post_logout_redirect_uri: absolute(this.options.postLogoutRedirectUri ?? studioUrl("/"), origin),
       response_type: "code",
       automaticSilentRenew: true,
       userStore: new WebStorageStateStore({ store: window.localStorage, prefix: `elsa-studio:oidc:${this.scope}:` }),
@@ -102,7 +103,7 @@ export class OidcAuthStrategy extends BaseAuthStrategy {
   async completeSignIn() {
     const u = await this.getManager().signinCallback();
     if (u) this.apply(u);
-    const returnTo = (u?.state as { returnTo?: string } | undefined)?.returnTo ?? "/";
+    const returnTo = (u?.state as { returnTo?: string } | undefined)?.returnTo ?? studioUrl("/");
     window.history.replaceState({}, "", returnTo);
   }
 

@@ -1,18 +1,18 @@
-# Elsa Studio (Next.js) – architecture and module guide
+# Elsa React Studio Preview (Vite) – architecture and module guide
 
 > Part of the [documentation set](../README.md#documentation): [Getting started](getting-started.md) ·
 > [Configuration](configuration.md) · [Modules](modules.md) · [Designer](designer.md) ·
 > [Deployment](deployment.md) · [Troubleshooting](troubleshooting.md)
 
-A standalone React front end for Elsa Workflows 3.x. Built with Next.js (App Router), React 19,
+A standalone React front end for Elsa Workflows 3.x. Built with Vite, React 19,
 TypeScript, Tailwind v4, shadcn/ui (Base UI primitives) and React Flow for the diagrams. The app
-is a client-rendered SPA that talks straight to the Elsa REST API; Next.js only serves the shell
-and resolves the runtime configuration per request.
+is a client-rendered SPA that talks straight to the Elsa REST API; the ASP.NET host serves the shell
+and resolves runtime configuration per request.
 
 ```
 src/
-  app/                      Next.js routes (thin): layout loads config; [[...slug]] is a catch-all
-  config/                   runtime configuration: zod schema, server-side loader, React provider
+  main.tsx                  fetch runtime configuration, then mount the History API router
+  config/                   runtime configuration: Zod schema and React provider (ASP.NET resolves the document)
   lib/
     api/                    HTTP client, typed endpoint groups, TS models, TanStack Query provider
     auth/                   AuthStrategy contract + none / api-key / elsa-identity / oidc / elsa-external
@@ -40,7 +40,7 @@ src/
 ## Runtime configuration
 
 `studio.config.json` (or `STUDIO_CONFIG` JSON env, or `STUDIO_*` env overrides) is read on the server
-for every request, validated with `src/config/schema.ts`, and provided to the client with
+for every configuration request. The browser validates `src/config/schema.ts` and provides it with
 `useStudioConfig()`. Nothing in it is secret: it ends up in the browser.
 
 ```jsonc
@@ -73,8 +73,8 @@ export const labelsModule = defineModule({
 Rules:
 
 - Core modules set `core: true` and ignore the flag; everything else is **off unless enabled** in config.
-- Routes are matched by the catch-all page through `resolveRoute()`; patterns use `:param` segments.
-  Never add files under `src/app/` for a module.
+- The History API router passes the path to `resolveRoute()`; patterns use `:param` segments.
+  Register module routes instead of adding file-system pages.
 - Each module owns `src/modules/<id>/` with `index.tsx` (the `defineModule` export), `api.ts`
   (endpoint group built from `useElsaClient().http`), `hooks.ts` (TanStack Query hooks, keys prefixed
   with `useQueryScope()`), `pages/` and `components/`.
@@ -181,7 +181,7 @@ providers it needs.
 ## Theming
 
 Five palettes (`ELSA_THEMES` in `src/lib/theme/elsa-theme.ts`) are expressed as CSS variable sets in
-`src/app/globals.css`, selected by the `data-elsa-theme` attribute on `<html>` (set server-side from
+`src/globals.css`, selected by the `data-elsa-theme` attribute on `<html>` (set by `main.tsx` from runtime
 config and client-side from the persisted store). Light/dark comes from next-themes (`.dark` class).
 Use the semantic tokens (`bg-card`, `text-muted-foreground`, `bg-status-success`, `text-brand`,
 `bg-canvas`) and the helpers `node-card`, `accent-rail` (with `--rail-color`), `eyebrow`,
@@ -194,4 +194,4 @@ Use the semantic tokens (`bg-card`, `text-muted-foreground`, `bg-status-success`
 - Prefer the shared `SimpleSelect`, `DataTable`, `Field`, `SearchInput`, `useConfirm()` and
   `useUrlState()` over ad-hoc markup so list pages look and behave alike.
 - Toasts: `import { toast } from "sonner"`.
-- No `any`; keep components small; no business logic in `src/app`.
+- No `any`; keep components small; keep `main.tsx` limited to bootstrap and routing.

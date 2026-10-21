@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/lib/navigation/link";
 import type { LucideIcon } from "lucide-react";
 import { ArrowUpRight } from "lucide-react";
 import { Card } from "@/components/ui/card";

@@ -1,6 +1,6 @@
 "use client";
 
-import dynamic from "next/dynamic";
+import CodeMirror from "@uiw/react-codemirror";
 import { useMemo } from "react";
 import { useTheme } from "next-themes";
 import { javascript } from "@codemirror/lang-javascript";
@@ -12,7 +12,6 @@ import { autocompletion, type CompletionContext } from "@codemirror/autocomplete
 import { cn } from "@/lib/utils";
 import type { Extension } from "@codemirror/state";
 
-const CodeMirror = dynamic(() => import("@uiw/react-codemirror"), { ssr: false });
 
 export type CodeLanguage = "javascript" | "typescript" | "json" | "python" | "liquid" | "csharp" | "sql" | "plaintext";
 

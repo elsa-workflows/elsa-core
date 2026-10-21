@@ -8,13 +8,13 @@ request being blocked.
 
 **Why.** The studio runs in the browser and calls the Elsa API directly, so the API must return CORS
 headers that permit the studio's origin. A deployment that allows only its own bundled designer will
-reject a studio running anywhere else, including `http://localhost:3000`.
+reject a studio running anywhere else, including `http://localhost:5173`.
 
 **Confirm it** by sending the same preflight the browser sends:
 
 ```bash
 curl -i -X OPTIONS https://your-elsa-host/elsa/api/identity/login \
-  -H "Origin: http://localhost:3000" \
+  -H "Origin: http://localhost:5173" \
   -H "Access-Control-Request-Method: POST" \
   -H "Access-Control-Request-Headers: content-type"
 ```

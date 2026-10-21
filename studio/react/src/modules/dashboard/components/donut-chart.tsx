@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import Link from "@/lib/navigation/link";
 
 export interface DonutSlice {
   label: string;
@@ -66,9 +67,9 @@ export function DonutChart({ slices, total, centerLabel, className }: { slices: 
           return (
             <li key={s.label}>
               {s.href ? (
-                <a href={s.href} className="flex items-center gap-2 rounded px-1 py-0.5 hover:bg-accent">
+                <Link href={s.href} className="flex items-center gap-2 rounded px-1 py-0.5 hover:bg-accent">
                   {row}
-                </a>
+                </Link>
               ) : (
                 <div className="flex items-center gap-2 px-1 py-0.5">{row}</div>
               )}

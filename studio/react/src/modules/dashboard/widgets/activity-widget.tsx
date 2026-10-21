@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/lib/navigation/link";
 import { differenceInMilliseconds, parseISO } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/common/status-badge";
