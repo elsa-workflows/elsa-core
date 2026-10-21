@@ -43,7 +43,8 @@ async function fixture(page: Page, unavailable = false) {
 async function complete(page: Page, prefix: string, label: string, expected = label, beforeClosingParenthesis = false) {
   const editor = page.locator(".cm-content");
   const cursor = prefix.indexOf("|");
-  await editor.fill(prefix.replace("|", ""));
+  // Remove the single artificial cursor marker; other expression content is literal.
+  await editor.fill(cursor >= 0 ? prefix.slice(0, cursor) + prefix.slice(cursor + 1) : prefix);
   if (cursor >= 0) {
     await editor.press("Control+Home");
     for (let i = 0; i < cursor; i++) await editor.press("ArrowRight");
