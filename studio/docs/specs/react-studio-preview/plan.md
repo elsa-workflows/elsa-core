@@ -296,3 +296,25 @@ passed runtime overrides, Elsa Identity sign-in, authenticated workflow listing
 and deep-link reload. CI runs this same check. Release selection and package-version
 policy tests and workflow lint pass. The Datadog recipe shares the corrected build
 stage; its unchanged instrumentation/runtime stages were not exercised locally.
+
+## npm delivery preparation
+
+The Release workflow now prepares four public npm tarballs at the selected lockstep
+version without changing private workspace manifests. Artifacts include exact internal
+dependencies, source notices and canonical repository metadata; release.json records
+the source commit and integrity. Dirty source is rejected. The publisher preflights
+all packages, requires prior same-base previews before plain releases, prevents
+backward dist-tag movement and allows partial-publish recovery only for identical
+bytes. GitHub OIDC trusted publishing supplies provenance behind the existing explicit
+cutover/tag/main/protected-environment gates. Release must provision package ownership
+and trusted publishers; no credentials or registry permissions are created here.
+
+Local 3.11.0-preview.8858 validation prepared/verified four tarballs and eighteen
+matching NuGet packages. The external consumer compiled/rendered, and the generated
+module built from package references only, switched language without losing widget
+state, saved an activity tab, respected read-only state and disappeared when disabled.
+Because GitHub/npm egress returned HTTP503 during this run, installation used offline
+pnpm cache and a third-party NuGet fallback cache; the new Studio packages still came
+from the supplied local feeds. Four policy/integrity regressions, all four npm publish
+--dry-run commands, script lint and actionlint passed. Live registry preflight, remote
+CI/review and publication remain separate acceptance steps.

@@ -5,12 +5,17 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium, expect } from "@playwright/test";
 
+import { readBundle } from "./npm-release.mjs";
+
 const root = fileURLToPath(new URL("../", import.meta.url));
 const args = process.argv.slice(2);
 const option = name => args[args.indexOf(name) + 1];
 if (!args.includes("--nuget-feed") || !args.includes("--studio-version")) throw new Error("Use --nuget-feed PATH --studio-version VERSION after packing Elsa.ReactStudio.slnf");
 const feed = resolve(option("--nuget-feed"));
 const version = option("--studio-version");
+const releasedDirectory = args.includes("--npm-feed") ? resolve(option("--npm-feed")) : undefined;
+const released = releasedDirectory ? readBundle(releasedDirectory) : undefined;
+if (released && released.version !== version) throw new Error("npm and NuGet release versions must match");
 const temporary = mkdtempSync(join(tmpdir(), "elsa-react-module-template-"));
 const generated = join(temporary, "sample");
 const env = { ...process.env, NUGET_PACKAGES: join(temporary, "nuget-cache") };
@@ -61,15 +66,16 @@ async function startServer(enabled) {
 
 try {
   const dependencies = {};
-  const npmVersion = JSON.parse(readFileSync(join(root, "packages/sdk/package.json"), "utf8")).version;
+  const npmVersion = released?.version ?? JSON.parse(readFileSync(join(root, "packages/sdk/package.json"), "utf8")).version;
   run(process.execPath, [join(root, "scripts/create-module.mjs"), generated, "--studio-version", version, "--npm-version", npmVersion], root);
   for (const name of ["api-client", "sdk", "auth", "ui"]) {
     const directory = join(root, "packages", name);
     const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8"));
-    npm(["pack", "--pack-destination", temporary], directory);
-    const archive = `${manifest.name.replace("@", "").replace("/", "-")}-${manifest.version}.tgz`;
-    if (!readdirSync(temporary).includes(archive)) throw new Error(`Missing ${archive}`);
-    dependencies[manifest.name] = `file:${join(temporary, archive)}`;
+    if (!released) npm(["pack", "--pack-destination", temporary], directory);
+    const npmFeed = releasedDirectory ?? temporary;
+    const archive = `${manifest.name.replace("@", "").replace("/", "-")}-${released?.version ?? manifest.version}.tgz`;
+    if (!readdirSync(npmFeed).includes(archive)) throw new Error(`Missing ${archive}`);
+    dependencies[manifest.name] = `file:${join(npmFeed, archive)}`;
   }
   const client = join(generated, "Module/Client");
   const manifest = JSON.parse(readFileSync(join(client, "package.json"), "utf8"));

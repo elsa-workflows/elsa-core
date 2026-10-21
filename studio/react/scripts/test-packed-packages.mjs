@@ -3,7 +3,12 @@ import { cpSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync }
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
+import { readBundle } from "./npm-release.mjs";
+
 const root = process.cwd();
+const args = process.argv.slice(2);
+const releasedDirectory = args.includes("--npm-feed") ? resolve(args[args.indexOf("--npm-feed") + 1]) : undefined;
+const released = releasedDirectory ? readBundle(releasedDirectory) : undefined;
 const temporary = mkdtempSync(join(tmpdir(), "elsa-react-studio-consumer-"));
 const pnpm = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
 function run(args, cwd) {
@@ -17,10 +22,11 @@ try {
   for (const name of ["api-client", "sdk", "auth", "ui"]) {
     const directory = join(root, "packages", name);
     const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8"));
-    run(["pack", "--pack-destination", temporary], directory);
-    const archive = readdirSync(temporary).find(file => file === `${manifest.name.replace("@", "").replace("/", "-")}-${manifest.version}.tgz`);
+    if (!released) run(["pack", "--pack-destination", temporary], directory);
+    const feed = releasedDirectory ?? temporary;
+    const archive = readdirSync(feed).find(file => file === `${manifest.name.replace("@", "").replace("/", "-")}-${released?.version ?? manifest.version}.tgz`);
     if (!archive) throw new Error(`Missing packed artifact for ${manifest.name}`);
-    dependencies[manifest.name] = `file:${join(temporary, archive)}`;
+    dependencies[manifest.name] = `file:${join(feed, archive)}`;
   }
   const installed = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
   const reactTypes = JSON.parse(readFileSync(join(root, "node_modules/@types/react/package.json"), "utf8"));

@@ -62,7 +62,6 @@ jobs:
           pnpm localization:check
           pnpm test
           pnpm benchmark:expressions
-          pnpm test:packages
           pnpm docs:api
           pnpm audit
           pnpm build
@@ -83,9 +82,15 @@ jobs:
             --output "$RUNNER_TEMP/react-studio-packages" -p:Version=3.11.0-preview.${{ github.run_id }}
           python3 studio/react/scripts/verify-nuget-packages.py \
             "$RUNNER_TEMP/react-studio-packages" 3.11.0-preview.${{ github.run_id }}
+      - name: Prepare and install the lockstep npm release artifacts
+        working-directory: studio/react
+        run: |
+          node scripts/prepare-npm-release.mjs 3.11.0-preview.${{ github.run_id }} "$RUNNER_TEMP/react-studio-npm"
+          node scripts/test-npm-release.mjs "$RUNNER_TEMP/react-studio-npm"
+          pnpm test:packages --npm-feed "$RUNNER_TEMP/react-studio-npm"
       - name: Generate and verify an independently packaged third-party module
         working-directory: studio/react
-        run: pnpm test:module --nuget-feed "$RUNNER_TEMP/react-studio-packages" --studio-version 3.11.0-preview.${{ github.run_id }}
+        run: pnpm test:module --nuget-feed "$RUNNER_TEMP/react-studio-packages" --studio-version 3.11.0-preview.${{ github.run_id }} --npm-feed "$RUNNER_TEMP/react-studio-npm"
       - name: Build and start the standalone Preview image without publishing
         run: |
           docker build -f studio/react/Dockerfile -t elsa-react-studio:ci .
@@ -132,5 +137,6 @@ jobs:
             studio/react/test-results/**
             studio/react/docs/api/**
             ${{ runner.temp }}/react-studio-packages/*.nupkg
+            ${{ runner.temp }}/react-studio-npm/*
           if-no-files-found: warn
           retention-days: 14
