@@ -42,7 +42,8 @@ export function AlterInstanceDialog({
   const [drafts, setDrafts] = useState<AlterationDraft[]>(() => [newDraft()]);
   const [retryActivityIds, setRetryActivityIds] = useState(() => targets.flatMap((t) => t.faultedActivityIds ?? []).join(", "));
   const [outcome, setOutcome] = useState<Outcome | null>(null);
-  const [validation, setValidation] = useState<string | undefined>();
+  // Retain the rejected draft, not a message translated in the previous culture.
+  const [validation, setValidation] = useState<AlterationDraft[] | undefined>();
   const confirm = useConfirm();
 
   const run = useRunAlterations();
@@ -54,7 +55,7 @@ export function AlterInstanceDialog({
 
   const prepared = () => {
     const { alterations, error } = toAlterations(drafts);
-    setValidation(error);
+    setValidation(error ? drafts : undefined);
     return error ? undefined : alterations;
   };
 
@@ -142,7 +143,7 @@ export function AlterInstanceDialog({
             </TabsList>
             <TabsContent value="compose" className="flex flex-col gap-3 pt-2">
               <AlterationComposer drafts={drafts} onChange={setDrafts} />
-              {validation && <p className="text-xs text-destructive">{validation}</p>}
+              {validation && <p className="text-xs text-destructive">{toAlterations(validation).error}</p>}
               <ErrorAlert error={error} />
               <DialogFooter>
                 <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
