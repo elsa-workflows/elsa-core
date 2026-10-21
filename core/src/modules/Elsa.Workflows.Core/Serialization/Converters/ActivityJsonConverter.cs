@@ -89,6 +89,10 @@ public class ActivityJsonConverter(
 
     private IActivity CreateNotFoundActivity(JsonElement activityRoot, JsonElement outerRoot, JsonSerializerOptions options, string? missingTypeName = null, int? missingTypeVersion = null)
     {
+        var isOpaqueCompensationScope = CompensationScopeDraftJson.IsRecognizedScope(activityRoot);
+        if (isOpaqueCompensationScope)
+            missingTypeName = CompensationScope.ActivityTypeName;
+
         missingTypeName ??= activityRoot.TryGetProperty("type", out var typeElement) && typeElement.ValueKind == JsonValueKind.String
             ? typeElement.GetString()!
             : "Unknown";
@@ -100,7 +104,6 @@ public class ActivityJsonConverter(
 
         // Unsupported scopes retain their entire raw document without first trying to
         // hydrate typed fields such as Version from the very schema we just rejected.
-        var isOpaqueCompensationScope = CompensationScopeDraftJson.IsRecognizedScope(activityRoot);
         NotFoundActivity notFoundActivity;
         if (isOpaqueCompensationScope)
         {
