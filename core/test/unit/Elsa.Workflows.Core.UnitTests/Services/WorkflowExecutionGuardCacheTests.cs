@@ -11,6 +11,9 @@ namespace Elsa.Workflows.Core.UnitTests.Services;
 
 public class WorkflowExecutionGuardCacheTests : IAsyncLifetime
 {
+    private static readonly Type ExecutionStateType = typeof(CompensationScope).Assembly.GetType(
+        "Elsa.Workflows.Activities.Compensation.CompensationScopeExecutionState",
+        throwOnError: true)!;
     private ActivityExecutionContext _activityContext = null!;
     private WorkflowExecutionContext _context = null!;
 
@@ -161,6 +164,31 @@ public class WorkflowExecutionGuardCacheTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task OrdinaryGraphCachesNegativePassUntilNodeMutation()
+    {
+        var graph = _context.WorkflowGraph;
+        var pipeline = CreatePipeline();
+        var scopeNode = new ActivityNode(new CompensationScope(), "test");
+
+        Assert.False(HasCachedPass(graph));
+
+        await RunAsync(pipeline);
+
+        Assert.True(HasCachedPass(graph));
+
+        graph.Nodes.Add(scopeNode);
+        try
+        {
+            Assert.False(HasCachedPass(graph));
+            await AssertDraftOnlyAsync(pipeline);
+        }
+        finally
+        {
+            graph.Nodes.Remove(scopeNode);
+        }
+    }
+
+    [Fact]
     public async Task SaturatedNodeRevisionFallsBackToScanning()
     {
         var graph = _context.WorkflowGraph;
@@ -211,9 +239,14 @@ public class WorkflowExecutionGuardCacheTests : IAsyncLifetime
 
     private static bool IsActivityTypeCacheable(IActivity activity)
     {
-        var stateType = typeof(CompensationScope).Assembly.GetType("Elsa.Workflows.Activities.Compensation.CompensationScopeExecutionState", throwOnError: true)!;
-        var method = stateType.GetMethod("IsActivityTypeCacheable", BindingFlags.Static | BindingFlags.NonPublic)!;
+        var method = ExecutionStateType.GetMethod("IsActivityTypeCacheable", BindingFlags.Static | BindingFlags.NonPublic)!;
         return (bool)method.Invoke(null, [activity])!;
+    }
+
+    private static bool HasCachedPass(WorkflowGraph graph)
+    {
+        var method = ExecutionStateType.GetMethod("TryGetPass", BindingFlags.Static | BindingFlags.NonPublic)!;
+        return (bool)method.Invoke(null, [graph, null])!;
     }
 
     private ActivityNode AddGraphActivity(IActivity activity)
