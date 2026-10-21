@@ -50,6 +50,8 @@ public class ExecuteWorkflow : Activity<ExecuteWorkflowResult>
 
     /// <summary>
     /// True to wait for the child workflow to complete before completing this activity. If not set, the child workflow will be executed until it either completes or goes idle before this activity completes.
+    /// A waiting activity completes once the child is finished, whether it finished successfully, faulted or was cancelled,
+    /// including a cancellation through the cancellation API.
     /// </summary>
     [Input(Description = "Wait for the child workflow to complete before completing this activity.")]
     public Input<bool> WaitForCompletion { get; set; } = null!;
