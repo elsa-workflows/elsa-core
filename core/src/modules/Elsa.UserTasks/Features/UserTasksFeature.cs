@@ -13,6 +13,7 @@ public sealed class UserTasksFeature(IModule module) : FeatureBase(module)
     public override void Configure()
     {
         Module.AddFastEndpointsAssembly<UserTasksFeature>();
+        Module.AddActivitiesFrom<UserTasksFeature>();
     }
 
     public override void Apply()

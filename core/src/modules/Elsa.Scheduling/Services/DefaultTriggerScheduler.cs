@@ -3,6 +3,7 @@ using Elsa.Extensions;
 using Elsa.Scheduling.Activities;
 using Elsa.Scheduling.Bookmarks;
 using Elsa.Workflows.Models;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Microsoft.Extensions.Logging;
 
@@ -32,7 +33,8 @@ public class DefaultTriggerScheduler(IWorkflowScheduler workflowScheduler, ISyst
             {
                 WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(trigger.WorkflowDefinitionVersionId),
                 TriggerActivityId = trigger.ActivityId,
-                Input = input
+                Input = input,
+                Properties = TriggerWorkflowProperties.WithStimulusHash(null, trigger.Hash)
             };
             await workflowScheduler.ScheduleRecurringAsync(trigger.Id, request, startAt, interval, cancellationToken);
         }
@@ -50,7 +52,8 @@ public class DefaultTriggerScheduler(IWorkflowScheduler workflowScheduler, ISyst
             {
                 WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(trigger.WorkflowDefinitionVersionId),
                 TriggerActivityId = trigger.ActivityId,
-                Input = input
+                Input = input,
+                Properties = TriggerWorkflowProperties.WithStimulusHash(null, trigger.Hash)
             };
 
             await workflowScheduler.ScheduleAtAsync(trigger.Id, request, executeAt, cancellationToken);
@@ -79,7 +82,8 @@ public class DefaultTriggerScheduler(IWorkflowScheduler workflowScheduler, ISyst
             {
                 WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId(trigger.WorkflowDefinitionVersionId),
                 TriggerActivityId = trigger.ActivityId,
-                Input = input
+                Input = input,
+                Properties = TriggerWorkflowProperties.WithStimulusHash(null, trigger.Hash)
             };
             try
             {
