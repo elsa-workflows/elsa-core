@@ -154,3 +154,14 @@ records the wire contracts, visibility and verification boundaries. Browser fixt
 exercise the actual production modules; a local reference-backend check verifies
 save/reload of each setting and a published reusable activity's paired version IDs.
 This does not close the broader partial-parity or release acceptance gates.
+
+
+## Partial parity verification
+
+The [evidence checklist](../../../react/docs/parity.md) covers every #8851 item.
+Workflow metadata/settings, variable defaults, outcomes, versions and keyboard
+history/clipboard now have mounted editor browser checks, with deeper designer-store
+checks for IDs, nested clones and edge preservation. Confirmed gaps are tracked in
+#8940 (workflow log persistence), #8941 (variable test values), #8942 (Applications/API
+keys), #8943 (HTTP ports/embedded branches) and #8944 (batch paste names). The retained
+sanitized observations identify the audited source head and real API boundaries.
