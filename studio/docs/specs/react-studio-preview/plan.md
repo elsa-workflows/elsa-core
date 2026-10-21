@@ -268,3 +268,24 @@ Hosted browser cases cover account preferences, dialogs, unsaved workflow state,
 independent module resources, namespace isolation and fallback. A real development
 React StrictMode unit case verifies query-cache retention through effect replay
 and disposal on true unmount; production browser bundles do not replay effects.
+
+## Container delivery preparation
+
+The standalone Docker image accepts an explicit lockstep version and retains the
+Preview title. A paired Compose example builds the source reference backend and
+standalone frontend, persists SQLite data and exposes only loopback ports. The
+reference server and Datadog Docker recipes now build/copy the React projects and
+assets required by Elsa.Server.Web's optional feature reference. The feature stays
+disabled by default.
+
+A manual Release-owned workflow prepares an OCI archive with SBOM/provenance. Its
+publication path requires explicit cutover enablement, the matching tag contained
+in main and a protected Release environment. No registry publication is implied.
+
+Local validation built the standalone image at 3.11.0-preview.8857 and the source
+reference server image. The standalone runtime reports UID 1654, has no Node
+executable and carries the Preview/version labels. The real paired browser check
+passed runtime overrides, Elsa Identity sign-in, authenticated workflow listing
+and deep-link reload. CI runs this same check. Release selection and package-version
+policy tests and workflow lint pass. The Datadog recipe shares the corrected build
+stage; its unchanged instrumentation/runtime stages were not exercised locally.

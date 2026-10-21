@@ -57,6 +57,33 @@ docker run --rm -p 8080:8080 \
 `STUDIO_CONFIG` and the existing `STUDIO_*` overrides are also supported. Every
 configuration value is browser-visible. See [Configuration](configuration.md).
 
+## Paired development containers
+
+From the repository root:
+
+```sh
+docker compose -f studio/react/compose.yaml up --build -d
+```
+
+Open `http://localhost:5201/studio-preview/`. The reference backend is at
+`http://localhost:5001/elsa/api`; use its existing Development account
+`admin` / `password`. Both ports bind only to loopback. This example deliberately
+uses the reference host's development identity and permissive CORS policy; use
+your own authentication, signing keys and CORS policy for a deployed service.
+SQLite data persists in the `server-data` volume across restarts.
+
+Set `ELSA_SERVER_PORT` or `ELSA_STUDIO_PORT` before starting to change the ports.
+The API URL uses the published host port because requests come from the browser.
+The Studio starts independently of API readiness; wait for the server's startup
+log if the first sign-in request arrives while migrations are running.
+
+To use prebuilt images, set `ELSA_SERVER_IMAGE` and `ELSA_REACT_STUDIO_IMAGE` to
+matching approved version tags, then run `docker compose -f studio/react/compose.yaml
+up --no-build -d`. The local image names are the defaults until publication; the
+[release guide](release.md) describes the intended registry and approval gates.
+Use `docker compose -f studio/react/compose.yaml down` to stop the pair; add `-v`
+only when you intend to discard the sample database.
+
 ## Backend and reverse proxy requirements
 
 The configured API URL must be reachable from the user's browser. For separate

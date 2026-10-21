@@ -1,24 +1,32 @@
-﻿FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM node:22-alpine AS react-assets
+WORKDIR /frontend
+RUN --mount=type=secret,id=build-ca \
+    if [ -f /run/secrets/build-ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/build-ca; fi; \
+    npm install --global pnpm@10.33.0
+COPY studio/react/package.json studio/react/pnpm-lock.yaml studio/react/pnpm-workspace.yaml ./
+COPY studio/react/packages ./packages/
+COPY studio/react/dotnet/modules ./dotnet/modules/
+RUN --mount=type=secret,id=build-ca \
+    if [ -f /run/secrets/build-ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/build-ca; fi; \
+    pnpm install --frozen-lockfile
+COPY studio/react .
+RUN --mount=type=secret,id=build-ca \
+    if [ -f /run/secrets/build-ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/build-ca; fi; \
+    pnpm build
+
+
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /source
+# One source snapshot avoids duplicating the SDK filesystem for every product.
+# The root .dockerignore excludes local configuration, credentials and build outputs.
+COPY . .
+COPY --from=react-assets /frontend/dist ./studio/react/dist
+COPY --from=react-assets /frontend/module-assets/ ./studio/react/dotnet/modules/
+RUN --mount=type=secret,id=build-ca --mount=type=cache,target=/root/.nuget/packages \
+    if [ -f /run/secrets/build-ca ]; then export SSL_CERT_FILE=/run/secrets/build-ca; fi; \
+    dotnet publish core/src/apps/Elsa.Server.Web/Elsa.Server.Web.csproj -c Release \
+      -o /app/publish -p:UseAppHost=false -f net10.0
 
-# copy sources.
-COPY core/src/. ./core/src
-COPY extensions/src/. ./extensions/src
-COPY studio/src/. ./studio/src
-COPY ./NuGet.Config ./
-COPY *.props *.targets ./
-COPY icon.png ./
-COPY build/ConsolidatedPackageProof.targets ./build/
-
-# restore packages.
-RUN dotnet restore "./core/src/apps/Elsa.Server.Web/Elsa.Server.Web.csproj"
-
-# build and publish (UseAppHost=false creates platform independent binaries).
-WORKDIR /source/core/src/apps/Elsa.Server.Web
-RUN dotnet build "Elsa.Server.Web.csproj" -c Release -o /app/build
-RUN dotnet publish "Elsa.Server.Web.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore -f net10.0
-
-# move binaries into smaller base image.
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 WORKDIR /app
 COPY --from=build /app/publish ./

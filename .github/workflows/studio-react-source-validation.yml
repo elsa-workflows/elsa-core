@@ -8,6 +8,9 @@ on:
       - 'docs/integration-program/studio-react-source-import.*'
       - 'scripts/integration-program/*studio_react_source_import.py'
       - '.github/workflows/studio-react-source-validation.yml'
+      - '.github/workflows/studio-react-release.yml'
+      - 'docker/ElsaServer.Dockerfile'
+      - 'docker/ElsaServer-Datadog.Dockerfile'
   workflow_dispatch:
 
 permissions:
@@ -34,7 +37,7 @@ jobs:
 
   frontend-and-host:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -74,6 +77,7 @@ jobs:
           pnpm test:browser
       - name: Pack the Preview feature libraries without publishing
         run: |
+          python3 studio/react/scripts/test-release-selection.py
           python3 studio/react/scripts/test-package-version-policy.py
           dotnet pack Elsa.ReactStudio.slnf -c Release \
             --output "$RUNNER_TEMP/react-studio-packages" -p:Version=3.11.0-preview.${{ github.run_id }}
@@ -105,6 +109,17 @@ jobs:
           assert response.status == 200 and len(response.read()) > 1000
           assert urllib.request.urlopen(origin + '/studio-preview/THIRD-PARTY-NOTICES.txt').status == 200
           PY
+      - name: Verify the paired reference server and Preview containers
+        env:
+          ELSA_SERVER_PORT: '5203'
+          ELSA_STUDIO_PORT: '5204'
+          ELSA_REACT_STUDIO_IMAGE: elsa-react-studio:ci
+        run: |
+          set -euo pipefail
+          docker build -f docker/ElsaServer.Dockerfile -t elsa-server:react-preview .
+          docker compose -p react-studio-ci -f studio/react/compose.yaml up --no-build -d
+          trap 'docker compose -p react-studio-ci -f studio/react/compose.yaml logs; docker compose -p react-studio-ci -f studio/react/compose.yaml down -v' EXIT
+          (cd studio/react && node scripts/test-container-pair.mjs)
       - name: Verify source remained unchanged
         run: git diff --exit-code HEAD --
       - name: Retain validation results
