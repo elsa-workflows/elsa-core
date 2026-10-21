@@ -12,6 +12,7 @@ public sealed class CompensationScopeDiagramDesigner : IDiagramDesigner
 {
     private JsonObject _scope = [];
     private string? _documentBackendContextKey;
+    private EventCallback _graphUpdatedCallback;
 
     public Task LoadRootActivityAsync(JsonObject activity, IDictionary<string, ActivityStats>? activityStatsMap)
     {
@@ -19,16 +20,23 @@ public sealed class CompensationScopeDiagramDesigner : IDiagramDesigner
         return Task.CompletedTask;
     }
 
-    public Task UpdateActivityAsync(string id, JsonObject activity)
+    public async Task UpdateActivityAsync(string id, JsonObject activity)
     {
+        bool updated;
         if (_scope.GetId() == id)
         {
             ReplaceContents(_scope, activity);
-            return Task.CompletedTask;
+            updated = true;
+        }
+        else
+        {
+            updated = ReplaceChild(_scope, id, activity);
         }
 
-        ReplaceChild(_scope, id, activity);
-        return Task.CompletedTask;
+        if (updated && _graphUpdatedCallback.HasDelegate)
+        {
+            await _graphUpdatedCallback.InvokeAsync();
+        }
     }
 
     public Task UpdateActivityStatsAsync(string id, ActivityStats stats) => Task.CompletedTask;
@@ -39,6 +47,7 @@ public sealed class CompensationScopeDiagramDesigner : IDiagramDesigner
     {
         _scope = context.Activity;
         _documentBackendContextKey = NativeCompensationDraftDocumentContext.GetBackendContextKey(context.WorkflowDefinition);
+        _graphUpdatedCallback = context.GraphUpdatedCallback;
         return builder =>
         {
             builder.OpenComponent<CompensationScopeDesigner>(0);
