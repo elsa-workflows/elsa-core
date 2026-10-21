@@ -37,7 +37,7 @@ test("specialized and extension UI hints edit their server values through regist
       return h("section",null,h("h1",null,"Editors fixture"),
         h("button",{onClick:()=>setReadOnly(value=>!value)},"Toggle read only"),
         ...controls.map(([id,hint,descriptor,syntaxes])=>h("div",{key:id,"data-testid":id},
-          h(hints[hint],{descriptor,syntaxes,context,readOnly,value:values[id],onChange:next=>setValues(current=>({...current,[id]:next}))}),
+          h(hints[hint],{descriptor,syntaxes,context,readOnly,value:values[id],onChange:next=>{if(id==="outcomes")window.outcomeWrites=(window.outcomeWrites??0)+1;setValues(current=>({...current,[id]:next}));}}),
           h("output",{"data-testid":id+"-value"},JSON.stringify(values[id])??"unset"))));
     }
     export function register(api) {
@@ -62,6 +62,12 @@ test("specialized and extension UI hints edit their server values through regist
   await page.getByLabel("New outcome", { exact: true }).fill(" Reject ");
   await page.getByLabel("New outcome", { exact: true }).press("Enter");
   await expect(page.getByTestId("outcomes-value")).toHaveText(JSON.stringify({ typeName: "String[]", expression: { type: "Object", value: '[" Approve ","Reject"]' } }));
+  const writes = () => page.evaluate(() => (window as Window & { outcomeWrites?: number }).outcomeWrites);
+  expect(await writes()).toBe(1);
+  await page.getByLabel("New outcome", { exact: true }).fill("Reject");
+  await page.getByLabel("New outcome", { exact: true }).press("Enter");
+  await expect(page.getByLabel("New outcome", { exact: true })).toHaveValue("");
+  expect(await writes()).toBe(1);
   await page.getByRole("button", { name: "Remove outcome Approve" }).click();
   await expect(page.getByTestId("outcomes-value")).toHaveText(JSON.stringify({
     typeName: "String[]", expression: { type: "Object", value: '["Reject"]' },

@@ -42,7 +42,7 @@ export function fixedOutcomes(descriptor: InputDescriptor): string[] {
 }
 export function serializeOutcomes(values: readonly string[], descriptor: InputDescriptor): string {
   const fixed = new Set(fixedOutcomes(descriptor));
-  return JSON.stringify([...new Set(values.filter(value => !fixed.has(value)))]);
+  return JSON.stringify(values.filter(value => !fixed.has(value)));
 }
 
 export function selectedInput(value: unknown, descriptor: InputDescriptor): InputDefinition | undefined {
