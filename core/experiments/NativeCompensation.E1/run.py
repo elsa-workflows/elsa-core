@@ -144,10 +144,12 @@ def backend(directory, url, kill_at=None, ambient=False, handoff="Compensated", 
             try:
                 process.kill()  # Only the child created by this controller is ever terminated.
             except ProcessLookupError:
+                # The owned child exited between the poll and kill calls.
                 pass
         try:
             process.stdin.close()
         except (BrokenPipeError, OSError):
+            # A terminated child's input pipe may already be closed.
             pass
         try:
             process.wait(timeout=15)
@@ -156,6 +158,7 @@ def backend(directory, url, kill_at=None, ambient=False, handoff="Compensated", 
             try:
                 process.kill()
             except ProcessLookupError:
+                # The owned child exited before the cleanup retry.
                 pass
             process.wait()
         reader.join(timeout=5)
@@ -172,6 +175,7 @@ def backend(directory, url, kill_at=None, ambient=False, handoff="Compensated", 
             try:
                 stream.close()
             except (OSError, ValueError):
+                # Preserve phase diagnostics when a teardown pipe is already closed.
                 pass
         reader.join(timeout=1)
         stderr_reader.join(timeout=1)
