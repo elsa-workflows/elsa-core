@@ -212,3 +212,22 @@ autosave before #8929 provides a native canvas. An actual Core-imported process
 retains its exact root after opening and advancing beyond the autosave interval,
 and still exports. Browser cases abort pending analysis/export on cancellation
 and reject late navigation/download effects.
+
+## Expression completion
+
+C# now has a syntax mode. Expression and script inputs combine current workflow
+members with cached server declaration metadata, providing typed members and
+runtime-correct input/output accessors for C#, JavaScript and Python. Liquid's
+existing suggestions remain available. Requests are shared across edits, cancelable
+and invalidated after save; server failures preserve local suggestions.
+
+Unit cases, three browser cases and an actual Core declaration document verify the
+behavior. The reproducible benchmark covers 3,000 variables, 3,000 inputs and 10,000
+activities, with measured completion generation below 43 ms median on the development
+environment. The expression guide states the one-level member scope and distinction
+from language-server diagnostics and full-diagram performance.
+
+Review regressions preserve the runtime's exact input-wrapper case, keep completion
+replacement inside surrounding calls/arrays, exclude saved wrappers that no longer
+match current workflow members, and parse generic CLR declaration names. The guide
+documents the conservative treatment of unknown cached get/set wrappers.

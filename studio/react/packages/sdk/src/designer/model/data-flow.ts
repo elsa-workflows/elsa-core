@@ -44,23 +44,62 @@ function escapeRe(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
+// Generated C#/JavaScript wrappers accept alphanumeric names only. An underscore
+// is a valid language identifier but is rejected by the runtime name validator.
+const generatedAccessor = /^[A-Za-z][A-Za-z0-9]*$/;
+const pascal = (name: string) => name.replace(/(?:^|_)([a-z])/g, (_, letter: string) => letter.toUpperCase());
+
 /**
  * Patterns under which expressions reference a variable in Elsa 3:
- * JavaScript/Python `variables.Name`, C#/Liquid `Variables.Name`, JS `getName()` / `setName()`,
- * `getVariable('Name')` / `setVariable('Name', …)`. Reads vs writes are distinguished by the setter forms.
+ * Includes direct containers, runtime-generated PascalCase aliases and generic
+ * getters/setters. Property mutations and setter calls identify writes.
  */
 function variablePatterns(name: string) {
   const n = escapeRe(name);
+  const argument = `(?:${escapeRe(JSON.stringify(name))}|['\`]${n}['\`])`;
+  const properties = [`\\b[vV]ariables\\.${n}\\b`];
+  const getters = [`\\bget${n}\\s*\\(`];
+  const setters = [`\\bset${n}\\s*\\(`];
+  if (generatedAccessor.test(name)) {
+    const alias = escapeRe(pascal(name));
+    properties.push(`\\bVariables?\\.${alias}\\b`);
+    getters.push(`\\bget${alias}\\s*\\(`);
+    setters.push(`\\bset${alias}\\s*\\(`);
+  }
+  const property = `(?:${properties.join("|")})`;
+  const assignment = String.raw`(?:=(?!=|>)|(?:\*\*|>>>?|<<|\?\?|&&|\|\||[+\-*/%&|^])=)`;
+  const update = String.raw`(?:\+\+|--)`;
   return {
-    read: new RegExp(`\\b[vV]ariables\\.${n}\\b|\\bget${n}\\s*\\(|\\bgetVariable\\s*\\(\\s*['"\`]${n}['"\`]`),
-    write: new RegExp(`\\bset${n}\\s*\\(|\\bsetVariable\\s*\\(\\s*['"\`]${n}['"\`]|\\b[vV]ariables\\.${n}\\s*=[^=]`),
+    read: new RegExp(`${property}(?!\\s*=(?!=))|${getters.join("|")}|\\bgetVariable\\s*\\(\\s*${argument}|\\b(?:Variables?\\.Get(?:<[^>]+>)?|variables\\.get)\\s*\\(\\s*${argument}`),
+    write: new RegExp(`${property}\\s*(?:${assignment}|${update})|${update}\\s*${property}|${setters.join("|")}|\\bsetVariable\\s*\\(\\s*${argument}|\\bVariables?\\.Set\\s*\\(\\s*${argument}`),
   };
 }
 
 /** JS `input.Name` / `getName()` / `getInput('Name')`, Liquid/C# `Input.Name`, `Inputs.Name`. */
 function inputPattern(name: string) {
   const n = escapeRe(name);
-  return new RegExp(`\\b[iI]nputs?\\.${n}\\b|\\bget${n}\\s*\\(|\\bgetInput\\s*\\(\\s*['"\`]${n}['"\`]`);
+  const argument = `(?:${escapeRe(JSON.stringify(name))}|['\`]${n}['\`])`;
+  return new RegExp(`\\b[iI]nputs?\\.${n}\\b|\\bget${n}\\s*\\(|\\bgetInput\\s*\\(\\s*${argument}|\\b[iI]nputs?\\.Get(?:<[^>]+>)?\\s*\\(\\s*${argument}`);
+}
+
+/** Pickers can store a reference object or its JSON serialization; older models use a raw id/name. */
+function bindingReference(value: unknown): string | { id?: string; name?: string } | undefined {
+  if (typeof value === "string") {
+    const text = value;
+    try {
+      const parsed: unknown = JSON.parse(text);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) value = parsed;
+      else return text;
+    } catch {
+      return text;
+    }
+  }
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const reference = value as Record<string, unknown>;
+  return {
+    id: typeof reference.id === "string" ? reference.id : undefined,
+    name: typeof reference.name === "string" ? reference.name : undefined,
+  };
 }
 
 /** Collects every string that could be an expression inside an activity's properties (one level deep is enough: wrapped inputs). */
@@ -72,7 +111,7 @@ function expressionTexts(activity: Activity): { property: string; text: string }
     if (typeof (value as Activity).type === "string" && typeof (value as Activity).id === "string") continue; // a child activity, not an input
     const wrapped = value as { expression?: { type?: string; value?: unknown } };
     const expr = wrapped.expression;
-    if (expr && typeof expr.value === "string" && expr.type !== "Literal" && expr.type !== "Object") out.push({ property: prop, text: expr.value });
+    if (expr && typeof expr.value === "string" && !["Literal", "Object", "Variable", "Input"].includes(expr.type ?? "")) out.push({ property: prop, text: expr.value });
     // Switch / FlowSwitch cases carry their own expressions.
     if (Array.isArray(value)) {
       for (const item of value as { condition?: { value?: unknown } }[]) {
@@ -165,12 +204,14 @@ export function indexDataFlow(
         const expr = (value as { expression?: { type?: string; value?: unknown } } | undefined)?.expression;
         if (!expr || typeof expr !== "object") continue;
         if (expr.type === "Variable") {
-          const id = typeof expr.value === "string" ? expr.value : (expr.value as { id?: string } | undefined)?.id;
-          const usage = allVariables.find((v) => v.id === id || v.name === id);
+          const reference = bindingReference(expr.value);
+          const id = typeof reference === "string" ? reference : reference?.id;
+          const usage = allVariables.find((v) => v.id === id) ?? (typeof reference === "string" ? allVariables.find((v) => v.name === reference) : undefined);
           if (usage) note(byKey.get(refKey("variable", usage.id))!, "readers", { ...base, property: prop, via: "expression" });
         }
         if (expr.type === "Input") {
-          const name = typeof expr.value === "string" ? expr.value : (expr.value as { name?: string } | undefined)?.name;
+          const reference = bindingReference(expr.value);
+          const name = typeof reference === "string" ? reference : reference?.name;
           const usage = name ? byKey.get(refKey("input", name)) : undefined;
           if (usage) note(usage, "readers", { ...base, property: prop, via: "expression" });
         }
@@ -200,24 +241,33 @@ export function expressionCompletions(
 ): { label: string; detail: string; type: string }[] {
   const items: { label: string; detail: string; type: string }[] = [];
   const add = (label: string, detail: string, type = "variable") => items.push({ label, detail, type });
+  const identifier = /^[A-Za-z_][\w]*$/;
+  const quote = (value: string) => JSON.stringify(value);
   for (const v of variables) {
-    if (language === "javascript" || language === "python") add(`variables.${v.name}`, "variable");
-    if (language === "csharp" || language === "liquid") add(`Variables.${v.name}`, "variable");
-    if (language === "javascript") {
-      add(`get${v.name}()`, "variable getter", "function");
-      add(`set${v.name}(value)`, "variable setter", "function");
+    if ((language === "javascript" || language === "python") && identifier.test(v.name)) add(`variables.${v.name}`, "variable");
+    if (language === "csharp") {
+      if (generatedAccessor.test(v.name)) add(`Variable.${pascal(v.name)}`, "variable");
+      add(`Variable.Get(${quote(v.name)})`, "variable", "function");
+    }
+    if (language === "liquid" && identifier.test(v.name)) add(`Variables.${v.name}`, "variable");
+    if (language === "python") add(`variables.get(${quote(v.name)})`, "variable", "function");
+    if (language === "javascript" && generatedAccessor.test(v.name)) {
+      add(`get${pascal(v.name)}()`, "variable getter", "function");
+      add(`set${pascal(v.name)}(value)`, "variable setter", "function");
     }
   }
   for (const i of inputs) {
     if (language === "javascript") {
-      add(`get${i.name}()`, "workflow input", "function");
-      add(`getInput('${i.name}')`, "workflow input", "function");
+      if (generatedAccessor.test(i.name)) add(`get${i.name}()`, "workflow input", "function");
+      add(`getInput(${quote(i.name)})`, "workflow input", "function");
     }
-    if (language === "csharp" || language === "liquid") add(`Input.${i.name}`, "workflow input");
-    if (language === "python") add(`input.${i.name}`, "workflow input");
+    if ((language === "csharp" && generatedAccessor.test(i.name)) || (language === "liquid" && identifier.test(i.name))) add(`Input.${i.name}`, "workflow input");
+    if (language === "csharp") add(`Input.Get<object>(${quote(i.name)})`, "workflow input", "function");
+    if (language === "python") add(`input.Get(${quote(i.name)})`, "workflow input", "function");
   }
-  if (language === "javascript") {
-    for (const a of activities) for (const o of a.outputs) add(`getOutputFrom('${a.name}', '${o}')`, `output of ${a.name}`, "function");
+  for (const a of activities) for (const o of a.outputs) {
+    const fn = language === "javascript" ? "getOutputFrom" : language === "csharp" ? "Output.From" : language === "python" ? "output.Get" : undefined;
+    if (fn) add(`${fn}(${quote(a.name)}, ${quote(o)})`, `output of ${a.name}`, "function");
   }
   return items;
 }

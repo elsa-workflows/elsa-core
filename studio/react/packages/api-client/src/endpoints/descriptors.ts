@@ -38,11 +38,11 @@ export function descriptorsApi(http: HttpClient) {
 
     installedFeatures: (signal?: AbortSignal) => http.get<ListResponse<FeatureDescriptor>>("features/installed", { signal }),
     packageVersion: (signal?: AbortSignal) => http.get<{ packageVersion: string }>("package/version", { signal }),
-    javascriptTypeDefinitions: (workflowDefinitionId: string, activityTypeName?: string, propertyName?: string) =>
+    javascriptTypeDefinitions: (workflowDefinitionId: string, activityTypeName?: string, propertyName?: string, signal?: AbortSignal) =>
       http.post<string>(
         `scripting/javascript/type-definitions/${encodeURIComponent(workflowDefinitionId)}`,
         { activityTypeName, propertyName },
-        { parse: "text" },
+        { parse: "text", signal },
       ),
   };
 }

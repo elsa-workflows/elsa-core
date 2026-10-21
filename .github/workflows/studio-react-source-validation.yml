@@ -57,6 +57,7 @@ jobs:
           pnpm typecheck
           pnpm check:boundaries
           pnpm test
+          pnpm benchmark:expressions
           pnpm test:packages
           pnpm docs:api
           pnpm audit

@@ -50,6 +50,7 @@ export function ActivityPropertiesPanel({ workflowDefinitionId, variables, workf
         .map((a) => ({ name: a.name!, outputs: (registry.get(a.type, a.version)?.outputs ?? []).map((o) => o.name) })),
     [containerActivities, selectedId, registry],
   );
+  const completionVariables = useMemo(() => variables.map(v => ({ id: v.id, name: v.name, typeName: v.typeName })), [variables]);
   const readOnly = useDesignerState((s) => s.readOnly);
   const updateActivity = useDesignerState((s) => s.updateActivity);
   const extraTabs = useExtensions("activityTabs");
@@ -71,7 +72,7 @@ export function ActivityPropertiesPanel({ workflowDefinitionId, variables, workf
     activityType: activity.type,
     activityVersion: activity.version,
     activity: { ...activity, __workflowOutputs: workflowOutputs },
-    variables: variables.map((v) => ({ id: v.id, name: v.name, typeName: v.typeName })),
+    variables: completionVariables,
     outputs: descriptor?.outputs ?? [],
     inputs: workflowInputs,
     activities: siblingActivities,

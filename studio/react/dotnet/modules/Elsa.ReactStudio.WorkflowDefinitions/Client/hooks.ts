@@ -52,7 +52,15 @@ export function useWorkflowDefinitionMutations() {
   const api = client.workflowDefinitions;
 
   return {
-    save: useMutation({ mutationFn: (request: SaveWorkflowDefinitionRequest) => api.save(request), onSuccess: invalidate }),
+    save: useMutation({ mutationFn: (request: SaveWorkflowDefinitionRequest) => api.save(request), onSuccess: () => {
+      const expressionTypes = { queryKey: [scope, "expression-types"] };
+      // Cancel an initial in-flight query before invalidating: otherwise its old
+      // response can clear invalidation without requesting the saved model's types.
+      void queryClient.cancelQueries(expressionTypes)
+        .then(() => queryClient.invalidateQueries(expressionTypes))
+        .catch(() => { /* Query state reports failures; type loading must not block saving. */ });
+      return invalidate();
+    } }),
     publish: useMutation({ mutationFn: (definitionId: string) => api.publish(definitionId), onSuccess: invalidate }),
     retract: useMutation({ mutationFn: (definitionId: string) => api.retract(definitionId), onSuccess: invalidate }),
     remove: useMutation({ mutationFn: (definitionId: string) => api.delete(definitionId), onSuccess: invalidate }),
