@@ -19,6 +19,7 @@ No BPMN implementation reuse, adapters, shared compensation abstractions or depe
 | [Data and persistence](persistence.md) | Identities, retained/protected captures, strict versions, root snapshot protocol, atomicity and recovery gates. |
 | [Guarded native snapshots](guarded-snapshot.md) | Proposed storage-owned marker, receipt, tenant/revision/epoch fence, fail-closed outer hydration, mutation-path enforcement and bounded E1 transaction proof. |
 | [Recovery API and security](recovery-api.md) | Safe read model, commands, authorization, audit, concurrency and disclosure. |
+| [Protected recovery data and tenant authority](recovery-data.md) | E2 protection, safe summaries/detail, source suppression, authenticated tenant binding, host profile, retention owners and proof matrix. |
 | [Native Core and Studio caller contract (E3)](e3-studio-contract.md) | Source-grounded owned-child model/traversal, pre-fallback pins, declared mapping semantics, mandatory publish refusal, E2-safe causal Studio reads, and the gated tracer/restart proof handoff. |
 | [Studio interaction contract](../../../../studio/docs/specs/native-compensation/plan.md) | Authoring, captures, publication diagnostics, execution navigation, accessible states and host integration. |
 | [Verification plan](verification.md) | Real browser/backend/store/participant restart demonstrations and negative controls; no pass is implied. |
@@ -26,6 +27,7 @@ No BPMN implementation reuse, adapters, shared compensation abstractions or depe
 | [Decisions and delivery gates](decisions.md) | Accepted owner policies, selected design proposals, remaining technical gates and progressive delivery. |
 | [Shared proposed ADR](../../../../docs/adr/2026-10-20-native-compensation-instance-journal.md) | Root instance journal and generation-specific recovery boundary. |
 | [Guarded-snapshot ADR](../../../../docs/adr/2026-10-21-native-compensation-guarded-snapshots.md) | Proposed persistence-owned admission and write-fence contract; no provider/API or qualification claim. |
+| [Protected recovery-data ADR](../../../../docs/adr/2026-10-21-protect-native-compensation-recovery-data.md) | Proposed E2 protection, projection, authorization and host-profile contract; no runtime qualification claim. |
 | [Owned-child and caller ADR](../../../../docs/adr/2026-10-21-native-compensation-owned-children.md) | Proposed native owned-child and paired Studio extension points; no global serializer change or API spelling freeze. |
 
 The program lead integrates the packet. Runtime/persistence reviewers own the commit, scheduling and ownership proofs; Studio reviewers own the interactions/client mapping; security reviewers own command/disclosure/protection; QA owns reproducible qualification. These are accountable roles, not claims that named maintainers have accepted future implementation work.
