@@ -13,10 +13,10 @@ pnpm install --frozen-lockfile
 pnpm build
 ```
 
-Start your Elsa API, then run the standalone host. For a local API at port 5001:
+Start your Elsa API, then run the standalone host. For the reference Core host’s HTTP API at port 5072:
 
 ```sh
-STUDIO_SERVER_URL=http://localhost:5001/elsa/api pnpm host
+STUDIO_SERVER_URL=http://localhost:5072/elsa/api pnpm host
 ```
 
 Open `http://localhost:5201/studio-preview/` and sign in with an account from that
