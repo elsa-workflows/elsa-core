@@ -15,7 +15,7 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
-using Elsa.Workflows.Runtime.Requests;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.State;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
