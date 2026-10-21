@@ -25,6 +25,14 @@ function literalValue(input: unknown): unknown {
   return input;
 }
 
+function literalList(input: unknown): unknown[] {
+  const value = literalValue(input);
+  if (Array.isArray(value)) return value;
+  if (typeof value !== "string") return [];
+  try { const parsed: unknown = JSON.parse(value); return Array.isArray(parsed) ? parsed : []; }
+  catch { return []; }
+}
+
 /**
  * Mirrors the studio's activity port providers:
  *  - every `Flow` port of the descriptor is an outgoing handle;
@@ -50,8 +58,11 @@ export function computePorts(activity: Activity, descriptor: ActivityDescriptor 
 
   for (const input of descriptor?.inputs ?? []) {
     if (input.uiHint !== "dynamic-outcomes") continue;
-    const outcomes = (literalValue(activity[portPropertyNameOf(input.name)]) as string[] | undefined) ?? [];
-    outPorts.push(...outcomes.filter(Boolean).map((n) => ({ name: n, displayName: n })));
+    const outcomes = literalList(activity[portPropertyNameOf(input.name)]);
+    const options = input.uiSpecifications?.DynamicOutcomesOptions as { fixedOutcomes?: unknown; FixedOutcomes?: unknown } | undefined;
+    const fixed = options?.fixedOutcomes ?? options?.FixedOutcomes;
+    const names = [...outcomes, ...(Array.isArray(fixed) ? fixed : [])].filter((name): name is string => typeof name === "string" && !!name);
+    outPorts.push(...names.map(name => ({ name, displayName: name })));
   }
 
   if (outPorts.length === 0 && !descriptor?.isTerminal) outPorts.push({ name: DEFAULT_DONE_PORT, displayName: "Done" });

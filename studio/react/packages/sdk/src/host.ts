@@ -133,7 +133,8 @@ export class StudioRegistry {
         workflowPropertiesTabs: own("workflowPropertiesTabs").map(item => ({ ...item, id: JSON.stringify([module.manifest.id, item.id]) })), definitionRowActions: [...own("definitionRowActions")],
         instanceRowActions: [...own("instanceRowActions")], instanceViewerActions: [...own("instanceViewerActions")],
         headerItems: [...own("headerItems")], activityTabs: own("activityPropertiesTabs").map(item => ({ ...item, id: JSON.stringify([module.manifest.id, item.id]) })),
-        uiHints: Object.fromEntries(own("uiHints").map(item => [item.hint, item.component])),
+        uiHints: Object.fromEntries(own("uiHints").reverse().map(item => [item.hint, item.component])),
+        uiHintContributions: [...own("uiHints")],
       };
       const providers = own("providers");
       return { ...module.manifest, name: module.manifest.name ?? module.manifest.id,

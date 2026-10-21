@@ -92,7 +92,14 @@ export function useExtensions<K extends keyof NonNullable<StudioModule["extensio
   const { enabled } = useModules();
   return useMemo(() => {
     const items = enabled.map((m) => m.extensions?.[kind]).filter(Boolean);
-    if (kind === "uiHints") return Object.assign({}, ...items) as never;
+    if (kind === "uiHints") {
+      const hints = enabled.flatMap(module => (module.extensions?.uiHintContributions ??
+        Object.entries(module.extensions?.uiHints ?? {}).map(([hint, component]) => ({ id: hint, hint, component, order: 0 })))
+        .map(hint => ({ ...hint, owner: module.id })));
+      const compare = (a: string, b: string) => a < b ? -1 : a > b ? 1 : 0;
+      hints.sort((a, b) => (a.order ?? 0) - (b.order ?? 0) || compare(a.owner, b.owner) || compare(a.id, b.id));
+      return Object.fromEntries(hints.reverse().map(hint => [hint.hint, hint.component])) as never;
+    }
     return (items.flat() as { order?: number }[]).sort(byOrder) as never;
   }, [enabled, kind]);
 }

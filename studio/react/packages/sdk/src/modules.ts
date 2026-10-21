@@ -127,6 +127,8 @@ export interface StudioModuleExtensions {
   headerItems?: { id: string; order?: number; component: ComponentType }[];
   /** Extra UI-hint editors keyed by hint name (e.g. `secret-picker`). */
   uiHints?: Record<string, ComponentType<import("./editor-types.js").UiHintEditorProps>>;
+  /** Ordered slot contributions, retained by the host for deterministic hint overrides. */
+  uiHintContributions?: StudioSlots["uiHints"][];
 }
 
 export interface StudioModule {

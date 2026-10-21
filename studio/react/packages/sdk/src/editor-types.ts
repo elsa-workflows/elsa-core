@@ -1,5 +1,6 @@
 import type { ActivityInput, Expression } from "@elsa-workflows/react-studio-api-client/types/activities";
 import type { InputDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
+import type { InputDefinition } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
 
 export type CodeLanguage = "javascript" | "typescript" | "json" | "python" | "liquid" | "csharp" | "sql" | "plaintext";
 
@@ -26,7 +27,7 @@ export interface UiHintContext {
   /** Outputs declared by the activity's descriptor. */
   outputs: { name: string; typeName: string; displayName?: string }[];
   /** Workflow inputs, offered by expression autocomplete. */
-  inputs?: { name: string }[];
+  inputs?: InputDefinition[];
   /** Other activities (name + output names) for `getOutputFrom` completions. */
   activities?: { name: string; outputs: string[] }[];
 }
