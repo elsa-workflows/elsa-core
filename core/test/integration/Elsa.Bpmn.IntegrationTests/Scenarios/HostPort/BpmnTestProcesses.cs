@@ -52,7 +52,10 @@ internal static partial class BpmnTestProcesses
             ? new(BpmnEventDefinitionTypes.Escalation)
             : new(BpmnEventDefinitionTypes.Escalation, new Dictionary<string, string>(StringComparer.Ordinal) { [BpmnEventDefinitionProperties.Code] = code });
 
-    private static BpmnEventDefinition Error() => new(BpmnEventDefinitionTypes.Error);
+    private static BpmnEventDefinition Error(string? code = null) =>
+        code is null
+            ? new(BpmnEventDefinitionTypes.Error)
+            : new(BpmnEventDefinitionTypes.Error, new Dictionary<string, string>(StringComparer.Ordinal) { [BpmnEventDefinitionProperties.Code] = code });
 
     private static BpmnEventDefinition Message(string name) =>
         new(BpmnEventDefinitionTypes.Message, new Dictionary<string, string>(StringComparer.Ordinal) { [BpmnEventDefinitionProperties.Name] = name });
@@ -102,10 +105,11 @@ internal static partial class BpmnTestProcesses
         Log = log
     };
 
-    private static BpmnTestFaultingWork Faulting(string id, BpmnTestLog log) => new()
+    private static BpmnTestFaultingWork Faulting(string id, BpmnTestLog log, string? code = null) => new()
     {
         Id = id,
-        Log = log
+        Log = log,
+        Code = code
     };
 
     private static BpmnTestDecisionWork Decision(string id, BpmnTestLog log, params string[] outcomeNames) => new()

@@ -91,6 +91,21 @@ The ledger is serialized to JSON as part of the scope's `ActivityExecutionContex
 
 BPMN describes *what* a task is for, not *how* to perform it. An unbound task gets its implementation from an `elsa:activityBinding` vendor extension inside the BPMN element's `<extensionElements>`. A send or receive task whose `messageRef` resolves to a named message is not unbound: it binds to `MessagePublish` or `MessageWait` like a message throw or catch event. `elsa:activityBinding` is accepted only on an unbound task; the binder refuses one on any other element, such as a gateway, an event, or a send or receive task bound to its message, because nothing would ever run it.
 
+### BPMN errors
+
+A unit of work that fails raises a BPMN error, and `Bpmn.Semantics` routes it to the error catcher that declares its
+code, else to a catch-all (an error boundary event or error event subprocess that declares no code), else the scope
+faults with that code. Elsa names the error a failed unit of work raised:
+
+- a `FaultException`, which Elsa's `Fault` activity throws, raises an error coded with its `Code`;
+- an embedded subprocess that ended because nothing in it caught an error, including one its own error end event
+  threw, raises that error's code in the enclosing scope, so a coded error boundary on the subprocess catches it;
+- any other exception raises an error with no code, which only a catch-all catches.
+
+An error end event's code is the `errorCode` of the `<error>` its `errorRef` names, else that error's id; an error end
+event without an `errorRef` throws an error with no code. A called workflow's fault reaches its call activity without a
+code (see below).
+
 ### Call activity failure
 
 A waiting call activity takes its normal outgoing flow only when the called workflow finishes successfully. When the

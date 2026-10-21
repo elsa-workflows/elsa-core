@@ -10,6 +10,7 @@ using Elsa.Scheduling;
 using Elsa.Scheduling.Bookmarks;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities.Flowchart.Models;
+using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Activities;
 using Elsa.Workflows.Runtime.Filters;
@@ -183,7 +184,8 @@ internal sealed class BpmnScopeHost
             Graph, memory.State, Snapshot(memory), record.BindingRef, record.Handle, signal.Exception.Message)
         {
             FaultedIterationId = record.IterationId,
-            WorkTokenId = record.TokenId
+            WorkTokenId = record.TokenId,
+            ErrorCode = ErrorCodeOf(signal.Exception)
         };
 
         var evaluation = await _conditions.InterpretAsync(() => Interpreter.OnWorkFaulted(request));
@@ -271,7 +273,7 @@ internal sealed class BpmnScopeHost
             case BpmnContinuation.Defer:
                 break;
             case BpmnContinuation.Fault fault:
-                throw new BpmnScopeFaultException(fault.Code, fault.Message);
+                throw new BpmnScopeFaultException(fault.Code, fault.Message) { ErrorCode = fault.ErrorCode };
             default:
                 throw new NotSupportedException($"The BPMN continuation '{evaluation.Continuation.GetType().Name}' is not supported by this host.");
         }
@@ -396,6 +398,18 @@ internal sealed class BpmnScopeHost
     /// is what turns "some activity failed" into "the work I started failed", which is exactly what BPMN error
     /// propagation across a scope boundary means.
     /// </remarks>
+    /// <summary>
+    /// The BPMN error a failed unit of work raised: a <see cref="FaultException"/>'s code, which is how Elsa's
+    /// <c>Fault</c> activity names a business error, or the error a subprocess ended with when nothing in it caught one.
+    /// Any other exception is an uncoded error, which only a catch-all error catcher catches.
+    /// </summary>
+    private static string? ErrorCodeOf(Exception exception) => exception switch
+    {
+        FaultException fault => fault.Code,
+        BpmnScopeFaultException scopeFault => scopeFault.ErrorCode,
+        _ => null
+    };
+
     private BpmnWorkRecord? ResolveFaultedWork(BpmnScopeMemory memory, ActivityExecutionContext faultedContext)
     {
         for (var current = faultedContext; current is not null && !string.Equals(current.Id, _context.Id, StringComparison.Ordinal); current = current.ParentActivityExecutionContext)

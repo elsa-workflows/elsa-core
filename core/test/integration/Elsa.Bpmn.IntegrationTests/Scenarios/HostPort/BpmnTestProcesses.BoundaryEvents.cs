@@ -103,6 +103,64 @@ internal static partial class BpmnTestProcesses
         return Scope("scope", definition, Immediate("first", log), Immediate("second", log), nested, Immediate("after", log));
     }
 
+    /// <summary>
+    /// A task that fails with the error code <paramref name="code"/>, carrying an error boundary event for
+    /// <paramref name="boundaryCode"/> and, when <paramref name="withCatchAll"/>, a catch-all one as well.
+    /// </summary>
+    public static BpmnProcess CodedErrorBoundaries(BpmnTestLog log, string? code, string boundaryCode, bool withCatchAll)
+    {
+        var builder = new BpmnProcessBuilder("coded-error-boundaries")
+            .StartEvent("start")
+            .Task("risky", bindingRef: BindingRef("risky"))
+            .EndEvent("end")
+            .BoundaryEvent("coded", attachedTo: "risky", eventDefinition: Error(boundaryCode))
+            .Task("handleCoded", bindingRef: BindingRef("handleCoded"))
+            .EndEvent("codedHandled")
+            .ConnectSequence("start", "risky", "end")
+            .ConnectSequence("coded", "handleCoded", "codedHandled");
+
+        if (withCatchAll)
+        {
+            builder = builder
+                .BoundaryEvent("any", attachedTo: "risky", eventDefinition: Error())
+                .Task("handleAny", bindingRef: BindingRef("handleAny"))
+                .EndEvent("anyHandled")
+                .ConnectSequence("any", "handleAny", "anyHandled");
+        }
+
+        return Scope("scope", builder.Build(), Faulting("risky", log, code), Immediate("handleCoded", log), Immediate("handleAny", log));
+    }
+
+    /// <summary>
+    /// An embedded subprocess whose body ends at an error end event for <paramref name="code"/>, with nothing in the body
+    /// to catch it, and an error boundary event for the same code on the subprocess in the enclosing scope.
+    /// </summary>
+    public static BpmnProcess ErrorEndEventCaughtByTheEnclosingScope(BpmnTestLog log, string code)
+    {
+        var body = new BpmnProcessBuilder("error-end-event-body")
+            .StartEvent("subStart")
+            .Task("subWork", bindingRef: BindingRef("subWork"))
+            .EndEvent("subFailed", null, Error(code))
+            .ConnectSequence("subStart", "subWork", "subFailed")
+            .Build();
+
+        var definition = new BpmnProcessBuilder("error-end-event-caught-by-the-enclosing-scope")
+            .StartEvent("start")
+            .SubProcess("sub", bindingRef: BindingRef("sub"))
+            .Task("after", bindingRef: BindingRef("after"))
+            .EndEvent("end")
+            .BoundaryEvent("subOops", attachedTo: "sub", eventDefinition: Error(code))
+            .Task("subRecover", bindingRef: BindingRef("subRecover"))
+            .EndEvent("subRecovered")
+            .ConnectSequence("start", "sub", "after", "end")
+            .ConnectSequence("subOops", "subRecover", "subRecovered")
+            .Build();
+
+        var nested = Scope("sub", body, Immediate("subWork", log));
+
+        return Scope("scope", definition, nested, Immediate("after", log), Immediate("subRecover", log));
+    }
+
     /// <summary>A task that fails with nothing to catch it.</summary>
     public static BpmnProcess UncaughtError(BpmnTestLog log)
     {
