@@ -65,11 +65,13 @@ internal sealed class BpmnScopeHost
 
     private readonly ActivityExecutionContext _context;
     private readonly BpmnProcess _process;
+    private readonly BpmnScopeConditions _conditions;
 
     private BpmnScopeHost(ActivityExecutionContext context)
     {
         _context = context;
         _process = (BpmnProcess)context.Activity;
+        _conditions = new BpmnScopeConditions(context);
     }
 
     /// <summary>Returns the host for the given BPMN scope context.</summary>
@@ -91,7 +93,10 @@ internal sealed class BpmnScopeHost
         var triggeredStart = await ResolveTriggeredStartAsync();
 
         await EvaluateAsync(memory =>
-            Interpreter.Start(new BpmnStartRequest(Graph, memory.State, Snapshot(memory), triggeredStart ?? ResolveStartSignal())));
+        {
+            var request = new BpmnStartRequest(Graph, memory.State, Snapshot(memory), triggeredStart ?? ResolveStartSignal());
+            return () => Interpreter.Start(request);
+        });
     }
 
     /// <summary>A unit of work finished, reporting zero or more outcome names.</summary>
@@ -109,11 +114,13 @@ internal sealed class BpmnScopeHost
 
         var outcomeNames = result is Outcomes outcomes ? outcomes.Names : CallActivityOutcomeNames(record, childContext);
 
-        return Interpreter.OnWorkCompleted(new BpmnWorkCompletedRequest(
+        var request = new BpmnWorkCompletedRequest(
             Graph, memory.State, Snapshot(memory), record.BindingRef, record.Handle, outcomeNames, record.IterationId)
         {
             WorkTokenId = record.TokenId
-        });
+        };
+
+        return () => Interpreter.OnWorkCompleted(request);
     });
 
     /// <summary>A nested scope this one invoked signalled outward.</summary>
@@ -139,11 +146,13 @@ internal sealed class BpmnScopeHost
             if (memory.Work.FindByHandle(signalling.Handle) is not { } record)
                 return null;
 
-            return Interpreter.OnWorkSignalled(new BpmnWorkSignalledRequest(
+            var request = new BpmnWorkSignalledRequest(
                 Graph, memory.State, Snapshot(memory), record.BindingRef, record.Handle, signal.Code, signal.Payload, record.IterationId)
             {
                 WorkTokenId = record.TokenId
-            });
+            };
+
+            return () => Interpreter.OnWorkSignalled(request);
         });
     }
 
@@ -170,12 +179,14 @@ internal sealed class BpmnScopeHost
 
         // The iteration and the token id name the failed unit among several live instances of one binding: without
         // either, the interpreter refuses a fault it cannot pin on exactly one of them.
-        var evaluation = Interpreter.OnWorkFaulted(new BpmnWorkFaultedRequest(
+        var request = new BpmnWorkFaultedRequest(
             Graph, memory.State, Snapshot(memory), record.BindingRef, record.Handle, signal.Exception.Message)
         {
             FaultedIterationId = record.IterationId,
             WorkTokenId = record.TokenId
-        });
+        };
+
+        var evaluation = await _conditions.InterpretAsync(() => Interpreter.OnWorkFaulted(request));
 
         ProjectDiagnostics(evaluation.State, memory.State);
 
@@ -216,14 +227,22 @@ internal sealed class BpmnScopeHost
         return BpmnCallActivityOutcomes.For(DispatchWorkflow.IsChildActivationDenied(childContext), DispatchWorkflow.GetChildWorkflowSubStatus(childContext));
     }
 
-    private ValueTask EvaluateAsync(Func<BpmnScopeMemory, BpmnEvaluation?> evaluate) =>
+    /// <summary>
+    /// Runs one interpreter call through the dispatcher. <paramref name="prepare"/> does the host's own bookkeeping and
+    /// returns the call, or <c>null</c> when there is nothing to evaluate; the call runs once per condition it asks
+    /// for (see <see cref="BpmnScopeConditions"/>), so it must call the interpreter and nothing else.
+    /// </summary>
+    private ValueTask EvaluateAsync(Func<BpmnScopeMemory, Func<BpmnEvaluation>?> prepare) =>
         DispatcherOf(_context.WorkflowExecutionContext).PostAsync(async () =>
         {
             var memory = BpmnScopeMemory.Load(_context);
-            var evaluation = evaluate(memory);
 
-            if (evaluation is null)
+            if (prepare(memory) is not { } interpret)
+            {
                 return;
+            }
+
+            var evaluation = await _conditions.InterpretAsync(interpret);
 
             // Diagnostics are audit-only and capped: projecting from persisted state later would lose whatever
             // Prune() already dropped, so this runs on the evaluation's own state, before pruning. memory.State is
@@ -450,7 +469,10 @@ internal sealed class BpmnScopeHost
             LiveWork: memory.Work.ToLiveWork(),
             InvocationCorrelation: invocationCorrelation,
             Variables: new BpmnScopeVariables(_context),
-            Capabilities: Capabilities);
+            Capabilities: Capabilities)
+        {
+            Conditions = _conditions
+        };
     }
 
     /// <summary>

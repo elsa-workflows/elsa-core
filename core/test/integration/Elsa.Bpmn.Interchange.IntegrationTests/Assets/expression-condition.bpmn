@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   An exclusive gateway whose outgoing flows carry standard BPMN <conditionExpression>s, the way Camunda Modeler or
-  bpmn.io write them. Bpmn.Interchange reads such a flow as unconditional, so import refuses the document
-  (elsa-core#8903). f3 is declared before f2 so a test can tell the refusal sorts the flow ids it reports.
+  bpmn.io write them. f3's names no language, so Elsa evaluates it as JavaScript; f2's names JavaScript.
 -->
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"

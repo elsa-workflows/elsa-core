@@ -16,14 +16,12 @@ namespace Elsa.Bpmn.Hosting;
 /// other way around, so there remains exactly one place this set is spelled out.
 /// <para>
 /// Capability refusal — <c>BpmnGraph.Build</c>'s <c>ThrowIfUnmet</c>, and the mirroring check in
-/// <c>BpmnInterchangeDocumentService.EnsureCapabilitiesSatisfied</c> — is reachable for one flag only:
-/// <see cref="BpmnHostCapabilities.ConditionEvaluation"/>, which <see cref="BpmnHostCapabilities.Full"/> leaves out and
-/// this runtime does not declare until Elsa evaluates condition expressions. Import refuses a document with
-/// expression conditions before the capability check, with its own code. Every flag in
-/// <see cref="BpmnHostCapabilities.Full"/> is declared. <c>Elsa.Bpmn.UnitTests.BpmnRuntimeCapabilitiesTests</c> is
-/// what will say when that stops being true — it fails the moment the library adds a flag to
-/// <see cref="BpmnHostCapabilities.Full"/> that this constant doesn't declare, and its failure message names the
-/// decision that needs making.
+/// <c>BpmnInterchangeDocumentService.EnsureCapabilitiesSatisfied</c> — is currently unreachable: <see cref="Declared"/>
+/// covers every flag the pinned <c>Bpmn.Semantics</c> defines, <see cref="BpmnHostCapabilities.ConditionEvaluation"/>
+/// included, which <see cref="BpmnHostCapabilities.Full"/> leaves out and <see cref="BpmnScopeConditions"/> honours.
+/// <c>Elsa.Bpmn.UnitTests.BpmnRuntimeCapabilitiesTests</c> is what will say when that stops being true — it fails the
+/// moment the library adds a flag this constant doesn't declare, and its failure message names the decision that
+/// needs making.
 /// </para>
 /// </remarks>
 public static class BpmnRuntimeCapabilities
@@ -33,5 +31,6 @@ public static class BpmnRuntimeCapabilities
     /// and why this is spelled out rather than written as <see cref="BpmnHostCapabilities.Full"/>.
     /// </summary>
     public const BpmnHostCapabilities Declared =
-        BpmnHostCapabilities.SubtreeCancellation | BpmnHostCapabilities.ScopeSignalling | BpmnHostCapabilities.IterationScopes | BpmnHostCapabilities.ScopeVariables;
+        BpmnHostCapabilities.SubtreeCancellation | BpmnHostCapabilities.ScopeSignalling | BpmnHostCapabilities.IterationScopes | BpmnHostCapabilities.ScopeVariables
+        | BpmnHostCapabilities.ConditionEvaluation;
 }

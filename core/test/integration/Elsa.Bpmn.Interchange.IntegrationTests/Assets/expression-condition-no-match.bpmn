@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  An exclusive gateway whose conditional flows all evaluate false and that has no default flow, which BPMN says faults.
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  id="Definitions_no-match"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="no-match" isExecutable="true">
+    <bpmn:startEvent id="Start">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:exclusiveGateway id="Decide">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_A</bpmn:outgoing>
+      <bpmn:outgoing>Flow_B</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="End_A">
+      <bpmn:incoming>Flow_A</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="End_B">
+      <bpmn:incoming>Flow_B</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start" targetRef="Decide" />
+    <bpmn:sequenceFlow id="Flow_A" sourceRef="Decide" targetRef="End_A">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">1 &gt; 2</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_B" sourceRef="Decide" targetRef="End_B">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" language="javascript">false</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+  </bpmn:process>
+</bpmn:definitions>

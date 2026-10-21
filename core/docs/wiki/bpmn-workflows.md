@@ -269,20 +269,43 @@ capabilities and the offending element ids, rather than persisting a definition 
 runs. `Analyze` never performs this check, since it does not persist; a document that `Analyze` reports cleanly can
 still be refused by `Import` on capability grounds.
 
-### Expression condition refusal
+### Conditions
 
-Elsa does not evaluate a sequence flow's standard BPMN `<conditionExpression>` yet (for example `${x > 1}` from Camunda
-Modeler or bpmn.io), so the imported workflow could not route as its diagram says. `Import` and the document `PUT`
-therefore refuse a document whose flows carry one, with `422 Unprocessable Entity` and the code
-`bpmn.import.condition-unsupported`, before persisting anything. The check covers the whole document, including the bodies of nested subprocesses, and `data.elementIds` lists
-the offending sequence flow ids, sorted. No opt-in overrides this refusal (ADR "Evaluate BPMN conditions with Elsa
-expressions", `docs/adr/2026-10-20-elsa-evaluates-bpmn-conditions.md`). It is lifted once Elsa evaluates these
-expressions with its own expression engine.
+Elsa evaluates a sequence flow's standard BPMN `<conditionExpression>` with its own expression engine, against the
+process's data, the same way it evaluates any other expression in a workflow (ADR "Evaluate BPMN conditions with Elsa
+expressions", `docs/adr/2026-10-20-elsa-evaluates-bpmn-conditions.md`). `Bpmn.Semantics` decides which conditions are
+asked, in what order, and what the answers mean for routing; Elsa only answers each one.
 
-A flow conditional on an outcome name through the library's own `vw:conditionOutcome` attribute is still accepted,
-including when it also carries the readable `conditionExpression` the library's writer emits beside it. `Analyze` does
-not refuse. Since `Bpmn.Interchange` 0.4.0 the reader keeps the expression on the model instead of dropping it, so
-`Analyze` no longer reports these flows as `Degraded`.
+- **Language.** The expression's own `language` attribute, else the document's `definitions/@expressionLanguage`,
+  selects the Elsa expression type: `javascript`, `csharp` or `liquid`, case-insensitively, written as that name or as
+  a URI whose last path segment is that name. JavaScript is used when neither names a language. Any other language,
+  such as XPath, JUEL or FEEL, is refused at import (see below); it is never mapped onto one of these. A language whose
+  Elsa module the host has not enabled fails when the condition is evaluated.
+- **Data.** The expression runs in the BPMN scope's expression context, so it sees the workflow's input and the
+  variables of the process and of every enclosing scope, for example `getInput('amount') > 1000` in JavaScript.
+  Camunda's `${...}` syntax is JUEL, not JavaScript, so such an expression fails unless it is rewritten.
+- **Routing.** An exclusive gateway takes the first flow, in declaration order, whose condition holds; a flow with no
+  condition that is not the default counts as true. An inclusive gateway and an activity take every flow whose
+  condition holds, plus every flow with no condition. The default flow is taken only when nothing else is. Without one, the scope faults: a gateway with
+  `bpmn.gateway.no-flow-selected`, any other element with `bpmn.flow.none-taken`.
+- **Result.** A condition must evaluate to a boolean; nothing is converted, so `1` or `'yes'` is not true. Liquid
+  renders text, so a Liquid condition answers with the text `true` or `false`.
+- **Failure.** A condition that throws or does not evaluate to a boolean faults its BPMN scope (the process or the
+  subprocess) with `bpmn.condition.failed`, naming the flow and the expression's error or result, which Elsa records
+  as an incident like any other fault.
+
+`Import` and the document `PUT` refuse two kinds of condition, with `422 Unprocessable Entity`, before persisting
+anything. The check covers the whole document, including the bodies of nested subprocesses, `data.elementIds` lists
+the offending sequence flow ids, sorted, and no opt-in overrides either refusal:
+
+- `bpmn.import.condition-language-unsupported`: an expression in a language Elsa does not evaluate.
+- `bpmn.import.condition-conflict`: a flow that carries both a `vw:conditionOutcome` and an author-written
+  `conditionExpression`, because either precedence rule would route some documents differently from what their
+  author meant. The readable `outcome == '...'` expression the library's writer emits beside an outcome is the outcome
+  restated, so it does not count.
+
+A flow conditional on an outcome name through the library's own `vw:conditionOutcome` attribute keeps working as
+before. `Analyze` does not refuse.
 
 ### Duplicate element id refusal
 
@@ -371,7 +394,8 @@ element that has a stored body but no `bindingRef`, are uncoded.
 | `bpmn.import.capability-unsupported` | `POST bpmn/import`, document `PUT` | 422 | `capabilities: string[]` (missing capability names), `elementIds: string[]` (offending element ids, combined across every missing capability) |
 | `bpmn.import.binding-invalid` | `POST bpmn/import`, document `PUT` | 422 | — |
 | `bpmn.import.duplicate-element-id` | `POST bpmn/import`, document `PUT` | 422 | `elementIds: string[]` (the duplicated ids) |
-| `bpmn.import.condition-unsupported` | `POST bpmn/import`, document `PUT` | 422 | `elementIds: string[]` (the sequence flows that carry an expression condition, across the whole document including nested subprocesses, sorted and distinct) |
+| `bpmn.import.condition-language-unsupported` | `POST bpmn/import`, document `PUT` | 422 | `elementIds: string[]` (the sequence flows whose expression is in a language Elsa does not evaluate, across the whole document including nested subprocesses, sorted and distinct) |
+| `bpmn.import.condition-conflict` | `POST bpmn/import`, document `PUT` | 422 | `elementIds: string[]` (the sequence flows that carry both an outcome and an author-written expression, across the whole document including nested subprocesses, sorted and distinct) |
 | `bpmn.export.not-imported` | `GET .../export`, document `GET` | 422 | — |
 | `bpmn.export.source-stale` | `GET .../export`, document `GET` | 422 | — |
 | `bpmn.export.source-version-unknown` | `GET .../export`, document `GET` | 422 | — |
