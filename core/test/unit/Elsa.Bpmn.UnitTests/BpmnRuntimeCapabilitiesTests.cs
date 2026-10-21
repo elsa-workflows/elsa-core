@@ -9,7 +9,7 @@ public class BpmnRuntimeCapabilitiesTests
     public void Declared_CoversEveryCapabilityTheLibraryDefines()
     {
         Assert.True(
-            BpmnRuntimeCapabilities.Declared == BpmnHostCapabilities.Full,
+            (BpmnHostCapabilities.Full & ~BpmnRuntimeCapabilities.Declared) == 0,
             $"""
              Bpmn.Semantics now defines a capability flag Elsa's runtime host does not declare
              (missing: {BpmnHostCapabilities.Full & ~BpmnRuntimeCapabilities.Declared}).
@@ -28,4 +28,8 @@ public class BpmnRuntimeCapabilitiesTests
              undocumented, is not.
              """);
     }
+
+    [Fact(DisplayName = "Declared includes condition evaluation, which Full leaves out")]
+    public void Declared_IncludesConditionEvaluation() =>
+        Assert.True(BpmnRuntimeCapabilities.Declared.HasFlag(BpmnHostCapabilities.ConditionEvaluation));
 }

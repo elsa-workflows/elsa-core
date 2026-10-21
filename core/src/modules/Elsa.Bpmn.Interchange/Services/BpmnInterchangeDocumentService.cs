@@ -93,10 +93,10 @@ namespace Elsa.Bpmn.Interchange.Services;
 /// it.
 /// </para>
 /// <para>
-/// <b>Expression conditions are refused here too, and nothing opts out of it.</b> Nothing in Elsa evaluates a sequence
-/// flow's standard <c>conditionExpression</c> yet, so import refuses the document (see
-/// <see cref="EnsureNoExpressionConditions"/>) rather than persisting a workflow that cannot route as its diagram says.
-/// <see cref="Analyze"/> refuses nothing.
+/// <b>Conditions Elsa cannot evaluate as written are refused here too, and nothing opts out of it.</b> Elsa evaluates a
+/// sequence flow's standard <c>conditionExpression</c> with its own expression engine, so import refuses only a flow
+/// that carries both an outcome and an expression, and an expression in a language Elsa does not evaluate (see
+/// <see cref="EnsureConditionsEvaluable"/>). <see cref="Analyze"/> refuses nothing.
 /// </para>
 /// </remarks>
 public sealed class BpmnInterchangeDocumentService(
@@ -207,7 +207,7 @@ public sealed class BpmnInterchangeDocumentService(
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <exception cref="BpmnInterchangeException">The document cannot be read, or declares more than one process and <paramref name="processId"/> does not pick one.</exception>
     /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
-    /// <exception cref="BpmnConditionUnsupportedException">A sequence flow carries an expression condition, which nothing evaluates yet.</exception>
+    /// <exception cref="BpmnConditionRefusedException">A sequence flow carries a condition Elsa cannot evaluate as written.</exception>
     /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
     public Task<BpmnDocumentImportResult> ImportAsync(string xml, string? definitionId, string? name, string? processId, CancellationToken cancellationToken) =>
         ImportCoreAsync(xml, definitionId, name, processId, preserveMetadataFrom: null, expectedETag: null, compareAndSwap: false, cancellationToken);
@@ -243,7 +243,7 @@ public sealed class BpmnInterchangeDocumentService(
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <exception cref="BpmnInterchangeException">The document cannot be read, or declares more than one process and <paramref name="processId"/> does not pick one.</exception>
     /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
-    /// <exception cref="BpmnConditionUnsupportedException">A sequence flow carries an expression condition, which nothing evaluates yet.</exception>
+    /// <exception cref="BpmnConditionRefusedException">A sequence flow carries a condition Elsa cannot evaluate as written.</exception>
     /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
     private async Task<BpmnDocumentImportResult> ImportCoreAsync(
         string xml,
@@ -265,10 +265,8 @@ public sealed class BpmnInterchangeDocumentService(
 
         var rootDefinition = ResolveRootDefinition(result.Definitions, processId);
 
-        // Before the capability check: a flow with an expression condition also needs the condition-evaluation
-        // capability Elsa does not declare yet, and this refusal names the flows and the way out.
-        EnsureNoExpressionConditions(xml, result);
         EnsureCapabilitiesSatisfied(rootDefinition, result.Bindings);
+        EnsureConditionsEvaluable(result);
 
         var process = binder.Bind(rootDefinition, result.Bindings);
 
@@ -588,7 +586,7 @@ public sealed class BpmnInterchangeDocumentService(
     /// subprocess element that has a stored body but no bindingRef to write that body back under.
     /// </exception>
     /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
-    /// <exception cref="BpmnConditionUnsupportedException">A sequence flow carries an expression condition, which nothing evaluates yet.</exception>
+    /// <exception cref="BpmnConditionRefusedException">A sequence flow carries a condition Elsa cannot evaluate as written.</exception>
     /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
     public async Task<BpmnDocumentImportResult> ImportDocumentAsync(
         BpmnDefinitions document,
@@ -985,59 +983,56 @@ public sealed class BpmnInterchangeDocumentService(
     }
 
     /// <summary>
-    /// Refuses a document whose sequence flows carry a standard BPMN <c>conditionExpression</c>, anywhere in it, naming
-    /// the offending flow ids. A flow conditional on an outcome through the library's own <c>conditionOutcome</c> is
-    /// accepted, including with the readable <c>conditionExpression</c> the library's own writer emits beside it.
+    /// Refuses a document with a sequence flow, anywhere in it, whose condition Elsa cannot evaluate as its author meant:
+    /// one that carries both a <c>conditionOutcome</c> and an author-written <c>conditionExpression</c>, or an expression
+    /// in a language <see cref="BpmnConditionLanguages"/> does not resolve. Names the offending flow ids.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// Nothing in Elsa evaluates such an expression yet, so the workflow could not route as its diagram says. Per
-    /// <c>docs/adr/2026-10-20-elsa-evaluates-bpmn-conditions.md</c> the document is refused, and no opt-in overrides
-    /// that. It runs before the capability check, which would also refuse the document for the condition-evaluation
-    /// capability Elsa does not declare, so the refusal names the flows and the way out. <see cref="Analyze"/> does not
-    /// call this: a preview refuses nothing.
-    /// </para>
-    /// <para>
-    /// The read model decides which flows exist and which are conditional on an outcome (resolving the vendor namespace
-    /// exactly as the read did), across every top-level process and every nested process body, and the XML text the
-    /// read came from — the same text, which <see cref="BpmnXmlReader"/> parses the same way — decides,
-    /// namespace-aware, which of the remaining flows declare a <c>conditionExpression</c> child. The document is checked
-    /// whole, not only the process being imported, like <see cref="EnsureElementIdsUnique"/>.
-    /// </para>
+    /// Per <c>docs/adr/2026-10-20-elsa-evaluates-bpmn-conditions.md</c>, and no opt-in overrides either refusal. The
+    /// <c>outcome == '...'</c> predicate the library writes for an outcome flow is consumed by the reader rather than
+    /// modeled, so it never counts as the second condition. The language is the expression's own, else its process's
+    /// <see cref="BpmnProcessDefinition.ExpressionLanguage"/>, as the interpreter resolves it at run time. The document is
+    /// checked whole, every top-level process and every nested process body, like <see cref="EnsureElementIdsUnique"/>.
+    /// <see cref="Analyze"/> does not call this: a preview refuses nothing.
     /// </remarks>
-    /// <exception cref="BpmnConditionUnsupportedException">A sequence flow carries an expression condition.</exception>
-    internal static void EnsureNoExpressionConditions(string xml, BpmnImportResult result)
+    /// <exception cref="BpmnConditionRefusedException">A sequence flow carries a condition Elsa cannot evaluate as written.</exception>
+    internal static void EnsureConditionsEvaluable(BpmnImportResult result)
     {
-        var flowIdsWithoutOutcome = result.Definitions.Processes
+        var conditionalFlows = result.Definitions.Processes
             .Concat(result.Bindings.OfType<BpmnWorkBinding.NestedProcess>().Select(nested => nested.Definition))
-            .SelectMany(process => process.SequenceFlows)
-            .Where(flow => flow.ConditionOutcome is null)
-            .Select(flow => flow.FlowId)
-            .ToHashSet(StringComparer.Ordinal);
-
-        if (flowIdsWithoutOutcome.Count == 0)
-            return;
-
-        var conditionExpression = BpmnXmlNames.Model + "conditionExpression";
-
-        var offendingFlowIds = XDocument.Parse(xml)
-            .Descendants(BpmnXmlNames.Model + "sequenceFlow")
-            .Where(flow => flow.Element(conditionExpression) is not null)
-            .Select(flow => (string?)flow.Attribute("id"))
-            .OfType<string>()
-            .Where(flowIdsWithoutOutcome.Contains)
-            .Distinct(StringComparer.Ordinal)
-            .Order(StringComparer.Ordinal)
+            .SelectMany(process => process.SequenceFlows
+                .Where(flow => flow.ConditionExpression is not null)
+                .Select(flow => (Flow: flow, Language: flow.ConditionExpression!.Language ?? process.ExpressionLanguage)))
             .ToList();
 
-        if (offendingFlowIds.Count == 0)
+        var conflictingFlowIds = SortedDistinct(conditionalFlows.Where(x => x.Flow.ConditionOutcome is not null).Select(x => x.Flow.FlowId));
+
+        if (conflictingFlowIds.Count > 0)
+            throw new BpmnConditionRefusedException(
+                BpmnErrorCodes.ImportConditionConflict,
+                $"The document's sequence flows carry both an outcome and a condition expression: {string.Join(", ", conflictingFlowIds)}. "
+                + "Elsa cannot tell which of the two the author meant to decide the route. "
+                + "Remove either the conditionOutcome attribute or the conditionExpression from each of these flows.",
+                conflictingFlowIds);
+
+        var unsupported = conditionalFlows
+            .Where(x => x.Flow.ConditionOutcome is null && !BpmnConditionLanguages.TryResolveExpressionType(x.Language, out _))
+            .ToList();
+
+        if (unsupported.Count == 0)
             return;
 
-        throw new BpmnConditionUnsupportedException(
-            $"The document's sequence flows carry expression conditions, which Elsa does not evaluate yet: {string.Join(", ", offendingFlowIds)}. "
-            + "Importing it would run each of these flows as unconditional, so the workflow would route differently from its diagram. "
-            + "Remove the conditionExpression from these flows, or make each one conditional on an outcome with the conditionOutcome attribute.",
-            offendingFlowIds);
+        var unsupportedFlowIds = SortedDistinct(unsupported.Select(x => x.Flow.FlowId));
+        var languages = string.Join(", ", unsupported.Select(x => $"'{x.Language}'").Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal));
+
+        throw new BpmnConditionRefusedException(
+            BpmnErrorCodes.ImportConditionLanguageUnsupported,
+            $"The document's sequence flows carry condition expressions in a language Elsa does not evaluate ({languages}): {string.Join(", ", unsupportedFlowIds)}. "
+            + "Write each of these conditions in JavaScript, C# or Liquid, and set the language to javascript, csharp or liquid, or leave it out for JavaScript.",
+            unsupportedFlowIds);
+
+        static IReadOnlyList<string> SortedDistinct(IEnumerable<string> flowIds) =>
+            flowIds.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
     }
 
     /// <summary>

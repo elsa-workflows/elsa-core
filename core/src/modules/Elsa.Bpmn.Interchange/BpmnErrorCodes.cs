@@ -38,14 +38,30 @@ public static class BpmnErrorCodes
     public const string ImportDuplicateElementId = "bpmn.import.duplicate-element-id";
 
     /// <summary>
-    /// <c>bpmn/import</c> and the document <c>PUT</c> refuse a document whose sequence flows carry a standard BPMN
-    /// <c>conditionExpression</c> — anywhere in it, subprocess bodies included — because nothing in Elsa evaluates
-    /// those expressions yet, so the imported workflow could not route as its diagram says. A flow conditional on an
-    /// outcome through the library's own <c>conditionOutcome</c> attribute is unaffected. Unlike other import findings,
-    /// no opt-in overrides this refusal. <c>bpmn/analyze</c> does not refuse. Carries <c>data.elementIds</c>
-    /// (the offending sequence flow ids, sorted and distinct).
+    /// No longer sent. Before Elsa evaluated condition expressions, <c>bpmn/import</c> and the document <c>PUT</c>
+    /// refused a document whose sequence flows carried a standard BPMN <c>conditionExpression</c> with this code.
     /// </summary>
+    [Obsolete("Elsa evaluates condition expressions; import no longer refuses them, so nothing sends this code. See ImportConditionConflict and ImportConditionLanguageUnsupported.")]
     public const string ImportConditionUnsupported = "bpmn.import.condition-unsupported";
+
+    /// <summary>
+    /// <c>bpmn/import</c> and the document <c>PUT</c> refuse a document with a sequence flow — anywhere in it,
+    /// subprocess bodies included — that carries both a <c>conditionOutcome</c> and an author-written
+    /// <c>conditionExpression</c>, because either precedence rule would route some documents differently from what their
+    /// author meant. The <c>outcome == '...'</c> predicate the library writes for an outcome flow is the outcome restated
+    /// and does not count. No opt-in overrides this refusal. Carries <c>data.elementIds</c> (the offending sequence flow
+    /// ids, sorted and distinct).
+    /// </summary>
+    public const string ImportConditionConflict = "bpmn.import.condition-conflict";
+
+    /// <summary>
+    /// <c>bpmn/import</c> and the document <c>PUT</c> refuse a document with a condition expression — anywhere in it,
+    /// subprocess bodies included — written in a language Elsa does not evaluate. The language is the expression's own,
+    /// else the document's <c>expressionLanguage</c>; Elsa evaluates <c>javascript</c> (the default when neither names
+    /// one), <c>csharp</c> and <c>liquid</c>, and never maps another language onto these. No opt-in overrides this
+    /// refusal. Carries <c>data.elementIds</c> (the offending sequence flow ids, sorted and distinct).
+    /// </summary>
+    public const string ImportConditionLanguageUnsupported = "bpmn.import.condition-language-unsupported";
 
     /// <summary>
     /// <c>bpmn/definitions/{id}/export</c> and the document <c>GET</c> refuse a workflow definition that does not

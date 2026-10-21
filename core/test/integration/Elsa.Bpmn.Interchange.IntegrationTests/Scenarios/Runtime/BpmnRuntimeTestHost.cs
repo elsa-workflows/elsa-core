@@ -128,14 +128,15 @@ public sealed class BpmnRuntimeTestHost
         Assert.True(result.Succeeded, string.Join("; ", result.ValidationErrors.Select(error => error.Message)));
     }
 
-    /// <summary>Starts a new instance of the published definition and returns its id.</summary>
-    public async Task<string> StartAsync(string definitionId, string? correlationId = null)
+    /// <summary>Starts a new instance of the published definition, with <paramref name="input"/> as its input, and returns its id.</summary>
+    public async Task<string> StartAsync(string definitionId, string? correlationId = null, IDictionary<string, object>? input = null)
     {
         var client = await Services.GetRequiredService<IWorkflowRuntime>().CreateClientAsync();
         var response = await client.CreateAndRunInstanceAsync(new CreateAndRunWorkflowInstanceRequest
         {
             WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Published),
-            CorrelationId = correlationId
+            CorrelationId = correlationId,
+            Input = input
         });
 
         return response.WorkflowInstanceId;
