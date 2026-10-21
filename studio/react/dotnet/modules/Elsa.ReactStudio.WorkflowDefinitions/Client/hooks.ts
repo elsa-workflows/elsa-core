@@ -52,7 +52,10 @@ export function useWorkflowDefinitionMutations() {
   const api = client.workflowDefinitions;
 
   return {
-    save: useMutation({ mutationFn: (request: SaveWorkflowDefinitionRequest) => api.save(request), onSuccess: invalidate }),
+    save: useMutation({ mutationFn: (request: SaveWorkflowDefinitionRequest) => api.save(request), onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: [scope, "expression-types"] });
+      return invalidate();
+    } }),
     publish: useMutation({ mutationFn: (definitionId: string) => api.publish(definitionId), onSuccess: invalidate }),
     retract: useMutation({ mutationFn: (definitionId: string) => api.retract(definitionId), onSuccess: invalidate }),
     remove: useMutation({ mutationFn: (definitionId: string) => api.delete(definitionId), onSuccess: invalidate }),

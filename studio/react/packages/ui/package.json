@@ -44,6 +44,8 @@
     "@codemirror/lang-python": "^6.2.1",
     "@codemirror/lang-liquid": "^6.3.3",
     "@codemirror/lang-sql": "^6.10.0",
+    "@codemirror/language": "^6.13.1",
+    "@codemirror/legacy-modes": "^6.5.5",
     "@codemirror/autocomplete": "^6.20.3",
     "@codemirror/state": "^6.7.6",
     "date-fns": "^4.4.0"

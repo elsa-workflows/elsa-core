@@ -17,6 +17,7 @@
     "test:packages": "pnpm build:packages && node scripts/test-packed-packages.mjs",
     "test:module": "pnpm build:packages && node scripts/test-module-template.mjs",
     "test:bpmn": "pnpm build:packages && node scripts/test-bpmn-roundtrip.mjs",
+    "benchmark:expressions": "pnpm build:packages && node scripts/benchmark-expression-completions.mjs",
     "check:boundaries": "node scripts/check-module-boundaries.mjs"
   },
   "dependencies": {
@@ -27,6 +28,8 @@
     "@codemirror/lang-liquid": "^6.3.3",
     "@codemirror/lang-python": "^6.2.1",
     "@codemirror/lang-sql": "^6.10.0",
+    "@codemirror/language": "^6.13.1",
+    "@codemirror/legacy-modes": "^6.5.5",
     "@codemirror/state": "^6.7.6",
     "@codemirror/view": "^6.43.14",
     "@dagrejs/dagre": "^3.1.1",

@@ -2,7 +2,7 @@
 
 import { Braces, Code2 } from "lucide-react";
 import type { ReactNode } from "react";
-import { CodeEditor } from "@elsa-workflows/react-studio-ui/common/code-editor";
+import { ExpressionCodeEditor } from "./expression-code-editor";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from "@elsa-workflows/react-studio-ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@elsa-workflows/react-studio-ui/tooltip";
@@ -10,7 +10,6 @@ import type { ActivityInput } from "@elsa-workflows/react-studio-api-client/type
 import type { InputDescriptor } from "@elsa-workflows/react-studio-api-client/types/descriptors";
 import { expressionText, isBindingSyntax, languageForSyntax, LITERAL, makeInput, OBJECT, syntaxOf } from "@elsa-workflows/react-studio-sdk/activity-expressions";
 import { BindingPicker } from "./editors/binding-picker";
-import { expressionCompletions } from "@elsa-workflows/react-studio-sdk/designer/model/data-flow";
 import type { UiHintContext } from "./types";
 
 const SYNTAX_LABELS: Record<string, string> = { Literal: "Literal", JavaScript: "JavaScript", CSharp: "C#", Python: "Python", Liquid: "Liquid", Object: "JSON", Variable: "Variable", Input: "Workflow input" };
@@ -42,8 +41,6 @@ export function ExpressionEditor({
 }) {
   const current = syntaxOf(value, descriptor);
   const language = languageForSyntax(current);
-  const completionLanguage = language === "javascript" || language === "csharp" || language === "python" || language === "liquid" ? language : "plaintext";
-  const completions = context ? expressionCompletions(context.variables, context.inputs ?? [], context.activities ?? [], completionLanguage) : [];
   const isLiteral = current === LITERAL || current === OBJECT || current === "Json";
   // Variable / Input bind to a workflow member and are edited with a picker, never as text.
   const isBinding = isBindingSyntax(current);
@@ -69,14 +66,15 @@ export function ExpressionEditor({
             onChange: (v) => onChange(makeInput(descriptor, { type: literalSyntax === OBJECT ? OBJECT : current === "Json" ? OBJECT : current, value: v })),
           })
         ) : (
-          <CodeEditor
+          <ExpressionCodeEditor
             value={expressionText(value?.expression)}
             onChange={(text) => onChange(makeInput(descriptor, { type: current, value: text }))}
             language={language}
             height="auto"
             minimal
             readOnly={readOnly}
-            completions={completions}
+            context={context}
+            propertyName={descriptor.name}
             placeholder={`${SYNTAX_LABELS[current] ?? current} expression`}
           />
         )}

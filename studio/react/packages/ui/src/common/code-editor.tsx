@@ -8,6 +8,8 @@ import { json } from "@codemirror/lang-json";
 import { python } from "@codemirror/lang-python";
 import { liquid } from "@codemirror/lang-liquid";
 import { sql } from "@codemirror/lang-sql";
+import { StreamLanguage } from "@codemirror/language";
+import { csharp } from "@codemirror/legacy-modes/mode/clike";
 import { autocompletion, type CompletionContext } from "@codemirror/autocomplete";
 import { cn } from "../utils.js";
 import type { Extension } from "@codemirror/state";
@@ -23,12 +25,13 @@ export interface CodeCompletion {
 }
 
 function completionExtension(items: CodeCompletion[]): Extension {
+  const options = items.map((i) => ({ label: i.label, detail: i.detail, type: i.type ?? "variable" }));
   return autocompletion({
     override: [
       (ctx: CompletionContext) => {
-        const word = ctx.matchBefore(/[\w.$'"]+/);
+        const word = ctx.matchBefore(/[\w.$'"()[\]]+/);
         if (!word || (word.from === word.to && !ctx.explicit)) return null;
-        return { from: word.from, options: items.map((i) => ({ label: i.label, detail: i.detail, type: i.type ?? "variable" })), validFor: /^[\w.$'"]*$/ };
+        return { from: word.from, options, validFor: /^[\w.$'"()[\]]*$/ };
       },
     ],
   });
@@ -49,6 +52,7 @@ function languageExtension(language: CodeLanguage): Extension[] {
     case "sql":
       return [sql()];
     case "csharp":
+      return [StreamLanguage.define(csharp)];
     case "plaintext":
     default:
       return [];

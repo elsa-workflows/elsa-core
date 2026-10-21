@@ -41,3 +41,9 @@ findings. `client.bpmn.import(file, { processId, name, definitionId }, signal)`
 uses multipart upload; every option is optional. `client.bpmn.export(id, signal)`
 returns an XML Blob. Requests use the shared auth, tenant and cancellation behavior.
 `ApiError.problem.raw` preserves the server's stable refusal code/data envelope.
+
+## Server type information
+
+`client.descriptors.javascriptTypeDefinitions(definitionId, activityTypeName,
+propertyName, signal)` returns the server declaration document as text. The optional
+fourth argument cancels the request; existing three-argument calls remain valid.
