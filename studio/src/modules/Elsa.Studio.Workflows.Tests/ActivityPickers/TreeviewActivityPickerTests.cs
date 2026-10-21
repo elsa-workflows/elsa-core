@@ -57,7 +57,7 @@ public sealed class TreeviewActivityPickerTests : BunitContext, IAsyncLifetime
     async Task IAsyncLifetime.DisposeAsync() => await base.DisposeAsync();
 
     [Fact]
-    public void HidesCompensationScopeWhenFreshCapabilityIsUnavailableButKeepsOrdinaryActivities()
+    public async Task HidesCompensationScopeWhenFreshCapabilityIsUnavailableButKeepsOrdinaryActivities()
     {
         Render<MudPopoverProvider>();
         var cut = Render<ActivityPicker>();
@@ -70,10 +70,15 @@ public sealed class TreeviewActivityPickerTests : BunitContext, IAsyncLifetime
             Assert.Contains("Write Line", leafNames);
             Assert.DoesNotContain("Compensation Scope", leafNames);
         });
+
+        var dragDropManager = new DragDropManager { Payload = "stale payload" };
+        cut.Instance.DragDropManager = dragDropManager;
+        await cut.InvokeAsync(() => InvokeDragStartAsync(cut.Instance, _compensationScope));
+        Assert.Null(dragDropManager.Payload);
     }
 
     [Fact]
-    public async Task RechecksNativeCapabilityBeforeDragAndAllowsOrdinaryActivitiesAfterContextChange()
+    public async Task UsesFilteredNativeMembershipForSynchronousDragAndKeepsOrdinaryDragIndependent()
     {
         _featureProvider.Enabled = true;
         Render<MudPopoverProvider>();
@@ -88,35 +93,33 @@ public sealed class TreeviewActivityPickerTests : BunitContext, IAsyncLifetime
         _featureProvider.Enabled = false;
         _backendProvider.ContextKey = "context-B";
 
-        await cut.InvokeAsync(() => InvokeDragStartAsync(cut.Instance, _compensationScope));
+        var nativeDrag = InvokeDragStartAsync(cut.Instance, _compensationScope);
+        Assert.True(nativeDrag.IsCompleted);
+        await cut.InvokeAsync(() => nativeDrag);
 
-        Assert.Null(dragDropManager.Payload);
+        Assert.Same(_compensationScope, dragDropManager.Payload);
         await cut.InvokeAsync(() => InvokeDragStartAsync(cut.Instance, _ordinaryActivity));
         Assert.Same(_ordinaryActivity, dragDropManager.Payload);
-        Assert.Equal(2, _featureProvider.FreshCheckCount);
+        Assert.Equal(1, _featureProvider.FreshCheckCount);
     }
 
     [Fact]
-    public async Task LaterOrdinaryDragKeepsPayloadWhenAnEarlierNativeCheckCompletes()
+    public async Task NativeDragstartDoesNotWaitForAnotherFeatureCheck()
     {
         _featureProvider.Enabled = true;
         Render<MudPopoverProvider>();
         var cut = Render<ActivityPicker>();
         var dragDropManager = new DragDropManager();
         cut.Instance.DragDropManager = dragDropManager;
-        var pendingCheck = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        _featureProvider.DeferredCheck = pendingCheck;
-
-        var nativeDrag = cut.InvokeAsync(() => InvokeDragStartAsync(cut.Instance, _compensationScope));
-        await _featureProvider.DeferredCheckStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var nativeDrag = InvokeDragStartAsync(cut.Instance, _compensationScope);
+        Assert.True(nativeDrag.IsCompleted);
+        await cut.InvokeAsync(() => nativeDrag);
+        Assert.Same(_compensationScope, dragDropManager.Payload);
 
         await cut.InvokeAsync(() => InvokeDragStartAsync(cut.Instance, _ordinaryActivity));
         Assert.Same(_ordinaryActivity, dragDropManager.Payload);
-
-        pendingCheck.SetResult(true);
-        await nativeDrag;
-
         Assert.Same(_ordinaryActivity, dragDropManager.Payload);
+        Assert.Equal(1, _featureProvider.FreshCheckCount);
     }
 
     [Fact]
@@ -165,8 +168,6 @@ public sealed class TreeviewActivityPickerTests : BunitContext, IAsyncLifetime
 
     private sealed class MutableFreshFeatureProvider(bool enabled) : IRemoteFeatureProvider, IRemoteFeatureProviderWithFreshCheck
     {
-        public TaskCompletionSource<bool>? DeferredCheck { get; set; }
-        public TaskCompletionSource DeferredCheckStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public bool Enabled { get; set; } = enabled;
         public int FreshCheckCount { get; private set; }
 
@@ -176,13 +177,6 @@ public sealed class TreeviewActivityPickerTests : BunitContext, IAsyncLifetime
         public Task<bool> IsEnabledFreshAsync(string featureName, CancellationToken cancellationToken = default)
         {
             FreshCheckCount++;
-            if (DeferredCheck is { } deferredCheck)
-            {
-                DeferredCheck = null;
-                DeferredCheckStarted.TrySetResult();
-                return deferredCheck.Task;
-            }
-
             return Task.FromResult(Enabled);
         }
     }

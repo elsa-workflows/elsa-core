@@ -1,12 +1,15 @@
 using System.Net;
 using Bunit;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Models;
+using Elsa.Api.Client.Resources.Features.Models;
+using Elsa.Studio.Contracts;
 using Elsa.Studio.Extensions;
 using Elsa.Studio.Localization;
 using Elsa.Studio.Testing;
 using Elsa.Studio.Workflows.DiagramDesigners.StateMachines.Presentation;
 using Elsa.Studio.Workflows.Domain.Contracts;
 using Elsa.Studio.Workflows.Domain.Services;
+using Elsa.Studio.Workflows.Domain.Models;
 using Elsa.Studio.Workflows.Tests.Support;
 using Microsoft.Extensions.DependencyInjection;
 using MudBlazor;
@@ -76,6 +79,18 @@ public sealed class StateMachineActivityPickerDialogTests : BunitContext, IAsync
         IsBrowsable = false
     };
 
+    private readonly ActivityDescriptor _compensationScope = new()
+    {
+        Name = "CompensationScope",
+        DisplayName = "Compensation scope",
+        TypeName = "Elsa.CompensationScope",
+        Category = "Composition",
+        IsBrowsable = true
+    };
+
+    private readonly MutableFreshFeatureProvider _featureProvider = new();
+    private readonly MutableBackendApiClientProvider _backendProvider = new("context-A");
+
     private readonly IRenderedComponent<MudDialogProvider> _dialogProvider;
 
     public StateMachineActivityPickerDialogTests()
@@ -84,7 +99,9 @@ public sealed class StateMachineActivityPickerDialogTests : BunitContext, IAsync
         Services.AddMudServices();
         Services.AddSingleton<ILocalizer, TestLocalizer>();
         Services.AddSingleton<IWorkflowRootActivityTemplateProvider, DefaultWorkflowRootActivityTemplateProvider>();
-        Services.AddSingleton<IActivityRegistry>(new TestActivityRegistry([_writeLine, _http, _sequence, _flowchart, _stateMachine, _internalActivity]));
+        Services.AddSingleton<IActivityRegistry>(new TestActivityRegistry([_writeLine, _http, _sequence, _flowchart, _stateMachine, _internalActivity, _compensationScope]));
+        Services.AddSingleton<IRemoteFeatureProvider>(_featureProvider);
+        Services.AddSingleton<IBackendApiClientProvider>(_backendProvider);
         Render<MudPopoverProvider>();
         _dialogProvider = Render<MudDialogProvider>();
     }
@@ -159,6 +176,22 @@ public sealed class StateMachineActivityPickerDialogTests : BunitContext, IAsync
 
         var result = await dialog.Result;
         Assert.Same(_sequence, result?.Data);
+    }
+
+    [Fact]
+    public async Task Picker_OffersNativeCompensationScopeOnlyForAnEnabledBoundDocument()
+    {
+        _featureProvider.Enabled = true;
+        var dialog = await ShowDialogAsync(configure: parameters => parameters.Add(x => x.DocumentBackendContextKey, "context-A"));
+
+        _dialogProvider.FindAll("button").Single(x => x.TextContent.Contains("All activities", StringComparison.Ordinal)).Click();
+        _dialogProvider.WaitForAssertion(() => Assert.NotEmpty(_dialogProvider.FindAll("[data-activity-type='Elsa.CompensationScope']")));
+        _dialogProvider.Find("[data-activity-type='Elsa.CompensationScope']").Click();
+        _dialogProvider.Find("[data-testid='state-machine-activity-picker-commit']").Click();
+
+        var result = await dialog.Result;
+        Assert.Same(_compensationScope, result?.Data);
+        Assert.Equal(1, _featureProvider.FreshCheckCount);
     }
 
     [Theory]
@@ -305,6 +338,34 @@ public sealed class StateMachineActivityPickerDialogTests : BunitContext, IAsync
         configure?.Invoke(parameters);
         var article = slotName == "trigger" ? "a" : "an";
         return await _dialogProvider.InvokeAsync(() => dialogService.ShowAsync<StateMachineActivityPickerDialog>($"Choose {article} {slotName} activity", parameters));
+    }
+
+    private sealed class MutableFreshFeatureProvider : IRemoteFeatureProvider, IRemoteFeatureProviderWithFreshCheck
+    {
+        public bool Enabled { get; set; }
+        public int FreshCheckCount { get; private set; }
+
+        public Task<bool> IsEnabledAsync(string featureName, CancellationToken cancellationToken = default) => Task.FromResult(Enabled);
+        public Task<IEnumerable<FeatureDescriptor>> ListAsync(CancellationToken cancellationToken = default) => Task.FromResult<IEnumerable<FeatureDescriptor>>([]);
+
+        public Task<bool> IsEnabledFreshAsync(string featureName, CancellationToken cancellationToken = default)
+        {
+            FreshCheckCount++;
+            return Task.FromResult(Enabled);
+        }
+    }
+
+    private sealed class MutableBackendApiClientProvider(string contextKey) : IBackendApiClientProvider, IBackendRequestContextBinding
+    {
+        public Uri Url { get; } = new("https://backend.example/");
+        public string ContextKey { get; set; } = contextKey;
+        public bool SupportsAuthenticatedRequestContextBinding => true;
+        public bool HasActiveRequestContextBinding => false;
+
+        public void RegisterAuthenticatedRequestTransport(IBackendRequestContextEpochSource? epochSource) { }
+        public IDisposable BindRequestContext(string expectedContextKey) => throw new NotSupportedException();
+        public void ValidateBoundRequestContext(IBackendRequestContextEpochSource? requestEpochSource) { }
+        public ValueTask<T> GetApiAsync<T>(CancellationToken cancellationToken = default) where T : class => throw new NotSupportedException();
     }
 
 }

@@ -9,6 +9,7 @@ namespace Elsa.Studio.Workflows.Domain.Models;
 /// </summary>
 public static class NativeCompensationDraftCapability
 {
+    public const string CompensationScopeActivityTypeName = "Elsa.CompensationScope";
     public const string RemoteFeatureName = "Elsa.NativeCompensationDraftAuthoringV1";
     public const string CompensatedHandoff = "Compensated";
     public const string PropagateOriginalFaultHandoff = "PropagateOriginalFault";
@@ -79,6 +80,25 @@ public static class NativeCompensationDraftCapability
         return enabled &&
                backendApiClientProvider is IBackendRequestContextBinding { SupportsAuthenticatedRequestContextBinding: true } &&
                string.Equals(backendApiClientProvider.ContextKey, expectedBackendContextKey, StringComparison.Ordinal);
+    }
+
+    public static bool IsCompensationScopeActivity(string? activityTypeName) =>
+        string.Equals(activityTypeName, CompensationScopeActivityTypeName, StringComparison.Ordinal);
+
+    public static Task<bool> IsActivityCreationEnabledForDocumentAsync(
+        string? activityTypeName,
+        IRemoteFeatureProvider? provider,
+        IBackendApiClientProvider backendApiClientProvider,
+        string? expectedBackendContextKey,
+        CancellationToken cancellationToken = default)
+    {
+        if (!IsCompensationScopeActivity(activityTypeName))
+            return Task.FromResult(true);
+
+        if (string.IsNullOrWhiteSpace(expectedBackendContextKey))
+            return Task.FromResult(false);
+
+        return IsEnabledForContextAsync(provider, backendApiClientProvider, expectedBackendContextKey, cancellationToken);
     }
 
     public static bool HasSupportedDraftShape(JsonNode? node)

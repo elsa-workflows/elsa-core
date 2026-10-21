@@ -1,7 +1,9 @@
 using Elsa.Api.Client.Resources.ActivityDescriptors.Models;
+using Elsa.Studio.Contracts;
 using Elsa.Studio.Localization;
 using Elsa.Studio.Workflows.Domain.Contracts;
 using Elsa.Studio.Workflows.Domain.Extensions;
+using Elsa.Studio.Workflows.Domain.Models;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using MudBlazor;
@@ -31,10 +33,13 @@ public partial class StateMachineActivityPickerDialog
     [Inject] private IActivityRegistry ActivityRegistry { get; set; } = null!;
     [Inject] private IWorkflowRootActivityTemplateProvider RootActivityTemplateProvider { get; set; } = null!;
     [Inject] private ILocalizer Localizer { get; set; } = null!;
+    [Inject] private IRemoteFeatureProvider RemoteFeatureProvider { get; set; } = null!;
+    [Inject] private IBackendApiClientProvider BackendApiClientProvider { get; set; } = null!;
 
     [Parameter] public string SlotName { get; set; } = "action";
     [Parameter] public bool IsReplacing { get; set; }
     [Parameter] public IReadOnlyCollection<string> RecentActivityTypes { get; set; } = [];
+    [Parameter] public string DocumentBackendContextKey { get; set; } = "";
 
     /// <summary>
     /// Restricts the offered activities to the descriptors this predicate accepts, in place of the default set (every
@@ -147,8 +152,18 @@ public partial class StateMachineActivityPickerDialog
                 ? allDescriptors.Where(DescriptorFilter)
                 : browsableDescriptors.Concat(designerBackedRoots);
 
-            _descriptors = offeredDescriptors
+            var distinctDescriptors = offeredDescriptors
                 .DistinctBy(x => x.TypeName, StringComparer.Ordinal)
+                .ToList();
+            if (distinctDescriptors.Any(x => NativeCompensationDraftCapability.IsCompensationScopeActivity(x.TypeName)) &&
+                !await NativeCompensationDraftCapability.IsActivityCreationEnabledForDocumentAsync(
+                    NativeCompensationDraftCapability.CompensationScopeActivityTypeName,
+                    RemoteFeatureProvider,
+                    BackendApiClientProvider,
+                    DocumentBackendContextKey))
+                distinctDescriptors.RemoveAll(x => NativeCompensationDraftCapability.IsCompensationScopeActivity(x.TypeName));
+
+            _descriptors = distinctDescriptors
                 .OrderBy(GetDisplayName, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(x => x.TypeName, StringComparer.OrdinalIgnoreCase)
                 .ToList();

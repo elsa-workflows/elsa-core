@@ -17,7 +17,6 @@ public partial class ActivityPicker
 {
     private bool _expanded;
     private string _searchText = "";
-    private long _dragGeneration;
     private MudTreeView<string> _treeView = null!;
     private readonly List<ITreeItemData<string>> _treeItemData = [];
 
@@ -51,7 +50,7 @@ public partial class ActivityPicker
             BackendApiClientProvider.ContextKey == backendContextKey;
         ActivityDescriptors = supportsCompensationDrafts
             ? descriptors
-            : descriptors.Where(x => !string.Equals(x.TypeName, "Elsa.CompensationScope", StringComparison.Ordinal));
+            : descriptors.Where(x => !NativeCompensationDraftCapability.IsCompensationScopeActivity(x.TypeName));
         BuildTree();
         StateHasChanged();
     }
@@ -137,27 +136,14 @@ public partial class ActivityPicker
         return Task.FromResult(item.CategoryPath.Contains(_searchText, StringComparison.OrdinalIgnoreCase) || (item.Text?.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ?? false));
     }
 
-    private async Task OnDragStart(ActivityDescriptor? activityDescriptor)
+    private Task OnDragStart(ActivityDescriptor? activityDescriptor)
     {
-        var dragGeneration = ++_dragGeneration;
-        // A newer drag owns the shared payload, even while an older native capability check is pending.
-        DragDropManager.Payload = null;
-
-        if (activityDescriptor == null)
-            return;
-
-        if (string.Equals(activityDescriptor.TypeName, "Elsa.CompensationScope", StringComparison.Ordinal))
-        {
-            var backendContextKey = BackendApiClientProvider.ContextKey;
-            if (!await NativeCompensationDraftCapability.IsEnabledForContextAsync(
-                    RemoteFeatureProvider, BackendApiClientProvider, backendContextKey) ||
-                BackendApiClientProvider.ContextKey != backendContextKey)
-                return;
-        }
-
-        if (dragGeneration != _dragGeneration)
-            return;
-
-        DragDropManager.Payload = activityDescriptor;
+        // Native descriptors can only be dragged if they survived the current filtered picker view.
+        // Creation boundaries repeat the fresh check, so dragstart stays synchronous and cannot lose a drop.
+        var nativeDescriptorIsOffered = activityDescriptor == null ||
+                                        !NativeCompensationDraftCapability.IsCompensationScopeActivity(activityDescriptor.TypeName) ||
+                                        ActivityDescriptors.Any(x => ReferenceEquals(x, activityDescriptor));
+        DragDropManager.Payload = nativeDescriptorIsOffered ? activityDescriptor : null;
+        return Task.CompletedTask;
     }
 }

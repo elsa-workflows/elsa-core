@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Elsa.Api.Client.Extensions;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Models;
+using Elsa.Studio.Contracts;
 using Elsa.Studio.Workflows.Designer.Components;
 using Elsa.Studio.Workflows.Designer.Options;
 using Elsa.Studio.Workflows.Designer.Services;
@@ -18,11 +19,12 @@ namespace Elsa.Studio.Workflows.DiagramDesigners.Sequences;
 /// <summary>
 /// A wrapper around the Sequence designer component.
 /// </summary>
-public partial class SequenceDesignerWrapper
+public partial class SequenceDesignerWrapper : IDisposable
 {
     [Parameter] public JsonObject Sequence { get; set; } = null!;
     [Parameter] public IDictionary<string, ActivityStats>? ActivityStats { get; set; }
     [Parameter] public bool IsReadOnly { get; set; }
+    [Parameter] public string DocumentBackendContextKey { get; set; } = "";
     [Parameter] public EventCallback<JsonObject> ActivitySelected { get; set; }
     [Parameter] public EventCallback<JsonObject> ActivityUpdated { get; set; }
     [Parameter] public EventCallback<ActivityEmbeddedPortSelectedArgs> ActivityEmbeddedPortSelected { get; set; }
@@ -33,10 +35,13 @@ public partial class SequenceDesignerWrapper
     [Inject] private IIdentityGenerator IdentityGenerator { get; set; } = null!;
     [Inject] private IActivityNameGenerator ActivityNameGenerator { get; set; } = null!;
     [Inject] private IOptions<DesignerOptions> DesignerOptions { get; set; } = null!;
+    [Inject] private IRemoteFeatureProvider RemoteFeatureProvider { get; set; } = null!;
+    [Inject] private IBackendApiClientProvider BackendApiClientProvider { get; set; } = null!;
 
     private SequenceDesigner? Designer { get; set; }
     private SequenceFlowDesigner? ReactDesigner { get; set; }
     private bool UseReactFlow => DesignerOptions.Value.UseReactFlow;
+    private bool _disposed;
     private string? _lastSequenceId;
 
     public async Task LoadSequenceAsync(JsonObject activity, IDictionary<string, ActivityStats>? activityStats = null)
@@ -140,12 +145,33 @@ public partial class SequenceDesignerWrapper
 
     private async Task AddNewActivityAsync(ActivityDescriptor activityDescriptor, double x, double y)
     {
-        var newActivity = SequenceActivityFactory.CreateActivity(Sequence, activityDescriptor, IdentityGenerator, ActivityNameGenerator, x, y);
+        if (_disposed || IsReadOnly)
+            return;
 
-        if (ReactDesigner is not null)
-            await ReactDesigner.AddActivityAsync(newActivity);
-        else if (Designer is not null)
-            await Designer.AddActivityAsync(newActivity);
+        var targetSequence = Sequence;
+        var targetDesigner = (object?)ReactDesigner ?? Designer;
+        var documentBackendContextKey = DocumentBackendContextKey;
+        if (NativeCompensationDraftCapability.IsCompensationScopeActivity(activityDescriptor.TypeName))
+        {
+            if (!await NativeCompensationDraftCapability.IsActivityCreationEnabledForDocumentAsync(
+                    activityDescriptor.TypeName,
+                    RemoteFeatureProvider,
+                    BackendApiClientProvider,
+                    documentBackendContextKey) ||
+                _disposed || IsReadOnly ||
+                !ReferenceEquals(Sequence, targetSequence) ||
+                !ReferenceEquals((object?)ReactDesigner ?? Designer, targetDesigner) ||
+                !string.Equals(DocumentBackendContextKey, documentBackendContextKey, StringComparison.Ordinal) ||
+                !string.Equals(BackendApiClientProvider.ContextKey, documentBackendContextKey, StringComparison.Ordinal))
+                return;
+        }
+
+        var newActivity = SequenceActivityFactory.CreateActivity(targetSequence, activityDescriptor, IdentityGenerator, ActivityNameGenerator, x, y);
+
+        if (targetDesigner is SequenceFlowDesigner reactDesigner)
+            await reactDesigner.AddActivityAsync(newActivity);
+        else if (targetDesigner is SequenceDesigner designer)
+            await designer.AddActivityAsync(newActivity);
 
         if (ActivitySelected.HasDelegate)
             await ActivitySelected.InvokeAsync(newActivity);
@@ -175,4 +201,6 @@ public partial class SequenceDesignerWrapper
         if (ActivitySelected.HasDelegate)
             await ActivitySelected.InvokeAsync(Sequence);
     }
+
+    public void Dispose() => _disposed = true;
 }

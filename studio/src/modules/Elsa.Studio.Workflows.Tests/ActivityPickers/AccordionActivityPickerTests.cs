@@ -13,7 +13,7 @@ namespace Elsa.Studio.Workflows.Tests.ActivityPickers;
 public sealed class AccordionActivityPickerTests
 {
     [Fact]
-    public async Task LaterOrdinaryDragKeepsPayloadWhenAnEarlierNativeCheckCompletes()
+    public async Task NativeDragUsesFilteredMembershipSynchronouslyAndCannotLoseTheDrop()
     {
         var nativeScope = new ActivityDescriptor { TypeName = "Elsa.CompensationScope" };
         var ordinaryActivity = new ActivityDescriptor { TypeName = "Elsa.WriteLine" };
@@ -22,20 +22,36 @@ public sealed class AccordionActivityPickerTests
         var picker = new ActivityPicker { DragDropManager = dragDropManager };
         SetPrivateProperty(picker, "RemoteFeatureProvider", featureProvider);
         SetPrivateProperty(picker, "BackendApiClientProvider", new MutableBackendApiClientProvider("context-A"));
+        SetPrivateProperty(picker, "ActivityDescriptors", new[] { nativeScope, ordinaryActivity });
 
-        var nativeCheck = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        featureProvider.DeferredCheck = nativeCheck;
         var nativeDrag = InvokeDragStartAsync(picker, nativeScope);
-        await featureProvider.DeferredCheckStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.True(nativeDrag.IsCompleted);
+        Assert.Same(nativeScope, dragDropManager.Payload);
 
         await InvokeDragStartAsync(picker, ordinaryActivity);
         Assert.Same(ordinaryActivity, dragDropManager.Payload);
 
-        nativeCheck.SetResult(true);
         await nativeDrag;
 
         Assert.Same(ordinaryActivity, dragDropManager.Payload);
-        Assert.Equal(1, featureProvider.FreshCheckCount);
+        Assert.Equal(0, featureProvider.FreshCheckCount);
+    }
+
+    [Fact]
+    public async Task NativeDragIsRejectedWhenFilteredOutButOrdinaryDragRemainsUnchanged()
+    {
+        var nativeScope = new ActivityDescriptor { TypeName = "Elsa.CompensationScope" };
+        var ordinaryActivity = new ActivityDescriptor { TypeName = "Elsa.WriteLine" };
+        var dragDropManager = new DragDropManager();
+        var picker = new ActivityPicker { DragDropManager = dragDropManager };
+        SetPrivateProperty(picker, "ActivityDescriptors", new[] { ordinaryActivity });
+        SetPrivateProperty(picker, "BackendApiClientProvider", new MutableBackendApiClientProvider("context-A") { ThrowOnContextRead = true });
+
+        await InvokeDragStartAsync(picker, nativeScope);
+        Assert.Null(dragDropManager.Payload);
+
+        await InvokeDragStartAsync(picker, ordinaryActivity);
+        Assert.Same(ordinaryActivity, dragDropManager.Payload);
     }
 
     [Fact]
@@ -62,8 +78,6 @@ public sealed class AccordionActivityPickerTests
 
     private sealed class DeferredFreshFeatureProvider : IRemoteFeatureProvider, IRemoteFeatureProviderWithFreshCheck
     {
-        public TaskCompletionSource<bool>? DeferredCheck { get; set; }
-        public TaskCompletionSource DeferredCheckStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public int FreshCheckCount { get; private set; }
 
         public Task<bool> IsEnabledAsync(string featureName, CancellationToken cancellationToken = default) => Task.FromResult(false);
@@ -72,13 +86,6 @@ public sealed class AccordionActivityPickerTests
         public Task<bool> IsEnabledFreshAsync(string featureName, CancellationToken cancellationToken = default)
         {
             FreshCheckCount++;
-            if (DeferredCheck is { } deferredCheck)
-            {
-                DeferredCheck = null;
-                DeferredCheckStarted.TrySetResult();
-                return deferredCheck.Task;
-            }
-
             return Task.FromResult(false);
         }
     }
