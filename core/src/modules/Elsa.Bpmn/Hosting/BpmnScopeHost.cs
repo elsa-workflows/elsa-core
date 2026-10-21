@@ -389,16 +389,6 @@ internal sealed class BpmnScopeHost
     }
 
     /// <summary>
-    /// Finds the unit of work this scope started that the failing activity belongs to, walking outward from the
-    /// failure.
-    /// </summary>
-    /// <remarks>
-    /// A fault raised deep inside a nested scope is, to this scope, its own subprocess work failing. The nested scope
-    /// sees the signal first and claims it if it has a catcher; if it does not, the signal arrives here and this walk
-    /// is what turns "some activity failed" into "the work I started failed", which is exactly what BPMN error
-    /// propagation across a scope boundary means.
-    /// </remarks>
-    /// <summary>
     /// The BPMN error a failed unit of work raised: a <see cref="FaultException"/>'s code, which is how Elsa's
     /// <c>Fault</c> activity names a business error, or the error a subprocess ended with when nothing in it caught one.
     /// Any other exception is an uncoded error, which only a catch-all error catcher catches.
@@ -410,6 +400,16 @@ internal sealed class BpmnScopeHost
         _ => null
     };
 
+    /// <summary>
+    /// Finds the unit of work this scope started that the failing activity belongs to, walking outward from the
+    /// failure.
+    /// </summary>
+    /// <remarks>
+    /// A fault raised deep inside a nested scope is, to this scope, its own subprocess work failing. The nested scope
+    /// sees the signal first and claims it if it has a catcher; if it does not, the signal arrives here and this walk
+    /// is what turns "some activity failed" into "the work I started failed", which is exactly what BPMN error
+    /// propagation across a scope boundary means.
+    /// </remarks>
     private BpmnWorkRecord? ResolveFaultedWork(BpmnScopeMemory memory, ActivityExecutionContext faultedContext)
     {
         for (var current = faultedContext; current is not null && !string.Equals(current.Id, _context.Id, StringComparison.Ordinal); current = current.ParentActivityExecutionContext)

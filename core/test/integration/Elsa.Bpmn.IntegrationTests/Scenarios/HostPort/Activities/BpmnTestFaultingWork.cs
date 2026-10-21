@@ -27,7 +27,9 @@ public class BpmnTestFaultingWork : CodeActivity
     {
         BpmnTestWorkProbe.RecordExecution(this, Log, context);
         if (Code is not null)
+        {
             throw new FaultException(Code, "Test", "Business", $"The work bound to '{Id}' failed with '{Code}'.");
+        }
 
         throw new InvalidOperationException($"The work bound to '{Id}' failed.");
     }
