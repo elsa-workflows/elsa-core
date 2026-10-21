@@ -785,11 +785,23 @@ def source_snapshot(source_root, source_files):
 
 
 def binary_snapshot(*roots):
+    """Hash copied runtime binaries and every file in the copied Studio wwwroot."""
     hashes = {}
     suffixes = (".dll", ".deps.json", ".runtimeconfig.json", ".dylib", ".so", ".exe")
     for root in roots:
+        root = Path(root)
+        studio_wwwroot = root / "wwwroot" if root.name == "studio-host" else None
+        if studio_wwwroot is not None:
+            if not studio_wwwroot.is_dir() or not studio_wwwroot.resolve().is_relative_to(root.resolve()):
+                raise StopProof("build-studio-wwwroot-missing")
+
         for path in sorted(root.rglob("*")):
-            if path.is_file() and path.name.endswith(suffixes):
+            if not path.is_file():
+                continue
+            relative_path = path.relative_to(root)
+            is_runtime_binary = path.name.endswith(suffixes)
+            is_studio_asset = studio_wwwroot is not None and relative_path.parts[0] == "wwwroot"
+            if is_runtime_binary or is_studio_asset:
                 key = f"{root.name}/{path.relative_to(root).as_posix()}"
                 hashes[key] = sha256_file(path)
     return hashes
