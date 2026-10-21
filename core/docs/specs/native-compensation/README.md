@@ -19,12 +19,14 @@ No BPMN implementation reuse, adapters, shared compensation abstractions or depe
 | [Data and persistence](persistence.md) | Identities, retained/protected captures, strict versions, root snapshot protocol, atomicity and recovery gates. |
 | [Guarded native snapshots](guarded-snapshot.md) | Proposed storage-owned marker, receipt, tenant/revision/epoch fence, fail-closed outer hydration, mutation-path enforcement and bounded E1 transaction proof. |
 | [Recovery API and security](recovery-api.md) | Safe read model, commands, authorization, audit, concurrency and disclosure. |
+| [Protected recovery data and tenant authority](recovery-data.md) | E2 protection, safe summaries/detail, source suppression, authenticated tenant binding, host profile, retention owners and proof matrix. |
 | [Studio interaction contract](../../../../studio/docs/specs/native-compensation/plan.md) | Authoring, captures, publication diagnostics, execution navigation, accessible states and host integration. |
 | [Verification plan](verification.md) | Real browser/backend/store/participant restart demonstrations and negative controls; no pass is implied. |
 | [Review record](review.md) | Independent findings, corrections and the limits of design review. |
 | [Decisions and delivery gates](decisions.md) | Accepted owner policies, selected design proposals, remaining technical gates and progressive delivery. |
 | [Shared proposed ADR](../../../../docs/adr/2026-10-20-native-compensation-instance-journal.md) | Root instance journal and generation-specific recovery boundary. |
 | [Guarded-snapshot ADR](../../../../docs/adr/2026-10-21-native-compensation-guarded-snapshots.md) | Proposed persistence-owned admission and write-fence contract; no provider/API or qualification claim. |
+| [Protected recovery-data ADR](../../../../docs/adr/2026-10-21-protect-native-compensation-recovery-data.md) | Proposed E2 protection, projection, authorization and host-profile contract; no runtime qualification claim. |
 
 The program lead integrates the packet. Runtime/persistence reviewers own the commit, scheduling and ownership proofs; Studio reviewers own the interactions/client mapping; security reviewers own command/disclosure/protection; QA owns reproducible qualification. These are accountable roles, not claims that named maintainers have accepted future implementation work.
 
