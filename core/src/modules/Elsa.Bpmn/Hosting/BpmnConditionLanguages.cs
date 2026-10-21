@@ -40,7 +40,9 @@ public static class BpmnConditionLanguages
         var name = language.Trim();
 
         if (Uri.TryCreate(name, UriKind.Absolute, out var uri) && !uri.IsFile)
+        {
             name = uri.Segments.Length > 0 ? uri.Segments[^1].TrimEnd('/') : string.Empty;
+        }
 
         return ExpressionTypesByName.TryGetValue(name, out expressionType);
     }

@@ -1008,19 +1008,23 @@ public sealed class BpmnInterchangeDocumentService(
         var conflictingFlowIds = SortedDistinct(conditionalFlows.Where(x => x.Flow.ConditionOutcome is not null).Select(x => x.Flow.FlowId));
 
         if (conflictingFlowIds.Count > 0)
+        {
             throw new BpmnConditionRefusedException(
                 BpmnErrorCodes.ImportConditionConflict,
                 $"The document's sequence flows carry both an outcome and a condition expression: {string.Join(", ", conflictingFlowIds)}. "
                 + "Elsa cannot tell which of the two the author meant to decide the route. "
                 + "Remove either the conditionOutcome attribute or the conditionExpression from each of these flows.",
                 conflictingFlowIds);
+        }
 
         var unsupported = conditionalFlows
             .Where(x => x.Flow.ConditionOutcome is null && !BpmnConditionLanguages.TryResolveExpressionType(x.Language, out _))
             .ToList();
 
         if (unsupported.Count == 0)
+        {
             return;
+        }
 
         var unsupportedFlowIds = SortedDistinct(unsupported.Select(x => x.Flow.FlowId));
         var languages = string.Join(", ", unsupported.Select(x => $"'{x.Language}'").Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal));

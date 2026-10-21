@@ -60,7 +60,9 @@ internal sealed class BpmnScopeConditions(ActivityExecutionContext context) : IB
             }
 
             if (_answers.Count >= MaxAnswersPerCall)
+            {
                 throw new InvalidOperationException($"The BPMN interpreter asked more than {MaxAnswersPerCall} distinct conditions in one evaluation.");
+            }
 
             _answers[pending] = await AnswerAsync(pending);
         }
@@ -71,11 +73,15 @@ internal sealed class BpmnScopeConditions(ActivityExecutionContext context) : IB
         // Bpmn.Semantics routes no instance token with its built-in behaviors (its ADR 0011), so this is a guard: an
         // iteration's variables live on that instance's own context, and answering from the scope's would be wrong.
         if (request.Iteration is not null)
+        {
             return BpmnConditionResult.Failed(null, $"The condition on sequence flow '{request.FlowId}' belongs to multi-instance iteration '{request.Iteration}', which Elsa does not evaluate conditions in.");
+        }
 
         // Import refuses a language this cannot resolve; a definition stored before that check can still carry one.
         if (!BpmnConditionLanguages.TryResolveExpressionType(request.Language, out var expressionType))
+        {
             return BpmnConditionResult.Failed(null, $"The condition on sequence flow '{request.FlowId}' is written in '{request.Language}', which Elsa does not evaluate.");
+        }
 
         try
         {

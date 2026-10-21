@@ -39,7 +39,9 @@ public class BpmnConditionTests(ITestOutputHelper testOutputHelper) : IAsyncLife
         string[] tasks = ["Large", "Medium", "Small"];
 
         foreach (var task in tasks)
+        {
             Assert.Equal(task == expectedTask, statuses.ContainsKey(WorkActivityId("route-by-amount", task)));
+        }
     }
 
     [Fact(DisplayName = "A condition that cannot be evaluated faults the process with the expression's error")]

@@ -238,7 +238,9 @@ internal sealed class BpmnScopeHost
             var memory = BpmnScopeMemory.Load(_context);
 
             if (prepare(memory) is not { } interpret)
+            {
                 return;
+            }
 
             var evaluation = await _conditions.InterpretAsync(interpret);
 
