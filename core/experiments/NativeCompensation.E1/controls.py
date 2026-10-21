@@ -70,6 +70,9 @@ def run_control(name, output):
     except Exception as error:
         result["control_error"] = str(error) or type(error).__name__
     finally:
+        participant_error = result.get("participant", {}).get("controller_error")
+        if participant_error:
+            result.setdefault("control_error", participant_error)
         (directory / "evidence.json").write_text(json.dumps(result, indent=2))
     print(json.dumps({"case": name, "events": result.get("control", {}).get("events", [])[-1:],
                       "originalBytesRetainedInRow": result.get("originalBytesRetainedInRow"), "control_error": result.get("control_error")}), flush=True)

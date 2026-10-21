@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -207,6 +208,53 @@ class ValidationTests(unittest.TestCase):
         if os.name == "posix":
             with self.assertRaises(ProcessLookupError):
                 os.kill(diagnostics["pid"], 0)
+
+    def test_participant_interrupt_is_recorded_reaped_and_propagated_by_both_controllers(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for controller in ("matrix", "controls"):
+                with self.subTest(controller=controller):
+                    output = root / controller
+                    output.mkdir()
+                    ready = output / "child-ready"
+                    child = (
+                        "import pathlib,sys,time; "
+                        "sys.stderr.write('interrupt child stderr\\n'); sys.stderr.flush(); "
+                        f"pathlib.Path({str(ready)!r}).write_text('ready'); time.sleep(30)"
+                    )
+
+                    def interrupt_get(_queue, block=True, timeout=None):
+                        deadline = time.monotonic() + 3
+                        while not ready.exists() and time.monotonic() < deadline:
+                            time.sleep(0.01)
+                        if not ready.exists():
+                            raise AssertionError("Synthetic participant did not reach the startup handshake")
+                        raise KeyboardInterrupt("synthetic startup interrupt")
+
+                    with patch.object(run, "participant_command", return_value=[sys.executable, "-u", "-c", child]), \
+                         patch.object(run.queue.Queue, "get", new=interrupt_get):
+                        if controller == "matrix":
+                            with patch.object(run, "args", SimpleNamespace(output=output), create=True):
+                                with self.assertRaisesRegex(KeyboardInterrupt, "synthetic startup interrupt"):
+                                    run.run_case("interrupted-startup")
+                            evidence = json.loads((output / "interrupted-startup" / "evidence.json").read_text())
+                            failure_key = "assertion_failure"
+                        else:
+                            with self.assertRaisesRegex(KeyboardInterrupt, "synthetic startup interrupt"):
+                                controls.run_control("interrupted-startup", output)
+                            evidence = json.loads((output / "interrupted-startup" / "evidence.json").read_text())
+                            failure_key = "control_error"
+
+                    diagnostics = evidence["participant"]
+                    self.assertIn("KeyboardInterrupt: synthetic startup interrupt", diagnostics["controller_error"])
+                    self.assertIn("KeyboardInterrupt: synthetic startup interrupt", evidence[failure_key])
+                    self.assertIn("interrupt child stderr", diagnostics["stderr"])
+                    self.assertTrue(diagnostics["reaped"])
+                    self.assertTrue(diagnostics["stdout_reader_completed"])
+                    self.assertTrue(diagnostics["stderr_reader_completed"])
+                    if os.name == "posix":
+                        with self.assertRaises(ProcessLookupError):
+                            os.kill(diagnostics["pid"], 0)
 
     def test_matrix_and_control_startup_failures_are_saved_without_orphans(self):
         malformed = (

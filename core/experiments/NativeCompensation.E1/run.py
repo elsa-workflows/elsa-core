@@ -106,10 +106,15 @@ class ParticipantProcess:
                 raise RuntimeError(f"Participant startup reported an invalid port: {port!r}")
             self.diagnostics["port"] = port
             return f"http://127.0.0.1:{port}/"
-        except Exception as error:
+        except BaseException as error:
             message = f"{type(error).__name__}: {error}"
             self.diagnostics["controller_error"] = message
-            self._stop()
+            try:
+                self._stop()
+            except BaseException as cleanup_error:
+                self.diagnostics["cleanup_error"] = f"{type(cleanup_error).__name__}: {cleanup_error}"
+            if not isinstance(error, Exception):
+                raise
             raise ParticipantFailure(message, self.result) from error
 
     def __exit__(self, error_type, error, traceback):
@@ -406,6 +411,9 @@ def run_case(name, kill_at=None, ambient=False, no_dedupe=False, fail_undo=False
     except Exception as error:
         result["assertion_failure"] = str(error) or type(error).__name__
     finally:
+        participant_error = result.get("participant", {}).get("controller_error")
+        if participant_error:
+            result.setdefault("assertion_failure", participant_error)
         (directory / "evidence.json").write_text(json.dumps(result, indent=2))
     print(json.dumps({"case": name, "observed": result.get("observed_result"), "assertion_failure": result.get("assertion_failure"), "evidence": str(directory / "evidence.json")}))
     return "assertion_failure" not in result

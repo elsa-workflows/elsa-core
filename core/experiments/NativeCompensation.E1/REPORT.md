@@ -152,7 +152,7 @@ run, and no E1 observation or readiness claim changed.
 
 Control validation also requires the recorded inspection child to exit successfully
 for every control that performs inspection; a negative regression covers all six
-such controls. The cheap suite now has 24 passing tests, with the same retained
+such controls. The cheap suite now has 25 passing tests, with the same retained
 evidence hashes and no change to recorded observations or readiness.
 
 Both controllers now initialize evidence before participant startup and share one
@@ -165,3 +165,8 @@ also verify a valid port enters the controller body before context teardown reap
 still-live child. These are harness lifecycle checks only; the fixture participant,
 .NET backend and database were not run again. The retained 24 raw evidence hashes and
 summary are unchanged.
+
+A synthetic main-thread `KeyboardInterrupt` after a child-ready signal is recorded
+and rethrown unchanged by both controllers; each still writes evidence and reaps its
+owned child. This exercises interruption during the handshake wait without running
+the fixture participant or changing the retained observations.
