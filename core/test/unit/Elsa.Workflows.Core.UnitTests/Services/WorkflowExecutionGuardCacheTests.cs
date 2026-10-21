@@ -9,6 +9,7 @@ using Elsa.Workflows.Pipelines.WorkflowExecution;
 
 namespace Elsa.Workflows.Core.UnitTests.Services;
 
+[Collection(nameof(WorkflowExecutionGuardCacheTestCollection))]
 public class WorkflowExecutionGuardCacheTests : IAsyncLifetime
 {
     private static readonly Type ExecutionStateType = typeof(CompensationScope).Assembly.GetType(
@@ -319,3 +320,7 @@ public class WorkflowExecutionGuardCacheTests : IAsyncLifetime
         }
     }
 }
+
+// Other test classes can legitimately invalidate the process-wide discriminator epoch.
+[CollectionDefinition(nameof(WorkflowExecutionGuardCacheTestCollection), DisableParallelization = true)]
+public class WorkflowExecutionGuardCacheTestCollection;
