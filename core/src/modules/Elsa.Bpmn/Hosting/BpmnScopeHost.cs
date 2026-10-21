@@ -93,7 +93,9 @@ internal sealed class BpmnScopeHost
         // A scope that no other BPMN scope started is where a run begins: every body it can reach is built now, so a
         // body that cannot run is refused before anything has run rather than when a token first reaches it.
         if (InvocationCorrelation.Count == 0)
+        {
             BpmnProcessGraphs.BuildAll(_process);
+        }
 
         // Resolving by the matched trigger may read the trigger store, so it happens before the synchronous evaluation.
         var triggeredStart = await ResolveTriggeredStartAsync();
