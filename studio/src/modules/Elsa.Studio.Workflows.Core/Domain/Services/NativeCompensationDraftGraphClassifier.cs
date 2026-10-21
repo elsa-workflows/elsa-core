@@ -95,7 +95,7 @@ public sealed class NativeCompensationDraftGraphClassifier : INativeCompensation
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        if (!visited.Add(activity) || !ContainsPotentialMarkerOutsideReservedData(activity))
+        if (!visited.Add(activity) || !NativeCompensationDraftCapability.ContainsPotentialScopeMarker(activity))
             return;
 
         var typeName = GetString(activity, "type");
@@ -412,9 +412,6 @@ public sealed class NativeCompensationDraftGraphClassifier : INativeCompensation
         if (!hasPotentialMarker)
             return NativeCompensationDraftGraphAnalysis.Ordinary;
 
-        if (!ContainsPotentialMarkerOutsideReservedData(activity))
-            return new(true, false, false, true);
-
         var typeName = GetString(activity, "type");
         if (NativeCompensationDraftCapability.IsCompensationScopeActivity(typeName))
         {
@@ -455,6 +452,9 @@ public sealed class NativeCompensationDraftGraphClassifier : INativeCompensation
 
         if (typeName is "Elsa.Sequence" or "Elsa.Flowchart")
         {
+            if (GetInt32(activity, "version") != 1)
+                return NativeCompensationDraftGraphAnalysis.Indeterminate;
+
             if (HasProtectedLegacyActivityInCollection(activity["activities"], visited) ||
                 HasPotentialMarkerOutsideProperties(activity, ["activities", "connections"]))
                 return NativeCompensationDraftGraphAnalysis.Indeterminate;
@@ -464,6 +464,9 @@ public sealed class NativeCompensationDraftGraphClassifier : INativeCompensation
 
         if (string.Equals(typeName, "Elsa.If", StringComparison.Ordinal))
         {
+            if (GetInt32(activity, "version") != 1)
+                return NativeCompensationDraftGraphAnalysis.Indeterminate;
+
             if (HasProtectedLegacyActivity(activity["then"], visited) || HasProtectedLegacyActivity(activity["else"], visited) ||
                 HasPotentialMarkerOutsideProperties(activity, ["then", "else", "condition"]))
                 return NativeCompensationDraftGraphAnalysis.Indeterminate;
@@ -473,6 +476,9 @@ public sealed class NativeCompensationDraftGraphClassifier : INativeCompensation
 
         if (string.Equals(typeName, "Elsa.StateMachine", StringComparison.Ordinal))
         {
+            if (GetInt32(activity, "version") != 1)
+                return NativeCompensationDraftGraphAnalysis.Indeterminate;
+
             if (HasProtectedLegacyStateMachineActivity(activity, visited) ||
                 HasPotentialMarkerOutsideProperties(activity, ["states", "transitions", "initialState"]))
                 return NativeCompensationDraftGraphAnalysis.Indeterminate;
