@@ -2,6 +2,7 @@ import type { HttpClient } from "../http.js";
 import type { ListResponse } from "../types/common.js";
 import type {
   ActivityDescriptor,
+  CommitStrategyDescriptor,
   ExpressionDescriptor,
   FeatureDescriptor,
   IncidentStrategyDescriptor,
@@ -31,9 +32,9 @@ export function descriptorsApi(http: HttpClient) {
     logPersistenceStrategies: (signal?: AbortSignal) =>
       http.get<ListResponse<IncidentStrategyDescriptor>>("descriptors/log-persistence-strategies", { signal }),
     workflowCommitStrategies: (signal?: AbortSignal) =>
-      http.get<ListResponse<IncidentStrategyDescriptor>>("descriptors/commit-strategies/workflows", { signal }),
+      http.get<ListResponse<CommitStrategyDescriptor>>("descriptors/commit-strategies/workflows", { signal }),
     activityCommitStrategies: (signal?: AbortSignal) =>
-      http.get<ListResponse<IncidentStrategyDescriptor>>("descriptors/commit-strategies/activities", { signal }),
+      http.get<ListResponse<CommitStrategyDescriptor>>("descriptors/commit-strategies/activities", { signal }),
 
     installedFeatures: (signal?: AbortSignal) => http.get<ListResponse<FeatureDescriptor>>("features/installed", { signal }),
     packageVersion: (signal?: AbortSignal) => http.get<{ packageVersion: string }>("package/version", { signal }),

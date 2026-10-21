@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@elsa-workflows/react-
 import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
 import type { ActivityExecutionRecord, WorkflowExecutionLogRecord } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
 import { activityDisplayText, useDesigner } from "@elsa-workflows/react-studio-sdk/designer/index";
+import { usePermission, Resources, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
+import { RetriesPanel } from "./retries-panel";
 import { ExecutionsTable } from "./executions-table";
 
 /** Bottom pane of the viewer: what happened to the selected activity. */
@@ -24,14 +26,16 @@ export function ActivityDetailsPane({
   onClose: () => void;
 }) {
   const { registry } = useDesigner();
+  const canViewRetries = usePermission(Resources.resilienceRetries, Verbs.view);
   const [tab, setTab] = useState("executions");
   const descriptor = registry.get(activity.type, activity.version);
+  const showRetries = canViewRetries && (descriptor?.customProperties?.Resilient === true || activity.customProperties?.resilienceStrategy != null);
   const lastEvent = useMemo(() => [...journal].reverse().find((r) => r.activityId === activity.id), [journal, activity.id]);
   const latest = executions[executions.length - 1];
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <Tabs value={tab} onValueChange={(v) => setTab(String(v))} className="h-full min-h-0 gap-0">
+      <Tabs value={tab === "retries" && !showRetries ? "executions" : tab} onValueChange={(v) => setTab(String(v))} className="h-full min-h-0 gap-0">
         <div className="flex items-center gap-3 border-b px-3 py-1.5">
           <div className="flex min-w-0 items-center gap-2">
             <span className="truncate text-sm font-medium">{activityDisplayText(activity, descriptor)}</span>
@@ -45,6 +49,7 @@ export function ActivityDetailsPane({
               Executions
               {executions.length > 0 && <span className="rounded-full bg-muted px-1.5 text-[10px] tabular-nums">{executions.length}</span>}
             </TabsTrigger>
+            {showRetries && <TabsTrigger value="retries">Retries</TabsTrigger>}
           </TabsList>
           <Button variant="ghost" size="icon-xs" aria-label="Close" onClick={onClose}>
             <X />
@@ -71,6 +76,7 @@ export function ActivityDetailsPane({
           <TabsContent value="activity">
             <JsonViewer value={activity} maxHeight="100%" />
           </TabsContent>
+          {showRetries && <TabsContent value="retries"><RetriesPanel key={activity.id} executions={executions} /></TabsContent>}
           <TabsContent value="executions">
             <ExecutionsTable records={executions} />
           </TabsContent>

@@ -1,5 +1,6 @@
 import { descriptorsApi } from "./endpoints/descriptors.js";
 import { identityApi } from "./endpoints/identity.js";
+import { resilienceApi } from "./endpoints/resilience.js";
 import { workflowDefinitionsApi } from "./endpoints/workflow-definitions.js";
 import { workflowInstancesApi } from "./endpoints/workflow-instances.js";
 import { createHttpClient, type HttpClient, type HttpClientOptions } from "./http.js";
@@ -16,6 +17,7 @@ export function createElsaClient(options: HttpClientOptions) {
     workflowInstances: workflowInstancesApi(http),
     descriptors: descriptorsApi(http),
     identity: identityApi(http),
+    resilience: resilienceApi(http),
   };
 }
 

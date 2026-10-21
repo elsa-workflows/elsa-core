@@ -22,6 +22,8 @@ export function SimpleSelect<T extends string>({
   size = "default",
   disabled,
   allowEmpty,
+  id,
+  "aria-label": ariaLabel,
 }: {
   value: T | undefined | null;
   onChange: (value: T | undefined) => void;
@@ -32,6 +34,8 @@ export function SimpleSelect<T extends string>({
   disabled?: boolean;
   /** Adds a "(none)" entry that clears the value. */
   allowEmpty?: boolean;
+  id?: string;
+  "aria-label"?: string;
 }) {
   const EMPTY = "__none__";
   // The empty entry reads as the placeholder ("Incidents: any", "Not captured"…) rather than a bare "(none)".
@@ -44,7 +48,7 @@ export function SimpleSelect<T extends string>({
       items={items}
       disabled={disabled}
     >
-      <SelectTrigger className={cn("w-full", className)} size={size}>
+      <SelectTrigger id={id} aria-label={ariaLabel} className={cn("w-full", className)} size={size}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent>

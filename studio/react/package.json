@@ -11,6 +11,7 @@
     "typecheck": "pnpm build:packages && tsc --noEmit",
     "test": "pnpm build:packages && vitest run",
     "test:browser": "playwright test",
+    "test:settings-server": "pnpm build:packages && node scripts/test-settings-roundtrip.mjs",
     "build:packages": "pnpm --filter \"./packages/*\" run build",
     "docs:api": "pnpm build:packages && typedoc",
     "test:packages": "pnpm build:packages && node scripts/test-packed-packages.mjs",

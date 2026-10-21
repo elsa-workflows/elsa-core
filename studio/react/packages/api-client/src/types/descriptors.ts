@@ -99,6 +99,13 @@ export interface IncidentStrategyDescriptor {
   description?: string;
 }
 
+/** Named strategy returned by the workflow/activity commit-strategy catalogs. */
+export interface CommitStrategyDescriptor {
+  name: string;
+  displayName: string;
+  description?: string;
+}
+
 export interface WorkflowActivationStrategyDescriptor {
   typeName: string;
   displayName: string;
