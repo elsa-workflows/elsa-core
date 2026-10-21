@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -25,5 +25,16 @@ it("rejects a module name that cannot safely form C# identifiers and package met
     const result = spawnSync(process.execPath, [generator, directory, "--name", "../invalid"], { encoding: "utf8" });
     expect(result.status).toBe(1);
     expect(result.stderr).toContain("PascalCase module name");
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
+it("rejects reserved C# namespace segments before creating any output", () => {
+  const directory = mkdtempSync(join(tmpdir(), "elsa-module-generator-"));
+  const output = join(directory, "module");
+  try {
+    const result = spawnSync(process.execPath, [generator, output, "--company", "Acme.namespace"], { encoding: "utf8" });
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("reserved C# keywords");
+    expect(existsSync(output)).toBe(false);
   } finally { rmSync(directory, { recursive: true, force: true }); }
 });
