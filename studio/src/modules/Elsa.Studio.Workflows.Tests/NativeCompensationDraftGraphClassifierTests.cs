@@ -99,7 +99,23 @@ public sealed class NativeCompensationDraftGraphClassifierTests
         var root = JsonNode.Parse("""
             {"id":"container-1","type":"Test.DynamicContainer","version":1,"channel":{"current":{"type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}}}
             """)!.AsObject();
-        var classifier = CreateClassifier(CreateRegistry(descriptor), new DynamicTestPortProvider());
+        var classifier = CreateClassifier(CreateRegistry(descriptor), new DynamicTestPortProvider("channel"));
+
+        var analysis = await classifier.AnalyzeAsync(root);
+
+        Assert.True(analysis.IsComplete);
+        Assert.True(analysis.ContainsCompensationScope);
+        Assert.True(analysis.ContainsUnsupportedScope);
+    }
+
+    [Fact]
+    public async Task DynamicPortNamedMetadataClassifiesItsCurrentScopeChild()
+    {
+        var descriptor = new ActivityDescriptor { TypeName = "Test.DynamicContainer", Version = 1 };
+        var root = JsonNode.Parse("""
+            {"id":"container-1","type":"Test.DynamicContainer","version":1,"metadata":{"current":{"type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}}}
+            """)!.AsObject();
+        var classifier = CreateClassifier(CreateRegistry(descriptor), new DynamicTestPortProvider("metadata"));
 
         var analysis = await classifier.AnalyzeAsync(root);
 
@@ -227,15 +243,28 @@ public sealed class NativeCompensationDraftGraphClassifierTests
     {
         var descriptor = new ActivityDescriptor { TypeName = "Test.CustomContainer", Version = 1 };
         var root = JsonNode.Parse("""
-            {"id":"container-1","type":"Test.CustomContainer","version":1,"owned":{"nested":{"type":"Elsa.CompensationScope","draftSchemaVersion":1,"steps":[]}}}
+            {"id":"container-1","type":"Test.CustomContainer","version":1,"extensionData":{"current":{"type":"Elsa.CompensationScope","draftSchemaVersion":1,"steps":[]}}}
             """)!.AsObject();
-        var classifier = CreateClassifier(CreateRegistry(descriptor), [], [new CustomContainerResolver(), new DefaultActivityResolver()]);
+        var classifier = CreateClassifier(CreateRegistry(descriptor), [], [new ReservedDataContainerResolver(), new DefaultActivityResolver()]);
 
         var analysis = await classifier.AnalyzeAsync(root);
 
         Assert.True(analysis.IsComplete);
         Assert.True(analysis.ContainsCompensationScope);
         Assert.True(analysis.ContainsUnsupportedScope);
+    }
+
+    [Fact]
+    public async Task LegacyFallbackFailsClosedForUnknownActivityMarkerInsideReservedData()
+    {
+        var root = JsonNode.Parse("""
+            {"id":"custom-1","type":"Test.UnknownContainer","version":1,"metadata":{"current":{"type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}}}
+            """)!.AsObject();
+
+        var analysis = await new NativeCompensationDraftGraphClassifier().AnalyzeAsync(root);
+
+        Assert.False(analysis.IsComplete);
+        Assert.True(analysis.MustRejectProtectedWrite);
     }
 
     private static NativeCompensationDraftGraphClassifier CreateClassifier(
@@ -300,22 +329,22 @@ public sealed class NativeCompensationDraftGraphClassifierTests
         public void MarkStale() { }
     }
 
-    private sealed class DynamicTestPortProvider : ActivityPortProviderBase
+    private sealed class DynamicTestPortProvider(string portName) : ActivityPortProviderBase
     {
         public override double Priority => 100;
         public override bool GetSupportsActivityType(PortProviderContext context) => context.ActivityDescriptor.TypeName == "Test.DynamicContainer";
-        public override IEnumerable<Port> GetPorts(PortProviderContext context) => [new() { Name = "DynamicChild", Type = PortType.Embedded }];
-        public override JsonObject? ResolvePort(string portName, PortProviderContext context) =>
-            context.Activity["channel"]?["current"] as JsonObject;
+        public override IEnumerable<Port> GetPorts(PortProviderContext context) => [new() { Name = portName, Type = PortType.Embedded }];
+        public override JsonObject? ResolvePort(string resolvedPortName, PortProviderContext context) =>
+            resolvedPortName == portName ? context.Activity[portName]?["current"] as JsonObject : null;
     }
 
-    private sealed class CustomContainerResolver : IActivityResolver
+    private sealed class ReservedDataContainerResolver : IActivityResolver
     {
         public int Priority => 100;
         public bool GetSupportsActivity(JsonObject activity) => activity["type"]?.GetValue<string>() == "Test.CustomContainer";
         public ValueTask<IEnumerable<EmbeddedActivity>> GetActivitiesAsync(JsonObject activity, CancellationToken cancellationToken = default) =>
             ValueTask.FromResult<IEnumerable<EmbeddedActivity>>(
-            [new(activity["owned"]!["nested"]!.AsObject(), "owned")]);
+            [new(activity["extensionData"]!["current"]!.AsObject(), "extensionData")]);
     }
 
     private sealed class AnyWorkflowJsonDetector : IWorkflowJsonDetector
