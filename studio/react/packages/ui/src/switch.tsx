@@ -1,4 +1,6 @@
 "use client"
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Switch as SwitchPrimitive } from "@base-ui/react/switch"
 import { cn } from "cn"
@@ -10,6 +12,7 @@ function Switch({
 }: SwitchPrimitive.Root.Props & {
   size?: "sm" | "default"
 }) {
+  useTranslation();
   return (
     <SwitchPrimitive.Root
       data-slot="switch"

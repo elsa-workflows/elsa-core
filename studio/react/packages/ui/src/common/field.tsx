@@ -1,3 +1,5 @@
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
 import type { ReactNode } from "react";
 import { Label } from "@elsa-workflows/react-studio-ui/label";
 import { cn } from "../utils.js";
@@ -23,6 +25,7 @@ export function Field({
   /** Places the label to the right of the control (checkboxes). */
   inline?: boolean;
 }) {
+  useTranslation();
   if (inline) {
     return (
       <div className={cn("flex flex-col gap-1", className)}>

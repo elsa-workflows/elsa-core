@@ -1,3 +1,5 @@
+
+import { translate } from "@elsa-workflows/react-studio-sdk/localization";
 import { studioUrl } from "@elsa-workflows/react-studio-sdk/navigation";
 import { UserManager, WebStorageStateStore, type User } from "oidc-client-ts";
 import type { AuthConfig } from "@elsa-workflows/react-studio-sdk/config";
@@ -68,7 +70,7 @@ export class OidcAuthStrategy extends BaseAuthStrategy {
 
   async initialize() {
     if (!this.options.authority || !this.options.clientId) {
-      this.setSnapshot({ status: "unauthenticated", error: "OIDC authority/clientId are not configured." });
+      this.setSnapshot({ status: "unauthenticated", error: translate("OIDC authority/clientId are not configured.") });
       return;
     }
     const u = await this.getManager().getUser();

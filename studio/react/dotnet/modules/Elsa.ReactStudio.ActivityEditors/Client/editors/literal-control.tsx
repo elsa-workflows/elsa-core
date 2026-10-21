@@ -1,3 +1,5 @@
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
 import type { ReactNode } from "react";
 import { ExpressionEditor } from "../expression-editor";
 import type { UiHintEditorProps } from "../types";
@@ -8,6 +10,7 @@ export function LiteralControl({ props, syntax = "Literal", children }: {
   syntax?: "Literal" | "Object";
   children: (literal: { value: unknown; onChange: (value: unknown) => void }) => ReactNode;
 }) {
+  useTranslation();
   if (props.descriptor.isWrapped === false) {
     return children({ value: props.value, onChange: value => props.onChange(value as UiHintEditorProps["value"]) });
   }

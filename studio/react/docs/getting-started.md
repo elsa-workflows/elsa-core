@@ -6,7 +6,7 @@ This guide takes you from a clone to a signed-in studio connected to an Elsa ser
 
 | Requirement | Version | Notes |
 |---|---|---|
-| Node.js | 22.12 or newer | Used to build Vite assets. |
+| Node.js | 22.13 or newer | Used to build Vite assets. |
 | .NET SDK | 10 | Runs the ASP.NET host. |
 | pnpm | 10 | The repository pins `pnpm@10.33.0` through `packageManager`. |
 | Elsa server | 3.x | Must expose the REST API and allow the studio's origin through CORS. |

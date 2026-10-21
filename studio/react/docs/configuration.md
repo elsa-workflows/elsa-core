@@ -121,6 +121,7 @@ here. [Modules](modules.md) lists the requirement for each one.
 {
   "ui": {
     "defaultTheme": "system",
+    "defaultCulture": "en",
     "theme": "classic",
     "pollIntervalMs": 5000,
     "defaultPageSize": 25
@@ -131,6 +132,7 @@ here. [Modules](modules.md) lists the requirement for each one.
 | Setting | Values | Meaning |
 |---|---|---|
 | `defaultTheme` | `light`, `dark`, `system` | Starting appearance. Users can override it from the header. |
+| `defaultCulture` | `en`, `nl`, or a culture contributed by a module | Initial language when the current account has no saved preference. See [localization](localization.md). |
 | `theme` | `classic`, `workflow-constellation`, `workflow-aurora`, `execution-timeline`, `human-automation` | Elsa colour palette. |
 | `pollIntervalMs` | milliseconds | Refresh interval for live views such as the instances list and the instance viewer. |
 | `defaultPageSize` | number | Default rows per page in lists. |

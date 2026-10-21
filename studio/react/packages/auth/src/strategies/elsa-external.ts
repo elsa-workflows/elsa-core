@@ -1,3 +1,5 @@
+
+import { translate } from "@elsa-workflows/react-studio-sdk/localization";
 import { studioUrl } from "@elsa-workflows/react-studio-sdk/navigation";
 import type { AuthConfig } from "@elsa-workflows/react-studio-sdk/config";
 import { readTokens, writeTokens } from "../storage.js";
@@ -101,7 +103,7 @@ export class ElsaExternalAuthStrategy extends BaseAuthStrategy {
       headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
       body: new URLSearchParams(form).toString(),
     });
-    if (!res.ok) throw new Error(`token endpoint failed (${res.status})`);
+    if (!res.ok) throw new Error(translate("token endpoint failed ({{value0}})", { value0: res.status }));
     return (await res.json()) as TokenResponse;
   }
 
@@ -154,8 +156,8 @@ export class ElsaExternalAuthStrategy extends BaseAuthStrategy {
         }),
       });
       if (!res.ok) {
-        this.setSnapshot({ status: "unauthenticated", error: "Invalid username or password." });
-        throw new Error("Invalid username or password.");
+        this.setSnapshot({ status: "unauthenticated", error: translate("Invalid username or password.") });
+        throw new Error(translate("Invalid username or password."));
       }
       const { redirectUri } = (await res.json()) as { redirectUri: string };
       window.location.assign(redirectUri);
@@ -163,7 +165,7 @@ export class ElsaExternalAuthStrategy extends BaseAuthStrategy {
     }
 
     const initiation = method?.initiationUrl ?? (await this.getLoginMethods()).find((m) => m.kind === "external")?.initiationUrl;
-    if (!initiation) throw new Error("No external login method is available.");
+    if (!initiation) throw new Error(translate("No external login method is available."));
     const target = new URL(initiation, this.apiBaseUrl);
     Object.entries(common).forEach(([k, v]) => target.searchParams.set(k, v));
     window.location.assign(target.toString());
@@ -175,7 +177,7 @@ export class ElsaExternalAuthStrategy extends BaseAuthStrategy {
     const state = params.get("state");
     const stored = JSON.parse(sessionStorage.getItem(PKCE_KEY) ?? "null") as { verifier: string; state: string; returnTo?: string } | null;
     sessionStorage.removeItem(PKCE_KEY);
-    if (!code || !stored || !state || stored.state !== state) throw new Error("Invalid sign-in callback.");
+    if (!code || !stored || !state || stored.state !== state) throw new Error(translate("Invalid sign-in callback."));
     const data = await this.token({
       grant_type: "authorization_code",
       code,

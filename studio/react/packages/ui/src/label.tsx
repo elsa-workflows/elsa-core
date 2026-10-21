@@ -1,9 +1,12 @@
 "use client"
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import * as React from "react"
 import { cn } from "cn"
 
 function Label({ className, ...props }: React.ComponentProps<"label">) {
+  useTranslation();
   return (
     <label
       data-slot="label"

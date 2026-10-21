@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { memo, useEffect, useRef, useState } from "react";
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
@@ -24,6 +26,7 @@ export interface StateNodeData extends Record<string, unknown> {
 export type StateFlowNode = Node<StateNodeData, "state">;
 
 function StateNodeComponent({ data, selected }: NodeProps<StateFlowNode>) {
+  const _t = useTranslation();
   const { state, index, isInitial, isCurrent, readOnly, warning, smId } = data;
   const { store } = useDesigner();
   const renaming = useDesignerState((s) => s.renamingId === selectionId.state(state.name));
@@ -62,7 +65,7 @@ function StateNodeComponent({ data, selected }: NodeProps<StateFlowNode>) {
       <Handle type="source" position={Position.Right} id="out" className="!size-3 !rounded-full !border-2 !border-card !bg-primary" style={{ top: "50%" }} isConnectable={!readOnly} />
 
       {isInitial && (
-        <span className="absolute -left-2.5 -top-2.5 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow" title="Initial state">
+        <span className="absolute -left-2.5 -top-2.5 flex size-6 items-center justify-center rounded-full bg-primary text-primary-foreground shadow" title={_t("Initial state")}>
           <CirclePlay className="size-3.5" />
         </span>
       )}
@@ -73,11 +76,11 @@ function StateNodeComponent({ data, selected }: NodeProps<StateFlowNode>) {
       )}
 
       <div className="px-3 pt-2.5 pb-2">
-        <div className="eyebrow text-[9px]">{isCurrent ? "Current state" : "State"}</div>
+        <div className="eyebrow text-[9px]">{isCurrent ? _t("Current state") : _t("State")}</div>
         {renaming ? (
           <RenameState name={state.name} onDone={() => store.getState().startRename(undefined)} />
         ) : (
-          <div className="truncate text-sm font-semibold leading-tight">{state.name || <span className="italic text-muted-foreground">(unnamed)</span>}</div>
+          <div className="truncate text-sm font-semibold leading-tight">{state.name || <span className="italic text-muted-foreground">{_t("(unnamed)")}</span>}</div>
         )}
       </div>
 
@@ -90,14 +93,14 @@ function StateNodeComponent({ data, selected }: NodeProps<StateFlowNode>) {
               type="button"
               className="nodrag flex items-center justify-between gap-2 rounded border border-dashed px-2 py-1 text-left text-[11px] hover:bg-muted"
               onClick={(e) => slot(kind, child, e)}
-              title={child ? `Open ${kind} activity` : `Add ${kind} activity`}
+              title={child ? _t("Open {{value0}} activity", { value0: kind }) : _t("Add {{value0}} activity", { value0: kind })}
             >
               <span className="flex items-center gap-1 font-medium text-muted-foreground">
                 {kind === "entry" ? <LogIn className="size-3" /> : <LogOut className="size-3" />}
-                {kind === "entry" ? "On entry" : "On exit"}
+                {kind === "entry" ? _t("On entry") : _t("On exit")}
               </span>
               <span className="flex items-center gap-1 truncate">
-                {child ? <span className="truncate text-foreground">{activityDisplayText(child)}</span> : <span className="text-muted-foreground">none</span>}
+                {child ? <span className="truncate text-foreground">{activityDisplayText(child)}</span> : <span className="text-muted-foreground">{_t("none")}</span>}
                 {child ? <ChevronRight className="size-3" /> : !readOnly && <Plus className="size-3" />}
               </span>
             </button>
@@ -108,8 +111,8 @@ function StateNodeComponent({ data, selected }: NodeProps<StateFlowNode>) {
       {!readOnly && (
         <button
           type="button"
-          aria-label="Add transition"
-          title="Add a transition from this state"
+          aria-label={_t("Add transition")}
+          title={_t("Add a transition from this state")}
           className="nodrag absolute -right-8 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center rounded-full border bg-card text-muted-foreground opacity-0 shadow-sm transition-opacity hover:border-primary hover:text-primary group-hover/state:opacity-100 data-[selected=true]:opacity-100"
           data-selected={selected}
           onClick={(e) => {
@@ -126,6 +129,7 @@ function StateNodeComponent({ data, selected }: NodeProps<StateFlowNode>) {
 }
 
 function RenameState({ name, onDone }: { name: string; onDone: () => void }) {
+  useTranslation();
   const { store } = useDesigner();
   const [value, setValue] = useState(name);
   const ref = useRef<HTMLInputElement>(null);

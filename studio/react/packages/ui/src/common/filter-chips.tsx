@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { cn } from "../utils.js";
 
@@ -10,6 +12,7 @@ export interface FilterChip<T extends string> {
 
 /** Single-choice chip row used for quick list filters (All / Published / Drafts…). */
 export function FilterChips<T extends string>({ value, options, onChange, className }: { value: T; options: FilterChip<T>[]; onChange: (v: T) => void; className?: string }) {
+  useTranslation();
   return (
     <div className={cn("inline-flex items-center gap-1 rounded-lg border bg-card p-0.5", className)} role="tablist">
       {options.map((o) => (

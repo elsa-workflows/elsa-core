@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
@@ -19,6 +21,7 @@ import { DataUsageChips } from "./data-usage";
 const EMPTY: Variable = { id: "", name: "", typeName: "Object", isArray: false, value: undefined, storageDriverTypeName: undefined };
 
 export function VariablesTab() {
+  const _t = useTranslation();
   const { definition, updateDefinition, readOnly } = useWorkflowEditor();
   const { dataFlow } = useDesigner();
   const [editing, setEditing] = useState<Variable | null>(null);
@@ -33,26 +36,25 @@ export function VariablesTab() {
   return (
     <div className="flex flex-col gap-3 p-3">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">Variables hold state for the lifetime of a workflow instance. Hover a usage count to see where it flows.</p>
+        <p className="text-sm text-muted-foreground">{_t("Variables hold state for the lifetime of a workflow instance. Hover a usage count to see where it flows.")}</p>
         {!readOnly && (
           <Button size="sm" variant="outline" onClick={() => setEditing({ ...EMPTY, id: newActivityId() })}>
-            <Plus /> Add variable
-          </Button>
+            <Plus /> {_t("Add variable")}</Button>
         )}
       </div>
       <div className="rounded-md border">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Variable</TableHead>
-              <TableHead>Used</TableHead>
+              <TableHead>{_t("Variable")}</TableHead>
+              <TableHead>{_t("Used")}</TableHead>
               <TableHead className="w-16" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {variables.length === 0 && (
               <TableRow>
-                <TableCell colSpan={3} className="text-center text-muted-foreground">No variables.</TableCell>
+                <TableCell colSpan={3} className="text-center text-muted-foreground">{_t("No variables.")}</TableCell>
               </TableRow>
             )}
             {variables.map((v) => (
@@ -61,7 +63,7 @@ export function VariablesTab() {
                   <div className="truncate font-medium">{v.name}</div>
                   <div className="truncate text-xs text-muted-foreground">
                     {v.typeName}{v.isArray ? "[]" : ""}
-                    {v.value !== undefined && v.value !== null && v.value !== "" && <> · default {String(v.value)}</>}
+                    {v.value !== undefined && v.value !== null && v.value !== "" && <> {_t("· default")}{" "}{String(v.value)}</>}
                     {v.storageDriverTypeName && <> · {v.storageDriverTypeName.split(",")[0].split(".").pop()?.replace("StorageDriver", "")}</>}
                   </div>
                 </TableCell>
@@ -69,8 +71,8 @@ export function VariablesTab() {
                 <TableCell>
                   {!readOnly && (
                     <div className="flex justify-end gap-0.5">
-                      <Button variant="ghost" size="icon-xs" aria-label="Edit" onClick={() => setEditing(v)}><Pencil /></Button>
-                      <Button variant="ghost" size="icon-xs" aria-label="Delete" onClick={() => updateDefinition({ variables: variables.filter((x) => x.id !== v.id) })}><Trash2 /></Button>
+                      <Button variant="ghost" size="icon-xs" aria-label={_t("Edit")} onClick={() => setEditing(v)}><Pencil /></Button>
+                      <Button variant="ghost" size="icon-xs" aria-label={_t("Delete")} onClick={() => updateDefinition({ variables: variables.filter((x) => x.id !== v.id) })}><Trash2 /></Button>
                     </div>
                   )}
                 </TableCell>
@@ -85,6 +87,7 @@ export function VariablesTab() {
 }
 
 function VariableDialog({ variable, onSave, onClose }: { variable: Variable; onSave: (v: Variable) => void; onClose: () => void }) {
+  const _t = useTranslation();
   const [draft, setDraft] = useState(variable);
   const { items: types } = useVariableTypes();
   const { items: drivers } = useStorageDrivers();
@@ -92,28 +95,28 @@ function VariableDialog({ variable, onSave, onClose }: { variable: Variable; onS
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{variable.name ? "Edit variable" : "Add variable"}</DialogTitle>
+          <DialogTitle>{variable.name ? _t("Edit variable") : _t("Add variable")}</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col gap-4">
-          <Field label="Name" required>
+          <Field label={_t("Name")} required>
             <Input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} autoFocus />
           </Field>
-          <Field label="Type">
+          <Field label={_t("Type")}>
             <SimpleSelect value={draft.typeName} options={types.map((t) => ({ value: t.typeName, label: t.displayName }))} onChange={(v) => setDraft({ ...draft, typeName: v ?? "Object" })} />
           </Field>
-          <Field inline label="Array">
+          <Field inline label={_t("Array")}>
             <Checkbox checked={draft.isArray === true} onCheckedChange={(c) => setDraft({ ...draft, isArray: c === true })} />
           </Field>
-          <Field label="Default value">
+          <Field label={_t("Default value")}>
             <Input value={draft.value === undefined || draft.value === null ? "" : String(draft.value)} onChange={(e) => setDraft({ ...draft, value: e.target.value === "" ? undefined : e.target.value })} />
           </Field>
-          <Field label="Storage driver" hint="Where the value is persisted between activities.">
+          <Field label={_t("Storage driver")} hint={_t("Where the value is persisted between activities.")}>
             <SimpleSelect value={draft.storageDriverTypeName} allowEmpty options={drivers.map((d) => ({ value: d.typeName, label: d.displayName }))} onChange={(v) => setDraft({ ...draft, storageDriverTypeName: v })} />
           </Field>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button disabled={!draft.name.trim()} onClick={() => onSave(draft)}>Save</Button>
+          <Button variant="outline" onClick={onClose}>{_t("Cancel")}</Button>
+          <Button disabled={!draft.name.trim()} onClick={() => onSave(draft)}>{_t("Save")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

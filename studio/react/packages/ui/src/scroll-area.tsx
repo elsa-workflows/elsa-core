@@ -1,4 +1,6 @@
 "use client"
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import * as React from "react"
 import { ScrollArea as ScrollAreaPrimitive } from "@base-ui/react/scroll-area"
@@ -9,6 +11,7 @@ function ScrollArea({
   children,
   ...props
 }: ScrollAreaPrimitive.Root.Props) {
+  useTranslation();
   return (
     <ScrollAreaPrimitive.Root
       data-slot="scroll-area"
@@ -32,6 +35,7 @@ function ScrollBar({
   orientation = "vertical",
   ...props
 }: ScrollAreaPrimitive.Scrollbar.Props) {
+  useTranslation();
   return (
     <ScrollAreaPrimitive.Scrollbar
       data-slot="scroll-area-scrollbar"

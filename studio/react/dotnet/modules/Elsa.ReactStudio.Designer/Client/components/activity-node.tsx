@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { memo, useEffect, useRef, useState } from "react";
 import { Handle, Position, type Node, type NodeProps } from "@xyflow/react";
@@ -34,6 +36,7 @@ export interface ActivityNodeData extends Record<string, unknown> {
 export type ActivityFlowNode = Node<ActivityNodeData, "activity">;
 
 function StatsBadge({ stats }: { stats: ActivityExecutionStats }) {
+  const _t = useTranslation();
   const tone = stats.isFaulted
     ? "bg-red-500 text-white"
     : stats.isBlocked
@@ -47,7 +50,7 @@ function StatsBadge({ stats }: { stats: ActivityExecutionStats }) {
   return (
     <span
       className={cn("absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center gap-0.5 rounded-full px-1.5 text-[10px] font-semibold shadow", tone)}
-      title={`started ${stats.startedCount}, completed ${stats.completedCount}, uncompleted ${stats.uncompletedCount}`}
+      title={_t("started {{value0}}, completed {{value1}}, uncompleted {{value2}}", { value0: stats.startedCount, value1: stats.completedCount, value2: stats.uncompletedCount })}
     >
       {stats.isFaulted ? <AlertTriangle className="size-3" /> : stats.isBlocked ? <Hourglass className="size-3" /> : stats.uncompletedCount > 0 ? <PlayCircle className="size-3" /> : null}
       {count}
@@ -56,6 +59,7 @@ function StatsBadge({ stats }: { stats: ActivityExecutionStats }) {
 }
 
 function InlineRename({ activity, onDone }: { activity: Activity; onDone: () => void }) {
+  useTranslation();
   const { store } = useDesigner();
   const [value, setValue] = useState(activity.name ?? "");
   const ref = useRef<HTMLInputElement>(null);
@@ -86,6 +90,7 @@ function InlineRename({ activity, onDone }: { activity: Activity; onDone: () => 
 }
 
 function ActivityNodeComponent({ data, selected }: NodeProps<ActivityFlowNode>) {
+  const _t = useTranslation();
   const { activity, descriptor, ports, stats, readOnly, issues, dataSummary, dataRole } = data;
   const highlightActive = useDesignerState((s) => !!s.dataHighlight);
   const { store } = useDesigner();
@@ -163,7 +168,7 @@ function ActivityNodeComponent({ data, selected }: NodeProps<ActivityFlowNode>) 
               <div className="flex items-center gap-1">
                 {renaming ? <InlineRename activity={activity} onDone={() => store.getState().startRename(undefined)} /> : <div className="truncate text-sm font-medium leading-tight">{title}</div>}
                 {canStart && (
-                  <span title="Can start workflow">
+                  <span title={_t("Can start workflow")}>
                     <Zap className="size-3 text-amber-500" />
                   </span>
                 )}
@@ -176,12 +181,12 @@ function ActivityNodeComponent({ data, selected }: NodeProps<ActivityFlowNode>) 
           {dataSummary && (dataSummary.writes.length > 0 || dataSummary.reads.length > 0) && (
             <div className="flex flex-wrap gap-1 border-t border-dashed px-2.5 py-1.5">
               {dataSummary.writes.map((d) => (
-                <span key={`w-${d.kind}-${d.key}`} className="rounded-full bg-status-warning/15 px-1.5 text-[10px] font-medium text-status-warning" title={`Writes ${d.kind} ${d.name}`}>
+                <span key={`w-${d.kind}-${d.key}`} className="rounded-full bg-status-warning/15 px-1.5 text-[10px] font-medium text-status-warning" title={_t("Writes {{value0}} {{value1}}", { value0: d.kind, value1: d.name })}>
                   ↑ {d.name}
                 </span>
               ))}
               {dataSummary.reads.map((d) => (
-                <span key={`r-${d.kind}-${d.key}`} className="rounded-full bg-status-info/15 px-1.5 text-[10px] font-medium text-status-info" title={`Reads ${d.kind} ${d.name}`}>
+                <span key={`r-${d.kind}-${d.key}`} className="rounded-full bg-status-info/15 px-1.5 text-[10px] font-medium text-status-info" title={_t("Reads {{value0}} {{value1}}", { value0: d.kind, value1: d.name })}>
                   ↓ {d.name}
                 </span>
               ))}
@@ -203,7 +208,7 @@ function ActivityNodeComponent({ data, selected }: NodeProps<ActivityFlowNode>) 
                       if (child) store.getState().enterSlot(activity.id, slot);
                       else if (!readOnly) store.getState().openQuickAdd({ screen: { x: e.clientX + 8, y: e.clientY - 20 }, slot: { activityId: activity.id, slot }, allowContainers: true });
                     }}
-                    title={child ? `Open ${port.displayName}` : `Add activities to ${port.displayName}`}
+                    title={child ? _t("Open {{value0}}", { value0: port.displayName }) : _t("Add activities to {{value0}}", { value0: port.displayName })}
                   >
                     <span className="font-medium">{port.displayName}</span>
                     <span className="flex items-center gap-1 text-muted-foreground">
@@ -225,8 +230,8 @@ function ActivityNodeComponent({ data, selected }: NodeProps<ActivityFlowNode>) 
                 {!readOnly && (
                   <button
                     type="button"
-                    aria-label={`Add activity after ${port.displayName}`}
-                    title={`Add activity after ${port.displayName}`}
+                    aria-label={_t("Add activity after {{value0}}", { value0: port.displayName })}
+                    title={_t("Add activity after {{value0}}", { value0: port.displayName })}
                     className="nodrag absolute -right-8 top-1/2 flex size-5 -translate-y-1/2 items-center justify-center rounded-full border bg-card text-muted-foreground opacity-0 shadow-sm transition-opacity hover:border-primary hover:text-primary group-hover/node:opacity-100 data-[selected=true]:opacity-100"
                     data-selected={selected}
                     onClick={(e) => {

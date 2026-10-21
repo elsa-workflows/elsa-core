@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { ArrowLeft, Ban, FlaskConical, KeyRound, Loader2, Pencil, RefreshCw, Save, Trash2, X } from "lucide-react";
 import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
@@ -33,6 +35,7 @@ import { SecretRoutes } from "../routes";
  * Mirrors the Blazor `Secret.razor` page; the value itself is never shown.
  */
 export function SecretDetailPage({ params }: { params: RouteParams }) {
+  const _t = useTranslation();
   const name = params.name;
   const router = useRouter();
   const confirm = useConfirm();
@@ -57,15 +60,15 @@ export function SecretDetailPage({ params }: { params: RouteParams }) {
   const onRevoke = async () => {
     if (!secret) return;
     const ok = await confirm({
-      title: `Revoke "${secret.name}"?`,
-      description: "Workflows can no longer resolve this secret. The record stays for auditing and can be rotated to a new value later.",
-      confirmLabel: "Revoke",
+      title: _t("Revoke \"{{value0}}\"?", { value0: secret.name }),
+      description: _t("Workflows can no longer resolve this secret. The record stays for auditing and can be rotated to a new value later."),
+      confirmLabel: _t("Revoke"),
       destructive: true,
     });
     if (!ok) return;
     try {
       await revoke.mutateAsync(secret.name);
-      toast.success(`Secret "${secret.name}" revoked`);
+      toast.success(_t("Secret \"{{value0}}\" revoked", { value0: secret.name }));
     } catch (err) {
       toast.error(describeError(err));
     }
@@ -74,15 +77,15 @@ export function SecretDetailPage({ params }: { params: RouteParams }) {
   const onDelete = async () => {
     if (!secret) return;
     const ok = await confirm({
-      title: `Delete "${secret.name}"?`,
-      description: "All versions are removed permanently. Workflows referencing it will fail to resolve the secret.",
-      confirmLabel: "Delete",
+      title: _t("Delete \"{{value0}}\"?", { value0: secret.name }),
+      description: _t("All versions are removed permanently. Workflows referencing it will fail to resolve the secret."),
+      confirmLabel: _t("Delete"),
       destructive: true,
     });
     if (!ok) return;
     try {
       await remove.mutateAsync(secret.name);
-      toast.success(`Secret "${secret.name}" deleted`);
+      toast.success(_t("Secret \"{{value0}}\" deleted", { value0: secret.name }));
       router.push(SecretRoutes.list);
     } catch (err) {
       toast.error(describeError(err));
@@ -93,8 +96,8 @@ export function SecretDetailPage({ params }: { params: RouteParams }) {
     if (!secret) return;
     try {
       const result = await test.mutateAsync(secret.name);
-      if (result.succeeded) toast.success(`"${secret.name}" resolves correctly`);
-      else toast.error(`"${secret.name}" failed to resolve${result.error ? `: ${result.error}` : ""}`);
+      if (result.succeeded) toast.success(_t("\"{{value0}}\" resolves correctly", { value0: secret.name }));
+      else toast.error(_t("\"{{value0}}\" failed to resolve{{value1}}", { value0: secret.name, value1: result.error ? `: ${result.error}` : "" }));
     } catch (err) {
       toast.error(describeError(err));
     }
@@ -103,7 +106,7 @@ export function SecretDetailPage({ params }: { params: RouteParams }) {
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
-        eyebrow="Secret"
+        eyebrow={_t("Secret")}
         title={
           secret ? (
             <span className="flex items-center gap-3">
@@ -127,7 +130,7 @@ export function SecretDetailPage({ params }: { params: RouteParams }) {
               <SecretStatusBadge status={secret.status} />
               <Badge variant="outline">{typeLabel}</Badge>
               <Badge variant="outline">{storeLabel}</Badge>
-              <Badge variant="outline">Version {secret.currentVersion ?? "–"}</Badge>
+              <Badge variant="outline">{_t("Version")}{" "}{secret.currentVersion ?? "–"}</Badge>
             </span>
           )
         }
@@ -136,18 +139,16 @@ export function SecretDetailPage({ params }: { params: RouteParams }) {
             {secret && canTest && (
               <Button size="sm" variant="outline" onClick={() => void onTest()} disabled={test.isPending}>
                 {test.isPending ? <Loader2 className="animate-spin" data-icon="inline-start" /> : <FlaskConical data-icon="inline-start" />}
-                Test resolution
-              </Button>
+                {_t("Test resolution")}</Button>
             )}
             <Button variant="ghost" size="sm" nativeButton={false} render={<Link href={SecretRoutes.list} />}>
               <ArrowLeft data-icon="inline-start" />
-              All secrets
-            </Button>
+              {_t("All secrets")}</Button>
           </>
         }
       />
 
-      <ErrorAlert error={query.error} title="Could not load the secret" />
+      <ErrorAlert error={query.error} title={_t("Could not load the secret")} />
 
       {query.isLoading && (
         <div className="flex flex-col gap-3">
@@ -159,8 +160,8 @@ export function SecretDetailPage({ params }: { params: RouteParams }) {
       {secret && (
         <Tabs defaultValue="overview">
           <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            {canWrite && <TabsTrigger value="rotation">Rotation</TabsTrigger>}
+            <TabsTrigger value="overview">{_t("Overview")}</TabsTrigger>
+            {canWrite && <TabsTrigger value="rotation">{_t("Rotation")}</TabsTrigger>}
           </TabsList>
 
           <TabsContent value="overview" className="mt-4">
@@ -169,19 +170,19 @@ export function SecretDetailPage({ params }: { params: RouteParams }) {
                 <DetailsCard secret={secret} canWrite={canWrite} />
                 <Card>
                   <CardHeader>
-                    <CardTitle>Properties</CardTitle>
-                    <CardDescription>Fixed at creation. Create a new secret to change the type, store or scope.</CardDescription>
+                    <CardTitle>{_t("Properties")}</CardTitle>
+                    <CardDescription>{_t("Fixed at creation. Create a new secret to change the type, store or scope.")}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <KeyValueTable
                       rows={[
-                        { label: "Technical name", value: <span className="font-mono text-xs">{secret.name}</span> },
-                        { label: "Type", value: typeLabel },
-                        { label: "Store", value: storeLabel },
+                        { label: _t("Technical name"), value: <span className="font-mono text-xs">{secret.name}</span> },
+                        { label: _t("Type"), value: typeLabel },
+                        { label: _t("Store"), value: storeLabel },
                         ...storeRows,
-                        { label: "Scope", value: secret.scope || undefined },
+                        { label: _t("Scope"), value: secret.scope || undefined },
                         {
-                          label: "Tags",
+                          label: _t("Tags"),
                           value:
                             secret.tags.length > 0 ? (
                               <span className="flex flex-wrap gap-1">
@@ -193,8 +194,8 @@ export function SecretDetailPage({ params }: { params: RouteParams }) {
                               </span>
                             ) : undefined,
                         },
-                        { label: "Created", value: <Timestamp value={secret.createdAt} /> },
-                        { label: "Updated", value: secret.updatedAt ? <Timestamp value={secret.updatedAt} /> : undefined },
+                        { label: _t("Created"), value: <Timestamp value={secret.createdAt} /> },
+                        { label: _t("Updated"), value: secret.updatedAt ? <Timestamp value={secret.updatedAt} /> : undefined },
                       ]}
                     />
                   </CardContent>
@@ -204,39 +205,37 @@ export function SecretDetailPage({ params }: { params: RouteParams }) {
               <div className="flex flex-col gap-4">
                 <Card>
                   <CardHeader>
-                    <CardTitle>At a glance</CardTitle>
+                    <CardTitle>{_t("At a glance")}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <KeyValueTable
                       className="grid-cols-[auto_1fr]"
                       rows={[
-                        { label: "Status", value: <SecretStatusBadge status={secret.status} /> },
-                        { label: "Version", value: secret.currentVersion ?? undefined },
-                        { label: "Expires", value: secret.expiresAt ? <Timestamp value={secret.expiresAt} relative /> : "Never" },
+                        { label: _t("Status"), value: <SecretStatusBadge status={secret.status} /> },
+                        { label: _t("Version"), value: secret.currentVersion ?? undefined },
+                        { label: _t("Expires"), value: secret.expiresAt ? <Timestamp value={secret.expiresAt} relative /> : "Never" },
                       ]}
                     />
-                    <p className="mt-4 text-xs text-muted-foreground">Rotate this secret when its value changes or as part of your credential policy.</p>
+                    <p className="mt-4 text-xs text-muted-foreground">{_t("Rotate this secret when its value changes or as part of your credential policy.")}</p>
                   </CardContent>
                 </Card>
 
                 {(canWrite || canDelete) && (
                   <Card className="border-destructive/30">
                     <CardHeader>
-                      <CardTitle>Danger zone</CardTitle>
-                      <CardDescription>These actions interrupt workflows that depend on this secret.</CardDescription>
+                      <CardTitle>{_t("Danger zone")}</CardTitle>
+                      <CardDescription>{_t("These actions interrupt workflows that depend on this secret.")}</CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col gap-2">
                       {canWrite && secret.status === "Active" && (
                         <Button variant="outline" size="sm" className="justify-start text-destructive" onClick={() => void onRevoke()} disabled={revoke.isPending}>
                           <Ban data-icon="inline-start" />
-                          Revoke secret
-                        </Button>
+                          {_t("Revoke secret")}</Button>
                       )}
                       {canDelete && (
                         <Button variant="destructive" size="sm" className="justify-start" onClick={() => void onDelete()} disabled={remove.isPending}>
                           <Trash2 data-icon="inline-start" />
-                          Delete secret
-                        </Button>
+                          {_t("Delete secret")}</Button>
                       )}
                     </CardContent>
                   </Card>
@@ -251,12 +250,12 @@ export function SecretDetailPage({ params }: { params: RouteParams }) {
                 <RotationCard secret={secret} descriptors={descriptors.data} className="lg:col-span-2" />
                 <Card>
                   <CardHeader>
-                    <CardTitle>How rotation works</CardTitle>
+                    <CardTitle>{_t("How rotation works")}</CardTitle>
                   </CardHeader>
                   <CardContent className="flex flex-col gap-2 text-sm text-muted-foreground">
-                    <p>A successful rotation creates the next version and retires the previous one.</p>
-                    <p>Workflows resolve the new value on their next run. Nothing needs to be republished.</p>
-                    <p>Elsa Studio never displays a stored value, so keep a copy where you manage credentials.</p>
+                    <p>{_t("A successful rotation creates the next version and retires the previous one.")}</p>
+                    <p>{_t("Workflows resolve the new value on their next run. Nothing needs to be republished.")}</p>
+                    <p>{_t("Elsa Studio never displays a stored value, so keep a copy where you manage credentials.")}</p>
                   </CardContent>
                 </Card>
               </div>
@@ -270,6 +269,7 @@ export function SecretDetailPage({ params }: { params: RouteParams }) {
 
 /** Display name and description, editable in place. */
 function DetailsCard({ secret, canWrite }: { secret: SecretModel; canWrite: boolean }) {
+  const _t = useTranslation();
   const [editing, setEditing] = useState(false);
   const [displayName, setDisplayName] = useState(secret.displayName ?? "");
   const [description, setDescription] = useState(secret.description ?? "");
@@ -285,7 +285,7 @@ function DetailsCard({ secret, canWrite }: { secret: SecretModel; canWrite: bool
     e.preventDefault();
     try {
       await update.mutateAsync({ name: secret.name, displayName: displayName.trim() || undefined, description: description.trim() || undefined });
-      toast.success(`Secret "${secret.name}" updated`);
+      toast.success(_t("Secret \"{{value0}}\" updated", { value0: secret.name }));
       setEditing(false);
     } catch (err) {
       toast.error(describeError(err));
@@ -295,42 +295,39 @@ function DetailsCard({ secret, canWrite }: { secret: SecretModel; canWrite: bool
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Details</CardTitle>
-        <CardDescription>Identity and metadata for this stored secret.</CardDescription>
+        <CardTitle>{_t("Details")}</CardTitle>
+        <CardDescription>{_t("Identity and metadata for this stored secret.")}</CardDescription>
         {canWrite && !editing && (
           <CardAction>
             <Button variant="outline" size="sm" onClick={start}>
               <Pencil data-icon="inline-start" />
-              Edit details
-            </Button>
+              {_t("Edit details")}</Button>
           </CardAction>
         )}
       </CardHeader>
       <CardContent>
         {editing ? (
           <form onSubmit={submit} className="flex flex-col gap-4">
-            <Field label="Display name" htmlFor="secret-display-name">
+            <Field label={_t("Display name")} htmlFor="secret-display-name">
               <Input id="secret-display-name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
             </Field>
-            <Field label="Description" htmlFor="secret-description">
+            <Field label={_t("Description")} htmlFor="secret-description">
               <Textarea id="secret-description" value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />
             </Field>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(false)} disabled={update.isPending}>
                 <X data-icon="inline-start" />
-                Cancel
-              </Button>
+                {_t("Cancel")}</Button>
               <Button type="submit" size="sm" disabled={update.isPending}>
                 {update.isPending ? <Loader2 className="animate-spin" data-icon="inline-start" /> : <Save data-icon="inline-start" />}
-                Save details
-              </Button>
+                {_t("Save details")}</Button>
             </div>
           </form>
         ) : (
           <KeyValueTable
             rows={[
-              { label: "Display name", value: secret.displayName || undefined },
-              { label: "Description", value: secret.description ? <span className="whitespace-pre-wrap">{secret.description}</span> : undefined },
+              { label: _t("Display name"), value: secret.displayName || undefined },
+              { label: _t("Description"), value: secret.description ? <span className="whitespace-pre-wrap">{secret.description}</span> : undefined },
             ]}
           />
         )}
@@ -341,6 +338,7 @@ function DetailsCard({ secret, canWrite }: { secret: SecretModel; canWrite: bool
 
 /** Inline rotation form; the same rules as `RotateSecretDialog` (the store declares which fields it needs). */
 function RotationCard({ secret, descriptors, className }: { secret: SecretModel; descriptors: SecretDescriptorsResponse | undefined; className?: string }) {
+  const _t = useTranslation();
   const type = descriptors?.types.find((t) => t.name === secret.typeName);
   const store = descriptors?.stores.find((s) => s.name === secret.storeName);
   const storeFields = useStoreFields(store);
@@ -361,7 +359,7 @@ function RotationCard({ secret, descriptors, className }: { secret: SecretModel;
         metadata: storeFields.metadata,
         expiresAt: toIsoOrNull(expiresAt),
       });
-      toast.success(`Secret "${secret.name}" rotated to version ${updated.currentVersion ?? "?"}`);
+      toast.success(_t("Secret \"{{value0}}\" rotated to version {{value1}}", { value0: secret.name, value1: updated.currentVersion ?? "?" }));
       setValue("");
       storeFields.reset();
       setExpiresAt("");
@@ -373,26 +371,25 @@ function RotationCard({ secret, descriptors, className }: { secret: SecretModel;
   return (
     <Card className={className}>
       <CardHeader>
-        <CardTitle>Rotate secret</CardTitle>
-        <CardDescription>Replace the stored value and optionally set an expiry for the new version.</CardDescription>
+        <CardTitle>{_t("Rotate secret")}</CardTitle>
+        <CardDescription>{_t("Replace the stored value and optionally set an expiry for the new version.")}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={submit} className="flex flex-col gap-4">
           <Alert>
             <AlertDescription>
-              This creates version {(secret.currentVersion ?? 0) + 1}. {secret.status !== "Active" && "Rotating a revoked or expired secret makes it active again."}
+              {_t("This creates version")}{" "}{(secret.currentVersion ?? 0) + 1}. {secret.status !== "Active" && "Rotating a revoked or expired secret makes it active again."}
             </AlertDescription>
           </Alert>
           <StoreFields state={storeFields} idPrefix="rotate" />
-          {requiresValue && <SecretValueField value={value} onChange={setValue} editorHint={type?.editorHint} label="New value" hint={valueHintFor(store)} required />}
-          <Field label="Expires at" htmlFor="rotate-expires" hint="Optional.">
+          {requiresValue && <SecretValueField value={value} onChange={setValue} editorHint={type?.editorHint} label={_t("New value")} hint={valueHintFor(store)} required />}
+          <Field label={_t("Expires at")} htmlFor="rotate-expires" hint={_t("Optional.")}>
             <Input id="rotate-expires" type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} className="max-w-xs" />
           </Field>
           <div className="flex justify-end">
             <Button type="submit" disabled={!canSubmit || rotate.isPending}>
               {rotate.isPending ? <Loader2 className="animate-spin" data-icon="inline-start" /> : <RefreshCw data-icon="inline-start" />}
-              Rotate
-            </Button>
+              {_t("Rotate")}</Button>
           </div>
         </form>
       </CardContent>

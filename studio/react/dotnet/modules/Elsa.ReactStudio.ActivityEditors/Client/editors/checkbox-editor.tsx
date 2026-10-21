@@ -1,10 +1,13 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Checkbox } from "@elsa-workflows/react-studio-ui/checkbox";
 import type { UiHintEditorProps } from "../types";
 import { ExpressionEditor } from "../expression-editor";
 
 export function CheckboxEditor(props: UiHintEditorProps) {
+  useTranslation();
   return (
     <ExpressionEditor {...props}>
       {({ value, onChange }) => (

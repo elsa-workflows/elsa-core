@@ -1,3 +1,5 @@
+
+import { message } from "@elsa-workflows/react-studio-sdk/localization";
 import { ClipboardCheck, Workflow } from "lucide-react";
 import { defineModule, NavGroups } from "@elsa-workflows/react-studio-sdk";
 import { Resources, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
@@ -13,25 +15,25 @@ const view = { resource: Resources.userTasks, verb: Verbs.view };
  */
 export const userTasksModule = defineModule({
   id: "user-tasks",
-  name: "User tasks",
-  description: "Human tasks raised by running workflows.",
+  name: message("User tasks"),
+  description: message("Human tasks raised by running workflows."),
   requiresServerFeatures: ["Elsa.UserTasks"],
   routes: [
-    { path: UserTaskRoutes.list, component: UserTasksListPage, title: "User tasks", permissions: [view] },
-    { path: UserTaskRoutes.detail, component: UserTaskDetailPage, title: "User task", permissions: [view] },
+    { path: UserTaskRoutes.list, component: UserTasksListPage, title: message("User tasks"), permissions: [view] },
+    { path: UserTaskRoutes.detail, component: UserTaskDetailPage, title: message("User task"), permissions: [view] },
   ],
   nav: [
     {
       // Same id as the core "Workflows" parent so a registry that merges parents by id nests this under it.
       id: "workflows",
-      label: "Workflows",
+      label: message("Workflows"),
       icon: Workflow,
       group: NavGroups.general.id,
       order: 10,
       children: [
         {
           id: "user-tasks",
-          label: "User tasks",
+          label: message("User tasks"),
           href: UserTaskRoutes.list,
           icon: ClipboardCheck,
           order: 20,

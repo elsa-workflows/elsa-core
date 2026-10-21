@@ -1,3 +1,5 @@
+
+import { translate } from "@elsa-workflows/react-studio-sdk/localization";
 import type { AuthConfig } from "@elsa-workflows/react-studio-sdk/config";
 import { BaseAuthStrategy } from "../types.js";
 
@@ -16,7 +18,7 @@ export class ApiKeyAuthStrategy extends BaseAuthStrategy {
 
   async initialize() {
     if (!this.options.key) {
-      this.setSnapshot({ status: "unauthenticated", error: "No API key configured (auth.apiKey.key)." });
+      this.setSnapshot({ status: "unauthenticated", error: translate("No API key configured (auth.apiKey.key).") });
       return;
     }
     this.setSnapshot({ status: "authenticated", user: { name: "API key" } });

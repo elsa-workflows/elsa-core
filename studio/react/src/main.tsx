@@ -1,3 +1,5 @@
+
+import { translate } from "@elsa-workflows/react-studio-sdk/localization";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { studioConfigSchema } from "@/config/schema";
@@ -11,11 +13,11 @@ import "./globals.css";
 
 async function start() {
   const response = await fetch(new URL("studio-config", document.baseURI), { cache: "no-store" });
-  if (!response.ok) throw new Error(`Configuration could not be loaded (${response.status})`);
+  if (!response.ok) throw new Error(translate("Configuration could not be loaded ({{value0}})", { value0: response.status }));
   const config = studioConfigSchema.parse(await response.json());
   const registry = new StudioRegistry();
   const manifestResponse = await fetch(new URL("studio-manifest", document.baseURI), { cache: "no-store" });
-  if (!manifestResponse.ok) throw new Error(`Studio modules could not be loaded (${manifestResponse.status})`);
+  if (!manifestResponse.ok) throw new Error(translate("Studio modules could not be loaded ({{value0}})", { value0: manifestResponse.status }));
   const manifest = await manifestResponse.json() as { modules: StudioModuleManifest[] };
   await Promise.all(manifest.modules.filter(module => module.core || config.features[module.id]?.enabled).map(async module => {
     if (import.meta.env.DEV) {

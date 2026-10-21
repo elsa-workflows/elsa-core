@@ -1,3 +1,5 @@
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
 import { ToneBadge } from "@elsa-workflows/react-studio-ui/common/status-badge";
 import { levelName, type StructuredLogEvent } from "../api";
 
@@ -20,6 +22,7 @@ export function levelTone(level: StructuredLogEvent["level"]): Tone {
 const SHORT: Record<string, string> = { Trace: "TRC", Debug: "DBG", Information: "INF", Warning: "WRN", Error: "ERR", Critical: "CRT", None: "-" };
 
 export function LevelBadge({ level }: { level: StructuredLogEvent["level"] }) {
+  useTranslation();
   const name = levelName(level);
   return (
     <ToneBadge tone={levelTone(level)} className="font-mono text-[10px] px-1.5 py-0">

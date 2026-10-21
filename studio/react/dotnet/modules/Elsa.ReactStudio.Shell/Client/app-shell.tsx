@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import type { ReactNode } from "react";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@elsa-workflows/react-studio-ui/sidebar";
@@ -11,8 +13,10 @@ import { StudioSidebar } from "./studio-sidebar";
 import { ThemeMenu } from "./theme-menu";
 import { UserMenu } from "./user-menu";
 import { TenantPicker } from "./tenant-picker";
+import { CulturePicker } from "./culture-picker";
 
 export function AppShell({ title, children }: { title?: string; children: ReactNode }) {
+  useTranslation();
   const headerItems = useExtensions("headerItems");
   const custom = useShellChrome((s) => s.header);
   const fullBleed = useShellChrome((s) => s.fullBleed);
@@ -39,6 +43,7 @@ export function AppShell({ title, children }: { title?: string; children: ReactN
               <Separator orientation="vertical" className="mx-1 h-5" />
               <ThemeMenu />
               <TenantPicker />
+              <CulturePicker />
               <UserMenu />
             </div>
           </header>

@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation, translate } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { ElsaApiProvider as SharedElsaApiProvider } from "@elsa-workflows/react-studio-api-client/react";
 export { useElsaClient, useQueryScope } from "@elsa-workflows/react-studio-api-client/react";
@@ -11,6 +13,7 @@ import { useTenant, tenantIdentityKey, resolveTenant } from "@elsa-workflows/rea
 
 /** Builds one API client for the active server + auth strategy and provides TanStack Query. */
 export function ElsaApiProvider({ children }: { children: ReactNode }) {
+  useTranslation();
   const server = useActiveServer();
   const { strategy, user, status } = useAuth();
   const { tenantId } = useTenant();
@@ -25,7 +28,7 @@ export function ElsaApiProvider({ children }: { children: ReactNode }) {
           const current = strategy.getSnapshot();
           const tenant = resolveTenant(server, current.user, tenantId);
           const currentScope = JSON.stringify([server.url.replace(/\/+$/, ""), current.status, tenantIdentityKey(current.user), tenant.tenantId ?? null]);
-          if (tenant.error || currentScope !== scope) throw new Error("The account or tenant changed. Reload Studio to continue.");
+          if (tenant.error || currentScope !== scope) throw new Error(translate("The account or tenant changed. Reload Studio to continue."));
         },
         getAuthHeaders: () => strategy.getAuthHeaders(),
         onUnauthorized: () => strategy.tryRefresh(),

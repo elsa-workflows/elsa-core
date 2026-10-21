@@ -1,4 +1,6 @@
 "use client";
+import { translate } from "./localization.js";
+
 
 import { createContext, useContext } from "react";
 import type { WorkflowDefinition } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
@@ -24,6 +26,6 @@ export const WorkflowEditorProvider = WorkflowEditorContext.Provider;
 
 export function useWorkflowEditor(): WorkflowEditorContextValue {
   const ctx = useContext(WorkflowEditorContext);
-  if (!ctx) throw new Error("useWorkflowEditor must be used inside the workflow definition editor");
+  if (!ctx) throw new Error(translate("useWorkflowEditor must be used inside the workflow definition editor"));
   return ctx;
 }

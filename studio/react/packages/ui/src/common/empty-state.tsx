@@ -1,3 +1,5 @@
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "../utils.js";
@@ -15,6 +17,7 @@ export function EmptyState({
   action?: ReactNode;
   className?: string;
 }) {
+  useTranslation();
   return (
     <div className={cn("flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-card/60 p-10 text-center", className)}>
       {Icon && (

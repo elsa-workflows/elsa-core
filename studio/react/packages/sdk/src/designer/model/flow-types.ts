@@ -1,3 +1,5 @@
+
+import { message } from "../../localization.js";
 import { GitBranch, ListOrdered, Workflow, type LucideIcon } from "lucide-react";
 import { FLOWCHART_TYPE, SEQUENCE_TYPE, STATE_MACHINE_TYPE } from "@elsa-workflows/react-studio-api-client/types/activities";
 
@@ -16,7 +18,7 @@ export interface FlowType {
 }
 
 export const FLOW_TYPES: readonly FlowType[] = [
-  { type: FLOWCHART_TYPE, label: "Flowchart", description: "Free-form graph of steps joined by outcomes.", icon: Workflow },
-  { type: SEQUENCE_TYPE, label: "Sequence", description: "Steps that run one after another.", icon: ListOrdered },
-  { type: STATE_MACHINE_TYPE, label: "State machine", description: "Named states with trigger-driven transitions.", icon: GitBranch },
+  { type: FLOWCHART_TYPE, label: message("Flowchart"), description: message("Free-form graph of steps joined by outcomes."), icon: Workflow },
+  { type: SEQUENCE_TYPE, label: message("Sequence"), description: message("Steps that run one after another."), icon: ListOrdered },
+  { type: STATE_MACHINE_TYPE, label: message("State machine"), description: message("Named states with trigger-driven transitions."), icon: GitBranch },
 ] as const;

@@ -223,7 +223,8 @@ and invalidated after save; server failures preserve local suggestions.
 
 Unit cases, three browser cases and an actual Core declaration document verify the
 behavior. The reproducible benchmark covers 3,000 variables, 3,000 inputs and 10,000
-activities, with measured completion generation below 43 ms median on the development
+activities. With localized descriptions, the measured completion-generation medians
+are 95.8 ms for C#, 79.6 ms for JavaScript and 63.8 ms for Python on the development
 environment. The expression guide states the one-level member scope and distinction
 from language-server diagnostics and full-diagram performance.
 
@@ -248,3 +249,29 @@ during React StrictMode's effect replay while disposing true unmounts, and retai
 the last authenticated scope across an intermediate missing-claim error. The
 hosted A/missing/B case verifies that module-level dialog state cannot revive in
 another tenant. Dirty server switches retain one discard prompt.
+
+## Localization
+
+The shared SDK now supplies i18next-backed hooks and English/Dutch catalogs for
+1,213 built-in messages. Nonempty matching Blazor Dutch resources were reused;
+React-specific and blank source entries were translated. A catalog check rejects
+empty/missing messages, mismatched interpolation and raw JSX display text.
+
+The header language preference is keyed by API URL and subject. Culture changes
+update shell/module labels, tables, controls, diagnostics and completion descriptions
+without remounting editors or rewriting workflow names/expressions. The host updates
+document language/direction and culture-aware formatting. Modules contribute owned,
+transactional resource slots and use their namespace with English fallback. The
+authoring template ships both languages and verifies a state-preserving switch.
+
+Hosted browser cases cover account preferences, dialogs, unsaved workflow state,
+independent module resources, namespace isolation and fallback. A real development
+React StrictMode unit case verifies query-cache retention through effect replay
+and disposal on true unmount; production browser bundles do not replay effects.
+
+Review regressions derive log-count options at render time, translate deferred task
+notices in the culture active when the operation completes, and externalize QuickAdd
+headings/BPMN refusal explanations. Hosted cases cover these behaviors and preserve
+user task titles and original server diagnostics. Literal display/heading/toast
+checks supplement catalog validation; arbitrary callback/dictionary flows require
+manual review. The revised catalog has 1,213 messages.

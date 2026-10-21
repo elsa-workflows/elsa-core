@@ -65,3 +65,8 @@ Independent forms can register dirty state with `useUnsavedChanges` from
 Hosts coordinate context changes with `reloadStudioContext` from
 `/navigation/reload`; its preparation callback runs after marking the reload
 pending, preventing duplicate navigation from synchronous context observers.
+
+`/localization` exposes `useTranslation(moduleId)` for packaged module resources.
+Register each culture through the `translations` slot; the host namespaces messages
+to the module and updates labels without remounting its components. English is the
+fallback. See [localization](../../docs/localization.md) for catalogs and preferences.

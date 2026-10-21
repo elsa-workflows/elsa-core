@@ -1,3 +1,5 @@
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
 import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
 import type { LucideIcon } from "lucide-react";
 import { ArrowUpRight } from "lucide-react";
@@ -34,6 +36,7 @@ export function StatTile({
   href?: string;
   isLoading?: boolean;
 }) {
+  const _t = useTranslation();
   const accent = accentColor[tone];
   const body = (
     <>
@@ -59,7 +62,7 @@ export function StatTile({
     return (
       <Link
         href={href}
-        aria-label={`${label}: ${value}`}
+        aria-label={_t("{{value0}}: {{value1}}", { value0: label, value1: value })}
         className="block rounded-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
       >
         <Card size="sm" className={cn(className, "transition-colors hover:border-primary/50")} style={{ "--rail-color": accent } as React.CSSProperties}>

@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Loader2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
@@ -23,6 +25,7 @@ interface UserDialogProps {
 }
 
 export function UserDialog({ open, onOpenChange, user, roles, onCreated }: UserDialogProps) {
+  useTranslation();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -34,6 +37,7 @@ export function UserDialog({ open, onOpenChange, user, roles, onCreated }: UserD
 }
 
 function UserForm({ user, roles, onCreated, close }: Pick<UserDialogProps, "user" | "roles" | "onCreated"> & { close: () => void }) {
+  const _t = useTranslation();
   const isEdit = !!user;
   const [name, setName] = useState(user?.name ?? "");
   const [password, setPassword] = useState("");
@@ -47,10 +51,10 @@ function UserForm({ user, roles, onCreated, close }: Pick<UserDialogProps, "user
     try {
       if (user) {
         await update.mutateAsync({ id: user.id, password: password || undefined, roles: selectedRoles });
-        toast.success(`User "${user.name}" updated`);
+        toast.success(_t("User \"{{value0}}\" updated", { value0: user.name }));
       } else {
         const created = await create.mutateAsync({ name: name.trim(), password: password || undefined, roles: selectedRoles });
-        toast.success(`User "${created.name}" created`);
+        toast.success(_t("User \"{{value0}}\" created", { value0: created.name }));
         onCreated?.(created);
       }
       close();
@@ -62,33 +66,32 @@ function UserForm({ user, roles, onCreated, close }: Pick<UserDialogProps, "user
   return (
     <form onSubmit={submit} className="contents">
       <DialogHeader>
-        <DialogTitle>{isEdit ? `Edit ${user.name}` : "Create user"}</DialogTitle>
+        <DialogTitle>{isEdit ? _t("Edit {{value0}}", { value0: user.name }) : _t("Create user")}</DialogTitle>
         <DialogDescription>
-          {isEdit ? "Change the password or the roles assigned to this user." : "Add a user account that can sign in to the studio and the API."}
+          {isEdit ? _t("Change the password or the roles assigned to this user.") : _t("Add a user account that can sign in to the studio and the API.")}
         </DialogDescription>
       </DialogHeader>
       <div className="flex flex-col gap-4">
-        <Field label="Name" required htmlFor="user-name">
+        <Field label={_t("Name")} required htmlFor="user-name">
           <Input id="user-name" value={name} onChange={(e) => setName(e.target.value)} disabled={isEdit} autoComplete="off" required={!isEdit} />
         </Field>
         <Field
-          label={isEdit ? "New password" : "Password"}
+          label={isEdit ? _t("New password") : _t("Password")}
           htmlFor="user-password"
-          hint={isEdit ? "Leave blank to keep the current password." : "Leave blank to let the server generate one; it is shown once after creation."}
+          hint={isEdit ? _t("Leave blank to keep the current password.") : _t("Leave blank to let the server generate one; it is shown once after creation.")}
         >
           <Input id="user-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
         </Field>
-        <Field label="Roles">
+        <Field label={_t("Roles")}>
           <RoleChecklist roles={roles} selected={selectedRoles} onChange={setSelectedRoles} disabled={pending} />
         </Field>
       </div>
       <DialogFooter>
         <Button type="button" variant="outline" onClick={close} disabled={pending}>
-          Cancel
-        </Button>
+          {_t("Cancel")}</Button>
         <Button type="submit" disabled={pending || (!isEdit && !name.trim())}>
           {pending && <Loader2 className="animate-spin" />}
-          {isEdit ? "Save" : "Create"}
+          {isEdit ? _t("Save") : _t("Create")}
         </Button>
       </DialogFooter>
     </form>

@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@elsa-workflows/react-studio-ui/popover";
@@ -10,6 +12,7 @@ import { dataRefKey, revealActivity, useDesigner, useDesignerState, type DataUsa
  * canvas; clicking opens the list of activities, and clicking one of those selects it.
  */
 export function DataUsageChips({ usage }: { usage: DataUsage | undefined }) {
+  const _t = useTranslation();
   const { store } = useDesigner();
   const highlighted = useDesignerState((s) => !!usage && s.dataHighlight === dataRefKey(usage));
   if (!usage) return <span className="text-xs text-muted-foreground">–</span>;
@@ -31,7 +34,7 @@ export function DataUsageChips({ usage }: { usage: DataUsage | undefined }) {
               highlighted ? "border-primary bg-accent" : "bg-card",
               total === 0 && "text-muted-foreground",
             )}
-            title={total === 0 ? "Not used by any activity yet" : "Show where this is used"}
+            title={total === 0 ? _t("Not used by any activity yet") : _t("Show where this is used")}
           />
         }
       >
@@ -44,11 +47,11 @@ export function DataUsageChips({ usage }: { usage: DataUsage | undefined }) {
           {usage.name} <span className="font-normal text-muted-foreground">· {usage.kind}</span>
         </div>
         {total === 0 ? (
-          <p className="px-3 py-3 text-sm text-muted-foreground">Not referenced by any activity yet. Bind an activity output to it or use it in an expression.</p>
+          <p className="px-3 py-3 text-sm text-muted-foreground">{_t("Not referenced by any activity yet. Bind an activity output to it or use it in an expression.")}</p>
         ) : (
           <div className="max-h-72 overflow-y-auto py-1">
-            <UseList title="Written by" uses={usage.writers} tone="text-status-warning" icon={<ArrowUpFromLine className="size-3.5" />} onPick={(id) => revealActivity(store, id)} />
-            <UseList title="Read by" uses={usage.readers} tone="text-status-info" icon={<ArrowDownToLine className="size-3.5" />} onPick={(id) => revealActivity(store, id)} />
+            <UseList title={_t("Written by")} uses={usage.writers} tone="text-status-warning" icon={<ArrowUpFromLine className="size-3.5" />} onPick={(id) => revealActivity(store, id)} />
+            <UseList title={_t("Read by")} uses={usage.readers} tone="text-status-info" icon={<ArrowDownToLine className="size-3.5" />} onPick={(id) => revealActivity(store, id)} />
           </div>
         )}
       </PopoverContent>
@@ -57,6 +60,7 @@ export function DataUsageChips({ usage }: { usage: DataUsage | undefined }) {
 }
 
 function UseList({ title, uses, tone, icon, onPick }: { title: string; uses: DataUse[]; tone: string; icon: React.ReactNode; onPick: (activityId: string) => void }) {
+  const _t = useTranslation();
   if (uses.length === 0) return null;
   return (
     <div>
@@ -67,7 +71,7 @@ function UseList({ title, uses, tone, icon, onPick }: { title: string; uses: Dat
         <button key={`${u.activityId}:${u.property}`} type="button" onClick={() => onPick(u.activityId)} className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm hover:bg-accent">
           <span className="truncate font-medium">{u.activityName}</span>
           <span className="shrink-0 text-xs text-muted-foreground">
-            {u.property} · {u.via === "binding" ? "output binding" : u.via}
+            {u.property} · {u.via === "binding" ? _t("output binding") : u.via}
           </span>
         </button>
       ))}

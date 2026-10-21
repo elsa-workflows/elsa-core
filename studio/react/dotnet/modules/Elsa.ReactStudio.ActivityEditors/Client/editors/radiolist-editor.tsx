@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { RadioGroup, RadioGroupItem } from "@elsa-workflows/react-studio-ui/radio-group";
 import { Label } from "@elsa-workflows/react-studio-ui/label";
@@ -7,6 +9,7 @@ import { ExpressionEditor } from "../expression-editor";
 import { selectListItems } from "./options";
 
 export function RadioListEditor(props: UiHintEditorProps) {
+  useTranslation();
   const items = selectListItems(props.descriptor);
   return (
     <ExpressionEditor {...props}>

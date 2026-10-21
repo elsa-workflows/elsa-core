@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
 import { differenceInMilliseconds, parseISO } from "date-fns";
@@ -46,6 +48,7 @@ function fromInstance(i: WorkflowInstanceSummary): ActivityRow {
 
 /** `GET /dashboard/recent-activity`, or the 10 newest instances from the core list endpoint. */
 export function RecentActivityWidget({ range }: { range: DashboardRange }) {
+  const _t = useTranslation();
   // Enough rows to fill the fixed card height on a busy server; the list scrolls past that.
   const activity = useRecentActivity(range, 14);
   const fallback = useFallbackRecentInstances(14);
@@ -55,12 +58,11 @@ export function RecentActivityWidget({ range }: { range: DashboardRange }) {
 
   return (
     <WidgetCard
-      title="Recent activity"
-      description={capability === "fallback" ? "Newest workflow instances" : `Workflow instances updated in the ${RANGE_LABELS[range].toLowerCase()}`}
+      title={_t("Recent activity")}
+      description={capability === "fallback" ? _t("Newest workflow instances") : _t("Workflow instances updated in the {{value0}}", { value0: _t(RANGE_LABELS[range]).toLowerCase() })}
       action={
         <Button variant="ghost" size="sm" nativeButton={false} render={<Link href={DashboardLinks.instances} />}>
-          View all
-        </Button>
+          {_t("View all")}</Button>
       }
       isLoading={source.isLoading}
       error={source.error}
@@ -69,7 +71,7 @@ export function RecentActivityWidget({ range }: { range: DashboardRange }) {
       contentClassName="flex flex-col gap-3"
     >
       {rows.length === 0 ? (
-        <WidgetEmpty>No workflow activity yet.</WidgetEmpty>
+        <WidgetEmpty>{_t("No workflow activity yet.")}</WidgetEmpty>
       ) : (
         <ul className="-mx-2 flex flex-col">
           {rows.map((r) => (
@@ -82,7 +84,7 @@ export function RecentActivityWidget({ range }: { range: DashboardRange }) {
                 <span className="min-w-0 flex-1 truncate font-medium">{r.name}</span>
                 {r.incidentCount > 0 && (
                   <span className="shrink-0 text-xs text-red-600 dark:text-red-400 tabular-nums">
-                    {r.incidentCount} incident{r.incidentCount === 1 ? "" : "s"}
+                    {r.incidentCount} {_t("incident")}{r.incidentCount === 1 ? "" : _t("s")}
                   </span>
                 )}
                 <span className="hidden w-16 shrink-0 text-right text-xs text-muted-foreground tabular-nums sm:inline">{formatDuration(r.durationMs)}</span>
@@ -94,7 +96,7 @@ export function RecentActivityWidget({ range }: { range: DashboardRange }) {
           ))}
         </ul>
       )}
-      <SourceNote capability={capability}>Showing the newest instances; the Dashboard API scopes this list to the selected range.</SourceNote>
+      <SourceNote capability={capability}>{_t("Showing the newest instances; the Dashboard API scopes this list to the selected range.")}</SourceNote>
     </WidgetCard>
   );
 }

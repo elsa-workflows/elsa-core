@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { useMemo } from "react";
 import { Trash2 } from "lucide-react";
@@ -27,6 +29,7 @@ const CONDITION_DESCRIPTOR: InputDescriptor = {
 
 /** Properties of the selected transition: endpoints, names, trigger, condition and action. */
 export function TransitionPanel({ index }: { index: number }) {
+  const _t = useTranslation();
   const { store } = useDesigner();
   const root = useDesignerState((s) => s.root);
   const path = useDesignerState((s) => s.path);
@@ -44,30 +47,30 @@ export function TransitionPanel({ index }: { index: number }) {
   return (
     <div className="flex flex-col gap-5 p-3">
       <div>
-        <div className="eyebrow">Transition</div>
-        <div className="text-lg font-semibold">{t.displayName || t.name || `${t.from} → ${t.to}`}</div>
+        <div className="eyebrow">{_t("Transition")}</div>
+        <div className="text-lg font-semibold">{t.displayName || t.name || _t("{{value0}} → {{value1}}", { value0: t.from, value1: t.to })}</div>
         <p className="text-xs text-muted-foreground">
-          {t.trigger ? "Fires when the trigger completes while the source state is current." : "Automatic: taken as soon as the source state is entered (in declaration order), if the condition holds."}
+          {t.trigger ? _t("Fires when the trigger completes while the source state is current.") : _t("Automatic: taken as soon as the source state is entered (in declaration order), if the condition holds.")}
         </p>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="From">
+        <Field label={_t("From")}>
           <SimpleSelect value={t.from} options={stateOptions} onChange={(v) => v && update({ from: v })} disabled={readOnly} />
         </Field>
-        <Field label="To">
+        <Field label={_t("To")}>
           <SimpleSelect value={t.to} options={stateOptions} onChange={(v) => v && update({ to: v })} disabled={readOnly} />
         </Field>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Name" hint="Technical name">
+        <Field label={_t("Name")} hint={_t("Technical name")}>
           <Input value={t.name ?? ""} readOnly={readOnly} onChange={(e) => update({ name: e.target.value || null })} />
         </Field>
-        <Field label="Display name">
+        <Field label={_t("Display name")}>
           <Input value={t.displayName ?? ""} readOnly={readOnly} onChange={(e) => update({ displayName: e.target.value || null })} />
         </Field>
       </div>
-      <SlotChip ownerId={sm.id} slot={`transitions.${index}.trigger`} child={t.trigger} label="Trigger" hint="A trigger activity (Timer, Event, HTTP Endpoint…) armed while the source state is current. Leave empty for an automatic transition. Each transition needs its own trigger." readOnly={readOnly} triggersOnly />
-      <Field label="Condition" hint="Optional. When false, the trigger is re-armed until it holds or another transition wins.">
+      <SlotChip ownerId={sm.id} slot={`transitions.${index}.trigger`} child={t.trigger} label={_t("Trigger")} hint={_t("A trigger activity (Timer, Event, HTTP Endpoint…) armed while the source state is current. Leave empty for an automatic transition. Each transition needs its own trigger.")} readOnly={readOnly} triggersOnly />
+      <Field label={_t("Condition")} hint={_t("Optional. When false, the trigger is re-armed until it holds or another transition wins.")}>
         <ExpressionEditor
           descriptor={CONDITION_DESCRIPTOR}
           value={t.condition ?? undefined}
@@ -76,17 +79,16 @@ export function TransitionPanel({ index }: { index: number }) {
           onChange={(v) => update({ condition: (v as ActivityInput | undefined) ?? null })}
           literalSyntax="Literal"
         >
-          {({ value, onChange }) => <Input value={typeof value === "string" ? value : ""} readOnly={readOnly} placeholder="true" onChange={(e) => onChange(e.target.value)} />}
+          {({ value, onChange }) => <Input value={typeof value === "string" ? value : ""} readOnly={readOnly} placeholder={_t("true")} onChange={(e) => onChange(e.target.value)} />}
         </ExpressionEditor>
       </Field>
-      <SlotChip ownerId={sm.id} slot={`transitions.${index}.action`} child={t.action} label="Action" hint="Runs after the source state's exit activity and before the target state is entered." readOnly={readOnly} />
+      <SlotChip ownerId={sm.id} slot={`transitions.${index}.action`} child={t.action} label={_t("Action")} hint={_t("Runs after the source state's exit activity and before the target state is entered.")} readOnly={readOnly} />
       {!readOnly && (
         <Button variant="ghost" size="sm" className="self-start text-status-danger hover:bg-status-danger/10" onClick={() => s().removeTransitions([index])}>
-          <Trash2 /> Delete transition
-        </Button>
+          <Trash2 /> {_t("Delete transition")}</Button>
       )}
       <Button variant="link" size="sm" className="self-start px-0" onClick={() => s().select([selectionId.state(t.from)])}>
-        Go to state {t.from}
+        {_t("Go to state")}{" "}{t.from}
       </Button>
     </div>
   );

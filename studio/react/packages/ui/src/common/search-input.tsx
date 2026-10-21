@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -10,7 +12,7 @@ import { cn } from "../utils.js";
 export function SearchInput({
   value,
   onChange,
-  placeholder = "Search…",
+  placeholder,
   delay = 400,
   className,
 }: {
@@ -20,6 +22,7 @@ export function SearchInput({
   delay?: number;
   className?: string;
 }) {
+  const _t = useTranslation();
   const [text, setText] = useState(value);
   const [lastValue, setLastValue] = useState(value);
   if (lastValue !== value) {
@@ -37,7 +40,7 @@ export function SearchInput({
   return (
     <div className={cn("relative", className)}>
       <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-      <Input value={text} onChange={(e) => setText(e.target.value)} placeholder={placeholder} className="pl-8 pr-8" />
+      <Input value={text} onChange={(e) => setText(e.target.value)} placeholder={placeholder ?? _t("Search…")} className="pl-8 pr-8" />
       {text && (
         <Button
           variant="ghost"
@@ -47,7 +50,7 @@ export function SearchInput({
             setText("");
             onChange("");
           }}
-          aria-label="Clear search"
+          aria-label={_t("Clear search")}
         >
           <X />
         </Button>

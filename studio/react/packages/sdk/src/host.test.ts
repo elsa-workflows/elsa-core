@@ -11,6 +11,23 @@ const manifest = (id: string): StudioModuleManifest => ({
 const entry = (register: RegisterModule) => async () => ({ register });
 
 describe("SDK module activation", () => {
+  it("owns immutable translation snapshots and removes them on unload or failed registration", async () => {
+    const registry = new StudioRegistry();
+    const messages = { Greeting: "Hallo" };
+    expect(await registry.load(manifest("weather"), entry(api => {
+      api.contribute("translations", { id: "dutch", culture: "nl-nl", messages });
+    }))).toBe(true);
+    messages.Greeting = "Changed after registration";
+    expect(registry.studioModules()[0].extensions?.translations).toEqual([{ id: "dutch", culture: "nl-NL", messages: { Greeting: "Hallo" } }]);
+    expect(await registry.load(manifest("broken"), entry(api => {
+      api.contribute("translations", { id: "english", culture: "en", messages: { Greeting: "Partial" } });
+      api.contribute("translations", { id: "invalid", culture: "not_a_culture", messages: {} });
+    }))).toBe(false);
+    expect(registry.slots("translations")).toHaveLength(1);
+    registry.remove("weather");
+    expect(registry.slots("translations")).toEqual([]);
+  });
+
   it("qualifies host tab identities without changing module-local SDK IDs", async () => {
     const registry = new StudioRegistry();
     for (const id of ["alpha", "beta"]) {

@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Checkbox } from "@elsa-workflows/react-studio-ui/checkbox";
 import type { UiHintEditorProps } from "../types";
@@ -7,6 +9,7 @@ import { selectListItems } from "./options";
 import { stringListOf } from "@elsa-workflows/react-studio-sdk/activity-expressions";
 
 export function ChecklistEditor(props: UiHintEditorProps) {
+  useTranslation();
   const items = selectListItems(props.descriptor);
   return (
     <ExpressionEditor {...props}>

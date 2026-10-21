@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Ban, Eye, FlaskConical, MoreHorizontal, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useRouter } from "@elsa-workflows/react-studio-sdk/navigation/index";
@@ -35,6 +37,7 @@ interface Filters {
 }
 
 export function SecretsPage() {
+  const _t = useTranslation();
   const config = useStudioConfig();
   const router = useRouter();
   const [filters, setFilters] = useState<Filters>({ search: "", scope: "" });
@@ -73,15 +76,15 @@ export function SecretsPage() {
 
   const onRevoke = async (secret: SecretModel) => {
     const ok = await confirm({
-      title: `Revoke "${secret.name}"?`,
-      description: "Workflows can no longer resolve this secret. The record stays for auditing and can be rotated to a new value later.",
-      confirmLabel: "Revoke",
+      title: _t("Revoke \"{{value0}}\"?", { value0: secret.name }),
+      description: _t("Workflows can no longer resolve this secret. The record stays for auditing and can be rotated to a new value later."),
+      confirmLabel: _t("Revoke"),
       destructive: true,
     });
     if (!ok) return;
     try {
       await revoke.mutateAsync(secret.name);
-      toast.success(`Secret "${secret.name}" revoked`);
+      toast.success(_t("Secret \"{{value0}}\" revoked", { value0: secret.name }));
     } catch (err) {
       toast.error(describeError(err));
     }
@@ -89,15 +92,15 @@ export function SecretsPage() {
 
   const onDelete = async (secret: SecretModel) => {
     const ok = await confirm({
-      title: `Delete "${secret.name}"?`,
-      description: "All versions are removed permanently. Workflows referencing it will fail to resolve the secret.",
-      confirmLabel: "Delete",
+      title: _t("Delete \"{{value0}}\"?", { value0: secret.name }),
+      description: _t("All versions are removed permanently. Workflows referencing it will fail to resolve the secret."),
+      confirmLabel: _t("Delete"),
       destructive: true,
     });
     if (!ok) return;
     try {
       await remove.mutateAsync(secret.name);
-      toast.success(`Secret "${secret.name}" deleted`);
+      toast.success(_t("Secret \"{{value0}}\" deleted", { value0: secret.name }));
     } catch (err) {
       toast.error(describeError(err));
     }
@@ -106,8 +109,8 @@ export function SecretsPage() {
   const onTest = async (secret: SecretModel) => {
     try {
       const result = await test.mutateAsync(secret.name);
-      if (result.succeeded) toast.success(`"${secret.name}" resolves correctly`);
-      else toast.error(`"${secret.name}" failed to resolve${result.error ? `: ${result.error}` : ""}`);
+      if (result.succeeded) toast.success(_t("\"{{value0}}\" resolves correctly", { value0: secret.name }));
+      else toast.error(_t("\"{{value0}}\" failed to resolve{{value1}}", { value0: secret.name, value1: result.error ? `: ${result.error}` : "" }));
     } catch (err) {
       toast.error(describeError(err));
     }
@@ -116,7 +119,7 @@ export function SecretsPage() {
   const columns: DataTableColumn<SecretModel>[] = [
     {
       id: "name",
-      header: "Name",
+      header: _t("Name"),
       cell: (s) => (
         <div className="min-w-0">
           <div className="font-medium">{s.displayName || s.name}</div>
@@ -124,12 +127,12 @@ export function SecretsPage() {
         </div>
       ),
     },
-    { id: "type", header: "Type", cell: (s) => descriptors.data?.types.find((t) => t.name === s.typeName)?.displayName ?? s.typeName },
-    { id: "store", header: "Store", cell: (s) => descriptors.data?.stores.find((st) => st.name === s.storeName)?.displayName ?? s.storeName },
-    { id: "scope", header: "Scope", cell: (s) => s.scope || <span className="text-muted-foreground">–</span> },
+    { id: "type", header: _t("Type"), cell: (s) => descriptors.data?.types.find((t) => t.name === s.typeName)?.displayName ?? s.typeName },
+    { id: "store", header: _t("Store"), cell: (s) => descriptors.data?.stores.find((st) => st.name === s.storeName)?.displayName ?? s.storeName },
+    { id: "scope", header: _t("Scope"), cell: (s) => s.scope || <span className="text-muted-foreground">–</span> },
     {
       id: "tags",
-      header: "Tags",
+      header: _t("Tags"),
       cell: (s) =>
         s.tags.length === 0 ? (
           <span className="text-muted-foreground">–</span>
@@ -143,10 +146,10 @@ export function SecretsPage() {
           </div>
         ),
     },
-    { id: "status", header: "Status", cell: (s) => <SecretStatusBadge status={s.status} /> },
-    { id: "version", header: "Version", className: "tabular-nums", cell: (s) => s.currentVersion ?? <span className="text-muted-foreground">–</span> },
-    { id: "expires", header: "Expires", cell: (s) => <Timestamp value={s.expiresAt} relative /> },
-    { id: "updated", header: "Updated", cell: (s) => <Timestamp value={s.updatedAt ?? s.createdAt} relative /> },
+    { id: "status", header: _t("Status"), cell: (s) => <SecretStatusBadge status={s.status} /> },
+    { id: "version", header: _t("Version"), className: "tabular-nums", cell: (s) => s.currentVersion ?? <span className="text-muted-foreground">–</span> },
+    { id: "expires", header: _t("Expires"), cell: (s) => <Timestamp value={s.expiresAt} relative /> },
+    { id: "updated", header: _t("Updated"), cell: (s) => <Timestamp value={s.updatedAt ?? s.createdAt} relative /> },
     {
       id: "actions",
       header: "",
@@ -154,45 +157,39 @@ export function SecretsPage() {
       className: "text-right",
       cell: (s) => (
           <DropdownMenu>
-            <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label={`Actions for ${s.name}`} onClick={(e) => e.stopPropagation()} />}>
+            <DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label={_t("Actions for {{value0}}", { value0: s.name })} onClick={(e) => e.stopPropagation()} />}>
               <MoreHorizontal />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44" onClick={(e) => e.stopPropagation()}>
               <DropdownMenuItem onClick={() => router.push(href(SecretRoutes.detail, { name: s.name }))}>
                 <Eye />
-                View details
-              </DropdownMenuItem>
+                {_t("View details")}</DropdownMenuItem>
               {(canWrite || canTest) && <DropdownMenuSeparator />}
               {canWrite && (
                 <DropdownMenuItem onClick={() => setEditing(s)}>
                   <Pencil />
-                  Edit metadata
-                </DropdownMenuItem>
+                  {_t("Edit metadata")}</DropdownMenuItem>
               )}
               {canWrite && (
                 <DropdownMenuItem onClick={() => setRotating(s)}>
                   <RefreshCw />
-                  Rotate value
-                </DropdownMenuItem>
+                  {_t("Rotate value")}</DropdownMenuItem>
               )}
               {canTest && (
                 <DropdownMenuItem onClick={() => void onTest(s)}>
                   <FlaskConical />
-                  Test resolution
-                </DropdownMenuItem>
+                  {_t("Test resolution")}</DropdownMenuItem>
               )}
               {(canWrite || canDelete) && <DropdownMenuSeparator />}
               {canWrite && s.status === "Active" && (
                 <DropdownMenuItem variant="destructive" onClick={() => void onRevoke(s)}>
                   <Ban />
-                  Revoke
-                </DropdownMenuItem>
+                  {_t("Revoke")}</DropdownMenuItem>
               )}
               {canDelete && (
                 <DropdownMenuItem variant="destructive" onClick={() => void onDelete(s)}>
                   <Trash2 />
-                  Delete
-                </DropdownMenuItem>
+                  {_t("Delete")}</DropdownMenuItem>
               )}
             </DropdownMenuContent>
           </DropdownMenu>
@@ -203,24 +200,23 @@ export function SecretsPage() {
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
-        title="Secrets"
-        description="Credentials and keys workflows reference by name. Values are write-only and never displayed."
+        title={_t("Secrets")}
+        description={_t("Credentials and keys workflows reference by name. Values are write-only and never displayed.")}
         actions={
           canWrite && (
             <Button onClick={() => setCreateOpen(true)} disabled={!descriptors.data}>
               <Plus />
-              Create secret
-            </Button>
+              {_t("Create secret")}</Button>
           )
         }
       >
         <div className="flex flex-wrap gap-2">
-          <SearchInput value={filters.search} onChange={(search) => updateFilters({ search })} placeholder="Search name or description…" className="w-64" />
+          <SearchInput value={filters.search} onChange={(search) => updateFilters({ search })} placeholder={_t("Search name or description…")} className="w-64" />
           <SimpleSelect
             value={filters.typeName}
             onChange={(typeName) => updateFilters({ typeName })}
             options={(descriptors.data?.types ?? []).map((t) => ({ value: t.name, label: t.displayName }))}
-            placeholder="Any type"
+            placeholder={_t("Any type")}
             allowEmpty
             className="w-40"
           />
@@ -228,29 +224,29 @@ export function SecretsPage() {
             value={filters.storeName}
             onChange={(storeName) => updateFilters({ storeName })}
             options={(descriptors.data?.stores ?? []).map((s) => ({ value: s.name, label: s.displayName }))}
-            placeholder="Any store"
+            placeholder={_t("Any store")}
             allowEmpty
             className="w-40"
           />
-          <Input value={filters.scope} onChange={(e) => updateFilters({ scope: e.target.value })} placeholder="Scope" className="w-32" aria-label="Scope filter" />
+          <Input value={filters.scope} onChange={(e) => updateFilters({ scope: e.target.value })} placeholder={_t("Scope")} className="w-32" aria-label={_t("Scope filter")} />
           <SimpleSelect
             value={filters.status}
             onChange={(status) => updateFilters({ status })}
             options={SECRET_STATUSES.map((s) => ({ value: s, label: s }))}
-            placeholder="Any status"
+            placeholder={_t("Any status")}
             allowEmpty
             className="w-36"
           />
         </div>
       </PageHeader>
-      <ErrorAlert error={secrets.error} title="Secrets could not be loaded" />
+      <ErrorAlert error={secrets.error} title={_t("Secrets could not be loaded")} />
       <DataTable
         columns={columns}
         rows={secrets.data?.items ?? []}
         rowKey={(s) => s.id || s.name}
         isLoading={secrets.isLoading}
         onRowClick={(s) => router.push(href(SecretRoutes.detail, { name: s.name }))}
-        emptyMessage="No secrets match."
+        emptyMessage={_t("No secrets match.")}
         paging={{
           page,
           pageSize,

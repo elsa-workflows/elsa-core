@@ -1,4 +1,6 @@
 "use client"
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import * as React from "react"
 import { Select as SelectPrimitive } from "@base-ui/react/select"
@@ -8,6 +10,7 @@ import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 const Select = SelectPrimitive.Root
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
+  useTranslation();
   return (
     <SelectPrimitive.Group
       data-slot="select-group"
@@ -18,6 +21,7 @@ function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
 }
 
 function SelectValue({ className, ...props }: SelectPrimitive.Value.Props) {
+  useTranslation();
   return (
     <SelectPrimitive.Value
       data-slot="select-value"
@@ -35,6 +39,7 @@ function SelectTrigger({
 }: SelectPrimitive.Trigger.Props & {
   size?: "sm" | "default"
 }) {
+  useTranslation();
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
@@ -69,6 +74,7 @@ function SelectContent({
     SelectPrimitive.Positioner.Props,
     "align" | "alignOffset" | "side" | "sideOffset" | "alignItemWithTrigger"
   >) {
+  useTranslation();
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Positioner
@@ -98,6 +104,7 @@ function SelectLabel({
   className,
   ...props
 }: SelectPrimitive.GroupLabel.Props) {
+  useTranslation();
   return (
     <SelectPrimitive.GroupLabel
       data-slot="select-label"
@@ -112,6 +119,7 @@ function SelectItem({
   children,
   ...props
 }: SelectPrimitive.Item.Props) {
+  useTranslation();
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
@@ -139,6 +147,7 @@ function SelectSeparator({
   className,
   ...props
 }: SelectPrimitive.Separator.Props) {
+  useTranslation();
   return (
     <SelectPrimitive.Separator
       data-slot="select-separator"
@@ -152,6 +161,7 @@ function SelectScrollUpButton({
   className,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.ScrollUpArrow>) {
+  useTranslation();
   return (
     <SelectPrimitive.ScrollUpArrow
       data-slot="select-scroll-up-button"
@@ -171,6 +181,7 @@ function SelectScrollDownButton({
   className,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.ScrollDownArrow>) {
+  useTranslation();
   return (
     <SelectPrimitive.ScrollDownArrow
       data-slot="select-scroll-down-button"

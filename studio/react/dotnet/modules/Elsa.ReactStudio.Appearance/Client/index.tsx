@@ -1,3 +1,5 @@
+
+import { message } from "@elsa-workflows/react-studio-sdk/localization";
 import { Palette } from "lucide-react";
 import { settingsSectionNav } from "@elsa-workflows/react-studio-ui/runtime/settings";
 import { defineModule, type SettingsSection } from "@elsa-workflows/react-studio-sdk";
@@ -8,8 +10,8 @@ export { AppearanceRoutes };
 
 const section: SettingsSection = {
   id: "appearance",
-  label: "Appearance",
-  description: "Light or dark mode and the Elsa colour palette used by this browser.",
+  label: message("Appearance"),
+  description: message("Light or dark mode and the Elsa colour palette used by this browser."),
   href: AppearanceRoutes.settings,
   icon: Palette,
   order: 10,
@@ -22,8 +24,8 @@ const section: SettingsSection = {
 export const appearanceModule = defineModule({
   id: "appearance",
   name: "Appearance",
-  description: "Appearance settings page (theme pack and light/dark mode).",
-  routes: [{ path: AppearanceRoutes.settings, component: AppearancePage, title: "Appearance" }],
+  description: message("Appearance settings page (theme pack and light/dark mode)."),
+  routes: [{ path: AppearanceRoutes.settings, component: AppearancePage, title: message("Appearance") }],
   nav: [settingsSectionNav(section)],
   extensions: { settingsSections: [section] },
 });

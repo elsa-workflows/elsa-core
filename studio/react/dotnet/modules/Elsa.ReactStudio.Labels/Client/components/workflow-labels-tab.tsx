@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -15,6 +17,7 @@ import { LabelSwatch } from "./label-badge";
  * stored per definition *version* on the server, so the version id (`definition.id`) is the key.
  */
 export function WorkflowLabelsTab() {
+  const _t = useTranslation();
   const { definition, readOnly } = useWorkflowEditor();
   const versionId = definition.id || undefined;
   const canUpdate = usePermission(Resources.workflowDefinitionLabels, Verbs.update) && !readOnly;
@@ -23,7 +26,7 @@ export function WorkflowLabelsTab() {
   const setLabels = useSetDefinitionLabels(versionId);
 
   if (!versionId) {
-    return <p className="p-3 text-sm text-muted-foreground">Save the workflow once before applying labels.</p>;
+    return <p className="p-3 text-sm text-muted-foreground">{_t("Save the workflow once before applying labels.")}</p>;
   }
 
   const appliedIds = new Set(applied.data ?? []);
@@ -43,15 +46,15 @@ export function WorkflowLabelsTab() {
     <div className="flex flex-col gap-3 p-3">
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">
-          {appliedIds.size} of {all.data?.length ?? 0} label(s) applied to version {definition.version}.
+          {appliedIds.size} {_t("of")}{" "}{all.data?.length ?? 0} {_t("label(s) applied to version")}{" "}{definition.version}.
         </p>
         {(setLabels.isPending || applied.isFetching) && <Loader2 className="size-3.5 animate-spin text-muted-foreground" />}
       </div>
-      <ErrorAlert error={all.error ?? applied.error} title="Labels could not be loaded" />
+      <ErrorAlert error={all.error ?? applied.error} title={_t("Labels could not be loaded")} />
       {all.isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading labels…</p>
+        <p className="text-sm text-muted-foreground">{_t("Loading labels…")}</p>
       ) : (all.data?.length ?? 0) === 0 ? (
-        <p className="text-sm text-muted-foreground">No labels exist yet. Create some on the Labels page first.</p>
+        <p className="text-sm text-muted-foreground">{_t("No labels exist yet. Create some on the Labels page first.")}</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {all.data?.map((label) => {

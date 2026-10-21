@@ -1,3 +1,5 @@
+
+import { message } from "./localization.js";
 import type { ComponentType, ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import type { Permission } from "./permissions.js";
@@ -112,6 +114,7 @@ export interface SettingsSection {
 }
 
 export interface StudioModuleExtensions {
+  translations?: StudioSlots["translations"][];
   components?: StudioSlots["components"][];
   providers?: StudioSlots["providers"][];
   settingsSections?: SettingsSection[];
@@ -148,9 +151,9 @@ export interface StudioModule {
 }
 
 export const NavGroups = {
-  general: { id: "general", label: "General", order: 0 },
-  diagnostics: { id: "diagnostics", label: "Diagnostics", order: 100 },
-  administration: { id: "administration", label: "Administration", order: 1000 },
+  general: { id: "general", label: message("General"), order: 0 },
+  diagnostics: { id: "diagnostics", label: message("Diagnostics"), order: 100 },
+  administration: { id: "administration", label: message("Administration"), order: 1000 },
 } as const;
 
 export function defineModule(module: StudioModule): StudioModule & { register: (api: StudioApi) => void } {

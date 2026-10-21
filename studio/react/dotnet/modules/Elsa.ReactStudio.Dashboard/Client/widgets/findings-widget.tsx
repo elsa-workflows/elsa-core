@@ -1,4 +1,8 @@
 "use client";
+import { translate } from "@elsa-workflows/react-studio-sdk/localization";
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
 import { ArrowUpRight, CircleAlert, CircleCheck, Info, OctagonAlert, TriangleAlert, type LucideIcon } from "lucide-react";
@@ -38,6 +42,7 @@ function hrefFor(f: DashboardFinding): string | undefined {
 
 /** `GET /dashboard/needs-attention`; on fallback servers derived from the all-time instance counts. */
 export function NeedsAttentionWidget({ range }: { range: DashboardRange }) {
+  const _t = useTranslation();
   const attention = useNeedsAttention(range);
   const counts = useFallbackInstanceCounts();
   const capability = attention.capability;
@@ -49,12 +54,11 @@ export function NeedsAttentionWidget({ range }: { range: DashboardRange }) {
       : [...(attention.data?.findings ?? [])].sort((a, b) => severity[a.severity].rank - severity[b.severity].rank || a.priority - b.priority);
 
   return (
-    <WidgetCard title="Needs attention" isLoading={source.isLoading} error={source.error} contentClassName="flex flex-col gap-3">
+    <WidgetCard title={_t("Needs attention")} isLoading={source.isLoading} error={source.error} contentClassName="flex flex-col gap-3">
       {findings.length === 0 ? (
         <WidgetEmpty>
           <CircleCheck className="mr-1.5 inline size-4 text-emerald-600 dark:text-emerald-400" aria-hidden />
-          Nothing needs attention.
-        </WidgetEmpty>
+          {_t("Nothing needs attention.")}</WidgetEmpty>
       ) : (
         <ul className="flex flex-col divide-y">
           {findings.map((f) => (
@@ -62,12 +66,13 @@ export function NeedsAttentionWidget({ range }: { range: DashboardRange }) {
           ))}
         </ul>
       )}
-      <SourceNote capability={capability}>Based on all-time instance counts; the Dashboard API adds runtime and range-scoped findings.</SourceNote>
+      <SourceNote capability={capability}>{_t("Based on all-time instance counts; the Dashboard API adds runtime and range-scoped findings.")}</SourceNote>
     </WidgetCard>
   );
 }
 
 function FindingRow({ finding }: { finding: DashboardFinding }) {
+  useTranslation();
   const { icon: Icon, className } = severity[finding.severity] ?? severity.Info;
   const href = hrefFor(finding);
   const inner = (
@@ -94,10 +99,10 @@ function fallbackFindings(counts: ReturnType<typeof useFallbackInstanceCounts>["
   if (!counts) return [];
   const out: DashboardFinding[] = [];
   if (counts.faulted > 0)
-    out.push({ id: "workflow-faults", severity: "Error", message: `${counts.faulted} workflow${counts.faulted === 1 ? "" : "s"} faulted`, targetKind: "WorkflowInstances", target: "faulted", priority: 10 });
+    out.push({ id: "workflow-faults", severity: "Error", message: counts.faulted === 1 ? translate("{{count}} workflow faulted", { count: counts.faulted }) : translate("{{count}} workflows faulted", { count: counts.faulted }), targetKind: "WorkflowInstances", target: "faulted", priority: 10 });
   if (counts.incidentBearing > 0)
-    out.push({ id: "workflow-incidents", severity: "Error", message: `${counts.incidentBearing} workflow${counts.incidentBearing === 1 ? " has" : "s have"} incidents`, targetKind: "WorkflowInstances", target: "incidents", priority: 20 });
+    out.push({ id: "workflow-incidents", severity: "Error", message: counts.incidentBearing === 1 ? translate("{{count}} workflow has incidents", { count: counts.incidentBearing }) : translate("{{count}} workflows have incidents", { count: counts.incidentBearing }), targetKind: "WorkflowInstances", target: "incidents", priority: 20 });
   if (counts.suspended > 0)
-    out.push({ id: "workflow-suspended", severity: "Info", message: `${counts.suspended} workflow${counts.suspended === 1 ? " is" : "s are"} suspended, waiting for input`, targetKind: "WorkflowInstances", target: "suspended", priority: 30 });
+    out.push({ id: "workflow-suspended", severity: "Info", message: counts.suspended === 1 ? translate("{{count}} workflow is suspended, waiting for input", { count: counts.suspended }) : translate("{{count}} workflows are suspended, waiting for input", { count: counts.suspended }), targetKind: "WorkflowInstances", target: "suspended", priority: 30 });
   return out;
 }

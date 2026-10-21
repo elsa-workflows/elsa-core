@@ -1,4 +1,6 @@
 "use client";
+import { message, useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { format, parseISO } from "date-fns";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -24,9 +26,9 @@ import type { DashboardTrendBucket, DashboardTrendGranularity } from "../api";
 type SeriesKey = "finished" | "faulted" | "suspended";
 
 const SERIES: { key: SeriesKey; label: string; fill: string; dot: string }[] = [
-  { key: "finished", label: "Finished", fill: "fill-emerald-500 dark:fill-emerald-400", dot: "bg-emerald-500 dark:bg-emerald-400" },
-  { key: "suspended", label: "Suspended", fill: "fill-amber-500 dark:fill-amber-400", dot: "bg-amber-500 dark:bg-amber-400" },
-  { key: "faulted", label: "Faulted", fill: "fill-red-500 dark:fill-red-400", dot: "bg-red-500 dark:bg-red-400" },
+  { key: "finished", label: message("Finished"), fill: "fill-emerald-500 dark:fill-emerald-400", dot: "bg-emerald-500 dark:bg-emerald-400" },
+  { key: "suspended", label: message("Suspended"), fill: "fill-amber-500 dark:fill-amber-400", dot: "bg-amber-500 dark:bg-amber-400" },
+  { key: "faulted", label: message("Faulted"), fill: "fill-red-500 dark:fill-red-400", dot: "bg-red-500 dark:bg-red-400" },
 ];
 
 const HEIGHT = 208;
@@ -71,6 +73,7 @@ function topRoundedRect(x: number, y: number, w: number, h: number, r: number) {
 }
 
 export function TrendChart({ buckets, granularity, className }: { buckets: DashboardTrendBucket[]; granularity: DashboardTrendGranularity; className?: string }) {
+  const _t = useTranslation();
   const { ref, width } = useElementWidth<HTMLDivElement>();
   const [hover, setHover] = useState<number | null>(null);
 
@@ -115,12 +118,12 @@ export function TrendChart({ buckets, granularity, className }: { buckets: Dashb
     <div className={cn("flex flex-col gap-2", className)}>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
         <span className="flex items-center gap-1.5 border-r pr-4">
-          Started <span className="font-medium text-foreground tabular-nums">{totals.started.toLocaleString()}</span>
+          {_t("Started")}{" "}<span className="font-medium text-foreground tabular-nums">{totals.started.toLocaleString()}</span>
         </span>
         {SERIES.map((s) => (
           <span key={s.key} className="flex items-center gap-1.5">
             <span className={cn("inline-block size-2 rounded-full", s.dot)} aria-hidden />
-            {s.label} <span className="font-medium text-foreground tabular-nums">{totals[s.key].toLocaleString()}</span>
+            {_t(s.label)} <span className="font-medium text-foreground tabular-nums">{totals[s.key].toLocaleString()}</span>
           </span>
         ))}
       </div>
@@ -130,7 +133,7 @@ export function TrendChart({ buckets, granularity, className }: { buckets: Dashb
             width={width}
             height={HEIGHT}
             role="img"
-            aria-label={`Workflow trend, ${n} buckets`}
+            aria-label={_t("Workflow trend, {{value0}} buckets", { value0: n })}
             className="block select-none"
             onMouseLeave={() => setHover(null)}
             onMouseMove={(e) => {
@@ -190,8 +193,7 @@ export function TrendChart({ buckets, granularity, className }: { buckets: Dashb
 
             {empty && (
               <text x={PAD.left + plotW / 2} y={PAD.top + plotH / 2} textAnchor="middle" className="fill-muted-foreground text-xs">
-                No workflow activity in this range
-              </text>
+                {_t("No workflow activity in this range")}</text>
             )}
           </svg>
         )}
@@ -205,15 +207,15 @@ export function TrendChart({ buckets, granularity, className }: { buckets: Dashb
               {labelFor(hovered.from, granularity)} – {labelFor(hovered.to, granularity)}
             </div>
             {hoveredIsQuiet ? (
-              <p className="text-muted-foreground">No activity</p>
+              <p className="text-muted-foreground">{_t("No activity")}</p>
             ) : (
               <dl className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5 text-muted-foreground">
-                <dt>Started</dt>
+                <dt>{_t("Started")}</dt>
                 <dd className="text-right text-foreground tabular-nums">{hovered.createdOrStarted}</dd>
                 {SERIES.map((s) => (
-                  <TooltipRow key={s.key} label={s.label} value={hovered[s.key]} dot={s.dot} />
+                  <TooltipRow key={s.key} label={_t(s.label)} value={hovered[s.key]} dot={s.dot} />
                 ))}
-                <dt>With incidents</dt>
+                <dt>{_t("With incidents")}</dt>
                 <dd className="text-right text-foreground tabular-nums">{hovered.incidentBearing}</dd>
               </dl>
             )}
@@ -225,6 +227,7 @@ export function TrendChart({ buckets, granularity, className }: { buckets: Dashb
 }
 
 function TooltipRow({ label, value, dot }: { label: string; value: number; dot: string }) {
+  useTranslation();
   return (
     <>
       <dt className="flex items-center gap-1.5">

@@ -1,3 +1,5 @@
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
 import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useAuth } from "@/lib/auth/provider";
 import { useActiveServer } from "@elsa-workflows/react-studio-sdk/environments/active-server";
@@ -6,6 +8,7 @@ import { approveNavigation, hasUnsavedChanges } from "@elsa-workflows/react-stud
 import { reloadStudioContext } from "@elsa-workflows/react-studio-sdk/navigation/reload";
 
 export function TenancyProvider({ children }: { children: ReactNode }) {
+  const _t = useTranslation();
   const server = useActiveServer();
   const auth = useAuth();
   const preferenceKey = tenantSelectionKey(server.url, tenantIdentityKey(auth.user));
@@ -28,19 +31,19 @@ export function TenancyProvider({ children }: { children: ReactNode }) {
     }
     previousScope.current = scope;
   }, [scope, auth.status, tenant.error]);
-  const [error, setError] = useState<string>();
-  const value = { ...tenant, error: error ?? tenant.error,
+  const [storageFailed, setStorageFailed] = useState(false);
+  const value = { ...tenant, error: storageFailed ? _t("Tenant selection could not be saved. Enable browser storage and try again.") : tenant.error,
     selectTenant: (id: string) => {
       if (tenant.mode !== "selection" || !tenant.tenants.some(item => item.id === id) || id === tenant.tenantId) return false;
-      if (hasUnsavedChanges() && !window.confirm("Switch tenant and discard unsaved changes?")) return false;
+      if (hasUnsavedChanges() && !window.confirm(_t("Switch tenant and discard unsaved changes?"))) return false;
       try { localStorage.setItem(preferenceKey, id); }
-      catch { setError("Tenant selection could not be saved. Enable browser storage and try again."); return false; }
+      catch { setStorageFailed(true); return false; }
       // Reload clears every module's stores, query cache, open editors and pending
       // browser requests, including state owned by third-party modules.
       return reloadStudioContext(approveNavigation);
     } };
-  if (auth.status === "initializing") return <p role="status">Loading account…</p>;
-  if (changed) return <div role="alert">The account or tenant changed. Reload Studio to continue. <button onClick={() => reloadStudioContext()}>Reload Studio</button></div>;
-  if (auth.status === "authenticated" && tenant.error) return <div role="alert"><p>{tenant.error}</p>{auth.strategy.interactive && <button onClick={() => void auth.logout()}>Sign out</button>}</div>;
+  if (auth.status === "initializing") return <p role="status">{_t("Loading account…")}</p>;
+  if (changed) return <div role="alert">{_t("The account or tenant changed. Reload Studio to continue.")}{" "}<button onClick={() => reloadStudioContext()}>{_t("Reload Studio")}</button></div>;
+  if (auth.status === "authenticated" && tenant.error) return <div role="alert"><p>{tenant.error}</p>{auth.strategy.interactive && <button onClick={() => void auth.logout()}>{_t("Sign out")}</button>}</div>;
   return <TenantProvider value={value}>{children}</TenantProvider>;
 }

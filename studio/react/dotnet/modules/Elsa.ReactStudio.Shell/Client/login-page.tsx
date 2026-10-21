@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { useRouter, useSearchParams } from "@elsa-workflows/react-studio-sdk/navigation/index";
 import { useEffect, useState, type FormEvent } from "react";
@@ -22,6 +24,7 @@ function safeReturnTo(value: string | null) {
 }
 
 export function LoginPage() {
+  const _t = useTranslation();
   const config = useStudioConfig();
   const server = useActiveServer();
   const auth = useAuth();
@@ -88,12 +91,12 @@ export function LoginPage() {
           <BrandLogo className="h-14 w-auto self-start text-sidebar-foreground" />
           <div>
             <div className="font-semibold tracking-tight">{config.title}</div>
-            <div className="text-xs text-muted-foreground">Workflow designer and operations console</div>
+            <div className="text-xs text-muted-foreground">{_t("Workflow designer and operations console")}</div>
           </div>
         </div>
         <LoginIllustration className="relative z-10 mx-auto w-full max-w-xl px-8" />
         <div className="relative z-10 p-8 text-xs text-muted-foreground">
-          <div className="eyebrow mb-1">Connected server</div>
+          <div className="eyebrow mb-1">{_t("Connected server")}</div>
           <div className="font-medium text-foreground">{server.name}</div>
           <div className="truncate font-mono">{server.url}</div>
         </div>
@@ -102,7 +105,7 @@ export function LoginPage() {
       <Card className="w-full max-w-sm node-card">
         <CardHeader className="items-center text-center">
           <BrandMark className="mx-auto mb-2 size-10 lg:hidden" />
-          <CardTitle className="text-lg">Sign in</CardTitle>
+          <CardTitle className="text-lg">{_t("Sign in")}</CardTitle>
           <CardDescription className="truncate">{config.title} · {server.name}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -111,27 +114,26 @@ export function LoginPage() {
 
           {showCredentials && (
             <form onSubmit={submitCredentials} className="flex flex-col gap-3">
-              <Field label="Username" htmlFor="username">
+              <Field label={_t("Username")} htmlFor="username">
                 <Input id="username" autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} required autoFocus />
               </Field>
-              <Field label="Password" htmlFor="password">
+              <Field label={_t("Password")} htmlFor="password">
                 <Input id="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />
               </Field>
               <Button type="submit" disabled={busy} className="mt-1">
                 {busy && <Loader2 className="animate-spin" />}
-                Sign in
-              </Button>
+                {_t("Sign in")}</Button>
             </form>
           )}
 
           {auth.strategy.kind === "oidc" && (
             <Button onClick={() => startRedirect()} disabled={busy}>
               {busy ? <Loader2 className="animate-spin" /> : <ExternalLink />}
-              Sign in with {new URL(config.auth.oidc.authority || "https://identity-provider").hostname}
+              {_t("Sign in with")}{" "}{new URL(config.auth.oidc.authority || "https://identity-provider").hostname}
             </Button>
           )}
 
-          {isExternalBroker && methods === undefined && <FullPageSpinner label="Loading sign-in options…" />}
+          {isExternalBroker && methods === undefined && <FullPageSpinner label={_t("Loading sign-in options…")} />}
           {externalMethods.map((m) => (
             <Button key={m.key} variant={m.isPreferred ? "default" : "outline"} onClick={() => startRedirect(m)} disabled={busy}>
               <ExternalLink />
@@ -139,7 +141,7 @@ export function LoginPage() {
             </Button>
           ))}
           {isExternalBroker && methods?.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center">The server offers no sign-in methods for this client.</p>
+            <p className="text-sm text-muted-foreground text-center">{_t("The server offers no sign-in methods for this client.")}</p>
           )}
         </CardContent>
       </Card>

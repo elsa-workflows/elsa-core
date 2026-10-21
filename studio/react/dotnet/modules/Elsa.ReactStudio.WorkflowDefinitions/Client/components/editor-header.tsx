@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
 import { useEffect, useRef, useState } from "react";
@@ -74,6 +76,7 @@ export interface EditorHeaderProps {
 
 /** Breadcrumb + identity on the left, view controls in the middle, save/publish/run on the right. */
 export function EditorHeader(p: EditorHeaderProps) {
+  const _t = useTranslation();
   const { definition, readOnly, isDirty } = useWorkflowEditor();
   const showDataFlow = useDesignerState((s) => s.showDataFlow);
   const setShowDataFlow = useDesignerState((s) => s.setShowDataFlow);
@@ -81,7 +84,7 @@ export function EditorHeader(p: EditorHeaderProps) {
     <>
       <nav
         className="flex min-w-0 items-center gap-1 text-sm"
-        aria-label="Breadcrumb"
+        aria-label={_t("Breadcrumb")}
       >
         {p.backTo && (
           <Tooltip>
@@ -89,38 +92,33 @@ export function EditorHeader(p: EditorHeaderProps) {
               <ArrowLeft />
               <span className="max-w-40 truncate">{p.backTo.label}</span>
             </TooltipTrigger>
-            <TooltipContent>Back to the workflow you came from</TooltipContent>
+            <TooltipContent>{_t("Back to the workflow you came from")}</TooltipContent>
           </Tooltip>
         )}
         <Link
           href={WorkflowDefinitionRoutes.list}
           className="hidden text-muted-foreground hover:text-foreground sm:inline"
         >
-          Definitions
-        </Link>
+          {_t("Definitions")}</Link>
         <ChevronRight className="hidden size-3.5 text-muted-foreground sm:inline" />
         <InlineName />
         <Badge variant="outline" className="ml-1 shrink-0 font-mono">
-          v{definition.version}
+          {_t("v")}{definition.version}
         </Badge>
         {definition.isPublished ? (
           <Badge className="shrink-0 border-transparent bg-status-success/10 text-status-success">
-            Published
-          </Badge>
+            {_t("Published")}</Badge>
         ) : (
           <Badge variant="secondary" className="shrink-0">
-            Draft
-          </Badge>
+            {_t("Draft")}</Badge>
         )}
         {p.viewingOldVersion && (
           <Badge variant="outline" className="shrink-0 text-status-warning">
-            older version
-          </Badge>
+            {_t("older version")}</Badge>
         )}
         {readOnly && !p.viewingOldVersion && (
           <Badge variant="outline" className="shrink-0">
-            Read-only
-          </Badge>
+            {_t("Read-only")}</Badge>
         )}
       </nav>
 
@@ -133,11 +131,9 @@ export function EditorHeader(p: EditorHeaderProps) {
         >
           <TabsList className="h-8">
             <TabsTrigger value="designer" className="text-xs">
-              Designer
-            </TabsTrigger>
+              {_t("Designer")}</TabsTrigger>
             <TabsTrigger value="code" className="text-xs">
-              Code
-            </TabsTrigger>
+              {_t("Code")}</TabsTrigger>
           </TabsList>
         </Tabs>
         {p.state.view === "designer" && (
@@ -150,7 +146,7 @@ export function EditorHeader(p: EditorHeaderProps) {
                       <Button
                         variant="ghost"
                         size="icon-sm"
-                        aria-label="View options"
+                        aria-label={_t("View options")}
                       />
                     }
                   />
@@ -158,39 +154,33 @@ export function EditorHeader(p: EditorHeaderProps) {
               >
                 <SlidersHorizontal />
               </TooltipTrigger>
-              <TooltipContent>View</TooltipContent>
+              <TooltipContent>{_t("View")}</TooltipContent>
             </Tooltip>
             <DropdownMenuContent align="center" className="w-56">
               <DropdownMenuGroup>
                 <DropdownMenuLabel className="eyebrow">
-                  Panels
-                </DropdownMenuLabel>
+                  {_t("Panels")}</DropdownMenuLabel>
                 {!readOnly && (
                   <DropdownMenuCheckboxItem
                     checked={p.state.showToolbox}
                     onCheckedChange={(c) => p.onChange({ showToolbox: !!c })}
                   >
-                    Activity toolbox
-                  </DropdownMenuCheckboxItem>
+                    {_t("Activity toolbox")}</DropdownMenuCheckboxItem>
                 )}
                 <DropdownMenuCheckboxItem
                   checked={p.state.showProperties}
                   onCheckedChange={(c) => p.onChange({ showProperties: !!c })}
                 >
-                  Properties pane
-                </DropdownMenuCheckboxItem>
+                  {_t("Properties pane")}</DropdownMenuCheckboxItem>
                 <DropdownMenuCheckboxItem
                   checked={p.state.showMinimap}
                   onCheckedChange={(c) => p.onChange({ showMinimap: !!c })}
                 >
-                  Mini-map
-                </DropdownMenuCheckboxItem>
+                  {_t("Mini-map")}</DropdownMenuCheckboxItem>
                 <DropdownMenuCheckboxItem checked={showDataFlow} onCheckedChange={(c) => setShowDataFlow(!!c)}>
-                  Data flow overlay
-                </DropdownMenuCheckboxItem>
+                  {_t("Data flow overlay")}</DropdownMenuCheckboxItem>
                 <DropdownMenuCheckboxItem checked={p.state.showContext} onCheckedChange={(c) => p.onChange({ showContext: !!c })}>
-                  Call context (callers &amp; callees)
-                </DropdownMenuCheckboxItem>
+                  {_t("Call context (callers & callees)")}</DropdownMenuCheckboxItem>
               </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -202,8 +192,7 @@ export function EditorHeader(p: EditorHeaderProps) {
         {!readOnly && p.state.view === "designer" && <IssuesPopover />}
         {p.viewingOldVersion && (
           <Button variant="outline" size="sm" onClick={p.onBackToLatest}>
-            Back to latest
-          </Button>
+            {_t("Back to latest")}</Button>
         )}
         {!readOnly && (
           <>
@@ -230,19 +219,18 @@ export function EditorHeader(p: EditorHeaderProps) {
                   <Check className="text-status-success" />
                 )}
                 <span className="hidden md:inline">
-                  {p.saving ? "Saving…" : isDirty ? "Unsaved changes" : "Saved"}
+                  {p.saving ? _t("Saving…") : isDirty ? _t("Unsaved changes") : _t("Saved")}
                 </span>
               </TooltipTrigger>
               <TooltipContent>
                 {p.state.autoSave
-                  ? "Auto-save is on · ⌘S saves now"
-                  : "Auto-save is off · ⌘S saves"}
+                  ? _t("Auto-save is on · ⌘S saves now")
+                  : _t("Auto-save is off · ⌘S saves")}
               </TooltipContent>
             </Tooltip>
             {p.canPublish && (
               <Button size="sm" onClick={p.onPublish} disabled={p.saving}>
-                <Rocket /> Publish
-              </Button>
+                <Rocket /> {_t("Publish")}</Button>
             )}
           </>
         )}
@@ -253,20 +241,18 @@ export function EditorHeader(p: EditorHeaderProps) {
             onClick={p.onRun}
             className="hidden lg:inline-flex"
           >
-            <Play /> Run
-          </Button>
+            <Play /> {_t("Run")}</Button>
         )}
         <DropdownMenu>
           <DropdownMenuTrigger
-            render={<Button variant="ghost" size="icon-sm" aria-label="More" />}
+            render={<Button variant="ghost" size="icon-sm" aria-label={_t("More")} />}
           >
             <MoreHorizontal />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             {p.canExecute && definition.isPublished && (
               <DropdownMenuItem onClick={p.onRun} className="lg:hidden">
-                <Play /> Run
-              </DropdownMenuItem>
+                <Play /> {_t("Run")}</DropdownMenuItem>
             )}
             {!readOnly && (
               <>
@@ -274,26 +260,21 @@ export function EditorHeader(p: EditorHeaderProps) {
                   checked={p.state.autoSave}
                   onCheckedChange={(c) => p.onChange({ autoSave: !!c })}
                 >
-                  Auto-save
-                </DropdownMenuCheckboxItem>
+                  {_t("Auto-save")}</DropdownMenuCheckboxItem>
                 <DropdownMenuItem onClick={p.onSaveAs}>
-                  <CloudUpload /> Save as…
-                </DropdownMenuItem>
+                  <CloudUpload /> {_t("Save as…")}</DropdownMenuItem>
               </>
             )}
             {p.canRetract && definition.isPublished && !p.viewingOldVersion && (
               <DropdownMenuItem onClick={p.onUnpublish}>
-                <Undo2 /> Unpublish
-              </DropdownMenuItem>
+                <Undo2 /> {_t("Unpublish")}</DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={p.onExport}>
-              <Download /> Export JSON
-            </DropdownMenuItem>
+              <Download /> {_t("Export JSON")}</DropdownMenuItem>
             {!readOnly && (
               <DropdownMenuItem onClick={p.onImport}>
-                <FileUp /> Import JSON…
-              </DropdownMenuItem>
+                <FileUp /> {_t("Import JSON…")}</DropdownMenuItem>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
@@ -304,6 +285,7 @@ export function EditorHeader(p: EditorHeaderProps) {
 
 /** The workflow name doubles as an inline editor: click to rename. */
 function InlineName() {
+  const _t = useTranslation();
   const { definition, updateDefinition, readOnly } = useWorkflowEditor();
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(definition.name ?? "");
@@ -331,7 +313,7 @@ function InlineName() {
           if (e.key === "Escape") setEditing(false);
         }}
         className="h-7 min-w-40 max-w-md rounded border border-primary bg-background px-1.5 text-sm font-semibold outline-none"
-        aria-label="Workflow name"
+        aria-label={_t("Workflow name")}
       />
     );
   }
@@ -351,11 +333,11 @@ function InlineName() {
         }
       >
         {definition.name ?? (
-          <span className="italic text-muted-foreground">(unnamed)</span>
+          <span className="italic text-muted-foreground">{_t("(unnamed)")}</span>
         )}
       </TooltipTrigger>
       <TooltipContent>
-        {readOnly ? "Workflow name" : "Click to rename"}
+        {readOnly ? _t("Workflow name") : _t("Click to rename")}
       </TooltipContent>
     </Tooltip>
   );

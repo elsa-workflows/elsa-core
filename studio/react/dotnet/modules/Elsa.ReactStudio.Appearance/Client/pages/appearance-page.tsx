@@ -1,4 +1,6 @@
 "use client";
+import { message, useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { ArrowLeft, Check, Monitor, Moon, RotateCcw, Sun } from "lucide-react";
 import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
@@ -14,13 +16,14 @@ import { useElsaTheme } from "@elsa-workflows/react-studio-sdk/theme/elsa-theme-
 import { cn } from "@elsa-workflows/react-studio-ui/utils";
 
 const appearances = [
-  { id: "light", label: "Light", description: "Always use the light appearance.", icon: Sun },
-  { id: "dark", label: "Dark", description: "Always use the dark appearance.", icon: Moon },
-  { id: "system", label: "System", description: "Follow the operating system setting.", icon: Monitor },
+  { id: "light", label: message("Light"), description: message("Always use the light appearance."), icon: Sun },
+  { id: "dark", label: message("Dark"), description: message("Always use the dark appearance."), icon: Moon },
+  { id: "system", label: message("System"), description: message("Follow the operating system setting."), icon: Monitor },
 ] as const;
 
 /** Edits the same per-browser state as the header palette menu, with room to explain each option. */
 export function AppearancePage() {
+  const _t = useTranslation();
   const config = useStudioConfig();
   const { theme: appearance, setTheme: setAppearance } = useTheme();
   const { theme, setTheme, defaultTheme, isOverridden } = useElsaTheme();
@@ -36,9 +39,9 @@ export function AppearancePage() {
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
-        eyebrow="Settings"
-        title="Appearance"
-        description="Choices are remembered in this browser only. The defaults come from the studio configuration."
+        eyebrow={_t("Settings")}
+        title={_t("Appearance")}
+        description={_t("Choices are remembered in this browser only. The defaults come from the studio configuration.")}
         actions={
           <>
             <Button
@@ -51,23 +54,21 @@ export function AppearancePage() {
               }}
             >
               <RotateCcw data-icon="inline-start" />
-              Reset to defaults
-            </Button>
+              {_t("Reset to defaults")}</Button>
             <Button variant="ghost" size="sm" nativeButton={false} render={<Link href={SettingsRoutes.overview} />}>
               <ArrowLeft data-icon="inline-start" />
-              All settings
-            </Button>
+              {_t("All settings")}</Button>
           </>
         }
       />
 
       <Card>
         <CardHeader>
-          <CardTitle>Mode</CardTitle>
-          <CardDescription>Light, dark or whatever the operating system prefers.</CardDescription>
+          <CardTitle>{_t("Mode")}</CardTitle>
+          <CardDescription>{_t("Light, dark or whatever the operating system prefers.")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Appearance mode">
+          <div className="grid gap-3 sm:grid-cols-3" role="radiogroup" aria-label={_t("Appearance mode")}>
             {appearances.map((a) => {
               const selected = currentAppearance === a.id;
               return (
@@ -87,10 +88,10 @@ export function AppearancePage() {
                   </span>
                   <span className="flex min-w-0 flex-col">
                     <span className="text-sm font-medium">
-                      {a.label}
-                      {a.id === config.ui.defaultTheme && <span className="ml-1 text-[10px] uppercase text-muted-foreground">default</span>}
+                      {_t(a.label)}
+                      {a.id === config.ui.defaultTheme && <span className="ml-1 text-[10px] uppercase text-muted-foreground">{_t("default")}</span>}
                     </span>
-                    <span className="text-xs text-muted-foreground">{a.description}</span>
+                    <span className="text-xs text-muted-foreground">{_t(a.description)}</span>
                   </span>
                 </button>
               );
@@ -101,11 +102,11 @@ export function AppearancePage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Palette</CardTitle>
-          <CardDescription>The Elsa theme pack: accent colours for the shell, the canvas and workflow statuses.</CardDescription>
+          <CardTitle>{_t("Palette")}</CardTitle>
+          <CardDescription>{_t("The Elsa theme pack: accent colours for the shell, the canvas and workflow statuses.")}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" role="radiogroup" aria-label="Palette">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" role="radiogroup" aria-label={_t("Palette")}>
             {ELSA_THEMES.map((t) => {
               const selected = theme === t.id;
               return (
@@ -123,10 +124,10 @@ export function AppearancePage() {
                   <span className="mt-0.5 size-6 shrink-0 rounded-full ring-2 ring-background" style={{ background: t.swatch }} />
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="text-sm font-medium">
-                      {t.label}
-                      {t.id === defaultTheme && <span className="ml-1 text-[10px] uppercase text-muted-foreground">default</span>}
+                      {_t(t.label)}
+                      {t.id === defaultTheme && <span className="ml-1 text-[10px] uppercase text-muted-foreground">{_t("default")}</span>}
                     </span>
-                    <span className="text-xs text-muted-foreground">{t.description}</span>
+                    <span className="text-xs text-muted-foreground">{_t(t.description)}</span>
                   </span>
                   <Check className={cn("mt-0.5 size-4 shrink-0 text-primary", selected ? "opacity-100" : "opacity-0")} />
                 </button>

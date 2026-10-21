@@ -1,4 +1,6 @@
 "use client"
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
@@ -9,6 +11,7 @@ import { Input } from "@elsa-workflows/react-studio-ui/input"
 import { Textarea } from "@elsa-workflows/react-studio-ui/textarea"
 
 function InputGroup({ className, ...props }: React.ComponentProps<"div">) {
+  useTranslation();
   return (
     <div
       data-slot="input-group"
@@ -48,6 +51,7 @@ function InputGroupAddon({
   align = "inline-start",
   ...props
 }: React.ComponentProps<"div"> & VariantProps<typeof inputGroupAddonVariants>) {
+  useTranslation();
   return (
     <div
       role="group"
@@ -93,6 +97,7 @@ function InputGroupButton({
   VariantProps<typeof inputGroupButtonVariants> & {
     type?: "button" | "submit" | "reset"
   }) {
+  useTranslation();
   return (
     <Button
       type={type}
@@ -105,6 +110,7 @@ function InputGroupButton({
 }
 
 function InputGroupText({ className, ...props }: React.ComponentProps<"span">) {
+  useTranslation();
   return (
     <span
       className={cn(
@@ -120,6 +126,7 @@ function InputGroupInput({
   className,
   ...props
 }: React.ComponentProps<"input">) {
+  useTranslation();
   return (
     <Input
       data-slot="input-group-control"
@@ -136,6 +143,7 @@ function InputGroupTextarea({
   className,
   ...props
 }: React.ComponentProps<"textarea">) {
+  useTranslation();
   return (
     <Textarea
       data-slot="input-group-control"

@@ -1,14 +1,18 @@
 "use client"
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import * as React from "react"
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover"
 import { cn } from "cn"
 
 function Popover({ ...props }: PopoverPrimitive.Root.Props) {
+  useTranslation();
   return <PopoverPrimitive.Root data-slot="popover" {...props} />
 }
 
 function PopoverTrigger({ ...props }: PopoverPrimitive.Trigger.Props) {
+  useTranslation();
   return <PopoverPrimitive.Trigger data-slot="popover-trigger" {...props} />
 }
 
@@ -24,6 +28,7 @@ function PopoverContent({
     PopoverPrimitive.Positioner.Props,
     "align" | "alignOffset" | "side" | "sideOffset"
   >) {
+  useTranslation();
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Positioner
@@ -47,6 +52,7 @@ function PopoverContent({
 }
 
 function PopoverHeader({ className, ...props }: React.ComponentProps<"div">) {
+  useTranslation();
   return (
     <div
       data-slot="popover-header"
@@ -57,6 +63,7 @@ function PopoverHeader({ className, ...props }: React.ComponentProps<"div">) {
 }
 
 function PopoverTitle({ className, ...props }: PopoverPrimitive.Title.Props) {
+  useTranslation();
   return (
     <PopoverPrimitive.Title
       data-slot="popover-title"
@@ -70,6 +77,7 @@ function PopoverDescription({
   className,
   ...props
 }: PopoverPrimitive.Description.Props) {
+  useTranslation();
   return (
     <PopoverPrimitive.Description
       data-slot="popover-description"

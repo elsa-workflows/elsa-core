@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { createElement, useMemo, useState } from "react";
 import { Info } from "lucide-react";
@@ -37,6 +39,7 @@ function inputPropertyName(input: InputDescriptor) {
 
 /** Edits the selected activity: inputs (by UI hint), output bindings, common settings, info, plus module tabs. */
 export function ActivityPropertiesPanel({ workflowDefinitionId, variables, workflowOutputs, workflowInputs = [] }: ActivityPropertiesPanelProps) {
+  const _t = useTranslation();
   const { registry, dataFlow } = useDesigner();
   const activity = useDesignerState((s) => s.selectedActivity());
   const root = useDesignerState((s) => s.root);
@@ -60,7 +63,7 @@ export function ActivityPropertiesPanel({ workflowDefinitionId, variables, workf
   const [tab, setTab] = useState("input");
 
   if (!activity) {
-    return <EmptyState icon={Info} title="No activity selected" description="Select an activity on the canvas to edit its properties." className="m-3 border-none" />;
+    return <EmptyState icon={Info} title={_t("No activity selected")} description={_t("Select an activity on the canvas to edit its properties.")} className="m-3 border-none" />;
   }
 
   const descriptor = registry.get(activity.type, activity.version);
@@ -97,49 +100,49 @@ export function ActivityPropertiesPanel({ workflowDefinitionId, variables, workf
       </div>
       <Tabs value={visibleTab} onValueChange={(v) => setTab(String(v))} className="flex min-h-0 flex-1 flex-col">
         <TabsList className="mx-3 mt-2 w-[calc(100%-1.5rem)] justify-start overflow-x-auto [&>*]:shrink-0">
-          <TabsTrigger value="input">Input</TabsTrigger>
-          <TabsTrigger value="output">Output</TabsTrigger>
-          <TabsTrigger value="common">Common</TabsTrigger>
-          <TabsTrigger value="commit">Commit strategy</TabsTrigger>
-          <TabsTrigger value="log">Log</TabsTrigger>
-          {isTask && <TabsTrigger value="task">Task</TabsTrigger>}
-          {isResilient && <TabsTrigger value="resilience">Resilience</TabsTrigger>}
-          {isWorkflowActivity && <TabsTrigger value="version">Version</TabsTrigger>}
+          <TabsTrigger value="input">{_t("Input")}</TabsTrigger>
+          <TabsTrigger value="output">{_t("Output")}</TabsTrigger>
+          <TabsTrigger value="common">{_t("Common")}</TabsTrigger>
+          <TabsTrigger value="commit">{_t("Commit strategy")}</TabsTrigger>
+          <TabsTrigger value="log">{_t("Log")}</TabsTrigger>
+          {isTask && <TabsTrigger value="task">{_t("Task")}</TabsTrigger>}
+          {isResilient && <TabsTrigger value="resilience">{_t("Resilience")}</TabsTrigger>}
+          {isWorkflowActivity && <TabsTrigger value="version">{_t("Version")}</TabsTrigger>}
           {extraTabs.map((t) => (
             <TabsTrigger key={t.id} value={t.id}>
               {t.label}
             </TabsTrigger>
           ))}
-          <TabsTrigger value="info">Info</TabsTrigger>
+          <TabsTrigger value="info">{_t("Info")}</TabsTrigger>
         </TabsList>
         <ScrollArea className="min-h-0 flex-1">
           <TabsContent value="input" className="flex flex-col gap-4 p-3">
-            {inputs.length === 0 && <p className="text-sm text-muted-foreground">This activity has no inputs.</p>}
+            {inputs.length === 0 && <p className="text-sm text-muted-foreground">{_t("This activity has no inputs.")}</p>}
             {inputs.map((input) => (
               <InputField key={input.name} input={input} activity={activity} syntaxes={syntaxes} readOnly={readOnly} context={context} onChange={update} />
             ))}
           </TabsContent>
           <TabsContent value="output" className="flex flex-col gap-4 p-3">
-            {outputs.length === 0 && <p className="text-sm text-muted-foreground">This activity has no outputs.</p>}
+            {outputs.length === 0 && <p className="text-sm text-muted-foreground">{_t("This activity has no outputs.")}</p>}
             {outputs.map((output) => (
               <OutputField key={output.name} output={output} activity={activity} variables={variables} readOnly={readOnly} onChange={update} />
             ))}
           </TabsContent>
           <TabsContent value="common" className="flex flex-col gap-4 p-3">
-            <Field label="Name" hint="Used to reference this activity from expressions and connections.">
+            <Field label={_t("Name")} hint={_t("Used to reference this activity from expressions and connections.")}>
               <Input value={activity.name ?? ""} readOnly={readOnly} onChange={(e) => update({ name: e.target.value })} />
             </Field>
-            <Field label="Display text">
+            <Field label={_t("Display text")}>
               <Input value={(activity.metadata?.displayText as string) ?? ""} readOnly={readOnly} onChange={(e) => update((a) => ({ ...a, metadata: { ...a.metadata, displayText: e.target.value } }))} />
             </Field>
-            <Field label="Description">
+            <Field label={_t("Description")}>
               <Textarea rows={3} value={(activity.metadata?.description as string) ?? ""} readOnly={readOnly} onChange={(e) => update((a) => ({ ...a, metadata: { ...a.metadata, description: e.target.value } }))} />
             </Field>
-            <Field inline label="Show description on the canvas">
+            <Field inline label={_t("Show description on the canvas")}>
               <Checkbox checked={activity.metadata?.showDescription === true} disabled={readOnly} onCheckedChange={(c) => update((a) => ({ ...a, metadata: { ...a.metadata, showDescription: c === true } }))} />
             </Field>
             {descriptor?.kind === "Trigger" && (
-              <Field inline label="Can start workflow" hint="When checked this trigger starts a new instance of the workflow.">
+              <Field inline label={_t("Can start workflow")} hint={_t("When checked this trigger starts a new instance of the workflow.")}>
                 <Checkbox
                   checked={activity.customProperties?.canStartWorkflow === true}
                   disabled={readOnly}
@@ -163,26 +166,26 @@ export function ActivityPropertiesPanel({ workflowDefinitionId, variables, workf
           <TabsContent value="info" className="flex flex-col gap-4 p-3">
             {dataSummary && (dataSummary.reads.length > 0 || dataSummary.writes.length > 0) && (
               <div className="flex flex-col gap-1.5">
-                <div className="eyebrow">Data</div>
+                <div className="eyebrow">{_t("Data")}</div>
                 <div className="flex flex-wrap gap-1">
                   {dataSummary.writes.map((d) => (
-                    <span key={`w-${d.kind}-${d.key}`} className="rounded-full bg-status-warning/15 px-2 py-0.5 text-xs font-medium text-status-warning">↑ writes {d.name}</span>
+                    <span key={`w-${d.kind}-${d.key}`} className="rounded-full bg-status-warning/15 px-2 py-0.5 text-xs font-medium text-status-warning">{_t("↑ writes")}{" "}{d.name}</span>
                   ))}
                   {dataSummary.reads.map((d) => (
-                    <span key={`r-${d.kind}-${d.key}`} className="rounded-full bg-status-info/15 px-2 py-0.5 text-xs font-medium text-status-info">↓ reads {d.name}</span>
+                    <span key={`r-${d.kind}-${d.key}`} className="rounded-full bg-status-info/15 px-2 py-0.5 text-xs font-medium text-status-info">{_t("↓ reads")}{" "}{d.name}</span>
                   ))}
                 </div>
               </div>
             )}
             <KeyValueTable
               rows={[
-                { label: "Id", value: <code className="font-mono text-xs">{activity.id}</code> },
-                { label: "Node id", value: <code className="font-mono text-xs break-all">{activity.nodeId}</code> },
-                { label: "Type", value: activity.type },
-                { label: "Version", value: activity.version },
-                { label: "Kind", value: descriptor?.kind },
-                { label: "Category", value: descriptor?.category },
-                { label: "Description", value: descriptor?.description },
+                { label: _t("Id"), value: <code className="font-mono text-xs">{activity.id}</code> },
+                { label: _t("Node id"), value: <code className="font-mono text-xs break-all">{activity.nodeId}</code> },
+                { label: _t("Type"), value: activity.type },
+                { label: _t("Version"), value: activity.version },
+                { label: _t("Kind"), value: descriptor?.kind },
+                { label: _t("Category"), value: descriptor?.category },
+                { label: _t("Description"), value: descriptor?.description },
               ]}
             />
           </TabsContent>
@@ -207,6 +210,7 @@ function InputField({
   context: UiHintContext;
   onChange: (patch: (a: Activity) => Activity) => void;
 }) {
+  useTranslation();
   const Editor = useUiHintEditor(input.uiHint);
   const prop = inputPropertyName(input);
   const raw = activity[prop];
@@ -238,16 +242,17 @@ function OutputField({
   readOnly: boolean;
   onChange: (patch: (a: Activity) => Activity) => void;
 }) {
+  const _t = useTranslation();
   const prop = inputPropertyName({ name: output.name } as InputDescriptor);
   const current = activity[prop] as { memoryReference?: { id: string } } | undefined;
   return (
-    <Field label={output.displayName ?? output.name} hint={output.description ?? `Store the ${output.name} (${output.typeName}) in a variable.`}>
+    <Field label={output.displayName ?? output.name} hint={output.description ?? _t("Store the {{value0}} ({{value1}}) in a variable.", { value0: output.name, value1: output.typeName })}>
       <SimpleSelect
         value={current?.memoryReference?.id}
         allowEmpty
         disabled={readOnly}
-        placeholder="Not captured"
-        options={variables.map((v) => ({ value: v.id, label: `${v.name} (${v.typeName})` }))}
+        placeholder={_t("Not captured")}
+        options={variables.map((v) => ({ value: v.id, label: _t("{{value0}} ({{value1}})", { value0: v.name, value1: v.typeName }) }))}
         onChange={(id) => onChange((a) => ({ ...a, [prop]: id ? { typeName: output.typeName, memoryReference: { id } } : undefined }))}
       />
     </Field>

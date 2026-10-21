@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { studioRoute } from "@elsa-workflows/react-studio-sdk/navigation/base-path";
 import { useEffect, useState } from "react";
@@ -9,6 +11,7 @@ import { AccessDenied } from "./status-pages";
 
 /** Landing route for redirect-based sign-in (OIDC, external authentication broker). */
 export function AuthCallback() {
+  const _t = useTranslation();
   const { strategy } = useAuth();
   const router = useRouter();
   const [error, setError] = useState<string>();
@@ -24,6 +27,6 @@ export function AuthCallback() {
       .catch((e: Error) => setError(e.message));
   }, [strategy, router]);
 
-  if (error) return <AccessDenied message={`Sign-in could not be completed: ${error}`} />;
-  return <FullPageSpinner label="Completing sign-in…" />;
+  if (error) return <AccessDenied message={_t("Sign-in could not be completed: {{value0}}", { value0: error })} />;
+  return <FullPageSpinner label={_t("Completing sign-in…")} />;
 }

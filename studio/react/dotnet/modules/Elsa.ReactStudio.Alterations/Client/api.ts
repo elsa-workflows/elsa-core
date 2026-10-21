@@ -1,3 +1,5 @@
+
+import { message } from "@elsa-workflows/react-studio-sdk/localization";
 import type { HttpClient } from "@elsa-workflows/react-studio-api-client/http";
 import type { TimestampFilter, WorkflowStatus, WorkflowSubStatus } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
 
@@ -15,11 +17,11 @@ export type Alteration =
 export type AlterationType = Alteration["type"];
 
 export const AlterationTypes: { value: AlterationType; label: string; description: string }[] = [
-  { value: "Migrate", label: "Migrate to version", description: "Move the instance to another published version of its definition." },
-  { value: "ModifyVariable", label: "Modify variable", description: "Set a workflow variable to a new value." },
-  { value: "ScheduleActivity", label: "Schedule activity", description: "Schedule an activity (by id or activity instance id) for execution." },
-  { value: "CancelActivity", label: "Cancel activity", description: "Cancel a running activity (by id or activity instance id)." },
-  { value: "Cancel", label: "Cancel workflow", description: "Cancel the whole workflow instance." },
+  { value: "Migrate", label: message("Migrate to version"), description: message("Move the instance to another published version of its definition.") },
+  { value: "ModifyVariable", label: message("Modify variable"), description: message("Set a workflow variable to a new value.") },
+  { value: "ScheduleActivity", label: message("Schedule activity"), description: message("Schedule an activity (by id or activity instance id) for execution.") },
+  { value: "CancelActivity", label: message("Cancel activity"), description: message("Cancel a running activity (by id or activity instance id).") },
+  { value: "Cancel", label: message("Cancel workflow"), description: message("Cancel the whole workflow instance.") },
 ];
 
 /** Mirrors `AlterationWorkflowInstanceFilter`. */

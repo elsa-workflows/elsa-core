@@ -1,3 +1,5 @@
+
+import { message } from "@elsa-workflows/react-studio-sdk/localization";
 import { FileCode2, Workflow } from "lucide-react";
 import { defineModule, NavGroups } from "@elsa-workflows/react-studio-sdk";
 import { Resources, Verbs } from "@elsa-workflows/react-studio-auth/permissions";
@@ -10,33 +12,33 @@ export { useWorkflowEditor } from "./editor-context";
 
 export const workflowDefinitionsModule = defineModule({
   id: "workflow-definitions",
-  name: "Workflow definitions",
+  name: message("Workflow definitions"),
   core: true,
   routes: [
     {
       path: WorkflowDefinitionRoutes.list,
       component: WorkflowDefinitionsListPage,
-      title: "Workflow definitions",
+      title: message("Workflow definitions"),
       permissions: [{ resource: Resources.workflowDefinitions, verb: Verbs.view }],
     },
     {
       path: WorkflowDefinitionRoutes.edit,
       component: WorkflowDefinitionEditorPage,
-      title: "Workflow editor",
+      title: message("Workflow editor"),
       permissions: [{ resource: Resources.workflowDefinitions, verb: Verbs.view }],
     },
   ],
   nav: [
     {
       id: "workflows",
-      label: "Workflows",
+      label: message("Workflows"),
       icon: Workflow,
       group: NavGroups.general.id,
       order: 10,
       children: [
         {
           id: "workflow-definitions",
-          label: "Definitions",
+          label: message("Definitions"),
           href: WorkflowDefinitionRoutes.list,
           icon: FileCode2,
           order: 0,

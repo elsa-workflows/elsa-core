@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -19,6 +21,7 @@ const HEIGHT = 420;
  * the empty canvas). Picking an item places and wires the activity in one step.
  */
 export function QuickAddMenu() {
+  useTranslation();
   const { registry, store } = useDesigner();
   const request = useDesignerState((s) => s.quickAdd);
   const ref = useRef<HTMLDivElement>(null);
@@ -100,6 +103,7 @@ function QuickAddPanel({
   pickType: (typeName: string) => void;
   panelRef: React.RefObject<HTMLDivElement | null>;
 }) {
+  const _t = useTranslation();
   const [query, setQuery] = useState("");
   /**
    * Filling a branch -- an If's Then, a loop's Body, a Switch case -- usually means starting a nested
@@ -116,9 +120,9 @@ function QuickAddPanel({
         className="fixed z-[100] overflow-hidden rounded-lg border bg-popover p-2 text-popover-foreground shadow-xl"
         style={{ left, top, width: WIDTH }}
         role="dialog"
-        aria-label="Choose what runs in this branch"
+        aria-label={_t("Choose what runs in this branch")}
       >
-        <p className="px-1 pb-1.5 pt-0.5 text-xs text-muted-foreground">Start a flow in this branch</p>
+        <p className="px-1 pb-1.5 pt-0.5 text-xs text-muted-foreground">{_t("Start a flow in this branch")}</p>
         <div className="flex flex-col gap-1">
           {FLOW_TYPES.map((f) => (
             <button
@@ -130,8 +134,8 @@ function QuickAddPanel({
             >
               <f.icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
               <span className="min-w-0">
-                <span className="block text-sm font-medium">{f.label}</span>
-                <span className="block text-xs text-muted-foreground">{f.description}</span>
+                <span className="block text-sm font-medium">{_t(f.label)}</span>
+                <span className="block text-xs text-muted-foreground">{_t(f.description)}</span>
               </span>
             </button>
           ))}
@@ -140,8 +144,7 @@ function QuickAddPanel({
             onClick={() => setMode("palette")}
             className="mt-0.5 rounded-md border border-dashed p-2 text-left text-sm text-muted-foreground outline-none hover:border-primary hover:text-foreground focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/40"
           >
-            A single activity instead…
-          </button>
+            {_t("A single activity instead…")}</button>
         </div>
       </div>
     );
@@ -153,7 +156,7 @@ function QuickAddPanel({
       className="fixed z-[100] overflow-hidden rounded-lg border bg-popover text-popover-foreground shadow-xl"
       style={{ left, top, width: WIDTH, height: HEIGHT }}
       role="dialog"
-      aria-label="Add activity"
+      aria-label={_t("Add activity")}
     >
       <Command loop className="h-full" filter={rankMatch}>
         <CommandInput
@@ -163,19 +166,19 @@ function QuickAddPanel({
           placeholder={
             request.slot
               ? request.triggersOnly
-                ? "Choose a trigger…"
-                : "Choose an activity or container…"
+                ? _t("Choose a trigger…")
+                : _t("Choose an activity or container…")
               : request.source
-                ? `Add after ${sourceName ?? "activity"} (${request.source.port})…`
+                ? _t("Add after {{value0}} ({{value1}})…", { value0: sourceName ?? "activity", value1: request.source.port })
                 : request.insertInto
-                  ? "Insert activity here…"
-                  : "Add activity…"
+                  ? _t("Insert activity here…")
+                  : _t("Add activity…")
           }
         />
         <CommandList className="max-h-none h-[calc(100%-2.75rem)]">
-          <CommandEmpty>No activities match.</CommandEmpty>
+          <CommandEmpty>{_t("No activities match.")}</CommandEmpty>
           {!query && recent.length > 0 && (
-            <CommandGroup heading="Recently used">
+            <CommandGroup heading={_t("Recently used")}>
               {recent.map((d) => (
                 <Item key={`recent-${d.typeName}`} d={d} onSelect={() => pick(d)} />
               ))}
@@ -214,6 +217,7 @@ function rankMatch(value: string, search: string): number {
 }
 
 function Item({ d, onSelect }: { d: ActivityDescriptor; onSelect: () => void }) {
+  useTranslation();
   const accent = activityAccentColor(d);
   return (
     <CommandItem value={[d.displayName, d.typeName, d.category, d.description ?? ""].join("\u0000")} keywords={[d.displayName]} onSelect={onSelect} className="gap-2.5">

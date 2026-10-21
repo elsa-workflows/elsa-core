@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { ChevronRight, Plus, Trash2 } from "lucide-react";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
@@ -32,6 +34,7 @@ export function SlotChip({
   triggersOnly?: boolean;
   allowContainers?: boolean;
 }) {
+  const _t = useTranslation();
   const { store, registry } = useDesigner();
   const descriptor = child ? registry.get(child.type, child.version) : undefined;
   const isContainer = !!child && ["Elsa.Flowchart", "Elsa.Sequence", "Elsa.StateMachine"].includes(child.type);
@@ -41,7 +44,7 @@ export function SlotChip({
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium">{label}</span>
         {child && !readOnly && (
-          <Button variant="ghost" size="icon-xs" aria-label={`Remove ${label}`} className="text-muted-foreground hover:text-status-danger" onClick={() => store.getState().fillSlot(ownerId, slot, undefined)}>
+          <Button variant="ghost" size="icon-xs" aria-label={_t("Remove {{value0}}", { value0: label })} className="text-muted-foreground hover:text-status-danger" onClick={() => store.getState().fillSlot(ownerId, slot, undefined)}>
             <Trash2 />
           </Button>
         )}
@@ -51,7 +54,7 @@ export function SlotChip({
           type="button"
           className="flex w-full items-center gap-2 rounded-md border bg-card px-2 py-1.5 text-left hover:border-primary"
           onClick={() => (isContainer ? store.getState().enterSlot(ownerId, slot) : store.getState().select([child.id]))}
-          title={isContainer ? "Open" : "Edit properties"}
+          title={isContainer ? _t("Open") : _t("Edit properties")}
         >
           <span className="flex size-6 shrink-0 items-center justify-center rounded-md" style={{ background: `color-mix(in oklab, ${accent} 14%, var(--card))`, color: accent }}>
             <ActivityIcon typeName={child.type} descriptor={descriptor} className="size-3.5" />
@@ -63,7 +66,7 @@ export function SlotChip({
           <ChevronRight className="size-4 text-muted-foreground" />
         </button>
       ) : readOnly ? (
-        <span className="text-sm text-muted-foreground">none</span>
+        <span className="text-sm text-muted-foreground">{_t("none")}</span>
       ) : (
         <Button
           variant="outline"
@@ -71,7 +74,7 @@ export function SlotChip({
           className="justify-start border-dashed text-muted-foreground"
           onClick={(e) => store.getState().openQuickAdd({ screen: { x: e.clientX - 300, y: e.clientY + 8 }, slot: { activityId: ownerId, slot }, allowContainers: allowContainers && !triggersOnly, triggersOnly })}
         >
-          <Plus /> {triggersOnly ? "Choose trigger" : "Add activity"}
+          <Plus /> {triggersOnly ? _t("Choose trigger") : _t("Add activity")}
         </Button>
       )}
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}

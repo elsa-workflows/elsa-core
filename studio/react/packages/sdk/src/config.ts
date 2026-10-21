@@ -1,3 +1,5 @@
+
+import { translate } from "./localization.js";
 import { z } from "zod";
 
 /**
@@ -72,8 +74,8 @@ export const tenancyConfigSchema = z.object({
   claimType: z.string().min(1).default("http://schemas.microsoft.com/identity/claims/tenantid"),
   tenants: z.array(z.object({ id: z.string(), name: z.string().min(1) })).default([]),
 }).superRefine((value, context) => {
-  if (value.mode === "selection" && value.tenants.length === 0) context.addIssue({ code: "custom", message: "Tenant selection requires at least one configured tenant." });
-  if (new Set(value.tenants.map(tenant => tenant.id)).size !== value.tenants.length) context.addIssue({ code: "custom", message: "Configured tenant IDs must be unique." });
+  if (value.mode === "selection" && value.tenants.length === 0) context.addIssue({ code: "custom", message: translate("Tenant selection requires at least one configured tenant.") });
+  if (new Set(value.tenants.map(tenant => tenant.id)).size !== value.tenants.length) context.addIssue({ code: "custom", message: translate("Configured tenant IDs must be unique.") });
 });
 
 export const serverConfigSchema = z.object({
@@ -111,6 +113,8 @@ export const studioConfigSchema = z.object({
     .object({
       /** Light/dark appearance. */
       defaultTheme: z.enum(["light", "dark", "system"]).default("system"),
+      /** Initial culture when the current user has no saved preference. */
+      defaultCulture: z.string().min(1).default("en"),
       /** Elsa theme pack (colour palette); users can override it from the header menu. */
       theme: z
         .enum(["classic", "workflow-constellation", "workflow-aurora", "execution-timeline", "human-automation"])
@@ -121,5 +125,8 @@ export const studioConfigSchema = z.object({
     })
     .prefault({}),
 });
-export type StudioConfig = Omit<z.infer<typeof studioConfigSchema>, "servers"> & { servers: ServerConfig[] };
+export type StudioConfig = Omit<z.infer<typeof studioConfigSchema>, "servers" | "ui"> & {
+  servers: ServerConfig[];
+  ui: Omit<z.infer<typeof studioConfigSchema>["ui"], "defaultCulture"> & { defaultCulture?: string };
+};
 export type StudioConfigInput = z.input<typeof studioConfigSchema>;

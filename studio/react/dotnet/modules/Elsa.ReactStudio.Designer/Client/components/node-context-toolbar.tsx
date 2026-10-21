@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { NodeToolbar, Position } from "@xyflow/react";
 import { ArrowUpRight, Copy, Link2, Pencil, Plus, Settings2, Trash2, Zap } from "lucide-react";
@@ -12,6 +14,7 @@ import type { ActivityPorts } from "@elsa-workflows/react-studio-sdk/designer/mo
 
 /** Floating actions above the selected node (Camunda's context pad / n8n's node actions). */
 export function NodeContextToolbar({ activity, descriptor, ports, visible }: { activity: Activity; descriptor?: ActivityDescriptor; ports: ActivityPorts; visible: boolean }) {
+  const _t = useTranslation();
   const { store, activityLink } = useDesigner();
   const s = store.getState;
   const canStart = activity.customProperties?.canStartWorkflow === true;
@@ -20,24 +23,24 @@ export function NodeContextToolbar({ activity, descriptor, ports, visible }: { a
     <NodeToolbar isVisible={visible} position={Position.Top} offset={8} className="flex items-center gap-0.5 rounded-lg border bg-popover p-0.5 shadow-md">
       {ports.outPorts.length === 1 && (
         <Action
-          label="Add next activity (A)"
+          label={_t("Add next activity (A)")}
           onClick={(e) => s().openQuickAdd({ screen: { x: e.clientX, y: e.clientY + 12 }, source: { activityId: activity.id, port: ports.outPorts[0].name } })}
         >
           <Plus />
         </Action>
       )}
       {ports.outPorts.length > 1 && (
-        <PortMenu label="Add next activity after…" icon={<Plus />} ports={ports} onPick={(port, e) => s().openQuickAdd({ screen: { x: e.clientX, y: e.clientY + 12 }, source: { activityId: activity.id, port } })} />
+        <PortMenu label={_t("Add next activity after…")} icon={<Plus />} ports={ports} onPick={(port, e) => s().openQuickAdd({ screen: { x: e.clientX, y: e.clientY + 12 }, source: { activityId: activity.id, port } })} />
       )}
       {ports.outPorts.length === 1 && (
-        <Action label="Connect to an existing step" onClick={() => s().startConnect({ activityId: activity.id, port: ports.outPorts[0].name })}>
+        <Action label={_t("Connect to an existing step")} onClick={() => s().startConnect({ activityId: activity.id, port: ports.outPorts[0].name })}>
           <Link2 />
         </Action>
       )}
       {ports.outPorts.length > 1 && (
-        <PortMenu label="Connect to an existing step from…" icon={<Link2 />} ports={ports} onPick={(port) => s().startConnect({ activityId: activity.id, port })} />
+        <PortMenu label={_t("Connect to an existing step from…")} icon={<Link2 />} ports={ports} onPick={(port) => s().startConnect({ activityId: activity.id, port })} />
       )}
-      <Action label="Settings" onClick={() => s().requestSettings()}>
+      <Action label={_t("Settings")} onClick={() => s().requestSettings()}>
         <Settings2 />
       </Action>
       {link && (
@@ -45,22 +48,22 @@ export function NodeContextToolbar({ activity, descriptor, ports, visible }: { a
           <ArrowUpRight />
         </Action>
       )}
-      <Action label="Rename (F2)" onClick={() => s().startRename(activity.id)}>
+      <Action label={_t("Rename (F2)")} onClick={() => s().startRename(activity.id)}>
         <Pencil />
       </Action>
-      <Action label="Duplicate (⌘D)" onClick={() => s().duplicate(activity.id)}>
+      <Action label={_t("Duplicate (⌘D)")} onClick={() => s().duplicate(activity.id)}>
         <Copy />
       </Action>
       {descriptor?.kind === "Trigger" && (
         <Action
-          label={canStart ? "Starts the workflow (click to turn off)" : "Make this trigger start the workflow"}
+          label={canStart ? _t("Starts the workflow (click to turn off)") : _t("Make this trigger start the workflow")}
           active={canStart}
           onClick={() => s().updateActivity(activity.id, (a) => ({ ...a, customProperties: { ...a.customProperties, canStartWorkflow: !canStart } }))}
         >
           <Zap />
         </Action>
       )}
-      <Action label="Delete (⌫)" destructive onClick={() => s().removeActivities([activity.id])}>
+      <Action label={_t("Delete (⌫)")} destructive onClick={() => s().removeActivities([activity.id])}>
         <Trash2 />
       </Action>
     </NodeToolbar>
@@ -68,6 +71,7 @@ export function NodeContextToolbar({ activity, descriptor, ports, visible }: { a
 }
 
 function PortMenu({ label, icon, ports, onPick }: { label: string; icon: React.ReactNode; ports: ActivityPorts; onPick: (port: string, e: React.MouseEvent) => void }) {
+  const _t = useTranslation();
   return (
     <DropdownMenu>
       <Tooltip>
@@ -76,7 +80,7 @@ function PortMenu({ label, icon, ports, onPick }: { label: string; icon: React.R
       </Tooltip>
       <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
         <DropdownMenuGroup>
-          <DropdownMenuLabel className="eyebrow">Outcome</DropdownMenuLabel>
+          <DropdownMenuLabel className="eyebrow">{_t("Outcome")}</DropdownMenuLabel>
           {ports.outPorts.map((port) => (
             <DropdownMenuItem key={port.name} onClick={(e) => onPick(port.name, e)}>
               <span className="port-dot bg-primary ring-0" /> {port.displayName}
@@ -89,6 +93,7 @@ function PortMenu({ label, icon, ports, onPick }: { label: string; icon: React.R
 }
 
 function Action({ label, onClick, children, destructive, active }: { label: string; onClick: (e: React.MouseEvent) => void; children: React.ReactNode; destructive?: boolean; active?: boolean }) {
+  useTranslation();
   return (
     <Tooltip>
       <TooltipTrigger

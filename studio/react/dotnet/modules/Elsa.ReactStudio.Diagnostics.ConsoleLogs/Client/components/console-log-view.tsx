@@ -1,5 +1,8 @@
 "use client";
 
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
+
 import { useEffect, useRef } from "react";
 import { cn } from "@elsa-workflows/react-studio-ui/utils";
 import { formatTimestamp } from "@elsa-workflows/react-studio-ui/common/timestamp";
@@ -21,6 +24,7 @@ export function ConsoleLogView({
   follow: boolean;
   className?: string;
 }) {
+  const _t = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
   const names = new Map(sources.map((s) => [s.id, s.displayName]));
 
@@ -32,7 +36,7 @@ export function ConsoleLogView({
   return (
     <div ref={ref} className={cn("rounded-lg border bg-muted/30 overflow-auto font-mono text-xs leading-5", className)}>
       {lines.length === 0 ? (
-        <div className="p-6 text-center text-muted-foreground font-sans text-sm">No log lines.</div>
+        <div className="p-6 text-center text-muted-foreground font-sans text-sm">{_t("No log lines.")}</div>
       ) : (
         <div className={cn("min-w-full", compact ? "py-0.5" : "py-1")}>
           {lines.map((line) => {
@@ -57,7 +61,7 @@ export function ConsoleLogView({
                 <span className={cn("shrink-0 select-none w-11 text-[10px] uppercase", stream === "stderr" ? "text-red-600 dark:text-red-400" : "text-muted-foreground")}>{stream}</span>
                 <span className="min-w-0 flex-1">
                   {stripAnsi(line.text)}
-                  {line.truncated && <span className="text-muted-foreground"> [truncated]</span>}
+                  {line.truncated && <span className="text-muted-foreground"> {_t("[truncated]")}</span>}
                 </span>
               </div>
             );

@@ -1,4 +1,8 @@
 "use client";
+import { translate } from "@elsa-workflows/react-studio-sdk/localization";
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { createContext, useContext, useEffect, useMemo, useSyncExternalStore, type ReactNode } from "react";
 import type { AuthSnapshot, AuthStrategy, PasswordCredentials } from "./types.js";
@@ -12,6 +16,7 @@ export interface AuthContextValue extends AuthSnapshot {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ strategy, children }: { strategy: AuthStrategy; children: ReactNode }) {
+  useTranslation();
 
   useEffect(() => {
     void strategy.initialize();
@@ -38,6 +43,6 @@ export function AuthProvider({ strategy, children }: { strategy: AuthStrategy; c
 
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used inside <AuthProvider>");
+  if (!ctx) throw new Error(translate("useAuth must be used inside <AuthProvider>"));
   return ctx;
 }

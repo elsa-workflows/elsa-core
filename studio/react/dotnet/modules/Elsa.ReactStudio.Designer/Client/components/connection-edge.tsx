@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { memo } from "react";
 import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, type Edge, type EdgeProps } from "@xyflow/react";
@@ -18,6 +20,7 @@ export interface ConnectionEdgeData extends Record<string, unknown> {
 export type ConnectionFlowEdge = Edge<ConnectionEdgeData, "connection">;
 
 function ConnectionEdgeComponent({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, selected, markerEnd }: EdgeProps<ConnectionFlowEdge>) {
+  const _t = useTranslation();
   const { store } = useDesigner();
   const vertices = data?.connection?.vertices ?? [];
   const [path, labelX, labelY] =
@@ -47,7 +50,7 @@ function ConnectionEdgeComponent({ id, sourceX, sourceY, targetX, targetY, sourc
                 e.stopPropagation();
                 store.getState().openQuickAdd({ screen: { x: e.clientX + 12, y: e.clientY - 20 }, insertInto: data.connection });
               }}
-              title="Insert activity here"
+              title={_t("Insert activity here")}
             >
               <Plus className="size-3" />
             </button>
@@ -60,7 +63,7 @@ function ConnectionEdgeComponent({ id, sourceX, sourceY, targetX, targetY, sourc
                 e.stopPropagation();
                 store.getState().removeConnections([data.connection]);
               }}
-              title="Remove connection"
+              title={_t("Remove connection")}
             >
               <X className="size-3" />
             </button>

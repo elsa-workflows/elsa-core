@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
@@ -31,6 +33,8 @@ function coerce(field: UserTaskFormField, raw: string): unknown {
   return raw;
 }
 
+type ValidationError = { kind: "required"; labels: string[] } | { kind: "json" };
+
 /**
  * Completes a task with one of its configured actions. When the task has a pinned form the
  * fields are rendered from its projection; otherwise an optional free-form JSON payload is offered.
@@ -48,6 +52,7 @@ export function CompleteTaskDialog({
   onSubmit: (actionKey: string, data: unknown) => Promise<unknown>;
   isPending: boolean;
 }) {
+  const _t = useTranslation();
   // `allowedActions` lists operations (assign, complete, …), not completion action keys, so it must not
   // filter the actions; the server validates the chosen key on submit.
   const actions = task.form?.actions?.length ? task.form.actions : task.actions;
@@ -55,14 +60,14 @@ export function CompleteTaskDialog({
   const [actionKey, setActionKey] = useState(actions[0]?.key ?? "Complete");
   const [values, setValues] = useState(() => initialValues(fields));
   const [json, setJson] = useState("");
-  const [error, setError] = useState<string>();
+  const [error, setError] = useState<ValidationError>();
 
   const submit = async () => {
     let data: unknown = undefined;
     if (fields.length) {
       const missing = fields.filter((f) => f.required && !f.masked && !values[f.key]?.trim());
       if (missing.length) {
-        setError(`Required: ${missing.map((f) => f.label).join(", ")}`);
+        setError({ kind: "required", labels: missing.map((f) => f.label) });
         return;
       }
       const obj: Record<string, unknown> = {};
@@ -72,7 +77,7 @@ export function CompleteTaskDialog({
       try {
         data = JSON.parse(json);
       } catch {
-        setError("The payload must be valid JSON.");
+        setError({ kind: "json" });
         return;
       }
     }
@@ -84,34 +89,34 @@ export function CompleteTaskDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Complete task</DialogTitle>
+          <DialogTitle>{_t("Complete task")}</DialogTitle>
           <DialogDescription>{task.title}</DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-3">
-          <Field label="Action" required>
+          <Field label={_t("Action")} required>
             <SimpleSelect value={actionKey} onChange={(v) => v && setActionKey(v)} options={actions.map((a) => ({ value: a.key, label: a.label }))} />
           </Field>
           {fields.length > 0 ? (
             fields.map((f) => (
-              <Field key={f.key} label={f.label} required={f.required} htmlFor={`f-${f.key}`} hint={f.masked ? "Protected field; leave empty to keep the current value." : undefined}>
+              <Field key={f.key} label={f.label} required={f.required} htmlFor={`f-${f.key}`} hint={f.masked ? _t("Protected field; leave empty to keep the current value.") : undefined}>
                 <FormFieldInput field={f} id={`f-${f.key}`} value={values[f.key] ?? ""} onChange={(v) => setValues((s) => ({ ...s, [f.key]: v }))} />
               </Field>
             ))
           ) : (
-            <Field label="Response payload (JSON)" htmlFor="complete-json" hint="Optional. Sent as the task's completion data.">
+            <Field label={_t("Response payload (JSON)")} htmlFor="complete-json" hint={_t("Optional. Sent as the task's completion data.")}>
               <Textarea id="complete-json" rows={5} value={json} onChange={(e) => setJson(e.target.value)} className="font-mono text-xs" placeholder="{ }" />
             </Field>
           )}
-          {error && <p className="text-xs text-destructive">{error}</p>}
+          {error && <p role="alert" className="text-xs text-destructive">{error.kind === "required"
+            ? _t("Required: {{value0}}", { value0: error.labels.join(", ") })
+            : _t("The payload must be valid JSON.")}</p>}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
-            Cancel
-          </Button>
+            {_t("Cancel")}</Button>
           <Button onClick={submit} disabled={isPending || actions.length === 0}>
             {isPending && <Loader2 className="animate-spin" data-icon="inline-start" />}
-            Complete
-          </Button>
+            {_t("Complete")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -119,6 +124,7 @@ export function CompleteTaskDialog({
 }
 
 function FormFieldInput({ field, id, value, onChange }: { field: UserTaskFormField; id: string; value: string; onChange: (v: string) => void }) {
+  useTranslation();
   const type = field.type.toLowerCase();
   if (type === "boolean" || type === "checkbox")
     return <Checkbox id={id} checked={value === "true"} onCheckedChange={(c) => onChange(c ? "true" : "false")} />;

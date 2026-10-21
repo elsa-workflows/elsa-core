@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { memo } from "react";
 import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, type Edge, type EdgeProps } from "@xyflow/react";
@@ -23,6 +25,7 @@ export type TransitionFlowEdge = Edge<TransitionEdgeData, "transition">;
 
 /** A state-machine transition. Self-transitions loop over the top of the state. */
 function TransitionEdgeComponent({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, selected: rfSelected, markerEnd }: EdgeProps<TransitionFlowEdge>) {
+  const _t = useTranslation();
   const { store } = useDesigner();
   const selected = rfSelected || data?.highlighted;
   let path: string;
@@ -54,7 +57,7 @@ function TransitionEdgeComponent({ id, sourceX, sourceY, targetX, targetY, sourc
               selected ? "border-primary text-primary" : "text-foreground",
               data?.warning && "border-status-warning",
             )}
-            title={data?.warning ?? (data?.trigger ? `Trigger: ${data.trigger}` : "Automatic transition")}
+            title={data?.warning ?? (data?.trigger ? _t("Trigger: {{value0}}", { value0: data.trigger }) : _t("Automatic transition"))}
           >
             {data?.trigger ? <Zap className="size-3 text-status-warning" /> : null}
             <span className="truncate">{data?.label}</span>
@@ -68,7 +71,7 @@ function TransitionEdgeComponent({ id, sourceX, sourceY, targetX, targetY, sourc
                 e.stopPropagation();
                 store.getState().removeTransitions([data!.index]);
               }}
-              title="Remove transition"
+              title={_t("Remove transition")}
             >
               <X className="size-3" />
             </button>

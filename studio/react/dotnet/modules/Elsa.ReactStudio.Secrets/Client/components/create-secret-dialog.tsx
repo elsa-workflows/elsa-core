@@ -1,4 +1,8 @@
 "use client";
+import { translate } from "@elsa-workflows/react-studio-sdk/localization";
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Loader2 } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
@@ -26,6 +30,7 @@ export function CreateSecretDialog({
   onOpenChange: (open: boolean) => void;
   descriptors: SecretDescriptorsResponse | undefined;
 }) {
+  useTranslation();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
@@ -36,6 +41,7 @@ export function CreateSecretDialog({
 }
 
 function CreateSecretForm({ descriptors, close }: { descriptors: SecretDescriptorsResponse | undefined; close: () => void }) {
+  const _t = useTranslation();
   const types = useMemo(() => descriptors?.types ?? [], [descriptors]);
   const stores = useMemo(() => descriptors?.stores ?? [], [descriptors]);
   const [name, setName] = useState("");
@@ -82,7 +88,7 @@ function CreateSecretForm({ descriptors, close }: { descriptors: SecretDescripto
         metadata: storeFields.metadata,
         expiresAt: toIsoOrNull(expiresAt),
       });
-      toast.success(`Secret "${created.name}" created`);
+      toast.success(_t("Secret \"{{value0}}\" created", { value0: created.name }));
       close();
     } catch (err) {
       toast.error(describeError(err));
@@ -92,27 +98,27 @@ function CreateSecretForm({ descriptors, close }: { descriptors: SecretDescripto
   return (
     <form onSubmit={submit} className="contents">
       <DialogHeader>
-        <DialogTitle>Create secret</DialogTitle>
+        <DialogTitle>{_t("Create secret")}</DialogTitle>
         <DialogDescription>
           {requiresValue
-            ? "The value is submitted once and never read back. Only metadata is ever returned."
-            : "Elsa records a reference to a value held elsewhere. Only metadata is ever returned."}
+            ? _t("The value is submitted once and never read back. Only metadata is ever returned.")
+            : _t("Elsa records a reference to a value held elsewhere. Only metadata is ever returned.")}
         </DialogDescription>
       </DialogHeader>
       <div className="flex flex-col gap-4">
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Name" required htmlFor="secret-name" hint="Technical, immutable identifier used in expressions." error={name && !nameValid ? "Letters, digits, dots, dashes, underscores and colons only." : undefined}>
-            <Input id="secret-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="smtp-password" autoComplete="off" required />
+          <Field label={_t("Name")} required htmlFor="secret-name" hint={_t("Technical, immutable identifier used in expressions.")} error={name && !nameValid ? translate("Letters, digits, dots, dashes, underscores and colons only.") : undefined}>
+            <Input id="secret-name" value={name} onChange={(e) => setName(e.target.value)} placeholder={_t("smtp-password")} autoComplete="off" required />
           </Field>
-          <Field label="Display name" htmlFor="secret-display-name">
-            <Input id="secret-display-name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="SMTP password" />
+          <Field label={_t("Display name")} htmlFor="secret-display-name">
+            <Input id="secret-display-name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder={_t("SMTP password")} />
           </Field>
         </div>
-        <Field label="Description" htmlFor="secret-description">
+        <Field label={_t("Description")} htmlFor="secret-description">
           <Textarea id="secret-description" value={description} onChange={(e) => setDescription(e.target.value)} rows={2} />
         </Field>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Type" required hint={type?.description}>
+          <Field label={_t("Type")} required hint={type?.description}>
             <SimpleSelect
               value={typeName}
               onChange={(v) => {
@@ -120,42 +126,40 @@ function CreateSecretForm({ descriptors, close }: { descriptors: SecretDescripto
                 setStoreName(undefined);
               }}
               options={types.map((t) => ({ value: t.name, label: t.displayName }))}
-              placeholder={types.length ? "Pick a type" : "No types available"}
+              placeholder={types.length ? _t("Pick a type") : _t("No types available")}
               disabled={types.length === 0}
             />
           </Field>
-          <Field label="Store" required hint={effectiveStore?.description}>
+          <Field label={_t("Store")} required hint={effectiveStore?.description}>
             <SimpleSelect
               value={effectiveStore?.name}
               onChange={setStoreName}
               options={availableStores.map((s) => ({ value: s.name, label: s.displayName }))}
-              placeholder={availableStores.length ? "Pick a store" : "No store supports this type"}
+              placeholder={availableStores.length ? _t("Pick a store") : _t("No store supports this type")}
               disabled={availableStores.length === 0}
             />
           </Field>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Scope" htmlFor="secret-scope" hint="Optional grouping such as Email or Http; pickers can filter on it.">
+          <Field label={_t("Scope")} htmlFor="secret-scope" hint={_t("Optional grouping such as Email or Http; pickers can filter on it.")}>
             <Input id="secret-scope" value={scope} onChange={(e) => setScope(e.target.value)} />
           </Field>
-          <Field label="Tags" htmlFor="secret-tags" hint="Comma-separated.">
-            <Input id="secret-tags" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="prod, email" />
+          <Field label={_t("Tags")} htmlFor="secret-tags" hint={_t("Comma-separated.")}>
+            <Input id="secret-tags" value={tags} onChange={(e) => setTags(e.target.value)} placeholder={_t("prod, email")} />
           </Field>
         </div>
         <StoreFields state={storeFields} idPrefix="secret" />
         {requiresValue && <SecretValueField value={value} onChange={setValue} editorHint={type?.editorHint} hint={valueHintFor(effectiveStore)} required />}
-        <Field label="Expires at" htmlFor="secret-expires" hint="Optional. Expired secrets stop resolving.">
+        <Field label={_t("Expires at")} htmlFor="secret-expires" hint={_t("Optional. Expired secrets stop resolving.")}>
           <Input id="secret-expires" type="datetime-local" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
         </Field>
       </div>
       <DialogFooter>
         <Button type="button" variant="outline" onClick={close} disabled={create.isPending}>
-          Cancel
-        </Button>
+          {_t("Cancel")}</Button>
         <Button type="submit" disabled={!canSubmit || create.isPending}>
           {create.isPending && <Loader2 className="animate-spin" />}
-          Create
-        </Button>
+          {_t("Create")}</Button>
       </DialogFooter>
     </form>
   );

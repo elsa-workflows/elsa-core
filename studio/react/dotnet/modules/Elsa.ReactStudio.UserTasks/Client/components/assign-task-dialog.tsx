@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
@@ -29,6 +31,7 @@ export function AssignTaskDialog({
   isPending: boolean;
   participantPicker: boolean;
 }) {
+  const _t = useTranslation();
   const api = useUserTasksApi();
   const { user } = useAuth();
   // The server matches assignees on the token's subject claim, so "me" is the `sub` claim, not the display name.
@@ -67,15 +70,15 @@ export function AssignTaskDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Assign task</DialogTitle>
-          <DialogDescription>Hand the task to a specific user or group.</DialogDescription>
+          <DialogTitle>{_t("Assign task")}</DialogTitle>
+          <DialogDescription>{_t("Hand the task to a specific user or group.")}</DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-3">
-          <Field label="Kind">
-            <SimpleSelect value={kind} onChange={(v) => v && setKind(v)} options={[{ value: "user", label: "User" }, { value: "group", label: "Group" }]} />
+          <Field label={_t("Kind")}>
+            <SimpleSelect value={kind} onChange={(v) => v && setKind(v)} options={[{ value: "user", label: _t("User") }, { value: "group", label: _t("Group") }]} />
           </Field>
           {participantPicker && (
-            <Field label="Look up" hint="Search the participant directory and pick a match.">
+            <Field label={_t("Look up")} hint={_t("Search the participant directory and pick a match.")}>
               <form
                 className="flex gap-2"
                 onSubmit={(e) => {
@@ -83,18 +86,18 @@ export function AssignTaskDialog({
                   lookup();
                 }}
               >
-                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Name or id…" />
+                <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={_t("Name or id…")} />
                 <Button type="submit" variant="outline" disabled={searching}>
-                  {searching ? <Loader2 className="animate-spin" /> : "Search"}
+                  {searching ? <Loader2 className="animate-spin" /> : _t("Search")}
                 </Button>
               </form>
-              <ErrorAlert error={searchError} title="Lookup failed" />
+              <ErrorAlert error={searchError} title={_t("Lookup failed")} />
               {matches.length > 0 && (
                 <ul className="mt-1 max-h-40 overflow-auto rounded-md border divide-y text-sm">
                   {matches.map((m) => (
                     <li key={`${m.kind}:${m.provider}:${m.id}`}>
                       <button type="button" className="w-full text-left px-2 py-1.5 hover:bg-muted" onClick={() => pick(m)}>
-                        {participantLabel(m)} <span className="text-muted-foreground text-xs">({m.kind}{m.provider ? ` · ${m.provider}` : ""})</span>
+                        {participantLabel(m)} <span className="text-muted-foreground text-xs">({m.kind}{m.provider ? _t(" · {{value0}}", { value0: m.provider }) : ""})</span>
                       </button>
                     </li>
                   ))}
@@ -102,7 +105,7 @@ export function AssignTaskDialog({
               )}
             </Field>
           )}
-          <Field label="Participant id" required htmlFor="assign-id" hint={mySubject ? "The user's subject id as issued by the identity provider." : undefined}>
+          <Field label={_t("Participant id")} required htmlFor="assign-id" hint={mySubject ? _t("The user's subject id as issued by the identity provider.") : undefined}>
             <div className="flex gap-2">
               <Input id="assign-id" value={id} onChange={(e) => setId(e.target.value)} />
               {mySubject && (
@@ -117,34 +120,31 @@ export function AssignTaskDialog({
                     setProvider("");
                   }}
                 >
-                  Assign to me
-                </Button>
+                  {_t("Assign to me")}</Button>
               )}
             </div>
           </Field>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Display name" htmlFor="assign-name">
+            <Field label={_t("Display name")} htmlFor="assign-name">
               <Input id="assign-name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
             </Field>
-            <Field label="Provider" htmlFor="assign-provider" hint="Defaults to your own identity provider.">
+            <Field label={_t("Provider")} htmlFor="assign-provider" hint={_t("Defaults to your own identity provider.")}>
               <Input id="assign-provider" value={provider} onChange={(e) => setProvider(e.target.value)} />
             </Field>
           </div>
-          <Field label="Reason" htmlFor="assign-reason">
+          <Field label={_t("Reason")} htmlFor="assign-reason">
             <Input id="assign-reason" value={reason} onChange={(e) => setReason(e.target.value)} />
           </Field>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
-            Cancel
-          </Button>
+            {_t("Cancel")}</Button>
           <Button
             disabled={isPending || !id.trim()}
             onClick={() => onSubmit({ kind, id: id.trim(), displayName: displayName.trim() || null, provider: provider.trim() || null }, reason.trim() || undefined)}
           >
             {isPending && <Loader2 className="animate-spin" data-icon="inline-start" />}
-            Assign
-          </Button>
+            {_t("Assign")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

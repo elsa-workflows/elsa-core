@@ -1,3 +1,5 @@
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
 import type { ReactNode } from "react";
 import { cn } from "../utils.js";
 
@@ -8,6 +10,7 @@ export interface KeyValueRow {
 
 /** Compact two-column read-only data panel. */
 export function KeyValueTable({ rows, className }: { rows: KeyValueRow[]; className?: string }) {
+  useTranslation();
   return (
     <dl className={cn("grid grid-cols-[minmax(8rem,auto)_1fr] gap-x-4 gap-y-2 text-sm", className)}>
       {rows.map((r, i) => (

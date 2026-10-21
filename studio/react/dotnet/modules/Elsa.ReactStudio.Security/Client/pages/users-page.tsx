@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -17,6 +19,7 @@ import { GeneratedPasswordDialog } from "../components/generated-password-dialog
 import { UserDialog } from "../components/user-dialog";
 
 export function UsersPage() {
+  const _t = useTranslation();
   const users = useUsers();
   const roles = useRoles();
   const remove = useDeleteUser();
@@ -40,25 +43,25 @@ export function UsersPage() {
 
   const onDelete = async (user: IdentityUser) => {
     const ok = await confirm({
-      title: `Delete user "${user.name}"?`,
-      description: "The account is removed permanently and any API keys issued to it stop working.",
-      confirmLabel: "Delete",
+      title: _t("Delete user \"{{value0}}\"?", { value0: user.name }),
+      description: _t("The account is removed permanently and any API keys issued to it stop working."),
+      confirmLabel: _t("Delete"),
       destructive: true,
     });
     if (!ok) return;
     try {
       await remove.mutateAsync(user.id);
-      toast.success(`User "${user.name}" deleted`);
+      toast.success(_t("User \"{{value0}}\" deleted", { value0: user.name }));
     } catch (err) {
       toast.error(describeError(err));
     }
   };
 
   const columns: DataTableColumn<IdentityUser>[] = [
-    { id: "name", header: "Name", cell: (u) => <span className="font-medium">{u.name}</span> },
+    { id: "name", header: _t("Name"), cell: (u) => <span className="font-medium">{u.name}</span> },
     {
       id: "roles",
-      header: "Roles",
+      header: _t("Roles"),
       cell: (u) =>
         u.roles.length === 0 ? (
           <span className="text-muted-foreground">–</span>
@@ -72,7 +75,7 @@ export function UsersPage() {
           </div>
         ),
     },
-    { id: "tenant", header: "Tenant", cell: (u) => u.tenantId || <span className="text-muted-foreground">–</span> },
+    { id: "tenant", header: _t("Tenant"), cell: (u) => u.tenantId || <span className="text-muted-foreground">–</span> },
     {
       id: "actions",
       header: "",
@@ -81,12 +84,12 @@ export function UsersPage() {
       cell: (u) => (
         <div className="flex justify-end gap-1" onClick={(e) => e.stopPropagation()}>
           {canUpdate && (
-            <Button variant="ghost" size="icon-sm" aria-label={`Edit ${u.name}`} onClick={() => setDialog({ open: true, user: u })}>
+            <Button variant="ghost" size="icon-sm" aria-label={_t("Edit {{value0}}", { value0: u.name })} onClick={() => setDialog({ open: true, user: u })}>
               <Pencil />
             </Button>
           )}
           {canDelete && (
-            <Button variant="ghost" size="icon-sm" aria-label={`Delete ${u.name}`} onClick={() => void onDelete(u)}>
+            <Button variant="ghost" size="icon-sm" aria-label={_t("Delete {{value0}}", { value0: u.name })} onClick={() => void onDelete(u)}>
               <Trash2 />
             </Button>
           )}
@@ -98,21 +101,20 @@ export function UsersPage() {
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
-        title="Users"
-        description="Accounts that can sign in to the studio and call the API."
+        title={_t("Users")}
+        description={_t("Accounts that can sign in to the studio and call the API.")}
         actions={
           canCreate && (
             <Button onClick={() => setDialog({ open: true })}>
               <Plus />
-              Create user
-            </Button>
+              {_t("Create user")}</Button>
           )
         }
       >
-        <SearchInput value={search} onChange={setSearch} placeholder="Filter by name, role or tenant…" className="max-w-sm" />
+        <SearchInput value={search} onChange={setSearch} placeholder={_t("Filter by name, role or tenant…")} className="max-w-sm" />
       </PageHeader>
-      <ErrorAlert error={users.error} title="Users could not be loaded" />
-      <DataTable columns={columns} rows={rows} rowKey={(u) => u.id} isLoading={users.isLoading} emptyMessage={search ? "No users match the filter." : "No users yet."} />
+      <ErrorAlert error={users.error} title={_t("Users could not be loaded")} />
+      <DataTable columns={columns} rows={rows} rowKey={(u) => u.id} isLoading={users.isLoading} emptyMessage={search ? _t("No users match the filter.") : _t("No users yet.")} />
 
       <UserDialog
         open={dialog.open}

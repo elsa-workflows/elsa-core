@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { LogOut, User } from "lucide-react";
 import { Avatar, AvatarFallback } from "@elsa-workflows/react-studio-ui/avatar";
@@ -16,6 +18,7 @@ import { useAuth } from "@elsa-workflows/react-studio-auth";
 import { useActiveServer } from "@elsa-workflows/react-studio-sdk/environments/active-server";
 
 export function UserMenu() {
+  const _t = useTranslation();
   const { user, strategy, logout } = useAuth();
   const server = useActiveServer();
   const name = user?.name ?? "Anonymous";
@@ -30,7 +33,7 @@ export function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button variant="ghost" size="icon-sm" aria-label="User menu" />
+          <Button variant="ghost" size="icon-sm" aria-label={_t("User menu")} />
         }
       >
         <Avatar className="size-7">
@@ -48,7 +51,7 @@ export function UserMenu() {
             </div>
             {user?.tenantId && (
               <div className="text-xs text-muted-foreground">
-                Tenant: {user.tenantId}
+                {_t("Tenant:")}{" "}{user.tenantId}
               </div>
             )}
           </DropdownMenuLabel>
@@ -58,8 +61,7 @@ export function UserMenu() {
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => void logout()}>
               <LogOut />
-              Sign out
-            </DropdownMenuItem>
+              {_t("Sign out")}</DropdownMenuItem>
           </>
         )}
       </DropdownMenuContent>

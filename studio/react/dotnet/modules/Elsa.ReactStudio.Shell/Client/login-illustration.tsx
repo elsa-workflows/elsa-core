@@ -1,3 +1,7 @@
+
+import { translate } from "@elsa-workflows/react-studio-sdk/localization";
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
 import { cn } from "@elsa-workflows/react-studio-ui/utils";
 
 /*
@@ -35,6 +39,7 @@ const links: Link[] = [
 ];
 
 export function LoginIllustration({ className }: { className?: string }) {
+  const _t = useTranslation();
   const node = (x: number, y: number, w: number, label: string, sub: string, pulseStage: number, accent?: string) => (
     <g key={label} transform={`translate(${x} ${y})`}>
       <rect width={w} height="54" rx="10" fill="var(--card)" stroke="var(--border)" />
@@ -84,15 +89,15 @@ export function LoginIllustration({ className }: { className?: string }) {
         })}
       </g>
       {node(0, 28, 172, "HTTP Endpoint", "Trigger · POST /orders", 0, "var(--status-warning)")}
-      {node(236, 28, 172, "Validate order", "JavaScript", 1)}
+      {node(236, 28, 172, translate("Validate order"), "JavaScript", 1)}
       {node(236, 123, 172, "If", "Branching", 2, "var(--elsa-secondary)")}
       {node(0, 123, 172, "Timer", "Trigger · every 5m", 1, "var(--status-warning)")}
-      {node(236, 218, 172, "Send email", "Email · customer", 3, "var(--status-success)")}
+      {node(236, 218, 172, translate("Send email"), "Email · customer", 3, "var(--status-success)")}
       <g transform="translate(470 210)">
         <rect width="86" height="54" rx="10" fill="var(--card)" stroke="var(--border)" />
         <rect width="86" height="54" rx="10" fill="none" stroke="var(--status-danger)" strokeWidth="2" className="elsa-node-pulse" style={{ animationDelay: stageDelay(4), animationDuration: `${CYCLE_S}s` }} />
         <rect x="0" y="12" width="3" height="30" rx="2" fill="var(--status-danger)" />
-        <text x="16" y="33" fontSize="12" fontWeight="600" fill="var(--foreground)">Finish</text>
+        <text x="16" y="33" fontSize="12" fontWeight="600" fill="var(--foreground)">{_t("Finish")}</text>
         <circle cx="0" cy="27" r="4.5" fill="var(--muted-foreground)" stroke="var(--card)" strokeWidth="2" />
       </g>
     </svg>

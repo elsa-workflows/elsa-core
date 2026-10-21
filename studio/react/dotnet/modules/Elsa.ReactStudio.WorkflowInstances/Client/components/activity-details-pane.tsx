@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { X } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -25,6 +27,7 @@ export function ActivityDetailsPane({
   executions: ActivityExecutionRecord[];
   onClose: () => void;
 }) {
+  const _t = useTranslation();
   const { registry } = useDesigner();
   const canViewRetries = usePermission(Resources.resilienceRetries, Verbs.view);
   const [tab, setTab] = useState("executions");
@@ -43,15 +46,14 @@ export function ActivityDetailsPane({
             {latest && <StatusBadge status={latest.status} className="h-4 px-1.5 text-[10px]" />}
           </div>
           <TabsList variant="line" className="ml-auto">
-            <TabsTrigger value="event">Event</TabsTrigger>
-            <TabsTrigger value="activity">Activity</TabsTrigger>
+            <TabsTrigger value="event">{_t("Event")}</TabsTrigger>
+            <TabsTrigger value="activity">{_t("Activity")}</TabsTrigger>
             <TabsTrigger value="executions">
-              Executions
-              {executions.length > 0 && <span className="rounded-full bg-muted px-1.5 text-[10px] tabular-nums">{executions.length}</span>}
+              {_t("Executions")}{executions.length > 0 && <span className="rounded-full bg-muted px-1.5 text-[10px] tabular-nums">{executions.length}</span>}
             </TabsTrigger>
-            {showRetries && <TabsTrigger value="retries">Retries</TabsTrigger>}
+            {showRetries && <TabsTrigger value="retries">{_t("Retries")}</TabsTrigger>}
           </TabsList>
-          <Button variant="ghost" size="icon-xs" aria-label="Close" onClick={onClose}>
+          <Button variant="ghost" size="icon-xs" aria-label={_t("Close")} onClick={onClose}>
             <X />
           </Button>
         </div>
@@ -61,16 +63,16 @@ export function ActivityDetailsPane({
               <>
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                   <span>
-                    Event <span className="font-medium text-foreground">{lastEvent.eventName}</span>
+                    {_t("Event")}{" "}<span className="font-medium text-foreground">{lastEvent.eventName}</span>
                   </span>
-                  <span>Sequence {lastEvent.sequence}</span>
+                  <span>{_t("Sequence")}{" "}{lastEvent.sequence}</span>
                   <span className="tabular-nums">{lastEvent.timestamp}</span>
                   {lastEvent.message && <span className="text-foreground">{lastEvent.message}</span>}
                 </div>
                 <JsonViewer value={{ payload: lastEvent.payload ?? null, activityState: lastEvent.activityState ?? null }} maxHeight="100%" />
               </>
             ) : (
-              <p className="text-sm text-muted-foreground">No journal entry for this activity yet.</p>
+              <p className="text-sm text-muted-foreground">{_t("No journal entry for this activity yet.")}</p>
             )}
           </TabsContent>
           <TabsContent value="activity">

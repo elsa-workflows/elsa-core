@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
@@ -18,25 +20,24 @@ export function CancelTaskDialog({
   onSubmit: (reason: string) => Promise<unknown>;
   isPending: boolean;
 }) {
+  const _t = useTranslation();
   const [reason, setReason] = useState("");
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Cancel task</DialogTitle>
-          <DialogDescription>The task ends with the “Cancelled” outcome and the workflow resumes accordingly.</DialogDescription>
+          <DialogTitle>{_t("Cancel task")}</DialogTitle>
+          <DialogDescription>{_t("The task ends with the “Cancelled” outcome and the workflow resumes accordingly.")}</DialogDescription>
         </DialogHeader>
-        <Field label="Reason" required htmlFor="cancel-reason">
+        <Field label={_t("Reason")} required htmlFor="cancel-reason">
           <Textarea id="cancel-reason" rows={3} value={reason} onChange={(e) => setReason(e.target.value)} />
         </Field>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isPending}>
-            Keep task
-          </Button>
+            {_t("Keep task")}</Button>
           <Button variant="destructive" disabled={isPending || !reason.trim()} onClick={() => onSubmit(reason.trim())}>
             {isPending && <Loader2 className="animate-spin" data-icon="inline-start" />}
-            Cancel task
-          </Button>
+            {_t("Cancel task")}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

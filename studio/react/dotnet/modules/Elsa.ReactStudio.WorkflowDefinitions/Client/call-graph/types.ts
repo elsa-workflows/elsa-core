@@ -33,7 +33,9 @@ export type CallGraphBuildStatus = "idle" | "loading" | "ready" | "error" | "can
 
 export interface CallGraphWarning {
   code: "max-requests" | "max-nodes" | "timeout" | "load-failed";
+  /** Untranslated catalog key; cached graph data must survive a culture change. */
   message: string;
+  values?: Record<string, unknown>;
 }
 
 /** The session-wide call graph: one node per workflow definition, edges kept on the caller. */

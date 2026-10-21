@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { X } from "lucide-react";
 import { useState } from "react";
@@ -10,6 +12,7 @@ import { ExpressionEditor } from "../expression-editor";
 
 /** Tag-style list editor used by `multitext`, `http-status-codes` and `dynamic-outcomes`. */
 export function MultiTextEditor(props: UiHintEditorProps) {
+  const _t = useTranslation();
   const [draft, setDraft] = useState("");
   const numeric = /Int32|Int64|Long/.test(props.descriptor.typeName);
   return (
@@ -31,7 +34,7 @@ export function MultiTextEditor(props: UiHintEditorProps) {
                 <Badge key={`${item}-${i}`} variant="secondary" className="gap-1 pr-1">
                   {String(item)}
                   {!props.readOnly && (
-                    <button type="button" className="rounded hover:bg-muted-foreground/20" onClick={() => onChange(items.filter((_, j) => j !== i))} aria-label="Remove">
+                    <button type="button" className="rounded hover:bg-muted-foreground/20" onClick={() => onChange(items.filter((_, j) => j !== i))} aria-label={_t("Remove")}>
                       <X className="size-3" />
                     </button>
                   )}
@@ -41,7 +44,7 @@ export function MultiTextEditor(props: UiHintEditorProps) {
             {!props.readOnly && (
               <Input
                 value={draft}
-                placeholder="Type and press Enter"
+                placeholder={_t("Type and press Enter")}
                 onChange={(e) => setDraft(e.target.value)}
                 onBlur={commit}
                 onKeyDown={(e) => {

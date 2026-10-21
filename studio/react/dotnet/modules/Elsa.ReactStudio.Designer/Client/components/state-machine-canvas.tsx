@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { useCallback, useEffect, useMemo, useRef, type KeyboardEvent } from "react";
 import {
@@ -38,6 +40,7 @@ const edgeTypes = { transition: TransitionEdge };
  * transition (trigger, condition, action). Positions live in the activity's designer metadata.
  */
 export function StateMachineCanvas({ minimap = true, onToggleMinimap, onOpenToolbox, className }: { minimap?: boolean; onToggleMinimap?: () => void; onOpenToolbox?: () => void; className?: string }) {
+  const _t = useTranslation();
   const { store, registry, stats } = useDesigner();
   const root = useDesignerState((s) => s.root);
   const path = useDesignerState((s) => s.path);
@@ -55,7 +58,7 @@ export function StateMachineCanvas({ minimap = true, onToggleMinimap, onOpenTool
     return isStateMachine(c) ? c : undefined;
   }, [root, path]);
 
-  const issues = useMemo(() => (readOnly ? [] : validateWorkflow(root, registry).filter((i) => i.stateName || i.transitionIndex !== undefined)), [root, registry, readOnly]);
+  const issues = useMemo(() => (readOnly ? [] : validateWorkflow(root, registry, _t).filter((i) => i.stateName || i.transitionIndex !== undefined)), [root, registry, readOnly, _t]);
 
   const nodes = useMemo<StateFlowNode[]>(() => {
     if (!sm) return [];
@@ -259,37 +262,36 @@ export function StateMachineCanvas({ minimap = true, onToggleMinimap, onOpenTool
         <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
         {minimap && <MiniMap pannable zoomable position="bottom-right" className="!bg-background/80" />}
         <Panel position="bottom-left" className="flex items-center gap-0.5 rounded-lg border bg-card/95 p-0.5 shadow-sm backdrop-blur">
-          <IconButton label="Zoom out" onClick={() => flow.zoomOut({ duration: 150 })}>
+          <IconButton label={_t("Zoom out")} onClick={() => flow.zoomOut({ duration: 150 })}>
             <Minus />
           </IconButton>
           <ZoomLabel onClick={() => flow.zoomTo(1, { duration: 150 })} />
-          <IconButton label="Zoom in" onClick={() => flow.zoomIn({ duration: 150 })}>
+          <IconButton label={_t("Zoom in")} onClick={() => flow.zoomIn({ duration: 150 })}>
             <Plus />
           </IconButton>
           <span className="mx-0.5 h-4 w-px bg-border" />
-          <IconButton label="Zoom to fit" onClick={() => flow.fitView({ padding: 0.25, duration: 200, maxZoom: 1 })}>
+          <IconButton label={_t("Zoom to fit")} onClick={() => flow.fitView({ padding: 0.25, duration: 200, maxZoom: 1 })}>
             <Maximize />
           </IconButton>
           {onToggleMinimap && (
-            <IconButton label={minimap ? "Hide mini-map" : "Show mini-map"} onClick={onToggleMinimap} className={minimap ? "text-foreground" : "text-muted-foreground"}>
+            <IconButton label={minimap ? _t("Hide mini-map") : _t("Show mini-map")} onClick={onToggleMinimap} className={minimap ? "text-foreground" : "text-muted-foreground"}>
               <MapIcon />
             </IconButton>
           )}
         </Panel>
         <Panel position="top-left" className="flex items-center gap-1">
           {onOpenToolbox && (
-            <IconButton label="Show toolbox" onClick={onOpenToolbox} className="rounded-lg border bg-card/95 shadow-sm backdrop-blur">
+            <IconButton label={_t("Show toolbox")} onClick={onOpenToolbox} className="rounded-lg border bg-card/95 shadow-sm backdrop-blur">
               <PanelLeftOpen />
             </IconButton>
           )}
           <DesignerBreadcrumb />
-          <span className="rounded-full border bg-card/95 px-2 py-0.5 text-[11px] text-muted-foreground shadow-sm">State machine</span>
+          <span className="rounded-full border bg-card/95 px-2 py-0.5 text-[11px] text-muted-foreground shadow-sm">{_t("State machine")}</span>
         </Panel>
         {connectFrom && (
           <Panel position="top-center" className="flex items-center gap-2 rounded-full border border-status-success/40 bg-card/95 px-3 py-1 text-xs shadow-sm backdrop-blur">
             <span className="port-dot bg-status-success ring-0" />
-            Click the target state of the new transition
-            <Button variant="ghost" size="icon-xs" aria-label="Cancel" onClick={() => store.getState().startConnect(undefined)}>
+            {_t("Click the target state of the new transition")}<Button variant="ghost" size="icon-xs" aria-label={_t("Cancel")} onClick={() => store.getState().startConnect(undefined)}>
               <X />
             </Button>
           </Panel>
@@ -300,13 +302,11 @@ export function StateMachineCanvas({ minimap = true, onToggleMinimap, onOpenTool
               <span className="flex size-12 items-center justify-center rounded-xl bg-accent text-primary">
                 <MousePointerClick className="size-6" />
               </span>
-              <div className="text-sm font-semibold">Add the first state</div>
+              <div className="text-sm font-semibold">{_t("Add the first state")}</div>
               <p className="text-xs text-muted-foreground">
-                The first state becomes the initial state. Drag from a state&apos;s port to another state to add a transition, then give it a trigger, a condition or an action.
-              </p>
+                {_t("The first state becomes the initial state. Drag from a state's port to another state to add a transition, then give it a trigger, a condition or an action.")}</p>
               <Button size="sm" onClick={addState}>
-                <Plus /> Add state
-              </Button>
+                <Plus /> {_t("Add state")}</Button>
             </div>
           </Panel>
         )}
@@ -314,17 +314,16 @@ export function StateMachineCanvas({ minimap = true, onToggleMinimap, onOpenTool
           {!readOnly && (
             <>
               <Button size="sm" variant="ghost" className="pr-2.5" onClick={addState}>
-                <Plus /> State
-                <kbd className="ml-1 rounded border bg-muted px-1 text-[10px] font-mono text-muted-foreground">S</kbd>
+                <Plus /> {_t("State")}<kbd className="ml-1 rounded border bg-muted px-1 text-[10px] font-mono text-muted-foreground">{_t("S")}</kbd>
               </Button>
               <span className="mx-0.5 h-5 w-px bg-border" />
-              <IconButton label="Undo (⌘Z)" onClick={() => store.getState().undo()} disabled={!canUndo}>
+              <IconButton label={_t("Undo (⌘Z)")} onClick={() => store.getState().undo()} disabled={!canUndo}>
                 <Undo2 />
               </IconButton>
-              <IconButton label="Redo (⇧⌘Z)" onClick={() => store.getState().redo()} disabled={!canRedo}>
+              <IconButton label={_t("Redo (⇧⌘Z)")} onClick={() => store.getState().redo()} disabled={!canRedo}>
                 <Redo2 />
               </IconButton>
-              <IconButton label="Auto layout" onClick={runAutoLayout}>
+              <IconButton label={_t("Auto layout")} onClick={runAutoLayout}>
                 <LayoutGrid />
               </IconButton>
             </>
@@ -337,9 +336,10 @@ export function StateMachineCanvas({ minimap = true, onToggleMinimap, onOpenTool
 }
 
 function ZoomLabel({ onClick }: { onClick: () => void }) {
+  const _t = useTranslation();
   const { zoom } = useViewport();
   return (
-    <button type="button" onClick={onClick} title="Reset zoom to 100%" className="w-11 rounded text-center text-[11px] tabular-nums text-muted-foreground hover:bg-accent hover:text-foreground">
+    <button type="button" onClick={onClick} title={_t("Reset zoom to 100%")} className="w-11 rounded text-center text-[11px] tabular-nums text-muted-foreground hover:bg-accent hover:text-foreground">
       {Math.round(zoom * 100)}%
     </button>
   );

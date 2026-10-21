@@ -1,4 +1,8 @@
 "use client";
+import { translate } from "@elsa-workflows/react-studio-sdk/localization";
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import {
   ArrowDown,
@@ -127,7 +131,7 @@ export function DataTable<T>({
   rows,
   rowKey,
   isLoading,
-  emptyMessage = "No results.",
+  emptyMessage = translate("No results."),
   selection,
   sort,
   onSortChange,
@@ -138,6 +142,7 @@ export function DataTable<T>({
   columnsStorageKey,
   toolbar,
 }: DataTableProps<T>) {
+  const _t = useTranslation();
   const hiddenRaw = useSyncExternalStore(
     subscribeHidden,
     () => readHiddenRaw(columnsStorageKey),
@@ -213,13 +218,11 @@ export function DataTable<T>({
               <DropdownMenuTrigger
                 render={<Button variant="outline" size="sm" />}
               >
-                <Columns3 /> Columns
-              </DropdownMenuTrigger>
+                <Columns3 /> {_t("Columns")}</DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuGroup>
                   <DropdownMenuLabel className="eyebrow">
-                    Show columns
-                  </DropdownMenuLabel>
+                    {_t("Show columns")}</DropdownMenuLabel>
                   {hideable.map((c) => (
                     <DropdownMenuCheckboxItem
                       key={c.id}
@@ -245,7 +248,7 @@ export function DataTable<T>({
                     checked={allSelected}
                     indeterminate={!allSelected && someSelected}
                     onCheckedChange={toggleAll}
-                    aria-label="Select all"
+                    aria-label={_t("Select all")}
                   />
                 </TableHead>
               )}
@@ -282,8 +285,7 @@ export function DataTable<T>({
                   className="h-24 text-center text-muted-foreground"
                 >
                   <Loader2 className="inline size-4 animate-spin mr-2" />
-                  Loading…
-                </TableCell>
+                  {_t("Loading…")}</TableCell>
               </TableRow>
             ) : rows.length === 0 ? (
               <TableRow>
@@ -317,7 +319,7 @@ export function DataTable<T>({
                         <Checkbox
                           checked={selection.selected.has(key)}
                           onCheckedChange={() => toggleOne(key)}
-                          aria-label="Select row"
+                          aria-label={_t("Select row")}
                         />
                       </TableCell>
                     )}
@@ -336,7 +338,7 @@ export function DataTable<T>({
       {paging && (
         <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
-            <span>Rows per page</span>
+            <span>{_t("Rows per page")}</span>
             <SimpleSelect
               size="sm"
               className="w-20"
@@ -350,14 +352,14 @@ export function DataTable<T>({
             <span>
               {paging.totalCount === 0 ? 0 : paging.page * paging.pageSize + 1}–
               {Math.min((paging.page + 1) * paging.pageSize, paging.totalCount)}{" "}
-              of {paging.totalCount}
+              {_t("of")}{" "}{paging.totalCount}
             </span>
             <Button
               variant="outline"
               size="icon-sm"
               disabled={paging.page === 0}
               onClick={() => paging.onChange(paging.page - 1, paging.pageSize)}
-              aria-label="Previous page"
+              aria-label={_t("Previous page")}
             >
               <ChevronLeft />
             </Button>
@@ -369,7 +371,7 @@ export function DataTable<T>({
               size="icon-sm"
               disabled={paging.page + 1 >= totalPages}
               onClick={() => paging.onChange(paging.page + 1, paging.pageSize)}
-              aria-label="Next page"
+              aria-label={_t("Next page")}
             >
               <ChevronRight />
             </Button>

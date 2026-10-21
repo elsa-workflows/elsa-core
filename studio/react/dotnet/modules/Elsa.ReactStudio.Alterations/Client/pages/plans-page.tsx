@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { ExternalLink, RefreshCw, Trash2, Wrench } from "lucide-react";
 import { useRouter } from "@elsa-workflows/react-studio-sdk/navigation/index";
@@ -33,6 +35,7 @@ interface Row {
  * browser (remembered in localStorage) and fetches each one's status.
  */
 export function AlterationPlansPage() {
+  const _t = useTranslation();
   const router = useRouter();
   const confirm = useConfirm();
   const canExecute = usePermission(Resources.alterations, Verbs.execute);
@@ -45,26 +48,26 @@ export function AlterationPlansPage() {
   const columns: DataTableColumn<Row>[] = [
     {
       id: "id",
-      header: "Plan",
+      header: _t("Plan"),
       cell: (r) => <span className="font-mono text-xs">{r.ref.id}</span>,
     },
     {
       id: "status",
-      header: "Status",
+      header: _t("Status"),
       cell: (r) =>
         r.error ? (
           <ToneBadge tone="danger" className="max-w-56 truncate" >
             {describeError(r.error)}
           </ToneBadge>
         ) : r.isLoading ? (
-          <span className="text-muted-foreground text-xs">Loading…</span>
+          <span className="text-muted-foreground text-xs">{_t("Loading…")}</span>
         ) : (
           <PlanStatusBadge status={r.data?.plan.status} />
         ),
     },
     {
       id: "jobs",
-      header: "Jobs",
+      header: _t("Jobs"),
       cell: (r) => {
         if (!r.data) return <span className="text-muted-foreground">–</span>;
         const jobs = r.data.jobs;
@@ -72,14 +75,14 @@ export function AlterationPlansPage() {
         const failed = jobs.filter((j) => j.status === "Failed").length;
         return (
           <span className="tabular-nums text-xs">
-            {done}/{jobs.length} completed{failed ? `, ${failed} failed` : ""}
+            {done}/{jobs.length} {_t("completed")}{failed ? _t(", {{value0}} failed", { value0: failed }) : ""}
           </span>
         );
       },
     },
-    { id: "alterations", header: "Alterations", cell: (r) => <span className="tabular-nums">{r.data?.plan.alterations.length ?? r.ref.alterationCount}</span> },
-    { id: "submitted", header: "Submitted", cell: (r) => <Timestamp value={r.data?.plan.createdAt ?? r.ref.submittedAt} relative /> },
-    { id: "completed", header: "Completed", cell: (r) => <Timestamp value={r.data?.plan.completedAt} relative /> },
+    { id: "alterations", header: _t("Alterations"), cell: (r) => <span className="tabular-nums">{r.data?.plan.alterations.length ?? r.ref.alterationCount}</span> },
+    { id: "submitted", header: _t("Submitted"), cell: (r) => <Timestamp value={r.data?.plan.createdAt ?? r.ref.submittedAt} relative /> },
+    { id: "completed", header: _t("Completed"), cell: (r) => <Timestamp value={r.data?.plan.completedAt} relative /> },
     {
       id: "actions",
       header: "",
@@ -88,7 +91,7 @@ export function AlterationPlansPage() {
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label="Forget plan"
+          aria-label={_t("Forget plan")}
           onClick={(e) => {
             e.stopPropagation();
             forget(r.ref.id);
@@ -111,26 +114,24 @@ export function AlterationPlansPage() {
   return (
     <div>
       <PageHeader
-        title="Alteration plans"
-        description="Plans submitted from this browser. The server does not list plans, so only plans you submitted or opened here are shown."
+        title={_t("Alteration plans")}
+        description={_t("Plans submitted from this browser. The server does not list plans, so only plans you submitted or opened here are shown.")}
         actions={
           <>
             {canExecute && (
               <Button variant="outline" onClick={() => openRetry([])}>
                 <RefreshCw data-icon="inline-start" />
-                Retry faulted instances
-              </Button>
+                {_t("Retry faulted instances")}</Button>
             )}
             {rows.length > 0 && (
               <Button
                 variant="ghost"
                 onClick={async () => {
-                  if (await confirm({ title: "Clear recent plans?", description: "Only this browser's list is cleared; the plans themselves are untouched.", destructive: true, confirmLabel: "Clear" }))
+                  if (await confirm({ title: _t("Clear recent plans?"), description: _t("Only this browser's list is cleared; the plans themselves are untouched."), destructive: true, confirmLabel: _t("Clear") }))
                     clear();
                 }}
               >
-                Clear list
-              </Button>
+                {_t("Clear list")}</Button>
             )}
           </>
         }
@@ -142,19 +143,18 @@ export function AlterationPlansPage() {
             openById();
           }}
         >
-          <Input value={lookup} onChange={(e) => setLookup(e.target.value)} placeholder="Open a plan by id…" className="font-mono text-xs" />
+          <Input value={lookup} onChange={(e) => setLookup(e.target.value)} placeholder={_t("Open a plan by id…")} className="font-mono text-xs" />
           <Button type="submit" variant="outline" disabled={!lookup.trim()}>
             <ExternalLink data-icon="inline-start" />
-            Open
-          </Button>
+            {_t("Open")}</Button>
         </form>
       </PageHeader>
 
       {rows.length === 0 ? (
         <EmptyState
           icon={Wrench}
-          title="No alteration plans yet"
-          description="Use “Alter” on a running workflow instance to compose alterations and submit them as a plan, or run them immediately."
+          title={_t("No alteration plans yet")}
+          description={_t("Use “Alter” on a running workflow instance to compose alterations and submit them as a plan, or run them immediately.")}
         />
       ) : (
         <DataTable columns={columns} rows={data} rowKey={(r) => r.ref.id} onRowClick={(r) => router.push(href(AlterationRoutes.plan, { id: r.ref.id }))} />

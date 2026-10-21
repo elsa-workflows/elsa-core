@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import CodeMirror from "@uiw/react-codemirror";
 import { useMemo } from "react";
@@ -128,6 +130,7 @@ export function CodeEditor({
   /** Names offered by autocomplete (variables, inputs, activity outputs). */
   completions?: CodeCompletion[];
 }) {
+  useTranslation();
   const { resolvedTheme } = useTheme();
   const extensions = useMemo(
     () => [...languageExtension(language), ...(completions?.length ? [completionExtension(completions)] : [])],

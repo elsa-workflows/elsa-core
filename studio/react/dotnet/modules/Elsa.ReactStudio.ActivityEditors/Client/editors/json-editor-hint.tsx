@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { useState } from "react";
 import { CodeEditor } from "@elsa-workflows/react-studio-ui/common/code-editor";
@@ -8,6 +10,7 @@ import { OBJECT } from "@elsa-workflows/react-studio-sdk/activity-expressions";
 
 /** JSON object literal; the stored expression type is `Object` with the parsed value. */
 export function JsonEditorHint(props: UiHintEditorProps) {
+  useTranslation();
   return (
     <ExpressionEditor {...props} literalSyntax={OBJECT}>
       {({ value, onChange }) => <JsonLiteral value={value} onChange={onChange} readOnly={props.readOnly} />}
@@ -16,6 +19,7 @@ export function JsonEditorHint(props: UiHintEditorProps) {
 }
 
 function JsonLiteral({ value, onChange, readOnly }: { value: unknown; onChange: (v: unknown) => void; readOnly?: boolean }) {
+  useTranslation();
   const external = value === undefined ? "" : typeof value === "string" ? value : JSON.stringify(value, null, 2);
   const [text, setText] = useState(external);
   const [lastExternal, setLastExternal] = useState(external);

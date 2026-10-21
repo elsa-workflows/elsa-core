@@ -1,3 +1,5 @@
+
+import { translate } from "./localization.js";
 import type { StudioModule, StudioModuleExtensions } from "./modules.js";
 import { createElement, type ComponentType, type ReactNode } from "react";
 import { isolateModuleComponent } from "./module-boundary.js";
@@ -41,14 +43,14 @@ export class StudioRegistry {
     if (abandoned) this.dispose(abandoned);
     if (manifest.hostApiVersion !== 1 || manifest.sdkApiVersion !== 1) {
       this.messages.push({ moduleId: manifest.id, code: "incompatible",
-        message: `Module ${manifest.id} requires host API ${manifest.hostApiVersion} and SDK API ${manifest.sdkApiVersion}; this Preview provides host API 1 and SDK API 1.` });
+        message: translate("Module {{value0}} requires host API {{value1}} and SDK API {{value2}}; this Preview provides host API 1 and SDK API 1.", { value0: manifest.id, value1: manifest.hostApiVersion, value2: manifest.sdkApiVersion }) });
       return false;
     }
 
     let entry: { register: RegisterModule };
     try {
       entry = await importer(manifest.entry);
-      if (typeof entry.register !== "function") throw new Error("The module must export register(api)");
+      if (typeof entry.register !== "function") throw new Error(translate("The module must export register(api)"));
     } catch (error) {
       if (this.generations.get(manifest.id) === generation) this.messages.push({
         moduleId: manifest.id, code: "load-failed", message: messageOf(error),
@@ -62,16 +64,23 @@ export class StudioRegistry {
     let open = true;
     const assertOpen = () => {
       if (!open || this.generations.get(manifest.id) !== generation)
-        throw new Error("Contributions must be registered during the active register(api) call");
+        throw new Error(translate("Contributions must be registered during the active register(api) call"));
     };
     const api: StudioApi = {
       hostApiVersion: 1, sdkApiVersion: 1,
       contribute: (kind, value) => {
         assertOpen();
-        if (!value.id.trim() || !Number.isFinite(value.order ?? 0)) throw new Error("Slots require a stable ID and finite order");
+        if (!value.id.trim() || !Number.isFinite(value.order ?? 0)) throw new Error(translate("Slots require a stable ID and finite order"));
         if (pending.contributions.some(item => item.kind === kind && item.value.id === value.id && item.active))
           throw new Error(`Duplicate ${kind} slot: ${value.id}`);
         const copy = Object.assign({}, value);
+        if (kind === "translations") {
+          const resource = copy as StudioSlots["translations"];
+          const culture = Intl.getCanonicalLocales(resource.culture)[0];
+          if (!culture || !resource.messages || Object.values(resource.messages).some(message => typeof message !== "string"))
+            throw new Error(translate("Translation resources require a culture and string messages"));
+          Object.assign(copy, { culture, messages: Object.freeze({ ...resource.messages }) });
+        }
         if ("component" in copy) {
           copy.component = isolateModuleComponent(copy.component as ComponentType<object>, manifest.id, value.id,
             error => this.messages.push({ moduleId: manifest.id, code: "render-failed", message: messageOf(error) }), kind === "providers");
@@ -127,6 +136,7 @@ export class StudioRegistry {
       const own = <K extends keyof StudioSlots>(kind: K) => this.slots(kind).filter(value =>
         module.contributions.some(item => item.kind === kind && item.active && item.value === value));
       const extensions: StudioModuleExtensions = {
+        translations: [...own("translations")],
         components: [...own("components")],
         providers: [...own("providers")],
         dashboardWidgets: [...own("dashboardWidgets")], settingsSections: [...own("settingsSections")],
@@ -153,4 +163,4 @@ export class StudioRegistry {
 }
 
 function compare(a: string, b: string) { return a < b ? -1 : a > b ? 1 : 0; }
-function messageOf(error: unknown) { return error instanceof Error ? error.message : "Module activation failed"; }
+function messageOf(error: unknown) { return error instanceof Error ? error.message : translate("Module activation failed"); }

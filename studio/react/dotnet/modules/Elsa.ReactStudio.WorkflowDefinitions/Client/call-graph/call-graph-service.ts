@@ -1,3 +1,5 @@
+
+import { message, translate } from "@elsa-workflows/react-studio-sdk/localization";
 import type { Activity } from "@elsa-workflows/react-studio-api-client/types/activities";
 import type { PagedList } from "@elsa-workflows/react-studio-api-client/types/common";
 import type { WorkflowDefinition, WorkflowDefinitionSummary } from "@elsa-workflows/react-studio-api-client/types/workflow-definitions";
@@ -161,7 +163,7 @@ export class CallGraphService {
         node.isPublished = s.isPublished;
         uninspected.add(s.definitionId);
       }
-      if (graph.nodes.size > this.config.maxNodes) this.addWarning({ code: "max-nodes", message: `More than ${this.config.maxNodes} workflow definitions; only the first ${this.config.maxNodes} were inspected.` });
+      if (graph.nodes.size > this.config.maxNodes) this.addWarning({ code: "max-nodes", message: message("More than {{value0}} workflow definitions; only the first {{value1}} were inspected."), values: { value0: this.config.maxNodes, value1: this.config.maxNodes } });
       this.notify();
 
       // Full models in bulk, bounded concurrency. Newly discovered targets that were not listed go to
@@ -186,7 +188,7 @@ export class CallGraphService {
           items = (await this.api.getMany(ids, signal)).items ?? [];
         } catch (e) {
           if (signal.aborted) return;
-          this.addWarning({ code: "load-failed", message: `Could not load ${ids.length} definitions: ${describe(e)}` });
+          this.addWarning({ code: "load-failed", message: message("Could not load {{value0}} definitions: {{value1}}"), values: { value0: ids.length, value1: describe(e) } });
           for (const s of batch) this.markMissing(s.definitionId, s.name);
           return;
         }
@@ -213,7 +215,7 @@ export class CallGraphService {
         await runBounded(wave, this.config.concurrency, async (definitionId) => {
           if (signal.aborted) return;
           if (graph.nodes.size >= this.config.maxNodes) {
-            this.addWarning({ code: "max-nodes", message: `Node limit of ${this.config.maxNodes} reached; some referenced workflows were not loaded.` });
+            this.addWarning({ code: "max-nodes", message: message("Node limit of {{value0}} reached; some referenced workflows were not loaded."), values: { value0: this.config.maxNodes } });
             return;
           }
           if (!budget.take()) return;
@@ -280,7 +282,7 @@ export class CallGraphService {
   private addWarning(warning: CallGraphWarning) {
     if (this.graph.warnings.some((w) => w.code === warning.code)) return;
     this.graph.warnings.push(warning);
-    this.warn(warning.message);
+    this.warn(translate(warning.message, warning.values));
     this.notify();
   }
 }
@@ -300,12 +302,12 @@ class RequestBudget {
     if (this.exhausted) return false;
     if (this.now() > this.deadline) {
       this.exhausted = true;
-      this.onLimit({ code: "timeout", message: "The call graph took too long to load; showing what was loaded." });
+      this.onLimit({ code: "timeout", message: message("The call graph took too long to load; showing what was loaded.") });
       return false;
     }
     if (this.used >= this.max) {
       this.exhausted = true;
-      this.onLimit({ code: "max-requests", message: `Request limit of ${this.max} reached; showing what was loaded.` });
+      this.onLimit({ code: "max-requests", message: message("Request limit of {{value0}} reached; showing what was loaded."), values: { value0: this.max } });
       return false;
     }
     this.used++;

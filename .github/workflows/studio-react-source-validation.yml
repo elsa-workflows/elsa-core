@@ -56,6 +56,7 @@ jobs:
           pnpm lint
           pnpm typecheck
           pnpm check:boundaries
+          pnpm localization:check
           pnpm test
           pnpm benchmark:expressions
           pnpm test:packages

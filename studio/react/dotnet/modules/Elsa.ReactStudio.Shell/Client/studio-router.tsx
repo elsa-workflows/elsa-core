@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { useEffect } from "react";
 import { useRouter } from "@elsa-workflows/react-studio-sdk/navigation/index";
@@ -11,6 +13,7 @@ import { AccessDenied, NotFound } from "./status-pages";
 import { FullPageSpinner } from "@elsa-workflows/react-studio-ui/full-page-spinner";
 
 export function StudioRouter({ path }: { path: string }) {
+  const _t = useTranslation();
   const auth = useAuth();
   const router = useRouter();
   const { enabled, featuresResolved } = useModules();
@@ -26,7 +29,7 @@ export function StudioRouter({ path }: { path: string }) {
 
   if (auth.status === "unauthenticated") {
     // Non-interactive strategies (api-key without key) cannot recover: show the reason.
-    return <AppShell><AccessDenied message={auth.error ?? "Not authenticated."} /></AppShell>;
+    return <AppShell><AccessDenied message={auth.error ?? _t("Not authenticated.")} /></AppShell>;
   }
 
   const match = resolveRoute(enabled, path);

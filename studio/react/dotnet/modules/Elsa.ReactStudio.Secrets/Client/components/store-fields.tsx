@@ -1,4 +1,8 @@
 "use client";
+import { translate } from "@elsa-workflows/react-studio-sdk/localization";
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { useCallback, useMemo, useState } from "react";
 import { Field } from "@elsa-workflows/react-studio-ui/common/field";
@@ -30,7 +34,8 @@ const defaultsFor = (fields: SecretStoreFieldDescriptor[]) =>
  * used to carry, so any store — including ones this studio has never heard of — gets a usable form.
  */
 export function useStoreFields(store: SecretStoreDescriptor | undefined): StoreFieldsState {
-  const fields = useMemo(() => storeFields(store), [store]);
+  const t = useTranslation();
+  const fields = useMemo(() => storeFields(store, t), [store, t]);
   const [values, setValues] = useState<Record<string, string>>(() => defaultsFor(fields));
 
   // Switching stores swaps the whole set of fields, so stale values must not carry over. Adjusting during render rather
@@ -61,11 +66,12 @@ export function useStoreFields(store: SecretStoreDescriptor | undefined): StoreF
 /** What a store does with a submitted value, in that store's own terms. */
 export function valueHintFor(store: SecretStoreDescriptor | undefined): string | undefined {
   if (!store) return undefined;
-  if (store.name === "encrypted") return "Stored encrypted by Elsa; it is never shown again after saving.";
-  return `Written to ${store.displayName}; Elsa keeps only the reference and never shows the value again.`;
+  if (store.name === "encrypted") return translate("Stored encrypted by Elsa; it is never shown again after saving.");
+  return translate("Written to {{value0}}; Elsa keeps only the reference and never shows the value again.", { value0: store.displayName });
 }
 
 export function StoreFields({ state, idPrefix }: { state: StoreFieldsState; idPrefix: string }) {
+  useTranslation();
   return (
     <>
       {state.fields.map((field) => {

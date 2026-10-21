@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { memo } from "react";
 import { BaseEdge, EdgeLabelRenderer, getBezierPath, type Edge, type EdgeProps } from "@xyflow/react";
@@ -16,6 +18,7 @@ export type DataFlowEdge = Edge<DataEdgeData, "data">;
 
 /** Dotted association from the activity that writes a piece of data to one that reads it (BPMN data-association style). */
 function DataEdgeComponent({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data }: EdgeProps<DataFlowEdge>) {
+  useTranslation();
   const [path, labelX, labelY] = getBezierPath({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, curvature: 0.4 });
   const colour = data?.kind === "variable" ? "var(--elsa-secondary)" : data?.kind === "input" ? "var(--status-info)" : "var(--status-success)";
   return (

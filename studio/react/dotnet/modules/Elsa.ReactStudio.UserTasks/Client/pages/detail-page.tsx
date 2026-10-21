@@ -1,4 +1,8 @@
 "use client";
+import { translate } from "@elsa-workflows/react-studio-sdk/localization";
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { ArrowLeft, CheckCircle2, Eye, Hand, RefreshCw, UserMinus, UserPlus, XCircle } from "lucide-react";
 import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
@@ -24,6 +28,7 @@ import { useUserTask, useUserTaskCapabilities, useUserTaskEvents, useUserTaskOpe
 import { UserTaskRoutes } from "../routes";
 
 export function UserTaskDetailPage({ params }: { params: RouteParams }) {
+  useTranslation();
   return (
     <UserTasksGate>
       <UserTaskDetailView taskId={params.taskId} />
@@ -32,6 +37,7 @@ export function UserTaskDetailPage({ params }: { params: RouteParams }) {
 }
 
 function UserTaskDetailView({ taskId }: { taskId: string }) {
+  const _t = useTranslation();
   const query = useUserTask(taskId);
   const task = query.data;
   const { capabilities } = useUserTaskCapabilities();
@@ -40,10 +46,10 @@ function UserTaskDetailView({ taskId }: { taskId: string }) {
   const [dialog, setDialog] = useState<"complete" | "assign" | "cancel" | null>(null);
   const op = useUserTaskOperation(() => setDialog(null));
 
-  const run = async (variables: Parameters<typeof op.mutateAsync>[0], success: string) => {
+  const run = async (variables: Parameters<typeof op.mutateAsync>[0], success: () => string) => {
     try {
       const res = await op.mutateAsync(variables);
-      toast.success(res.status === "Accepted" ? `${success} (processing in the background).` : success);
+      toast.success(res.status === "Accepted" ? translate("{{value0}} (processing in the background).", { value0: success() }) : success());
       setDialog(null);
     } catch {
       // Already reported by the mutation's onError.
@@ -74,44 +80,39 @@ function UserTaskDetailView({ taskId }: { taskId: string }) {
       <PageHeader
         title={
           <span className="flex items-center gap-2 flex-wrap">
-            {task?.title ?? "User task"}
+            {task?.title ?? _t("User task")}
             <UserTaskStatusBadge status={task?.status} />
             {task && <PriorityBadge priority={task.priority} />}
-            {task?.isOverdue && <ToneBadge tone="danger">Overdue</ToneBadge>}
+            {task?.isOverdue && <ToneBadge tone="danger">{_t("Overdue")}</ToneBadge>}
           </span>
         }
         description={task?.summary ?? undefined}
         actions={
           <>
             {can("claim") && (
-              <Button size="sm" onClick={() => task && run({ op: "claim", taskId, expectedRevision: task.revision }, "Task claimed.")} disabled={op.isPending}>
+              <Button size="sm" onClick={() => task && run({ op: "claim", taskId, expectedRevision: task.revision }, () => translate("Task claimed."))} disabled={op.isPending}>
                 <Hand data-icon="inline-start" />
-                Claim
-              </Button>
+                {_t("Claim")}</Button>
             )}
             {can("release") && (
-              <Button size="sm" variant="outline" onClick={() => task && run({ op: "release", taskId, expectedRevision: task.revision }, "Task released.")} disabled={op.isPending}>
+              <Button size="sm" variant="outline" onClick={() => task && run({ op: "release", taskId, expectedRevision: task.revision }, () => translate("Task released."))} disabled={op.isPending}>
                 <UserMinus data-icon="inline-start" />
-                Release
-              </Button>
+                {_t("Release")}</Button>
             )}
             {can("assign") && (
               <Button size="sm" variant="outline" onClick={() => setDialog("assign")} disabled={op.isPending}>
                 <UserPlus data-icon="inline-start" />
-                Assign
-              </Button>
+                {_t("Assign")}</Button>
             )}
             {can("complete") && (
               <Button size="sm" onClick={() => setDialog("complete")} disabled={op.isPending}>
                 <CheckCircle2 data-icon="inline-start" />
-                Complete
-              </Button>
+                {_t("Complete")}</Button>
             )}
             {can("cancel") && (
               <Button size="sm" variant="destructive" onClick={() => setDialog("cancel")} disabled={op.isPending}>
                 <XCircle data-icon="inline-start" />
-                Cancel task
-              </Button>
+                {_t("Cancel task")}</Button>
             )}
             {can("retry") && (
               <Button
@@ -119,23 +120,21 @@ function UserTaskDetailView({ taskId }: { taskId: string }) {
                 variant="outline"
                 disabled={op.isPending}
                 onClick={async () => {
-                  if (task && (await confirm({ title: "Retry form resolution?", description: task.healthCode ?? undefined })))
-                    run({ op: "retryResolution", taskId, expectedRevision: task.revision }, "Resolution retried.");
+                  if (task && (await confirm({ title: _t("Retry form resolution?"), description: task.healthCode ?? undefined })))
+                    run({ op: "retryResolution", taskId, expectedRevision: task.revision }, () => translate("Resolution retried."));
                 }}
               >
                 <RefreshCw data-icon="inline-start" />
-                Retry resolution
-              </Button>
+                {_t("Retry resolution")}</Button>
             )}
             <Button variant="ghost" size="sm" nativeButton={false} render={<Link href={UserTaskRoutes.list} />}>
               <ArrowLeft data-icon="inline-start" />
-              All tasks
-            </Button>
+              {_t("All tasks")}</Button>
           </>
         }
       />
 
-      <ErrorAlert error={query.error} title="Could not load the task" />
+      <ErrorAlert error={query.error} title={_t("Could not load the task")} />
 
       {task && (
         <div className="grid gap-4 lg:grid-cols-3">
@@ -143,14 +142,14 @@ function UserTaskDetailView({ taskId }: { taskId: string }) {
             {task.instructions && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Instructions</CardTitle>
+                  <CardTitle>{_t("Instructions")}</CardTitle>
                 </CardHeader>
                 <CardContent className="text-sm whitespace-pre-wrap">{task.instructions}</CardContent>
               </Card>
             )}
             <Card>
               <CardHeader>
-                <CardTitle>Fields</CardTitle>
+                <CardTitle>{_t("Fields")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <TaskFields task={task} />
@@ -159,7 +158,7 @@ function UserTaskDetailView({ taskId }: { taskId: string }) {
             {task.data !== undefined && task.data !== null && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Task data</CardTitle>
+                  <CardTitle>{_t("Task data")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <JsonViewer value={redactMasked(task.data, task)} maxHeight="16rem" />
@@ -169,14 +168,14 @@ function UserTaskDetailView({ taskId }: { taskId: string }) {
             {(task.outcome || task.response !== undefined) && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Outcome</CardTitle>
+                  <CardTitle>{_t("Outcome")}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-2">
                   <KeyValueTable
                     rows={[
-                      { label: "Action", value: task.outcome },
-                      { label: "Completed by", value: participantLabel(task.completedBy) || undefined },
-                      { label: "Completed at", value: <Timestamp value={task.completedAt} /> },
+                      { label: _t("Action"), value: task.outcome },
+                      { label: _t("Completed by"), value: participantLabel(task.completedBy) || undefined },
+                      { label: _t("Completed at"), value: <Timestamp value={task.completedAt} /> },
                     ]}
                   />
                   {task.response !== undefined && task.response !== null && <JsonViewer value={redactMasked(task.response, task)} maxHeight="12rem" />}
@@ -187,35 +186,35 @@ function UserTaskDetailView({ taskId }: { taskId: string }) {
           <div className="flex flex-col gap-4">
             <Card>
               <CardHeader>
-                <CardTitle>Assignment</CardTitle>
+                <CardTitle>{_t("Assignment")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <KeyValueTable
                   rows={[
-                    { label: "Assignee", value: participantLabel(task.assignee) || undefined },
-                    { label: "Candidates", value: task.candidateSummary ?? undefined },
-                    { label: "Assigned at", value: <Timestamp value={task.assignedAt} /> },
-                    { label: "Due", value: <Timestamp value={task.dueAt} /> },
-                    { label: "Allowed actions", value: task.allowedActions.length ? task.allowedActions.join(", ") : undefined },
-                    { label: "Revision", value: task.revision },
+                    { label: _t("Assignee"), value: participantLabel(task.assignee) || undefined },
+                    { label: _t("Candidates"), value: task.candidateSummary ?? undefined },
+                    { label: _t("Assigned at"), value: <Timestamp value={task.assignedAt} /> },
+                    { label: _t("Due"), value: <Timestamp value={task.dueAt} /> },
+                    { label: _t("Allowed actions"), value: task.allowedActions.length ? task.allowedActions.join(", ") : undefined },
+                    { label: _t("Revision"), value: task.revision },
                   ]}
                 />
               </CardContent>
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Details</CardTitle>
+                <CardTitle>{_t("Details")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <KeyValueTable
                   rows={[
-                    { label: "Id", value: <span className="font-mono text-xs">{task.id}</span> },
-                    { label: "Reference", value: task.reference ?? undefined },
-                    { label: "Type", value: task.taskType ?? undefined },
-                    { label: "Tags", value: task.tags.length ? task.tags.join(", ") : undefined },
-                    { label: "Health", value: task.healthCode ? `${task.healthSeverity ?? ""} ${task.healthCode}`.trim() : undefined },
-                    { label: "Created", value: <Timestamp value={task.createdAt} /> },
-                    { label: "Updated", value: <Timestamp value={task.updatedAt} /> },
+                    { label: _t("Id"), value: <span className="font-mono text-xs">{task.id}</span> },
+                    { label: _t("Reference"), value: task.reference ?? undefined },
+                    { label: _t("Type"), value: task.taskType ?? undefined },
+                    { label: _t("Tags"), value: task.tags.length ? task.tags.join(", ") : undefined },
+                    { label: _t("Health"), value: task.healthCode ? `${task.healthSeverity ?? ""} ${task.healthCode}`.trim() : undefined },
+                    { label: _t("Created"), value: <Timestamp value={task.createdAt} /> },
+                    { label: _t("Updated"), value: <Timestamp value={task.updatedAt} /> },
                   ]}
                 />
               </CardContent>
@@ -223,15 +222,15 @@ function UserTaskDetailView({ taskId }: { taskId: string }) {
             {task.disclosure.canViewWorkflow && (task.workflow ?? task.workflowInstanceId) && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Workflow</CardTitle>
+                  <CardTitle>{_t("Workflow")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <KeyValueTable
                     rows={[
-                      { label: "Definition", value: task.workflow?.definitionName ?? task.workflowDefinitionName ?? task.workflowDefinitionId ?? undefined },
-                      { label: "Version", value: task.workflow?.definitionVersion ?? task.workflowDefinitionVersion ?? undefined },
+                      { label: _t("Definition"), value: task.workflow?.definitionName ?? task.workflowDefinitionName ?? task.workflowDefinitionId ?? undefined },
+                      { label: _t("Version"), value: task.workflow?.definitionVersion ?? task.workflowDefinitionVersion ?? undefined },
                       {
-                        label: "Instance",
+                        label: _t("Instance"),
                         value: (task.workflow?.instanceId ?? task.workflowInstanceId) ? (
                           <Link className="underline underline-offset-4 font-mono text-xs" href={`/workflows/instances/${encodeURIComponent(task.workflow?.instanceId ?? task.workflowInstanceId ?? "")}/view`}>
                             {task.workflow?.instanceReference ?? task.workflowInstanceReference ?? task.workflow?.instanceId ?? task.workflowInstanceId}
@@ -246,7 +245,7 @@ function UserTaskDetailView({ taskId }: { taskId: string }) {
             {task.disclosure.canViewHistory && (
               <Card>
                 <CardHeader>
-                  <CardTitle>History</CardTitle>
+                  <CardTitle>{_t("History")}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {events.error ? (
@@ -265,7 +264,7 @@ function UserTaskDetailView({ taskId }: { taskId: string }) {
                       ))}
                     </ol>
                   ) : (
-                    <p className="text-xs text-muted-foreground">No events.</p>
+                    <p className="text-xs text-muted-foreground">{_t("No events.")}</p>
                   )}
                 </CardContent>
               </Card>
@@ -280,7 +279,7 @@ function UserTaskDetailView({ taskId }: { taskId: string }) {
           open
           onOpenChange={(o) => !o && setDialog(null)}
           isPending={op.isPending}
-          onSubmit={(actionKey, data) => run({ op: "complete", taskId, expectedRevision: task.revision, actionKey, data }, "Task completed.")}
+          onSubmit={(actionKey, data) => run({ op: "complete", taskId, expectedRevision: task.revision, actionKey, data }, () => translate("Task completed."))}
         />
       )}
       {task && dialog === "assign" && (
@@ -289,11 +288,11 @@ function UserTaskDetailView({ taskId }: { taskId: string }) {
           onOpenChange={(o) => !o && setDialog(null)}
           isPending={op.isPending}
           participantPicker={!!capabilities?.participantPicker}
-          onSubmit={(assignee, reason) => run({ op: "assign", taskId, expectedRevision: task.revision, assignee, reason }, `Task assigned to ${participantLabel(assignee)}.`)}
+          onSubmit={(assignee, reason) => run({ op: "assign", taskId, expectedRevision: task.revision, assignee, reason }, () => translate("Task assigned to {{participant}}.", { participant: participantLabel(assignee) }))}
         />
       )}
       {task && dialog === "cancel" && (
-        <CancelTaskDialog open onOpenChange={(o) => !o && setDialog(null)} isPending={op.isPending} onSubmit={(reason) => run({ op: "cancel", taskId, expectedRevision: task.revision, reason }, "Task cancelled.")} />
+        <CancelTaskDialog open onOpenChange={(o) => !o && setDialog(null)} isPending={op.isPending} onSubmit={(reason) => run({ op: "cancel", taskId, expectedRevision: task.revision, reason }, () => translate("Task cancelled."))} />
       )}
     </div>
   );
@@ -313,8 +312,9 @@ function redactMasked(value: unknown, task: UserTaskDetail): unknown {
 }
 
 function TaskFields({ task }: { task: UserTaskDetail }) {
+  const _t = useTranslation();
   const fields = task.form?.fields ?? [];
-  if (fields.length === 0) return <p className="text-sm text-muted-foreground">This task has no form fields.</p>;
+  if (fields.length === 0) return <p className="text-sm text-muted-foreground">{_t("This task has no form fields.")}</p>;
   return (
     <KeyValueTable
       rows={fields.map((f) => ({
@@ -331,6 +331,7 @@ function TaskFields({ task }: { task: UserTaskDetail }) {
 }
 
 function FieldValue({ taskId, field }: { taskId: string; field: UserTaskFormField }) {
+  const _t = useTranslation();
   const api = useUserTasksApi();
   const [revealed, setRevealed] = useState<unknown>();
   const [busy, setBusy] = useState(false);
@@ -358,8 +359,7 @@ function FieldValue({ taskId, field }: { taskId: string; field: UserTaskFormFiel
             }}
           >
             <Eye data-icon="inline-start" />
-            Reveal
-          </Button>
+            {_t("Reveal")}</Button>
         )}
       </span>
     );

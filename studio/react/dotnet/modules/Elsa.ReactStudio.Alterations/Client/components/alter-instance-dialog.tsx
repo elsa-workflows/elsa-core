@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Loader2, Play, Send } from "lucide-react";
 import Link from "@elsa-workflows/react-studio-sdk/navigation/link";
@@ -36,10 +38,12 @@ export function AlterInstanceDialog({
   onOpenChange: (open: boolean) => void;
   onDone?: () => void;
 }) {
+  const _t = useTranslation();
   const [drafts, setDrafts] = useState<AlterationDraft[]>(() => [newDraft()]);
   const [retryActivityIds, setRetryActivityIds] = useState(() => targets.flatMap((t) => t.faultedActivityIds ?? []).join(", "));
   const [outcome, setOutcome] = useState<Outcome | null>(null);
-  const [validation, setValidation] = useState<string | undefined>();
+  // Retain the rejected draft, not a message translated in the previous culture.
+  const [validation, setValidation] = useState<AlterationDraft[] | undefined>();
   const confirm = useConfirm();
 
   const run = useRunAlterations();
@@ -51,20 +55,20 @@ export function AlterInstanceDialog({
 
   const prepared = () => {
     const { alterations, error } = toAlterations(drafts);
-    setValidation(error);
+    setValidation(error ? drafts : undefined);
     return error ? undefined : alterations;
   };
 
   const onRun = async () => {
     const alterations = prepared();
     if (!alterations) return;
-    if (!(await confirm({ title: "Run alterations now?", description: `${alterations.length} alteration(s) will be applied immediately to ${instanceIds.length} instance(s).`, confirmLabel: "Run" }))) return;
+    if (!(await confirm({ title: _t("Run alterations now?"), description: _t("{{value0}} alteration(s) will be applied immediately to {{value1}} instance(s).", { value0: alterations.length, value1: instanceIds.length }), confirmLabel: _t("Run") }))) return;
     try {
       const res = await run.mutateAsync({ alterations, workflowInstanceIds: instanceIds });
       setOutcome({ kind: "run", results: res.results });
       const failed = res.results.filter((r) => !r.isSuccessful).length;
-      if (failed) toast.warning(`${failed} of ${res.results.length} instance(s) reported errors.`);
-      else toast.success(`Alterations applied to ${res.results.length} instance(s).`);
+      if (failed) toast.warning(_t("{{value0}} of {{value1}} instance(s) reported errors.", { value0: failed, value1: res.results.length }));
+      else toast.success(_t("Alterations applied to {{value0}} instance(s).", { value0: res.results.length }));
       onDone?.();
     } catch (e) {
       toast.error(describeError(e));
@@ -77,7 +81,7 @@ export function AlterInstanceDialog({
     try {
       const res = await submit.mutateAsync({ alterations, filter: { workflowInstanceIds: instanceIds } });
       setOutcome({ kind: "submitted", planId: res.planId });
-      toast.success("Alteration plan submitted.");
+      toast.success(_t("Alteration plan submitted."));
       onDone?.();
     } catch (e) {
       toast.error(describeError(e));
@@ -89,7 +93,7 @@ export function AlterInstanceDialog({
     try {
       const res = await retry.mutateAsync({ workflowInstanceIds: instanceIds, activityIds: activityIds.length ? activityIds : undefined });
       setOutcome({ kind: "run", results: res.results });
-      toast.success(`Retry requested for ${instanceIds.length} instance(s).`);
+      toast.success(_t("Retry requested for {{value0}} instance(s).", { value0: instanceIds.length }));
       onDone?.();
     } catch (e) {
       toast.error(describeError(e));
@@ -100,16 +104,16 @@ export function AlterInstanceDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Alter workflow instance{targets.length > 1 ? "s" : ""}</DialogTitle>
+          <DialogTitle>{_t("Alter workflow instance")}{targets.length > 1 ? _t("s") : ""}</DialogTitle>
           <DialogDescription>
             {targets.length === 1 ? (
               <>
                 <span className="font-mono text-xs">{targets[0].workflowInstanceId}</span>
                 {targets[0].name && <> · {targets[0].name}</>}
-                {targets[0].version !== undefined && <> · v{targets[0].version}</>}
+                {targets[0].version !== undefined && <> {_t("· v")}{targets[0].version}</>}
               </>
             ) : (
-              <>{targets.length} instances selected.</>
+              <>{targets.length} {_t("instances selected.")}</>
             )}
           </DialogDescription>
         </DialogHeader>
@@ -120,60 +124,51 @@ export function AlterInstanceDialog({
               <AlterationResults results={outcome.results} />
             ) : (
               <p className="text-sm">
-                Plan <span className="font-mono text-xs">{outcome.planId}</span> was submitted and is being processed in the background.{" "}
+                {_t("Plan")}{" "}<span className="font-mono text-xs">{outcome.planId}</span> {_t("was submitted and is being processed in the background.")}{" "}
                 <Link className="underline underline-offset-4" href={href(AlterationRoutes.plan, { id: outcome.planId })} onClick={() => onOpenChange(false)}>
-                  Open the plan
-                </Link>{" "}
-                to follow its jobs.
-              </p>
+                  {_t("Open the plan")}</Link>{" "}
+                {_t("to follow its jobs.")}</p>
             )}
             <DialogFooter>
               <Button variant="outline" onClick={() => setOutcome(null)}>
-                Back
-              </Button>
-              <Button onClick={() => onOpenChange(false)}>Close</Button>
+                {_t("Back")}</Button>
+              <Button onClick={() => onOpenChange(false)}>{_t("Close")}</Button>
             </DialogFooter>
           </div>
         ) : (
           <Tabs defaultValue="compose">
             <TabsList>
-              <TabsTrigger value="compose">Compose alterations</TabsTrigger>
-              <TabsTrigger value="retry">Retry faulted activities</TabsTrigger>
+              <TabsTrigger value="compose">{_t("Compose alterations")}</TabsTrigger>
+              <TabsTrigger value="retry">{_t("Retry faulted activities")}</TabsTrigger>
             </TabsList>
             <TabsContent value="compose" className="flex flex-col gap-3 pt-2">
               <AlterationComposer drafts={drafts} onChange={setDrafts} />
-              {validation && <p className="text-xs text-destructive">{validation}</p>}
+              {validation && <p className="text-xs text-destructive">{toAlterations(validation).error}</p>}
               <ErrorAlert error={error} />
               <DialogFooter>
                 <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
-                  Cancel
-                </Button>
+                  {_t("Cancel")}</Button>
                 <Button variant="secondary" onClick={onSubmit} disabled={busy}>
                   {submit.isPending ? <Loader2 className="animate-spin" data-icon="inline-start" /> : <Send data-icon="inline-start" />}
-                  Submit as plan
-                </Button>
+                  {_t("Submit as plan")}</Button>
                 <Button onClick={onRun} disabled={busy}>
                   {run.isPending ? <Loader2 className="animate-spin" data-icon="inline-start" /> : <Play data-icon="inline-start" />}
-                  Run now
-                </Button>
+                  {_t("Run now")}</Button>
               </DialogFooter>
             </TabsContent>
             <TabsContent value="retry" className="flex flex-col gap-3 pt-2">
               <p className="text-sm text-muted-foreground">
-                Re-schedules faulted activities (`POST /alterations/workflows/retry`). Leave the list empty to retry every activity that raised an incident.
-              </p>
-              <Field label="Activity ids" htmlFor="retry-activity-ids" hint="Comma or whitespace separated. Optional.">
+                {_t("Re-schedules faulted activities (`POST /alterations/workflows/retry`). Leave the list empty to retry every activity that raised an incident.")}</p>
+              <Field label={_t("Activity ids")} htmlFor="retry-activity-ids" hint={_t("Comma or whitespace separated. Optional.")}>
                 <Input id="retry-activity-ids" value={retryActivityIds} onChange={(e) => setRetryActivityIds(e.target.value)} className="font-mono text-xs" />
               </Field>
               <ErrorAlert error={retry.error} />
               <DialogFooter>
                 <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
-                  Cancel
-                </Button>
+                  {_t("Cancel")}</Button>
                 <Button onClick={onRetry} disabled={busy}>
                   {retry.isPending ? <Loader2 className="animate-spin" data-icon="inline-start" /> : <Play data-icon="inline-start" />}
-                  Retry
-                </Button>
+                  {_t("Retry")}</Button>
               </DialogFooter>
             </TabsContent>
           </Tabs>

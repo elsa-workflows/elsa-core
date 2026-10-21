@@ -1,4 +1,6 @@
 "use client";
+import { message, useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Check, Monitor, Moon, Palette, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -18,26 +20,27 @@ import { useElsaTheme } from "@elsa-workflows/react-studio-sdk/theme/elsa-theme-
 import { cn } from "@elsa-workflows/react-studio-ui/utils";
 
 const appearances = [
-  { id: "light", label: "Light", icon: Sun },
-  { id: "dark", label: "Dark", icon: Moon },
-  { id: "system", label: "System", icon: Monitor },
+  { id: "light", label: message("Light"), icon: Sun },
+  { id: "dark", label: message("Dark"), icon: Moon },
+  { id: "system", label: message("System"), icon: Monitor },
 ] as const;
 
 /** Appearance (light/dark/system) and Elsa theme pack picker. */
 export function ThemeMenu() {
+  const _t = useTranslation();
   const { theme: appearance, setTheme: setAppearance } = useTheme();
   const { theme, setTheme, defaultTheme } = useElsaTheme();
   return (
     <DropdownMenu>
       <Tooltip>
-        <TooltipTrigger render={<DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label="Theme" />} />}>
+        <TooltipTrigger render={<DropdownMenuTrigger render={<Button variant="ghost" size="icon-sm" aria-label={_t("Theme")} />} />}>
           <Palette />
         </TooltipTrigger>
-        <TooltipContent>Theme</TooltipContent>
+        <TooltipContent>{_t("Theme")}</TooltipContent>
       </Tooltip>
       <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuGroup>
-          <DropdownMenuLabel className="eyebrow">Appearance</DropdownMenuLabel>
+          <DropdownMenuLabel className="eyebrow">{_t("Appearance")}</DropdownMenuLabel>
           <div className="grid grid-cols-3 gap-1 px-1 pb-1">
             {appearances.map((a) => (
               <button
@@ -50,23 +53,23 @@ export function ThemeMenu() {
                 )}
               >
                 <a.icon className="size-4" />
-                {a.label}
+                {_t(a.label)}
               </button>
             ))}
           </div>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuLabel className="eyebrow">Palette</DropdownMenuLabel>
+          <DropdownMenuLabel className="eyebrow">{_t("Palette")}</DropdownMenuLabel>
           {ELSA_THEMES.map((t) => (
             <DropdownMenuItem key={t.id} onClick={() => setTheme(t.id === defaultTheme ? null : t.id)} className="items-start gap-2.5">
               <span className="mt-0.5 size-4 shrink-0 rounded-full ring-2 ring-background" style={{ background: t.swatch }} />
               <span className="flex min-w-0 flex-1 flex-col">
                 <span className="text-sm">
-                  {t.label}
-                  {t.id === defaultTheme && <span className="ml-1 text-[10px] uppercase text-muted-foreground">default</span>}
+                  {_t(t.label)}
+                  {t.id === defaultTheme && <span className="ml-1 text-[10px] uppercase text-muted-foreground">{_t("default")}</span>}
                 </span>
-                <span className="truncate text-xs text-muted-foreground">{t.description}</span>
+                <span className="truncate text-xs text-muted-foreground">{_t(t.description)}</span>
               </span>
               <Check className={cn("mt-0.5 size-4", theme === t.id ? "opacity-100" : "opacity-0")} />
             </DropdownMenuItem>

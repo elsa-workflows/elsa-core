@@ -1,4 +1,8 @@
 "use client";
+import { translate } from "@elsa-workflows/react-studio-sdk/localization";
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Field } from "@elsa-workflows/react-studio-ui/common/field";
 import { Input } from "@elsa-workflows/react-studio-ui/input";
@@ -16,7 +20,7 @@ export function secretValueError(value: string, editorHint?: string): string | u
     JSON.parse(value);
     return undefined;
   } catch (e) {
-    return `Not valid JSON: ${e instanceof Error ? e.message : String(e)}`;
+    return translate("Not valid JSON: {{value0}}", { value0: e instanceof Error ? e.message : String(e) });
   }
 }
 
@@ -38,11 +42,12 @@ export function SecretValueField({
   required?: boolean;
   disabled?: boolean;
 }) {
+  const _t = useTranslation();
   const multiline = !!editorHint && MULTILINE_HINTS.some((h) => editorHint.toLowerCase().includes(h));
   const id = "secret-value";
   const error = secretValueError(value, editorHint);
   return (
-    <Field label={label} htmlFor={id} required={required} error={error} hint={hint ?? "Submitted once; it is never shown again after saving."}>
+    <Field label={label} htmlFor={id} required={required} error={error} hint={hint ?? _t("Submitted once; it is never shown again after saving.")}>
       {multiline ? (
         <Textarea id={id} value={value} onChange={(e) => onChange(e.target.value)} rows={6} className="font-mono text-xs" spellCheck={false} disabled={disabled} />
       ) : (

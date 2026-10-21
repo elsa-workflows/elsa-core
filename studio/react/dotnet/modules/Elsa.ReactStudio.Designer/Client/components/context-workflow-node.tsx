@@ -1,4 +1,6 @@
 "use client";
+import { message, useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { memo } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
@@ -7,15 +9,16 @@ import { cn } from "@elsa-workflows/react-studio-ui/utils";
 import type { ContextWorkflowNode as ContextWorkflowNodeType } from "@elsa-workflows/react-studio-sdk/designer/decorations";
 
 const kinds = {
-  workflow: { icon: Workflow, accent: "var(--primary)", title: "Workflow" },
-  missing: { icon: FileWarning, accent: "var(--status-danger)", title: "Referenced workflow does not exist or could not be loaded" },
-  unresolved: { icon: CircleHelp, accent: "var(--status-warning)", title: "The target is computed by an expression and cannot be resolved here" },
-  truncated: { icon: ChevronsRight, accent: "var(--muted-foreground)", title: "More workflows beyond this point" },
-  pending: { icon: Loader2, accent: "var(--muted-foreground)", title: "Loading…" },
+  workflow: { icon: Workflow, accent: "var(--primary)", title: message("Workflow") },
+  missing: { icon: FileWarning, accent: "var(--status-danger)", title: message("Referenced workflow does not exist or could not be loaded") },
+  unresolved: { icon: CircleHelp, accent: "var(--status-warning)", title: message("The target is computed by an expression and cannot be resolved here") },
+  truncated: { icon: ChevronsRight, accent: "var(--muted-foreground)", title: message("More workflows beyond this point") },
+  pending: { icon: Loader2, accent: "var(--muted-foreground)", title: message("Loading…") },
 } as const;
 
 /** An external workflow (caller or callee) in call-context mode, with a drill-in action. */
 function ContextWorkflowNodeComponent({ data }: NodeProps<ContextWorkflowNodeType>) {
+  const _t = useTranslation();
   const meta = kinds[data.kind];
   const Icon = meta.icon;
   const placeholder = data.kind !== "workflow";
@@ -23,7 +26,7 @@ function ContextWorkflowNodeComponent({ data }: NodeProps<ContextWorkflowNodeTyp
     <div
       className={cn("node-card accent-rail relative flex h-[60px] w-[200px] items-center gap-2.5 rounded-xl border bg-card pl-3.5 pr-2 shadow-sm", placeholder && "border-dashed")}
       style={{ "--rail-color": meta.accent } as React.CSSProperties}
-      title={meta.title}
+      title={_t(meta.title)}
     >
       <span className="flex size-8 shrink-0 items-center justify-center rounded-lg" style={{ background: `color-mix(in oklab, ${meta.accent} 14%, var(--card))`, color: meta.accent }}>
         <Icon className={cn("size-4", data.kind === "pending" && "animate-spin")} />
@@ -40,8 +43,8 @@ function ContextWorkflowNodeComponent({ data }: NodeProps<ContextWorkflowNodeTyp
             e.stopPropagation();
             data.onOpen?.();
           }}
-          title="Open this workflow"
-          aria-label={`Open ${data.name}`}
+          title={_t("Open this workflow")}
+          aria-label={_t("Open {{value0}}", { value0: data.name })}
         >
           <ArrowUpRight className="size-4" />
         </button>
@@ -55,8 +58,7 @@ function ContextWorkflowNodeComponent({ data }: NodeProps<ContextWorkflowNodeTyp
             data.onExpand?.();
           }}
         >
-          Expand
-        </button>
+          {_t("Expand")}</button>
       )}
       <Handle type="target" position={Position.Left} id="in-left" isConnectable={false} className="!pointer-events-none !opacity-0" />
       <Handle type="target" position={Position.Right} id="in-right" isConnectable={false} className="!pointer-events-none !opacity-0" />

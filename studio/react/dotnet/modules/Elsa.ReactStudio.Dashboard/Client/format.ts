@@ -1,3 +1,4 @@
+import { message, studioI18n } from "@elsa-workflows/react-studio-sdk/localization";
 /** Small formatting helpers shared by the dashboard widgets. */
 
 /** Parses a .NET `TimeSpan` string (`[-][d.]hh:mm:ss[.fffffff]`) into milliseconds. */
@@ -29,8 +30,8 @@ export function formatDuration(ms: number | undefined): string {
 /** Compact integers for tiles: 1,284 / 12.9K / 4.2M. */
 export function formatCount(value: number | undefined): string {
   if (value === undefined || !Number.isFinite(value)) return "–";
-  if (Math.abs(value) < 10_000) return value.toLocaleString();
-  return new Intl.NumberFormat(undefined, { notation: "compact", maximumFractionDigits: 1 }).format(value);
+  if (Math.abs(value) < 10_000) return value.toLocaleString(studioI18n.language);
+  return new Intl.NumberFormat(studioI18n.language, { notation: "compact", maximumFractionDigits: 1 }).format(value);
 }
 
-export const RANGE_LABELS = { "1h": "Last hour", "24h": "Last 24 hours", "7d": "Last 7 days" } as const;
+export const RANGE_LABELS = { "1h": message("Last hour"), "24h": message("Last 24 hours"), "7d": message("Last 7 days") } as const;

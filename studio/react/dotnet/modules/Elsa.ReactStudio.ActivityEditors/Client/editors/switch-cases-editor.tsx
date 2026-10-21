@@ -1,4 +1,6 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@elsa-workflows/react-studio-ui/button";
@@ -19,6 +21,7 @@ interface SwitchCase {
  * FlowSwitch) and a condition expression. The input is not wrapped: the value is the raw list.
  */
 export function SwitchCasesEditor({ value, onChange, descriptor, syntaxes, readOnly }: UiHintEditorProps) {
+  const _t = useTranslation();
   const cases = (Array.isArray(value) ? value : ((value as { expression?: { value?: unknown } } | undefined)?.expression?.value ?? [])) as SwitchCase[];
   const expressionSyntaxes = syntaxes.filter((s) => s !== "Literal");
   const set = (next: SwitchCase[]) => onChange(next as unknown as UiHintEditorProps["value"]);
@@ -30,7 +33,7 @@ export function SwitchCasesEditor({ value, onChange, descriptor, syntaxes, readO
       {cases.map((c, i) => (
         <div key={i} className="rounded-md border p-2 flex flex-col gap-1.5">
           <div className="flex items-center gap-1.5">
-            <Input value={c.label ?? ""} placeholder="Case label" readOnly={readOnly} onChange={(e) => update(i, { label: e.target.value })} />
+            <Input value={c.label ?? ""} placeholder={_t("Case label")} readOnly={readOnly} onChange={(e) => update(i, { label: e.target.value })} />
             <SimpleSelect
               className="w-32"
               size="sm"
@@ -40,7 +43,7 @@ export function SwitchCasesEditor({ value, onChange, descriptor, syntaxes, readO
               disabled={readOnly}
             />
             {!readOnly && (
-              <Button variant="ghost" size="icon-sm" aria-label="Remove case" onClick={() => set(cases.filter((_, j) => j !== i))}>
+              <Button variant="ghost" size="icon-sm" aria-label={_t("Remove case")} onClick={() => set(cases.filter((_, j) => j !== i))}>
                 <Trash2 />
               </Button>
             )}
@@ -51,15 +54,14 @@ export function SwitchCasesEditor({ value, onChange, descriptor, syntaxes, readO
             height="auto"
             minimal
             readOnly={readOnly}
-            placeholder="Condition expression"
+            placeholder={_t("Condition expression")}
             onChange={(text) => update(i, { condition: { type: c.condition?.type ?? expressionSyntaxes[0] ?? "JavaScript", value: text } })}
           />
         </div>
       ))}
       {!readOnly && (
-        <Button variant="outline" size="sm" className="self-start" onClick={() => set([...cases, { label: `Case ${cases.length + 1}`, condition: { type: expressionSyntaxes[0] ?? "JavaScript", value: "" } }])}>
-          <Plus /> Add case
-        </Button>
+        <Button variant="outline" size="sm" className="self-start" onClick={() => set([...cases, { label: _t("Case {{value0}}", { value0: cases.length + 1 }), condition: { type: expressionSyntaxes[0] ?? "JavaScript", value: "" } }])}>
+          <Plus /> {_t("Add case")}</Button>
       )}
     </div>
   );

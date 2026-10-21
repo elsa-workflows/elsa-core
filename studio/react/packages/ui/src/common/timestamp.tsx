@@ -1,6 +1,10 @@
 "use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { format, formatDistanceToNowStrict, isValid, parseISO } from "date-fns";
+import { enUS, nl } from "date-fns/locale";
+import { studioI18n } from "@elsa-workflows/react-studio-sdk/localization";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@elsa-workflows/react-studio-ui/tooltip";
 
 export function formatTimestamp(value: string | Date | undefined | null, pattern = "yyyy-MM-dd HH:mm:ss") {
@@ -11,11 +15,12 @@ export function formatTimestamp(value: string | Date | undefined | null, pattern
 
 /** Absolute timestamp with a relative-time tooltip. Renders a dash for empty values. */
 export function Timestamp({ value, relative = false }: { value: string | Date | undefined | null; relative?: boolean }) {
+  useTranslation();
   if (!value) return <span className="text-muted-foreground">–</span>;
   const d = typeof value === "string" ? parseISO(value) : value;
   if (!isValid(d)) return <span>{String(value)}</span>;
   const absolute = format(d, "yyyy-MM-dd HH:mm:ss");
-  const rel = formatDistanceToNowStrict(d, { addSuffix: true });
+  const rel = formatDistanceToNowStrict(d, { addSuffix: true, locale: studioI18n.language.startsWith("nl") ? nl : enUS });
   return (
     <Tooltip>
       <TooltipTrigger render={<span className="whitespace-nowrap tabular-nums" />}>{relative ? rel : absolute}</TooltipTrigger>

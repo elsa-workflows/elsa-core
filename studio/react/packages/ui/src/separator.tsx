@@ -1,4 +1,6 @@
 "use client"
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
 
 import { Separator as SeparatorPrimitive } from "@base-ui/react/separator"
 import { cn } from "cn"
@@ -8,6 +10,7 @@ function Separator({
   orientation = "horizontal",
   ...props
 }: SeparatorPrimitive.Props) {
+  useTranslation();
   return (
     <SeparatorPrimitive
       data-slot="separator"

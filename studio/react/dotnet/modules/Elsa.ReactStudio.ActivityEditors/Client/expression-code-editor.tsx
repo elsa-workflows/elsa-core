@@ -1,3 +1,5 @@
+
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
 import { useMemo, type ComponentProps } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useElsaClient, useQueryScope } from "@elsa-workflows/react-studio-api-client/react";
@@ -9,6 +11,7 @@ const emptyTypes = parseServerTypes("");
 
 /** Saved server type information augments the current, possibly unsaved workflow members. */
 export function ExpressionCodeEditor({ context, propertyName, ...props }: ComponentProps<typeof CodeEditor> & { context?: UiHintContext; propertyName: string }) {
+  const _t = useTranslation();
   const client = useElsaClient();
   const scope = useQueryScope();
   const language = props.language ?? "plaintext";
@@ -21,10 +24,10 @@ export function ExpressionCodeEditor({ context, propertyName, ...props }: Compon
   const variables = context?.variables;
   const inputs = context?.inputs;
   const activities = context?.activities;
-  const completions = useMemo(() => typedCompletions(variables ? { variables, inputs, activities } : undefined, language, query.data ?? emptyTypes),
-    [variables, inputs, activities, language, query.data]);
+  const completions = useMemo(() => typedCompletions(variables ? { variables, inputs, activities } : undefined, language, query.data ?? emptyTypes, _t),
+    [variables, inputs, activities, language, query.data, _t]);
   return <>
     <CodeEditor {...props} completions={completions} />
-    {query.isError && <p className="text-xs text-muted-foreground" role="status">Server type information is unavailable. Workflow member completion remains available.</p>}
+    {query.isError && <p className="text-xs text-muted-foreground" role="status">{_t("Server type information is unavailable. Workflow member completion remains available.")}</p>}
   </>;
 }
