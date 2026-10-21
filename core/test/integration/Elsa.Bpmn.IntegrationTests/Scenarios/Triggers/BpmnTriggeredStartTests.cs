@@ -3,6 +3,8 @@ using Elsa.Bpmn.Activities;
 using Elsa.Bpmn.Hosting;
 using Elsa.Bpmn.IntegrationTests.Scenarios.HostPort.Activities;
 using Elsa.Extensions;
+using Elsa.Scheduling;
+using Elsa.Scheduling.Tasks;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
@@ -11,6 +13,8 @@ using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime;
+using Elsa.Workflows.Runtime.Activities;
+using Elsa.Workflows.Runtime.Filters;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
@@ -23,9 +27,13 @@ namespace Elsa.Bpmn.IntegrationTests.Scenarios.Triggers;
 /// <remarks>
 /// <para>
 /// Message and signal starts go end to end: the workflow is registered, its triggers are indexed, and an ordinary
-/// <see cref="IEventPublisher.PublishAsync"/> starts it. A timer start is started the way <c>Elsa.Scheduling</c>'s
-/// <c>RunWorkflowTask</c> starts one, with the process as the trigger activity and no input, since waiting for a real
-/// schedule to elapse would only make the test slow.
+/// <see cref="IEventPublisher.PublishAsync"/> starts it. A timer start that has to be told apart from another goes
+/// through the real trigger scheduler, and the schedule it registers is fired as the <see cref="RunWorkflowTask"/> it
+/// would run when it elapses, since waiting for a real schedule would only make the test slow.
+/// </para>
+/// <para>
+/// The remaining runs go straight to the workflow runner with the process as the trigger activity. They carry no
+/// trigger hash, which is how the kind-based fallback, and its ambiguity fault, are exercised.
 /// </para>
 /// <para>
 /// Each process routes its start events to different work so the start the instance began at is observable from the
@@ -103,14 +111,56 @@ public class BpmnTriggeredStartTests(ITestOutputHelper testOutputHelper)
         AssertFinished(instance);
     }
 
-    [Fact(DisplayName = "A process whose message starts register different names faults instead of guessing which one fired")]
-    public async Task TwoMessageStartsOnDifferentNames_PublishingOneOfThem_FaultsAsAmbiguous()
+    [Fact(DisplayName = "Publishing the first of two message names starts the process at the start that registered it")]
+    public async Task TwoMessageStartsOnDifferentNames_PublishingTheFirst_StartsAtItsStart()
     {
+        // The placed start leads straight to an end, the cancelled start to blocking work.
         var instance = await PublishAsync<TwoMessageStartsOnDifferentNamesWorkflow>("OrderPlaced");
 
-        Assert.Equal(WorkflowSubStatus.Faulted, instance.SubStatus);
-        var incident = Assert.Single(instance.WorkflowState.Incidents);
-        Assert.Contains(BpmnStartEventResolver.AmbiguousTriggerFaultCode, incident.Message);
+        AssertFinished(instance);
+    }
+
+    [Fact(DisplayName = "Publishing the second of two message names starts the process at the start that registered it")]
+    public async Task TwoMessageStartsOnDifferentNames_PublishingTheSecond_StartsAtItsStart()
+    {
+        var instance = await PublishAsync<TwoMessageStartsOnDifferentNamesWorkflow>("OrderCancelled");
+
+        Assert.Empty(instance.WorkflowState.Incidents);
+        Assert.Equal(WorkflowSubStatus.Suspended, instance.SubStatus);
+    }
+
+    [Fact(DisplayName = "A run with no trigger hash on a process whose message starts register different names faults instead of guessing")]
+    public async Task TwoMessageStartsOnDifferentNames_RunAsTriggerWithoutHash_FaultsAsAmbiguous()
+    {
+        var result = await RunAsync(new TwoMessageStartsOnDifferentNamesWorkflow(), TriggeredBy.EventWithoutHash);
+
+        AssertAmbiguous(result);
+    }
+
+    [Fact(DisplayName = "Firing the shorter of two timer schedules starts the process at the start that registered it")]
+    public async Task TwoTimerStartsOnDifferentIntervals_FiringTheShorter_StartsAtItsStart()
+    {
+        // The hourly start leads straight to an end, the two-hourly start to blocking work.
+        var instance = await FireScheduledTimerAsync<TwoTimerStartsOnDifferentIntervalsWorkflow>(TimeSpan.FromHours(1));
+
+        AssertFinished(instance);
+    }
+
+    [Fact(DisplayName = "Firing the longer of two timer schedules starts the process at the start that registered it")]
+    public async Task TwoTimerStartsOnDifferentIntervals_FiringTheLonger_StartsAtItsStart()
+    {
+        var instance = await FireScheduledTimerAsync<TwoTimerStartsOnDifferentIntervalsWorkflow>(TimeSpan.FromHours(2));
+
+        Assert.Empty(instance.WorkflowState.Incidents);
+        Assert.Equal(WorkflowSubStatus.Suspended, instance.SubStatus);
+    }
+
+    [Fact(DisplayName = "A timer run with no trigger hash on a process whose timer starts register different intervals faults instead of guessing")]
+    public async Task TwoTimerStartsOnDifferentIntervals_RunAsTriggerWithoutHash_FaultsAsAmbiguous()
+    {
+        var result = await RunAsync(new TwoTimerStartsOnDifferentIntervalsWorkflow(), TriggeredBy.TimerWithoutHash);
+
+        AssertAmbiguous(result);
     }
 
     private async Task<WorkflowInstance> PublishAsync<TWorkflow>(string eventName) where TWorkflow : IWorkflow
@@ -135,7 +185,42 @@ public class BpmnTriggeredStartTests(ITestOutputHelper testOutputHelper)
         return Assert.Single(instances);
     }
 
-    private async Task<RunWorkflowResult> RunAsync(IWorkflow workflowDefinition, bool triggeredByTimer)
+    /// <summary>
+    /// Schedules the workflow's stored triggers through the real <see cref="ITriggerScheduler"/>, then fires the timer
+    /// schedule with the given interval the way the scheduler does when it elapses: as a <see cref="RunWorkflowTask"/>.
+    /// </summary>
+    private async Task<WorkflowInstance> FireScheduledTimerAsync<TWorkflow>(TimeSpan interval) where TWorkflow : IWorkflow
+    {
+        var workflowScheduler = new CapturingWorkflowScheduler();
+        var services = new TestApplicationBuilder(testOutputHelper)
+            .ConfigureElsa(elsa => elsa.UseBpmn().UseScheduling(scheduling => scheduling.WorkflowScheduler = _ => workflowScheduler))
+            .AddActivitiesFrom<BpmnTestWork>()
+            .AddWorkflow<TWorkflow>()
+            .Build();
+
+        await services.PopulateRegistriesAsync();
+
+        var triggers = await services.GetRequiredService<ITriggerStore>().FindManyAsync(new TriggerFilter { WorkflowDefinitionId = typeof(TWorkflow).Name });
+        await services.GetRequiredService<ITriggerScheduler>().ScheduleAsync(triggers);
+
+        var request = Assert.Single(workflowScheduler.RecurringSchedules, schedule => schedule.Interval == interval).Request;
+        await new RunWorkflowTask(request).ExecuteAsync(new TaskExecutionContext(services, CancellationToken.None));
+
+        var instances = await services.GetRequiredService<IWorkflowInstanceStore>().FindManyAsync(new WorkflowInstanceFilter
+        {
+            DefinitionId = typeof(TWorkflow).Name
+        });
+
+        return Assert.Single(instances);
+    }
+
+    private async Task<RunWorkflowResult> RunAsync(IWorkflow workflowDefinition, bool triggeredByTimer) =>
+        await RunAsync(workflowDefinition, triggeredByTimer ? TriggeredBy.TimerWithoutHash : TriggeredBy.Nothing);
+
+    /// <summary>
+    /// Runs the workflow directly, never through the runtime, so a trigger-started run carries no trigger hash.
+    /// </summary>
+    private async Task<RunWorkflowResult> RunAsync(IWorkflow workflowDefinition, TriggeredBy triggeredBy)
     {
         var services = new TestApplicationBuilder(testOutputHelper)
             .ConfigureElsa(elsa => elsa.UseBpmn())
@@ -147,7 +232,10 @@ public class BpmnTriggeredStartTests(ITestOutputHelper testOutputHelper)
         var workflow = await services.GetRequiredService<IWorkflowBuilderFactory>().CreateBuilder().BuildWorkflowAsync(workflowDefinition);
         var options = new RunWorkflowOptions
         {
-            TriggerActivityId = triggeredByTimer ? ProcessId : null
+            TriggerActivityId = triggeredBy == TriggeredBy.Nothing ? null : ProcessId,
+            Input = triggeredBy == TriggeredBy.EventWithoutHash
+                ? new Dictionary<string, object> { [Event.EventInputWorkflowInputKey] = "payload" }
+                : null
         };
 
         return await services.GetRequiredService<IWorkflowRunner>().RunAsync(workflow, options);
@@ -157,6 +245,42 @@ public class BpmnTriggeredStartTests(ITestOutputHelper testOutputHelper)
     {
         Assert.Empty(instance.WorkflowState.Incidents);
         Assert.Equal(WorkflowSubStatus.Finished, instance.SubStatus);
+    }
+
+    private static void AssertAmbiguous(RunWorkflowResult result)
+    {
+        Assert.Equal(WorkflowSubStatus.Faulted, result.WorkflowState.SubStatus);
+        var incident = Assert.Single(result.WorkflowState.Incidents);
+        Assert.Contains(BpmnStartEventResolver.AmbiguousTriggerFaultCode, incident.Message);
+    }
+
+    private enum TriggeredBy
+    {
+        Nothing,
+        EventWithoutHash,
+        TimerWithoutHash
+    }
+
+    /// <summary>Records the recurring schedules the trigger scheduler asks for instead of waiting for them to elapse.</summary>
+    private sealed class CapturingWorkflowScheduler : IWorkflowScheduler
+    {
+        // Keyed by task name, the stored trigger's id, so a trigger scheduled again replaces its earlier schedule.
+        private readonly Dictionary<string, (ScheduleNewWorkflowInstanceRequest Request, TimeSpan Interval)> _recurringSchedules = new();
+
+        public IEnumerable<(ScheduleNewWorkflowInstanceRequest Request, TimeSpan Interval)> RecurringSchedules => _recurringSchedules.Values;
+
+        public ValueTask ScheduleRecurringAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, DateTimeOffset startAt, TimeSpan interval, CancellationToken cancellationToken = default)
+        {
+            _recurringSchedules[taskName] = (request, interval);
+            return default;
+        }
+
+        public ValueTask ScheduleAtAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, DateTimeOffset at, CancellationToken cancellationToken = default) => default;
+        public ValueTask ScheduleAtAsync(string taskName, ScheduleExistingWorkflowInstanceRequest request, DateTimeOffset at, CancellationToken cancellationToken = default) => default;
+        public ValueTask ScheduleRecurringAsync(string taskName, ScheduleExistingWorkflowInstanceRequest request, DateTimeOffset startAt, TimeSpan interval, CancellationToken cancellationToken = default) => default;
+        public ValueTask ScheduleCronAsync(string taskName, ScheduleNewWorkflowInstanceRequest request, string cronExpression, CancellationToken cancellationToken = default) => default;
+        public ValueTask ScheduleCronAsync(string taskName, ScheduleExistingWorkflowInstanceRequest request, string cronExpression, CancellationToken cancellationToken = default) => default;
+        public ValueTask UnscheduleAsync(string taskName, CancellationToken cancellationToken = default) => default;
     }
 
     private const string ProcessId = "process";
@@ -298,10 +422,31 @@ public class BpmnTriggeredStartTests(ITestOutputHelper testOutputHelper)
                     .StartEvent("placedStart", null, Message("OrderPlaced"))
                     .EndEvent("placedEnd")
                     .StartEvent("cancelledStart", null, Message("OrderCancelled"))
+                    .Task("wait", null, BindingRef("wait"))
                     .EndEvent("cancelledEnd")
                     .ConnectSequence("placedStart", "placedEnd")
-                    .ConnectSequence("cancelledStart", "cancelledEnd")
-                    .Build());
+                    .ConnectSequence("cancelledStart", "wait", "cancelledEnd")
+                    .Build(),
+                Blocking("wait"));
+        }
+    }
+
+    private sealed class TwoTimerStartsOnDifferentIntervalsWorkflow : WorkflowBase
+    {
+        protected override void Build(IWorkflowBuilder builder)
+        {
+            builder.WithDefinitionId(nameof(TwoTimerStartsOnDifferentIntervalsWorkflow));
+            builder.Root = RootScope(
+                new BpmnProcessBuilder(ProcessId)
+                    .StartEvent("hourlyStart", null, TimerInterval("PT1H"))
+                    .EndEvent("hourlyEnd")
+                    .StartEvent("twoHourlyStart", null, TimerInterval("PT2H"))
+                    .Task("wait", null, BindingRef("wait"))
+                    .EndEvent("twoHourlyEnd")
+                    .ConnectSequence("hourlyStart", "hourlyEnd")
+                    .ConnectSequence("twoHourlyStart", "wait", "twoHourlyEnd")
+                    .Build(),
+                Blocking("wait"));
         }
     }
 }

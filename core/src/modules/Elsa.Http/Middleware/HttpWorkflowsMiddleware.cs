@@ -169,7 +169,8 @@ public class HttpWorkflowsMiddleware(RequestDelegate next)
             Input = input,
             CorrelationId = correlationId,
             TriggerActivityId = trigger.ActivityId,
-            WorkflowInstanceId = workflowInstanceId
+            WorkflowInstanceId = workflowInstanceId,
+            Properties = TriggerWorkflowProperties.WithStimulusHash(null, trigger.Hash)
         };
 
         await ExecuteWorkflowAsync(httpContext, workflowGraph, workflowOptions, bookmarkPayload, null, input);
