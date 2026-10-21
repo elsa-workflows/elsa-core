@@ -59,7 +59,10 @@ public class WorkflowDefinitionEditorService : IWorkflowDefinitionEditorService,
         Func<WorkflowDefinition, Task>? workflowSavedCallback,
         CancellationToken cancellationToken)
     {
-        var containsCompensationDraft = NativeCompensationDraftCapability.ContainsCompensationScope(workflowDefinition.Root);
+        // Classify and send one owned snapshot. The editor root is mutable JSON and may change while
+        // API acquisition or mediator callbacks are awaiting; the request must not inherit unchecked edits.
+        var rootSnapshot = workflowDefinition.Root?.DeepClone().AsObject();
+        var containsCompensationDraft = NativeCompensationDraftCapability.ContainsCompensationScope(rootSnapshot);
         var draftOriginContextKey = containsCompensationDraft
             ? NativeCompensationDraftDocumentContext.GetBackendContextKey(workflowDefinition)
             : null;
@@ -72,7 +75,7 @@ public class WorkflowDefinitionEditorService : IWorkflowDefinitionEditorService,
         if (containsCompensationDraft &&
             !await NativeCompensationDraftCapability.IsEnabledForContextAsync(remoteFeatureProvider, backendApiClientProvider, draftOriginContextKey!, cancellationToken))
             return backendApiClientProvider.ContextKey == draftOriginContextKey
-                ? new(new ValidationErrors([new("This server does not advertise native compensation draft authoring. The workflow was not saved.")]))
+                ? new(new ValidationErrors([new("This connection cannot verify safe native compensation draft authoring. A fresh backend feature check and supported authenticated request binding are required; the workflow was not saved.")]))
                 : DraftContextChanged();
 
         var request = new SaveWorkflowDefinitionRequest
@@ -102,7 +105,7 @@ public class WorkflowDefinitionEditorService : IWorkflowDefinitionEditorService,
                 DefinitionId = workflowDefinition.DefinitionId,
                 IsLatest = workflowDefinition.IsLatest,
                 IsPublished = workflowDefinition.IsPublished,
-                Root = workflowDefinition.Root
+                Root = rootSnapshot
             },
             Publish = publish,
         };
@@ -122,7 +125,34 @@ public class WorkflowDefinitionEditorService : IWorkflowDefinitionEditorService,
             await mediator.NotifyAsync(new WorkflowDefinitionSaving(workflowDefinition), cancellationToken);
             if (containsCompensationDraft && backendApiClientProvider.ContextKey != draftOriginContextKey)
                 return DraftContextChanged();
-            var response = await api.SaveAsync(request, cancellationToken);
+
+            IDisposable? requestContextScope = null;
+            if (containsCompensationDraft)
+            {
+                if (backendApiClientProvider is not IBackendRequestContextBinding requestContextBinding)
+                    return DraftContextChanged();
+
+                try
+                {
+                    requestContextScope = requestContextBinding.BindRequestContext(draftOriginContextKey!);
+                }
+                catch (BackendRequestContextChangedException)
+                {
+                    return DraftContextChanged();
+                }
+            }
+
+            SaveWorkflowDefinitionResponse response;
+            try
+            {
+                using (requestContextScope)
+                    response = await api.SaveAsync(request, cancellationToken);
+            }
+            catch (BackendRequestContextChangedException)
+            {
+                return DraftContextChanged();
+            }
+
             if (containsCompensationDraft)
             {
                 if (backendApiClientProvider.ContextKey != draftOriginContextKey)
@@ -147,10 +177,15 @@ public class WorkflowDefinitionEditorService : IWorkflowDefinitionEditorService,
         }
         catch (ApiException e) when (e.StatusCode == HttpStatusCode.BadRequest)
         {
-            var errors = e.GetValidationErrors();
+            var errors = NativeCompensationDraftRefusal.TryGetValidationErrorsFromContent(e.Content, e.StatusCode)
+                         ?? e.GetValidationErrors();
             await mediator.NotifyAsync(new WorkflowDefinitionSavingFailed(workflowDefinition, errors), cancellationToken);
             if (request.Publish == true) await mediator.NotifyAsync(new WorkflowDefinitionPublishingFailed(workflowDefinition, errors), cancellationToken);
             return new(errors);
+        }
+        catch (BackendRequestContextChangedException) when (containsCompensationDraft)
+        {
+            return DraftContextChanged();
         }
 
         static Result<SaveWorkflowDefinitionResponse, ValidationErrors> DraftContextChanged() =>
@@ -171,7 +206,7 @@ public class WorkflowDefinitionEditorService : IWorkflowDefinitionEditorService,
         if (containsCompensationDraft &&
             !await NativeCompensationDraftCapability.IsEnabledForContextAsync(remoteFeatureProvider, backendApiClientProvider, draftOriginContextKey!, cancellationToken))
             throw new InvalidOperationException(backendApiClientProvider.ContextKey == draftOriginContextKey
-                ? "This server does not advertise native compensation draft authoring. The workflow was not published."
+                ? "This connection cannot verify safe native compensation draft authoring. A fresh backend feature check and supported authenticated request binding are required; the workflow was not published."
                 : "This compensation draft was loaded from a different backend context. Reload the workflow before publishing.");
 
         var api = await GetApiAsync(cancellationToken);
@@ -180,7 +215,34 @@ public class WorkflowDefinitionEditorService : IWorkflowDefinitionEditorService,
         await mediator.NotifyAsync(new WorkflowDefinitionPublishing(workflowDefinition), cancellationToken);
         if (containsCompensationDraft && backendApiClientProvider.ContextKey != draftOriginContextKey)
             throw new InvalidOperationException("This compensation draft was loaded from a different backend context. Reload the workflow before publishing.");
-        var response = await api.PublishAsync(workflowDefinition.DefinitionId, new PublishWorkflowDefinitionRequest(), cancellationToken);
+
+        IDisposable? requestContextScope = null;
+        if (containsCompensationDraft)
+        {
+            if (backendApiClientProvider is not IBackendRequestContextBinding requestContextBinding)
+                throw new InvalidOperationException("The authenticated backend connection cannot safely publish this compensation draft.");
+
+            try
+            {
+                requestContextScope = requestContextBinding.BindRequestContext(draftOriginContextKey!);
+            }
+            catch (BackendRequestContextChangedException exception)
+            {
+                throw new InvalidOperationException("This compensation draft's backend identity changed before publishing. Reload the workflow before trying again.", exception);
+            }
+        }
+
+        SaveWorkflowDefinitionResponse response;
+        try
+        {
+            using (requestContextScope)
+                response = await api.PublishAsync(workflowDefinition.DefinitionId, new PublishWorkflowDefinitionRequest(), cancellationToken);
+        }
+        catch (BackendRequestContextChangedException exception) when (containsCompensationDraft)
+        {
+            throw new InvalidOperationException("This compensation draft's backend identity changed before publishing. Reload the workflow before trying again.", exception);
+        }
+
         if (containsCompensationDraft && backendApiClientProvider.ContextKey != draftOriginContextKey)
             throw new InvalidOperationException("This compensation draft was loaded from a different backend context. Reload the workflow before publishing.");
         if (workflowPublishedCallback != null) await workflowPublishedCallback(workflowDefinition);

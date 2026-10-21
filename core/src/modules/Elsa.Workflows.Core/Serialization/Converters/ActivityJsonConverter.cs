@@ -98,18 +98,32 @@ public class ActivityJsonConverter(
             ? version
             : 0;
 
-        var descriptor = activityRegistry.Find<NotFoundActivity>()!;
-        var result = JsonActivityConstructorContextHelper.CreateActivity<NotFoundActivity>(descriptor, activityRoot, options);
-        LogExceptionsIfAny(result);
-
-        var notFoundActivity = result.Activity;
+        // Unsupported scopes retain their entire raw document without first trying to
+        // hydrate typed fields such as Version from the very schema we just rejected.
+        var isOpaqueCompensationScope = CompensationScopeDraftJson.IsRecognizedScope(activityRoot);
+        NotFoundActivity notFoundActivity;
+        if (isOpaqueCompensationScope)
+        {
+            notFoundActivity = new NotFoundActivity();
+            if (activityRoot.TryGetProperty("id", out var id) && id.ValueKind == JsonValueKind.String)
+                notFoundActivity.Id = id.GetString()!;
+            if (activityRoot.TryGetProperty("nodeId", out var nodeId) && nodeId.ValueKind == JsonValueKind.String)
+                notFoundActivity.NodeId = nodeId.GetString()!;
+        }
+        else
+        {
+            var descriptor = activityRegistry.Find<NotFoundActivity>()!;
+            var result = JsonActivityConstructorContextHelper.CreateActivity<NotFoundActivity>(descriptor, activityRoot, options);
+            LogExceptionsIfAny(result);
+            notFoundActivity = result.Activity;
+        }
         notFoundActivity.Type = ActivityTypeNameHelper.GenerateTypeName<NotFoundActivity>();
         notFoundActivity.Version = 1;
         notFoundActivity.MissingTypeName = missingTypeName;
         notFoundActivity.MissingTypeVersion = missingTypeVersion.Value;
         notFoundActivity.OriginalActivityJson = activityRoot.GetRawText();
 
-        if (outerRoot.TryGetProperty("metadata", out var metadataElement))
+        if (!isOpaqueCompensationScope && outerRoot.TryGetProperty("metadata", out var metadataElement))
         {
             var metadata = JsonSerializer.Deserialize<IDictionary<string, object>>(metadataElement.GetRawText(), options);
             if (metadata != null)

@@ -48,6 +48,7 @@ public partial class ActivityPicker
     [Inject] private IActivityDisplaySettingsRegistry ActivityDisplaySettingsRegistry { get; set; } = default!;
     [Inject] private IMediator Mediator { get; set; } = default!;
     [Inject] private IRemoteFeatureProvider RemoteFeatureProvider { get; set; } = default!;
+    [Inject] private IBackendApiClientProvider BackendApiClientProvider { get; set; } = default!;
 
     private IEnumerable<ActivityDescriptor> ActivityDescriptors { get; set; } = new List<ActivityDescriptor>();
 
@@ -61,7 +62,9 @@ public partial class ActivityPicker
     {
         await ActivityRegistry.EnsureLoadedAsync();
         var descriptors = ActivityRegistry.ListBrowsable();
-        var supportsCompensationDrafts = await NativeCompensationDraftCapability.IsEnabledAsync(RemoteFeatureProvider);
+        var backendContextKey = BackendApiClientProvider.ContextKey;
+        var supportsCompensationDrafts = await NativeCompensationDraftCapability.IsEnabledForContextAsync(
+            RemoteFeatureProvider, BackendApiClientProvider, backendContextKey);
         ActivityDescriptors = supportsCompensationDrafts
             ? descriptors
             : descriptors.Where(x => !string.Equals(x.TypeName, "Elsa.CompensationScope", StringComparison.Ordinal));
@@ -71,7 +74,8 @@ public partial class ActivityPicker
     private async Task OnDragStart(ActivityDescriptor activityDescriptor)
     {
         if (string.Equals(activityDescriptor.TypeName, "Elsa.CompensationScope", StringComparison.Ordinal) &&
-            !await NativeCompensationDraftCapability.IsEnabledAsync(RemoteFeatureProvider))
+            !await NativeCompensationDraftCapability.IsEnabledForContextAsync(
+                RemoteFeatureProvider, BackendApiClientProvider, BackendApiClientProvider.ContextKey))
         {
             DragDropManager.Payload = null;
             return;

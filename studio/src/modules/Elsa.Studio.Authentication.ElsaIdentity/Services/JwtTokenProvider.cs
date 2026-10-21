@@ -1,4 +1,6 @@
-using System.Security.Claims;
+using System.Buffers.Binary;
+using System.Security.Cryptography;
+using System.Text;
 using Elsa.Studio.Authentication.ElsaIdentity.Contracts;
 using Elsa.Studio.Authentication.ElsaIdentity.Extensions;
 using Elsa.Studio.Contracts;
@@ -11,7 +13,7 @@ public class JwtTokenProvider(
     IJwtParser jwtParser,
     ISingleFlightCoordinator refreshCoordinator,
     IRefreshTokenService refreshTokenService,
-    IEnumerable<IPermissionRefreshSignal> refreshSignals) : ITokenProvider
+    IEnumerable<IPermissionRefreshSignal> refreshSignals) : ITokenProvider, IBackendRequestContextEpochSource
 {
     public JwtTokenProvider(
         IJwtAccessor jwtAccessor,
@@ -24,11 +26,25 @@ public class JwtTokenProvider(
 
     private static readonly TimeSpan RefreshSkew = TimeSpan.FromMinutes(2);
     private static readonly StringComparer ClaimComparer = StringComparer.Ordinal;
+    private static readonly HashSet<string> LifecycleClaimTypes = new(StringComparer.Ordinal)
+    {
+        "exp",
+        "iat",
+        "nbf",
+        "jti"
+    };
+    private readonly object _identityObservationLock = new();
+    private byte[]? _observedIdentityFingerprint;
+    private bool _hasObservedIdentity;
+
+    /// <inheritdoc />
+    public bool UsesPermissionRefreshSignal(IPermissionRefreshSignal signal) => refreshSignals.Any(x => ReferenceEquals(x, signal));
 
     /// <inheritdoc />
     public async Task<string?> GetAccessTokenAsync(CancellationToken cancellationToken = default)
     {
         var accessToken = await jwtAccessor.ReadTokenAsync(TokenNames.AccessToken);
+        ObserveAccessToken(accessToken);
 
         if (string.IsNullOrWhiteSpace(accessToken))
             return null;
@@ -48,41 +64,81 @@ public class JwtTokenProvider(
         }
 
         var refreshedToken = await jwtAccessor.ReadTokenAsync(TokenNames.AccessToken);
-        if (IdentityChanged(accessToken, refreshedToken))
-            NotifyRefresh();
+        ObserveAccessToken(refreshedToken);
 
         return refreshedToken;
     }
+
+    private void ObserveAccessToken(string? accessToken)
+    {
+        byte[]? fingerprint = null;
+        var parseFailed = false;
+
+        if (!string.IsNullOrWhiteSpace(accessToken) && !TryCreateIdentityFingerprint(accessToken, out fingerprint))
+            parseFailed = true;
+
+        var changed = false;
+        lock (_identityObservationLock)
+        {
+            changed = _hasObservedIdentity && !FingerprintsEqual(_observedIdentityFingerprint, fingerprint);
+            _observedIdentityFingerprint = fingerprint;
+            _hasObservedIdentity = true;
+        }
+
+        // Invalid tokens cannot establish a trustworthy identity epoch. Invalidate an active
+        // native binding on every parse failure, even when the previous observation was also invalid.
+        if (changed || parseFailed)
+            NotifyRefresh();
+    }
+
+    private bool TryCreateIdentityFingerprint(string accessToken, out byte[]? fingerprint)
+    {
+        try
+        {
+            var claims = jwtParser.Parse(accessToken)?.ToArray();
+            if (claims is not { Length: > 0 })
+            {
+                fingerprint = null;
+                return false;
+            }
+
+            using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+            foreach (var claim in claims
+                         .Where(x => !LifecycleClaimTypes.Contains(x.Type))
+                         .OrderBy(x => x.Type, ClaimComparer)
+                         .ThenBy(x => x.Value, ClaimComparer))
+            {
+                AppendCanonicalString(hash, claim.Type);
+                AppendCanonicalString(hash, claim.Value);
+            }
+
+            fingerprint = hash.GetHashAndReset();
+            return true;
+        }
+        catch
+        {
+            // Preserve ordinary token-provider behavior while making native request bindings fail closed.
+            fingerprint = null;
+            return false;
+        }
+    }
+
+    private static void AppendCanonicalString(IncrementalHash hash, string value)
+    {
+        var bytes = Encoding.UTF8.GetBytes(value);
+        Span<byte> length = stackalloc byte[sizeof(int)];
+        BinaryPrimitives.WriteInt32BigEndian(length, bytes.Length);
+        hash.AppendData(length);
+        hash.AppendData(bytes);
+    }
+
+    private static bool FingerprintsEqual(byte[]? left, byte[]? right) =>
+        left == null ? right == null : right != null && CryptographicOperations.FixedTimeEquals(left, right);
 
     private void NotifyRefresh()
     {
         foreach (var signal in refreshSignals)
             signal.Raise();
-    }
-
-    private bool IdentityChanged(string previousToken, string? refreshedToken)
-    {
-        if (string.IsNullOrWhiteSpace(refreshedToken))
-            return true;
-
-        try
-        {
-            var previous = jwtParser.Parse(previousToken).ToList();
-            var refreshed = jwtParser.Parse(refreshedToken).ToList();
-            return !SameClaimValues(previous, refreshed, "sub") ||
-                   !SameClaimValues(previous, refreshed, "permissions");
-        }
-        catch
-        {
-            return true;
-        }
-    }
-
-    private static bool SameClaimValues(IReadOnlyCollection<Claim> previous, IReadOnlyCollection<Claim> refreshed, string type)
-    {
-        var previousValues = previous.Where(x => x.Type == type).Select(x => x.Value).OrderBy(x => x, ClaimComparer);
-        var refreshedValues = refreshed.Where(x => x.Type == type).Select(x => x.Value).OrderBy(x => x, ClaimComparer);
-        return previousValues.SequenceEqual(refreshedValues, ClaimComparer);
     }
 
     private bool IsExpiredOrNearExpiry(string jwt)

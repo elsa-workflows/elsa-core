@@ -1,6 +1,7 @@
 @inherits Elsa.Studio.Workflows.Components.QueryTableComponentBase
 @inject ILocalizer Localizer
 @using Elsa.Studio.Workflows.Services
+@using Elsa.Studio.Workflows.Components
 @using Variant = MudBlazor.Variant
 @using Microsoft.Extensions.Localization
 
@@ -26,6 +27,8 @@
 
 <MudContainer MaxWidth="MaxWidth.False">
     <PageHeading Text="@Localizer["Workflow definitions Editor"]" />
+
+    <NativeCompensationDraftRefusalSummary Refusal="@CurrentNativeCompensationDraftRefusal" DefinitionId="@CurrentNativeCompensationDraftPublishDefinitionId" />
 
     <div id="workflow-file-upload-button-wrapper" class="d-none">
         <MudFileUpload T="IReadOnlyList<IBrowserFile>" FilesChanged="@OnFilesSelected" MaximumFileCount="Int32.MaxValue" />

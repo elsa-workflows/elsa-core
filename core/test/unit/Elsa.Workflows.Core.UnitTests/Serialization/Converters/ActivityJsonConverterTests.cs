@@ -3,6 +3,7 @@ using Elsa.Common.Serialization;
 using Elsa.Expressions.Services;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Activities.Compensation;
+using Elsa.Workflows.Activities.StateMachine.Activities;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management.Activities.WorkflowDefinitionActivity;
 using Elsa.Workflows.Management.Services;
@@ -181,6 +182,50 @@ public sealed class ActivityJsonConverterTests
         Assert.Equal(expected.RootElement.GetRawText(), actual.RootElement.GetRawText());
     }
 
+    [Theory]
+    [InlineData("entry")]
+    [InlineData("exit")]
+    [InlineData("trigger")]
+    [InlineData("action")]
+    public void When_DeserializeCompensationScopeWithUnavailableStateMachineOwnedPin_Then_PreservesTheWholeScopeOpaque(string role)
+    {
+        var compensationScopeJson = CreateStateMachineCompensationScopeJson(role, 2);
+        var activityRegistry = CreateStateMachineCompensationRegistry();
+
+        var result = Assert.IsType<NotFoundActivity>(Execute(CreateSut(activityRegistry), compensationScopeJson));
+
+        Assert.Equal(CompensationScope.ActivityTypeName, result.MissingTypeName);
+        Assert.Equal(compensationScopeJson, result.OriginalActivityJson);
+    }
+
+    private static string CreateStateMachineCompensationScopeJson(string unpinnedRole, int version)
+    {
+        var child = (string role) => unpinnedRole == "all" || role == unpinnedRole
+            ? JsonSerializer.Serialize(new { id = $"{role}-1", type = WriteLineActivityTypeName, version })
+            : "null";
+        var stateMachineTypeName = ActivityTypeNameHelper.GenerateTypeName<StateMachine>();
+        return $$"""
+            {"id":"scope-1","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[{"stepId":"step-1","forward":{"id":"machine-1","type":"{{stateMachineTypeName}}","version":1,"states":[{"name":"state","entry":{{child("entry")}},"exit":{{child("exit")}}}],"transitions":[{"from":"state","to":"state","trigger":{{child("trigger")}},"action":{{child("action")}}}]},"handler":null,"mappings":[]}]}
+            """;
+    }
+
+    private static IActivityRegistry CreateStateMachineCompensationRegistry()
+    {
+        var activityRegistry = Substitute.For<IActivityRegistry>();
+        var scopeDescriptor = new ActivityDescriptor { Version = 1, ClrType = typeof(CompensationScope), Constructor = context => context.CreateActivity<CompensationScope>() };
+        var stateMachineDescriptor = new ActivityDescriptor { Version = 1, ClrType = typeof(StateMachine), Constructor = context => context.CreateActivity<StateMachine>() };
+        var writeLineDescriptor = new ActivityDescriptor { Version = 1, ClrType = typeof(WriteLine), Constructor = context => context.CreateActivity<WriteLine>() };
+        var notFoundDescriptor = new ActivityDescriptor { Constructor = _ => new(new NotFoundActivity()) };
+        var stateMachineTypeName = ActivityTypeNameHelper.GenerateTypeName<StateMachine>();
+
+        activityRegistry.Find(CompensationScope.ActivityTypeName).Returns(scopeDescriptor);
+        activityRegistry.Find(CompensationScope.ActivityTypeName, 1).Returns(scopeDescriptor);
+        activityRegistry.Find(stateMachineTypeName, 1).Returns(stateMachineDescriptor);
+        activityRegistry.Find(WriteLineActivityTypeName, 1).Returns(writeLineDescriptor);
+        activityRegistry.Find(NotFoundActivityTypeName).Returns(notFoundDescriptor);
+        return activityRegistry;
+    }
+
     [Fact]
     public void When_DeserializeCompensationScopeWithDuplicateStepIds_Then_PreservesTheWholeScopeOpaque()
     {
@@ -301,7 +346,7 @@ public sealed class ActivityJsonConverterTests
         return activityRegistry;
     }
 
-    static JsonSerializerOptions GetSerializerOptions(ActivityJsonConverter sut) => new()
+    static JsonSerializerOptions GetSerializerOptions(ActivityJsonConverter sut) => new(JsonSerializerDefaults.Web)
     {
         Converters =
         {

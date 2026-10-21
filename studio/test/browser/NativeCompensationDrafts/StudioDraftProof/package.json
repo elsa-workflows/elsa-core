@@ -1,0 +1,14 @@
+{
+  "name": "elsa-native-compensation-draft-proof",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test --config playwright.config.ts",
+    "typecheck": "tsc --noEmit --project tsconfig.json"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "26.4.1",
+    "typescript": "5.9.3"
+  }
+}

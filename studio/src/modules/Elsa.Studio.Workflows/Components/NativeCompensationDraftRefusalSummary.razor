@@ -1,0 +1,102 @@
+@using Elsa.Studio.Localization
+@using Elsa.Studio.Workflows.Domain.Models
+@using Microsoft.AspNetCore.Components.Web
+@using MudBlazor
+@inject ILocalizer Localizer
+
+@if (Refusal is { } refusal)
+{
+    <div @ref="_summary"
+         role="alert"
+         aria-label="@Localizer["Native compensation publication refusal"]"
+         tabindex="-1"
+         class="pa-2">
+        <MudPaper Outlined="true" Class="pa-3">
+            <MudText Typo="Typo.h6" Color="Color.Error">@Localizer["Native compensation drafts cannot be published."]</MudText>
+            <p>@Localizer["The backend refused publication because this scope is draft-only."]</p>
+            @if (!string.IsNullOrWhiteSpace(DefinitionId))
+            {
+                <p>@Localizer["Workflow definition ID"]: <code>@DefinitionId</code></p>
+            }
+            @if (refusal.Diagnostics.Count > 0)
+            {
+                <ul>
+                    @foreach (var diagnostic in refusal.Diagnostics)
+                    {
+                        var roleLabel = diagnostic.Role switch
+                        {
+                            NativeCompensationDraftDiagnosticRole.Scope => Localizer["scope"],
+                            NativeCompensationDraftDiagnosticRole.Forward => Localizer["forward activity"],
+                            NativeCompensationDraftDiagnosticRole.Handler => Localizer["inline handler"],
+                            NativeCompensationDraftDiagnosticRole.Mapping => Localizer["mapping"],
+                            _ => Localizer["target"]
+                        };
+                        <li>
+                            <span>@Localizer["Scope ID"]:</span>
+                            @if (diagnostic.ScopeActivityId is { } scopeActivityId)
+                            {
+                                <code>@scopeActivityId</code>
+                            }
+                            else
+                            {
+                                <span>@Localizer["unavailable"]</span>
+                            }
+                            @if (diagnostic.StepId is { } stepId)
+                            {
+                                <span> · @Localizer["Step ID"]: <code>@stepId</code></span>
+                            }
+                            <span> · @Localizer["Area"]: @roleLabel</span>
+                            @if (diagnostic.RelatedActivityIds.Count > 0)
+                            {
+                                <span> · @Localizer["Related activity IDs"]:</span>
+                                @foreach (var activityId in diagnostic.RelatedActivityIds)
+                                {
+                                    <code>@activityId</code>
+                                }
+                            }
+                            @if (diagnostic.MappingIds.Count > 0)
+                            {
+                                <span> · @Localizer["Mapping IDs"]:</span>
+                                @foreach (var relatedMappingId in diagnostic.MappingIds)
+                                {
+                                    <code>@relatedMappingId</code>
+                                }
+                            }
+                            @if (diagnostic.MappingId is { } mappingId && !diagnostic.MappingIds.Contains(mappingId, StringComparer.Ordinal))
+                            {
+                                <span> · @Localizer["Mapping ID"]: <code>@mappingId</code></span>
+                            }
+                        </li>
+                    }
+                </ul>
+            }
+        </MudPaper>
+    </div>
+}
+
+@code {
+    private ElementReference _summary;
+    private NativeCompensationDraftRefusal? _lastRefusal;
+    private bool _focusAfterRender;
+
+    [Parameter] public NativeCompensationDraftRefusal? Refusal { get; set; }
+    [Parameter] public string? DefinitionId { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (ReferenceEquals(Refusal, _lastRefusal))
+            return;
+
+        _lastRefusal = Refusal;
+        _focusAfterRender = Refusal != null;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_focusAfterRender || Refusal == null)
+            return;
+
+        _focusAfterRender = false;
+        await _summary.FocusAsync();
+    }
+}

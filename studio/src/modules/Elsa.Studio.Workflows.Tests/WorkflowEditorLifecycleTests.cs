@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bunit;
 using System.Text.Json.Nodes;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Models;
@@ -16,6 +17,7 @@ using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components;
 using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.ActivityProperties;
 using Elsa.Studio.Workflows.Contracts;
 using Elsa.Studio.Workflows.Domain.Contracts;
+using Elsa.Studio.Workflows.Domain.Extensions;
 using Elsa.Studio.Workflows.Domain.Models;
 using Elsa.Studio.Workflows.Extensions;
 using Elsa.Studio.Workflows.Shared.Components;
@@ -35,6 +37,7 @@ public sealed class WorkflowEditorLifecycleTests : BunitContext, IAsyncLifetime
 {
     private readonly DelayedWorkflowDefinitionEditorService _editorService = new();
     private readonly RecordingUserMessageService _userMessageService = new();
+    private readonly MutableBackendApiClientProvider _backendProvider = new("context-A");
     private IRenderedComponent<MudPopoverProvider> _popovers = null!;
 
     public WorkflowEditorLifecycleTests()
@@ -45,6 +48,7 @@ public sealed class WorkflowEditorLifecycleTests : BunitContext, IAsyncLifetime
         Services.AddCoreInternal();
         Services.AddRemoteBackend();
         Services.AddWorkflowsModule();
+        Services.AddSingleton<IBackendApiClientProvider>(_backendProvider);
         Services.AddSingleton<ILocalizer, TestLocalizer>();
         Services.AddSingleton<IWorkflowDefinitionEditorService>(_editorService);
         Services.AddSingleton<IActivityRegistry, NoOpActivityRegistry>();
@@ -243,6 +247,83 @@ public sealed class WorkflowEditorLifecycleTests : BunitContext, IAsyncLifetime
     }
 
     [Fact]
+    public async Task NativeCompensationSaveAndPublishRefusalShowsFocusedSafeSummaryAndClearsOnGraphEdit()
+    {
+        var definition = CreateDefinition("draft-only");
+        definition.Root = JsonNode.Parse("""{"id":"scope-17","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}""")!.AsObject();
+        var backend = Services.GetRequiredService<IBackendApiClientProvider>();
+        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, backend.ContextKey));
+        var cut = RenderEditor(definition, () => Task.CompletedTask);
+        var failureCallbackCount = 0;
+
+        var saveTask = InvokeSaveAsync(cut.Instance, null, _ =>
+        {
+            failureCallbackCount++;
+            return Task.CompletedTask;
+        }, publish: true);
+        var pendingSave = await _editorService.SaveStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var validationErrors = ValidationApiExceptionExtensions.GetValidationErrorsFromContent(NativeCompensationRefusalResponse)!;
+        pendingSave.CompleteFailure(validationErrors);
+        await saveTask.WaitAsync(TimeSpan.FromSeconds(5));
+
+        var summary = cut.WaitForElement("[aria-label='Native compensation publication refusal'][role='alert'][tabindex='-1']");
+        Assert.Contains("Native compensation drafts cannot be published.", summary.TextContent);
+        Assert.Contains("definition-1", summary.TextContent);
+        Assert.Contains("scope-17", summary.TextContent);
+        Assert.Contains("step-9", summary.TextContent);
+        Assert.Contains("forward-activity-3", summary.TextContent);
+        Assert.DoesNotContain("server-private-message", summary.TextContent);
+        Assert.Contains(JSInterop.Invocations, invocation => invocation.Identifier == "Blazor._internal.domWrapper.focus");
+        Assert.Equal(0, failureCallbackCount);
+        Assert.Equal(0, _userMessageService.MessageCount);
+        Assert.True(_editorService.LastNativeDraftPublish);
+        Assert.Equal(backend.ContextKey, _editorService.LastNativeDraftBackendContextKey);
+
+        definition.Root["changed"] = true;
+        await cut.InvokeAsync(() => InvokeGraphUpdatedAsync(cut.Instance));
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll("[aria-label='Native compensation publication refusal']")));
+    }
+
+    [Fact]
+    public async Task NativeCompensationSaveAndPublishRefusalWithoutReliableContextShowsNoIdentifiers()
+    {
+        _backendProvider.SupportsAuthenticatedRequestContextBinding = false;
+        var definition = CreateCompensationDraftDefinition("unbound-context");
+        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, _backendProvider.ContextKey));
+        var cut = RenderEditor(definition, () => Task.CompletedTask);
+        var saveTask = InvokeSaveAsync(cut.Instance, null, null, publish: true);
+        var pendingSave = await _editorService.SaveStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        pendingSave.CompleteFailure(ValidationApiExceptionExtensions.GetValidationErrorsFromContent(NativeCompensationRefusalResponse)!);
+        await saveTask.WaitAsync(TimeSpan.FromSeconds(5));
+
+        var summary = cut.WaitForElement("[aria-label='Native compensation publication refusal'][role='alert'][tabindex='-1']");
+        Assert.Contains("Native compensation drafts cannot be published.", summary.TextContent);
+        Assert.DoesNotContain("definition-1", summary.TextContent);
+        Assert.DoesNotContain("scope-17", summary.TextContent);
+        Assert.DoesNotContain("step-9", summary.TextContent);
+        Assert.DoesNotContain("forward-activity-3", summary.TextContent);
+        Assert.DoesNotContain("server-private-message", summary.TextContent);
+    }
+
+    [Fact]
+    public async Task NativeCompensationSaveAndPublishRefusalCompletedAfterBackendSwitchIsDiscarded()
+    {
+        var definition = CreateCompensationDraftDefinition("context-switch");
+        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, _backendProvider.ContextKey));
+        var cut = RenderEditor(definition, () => Task.CompletedTask);
+        var saveTask = InvokeSaveAsync(cut.Instance, null, null, publish: true);
+        var pendingSave = await _editorService.SaveStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        _backendProvider.ContextKey = "context-B";
+        pendingSave.CompleteFailure(ValidationApiExceptionExtensions.GetValidationErrorsFromContent(NativeCompensationRefusalResponse)!);
+        await saveTask.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.Empty(cut.FindAll("[aria-label='Native compensation publication refusal']"));
+        Assert.Equal(0, _userMessageService.MessageCount);
+    }
+
+    [Fact]
     public async Task SaveFailureCompletedAfterInvalidationDoesNotInvokeFailure()
     {
         var originalDefinition = CreateDefinition("initial");
@@ -326,10 +407,16 @@ public sealed class WorkflowEditorLifecycleTests : BunitContext, IAsyncLifetime
             .AddCascadingValue(permissions ?? UserPermissions.Unknown));
     }
 
-    private static Task InvokeSaveAsync(WorkflowEditor editor, Func<SaveWorkflowDefinitionResponse, Task>? onSuccess, Func<ValidationErrors, Task>? onFailure)
+    private static Task InvokeSaveAsync(WorkflowEditor editor, Func<SaveWorkflowDefinitionResponse, Task>? onSuccess, Func<ValidationErrors, Task>? onFailure, bool publish = false)
     {
         var method = typeof(WorkflowEditor).GetMethod("SaveChangesAsync", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
-        return (Task)method.Invoke(editor, new object?[] { false, false, false, onSuccess, onFailure, null })!;
+        return (Task)method.Invoke(editor, new object?[] { false, false, publish, onSuccess, onFailure, null })!;
+    }
+
+    private static Task InvokeGraphUpdatedAsync(WorkflowEditor editor)
+    {
+        var method = typeof(WorkflowEditor).GetMethod("OnGraphUpdated", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        return (Task)method.Invoke(editor, null)!;
     }
 
     private static Task InvokeSaveWithLoaderAsync(WorkflowEditor editor)
@@ -361,6 +448,28 @@ public sealed class WorkflowEditorLifecycleTests : BunitContext, IAsyncLifetime
         return (Task)method.Invoke(editor, new object?[] { onSuccess, onFailure })!;
     }
 
+    private static WorkflowDefinition CreateCompensationDraftDefinition(string name)
+    {
+        var definition = CreateDefinition(name);
+        definition.Root = JsonNode.Parse("""{"id":"scope-17","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}""")!.AsObject();
+        return definition;
+    }
+
+    private const string NativeCompensationRefusalResponse = """
+    {
+      "errors": { "generalErrors": ["server-private-message"] },
+      "code": "NATIVE_COMPENSATION_DRAFT_ONLY",
+      "data": { "diagnostics": [{
+        "scopeActivityId": "scope-17",
+        "stepId": "step-9",
+        "role": "forward",
+        "relatedActivityIds": ["forward-activity-3"],
+        "mappingIds": ["capture-2"],
+        "mappingId": "capture-2"
+      }] }
+    }
+    """;
+
     private static WorkflowDefinition CreateDefinition(string name) => new()
     {
         Id = "version-1",
@@ -376,8 +485,44 @@ public sealed class WorkflowEditorLifecycleTests : BunitContext, IAsyncLifetime
         }
     };
 
-    private sealed class DelayedWorkflowDefinitionEditorService : IWorkflowDefinitionEditorService
+    private sealed class MutableBackendApiClientProvider(string contextKey) : IBackendApiClientProvider, IBackendRequestContextBinding
     {
+        public Uri Url => new("http://localhost");
+        public string ContextKey { get; set; } = contextKey;
+        public bool SupportsAuthenticatedRequestContextBinding { get; set; } = true;
+        public bool HasActiveRequestContextBinding => true;
+
+        public void RegisterAuthenticatedRequestTransport(IBackendRequestContextEpochSource? epochSource)
+        {
+        }
+
+        public IDisposable BindRequestContext(string expectedContextKey)
+        {
+            if (!string.Equals(ContextKey, expectedContextKey, StringComparison.Ordinal))
+                throw new BackendRequestContextChangedException();
+
+            return new NoopDisposable();
+        }
+
+        public void ValidateBoundRequestContext()
+        {
+        }
+
+        public ValueTask<T> GetApiAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(CancellationToken cancellationToken = default) where T : class => throw new NotSupportedException();
+
+        private sealed class NoopDisposable : IDisposable
+        {
+            public void Dispose()
+            {
+            }
+        }
+    }
+
+    private sealed class DelayedWorkflowDefinitionEditorService : IWorkflowDefinitionEditorService, IContextBoundWorkflowDefinitionEditorService
+    {
+        public bool LastNativeDraftPublish { get; private set; }
+        public string? LastNativeDraftBackendContextKey { get; private set; }
+
         public TaskCompletionSource<PendingSave> SaveStarted { get; } = NewCompletionSource<PendingSave>();
         public TaskCompletionSource<PendingSave> SecondSaveStarted { get; } = NewCompletionSource<PendingSave>();
         public TaskCompletionSource<PendingRetract> RetractStarted { get; } = NewCompletionSource<PendingRetract>();
@@ -388,6 +533,13 @@ public sealed class WorkflowEditorLifecycleTests : BunitContext, IAsyncLifetime
             if (!SaveStarted.TrySetResult(pending))
                 SecondSaveStarted.TrySetResult(pending);
             return pending.Completion.Task;
+        }
+
+        public Task<Result<SaveWorkflowDefinitionResponse, ValidationErrors>> SaveNativeCompensationDraftAsync(WorkflowDefinition workflowDefinition, bool publish, string expectedBackendContextKey, Func<WorkflowDefinition, Task>? workflowSavedCallback = null, CancellationToken cancellationToken = default)
+        {
+            LastNativeDraftPublish = publish;
+            LastNativeDraftBackendContextKey = expectedBackendContextKey;
+            return SaveAsync(workflowDefinition, publish, workflowSavedCallback, cancellationToken);
         }
 
         public Task<SaveWorkflowDefinitionResponse> PublishAsync(WorkflowDefinition workflowDefinition, Func<WorkflowDefinition, Task>? workflowPublishedCallback = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
@@ -418,7 +570,9 @@ public sealed class WorkflowEditorLifecycleTests : BunitContext, IAsyncLifetime
             Completion.TrySetResult(new(new SaveWorkflowDefinitionResponse(definition, false, 0)));
         }
 
-        public void CompleteFailure() => Completion.TrySetResult(new(new ValidationErrors([new("save failed")])));
+        public void CompleteFailure() => CompleteFailure(new ValidationErrors([new("save failed")]));
+
+        public void CompleteFailure(ValidationErrors errors) => Completion.TrySetResult(new(errors));
     }
 
     private sealed class PendingRetract(Func<WorkflowDefinition, Task>? callback)

@@ -84,7 +84,7 @@
                             @if (NativeCompensationDraftCapability.ContainsCompensationScope(_selectedWorkflowDefinition.Root) && !HasNativeCompensationDraftCapability)
                             {
                                 <MudAlert Severity="Severity.Warning" Variant="MudBlazor.Variant.Filled" Square="true" Class="py-1">
-                                    @Localizer["This server does not advertise native compensation draft authoring. The compensation workflow is read-only and cannot be saved here."]
+                                    @Localizer["This connection cannot verify safe native compensation draft authoring. It requires a fresh backend feature check and a supported ElsaIdentity-authenticated connection. The compensation workflow is read-only and cannot be saved here."]
                                 </MudAlert>
                             }
                             <WorkflowDefinitionVersionViewer @key="_selectedWorkflowDefinition.DefinitionId"

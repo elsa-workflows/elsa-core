@@ -30,6 +30,7 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
     private long _workflowDefinitionReloadVersion;
     private long _compensationCapabilityGeneration;
     private bool _nativeCompensationDraftCapabilityEnabled;
+    private bool _nativeCompensationDraftContextInvalidated;
     private bool _isReloadingNativeCompensationDraft;
     private string? _nativeCompensationDraftReloadError;
     private string? _compensationCapabilityContextKey;
@@ -79,7 +80,8 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
 
     private bool IsNativeCompensationDraftContextStale =>
         NativeCompensationDraftCapability.ContainsCompensationScope(_selectedWorkflowDefinition?.Root) &&
-        (_compensationDocumentContextKey == null || _compensationDocumentContextKey != BackendApiClientProvider.ContextKey);
+        (_nativeCompensationDraftContextInvalidated || _compensationDocumentContextKey == null ||
+         _compensationDocumentContextKey != BackendApiClientProvider.ContextKey);
 
     /// <inheritdoc />
     public bool HasWorkflowEditPermission => (_selectedWorkflowDefinition?.Links?.Count(l => l.Rel == "publish") ?? 0) > 0;
@@ -122,6 +124,9 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
 
         _selectedWorkflowDefinition = SelectedWorkflowDefinition ?? _workflowDefinition;
         _compensationDocumentContextKey = GetCompensationDocumentContextKey(_selectedWorkflowDefinition);
+        _nativeCompensationDraftContextInvalidated = NativeCompensationDraftCapability.ContainsCompensationScope(_selectedWorkflowDefinition?.Root) &&
+                                                     _nativeCompensationDraftContextInvalidated &&
+                                                     _compensationDocumentContextKey != BackendApiClientProvider.ContextKey;
         _workflowDefinitionReloadVersion++;
         _nativeCompensationDraftCapabilityEnabled = false;
         _compensationCapabilityContextKey = null;
@@ -170,7 +175,7 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
             BackendApiClientProvider.ContextKey != backendContextKey)
             return;
 
-        _nativeCompensationDraftCapabilityEnabled = capabilityEnabled;
+        _nativeCompensationDraftCapabilityEnabled = capabilityEnabled && !_nativeCompensationDraftContextInvalidated;
     }
 
     private void OnBackendContextChanged() => _ = InvokeAsync(async () =>
@@ -178,6 +183,7 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
         if (!NativeCompensationDraftCapability.ContainsCompensationScope(_selectedWorkflowDefinition?.Root))
             return;
 
+        _nativeCompensationDraftContextInvalidated = true;
         if (WorkflowEditor != null)
             WorkflowEditor.InvalidateWorkflowDefinitionOperations();
 
@@ -185,6 +191,7 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
         _nativeCompensationDraftCapabilityEnabled = false;
         _compensationCapabilityContextKey = null;
         _nativeCompensationDraftReloadError = null;
+        StateHasChanged();
         await RefreshNativeCompensationDraftCapabilityAsync();
         StateHasChanged();
     });
@@ -220,6 +227,7 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
             _workflowDefinition = definition;
             _selectedWorkflowDefinition = definition;
             _compensationDocumentContextKey = expectedBackendContextKey;
+            _nativeCompensationDraftContextInvalidated = false;
             _workflowDefinitionReloadVersion++;
             await RefreshNativeCompensationDraftCapabilityAsync();
         }
@@ -264,6 +272,9 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
         _workflowDefinitionReloadVersion++;
         _selectedWorkflowDefinition = workflowDefinition;
         _compensationDocumentContextKey = GetCompensationDocumentContextKey(workflowDefinition);
+        _nativeCompensationDraftContextInvalidated = NativeCompensationDraftCapability.ContainsCompensationScope(workflowDefinition.Root) &&
+                                                     _nativeCompensationDraftContextInvalidated &&
+                                                     _compensationDocumentContextKey != BackendApiClientProvider.ContextKey;
         _nativeCompensationDraftCapabilityEnabled = false;
         _compensationCapabilityContextKey = null;
 

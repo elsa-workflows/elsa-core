@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Helpers;
@@ -75,50 +76,92 @@ internal static class CompensationScopeDraftJson
             IsWorkflowDefinitionActivity(descriptor))
             return false;
 
-        foreach (var childProperty in GetActivityChildProperties(descriptor))
+        return HasPinnedOwnedActivityDescendants(activity, descriptor.ClrType, activityRegistry);
+    }
+
+    private static bool HasPinnedOwnedActivityDescendants(JsonElement value, Type containerType, IActivityRegistry activityRegistry)
+    {
+        foreach (var property in GetSerializableProperties(containerType))
         {
-            if (!activity.TryGetProperty(childProperty.Name, out var childValue) || childValue.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+            if (!HasOwnedActivityDescendant(property.PropertyType, new HashSet<Type>()))
                 continue;
 
-            if (childProperty.IsCollection)
-            {
-                if (childValue.ValueKind != JsonValueKind.Array ||
-                    childValue.EnumerateArray().Any(child => !IsPinnedActivityTree(child, activityRegistry)))
-                    return false;
-            }
-            else if (!IsPinnedActivityTree(childValue, activityRegistry))
+            var jsonName = property.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? JsonNamingPolicy.CamelCase.ConvertName(property.Name);
+            if (!value.TryGetProperty(jsonName, out var childValue) || childValue.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
+                continue;
+
+            if (!HasPinnedOwnedActivityValues(childValue, property.PropertyType, activityRegistry))
                 return false;
         }
 
         return true;
     }
 
-    private static IEnumerable<(string Name, bool IsCollection)> GetActivityChildProperties(ActivityDescriptor descriptor)
+    private static bool HasPinnedOwnedActivityValues(JsonElement value, Type valueType, IActivityRegistry activityRegistry)
     {
-        foreach (var property in descriptor.ClrType.GetProperties(BindingFlags.Instance | BindingFlags.Public))
+        valueType = Nullable.GetUnderlyingType(valueType) ?? valueType;
+        if (typeof(IActivity).IsAssignableFrom(valueType))
+            return IsPinnedActivityTree(value, activityRegistry);
+
+        if (TryGetEnumerableElementType(valueType, out var elementType))
         {
-            if (property.GetIndexParameters().Length != 0)
-                continue;
+            if (value.ValueKind != JsonValueKind.Array)
+                return false;
 
-            var propertyType = property.PropertyType;
-            var isCollection = false;
-            if (!typeof(IActivity).IsAssignableFrom(propertyType))
-            {
-                var elementType = propertyType.IsArray
-                    ? propertyType.GetElementType()
-                    : propertyType.GetInterfaces()
-                        .Append(propertyType)
-                        .Where(type => type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-                        .Select(type => type.GetGenericArguments()[0])
-                        .FirstOrDefault();
-                if (elementType == null || !typeof(IActivity).IsAssignableFrom(elementType))
-                    continue;
-                isCollection = true;
-            }
-
-            var jsonName = property.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? JsonNamingPolicy.CamelCase.ConvertName(property.Name);
-            yield return (jsonName, isCollection);
+            return value.EnumerateArray().All(item => item.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined ||
+                                                    HasPinnedOwnedActivityValues(item, elementType, activityRegistry));
         }
+
+        if (!HasOwnedActivityDescendant(valueType, new HashSet<Type>()))
+            return true;
+
+        return value.ValueKind == JsonValueKind.Object && HasPinnedOwnedActivityDescendants(value, valueType, activityRegistry);
+    }
+
+    private static bool HasOwnedActivityDescendant(Type type, HashSet<Type> visited)
+    {
+        type = Nullable.GetUnderlyingType(type) ?? type;
+        if (typeof(IActivity).IsAssignableFrom(type))
+            return true;
+
+        if (type == typeof(string) || type.IsPrimitive || type.IsEnum || type == typeof(decimal) || type == typeof(JsonElement) ||
+            typeof(JsonDocument).IsAssignableFrom(type) || typeof(JsonNode).IsAssignableFrom(type) || typeof(Delegate).IsAssignableFrom(type))
+            return false;
+
+        if (TryGetEnumerableElementType(type, out var elementType))
+            return HasOwnedActivityDescendant(elementType, visited);
+
+        if ((!type.IsClass && !type.IsValueType && !type.IsInterface) || !visited.Add(type))
+            return false;
+
+        var containsActivity = GetSerializableProperties(type)
+            .Any(property => HasOwnedActivityDescendant(property.PropertyType, visited));
+        visited.Remove(type);
+        return containsActivity;
+    }
+
+    private static bool TryGetEnumerableElementType(Type type, out Type elementType)
+    {
+        elementType = null!;
+        if (type == typeof(string))
+            return false;
+
+        var enumerableType = type.IsArray
+            ? typeof(IEnumerable<>).MakeGenericType(type.GetElementType()!)
+            : type.GetInterfaces().Append(type)
+                .FirstOrDefault(candidate => candidate.IsGenericType && candidate.GetGenericTypeDefinition() == typeof(IEnumerable<>));
+        if (enumerableType == null)
+            return false;
+
+        elementType = enumerableType.GetGenericArguments()[0];
+        return true;
+    }
+
+    private static IEnumerable<PropertyInfo> GetSerializableProperties(Type type)
+    {
+        return type.GetProperties(BindingFlags.Instance | BindingFlags.Public)
+            .Where(property => property.GetMethod?.IsPublic == true && property.GetIndexParameters().Length == 0)
+            .Where(property => property.GetCustomAttribute<JsonIgnoreAttribute>() is not { Condition: not JsonIgnoreCondition.Never });
     }
 
     private static bool HasExactVersion(JsonElement activity, string typeName, int expectedVersion, IActivityRegistry activityRegistry) =>

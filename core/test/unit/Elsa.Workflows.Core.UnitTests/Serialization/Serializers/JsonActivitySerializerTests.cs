@@ -3,6 +3,8 @@ using System.Text.Json.Serialization;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
 using Elsa.Workflows.Activities.Compensation;
+using Elsa.Workflows.Activities.StateMachine.Activities;
+using Elsa.Workflows.Activities.StateMachine.Models;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Serialization.Converters;
@@ -29,6 +31,7 @@ public sealed class JsonActivitySerializerTests : IAsyncLifetime
         await registry.RegisterAsync<Sequence>();
         await registry.RegisterAsync<WriteLine>();
         await registry.RegisterAsync<CompensationScope>();
+        await registry.RegisterAsync<StateMachine>();
         registry.Register(new ActivityDescriptor
         {
             TypeName = "Test.Generated",
@@ -104,6 +107,63 @@ public sealed class JsonActivitySerializerTests : IAsyncLifetime
         Assert.Equal("capture path", mapping.GetProperty("items")[0].GetProperty("source").GetString());
         Assert.Equal(7, mapping.GetProperty("items")[0].GetProperty("futureMapping").GetInt32());
         Assert.Equal(1, mapping.GetProperty("values")[0].GetProperty("items")[0].GetInt32());
+    }
+
+    [Theory]
+    [InlineData("null")]
+    [InlineData("\"future\"")]
+    [InlineData("{}")]
+    public void UnsupportedCompensationVersionPreservesRawDraftWithoutHydratingIt(string version)
+    {
+        var json = "{\"id\":\"scope-1\",\"type\":\"Elsa.CompensationScope\",\"version\":" + version +
+                   ",\"draftSchemaVersion\":1,\"steps\":[],\"metadata\":{\"future\":[1,2]}}";
+
+        var activity = Assert.IsType<NotFoundActivity>(Serializer.Deserialize(json));
+        Assert.Equal("scope-1", activity.Id);
+        Assert.Equal(CompensationScope.ActivityTypeName, activity.MissingTypeName);
+        Assert.Equal(json, activity.OriginalActivityJson);
+        var restored = Assert.IsType<NotFoundActivity>(Serializer.Deserialize(Serializer.Serialize(activity)));
+        Assert.Equal(json, restored.OriginalActivityJson);
+    }
+
+    [Fact]
+    public void When_RoundtripSupportedCompensationDraft_Then_PreservesMappingsAndExtensionData()
+    {
+        const string template = """
+            {"id":"scope-1","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"scopeExtension":{"keep":[1,"two"]},"steps":[{"stepId":"step-1","forward":{"id":"forward-1","type":"WRITE_LINE_TYPE","version":1,"text":{"typeName":"String","expression":{"type":"Literal","value":"hello"}}},"handler":null,"mappings":[{"mappingId":"mapping-1","target":"targetId","opaque":{"keep":true}}],"rowExtension":{"keep":"row"}}]}
+            """;
+        var json = template.Replace("WRITE_LINE_TYPE", "Elsa.WriteLine", StringComparison.Ordinal);
+        var activity = Assert.IsType<CompensationScope>(Serializer.Deserialize(json));
+        Assert.IsType<WriteLine>(Assert.Single(activity.Steps).Forward);
+
+        var roundtrip = Serializer.Serialize(activity);
+        using var expected = JsonDocument.Parse(json);
+        using var actual = JsonDocument.Parse(roundtrip);
+
+        Assert.Equal(expected.RootElement.GetProperty("scopeExtension").GetRawText(), actual.RootElement.GetProperty("scopeExtension").GetRawText());
+        Assert.Equal(expected.RootElement.GetProperty("steps")[0].GetProperty("mappings").GetRawText(), actual.RootElement.GetProperty("steps")[0].GetProperty("mappings").GetRawText());
+        Assert.Equal(expected.RootElement.GetProperty("steps")[0].GetProperty("rowExtension").GetRawText(), actual.RootElement.GetProperty("steps")[0].GetProperty("rowExtension").GetRawText());
+    }
+
+    [Fact]
+    public void CompensationDraftRoundTripsNativeStateMachineOwnedPins()
+    {
+        var machine = new StateMachine
+        {
+            Id = "machine-1",
+            States = [new StateMachineState { Name = "state", Entry = new WriteLine("entry") { Id = "entry-1" }, Exit = new WriteLine("exit") { Id = "exit-1" } }],
+            Transitions = [new Transition { From = "state", To = "state", Trigger = new WriteLine("trigger") { Id = "trigger-1" }, Action = new WriteLine("action") { Id = "action-1" } }]
+        };
+        var scope = new CompensationScope { Id = "scope-1", Steps = [new CompensationStep { StepId = "step-1", Forward = machine }] };
+
+        var restoredScope = Assert.IsType<CompensationScope>(Serializer.Deserialize(Serializer.Serialize(scope)));
+        var restoredMachine = Assert.IsType<StateMachine>(Assert.Single(restoredScope.Steps).Forward);
+        var state = Assert.Single(restoredMachine.States);
+        var transition = Assert.Single(restoredMachine.Transitions);
+        Assert.Equal("entry-1", Assert.IsType<WriteLine>(state.Entry).Id);
+        Assert.Equal("exit-1", Assert.IsType<WriteLine>(state.Exit).Id);
+        Assert.Equal("trigger-1", Assert.IsType<WriteLine>(transition.Trigger).Id);
+        Assert.Equal("action-1", Assert.IsType<WriteLine>(transition.Action).Id);
     }
 
     [Fact]

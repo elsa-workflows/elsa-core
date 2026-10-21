@@ -1,7 +1,13 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
+using System.Text.Json;
 using Elsa.Api.Client.Resources.Features.Models;
+using Elsa.Api.Client.Resources.Identity.Responses;
+using Elsa.Studio.Authentication.ElsaIdentity;
+using Elsa.Studio.Authentication.ElsaIdentity.Contracts;
+using Elsa.Studio.Authentication.ElsaIdentity.HttpMessageHandlers;
+using Elsa.Studio.Authentication.ElsaIdentity.Services;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Environments;
 using Elsa.Studio.Environments.Contracts;
@@ -81,6 +87,333 @@ public class EnvironmentsModuleTests : IDisposable
 
         Assert.Equal(sameUrl, apiClientProvider.Url);
         Assert.NotEqual(initialContextKey, apiClientProvider.ContextKey);
+    }
+
+    [Fact]
+    public void BackendContextKey_ChangesWhenCircuitPermissionRefreshSignalIsRaised()
+    {
+        var provider = _serviceProvider.GetRequiredService<IBackendApiClientProvider>();
+        var backendContextKey = _serviceProvider.GetRequiredService<IRemoteBackendAccessor>().ContextKey;
+        var initialContextKey = provider.ContextKey;
+
+        _serviceProvider.GetRequiredService<IPermissionRefreshSignal>().Raise();
+
+        Assert.StartsWith($"{backendContextKey}|auth:", initialContextKey, StringComparison.Ordinal);
+        Assert.NotEqual(initialContextKey, provider.ContextKey);
+    }
+
+    [Fact]
+    public async Task AuthenticatedWriteIsStoppedWhenTokenAcquisitionChangesIdentity()
+    {
+        using var harness = AuthenticatedRequestHarness.Create();
+        using var invoker = harness.CreateInvoker();
+        await invoker.SendAsync(new HttpRequestMessage(HttpMethod.Get, "https://backend.example/features"), CancellationToken.None);
+        Assert.True(harness.Binding.SupportsAuthenticatedRequestContextBinding);
+        var originalContextKey = harness.BackendProvider.ContextKey;
+        using var binding = harness.Binding.BindRequestContext(originalContextKey);
+        harness.TokenAccessor.Token = harness.CreateToken("user-a", DateTimeOffset.UtcNow.AddMinutes(-10));
+        harness.RefreshTokenService.RefreshedToken = harness.CreateToken("user-b", DateTimeOffset.UtcNow.AddHours(1));
+
+        await Assert.ThrowsAsync<BackendRequestContextChangedException>(() =>
+            invoker.SendAsync(new HttpRequestMessage(HttpMethod.Post, "https://backend.example/workflow-definitions"), CancellationToken.None));
+
+        Assert.NotEqual(originalContextKey, harness.BackendProvider.ContextKey);
+        Assert.Equal(1, harness.InnerHandler.RequestCount);
+        Assert.True(harness.Binding.SupportsAuthenticatedRequestContextBinding);
+    }
+
+    [Fact]
+    public async Task AuthenticatedWriteIsStoppedWhenStillValidStoredTokenChangesIdentity()
+    {
+        using var harness = AuthenticatedRequestHarness.Create();
+        using var invoker = harness.CreateInvoker();
+        await invoker.SendAsync(new HttpRequestMessage(HttpMethod.Get, "https://backend.example/features"), CancellationToken.None);
+        var originalContextKey = harness.BackendProvider.ContextKey;
+        using var binding = harness.Binding.BindRequestContext(originalContextKey);
+        harness.TokenAccessor.Token = harness.CreateToken("user-b", harness.TokenExpiresAt);
+        using var writeRequest = new HttpRequestMessage(HttpMethod.Post, "https://backend.example/workflow-definitions");
+
+        await Assert.ThrowsAsync<BackendRequestContextChangedException>(() => invoker.SendAsync(writeRequest, CancellationToken.None));
+
+        Assert.NotEqual(originalContextKey, harness.BackendProvider.ContextKey);
+        Assert.Null(writeRequest.Headers.Authorization);
+        Assert.Equal(1, harness.InnerHandler.RequestCount);
+    }
+
+    [Theory]
+    [InlineData("tenant-b", "stamp-a")]
+    [InlineData("tenant-a", "stamp-b")]
+    public async Task AuthenticatedWriteIsStoppedWhenNonSubjectSecurityClaimChanges(string tenantId, string securityStamp)
+    {
+        using var harness = AuthenticatedRequestHarness.Create();
+        using var invoker = harness.CreateInvoker();
+        await invoker.SendAsync(new HttpRequestMessage(HttpMethod.Get, "https://backend.example/features"), CancellationToken.None);
+        var originalContextKey = harness.BackendProvider.ContextKey;
+        using var binding = harness.Binding.BindRequestContext(originalContextKey);
+        harness.TokenAccessor.Token = harness.CreateToken("user-a", harness.TokenExpiresAt, new Dictionary<string, object?>
+        {
+            ["tenant_id"] = tenantId,
+            ["security_stamp"] = securityStamp
+        });
+        using var writeRequest = new HttpRequestMessage(HttpMethod.Post, "https://backend.example/workflow-definitions");
+
+        await Assert.ThrowsAsync<BackendRequestContextChangedException>(() => invoker.SendAsync(writeRequest, CancellationToken.None));
+
+        Assert.NotEqual(originalContextKey, harness.BackendProvider.ContextKey);
+        Assert.Null(writeRequest.Headers.Authorization);
+        Assert.Equal(1, harness.InnerHandler.RequestCount);
+    }
+
+    [Fact]
+    public async Task AuthenticatedWriteAllowsRefreshThatOnlyChangesLifecycleClaims()
+    {
+        using var harness = AuthenticatedRequestHarness.Create();
+        using var invoker = harness.CreateInvoker();
+        await invoker.SendAsync(new HttpRequestMessage(HttpMethod.Get, "https://backend.example/features"), CancellationToken.None);
+        var originalContextKey = harness.BackendProvider.ContextKey;
+        using var binding = harness.Binding.BindRequestContext(originalContextKey);
+        var lifecycleClaims = new Dictionary<string, object?>
+        {
+            ["iat"] = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+            ["nbf"] = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
+            ["jti"] = Guid.NewGuid().ToString("N")
+        };
+        harness.TokenAccessor.Token = harness.CreateToken("user-a", DateTimeOffset.UtcNow.AddMinutes(-10), lifecycleClaims);
+        harness.RefreshTokenService.RefreshedToken = harness.CreateToken("user-a", DateTimeOffset.UtcNow.AddHours(1), lifecycleClaims);
+
+        await invoker.SendAsync(new HttpRequestMessage(HttpMethod.Post, "https://backend.example/workflow-definitions"), CancellationToken.None);
+
+        Assert.Equal(originalContextKey, harness.BackendProvider.ContextKey);
+        Assert.Equal(2, harness.InnerHandler.RequestCount);
+    }
+
+    [Fact]
+    public async Task MissingTokenStopsBoundWriteAndPreservesOrdinaryUnauthenticatedRequest()
+    {
+        using var harness = AuthenticatedRequestHarness.Create();
+        using var invoker = harness.CreateInvoker();
+        await invoker.SendAsync(new HttpRequestMessage(HttpMethod.Get, "https://backend.example/features"), CancellationToken.None);
+        using (harness.Binding.BindRequestContext(harness.BackendProvider.ContextKey))
+        {
+            harness.TokenAccessor.Token = null;
+            await Assert.ThrowsAsync<BackendRequestContextChangedException>(() =>
+                invoker.SendAsync(new HttpRequestMessage(HttpMethod.Post, "https://backend.example/workflow-definitions"), CancellationToken.None));
+        }
+
+        Assert.Equal(1, harness.InnerHandler.RequestCount);
+        using var ordinaryRequest = new HttpRequestMessage(HttpMethod.Get, "https://backend.example/ordinary");
+        await invoker.SendAsync(ordinaryRequest, CancellationToken.None);
+
+        Assert.Equal(2, harness.InnerHandler.RequestCount);
+        Assert.Null(ordinaryRequest.Headers.Authorization);
+    }
+
+    [Fact]
+    public async Task UnparseableTokenStopsBoundWriteWithoutChangingOrdinaryTokenHandling()
+    {
+        using var harness = AuthenticatedRequestHarness.Create();
+        using var invoker = harness.CreateInvoker();
+        await invoker.SendAsync(new HttpRequestMessage(HttpMethod.Get, "https://backend.example/features"), CancellationToken.None);
+        using var writeRequest = new HttpRequestMessage(HttpMethod.Post, "https://backend.example/workflow-definitions");
+        using (harness.Binding.BindRequestContext(harness.BackendProvider.ContextKey))
+        {
+            harness.TokenAccessor.Token = "invalid-token";
+            await Assert.ThrowsAsync<BackendRequestContextChangedException>(() => invoker.SendAsync(writeRequest, CancellationToken.None));
+        }
+
+        Assert.Equal(1, harness.InnerHandler.RequestCount);
+        Assert.Null(writeRequest.Headers.Authorization);
+        using var ordinaryRequest = new HttpRequestMessage(HttpMethod.Get, "https://backend.example/ordinary");
+        await invoker.SendAsync(ordinaryRequest, CancellationToken.None);
+
+        Assert.Equal(2, harness.InnerHandler.RequestCount);
+        Assert.Equal("Bearer", ordinaryRequest.Headers.Authorization?.Scheme);
+    }
+
+    [Fact]
+    public async Task AuthenticatedWriteUsesStableIdentityAndNestedBindingsRestore()
+    {
+        using var harness = AuthenticatedRequestHarness.Create();
+        using var invoker = harness.CreateInvoker();
+        await invoker.SendAsync(new HttpRequestMessage(HttpMethod.Get, "https://backend.example/features"), CancellationToken.None);
+        var contextKey = harness.BackendProvider.ContextKey;
+        using (harness.Binding.BindRequestContext(contextKey))
+        {
+            Assert.True(harness.Binding.HasActiveRequestContextBinding);
+            using (harness.Binding.BindRequestContext(contextKey))
+                await invoker.SendAsync(new HttpRequestMessage(HttpMethod.Post, "https://backend.example/workflow-definitions"), CancellationToken.None);
+            Assert.True(harness.Binding.HasActiveRequestContextBinding);
+        }
+
+        Assert.False(harness.Binding.HasActiveRequestContextBinding);
+        Assert.Equal(2, harness.InnerHandler.RequestCount);
+    }
+
+    [Fact]
+    public async Task LegacyUnboundAuthenticatedRequestRemainsCompatible()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<ITokenProvider>(new StaticTokenProvider());
+        services.AddSingleton<IBlazorServiceAccessor, BlazorServiceAccessor>();
+        using var provider = services.BuildServiceProvider();
+        var accessor = provider.GetRequiredService<IBlazorServiceAccessor>();
+        accessor.Services = provider;
+        var innerHandler = new RecordingHandler();
+        using var handler = new ElsaIdentityAuthenticatingApiHttpMessageHandler(accessor) { InnerHandler = innerHandler };
+        using var invoker = new HttpMessageInvoker(handler);
+
+        await invoker.SendAsync(new HttpRequestMessage(HttpMethod.Get, "https://backend.example/ordinary"), CancellationToken.None);
+
+        Assert.Equal(1, innerHandler.RequestCount);
+        Assert.Equal("Bearer", innerHandler.LastRequest!.Headers.Authorization?.Scheme);
+    }
+
+    private sealed class AuthenticatedRequestHarness : IDisposable
+    {
+        private readonly ServiceProvider _services;
+        private readonly BlazorServiceAccessor _blazorServiceAccessor;
+
+        private AuthenticatedRequestHarness(
+            ServiceProvider services,
+            BlazorServiceAccessor blazorServiceAccessor,
+            DefaultBackendApiClientProvider backendProvider,
+            MutableJwtAccessor tokenAccessor,
+            RefreshTokenService refreshTokenService,
+            DateTimeOffset tokenExpiresAt)
+        {
+            _services = services;
+            _blazorServiceAccessor = blazorServiceAccessor;
+            BackendProvider = backendProvider;
+            Binding = backendProvider;
+            TokenAccessor = tokenAccessor;
+            RefreshTokenService = refreshTokenService;
+            TokenExpiresAt = tokenExpiresAt;
+            InnerHandler = new RecordingHandler();
+        }
+
+        public DefaultBackendApiClientProvider BackendProvider { get; }
+        public IBackendRequestContextBinding Binding { get; }
+        public MutableJwtAccessor TokenAccessor { get; }
+        public RefreshTokenService RefreshTokenService { get; }
+        public RecordingHandler InnerHandler { get; }
+        public DateTimeOffset TokenExpiresAt { get; }
+
+        public static AuthenticatedRequestHarness Create()
+        {
+            var tokenExpiresAt = DateTimeOffset.UtcNow.AddHours(1);
+            var initialToken = CreateTokenPayload("user-a", tokenExpiresAt, new Dictionary<string, object?>
+            {
+                ["tenant_id"] = "tenant-a",
+                ["security_stamp"] = "stamp-a"
+            });
+            var tokenAccessor = new MutableJwtAccessor(initialToken);
+            var refreshTokenService = new RefreshTokenService(tokenAccessor);
+            var signal = new PermissionRefreshSignal();
+            var blazorServiceAccessor = new BlazorServiceAccessor();
+            var services = new ServiceCollection();
+            services.AddSingleton<IPermissionRefreshSignal>(signal);
+            services.AddSingleton<IRemoteBackendAccessor>(new FixedRemoteBackendAccessor());
+            services.AddSingleton<IBlazorServiceAccessor>(blazorServiceAccessor);
+            services.AddSingleton<ITokenProvider>(new JwtTokenProvider(
+                tokenAccessor, new JwtParser(), new ImmediateSingleFlightCoordinator(), refreshTokenService, [signal]));
+            services.AddSingleton<IBackendApiClientProvider>(serviceProvider => new DefaultBackendApiClientProvider(
+                serviceProvider.GetRequiredService<IRemoteBackendAccessor>(),
+                serviceProvider.GetRequiredService<IBlazorServiceAccessor>(),
+                serviceProvider,
+                null,
+                signal));
+            var provider = services.BuildServiceProvider();
+            blazorServiceAccessor.Services = provider;
+
+            return new AuthenticatedRequestHarness(
+                provider,
+                blazorServiceAccessor,
+                (DefaultBackendApiClientProvider)provider.GetRequiredService<IBackendApiClientProvider>(),
+                tokenAccessor,
+                refreshTokenService,
+                tokenExpiresAt);
+        }
+
+        public HttpMessageInvoker CreateInvoker() => new(new ElsaIdentityAuthenticatingApiHttpMessageHandler(_blazorServiceAccessor)
+        {
+            InnerHandler = InnerHandler
+        });
+
+        public string CreateToken(string subject, DateTimeOffset expiresAt, IReadOnlyDictionary<string, object?>? additionalClaims = null) =>
+            CreateTokenPayload(subject, expiresAt, additionalClaims);
+
+        public void Dispose()
+        {
+            _blazorServiceAccessor.Services = null!;
+            _services.Dispose();
+        }
+
+        private static string CreateTokenPayload(string subject, DateTimeOffset expiresAt, IReadOnlyDictionary<string, object?>? additionalClaims)
+        {
+            var claims = new Dictionary<string, object?>
+            {
+                ["sub"] = subject,
+                ["permissions"] = new[] { "workflow.write" },
+                ["exp"] = expiresAt.ToUnixTimeSeconds(),
+                ["tenant_id"] = "tenant-a",
+                ["security_stamp"] = "stamp-a"
+            };
+            if (additionalClaims != null)
+            {
+                foreach (var (type, value) in additionalClaims)
+                    claims[type] = value;
+            }
+
+            var payload = JsonSerializer.Serialize(claims);
+            var encoded = Convert.ToBase64String(Encoding.UTF8.GetBytes(payload)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+            return $"header.{encoded}.signature";
+        }
+    }
+
+    private sealed class FixedRemoteBackendAccessor : IRemoteBackendAccessor
+    {
+        public RemoteBackend RemoteBackend { get; } = new(new Uri("https://backend.example/"));
+        public string ContextKey => $"tenant-A|{RemoteBackend.Url}";
+    }
+
+    private sealed class MutableJwtAccessor(string? token) : IJwtAccessor
+    {
+        public string? Token { get; set; } = token;
+
+        public ValueTask<string?> ReadTokenAsync(string name) => ValueTask.FromResult(Token);
+
+        public ValueTask WriteTokenAsync(string name, string token)
+        {
+            Token = token;
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask ClearTokenAsync(string name)
+        {
+            Token = null;
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    private sealed class RefreshTokenService(MutableJwtAccessor jwtAccessor) : IRefreshTokenService
+    {
+        public string RefreshedToken { get; set; } = string.Empty;
+
+        public async Task<LoginResponse> RefreshTokenAsync(CancellationToken cancellationToken)
+        {
+            await jwtAccessor.WriteTokenAsync(TokenNames.AccessToken, RefreshedToken);
+            return new LoginResponse(true, RefreshedToken, "refresh-token");
+        }
+    }
+
+    private sealed class ImmediateSingleFlightCoordinator : ISingleFlightCoordinator
+    {
+        public Task<T> RunAsync<T>(Func<CancellationToken, Task<T>> action, CancellationToken cancellationToken) => action(cancellationToken);
+    }
+
+    private sealed class StaticTokenProvider : ITokenProvider
+    {
+        public Task<string?> GetAccessTokenAsync(CancellationToken cancellationToken = default) => Task.FromResult<string?>("ordinary-test-token");
     }
 
     [Fact]

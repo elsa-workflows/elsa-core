@@ -51,7 +51,9 @@ public static class NativeCompensationDraftCapability
             return false;
 
         var enabled = await IsEnabledAsync(provider, cancellationToken);
-        return enabled && string.Equals(backendApiClientProvider.ContextKey, expectedBackendContextKey, StringComparison.Ordinal);
+        return enabled &&
+               backendApiClientProvider is IBackendRequestContextBinding { SupportsAuthenticatedRequestContextBinding: true } &&
+               string.Equals(backendApiClientProvider.ContextKey, expectedBackendContextKey, StringComparison.Ordinal);
     }
 
     public static bool HasSupportedDraftShape(JsonNode? node)
@@ -68,7 +70,8 @@ public static class NativeCompensationDraftCapability
         return steps.All(step => step is JsonObject row &&
                                  GetString(row, "stepId") is { } stepId &&
                                  !string.IsNullOrWhiteSpace(stepId) &&
-                                 stepIds.Add(stepId));
+                                 stepIds.Add(stepId) &&
+                                 (!row.TryGetPropertyValue("mappings", out var mappings) || mappings is JsonArray));
     }
 
     private static bool ContainsCompensationScopeJson(string json)

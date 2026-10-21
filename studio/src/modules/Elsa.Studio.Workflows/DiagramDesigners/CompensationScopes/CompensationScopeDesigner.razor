@@ -33,7 +33,7 @@
     else if (!_canEdit)
     {
         <MudAlert Severity="Severity.Warning" Variant="MudBlazor.Variant.Outlined">
-            The server does not advertise native compensation draft authoring. This scope is read-only and cannot be saved here.
+            This connection cannot verify safe native compensation draft authoring. It requires a fresh backend feature check and a supported ElsaIdentity-authenticated connection. This scope is read-only and cannot be saved here.
         </MudAlert>
     }
     else
@@ -171,7 +171,8 @@
         bool capabilityEnabled;
         try
         {
-            capabilityEnabled = await NativeCompensationDraftCapability.IsEnabledAsync(RemoteFeatureProvider, cancellationSource.Token);
+            capabilityEnabled = await NativeCompensationDraftCapability.IsEnabledForContextAsync(
+                RemoteFeatureProvider, BackendApiClientProvider, backendContextKey, cancellationSource.Token);
         }
         catch (OperationCanceledException) when (cancellationSource.IsCancellationRequested)
         {

@@ -93,6 +93,45 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
     }
 
     [Fact]
+    public async Task WorkspaceHidesNativeDraftImmediatelyAndIgnoresLateCapabilityAfterContextSwitch()
+    {
+        await using var context = CreateContext();
+        var backend = new MutableBackendApiClientProvider("context-A");
+        var featureProvider = new DeferredFreshFeatureProvider();
+        context.Services.AddSingleton<IBackendApiClientProvider>(backend);
+        context.Services.AddSingleton<IRemoteFeatureProvider>(featureProvider);
+        var definition = CreateDefinition("origin A draft", "version-a");
+        definition.Root = System.Text.Json.Nodes.JsonNode.Parse("""{"id":"scope-a","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}""")!.AsObject();
+        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, "context-A"));
+
+        var cut = RenderWorkspace(context, definition, definition);
+        await featureProvider.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.Single(cut.FindComponents<WorkflowDefinitionVersionViewer>());
+
+        backend.ContextKey = "context-B";
+        context.Services.GetRequiredService<IPermissionRefreshSignal>().Raise();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("local draft is hidden", cut.Markup, StringComparison.OrdinalIgnoreCase);
+            Assert.Empty(cut.FindComponents<WorkflowEditor>());
+            Assert.Empty(cut.FindComponents<CodeView>());
+            Assert.Empty(cut.FindComponents<WorkflowProperties>());
+            Assert.Empty(cut.FindComponents<WorkflowDefinitionVersionViewer>());
+            Assert.Same(definition, cut.Instance.GetSelectedDefinition());
+        });
+
+        featureProvider.Complete(true);
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("local draft is hidden", cut.Markup, StringComparison.OrdinalIgnoreCase);
+            Assert.Empty(cut.FindComponents<WorkflowEditor>());
+            Assert.Empty(cut.FindComponents<WorkflowDefinitionVersionViewer>());
+            Assert.Equal("context-A", NativeCompensationDraftDocumentContext.GetBackendContextKey(definition));
+        });
+    }
+
+    [Fact]
     public async Task OrdinaryDefinitionKeepsItsLoadOriginIfItGainsACompensationScopeAfterContextSwitch()
     {
         await using var context = CreateContext();
@@ -323,6 +362,7 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
         context.Services.AddSingleton<IActivityRegistry, NoOpActivityRegistry>();
         context.Services.AddSingleton<IActivityPickerComponentProvider, EmptyActivityPickerComponentProvider>();
         context.ComponentFactories.Add<WorkflowEditor, TestWorkflowEditor>();
+        context.ComponentFactories.Add<WorkflowDefinitionVersionViewer, TestWorkflowDefinitionVersionViewer>();
         context.ComponentFactories.Add<CodeView, TestCodeView>();
         context.ComponentFactories.Add<WorkflowProperties, TestWorkflowProperties>();
         return context;
@@ -433,6 +473,16 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
         }
     }
 
+    private sealed class TestWorkflowDefinitionVersionViewer : WorkflowDefinitionVersionViewer
+    {
+        protected override Task OnInitializedAsync() => Task.CompletedTask;
+        protected override Task OnParametersSetAsync() => Task.CompletedTask;
+
+        protected override void BuildRenderTree(RenderTreeBuilder builder)
+        {
+        }
+    }
+
     private sealed class TestWorkflowProperties : WorkflowProperties
     {
         protected override void BuildRenderTree(RenderTreeBuilder builder)
@@ -461,13 +511,38 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
         }
     }
 
-    private sealed class MutableBackendApiClientProvider(string contextKey) : IBackendApiClientProvider
+    private sealed class MutableBackendApiClientProvider(string contextKey) : IBackendApiClientProvider, IBackendRequestContextBinding
     {
+        private readonly AsyncLocal<string?> _boundContext = new();
         public Uri Url { get; } = new("https://backend.example/");
         public string ContextKey { get; set; } = contextKey;
+        public bool SupportsAuthenticatedRequestContextBinding => true;
+        public bool HasActiveRequestContextBinding => _boundContext.Value != null;
+
+        public void RegisterAuthenticatedRequestTransport(IBackendRequestContextEpochSource? epochSource) { }
+
+        public IDisposable BindRequestContext(string expectedContextKey)
+        {
+            if (expectedContextKey != ContextKey)
+                throw new BackendRequestContextChangedException();
+            var previous = _boundContext.Value;
+            _boundContext.Value = expectedContextKey;
+            return new ActionScope(() => _boundContext.Value = previous);
+        }
+
+        public void ValidateBoundRequestContext()
+        {
+            if (_boundContext.Value is { } expected && expected != ContextKey)
+                throw new BackendRequestContextChangedException();
+        }
 
         public ValueTask<T> GetApiAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(CancellationToken cancellationToken = default) where T : class =>
             throw new InvalidOperationException("The workspace lifecycle test must not create a backend client.");
+
+        private sealed class ActionScope(Action dispose) : IDisposable
+        {
+            public void Dispose() => dispose();
+        }
     }
 
     private sealed class EnabledRemoteFeatureProvider : IRemoteFeatureProvider, IRemoteFeatureProviderWithFreshCheck
@@ -478,6 +553,25 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
             Task.FromResult<IEnumerable<Elsa.Api.Client.Resources.Features.Models.FeatureDescriptor>>([]);
 
         public Task<bool> IsEnabledFreshAsync(string featureName, CancellationToken cancellationToken = default) => Task.FromResult(true);
+    }
+
+    private sealed class DeferredFreshFeatureProvider : IRemoteFeatureProvider, IRemoteFeatureProviderWithFreshCheck
+    {
+        private readonly TaskCompletionSource<bool> _result = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task<bool> IsEnabledAsync(string featureName, CancellationToken cancellationToken = default) => Task.FromResult(false);
+
+        public Task<IEnumerable<Elsa.Api.Client.Resources.Features.Models.FeatureDescriptor>> ListAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult<IEnumerable<Elsa.Api.Client.Resources.Features.Models.FeatureDescriptor>>([]);
+
+        public Task<bool> IsEnabledFreshAsync(string featureName, CancellationToken cancellationToken = default)
+        {
+            Started.TrySetResult();
+            return _result.Task;
+        }
+
+        public void Complete(bool enabled) => _result.TrySetResult(enabled);
     }
 
     private class WorkflowDefinitionServiceProxy : DispatchProxy

@@ -201,3 +201,7 @@ These domain terms belong to the [Elsa 3 compensation design](core/docs/specs/na
 **Recovery capture**: Immutable, versioned occurrence data retained for a handler. It is not a later lookup of mutable workflow variables or the latest output of an activity node.
 
 **Confirmation**: An explicit end of compensation eligibility under the accepted scope policy. It preserves audit and does not erase unresolved work.
+
+**Backend request context**: Studio's identity for the selected backend/environment and its current authentication or authorization epoch. A native draft stays associated with the context that loaded it; a URL alone does not establish that association.
+
+**Authenticated request binding**: An optional Studio transport contract that checks a request against its expected backend request context after token acquisition and before dispatch. Native draft writes require a participating identity source and transport. This client boundary does not replace server authorization, tenant isolation, or the program's durable runtime fencing proof.

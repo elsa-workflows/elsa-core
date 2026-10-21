@@ -1,5 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Net;
 using System.Reflection;
+using System.Text;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Responses;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
@@ -15,6 +17,7 @@ using Elsa.Api.Client.Resources.ActivityDescriptors.Models;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Contracts;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Responses;
 using Elsa.Studio.Workflows.DiagramDesigners.CompensationScopes;
+using Refit;
 using Xunit;
 
 namespace Elsa.Studio.Workflows.Tests;
@@ -38,6 +41,57 @@ public class NativeCompensationDraftCapabilityTests
 
         Assert.False(await NativeCompensationDraftCapability.IsEnabledAsync(provider));
         Assert.Equal(0, provider.CachedChecks);
+    }
+
+    [Fact]
+    public async Task NativeCapabilityRequiresAnAuthenticatedRequestContextBinding()
+    {
+        var backend = new ContextBackendApiClientProvider(new Uri("https://backend.example/"), "context-A");
+
+        Assert.False(await NativeCompensationDraftCapability.IsEnabledForContextAsync(
+            new FreshFeatureProvider(true), backend, backend.ContextKey));
+    }
+
+    [Theory]
+    [InlineData("application/json", false)]
+    [InlineData("application/problem+json", true)]
+    public async Task NativeDraftSavePreservesNativeCodeFromRefitTypedAndUntypedCodeOnlyFailures(string contentType, bool isValidationApiException)
+    {
+        var backend = new TestBackendApiClientProvider(new Uri("https://backend.example/"), "context-A");
+        var api = DispatchProxy.Create<IWorkflowDefinitionsApi, NativeRefusalWorkflowDefinitionsApi>();
+        var apiProxy = (NativeRefusalWorkflowDefinitionsApi)(object)api;
+        apiProxy.RefusalException = await CreateRefusalApiExceptionAsync(contentType);
+        Assert.Equal(isValidationApiException, apiProxy.RefusalException is ValidationApiException);
+        backend.SetApi(api);
+        var service = new WorkflowDefinitionEditorService(backend, DispatchProxy.Create<IMediator, CompletedMediator>(), new FreshFeatureProvider(true));
+        var definition = CreateDraft();
+        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, backend.ContextKey));
+
+        var result = await service.SaveNativeCompensationDraftAsync(definition, true, backend.ContextKey);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(NativeCompensationDraftRefusal.Code, result.Failure!.Code);
+        Assert.Equal(HttpStatusCode.BadRequest, result.Failure.StatusCode);
+        Assert.Empty(result.Failure.Errors);
+        Assert.Empty(NativeCompensationDraftRefusal.FromValidationErrors(result.Failure)!.Diagnostics);
+        Assert.Equal(1, apiProxy.SaveCalls);
+    }
+
+    [Fact]
+    public async Task NativeDraftSaveWithLegacyProviderRefusesBeforeCreatingAWriteClient()
+    {
+        var backend = new ContextBackendApiClientProvider(new Uri("https://backend.example/"), "context-A");
+        var featureProvider = new FreshFeatureProvider(true);
+        var service = new WorkflowDefinitionEditorService(backend, DispatchProxy.Create<IMediator, CompletedMediator>(), featureProvider);
+        var definition = CreateDraft();
+        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, "context-A"));
+
+        var result = await service.SaveAsync(definition, false);
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(1, featureProvider.FreshChecks);
+        Assert.Equal(0, backend.ApiRequests);
+        Assert.Contains("native compensation draft authoring", result.Failure!.Errors.Single().ErrorMessage, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -126,6 +180,32 @@ public class NativeCompensationDraftCapabilityTests
         var result = await save;
         Assert.False(result.IsSuccess);
         Assert.Equal(0, ((RecordingWorkflowDefinitionsApi)(object)api).SaveCalls);
+    }
+
+    [Fact]
+    public async Task SaveSendsTheSameOrdinaryRootSnapshotThatWasClassifiedBeforeMediatorAwait()
+    {
+        var backend = new TestBackendApiClientProvider(new Uri("https://backend.example/"), "context-A");
+        var api = DispatchProxy.Create<IWorkflowDefinitionsApi, RecordingWorkflowDefinitionsApi>();
+        backend.SetApi(api);
+        var mediator = DispatchProxy.Create<IMediator, GatedMediator>();
+        var gate = (GatedMediator)(object)mediator;
+        var service = new WorkflowDefinitionEditorService(backend, mediator, new FreshFeatureProvider(true));
+        var originalRoot = System.Text.Json.Nodes.JsonNode.Parse("""{"id":"write-1","type":"Elsa.WriteLine","version":1}""")!.AsObject();
+        var definition = new WorkflowDefinition { Root = originalRoot };
+        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, "context-A"));
+
+        var save = service.SaveAsync(definition, false);
+        await gate.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        backend.ContextKey = "context-B";
+        definition.Root = System.Text.Json.Nodes.JsonNode.Parse("""{"id":"scope-1","type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}""")!.AsObject();
+        gate.Release.TrySetResult(true);
+
+        var result = await save;
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(originalRoot.ToJsonString(), ((RecordingWorkflowDefinitionsApi)(object)api).SavedRoot!.ToJsonString());
+        Assert.False(NativeCompensationDraftCapability.ContainsCompensationScope(((RecordingWorkflowDefinitionsApi)(object)api).SavedRoot));
     }
 
     [Fact]
@@ -293,6 +373,33 @@ public class NativeCompensationDraftCapabilityTests
         Assert.Equal("same", scope["steps"]![1]!["stepId"]!.GetValue<string>());
     }
 
+    [Theory]
+    [InlineData("null")]
+    [InlineData("{}")]
+    [InlineData("\"malformed\"")]
+    public void HasSupportedDraftShapeRejectsMalformedMappingsLikeCore(string mappingsJson)
+    {
+        var scope = System.Text.Json.Nodes.JsonNode.Parse($$"""
+            {"type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[{"stepId":"step-1","mappings":{{mappingsJson}}}]}
+            """)!;
+
+        Assert.False(NativeCompensationDraftCapability.HasSupportedDraftShape(scope));
+    }
+
+    [Fact]
+    public void HasSupportedDraftShapeAcceptsAbsentOrArrayMappingsLikeCore()
+    {
+        var withoutMappings = System.Text.Json.Nodes.JsonNode.Parse("""
+            {"type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[{"stepId":"step-1"}]}
+            """)!;
+        var withMappings = System.Text.Json.Nodes.JsonNode.Parse("""
+            {"type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[{"stepId":"step-1","mappings":[]}]}
+            """)!;
+
+        Assert.True(NativeCompensationDraftCapability.HasSupportedDraftShape(withoutMappings));
+        Assert.True(NativeCompensationDraftCapability.HasSupportedDraftShape(withMappings));
+    }
+
     [Fact]
     public void ChildInputExpressionNamedLiteralIsNotTreatedAsAnActivityPin()
     {
@@ -345,6 +452,39 @@ public class NativeCompensationDraftCapabilityTests
             activityType == descriptor.TypeName && version == descriptor.Version ? descriptor : null;
         public IEnumerable<ActivityDescriptor> FindAll(string activityType) => activityType == descriptor.TypeName ? [descriptor] : [];
         public void MarkStale() { }
+    }
+
+    private static async Task<ApiException> CreateRefusalApiExceptionAsync(string contentType)
+    {
+        const string content = """
+        {
+          "errors": {},
+          "code": "NATIVE_COMPENSATION_DRAFT_ONLY",
+          "data": { "diagnostics": "untrusted" }
+        }
+        """;
+        using var request = new HttpRequestMessage(HttpMethod.Post, "http://localhost/workflow-definitions/draft-1");
+        using var response = new HttpResponseMessage(HttpStatusCode.BadRequest)
+        {
+            RequestMessage = request,
+            Content = new StringContent(content, Encoding.UTF8, contentType)
+        };
+        return await ApiException.Create(request, HttpMethod.Post, response, new RefitSettings());
+    }
+
+    private class NativeRefusalWorkflowDefinitionsApi : DispatchProxy
+    {
+        public ApiException? RefusalException { get; set; }
+        public int SaveCalls { get; private set; }
+
+        protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
+        {
+            if (targetMethod?.Name != nameof(IWorkflowDefinitionsApi.SaveAsync))
+                throw new NotSupportedException(targetMethod?.Name);
+
+            SaveCalls++;
+            return Task.FromException<SaveWorkflowDefinitionResponse>(RefusalException!);
+        }
     }
 
     private sealed class FreshFeatureProvider(bool enabled) : IRemoteFeatureProvider, IRemoteFeatureProviderWithFreshCheck
@@ -409,12 +549,32 @@ public class NativeCompensationDraftCapabilityTests
         }
     }
 
-    private sealed class TestBackendApiClientProvider(Uri url, string contextKey) : IBackendApiClientProvider
+    private sealed class TestBackendApiClientProvider(Uri url, string contextKey) : IBackendApiClientProvider, IBackendRequestContextBinding
     {
         private readonly TaskCompletionSource<object> _api = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly AsyncLocal<string?> _boundContext = new();
         public Uri Url { get; } = url;
         public string ContextKey { get; set; } = contextKey;
         public TaskCompletionSource<bool> ApiRequested { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public bool SupportsAuthenticatedRequestContextBinding => true;
+        public bool HasActiveRequestContextBinding => _boundContext.Value != null;
+
+        public void RegisterAuthenticatedRequestTransport(IBackendRequestContextEpochSource? epochSource) { }
+
+        public IDisposable BindRequestContext(string expectedContextKey)
+        {
+            if (expectedContextKey != ContextKey)
+                throw new BackendRequestContextChangedException();
+            var previous = _boundContext.Value;
+            _boundContext.Value = expectedContextKey;
+            return new ActionScope(() => _boundContext.Value = previous);
+        }
+
+        public void ValidateBoundRequestContext()
+        {
+            if (_boundContext.Value is { } expected && expected != ContextKey)
+                throw new BackendRequestContextChangedException();
+        }
 
         public void SetApi(object api) => _api.TrySetResult(api);
 
@@ -422,6 +582,11 @@ public class NativeCompensationDraftCapabilityTests
         {
             ApiRequested.TrySetResult(true);
             return (T)await _api.Task.WaitAsync(cancellationToken);
+        }
+
+        private sealed class ActionScope(Action dispose) : IDisposable
+        {
+            public void Dispose() => dispose();
         }
     }
 
@@ -445,6 +610,7 @@ public class NativeCompensationDraftCapabilityTests
         public int ImportCalls { get; private set; }
         public int PublishCalls { get; private set; }
         public int BulkPublishCalls { get; private set; }
+        public System.Text.Json.Nodes.JsonNode? SavedRoot { get; private set; }
 
         protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
         {
@@ -471,6 +637,7 @@ public class NativeCompensationDraftCapabilityTests
 
             SaveCalls++;
             var request = (SaveWorkflowDefinitionRequest)args![0]!;
+            SavedRoot = request.Model.Root?.DeepClone();
             var definition = new WorkflowDefinition { Root = request.Model.Root! };
             return Task.FromResult(new SaveWorkflowDefinitionResponse(definition, false, 0));
         }
