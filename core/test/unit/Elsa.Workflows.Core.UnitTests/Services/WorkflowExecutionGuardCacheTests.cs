@@ -146,6 +146,21 @@ public class WorkflowExecutionGuardCacheTests : IAsyncLifetime
     }
 
     [Fact]
+    public void NativeActivitiesWithInheritedTypeAccessorsAreCacheable()
+    {
+        IActivity[] activities =
+        [
+            new Sequence(),
+            new Workflow(),
+            new WriteLine("cache eligibility"),
+            new InheritedTypeCodeActivity()
+        ];
+
+        foreach (var activity in activities)
+            Assert.True(IsActivityTypeCacheable(activity), $"{activity.GetType().Name} should be cacheable.");
+    }
+
+    [Fact]
     public async Task SaturatedNodeRevisionFallsBackToScanning()
     {
         var graph = _context.WorkflowGraph;
@@ -193,6 +208,13 @@ public class WorkflowExecutionGuardCacheTests : IAsyncLifetime
         ReimplementedTypeActivity derived => derived.TypeGetterReads,
         _ => throw new ArgumentOutOfRangeException(nameof(activity))
     };
+
+    private static bool IsActivityTypeCacheable(IActivity activity)
+    {
+        var stateType = typeof(CompensationScope).Assembly.GetType("Elsa.Workflows.Activities.Compensation.CompensationScopeExecutionState", throwOnError: true)!;
+        var method = stateType.GetMethod("IsActivityTypeCacheable", BindingFlags.Static | BindingFlags.NonPublic)!;
+        return (bool)method.Invoke(null, [activity])!;
+    }
 
     private ActivityNode AddGraphActivity(IActivity activity)
     {
@@ -252,6 +274,13 @@ public class WorkflowExecutionGuardCacheTests : IAsyncLifetime
             set => _type = value;
         }
 
+        protected override void Execute(ActivityExecutionContext context)
+        {
+        }
+    }
+
+    private sealed class InheritedTypeCodeActivity : CodeActivity
+    {
         protected override void Execute(ActivityExecutionContext context)
         {
         }

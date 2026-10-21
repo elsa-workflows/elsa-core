@@ -100,7 +100,7 @@ internal static class CompensationScopeExecutionState
     private static bool HasExactInterfaceTarget(InterfaceMapping interfaceMap, MethodInfo interfaceMethod, MethodInfo expectedTarget)
     {
         var index = Array.IndexOf(interfaceMap.InterfaceMethods, interfaceMethod);
-        return index >= 0 && interfaceMap.TargetMethods[index].Equals(expectedTarget);
+        return index >= 0 && interfaceMap.TargetMethods[index].MethodHandle.Equals(expectedTarget.MethodHandle);
     }
 
     internal readonly struct CacheObservation(
