@@ -201,7 +201,7 @@ internal sealed class BpmnScopeHost
             return [];
         }
 
-        return BpmnCallActivityOutcomes.For(DispatchWorkflow.GetChildWorkflowSubStatus(childContext));
+        return BpmnCallActivityOutcomes.For(DispatchWorkflow.IsChildActivationDenied(childContext), DispatchWorkflow.GetChildWorkflowSubStatus(childContext));
     }
 
     private ValueTask EvaluateAsync(Func<BpmnScopeMemory, BpmnEvaluation?> evaluate) =>
