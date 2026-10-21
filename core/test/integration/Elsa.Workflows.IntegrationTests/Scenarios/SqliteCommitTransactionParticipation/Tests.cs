@@ -229,7 +229,6 @@ internal sealed class NativeCommitFixture : IAsyncDisposable
             var services = new ServiceCollection();
             services.AddSingleton<IConfiguration, ConfigurationManager>();
             services.AddLogging(logging => logging.AddProvider(new XunitLoggerProvider(output)).SetMinimumLevel(LogLevel.Warning));
-            services.AddSingleton<ITenantAccessor>(new TestTenantAccessor(TenantId));
             services.Configure<TenantsOptions>(options => options.IsEnabled = true);
             services.AddSingleton(commands);
             services.AddSingleton(transactionState);
@@ -253,11 +252,15 @@ internal sealed class NativeCommitFixture : IAsyncDisposable
                 }))
                 .AddWorkflow<NativeCommitWorkflow>());
 
+            // Elsa registers DefaultTenantAccessor during AddElsa; override it for this synthetic tenant.
+            services.Replace(ServiceDescriptor.Singleton<ITenantAccessor>(new TestTenantAccessor(TenantId)));
+
             services.Decorate<IDbContextFactory<ManagementElsaDbContext>, SharedTransactionDbContextFactory<ManagementElsaDbContext>>();
             services.Decorate<IDbContextFactory<RuntimeElsaDbContext>, SharedTransactionDbContextFactory<RuntimeElsaDbContext>>();
             services.Replace(ServiceDescriptor.Scoped<IWorkflowCommitTransaction, SharedSqliteCommitTransaction>());
 
             serviceProvider = services.BuildServiceProvider();
+            Assert.Equal(TenantId, serviceProvider.GetRequiredService<ITenantAccessor>().TenantId);
 
             // The registry population queries management stores, so create both schemas first.
             await using (var management = await serviceProvider.GetRequiredService<IDbContextFactory<ManagementElsaDbContext>>().CreateDbContextAsync())
