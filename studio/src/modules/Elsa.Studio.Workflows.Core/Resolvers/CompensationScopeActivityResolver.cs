@@ -13,7 +13,7 @@ public sealed class CompensationScopeActivityResolver : IActivityResolver
     public int Priority => 0;
 
     public bool GetSupportsActivity(JsonObject activity) =>
-        activity.GetTypeName() == "Elsa.CompensationScope" || IsOpaqueCompensationScope(activity);
+        activity.GetTypeName() == "Elsa.CompensationScope" || NativeCompensationDraftCapability.IsOpaqueCompensationScope(activity);
 
     public ValueTask<IEnumerable<EmbeddedActivity>> GetActivitiesAsync(JsonObject activity, CancellationToken cancellationToken = default)
     {
@@ -41,24 +41,6 @@ public sealed class CompensationScopeActivityResolver : IActivityResolver
     private static bool HasSupportedSchema(JsonObject scope) =>
         scope["version"] is JsonValue version && version.TryGetValue<int>(out var activityVersion) && activityVersion == 1 &&
         scope["draftSchemaVersion"] is JsonValue schema && schema.TryGetValue<int>(out var schemaVersion) && schemaVersion == 1;
-
-    private static bool IsOpaqueCompensationScope(JsonObject activity)
-    {
-        if (activity.GetTypeName() != "Elsa.NotFoundActivity" ||
-            activity["originalActivityJson"] is not JsonValue rawJson ||
-            !rawJson.TryGetValue<string>(out var json) ||
-            string.IsNullOrWhiteSpace(json))
-            return false;
-
-        try
-        {
-            return JsonNode.Parse(json) is JsonObject original && original.GetTypeName() == "Elsa.CompensationScope";
-        }
-        catch (System.Text.Json.JsonException)
-        {
-            return false;
-        }
-    }
 
     private static string? GetString(JsonObject value, string propertyName) =>
         value[propertyName] is JsonValue jsonValue && jsonValue.TryGetValue<string>(out var result) ? result : null;

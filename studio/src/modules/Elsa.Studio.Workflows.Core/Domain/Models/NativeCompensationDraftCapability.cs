@@ -37,6 +37,31 @@ public static class NativeCompensationDraftCapability
         return node is JsonArray array && array.Any(ContainsCompensationScope);
     }
 
+    public static bool IsOpaqueCompensationScope(JsonObject activity)
+    {
+        if (GetString(activity, "type") != "Elsa.NotFoundActivity")
+            return false;
+
+        return GetString(activity, "missingTypeName") == "Elsa.CompensationScope" ||
+               activity["originalActivityJson"] is JsonValue originalValue &&
+               originalValue.TryGetValue<string>(out var originalJson) &&
+               ContainsCompensationScopeJson(originalJson);
+    }
+
+    public static bool ContainsUnsupportedCompensationScopeShape(JsonNode? node)
+    {
+        if (node is JsonObject activity)
+        {
+            if (IsOpaqueCompensationScope(activity) ||
+                GetString(activity, "type") == "Elsa.CompensationScope" && !HasSupportedDraftShape(activity))
+                return true;
+
+            return activity.Any(x => ContainsUnsupportedCompensationScopeShape(x.Value));
+        }
+
+        return node is JsonArray array && array.Any(ContainsUnsupportedCompensationScopeShape);
+    }
+
     public static async Task<bool> IsEnabledAsync(IRemoteFeatureProvider? provider, CancellationToken cancellationToken = default) =>
         provider is IRemoteFeatureProviderWithFreshCheck freshProvider &&
         await freshProvider.IsEnabledFreshOrDefaultAsync(RemoteFeatureName, cancellationToken);

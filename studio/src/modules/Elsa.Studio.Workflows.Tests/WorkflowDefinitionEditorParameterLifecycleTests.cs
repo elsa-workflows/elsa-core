@@ -59,6 +59,7 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
         Assert.True(NativeCompensationDraftDocumentContext.TryBind(originalDefinition, "context-A"));
         var cut = RenderWorkspace(context, originalDefinition, originalDefinition);
 
+        Assert.False(cut.Instance.IsReadOnly);
         Assert.Single(cut.FindComponents<WorkflowEditor>());
         backend.ContextKey = "context-B";
         context.Services.GetRequiredService<IPermissionRefreshSignal>().Raise();
@@ -129,6 +130,47 @@ public sealed class WorkflowDefinitionEditorParameterLifecycleTests
             Assert.Empty(cut.FindComponents<WorkflowDefinitionVersionViewer>());
             Assert.Equal("context-A", NativeCompensationDraftDocumentContext.GetBackendContextKey(definition));
         });
+    }
+
+    [Theory]
+    [InlineData("""{"type":"Elsa.NotFoundActivity","originalActivityJson":"{\"type\":\"Elsa.NotFoundActivity\",\"originalActivityJson\":\"{\\\"type\\\":\\\"Elsa.CompensationScope\\\",\\\"version\\\":9}\"}"}""")]
+    [InlineData("""{"type":"Elsa.NotFoundActivity","missingTypeName":"Elsa.CompensationScope"}""")]
+    [InlineData("""{"type":"Elsa.CompensationScope","version":2,"draftSchemaVersion":1,"steps":[]}""")]
+    public async Task WorkspaceKeepsOpaqueAndUnsupportedNativeDraftsReadOnlyEvenWithCapability(string rootJson)
+    {
+        await using var context = CreateContext();
+        var backend = new MutableBackendApiClientProvider("context-A");
+        context.Services.AddSingleton<IBackendApiClientProvider>(backend);
+        context.Services.AddSingleton<IRemoteFeatureProvider>(new EnabledRemoteFeatureProvider());
+        var definition = CreateDefinition("native draft", "version-a");
+        definition.Root = System.Text.Json.Nodes.JsonNode.Parse(rootJson)!.AsObject();
+        Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, "context-A"));
+        var cut = RenderWorkspace(context, definition, definition);
+
+        Assert.True(cut.Instance.IsReadOnly);
+        Assert.Empty(cut.FindComponents<WorkflowEditor>());
+        Assert.Single(cut.FindComponents<WorkflowDefinitionVersionViewer>());
+        Assert.Contains("This workflow contains native compensation data that Studio cannot safely edit", cut.Markup, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("read-only", cut.Markup, StringComparison.OrdinalIgnoreCase);
+        cut.FindAll("[role=tab]").Single(tab => tab.TextContent.Contains("Code View", StringComparison.Ordinal)).Click();
+        cut.WaitForAssertion(() => Assert.Single(cut.FindComponents<CodeView>()));
+        var codeView = cut.FindComponent<CodeView>().Instance;
+        Assert.True(codeView.IsReadOnly);
+        var metadata = cut.FindComponent<WorkflowProperties>().FindComponent<MetadataComponent>().Instance;
+        var metadataReadOnly = (bool)typeof(MetadataComponent)
+            .GetProperty("IsReadOnly", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .GetValue(metadata)!;
+        Assert.True(metadataReadOnly);
+
+        var attemptedDefinition = CreateDefinition("mutated by code view", "version-a");
+        attemptedDefinition.Root = System.Text.Json.Nodes.JsonNode.Parse("""{"type":"Elsa.WriteLine","version":1}""")!.AsObject();
+        var codeViewUpdate = typeof(CodeView).GetMethod("UpdateEditorFromCodeViewAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        Assert.False(await (Task<bool>)codeViewUpdate.Invoke(codeView, null)!);
+        var applyDefinition = typeof(WorkflowDefinitionWorkspace).GetMethod("OnApplyWorkflowDefinition", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        await cut.InvokeAsync(() => (Task)applyDefinition.Invoke(cut.Instance, [attemptedDefinition])!);
+
+        Assert.Same(definition, cut.Instance.GetSelectedDefinition());
+        Assert.Equal("native draft", definition.Name);
     }
 
     [Fact]

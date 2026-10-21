@@ -63,6 +63,9 @@ public class WorkflowDefinitionEditorService : IWorkflowDefinitionEditorService,
         // API acquisition or mediator callbacks are awaiting; the request must not inherit unchecked edits.
         var rootSnapshot = workflowDefinition.Root?.DeepClone().AsObject();
         var containsCompensationDraft = NativeCompensationDraftCapability.ContainsCompensationScope(rootSnapshot);
+        if (containsCompensationDraft && NativeCompensationDraftCapability.ContainsUnsupportedCompensationScopeShape(rootSnapshot))
+            return new(new ValidationErrors([new("This workflow contains a native compensation scope Studio cannot safely edit. The workflow was not saved.")]));
+
         var draftOriginContextKey = containsCompensationDraft
             ? NativeCompensationDraftDocumentContext.GetBackendContextKey(workflowDefinition)
             : null;

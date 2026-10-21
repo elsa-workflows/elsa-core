@@ -118,16 +118,7 @@ public class RemoteWorkflowDefinitionService : IWorkflowDefinitionService
         requiresRequestContextBinding |= supportsNativeCompensationDrafts || requestContextBinding?.SupportsAuthenticatedRequestContextBinding == true;
         if (!supportsNativeCompensationDrafts)
         {
-            WorkflowDefinition? definition;
-            if (requiresRequestContextBinding)
-            {
-                using (requestContextBinding!.BindRequestContext(backendContextKey))
-                    definition = await api.GetByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken);
-            }
-            else
-                definition = await api.GetByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken);
-
-            EnsureSameBackendContext(backendContextKey, cancellationToken);
+            var definition = await ReadLegacyPublishTargetAsync(api, definitionId, backendContextKey, requiresRequestContextBinding, cancellationToken);
             if (definition != null && NativeCompensationDraftCapability.ContainsCompensationScope(definition.Root))
                 throw new NativeCompensationDraftPublishUnavailableException("This server does not advertise native compensation draft authoring. The workflow was not published.");
         }
@@ -244,18 +235,12 @@ public class RemoteWorkflowDefinitionService : IWorkflowDefinitionService
         requiresRequestContextBinding |= supportsNativeCompensationDrafts || requestContextBinding?.SupportsAuthenticatedRequestContextBinding == true;
         if (!supportsNativeCompensationDrafts)
         {
-            ListResponse<WorkflowDefinition> definitions;
-            if (requiresRequestContextBinding)
+            foreach (var definitionId in definitionIdList)
             {
-                using (requestContextBinding!.BindRequestContext(backendContextKey))
-                    definitions = await api.GetManyByIdAsync(definitionIdList, cancellationToken);
+                var definition = await ReadLegacyPublishTargetAsync(api, definitionId, backendContextKey, requiresRequestContextBinding, cancellationToken);
+                if (definition != null && NativeCompensationDraftCapability.ContainsCompensationScope(definition.Root))
+                    throw new NativeCompensationDraftPublishUnavailableException("This server does not advertise native compensation draft authoring. The selected workflows were not published.");
             }
-            else
-                definitions = await api.GetManyByIdAsync(definitionIdList, cancellationToken);
-
-            EnsureSameBackendContext(backendContextKey, cancellationToken);
-            if (definitions.Items.Any(x => NativeCompensationDraftCapability.ContainsCompensationScope(x.Root)))
-                throw new NativeCompensationDraftPublishUnavailableException("This server does not advertise native compensation draft authoring. The selected workflows were not published.");
         }
 
         var request = new BulkPublishWorkflowDefinitionsRequest(definitionIdList);
@@ -447,6 +432,32 @@ public class RemoteWorkflowDefinitionService : IWorkflowDefinitionService
         EnsureSameBackendContext(backendContextKey, cancellationToken);
         if (definition != null && !NativeCompensationDraftDocumentContext.TryBind(definition, backendContextKey))
             throw new OperationCanceledException("The workflow definition was already bound to a different backend context.", cancellationToken);
+    }
+
+    private async Task<WorkflowDefinition?> ReadLegacyPublishTargetAsync(
+        IWorkflowDefinitionsApi api,
+        string definitionId,
+        string expectedBackendContextKey,
+        bool requiresRequestContextBinding,
+        CancellationToken cancellationToken)
+    {
+        WorkflowDefinition? definition;
+        try
+        {
+            using var binding = requiresRequestContextBinding
+                ? ((IBackendRequestContextBinding)backendApiClientProvider).BindRequestContext(expectedBackendContextKey)
+                : null;
+            definition = await api.GetByDefinitionIdAsync(definitionId, VersionOptions.Latest, cancellationToken);
+        }
+        catch (ApiException exception) when (exception.StatusCode == HttpStatusCode.Forbidden)
+        {
+            // Optional legacy inspection must not add definitions:view to the publish permission.
+            // The publish endpoint remains responsible for permission and native-scope denial.
+            definition = null;
+        }
+
+        EnsureSameBackendContext(expectedBackendContextKey, cancellationToken);
+        return definition;
     }
 
     private void EnsureSameBackendContext(string expected, CancellationToken cancellationToken)

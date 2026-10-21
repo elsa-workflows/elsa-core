@@ -24,6 +24,7 @@ using Elsa.Api.Client.Resources.ActivityDescriptors.Models;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Contracts;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Responses;
 using Elsa.Studio.Workflows.DiagramDesigners.CompensationScopes;
+using Elsa.Studio.Workflows.Resolvers;
 using Microsoft.Extensions.DependencyInjection;
 using Refit;
 using Xunit;
@@ -501,7 +502,10 @@ public class NativeCompensationDraftCapabilityTests
     {
         var backend = new TestBackendApiClientProvider(new Uri("https://backend.example/"), "context-A");
         var api = DispatchProxy.Create<IWorkflowDefinitionsApi, RecordingWorkflowDefinitionsApi>();
-        ((RecordingWorkflowDefinitionsApi)(object)api).StoredDefinitions = [CreateDraft()];
+        ((RecordingWorkflowDefinitionsApi)(object)api).StoredDefinitionsByDefinitionId = new Dictionary<string, WorkflowDefinition>(StringComparer.Ordinal)
+        {
+            ["definition-1"] = new() { Id = "definition-1:4", DefinitionId = "definition-1", Root = CreateDraft().Root }
+        };
         backend.SetApi(api);
         var service = new RemoteWorkflowDefinitionService(
             backend,
@@ -551,6 +555,10 @@ public class NativeCompensationDraftCapabilityTests
             Root = System.Text.Json.Nodes.JsonNode.Parse("""{"type":"Elsa.WriteLine","version":1}""")!.AsObject()
         };
         apiProxy.StoredDefinition = ordinaryDefinition;
+        apiProxy.StoredDefinitionsByDefinitionId = new Dictionary<string, WorkflowDefinition>(StringComparer.Ordinal)
+        {
+            ["definition-1"] = ordinaryDefinition
+        };
         apiProxy.StoredDefinitions = [ordinaryDefinition];
         var backend = new LegacyTestBackendApiClientProvider(new Uri("https://backend.example/"), "legacy-context", api);
         var service = new RemoteWorkflowDefinitionService(
@@ -605,6 +613,94 @@ public class NativeCompensationDraftCapabilityTests
     }
 
     [Theory]
+    [InlineData("publish")]
+    [InlineData("bulk-publish")]
+    public async Task PublishOnlyPermissionFallsThroughAViewForbiddenLegacyPreflight(string operation)
+    {
+        var backend = new TestBackendApiClientProvider(new Uri("https://backend.example/"), "context-A");
+        var api = DispatchProxy.Create<IWorkflowDefinitionsApi, RecordingWorkflowDefinitionsApi>();
+        var apiProxy = (RecordingWorkflowDefinitionsApi)(object)api;
+        apiProxy.IsRequestContextBound = () => backend.HasActiveRequestContextBinding;
+        apiProxy.StoredReadException = await CreateApiExceptionAsync(HttpStatusCode.Forbidden);
+        backend.SetApi(api);
+        var service = new RemoteWorkflowDefinitionService(
+            backend,
+            null!,
+            null!,
+            DispatchProxy.Create<IMediator, CompletedMediator>(),
+            new FreshFeatureProvider(false));
+
+        if (operation == "publish")
+            await service.PublishAsync("order-process");
+        else
+            await service.BulkPublishAsync(["order-process", "shipping-process"]);
+
+        Assert.Equal(operation == "publish" ? 1 : 2, apiProxy.DefinitionIdReads.Count);
+        Assert.Empty(apiProxy.VersionIdReads);
+        Assert.Equal(operation == "publish" ? 1 : 0, apiProxy.PublishCalls);
+        Assert.Equal(operation == "bulk-publish" ? 1 : 0, apiProxy.BulkPublishCalls);
+        Assert.All(apiProxy.StoredReadBindingStates, Assert.True);
+        if (operation == "publish")
+            Assert.True(apiProxy.PublishWasBound);
+        else
+            Assert.True(apiProxy.BulkPublishWasBound);
+    }
+
+    [Fact]
+    public async Task BulkStoredNativePreflightUsesLogicalDefinitionIdsAndChecksEveryTarget()
+    {
+        var backend = new TestBackendApiClientProvider(new Uri("https://backend.example/"), "context-A");
+        var api = DispatchProxy.Create<IWorkflowDefinitionsApi, RecordingWorkflowDefinitionsApi>();
+        var apiProxy = (RecordingWorkflowDefinitionsApi)(object)api;
+        apiProxy.StoredDefinitionsByDefinitionId = new Dictionary<string, WorkflowDefinition>(StringComparer.Ordinal)
+        {
+            ["order-process"] = new()
+            {
+                Id = "order-process:7",
+                DefinitionId = "order-process",
+                Root = System.Text.Json.Nodes.JsonNode.Parse("""{"type":"Elsa.WriteLine","version":1}""")!.AsObject()
+            },
+            ["shipping-process"] = new() { Id = "shipping-process:12", DefinitionId = "shipping-process", Root = CreateDraft().Root }
+        };
+        backend.SetApi(api);
+        var service = new RemoteWorkflowDefinitionService(
+            backend,
+            null!,
+            null!,
+            DispatchProxy.Create<IMediator, CompletedMediator>(),
+            new FreshFeatureProvider(false));
+
+        await Assert.ThrowsAsync<NativeCompensationDraftPublishUnavailableException>(() =>
+            service.BulkPublishAsync(["order-process", "shipping-process"]));
+
+        Assert.Equal(new[] { "order-process", "shipping-process" }, apiProxy.DefinitionIdReads);
+        Assert.Empty(apiProxy.VersionIdReads);
+        Assert.Equal(0, apiProxy.BulkPublishCalls);
+    }
+
+    [Fact]
+    public async Task LegacyViewPreflightDoesNotSwallowUnauthorizedResponses()
+    {
+        var backend = new TestBackendApiClientProvider(new Uri("https://backend.example/"), "context-A");
+        var api = DispatchProxy.Create<IWorkflowDefinitionsApi, RecordingWorkflowDefinitionsApi>();
+        var apiProxy = (RecordingWorkflowDefinitionsApi)(object)api;
+        var unauthorized = await CreateApiExceptionAsync(HttpStatusCode.Unauthorized);
+        apiProxy.StoredReadException = unauthorized;
+        backend.SetApi(api);
+        var service = new RemoteWorkflowDefinitionService(
+            backend,
+            null!,
+            null!,
+            DispatchProxy.Create<IMediator, CompletedMediator>(),
+            new FreshFeatureProvider(false));
+
+        var thrown = await Assert.ThrowsAsync<ApiException>(() => service.PublishAsync("order-process"));
+
+        Assert.Same(unauthorized, thrown);
+        Assert.Equal(0, apiProxy.PublishCalls);
+    }
+
+    [Theory]
     [InlineData("""{"type":"Elsa.CompensationScope","version":1}""")]
     [InlineData("""{"type":"Elsa.NotFoundActivity","originalActivityJson":"{\"type\":\"Elsa.CompensationScope\",\"version\":9}"}""")]
     [InlineData("""{"type":"Elsa.NotFoundActivity","originalActivityJson":"{\"type\":\"Elsa.NotFoundActivity\",\"originalActivityJson\":\"{\\\"type\\\":\\\"Elsa.CompensationScope\\\",\\\"version\\\":9}\"}"}""")]
@@ -614,26 +710,47 @@ public class NativeCompensationDraftCapabilityTests
         Assert.True(NativeCompensationDraftCapability.ContainsCompensationScope(System.Text.Json.Nodes.JsonNode.Parse(json)));
     }
 
-    [Fact]
-    public async Task NestedNotFoundCompensationScopeIsRefusedBeforeOrdinarySave()
+    [Theory]
+    [InlineData("""{"type":"Elsa.NotFoundActivity","originalActivityJson":"{\"type\":\"Elsa.NotFoundActivity\",\"originalActivityJson\":\"{\\\"type\\\":\\\"Elsa.CompensationScope\\\",\\\"version\\\":9}\"}"}""")]
+    [InlineData("""{"type":"Elsa.NotFoundActivity","missingTypeName":"Elsa.CompensationScope"}""")]
+    [InlineData("""{"type":"Elsa.CompensationScope","version":9,"draftSchemaVersion":1,"steps":[]}""")]
+    public async Task SaveRefusesOpaqueAndUnsupportedNativeScopeBeforeOrdinarySave(string rootJson)
     {
         var backend = new ContextBackendApiClientProvider(new Uri("https://backend.example/"), "context-A");
         var featureProvider = new FreshFeatureProvider(true);
         var service = new WorkflowDefinitionEditorService(backend, DispatchProxy.Create<IMediator, CompletedMediator>(), featureProvider);
         var definition = new WorkflowDefinition
         {
-            Root = System.Text.Json.Nodes.JsonNode.Parse("""
-                {"type":"Elsa.NotFoundActivity","originalActivityJson":"{\"type\":\"Elsa.NotFoundActivity\",\"originalActivityJson\":\"{\\\"type\\\":\\\"Elsa.CompensationScope\\\",\\\"version\\\":9}\"}"}
-                """)!.AsObject()
+            Root = System.Text.Json.Nodes.JsonNode.Parse(rootJson)!.AsObject()
         };
         Assert.True(NativeCompensationDraftDocumentContext.TryBind(definition, "context-A"));
 
         var result = await service.SaveAsync(definition, false);
 
         Assert.False(result.IsSuccess);
-        Assert.Equal(1, featureProvider.FreshChecks);
+        Assert.Equal(0, featureProvider.FreshChecks);
         Assert.Equal(0, backend.ApiRequests);
-        Assert.Contains("native compensation draft authoring", result.Failure!.Errors.Single().ErrorMessage, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("cannot safely edit", result.Failure!.Errors.Single().ErrorMessage, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [InlineData("""{"type":"Elsa.NotFoundActivity","originalActivityJson":"{\"type\":\"Elsa.NotFoundActivity\",\"originalActivityJson\":\"{\\\"type\\\":\\\"Elsa.CompensationScope\\\",\\\"version\\\":9}\"}"}""")]
+    [InlineData("""{"type":"Elsa.NotFoundActivity","missingTypeName":"Elsa.CompensationScope"}""")]
+    public void OpaqueCompensationScopesAreSharedByTheResolverAndDesignerProvider(string json)
+    {
+        var activity = System.Text.Json.Nodes.JsonNode.Parse(json)!.AsObject();
+
+        Assert.True(new CompensationScopeActivityResolver().GetSupportsActivity(activity));
+        Assert.True(new CompensationScopeDiagramDesignerProvider().GetSupportsActivity(activity));
+    }
+
+    [Theory]
+    [InlineData("""{"type":"Elsa.CompensationScope","version":2,"draftSchemaVersion":1,"steps":[]}""")]
+    [InlineData("""{"type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[{"stepId":"same"},{"stepId":"same"}]}""")]
+    public void UnsupportedNativeScopeShapesAreDetectedRecursively(string json)
+    {
+        Assert.True(NativeCompensationDraftCapability.ContainsUnsupportedCompensationScopeShape(
+            System.Text.Json.Nodes.JsonNode.Parse(json)));
     }
 
     [Fact]
@@ -745,6 +862,13 @@ public class NativeCompensationDraftCapabilityTests
             Content = new StringContent(content, Encoding.UTF8, contentType)
         };
         return await ApiException.Create(request, HttpMethod.Post, response, new RefitSettings());
+    }
+
+    private static async Task<ApiException> CreateApiExceptionAsync(HttpStatusCode statusCode)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, "http://localhost/workflow-definitions/order-process");
+        using var response = new HttpResponseMessage(statusCode) { RequestMessage = request };
+        return await ApiException.Create(request, HttpMethod.Get, response, new RefitSettings());
     }
 
     private class NativeRefusalWorkflowDefinitionsApi : DispatchProxy
@@ -1096,22 +1220,45 @@ public class NativeCompensationDraftCapabilityTests
         public string? ImportedName { get; private set; }
         public bool ImportWasBound { get; private set; }
         public bool StoredReadWasBound { get; private set; }
+        public List<bool> StoredReadBindingStates { get; } = [];
+        public bool PublishWasBound { get; private set; }
+        public bool BulkPublishWasBound { get; private set; }
         public Func<bool>? IsRequestContextBound { get; set; }
         public WorkflowDefinition? StoredDefinition { get; set; }
         public ICollection<WorkflowDefinition> StoredDefinitions { get; set; } = [];
+        public IDictionary<string, WorkflowDefinition> StoredDefinitionsByDefinitionId { get; set; } = new Dictionary<string, WorkflowDefinition>(StringComparer.Ordinal);
+        public ApiException? StoredReadException { get; set; }
+        public List<string> DefinitionIdReads { get; } = [];
+        public List<string> VersionIdReads { get; } = [];
 
         protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
         {
             if (targetMethod?.Name == nameof(IWorkflowDefinitionsApi.GetByDefinitionIdAsync))
             {
                 StoredReadWasBound = IsRequestContextBound?.Invoke() == true;
+                StoredReadBindingStates.Add(StoredReadWasBound);
+                var definitionId = (string)args![0]!;
+                DefinitionIdReads.Add(definitionId);
+                if (StoredReadException != null)
+                    return Task.FromException<WorkflowDefinition?>(StoredReadException);
+
+                if (StoredDefinitionsByDefinitionId.TryGetValue(definitionId, out var storedDefinition))
+                    return Task.FromResult<WorkflowDefinition?>(storedDefinition);
+
                 return Task.FromResult<WorkflowDefinition?>(StoredDefinition);
             }
 
             if (targetMethod?.Name == nameof(IWorkflowDefinitionsApi.GetManyByIdAsync))
             {
                 StoredReadWasBound = IsRequestContextBound?.Invoke() == true;
-                return Task.FromResult(new ListResponse<WorkflowDefinition>(StoredDefinitions, StoredDefinitions.Count));
+                StoredReadBindingStates.Add(StoredReadWasBound);
+                var ids = (ICollection<string>)args![0]!;
+                VersionIdReads.AddRange(ids);
+                if (StoredReadException != null)
+                    return Task.FromException<ListResponse<WorkflowDefinition>>(StoredReadException);
+
+                var definitions = StoredDefinitions.Where(x => ids.Contains(x.Id)).ToList();
+                return Task.FromResult(new ListResponse<WorkflowDefinition>(definitions, definitions.Count));
             }
 
             if (targetMethod?.Name == nameof(IWorkflowDefinitionsApi.ImportAsync))
@@ -1127,12 +1274,14 @@ public class NativeCompensationDraftCapabilityTests
             if (targetMethod?.Name == nameof(IWorkflowDefinitionsApi.PublishAsync))
             {
                 PublishCalls++;
+                PublishWasBound = IsRequestContextBound?.Invoke() == true;
                 return Task.FromResult(new SaveWorkflowDefinitionResponse(new WorkflowDefinition(), false, 0));
             }
 
             if (targetMethod?.Name == nameof(IWorkflowDefinitionsApi.BulkPublishAsync))
             {
                 BulkPublishCalls++;
+                BulkPublishWasBound = IsRequestContextBound?.Invoke() == true;
                 return Task.FromResult(new BulkPublishWorkflowDefinitionsResponse([], [], [], []));
             }
 

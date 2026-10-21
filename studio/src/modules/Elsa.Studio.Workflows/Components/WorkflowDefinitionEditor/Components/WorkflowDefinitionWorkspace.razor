@@ -87,6 +87,12 @@
                                     @Localizer["This connection cannot verify safe native compensation draft authoring. It requires a fresh backend feature check and a supported ElsaIdentity-authenticated connection. The compensation workflow is read-only and cannot be saved here."]
                                 </MudAlert>
                             }
+                            else if (IsNativeCompensationDraftOpaqueOrUnsupported)
+                            {
+                                <MudAlert Severity="Severity.Warning" Variant="MudBlazor.Variant.Filled" Square="true" Class="py-1">
+                                    @Localizer["This workflow contains native compensation data that Studio cannot safely edit. It is read-only and cannot be saved here."]
+                                </MudAlert>
+                            }
                             <WorkflowDefinitionVersionViewer @key="_selectedWorkflowDefinition.DefinitionId"
                                                              WorkflowDefinition="_selectedWorkflowDefinition"
                                                              WorkflowDefinitionExecuted="WorkflowDefinitionExecuted"

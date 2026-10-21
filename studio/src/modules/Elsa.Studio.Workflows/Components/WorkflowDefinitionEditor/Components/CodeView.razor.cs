@@ -123,6 +123,9 @@ public partial class CodeView : IDisposable
 
     private async Task<bool> UpdateEditorFromCodeViewAsync()
     {
+        if (IsReadOnly)
+            return false;
+
         var value = await _monacoEditor!.GetValue();
         if (string.Equals(value, _lastMonacoEditorContent))
         {

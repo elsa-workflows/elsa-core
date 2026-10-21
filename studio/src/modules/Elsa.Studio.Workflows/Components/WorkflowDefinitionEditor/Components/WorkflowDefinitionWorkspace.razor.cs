@@ -70,10 +70,24 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
 
     /// <inheritdoc />
     /// <remarks>A user who cannot save workflow definitions gets the read-only viewer and read-only properties.</remarks>
-    public bool IsReadOnly => _selectedWorkflowDefinition.GetIsReadOnly() || !Permissions.CanWriteDefinitions() ||
-                              (NativeCompensationDraftCapability.ContainsCompensationScope(_selectedWorkflowDefinition?.Root) &&
-                               (!HasNativeCompensationDraftCapability || _compensationDocumentContextKey == null ||
-                                _compensationDocumentContextKey != BackendApiClientProvider.ContextKey));
+    public bool IsReadOnly => _selectedWorkflowDefinition.GetIsReadOnly() || !Permissions.CanWriteDefinitions() || IsNativeCompensationDraftReadOnly;
+
+    private bool IsNativeCompensationDraftReadOnly
+    {
+        get
+        {
+            var root = _selectedWorkflowDefinition?.Root;
+            if (!NativeCompensationDraftCapability.ContainsCompensationScope(root))
+                return false;
+
+            return NativeCompensationDraftCapability.ContainsUnsupportedCompensationScopeShape(root) ||
+                   !HasNativeCompensationDraftCapability || _compensationDocumentContextKey == null ||
+                   _compensationDocumentContextKey != BackendApiClientProvider.ContextKey;
+        }
+    }
+
+    private bool IsNativeCompensationDraftOpaqueOrUnsupported =>
+        NativeCompensationDraftCapability.ContainsUnsupportedCompensationScopeShape(_selectedWorkflowDefinition?.Root);
 
     private bool HasNativeCompensationDraftCapability =>
         _nativeCompensationDraftCapabilityEnabled && _compensationCapabilityContextKey == BackendApiClientProvider.ContextKey;
@@ -308,6 +322,9 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
 
     private async Task OnWorkflowDefinitionPropsUpdated()
     {
+        if (IsReadOnly)
+            return;
+
         if (WorkflowEditor != null)
             await WorkflowEditor.NotifyWorkflowChangedAsync(_isCodeViewTab);
 
@@ -333,6 +350,9 @@ public partial class WorkflowDefinitionWorkspace : IWorkspace, IDisposable
 
     private async Task OnApplyWorkflowDefinition(WorkflowDefinition deserialized)
     {
+        if (IsReadOnly)
+            return;
+
         var incomingJson = JsonSerializer.Serialize(deserialized, new JsonSerializerOptions { WriteIndented = true });
         if (string.Equals(WorkflowDefinitionSerialized, incomingJson, StringComparison.Ordinal))
             return;
