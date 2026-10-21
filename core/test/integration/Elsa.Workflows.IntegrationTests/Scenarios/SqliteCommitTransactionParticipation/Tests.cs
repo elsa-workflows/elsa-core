@@ -71,6 +71,7 @@ public sealed class Tests(ITestOutputHelper output)
         AssertConditionalUpdateCommand(output, commit.ConditionalUpdate!, before.DataHash, fixture.Commands.ExpectedDataParameterName);
         Assert.Equal(true, commit.ConditionalUpdate!.ReturnedRows);
         AssertStagedSnapshot(commit, before.DataHash, before.BookmarkIds, before.ExecutionLogCount, before.ActivityExecutionRecordCount, "created", "resumed", transactionPresent: true, ambientTransactionPresent: false);
+        WriteSnapshotComparison(output, "shared-transaction-success", before, commit, after);
         AssertResumeSnapshotUpdatesUseExpectedData(fixture.Commands.GetResumeCommitAttempts(), before.DataHash);
         Assert.True(fixture.TransactionState.ConditionalUpdateRowsAffected is > 0);
         Assert.Equal(fixture.TransactionState.CommittedTransactions, fixture.TransactionState.CompletedTransactions);
@@ -126,6 +127,7 @@ public sealed class Tests(ITestOutputHelper output)
         AssertConditionalUpdateCommand(output, commit.ConditionalUpdate!, initial.DataHash, fixture.Commands.ExpectedDataParameterName);
         Assert.Equal(false, commit.ConditionalUpdate!.ReturnedRows);
         AssertStagedSnapshot(commit, newer.DataHash, initial.BookmarkIds, initial.ExecutionLogCount, initial.ActivityExecutionRecordCount, "newer-wins", "resumed", transactionPresent: true, ambientTransactionPresent: false);
+        WriteSnapshotComparison(output, "shared-transaction-conflict-rollback", newer, commit, after);
         AssertResumeSnapshotUpdatesUseExpectedData(fixture.Commands.GetResumeCommitAttempts(), initial.DataHash);
         Assert.Equal(1, fixture.TransactionState.RolledBackTransactions);
     }
@@ -158,6 +160,7 @@ public sealed class Tests(ITestOutputHelper output)
         Assert.Equal("newer-wins", GetVariable(survivor, started.VariableId, fixture.WorkflowNodeId));
         AssertVariable(after.State, started.VariableId, "newer-wins", fixture.WorkflowNodeId);
         Assert.True(after.ActivityExecutionRecordCount > initial.ActivityExecutionRecordCount);
+        Assert.True(after.ExecutionLogCount > newer.ExecutionLogCount);
 
         var commit = Assert.Single(fixture.Commands.GetCompletedCommitAttempts(fixture.Commands.ConditionalCommitAttemptId));
         Assert.True(commit.BookmarkDeleteSeen);
@@ -169,6 +172,7 @@ public sealed class Tests(ITestOutputHelper output)
         AssertConditionalUpdateCommand(output, commit.ConditionalUpdate!, initial.DataHash, fixture.Commands.ExpectedDataParameterName);
         Assert.Equal(false, commit.ConditionalUpdate!.ReturnedRows);
         AssertStagedSnapshot(commit, newer.DataHash, initial.BookmarkIds, initial.ExecutionLogCount, initial.ActivityExecutionRecordCount, "newer-wins", "resumed", transactionPresent: false, ambientTransactionPresent: false);
+        WriteSnapshotComparison(output, "transaction-disabled-conflict", newer, commit, after);
         AssertResumeSnapshotUpdatesUseExpectedData(fixture.Commands.GetResumeCommitAttempts(), initial.DataHash);
         Assert.Equal(0, fixture.TransactionState.RolledBackTransactions);
     }
@@ -178,6 +182,7 @@ public sealed class Tests(ITestOutputHelper output)
     {
         await using var fixture = await NativeCommitFixture.CreateAsync(output, useNativeAmbientTransaction: true);
         const string instanceId = "sqlite-ambient-unsupported-8936";
+        var before = await fixture.ReadWorkflowWriteCountsAsync(instanceId);
         var (started, error, _) = await fixture.TryStartAsync(instanceId);
 
         Assert.Null(started);
@@ -187,7 +192,8 @@ public sealed class Tests(ITestOutputHelper output)
 
         var writes = await fixture.ReadWorkflowWriteCountsAsync(instanceId);
         output.WriteLine($"Initial native commit stopped by EF ambient warning: {warning.Message}");
-        output.WriteLine($"Independent database counts after failure: {writes}");
+        output.WriteLine($"ambient-unsupported before: workflowInstances={before.WorkflowInstances}, bookmarks={before.Bookmarks}, executionLogs={before.ExecutionLogs}, activityExecutionRecords={before.ActivityExecutionRecords}");
+        output.WriteLine($"ambient-unsupported after independent connection: workflowInstances={writes.WorkflowInstances}, bookmarks={writes.Bookmarks}, executionLogs={writes.ExecutionLogs}, activityExecutionRecords={writes.ActivityExecutionRecords}");
         Assert.Equal(0, writes.WorkflowInstances);
         Assert.Equal(0, writes.Bookmarks);
         Assert.Equal(0, writes.ExecutionLogs);
@@ -221,6 +227,21 @@ public sealed class Tests(ITestOutputHelper output)
             output.WriteLine($"Workflow snapshot command {command.CommandId}, context {command.ContextType?.FullName}, callbacks: {string.Join(", ", command.CallbackMethods)}, expected Data hash: {command.ExpectedDataHash}, attempted Data hash: {command.AttemptedDataHash}");
             output.WriteLine($"Workflow snapshot SQL: {command.Sql}");
         }
+    }
+
+    private static void WriteSnapshotComparison(
+        ITestOutputHelper output,
+        string scenario,
+        NativeCommitFixture.DatabaseSnapshot before,
+        SqliteCommitCommandInterceptor.CommitObservation commit,
+        NativeCommitFixture.DatabaseSnapshot after)
+    {
+        var update = Assert.IsType<SqliteCommitCommandInterceptor.CommandObservation>(commit.ConditionalUpdate);
+        var staged = Assert.IsType<SqliteCommitCommandInterceptor.StagedDatabaseSnapshot>(update.StagedSnapshot);
+        output.WriteLine($"{scenario} before on fresh connection: dataSha256={before.DataHash}, bookmarks={before.BookmarkIds.Count}, executionLogs={before.ExecutionLogCount}, activityExecutionRecords={before.ActivityExecutionRecordCount}");
+        output.WriteLine($"{scenario} staged on command connection: dataSha256={staged.DataHash}, bookmarks={staged.BookmarkIds.Count}, executionLogs={staged.ExecutionLogCount}, activityExecutionRecords={staged.ActivityExecutionRecordCount}, dbTransaction={staged.TransactionPresent}, ambientTransaction={update.AmbientTransactionPresent}");
+        output.WriteLine($"{scenario} conditional update: expectedPreimageSha256={update.ExpectedDataHash}, proposedDataSha256={update.AttemptedDataHash}, returnedRows={update.ReturnedRows}, callbacks={string.Join(", ", update.CallbackMethods)}");
+        output.WriteLine($"{scenario} after on fresh connection: dataSha256={after.DataHash}, bookmarks={after.BookmarkIds.Count}, executionLogs={after.ExecutionLogCount}, activityExecutionRecords={after.ActivityExecutionRecordCount}");
     }
 
     private static void AssertResumeSnapshotUpdatesUseExpectedData(IEnumerable<SqliteCommitCommandInterceptor.CommitObservation> commits, string expectedDataHash)
@@ -756,8 +777,16 @@ internal sealed class SharedTransactionDbContextFactory<TContext>(IDbContextFact
     public TContext CreateDbContext()
     {
         var context = inner.CreateDbContext();
-        Enlist(context);
-        return context;
+        try
+        {
+            Enlist(context);
+            return context;
+        }
+        catch
+        {
+            context.Dispose();
+            throw;
+        }
     }
 
     public async Task<TContext> CreateDbContextAsync(CancellationToken cancellationToken = default)
@@ -860,7 +889,9 @@ internal sealed class SqliteCommitCommandInterceptor : DbCommandInterceptor
         var current = _commits.GetValueOrDefault(_activeCommitAttemptId);
         var commandKey = (eventData.Context?.GetType(), eventData.CommandId);
         if (current != null && current.CommandObservations.TryGetValue(commandKey, out var observation) && observation.ExpectedDataHash != null)
+        {
             observation.ReturnedRows = result.HasRows;
+        }
 
         return ValueTask.FromResult(result);
     }
