@@ -11,6 +11,46 @@ internal static class CompensationScopeExecutionGuard
 {
     public static void DemandExecutable(WorkflowGraph workflowGraph)
     {
+        if (CompensationScopeExecutionState.TryGetPass(workflowGraph, out var observation))
+            return;
+
+        if (!observation.IsEnabled)
+        {
+            DemandExecutableByScanning(workflowGraph);
+            return;
+        }
+
+        if (!observation.NeedsClassification)
+        {
+            if (!observation.ActivitiesAreCacheable)
+            {
+                DemandExecutableByScanning(workflowGraph);
+                return;
+            }
+
+            DemandExecutableByScanning(workflowGraph);
+            CompensationScopeExecutionState.RecordCompletedScan(observation, activitiesAreCacheable: true);
+            return;
+        }
+
+        var activitiesAreCacheable = true;
+        foreach (var node in workflowGraph.Nodes)
+        {
+            if (activitiesAreCacheable && !CompensationScopeExecutionState.IsActivityTypeCacheable(node.Activity))
+                activitiesAreCacheable = false;
+
+            if (IsCompensationScope(node.Activity))
+            {
+                CompensationScopeExecutionState.RecordUncacheableScan(observation);
+                throw new InvalidOperationException(CompensationScope.DraftOnlyRefusalMessage);
+            }
+        }
+
+        CompensationScopeExecutionState.RecordCompletedScan(observation, activitiesAreCacheable);
+    }
+
+    private static void DemandExecutableByScanning(WorkflowGraph workflowGraph)
+    {
         if (workflowGraph.Nodes.Any(node => IsCompensationScope(node.Activity)))
             throw new InvalidOperationException(CompensationScope.DraftOnlyRefusalMessage);
     }

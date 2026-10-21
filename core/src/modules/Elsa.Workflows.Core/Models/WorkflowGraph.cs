@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Activities.Compensation;
 
 namespace Elsa.Workflows.Models;
 
@@ -17,7 +18,7 @@ public record WorkflowGraph
         using var hashAlgorithm = SHA256.Create();
         Workflow = workflow;
         Root = root;
-        Nodes = nodes.ToList();
+        Nodes = new CompensationScopeExecutionNodeCollection(nodes);
         NodeIdLookup = Nodes.ToDictionary(x => x.NodeId);
         NodeHashLookup = Nodes.ToDictionary(x => Hash(hashAlgorithm, x.NodeId));
         NodeActivityLookup = Nodes.ToDictionary(x => x.Activity);
