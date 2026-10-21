@@ -1,5 +1,7 @@
 using Elsa.Workflows.IntegrationTests.Scenarios.DispatchWorkflowCancellation;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Messages;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.BulkDispatchWorkflowsCancellation;
@@ -14,7 +16,8 @@ public class Tests(ITestOutputHelper testOutputHelper) : ChildWorkflowCancellati
     .AddWorkflow<SecondBulkChildWorkflow>()
     .AddWorkflow<BulkDispatchAndWaitInForkWorkflow>()
     .AddWorkflow<BulkDispatchAndWaitForFinishingChildWorkflow>()
-    .AddWorkflow<BulkDispatchAndWaitBesideSiblingDispatchesWorkflow>())
+    .AddWorkflow<BulkDispatchAndWaitBesideSiblingDispatchesWorkflow>()
+    .AddWorkflow<BulkDispatchAndWaitWorkflow>())
 {
     [Fact(DisplayName = "Cancelling a waiting BulkDispatchWorkflows activity cancels all the child workflows it dispatched, past the first page")]
     public async Task CancellingTheWaitingBulkDispatchActivity_CancelsTheChildWorkflows()
@@ -83,6 +86,63 @@ public class Tests(ITestOutputHelper testOutputHelper) : ChildWorkflowCancellati
         // child nor its own child is touched.
         Assert.Empty((await ExportStateAsync(parentId)).Incidents);
         Assert.Empty(CancellationTargets);
+    }
+
+    [Fact(DisplayName = "Cancelling waited-for children through the cancellation service resumes their parent once every child is counted")]
+    public async Task CancellingTheWaitedForChildren_ResumesTheParent()
+    {
+        const int childCount = BulkDispatchAndWaitWorkflow.ChildCount;
+
+        // Arrange: the parent is waiting for its suspended children.
+        var parentId = await StartParentAsync(nameof(BulkDispatchAndWaitWorkflow));
+        var childIds = (await WaitForChildrenAsync(parentId, nameof(BlockingChildWorkflow), childCount, IsSuspended)).Select(x => x.Id).Order().ToList();
+        var cancellationService = Services.GetRequiredService<IWorkflowCancellationService>();
+
+        // Act: cancel the first child, the way the cancellation API does. The test host runs no bookmark queue worker, so
+        // deliver the resume the child's cancellation queued for its parent.
+        Assert.True(await cancellationService.CancelWorkflowAsync(childIds[0]));
+        await WaitForChildrenAsync(parentId, nameof(BlockingChildWorkflow), childCount, child => child.Id != childIds[0] || IsFinished(child));
+        await Services.GetRequiredService<IBookmarkQueueProcessor>().ProcessAsync();
+
+        // Assert: the cancelled child counted as one finished child, so the parent still waits for the other one.
+        Assert.Equal(WorkflowSubStatus.Suspended, (await ExportStateAsync(parentId)).SubStatus);
+
+        // Act: cancel the second child too.
+        Assert.True(await cancellationService.CancelWorkflowAsync(childIds[1]));
+        await WaitForChildrenAsync(parentId, nameof(BlockingChildWorkflow), childCount, IsFinished);
+        await Services.GetRequiredService<IBookmarkQueueProcessor>().ProcessAsync();
+
+        // Assert: both children were cancelled, and the parent's BulkDispatchWorkflows completed, as it does for children
+        // that finish, so the parent finished.
+        var children = await WaitForChildrenAsync(parentId, nameof(BlockingChildWorkflow), childCount, IsFinished);
+        Assert.All(children, child => Assert.Equal(WorkflowSubStatus.Cancelled, child.SubStatus));
+        var parent = await ExportStateAsync(parentId);
+        Assert.Equal(WorkflowStatus.Finished, parent.Status);
+        Assert.Equal(WorkflowSubStatus.Finished, parent.SubStatus);
+        Assert.Empty(parent.Incidents);
+    }
+
+    [Fact(DisplayName = "The children a cancelled BulkDispatchWorkflows activity cancels do not resume a sibling BulkDispatchWorkflows of the same parent")]
+    public async Task CancellingTheWaitingBulkDispatchActivity_DoesNotResumeASiblingBulkDispatch()
+    {
+        const int waitedChildCount = BulkDispatchAndWaitBesideSiblingDispatchesWorkflow.WaitedChildCount;
+
+        // Arrange: two bulk activities of the same parent are waiting for their own children.
+        var parentId = await StartParentAsync(nameof(BulkDispatchAndWaitBesideSiblingDispatchesWorkflow));
+        await WaitForChildAsync(parentId, nameof(SecondBulkChildWorkflow), IsSuspended);
+        await WaitForChildrenAsync(parentId, nameof(BlockingChildWorkflow), waitedChildCount, IsSuspended);
+
+        // Act: cancel the first bulk activity, which cancels its children, then deliver whatever resumes those
+        // cancellations queued. The test host runs no bookmark queue worker.
+        var resumed = await ResumeProceedAsync(parentId);
+        Assert.Equal(WorkflowSubStatus.Suspended, resumed.SubStatus);
+        await WaitForChildrenAsync(parentId, nameof(BlockingChildWorkflow), waitedChildCount, IsFinished);
+        await Services.GetRequiredService<IBookmarkQueueProcessor>().ProcessAsync();
+
+        // Assert: the bulk activity of the same parent that waits for its own still-running child is still waiting.
+        var parent = await ExportStateAsync(parentId);
+        Assert.Equal(WorkflowSubStatus.Suspended, parent.SubStatus);
+        Assert.Empty(parent.Incidents);
     }
 
     /// <summary>Resumes the parent's proceed branch, which completes the inner fork and cancels its waiting bulk activity.</summary>
