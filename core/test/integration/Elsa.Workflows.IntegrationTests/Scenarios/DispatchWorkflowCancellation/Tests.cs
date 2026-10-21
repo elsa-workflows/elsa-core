@@ -17,7 +17,8 @@ public class Tests(ITestOutputHelper testOutputHelper) : ChildWorkflowCancellati
     .AddWorkflow<FinishingChildWorkflow>()
     .AddWorkflow<DispatchAndWaitInForkWorkflow>()
     .AddWorkflow<DispatchAndWaitBesideFireAndForgetWorkflow>()
-    .AddWorkflow<DispatchAndWaitForFinishingChildWorkflow>())
+    .AddWorkflow<DispatchAndWaitForFinishingChildWorkflow>()
+    .AddWorkflow<DispatchAndWaitWorkflow>())
 {
     [Fact(DisplayName = "Cancelling a waiting DispatchWorkflow activity cancels the child workflow it dispatched")]
     public async Task CancellingTheWaitingDispatchActivity_CancelsTheChildWorkflow()
@@ -75,6 +76,28 @@ public class Tests(ITestOutputHelper testOutputHelper) : ChildWorkflowCancellati
         // finished child nor its own child is touched.
         Assert.Empty((await ExportStateAsync(parentId)).Incidents);
         Assert.Empty(CancellationTargets);
+    }
+
+    [Fact(DisplayName = "Cancelling a waited-for child through the cancellation service resumes its parent")]
+    public async Task CancellingTheWaitedForChild_ResumesTheParent()
+    {
+        // Arrange: the parent is waiting for its suspended child.
+        var parentId = await StartParentAsync(nameof(DispatchAndWaitWorkflow));
+        var childId = (await WaitForChildAsync(parentId, nameof(BlockingChildWorkflow), IsSuspended)).Id;
+
+        // Act: cancel the child, the way the cancellation API does.
+        Assert.True(await Services.GetRequiredService<IWorkflowCancellationService>().CancelWorkflowAsync(childId));
+        var child = await WaitForChildAsync(parentId, nameof(BlockingChildWorkflow), IsFinished);
+        Assert.Equal(WorkflowSubStatus.Cancelled, child.SubStatus);
+
+        // The test host runs no bookmark queue worker, so deliver the resume the child's cancellation queued for its parent.
+        await Services.GetRequiredService<IBookmarkQueueProcessor>().ProcessAsync();
+
+        // Assert: the parent's DispatchWorkflow completed, as it does for a child that finishes, so the parent finished.
+        var parent = await ExportStateAsync(parentId);
+        Assert.Equal(WorkflowStatus.Finished, parent.Status);
+        Assert.Equal(WorkflowSubStatus.Finished, parent.SubStatus);
+        Assert.Empty(parent.Incidents);
     }
 
     [Fact(DisplayName = "Control: cancelling the parent workflow through the cancellation service cancels the dispatched child")]

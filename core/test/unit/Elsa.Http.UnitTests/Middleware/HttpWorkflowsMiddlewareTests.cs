@@ -4,9 +4,13 @@ using Elsa.Http.Bookmarks;
 using Elsa.Http.Middleware;
 using Elsa.Http.Options;
 using Elsa.Workflows;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.State;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -234,6 +238,52 @@ public class HttpWorkflowsMiddlewareTests
         Assert.NotNull(bookmarkStore.LastFilter);
     }
 
+    [Fact]
+    public async Task InvokeAsync_WhenATriggerMatches_StartsTheWorkflowWithTheTriggersHash()
+    {
+        const string triggerHash = "http-endpoint-trigger-hash";
+        var workflow = new Workflow { Id = "workflow" };
+        var root = new ActivityNode(workflow, "Root");
+        var trigger = new StoredTrigger
+        {
+            Id = "trigger-1",
+            WorkflowDefinitionVersionId = "workflow-version",
+            ActivityId = "http-endpoint",
+            Hash = triggerHash,
+            Payload = new HttpEndpointBookmarkPayload(BookmarkPath, "get", authorize: false)
+        };
+        var workflowRunner = Substitute.For<IWorkflowRunner>();
+        RunWorkflowOptions? runOptions = null;
+        workflowRunner
+            .RunAsync(Arg.Any<WorkflowGraph>(), Arg.Do<RunWorkflowOptions?>(options => runOptions = options), Arg.Any<CancellationToken>())
+            // The middleware reads only the resulting state's incidents.
+            .Returns(new RunWorkflowResult(null!, new WorkflowState(), workflow, null, Journal.Empty));
+        var serviceProvider = new ServiceCollection()
+            .AddSingleton<IRouteMatcher, ExactRouteMatcher>()
+            .AddSingleton<IRouteTable>(new ListRouteTable([new(BookmarkPath)]))
+            .AddSingleton<IStimulusHasher, FixedStimulusHasher>()
+            .AddSingleton(Substitute.For<IHttpEndpointAuthorizationHandler>())
+            .AddSingleton(workflowRunner)
+            .BuildServiceProvider();
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = serviceProvider
+        };
+        httpContext.Request.Path = BookmarkPath;
+        httpContext.Request.Method = HttpMethod.Get.Method;
+
+        await _middleware.InvokeAsync(
+            httpContext,
+            serviceProvider,
+            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = null }),
+            new FixedHttpWorkflowLookupService(new(new WorkflowGraph(workflow, root, [root]), [trigger])));
+
+        Assert.NotNull(runOptions);
+        Assert.Equal(trigger.ActivityId, runOptions.TriggerActivityId);
+        Assert.NotNull(runOptions.Properties);
+        Assert.Equal(triggerHash, runOptions.Properties[TriggerWorkflowProperties.StimulusHash]);
+    }
+
     private static IEnumerable<StoredBookmark> CreateCollidingHttpEndpointBookmarks()
     {
         yield return CreateBookmark("current-tenant-bookmark", CurrentTenantId);
@@ -315,6 +365,11 @@ public class HttpWorkflowsMiddlewareTests
     private class EmptyHttpWorkflowLookupService : IHttpWorkflowLookupService
     {
         public Task<HttpWorkflowLookupResult?> FindWorkflowAsync(string bookmarkHash, CancellationToken cancellationToken = default) => Task.FromResult<HttpWorkflowLookupResult?>(null);
+    }
+
+    private class FixedHttpWorkflowLookupService(HttpWorkflowLookupResult result) : IHttpWorkflowLookupService
+    {
+        public Task<HttpWorkflowLookupResult?> FindWorkflowAsync(string bookmarkHash, CancellationToken cancellationToken = default) => Task.FromResult<HttpWorkflowLookupResult?>(result);
     }
 
     private class FixedStimulusHasher : IStimulusHasher

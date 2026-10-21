@@ -1,9 +1,9 @@
 // GENERATED FILE -- do not edit by hand.
-// Source: Bpmn.Model 0.3.0, payload format 1.0.0, schema/bpmn-payload.schema.json.
+// Source: Bpmn.Model 0.3.1, payload format 1.1.0, schema/bpmn-payload.schema.json.
 // Regenerate with: npm run generate:bpmn-types (from src/modules/Elsa.Studio.Workflows.Designer/ClientLib).
 // See scripts/generate-bpmn-types.js.
 /**
- * Version 1.0.0 of the payload format owned by Bpmn.Model. Generated from the model; do not edit by hand. See ADR 0005.
+ * Version 1.1.0 of the payload format owned by Bpmn.Model. Generated from the model; do not edit by hand. See ADR 0005.
  */
 export type BPMNPayloadFormat = (BpmnDefinitions | BpmnExecutionState)
 
@@ -215,6 +215,7 @@ status: BpmnTokenStatus
 producingWorkHandle?: (string | null)
 iterationKey?: (string | null)
 kind?: (BpmnTokenKind | null)
+stoppedHandle?: (string | null)
 }
 export interface BpmnActiveWork {
 nodeId: string
