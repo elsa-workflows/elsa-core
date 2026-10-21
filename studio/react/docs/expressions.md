@@ -38,6 +38,8 @@ forms a valid language identifier. Use `Variable.Get("customer_id")`,
 Usable JavaScript input wrapper names preserve exact case (`customer` uses
 `getcustomer()`). The data-usage index recognizes generated PascalCase variable
 properties/getters/setters and generic C# accessors as well as legacy forms.
+A plain property assignment is a write; a reference on its right-hand side or in
+a comparison remains a read.
 Cached declarations do not revive removed or renamed workflow
 wrappers. Because the server document does not identify function ownership, unknown
 `get*`/`set*` functions are omitted unless they match current workflow accessors or
