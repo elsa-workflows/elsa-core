@@ -13,7 +13,7 @@
       differ. To diverge deliberately, add <BpmnModelDivergesFromCoreVersion> naming Core's version
       next to this property, with a comment saying why; the check then fails again on Core's next bump.
     -->
-    <BpmnModelVersion>0.3.0</BpmnModelVersion>
+    <BpmnModelVersion>0.3.1</BpmnModelVersion>
   </PropertyGroup>
   <ItemGroup Label="Elsa">
     <PackageVersion Include="Elsa.Api.Client" Version="3.8.4" />
