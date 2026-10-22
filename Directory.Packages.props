@@ -56,7 +56,7 @@
         <PackageVersion Include="Microsoft.AspNetCore.Components" Version="10.0.9"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.9"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.9"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.9"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.13"/>
         <PackageVersion Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="10.0.9"/>
         <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.9"/>
         <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="10.0.9"/>

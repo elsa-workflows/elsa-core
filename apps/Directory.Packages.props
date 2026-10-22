@@ -64,12 +64,12 @@
     <ItemGroup>
         <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="$(MicrosoftVersion)"/>
         <PackageVersion Include="Microsoft.OpenApi" Version="2.7.5"/>
-        <PackageVersion Include="Microsoft.Extensions.Configuration" Version="$(MicrosoftVersion)"/>
-        <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="$(MicrosoftVersion)"/>
+        <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.13"/>
+        <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.13"/>
         <PackageVersion Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.23.0"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="$(MicrosoftVersion)"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="$(MicrosoftVersion)" PrivateAssets="all"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="$(MicrosoftVersion)"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.13"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.13" PrivateAssets="all"/>
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.13"/>
         <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.1.0"/>
 	<PackageVersion Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0"/>
     </ItemGroup>
