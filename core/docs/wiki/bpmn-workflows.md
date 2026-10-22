@@ -222,9 +222,12 @@ The `xml` GET/PUT pair is how the BPMN modeler edits a process (ADR *Keep BPMN X
 loads the stored document, edits it, and saves the whole document back. The XML is the source of truth; the Elsa
 activity graph is derived from it on every save.
 
-- **The body is the document.** `PUT` reads the request body as BPMN 2.0 XML, whatever its content type. An empty
+- **The body is the document.** `PUT` reads the request body as BPMN 2.0 XML, whatever its media type. An empty
   body, XML that is not well-formed and XML whose root is not a BPMN `<definitions>` element are `400 Bad Request`.
   Everything else is refused exactly as `Import` and the document `PUT` refuse it.
+- **The body is UTF-8.** Send it as UTF-8, or in the Unicode encoding a byte-order mark names. A `charset` other than
+  UTF-8 is `415 Unsupported Media Type`, and bytes that are not valid UTF-8 are `400 Bad Request`, rather than text
+  saved with its characters silently replaced.
 - **Nested scopes are edited, not restored.** Unlike the document `PUT`, nothing is taken from the stored source:
   the posted XML carries every subprocess body, so an element inside one can be changed (#8076).
 - **Which process is bound.** A document that declares exactly one process binds it, whatever its id now is, so the

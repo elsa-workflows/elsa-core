@@ -1038,6 +1038,49 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     }
 
     [Fact]
+    public async Task XmlPut_OfNonAsciiUtf8Text_StoresItUnchanged()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        var (etag, xml) = await GetXmlAsync(definitionId);
+
+        var response = await PutXmlAsync(definitionId, xml.Replace("Order Handled", "Commande traitée à Zürich"), etag);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("Commande traitée à Zürich", (await GetXmlAsync(definitionId)).Xml);
+    }
+
+    [Fact]
+    public async Task XmlPut_DeclaringACharsetOtherThanUtf8_ReturnsUnsupportedMediaTypeAndOverwritesNothing()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        var (etag, xml) = await GetXmlAsync(definitionId);
+        var storedBeforePut = await LatestStoredAsync(definitionId);
+        var latin1 = Encoding.Latin1;
+        var content = new ByteArrayContent(latin1.GetBytes(xml.Replace("Order Handled", "Commande traitée")));
+        content.Headers.ContentType = new("application/xml") { CharSet = latin1.WebName };
+
+        var response = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/xml", content, etag, "workflows/definitions:write");
+
+        Assert.Equal(HttpStatusCode.UnsupportedMediaType, response.StatusCode);
+        Assert.Equal(storedBeforePut, await LatestStoredAsync(definitionId));
+    }
+
+    [Fact]
+    public async Task XmlPut_OfABodyThatIsNotValidUtf8_ReturnsBadRequestAndOverwritesNothing()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        var (etag, xml) = await GetXmlAsync(definitionId);
+        var storedBeforePut = await LatestStoredAsync(definitionId);
+        var content = new ByteArrayContent(Encoding.Latin1.GetBytes(xml.Replace("Order Handled", "Commande traitée")));
+        content.Headers.ContentType = new("application/xml");
+
+        var response = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/xml", content, etag, "workflows/definitions:write");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(storedBeforePut, await LatestStoredAsync(definitionId));
+    }
+
+    [Fact]
     public async Task XmlPut_WithARepeatedElementId_ReturnsUnprocessableEntityAndOverwritesNothing()
     {
         var definitionId = await ImportCamundaOrderProcessAsync();

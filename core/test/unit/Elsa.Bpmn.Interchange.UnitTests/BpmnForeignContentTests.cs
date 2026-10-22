@@ -60,6 +60,17 @@ public class BpmnForeignContentTests
         Assert.Empty(BpmnForeignContent.DroppedBetween(stored, saved));
     }
 
+    [Fact(DisplayName = "An attribute value that reads like a second attribute is not mistaken for one")]
+    public void DroppedBetween_DoesNotConfuseAValueWithAnAttributeBoundary()
+    {
+        var stored = Document("acme", """<bpmn:task id="T"><acme:hint a="1&quot; |b=&quot;2"/></bpmn:task>""");
+        var saved = Document("acme", """<bpmn:task id="T"><acme:hint a="1" b="2"/></bpmn:task>""");
+
+        var dropped = BpmnForeignContent.DroppedBetween(stored, saved).Select(item => $"{item.ElementId} {item.Kind} {item.Name}");
+
+        Assert.Equal(["T element hint"], dropped);
+    }
+
     [Theory(DisplayName = "Nothing is reported without a stored document, or when one cannot be parsed")]
     [InlineData(null)]
     [InlineData("")]

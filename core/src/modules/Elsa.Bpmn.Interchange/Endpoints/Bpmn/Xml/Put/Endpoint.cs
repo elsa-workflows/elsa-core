@@ -1,3 +1,4 @@
+using System.Text;
 using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Bpmn.Interchange.Endpoints.Bpmn.Document;
@@ -51,10 +52,10 @@ internal sealed class Put(IWorkflowDefinitionStore store, BpmnInterchangeDocumen
         if (ifMatch is null)
             return;
 
-        string xml;
+        var xml = await ReadUtf8BodyAsync(cancellationToken);
 
-        using (var reader = new StreamReader(HttpContext.Request.Body))
-            xml = await reader.ReadToEndAsync(cancellationToken);
+        if (xml is null)
+            return;
 
         if (string.IsNullOrWhiteSpace(xml))
         {
@@ -94,5 +95,34 @@ internal sealed class Put(IWorkflowDefinitionStore store, BpmnInterchangeDocumen
             Analysis = BpmnImportAnalysisModel.From(result.Analysis),
             DroppedForeignContent = BpmnForeignContent.DroppedBetween(storedXml, xml)
         }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Reads the body as UTF-8, or as the Unicode encoding a byte-order mark names. A body in any other encoding would
+    /// otherwise be decoded wrongly and saved with its text silently changed, so a <c>charset</c> other than UTF-8 is
+    /// refused with 415 and bytes that are not valid UTF-8 with 400; both send the response and return null.
+    /// </summary>
+    private async Task<string?> ReadUtf8BodyAsync(CancellationToken cancellationToken)
+    {
+        var contentType = HttpContext.Request.GetTypedHeaders().ContentType;
+
+        if (contentType is { Charset.HasValue: true } && contentType.Encoding?.CodePage != Encoding.UTF8.CodePage)
+        {
+            AddError($"The BPMN XML must be sent as UTF-8, not as charset '{contentType.Charset}'.");
+            await Send.ErrorsAsync(StatusCodes.Status415UnsupportedMediaType, cancellationToken);
+            return null;
+        }
+
+        try
+        {
+            using var reader = new StreamReader(HttpContext.Request.Body, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true), detectEncodingFromByteOrderMarks: true);
+            return await reader.ReadToEndAsync(cancellationToken);
+        }
+        catch (DecoderFallbackException)
+        {
+            AddError("The request body is not valid UTF-8. Send the BPMN XML encoded as UTF-8.");
+            await Send.ErrorsAsync(StatusCodes.Status400BadRequest, cancellationToken);
+            return null;
+        }
     }
 }

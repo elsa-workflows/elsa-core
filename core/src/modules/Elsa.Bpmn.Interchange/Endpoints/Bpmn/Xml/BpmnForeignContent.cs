@@ -118,9 +118,17 @@ internal static class BpmnForeignContent
         }
     }
 
-    private static (string Key, BpmnForeignContentModel Model) Item(string? ownerId, string kind, XName name, string value) =>
-        ($"{ownerId}\n{kind}\n{name.NamespaceName}\n{name.LocalName}\n{value}",
-            new BpmnForeignContentModel { ElementId = ownerId, Kind = kind, Namespace = name.NamespaceName, Name = name.LocalName });
+    private static (string Key, BpmnForeignContentModel Model) Item(string? ownerId, string kind, XName name, string value)
+    {
+        var key = new StringBuilder();
+        AppendToken(key, ownerId ?? "");
+        AppendToken(key, kind);
+        AppendToken(key, name.NamespaceName);
+        AppendToken(key, name.LocalName);
+        AppendToken(key, value);
+
+        return (key.ToString(), new BpmnForeignContentModel { ElementId = ownerId, Kind = kind, Namespace = name.NamespaceName, Name = name.LocalName });
+    }
 
     /// <summary>The element's subtree by namespace and local name, so a changed prefix or attribute order is not a difference.</summary>
     private static string Canonical(XElement element)
@@ -132,12 +140,17 @@ internal static class BpmnForeignContent
 
     private static void Append(XElement element, StringBuilder builder)
     {
-        builder.Append('<').Append(element.Name.NamespaceName).Append('|').Append(element.Name.LocalName);
+        builder.Append('<');
+        AppendToken(builder, element.Name.NamespaceName);
+        AppendToken(builder, element.Name.LocalName);
 
         foreach (var attribute in element.Attributes().Where(attribute => !attribute.IsNamespaceDeclaration).OrderBy(attribute => attribute.Name.ToString(), StringComparer.Ordinal))
-            builder.Append(' ').Append(attribute.Name.NamespaceName).Append('|').Append(attribute.Name.LocalName).Append("=\"").Append(attribute.Value).Append('"');
-
-        builder.Append('>');
+        {
+            builder.Append('@');
+            AppendToken(builder, attribute.Name.NamespaceName);
+            AppendToken(builder, attribute.Name.LocalName);
+            AppendToken(builder, attribute.Value);
+        }
 
         foreach (var node in element.Nodes())
         {
@@ -147,11 +160,18 @@ internal static class BpmnForeignContent
                     Append(child, builder);
                     break;
                 case XText text when !string.IsNullOrWhiteSpace(text.Value):
-                    builder.Append(text.Value);
+                    builder.Append('#');
+                    AppendToken(builder, text.Value);
                     break;
             }
         }
 
-        builder.Append("</>");
+        builder.Append('>');
     }
+
+    /// <summary>
+    /// Writes <paramref name="value"/> prefixed with its length, so no name, value or text can be read as a boundary:
+    /// otherwise an attribute value holding <c>" b="2</c> compares equal to a second attribute.
+    /// </summary>
+    private static void AppendToken(StringBuilder builder, string value) => builder.Append(value.Length).Append(':').Append(value);
 }
