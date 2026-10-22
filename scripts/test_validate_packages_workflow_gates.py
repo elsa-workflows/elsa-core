@@ -603,15 +603,9 @@ class WorkflowGateTests(unittest.TestCase):
         self.assertEqual([], gates.source_violations(self.source))
 
     def test_build_may_omit_node_setup(self):
-        source = self.mutated(
-            "      - name: Set up Node for React Studio assets\n"
-            "        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}\n"
-            "        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0\n"
-            "        with:\n"
-            "          node-version: '22'\n\n",
-            "",
-        )
-        self.assertEqual([], gates.source_violations(source))
+        # release/3.10.0 has no React Node step; the validator treats it as optional.
+        self.assertNotIn("Set up Node for React Studio assets", self.source)
+        self.assertEqual([], gates.source_violations(self.source))
 
     def test_candidate_recheck_rejects_always(self):
         source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
