@@ -66,7 +66,8 @@ class SelectionErrorsTests(unittest.TestCase):
 
     def test_candidate_optins_and_artifact_selectors_have_no_publisher_route(self):
         workflow = (SCRIPT.parents[1] / ".github/workflows/packages.yml").read_text()
-        for selector in ("ConsolidatedReleaseCandidate", "prepare-consolidated-release-candidate", "consolidated-candidate-",
+        self.assertIn("ConsolidatedReleaseCandidate", workflow)
+        for selector in ("prepare-consolidated-release-candidate", "consolidated-candidate-",
                          "artifact-id", "artifact_id", "candidate_run", "candidate_artifact"):
             self.assertNotIn(selector, workflow)
         for selector in ("candidate", "candidate_artifact_id", "candidate_run_id", "candidate_workflow"):

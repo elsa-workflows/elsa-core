@@ -205,7 +205,7 @@ class CandidateContractsTests(unittest.TestCase):
         self.assertEqual("Restore;PrepareForBuild;Pack;GenerateNuspec", target.get("BeforeTargets"))
         errors = [node.get("Condition") for node in target.findall("Error")]
         self.assertIn("'$(ConsolidatedPackageProof)' == 'true'", errors)
-        self.assertIn("'$(Version)' != '3.10.0' or '$(PackageVersion)' != '3.10.0' or '$(Configuration)' != 'Release'", errors)
+        self.assertIn("'$(Version)' != '$(PackageVersion)' or '$(Configuration)' != 'Release' or !$([System.Text.RegularExpressions.Regex]::IsMatch('$(Version)', '^3\\.10\\.[0-9]+$'))", errors)
         build = (ROOT / "build/Build.cs").read_text()
         for start, end in (("RestoreSettings", "CompileSettings"), ("CompileSettings", "PackSettings"), ("PackSettings", "TestProjects")):
             section = build.split(start, 1)[1].split(end, 1)[0]

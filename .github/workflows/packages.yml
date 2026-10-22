@@ -362,9 +362,14 @@ jobs:
           if [[ "${REF}" == refs/tags/* && ("${EVENT_NAME}" == "release" || "${EVENT_NAME}" == "workflow_dispatch") ]]; then
             TAG_NAME="${REF}" # e.g., refs/tags/3.0.0
             TAG_NAME=${TAG_NAME#refs/tags/} # remove the refs/tags/ prefix
-            echo "VERSION=${TAG_NAME}" >> $GITHUB_ENV
+            VERSION="${TAG_NAME}"
           else
-            echo "VERSION=${{env.base_version}}-preview.${{github.run_number}}" >> $GITHUB_ENV
+            VERSION="${{env.base_version}}-preview.${{github.run_number}}"
+          fi
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          # Stable 3.10.x only (3.10.0, 3.10.1, ...). Previews and other lines keep the default pack.
+          if [[ "${VERSION}" =~ ^3\.10\.[0-9]+$ ]]; then
+            echo "CONSOLIDATED_RELEASE_CANDIDATE=true" >> $GITHUB_ENV
           fi
 
       - uses: actions/setup-dotnet@v4
@@ -379,7 +384,15 @@ jobs:
           node-version: '22'
 
       - name: Compile+Pack
+        env:
+          ConsolidatedReleaseCandidate: ${{ env.CONSOLIDATED_RELEASE_CANDIDATE }}
         run: ./build.sh Compile+Pack --version "${VERSION}" --analyseCode true
+
+      - name: Guard package ID set
+        if: ${{ env.CONSOLIDATED_RELEASE_CANDIDATE == 'true' }}
+        env:
+          PACKAGES_DIR: packages
+        run: python3 scripts/validate_packages_id_set.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

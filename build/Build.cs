@@ -76,7 +76,8 @@ partial class Build : NukeBuild, ITest, IPack
         .When(_ => IsConsolidatedPackageBuild, settings => settings
             .SetProperty("Configuration", "Release")
             .SetProperty("Version", Version)
-            .SetProperty("PackageVersion", Version));
+            .SetProperty("PackageVersion", Version)
+            .SetProperty("ConsolidatedReleaseCandidate", IsConsolidatedReleaseCandidate ? "true" : "false"));
 
     public Configure<DotNetBuildSettings> CompileSettings => _ => _
         // ensure we don't generate too much output in CI run
@@ -87,14 +88,16 @@ partial class Build : NukeBuild, ITest, IPack
             .SetProperty("Configuration", "Release")
             .SetProperty("Version", Version)
             .SetProperty("PackageVersion", Version)
-            .SetProperty("EmbedAllSources", "true"));
+            .SetProperty("EmbedAllSources", "true")
+            .SetProperty("ConsolidatedReleaseCandidate", IsConsolidatedReleaseCandidate ? "true" : "false"));
 
     public Configure<DotNetPackSettings> PackSettings => settings =>
         (string.IsNullOrWhiteSpace(Version) ? settings : settings.SetVersion(Version))
             .When(_ => IsConsolidatedPackageBuild, configured => configured
                 .SetProperty("Configuration", "Release")
                 .SetProperty("Version", Version)
-                .SetProperty("PackageVersion", Version));
+                .SetProperty("PackageVersion", Version)
+                .SetProperty("ConsolidatedReleaseCandidate", IsConsolidatedReleaseCandidate ? "true" : "false"));
 
     public IEnumerable<Project> TestProjects =>
         ((IHazSolution)this).Solution.AllProjects.Where(x => x.Name.EndsWith("Tests"));

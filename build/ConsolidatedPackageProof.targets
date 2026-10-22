@@ -11,7 +11,7 @@
           Condition="'$(ConsolidatedReleaseCandidate)' == 'true'">
     <Error Condition="'$(ConsolidatedPackageProof)' == 'true'" Code="ELSA0004"
            Text="ConsolidatedReleaseCandidate and ConsolidatedPackageProof are mutually exclusive." />
-    <Error Condition="'$(Version)' != '3.10.0' or '$(PackageVersion)' != '3.10.0' or '$(Configuration)' != 'Release'"
-           Code="ELSA0004" Text="ConsolidatedReleaseCandidate requires Release and Version=PackageVersion=3.10.0. This prepares unpublished candidate bytes only." />
+    <Error Condition="'$(Version)' != '$(PackageVersion)' or '$(Configuration)' != 'Release' or !$([System.Text.RegularExpressions.Regex]::IsMatch('$(Version)', '^3\.10\.[0-9]+$'))"
+           Code="ELSA0004" Text="ConsolidatedReleaseCandidate requires Release and Version=PackageVersion as a stable 3.10.x version." />
   </Target>
 </Project>
