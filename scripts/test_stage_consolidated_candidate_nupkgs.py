@@ -1,4 +1,5 @@
 import hashlib
+import io
 import json
 import os
 import subprocess
@@ -49,6 +50,9 @@ class StageCandidateTests(unittest.TestCase):
             f"{candidate_input.PRODUCER['run_id']}-{candidate_input.PRODUCER['run_attempt']}",
             stage.CANDIDATE_NAME,
         )
+        envelope = json.loads(candidate_input.ORIGINAL_ENVELOPE.read_text(encoding="utf-8"))
+        self.assertEqual(envelope["archive_size"], stage.CANDIDATE_SIZE)
+        self.assertEqual(envelope["expires_at"], stage.CANDIDATE_EXPIRES)
 
     def test_only_the_pinned_stable_tag_is_accepted(self):
         stage.require_pinned_stable_tag("refs/tags/3.10.0")
@@ -56,7 +60,7 @@ class StageCandidateTests(unittest.TestCase):
             with self.subTest(ref=ref), self.assertRaises(SystemExit):
                 stage.require_pinned_stable_tag(ref)
 
-    def test_extract_copies_nupkgs_and_ignores_other_members(self):
+    def test_extract_copies_nupkgs_and_snupkgs_and_ignores_other_members(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             archive = root / "candidate.zip"
@@ -64,17 +68,22 @@ class StageCandidateTests(unittest.TestCase):
             packages = {
                 "Elsa.3.10.0.nupkg": b"elsa",
                 "Elsa.Studio.DomInterop.3.10.0.nupkg": b"dom",
+                "Elsa.3.10.0.snupkg": b"symbols",
             }
             write_sealed_archive(
                 archive,
                 packages,
-                extra={"artifacts/Elsa.3.10.0.snupkg": b"symbols"},
+                extra={"artifacts/notes.txt": b"no"},
             )
             staged = stage.extract_nupkgs(archive, output)
             names = sorted(path.name for path in staged)
-            self.assertEqual(["Elsa.3.10.0.nupkg", "Elsa.Studio.DomInterop.3.10.0.nupkg"], names)
+            self.assertEqual(
+                ["Elsa.3.10.0.nupkg", "Elsa.3.10.0.snupkg", "Elsa.Studio.DomInterop.3.10.0.nupkg"],
+                names,
+            )
             self.assertEqual(b"elsa", (output / "Elsa.3.10.0.nupkg").read_bytes())
-            self.assertFalse((output / "Elsa.3.10.0.snupkg").exists())
+            self.assertEqual(b"symbols", (output / "Elsa.3.10.0.snupkg").read_bytes())
+            self.assertFalse((output / "notes.txt").exists())
 
     def test_seal_hash_and_nupkg_hashes_must_match(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -150,6 +159,28 @@ class StageCandidateTests(unittest.TestCase):
                 with self.assertRaises(SystemExit) as raised:
                     stage.main(["stage"])
             self.assertIn("hash mismatch", str(raised.exception))
+
+    def test_stage_summary_counts_only_nupkgs(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive = root / "candidate.zip"
+            packages = {
+                "Elsa.3.10.0.nupkg": b"elsa",
+                "Elsa.3.10.0.snupkg": b"symbols",
+            }
+            digest = write_sealed_archive(archive, packages)
+            env = {
+                key: value for key, value in os.environ.items()
+                if key not in ("GH_TOKEN", "GITHUB_TOKEN", "ACTIONS_READ_TOKEN")
+            }
+            env.update(REF="refs/tags/3.10.0", CANDIDATE_ARCHIVE=str(archive), PACKAGES_DIR=str(root / "out"))
+            stdout = io.StringIO()
+            with unittest.mock.patch.dict(os.environ, env, clear=True), unittest.mock.patch.object(
+                candidate_input, "MANIFEST_SHA256", digest
+            ), unittest.mock.patch.object(sys, "stdout", stdout):
+                self.assertEqual(0, stage.main(["stage"]))
+            self.assertIn("Staged 1 candidate nupkgs", stdout.getvalue())
+            self.assertNotIn("Staged 2 candidate nupkgs", stdout.getvalue())
 
 
 class WorkflowPromotionTests(unittest.TestCase):
