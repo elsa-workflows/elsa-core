@@ -37,7 +37,10 @@ public class AgentFactory(
     private Kernel CreateKernel(AgentConfig agentConfig)
     {
         var builder = Kernel.CreateBuilder();
-        builder.Services.AddLogging(services => services.AddConsole().SetMinimumLevel(LogLevel.Trace));
+        var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
+        if (loggerFactory is not null)
+            builder.Services.AddSingleton(loggerFactory);
+
         builder.Services.AddSingleton(agentConfig);
 
         ApplyAgentConfig(builder, agentConfig);
