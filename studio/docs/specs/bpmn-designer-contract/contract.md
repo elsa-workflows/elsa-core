@@ -148,11 +148,12 @@ URL. `BpmnDesignerResolver` in `Elsa.Studio.Bpmn` picks the designer a host uses
 
 | Designers enabled | Result |
 | --- | --- |
-| None | None. The caller keeps the BPMN view it has. |
+| None | The default a Studio feature registered with `AddDefaultBpmnDesigner`, if any; otherwise none, and the caller keeps the BPMN view it has. The workflows module (`AddWorkflowsModule`) registers bpmn-js as that default, so a host that enables no designer gets bpmn-js. `BpmnDesignerOptions.DesignerId`, when set, must name the default. |
 | One | That one. `BpmnDesignerOptions.DesignerId`, when set, must name it. |
 | Several | The one `BpmnDesignerOptions.DesignerId` names. Leaving it unset is an error. |
 
-A choice that names no enabled designer is an error, and so are two enabled designers that declare the same id.
+The default is never counted as enabled: a host that enables a designer, even a different one, uses its enabled
+designers and never has to choose between them and the default. A choice that names no enabled designer is an error, and so are two enabled designers that declare the same id.
 Enabling the same designer twice enables it once. Errors fail the host at startup, through an `IStartupTask`, rather
 than when a BPMN workflow is first opened.
 

@@ -1,5 +1,6 @@
 using Elsa.Api.Client.Resources.ActivityDescriptors.Enums;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Models;
+using Elsa.Studio.Bpmn.Designers;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.Extensions;
 using Elsa.Studio.Localization;
@@ -7,6 +8,7 @@ using Elsa.Studio.Testing;
 using Elsa.Studio.Workflows.Domain.Contracts;
 using Elsa.Studio.Workflows.Extensions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using MudBlazor.Services;
 using static Elsa.Studio.Workflows.Tests.Support.BpmnDocumentFixtures;
 
@@ -34,6 +36,9 @@ internal static class BpmnEditingTestServices
         services.AddCoreInternal();
         services.AddRemoteBackend();
         services.AddWorkflowsModule();
+        // These tests cover the read-only canvas a host gets when no BPMN designer resolves, so the module's bpmn-js
+        // default is taken out; a test that covers the designer enables one, which takes precedence over any default.
+        services.RemoveAll<DefaultBpmnDesigner>();
         services.AddSingleton<ILocalizer, TestLocalizer>();
         services.AddSingleton<IActivityRegistry>(new TestActivityRegistry([WriteLine(), HttpRequest, Sequence, If, Delay]));
         services.AddSingleton<IExpressionService, StubExpressionService>();
