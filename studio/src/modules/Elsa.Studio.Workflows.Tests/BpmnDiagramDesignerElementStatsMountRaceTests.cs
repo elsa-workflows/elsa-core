@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Bunit;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Models;
+using Elsa.Studio.Bpmn.Extensions;
 using Elsa.Studio.Extensions;
 using Elsa.Studio.Localization;
 using Elsa.Studio.Workflows.DiagramDesigners.Bpmn;
@@ -37,6 +38,7 @@ public sealed class BpmnDiagramDesignerElementStatsMountRaceTests : BunitContext
         Services.AddCoreInternal();
         Services.AddWorkflowsCore();
         Services.AddWorkflowsDesigner();
+        Services.AddBpmnDesignerResolver();
         Services.AddSingleton<ILocalizer, TestLocalizer>();
         Services.AddSingleton<IActivityRegistry, NoOpActivityRegistry>();
     }

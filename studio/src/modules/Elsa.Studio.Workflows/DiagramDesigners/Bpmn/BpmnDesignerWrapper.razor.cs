@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Elsa.Studio.Bpmn.Designers;
 using Elsa.Studio.Workflows.Designer.Components;
 using Elsa.Studio.Workflows.Designer.Models;
 using Elsa.Studio.Workflows.Designer.Options;
@@ -14,7 +15,8 @@ namespace Elsa.Studio.Workflows.DiagramDesigners.Bpmn;
 /// between the X6 canvas and, while <see cref="DesignerOptions.UseReactFlow"/> is in effect, a notice
 /// that BPMN is not yet available on the React Flow canvas -- exactly as <c>FlowchartDesignerWrapper</c>
 /// switches, except that dropping W9b's React Flow adapter here is a clear notice, not the JSON
-/// fallback and not a crash.
+/// fallback and not a crash. When a BPMN designer is enabled, it shows an editor's document in
+/// <see cref="BpmnModelerCanvas"/>, and a viewer's source document read-only in <see cref="BpmnViewerCanvas"/>.
 /// </summary>
 public partial class BpmnDesignerWrapper
 {
@@ -62,9 +64,17 @@ public partial class BpmnDesignerWrapper
     [Parameter] public BpmnModelerSession? ModelerSession { get; set; }
 
     [Inject] private IOptions<DesignerOptions> DesignerOptions { get; set; } = null!;
+    [Inject] private BpmnDesignerResolver DesignerResolver { get; set; } = null!;
 
     private BpmnDesigner? Designer { get; set; }
+    private BpmnViewerCanvas? Viewer { get; set; }
     private bool UseReactFlow => DesignerOptions.Value.UseReactFlow;
+
+    /// <summary>
+    /// Whether the enabled BPMN designer shows the imported document read-only, in place of the read-only canvas. It
+    /// needs the document itself, so a scope with no source document stays on the read-only canvas.
+    /// </summary>
+    private bool ShowsDesignerViewer => SourceXml != null && DesignerResolver.Resolve() != null;
 
     /// <summary>
     /// The latest element-keyed instance overlay handed to <see cref="UpdateElementStatsAsync"/>, retained so it
@@ -101,6 +111,11 @@ public partial class BpmnDesignerWrapper
 
         if (Designer != null)
             await Designer.LoadBpmnAsync(activity, sourceXml, activityStats);
+
+        if (Viewer != null && sourceXml != null)
+        {
+            await Viewer.LoadBpmnAsync(activity, sourceXml, activityStats);
+        }
     }
 
     /// <summary>
@@ -120,6 +135,11 @@ public partial class BpmnDesignerWrapper
     {
         if (Designer != null)
             await Designer.UpdateActivityStatsAsync(id, stats);
+
+        if (Viewer != null)
+        {
+            await Viewer.UpdateActivityStatsAsync(id, stats);
+        }
     }
 
     /// <summary>
@@ -131,6 +151,11 @@ public partial class BpmnDesignerWrapper
 
         if (Designer != null)
             await Designer.UpdateElementStatsAsync(elementStats);
+
+        if (Viewer != null)
+        {
+            await Viewer.UpdateElementStatsAsync(elementStats);
+        }
     }
 
     /// <summary>
@@ -151,8 +176,20 @@ public partial class BpmnDesignerWrapper
     /// </summary>
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && Designer != null && _pendingElementStats != null)
+        if (!firstRender || _pendingElementStats == null)
+        {
+            return;
+        }
+
+        if (Designer != null)
+        {
             await Designer.UpdateElementStatsAsync(_pendingElementStats);
+        }
+
+        if (Viewer != null)
+        {
+            await Viewer.UpdateElementStatsAsync(_pendingElementStats);
+        }
     }
 
     /// <summary>
@@ -162,6 +199,11 @@ public partial class BpmnDesignerWrapper
     {
         if (Designer != null)
             await Designer.SelectActivityAsync(id);
+
+        if (Viewer != null)
+        {
+            await Viewer.SelectActivityAsync(id);
+        }
     }
 
     /// <summary>
