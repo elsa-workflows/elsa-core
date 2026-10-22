@@ -213,6 +213,26 @@ public sealed class DapperWorkflowDefinitionStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task TryUpdateLatest_AgnosticDefinition_UnderConcreteTenant_UpdatesAndKeepsStar()
+    {
+        var definition = Definition();
+        definition.TenantId = Tenant.AgnosticTenantId;
+        await _store.SaveAsync(definition);
+
+        WorkflowDefinitionUpdateResult result;
+        using (_tenant.PushContext(new Tenant { Id = "tenant-a" }))
+        {
+            result = await _store.TryUpdateLatestAsync(Filter(), _ => true, current => Edited(current));
+        }
+
+        Assert.Equal(WorkflowDefinitionUpdateOutcome.Updated, result.Outcome);
+        Assert.Equal(Tenant.AgnosticTenantId, result.Definition!.TenantId);
+        Assert.Equal("new", result.Definition.StringData);
+        using var verify = _provider.GetConnection();
+        Assert.Equal(Tenant.AgnosticTenantId, verify.QuerySingle<string>($"select {Q("TenantId")} from {Q(_table)}"));
+    }
+
+    [Fact]
     public async Task TenantScopeIsRequiredAndAgnosticUpdatePreservesTenant()
     {
         var definition = Definition();
