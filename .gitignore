@@ -64,6 +64,7 @@ studio/samples/react/workflow-definition-editor-sample/workflow-definition-edito
 studio/samples/react/workflow-definition-editor-sample/workflow-definition-editor-app/public/appsettings.json
 studio/src/modules/Elsa.Studio.Workflows.Designer/ClientLib/package-lock.json
 studio/src/framework/Elsa.Studio.DomInterop/ClientLib/package-lock.json
+studio/src/modules/Elsa.Studio.Bpmn/ClientLib/package-lock.json
 studio/test/browser/**/test-results/
 studio/src/wrappers/.npmrc
 
