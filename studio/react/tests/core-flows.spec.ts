@@ -30,6 +30,41 @@ function emptyPaged() {
   return { items: [], totalCount: 0 };
 }
 
+type SavedDefinition = Record<string, unknown> & {
+  name?: string;
+  root?: { type?: string; activities?: { type?: string }[] };
+};
+
+function hasWriteLine(root: SavedDefinition["root"]) {
+  if (!root) return false;
+  if (String(root.type ?? "").includes("WriteLine")) return true;
+  return (root.activities ?? []).some(activity => String(activity.type ?? "").includes("WriteLine"));
+}
+
+async function waitForFinishedInstance(page: Page, instanceId: string) {
+  await expect.poll(async () => {
+    const instance = await page.evaluate(async ({ api, instanceId }) => {
+      const response = await fetch(`${api}/workflow-instances/${instanceId}`);
+      if (!response.ok) return { subStatus: `http-${response.status}` };
+      return await response.json() as { subStatus?: string };
+    }, { api, instanceId });
+    if (instance.subStatus === "Faulted") {
+      throw new Error(`Workflow instance ${instanceId} faulted`);
+    }
+    return instance.subStatus;
+  }, { timeout: 30_000 }).toBe("Finished");
+}
+
+async function assertJournalSucceeded(page: Page) {
+  const journal = page.getByRole("tree", { name: "Workflow journal" });
+  await expect(journal).toBeVisible();
+  const step = page.getByRole("treeitem").filter({ hasText: /WriteLine/ });
+  await expect(step).toBeVisible();
+  await step.click();
+  await expect(journal.getByText("Completed", { exact: true }).first()).toBeVisible();
+  await expect(journal.getByText("Faulted", { exact: true })).toHaveCount(0);
+}
+
 async function installPreviewConfig(page: Page) {
   await page.route("**/studio-config", route => route.fulfill({ json: {
     title: "Elsa test Studio",
@@ -45,6 +80,7 @@ async function installStudioBackend(page: Page) {
   const definitions = new Map<string, Record<string, unknown>>();
   const instances = new Map<string, Record<string, unknown>>();
   const journals = new Map<string, object[]>();
+  const saves: SavedDefinition[] = [];
   let nextDefinition = 1;
   let nextInstance = 1;
 
@@ -82,7 +118,8 @@ async function installStudioBackend(page: Page) {
     }
 
     if (path === "workflow-definitions" && method === "POST") {
-      const { model, publish } = request.postDataJSON() as { model: Record<string, unknown>; publish?: boolean };
+      const { model, publish } = request.postDataJSON() as { model: SavedDefinition; publish?: boolean };
+      saves.push(model);
       const definitionId = String(model.definitionId ?? `wf-${nextDefinition++}`);
       const previous = definitions.get(definitionId);
       const version = publish ? Number(previous?.version ?? 0) + (previous?.isPublished ? 1 : 0) || 1 : Number(previous?.version ?? 1);
@@ -188,6 +225,8 @@ async function installStudioBackend(page: Page) {
 
     return fulfill(route, emptyPaged());
   });
+
+  return { saves };
 }
 
 async function signIn(page: Page, username = "admin", password = "password") {
@@ -208,7 +247,7 @@ test("rejected credentials stay on the sign-in page", async ({ page }) => {
 
 test("sign-in, list, create, edit, save, publish, run, journal and settings", async ({ page }) => {
   test.setTimeout(60_000);
-  await installStudioBackend(page);
+  const { saves } = await installStudioBackend(page);
   await page.goto("/studio-preview/");
   await signIn(page);
   await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
@@ -229,17 +268,17 @@ test("sign-in, list, create, edit, save, publish, run, journal and settings", as
   const name = properties.locator("label").filter({ hasText: /^Name[*]?$/ }).locator("..").getByRole("textbox");
   await expect(name).toHaveValue("Order notice");
   await name.fill("Order notice v1");
-  await page.getByRole("button", { name: "Unsaved changes", exact: true }).click();
-  await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+  await expect.poll(() => saves.at(-1)?.name, { timeout: 15_000 }).toBe("Order notice v1");
+  await expect(page.getByText("Saved", { exact: true })).toBeVisible({ timeout: 15_000 });
 
   await page.getByRole("button", { name: "Add activity", exact: true }).click();
   const palette = page.getByRole("dialog", { name: "Add activity", exact: true });
   await palette.locator("input").fill("Write line");
   await page.getByRole("option").filter({ hasText: "Write line" }).first().click();
   await expect(page.locator(".react-flow__node").first()).toBeVisible();
-  const unsaved = page.getByRole("button", { name: "Unsaved changes", exact: true });
-  if (await unsaved.isVisible()) await unsaved.click();
-  await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+  await expect.poll(() => hasWriteLine(saves.at(-1)?.root), { timeout: 15_000 }).toBe(true);
+  expect(saves.at(-1)?.name).toBe("Order notice v1");
+  await expect(page.getByText("Saved", { exact: true })).toBeVisible({ timeout: 15_000 });
 
   await page.getByRole("button", { name: "Publish", exact: true }).click();
   await expect(page.getByText("Published version 1")).toBeVisible();
@@ -253,10 +292,9 @@ test("sign-in, list, create, edit, save, publish, run, journal and settings", as
   await page.getByRole("button", { name: "Open", exact: true }).click();
 
   await expect(page).toHaveURL(/\/studio-preview\/workflows\/instances\/instance-1\/view$/);
-  await expect(page.getByText("Finished", { exact: true }).first()).toBeVisible();
+  await waitForFinishedInstance(page, "instance-1");
   await expect(page.getByRole("tab", { name: "Journal", exact: true })).toBeVisible();
-  await expect(page.getByRole("tree", { name: "Workflow journal" })).toBeVisible();
-  await expect(page.getByRole("treeitem").filter({ hasText: "WriteLine1" })).toBeVisible();
+  await assertJournalSucceeded(page);
 
   await page.goto("/studio-preview/settings");
   await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible();
