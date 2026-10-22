@@ -7,6 +7,7 @@ using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 using NSubstitute;
@@ -383,6 +384,50 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
         Assert.Contains(logger.Messages, message =>
             message.Contains("Skipping CLR tenant re-stamp", StringComparison.Ordinal)
             && message.Contains("bad-workflow", StringComparison.Ordinal));
+    }
+
+    [Fact(DisplayName = "PopulateStoreAsync lets cancellation through without per-workflow error logs")]
+    public async Task PopulateStoreAsync_Cancellation_PropagatesWithoutPerWorkflowLogs()
+    {
+        var logger = new CapturingLogger();
+        var restamper = Substitute.For<IClrWorkflowDefinitionTenantRestamper>();
+        restamper
+            .RestampAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns<Task<bool>>(_ => throw new OperationCanceledException());
+
+        var workflow = new MaterializedWorkflow(new()
+        {
+            Identity = new("shared-workflow", 1, "shared-v1", Tenant.AgnosticTenantId),
+            Publication = new(true, true)
+        }, "CLR", "ClrWorkflowMaterializer");
+        var populator = CreatePopulatorWithTenant("tenant-a", logger, restamper, workflow);
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => populator.PopulateStoreAsync());
+        Assert.Empty(logger.Messages);
+    }
+
+    [Fact(DisplayName = "The full constructor is the one ActivatorUtilities uses")]
+    public void CreateInstance_ViaActivatorUtilities_UsesFullConstructor()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton<Func<IEnumerable<IWorkflowsProvider>>>(() => []);
+        services.AddSingleton(Substitute.For<ITriggerIndexer>());
+        services.AddSingleton(Substitute.For<IWorkflowDefinitionStore>());
+        services.AddSingleton(Substitute.For<IActivitySerializer>());
+        services.AddSingleton(Substitute.For<IPayloadSerializer>());
+        services.AddSingleton(Substitute.For<ISystemClock>());
+        services.AddSingleton(Substitute.For<IIdentityGraphService>());
+        services.AddSingleton(Substitute.For<ITenantAccessor>());
+        services.AddSingleton(Substitute.For<ILogger<DefaultWorkflowDefinitionStorePopulator>>());
+        services.AddSingleton(Substitute.For<IClrWorkflowDefinitionTenantRestamper>());
+        using var provider = services.BuildServiceProvider();
+
+        var factory = ActivatorUtilities.CreateFactory(typeof(DefaultWorkflowDefinitionStorePopulator), Type.EmptyTypes);
+        var fromFactory = (DefaultWorkflowDefinitionStorePopulator)factory(provider, null);
+        var fromCreateInstance = ActivatorUtilities.CreateInstance<DefaultWorkflowDefinitionStorePopulator>(provider);
+
+        Assert.NotNull(fromFactory);
+        Assert.NotNull(fromCreateInstance);
     }
 
     [Theory(DisplayName = "PopulateStoreAsync handles null/empty tenant IDs correctly")]

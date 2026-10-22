@@ -6,6 +6,7 @@ using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Providers;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 
@@ -56,6 +57,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
     /// <summary>
     /// Initializes a new instance of the <see cref="DefaultWorkflowDefinitionStorePopulator"/> class.
     /// </summary>
+    [ActivatorUtilitiesConstructor]
     public DefaultWorkflowDefinitionStorePopulator(
         Func<IEnumerable<IWorkflowsProvider>> workflowDefinitionProviders,
         ITriggerIndexer triggerIndexer,
@@ -157,7 +159,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
             var workflowDefinition = await AddOrUpdateCoreAsync(materializedWorkflow, cancellationToken);
             return Result.Success(workflowDefinition);
         }
-        catch (Exception e)
+        catch (Exception e) when (e is not OperationCanceledException)
         {
             if (e is InvalidOperationException && e.Message.Contains("already exists in another tenant", StringComparison.Ordinal))
             {
@@ -377,7 +379,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
                 identity.TenantId ?? Tenant.AgnosticTenantId,
                 cancellationToken);
         }
-        catch (Exception e)
+        catch (Exception e) when (e is not OperationCanceledException)
         {
             _logger.LogError(e,
                 "Skipping CLR tenant re-stamp for workflow {WorkflowId} (Version: {Version}). Population continues.",
