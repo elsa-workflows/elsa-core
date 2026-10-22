@@ -46,7 +46,7 @@
         <PackageReference Include="Elsa.Shells.Api" Version="3.9.0" />
         <PackageReference Include="CShells.AspNetCore" Version="0.0.28" />
         <PackageReference Include="CShells.FastEndpoints" Version="0.0.28" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.8" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.13" />
         <PackageReference Include="Elsa.Studio" Version="3.9.0" />
         <PackageReference Include="Elsa.Studio.Authentication.Abstractions" Version="3.9.0" />
         <PackageReference Include="Elsa.Studio.Authentication.UI" Version="3.9.0" />
