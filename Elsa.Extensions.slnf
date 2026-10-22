@@ -229,6 +229,7 @@
       "extensions/src/workflows/Elsa.Studio.WorkflowContexts/Elsa.Studio.WorkflowContexts.csproj",
       "extensions/src/workflows/Elsa.WorkflowContexts/Elsa.WorkflowContexts.csproj",
       "extensions/test/modules/actors/Elsa.Actors.ProtoActor.UnitTests/Elsa.Actors.ProtoActor.UnitTests.csproj",
+      "extensions/test/modules/agents/Elsa.Agents.Core.UnitTests/Elsa.Agents.Core.UnitTests.csproj",
       "extensions/test/modules/agents/Elsa.Studio.Agents.Tests/Elsa.Studio.Agents.Tests.csproj",
       "extensions/test/modules/caching/Elsa.Caching.Distributed.ProtoActor.IntegrationTests/Elsa.Caching.Distributed.ProtoActor.IntegrationTests.csproj",
       "extensions/test/modules/devops/Elsa.DevOps.GitHub.UnitTests/Elsa.DevOps.GitHub.UnitTests.csproj",
