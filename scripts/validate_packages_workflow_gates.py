@@ -76,6 +76,8 @@ UPLOAD_PACKAGES = (
 RETRIEVE_CANDIDATE = "python3 scripts/stage_consolidated_candidate_nupkgs.py retrieve"
 STAGE_CANDIDATE = "python3 scripts/stage_consolidated_candidate_nupkgs.py stage"
 GUARD_CANDIDATE = "python3 scripts/validate_packages_id_set.py"
+# Whitespace-normalized run: of the candidate Feedz guard step.
+CANDIDATE_GUARD_RUN = f"set -euo pipefail {STAGE_CANDIDATE} {GUARD_CANDIDATE}"
 FORBIDDEN_PACK_ROUTE = (
     ("CONSOLIDATED_RELEASE_CANDIDATE", "packages.yml must not set CONSOLIDATED_RELEASE_CANDIDATE; the candidate workflow owns that pack"),
     ("ConsolidatedReleaseCandidate:", "packages.yml must not pack ConsolidatedReleaseCandidate; the candidate workflow owns that pack"),
@@ -367,7 +369,9 @@ def promotion_job_violations(jobs: dict) -> list[str]:
         (index for index, step in enumerate(steps) if step.get("name") == "Download Packages"),
         None,
     )
-    if download is not None and if_expression(steps[download].get("if")) != SKIP_STABLE_310_DOWNLOAD:
+    if download is None:
+        violations.append("publish_nuget must contain Download Packages")
+    elif if_expression(steps[download].get("if")) != SKIP_STABLE_310_DOWNLOAD:
         violations.append("publish_nuget Download Packages if: must skip stable 3.10.x tags")
     build = jobs.get(BUILD_JOB)
     compile_step = None
@@ -387,11 +391,16 @@ def promotion_job_violations(jobs: dict) -> list[str]:
         violations.append("build job must still contain Compile+Pack for non-promote publication")
     elif if_expression(compile_step.get("if")) != SKIP_STABLE_310_PACK:
         violations.append("build Compile+Pack must skip a stable 3.10.x nuget.org promotion")
-    if setup_dotnet is not None and if_expression(setup_dotnet.get("if")) != SKIP_STABLE_310_PACK:
+    if setup_dotnet is None:
+        violations.append("build job must contain setup-dotnet")
+    elif if_expression(setup_dotnet.get("if")) != SKIP_STABLE_310_PACK:
         violations.append("build setup-dotnet must skip a stable 3.10.x nuget.org promotion")
+    # Node is only for main's React Studio assets; release/3.10.0 does not have it.
     if setup_node is not None and if_expression(setup_node.get("if")) != SKIP_STABLE_310_PACK:
         violations.append("build Node setup must skip a stable 3.10.x nuget.org promotion")
-    if upload is not None and if_expression(upload.get("if")) != UPLOAD_PACKAGES:
+    if upload is None:
+        violations.append("build job must contain Upload artifact")
+    elif if_expression(upload.get("if")) != UPLOAD_PACKAGES:
         violations.append("build Upload artifact must skip a stable 3.10.x nuget.org promotion")
     return violations
 
@@ -445,9 +454,9 @@ def candidate_publisher_violations(source: str) -> list[str]:
             violations.append(
                 "publish-consolidated-original-candidate.yml guard step must not have an if:"
             )
-        if "|| true" in _step_run(step):
+        if _step_run(step) != CANDIDATE_GUARD_RUN:
             violations.append(
-                "publish-consolidated-original-candidate.yml guard command must not ignore a failed exit"
+                "publish-consolidated-original-candidate.yml guard run: must be exactly set -euo pipefail, stage, and the ID-set guard"
             )
     # Recheck and publish must not be gated by always()/failure()/cancelled().
     # The evidence upload's if: always() is the one allowed status-function use.

@@ -128,6 +128,24 @@ OTHER_BYPASSES = (
         "validate_publication_selection must pass REF: ${{ github.ref }}",
     ),
     (
+        "nuget publisher drops Download Packages",
+        "      - name: Download Packages\n        # Pinned for the reason given on the checkout above. Skipped for stable\n",
+        "      - name: Fetch packages\n        # Pinned for the reason given on the checkout above. Skipped for stable\n",
+        "publish_nuget must contain Download Packages",
+    ),
+    (
+        "build drops Upload artifact",
+        "      - name: Upload artifact\n",
+        "      - name: Upload packages\n",
+        "build job must contain Upload artifact",
+    ),
+    (
+        "build drops setup-dotnet",
+        "      - uses: actions/setup-dotnet@v4\n        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}\n        with:\n          dotnet-version: 10.x\n",
+        "      - uses: actions/setup-python@v5\n        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}\n        with:\n          python-version: '3.12'\n",
+        "build job must contain setup-dotnet",
+    ),
+    (
         "workflow is callable by another workflow",
         "on:\n  workflow_dispatch:\n",
         "on:\n  workflow_call:\n  workflow_dispatch:\n",
@@ -400,16 +418,65 @@ class WorkflowGateTests(unittest.TestCase):
                     gates.candidate_publisher_violations(mutated),
                 )
 
-    def test_candidate_guard_rejects_or_true(self):
+    CANDIDATE_GUARD_RUN_BLOCK = (
+        "          set -euo pipefail\n"
+        "          python3 scripts/stage_consolidated_candidate_nupkgs.py stage\n"
+        "          python3 scripts/validate_packages_id_set.py\n"
+    )
+    CANDIDATE_GUARD_RUN_VIOLATION = (
+        "publish-consolidated-original-candidate.yml guard run: must be exactly set -euo pipefail, stage, and the ID-set guard"
+    )
+
+    def _mutate_candidate_guard_run(self, new_block: str) -> str:
         source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
-        mutated = source.replace(
-            "python3 scripts/validate_packages_id_set.py\n",
-            "python3 scripts/validate_packages_id_set.py || true\n",
+        self.assertEqual(1, source.count(self.CANDIDATE_GUARD_RUN_BLOCK))
+        return source.replace(self.CANDIDATE_GUARD_RUN_BLOCK, new_block)
+
+    def test_candidate_guard_rejects_failure_suppressing_run_forms(self):
+        forms = (
+            "||true",
+            "|| :",
+            "|| exit 0",
+            "; true",
+            "|| echo ok",
         )
-        self.assertIn(
-            "publish-consolidated-original-candidate.yml guard command must not ignore a failed exit",
-            gates.candidate_publisher_violations(mutated),
+        for suffix in forms:
+            with self.subTest(suffix=suffix):
+                mutated = self._mutate_candidate_guard_run(
+                    "          set -euo pipefail\n"
+                    "          python3 scripts/stage_consolidated_candidate_nupkgs.py stage\n"
+                    f"          python3 scripts/validate_packages_id_set.py {suffix}\n"
+                )
+                self.assertIn(self.CANDIDATE_GUARD_RUN_VIOLATION, gates.candidate_publisher_violations(mutated))
+
+    def test_candidate_guard_rejects_set_plus_e_before_the_guard(self):
+        mutated = self._mutate_candidate_guard_run(
+            "          set -euo pipefail\n"
+            "          python3 scripts/stage_consolidated_candidate_nupkgs.py stage\n"
+            "          set +e\n"
+            "          python3 scripts/validate_packages_id_set.py\n"
         )
+        self.assertIn(self.CANDIDATE_GUARD_RUN_VIOLATION, gates.candidate_publisher_violations(mutated))
+
+    def test_candidate_guard_accepts_harmless_run_whitespace(self):
+        mutated = self._mutate_candidate_guard_run(
+            "          set  -euo   pipefail  \n"
+            "\n"
+            "          python3 scripts/stage_consolidated_candidate_nupkgs.py stage   \n"
+            "          python3 scripts/validate_packages_id_set.py\n"
+        )
+        self.assertEqual([], gates.candidate_publisher_violations(mutated))
+
+    def test_build_may_omit_node_setup(self):
+        source = self.mutated(
+            "      - name: Set up Node for React Studio assets\n"
+            "        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}\n"
+            "        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0\n"
+            "        with:\n"
+            "          node-version: '22'\n\n",
+            "",
+        )
+        self.assertEqual([], gates.source_violations(source))
 
     def test_candidate_recheck_rejects_always(self):
         source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")

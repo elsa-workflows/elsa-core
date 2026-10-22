@@ -128,24 +128,24 @@ def rehearse(root: Path, provenance: dict) -> dict:
     except SimulatedAcceptanceInterrupted:
         interrupted = True
     _require(interrupted and feed.accepted[first_key] == original, "Acceptance did not precede interruption")
-    observe("interruption_after_simulated_acceptance", counts(matching=len(accepted)+1, missing=224-len(accepted)))
+    observe("interruption_after_simulated_acceptance", counts(matching=len(accepted)+1, missing=candidate_input.PIN_PACKAGE_COUNT - 1 - len(accepted)))
     feed.overrides[first_key] = recovery.ReadResult(None, b"", False, "timeout")
-    observe("uncertain_outcome", counts(matching=len(accepted), missing=224-len(accepted), unverifiable=1))
+    observe("uncertain_outcome", counts(matching=len(accepted), missing=candidate_input.PIN_PACKAGE_COUNT - 1 - len(accepted), unverifiable=1))
     feed.overrides = {}
     feed.visible.remove(first_key)
     delayed = observe("delayed_visibility", counts(matching=len(accepted), missing=candidate_input.PIN_PACKAGE_COUNT-len(accepted)))
     _require(delayed["content_converged"] is False, "Delayed visibility certified convergence")
     acceptances = feed.simulated_acceptance_calls
     feed.visible.add(first_key)
-    observe("visibility_recovered_without_reacceptance", counts(matching=len(accepted)+1, missing=224-len(accepted)))
+    observe("visibility_recovered_without_reacceptance", counts(matching=len(accepted)+1, missing=candidate_input.PIN_PACKAGE_COUNT - 1 - len(accepted)))
     _require(feed.simulated_acceptance_calls == acceptances, "Visibility recovery retried an uncertain acceptance")
     feed.overrides = {first_key: recovery.ReadResult(200, _remote_mutation(original), True)}
     feed.outcome = 200
-    observe("conflicting_payload", counts(matching=224, conflicting=1))
+    observe("conflicting_payload", counts(matching=candidate_input.PIN_PACKAGE_COUNT - 1, conflicting=1))
     feed.overrides[first_key] = recovery.ReadResult(200, _remote_mutation(original, duplicate=True), True)
-    observe("duplicate_archive_identity", counts(matching=224, unverifiable=1))
+    observe("duplicate_archive_identity", counts(matching=candidate_input.PIN_PACKAGE_COUNT - 1, unverifiable=1))
     feed.overrides[first_key] = recovery.ReadResult(503, b"unretained synthetic body", True)
-    observe("unreadable_package", counts(matching=224, unverifiable=1))
+    observe("unreadable_package", counts(matching=candidate_input.PIN_PACKAGE_COUNT - 1, unverifiable=1))
     feed.overrides = {}
     index = feed.index
     feed.index = recovery.ReadResult(200, b'{"version":"3.0.0","resources":[],"resources":[]}', True)

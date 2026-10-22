@@ -1,4 +1,5 @@
 import hashlib
+import io
 import json
 import os
 import subprocess
@@ -158,6 +159,28 @@ class StageCandidateTests(unittest.TestCase):
                 with self.assertRaises(SystemExit) as raised:
                     stage.main(["stage"])
             self.assertIn("hash mismatch", str(raised.exception))
+
+    def test_stage_summary_counts_only_nupkgs(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive = root / "candidate.zip"
+            packages = {
+                "Elsa.3.10.0.nupkg": b"elsa",
+                "Elsa.3.10.0.snupkg": b"symbols",
+            }
+            digest = write_sealed_archive(archive, packages)
+            env = {
+                key: value for key, value in os.environ.items()
+                if key not in ("GH_TOKEN", "GITHUB_TOKEN", "ACTIONS_READ_TOKEN")
+            }
+            env.update(REF="refs/tags/3.10.0", CANDIDATE_ARCHIVE=str(archive), PACKAGES_DIR=str(root / "out"))
+            stdout = io.StringIO()
+            with unittest.mock.patch.dict(os.environ, env, clear=True), unittest.mock.patch.object(
+                candidate_input, "MANIFEST_SHA256", digest
+            ), unittest.mock.patch.object(sys, "stdout", stdout):
+                self.assertEqual(0, stage.main(["stage"]))
+            self.assertIn("Staged 1 candidate nupkgs", stdout.getvalue())
+            self.assertNotIn("Staged 2 candidate nupkgs", stdout.getvalue())
 
 
 class WorkflowPromotionTests(unittest.TestCase):

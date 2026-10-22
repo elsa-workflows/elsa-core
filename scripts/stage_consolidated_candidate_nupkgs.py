@@ -177,7 +177,8 @@ def main(argv: list[str] | None = None) -> int:
     sealed = sealed_nupkg_hashes(archive, candidate_input.MANIFEST_SHA256)
     staged = extract_nupkgs(archive, packages)
     verify_nupkg_hashes(staged, sealed)
-    print(f"Staged {len(staged)} candidate nupkgs into {packages}; each sha256 matched the candidate seal.")
+    nupkgs = sum(1 for path in staged if path.name.endswith(".nupkg"))
+    print(f"Staged {nupkgs} candidate nupkgs into {packages}; each sha256 matched the candidate seal.")
     return 0
 
 
