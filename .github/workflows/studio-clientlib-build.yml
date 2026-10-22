@@ -14,6 +14,10 @@ on:
       - 'scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/**'
       - 'studio/test/browser/DesignerHover/**'
       - 'studio/test/browser/BpmnDesigner/**'
+      # The designer suite checks that Elsa imports a designer's saved copy of each test asset as it imports the original.
+      - 'core/src/modules/Elsa.Bpmn/**'
+      - 'core/src/modules/Elsa.Bpmn.Interchange/**'
+      - 'core/test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Assets/**'
       - '.github/workflows/studio-clientlib-build.yml'
   workflow_dispatch:
 
@@ -61,10 +65,17 @@ jobs:
         run: scripts/integration-program/build_studio_clientlibs.sh .
       - name: Verify the bpmn-js designer against the BPMN designer contract
         working-directory: studio/test/browser/BpmnDesigner
+        env:
+          BPMN_DESIGNER_OUTPUT: ${{ runner.temp }}/bpmn-designer-round-trips
         run: |
           npm ci
           npx --no-install playwright install --with-deps chromium
           npm test
+      - name: Verify Elsa imports the bpmn-js designer's saved documents as it imports the originals
+        run: >-
+          dotnet run -c Release
+          --project studio/test/browser/BpmnDesigner/ImportEquivalence/BpmnImportEquivalence.csproj
+          -- "$RUNNER_TEMP/bpmn-designer-round-trips" .
       - name: Verify real X6 edge-hover behavior
         working-directory: studio/test/browser/DesignerHover
         run: |

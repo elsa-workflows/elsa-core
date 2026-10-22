@@ -125,7 +125,8 @@
       "studio/src/modules/Elsa.Studio.UIHints/Elsa.Studio.UIHints.csproj",
       "studio/src/modules/Elsa.Studio.Workflows.Core/Elsa.Studio.Workflows.Core.csproj",
       "studio/src/modules/Elsa.Studio.Workflows.Designer/Elsa.Studio.Workflows.Designer.csproj",
-      "studio/src/modules/Elsa.Studio.Workflows/Elsa.Studio.Workflows.csproj"
+      "studio/src/modules/Elsa.Studio.Workflows/Elsa.Studio.Workflows.csproj",
+      "studio/test/browser/BpmnDesigner/ImportEquivalence/BpmnImportEquivalence.csproj"
     ]
   }
 }
