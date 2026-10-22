@@ -71,6 +71,15 @@ class IdSetTests(unittest.TestCase):
             self.write_packages(directory, ["Elsa", "Elsa.Workflows.Core"], version="3.10.0-preview.1")
             self.assertEqual(["Elsa", "Elsa.Workflows.Core"], packed_ids(directory))
 
+    def test_packed_ids_reject_mixed_versions(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            (directory / "Elsa.3.10.0.nupkg").write_bytes(b"nupkg")
+            (directory / "Elsa.Workflows.Core.3.10.1.nupkg").write_bytes(b"nupkg")
+            with self.assertRaises(SystemExit) as raised:
+                packed_ids(directory)
+            self.assertIn("mix versions", str(raised.exception))
+
     def test_matching_set_is_accepted(self):
         self.assertEqual([], id_set_errors(list(self.expected), list(self.expected)))
 
@@ -246,6 +255,24 @@ GUARD_COMMAND = "python3 scripts/validate_packages_id_set.py"
 
 
 class SharedPublisherGuardTests(unittest.TestCase):
+    def test_pin_inventory_ids_are_tied_to_the_guard_list(self):
+        import json
+
+        sys.path.insert(0, str(Path(__file__).resolve().parent / "integration-program"))
+        import consolidated_candidate_input as candidate_input
+
+        pin = json.loads(candidate_input.PIN_INVENTORY.read_text(encoding="utf-8"))
+        pin_ids = {row["id"] for row in pin["packages"]}
+        guard_ids = set(load_expected_ids(DEFAULT_EXPECTED))
+        unexpected = pin_ids - guard_ids
+        missing = guard_ids - pin_ids
+        stale_delta = unexpected == {"Elsa.SamplePackage"} and missing == set(STALE_OCT6_MISSING)
+        matched = not unexpected and not missing
+        self.assertTrue(
+            stale_delta or matched,
+            f"pin/guard delta must be the known fail-closed set or empty; unexpected={sorted(unexpected)} missing={sorted(missing)}",
+        )
+
     def test_stale_225_set_can_never_be_published_as_310(self):
         expected = load_expected_ids(DEFAULT_EXPECTED)
         for package_id in STALE_OCT6_MISSING:

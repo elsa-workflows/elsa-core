@@ -128,6 +128,24 @@ OTHER_BYPASSES = (
         "validate_publication_selection must pass REF: ${{ github.ref }}",
     ),
     (
+        "nuget publisher drops Download Packages",
+        "      - name: Download Packages\n        # Pinned for the reason given on the checkout above. Skipped for stable\n",
+        "      - name: Fetch packages\n        # Pinned for the reason given on the checkout above. Skipped for stable\n",
+        "publish_nuget must contain Download Packages",
+    ),
+    (
+        "build drops Upload artifact",
+        "      - name: Upload artifact\n",
+        "      - name: Upload packages\n",
+        "build job must contain Upload artifact",
+    ),
+    (
+        "build drops setup-dotnet",
+        "      - uses: actions/setup-dotnet@v4\n        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}\n        with:\n          dotnet-version: 10.x\n",
+        "      - uses: actions/setup-python@v5\n        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}\n        with:\n          python-version: '3.12'\n",
+        "build job must contain setup-dotnet",
+    ),
+    (
         "workflow is callable by another workflow",
         "on:\n  workflow_dispatch:\n",
         "on:\n  workflow_call:\n  workflow_dispatch:\n",
@@ -399,6 +417,271 @@ class WorkflowGateTests(unittest.TestCase):
                     "publish-consolidated-original-candidate.yml guard step must not have an if:",
                     gates.candidate_publisher_violations(mutated),
                 )
+
+    CANDIDATE_GUARD_RUN_BLOCK = (
+        "          set -euo pipefail\n"
+        "          python3 scripts/stage_consolidated_candidate_nupkgs.py stage\n"
+        "          python3 scripts/validate_packages_id_set.py\n"
+    )
+    CANDIDATE_GUARD_RUN_VIOLATION = (
+        "publish-consolidated-original-candidate.yml guard run: must be exactly set -euo pipefail, stage, and the ID-set guard"
+    )
+
+    def _mutate_candidate_guard_run(self, new_block: str) -> str:
+        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
+        self.assertEqual(1, source.count(self.CANDIDATE_GUARD_RUN_BLOCK))
+        return source.replace(self.CANDIDATE_GUARD_RUN_BLOCK, new_block)
+
+    def test_candidate_guard_rejects_failure_suppressing_run_forms(self):
+        forms = (
+            "||true",
+            "|| :",
+            "|| exit 0",
+            "; true",
+            "|| echo ok",
+        )
+        for suffix in forms:
+            with self.subTest(suffix=suffix):
+                mutated = self._mutate_candidate_guard_run(
+                    "          set -euo pipefail\n"
+                    "          python3 scripts/stage_consolidated_candidate_nupkgs.py stage\n"
+                    f"          python3 scripts/validate_packages_id_set.py {suffix}\n"
+                )
+                self.assertIn(self.CANDIDATE_GUARD_RUN_VIOLATION, gates.candidate_publisher_violations(mutated))
+
+    def test_candidate_guard_rejects_set_plus_e_before_the_guard(self):
+        mutated = self._mutate_candidate_guard_run(
+            "          set -euo pipefail\n"
+            "          python3 scripts/stage_consolidated_candidate_nupkgs.py stage\n"
+            "          set +e\n"
+            "          python3 scripts/validate_packages_id_set.py\n"
+        )
+        self.assertIn(self.CANDIDATE_GUARD_RUN_VIOLATION, gates.candidate_publisher_violations(mutated))
+
+    def test_candidate_guard_accepts_harmless_run_whitespace(self):
+        mutated = self._mutate_candidate_guard_run(
+            "          set  -euo   pipefail  \n"
+            "\n"
+            "          python3 scripts/stage_consolidated_candidate_nupkgs.py stage   \n"
+            "          python3 scripts/validate_packages_id_set.py\n"
+        )
+        self.assertEqual([], gates.candidate_publisher_violations(mutated))
+
+    def test_candidate_guard_rejects_folded_run(self):
+        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
+        old = "        run: |\n" + self.CANDIDATE_GUARD_RUN_BLOCK
+        self.assertEqual(1, source.count(old))
+        mutated = source.replace(old, "        run: >-\n" + self.CANDIDATE_GUARD_RUN_BLOCK)
+        self.assertIn(self.CANDIDATE_GUARD_RUN_VIOLATION, gates.candidate_publisher_violations(mutated))
+
+    def test_candidate_guard_rejects_shell(self):
+        mutated = self._candidate_guard_with("shell: true {0}")
+        self.assertIn(
+            "publish-consolidated-original-candidate.yml guard step keys must be among name, env, run, id, if, continue-on-error",
+            gates.candidate_publisher_violations(mutated),
+        )
+
+    def test_candidate_guard_rejects_workflow_defaults_shell(self):
+        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
+        old = "permissions: {}\n"
+        self.assertEqual(1, source.count(old))
+        mutated = source.replace(old, "permissions: {}\ndefaults:\n  run:\n    shell: bash\n")
+        self.assertIn(
+            "publish-consolidated-original-candidate.yml must not set defaults.run.shell",
+            gates.candidate_publisher_violations(mutated),
+        )
+
+    def test_candidate_guard_rejects_job_defaults_shell(self):
+        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
+        old = (
+            "    environment: elsa-3-10-feedz\n"
+            "    permissions:\n"
+            "      contents: read\n"
+            "      actions: none\n"
+            "    runs-on: ubuntu-latest\n"
+            "    timeout-minutes: 60\n"
+            "    steps:\n"
+        )
+        self.assertEqual(1, source.count(old))
+        mutated = source.replace(
+            old,
+            "    environment: elsa-3-10-feedz\n"
+            "    permissions:\n"
+            "      contents: read\n"
+            "      actions: none\n"
+            "    runs-on: ubuntu-latest\n"
+            "    timeout-minutes: 60\n"
+            "    defaults:\n"
+            "      run:\n"
+            "        shell: bash\n"
+            "    steps:\n",
+        )
+        self.assertIn(
+            "publish-consolidated-original-candidate.yml must not set defaults.run.shell",
+            gates.candidate_publisher_violations(mutated),
+        )
+
+    def test_candidate_guard_rejects_a_different_ref(self):
+        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
+        old = "          REF: refs/tags/3.10.0\n"
+        self.assertEqual(1, source.count(old))
+        mutated = source.replace(old, "          REF: refs/tags/3.10.1\n")
+        self.assertIn(
+            "publish-consolidated-original-candidate.yml guard env REF must be refs/tags/3.10.0",
+            gates.candidate_publisher_violations(mutated),
+        )
+
+    NUGET_GUARD_RUN_BLOCK = (
+        "        run: |\n"
+        "          python3 scripts/stage_consolidated_candidate_nupkgs.py stage\n"
+        "          python3 scripts/validate_packages_id_set.py\n"
+    )
+    NUGET_GUARD_RUN_VIOLATION = "publish_nuget candidate staging run: must be exactly stage and the ID-set guard"
+
+    def test_nuget_guard_rejects_or_true(self):
+        self.assert_rejected(
+            self.mutated(
+                self.NUGET_GUARD_RUN_BLOCK,
+                self.NUGET_GUARD_RUN_BLOCK.replace(
+                    "python3 scripts/validate_packages_id_set.py\n",
+                    "python3 scripts/validate_packages_id_set.py || true\n",
+                ),
+            ),
+            self.NUGET_GUARD_RUN_VIOLATION,
+        )
+
+    def test_nuget_guard_rejects_set_plus_e(self):
+        self.assert_rejected(
+            self.mutated(
+                self.NUGET_GUARD_RUN_BLOCK,
+                "        run: |\n"
+                "          set +e\n"
+                "          python3 scripts/stage_consolidated_candidate_nupkgs.py stage\n"
+                "          python3 scripts/validate_packages_id_set.py\n",
+            ),
+            self.NUGET_GUARD_RUN_VIOLATION,
+        )
+
+    def test_nuget_guard_rejects_folded_run(self):
+        self.assert_rejected(
+            self.mutated(self.NUGET_GUARD_RUN_BLOCK, self.NUGET_GUARD_RUN_BLOCK.replace("run: |", "run: >-", 1)),
+            self.NUGET_GUARD_RUN_VIOLATION,
+        )
+
+    def test_nuget_guard_rejects_shell(self):
+        self.assert_rejected(
+            self.mutated(
+                "      - name: Stage and guard verified candidate packages\n",
+                "      - name: Stage and guard verified candidate packages\n        shell: true {0}\n",
+            ),
+            "publish_nuget candidate staging keys must be among name, env, run, id, if, continue-on-error",
+        )
+
+    def test_nuget_guard_rejects_workflow_defaults_shell(self):
+        self.assert_rejected(
+            self.mutated("\njobs:\n", "\ndefaults:\n  run:\n    shell: bash\n\njobs:\n"),
+            "the workflow must not set defaults.run.shell",
+        )
+
+    def test_nuget_guard_rejects_job_defaults_shell(self):
+        self.assert_rejected(
+            self.mutated(
+                "    name: Publish release to nuget.org\n    needs: [build, validate_publication_selection]\n",
+                "    name: Publish release to nuget.org\n    defaults:\n      run:\n        shell: bash\n    needs: [build, validate_publication_selection]\n",
+            ),
+            "publish_nuget must not set defaults.run.shell",
+        )
+
+    def test_real_packages_yml_guard_run_is_exact_lines(self):
+        workflow = yaml.safe_load(self.source)
+        step = next(
+            step
+            for step in workflow["jobs"]["publish_nuget"]["steps"]
+            if isinstance(step, dict) and step.get("name") == "Stage and guard verified candidate packages"
+        )
+        self.assertEqual(list(gates.NUGET_GUARD_LINES), gates._run_lines(step))
+        self.assertEqual([], gates.source_violations(self.source))
+
+    def test_build_may_omit_node_setup(self):
+        source = self.mutated(
+            "      - name: Set up Node for React Studio assets\n"
+            "        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}\n"
+            "        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0\n"
+            "        with:\n"
+            "          node-version: '22'\n\n",
+            "",
+        )
+        self.assertEqual([], gates.source_violations(source))
+
+    def test_candidate_recheck_rejects_always(self):
+        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
+        mutated = source.replace(
+            "      - name: Recheck protected admission with metadata-only authority before exposing the publisher credential\n",
+            "      - name: Recheck protected admission with metadata-only authority before exposing the publisher credential\n        if: always()\n",
+        )
+        self.assertIn(
+            "publish-consolidated-original-candidate.yml recheck and publish steps must not call always(), failure() or cancelled()",
+            gates.candidate_publisher_violations(mutated),
+        )
+
+    def test_inverted_compile_pack_condition_is_rejected(self):
+        source = self.mutated(
+            "      - name: Compile+Pack\n"
+            "        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}\n"
+            "        run: ./build.sh Compile+Pack --version \"${VERSION}\" --analyseCode true\n",
+            "      - name: Compile+Pack\n"
+            "        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-') }}\n"
+            "        run: ./build.sh Compile+Pack --version \"${VERSION}\" --analyseCode true\n",
+        )
+        self.assert_rejected(source, "build Compile+Pack must skip a stable 3.10.x nuget.org promotion")
+
+    def test_duplicate_compile_pack_is_rejected(self):
+        source = self.mutated(
+            "      - name: Compile+Pack\n"
+            "        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}\n"
+            "        run: ./build.sh Compile+Pack --version \"${VERSION}\" --analyseCode true\n",
+            "      - name: Compile+Pack\n"
+            "        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}\n"
+            "        run: ./build.sh Compile+Pack --version \"${VERSION}\" --analyseCode true\n"
+            "\n"
+            "      - name: Compile+Pack\n"
+            "        run: ./build.sh Compile+Pack --version \"${VERSION}\" --analyseCode true\n",
+        )
+        self.assert_rejected(source, "build job must contain exactly one Compile+Pack step")
+
+    def test_duplicate_download_packages_is_rejected(self):
+        source = self.mutated(
+            "      - name: NuGet login (OIDC)\n",
+            "      - name: Download Packages\n"
+            "        uses: actions/download-artifact@v4\n\n"
+            "      - name: NuGet login (OIDC)\n",
+        )
+        self.assert_rejected(source, "publish_nuget must contain exactly one Download Packages step")
+
+    def test_staging_condition_prefixed_with_false_is_rejected(self):
+        source = self.mutated(
+            "      - name: Stage and guard verified candidate packages\n"
+            "        if: ${{ startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-') }}\n",
+            "      - name: Stage and guard verified candidate packages\n"
+            "        if: ${{ false && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-') }}\n",
+        )
+        self.assert_rejected(source, "publish_nuget candidate staging if: must be exactly the stable 3.10.x tag condition")
+
+    def test_real_workflow_uses_the_pinned_promote_conditions(self):
+        self.assertEqual(gates.SKIP_STABLE_310_PACK, if_expression_of_real("Compile+Pack"))
+        self.assertEqual(gates.PROMOTE_STABLE_310, if_expression_of_real("Stage and guard verified candidate packages"))
+        self.assertEqual([], gates.source_violations(self.source))
+
+
+def if_expression_of_real(name: str) -> str:
+    workflow = yaml.safe_load(gates.WORKFLOW.read_text(encoding="utf-8"))
+    for job in workflow["jobs"].values():
+        if not isinstance(job, dict):
+            continue
+        for step in job.get("steps") or []:
+            if isinstance(step, dict) and step.get("name") == name:
+                return gates.if_expression(step.get("if"))
+    raise AssertionError(f"step {name!r} not found")
 
 
 if __name__ == "__main__":
