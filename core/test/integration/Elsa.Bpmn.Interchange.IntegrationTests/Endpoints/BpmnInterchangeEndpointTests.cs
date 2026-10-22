@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using Elsa;
 using Elsa.Bpmn.Activities;
 using Elsa.Bpmn.Interchange.Features;
@@ -207,6 +208,25 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         var body = await response.Content.ReadAsStringAsync();
         Assert.Equal(BpmnErrorCodes.ImportDuplicateElementId, CodeOf(body));
         Assert.Contains("shared", body);
+    }
+
+    [Fact]
+    public async Task Import_OfADocumentWithTwoFlowNodesSharingAnIdInOneBody_ReturnsUnprocessableEntityAndCreatesNoDefinition()
+    {
+        // The library's reader indexes each body's flow nodes by id, so this repeat used to escape it as an unhandled
+        // ArgumentException and a 500; it is now refused before the reader runs.
+        var definitionId = Guid.NewGuid().ToString("N");
+        using var content = new MultipartFormDataContent();
+        AddBpmnFile(content, ReadAsset("camunda-order-process.bpmn").Replace("<bpmn:endEvent id=\"EndEvent_1\"", "<bpmn:endEvent id=\"StartEvent_1\""), "file");
+        content.Add(new StringContent(definitionId), "DefinitionId");
+
+        var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Equal(BpmnErrorCodes.ImportDuplicateElementId, CodeOf(body));
+        Assert.Equal(["StartEvent_1"], ElementIdsOf(body));
+        Assert.Null(await FindLatestOrDefaultAsync(definitionId));
     }
 
     [Fact]
@@ -892,6 +912,242 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         Assert.Equal(versionBeforePut, await LatestVersionOfAsync(definitionId));
     }
 
+    [Fact]
+    public async Task XmlGet_OfAMissingDefinition_ReturnsNotFound()
+    {
+        var response = await GetAuthenticatedAsync("bpmn/definitions/does-not-exist/xml", "workflows/definitions:view");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task XmlGet_OfADefinitionNeverImportedFromBpmn_ReturnsUnprocessableEntity()
+    {
+        var definitionId = await CreateNonBpmnDefinitionAsync();
+
+        var response = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/xml", "workflows/definitions:view");
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        Assert.Equal(BpmnErrorCodes.ExportNotImported, CodeOf(await response.Content.ReadAsStringAsync()));
+    }
+
+    [Fact]
+    public async Task XmlGet_OfAFreshlyImportedDefinition_ReturnsTheStoredSourceExactlyWithTheDocumentETag()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+
+        var (etag, xml) = await GetXmlAsync(definitionId);
+
+        // The uploaded bytes, not the library's own rendering of them as Export returns: the ETag covers this text.
+        Assert.Equal(ReadAsset("camunda-order-process.bpmn"), xml);
+        Assert.Equal((await GetDocumentAsync(definitionId)).ETag, etag);
+    }
+
+    [Fact]
+    public async Task XmlGet_WhenAuthenticatedWithoutTheRequiredPermission_ReturnsForbidden()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+
+        var response = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/xml", "workflows/definitions:write");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task XmlPut_OfAMissingDefinition_ReturnsNotFound()
+    {
+        var response = await PutXmlAsync("does-not-exist", ReadAsset("camunda-order-process.bpmn"), null);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("*")]
+    public async Task XmlPut_WithoutAUsableIfMatch_ReturnsPreconditionRequiredAndOverwritesNothing(string? ifMatch)
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        var (_, xml) = await GetXmlAsync(definitionId);
+        var storedBeforePut = await LatestStoredAsync(definitionId);
+
+        var response = await PutXmlAsync(definitionId, xml.Replace("Order Handled", "Order Shipped"), ifMatch);
+
+        Assert.Equal(HttpStatusCode.PreconditionRequired, response.StatusCode);
+        Assert.Equal(BpmnErrorCodes.DocumentPreconditionRequired, CodeOf(await response.Content.ReadAsStringAsync()));
+        Assert.Equal(storedBeforePut, await LatestStoredAsync(definitionId));
+    }
+
+    [Fact]
+    public async Task XmlPut_WithTheCurrentIfMatch_StoresTheDocumentExactlyAndReturnsItsETag()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        var (etag, xml) = await GetXmlAsync(definitionId);
+        var edited = xml.Replace("Notifying the warehouse", "Notifying the warehouse, saved as XML");
+
+        var response = await PutXmlAsync(definitionId, edited, etag);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var (etagAfterPut, xmlAfterPut) = await GetXmlAsync(definitionId);
+        Assert.Equal(edited, xmlAfterPut);
+        Assert.Equal(etagAfterPut, ETagOf(response));
+        Assert.NotEqual(etag, etagAfterPut);
+        Assert.Contains("Notifying the warehouse, saved as XML", (await LatestStoredAsync(definitionId)).StringData);
+    }
+
+    [Fact]
+    public async Task XmlPut_OfUnchangedContent_ReturnsTheETagTheGetReturned()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        var (etag, xml) = await GetXmlAsync(definitionId);
+
+        var response = await PutXmlAsync(definitionId, xml, etag);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(etag, ETagOf(response));
+    }
+
+    [Fact]
+    public async Task XmlPut_AfterAnInterveningXmlPut_ReturnsPreconditionFailedAndOverwritesNothing()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        var (staleETag, xml) = await GetXmlAsync(definitionId);
+        Assert.Equal(HttpStatusCode.OK, (await PutXmlAsync(definitionId, xml.Replace("Order Handled", "Order Shipped"), staleETag)).StatusCode);
+        var storedBeforePut = await LatestStoredAsync(definitionId);
+
+        var response = await PutXmlAsync(definitionId, xml.Replace("Order Handled", "Order Closed"), staleETag);
+
+        Assert.Equal(HttpStatusCode.PreconditionFailed, response.StatusCode);
+        Assert.Equal(BpmnErrorCodes.DocumentPreconditionFailed, CodeOf(await response.Content.ReadAsStringAsync()));
+        Assert.Equal(storedBeforePut, await LatestStoredAsync(definitionId));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("<bpmn:definitions")]
+    [InlineData("<notBpmn />")]
+    public async Task XmlPut_OfABodyThatIsNotBpmnXml_ReturnsBadRequestAndOverwritesNothing(string body)
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        var (etag, _) = await GetXmlAsync(definitionId);
+        var storedBeforePut = await LatestStoredAsync(definitionId);
+
+        var response = await PutXmlAsync(definitionId, body, etag);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Equal(storedBeforePut, await LatestStoredAsync(definitionId));
+    }
+
+    [Fact]
+    public async Task XmlPut_WithARepeatedElementId_ReturnsUnprocessableEntityAndOverwritesNothing()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        var (etag, xml) = await GetXmlAsync(definitionId);
+        var storedBeforePut = await LatestStoredAsync(definitionId);
+
+        var response = await PutXmlAsync(definitionId, xml.Replace("<bpmn:endEvent id=\"EndEvent_1\"", "<bpmn:endEvent id=\"StartEvent_1\""), etag);
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        Assert.Equal(BpmnErrorCodes.ImportDuplicateElementId, CodeOf(await response.Content.ReadAsStringAsync()));
+        Assert.Equal(storedBeforePut, await LatestStoredAsync(definitionId));
+    }
+
+    [Fact]
+    public async Task XmlPut_ThatEditsInsideANestedSubprocess_RebindsTheNestedScope()
+    {
+        // The document PUT restores every subprocess body from the stored source, so nothing inside one can change
+        // through it (#8076). The XML carries the bodies itself.
+        var definitionId = await ImportAssetAsync("nested-subprocesses.bpmn");
+        var (etag, xml) = await GetXmlAsync(definitionId);
+        Assert.DoesNotContain("audit-workflow-v2", (await LatestStoredAsync(definitionId)).StringData);
+
+        var response = await PutXmlAsync(definitionId, xml.Replace("calledElement=\"audit-workflow\"", "calledElement=\"audit-workflow-v2\""), etag);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("audit-workflow-v2", (await LatestStoredAsync(definitionId)).StringData);
+    }
+
+    [Fact]
+    public async Task XmlPut_WithABindingChange_PreservesTheDefinitionsNonBpmnMetadata()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        await SetNonBpmnMetadataOnDraftAsync(definitionId);
+        var metadataBeforePut = await CaptureMetadataAsync(definitionId);
+        var (etag, xml) = await GetXmlAsync(definitionId);
+
+        var response = await PutXmlAsync(definitionId, xml.Replace("Notifying the warehouse", "Notifying the warehouse, saved as XML"), etag);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(metadataBeforePut, await CaptureMetadataAsync(definitionId));
+    }
+
+    [Fact]
+    public async Task XmlPut_ThatRenamesTheOnlyProcess_BindsTheRenamedProcess()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        var (etag, xml) = await GetXmlAsync(definitionId);
+
+        var response = await PutXmlAsync(definitionId, xml.Replace("\"order-process\"", "\"order-fulfilment\""), etag);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var stored = await FindLatestDefinitionAsync(definitionId);
+        Assert.True(stored.CustomProperties.TryGetValue<string>(BpmnInterchangeDocumentService.SourceProcessIdCustomPropertyKey, out var processId));
+        Assert.Equal("order-fulfilment", processId);
+    }
+
+    [Fact]
+    public async Task XmlPut_OfATwoProcessDocument_KeepsBindingTheStoredProcess()
+    {
+        var definitionId = await ImportTwoProcessDocumentAsync("second-process");
+        var (etag, xml) = await GetXmlAsync(definitionId);
+
+        var response = await PutXmlAsync(definitionId, xml, etag);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var stored = await FindLatestDefinitionAsync(definitionId);
+        Assert.True(stored.CustomProperties.TryGetValue<string>(BpmnInterchangeDocumentService.SourceProcessIdCustomPropertyKey, out var processId));
+        Assert.Equal("second-process", processId);
+    }
+
+    [Fact]
+    public async Task XmlPut_ThatDropsForeignContent_SavesAndReportsWhatWasDropped()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        var (etag, xml) = await GetXmlAsync(definitionId);
+
+        // Drops camunda:asyncBefore and the camunda:inputOutput block from NotifyWarehouse, and renames the camunda
+        // prefix everywhere else, which is not a loss.
+        var withoutInputOutput = Regex.Replace(xml, @"\s*<camunda:inputOutput>.*?</camunda:inputOutput>", "", RegexOptions.Singleline);
+        var edited = withoutInputOutput
+            .Replace(" camunda:asyncBefore=\"true\"", "")
+            .Replace("camunda:", "cam:")
+            .Replace("xmlns:camunda=", "xmlns:cam=");
+
+        var response = await PutXmlAsync(definitionId, edited, etag);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var dropped = body.RootElement.GetProperty("droppedForeignContent").EnumerateArray()
+            .Select(item => $"{item.GetProperty("elementId").GetString()} {item.GetProperty("kind").GetString()} {item.GetProperty("namespace").GetString()} {item.GetProperty("name").GetString()}")
+            .ToList();
+        Assert.Equal(
+        [
+            "NotifyWarehouse attribute http://camunda.org/schema/1.0/bpmn asyncBefore",
+            "NotifyWarehouse element http://camunda.org/schema/1.0/bpmn inputOutput"
+        ], dropped);
+        Assert.Equal(edited, (await GetXmlAsync(definitionId)).Xml);
+    }
+
+    [Fact]
+    public async Task XmlPut_WhenAuthenticatedWithoutTheRequiredPermission_ReturnsForbidden()
+    {
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        using var content = new StringContent(ReadAsset("camunda-order-process.bpmn"), Encoding.UTF8, "application/xml");
+
+        var response = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/xml", content, null, "workflows/definitions:view");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     /// <summary>
     /// Re-serializes <paramref name="element"/> with every <c>extensionElements</c> array entry named
     /// <c>activityBinding</c> (in the <c>elsa:</c> namespace URI) removed, walking the whole document recursively.
@@ -1001,6 +1257,17 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         return (ETagOf(response), await response.Content.ReadAsStringAsync());
     }
+
+    private async Task<(string? ETag, string Xml)> GetXmlAsync(string definitionId)
+    {
+        var response = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/xml", "workflows/definitions:view");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("application/xml", response.Content.Headers.ContentType?.MediaType);
+        return (ETagOf(response), await response.Content.ReadAsStringAsync());
+    }
+
+    private Task<HttpResponseMessage> PutXmlAsync(string definitionId, string xml, string? ifMatch) =>
+        PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/xml", new StringContent(xml, Encoding.UTF8, "application/xml"), ifMatch, "workflows/definitions:write");
 
     private Task<HttpResponseMessage> PutDocumentAsync(string definitionId, string documentJson, string? ifMatch) =>
         PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", new StringContent(documentJson, Encoding.UTF8, "application/json"), ifMatch, "workflows/definitions:write");

@@ -160,7 +160,7 @@ An exported `.bpmn` is self-contained: all binding configuration, including inpu
 
 ## REST Endpoints
 
-`Elsa.Bpmn.Interchange` registers five routes, all under `bpmn/`:
+`Elsa.Bpmn.Interchange` registers seven routes, all under `bpmn/`:
 
 | Method & route | Permission | What it does |
 | --- | --- | --- |
@@ -169,23 +169,25 @@ An exported `.bpmn` is self-contained: all binding configuration, including inpu
 | `GET bpmn/definitions/{definitionId}/export` | `read:workflow-definitions` | Writes the workflow definition's BPMN source back out as `.bpmn` XML. Optional `VersionOptions` query parameter (`Latest`, `Published`, or a specific version), defaulting to `Latest`. |
 | `GET bpmn/definitions/{definitionId}/document` | `read:workflow-definitions` | Reads the workflow definition's stored BPMN source with the `Bpmn.Model`/`Bpmn.Interchange` reader and returns the whole `bpmnDefinitions` document as the library's own JSON (payload format `1.0.0`), rather than as `.bpmn` XML. That document declares every subprocess but not what is inside one — see *Nested scopes* below. Same refusals as `Export` when the definition was never imported from BPMN or its stored source is stale. Carries an `ETag` response header for the returned revision — see below. |
 | `PUT bpmn/definitions/{definitionId}/document` | `write:workflow-definitions` | Accepts a `bpmnDefinitions` JSON document — the shape `GET` on the same route returns — writes it back out as `.bpmn` XML, with every subprocess it still declares keeping the body stored for it (see *Nested scopes* below), and runs it through the same path `Import` runs: analyze, capability check, bind, persist as a new draft, refresh the stored source. Only the activity graph and the `Bpmn:*` custom properties change; the definition's name, description, variables, inputs, outputs, outcomes, options, tool version and any other custom property are carried forward unchanged, unlike `POST bpmn/import`, which stays a whole-definition import (see below). Never edits a published version in place, exactly like `Import`. Returns the same `Id`/`DefinitionId`/`Version`/`Analysis` shape `Import` returns, plus the new `ETag`. Requires an `If-Match` request header — see below. |
+| `GET bpmn/definitions/{definitionId}/xml` | `read:workflow-definitions` | Returns the latest version's stored BPMN source as `.bpmn` XML, exactly as stored — unlike `Export`, which writes it out again through the library's writer and can read any version. This is what the BPMN modeler loads. Same refusals as `Export` when the definition was never imported from BPMN or its stored source is stale. Carries the same `ETag` as the document `GET` — see below. |
+| `PUT bpmn/definitions/{definitionId}/xml` | `write:workflow-definitions` | Accepts a complete `.bpmn` document as the request body and saves it as the definition's BPMN source: the same import path, refusals, `If-Match` rules and metadata preservation as the document `PUT`, but every subprocess body comes from the posted XML, so nested scopes can be edited — see *The XML endpoints* below. Returns the document `PUT`'s `Id`/`DefinitionId`/`Version`/`Analysis` shape plus `DroppedForeignContent`, and the new `ETag`. |
 
 Both `Analyze` and `Import` require exactly one uploaded file; zero or more than one returns `400 Bad Request`.
 
-### Optimistic concurrency on the document endpoints
+### Optimistic concurrency on the document and XML endpoints
 
-`GET` and `PUT` on `bpmn/definitions/{definitionId}/document` exchange a strong `ETag`, so a client that reads the
+`GET` and `PUT` on `bpmn/definitions/{definitionId}/document` and `bpmn/definitions/{definitionId}/xml` exchange the same strong `ETag`, so a client that reads the
 document, and someone else writes the definition before it writes its own edit back, cannot silently overwrite that
 intervening write. The `ETag` is a SHA-256 hash of what the definition stores: its BPMN document (the `Bpmn:SourceXml`
 custom property), its activity graph, its version and its id. Any write that changes the stored document or the
-graph therefore invalidates it — another document `PUT`, a `POST bpmn/import` with the same `DefinitionId`, a save of
+graph therefore invalidates it — another document or XML `PUT`, a `POST bpmn/import` with the same `DefinitionId`, a save of
 the draft from the workflow designer — including when an unpublished draft is saved in place under the same version,
 which is the common case. The value is opaque and must be sent back verbatim.
 
 Because it is derived from content, identical stored content has an identical `ETag`: a `PUT` that writes back
-exactly what is stored returns the same `ETag` `GET` did. The first `PUT` after a `.bpmn` upload replaces the
+exactly what is stored returns the same `ETag` `GET` did. The first document `PUT` after a `.bpmn` upload replaces the
 uploaded bytes with the writer's own rendering of the same document, so the stored document, and with it the `ETag`,
-changes once even when nothing was edited. A save that changes only the definition's other properties — its name,
+changes once even when nothing was edited; an XML `PUT` stores the posted text as is. A save that changes only the definition's other properties — its name,
 description or variables, say — leaves the document and the graph untouched and does not change the `ETag`; a
 document `PUT` leaves those properties as that save left them, since it edits the document, not the rest of the
 definition — see the next section. `POST bpmn/import` with the same `DefinitionId` is different: it is a
@@ -213,6 +215,28 @@ whole-definition import and resets them from the document, same as it always has
   throws `NotSupportedException` without writing anything, so the `PUT` fails instead of saving an unguarded
   edit. A third-party definition store must implement the method with the same guarantee for this
   endpoint to be concurrency-safe on it.
+
+### The XML endpoints
+
+The `xml` GET/PUT pair is how the BPMN modeler edits a process (ADR *Keep BPMN XML as the source of truth*): it
+loads the stored document, edits it, and saves the whole document back. The XML is the source of truth; the Elsa
+activity graph is derived from it on every save.
+
+- **The body is the document.** `PUT` reads the request body as BPMN 2.0 XML, whatever its content type. An empty
+  body, XML that is not well-formed and XML whose root is not a BPMN `<definitions>` element are `400 Bad Request`.
+  Everything else is refused exactly as `Import` and the document `PUT` refuse it.
+- **Nested scopes are edited, not restored.** Unlike the document `PUT`, nothing is taken from the stored source:
+  the posted XML carries every subprocess body, so an element inside one can be changed (#8076).
+- **Which process is bound.** A document that declares exactly one process binds it, whatever its id now is, so the
+  modeler may rename it. A document that declares more than one binds the process the definition was last bound to
+  (`Bpmn:SourceProcessId`), and is `400 Bad Request` when it no longer declares that process.
+- **Dropped foreign content.** The response's `DroppedForeignContent` lists the foreign content the stored document
+  had that the posted one does not, each as `{ elementId, kind, namespace, name }`: `kind` is `element` or
+  `attribute`, and `elementId` is the nearest element id that carried it. Foreign content is anything in a namespace
+  other than BPMN's own (model, DI, DC, DD), `xsi`, `xml`, Elsa's `elsa:` binding namespace and the library's vendor
+  namespace. A renamed prefix, reordered attributes or changed whitespace is not a loss; changed content is, and
+  content that moves to another element counts as dropped from the first. The save succeeds either way — the
+  modeler asks the user to acknowledge such a loss before it saves, and this list tells a client that did not.
 
 ### The document endpoints and the JSON payload format
 
@@ -391,7 +415,7 @@ A missing `definitionId` returns `404 Not Found`.
 `code`, and on the `data` fields a code documents, rather than on the message — the message may be reworded without
 notice.
 
-`bpmn/import`, `bpmn/definitions/{id}/export`, and the document `GET`/`PUT` endpoints report most of their
+`bpmn/import`, `bpmn/definitions/{id}/export`, and the document and XML `GET`/`PUT` endpoints report most of their
 BPMN-specific refusals as an additive envelope alongside the usual FastEndpoints error body shape (`statusCode`,
 `message`, `errors`):
 
@@ -414,27 +438,27 @@ FastEndpoints' process-wide `Config.ErrOpts.ResponseBuilder`, which would have r
 response, not just these — see `Elsa.Bpmn.Interchange.Endpoints.Bpmn.BpmnErrorResponse`'s remarks.
 
 Not every 4xx these endpoints send carries a code: a plain `404 Not Found` for a `definitionId` that does not exist,
-a `400 Bad Request` from malformed JSON or an unparseable `VersionOptions`, a `400 Bad Request` for a document
+a `400 Bad Request` from malformed JSON, an XML `PUT` body that is not BPMN 2.0 XML or an unparseable `VersionOptions`, a `400 Bad Request` for a document
 that names more than one process without saying which, and a document `PUT`'s `400 Bad Request` for a subprocess
 element that has a stored body but no `bindingRef`, are uncoded.
 
 | Code (`Elsa.Bpmn.Interchange.BpmnErrorCodes`) | Sent by | Status | `data` |
 | --- | --- | --- | --- |
-| `bpmn.import.capability-unsupported` | `POST bpmn/import`, document `PUT` | 422 | `capabilities: string[]` (missing capability names), `elementIds: string[]` (offending element ids, combined across every missing capability) |
-| `bpmn.import.binding-invalid` | `POST bpmn/import`, document `PUT` | 422 | — |
-| `bpmn.import.duplicate-element-id` | `POST bpmn/import`, document `PUT` | 422 | `elementIds: string[]` (the duplicated ids) |
-| `bpmn.import.process-invalid` | `POST bpmn/import`, document `PUT` | 422 | — |
-| `bpmn.import.condition-language-unsupported` | `POST bpmn/import`, document `PUT` | 422 | `elementIds: string[]` (the sequence flows whose expression is in a language Elsa does not evaluate, across the whole document including nested subprocesses, sorted and distinct) |
-| `bpmn.import.condition-conflict` | `POST bpmn/import`, document `PUT` | 422 | `elementIds: string[]` (the sequence flows that carry both an outcome and an author-written expression, across the whole document including nested subprocesses, sorted and distinct) |
-| `bpmn.export.not-imported` | `GET .../export`, document `GET` | 422 | — |
-| `bpmn.export.source-stale` | `GET .../export`, document `GET` | 422 | — |
-| `bpmn.export.source-version-unknown` | `GET .../export`, document `GET` | 422 | — |
-| `bpmn.document.not-found` | document `PUT` | 404 | — |
-| `bpmn.document.precondition-required` | document `PUT` | 428 | — |
-| `bpmn.document.precondition-failed` | document `PUT` | 412 | — |
+| `bpmn.import.capability-unsupported` | `POST bpmn/import`, document and XML `PUT` | 422 | `capabilities: string[]` (missing capability names), `elementIds: string[]` (offending element ids, combined across every missing capability) |
+| `bpmn.import.binding-invalid` | `POST bpmn/import`, document and XML `PUT` | 422 | — |
+| `bpmn.import.duplicate-element-id` | `POST bpmn/import`, document and XML `PUT` | 422 | `elementIds: string[]` (the duplicated ids) |
+| `bpmn.import.process-invalid` | `POST bpmn/import`, document and XML `PUT` | 422 | — |
+| `bpmn.import.condition-language-unsupported` | `POST bpmn/import`, document and XML `PUT` | 422 | `elementIds: string[]` (the sequence flows whose expression is in a language Elsa does not evaluate, across the whole document including nested subprocesses, sorted and distinct) |
+| `bpmn.import.condition-conflict` | `POST bpmn/import`, document and XML `PUT` | 422 | `elementIds: string[]` (the sequence flows that carry both an outcome and an author-written expression, across the whole document including nested subprocesses, sorted and distinct) |
+| `bpmn.export.not-imported` | `GET .../export`, document and XML `GET` | 422 | — |
+| `bpmn.export.source-stale` | `GET .../export`, document and XML `GET` | 422 | — |
+| `bpmn.export.source-version-unknown` | `GET .../export`, document and XML `GET` | 422 | — |
+| `bpmn.document.not-found` | document and XML `PUT` | 404 | — |
+| `bpmn.document.precondition-required` | document and XML `PUT` | 428 | — |
+| `bpmn.document.precondition-failed` | document and XML `PUT` | 412 | — |
 
 See each constant's XML doc in `Elsa.Bpmn.Interchange.BpmnErrorCodes` for exactly which situation it names.
-`bpmn.export.source-version-unknown` is not reachable through `Import` or the document `PUT` themselves — both
+`bpmn.export.source-version-unknown` is not reachable through `Import` or the document and XML `PUT` themselves — all three
 always record a source version alongside the source text — only through custom properties edited or migrated some
 other way; it is kept, and coded, as a defence against that combination arising.
 

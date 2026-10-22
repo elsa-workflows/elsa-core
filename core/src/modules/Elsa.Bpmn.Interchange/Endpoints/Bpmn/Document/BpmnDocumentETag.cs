@@ -7,7 +7,7 @@ using Elsa.Workflows.Management.Entities;
 namespace Elsa.Bpmn.Interchange.Endpoints.Bpmn.Document;
 
 /// <summary>
-/// The strong <c>ETag</c> the document <c>Get</c> and <c>Put</c> endpoints exchange for optimistic concurrency: a
+/// The strong <c>ETag</c> the document and XML <c>Get</c> and <c>Put</c> endpoints exchange for optimistic concurrency: a
 /// SHA-256 hash over the stored workflow definition's id, its version, its BPMN source
 /// (<see cref="BpmnInterchangeDocumentService.SourceXmlCustomPropertyKey"/>) and its serialized activity graph
 /// (<see cref="WorkflowDefinition.StringData"/>).

@@ -49,39 +49,11 @@ internal sealed class Put(IWorkflowDefinitionStore store, BpmnInterchangeDocumen
             return;
         }
 
-        // Optimistic concurrency: a client that GETs the document, then PUTs it back after someone else has written the
-        // definition in between, must not silently replace that intervening write. The client is required to carry the
-        // ETag its GET returned as If-Match. A missing header cannot express "I know what I'm overwriting" at all, and
-        // neither can "*", which matches whatever is stored — so both are refused as 428 rather than honoured. Anything
-        // else must be exactly the current strong ETag (a weak W/ tag or a list never is), or it proves the client's copy
-        // is no longer current. The header is checked here so a stale client is refused before import work runs, and
-        // again inside ImportDocumentAsync's compare-and-swap so a write that lands in that window is 412, not a silent
-        // overwrite. Metadata carried forward is read in that same swap, not from this lookup.
-        var ifMatch = HttpContext.Request.Headers.IfMatch.ToString().Trim();
+        // Metadata carried forward is read in ImportDocumentAsync's compare-and-swap, not from this lookup.
+        var ifMatch = await BpmnDocumentPrecondition.CheckAsync(HttpContext, definition, cancellationToken);
 
-        if (ifMatch is "" or "*")
-        {
-            await BpmnErrorResponse.SendAsync(
-                HttpContext.Response,
-                BpmnErrorResponse.Create(
-                    "An If-Match header carrying the ETag from a prior GET of this document is required to PUT it back, so an intervening edit is not silently overwritten. The wildcard \"*\" is not accepted.",
-                    BpmnErrorCodes.DocumentPreconditionRequired,
-                    StatusCodes.Status428PreconditionRequired),
-                cancellationToken);
+        if (ifMatch is null)
             return;
-        }
-
-        if (!string.Equals(ifMatch, BpmnDocumentETag.From(definition), StringComparison.Ordinal))
-        {
-            await BpmnErrorResponse.SendAsync(
-                HttpContext.Response,
-                BpmnErrorResponse.Create(
-                    "The workflow definition has been written since the ETag in If-Match was issued. GET the document again, reapply the edit, and PUT it with the new ETag.",
-                    BpmnErrorCodes.DocumentPreconditionFailed,
-                    StatusCodes.Status412PreconditionFailed),
-                cancellationToken);
-            return;
-        }
 
         string body;
 
