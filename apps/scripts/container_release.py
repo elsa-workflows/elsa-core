@@ -686,10 +686,12 @@ def smoke_image(
     platform_args = [] if local else ["--platform", platform]
     username = "container-smoke"
     password = secrets.token_urlsafe(32) if auth_enabled else ""
+    signing_key = secrets.token_urlsafe(48) if auth_enabled else ""
     run_env = {
         **os.environ,
         "Identity__AdminUser__UserName": username,
         "Identity__AdminUser__Password": password,
+        "Identity__Tokens__SigningKey": signing_key,
     } if auth_enabled else None
     auth_args = (
         [
@@ -697,6 +699,8 @@ def smoke_image(
             "Identity__AdminUser__UserName",
             "--env",
             "Identity__AdminUser__Password",
+            "--env",
+            "Identity__Tokens__SigningKey",
         ]
         if auth_enabled
         else []
