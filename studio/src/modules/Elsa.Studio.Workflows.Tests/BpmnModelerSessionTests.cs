@@ -150,7 +150,7 @@ public class BpmnModelerSessionTests
         Assert.Equal("\"REVISION-2\"", _service.Puts[1].IfMatch);
     }
 
-    [Fact(DisplayName = "Without an ETag in the response, a different stored document leaves the revision unknown")]
+    [Fact(DisplayName = "Without an ETag in the response, a different stored document leaves the revision unknown, and the next save is refused as stale")]
     public async Task MissingResponseETag_WithAnotherWriter_LeavesTheRevisionUnknown()
     {
         await OpenAsync();
@@ -161,6 +161,12 @@ public class BpmnModelerSessionTests
 
         Assert.True(result.IsSuccess);
         Assert.True(_session.SavedButRevisionUnknown);
+
+        Edit();
+        var next = await _session.SaveAsync();
+
+        Assert.Equal(BpmnDocumentFailureReason.PreconditionFailed, next.Failure!.Reason);
+        Assert.Single(_service.Puts);
     }
 
     [Fact(DisplayName = "After an ordinary save, an unchanged document's new ETag is adopted; a changed one conflicts with unsaved edits")]

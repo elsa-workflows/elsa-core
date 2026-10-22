@@ -181,8 +181,11 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
         if (_saveTask is { IsCompleted: false })
             return _saveTask;
 
-        if (_canvas == null || _eTag == null || CanvasLoadError != null)
+        if (_canvas == null || Xml == null || CanvasLoadError != null)
             return Task.FromResult(Refuse(new(BpmnDocumentFailureReason.Unknown, "The BPMN document is not open in a designer, so there is nothing to save.")));
+
+        if (_eTag == null)
+            return Task.FromResult(Refuse(new(BpmnDocumentFailureReason.PreconditionFailed, "The revision of the last save could not be confirmed, so nothing was saved. Reload to continue from the current version.")));
 
         if (SaveGate.RequiresAcknowledgement)
             return Task.FromResult(Refuse(new(BpmnDocumentFailureReason.Unknown, "The content the designer cannot keep has not been acknowledged, so nothing was saved.")));
