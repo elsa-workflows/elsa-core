@@ -142,4 +142,4 @@ takes no part in this: the host owns it (`BpmnSaveGate` in `Elsa.Studio.Bpmn`).
 A change that an existing designer or host could not handle is a new contract version. Examples are removing or
 renaming a member, changing a payload's shape, or adding a required option. Adding an optional member is not. A host
 treats a warning kind it does not know as `dropped`, so adding a warning kind is not a new version either. Every
-designer passes the conformance suite for the version it declares.
+designer passes the conformance suite for the version it declares: `studio/test/browser/BpmnDesigner`.
