@@ -76,8 +76,12 @@ UPLOAD_PACKAGES = (
 RETRIEVE_CANDIDATE = "python3 scripts/stage_consolidated_candidate_nupkgs.py retrieve"
 STAGE_CANDIDATE = "python3 scripts/stage_consolidated_candidate_nupkgs.py stage"
 GUARD_CANDIDATE = "python3 scripts/validate_packages_id_set.py"
-# Whitespace-normalized run: of the candidate Feedz guard step.
-CANDIDATE_GUARD_RUN = f"set -euo pipefail {STAGE_CANDIDATE} {GUARD_CANDIDATE}"
+# Exact non-empty run: lines after horizontal-whitespace collapse. A joined
+# string would accept YAML `>-`, which folds the block into one no-op `set`.
+CANDIDATE_GUARD_LINES = ("set -euo pipefail", STAGE_CANDIDATE, GUARD_CANDIDATE)
+NUGET_GUARD_LINES = (STAGE_CANDIDATE, GUARD_CANDIDATE)
+CANDIDATE_GUARD_REF = "refs/tags/3.10.0"
+GUARD_STEP_KEYS = frozenset({"name", "env", "run", "id", "if", "continue-on-error"})
 FORBIDDEN_PACK_ROUTE = (
     ("CONSOLIDATED_RELEASE_CANDIDATE", "packages.yml must not set CONSOLIDATED_RELEASE_CANDIDATE; the candidate workflow owns that pack"),
     ("ConsolidatedReleaseCandidate:", "packages.yml must not pack ConsolidatedReleaseCandidate; the candidate workflow owns that pack"),
@@ -333,6 +337,25 @@ def _step_run(step: dict) -> str:
     return " ".join(str(step.get("run") or "").split())
 
 
+def _run_lines(step: dict) -> list[str]:
+    """Whitespace-normalized non-empty lines of a step's run: body."""
+    return [" ".join(line.split()) for line in str(step.get("run") or "").splitlines() if line.strip()]
+
+
+def _has_defaults_run_shell(node: Any) -> bool:
+    if not isinstance(node, dict):
+        return False
+    defaults = node.get("defaults")
+    if not isinstance(defaults, dict):
+        return False
+    run = defaults.get("run")
+    return isinstance(run, dict) and "shell" in run
+
+
+def _guard_step_extra_keys(step: dict) -> list[str]:
+    return sorted(set(step) - GUARD_STEP_KEYS)
+
+
 def promotion_job_violations(jobs: dict) -> list[str]:
     """Stable 3.10.x nuget.org must promote pinned candidate bytes, never a rebuild."""
     violations = []
@@ -353,6 +376,15 @@ def promotion_job_violations(jobs: dict) -> list[str]:
         violations.append("publish_nuget must retrieve the pinned candidate, stage it, and run the ID-set guard before NuGet login")
     elif not retrieve < stage <= guard < login:
         violations.append("publish_nuget must retrieve, stage, and guard the pinned candidate before NuGet login")
+    if guard is not None:
+        if _run_lines(steps[guard]) != list(NUGET_GUARD_LINES):
+            violations.append("publish_nuget candidate staging run: must be exactly stage and the ID-set guard")
+        if _guard_step_extra_keys(steps[guard]):
+            violations.append(
+                "publish_nuget candidate staging keys must be among name, env, run, id, if, continue-on-error"
+            )
+    if _has_defaults_run_shell(job):
+        violations.append("publish_nuget must not set defaults.run.shell")
     for index, expected, message in (
         (retrieve, PROMOTE_STABLE_310, "publish_nuget candidate retrieve if: must be exactly the stable 3.10.x tag condition"),
         (stage, PROMOTE_STABLE_310, "publish_nuget candidate staging if: must be exactly the stable 3.10.x tag condition"),
@@ -437,6 +469,10 @@ def candidate_publisher_violations(source: str) -> list[str]:
         violations.append(
             "publish-consolidated-original-candidate.yml must run the same ID-set guard before Feedz"
         )
+    if _has_defaults_run_shell(workflow) or _has_defaults_run_shell(job):
+        violations.append(
+            "publish-consolidated-original-candidate.yml must not set defaults.run.shell"
+        )
     if isinstance(job, dict) and "continue-on-error" in job and job.get("continue-on-error") is not False:
         violations.append(
             "publish-consolidated-original-candidate.yml must not continue on error"
@@ -454,9 +490,18 @@ def candidate_publisher_violations(source: str) -> list[str]:
             violations.append(
                 "publish-consolidated-original-candidate.yml guard step must not have an if:"
             )
-        if _step_run(step) != CANDIDATE_GUARD_RUN:
+        if _guard_step_extra_keys(step):
+            violations.append(
+                "publish-consolidated-original-candidate.yml guard step keys must be among name, env, run, id, if, continue-on-error"
+            )
+        if _run_lines(step) != list(CANDIDATE_GUARD_LINES):
             violations.append(
                 "publish-consolidated-original-candidate.yml guard run: must be exactly set -euo pipefail, stage, and the ID-set guard"
+            )
+        env = step.get("env") if isinstance(step.get("env"), dict) else {}
+        if " ".join(str(env.get("REF") or "").split()) != CANDIDATE_GUARD_REF:
+            violations.append(
+                "publish-consolidated-original-candidate.yml guard env REF must be refs/tags/3.10.0"
             )
     # Recheck and publish must not be gated by always()/failure()/cancelled().
     # The evidence upload's if: always() is the one allowed status-function use.
@@ -478,6 +523,7 @@ def workflow_violations(workflow: Any) -> list[str]:
     if not isinstance(workflow, dict) or not isinstance(workflow.get("jobs"), dict):
         return ["the workflow has no jobs mapping"]
     jobs = workflow["jobs"]
+    defaults = ["the workflow must not set defaults.run.shell"] if _has_defaults_run_shell(workflow) else []
     return [
         *trigger_violations(workflow),
         *capability_violations(workflow),
@@ -486,6 +532,7 @@ def workflow_violations(workflow: Any) -> list[str]:
         *selection_violations(jobs),
         *pages_upload_violations(jobs),
         *promotion_job_violations(jobs),
+        *defaults,
     ]
 
 

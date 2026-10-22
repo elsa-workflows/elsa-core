@@ -58,8 +58,8 @@ The validator parses `packages.yml` and fails in these cases:
 - The selection job does not run the selection check with the dispatched ref and inputs, or can continue on error.
 - The selection check accepts a tag that is not a release version.
 - `publish_preview_feedz` accepts a stable `3.10.x` tag, or the selection check accepts Feedz for `3.10.0` / `3.10.1`.
-- `publish_nuget` does not retrieve the pinned candidate, stage it, and run the ID-set guard before NuGet login, or those steps can continue on error.
-- `publish-consolidated-original-candidate.yml` does not run the same ID-set guard before its Feedz publish, or the guard step's `run:` is not exactly `set -euo pipefail`, stage, and the ID-set command.
+- `publish_nuget` does not retrieve the pinned candidate, stage it, and run the ID-set guard before NuGet login, those steps can continue on error, or the stage+guard `run:` is not exactly those two commands on separate lines.
+- `publish-consolidated-original-candidate.yml` does not run the same ID-set guard before its Feedz publish, or the guard step's `run:` is not exactly `set -euo pipefail`, stage, and the ID-set command on separate lines. A guard `shell:` or `defaults.run.shell` is rejected.
 - `Compile+Pack` still runs on a stable 3.10.x nuget.org dispatch, or `packages.yml` packs `ConsolidatedReleaseCandidate` / builds Studio ClientLibs.
 
 The tests mutate copies of the real workflow to confirm each of these cases is rejected. They also check every accepted and rejected dispatch selection.
