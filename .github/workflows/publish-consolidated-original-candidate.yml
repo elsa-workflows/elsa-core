@@ -215,6 +215,17 @@ jobs:
         run: >-
           dotnet build scripts/integration-program/VerifyPackageSymbolPair/VerifyPackageSymbolPair.csproj
           --configuration Release --output "$RUNNER_TEMP/symbol-inspector"
+      - name: Guard the pinned candidate ID set before Feedz
+        env:
+          REF: refs/tags/3.10.0
+          CANDIDATE_ARCHIVE: ${{ runner.temp }}/executor-input/candidate.zip
+          PACKAGES_DIR: ${{ runner.temp }}/candidate-nupkgs
+          GITHUB_TOKEN: ''
+          ACTIONS_READ_TOKEN: ''
+        run: |
+          set -euo pipefail
+          python3 scripts/stage_consolidated_candidate_nupkgs.py stage
+          python3 scripts/validate_packages_id_set.py
       - name: Recheck protected admission with metadata-only authority before exposing the publisher credential
         env:
           ELSA_CONSOLIDATED_METADATA_READ_TOKEN: ${{ secrets.ELSA_CONSOLIDATED_METADATA_READ_TOKEN }}
@@ -226,18 +237,6 @@ jobs:
           jq -e --arg result native_approval_verified --argjson native true \
             --arg source "$GITHUB_SHA" --argjson run "$GITHUB_RUN_ID" \
             "$ELSA_ADMISSION_RECEIPT_FILTER" "$RUNNER_TEMP/executor-publication/admission.json" > /dev/null 2>&1
-      - name: Guard the pinned candidate ID set before Feedz
-        env:
-          REF: refs/tags/3.10.0
-          CANDIDATE_ARCHIVE: ${{ runner.temp }}/executor-input/candidate.zip
-          PACKAGES_DIR: ${{ runner.temp }}/candidate-nupkgs
-          GITHUB_TOKEN: ''
-          GH_TOKEN: ''
-          ACTIONS_READ_TOKEN: ''
-        run: |
-          set -euo pipefail
-          python3 scripts/stage_consolidated_candidate_nupkgs.py stage
-          python3 scripts/validate_packages_id_set.py
       - name: Publish and verify only the admitted original bytes
         env:
           ELSA_CONSOLIDATED_METADATA_READ_TOKEN: ${{ secrets.ELSA_CONSOLIDATED_METADATA_READ_TOKEN }}

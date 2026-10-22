@@ -384,6 +384,24 @@ def candidate_publisher_violations(source: str) -> list[str]:
         violations.append(
             "publish-consolidated-original-candidate.yml must run the ID-set guard before the Feedz publish"
         )
+    workflow = yaml.safe_load(source)
+    jobs = workflow.get("jobs") if isinstance(workflow, dict) else None
+    job = jobs.get("publish") if isinstance(jobs, dict) else None
+    steps = [step for step in (job or {}).get("steps") or [] if isinstance(step, dict)] if isinstance(job, dict) else []
+    guard_steps = [step for step in steps if GUARD_CANDIDATE in _step_run(step)]
+    if not guard_steps and guard >= 0:
+        violations.append(
+            "publish-consolidated-original-candidate.yml must run the same ID-set guard before Feedz"
+        )
+    for step in guard_steps:
+        if step.get("continue-on-error") not in (None, False):
+            violations.append(
+                "publish-consolidated-original-candidate.yml must not continue on error"
+            )
+        if step.get("if"):
+            violations.append(
+                "publish-consolidated-original-candidate.yml guard step must not have an if:"
+            )
     return violations
 
 

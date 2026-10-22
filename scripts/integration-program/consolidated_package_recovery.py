@@ -23,11 +23,13 @@ import urllib.parse
 import urllib.request
 import zipfile
 
+import consolidated_candidate_input as candidate_input
+
 FEED_INDEX = "https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json"
 FEED_ORIGIN = "https://f.feedz.io"
 VERSION = "3.10.0"
 SOURCE = "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205"
-PACKAGE_COUNT = 225
+PACKAGE_COUNT = candidate_input.PIN_PACKAGE_COUNT
 MAX_PACKAGE_BYTES = 32 * 1024 * 1024
 MAX_PAYLOAD_BYTES = 256 * 1024 * 1024
 MAX_INDEX_BYTES = 1024 * 1024

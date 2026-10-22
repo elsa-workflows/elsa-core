@@ -28,7 +28,7 @@ Normal source builds retain the imported product's packing guard. The reviewed
 [consolidated package proof](../../docs/integration-program/consolidated-package-proof.md)
 evaluates eligible packages explicitly and verifies original archive/consumer
 provenance. The [first 3.10 release policy](../../docs/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md)
-is lockstep with Core as sole 3.10+ publisher (NuGet.org for release tags (stable 3.10.x by candidate promotion, blocked until re-pin (#9016)); Feedz for previews, 3.10.x prereleases and the 3.10.x candidate, also blocked until re-pin (#9016));
+is lockstep with Core as sole 3.10+ publisher (NuGet.org for release tags (stable 3.10.x by candidate promotion, blocked until re-pin (#9016)); Feedz for previews, 3.10.x prereleases, and the stable 3.10.x candidate publish, blocked until re-pin (#9016));
 source publisher cutover remains separately governed. The earlier
 [Slack release-unit handoff](../../docs/integration-program/publisher-handoff.md)
 is bounded historical preparation, not evidence that live publisher ownership

@@ -78,7 +78,9 @@ def render_summary(admission, verification, *, artifact_id, artifact_digest, adm
             and len(set(reviewers)) == len(reviewers), "schedule_policy_invalid")
     candidate = {**executor.candidate_input.PRODUCER, "archive_sha256": executor.candidate_input.ARCHIVE_SHA256,
                  "preupload_manifest_sha256": executor.candidate_input.MANIFEST_SHA256, "expires_at": executor.EXPIRY,
-                 "package_count": 225, "exclusion_count": 124, "excluded_id_count": 123}
+                 "package_count": executor.candidate_input.PIN_PACKAGE_COUNT,
+                 "exclusion_count": executor.candidate_input.PIN_EXCLUSION_COUNT,
+                 "excluded_id_count": executor.candidate_input.PIN_EXCLUSION_ID_COUNT}
     require(admitted.get("candidate") == candidate, "candidate_identity_invalid")
     implementation = executor.sha(Path(executor.__file__).read_bytes())
     require(admitted.get("implementation_sha256") == implementation
@@ -95,12 +97,14 @@ def render_summary(admission, verification, *, artifact_id, artifact_digest, adm
             and provenance["original_envelope_sha256"] == executor.candidate_input.ENVELOPE_SHA256
             and provenance["preupload_manifest_sha256"] == executor.candidate_input.MANIFEST_SHA256,
             "original_identity_invalid")
-    baseline, _ = inputs._read_bounded_json(Path(executor.__file__).with_name("consolidated-candidate-inventory-baseline.json"), "Reviewed inventory")
+    baseline, _ = inputs._read_bounded_json(executor.candidate_input.PIN_INVENTORY, "Reviewed inventory")
     inventory_hash = executor.sha(json.dumps(inventory_identity(baseline), sort_keys=True, separators=(",", ":")).encode())
     require(provenance["inventory_sha256"] == inventory_hash, "inventory_identity_invalid")
     package_ids = {row["id"] for row in baseline["packages"]}
-    require(len(package_ids) == 225 and len(baseline["exclusions"]) == 124
-            and len({row["id"] for row in baseline["exclusions"]}) == 123, "inventory_identity_invalid")
+    require(len(package_ids) == executor.candidate_input.PIN_PACKAGE_COUNT
+            and len(baseline["exclusions"]) == executor.candidate_input.PIN_EXCLUSION_COUNT
+            and len({row["id"] for row in baseline["exclusions"]}) == executor.candidate_input.PIN_EXCLUSION_ID_COUNT,
+            "inventory_identity_invalid")
     start, finish, scheduled = (timestamp(value) for value in
                                (verification.get("started_at"), verification.get("finished_at"), admitted.get("observed_at")))
     require(timestamp(provenance["observed_at"]) <= start <= finish <= scheduled
@@ -116,13 +120,15 @@ def render_summary(admission, verification, *, artifact_id, artifact_digest, adm
             and package_proof.get("publication_ready") is False and package_proof.get("remote_symbols_verified") is False
             and package_proof.get("access_mode") == "anonymous" and package_proof.get("absence_scope") == "declared_access_visibility_only"
             and package_proof.get("classification_complete") is True and package_proof.get("reconciliation_blocked") is False
-            and package_proof.get("package_count") == 225 and package_proof.get("exclusion_count") == 124
+            and package_proof.get("package_count") == executor.candidate_input.PIN_PACKAGE_COUNT
+            and package_proof.get("exclusion_count") == executor.candidate_input.PIN_EXCLUSION_COUNT
             and digest(package_proof.get("exclusions_sha256")), "package_observation_invalid")
     feed = package_proof["feed_observation"]
     require(feed.get("status") == 200 and feed.get("complete") is True and feed.get("failure_category") is None
             and feed.get("archive_sha256") == verification["feed_index_sha256"], "feed_observation_invalid")
     packages = package_proof["packages"]
-    require(isinstance(packages, list) and len(packages) == 225 and {row["id"] for row in packages} == package_ids,
+    require(isinstance(packages, list) and len(packages) == executor.candidate_input.PIN_PACKAGE_COUNT
+            and {row["id"] for row in packages} == package_ids,
             "package_coverage_invalid")
     pins = {}
     for row in packages:
@@ -139,15 +145,17 @@ def render_summary(admission, verification, *, artifact_id, artifact_digest, adm
         for kind in ("nupkg", "snupkg"):
             pins[(row["id"], kind)] = row["local_"+kind+"_sha256"]
     package_counts = counts(packages)
-    require(package_proof.get("counts") == package_counts and package_proof.get("content_converged") is (package_counts["matching"] == 225),
+    require(package_proof.get("counts") == package_counts
+            and package_proof.get("content_converged") is (package_counts["matching"] == executor.candidate_input.PIN_PACKAGE_COUNT),
             "package_counts_invalid")
     operations = verification["operations"]
-    require(isinstance(operations, list) and len(operations) == 450
+    require(isinstance(operations, list) and len(operations) == executor.candidate_input.PIN_PACKAGE_COUNT * 2
             and {(row["id"], row["kind"]) for row in operations} == set(pins), "operation_coverage_invalid")
     require(all(row.get("state") == "not_attempted" and row.get("status") is None and row.get("failure_category") is None
                 and row.get("archive_sha256") == pins[(row["id"], row["kind"])] for row in operations), "operation_receipt_invalid")
     associations = verification["associations"]
-    require(isinstance(associations, list) and len(associations) == 225 and {row["id"] for row in associations} == package_ids,
+    require(isinstance(associations, list) and len(associations) == executor.candidate_input.PIN_PACKAGE_COUNT
+            and {row["id"] for row in associations} == package_ids,
             "association_coverage_invalid")
     keys, association_count, assembly_free = {}, 0, 0
     for row in associations:
@@ -174,7 +182,8 @@ def render_summary(admission, verification, *, artifact_id, artifact_digest, adm
                 and row.get("failure_category") is None and row.get("status") == (200 if row["classification"] == "matching" else 404)
                 and (row["classification"] == "missing" or row.get("pdb_sha256") == keys[row["key"]]), "symbol_observation_invalid")
     symbol_counts = counts(symbols)
-    converged = package_counts["matching"] == 225 and symbol_counts["matching"] == len(keys)
+    converged = (package_counts["matching"] == executor.candidate_input.PIN_PACKAGE_COUNT
+                 and symbol_counts["matching"] == len(keys))
     require(observed.get("content_verified") is converged and verification.get("content_verified") is converged,
             "content_receipt_invalid")
     pending = verification.get("pending_gates")
@@ -211,7 +220,7 @@ This is a completed, nonpublishing observation from this run. It grants no nativ
 | Reviewed GitHub reviewer IDs | {', '.join('`'+str(item)+'`' for item in sorted(reviewers))} |
 | Reviewed policy / operational packet SHA-256 | `{admitted['policy_sha256']}` / `{admitted['operational_packet_sha256']}` |
 
-Complete scope: **225 package pairs / 450 original archives**, **124 exclusions / 123 excluded IDs**, **{association_count} DLL/PDB associations**, **{len(keys)} distinct PDB keys**, **{assembly_free} assembly-free pairs**. Package observations: **{package_counts['matching']} matching, {package_counts['missing']} missing, 0 conflicting, 0 unknown**. PDB observations: **{symbol_counts['matching']} matching, {symbol_counts['missing']} missing, 0 conflicting, 0 unknown**. The completed verification records preserved SourceLink and original source evidence for every recorded association. These counts come from that verification receipt; this formatter checks receipt coverage and consistency and does not independently reinspect the original manifest or DLL/PDB bytes.
+Complete scope: **{executor.candidate_input.PIN_PACKAGE_COUNT} package pairs / {executor.candidate_input.PIN_PACKAGE_COUNT * 2} original archives**, **{executor.candidate_input.PIN_EXCLUSION_COUNT} exclusions / {executor.candidate_input.PIN_EXCLUSION_ID_COUNT} excluded IDs**, **{association_count} DLL/PDB associations**, **{len(keys)} distinct PDB keys**, **{assembly_free} assembly-free pairs**. Package observations: **{package_counts['matching']} matching, {package_counts['missing']} missing, 0 conflicting, 0 unknown**. PDB observations: **{symbol_counts['matching']} matching, {symbol_counts['missing']} missing, 0 conflicting, 0 unknown**. The completed verification records preserved SourceLink and original source evidence for every recorded association. These counts come from that verification receipt; this formatter checks receipt coverage and consistency and does not independently reinspect the original manifest or DLL/PDB bytes.
 
 The artifact ID and digest above come from the same-run GitHub upload outputs; this helper hashes the extracted receipt and does not independently reconstruct or validate the uploaded ZIP digest. Workflow admission separately requires the verification job to have succeeded and downloads that exact artifact ID.
 

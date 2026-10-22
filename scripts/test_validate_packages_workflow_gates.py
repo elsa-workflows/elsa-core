@@ -365,6 +365,28 @@ class WorkflowGateTests(unittest.TestCase):
             gates.candidate_publisher_violations(reordered),
         )
 
+    def test_candidate_guard_rejects_continue_on_error(self):
+        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
+        mutated = source.replace(
+            "      - name: Guard the pinned candidate ID set before Feedz\n",
+            "      - name: Guard the pinned candidate ID set before Feedz\n        continue-on-error: true\n",
+        )
+        self.assertIn(
+            "publish-consolidated-original-candidate.yml must not continue on error",
+            gates.candidate_publisher_violations(mutated),
+        )
+
+    def test_candidate_guard_rejects_an_if_condition(self):
+        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
+        mutated = source.replace(
+            "      - name: Guard the pinned candidate ID set before Feedz\n",
+            "      - name: Guard the pinned candidate ID set before Feedz\n        if: always()\n",
+        )
+        self.assertIn(
+            "publish-consolidated-original-candidate.yml guard step must not have an if:",
+            gates.candidate_publisher_violations(mutated),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

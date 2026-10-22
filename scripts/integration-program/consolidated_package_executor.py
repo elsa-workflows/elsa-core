@@ -367,7 +367,8 @@ def check_admission(*, publish=False, api=None):
                "credential_isolation": "pending_authenticated_execution_check",
                "candidate": {**candidate_input.PRODUCER, "archive_sha256": candidate_input.ARCHIVE_SHA256,
                              "preupload_manifest_sha256": candidate_input.MANIFEST_SHA256,
-                             "expires_at": EXPIRY, "package_count": 225, "exclusion_count": 124,
+                             "expires_at": EXPIRY, "package_count": candidate_input.PIN_PACKAGE_COUNT,
+                             "exclusion_count": candidate_input.PIN_EXCLUSION_COUNT,
                              "excluded_id_count": 123}}
     if publish:
         reviews = api.get(f"{prefix}/actions/runs/{run}/approvals")
@@ -735,7 +736,7 @@ def rehearse(root, provenance, inspector):
             "rehearsal_interruption_failed")
     resumed = run_verified(root, provenance, inspector, mode="publish", transport=feed,
                            authorize=lambda: {"scope": "simulation_only"}, credential=lambda: "synthetic")
-    require(resumed["content_verified"] and len(resumed["associations"]) == 225, "rehearsal_incomplete")
+    require(resumed["content_verified"] and len(resumed["associations"]) == candidate_input.PIN_PACKAGE_COUNT, "rehearsal_incomplete")
     actual = {(row["kind"], row["archive_sha256"]) for row in feed.calls}
     wanted = {(kind, row[kind+"_sha256"]) for row in manifest["packages"] for kind in ("nupkg", "snupkg")
               if kind == "nupkg" or row["assemblies"]}
