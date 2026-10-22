@@ -118,13 +118,8 @@ internal static class BpmnForeignContent
             var ownerId = id ?? inheritedOwnerId;
             var ownerKey = element == singleProcess ? SingleProcessOwnerKey : id ?? inheritedOwnerKey;
 
-            foreach (var attribute in element.Attributes())
-            {
-                if (attribute.IsNamespaceDeclaration || !IsForeign(attribute.Name.Namespace))
-                    continue;
-
+            foreach (var attribute in element.Attributes().Where(attribute => !attribute.IsNamespaceDeclaration && IsForeign(attribute.Name.Namespace)))
                 yield return Item(ownerId, ownerKey, "attribute", attribute.Name, attribute.Value);
-            }
 
             var children = new List<XElement>();
 
