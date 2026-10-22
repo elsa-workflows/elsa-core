@@ -11,8 +11,7 @@ namespace Elsa.Persistence.EFCore.UnitTests;
 /// <see cref="IMigrationsModelDiffer"/> reports no unique-index operations for it.
 /// </summary>
 /// <remarks>
-/// Other pending snapshot gaps (V3_7 Scheduling* indexes, Oracle NCLOB vs NVARCHAR2 mappings) are
-/// out of scope here. Those diffs remain, so this test does not require
+/// Other providers may still have out-of-scope snapshot gaps, so this test does not require
 /// <see cref="DatabaseFacade.HasPendingModelChanges"/> to be globally false.
 /// </remarks>
 public class StoredTriggerRuntimeModelSnapshotTests
