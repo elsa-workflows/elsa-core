@@ -39,7 +39,9 @@ public class AgentFactory(
         var builder = Kernel.CreateBuilder();
         var loggerFactory = serviceProvider.GetService<ILoggerFactory>();
         if (loggerFactory is not null)
+        {
             builder.Services.AddSingleton(loggerFactory);
+        }
 
         builder.Services.AddSingleton(agentConfig);
 
