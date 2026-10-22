@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using Elsa.Persistence.EFCore.Modules.Management;
 using Elsa.Persistence.EFCore.Modules.Runtime;
+using Elsa.Persistence.EFCore.Oracle;
 using Elsa.Persistence.EFCore.Oracle.Configurations;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime.Entities;
@@ -71,18 +72,23 @@ public static class OracleProvidersExtensions
         
         var management = new Management();
         var runtime = new Runtime();
-        
-        options.ConfigureModel<ManagementElsaDbContext>(modelBuilder => modelBuilder
-            .ApplyConfiguration<WorkflowDefinition>(management)
-            .ApplyConfiguration<WorkflowInstance>(management));
-        
+
+        options.ConfigureModel<ManagementElsaDbContext>(modelBuilder =>
+        {
+            modelBuilder
+                .ApplyConfiguration<WorkflowDefinition>(management)
+                .ApplyConfiguration<WorkflowInstance>(management)
+                .ApplyConfiguration<WorkflowDefinitionRegistryGeneration>(management);
+            OracleEmptyStringAsNull.ApplyToTenantIdProperties(modelBuilder);
+        });
+
         options.ConfigureModel<RuntimeElsaDbContext>(modelBuilder => modelBuilder
             .ApplyConfiguration<StoredTrigger>(runtime)
             .ApplyConfiguration<WorkflowExecutionLogRecord>(runtime)
             .ApplyConfiguration<ActivityExecutionRecord>(runtime)
             .ApplyConfiguration<StoredBookmark>(runtime)
             .ApplyConfiguration<WorkflowInboxMessage>(runtime));
-        
+
         return options;
     }
 
