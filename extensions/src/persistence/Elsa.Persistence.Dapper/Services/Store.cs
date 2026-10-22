@@ -542,7 +542,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
 
         var tenant = tenantAccessor.Tenant;
         var tenantId = tenant?.Id;
-        // Default tenant is '' in Elsa and NULL on some legacy rows (#245 / #260).
+        // Default tenant is '' in Elsa and NULL or '' on some legacy rows (#245 / #260 / elsa-core#8618).
         if (string.IsNullOrEmpty(tenantId))
             query.IsNullOrEmpty(nameof(Record.TenantId));
         else
