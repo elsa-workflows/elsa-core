@@ -46,6 +46,21 @@ Replaces the canvas content with the document. It returns `{ imported, error?, w
 
 A designer computes warnings by comparing the original input with what a save right after loading would produce.
 It does not rely on its parser's own messages alone, because content a parser accepts can still be lost on save.
+`computeLoadWarnings(original, saved)` in the shared ClientLib does this comparison, by these rules:
+
+- Elements and attributes are compared by namespace and local name. Prefixes, attribute order and whitespace-only
+  text do not matter, and neither does content the save adds.
+- An element is matched by its `id`, else its `name`, else its position among siblings of the same kind. Of two
+  elements that share an `id`, the one a save does not keep is `dropped`.
+- A BPMN attribute the save leaves out is not reported when it held its schema default.
+- Diagram layout is matched by the element it draws, whichever diagram plane holds it. Layout that moves to another
+  plane with the same geometry is `rewritten`. Diagram element ids do not matter.
+- A lost XML comment is `dropped`.
+
+A document that draws nothing (no shape or edge in any diagram) is loaded with a generated layout for its first
+process: `withGeneratedLayout(xml)` in the shared ClientLib. That adds a `rewritten` warning, and one more for each
+other process, which stays in the document but is not drawn. Warnings are still computed against the original
+document.
 
 ### `save()`
 

@@ -9,11 +9,15 @@
   "devDependencies": {
     "@types/node": "22.15.21",
     "bpmn-moddle": "10.3.1",
+    "jsdom": "30.0.1",
     "typescript": "5.8.3",
     "vitest": "4.1.11"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "tsc --noEmit && vitest run"
+  },
+  "dependencies": {
+    "bpmn-auto-layout": "1.3.0"
   }
 }
