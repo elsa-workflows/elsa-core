@@ -287,6 +287,36 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
             && message.Contains("extensions/docs/changelogs/3.10.1.md", StringComparison.Ordinal));
     }
 
+    [Fact(DisplayName = "PopulateStoreAsync errors when a tenant-declared CLR workflow was wrongly stored as '*'")]
+    public async Task PopulateStoreAsync_ExistingStarRow_DeclaredConcreteTenant_LogsErrorAndSkips()
+    {
+        var logger = new CapturingLogger();
+        _storeMock.FindAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>())
+            .Returns(new WorkflowDefinition
+            {
+                Id = "owned-v1",
+                DefinitionId = "owned-workflow",
+                Version = 1,
+                TenantId = Tenant.AgnosticTenantId
+            });
+
+        var workflow = new MaterializedWorkflow(new()
+        {
+            Identity = new("owned-workflow", 1, "owned-v1", "tenant-a"),
+            Publication = new(true, true)
+        }, "CLR", "ClrWorkflowMaterializer");
+        var populator = CreatePopulatorWithTenant("tenant-a", logger, workflow);
+
+        var result = (await populator.PopulateStoreAsync()).ToList();
+
+        Assert.Empty(result);
+        await _storeMock.DidNotReceive().SaveManyAsync(Arg.Any<IEnumerable<WorkflowDefinition>>(), Arg.Any<CancellationToken>());
+        Assert.Contains(logger.Messages, message =>
+            message.Contains("stored as '*'", StringComparison.Ordinal)
+            && message.Contains("declares tenant", StringComparison.Ordinal)
+            && message.Contains("3.10.1 upgrade step", StringComparison.Ordinal));
+    }
+
     [Theory(DisplayName = "PopulateStoreAsync handles null/empty tenant IDs correctly")]
     [InlineData(null, null, true)]  // Both null - should import
     [InlineData("", "", true)]      // Both empty - should import

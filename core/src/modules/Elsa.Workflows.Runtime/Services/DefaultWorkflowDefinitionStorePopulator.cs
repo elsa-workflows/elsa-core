@@ -133,6 +133,13 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
                     materializedWorkflow.Workflow.Identity.DefinitionId,
                     materializedWorkflow.ProviderName);
             }
+            else if (e is InvalidOperationException && e.Message.Contains("stored as tenant-agnostic", StringComparison.Ordinal))
+            {
+                _logger.LogError(e,
+                    "Skipping adding workflow {WorkflowId} because it is stored as '*' but declares tenant '{DeclaredTenantId}'. Restore TenantId to the declared tenant; if this followed the 3.10.1 CLR upgrade SQL, exclude this DefinitionId. See the 3.10.1 upgrade step in extensions/docs/changelogs/3.10.1.md.",
+                    materializedWorkflow.Workflow.Identity.DefinitionId,
+                    materializedWorkflow.Workflow.Identity.TenantId);
+            }
             else
             {
                 _logger.LogError(e, "An error occurred while populating the workflow definition store for workflow {WorkflowId} (Name: {WorkflowName}, Version: {Version})",
@@ -191,6 +198,19 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         };
 
         var existingDefinitionVersion = await _workflowDefinitionStore.FindAsync(specificVersionFilter, cancellationToken);
+
+        // A 3.10.1 Dapper upgrade SQL that reset every CLR row to '*' can hide a
+        // code-first workflow that declared a concrete tenant. Do not treat that row
+        // as shared: leave TenantId as stored and fail the import so triggers are not
+        // indexed for every tenant.
+        var declaredTenantId = workflow.Identity.TenantId;
+        if (existingDefinitionVersion?.TenantId == Tenant.AgnosticTenantId
+            && !string.IsNullOrEmpty(declaredTenantId)
+            && declaredTenantId != Tenant.AgnosticTenantId)
+        {
+            throw new InvalidOperationException(
+                $"Workflow '{definitionId}' is stored as tenant-agnostic ('*') but declares tenant '{declaredTenantId}'. Restore TenantId to the declared tenant; if this followed the 3.10.1 CLR upgrade SQL, exclude this DefinitionId. See the 3.10.1 upgrade step in extensions/docs/changelogs/3.10.1.md.");
+        }
 
         // Set up a list to collect all workflow definitions to be persisted.
         var workflowDefinitionsToSave = new HashSet<WorkflowDefinition>();
