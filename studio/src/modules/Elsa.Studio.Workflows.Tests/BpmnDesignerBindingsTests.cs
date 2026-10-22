@@ -56,6 +56,14 @@ public class BpmnDesignerBindingsTests
         Assert.False(BpmnDesignerBindings.AreEquivalent(withNull, new("Elsa.WriteLine", [new("text", "\"bye\"")])));
     }
 
+    [Fact(DisplayName = "A binding that names an input twice matches nothing, even when one of the two is null")]
+    public void ARepeatedName_MatchesNothing()
+    {
+        var repeated = new BpmnDesignerBinding("Elsa.WriteLine", [new("text", "\"hi\""), new("text", "null")]);
+
+        Assert.False(BpmnDesignerBindings.AreEquivalent(repeated, new("Elsa.WriteLine", [new("text", "\"hi\"")])));
+    }
+
     [Fact(DisplayName = "Each value is read as the JSON node it holds")]
     public void ReadsValuesAsJson()
     {

@@ -28,7 +28,9 @@ internal static class BpmnDesignerBindings
         foreach (var input in binding.Inputs)
         {
             if (!names.Add(input.Name))
+            {
                 throw new BpmnActivityBindingFormatException($"The '{binding.ActivityType}' binding declares the input '{input.Name}' more than once.");
+            }
 
             inputs.Add(new(input.Name, Parse(input, binding.ActivityType)));
         }
@@ -46,22 +48,35 @@ internal static class BpmnDesignerBindings
     /// <summary>
     /// Whether two bindings name the same activity with the same input values, whatever their order or spacing. An input
     /// whose value is JSON <c>null</c> counts as absent, since <see cref="BpmnActivityBindingFormat.Create"/> writes none.
+    /// A binding that names an input twice matches nothing, so the section reads it and reports it as <see cref="Read"/> does.
     /// </summary>
     public static bool AreEquivalent(BpmnDesignerBinding? left, BpmnDesignerBinding? right)
     {
         if (left is null || right is null)
+        {
             return left is null && right is null;
+        }
+
+        if (HasRepeatedName(left) || HasRepeatedName(right))
+        {
+            return false;
+        }
 
         var leftInputs = ValuedInputs(left);
         var rightInputs = ValuedInputs(right);
 
         if (left.ActivityType != right.ActivityType || leftInputs.Count != rightInputs.Count)
+        {
             return false;
+        }
 
         var rightByName = rightInputs.ToDictionary(input => input.Name, StringComparer.Ordinal);
 
         return leftInputs.All(input => rightByName.TryGetValue(input.Name, out var other) && IsSameJson(input.Value, other.Value));
     }
+
+    private static bool HasRepeatedName(BpmnDesignerBinding binding) =>
+        binding.Inputs.Select(input => input.Name).Distinct(StringComparer.Ordinal).Count() != binding.Inputs.Count;
 
     private static List<BpmnDesignerBindingInput> ValuedInputs(BpmnDesignerBinding binding) =>
         binding.Inputs.Where(input => !IsJsonNull(input.Value)).ToList();
