@@ -13,6 +13,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import subprocess
 import sys
 import zipfile
@@ -23,16 +24,20 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "integration-program"))
 
 import consolidated_candidate_input as candidate_input
 
-from validate_packages_id_set import PACKAGE_FILE, is_stable_310
+from validate_packages_id_set import is_stable_310
 
 PINNED_TAG = f"refs/tags/{candidate_input.PRODUCER['version']}"
 CANDIDATE_NAME = (
     f"consolidated-candidate-{candidate_input.PRODUCER['source_commit']}-"
     f"{candidate_input.PRODUCER['run_id']}-{candidate_input.PRODUCER['run_attempt']}"
 )
-CANDIDATE_SIZE = 92659861
-CANDIDATE_EXPIRES = "2026-11-05T12:13:30Z"
+_ENVELOPE = json.loads(candidate_input.ORIGINAL_ENVELOPE.read_text(encoding="utf-8"))
+CANDIDATE_SIZE = _ENVELOPE["archive_size"]
+CANDIDATE_EXPIRES = _ENVELOPE["expires_at"]
 SEAL_NAME = "preupload-manifest.json"
+PACKAGE_OR_SYMBOL = re.compile(
+    r".+\.[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?\.(nupkg|snupkg)"
+)
 
 
 def require(condition: bool, message: str) -> None:
@@ -47,14 +52,14 @@ def require_pinned_stable_tag(ref: str) -> None:
 
 
 def extract_nupkgs(archive: Path, output: Path) -> list[Path]:
-    """Copy *.nupkg members from the candidate archive into output, flat."""
+    """Copy *.nupkg and *.snupkg members from the candidate archive into output, flat."""
     require(archive.is_file() and not archive.is_symlink(), "Candidate archive missing.")
     output.mkdir(parents=True, exist_ok=True)
     staged: list[Path] = []
     with zipfile.ZipFile(archive) as zipped:
         for member in zipped.infolist():
             name = PurePosixPath(member.filename).name
-            if member.is_dir() or not PACKAGE_FILE.fullmatch(name):
+            if member.is_dir() or not PACKAGE_OR_SYMBOL.fullmatch(name):
                 continue
             require(".." not in PurePosixPath(member.filename).parts, f"Unsafe candidate entry: {member.filename}")
             destination = output / name
@@ -62,7 +67,7 @@ def extract_nupkgs(archive: Path, output: Path) -> list[Path]:
             with zipped.open(member) as reader, destination.open("xb") as writer:
                 writer.write(reader.read())
             staged.append(destination)
-    require(bool(staged), f"Candidate archive {archive} contains no .nupkg files.")
+    require(any(path.name.endswith(".nupkg") for path in staged), f"Candidate archive {archive} contains no .nupkg files.")
     return staged
 
 
@@ -72,7 +77,7 @@ def file_sha256(path: Path) -> str:
 
 
 def sealed_nupkg_hashes(archive: Path, expected_manifest_sha256: str) -> dict[str, str]:
-    """Read {nupkg filename: sha256} from the candidate seal and check the seal hash."""
+    """Read {nupkg/snupkg filename: sha256} from the candidate seal and check the seal hash."""
     require(archive.is_file() and not archive.is_symlink(), "Candidate archive missing.")
     with zipfile.ZipFile(archive) as zipped:
         require(SEAL_NAME in zipped.namelist(), "Candidate seal missing.")
@@ -86,12 +91,12 @@ def sealed_nupkg_hashes(archive: Path, expected_manifest_sha256: str) -> dict[st
     hashes: dict[str, str] = {}
     for row in manifest.get("files") or []:
         name = PurePosixPath(row["path"]).name
-        if not PACKAGE_FILE.fullmatch(name):
+        if not PACKAGE_OR_SYMBOL.fullmatch(name):
             continue
         require(name not in hashes, f"Duplicate sealed package: {name}")
         require(isinstance(row.get("sha256"), str) and bool(row["sha256"]), f"Sealed package {name} is missing sha256.")
         hashes[name] = row["sha256"]
-    require(bool(hashes), "Candidate seal lists no .nupkg files.")
+    require(any(name.endswith(".nupkg") for name in hashes), "Candidate seal lists no .nupkg files.")
     return hashes
 
 

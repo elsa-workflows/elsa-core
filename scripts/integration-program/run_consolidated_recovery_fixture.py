@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 import zipfile
 
+import consolidated_candidate_input as candidate_input
 import consolidated_package_recovery as recovery
 
 
@@ -85,7 +86,7 @@ def rehearse(root: Path, provenance: dict) -> dict:
     manifest = json.loads((root / "verified-artifacts.json").read_text())
     rows = manifest["packages"]
     package_ids = {row["id"] for row in rows}
-    _require(len(package_ids) == 225, "Full original inventory required")
+    _require(len(package_ids) == candidate_input.PIN_PACKAGE_COUNT, "Full original inventory required")
     first = rows[0]
     first_key = first["id"].lower()
     original = (root / "artifacts" / first["nupkg"]).read_bytes()
@@ -110,15 +111,15 @@ def rehearse(root: Path, provenance: dict) -> dict:
     def counts(missing=0, matching=0, conflicting=0, unverifiable=0):
         return dict(missing=missing, matching=matching, conflicting=conflicting, unverifiable=unverifiable)
 
-    observe("all_missing", counts(missing=225))
+    observe("all_missing", counts(missing=candidate_input.PIN_PACKAGE_COUNT))
     feed.outcome = 200
-    observe("all_matching", counts(matching=225))
+    observe("all_matching", counts(matching=candidate_input.PIN_PACKAGE_COUNT))
     # An arbitrary noncontiguous subset has become visible after simulated acceptance.
     accepted = [row for index, row in enumerate(rows) if index % 3 == 1]
     feed.outcome = 404
     for row in accepted:
         feed.simulate_accept(row["id"], (root / "artifacts" / row["nupkg"]).read_bytes())
-    observe("arbitrary_partial", counts(matching=len(accepted), missing=225-len(accepted)))
+    observe("arbitrary_partial", counts(matching=len(accepted), missing=candidate_input.PIN_PACKAGE_COUNT-len(accepted)))
     # A simulated process stopped after acceptance. A new invocation queries truth;
     # there is no prior push exit code, skip-duplicate flag or cached success input.
     interrupted = False
@@ -132,7 +133,7 @@ def rehearse(root: Path, provenance: dict) -> dict:
     observe("uncertain_outcome", counts(matching=len(accepted), missing=224-len(accepted), unverifiable=1))
     feed.overrides = {}
     feed.visible.remove(first_key)
-    delayed = observe("delayed_visibility", counts(matching=len(accepted), missing=225-len(accepted)))
+    delayed = observe("delayed_visibility", counts(matching=len(accepted), missing=candidate_input.PIN_PACKAGE_COUNT-len(accepted)))
     _require(delayed["content_converged"] is False, "Delayed visibility certified convergence")
     acceptances = feed.simulated_acceptance_calls
     feed.visible.add(first_key)
@@ -148,16 +149,16 @@ def rehearse(root: Path, provenance: dict) -> dict:
     feed.overrides = {}
     index = feed.index
     feed.index = recovery.ReadResult(200, b'{"version":"3.0.0","resources":[],"resources":[]}', True)
-    observe("ambiguous_feed", counts(unverifiable=225))
+    observe("ambiguous_feed", counts(unverifiable=candidate_input.PIN_PACKAGE_COUNT))
     feed.index = index
     feed.overrides[first_key] = KeyboardInterrupt()
-    observe("interrupted_observation", counts(unverifiable=225))
+    observe("interrupted_observation", counts(unverifiable=candidate_input.PIN_PACKAGE_COUNT))
     feed.overrides = {}
     feed.outcome = 404
     for row in rows:
         if row["id"].lower() not in feed.accepted:
             feed.simulate_accept(row["id"], (root / "artifacts" / row["nupkg"]).read_bytes())
-    final = observe("eventual_full_set_convergence", counts(matching=225))
+    final = observe("eventual_full_set_convergence", counts(matching=candidate_input.PIN_PACKAGE_COUNT))
     _require(final["content_converged"] is True, "Full set did not converge")
     # Re-read every archive pin after all simulated responses to prove no mutation.
     for row in rows:

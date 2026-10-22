@@ -400,6 +400,64 @@ class WorkflowGateTests(unittest.TestCase):
                     gates.candidate_publisher_violations(mutated),
                 )
 
+    def test_candidate_guard_rejects_or_true(self):
+        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
+        mutated = source.replace(
+            "python3 scripts/validate_packages_id_set.py\n",
+            "python3 scripts/validate_packages_id_set.py || true\n",
+        )
+        self.assertIn(
+            "publish-consolidated-original-candidate.yml guard command must not ignore a failed exit",
+            gates.candidate_publisher_violations(mutated),
+        )
+
+    def test_candidate_recheck_rejects_always(self):
+        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
+        mutated = source.replace(
+            "      - name: Recheck protected admission with metadata-only authority before exposing the publisher credential\n",
+            "      - name: Recheck protected admission with metadata-only authority before exposing the publisher credential\n        if: always()\n",
+        )
+        self.assertIn(
+            "publish-consolidated-original-candidate.yml recheck and publish steps must not call always(), failure() or cancelled()",
+            gates.candidate_publisher_violations(mutated),
+        )
+
+    def test_inverted_compile_pack_condition_is_rejected(self):
+        source = self.mutated(
+            "      - name: Compile+Pack\n"
+            "        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}\n"
+            "        run: ./build.sh Compile+Pack --version \"${VERSION}\" --analyseCode true\n",
+            "      - name: Compile+Pack\n"
+            "        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-') }}\n"
+            "        run: ./build.sh Compile+Pack --version \"${VERSION}\" --analyseCode true\n",
+        )
+        self.assert_rejected(source, "build Compile+Pack must skip a stable 3.10.x nuget.org promotion")
+
+    def test_staging_condition_prefixed_with_false_is_rejected(self):
+        source = self.mutated(
+            "      - name: Stage and guard verified candidate packages\n"
+            "        if: ${{ startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-') }}\n",
+            "      - name: Stage and guard verified candidate packages\n"
+            "        if: ${{ false && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-') }}\n",
+        )
+        self.assert_rejected(source, "publish_nuget candidate staging if: must be exactly the stable 3.10.x tag condition")
+
+    def test_real_workflow_uses_the_pinned_promote_conditions(self):
+        self.assertEqual(gates.SKIP_STABLE_310_PACK, if_expression_of_real("Compile+Pack"))
+        self.assertEqual(gates.PROMOTE_STABLE_310, if_expression_of_real("Stage and guard verified candidate packages"))
+        self.assertEqual([], gates.source_violations(self.source))
+
+
+def if_expression_of_real(name: str) -> str:
+    workflow = yaml.safe_load(gates.WORKFLOW.read_text(encoding="utf-8"))
+    for job in workflow["jobs"].values():
+        if not isinstance(job, dict):
+            continue
+        for step in job.get("steps") or []:
+            if isinstance(step, dict) and step.get("name") == name:
+                return gates.if_expression(step.get("if"))
+    raise AssertionError(f"step {name!r} not found")
+
 
 if __name__ == "__main__":
     unittest.main()
