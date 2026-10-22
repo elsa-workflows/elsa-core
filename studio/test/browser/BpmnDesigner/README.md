@@ -19,6 +19,9 @@ npm test
 
 To use a Chromium that is already installed, set `BPMN_DESIGNER_CHROMIUM` to its executable.
 
+`bpmn-js.spec.ts` checks what the bpmn-js designer draws, such as its overlay badges. The contract leaves drawing to
+each designer, so it runs only against bpmn-js.
+
 ## Another designer
 
 The suite tests the bpmn-js designer's build output, `studio/src/modules/Elsa.Studio.Bpmn.BpmnJs/wwwroot`, by default.

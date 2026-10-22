@@ -1,9 +1,10 @@
 // Bundles the bpmn-js designer into the module's wwwroot, and fails when the JavaScript outgrows its size budget.
 import { build } from 'esbuild';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { brotliCompressSync } from 'node:zlib';
 
-const here = new URL('.', import.meta.url).pathname;
+const here = fileURLToPath(new URL('.', import.meta.url));
 const output = `${here}../wwwroot`;
 
 // The module is loaded on demand when a BPMN canvas opens, never at Studio start, but it still has to stay small. The

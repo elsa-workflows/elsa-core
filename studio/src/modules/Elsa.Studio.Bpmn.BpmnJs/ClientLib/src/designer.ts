@@ -210,8 +210,10 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
 
         async save(): Promise<BpmnSaveResult> {
             ensureLive();
+            // An edit made while the export runs is not in the XML, so only the state being exported becomes clean.
+            const exportedStateId = currentStateId();
             const xml = await serialize();
-            savedStateId = currentStateId();
+            savedStateId = exportedStateId;
             return { xml };
         },
 
@@ -248,8 +250,9 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
             const extensionElements = businessObject.extensionElements as ModdleElement | undefined;
             const modeling = service<Modeling>('modeling');
 
-            // Each branch is one command, so the edit is one undo step.
-            if (extensionElements && values.length > 0) {
+            // Each branch is one command, so the edit is one undo step. An emptied extensionElements is removed, unless
+            // it carries foreign attributes, which the element has to keep.
+            if (extensionElements && (values.length > 0 || hasForeignAttributes(extensionElements))) {
                 modeling.updateModdleProperties(element, extensionElements, { values });
             } else if (extensionElements) {
                 modeling.updateProperties(element, { extensionElements: undefined });
@@ -327,6 +330,10 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
             propertiesContainer?.replaceChildren();
         }
     } satisfies BpmnDesigner;
+}
+
+function hasForeignAttributes(element: ModdleElement): boolean {
+    return Object.keys((element.$attrs as Record<string, unknown> | undefined) ?? {}).some(name => !name.startsWith('xmlns'));
 }
 
 type ElementState = 'faulted' | 'blocked' | 'active' | 'canceled' | 'completed' | 'idle';

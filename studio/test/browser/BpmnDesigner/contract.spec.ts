@@ -33,6 +33,20 @@ async function loaded(page: Page, name: string, options: { readOnly?: boolean; w
     return call<{ imported: boolean; error?: string; warnings: { kind: string; message: string; elementId?: string }[] }>(page, 'load', await fixture(name));
 }
 
+/** The plane and bounds of the shape that draws `elementId` in `xml`. */
+function layoutOf(page: Page, xml: string, elementId: string): Promise<{ plane: string | null; bounds: string | null }> {
+    return page.evaluate(([xml, elementId]) => {
+        const document = new DOMParser().parseFromString(xml, 'application/xml');
+        const shape = Array.from(document.getElementsByTagNameNS('http://www.omg.org/spec/BPMN/20100524/DI', 'BPMNShape'))
+            .find(element => element.getAttribute('bpmnElement') === elementId);
+        const bounds = shape?.getElementsByTagNameNS('http://www.omg.org/spec/DD/20100524/DC', 'Bounds')[0];
+        return {
+            plane: shape?.parentElement?.getAttribute('bpmnElement') ?? null,
+            bounds: bounds ? ['x', 'y', 'width', 'height'].map(name => bounds.getAttribute(name)).join(',') : null
+        };
+    }, [xml, elementId] as const);
+}
+
 const CHARGE_BINDING = { activityType: 'Elsa.WriteLine', inputs: [{ name: 'Text', value: '"Charging"' }] };
 
 test('the module declares its id and contract version 1', async ({ harness }) => {
@@ -61,21 +75,29 @@ test.describe('load', () => {
         expect(result.warnings).toEqual([]);
     });
 
-    test('reports content a save would lose as dropped', async ({ harness }) => {
+    // A designer may keep what bpmn-js drops; what the contract requires is that the warnings match what it saves.
+    test('reports content as dropped exactly when a save loses it', async ({ harness }) => {
+        const original = await fixture('lossy.bpmn');
         const result = await loaded(harness, 'lossy.bpmn');
+        const { xml } = await call<{ xml: string }>(harness, 'save');
 
         expect(result.imported).toBe(true);
-        expect(result.warnings).toEqual(expect.arrayContaining([
-            expect.objectContaining({ kind: 'dropped', elementId: 'Note' }),
-            { kind: 'dropped', message: 'A comment is lost.' }
-        ]));
+        const keepsNote = /<[\w.-]+:note[\s>]/.test(xml);
+        expect(result.warnings.some(warning => warning.kind === 'dropped' && warning.elementId === 'Note')).toBe(!keepsNote);
+        const losesComment = (xml.match(/<!--/g)?.length ?? 0) < (original.match(/<!--/g)?.length ?? 0);
+        expect(result.warnings.some(warning => warning.kind === 'dropped' && /comment/.test(warning.message))).toBe(losesComment);
     });
 
-    test('reports layout that moves to its own diagram plane, unchanged, as rewritten', async ({ harness }) => {
+    test('reports layout as rewritten exactly when a save moves or changes it', async ({ harness }) => {
+        const original = await fixture('legacy-collapsed.bpmn');
         const result = await loaded(harness, 'legacy-collapsed.bpmn');
+        const { xml } = await call<{ xml: string }>(harness, 'save');
 
         expect(result.imported).toBe(true);
-        expect(result.warnings).toEqual([expect.objectContaining({ kind: 'rewritten', elementId: 'Inner' })]);
+        const before = await layoutOf(harness, original, 'Inner');
+        const after = await layoutOf(harness, xml, 'Inner');
+        const innerWarnings = result.warnings.filter(warning => warning.elementId === 'Inner');
+        expect(innerWarnings).toEqual(JSON.stringify(before) === JSON.stringify(after) ? [] : [expect.objectContaining({ kind: 'rewritten' })]);
     });
 
     test('draws a document without layout, and says the layout is generated', async ({ harness }) => {
@@ -167,6 +189,16 @@ test.describe('bindings', () => {
         expect(xml).toMatch(/<bpmn:extensionElements>\s*<vendor:retry count="3"\s*\/>\s*<vendor:audit level="full"\s*\/>\s*<\/bpmn:extensionElements>/);
     });
 
+    test('setBinding removing the last binding keeps foreign attributes of the extension content', async ({ harness }) => {
+        await loaded(harness, 'foreign-attributes.bpmn');
+
+        expect(await call(harness, 'setBinding', 'Archive', null)).toEqual({ applied: true });
+
+        const { xml } = await call<{ xml: string }>(harness, 'save');
+        expect(xml).toMatch(/<bpmn:extensionElements [^>]*vendor:origin="import"/);
+        expect(xml).not.toContain('elsa:activityBinding');
+    });
+
     test('setBinding refuses an unknown element, an element that cannot carry a binding, and a message task', async ({ harness }) => {
         await loaded(harness, 'order.bpmn');
 
@@ -210,6 +242,23 @@ test.describe('change, undo and redo', () => {
         expect(await events(harness, 'change')).toEqual([expect.objectContaining({ isDirty: true, canUndo: true, canRedo: false })]);
     });
 
+    test('save marks clean the document it returns, not an edit made while it runs', async ({ harness }) => {
+        await loaded(harness, 'order.bpmn');
+
+        const xml = await harness.evaluate(async binding => {
+            const harness = (window as unknown as { harness: Harness }).harness;
+            const saving = harness.designer.save() as Promise<{ xml: string }>;
+            harness.designer.setBinding('Review', binding);
+            return (await saving).xml;
+        }, CHARGE_BINDING);
+        await clearEvents(harness);
+        await call(harness, 'undo');
+        await call(harness, 'redo');
+
+        expect(xml).not.toMatch(/<bpmn:userTask id="Review"[^>]*>\s*<bpmn:extensionElements>/);
+        expect((await events(harness, 'change')).map(event => event.isDirty)).toEqual([false, true]);
+    });
+
     test('undo and redo return false when there is nothing to do', async ({ harness }) => {
         await loaded(harness, 'order.bpmn');
 
@@ -234,21 +283,13 @@ test.describe('read-only', () => {
 test.describe('overlays', () => {
     test('applyOverlays replaces the overlay and reports unknown ids; null and clearOverlays clear it', async ({ harness }) => {
         await loaded(harness, 'order.bpmn');
-        const badges = () => harness.locator('.elsa-bpmn-badge').count();
 
         expect(await call(harness, 'applyOverlays', { Charge: { started: 1, completed: 1 }, Review: { active: 1 }, Nope: { faulted: true } }))
             .toEqual({ applied: ['Charge', 'Review'], unknownElementIds: ['Nope'] });
-        expect(await badges()).toBe(2);
-
         expect(await call(harness, 'applyOverlays', { Charge: { faulted: true } })).toEqual({ applied: ['Charge'], unknownElementIds: [] });
-        expect(await badges()).toBe(1);
-
         expect(await call(harness, 'applyOverlays', null)).toEqual({ applied: [], unknownElementIds: [] });
-        expect(await badges()).toBe(0);
-
         await call(harness, 'applyOverlays', { Charge: { completed: 2 } });
         expect(await call(harness, 'clearOverlays')).toEqual({ applied: [], unknownElementIds: [] });
-        expect(await badges()).toBe(0);
     });
 });
 
