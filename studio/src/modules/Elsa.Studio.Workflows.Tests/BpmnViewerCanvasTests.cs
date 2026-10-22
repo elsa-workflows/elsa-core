@@ -78,7 +78,7 @@ public sealed class BpmnViewerCanvasTests : BunitContext, IAsyncLifetime
         Assert.Single(_designer.Calls, call => call.Identifier == "applyOverlays");
     }
 
-    [Fact(DisplayName = "A load that finishes after a newer document was asked for shows no state; the newer one does")]
+    [Fact(DisplayName = "A newer document waits for the load in flight, which then shows no state; the newer one does")]
     public async Task AStaleLoad_ShowsNothing()
     {
         EnableDesigner();
@@ -94,7 +94,9 @@ public sealed class BpmnViewerCanvasTests : BunitContext, IAsyncLifetime
         cut.WaitForAssertion(() => Assert.Single(pending));
 
         var newer = cut.InvokeAsync(() => cut.Instance.LoadBpmnAsync(OrderProcess(), "<newer/>", null));
+        Assert.Single(pending);
         await cut.InvokeAsync(() => pending[0].SetResult(new BpmnDesignerLoadResult(true, null, [])));
+        cut.WaitForAssertion(() => Assert.Equal(2, pending.Count));
         Assert.DoesNotContain(_designer.Calls, call => call.Identifier == "applyOverlays");
 
         await cut.InvokeAsync(() => pending[1].SetResult(new BpmnDesignerLoadResult(true, null, [])));
@@ -102,6 +104,21 @@ public sealed class BpmnViewerCanvasTests : BunitContext, IAsyncLifetime
 
         Assert.Single(_designer.Calls, call => call.Identifier == "applyOverlays");
         Assert.Equal(["<newer/>"], _designer.Calls.Last(call => call.Identifier == "load").Args);
+    }
+
+    [Fact(DisplayName = "After a new document loads, selecting an activity selects its element again")]
+    public async Task ANewDocument_ForgetsTheSelection()
+    {
+        EnableDesigner();
+        var cut = RenderViewer();
+        var host = cut.FindComponent<BpmnCanvasHost>().Instance;
+        await cut.InvokeAsync(() => cut.Instance.SelectActivityAsync(NotifyActivityId));
+        await cut.InvokeAsync(() => host.OnDesignerSelectionChanged(new(["NotifyWarehouse"], new("NotifyWarehouse", "bpmn:ServiceTask", null))));
+
+        await cut.InvokeAsync(() => cut.Instance.LoadBpmnAsync(OrderProcess(), "<newer/>", null));
+        await cut.InvokeAsync(() => cut.Instance.SelectActivityAsync(NotifyActivityId));
+
+        Assert.Equal(2, _designer.Calls.Count(call => call.Identifier == "select"));
     }
 
     [Fact(DisplayName = "A selected element is reported as its bound activity, an unbound one as its scope, and no selection as the root")]

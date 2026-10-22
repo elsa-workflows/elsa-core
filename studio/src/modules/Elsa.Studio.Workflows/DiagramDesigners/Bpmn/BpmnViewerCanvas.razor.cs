@@ -19,6 +19,7 @@ namespace Elsa.Studio.Workflows.DiagramDesigners.Bpmn;
 public partial class BpmnViewerCanvas
 {
     private readonly Dictionary<string, ActivityStats> _activityStats = new(StringComparer.Ordinal);
+    private readonly SemaphoreSlim _loadGate = new(1, 1);
     private BpmnCanvasHost _host = null!;
     private BpmnElementActivityMap _map = null!;
     private JsonObject? _mappedActivity;
@@ -120,35 +121,51 @@ public partial class BpmnViewerCanvas
 
     /// <summary>
     /// Loads the document unless the designer already shows it, then shows the state held so far. State that arrives
-    /// while the document loads is held, and shown once it has.
+    /// while the document loads is held, and shown once it has. Loads run one at a time, so a document's import can
+    /// never finish after that of a document asked for later.
     /// </summary>
     private async Task LoadAsync()
     {
-        if (_loadedXml != SourceXml)
+        await _loadGate.WaitAsync();
+
+        try
         {
-            var xml = SourceXml;
-            _isLoaded = false;
-            _loadedXml = xml;
-            BpmnDesignerLoadResult result;
-
-            try
+            if (_loadedXml != SourceXml)
             {
-                result = await _host.LoadAsync(xml);
-            }
-            catch (Exception exception) when (exception is not OperationCanceledException)
-            {
-                // The host shows why the designer could not be created; there is nothing to show state on.
-                return;
+                var xml = SourceXml;
+                _isLoaded = false;
+                _loadedXml = xml;
+
+                // The designer raises no selection event while it loads, so the selection it had is forgotten here.
+                _selectedElementId = null;
+                _requestedElementId = null;
+                BpmnDesignerLoadResult result;
+
+                try
+                {
+                    result = await _host.LoadAsync(xml);
+                }
+                catch (Exception exception) when (exception is not OperationCanceledException)
+                {
+                    // The host shows why the designer could not be created; there is nothing to show state on.
+                    return;
+                }
+
+                // A newer document asked for while this one loaded waits its turn, and shows the state once it has loaded.
+                if (!result.Imported || SourceXml != xml)
+                {
+                    return;
+                }
+
+                _isLoaded = true;
             }
 
-            // A newer document may have been asked for while this one loaded; that load shows the state.
-            if (!result.Imported || _loadedXml != xml)
-                return;
-
-            _isLoaded = true;
+            await ApplyOverlaysAsync();
         }
-
-        await ApplyOverlaysAsync();
+        finally
+        {
+            _loadGate.Release();
+        }
     }
 
     private async Task ApplyOverlaysAsync()
