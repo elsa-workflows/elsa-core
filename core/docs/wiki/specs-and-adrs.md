@@ -60,6 +60,22 @@ Date-prefixed ADRs:
 | [2026-09-25](../../../docs/adr/2026-09-25-separate-workflow-connection-sharing-authorization.md) | Separate workflow connection sharing from grant management and use. |
 | [2026-09-27](../../../docs/adr/2026-09-27-dedicated-connection-metadata-inspection-policy.md) | Decide connection metadata inspection with its own host policy. (Supersedes 2026-09-25 inspection boundary.) |
 | [2026-09-28](../../../docs/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md) | Release the consolidated packages in lockstep and cut publishers over at 3.10.0. |
+| [2026-10-08](../../../docs/adr/2026-10-08-durable-event-admission-and-isolated-execution.md) | Durable event admission with isolated local execution. |
+| [2026-10-08](../../../docs/adr/2026-10-08-product-directory-boundaries.md) | Give Core, Extensions and Studio separate root directories. |
+| [2026-10-19](../../../docs/adr/2026-10-19-native-compensation-recovery-boundaries.md) | Keep native compensation recovery within Elsa 3 runtime and Studio boundaries. |
+| [2026-10-20](../../../docs/adr/2026-10-20-bpmn-import-policy.md) | Accept unbound tasks in BPMN drafts; refuse silent degradation at import. |
+| [2026-10-20](../../../docs/adr/2026-10-20-bpmn-modeler-on-bpmn-js.md) | Build the BPMN modeler on bpmn-js. |
+| [2026-10-20](../../../docs/adr/2026-10-20-bpmn-xml-as-source-of-truth.md) | Keep BPMN XML as the source of truth for BPMN workflows. |
+| [2026-10-20](../../../docs/adr/2026-10-20-elsa-evaluates-bpmn-conditions.md) | Evaluate BPMN conditions with Elsa expressions. |
+| [2026-10-20](../../../docs/adr/2026-10-20-modular-react-studio-preview.md) | Deliver the React Studio preview as modular NuGet packages. |
+| [2026-10-20](../../../docs/adr/2026-10-20-native-compensation-instance-journal.md) | Retain native compensation obligations in the workflow instance journal. |
+| [2026-10-20](../../../docs/adr/2026-10-20-one-bpmn-modeler-for-both-studios.md) | Build one BPMN modeler module for both Studios. |
+| [2026-10-20](../../../docs/adr/2026-10-20-published-bpmn-support-matrix.md) | Publish the supported BPMN subset as a tested matrix. |
+| [2026-10-20](../../../docs/adr/2026-10-20-selectable-bpmn-designers.md) | Offer selectable BPMN designers. |
+| [2026-10-21](../../../docs/adr/2026-10-21-native-compensation-guarded-snapshots.md) | Guard compensation-aware snapshots at the native persistence boundary. |
+| [2026-10-21](../../../docs/adr/2026-10-21-native-compensation-owned-children.md) | Use native owned children for compensation scopes. |
+| [2026-10-21](../../../docs/adr/2026-10-21-protect-native-compensation-recovery-data.md) | Protect and authorize native compensation recovery data. |
+| [2026-10-22](../../../docs/adr/2026-10-22-elsa-fault-codes-are-bpmn-error-codes.md) | Use an Elsa fault's code as its BPMN error code. |
 
 ## Active And Recent Specs
 
@@ -83,6 +99,7 @@ Date-prefixed ADRs:
 | [012 weaver grounding tools](../specs/012-weaver-grounding-tools/spec.md) | AI | Grounds Weaver in real Elsa server data: activity registry discovery, workflow definition inspection, instance and incident investigation, and proposal-based workflow authoring with validation. |
 | [013 user tasks](../specs/013-user-tasks/spec.md) | Workflow core | Identity-neutral durable human-task module: workflow pause/resume for human decisions, a secure task queue, typed outcomes, and a task workbench. No dependency on `Elsa.Identity`. |
 | [013 RBAC authorization model](../specs/013-rbac-authorization-model/spec.md) | Security | Structured role-based access-control model on top of the two-axis permission system (ADR 0025). Status: Draft — pending approval. |
+| [native-compensation](../specs/native-compensation/README.md) | Workflow core | Native compensation design packet: explicit compensation scopes, durable operation journals, guarded snapshots, protected recovery data, and Studio interaction contract. Status: Proposed — evidence gates E1–E3 pending. |
 
 Each spec folder usually contains:
 
@@ -190,6 +207,17 @@ For runtime behavior, read in this order:
 3. [specs/011-persistence-vnext/roadmap.md](../specs/011-persistence-vnext/roadmap.md)
 4. `Elsa.Persistence.VNext` core abstractions
 5. `Elsa.Persistence.VNext.Relational`, `Sqlite`, `PostgreSql`, `SqlServer`, `MongoDb` providers
+
+## Reading Order For Native Compensation Work
+
+1. [specs/native-compensation/README.md](../specs/native-compensation/README.md) — packet overview, ownership, and acceptance boundary
+2. [specs/native-compensation/semantics.md](../specs/native-compensation/semantics.md) — scope/operation transitions, ordering, cancellation, and fault behavior
+3. [specs/native-compensation/persistence.md](../specs/native-compensation/persistence.md) — identities, captured state, atomicity, and recovery gates
+4. [ADR 2026-10-19](../../../docs/adr/2026-10-19-native-compensation-recovery-boundaries.md) — recovery boundaries within Elsa 3 runtime
+5. [ADR 2026-10-20](../../../docs/adr/2026-10-20-native-compensation-instance-journal.md) — root instance journal and generation-specific recovery boundary
+6. [ADR 2026-10-21](../../../docs/adr/2026-10-21-native-compensation-guarded-snapshots.md) — persistence-owned admission and write-fence contract
+7. [ADR 2026-10-21](../../../docs/adr/2026-10-21-protect-native-compensation-recovery-data.md) — E2 protection, projection, authorization, and host-profile contract
+8. [ADR 2026-10-21](../../../docs/adr/2026-10-21-native-compensation-owned-children.md) — native owned-child model and Studio extension points
 
 ## When To Write An ADR
 
