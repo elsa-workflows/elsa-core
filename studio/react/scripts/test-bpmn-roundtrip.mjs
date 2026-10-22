@@ -30,7 +30,24 @@ try {
   const second = await client.bpmn.import(new File([exported], 'exported.bpmn'), { name: `BpmnReimport${Date.now()}` });
   cleanup.push(second.definitionId);
   assert.equal(await (await client.bpmn.export(second.definitionId)).text(), exported);
-  const condition = xml.replace('sourceRef="Start" targetRef="End"/>', 'sourceRef="Start" targetRef="End"><bpmn:conditionExpression language="JavaScript">true</bpmn:conditionExpression></bpmn:sequenceFlow>');
+  const condition = `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_condition" targetNamespace="https://elsaworkflows.io/tests">
+  <bpmn:process id="preview-condition" isExecutable="true">
+    <bpmn:startEvent id="Start"><bpmn:outgoing>Entry</bpmn:outgoing></bpmn:startEvent>
+    <bpmn:exclusiveGateway id="Choose" default="Flow_Default">
+      <bpmn:incoming>Entry</bpmn:incoming>
+      <bpmn:outgoing>Flow</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Default</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="TrueEnd"><bpmn:incoming>Flow</bpmn:incoming></bpmn:endEvent>
+    <bpmn:endEvent id="DefaultEnd"><bpmn:incoming>Flow_Default</bpmn:incoming></bpmn:endEvent>
+    <bpmn:sequenceFlow id="Entry" sourceRef="Start" targetRef="Choose"/>
+    <bpmn:sequenceFlow id="Flow" sourceRef="Choose" targetRef="TrueEnd">
+      <bpmn:conditionExpression language="JavaScript">true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Default" sourceRef="Choose" targetRef="DefaultEnd"/>
+  </bpmn:process>
+</bpmn:definitions>`;
   const conditional = await client.bpmn.import(new File([condition], 'conditional.bpmn'), { name: `BpmnConditional${Date.now()}` });
   cleanup.push(conditional.definitionId);
   const conditionalExport = await (await client.bpmn.export(conditional.definitionId)).text();
