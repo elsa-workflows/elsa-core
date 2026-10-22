@@ -96,10 +96,13 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
     /// <summary>Reads the document, unless a read has already started.</summary>
     public Task EnsureLoadedAsync(CancellationToken cancellationToken = default) => _loadTask ?? ReloadAsync(cancellationToken);
 
-    /// <summary>Reads the document again; the canvas then loads it, discarding the designer's unsaved edits.</summary>
+    /// <summary>
+    /// Reads the document again; the canvas then loads it, discarding the designer's unsaved edits. A save in flight
+    /// finishes first, so the read cannot return the document from before it and hand that to the canvas as current.
+    /// </summary>
     public Task ReloadAsync(CancellationToken cancellationToken = default)
     {
-        _loadTask = LoadAsync(cancellationToken);
+        _loadTask = LoadAfterSaveAsync(cancellationToken);
         Changed?.Invoke();
         return _loadTask;
     }
@@ -184,6 +187,10 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
         if (_canvas == null || Xml == null || CanvasLoadError != null)
             return Task.FromResult(Refuse(new(BpmnDocumentFailureReason.Unknown, "The BPMN document is not open in a designer, so there is nothing to save.")));
 
+        // The read replaces the designer's document when it lands, so what this save would send is about to be discarded.
+        if (IsLoading)
+            return Task.FromResult(Refuse(new(BpmnDocumentFailureReason.Unknown, "The BPMN document is being read again, so nothing was saved.")));
+
         if (_eTag == null)
             return Task.FromResult(Refuse(new(BpmnDocumentFailureReason.PreconditionFailed, "The revision of the last save could not be confirmed, so nothing was saved. Reload to continue from the current version.")));
 
@@ -209,6 +216,9 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
     {
         if (_saveTask is { IsCompleted: false })
             await _saveTask;
+
+        if (_loadTask is { IsCompleted: false })
+            await _loadTask;
 
         if (Xml == null)
             return false;
@@ -291,6 +301,14 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
     {
         var result = await TryAsync(() => bpmnXmlService.GetXmlAsync(DefinitionId, cancellationToken));
         return result.Success is { } revision && revision.Xml == xml ? revision.ETag : null;
+    }
+
+    private async Task LoadAfterSaveAsync(CancellationToken cancellationToken)
+    {
+        if (_saveTask is { IsCompleted: false } saveTask)
+            await saveTask;
+
+        await LoadAsync(cancellationToken);
     }
 
     private async Task LoadAsync(CancellationToken cancellationToken)

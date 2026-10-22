@@ -104,6 +104,44 @@ public class BpmnModelerSessionTests
         Assert.True(_session.IsDirty);
     }
 
+    [Fact(DisplayName = "A reload asked for while a save is in flight reads the document only once the save has finished")]
+    public async Task ReloadDuringSave_WaitsForTheSave()
+    {
+        await OpenAsync();
+        _service.PutGate = new();
+        _service.AcceptsPut("\"REVISION-2\"").ReturnsXml("<edited/>", "\"REVISION-2\"");
+        Edit();
+
+        var save = _session.SaveAsync();
+        var reload = _session.ReloadAsync();
+
+        Assert.Equal(1, _service.GetCount);
+
+        _service.PutGate.SetResult();
+        await save;
+        await reload;
+
+        Assert.Equal(2, _service.GetCount);
+        Assert.Equal("<edited/>", _session.Xml);
+    }
+
+    [Fact(DisplayName = "A save asked for while the document is being read again is refused, since the read replaces what it would send")]
+    public async Task SaveDuringReload_IsRefused()
+    {
+        await OpenAsync();
+        _service.GetGate = new();
+        Edit();
+
+        var reload = _session.ReloadAsync();
+        var result = await _session.SaveAsync();
+        _service.GetGate.SetResult();
+        await reload;
+
+        Assert.False(result.IsSuccess);
+        Assert.Empty(_service.Puts);
+        Assert.Equal(0, _canvas.Saves);
+    }
+
     [Fact(DisplayName = "Nothing is sent while the content the designer cannot keep is not acknowledged")]
     public async Task UnacknowledgedDroppedContent_SendsNothing()
     {

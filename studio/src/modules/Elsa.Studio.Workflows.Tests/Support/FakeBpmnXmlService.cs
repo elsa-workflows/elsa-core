@@ -25,8 +25,18 @@ internal sealed class FakeBpmnXmlService : IBpmnXmlService
     public FakeBpmnXmlService AcceptsPut(string? newETag, params BpmnForeignContentModel[] dropped) => Add(_putResults, new(new BpmnXmlSaveResult(new BpmnImportResultModel(), newETag, dropped)));
     public FakeBpmnXmlService RefusesPut(BpmnDocumentFailureReason reason) => Add(_putResults, new(new BpmnDocumentFailure(reason, "refused")));
 
-    public Task<Result<BpmnXmlRevision, BpmnDocumentFailure>> GetXmlAsync(string definitionId, CancellationToken cancellationToken = default) =>
-        Task.FromResult(Next(_getResults, GetCount++));
+    /// <summary>When set, a GET awaits it before answering, so a test can act while one is in flight.</summary>
+    public TaskCompletionSource? GetGate { get; set; }
+
+    public async Task<Result<BpmnXmlRevision, BpmnDocumentFailure>> GetXmlAsync(string definitionId, CancellationToken cancellationToken = default)
+    {
+        var index = GetCount++;
+
+        if (GetGate != null)
+            await GetGate.Task;
+
+        return Next(_getResults, index);
+    }
 
     public async Task<Result<BpmnXmlSaveResult, BpmnDocumentFailure>> PutXmlAsync(string definitionId, string xml, string eTag, CancellationToken cancellationToken = default)
     {

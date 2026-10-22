@@ -72,6 +72,12 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
     /// </summary>
     private BpmnModelerSession? _bpmnModelerSession;
 
+    /// <summary>
+    /// Whether a save of the designer's document is running, from the ordinary save before it to the reload after it.
+    /// Until that reload, the graph this editor holds predates the document just saved.
+    /// </summary>
+    private bool _isSavingBpmnModelerDefinition;
+
     private BpmnElementSelection? _selectedBpmnElement;
     private EventCallback<BpmnElementSelection?> _bpmnElementSelected;
 
@@ -693,6 +699,13 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
             return;
         }
 
+        // Publishing saves the graph this editor holds, which until a diagram save's reload predates the saved document.
+        if (_isSavingBpmnModelerDefinition)
+        {
+            UserMessageService.ShowSnackbarTextMessage(Localizer["Wait for the diagram to finish saving before publishing."], Severity.Warning);
+            return;
+        }
+
         if (_bpmnModelerSession?.IsDirty == true)
         {
             UserMessageService.ShowSnackbarTextMessage(Localizer["Save the diagram changes before publishing."], Severity.Warning);
@@ -869,8 +882,23 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
     /// </summary>
     private async Task SaveBpmnModelerDefinitionAsync()
     {
-        var session = _bpmnModelerSession!;
+        if (_isSavingBpmnModelerDefinition)
+            return;
 
+        _isSavingBpmnModelerDefinition = true;
+
+        try
+        {
+            await SaveBpmnModelerDefinitionCoreAsync(_bpmnModelerSession!);
+        }
+        finally
+        {
+            _isSavingBpmnModelerDefinition = false;
+        }
+    }
+
+    private async Task SaveBpmnModelerDefinitionCoreAsync(BpmnModelerSession session)
+    {
         if (_isDirty || !session.IsDirty)
         {
             var saved = false;

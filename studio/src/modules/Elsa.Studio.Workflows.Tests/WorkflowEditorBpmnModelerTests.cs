@@ -194,6 +194,25 @@ public sealed class WorkflowEditorBpmnModelerTests : BunitContext, IAsyncLifetim
         Assert.Contains(_messages.Messages, message => message.Contains("before publishing", StringComparison.Ordinal));
     }
 
+    [Fact(DisplayName = "Publishing while the diagram is being saved is refused, since the editor's graph predates the saved document")]
+    public async Task Publish_DuringADiagramSave_IsRefused()
+    {
+        var cut = RenderEditor();
+        await EditAsync(cut);
+        _xmlService.PutGate = new();
+        _xmlService.AcceptsPut("\"REVISION-2\"");
+        _definitionService.Latest = Definition(sourceXml: _canvas.Xml);
+
+        var save = InvokeAsync(cut, "OnSaveClick");
+        cut.WaitForAssertion(() => Assert.Single(_xmlService.Puts));
+        await InvokeAsync(cut, "OnPublishClicked");
+        _xmlService.PutGate.SetResult();
+        await save;
+
+        Assert.Empty(_editorService.Saves);
+        Assert.Contains(_messages.Messages, message => message.Contains("finish saving before publishing", StringComparison.Ordinal));
+    }
+
     [Fact(DisplayName = "Reloading reads the workflow and its document again, discarding the designer's edits")]
     public async Task Reload_ReadsTheDocumentAgain()
     {
