@@ -24,7 +24,7 @@ public sealed class DapperUpsertTenantScopeDialectTests
         var sql = new PostgreSqlDialect().Upsert("Items", "Id", ["Name", "TenantId"]);
 
         Assert.Contains("on conflict(\"Id\") do update set", sql, StringComparison.Ordinal);
-        Assert.Contains("WHERE COALESCE(\"TenantId\", '') = COALESCE(@TenantId, '')", sql, StringComparison.Ordinal);
+        Assert.Contains("WHERE COALESCE(\"Items\".\"TenantId\", '') = COALESCE(@TenantId, '')", sql, StringComparison.Ordinal);
     }
 
     [Fact]

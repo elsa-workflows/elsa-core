@@ -49,15 +49,6 @@ public sealed class PostgreSqlDialectTests
         Assert.DoesNotContain("insert into ActivityExecutionRecords", sql, StringComparison.Ordinal);
     }
 
-    [Fact(DisplayName = "Upsert scopes the conflict update to TenantId when that column is present")]
-    public void Upsert_ScopesConflictUpdateToTenantId()
-    {
-        var sql = _dialect.Upsert("Roles", "Id", ["Name", "TenantId"]);
-
-        Assert.Contains("on conflict(\"Id\") do update set", sql, StringComparison.Ordinal);
-        Assert.Contains("WHERE COALESCE(\"TenantId\", '') = COALESCE(@TenantId, '')", sql, StringComparison.Ordinal);
-    }
-
     [Fact]
     public void Quote_IsIdempotentAndEscapesEmbeddedQuotes()
     {

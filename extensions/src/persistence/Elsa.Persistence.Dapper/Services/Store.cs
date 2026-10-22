@@ -352,9 +352,11 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
     {
         SetTenantId(record);
         using var connection = dbConnectionProvider.GetConnection();
-        var query = new ParameterizedQuery(dbConnectionProvider.Dialect).Upsert(TableName, PrimaryKey, record);
-        var affected = await query.ExecuteAsync(connection);
-        await ThrowIfCrossTenantIdCollisionAsync(record, affected, connection);
+        var affected = await ExecuteUpsertAsync(record, connection);
+        if (affected > 0)
+            return;
+
+        await ResolveZeroRowUpsertAsync(record, connection);
     }
 
     /// <summary>
@@ -364,8 +366,29 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
     /// <param name="cancellationToken">The cancellation token.</param>
     public async Task SaveManyAsync(IEnumerable<T> records, CancellationToken cancellationToken = default)
     {
-        foreach (var record in records)
-            await SaveAsync(record, cancellationToken);
+        var recordsList = records.ToList();
+        if (recordsList.Count == 0)
+            return;
+
+        var query = new ParameterizedQuery(dbConnectionProvider.Dialect);
+        var currentIndex = 0;
+
+        foreach (var record in recordsList)
+        {
+            var index = currentIndex;
+            SetTenantId(record);
+            query.Upsert(TableName, PrimaryKey, record, field => $"{field}_{index}");
+            currentIndex++;
+        }
+
+        using var connection = dbConnectionProvider.GetConnection();
+        var affected = await query.ExecuteAsync(connection);
+        // PostgreSQL and SQL Server sum the batch. SQLite's changes() is the last statement only,
+        // so a successful multi-row SQLite batch often reports 1 and takes the lookup path.
+        if (affected == recordsList.Count)
+            return;
+
+        await ResolveBatchTenantConflictsAsync(recordsList, connection);
     }
 
     /// <summary>
@@ -544,20 +567,98 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
         recordWithTenant.TenantId = tenantAccessor.Tenant?.Id;
     }
 
-    private async Task ThrowIfCrossTenantIdCollisionAsync(T record, int affected, IDbConnection connection)
+    // Cross-tenant Id rule (#9010):
+    // - Existing TenantId '*': same as main — no throw; ambient stamp plus a PK overwrite
+    //   (the '*' row becomes the current tenant). Visibility of '*' on reads stays in #9010.
+    // - Existing concrete tenant A, incoming other tenant B (a caller-supplied '*' is stamped
+    //   to ambient first, so it cannot overwrite A): throw.
+    // - Same tenant, treating NULL and '' as the default tenant: update.
+    private async Task ResolveZeroRowUpsertAsync(T record, IDbConnection connection)
     {
-        if (affected > 0 || record is not Record incoming)
+        var key = GetPrimaryKeyValue(record);
+        var existing = await LookupByKeyAsync(key, connection);
+        if (existing is Record owned)
+        {
+            await ApplyExistingRowOutcomeAsync(record, owned, key, connection);
             return;
+        }
+
+        var retried = await ExecuteUpsertAsync(record, connection);
+        if (retried > 0)
+            return;
+
+        throw new InvalidOperationException($"Failed to save a record with ID '{key}'.");
+    }
+
+    private async Task ResolveBatchTenantConflictsAsync(IReadOnlyList<T> records, IDbConnection connection)
+    {
+        var keys = records.Select(GetPrimaryKeyValue).OfType<object>().Distinct().ToList();
+        var existingByKey = new Dictionary<object, T>();
+
+        if (keys.Count > 0)
+        {
+            var lookup = new ParameterizedQuery(dbConnectionProvider.Dialect).From(TableName);
+            lookup.In(PrimaryKey, keys);
+            foreach (var existing in await lookup.QueryAsync<T>(connection))
+            {
+                var existingKey = GetPrimaryKeyValue(existing);
+                if (existingKey != null)
+                    existingByKey[existingKey] = existing;
+            }
+        }
+
+        foreach (var record in records)
+        {
+            var key = GetPrimaryKeyValue(record);
+            if (key == null || !existingByKey.TryGetValue(key, out var existing))
+            {
+                var retried = await ExecuteUpsertAsync(record, connection);
+                if (retried > 0)
+                    continue;
+
+                throw new InvalidOperationException($"Failed to save a record with ID '{key}'.");
+            }
+
+            if (existing is Record owned)
+                await ApplyExistingRowOutcomeAsync(record, owned, key, connection);
+        }
+    }
+
+    private async Task ApplyExistingRowOutcomeAsync(T record, Record owned, object? key, IDbConnection connection)
+    {
+        if (owned.TenantId == Tenant.AgnosticTenantId)
+        {
+            var overwrite = new ParameterizedQuery(dbConnectionProvider.Dialect).Update(TableName, record, PrimaryKey);
+            await overwrite.ExecuteAsync(connection);
+            return;
+        }
+
+        var incomingTenantId = record is Record incoming ? incoming.TenantId : null;
+        if (SameTenant(owned.TenantId, incomingTenantId))
+            return;
+
+        throw new InvalidOperationException($"A record with ID '{key}' already exists in another tenant.");
+    }
+
+    private async Task<int> ExecuteUpsertAsync(T record, IDbConnection connection)
+    {
+        var query = new ParameterizedQuery(dbConnectionProvider.Dialect).Upsert(TableName, PrimaryKey, record);
+        return await query.ExecuteAsync(connection);
+    }
+
+    private async Task<T?> LookupByKeyAsync(object? key, IDbConnection connection)
+    {
+        if (key == null)
+            return default;
 
         var lookup = new ParameterizedQuery(dbConnectionProvider.Dialect).From(TableName);
-        lookup.Is(PrimaryKey, incoming.Id);
-        var existing = await lookup.FirstOrDefaultAsync<T>(connection);
-        if (existing is not Record owned)
-            return;
-
-        if (string.Equals(owned.TenantId ?? string.Empty, incoming.TenantId ?? string.Empty, StringComparison.Ordinal))
-            return;
-
-        throw new InvalidOperationException($"A record with ID '{incoming.Id}' already exists in another tenant.");
+        lookup.Is(PrimaryKey, key);
+        return await lookup.FirstOrDefaultAsync<T>(connection);
     }
+
+    private object? GetPrimaryKeyValue(T record) =>
+        record.GetType().GetProperty(PrimaryKey)?.GetValue(record);
+
+    private static bool SameTenant(string? left, string? right) =>
+        string.Equals(left ?? string.Empty, right ?? string.Empty, StringComparison.Ordinal);
 }

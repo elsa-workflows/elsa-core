@@ -37,6 +37,7 @@ has changed. Later independent version streams require a separate decision.
 The former [Extensions repository README](../../docs/integration-program/legacy/extensions/README.md.source)
 is retained as import provenance. Its planned-provider table, old repository
 paths and examples are historical claims. Use each active module's documentation
-and released package metadata for availability. The [3.6](changelogs/3.6.0.md) and
-[3.7](changelogs/3.7.0.md) notes remain release history. Follow the root
+and released package metadata for availability. The [3.6](changelogs/3.6.0.md),
+[3.7](changelogs/3.7.0.md) and
+[3.10](changelogs/3.10.0.md) notes remain release history. Follow the root
 [contribution guide](../../CONTRIBUTING.md) for changes and contributor attribution.

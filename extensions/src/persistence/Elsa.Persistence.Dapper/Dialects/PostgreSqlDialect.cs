@@ -67,7 +67,8 @@ public class PostgreSqlDialect : SqlDialectBase, ISqlDialect
         var fieldList = string.Join(", ", fields.Select(Quote));
         var fieldParamList = string.Join(", ", fields.Select(x => $"@{getParamName(x)}"));
         var updateList = string.Join(", ", fields.Select(x => $"{Quote(x)} = @{getParamName(x)}"));
-        var tenantWhere = SqlDialectStatements.TenantScopedUpdateWhere(fields, Quote, getParamName);
+        // Qualify the target table: an unqualified "TenantId" is 42702 (target vs EXCLUDED).
+        var tenantWhere = SqlDialectStatements.TenantScopedUpdateWhere(fields, column => $"{Quote(table)}.{Quote(column)}", getParamName);
         // Include the PK in the insert list: ON CONFLICT cannot insert a NOT NULL PK that was omitted (23502).
         return $"insert into {Quote(table)} ({Quote(primaryKeyField)}, {fieldList}) values (@{getParamName(primaryKeyField)}, {fieldParamList}) on conflict({Quote(primaryKeyField)}) do update set {updateList}{tenantWhere};";
     }
