@@ -11,9 +11,11 @@ BPMN root and never normalizes or autosaves it. Export remains available; canvas
 editing is separate work in #8929.
 
 The API remains the source of truth for supported BPMN capabilities. Capability
-refusals list missing capabilities and offending elements. Unsupported expression
-conditions list sequence-flow IDs and explain why unconditional execution would
-change routing. These messages use stable server error codes and retain the
+refusals list missing capabilities and offending elements. Current Core evaluates
+supported expression conditions with Elsa's expression engine. Conditions in an
+unsupported language are refused with sequence-flow IDs and the server's explanation;
+older servers may refuse expression conditions altogether. These messages use
+stable server error codes and retain the
 server's explanation. Unknown codes and older-server errors show the ordinary
 server error rather than guessing their meaning.
 
@@ -41,8 +43,9 @@ export requests, native-root preservation without autosave, capability/condition
 refusals, stale/missing-source refusals, unknown error fallback and download/reimport.
 To check a disposable real backend, set `ELSA_TEST_API_URL`, `ELSA_TEST_USERNAME`
 and `ELSA_TEST_PASSWORD`, then run `pnpm test:bpmn`. This checks analysis,
-import/export/reimport, stable canonical XML, structured expression-condition
-refusal and cleanup of its temporary definitions.
+import/export/reimport, stable canonical XML, preservation of supported expression
+conditions, structured refusal of unsupported condition languages and cleanup of its
+temporary definitions.
 
 This implements interchange for [#8853](https://github.com/elsa-workflows/elsa-core/issues/8853).
 An editable BPMN diagram canvas is separate work in #8929.

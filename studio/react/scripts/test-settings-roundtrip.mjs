@@ -12,11 +12,20 @@ const cleanup = [];
 let primaryError;
 try {
   const name = `SettingsRoundtrip${Date.now()}`;
-  const model = { name, variables: [], inputs: [], outputs: [], outcomes: [], customProperties: {}, options: { usableAsActivity: true }, root: { id: 'child-root', type: 'Elsa.Sequence', version: 1, activities: [] } };
+  const model = { name, variables: [], inputs: [], outputs: [], outcomes: [], customProperties: {}, options: { usableAsActivity: true, autoUpdateConsumingWorkflows: true }, root: { id: 'child-root', type: 'Elsa.Sequence', version: 1, activities: [] } };
   const first = (await client.workflowDefinitions.save({ model, publish: true })).workflowDefinition;
   cleanup.push(first.definitionId);
   const second = (await client.workflowDefinitions.save({ model: { ...first, description: 'Second version' }, publish: true })).workflowDefinition;
   assert.equal(second.version, 2);
+
+  const reverted = await client.workflowDefinitions.revert(first.definitionId, 1);
+  assert.equal(reverted.definitionId, first.definitionId);
+  assert.equal(reverted.version, 3);
+  const publishedChild = await client.workflowDefinitions.publish(first.definitionId);
+  assert.equal(publishedChild.workflowDefinition.isPublished, true);
+  assert.equal(publishedChild.workflowDefinition.version, 3);
+  assert.equal((await client.workflowDefinitions.getByDefinitionId(first.definitionId)).id, publishedChild.workflowDefinition.id);
+
   const descriptors = await client.descriptors.activities(true);
   const descriptor = descriptors.items.find(item => item.customProperties?.WorkflowDefinitionId === first.definitionId && item.version === 2);
   assert(descriptor, 'Reusable workflow descriptor version 2 missing');
@@ -40,7 +49,20 @@ try {
   assert.equal(saved.workflowDefinitionVersionId, second.id);
   const versions = await client.workflowDefinitions.list({ definitionIds: [first.definitionId], versionOptions: 'AllVersions', page: 0, pageSize: 10 });
   assert(versions.items.some(item => item.id === second.id && item.version === 2));
-  console.log('PASS: actual Core API round-trips commit, logging strategy/expression, resilience expression, task mode, custom data, and the reusable activity version pair');
+  const published = await client.workflowDefinitions.publish(parent.definitionId);
+  assert.equal(published.workflowDefinition.isPublished, true);
+  const retracted = await client.workflowDefinitions.retract(parent.definitionId);
+  assert.equal(retracted.definitionId, parent.definitionId);
+  assert.equal(retracted.isPublished, false);
+  assert.equal((await client.workflowDefinitions.getByDefinitionId(parent.definitionId)).isPublished, false);
+
+  const updated = await client.workflowDefinitions.updateReferences(first.definitionId);
+  assert(updated.affectedWorkflows.includes(parent.name));
+  const reloaded = await client.workflowDefinitions.getByDefinitionId(parent.definitionId);
+  const updatedChild = reloaded.root.activities.find(item => item.id === child.id);
+  assert.equal(updatedChild.workflowDefinitionVersionId, publishedChild.workflowDefinition.id);
+  assert.equal(updatedChild.version, 3);
+  console.log('PASS: actual Core API round-trips commit, logging strategy/expression, resilience expression, task mode, custom data, and the reusable activity version pair; dedicated publish, retract, revert and update-references actions accept their requests and return the expected models');
 } catch (error) {
   primaryError = error;
   throw error;

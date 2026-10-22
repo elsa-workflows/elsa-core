@@ -210,7 +210,7 @@ function EditorWorkspace({
   const unpublish = async () => {
     try {
       const result = await mutations.retract.mutateAsync(definition.definitionId);
-      setDefinition((d) => ({ ...d, isPublished: result.workflowDefinition.isPublished }));
+      setDefinition((d) => ({ ...d, isPublished: result.isPublished }));
       toast.success(_t("Workflow unpublished"));
     } catch (e) {
       toast.error(describeError(e));

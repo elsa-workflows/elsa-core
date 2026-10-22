@@ -1,8 +1,8 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import type { WorkflowDefinition } from "../packages/api-client/src/types/workflow-definitions";
 
-async function editorFixture(page: Page) {
-  let definition: WorkflowDefinition = { id: "version-three", definitionId: "parity", name: "Parity workflow", version: 3, isLatest: true, isPublished: false, createdAt: "2026-10-21T00:00:00Z",
+async function editorFixture(page: Page, published = false) {
+  let definition: WorkflowDefinition = { id: "version-three", definitionId: "parity", name: "Parity workflow", version: 3, isLatest: true, isPublished: published, createdAt: "2026-10-21T00:00:00Z",
     variables: [{ id: "customer", name: "Customer", typeName: "String", value: "original" }], inputs: [], outputs: [], outcomes: ["Approved"], options: {}, customProperties: {},
     root: { id: "root", nodeId: "root", type: "Elsa.Flowchart", version: 1, activities: [
       { id: "alpha", nodeId: "root:alpha", type: "Elsa.WriteLine", version: 1, name: "Alpha1", metadata: { designer: { position: { x: 0, y: 0 } } } },
@@ -21,6 +21,10 @@ async function editorFixture(page: Page) {
     if (path.endsWith("descriptors/activities")) json = { items: [{ typeName: "Elsa.WriteLine", name: "WriteLine", version: 1, displayName: "Write line", category: "Tests", kind: "Action", inputs: [], outputs: [], ports: [] }] };
     else if (path.endsWith("workflow-definitions/by-definition-id/parity")) json = url.searchParams.get("versionOptions") === "Latest" ? definition : versions.find(item => String(item.version) === url.searchParams.get("versionOptions"));
     else if (path.endsWith("workflow-definitions/parity/versions")) json = versions;
+    else if (path.endsWith("workflow-definitions/parity/retract")) {
+      definition = { ...definition, isPublished: false };
+      json = definition;
+    }
     else if (path.includes("workflow-definition-versions/") && request.method() === "DELETE") {
       const id = path.split("/").at(-1)!;
       deleted.push(id);
@@ -48,6 +52,17 @@ async function choose(page: Page, panel: Locator, label: string, option: string)
   await field(panel, label).getByRole("combobox").click();
   await page.getByRole("option", { name: option, exact: true }).click();
 }
+
+test("unpublishing consumes Core's bare definition response and updates the editor", async ({ page }) => {
+  const fixture = await editorFixture(page, true);
+  await expect(page.getByRole("button", { name: "Run", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "More", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Unpublish", exact: true }).click();
+  await expect.poll(() => fixture.saved().isPublished).toBe(false);
+  await expect(page.getByText("Workflow unpublished", { exact: true })).toBeVisible();
+  await expect(page.getByText("Draft", { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: "Run", exact: true })).toHaveCount(0);
+});
 
 test("workflow settings, variable defaults and outcomes reach the normal save flow", async ({ page }) => {
   const fixture = await editorFixture(page);
