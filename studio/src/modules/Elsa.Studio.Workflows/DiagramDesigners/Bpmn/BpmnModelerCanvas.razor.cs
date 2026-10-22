@@ -105,6 +105,10 @@ public partial class BpmnModelerCanvas : IBpmnModelerCanvas, IDisposable
 
     Task IBpmnModelerCanvas.RedoAsync() => _host.RedoAsync();
 
+    Task<BpmnDesignerBinding?> IBpmnModelerCanvas.GetBindingAsync(string elementId) => _host.GetBindingAsync(elementId);
+
+    Task<BpmnDesignerSetBindingResult> IBpmnModelerCanvas.SetBindingAsync(string elementId, BpmnDesignerBinding binding) => _host.SetBindingAsync(elementId, binding);
+
     private void Detach()
     {
         if (_attachedSession == null)

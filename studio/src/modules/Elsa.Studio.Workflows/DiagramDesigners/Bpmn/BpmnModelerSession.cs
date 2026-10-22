@@ -88,6 +88,9 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
     /// <summary>Whether the designer has an undone edit to redo.</summary>
     public bool CanRedo { get; private set; }
 
+    /// <summary>Counts the designer's <c>change</c> events, so a reader of the document can tell it may have changed.</summary>
+    public long ChangeSequence => _changeSequence;
+
     /// <summary>The element selected on the canvas, or <see langword="null"/> when none is.</summary>
     public BpmnDesignerSelectedElement? SelectedElement { get; private set; }
 
@@ -173,6 +176,23 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
 
     /// <summary>Redoes the designer's last undone edit.</summary>
     public Task RedoAsync() => _canvas?.RedoAsync() ?? Task.CompletedTask;
+
+    /// <summary>
+    /// The <c>elsa:activityBinding</c> of the element with <paramref name="elementId"/> in the designer's document, or
+    /// <see langword="null"/> when it has none or no designer shows the document.
+    /// </summary>
+    public Task<BpmnDesignerBinding?> GetBindingAsync(string elementId) =>
+        _canvas != null && CanvasLoadError == null ? _canvas.GetBindingAsync(elementId) : Task.FromResult<BpmnDesignerBinding?>(null);
+
+    /// <summary>
+    /// Makes <paramref name="binding"/> the binding of the element with <paramref name="elementId"/> in the designer's
+    /// document, as one undoable edit. Like every designer edit, it is sent with the next <see cref="SaveAsync"/>.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">No designer shows the document.</exception>
+    public Task<BpmnDesignerSetBindingResult> SetBindingAsync(string elementId, BpmnDesignerBinding binding) =>
+        _canvas != null && CanvasLoadError == null
+            ? _canvas.SetBindingAsync(elementId, binding)
+            : throw new InvalidOperationException("The BPMN document is not open in a designer.");
 
     /// <summary>
     /// Sends the designer's document through the XML <c>PUT</c>, against the revision it was loaded or last saved as.

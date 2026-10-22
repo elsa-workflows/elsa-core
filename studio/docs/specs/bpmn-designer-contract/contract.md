@@ -181,9 +181,12 @@ BPMN-imported workflow's whole document in it. Without one, the workflow keeps t
   document replaces it when the designer has nothing unsaved; otherwise the next save is refused as a conflict.
 - Diagram changes are saved with Save only; auto-save covers the workflow's other properties, as it does for the
   "Performed by" panel. Publishing is refused while the diagram has unsaved changes.
-- The editor shows the selected element. Choosing the activity that performs a task through `getBinding` and
-  `setBinding` is not wired yet, and neither are the viewport tools (Zoom to fit, Center), which this contract does not
-  have.
+- The panel shows the selected element and, for a task, its "Performed by" section: the activity picker and that
+  activity's input editors. It reads the binding with `getBinding` and writes every pick and input edit with
+  `setBinding`, so each is one undoable edit saved with the diagram. It reads the binding again after every `change`,
+  and keeps the draft being edited when the binding read back is the one it wrote. A refusal is shown and leaves the
+  document as it was.
+- The viewport tools (Zoom to fit, Center) do nothing on this canvas; this contract does not have them.
 
 ## Versioning
 
