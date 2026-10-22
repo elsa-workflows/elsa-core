@@ -127,7 +127,9 @@ internal sealed class FakeModelerCanvas : IBpmnModelerCanvas
         var binding = Bindings.TryGetValue(elementId, out var found) ? found : null;
 
         if (gate != null)
+        {
             await gate.Task;
+        }
 
         return binding;
     }
@@ -139,10 +141,14 @@ internal sealed class FakeModelerCanvas : IBpmnModelerCanvas
         SetBindings.Add((elementId, binding));
 
         if (gate != null)
+        {
             await gate.Task;
+        }
 
         if (SetBindingRefusal != null)
+        {
             return new(false, SetBindingRefusal);
+        }
 
         Bindings[elementId] = binding;
         BindingApplied?.Invoke(elementId);

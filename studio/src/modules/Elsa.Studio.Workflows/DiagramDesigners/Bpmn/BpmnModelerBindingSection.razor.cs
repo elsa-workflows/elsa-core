@@ -72,7 +72,9 @@ public partial class BpmnModelerBindingSection : IDisposable
         if (!ReferenceEquals(_subscribedSession, Session))
         {
             if (_subscribedSession != null)
+            {
                 _subscribedSession.Changed -= OnSessionChanged;
+            }
 
             Session.Changed += OnSessionChanged;
             _subscribedSession = Session;
@@ -95,19 +97,25 @@ public partial class BpmnModelerBindingSection : IDisposable
     private async Task SyncAsync()
     {
         if (!_isInitialized)
+        {
             return;
+        }
 
         var key = (Element.Id, Session.DocumentVersion, Session.ChangeSequence, Session.IsDocumentReady);
 
         if (_readKey == key)
+        {
             return;
+        }
 
         _readKey = key;
         var isSameElement = _elementId == Element.Id;
         _elementId = Element.Id;
 
         if (!isSameElement)
+        {
             _refusal = null;
+        }
 
         if (!IsTask)
         {
@@ -119,12 +127,16 @@ public partial class BpmnModelerBindingSection : IDisposable
         var readNumber = ++_readNumber;
 
         if (!Session.IsDocumentReady)
+        {
             return;
+        }
 
         var binding = await Session.GetBindingAsync(Element.Id);
 
         if (readNumber != _readNumber)
+        {
             return;
+        }
 
         if (isSameElement && _draft != null && BpmnDesignerBindings.AreEquivalent(binding, BpmnDesignerBindings.From(_draft)))
         {
@@ -142,7 +154,9 @@ public partial class BpmnModelerBindingSection : IDisposable
         SetDraft(null);
 
         if (binding == null)
+        {
             return;
+        }
 
         BpmnActivityBinding read;
 
@@ -157,7 +171,9 @@ public partial class BpmnModelerBindingSection : IDisposable
         }
 
         if (LatestDescriptorOf(read.ActivityType) is { } descriptor)
+        {
             SetDraft(BpmnActivityBindingDraft.FromBinding(read, descriptor, Element.Id));
+        }
     }
 
     /// <summary>A binding names no version, and elsa-core builds the latest one it has, so that is the one to edit.</summary>
@@ -191,7 +207,9 @@ public partial class BpmnModelerBindingSection : IDisposable
 
         // Nothing changes until the picker returns an explicit choice: cancelling keeps the existing binding as it is.
         if (result is not { Canceled: false, Data: ActivityDescriptor descriptor })
+        {
             return;
+        }
 
         _bindingError = null;
         SetDraft(BpmnActivityBindingDraft.Create(LatestDescriptorOf(descriptor.TypeName) ?? descriptor, Element.Id));
@@ -207,7 +225,9 @@ public partial class BpmnModelerBindingSection : IDisposable
     private async Task ApplyDraftAsync()
     {
         if (_draft == null || _elementId == null)
+        {
             return;
+        }
 
         // A read started before this edit returns the binding from before it, so it must not replace the draft.
         _readNumber++;
@@ -237,6 +257,8 @@ public partial class BpmnModelerBindingSection : IDisposable
     public void Dispose()
     {
         if (_subscribedSession != null)
+        {
             _subscribedSession.Changed -= OnSessionChanged;
+        }
     }
 }
