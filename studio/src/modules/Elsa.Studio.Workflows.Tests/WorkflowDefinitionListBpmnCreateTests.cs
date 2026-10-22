@@ -30,6 +30,9 @@ public sealed class WorkflowDefinitionListBpmnCreateTests : BunitContext, IAsync
 {
     private const string GeneratedName = "Workflow 1";
     private const string ExistingName = "Order process";
+
+    /// <summary>When set, the name check waits for it, so a test can submit again while the check runs.</summary>
+    private static TaskCompletionSource<bool>? _uniquenessGate;
     private readonly FakeBpmnXmlService _bpmnXml = new();
     private readonly List<string> _opened = [];
     private IRenderedComponent<MudPopoverProvider> _popovers = null!;
@@ -52,7 +55,11 @@ public sealed class WorkflowDefinitionListBpmnCreateTests : BunitContext, IAsync
     }
 
     Task IAsyncLifetime.InitializeAsync() => Task.CompletedTask;
-    async Task IAsyncLifetime.DisposeAsync() => await base.DisposeAsync();
+    async Task IAsyncLifetime.DisposeAsync()
+    {
+        _uniquenessGate = null;
+        await base.DisposeAsync();
+    }
 
     [Fact(DisplayName = "Without a BPMN designer, creating a BPMN workflow is not offered")]
     public void WithoutADesigner_IsNotOffered()
@@ -85,6 +92,23 @@ public sealed class WorkflowDefinitionListBpmnCreateTests : BunitContext, IAsync
 
         _dialogs.WaitForAssertion(() => Assert.Contains(Services.GetRequiredService<ISnackbar>().ShownSnackbars, snackbar => snackbar.Message.Contains("the server is read-only", StringComparison.Ordinal)));
         Assert.Empty(_opened);
+    }
+
+    [Fact(DisplayName = "Submitting again while the name is checked creates the workflow once")]
+    public void SubmittingTwice_CreatesOnce()
+    {
+        EnableDesigner();
+        _bpmnXml.CreateResult = new(new BpmnXmlSaveResult(new() { DefinitionId = "new-process" }, "\"REVISION-1\"", []));
+        OpenCreateMenu(RenderList()).Single(item => item.TextContent.Contains("Create BPMN workflow", StringComparison.Ordinal)).Click();
+        _dialogs.WaitForAssertion(() => Assert.NotEmpty(_dialogs.FindAll("[data-testid='bpmn-create-submit']")));
+        _uniquenessGate = new();
+
+        _dialogs.Find("[data-testid='bpmn-create-submit']").Click();
+        _dialogs.Find("[data-testid='bpmn-create-submit']").Click();
+        _dialogs.InvokeAsync(() => _uniquenessGate.SetResult(true));
+
+        _dialogs.WaitForAssertion(() => Assert.Equal(["new-process"], _opened));
+        Assert.Single(_bpmnXml.Creates);
     }
 
     [Fact(DisplayName = "Cancelling the dialog creates nothing")]
@@ -142,7 +166,7 @@ public sealed class WorkflowDefinitionListBpmnCreateTests : BunitContext, IAsync
                 Links = PublishLinks
             }),
             nameof(IWorkflowDefinitionService.GenerateUniqueNameAsync) => Task.FromResult(GeneratedName),
-            nameof(IWorkflowDefinitionService.GetIsNameUniqueAsync) => Task.FromResult(true),
+            nameof(IWorkflowDefinitionService.GetIsNameUniqueAsync) => _uniquenessGate?.Task ?? Task.FromResult(true),
             _ => throw new InvalidOperationException($"Unexpected call to {targetMethod.DeclaringType!.Name}.{targetMethod.Name}.")
         };
     }

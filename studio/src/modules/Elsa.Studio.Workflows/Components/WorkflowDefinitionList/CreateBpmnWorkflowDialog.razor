@@ -10,7 +10,7 @@
         </EditForm>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="OnCancelClicked">@Localizer["Cancel"]</MudButton>
+        <MudButton Disabled="_isCreating" OnClick="OnCancelClicked">@Localizer["Cancel"]</MudButton>
         <MudButton Color="Color.Primary" Disabled="_isCreating" OnClick="OnSubmitClicked" data-testid="bpmn-create-submit">@Localizer["Create"]</MudButton>
     </DialogActions>
 </MudDialog>

@@ -44,14 +44,16 @@ public partial class CreateBpmnWorkflowDialog : IDisposable
 
     private async Task ValidateAndCreateAsync()
     {
-        if (_isCreating || !await _submitValidator.ValidateAndPublishAsync())
+        // Set before the name check, which is asynchronous, so a second submit during it cannot create a second workflow.
+        if (_isCreating)
             return;
 
         _isCreating = true;
 
         try
         {
-            MudDialog.Close(await BpmnXmlService.CreateAsync(_metadataModel.Name!));
+            if (await _submitValidator.ValidateAndPublishAsync())
+                MudDialog.Close(await BpmnXmlService.CreateAsync(_metadataModel.Name!));
         }
         finally
         {
