@@ -344,6 +344,28 @@ public class BpmnModelerSessionTests
         Assert.Equal((1, 1), (_canvas.Undos, _canvas.Redos));
     }
 
+    [Fact(DisplayName = "A binding is set only in the document the designer shows as current: not while it is read again, nor before the canvas loads it")]
+    public async Task SetBinding_WaitsForTheCurrentDocument()
+    {
+        await OpenAsync();
+        _service.ReturnsXml("<newer/>", "\"REVISION-2\"");
+        _service.GetGate = new();
+        var binding = new BpmnDesignerBinding("Elsa.WriteLine", []);
+
+        var reload = _session.ReloadAsync();
+        var whileReading = await _session.SetBindingAsync("Task_1", binding);
+        _service.GetGate.SetResult();
+        await reload;
+        var beforeTheCanvasLoads = await _session.SetBindingAsync("Task_1", binding);
+        _session.CanvasLoaded(new(true, null, []), _session.DocumentVersion);
+        var afterTheCanvasLoads = await _session.SetBindingAsync("Task_1", binding);
+
+        Assert.Equal(new BpmnDesignerSetBindingResult(false, BpmnModelerSession.DocumentNotReadyRefusal), whileReading);
+        Assert.Equal(new BpmnDesignerSetBindingResult(false, BpmnModelerSession.DocumentNotReadyRefusal), beforeTheCanvasLoads);
+        Assert.True(afterTheCanvasLoads.Applied);
+        Assert.Single(_canvas.SetBindings);
+    }
+
     private async Task OpenAsync(IReadOnlyList<BpmnDesignerLoadWarning>? warnings = null)
     {
         await _session.EnsureLoadedAsync();

@@ -25,6 +25,7 @@ public sealed class BpmnModelerBindingSectionTests : BunitContext, IAsyncLifetim
         new("Elsa.WriteLine", [new("text", """{"typeName":"String","expression":{"type":"Literal","value":"Notifying the warehouse"}}""")]);
 
     private readonly FakeModelerCanvas _canvas = new();
+    private readonly FakeBpmnXmlService _service = new();
     private readonly IRenderedComponent<MudDialogProvider> _dialogProvider;
     private readonly BpmnModelerSession _session;
 
@@ -36,7 +37,7 @@ public sealed class BpmnModelerBindingSectionTests : BunitContext, IAsyncLifetim
         Render<MudPopoverProvider>();
         _dialogProvider = Render<MudDialogProvider>();
 
-        _session = new(new FakeBpmnXmlService().ReturnsXml("<definitions/>", "\"REVISION-1\""), DefinitionId);
+        _session = new(_service.ReturnsXml("<definitions/>", "\"REVISION-1\""), DefinitionId);
         _session.EnsureLoadedAsync().GetAwaiter().GetResult();
         _session.AttachCanvas(_canvas);
         _session.CanvasLoaded(new(true, null, []), _session.DocumentVersion);
@@ -113,6 +114,66 @@ public sealed class BpmnModelerBindingSectionTests : BunitContext, IAsyncLifetim
         Assert.Contains("sends or waits for a message", cut.Find("[data-testid='bpmn-binding-refused']").TextContent);
         Assert.Same(WriteLineBinding, _canvas.Bindings[TaskId]);
         Assert.False(_session.IsDirty);
+    }
+
+    [Fact(DisplayName = "A pick the designer refuses is not shown; the activity the document keeps is")]
+    public async Task ARefusedPick_ShowsTheKeptBinding()
+    {
+        var cut = RenderSection(Task);
+        _canvas.SetBindingRefusal = BpmnDesignerSetBindingRefusals.NotBindable;
+
+        await cut.InvokeAsync(() => cut.Find("[data-testid='bpmn-pick-activity']").Click());
+        _dialogProvider.WaitForAssertion(() => Assert.NotEmpty(_dialogProvider.FindAll("[data-testid='state-machine-activity-option']")));
+        _dialogProvider.FindAll("button").Single(button => button.TextContent.Contains("All activities", StringComparison.Ordinal)).Click();
+        _dialogProvider.Find("[data-testid='state-machine-activity-option'][data-activity-type='Elsa.HttpRequest']").Click();
+        _dialogProvider.Find("[data-testid='state-machine-activity-picker-commit']").Click();
+
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("[data-testid='bpmn-binding-refused']")));
+        Assert.Contains("Write Line (Elsa.WriteLine)", cut.Find("[data-testid='bpmn-bound-activity']").TextContent);
+        Assert.Equal("Elsa.WriteLine", cut.FindComponent<InputsTab>().Instance.ActivityDescriptor!.TypeName);
+    }
+
+    [Fact(DisplayName = "A read that started before an input edit does not replace the editors while the edit is being applied")]
+    public async Task AReadFromBeforeAnEdit_DoesNotReplaceTheEditors()
+    {
+        var cut = RenderSection(Task);
+        var inputs = cut.FindComponent<InputsTab>().Instance;
+        var staleRead = _canvas.NextGetBindingGate = new();
+        await cut.InvokeAsync(() => _session.CanvasChanged(new(["Shape_1"], IsDirty: true, CanUndo: true, CanRedo: false)));
+
+        var write = _canvas.NextSetBindingGate = new();
+        inputs.Activity!["text"] = JsonNode.Parse("""{"typeName":"String","expression":{"type":"Literal","value":"Edited"}}""");
+        var edit = cut.InvokeAsync(() => inputs.OnActivityUpdated!(inputs.Activity!));
+        await cut.InvokeAsync(staleRead.SetResult);
+        Assert.Same(inputs, cut.FindComponent<InputsTab>().Instance);
+
+        await cut.InvokeAsync(write.SetResult);
+        await edit;
+
+        Assert.Same(inputs, cut.FindComponent<InputsTab>().Instance);
+        Assert.Contains("Edited", Assert.Single(_canvas.Bindings[TaskId].Inputs).Value);
+    }
+
+    [Fact(DisplayName = "While the diagram is read again, the editors are hidden and the picker is off; then the binding of the document shown is read")]
+    public async Task WhileTheDiagramIsReadAgain_NothingCanBeEdited()
+    {
+        var cut = RenderSection(Task);
+        _service.ReturnsXml("<definitions/>", "\"REVISION-2\"");
+        _service.GetGate = new();
+
+        var reload = System.Threading.Tasks.Task.CompletedTask;
+        await cut.InvokeAsync(() => { reload = _session.ReloadAsync(); });
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("[data-testid='bpmn-binding-loading']")));
+        Assert.Empty(cut.FindComponents<InputsTab>());
+        Assert.True(cut.Find("[data-testid='bpmn-pick-activity']").HasAttribute("disabled"));
+
+        await cut.InvokeAsync(_service.GetGate.SetResult);
+        await reload;
+        _canvas.Bindings[TaskId] = new("Elsa.Delay", []);
+        await cut.InvokeAsync(() => _session.CanvasLoaded(new(true, null, []), _session.DocumentVersion));
+
+        cut.WaitForAssertion(() => Assert.Equal("Elsa.Delay", cut.FindComponent<InputsTab>().Instance.ActivityDescriptor!.TypeName));
+        Assert.False(cut.Find("[data-testid='bpmn-pick-activity']").HasAttribute("disabled"));
     }
 
     [Fact(DisplayName = "An unbound task offers the picker")]

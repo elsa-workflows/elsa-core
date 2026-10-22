@@ -184,8 +184,10 @@ BPMN-imported workflow's whole document in it. Without one, the workflow keeps t
 - The panel shows the selected element and, for a task, its "Performed by" section: the activity picker and that
   activity's input editors. It reads the binding with `getBinding` and writes every pick and input edit with
   `setBinding`, so each is one undoable edit saved with the diagram. It reads the binding again after every `change`,
-  and keeps the draft being edited when the binding read back is the one it wrote. A refusal is shown and leaves the
-  document as it was.
+  and keeps the draft being edited when the binding read back is the one it wrote. A refusal is shown, and the binding
+  the document kept is read back in place of the refused draft. While the document is read again, and until the designer
+  has loaded what the read returned, the editors are hidden and `setBinding` is not called, since loading the document
+  discards the designer's edits.
 - The viewport tools (Zoom to fit, Center) do nothing on this canvas; this contract does not have them.
 
 ## Versioning

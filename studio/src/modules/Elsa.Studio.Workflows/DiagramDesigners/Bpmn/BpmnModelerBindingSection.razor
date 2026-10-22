@@ -26,10 +26,14 @@
             <MudStack Row="true" AlignItems="MudBlazor.AlignItems.Center">
                 <MudText data-testid="bpmn-bound-activity">@(BoundActivityName ?? Localizer["Not bound"])</MudText>
                 <MudSpacer />
-                <MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="!_isInitialized" OnClick="OnPickActivityClicked" data-testid="bpmn-pick-activity">@(BoundActivityName == null ? Localizer["Choose activity"] : Localizer["Change activity"])</MudButton>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="@(!_isInitialized || !Session.IsDocumentReady)" OnClick="OnPickActivityClicked" data-testid="bpmn-pick-activity">@(BoundActivityName == null ? Localizer["Choose activity"] : Localizer["Change activity"])</MudButton>
             </MudStack>
 
-            @if (_draft != null)
+            @if (!Session.IsDocumentReady)
+            {
+                <MudText Typo="Typo.body2" data-testid="bpmn-binding-loading">@Localizer["The diagram is loading."]</MudText>
+            }
+            else if (_draft != null)
             {
                 @if (_draft.Descriptor.Inputs.Any(input => input.IsBrowsable is not false))
                 {

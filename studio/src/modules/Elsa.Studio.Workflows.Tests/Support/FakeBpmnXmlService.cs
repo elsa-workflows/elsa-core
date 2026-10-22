@@ -114,18 +114,38 @@ internal sealed class FakeModelerCanvas : IBpmnModelerCanvas
         return Task.CompletedTask;
     }
 
-    public Task<BpmnDesignerBinding?> GetBindingAsync(string elementId) =>
-        Task.FromResult(Bindings.TryGetValue(elementId, out var binding) ? binding : null);
+    /// <summary>When set, the next <c>getBinding</c> reads the binding at once but returns it only once this completes.</summary>
+    public TaskCompletionSource? NextGetBindingGate { get; set; }
 
-    public Task<BpmnDesignerSetBindingResult> SetBindingAsync(string elementId, BpmnDesignerBinding binding)
+    /// <summary>When set, the next <c>setBinding</c> applies the binding only once this completes.</summary>
+    public TaskCompletionSource? NextSetBindingGate { get; set; }
+
+    public async Task<BpmnDesignerBinding?> GetBindingAsync(string elementId)
     {
+        var gate = NextGetBindingGate;
+        NextGetBindingGate = null;
+        var binding = Bindings.TryGetValue(elementId, out var found) ? found : null;
+
+        if (gate != null)
+            await gate.Task;
+
+        return binding;
+    }
+
+    public async Task<BpmnDesignerSetBindingResult> SetBindingAsync(string elementId, BpmnDesignerBinding binding)
+    {
+        var gate = NextSetBindingGate;
+        NextSetBindingGate = null;
         SetBindings.Add((elementId, binding));
 
+        if (gate != null)
+            await gate.Task;
+
         if (SetBindingRefusal != null)
-            return Task.FromResult(new BpmnDesignerSetBindingResult(false, SetBindingRefusal));
+            return new(false, SetBindingRefusal);
 
         Bindings[elementId] = binding;
         BindingApplied?.Invoke(elementId);
-        return Task.FromResult(new BpmnDesignerSetBindingResult(true));
+        return new(true);
     }
 }

@@ -26,7 +26,7 @@ public partial class BpmnModelerBindingSection : IDisposable
 {
     private readonly ExpressionDescriptorProvider _expressionDescriptorProvider = new();
     private BpmnModelerSession? _subscribedSession;
-    private (string? ElementId, int DocumentVersion, long ChangeSequence)? _readKey;
+    private (string? ElementId, int DocumentVersion, long ChangeSequence, bool IsDocumentReady)? _readKey;
     private long _readNumber;
     private bool _isInitialized;
     private string? _elementId;
@@ -90,13 +90,14 @@ public partial class BpmnModelerBindingSection : IDisposable
     /// <summary>
     /// Reads the element's binding again when the element, the document or the designer's edits have moved on since the
     /// last read. A draft whose binding is the one read back is kept, with its editors; any other binding replaces it.
+    /// Nothing is read while the designer does not show the latest document, since that document is about to be replaced.
     /// </summary>
     private async Task SyncAsync()
     {
         if (!_isInitialized)
             return;
 
-        var key = (Element.Id, Session.DocumentVersion, Session.ChangeSequence);
+        var key = (Element.Id, Session.DocumentVersion, Session.ChangeSequence, Session.IsDocumentReady);
 
         if (_readKey == key)
             return;
@@ -116,6 +117,10 @@ public partial class BpmnModelerBindingSection : IDisposable
 
         // Reads overlap when the designer reports changes in quick succession; only the latest one may land.
         var readNumber = ++_readNumber;
+
+        if (!Session.IsDocumentReady)
+            return;
+
         var binding = await Session.GetBindingAsync(Element.Id);
 
         if (readNumber != _readNumber)
@@ -195,14 +200,26 @@ public partial class BpmnModelerBindingSection : IDisposable
 
     private Task OnDraftUpdatedAsync(JsonObject activity) => ApplyDraftAsync();
 
-    /// <summary>Writes the draft into the designer's document. A refusal is shown, and the document is left as it was.</summary>
+    /// <summary>
+    /// Writes the draft into the designer's document. A refusal is shown, and the binding the document kept is read back
+    /// in place of the refused draft.
+    /// </summary>
     private async Task ApplyDraftAsync()
     {
         if (_draft == null || _elementId == null)
             return;
 
+        // A read started before this edit returns the binding from before it, so it must not replace the draft.
+        _readNumber++;
         var result = await Session.SetBindingAsync(_elementId, BpmnDesignerBindings.From(_draft));
         _refusal = result.Applied ? null : result.Reason ?? string.Empty;
+
+        if (!result.Applied)
+        {
+            _readKey = null;
+            await SyncAsync();
+        }
+
         StateHasChanged();
     }
 
@@ -212,6 +229,7 @@ public partial class BpmnModelerBindingSection : IDisposable
     {
         BpmnDesignerSetBindingRefusals.NotBindable => Localizer["'{0}' sends or waits for a message, so Elsa binds it automatically and its activity cannot be chosen here.", ElementLabel],
         BpmnDesignerSetBindingRefusals.UnknownElement => Localizer["'{0}' is no longer in the diagram.", ElementLabel],
+        BpmnModelerSession.DocumentNotReadyRefusal => Localizer["The diagram is being loaded again, so the binding was not changed."],
         _ => Localizer["The designer did not apply the binding: {0}", reason]
     };
 
