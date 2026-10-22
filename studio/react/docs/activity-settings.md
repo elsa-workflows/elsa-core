@@ -55,5 +55,6 @@ The paired-container CI check runs this test against the reference backend.
 To repeat the reference-backend check, set `ELSA_TEST_API_URL`,
 `ELSA_TEST_USERNAME` and `ELSA_TEST_PASSWORD` for a disposable development server,
 then run `pnpm test:settings-server`. The test needs workflow create, publish, view,
-retract, update-references and delete permissions and creates temporary published definitions. Credentials
+retract, update-references and delete permissions, plus
+`workflows/definitions/versions:revert`. It creates temporary published definitions. Credentials
 remain in memory; temporary definitions are deleted in its cleanup handler.
