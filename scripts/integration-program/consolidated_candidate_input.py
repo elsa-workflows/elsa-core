@@ -16,7 +16,15 @@ ARCHIVE_SHA256 = "ace85260c3389916fe3dcd7ee9cd5b766e4030dd6cee13c7f89285ada79c94
 MANIFEST_SHA256 = "df25b11556bbf21210cfc33ef02f3d0841af6316a20ece69422c7b8143a11820"
 ENVELOPE_SHA256 = "ef5e772020b151089b64b90b819d36ff371ed5e65212f7fdc7b2934d9860ddda"
 ORIGINAL_ENVELOPE = Path(__file__).resolve().parent / "persisted-workflow-upgrade/stable-original-envelope.json"
+# Frozen Oct 6 pin inventory (225 packages, including Elsa.SamplePackage).
+# The forward-looking candidate baseline may differ; recovery and the executor
+# use this snapshot so they still accept the real pinned artifact.
+PIN_INVENTORY = Path(__file__).resolve().parent / "consolidated-pin-inventory-baseline.json"
 PRODUCER = {"version": "3.10.0", "source_commit": SOURCE, "run_id": RUN, "run_attempt": ATTEMPT, "artifact_id": ARTIFACT}
+_PIN = json.loads(PIN_INVENTORY.read_text(encoding="utf-8"))
+PIN_PACKAGE_COUNT = len(_PIN["packages"])
+PIN_EXCLUSION_COUNT = len(_PIN["exclusions"])
+PIN_EXCLUSION_ID_COUNT = len({row["id"] for row in _PIN["exclusions"]})
 
 
 def require(condition: bool, message: str) -> None:

@@ -8,7 +8,7 @@
         <Nullable>enable</Nullable>
         <Version>$([System.Environment]::GetEnvironmentVariable('VERSION'))</Version>
         <Version Condition="'$(Version)' == ''">1.0.1</Version>
-        <IsPackable>true</IsPackable>
+        <IsPackable>false</IsPackable>
     </PropertyGroup>
 
     <ItemGroup>

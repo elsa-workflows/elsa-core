@@ -4,12 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       publish_preview_feedz:
-        description: Publish this run's packages to Feedz - branch previews, or a 3.10.x release tag (requires publisher approval).
+        description: Publish this run's packages to Feedz - branch previews, or a 3.10.x prerelease tag (requires publisher approval). Stable 3.10.x Feedz is owned by publish-consolidated-original-candidate.yml.
         required: true
         type: boolean
         default: false
       publish_nuget:
-        description: Publish a release-tag package to NuGet.org for this run; 3.10.x tags are Feedz-only (requires publisher approval).
+        description: Publish a release-tag package to NuGet.org for this run (requires publisher approval). Stable 3.10.x nuget.org publishing is blocked until re-pin (#9016).
         required: true
         type: boolean
         default: false
@@ -49,7 +49,7 @@ jobs:
           sparse-checkout: scripts
           fetch-depth: 1
 
-      # Strict release tags only; 3.10.x tags are Feedz-only. Tested by
+      # Strict release tags only. Tested by
       # scripts/test_validate_packages_publication_selection.py.
       - name: Reject incompatible publication refs
         env:
@@ -362,23 +362,28 @@ jobs:
           if [[ "${REF}" == refs/tags/* && ("${EVENT_NAME}" == "release" || "${EVENT_NAME}" == "workflow_dispatch") ]]; then
             TAG_NAME="${REF}" # e.g., refs/tags/3.0.0
             TAG_NAME=${TAG_NAME#refs/tags/} # remove the refs/tags/ prefix
-            echo "VERSION=${TAG_NAME}" >> $GITHUB_ENV
+            VERSION="${TAG_NAME}"
           else
-            echo "VERSION=${{env.base_version}}-preview.${{github.run_number}}" >> $GITHUB_ENV
+            VERSION="${{env.base_version}}-preview.${{github.run_number}}"
           fi
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
 
+      # Stable 3.10.x nuget.org is blocked until re-pin (#9016); this job must not pack.
       - uses: actions/setup-dotnet@v4
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}
         with:
           dotnet-version: 10.x
 
       # NUKE builds the embedded React assets before Compile and Pack. Keep the
       # existing 3.10 release base; React packages are eligible starting at 3.11.
       - name: Set up Node for React Studio assets
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22'
 
       - name: Compile+Pack
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}
         run: ./build.sh Compile+Pack --version "${VERSION}" --analyseCode true
 
       - name: Upload artifact
@@ -386,7 +391,7 @@ jobs:
         with:
           name: elsa-nuget-packages
           path: packages/*nupkg
-        if: ${{ github.event_name == 'release' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.publish_preview_feedz || inputs.publish_nuget)) }}
+        if: ${{ (github.event_name == 'release' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.publish_preview_feedz || inputs.publish_nuget))) && !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}
 
   publish_preview_feedz:
     name: Publish to feedz.io
@@ -398,8 +403,9 @@ jobs:
     timeout-minutes: 30
     # Push and release events stay non-publishing. An approved operator must
     # dispatch this workflow and opt in for this run: from a branch for previews,
-    # or from a 3.10.x release tag, which ships to Feedz only.
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_preview_feedz && (startsWith(github.ref, 'refs/heads/') || startsWith(github.ref, 'refs/tags/3.10.')) }}
+    # or from a 3.10.x prerelease tag. Stable 3.10.x Feedz is owned only by
+    # the candidate executor.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_preview_feedz && (startsWith(github.ref, 'refs/heads/') || (startsWith(github.ref, 'refs/tags/3.10.') && contains(github.ref_name, '-'))) }}
     steps:
       - name: Check out the push action
         # Every third-party action in this job runs before a feed API key is handed
@@ -431,12 +437,12 @@ jobs:
     # starting pushes once its own deadline passes, so the runner never has to
     # cancel a publish half-done. Move the two together.
     timeout-minutes: 30
-    # NuGet publication requires an explicit dispatch on a release tag. 3.10.x is
-    # Feedz-only: the selection check rejects it, and this guard keeps it off
-    # NuGet.org even if that check were bypassed.
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/') && !startsWith(github.ref_name, '3.10.') }}
+    # NuGet publication requires an explicit dispatch on a release tag. Stable
+    # 3.10.x is blocked until re-pin (#9016); other tags push this run's pack.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/') }}
     permissions:
       contents: read
+      actions: read # Stable 3.10.x reads the pinned candidate artifact; unused on other tags.
       id-token: write # Required: lets this job request the OIDC token that nuget.org exchanges for a temporary API key.
     steps:
       - name: Check out the push action
@@ -446,14 +452,37 @@ jobs:
         # substitute the composite before it receives the credential.
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          sparse-checkout: .github/actions
+          sparse-checkout: |
+            .github/actions
+            scripts
           fetch-depth: 1
+          persist-credentials: false
 
       - name: Download Packages
-        # Pinned for the reason given on the checkout above.
+        # Pinned for the reason given on the checkout above. Skipped for stable
+        # 3.10.x, which stages the current pin and fails the 231-ID guard until #9016.
+        if: ${{ !(startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}
         uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
         with:
           name: elsa-nuget-packages
+
+      - name: Retrieve verified candidate archive
+        if: ${{ startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-') }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REF: ${{ github.ref }}
+          CANDIDATE_ARCHIVE: ${{ runner.temp }}/candidate.zip
+        run: python3 scripts/stage_consolidated_candidate_nupkgs.py retrieve
+
+      - name: Stage and guard verified candidate packages
+        if: ${{ startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-') }}
+        env:
+          REF: ${{ github.ref }}
+          CANDIDATE_ARCHIVE: ${{ runner.temp }}/candidate.zip
+          PACKAGES_DIR: ${{ github.workspace }}
+        run: |
+          python3 scripts/stage_consolidated_candidate_nupkgs.py stage
+          python3 scripts/validate_packages_id_set.py
 
       # Exchanges a GitHub OIDC token for a temporary nuget.org API key (valid 1 hour).
       # Requires a Trusted Publishing policy on nuget.org matching:

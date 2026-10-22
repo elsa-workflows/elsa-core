@@ -19,7 +19,7 @@ import prove_consolidated_packages as packages
 
 
 ROOT = Path(__file__).resolve().parents[2]
-BASELINE = json.loads((ROOT / "scripts/integration-program/consolidated-candidate-inventory-baseline.json").read_text())
+BASELINE = json.loads(candidate_input.PIN_INVENTORY.read_text())
 FRAMEWORKS = ("net8.0", "net9.0", "net10.0")
 
 
