@@ -26,9 +26,9 @@ MAX_ARCHIVE_MEMBERS = 10_000
 MAX_PACKAGE_BYTES = 256 * 1024 * 1024
 MAX_VERIFIED_MANIFEST_BYTES = 32 * 1024 * 1024
 MAX_PREUPLOAD_MANIFEST_BYTES = 64 * 1024 * 1024
-EXPECTED_PACKAGE_COUNT = 225
-EXPECTED_EXCLUSION_COUNT = 124
-EXPECTED_EXCLUSION_ID_COUNT = 123
+EXPECTED_PACKAGE_COUNT = candidate_input.PIN_PACKAGE_COUNT
+EXPECTED_EXCLUSION_COUNT = candidate_input.PIN_EXCLUSION_COUNT
+EXPECTED_EXCLUSION_ID_COUNT = candidate_input.PIN_EXCLUSION_ID_COUNT
 PLANNER_SOURCE_PATTERN = re.compile(r"[0-9a-f]{40}\Z")
 SHA256_PATTERN = re.compile(r"[0-9a-f]{64}\Z")
 SHA512_PATTERN = re.compile(r"[0-9a-f]{128}\Z")
@@ -216,7 +216,7 @@ def _validate_inventory(manifest: dict) -> str:
     _require(len(exclusion_ids) == EXPECTED_EXCLUSION_ID_COUNT,
              "Verified exclusion package ID count changed")
 
-    baseline_path = Path(__file__).with_name("consolidated-candidate-inventory-baseline.json")
+    baseline_path = candidate_input.PIN_INVENTORY
     try:
         baseline = json.loads(baseline_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError) as error:

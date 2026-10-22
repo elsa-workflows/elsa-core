@@ -8,9 +8,9 @@ Studio, Extensions and Apps are folded into `elsa-core`; a release is one `elsa-
 
 What `elsa-core` actually does today (check `origin/main` before relying on it):
 
-- `.github/workflows/packages.yml` builds and uploads packages on `release: published` and on pushes to `main` and `release/*`. Those events never publish. Publication is an approved `workflow_dispatch`: `publish_preview_feedz` (Feedz, from a branch or a `3.10.x` tag) or `publish_nuget` (nuget.org, from a release tag that is not `3.10.x`). `3.10.x` tags are Feedz only.
-- Its `./build.sh Compile+Pack` packs Core only. Studio and Extensions projects are in `Elsa.sln` but unpackable unless the consolidated proof or release-candidate switch is set. The full set, including the Extensions and Studio packages, is produced only by the consolidated candidate pipeline. Its reviewed inventory baseline (`scripts/integration-program/consolidated-candidate-inventory-baseline.json`) lists 225 package IDs (103 Core, 71 Extensions, 51 Studio); an independent evaluation of `origin/main` at 6ba8e063f found 233, because eight IDs became packable after the baseline (`Elsa.Connections`, three `Elsa.Connections.Credentials.*`, `Elsa.Workflows.Admission` and its two `EFCore` packages, and `Elsa.Testing.Extensions`). Reconcile with the inventory-only gate rather than trusting either number. The five `Elsa.Secrets.*` IDs and the four `Elsa.Studio.Host.*` IDs stay unpackable and `Elsa.Templates` is not in core. The whole-product 3.10.0 candidate is [prepared without publishing](#consolidated-3100-candidate-preparation-nonpublishing) and published only by the separately approved `publish-consolidated-original-candidate.yml`.
-- `studio-npm-pair.yml` is a local proof of the two Studio npm archives. No core workflow publishes them. Studio and Extensions packing in `packages.yml`, npm publication and pack guards are pending [#8725](https://github.com/elsa-workflows/elsa-core/issues/8725).
+- `.github/workflows/packages.yml` builds and uploads packages on `release: published` and on pushes to `main` and `release/*`. Those events never publish. Publication is an approved `workflow_dispatch`: `publish_preview_feedz` (Feedz, from a branch or a `3.10.x` prerelease tag) or `publish_nuget` (nuget.org, from a release-version tag). Stable `3.10.x` Feedz is owned only by `publish-consolidated-original-candidate.yml`.
+- Its `./build.sh Compile+Pack` packs Core only. Stable `3.10.x` nuget.org publishing is blocked until re-pin ([#9016](https://github.com/elsa-workflows/elsa-core/issues/9016)). A `publish_nuget` dispatch on a stable `3.10.x` tag does not pack: it downloads the current pin (run/artifact `11412848210`), verifies each `.nupkg` sha256 against that candidate's seal, and runs `scripts/validate_packages_id_set.py` (231 IDs plus the three Studio ClientLib assets per package) before any push. The Oct 6 225-package set fails that guard. After the freeze, once the [3.10] picks and advisory fixes have landed, #9016 builds a fresh candidate from the `release/3.10.0` tip and re-pins it. `Elsa.SamplePackage` is not packable. The five `Elsa.Secrets.*` IDs and the four `Elsa.Studio.Host.*` IDs stay unpackable and `Elsa.Templates` is not in core. The whole-product 3.10.0 candidate is [prepared without publishing](#consolidated-3100-candidate-preparation-nonpublishing); `publish-consolidated-original-candidate.yml` is the only Feedz publisher for those stable 3.10.x bytes and runs the same 231-ID guard before its Feedz push (also blocked until re-pin (#9016)).
+- `studio-npm-pair.yml` is a local proof of the two Studio npm archives. No core workflow publishes them. Stable 3.10.x nuget.org publication is blocked until re-pin ([#9016](https://github.com/elsa-workflows/elsa-core/issues/9016)) (part of [#8725](https://github.com/elsa-workflows/elsa-core/issues/8725)); npm publication remains pending.
 - Core has no container-image publishing workflow. The Apps workflow it used lived in `elsa-apps`.
 
 ## 1. Resolve the plan and preflight the Core and Templates repositories
@@ -30,7 +30,7 @@ Check:
 - All configured package workflow `base_version` values match the new release line before branch CI. Templates stable workflow policy is checked separately: its `BASE_VERSION` and embedded Core/Studio PackageReferences must match the requested stable version, while a prerelease source must be selected explicitly or from its release branch. Version tags drive named release artifacts, but the branch preview version must also be correct. Make routine preparation changes on the intended release branch when needed.
 - Before a Templates RC/preview run, inspect its release workflow's tag ancestry guard. It must accept the selected `origin/release/<base-version>` or explicit prerelease source; if it only accepts `origin/main`, resolve that workflow/source mismatch in the Templates repository before publishing. Never claim a release-line source is runnable while the workflow silently rejects its tag.
 - The workflow subscribes once to `release: types: [published]`. GitHub `published` covers both stable and prereleases. Use `release.prerelease` or parsed package versions for distinctions, never `event.action == published` as a stable-only test. [GitHub reference](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#release).
-- Named stable, RC and preview releases publish only through an approved `packages.yml` dispatch, never from the release event itself: nuget.org for release tags that are not `3.10.x`, Feedz for branches and `3.10.x` tags. Automated branch previews are separate, Feedz-only builds. Studio npm `next`/`latest` publication does not exist in core yet (pending #8725); do not expect it. If the source workflow disagrees with this policy, resolve the mismatch before release; do not weaken verification to match missing output.
+- Named stable, RC and preview releases use the approved publication workflows, never the release event itself: nuget.org for release-version tags (stable `3.10.x` is blocked until re-pin (#9016)), Feedz for branches and `3.10.x` prerelease tags through `packages.yml`, and stable `3.10.x` Feedz publication through `publish-consolidated-original-candidate.yml` (also blocked until re-pin (#9016)). Automated branch previews are separate, Feedz-only builds. Studio npm `next`/`latest` publication does not exist in core yet (pending #8725); do not expect it. If the source workflow disagrees with this policy, resolve the mismatch before release; do not weaken verification to match missing output.
 - Identify advisories and build/test prerequisites early. Assess actual usage and document disposition; a known warning from a prior release is evidence, not permanent acceptance. Keep unrelated upgrades out of the release. New material unresolved risks or failures require an explicit resolution before irreversible publication.
 
 Before creating a named release, perform a publishing credential preflight for
@@ -427,13 +427,26 @@ identity and needs the full proof again. Candidate preparation is distinct from
 the unchanged earlier `3.10.0-proof.37410240989.1` archive and from future approved
 publication. The #8629 proof-version persisted matrix cannot certify different
 stable candidate bytes: applicable persisted compatibility checks must bind to
-these exact production bytes before publication.
+the admitted candidate production bytes before that candidate is published.
+`publish-consolidated-original-candidate.yml` is the only Feedz publisher for
+those stable 3.10.x bytes. Stable 3.10.x nuget.org publishing is blocked until
+re-pin ([#9016](https://github.com/elsa-workflows/elsa-core/issues/9016)). A
+`packages.yml` nuget.org dispatch on a stable 3.10.x tag downloads the current
+pin (run/artifact `11412848210`), verifies each `.nupkg` sha256 against the
+candidate seal, and runs the same 231-ID and Studio content guards that the
+candidate Feedz publisher runs before its push. The current 225-package set
+fails that guard, so neither path can publish 3.10.0 until #9016 re-pins a
+fresh candidate from the `release/3.10.0` tip. The promote path does not
+restore, build, or pack. `3.10.1` and later stay blocked until a new pin
+exists.
 
 This task implements no publisher handoff. Ordinary approved Core publication
-selection remains unchanged, including its stable 3.10.0 Feedz dispatch. That
-workflow accepts no candidate opt-in, candidate artifact/run selector or candidate
-workflow ID. A future separately reviewed **publish-only** workflow must bind to
-the exact original candidate identity without restore/build/pack, after the
-remaining compatibility, publisher-cutover and release approvals. Candidate
+selection remains a `packages.yml` dispatch: branch previews and 3.10.x
+prerelease tags may publish to Feedz, and release-version tags may publish to
+NuGet.org with `publish_nuget`. Stable 3.10.x Feedz is not a `packages.yml`
+option. That
+workflow has no operator-supplied candidate artifact/run selector; the 3.10.0
+nuget.org path is pinned to the reviewed candidate identity and promotes those
+bytes. Candidate
 success does not imply release readiness, publication, source publisher cutover
 or completion of #8219/#8220.

@@ -40,6 +40,11 @@
       "reason": "Project or inherited nonpackable setting remains active"
     },
     {
+      "id": "Elsa.SamplePackage",
+      "project": "src/apps/Elsa.SamplePackage/Elsa.SamplePackage.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
       "id": "Elsa.Server.LoadBalancer",
       "project": "src/apps/Elsa.Server.LoadBalancer/Elsa.Server.LoadBalancer.csproj",
       "reason": "Project or inherited nonpackable setting remains active"
@@ -631,10 +636,6 @@
     }
   ],
   "packages": [
-    {
-      "id": "Elsa.SamplePackage",
-      "project": "src/apps/Elsa.SamplePackage/Elsa.SamplePackage.csproj"
-    },
     {
       "id": "Elsa.Api.Client",
       "project": "src/clients/Elsa.Api.Client/Elsa.Api.Client.csproj"
