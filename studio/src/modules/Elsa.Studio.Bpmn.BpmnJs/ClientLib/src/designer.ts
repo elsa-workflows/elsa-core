@@ -77,6 +77,7 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
     const markedElements = new Map<string, string>();
     let changedIds = new Set<string>();
     let loading = false;
+    let hasDocument = false;
     let disposed = false;
 
     // Dirty tracking counts commands rather than reading the command stack's private index. Each executed command gets
@@ -138,12 +139,15 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
                 break;
         }
 
-        if (loading) return;
+        if (!loading) emitChange();
+    });
+
+    function emitChange(): void {
         const commandStack = service<{ canUndo(): boolean; canRedo(): boolean }>('commandStack');
         const elementIds = [...changedIds];
         changedIds = new Set();
         emit('change', { elementIds, isDirty: currentStateId() !== savedStateId, canUndo: commandStack.canUndo(), canRedo: commandStack.canRedo() });
-    });
+    }
 
     subscribe('selection.changed', (event: { newSelection: DiagramElement[] }) => {
         // Importing clears the selection, several times. The host learns about a new document from load's result.
@@ -166,6 +170,27 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
 
     function ensureLive(): void {
         if (disposed) throw new Error('This BPMN designer has been disposed.');
+    }
+
+    /**
+     * Puts back the document a failed load replaced, and whether it was dirty. Its undo history is gone: bpmn-js clears
+     * it on import. With no document to put back, the designer holds none.
+     */
+    async function restore(previous: { xml: string; isDirty: boolean } | null): Promise<void> {
+        if (previous) {
+            try {
+                await bpmnjs!.importXML(previous.xml);
+                // A state id no command gets, so a dirty document stays dirty until it is saved.
+                savedStateId = previous.isDirty ? -1 : currentStateId();
+                changedIds = new Set();
+                emitChange();
+                return;
+            } catch {
+                // The document imported before, so this is not expected; the designer then holds no document.
+            }
+        }
+        bpmnjs!.clear();
+        hasDocument = false;
     }
 
     async function serialize(): Promise<string> {
@@ -191,6 +216,9 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
         async load(xml: string): Promise<BpmnLoadResult> {
             ensureLive();
             loading = true;
+            // bpmn-js can replace the document before an import fails, so keep what a save would write now.
+            const definitions = bpmnjs!.getDefinitions();
+            const previous = hasDocument ? { xml: await serialize(), isDirty: currentStateId() !== savedStateId } : null;
             try {
                 clearOverlays();
                 const layout = await withGeneratedLayout(xml);
@@ -200,8 +228,10 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
                 savedStateId = currentStateId();
                 changedIds = new Set();
                 service<{ zoom(level: string, center: string): void }>('canvas').zoom('fit-viewport', 'auto');
+                hasDocument = true;
                 return { imported: true, warnings };
             } catch (error) {
+                if (bpmnjs!.getDefinitions() !== definitions) await restore(previous);
                 return { imported: false, error: error instanceof Error ? error.message : String(error), warnings: [] };
             } finally {
                 loading = false;
@@ -210,6 +240,7 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
 
         async save(): Promise<BpmnSaveResult> {
             ensureLive();
+            if (!hasDocument) throw new Error('No document is loaded.');
             // An edit made while the export runs is not in the XML, so only the state being exported becomes clean.
             const exportedStateId = currentStateId();
             const xml = await serialize();

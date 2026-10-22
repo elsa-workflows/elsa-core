@@ -76,6 +76,25 @@ test.describe('load', () => {
     });
 
     // A designer may keep what bpmn-js drops; what the contract requires is that the warnings match what it saves.
+    test('a load that fails keeps the document and edits the designer had', async ({ harness }) => {
+        await loaded(harness, 'order.bpmn');
+        const edited = { activityType: 'Elsa.Delay', inputs: [] };
+        expect(await call(harness, 'setBinding', 'Charge', edited)).toEqual({ applied: true });
+
+        expect((await call<{ imported: boolean }>(harness, 'load', '<bpmn:definitions')).imported).toBe(false);
+
+        const { xml } = await call<{ xml: string }>(harness, 'save');
+        expect(await call(harness, 'load', xml)).toEqual({ imported: true, warnings: [] });
+        expect(await call(harness, 'getBinding', 'Charge')).toEqual(edited);
+    });
+
+    test('save throws while a designer has no document', async ({ harness }) => {
+        await create(harness);
+        expect((await call<{ imported: boolean }>(harness, 'load', '<bpmn:definitions')).imported).toBe(false);
+
+        await expect(call(harness, 'save')).rejects.toThrow();
+    });
+
     test('reports content as dropped exactly when a save loses it', async ({ harness }) => {
         const original = await fixture('lossy.bpmn');
         const result = await loaded(harness, 'lossy.bpmn');

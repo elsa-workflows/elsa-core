@@ -35,3 +35,22 @@ test('a badge shows a cancellation over blocked and active, and a fault over eve
     await apply({ Charge: { faulted: true, canceled: true } });
     await expect(harness.locator('.elsa-bpmn-badge-faulted')).toHaveCount(1);
 });
+
+test('a load that fails after bpmn-js replaced the document puts the earlier one back, still dirty', async ({ harness }) => {
+    // bpmn-js accepts these definitions, then fails to draw them: they hold no diagram.
+    const undrawable = '<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="D" targetNamespace="x"><bpmn:message id="M" name="Only" /></bpmn:definitions>';
+    const result = await harness.evaluate(async ([order, undrawable]) => {
+        const harness = (window as any).harness;
+        harness.create({});
+        await harness.designer.load(order);
+        harness.designer.setBinding('Charge', { activityType: 'Elsa.Delay', inputs: [] });
+        harness.events = [];
+        const load = await harness.designer.load(undrawable);
+        return { load, xml: (await harness.designer.save()).xml, changes: harness.events.filter((event: { type: string }) => event.type === 'change') };
+    }, [await fixture('order.bpmn'), undrawable] as const);
+
+    expect(result.load).toEqual({ imported: false, error: 'no diagram to display', warnings: [] });
+    expect(result.xml).toContain('activityType="Elsa.Delay"');
+    expect(result.xml).not.toContain('Only');
+    expect(result.changes).toEqual([expect.objectContaining({ isDirty: true, canUndo: false })]);
+});

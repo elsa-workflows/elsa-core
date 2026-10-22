@@ -37,7 +37,10 @@ Every element is identified by its BPMN element id. After `dispose`, every metho
 
 Replaces the canvas content with the document. It returns `{ imported, error?, warnings }`:
 
-- `imported` is `false` when the document could not be shown at all; `error` then says why.
+- `imported` is `false` when the document could not be shown at all; `error` then says why. The designer keeps the
+  document it had, and whether it was dirty, so `save` still returns that document. Its undo history and overlays may
+  be cleared; when the undo state changes, `change` is raised. A designer that had no document still has none, and
+  `save` throws until a load succeeds.
 - `warnings` lists what the designer cannot represent or will change. Each warning is
   `{ kind, message, elementId? }`:
   - **`dropped`:** content that a save would lose.
