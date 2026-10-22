@@ -1,7 +1,10 @@
 using Elsa.Common;
 using Elsa.Common.Multitenancy;
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Runtime;
+using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;
@@ -262,6 +265,126 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
         await _storeMock.Received(1).SaveManyAsync(Arg.Any<IEnumerable<WorkflowDefinition>>(), Arg.Any<CancellationToken>());
     }
 
+    [Fact(DisplayName = "PopulateStoreAsync skips a non-CLR save that hits another tenant without an upgrade hint")]
+    public async Task PopulateStoreAsync_CrossTenantIdCollision_LogsAndSkipsWithoutUpgradeHint()
+    {
+        var logger = new CapturingLogger();
+        _storeMock
+            .When(x => x.SaveManyAsync(Arg.Any<IEnumerable<WorkflowDefinition>>(), Arg.Any<CancellationToken>()))
+            .Do(_ => throw new InvalidOperationException(
+                "A record with ID 'shared-v1' already exists in another tenant."));
+
+        var workflow = new MaterializedWorkflow(new()
+        {
+            Identity = new("shared-workflow", 1, "shared-v1", Tenant.AgnosticTenantId),
+            Publication = new(true, true)
+        }, "Test", "TestProvider");
+        var populator = CreatePopulatorWithTenant("tenant-b", logger, workflow);
+
+        var result = (await populator.PopulateStoreAsync()).ToList();
+
+        Assert.Empty(result);
+        Assert.Contains(logger.Messages, message =>
+            message.Contains("Skipping adding workflow", StringComparison.Ordinal)
+            && message.Contains("already exists in another tenant", StringComparison.Ordinal));
+        Assert.DoesNotContain(logger.Messages, message =>
+            message.Contains("3.10.1", StringComparison.Ordinal)
+            || message.Contains("upgrade step", StringComparison.Ordinal));
+    }
+
+    [Fact(DisplayName = "PopulateStoreAsync restamps a tenant-declared CLR workflow stored as '*'")]
+    public async Task PopulateStoreAsync_ExistingStarRow_DeclaredConcreteTenant_RestampsAndSaves()
+    {
+        _storeMock.FindAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>())
+            .Returns(new WorkflowDefinition
+            {
+                Id = "owned-v1",
+                DefinitionId = "owned-workflow",
+                Version = 1,
+                TenantId = Tenant.AgnosticTenantId,
+                ProviderName = "CLR"
+            });
+
+        var workflow = new MaterializedWorkflow(new()
+        {
+            Identity = new("owned-workflow", 1, "owned-v1", "tenant-a"),
+            Publication = new(true, true)
+        }, "CLR", "ClrWorkflowMaterializer");
+        var populator = CreatePopulatorWithTenant("tenant-a", workflow);
+
+        var result = (await populator.PopulateStoreAsync()).ToList();
+
+        Assert.Single(result);
+        await _storeMock.Received().SaveManyAsync(Arg.Is<IEnumerable<WorkflowDefinition>>(definitions =>
+            definitions.Any(definition =>
+                definition.Id == "owned-v1"
+                && definition.TenantId == "tenant-a")), Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "PopulateStoreAsync restamps every CLR workflow, including those it then skips")]
+    public async Task PopulateStoreAsync_OtherTenantClrWorkflow_RestampsBeforeSkip()
+    {
+        var restamper = Substitute.For<IClrWorkflowDefinitionTenantRestamper>();
+        var workflow = new MaterializedWorkflow(new()
+        {
+            Identity = new("owned-workflow", 1, "owned-v1", "tenant-a"),
+            Publication = new(true, true)
+        }, "CLR", "ClrWorkflowMaterializer");
+        var populator = CreatePopulatorWithTenant("tenant-b", restamper, workflow);
+
+        var result = (await populator.PopulateStoreAsync()).ToList();
+
+        Assert.Empty(result);
+        await restamper.Received(1).RestampAsync("owned-workflow", 1, "tenant-a", Arg.Any<CancellationToken>());
+        await _storeMock.DidNotReceive().SaveManyAsync(Arg.Any<IEnumerable<WorkflowDefinition>>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "A failing CLR re-stamp is skipped so later workflows still populate, index, and reload")]
+    public async Task PopulateAsync_MalformedClrRestamp_StillPopulatesIndexesAndReloads()
+    {
+        var restamper = Substitute.For<IClrWorkflowDefinitionTenantRestamper>();
+        restamper
+            .RestampAsync("bad-workflow", Arg.Any<int>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns<Task<bool>>(_ => throw new InvalidOperationException("malformed Props"));
+        restamper
+            .RestampAsync("good-workflow", Arg.Any<int>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(true);
+
+        var triggerIndexer = Substitute.For<ITriggerIndexer>();
+        var notificationSender = Substitute.For<INotificationSender>();
+        var logger = new CapturingLogger();
+        var bad = new MaterializedWorkflow(new()
+        {
+            Identity = new("bad-workflow", 1, "bad-v1", Tenant.AgnosticTenantId),
+            Publication = new(true, true)
+        }, "CLR", "ClrWorkflowMaterializer");
+        var good = new MaterializedWorkflow(new()
+        {
+            Identity = new("good-workflow", 1, "good-v1", Tenant.AgnosticTenantId),
+            Publication = new(true, true)
+        }, "CLR", "ClrWorkflowMaterializer");
+        var storePopulator = CreatePopulatorWithTenant("tenant-a", logger, restamper, triggerIndexer, bad, good);
+        var registries = new DefaultRegistriesPopulator(
+            storePopulator,
+            Substitute.For<IActivityRegistryPopulator>(),
+            notificationSender);
+
+        await registries.PopulateAsync();
+
+        await _storeMock.Received().SaveManyAsync(Arg.Is<IEnumerable<WorkflowDefinition>>(definitions =>
+            definitions.Any(definition => definition.DefinitionId == "good-workflow")), Arg.Any<CancellationToken>());
+        await triggerIndexer.Received().IndexTriggersAsync(
+            Arg.Is<WorkflowDefinition>(definition => definition.DefinitionId == "good-workflow"),
+            Arg.Any<CancellationToken>());
+        await notificationSender.Received().SendAsync(
+            Arg.Is<WorkflowDefinitionsReloaded>(notification =>
+                notification.ReloadedWorkflowDefinitions.Any(definition => definition.DefinitionId == "good-workflow")),
+            Arg.Any<CancellationToken>());
+        Assert.Contains(logger.Messages, message =>
+            message.Contains("Skipping CLR tenant re-stamp", StringComparison.Ordinal)
+            && message.Contains("bad-workflow", StringComparison.Ordinal));
+    }
+
     [Theory(DisplayName = "PopulateStoreAsync handles null/empty tenant IDs correctly")]
     [InlineData(null, null, true)]  // Both null - should import
     [InlineData("", "", true)]      // Both empty - should import
@@ -295,7 +418,34 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
         }, "Test", "TestProvider");
     }
 
-    private DefaultWorkflowDefinitionStorePopulator CreatePopulatorWithTenant(string? tenantId, params MaterializedWorkflow[] workflows)
+    private DefaultWorkflowDefinitionStorePopulator CreatePopulatorWithTenant(string? tenantId, params MaterializedWorkflow[] workflows) =>
+        CreatePopulatorWithTenant(tenantId, Substitute.For<ILogger<DefaultWorkflowDefinitionStorePopulator>>(), restamper: null, workflows);
+
+    private DefaultWorkflowDefinitionStorePopulator CreatePopulatorWithTenant(
+        string? tenantId,
+        ILogger<DefaultWorkflowDefinitionStorePopulator> logger,
+        params MaterializedWorkflow[] workflows) =>
+        CreatePopulatorWithTenant(tenantId, logger, restamper: null, workflows);
+
+    private DefaultWorkflowDefinitionStorePopulator CreatePopulatorWithTenant(
+        string? tenantId,
+        IClrWorkflowDefinitionTenantRestamper restamper,
+        params MaterializedWorkflow[] workflows) =>
+        CreatePopulatorWithTenant(tenantId, Substitute.For<ILogger<DefaultWorkflowDefinitionStorePopulator>>(), restamper, workflows);
+
+    private DefaultWorkflowDefinitionStorePopulator CreatePopulatorWithTenant(
+        string? tenantId,
+        ILogger<DefaultWorkflowDefinitionStorePopulator> logger,
+        IClrWorkflowDefinitionTenantRestamper? restamper,
+        params MaterializedWorkflow[] workflows) =>
+        CreatePopulatorWithTenant(tenantId, logger, restamper, triggerIndexer: null, workflows);
+
+    private DefaultWorkflowDefinitionStorePopulator CreatePopulatorWithTenant(
+        string? tenantId,
+        ILogger<DefaultWorkflowDefinitionStorePopulator> logger,
+        IClrWorkflowDefinitionTenantRestamper? restamper,
+        ITriggerIndexer? triggerIndexer,
+        params MaterializedWorkflow[] workflows)
     {
         var tenantAccessor = Substitute.For<ITenantAccessor>();
         tenantAccessor.Tenant.Returns(tenantId != null ? new Tenant { Id = tenantId } : null);
@@ -308,13 +458,36 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
 
         return new(
             () => new List<IWorkflowsProvider> { provider },
-            Substitute.For<ITriggerIndexer>(),
+            triggerIndexer ?? Substitute.For<ITriggerIndexer>(),
             _storeMock,
             Substitute.For<IActivitySerializer>(),
             Substitute.For<IPayloadSerializer>(),
             Substitute.For<ISystemClock>(),
             Substitute.For<IIdentityGraphService>(),
             tenantAccessor,
-            Substitute.For<ILogger<DefaultWorkflowDefinitionStorePopulator>>());
+            logger,
+            restamper);
+    }
+
+    private sealed class CapturingLogger : ILogger<DefaultWorkflowDefinitionStorePopulator>
+    {
+        public List<string> Messages { get; } = [];
+
+        public IDisposable BeginScope<TState>(TState state) where TState : notnull => NullScope.Instance;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            Messages.Add(formatter(state, exception));
+        }
+
+        private sealed class NullScope : IDisposable
+        {
+            public static readonly NullScope Instance = new();
+            public void Dispose()
+            {
+            }
+        }
     }
 }

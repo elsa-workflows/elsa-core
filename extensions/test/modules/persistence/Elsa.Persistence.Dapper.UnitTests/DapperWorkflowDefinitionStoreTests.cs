@@ -67,7 +67,7 @@ public sealed class DapperWorkflowDefinitionStoreTests : IDisposable
             schema = schema.Replace("Id text", "Id varchar(255)").Replace("blob", "varbinary(max)").Replace("CreatedAt text", "CreatedAt datetimeoffset").Replace(" text", " nvarchar(max)");
         }
         connection.Execute(schema);
-        _store = new DapperWorkflowDefinitionStore(new Store<WorkflowDefinitionRecord>(_provider, _tenant, _table), _serializer, _provider, _tenant);
+        _store = new DapperWorkflowDefinitionStore(new Store<WorkflowDefinitionRecord>(_provider, _tenant, _table), _serializer, _provider);
     }
 
     [Fact]
@@ -210,6 +210,26 @@ public sealed class DapperWorkflowDefinitionStoreTests : IDisposable
         var results = await Task.WhenAll(attempts);
         Assert.Single(results, x => x.Outcome == WorkflowDefinitionUpdateOutcome.Updated);
         Assert.Single(results, x => x.Outcome == WorkflowDefinitionUpdateOutcome.Conflict);
+    }
+
+    [Fact]
+    public async Task TryUpdateLatest_AgnosticDefinition_UnderConcreteTenant_UpdatesAndKeepsStar()
+    {
+        var definition = Definition();
+        definition.TenantId = Tenant.AgnosticTenantId;
+        await _store.SaveAsync(definition);
+
+        WorkflowDefinitionUpdateResult result;
+        using (_tenant.PushContext(new Tenant { Id = "tenant-a" }))
+        {
+            result = await _store.TryUpdateLatestAsync(Filter(), _ => true, current => Edited(current));
+        }
+
+        Assert.Equal(WorkflowDefinitionUpdateOutcome.Updated, result.Outcome);
+        Assert.Equal(Tenant.AgnosticTenantId, result.Definition!.TenantId);
+        Assert.Equal("new", result.Definition.StringData);
+        using var verify = _provider.GetConnection();
+        Assert.Equal(Tenant.AgnosticTenantId, verify.QuerySingle<string>($"select {Q("TenantId")} from {Q(_table)}"));
     }
 
     [Fact]

@@ -5,6 +5,7 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Runtime.Providers;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 
@@ -21,6 +22,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
     private readonly ISystemClock _systemClock;
     private readonly IIdentityGraphService _identityGraphService;
     private readonly ITenantAccessor _tenantAccessor;
+    private readonly IClrWorkflowDefinitionTenantRestamper? _clrTenantRestamper;
     private readonly ILogger<DefaultWorkflowDefinitionStorePopulator> _logger;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
@@ -37,6 +39,34 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         IIdentityGraphService identityGraphService,
         ITenantAccessor tenantAccessor,
         ILogger<DefaultWorkflowDefinitionStorePopulator> logger)
+        : this(
+            workflowDefinitionProviders,
+            triggerIndexer,
+            workflowDefinitionStore,
+            activitySerializer,
+            payloadSerializer,
+            systemClock,
+            identityGraphService,
+            tenantAccessor,
+            logger,
+            clrTenantRestamper: null)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DefaultWorkflowDefinitionStorePopulator"/> class.
+    /// </summary>
+    public DefaultWorkflowDefinitionStorePopulator(
+        Func<IEnumerable<IWorkflowsProvider>> workflowDefinitionProviders,
+        ITriggerIndexer triggerIndexer,
+        IWorkflowDefinitionStore workflowDefinitionStore,
+        IActivitySerializer activitySerializer,
+        IPayloadSerializer payloadSerializer,
+        ISystemClock systemClock,
+        IIdentityGraphService identityGraphService,
+        ITenantAccessor tenantAccessor,
+        ILogger<DefaultWorkflowDefinitionStorePopulator> logger,
+        IClrWorkflowDefinitionTenantRestamper? clrTenantRestamper)
     {
         _workflowDefinitionProviders = workflowDefinitionProviders;
         _triggerIndexer = triggerIndexer;
@@ -47,6 +77,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         _identityGraphService = identityGraphService;
         _tenantAccessor = tenantAccessor;
         _logger = logger;
+        _clrTenantRestamper = clrTenantRestamper;
     }
 
     /// <inheritdoc />
@@ -68,6 +99,8 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
 
             foreach (var result in results)
             {
+                await RestampClrTenantAsync(result, cancellationToken);
+
                 // Normalize tenant IDs for comparison (null becomes empty string)
                 var definitionTenantId = result.Workflow.Identity.TenantId.NormalizeTenantId();
 
@@ -126,10 +159,20 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "An error occurred while populating the workflow definition store for workflow {WorkflowId} (Name: {WorkflowName}, Version: {Version})",
-                materializedWorkflow.Workflow.Identity.DefinitionId,
-                materializedWorkflow.Workflow.WorkflowMetadata.Name,
-                materializedWorkflow.Workflow.Identity.Version);
+            if (e is InvalidOperationException && e.Message.Contains("already exists in another tenant", StringComparison.Ordinal))
+            {
+                _logger.LogError(e,
+                    "Skipping adding workflow {WorkflowId} from provider {Provider} because a record with that Id already exists in another tenant.",
+                    materializedWorkflow.Workflow.Identity.DefinitionId,
+                    materializedWorkflow.ProviderName);
+            }
+            else
+            {
+                _logger.LogError(e, "An error occurred while populating the workflow definition store for workflow {WorkflowId} (Name: {WorkflowName}, Version: {Version})",
+                    materializedWorkflow.Workflow.Identity.DefinitionId,
+                    materializedWorkflow.Workflow.WorkflowMetadata.Name,
+                    materializedWorkflow.Workflow.Identity.Version);
+            }
 
             return Result.Failure<WorkflowDefinition>(e);
         }
@@ -180,7 +223,10 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
             VersionOptions = VersionOptions.SpecificVersion(workflow.Identity.Version)
         };
 
+        await RestampClrTenantAsync(materializedWorkflow, cancellationToken);
+
         var existingDefinitionVersion = await _workflowDefinitionStore.FindAsync(specificVersionFilter, cancellationToken);
+        ApplyDeclaredClrTenant(materializedWorkflow, existingDefinitionVersion);
 
         // Set up a list to collect all workflow definitions to be persisted.
         var workflowDefinitionsToSave = new HashSet<WorkflowDefinition>();
@@ -314,6 +360,48 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
             }
         }
     }
+
+    private async Task RestampClrTenantAsync(MaterializedWorkflow materializedWorkflow, CancellationToken cancellationToken)
+    {
+        if (_clrTenantRestamper == null || !IsClr(materializedWorkflow))
+        {
+            return;
+        }
+
+        var identity = materializedWorkflow.Workflow.Identity;
+        try
+        {
+            await _clrTenantRestamper.RestampAsync(
+                identity.DefinitionId,
+                identity.Version,
+                identity.TenantId ?? Tenant.AgnosticTenantId,
+                cancellationToken);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e,
+                "Skipping CLR tenant re-stamp for workflow {WorkflowId} (Version: {Version}). Population continues.",
+                identity.DefinitionId,
+                identity.Version);
+        }
+    }
+
+    private static void ApplyDeclaredClrTenant(MaterializedWorkflow materializedWorkflow, WorkflowDefinition? existing)
+    {
+        if (existing == null || !IsClr(materializedWorkflow) || existing.ProviderName != ClrWorkflowsProvider.ProviderName)
+        {
+            return;
+        }
+
+        var declaredTenantId = materializedWorkflow.Workflow.Identity.TenantId ?? Tenant.AgnosticTenantId;
+        if (!string.Equals(existing.TenantId ?? string.Empty, declaredTenantId, StringComparison.Ordinal))
+        {
+            existing.TenantId = declaredTenantId;
+        }
+    }
+
+    private static bool IsClr(MaterializedWorkflow materializedWorkflow) =>
+        string.Equals(materializedWorkflow.ProviderName, ClrWorkflowsProvider.ProviderName, StringComparison.Ordinal);
 
     /// <summary>
     /// Syncs the items in the primary list with existing items in the secondary list, even when the object instances are not the same (but their IDs are).

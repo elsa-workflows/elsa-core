@@ -38,5 +38,7 @@ The former [Extensions repository README](../../docs/integration-program/legacy/
 is retained as import provenance. Its planned-provider table, old repository
 paths and examples are historical claims. Use each active module's documentation
 and released package metadata for availability. The [3.6](changelogs/3.6.0.md) and
-[3.7](changelogs/3.7.0.md) notes remain release history. Follow the root
+[3.7](changelogs/3.7.0.md) notes are release history.
+The [3.10.1](changelogs/3.10.1.md) note covers the upcoming patch, including the
+automatic CLR tenant re-stamp for multi-tenant Dapper hosts. Follow the root
 [contribution guide](../../CONTRIBUTING.md) for changes and contributor attribution.

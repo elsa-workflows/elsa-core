@@ -16,8 +16,13 @@ public class ClrWorkflowsProvider(
     IWorkflowBuilderFactory workflowBuilderFactory,
     IServiceProvider serviceProvider) : IWorkflowsProvider
 {
+    /// <summary>
+    /// The provider name stored on CLR workflow definition rows.
+    /// </summary>
+    public const string ProviderName = "CLR";
+
     /// <inheritdoc />
-    public string Name => "CLR";
+    public string Name => ProviderName;
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<MaterializedWorkflow>> GetWorkflowsAsync(CancellationToken cancellationToken = default)

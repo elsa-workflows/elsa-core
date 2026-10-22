@@ -1,3 +1,4 @@
+using System.Data;
 using System.Linq.Expressions;
 using Dapper;
 using Elsa.Common.Entities;
@@ -349,10 +350,20 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
     /// <param name="cancellationToken">The cancellation token.</param>
     public async Task SaveAsync(T record, CancellationToken cancellationToken = default)
     {
-        using var connection = dbConnectionProvider.GetConnection();
         SetTenantId(record);
-        var query = new ParameterizedQuery(dbConnectionProvider.Dialect).Upsert(TableName, PrimaryKey, record);
-        await query.ExecuteAsync(connection);
+        using var connection = dbConnectionProvider.GetConnection();
+        var affected = await ExecuteUpsertAsync(record, connection);
+        if (affected > 0)
+        {
+            return;
+        }
+
+        if (affected < 0 && await ConfirmNegativeCountWriteAsync(record, connection))
+        {
+            return;
+        }
+
+        await ResolveZeroRowWriteAsync(record, connection, ExecuteUpsertAsync);
     }
 
     /// <summary>
@@ -363,9 +374,10 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
     public async Task SaveManyAsync(IEnumerable<T> records, CancellationToken cancellationToken = default)
     {
         var recordsList = records.ToList();
-
-        if (!recordsList.Any())
+        if (recordsList.Count == 0)
+        {
             return;
+        }
 
         var query = new ParameterizedQuery(dbConnectionProvider.Dialect);
         var currentIndex = 0;
@@ -379,7 +391,16 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
         }
 
         using var connection = dbConnectionProvider.GetConnection();
-        await query.ExecuteAsync(connection);
+        var affected = await query.ExecuteAsync(connection);
+        // PostgreSQL, SQL Server, and Microsoft.Data.Sqlite all sum affected rows across
+        // the statements of one command, so a full batch reports `recordCount`. SQL Server
+        // with NOCOUNT ON reports -1, which is indeterminate: confirm each row is ours.
+        if (affected == recordsList.Count)
+        {
+            return;
+        }
+
+        await ResolveBatchTenantConflictsAsync(recordsList, connection);
     }
 
     /// <summary>
@@ -431,8 +452,13 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
     {
         using var connection = dbConnectionProvider.GetConnection();
         SetTenantId(record);
-        var query = new ParameterizedQuery(dbConnectionProvider.Dialect).Update(TableName, record, PrimaryKey);
-        await query.ExecuteAsync(connection);
+        var affected = await ExecuteTenantScopedUpdateAsync(record, connection);
+        if (affected > 0)
+        {
+            return;
+        }
+
+        await ResolveZeroRowUpdateAsync(record, connection);
     }
     
     public async Task UpdateAsync(T record, Expression<Func<T, object>>[] props, CancellationToken cancellationToken = default)
@@ -440,8 +466,13 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
         using var connection = dbConnectionProvider.GetConnection();
         SetTenantId(record);
         var fields = props.Select(x => x.GetPropertyName()).ToArray();
-        var query = new ParameterizedQuery(dbConnectionProvider.Dialect).Update(TableName, record, PrimaryKey, fields);
-        await query.ExecuteAsync(connection);
+        var affected = await ExecuteTenantScopedUpdateAsync(record, connection, fields);
+        if (affected > 0)
+        {
+            return;
+        }
+
+        await ResolveZeroRowUpdateAsync(record, connection);
     }
 
     /// <summary>
@@ -453,7 +484,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
         using var connection = dbConnectionProvider.GetConnection();
         var fields = props.Select(x => x.GetPropertyName()).ToArray();
         var query = dbConnectionProvider.CreateQuery().Update(TableName, record, fields);
-        ApplyTenantFilter(query);
+        ApplyWriteTenantScope(query);
         filter(query);
         return await query.ExecuteAsync(connection);
     }
@@ -473,7 +504,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
         if (!query.Parameters.ParameterNames.Any())
             return 0;
 
-        ApplyTenantFilter(query);
+        ApplyWriteTenantScope(query);
 
         using var connection = dbConnectionProvider.GetConnection();
         return await query.ExecuteAsync(connection);
@@ -497,7 +528,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
         if (!selectQuery.Parameters.ParameterNames.Any())
             return 0;
 
-        ApplyTenantFilter(selectQuery, false);
+        ApplyWriteTenantScope(selectQuery);
         selectQuery = selectQuery.OrderBy(orderFields.ToArray()).Page(pageArgs);
 
         var deleteQuery = dbConnectionProvider.CreateQuery().Delete(TableName, primaryKey, selectQuery);
@@ -538,24 +569,264 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
     private void ApplyTenantFilter(ParameterizedQuery query, bool tenantAgnostic = false)
     {
         if (tenantAgnostic)
+        {
             return;
+        }
 
-        var tenant = tenantAccessor.Tenant;
-        var tenantId = tenant?.Id;
-        // Default tenant is '' in Elsa and NULL or '' on some legacy rows (#245 / #260 / elsa-core#8618).
+        // Mirror EF SetTenantIdFilter: ambient match OR '*' OR (NULL when ambient is default).
+        ApplyTenantVisibility(query);
+    }
+
+    internal void ApplyTenantVisibility(ParameterizedQuery query)
+    {
+        var tenantId = tenantAccessor.Tenant?.Id;
+        var ident = query.Dialect.QuoteIdentifier(nameof(Record.TenantId));
+
         if (string.IsNullOrEmpty(tenantId))
+        {
+            query.Sql.AppendLine($"and ({ident} is null or {ident} = '' or {ident} = @AgnosticTenantId)");
+            query.Parameters.Add("@AgnosticTenantId", Tenant.AgnosticTenantId);
+            return;
+        }
+
+        query.Sql.AppendLine($"and ({ident} = @AmbientTenantId or {ident} = @AgnosticTenantId)");
+        query.Parameters.Add("@AmbientTenantId", tenantId);
+        query.Parameters.Add("@AgnosticTenantId", Tenant.AgnosticTenantId);
+    }
+
+    /// <summary>
+    /// Writes and deletes match the ambient tenant only. Shared <c>*</c> rows stay visible on
+    /// reads but cannot be taken over, deleted, or filter-updated by a concrete tenant.
+    /// </summary>
+    private void ApplyWriteTenantScope(ParameterizedQuery query)
+    {
+        var tenantId = tenantAccessor.Tenant?.Id;
+        if (string.IsNullOrEmpty(tenantId))
+        {
             query.IsNullOrEmpty(nameof(Record.TenantId));
-        else
-            query.Is(nameof(Record.TenantId), tenantId);
+            return;
+        }
+
+        query.Is(nameof(Record.TenantId), tenantId);
+    }
+
+    private void ApplyOwnedTenantScope(ParameterizedQuery query, T record)
+    {
+        if (record is not Record owned)
+        {
+            return;
+        }
+
+        var ident = query.Dialect.QuoteIdentifier(nameof(Record.TenantId));
+        query.Sql.AppendLine($"and COALESCE({ident}, '') = COALESCE(@OwnedTenantId, '')");
+        query.Parameters.Add("@OwnedTenantId", owned.TenantId ?? string.Empty);
     }
 
     private void SetTenantId(T record)
     {
         if (record is not Record recordWithTenant)
+        {
             return;
+        }
 
-        var tenant = tenantAccessor.Tenant;
-        var tenantId = tenant?.Id;
-        recordWithTenant.TenantId = tenantId;
+        // Keep an explicit '*'. Stamp only when TenantId is null. Keep an explicit concrete
+        // id only when it equals the ambient tenant or there is no ambient tenant. Do not
+        // trust any other explicit concrete id.
+        var ambient = tenantAccessor.Tenant;
+        var ambientId = ambient?.Id;
+        var explicitId = recordWithTenant.TenantId;
+
+        if (explicitId == Tenant.AgnosticTenantId)
+        {
+            return;
+        }
+
+        if (string.IsNullOrEmpty(explicitId))
+        {
+            recordWithTenant.TenantId = ambientId;
+            return;
+        }
+
+        if (ambient == null || SameTenant(explicitId, ambientId))
+        {
+            return;
+        }
+
+        throw new InvalidOperationException($"The record tenant '{explicitId}' does not match the current tenant '{ambientId}'.");
+    }
+
+    // Cross-tenant Id rule:
+    // - Existing '*': a concrete tenant cannot take it over. Incoming '*' updates the shared
+    //   row in place. Incoming ambient/concrete throws and leaves TenantId as '*'.
+    // - Existing concrete tenant A, incoming other tenant B: throw.
+    // - Same tenant, treating NULL and '' as the default tenant: retry the tenant-scoped upsert.
+    // - Missing row after a 0-row upsert: retry once, then throw.
+    // - Update of a missing row is a no-op (heartbeats). Updates never retry.
+    // - A negative affected count (SQL Server NOCOUNT ON) is indeterminate: look the row up
+    //   and throw if it belongs to another tenant.
+    private async Task ResolveZeroRowWriteAsync(T record, IDbConnection connection, Func<T, IDbConnection, Task<int>> write)
+    {
+        var key = GetPrimaryKeyValue(record);
+        var existing = await LookupByKeyAsync(key, connection);
+        OnAfterExistingRowLookup(record, existing);
+
+        if (existing is Record owned && !CanWriteExistingRow(owned, record))
+        {
+            throw CrossTenantConflict(key);
+        }
+
+        var retried = await write(record, connection);
+        if (retried > 0)
+        {
+            return;
+        }
+
+        if (retried < 0 && await ConfirmNegativeCountWriteAsync(record, connection))
+        {
+            return;
+        }
+
+        throw new InvalidOperationException($"Failed to save a record with ID '{key}'.");
+    }
+
+    private async Task ResolveZeroRowUpdateAsync(T record, IDbConnection connection)
+    {
+        var key = GetPrimaryKeyValue(record);
+        var existing = await LookupByKeyAsync(key, connection);
+        OnAfterExistingRowLookup(record, existing);
+
+        if (existing is Record owned && !CanWriteExistingRow(owned, record))
+        {
+            throw CrossTenantConflict(key);
+        }
+    }
+
+    private async Task ResolveBatchTenantConflictsAsync(IReadOnlyList<T> records, IDbConnection connection)
+    {
+        var keys = records.Select(GetPrimaryKeyValue).OfType<object>().Distinct().ToList();
+        var existingByKey = new Dictionary<object, T>();
+
+        if (keys.Count > 0)
+        {
+            var lookup = new ParameterizedQuery(dbConnectionProvider.Dialect).From(TableName);
+            lookup.In(PrimaryKey, keys);
+            foreach (var existing in await lookup.QueryAsync<T>(connection))
+            {
+                var existingKey = GetPrimaryKeyValue(existing);
+                if (existingKey != null)
+                {
+                    existingByKey[existingKey] = existing;
+                }
+            }
+        }
+
+        foreach (var record in records)
+        {
+            var key = GetPrimaryKeyValue(record);
+            if (key != null && existingByKey.TryGetValue(key, out var existing) && existing is Record owned && !CanWriteExistingRow(owned, record))
+            {
+                throw CrossTenantConflict(key);
+            }
+
+            var retried = await ExecuteUpsertAsync(record, connection);
+            if (retried > 0)
+            {
+                continue;
+            }
+
+            if (retried < 0 && await ConfirmNegativeCountWriteAsync(record, connection))
+            {
+                continue;
+            }
+
+            throw new InvalidOperationException($"Failed to save a record with ID '{key}'.");
+        }
+    }
+
+    private async Task<bool> ConfirmNegativeCountWriteAsync(T record, IDbConnection connection)
+    {
+        var existing = await LookupByKeyAsync(GetPrimaryKeyValue(record), connection);
+        if (existing is Record owned && !CanWriteExistingRow(owned, record))
+        {
+            throw CrossTenantConflict(GetPrimaryKeyValue(record));
+        }
+
+        return existing != null;
+    }
+
+    private static InvalidOperationException CrossTenantConflict(object? key) =>
+        new($"A record with ID '{key}' already exists in another tenant.");
+
+    private static bool CanWriteExistingRow(Record owned, T record)
+    {
+        var incomingTenantId = record is Record incoming ? incoming.TenantId : null;
+
+        if (owned.TenantId == Tenant.AgnosticTenantId)
+        {
+            // Shared rows stay shared. A concrete tenant cannot restamp '*' to itself.
+            return incomingTenantId == Tenant.AgnosticTenantId;
+        }
+
+        return SameTenant(owned.TenantId, incomingTenantId);
+    }
+
+    private async Task<int> ExecuteUpsertAsync(T record, IDbConnection connection)
+    {
+        if (ConsumeForcedAffectedRows() is { } forced)
+        {
+            return forced;
+        }
+
+        var query = new ParameterizedQuery(dbConnectionProvider.Dialect).Upsert(TableName, PrimaryKey, record);
+        return await query.ExecuteAsync(connection);
+    }
+
+    private async Task<int> ExecuteTenantScopedUpdateAsync(T record, IDbConnection connection, string[]? fields = null)
+    {
+        if (ConsumeForcedAffectedRows() is { } forced)
+        {
+            return forced;
+        }
+
+        fields ??= record.GetType().GetProperties()
+            .Where(x => x.CanRead && x.Name != PrimaryKey)
+            .Select(x => x.Name)
+            .ToArray();
+
+        var key = GetPrimaryKeyValue(record);
+        if (key == null)
+        {
+            throw new InvalidOperationException($"Cannot update a record without a {PrimaryKey}.");
+        }
+
+        var query = new ParameterizedQuery(dbConnectionProvider.Dialect)
+            .Update(TableName, record, fields)
+            .Is(PrimaryKey, key);
+        ApplyOwnedTenantScope(query, record);
+        return await query.ExecuteAsync(connection);
+    }
+
+    private async Task<T?> LookupByKeyAsync(object? key, IDbConnection connection)
+    {
+        if (key == null)
+        {
+            return default;
+        }
+
+        var lookup = new ParameterizedQuery(dbConnectionProvider.Dialect).From(TableName);
+        lookup.Is(PrimaryKey, key);
+        return await lookup.FirstOrDefaultAsync<T>(connection);
+    }
+
+    private object? GetPrimaryKeyValue(T record) =>
+        record.GetType().GetProperty(PrimaryKey)?.GetValue(record);
+
+    private static bool SameTenant(string? left, string? right) =>
+        string.Equals(left ?? string.Empty, right ?? string.Empty, StringComparison.Ordinal);
+
+    internal virtual int? ConsumeForcedAffectedRows() => null;
+
+    internal virtual void OnAfterExistingRowLookup(T record, T? existing)
+    {
     }
 }

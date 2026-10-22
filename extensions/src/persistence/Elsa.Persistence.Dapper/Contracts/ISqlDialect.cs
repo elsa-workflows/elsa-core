@@ -166,10 +166,33 @@ public interface ISqlDialect
 
 internal static class SqlDialectStatements
 {
+    public const string TenantIdColumn = "TenantId";
+
     public static string Update(string table, string[] fields, Func<string, string>? getParamName)
     {
         getParamName ??= static x => x;
         var fieldList = string.Join(", ", fields.Select(x => $"{x} = @{getParamName(x)}"));
         return $"UPDATE {table} SET {fieldList} WHERE 1=1";
     }
+
+    public static bool HasTenantId(string[] fields) =>
+        fields.Contains(TenantIdColumn, StringComparer.Ordinal);
+
+    /// <summary>
+    /// Treats <c>NULL</c> and <c>''</c> as the same default tenant, matching
+    /// <c>ApplyTenantFilter</c>. <c>IS NOT DISTINCT FROM</c> would miss that pair and
+    /// is not available on SQL Server before 2022.
+    /// </summary>
+    public static string TenantIdEquals(string left, string right) =>
+        $"COALESCE({left}, '') = COALESCE({right}, '')";
+
+    public static string TenantScopedUpdateWhere(string[] fields, Func<string, string> quoteColumn, Func<string, string> getParamName) =>
+        HasTenantId(fields)
+            ? $" WHERE {TenantIdEquals(quoteColumn(TenantIdColumn), $"@{getParamName(TenantIdColumn)}")}"
+            : string.Empty;
+
+    public static string TenantScopedMatchAnd(string[] fields, string targetColumn, string sourceColumn) =>
+        HasTenantId(fields)
+            ? $" AND {TenantIdEquals(targetColumn, sourceColumn)}"
+            : string.Empty;
 }
