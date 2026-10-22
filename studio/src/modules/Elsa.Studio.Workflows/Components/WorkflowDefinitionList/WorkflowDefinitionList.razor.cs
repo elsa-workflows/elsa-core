@@ -217,7 +217,9 @@ public partial class WorkflowDefinitionList
         var dialogResult = await dialogInstance.Result;
 
         if (dialogResult?.Canceled != false || dialogResult.Data is not Result<BpmnXmlSaveResult, BpmnDocumentFailure> result)
+        {
             return;
+        }
 
         await result.OnSuccessAsync(created => EditAsync(created.Import.DefinitionId));
         result.OnFailed(failure => UserMessageService.ShowSnackbarTextMessage(Localizer["Failed to create the BPMN workflow. Reason: {0}", failure.Message], Severity.Error));

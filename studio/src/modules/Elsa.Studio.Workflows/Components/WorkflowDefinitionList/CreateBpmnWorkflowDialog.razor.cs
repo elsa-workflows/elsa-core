@@ -53,14 +53,18 @@ public partial class CreateBpmnWorkflowDialog : IDisposable
     {
         // Set before the name check, which is asynchronous, so a second submit during it cannot create a second workflow.
         if (_isCreating)
+        {
             return;
+        }
 
         _isCreating = true;
 
         try
         {
             if (!await _submitValidator.ValidateAndPublishAsync() || _lifetime.IsCancellationRequested)
+            {
                 return;
+            }
 
             var options = MudDialog.Options;
             await MudDialog.SetOptionsAsync(options with { CloseOnEscapeKey = false, CloseButton = false, BackdropClick = false });

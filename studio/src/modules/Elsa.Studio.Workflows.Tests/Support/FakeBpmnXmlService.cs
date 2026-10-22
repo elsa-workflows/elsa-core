@@ -71,10 +71,14 @@ internal sealed class FakeBpmnXmlService : IBpmnXmlService
         Creates.Add(name);
 
         if (CreateGate != null)
+        {
             await CreateGate.Task;
+        }
 
         if (CreateException != null)
+        {
             throw CreateException;
+        }
 
         return CreateResult ?? throw new NotSupportedException("No create result was set.");
     }
