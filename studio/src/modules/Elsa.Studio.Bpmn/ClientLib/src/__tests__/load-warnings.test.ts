@@ -132,6 +132,13 @@ describe('computeLoadWarnings', () => {
         expect(computeLoadWarnings(original, await roundTrip(original))).toEqual([{ kind: 'dropped', message: '2 comments are lost.' }]);
     });
 
+    it('reports a comment the save replaces with another as lost', () => {
+        const original = definitions('<!-- old --><bpmn:task id="Task" />');
+        const saved = definitions('<!-- new --><bpmn:task id="Task" /><!-- another -->');
+
+        expect(computeLoadWarnings(original, saved)).toEqual([{ kind: 'dropped', message: 'A comment is lost.' }]);
+    });
+
     it('does not report content the save adds', () => {
         const original = definitions('<bpmn:task id="Task" />');
         const saved = definitions('<bpmn:task id="Task" name="Added"><bpmn:incoming>Flow</bpmn:incoming></bpmn:task><bpmn:task id="Other" />');

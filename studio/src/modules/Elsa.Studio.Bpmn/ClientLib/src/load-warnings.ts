@@ -314,15 +314,24 @@ function geometryOf(element: Element): number[] {
 }
 
 function compareLexicalContent(before: Document, after: Document, warnings: BpmnLoadWarning[]): void {
-    const lostComments = count(before, 128) - count(after, 128);
+    // Comments are matched by their text, so one the save replaces with another still counts as lost.
+    const kept = commentsOf(after);
+    let lostComments = 0;
+    for (const [text, total] of commentsOf(before)) {
+        lostComments += Math.max(0, total - (kept.get(text) ?? 0));
+    }
     if (lostComments > 0) warnings.push(warning('dropped', lostComments === 1 ? 'A comment is lost.' : `${lostComments} comments are lost.`));
 }
 
-function count(document: Document, whatToShow: number): number {
-    const walker = document.createTreeWalker(document, whatToShow);
-    let total = 0;
-    while (walker.nextNode()) total++;
-    return total;
+/** How many times each comment text occurs in the document. */
+function commentsOf(document: Document): Map<string, number> {
+    const walker = document.createTreeWalker(document, NodeFilter.SHOW_COMMENT);
+    const comments = new Map<string, number>();
+    while (walker.nextNode()) {
+        const text = walker.currentNode.nodeValue ?? '';
+        comments.set(text, (comments.get(text) ?? 0) + 1);
+    }
+    return comments;
 }
 
 function warning(kind: BpmnLoadWarning['kind'], message: string, elementId?: string | null): BpmnLoadWarning {
