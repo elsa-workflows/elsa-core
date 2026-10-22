@@ -4,6 +4,7 @@ using Elsa.Api.Client.Resources.WorkflowDefinitions.Requests;
 using Elsa.Api.Client.Resources.WorkflowInstances.Requests;
 using Elsa.Api.Client.Shared.Models;
 using Elsa.Studio.Authorization;
+using Elsa.Studio.Bpmn.Designers;
 using Elsa.Studio.Components;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.DomInterop.Contracts;
@@ -11,6 +12,7 @@ using Elsa.Studio.Models;
 using Elsa.Studio.Workflows.Contracts;
 using Elsa.Studio.Workflows.Domain.Contracts;
 using Elsa.Studio.Workflows.Domain.Models;
+using Elsa.Studio.Workflows.Domain.Models.Bpmn;
 using Elsa.Studio.Workflows.Extensions;
 using Humanizer;
 using Microsoft.AspNetCore.Components;
@@ -42,6 +44,7 @@ public partial class WorkflowDefinitionList
     [Inject] private IWorkflowCloningDialogService WorkflowCloningService { get; set; } = null!;
     [Inject] private IWorkflowExportDialogService WorkflowExportDialogService { get; set; } = null!;
     [Inject] private IBpmnImportUiService BpmnImportUiService { get; set; } = null!;
+    [Inject] private BpmnDesignerResolver BpmnDesignerResolver { get; set; } = null!;
 
     [CascadingParameter] private UserPermissions Permissions { get; set; } = UserPermissions.Unknown;
 
@@ -52,6 +55,9 @@ public partial class WorkflowDefinitionList
     private bool CanRetract => Permissions.CanRetractDefinitions();
     private bool CanExecute => Permissions.CanExecuteDefinitions();
     private bool CanCancelInstances => Permissions.CanCancelInstances();
+
+    // A BPMN workflow created from scratch has nothing to draw it with but a BPMN designer.
+    private bool CanCreateBpmnWorkflow => BpmnDesignerResolver.Resolve() != null;
 
     private string SearchTerm { get; set; } = string.Empty;
     private bool IsReadOnlyMode { get; set; }
@@ -190,6 +196,33 @@ public partial class WorkflowDefinitionList
 
         await result.OnSuccessAsync(definition => EditAsync(definition.DefinitionId));
         result.OnFailed(errors => UserMessageService.ShowSnackbarTextMessage(string.Join(Environment.NewLine, errors.Errors)));
+    }
+
+    private async Task OnCreateBpmnWorkflowClicked()
+    {
+        var parameters = new DialogParameters<CreateBpmnWorkflowDialog>
+        {
+            { x => x.WorkflowName, await WorkflowDefinitionService.GenerateUniqueNameAsync() }
+        };
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            Position = DialogPosition.Center,
+            CloseButton = true,
+            FullWidth = true,
+            MaxWidth = MaxWidth.Small
+        };
+
+        var dialogInstance = await DialogService.ShowAsync<CreateBpmnWorkflowDialog>(Localizer["New BPMN workflow"], parameters, options);
+        var dialogResult = await dialogInstance.Result;
+
+        if (dialogResult?.Canceled != false || dialogResult.Data is not Result<BpmnXmlSaveResult, BpmnDocumentFailure> result)
+        {
+            return;
+        }
+
+        await result.OnSuccessAsync(created => EditAsync(created.Import.DefinitionId));
+        result.OnFailed(failure => UserMessageService.ShowSnackbarTextMessage(Localizer["Failed to create the BPMN workflow. Reason: {0}", failure.Message], Severity.Error));
     }
 
     private async Task OnDuplicateWorkflowClicked(WorkflowDefinitionRow workflowDefinitionRow)

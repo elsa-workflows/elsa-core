@@ -8,7 +8,7 @@ namespace Elsa.Studio.Workflows.Tests.Support;
 
 /// <summary>
 /// An in-memory <see cref="IBpmnXmlService"/>: each GET and PUT answers with the next result a test queued, the last one
-/// repeating, and every PUT is recorded as it was sent.
+/// repeating, and every PUT and create is recorded as it was sent.
 /// </summary>
 internal sealed class FakeBpmnXmlService : IBpmnXmlService
 {
@@ -55,7 +55,34 @@ internal sealed class FakeBpmnXmlService : IBpmnXmlService
         return Next(_putResults, Puts.Count - 1);
     }
 
-    public Task<Result<BpmnXmlSaveResult, BpmnDocumentFailure>> CreateAsync(string name, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    /// <summary>The name of every workflow a test created, in order.</summary>
+    public List<string> Creates { get; } = [];
+
+    /// <summary>What a create answers with; unset, a create is not expected and throws.</summary>
+    public Result<BpmnXmlSaveResult, BpmnDocumentFailure>? CreateResult { get; set; }
+
+    /// <summary>When set, a create awaits it before answering, so a test can act while one is in flight.</summary>
+    public TaskCompletionSource? CreateGate { get; set; }
+
+    /// <summary>When set, a create throws it, as a dropped connection would.</summary>
+    public Exception? CreateException { get; set; }
+
+    public async Task<Result<BpmnXmlSaveResult, BpmnDocumentFailure>> CreateAsync(string name, CancellationToken cancellationToken = default)
+    {
+        Creates.Add(name);
+
+        if (CreateGate != null)
+        {
+            await CreateGate.Task;
+        }
+
+        if (CreateException != null)
+        {
+            throw CreateException;
+        }
+
+        return CreateResult ?? throw new NotSupportedException("No create result was set.");
+    }
 
     private FakeBpmnXmlService Add<T>(List<T> results, T result)
     {
