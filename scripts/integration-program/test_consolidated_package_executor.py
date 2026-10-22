@@ -76,7 +76,7 @@ class FullInventoryTests(unittest.TestCase):
         cls.addClassCleanup(temporary.cleanup)
         cls.root = Path(temporary.name).resolve()
         (cls.root / "artifacts").mkdir()
-        baseline = json.loads(Path(executor.__file__).with_name("consolidated-candidate-inventory-baseline.json").read_text())
+        baseline = json.loads(executor.candidate_input.PIN_INVENTORY.read_text())
         rows, files, sources = [], [], []
         for source in baseline["packages"]:
             package_id = source["id"]

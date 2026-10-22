@@ -12,7 +12,7 @@ import validate_packages_workflow_gates as gates
 
 NUGET_IF = (
     "if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget"
-    " && startsWith(github.ref, 'refs/tags/') && !startsWith(github.ref_name, '3.10.') }}"
+    " && startsWith(github.ref, 'refs/tags/') }}"
 )
 COVERAGE_REFS_IF = "github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release/3.6.1') }}"
 SELECTION_RUN = "        run: python3 scripts/validate_packages_publication_selection.py\n"
@@ -36,6 +36,42 @@ OTHER_BYPASSES = (
         "inputs.publish_preview_feedz && (startsWith",
         "(startsWith",
         "publish_preview_feedz if: must require inputs.publish_preview_feedz",
+    ),
+    (
+        "Feedz publisher accepts a stable 3.10.x tag",
+        "startsWith(github.ref, 'refs/heads/') || (startsWith(github.ref, 'refs/tags/3.10.') && contains(github.ref_name, '-'))",
+        "startsWith(github.ref, 'refs/heads/') || startsWith(github.ref, 'refs/tags/3.10.')",
+        "publish_preview_feedz if: must require startsWith(github.ref, 'refs/heads/') || (startsWith(github.ref, 'refs/tags/3.10.') && contains(github.ref_name, '-'))",
+    ),
+    (
+        "nuget publisher drops the candidate retrieve",
+        "python3 scripts/stage_consolidated_candidate_nupkgs.py retrieve",
+        "python3 scripts/stage_consolidated_candidate_nupkgs.py missing",
+        "publish_nuget must retrieve the pinned candidate",
+    ),
+    (
+        "nuget login runs before the candidate guard",
+        "      - name: Retrieve verified candidate archive\n",
+        "      - name: NuGet login too early\n        uses: NuGet/login@v1\n\n      - name: Retrieve verified candidate archive\n",
+        "publish_nuget must retrieve, stage, and guard the pinned candidate before NuGet login",
+    ),
+    (
+        "nuget publisher continues after a failed candidate guard",
+        "        run: |\n          python3 scripts/stage_consolidated_candidate_nupkgs.py stage\n          python3 scripts/validate_packages_id_set.py\n",
+        "        continue-on-error: true\n        run: |\n          python3 scripts/stage_consolidated_candidate_nupkgs.py stage\n          python3 scripts/validate_packages_id_set.py\n",
+        "publish_nuget must not continue on error",
+    ),
+    (
+        "stable 3.10 nuget still packs",
+        "        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}\n        run: ./build.sh Compile+Pack",
+        "        run: ./build.sh Compile+Pack",
+        "build Compile+Pack must skip a stable 3.10.x nuget.org promotion",
+    ),
+    (
+        "packages.yml packs the consolidated set again",
+        "      - name: Compile+Pack\n",
+        "      - name: Build Studio ClientLib bundles\n        run: bash scripts/integration-program/build_studio_clientlibs.sh\n\n      - name: Compile+Pack\n",
+        "packages.yml must not build Studio ClientLibs",
     ),
     (
         "text around ${{ }} makes the coverage condition always true",
@@ -294,18 +330,14 @@ class WorkflowGateTests(unittest.TestCase):
                 gates.triggers(workflow)["workflow_dispatch"]["inputs"][name]["default"] = True
                 self.assertIn(f"workflow_dispatch input {name!r} must default to false", gates.workflow_violations(workflow))
 
-    def test_rejects_nuget_publisher_without_the_3_10_exclusion(self):
-        source = self.mutated(" && !startsWith(github.ref_name, '3.10.')", "")
-        self.assert_rejected(source, "publish_nuget if: must require !startsWith(github.ref_name, '3.10.')")
-
     def test_rejects_other_publication_bypasses(self):
         for description, old, new, expected in OTHER_BYPASSES:
             with self.subTest(description):
                 self.assert_rejected(self.mutated(old, new), expected)
 
-    def test_rejects_selection_script_that_allows_3_10_on_nuget(self):
+    def test_rejects_selection_script_that_allows_a_non_release_tag(self):
         with unittest.mock.patch.object(gates, "selection_errors", return_value=[]):
-            self.assert_rejected(self.source, "the selection script must reject NuGet.org publication of a 3.10.x tag")
+            self.assert_rejected(self.source, "the selection script must reject a v-prefixed tag")
 
     def test_accepts_ungated_job_whose_string_literal_merely_contains_secrets_bracket(self):
         source = self.mutated(None, """
@@ -316,6 +348,57 @@ class WorkflowGateTests(unittest.TestCase):
                 - run: echo ok
             """)
         self.assertEqual([], gates.source_violations(source))
+
+    def test_candidate_publisher_must_run_the_same_id_set_guard_before_feedz(self):
+        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
+        self.assertEqual([], gates.candidate_publisher_violations(source))
+        stripped = source.replace(gates.GUARD_CANDIDATE, "true")
+        self.assertIn(
+            "publish-consolidated-original-candidate.yml must run the same ID-set guard before Feedz",
+            gates.candidate_publisher_violations(stripped),
+        )
+        reordered = source.replace(gates.GUARD_CANDIDATE, "GUARD_PLACEHOLDER").replace(
+            gates.CANDIDATE_PUBLISH, f"{gates.CANDIDATE_PUBLISH}\n          {gates.GUARD_CANDIDATE}"
+        ).replace("GUARD_PLACEHOLDER", "true")
+        self.assertIn(
+            "publish-consolidated-original-candidate.yml must run the ID-set guard before the Feedz publish",
+            gates.candidate_publisher_violations(reordered),
+        )
+
+    def _candidate_guard_with(self, extra_line: str) -> str:
+        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
+        return source.replace(
+            "      - name: Guard the pinned candidate ID set before Feedz\n",
+            f"      - name: Guard the pinned candidate ID set before Feedz\n        {extra_line}\n",
+        )
+
+    def test_candidate_guard_rejects_continue_on_error(self):
+        mutated = self._candidate_guard_with("continue-on-error: true")
+        self.assertIn(
+            "publish-consolidated-original-candidate.yml must not continue on error",
+            gates.candidate_publisher_violations(mutated),
+        )
+
+    def test_candidate_guard_allows_continue_on_error_false(self):
+        # Explicit false is GitHub's default and the existing publish_nuget contract.
+        mutated = self._candidate_guard_with("continue-on-error: false")
+        self.assertEqual([], gates.candidate_publisher_violations(mutated))
+
+    def test_candidate_guard_rejects_an_if_condition(self):
+        mutated = self._candidate_guard_with("if: always()")
+        self.assertIn(
+            "publish-consolidated-original-candidate.yml guard step must not have an if:",
+            gates.candidate_publisher_violations(mutated),
+        )
+
+    def test_candidate_guard_rejects_falsy_if_values(self):
+        for extra in ("if: false", "if: ''", "if: 0"):
+            with self.subTest(extra=extra):
+                mutated = self._candidate_guard_with(extra)
+                self.assertIn(
+                    "publish-consolidated-original-candidate.yml guard step must not have an if:",
+                    gates.candidate_publisher_violations(mutated),
+                )
 
 
 if __name__ == "__main__":
