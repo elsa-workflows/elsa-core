@@ -38,6 +38,42 @@ OTHER_BYPASSES = (
         "publish_preview_feedz if: must require inputs.publish_preview_feedz",
     ),
     (
+        "Feedz publisher accepts a stable 3.10.x tag",
+        "startsWith(github.ref, 'refs/heads/') || (startsWith(github.ref, 'refs/tags/3.10.') && contains(github.ref_name, '-'))",
+        "startsWith(github.ref, 'refs/heads/') || startsWith(github.ref, 'refs/tags/3.10.')",
+        "publish_preview_feedz if: must require startsWith(github.ref, 'refs/heads/') || (startsWith(github.ref, 'refs/tags/3.10.') && contains(github.ref_name, '-'))",
+    ),
+    (
+        "nuget publisher drops the candidate retrieve",
+        "python3 scripts/stage_consolidated_candidate_nupkgs.py retrieve",
+        "python3 scripts/stage_consolidated_candidate_nupkgs.py missing",
+        "publish_nuget must retrieve the pinned candidate",
+    ),
+    (
+        "nuget login runs before the candidate guard",
+        "      - name: Retrieve verified candidate archive\n",
+        "      - name: NuGet login too early\n        uses: NuGet/login@v1\n\n      - name: Retrieve verified candidate archive\n",
+        "publish_nuget must retrieve, stage, and guard the pinned candidate before NuGet login",
+    ),
+    (
+        "nuget publisher continues after a failed candidate guard",
+        "        run: |\n          python3 scripts/stage_consolidated_candidate_nupkgs.py stage\n          python3 scripts/validate_packages_id_set.py\n",
+        "        continue-on-error: true\n        run: |\n          python3 scripts/stage_consolidated_candidate_nupkgs.py stage\n          python3 scripts/validate_packages_id_set.py\n",
+        "publish_nuget must not continue on error",
+    ),
+    (
+        "stable 3.10 nuget still packs",
+        "        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}\n        run: ./build.sh Compile+Pack",
+        "        run: ./build.sh Compile+Pack",
+        "build Compile+Pack must skip a stable 3.10.x nuget.org promotion",
+    ),
+    (
+        "packages.yml packs the consolidated set again",
+        "      - name: Compile+Pack\n",
+        "      - name: Build Studio ClientLib bundles\n        run: bash scripts/integration-program/build_studio_clientlibs.sh\n\n      - name: Compile+Pack\n",
+        "packages.yml must not build Studio ClientLibs",
+    ),
+    (
         "text around ${{ }} makes the coverage condition always true",
         COVERAGE_REFS_IF,
         COVERAGE_REFS_IF + " || true",

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Compare packed NuGet IDs with the expected consolidated 3.10 set.
 
-The build job in .github/workflows/packages.yml runs this after Compile+Pack when
-ConsolidatedReleaseCandidate is on (stable 3.10.x tags). The package directory
-arrives as an environment variable, never as script text:
+packages.yml publish_nuget runs this on the pinned candidate nupkgs before a
+stable 3.10.x nuget.org push. The package directory arrives as an environment
+variable, never as script text:
 
     PACKAGES_DIR   directory containing the produced .nupkg files
     EXPECTED_IDS   optional path to the ID list; defaults to validate_packages_id_set.txt
@@ -19,15 +19,23 @@ from pathlib import Path
 
 # Same release-version shape as validate_packages_publication_selection.RELEASE_TAG.
 PACKAGE_FILE = re.compile(r"(.+)\.[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?\.nupkg")
-# Keep in lockstep with the packages.yml VERSION regex (source of truth for enabling CRC)
-# and ConsolidatedPackageProof.targets. Rejects non-canonical patches such as 3.10.01.
-STABLE_310 = re.compile(r"3\.10\.(0|[1-9][0-9]*)")
+# Canonical stable 3.10.x patch. Python callers import this; MSBuild keeps the same
+# source string in ConsolidatedPackageProof.targets. Rejects 3.10.01.
+STABLE_310_PATTERN = r"3\.10\.(0|[1-9][0-9]*)"
+STABLE_310 = re.compile(STABLE_310_PATTERN)
 DEFAULT_EXPECTED = Path(__file__).with_name("validate_packages_id_set.txt")
-# One required packed entry per Studio package that ships a ClientLib browser bundle.
-# Paths match prove_consolidated_packages.CLIENTLIB_ASSETS package_path.
+# Same three packed entries per package as prove_consolidated_packages.CLIENTLIB_ASSETS.
 STUDIO_CONTENT = {
-    "Elsa.Studio.Workflows.Designer": "staticwebassets/designer.entry.js",
-    "Elsa.Studio.DomInterop": "staticwebassets/dom.entry.js",
+    "Elsa.Studio.Workflows.Designer": (
+        "staticwebassets/designer.entry.js",
+        "staticwebassets/react-designer.entry.js",
+        "staticwebassets/designer.css",
+    ),
+    "Elsa.Studio.DomInterop": (
+        "staticwebassets/dom.entry.js",
+        "staticwebassets/clipboard.entry.js",
+        "staticwebassets/files.entry.js",
+    ),
 }
 
 
@@ -82,14 +90,14 @@ def id_set_errors(produced: list[str], expected: list[str]) -> list[str]:
 
 
 def studio_content_errors(directory: Path) -> list[str]:
-    """Fail when a packed Studio ClientLib package is missing its required bundle entry."""
+    """Fail when a packed Studio ClientLib package is missing a required bundle entry."""
     errors = []
     for nupkg in sorted(directory.glob("*.nupkg")):
         match = PACKAGE_FILE.fullmatch(nupkg.name)
         if match is None:
             continue
-        entry = STUDIO_CONTENT.get(match.group(1))
-        if entry is None:
+        entries = STUDIO_CONTENT.get(match.group(1))
+        if not entries:
             continue
         try:
             with zipfile.ZipFile(nupkg) as archive:
@@ -97,8 +105,9 @@ def studio_content_errors(directory: Path) -> list[str]:
         except zipfile.BadZipFile:
             errors.append(f"Cannot read {nupkg.name} as a NuGet package.")
             continue
-        if entry not in names:
-            errors.append(f"Missing required content {entry} in {nupkg.name}.")
+        for entry in entries:
+            if entry not in names:
+                errors.append(f"Missing required content {entry} in {nupkg.name}.")
     return errors
 
 
@@ -119,7 +128,7 @@ def main() -> int:
     if errors:
         return 1
     print(f"Package ID set matches {len(expected)} expected IDs.")
-    print(f"Studio package content matches {len(STUDIO_CONTENT)} required entries.")
+    print(f"Studio package content matches {sum(len(entries) for entries in STUDIO_CONTENT.values())} required entries.")
     return 0
 
 

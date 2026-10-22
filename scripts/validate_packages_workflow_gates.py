@@ -30,6 +30,9 @@ GATED_JOBS = ("publish_preview_feedz", "publish_nuget", "deploy_coverage")
 MANUAL_DISPATCH = "github.event_name == 'workflow_dispatch'"
 # Top-level conjuncts a gated job's if: needs beyond the dispatch and its own input.
 REQUIRED_REF_CONDITIONS = {
+    "publish_preview_feedz": (
+        "startsWith(github.ref, 'refs/heads/') || (startsWith(github.ref, 'refs/tags/3.10.') && contains(github.ref_name, '-'))",
+    ),
     "publish_nuget": (
         "startsWith(github.ref, 'refs/tags/')",
     ),
@@ -47,6 +50,20 @@ REQUIRED_REJECTIONS = (
     ("a v-prefixed tag", "refs/tags/v3.10.0", {}),
     ("a non-release tag", "refs/tags/test-1", {}),
     ("Feedz from a stable 3.10.x tag", "refs/tags/3.10.0", {"feedz": True}),
+    ("Feedz from a later stable 3.10.x tag", "refs/tags/3.10.1", {"feedz": True}),
+)
+REQUIRED_ACCEPTANCES = (
+    ("Feedz from a 3.10.x prerelease tag", "refs/tags/3.10.0-rc1", {"feedz": True}),
+    ("NuGet from a stable 3.10.x tag", "refs/tags/3.10.0", {"nuget": True}),
+)
+PROMOTE_STABLE_REF = "startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')"
+RETRIEVE_CANDIDATE = "python3 scripts/stage_consolidated_candidate_nupkgs.py retrieve"
+STAGE_CANDIDATE = "python3 scripts/stage_consolidated_candidate_nupkgs.py stage"
+GUARD_CANDIDATE = "python3 scripts/validate_packages_id_set.py"
+FORBIDDEN_PACK_ROUTE = (
+    ("CONSOLIDATED_RELEASE_CANDIDATE", "packages.yml must not set CONSOLIDATED_RELEASE_CANDIDATE; the candidate workflow owns that pack"),
+    ("ConsolidatedReleaseCandidate:", "packages.yml must not pack ConsolidatedReleaseCandidate; the candidate workflow owns that pack"),
+    ("build_studio_clientlibs.sh", "packages.yml must not build Studio ClientLibs; the candidate workflow owns that build"),
 )
 # Capabilities only a gated job may reference. Expression contexts and action names are case-insensitive.
 PUBLICATION_REFERENCES = {
@@ -268,6 +285,9 @@ def selection_violations(jobs: dict) -> list[str]:
     for description, ref, selected in REQUIRED_REJECTIONS:
         if not selection_errors(ref, **selected):
             violations.append(f"the selection script must reject {description}")
+    for description, ref, selected in REQUIRED_ACCEPTANCES:
+        if selection_errors(ref, **selected):
+            violations.append(f"the selection script must accept {description}")
     return violations
 
 
@@ -291,6 +311,58 @@ def pages_upload_violations(jobs: dict) -> list[str]:
     return violations
 
 
+def _step_run(step: dict) -> str:
+    return " ".join(str(step.get("run") or "").split())
+
+
+def promotion_job_violations(jobs: dict) -> list[str]:
+    """Stable 3.10.x nuget.org must promote pinned candidate bytes, never a rebuild."""
+    violations = []
+    job = jobs.get("publish_nuget")
+    if not isinstance(job, dict):
+        return ["gated job 'publish_nuget' is missing"]
+    steps = [step for step in job.get("steps") or [] if isinstance(step, dict)]
+    if any(node.get("continue-on-error") not in (None, False) for node in (job, *steps)):
+        violations.append("publish_nuget must not continue on error; a failed candidate guard must block the push")
+    retrieve = next((index for index, step in enumerate(steps) if RETRIEVE_CANDIDATE in _step_run(step)), None)
+    stage = next((index for index, step in enumerate(steps) if STAGE_CANDIDATE in _step_run(step)), None)
+    guard = next((index for index, step in enumerate(steps) if GUARD_CANDIDATE in _step_run(step)), None)
+    login = next(
+        (index for index, step in enumerate(steps) if "nuget/login" in str(step.get("uses") or "").lower()),
+        None,
+    )
+    if None in (retrieve, stage, guard, login):
+        violations.append("publish_nuget must retrieve the pinned candidate, stage it, and run the ID-set guard before NuGet login")
+    elif not retrieve < stage <= guard < login:
+        violations.append("publish_nuget must retrieve, stage, and guard the pinned candidate before NuGet login")
+    for index in (retrieve, stage, guard):
+        if index is None:
+            continue
+        expression = if_expression(steps[index].get("if"))
+        if expression is None or PROMOTE_STABLE_REF not in expression:
+            violations.append("publish_nuget candidate promotion steps must run only for stable 3.10.x tags")
+        if STATUS_FUNCTION.search(expression or ""):
+            violations.append("publish_nuget candidate promotion steps must not call always(), failure() or cancelled()")
+    build = jobs.get(BUILD_JOB)
+    compile_step = None
+    if isinstance(build, dict):
+        compile_step = next(
+            (step for step in build.get("steps") or [] if isinstance(step, dict) and step.get("name") == "Compile+Pack"),
+            None,
+        )
+    if compile_step is None:
+        violations.append("build job must still contain Compile+Pack for non-promote publication")
+    else:
+        expression = if_expression(compile_step.get("if"))
+        if expression is None or PROMOTE_STABLE_REF not in expression:
+            violations.append("build Compile+Pack must skip a stable 3.10.x nuget.org promotion")
+    return violations
+
+
+def promotion_source_violations(source: str) -> list[str]:
+    return [message for needle, message in FORBIDDEN_PACK_ROUTE if needle in source]
+
+
 def workflow_violations(workflow: Any) -> list[str]:
     if not isinstance(workflow, dict) or not isinstance(workflow.get("jobs"), dict):
         return ["the workflow has no jobs mapping"]
@@ -302,11 +374,15 @@ def workflow_violations(workflow: Any) -> list[str]:
         *build_gate_violations(jobs),
         *selection_violations(jobs),
         *pages_upload_violations(jobs),
+        *promotion_job_violations(jobs),
     ]
 
 
 def source_violations(source: str) -> list[str]:
-    return workflow_violations(yaml.safe_load(source))
+    return [
+        *workflow_violations(yaml.safe_load(source)),
+        *promotion_source_violations(source),
+    ]
 
 
 def main() -> int:

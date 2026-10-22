@@ -8,8 +8,8 @@ Studio, Extensions and Apps are folded into `elsa-core`; a release is one `elsa-
 
 What `elsa-core` actually does today (check `origin/main` before relying on it):
 
-- `.github/workflows/packages.yml` builds and uploads packages on `release: published` and on pushes to `main` and `release/*`. Those events never publish. Publication is an approved `workflow_dispatch`: `publish_preview_feedz` (Feedz, from a branch or a `3.10.x` prerelease tag) or `publish_nuget` (nuget.org, from a release-version tag, including stable `3.10.x`). Stable `3.10.x` Feedz is owned only by `publish-consolidated-original-candidate.yml`.
-- Its `./build.sh Compile+Pack` packs Core only, except on a stable `3.10.x` tag: that pack sets `ConsolidatedReleaseCandidate=true`, builds Studio ClientLib bundles, and `scripts/validate_packages_id_set.py` must see the checked-in 231 IDs plus the required Studio package contents. Those rebuilt bytes are a verification pack, not what nuget.org publishes. A stable `3.10.x` `publish_nuget` dispatch promotes the pinned candidate `.nupkg` set after the same ID and content guards. `Elsa.SamplePackage` is not packable. The five `Elsa.Secrets.*` IDs and the four `Elsa.Studio.Host.*` IDs stay unpackable and `Elsa.Templates` is not in core. The whole-product 3.10.0 candidate is [prepared without publishing](#consolidated-3100-candidate-preparation-nonpublishing) and is the only Feedz publisher for stable 3.10.x.
+- `.github/workflows/packages.yml` builds and uploads packages on `release: published` and on pushes to `main` and `release/*`. Those events never publish. Publication is an approved `workflow_dispatch`: `publish_preview_feedz` (Feedz, from a branch or a `3.10.x` prerelease tag) or `publish_nuget` (nuget.org, from a release-version tag). Stable `3.10.x` Feedz is owned only by `publish-consolidated-original-candidate.yml`.
+- Its `./build.sh Compile+Pack` packs Core only. A stable `3.10.x` `publish_nuget` dispatch does not pack: it downloads the pinned admitted candidate artifact (run and artifact identity in `consolidated_candidate_input.py`), verifies each `.nupkg` sha256 against that candidate's seal, runs `scripts/validate_packages_id_set.py` (231 IDs plus the three Studio ClientLib assets per package), and pushes those bytes. `Elsa.SamplePackage` is not packable. The five `Elsa.Secrets.*` IDs and the four `Elsa.Studio.Host.*` IDs stay unpackable and `Elsa.Templates` is not in core. The whole-product 3.10.0 candidate is [prepared without publishing](#consolidated-3100-candidate-preparation-nonpublishing); that workflow owns building the 231-ID set, and `publish-consolidated-original-candidate.yml` is the only Feedz publisher for those stable 3.10.x bytes.
 - `studio-npm-pair.yml` is a local proof of the two Studio npm archives. No core workflow publishes them. Stable 3.10.x nuget.org publication promotes the candidate set (part of [#8725](https://github.com/elsa-workflows/elsa-core/issues/8725)); npm publication remains pending.
 - Core has no container-image publishing workflow. The Apps workflow it used lived in `elsa-apps`.
 
@@ -430,8 +430,9 @@ stable candidate bytes: applicable persisted compatibility checks must bind to
 the admitted candidate production bytes before that candidate is published.
 `publish-consolidated-original-candidate.yml` is the only Feedz publisher for
 those stable 3.10.x bytes. A stable 3.10.x `packages.yml` nuget.org dispatch
-promotes the same candidate `.nupkg` set after the 231-ID and Studio content
-guards; it does not rebuild them.
+downloads that same pinned candidate artifact, verifies each `.nupkg` sha256
+against the candidate seal, runs the 231-ID and Studio content guards on that
+exact set, and pushes those bytes. It does not restore, build, or pack.
 
 This task implements no publisher handoff. Ordinary approved Core publication
 selection remains a `packages.yml` dispatch: branch previews and 3.10.x
@@ -439,8 +440,7 @@ prerelease tags may publish to Feedz, and release-version tags may publish to
 NuGet.org with `publish_nuget`. Stable 3.10.x Feedz is not a `packages.yml`
 option. That
 workflow has no operator-supplied candidate artifact/run selector; the 3.10.0
-nuget.org path is pinned to the reviewed candidate identity. A future separately reviewed **publish-only** workflow must bind to
-the exact original candidate identity without restore/build/pack, after the
-remaining compatibility, publisher-cutover and release approvals. Candidate
+nuget.org path is pinned to the reviewed candidate identity and promotes those
+bytes. Candidate
 success does not imply release readiness, publication, source publisher cutover
 or completion of #8219/#8220.

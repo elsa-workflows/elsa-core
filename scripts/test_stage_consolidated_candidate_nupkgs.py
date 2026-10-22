@@ -1,8 +1,11 @@
+import hashlib
+import json
 import os
 import subprocess
 import sys
 import tempfile
 import unittest
+import unittest.mock
 import zipfile
 from pathlib import Path
 
@@ -13,6 +16,28 @@ import consolidated_candidate_input as candidate_input
 import stage_consolidated_candidate_nupkgs as stage
 
 SCRIPT = Path(__file__).with_name("stage_consolidated_candidate_nupkgs.py")
+
+
+def _manifest_bytes(packages: dict[str, bytes]) -> bytes:
+    files = [
+        {"path": f"artifacts/{name}", "size": len(data), "sha256": hashlib.sha256(data).hexdigest()}
+        for name, data in packages.items()
+    ]
+    return json.dumps(
+        {"schema": 1, "published": False, "version": "3.10.0", "files": files},
+        separators=(",", ":"),
+    ).encode()
+
+
+def write_sealed_archive(archive: Path, packages: dict[str, bytes], extra: dict[str, bytes] | None = None) -> str:
+    manifest = _manifest_bytes(packages)
+    with zipfile.ZipFile(archive, "w") as zipped:
+        zipped.writestr(stage.SEAL_NAME, manifest)
+        for name, data in packages.items():
+            zipped.writestr(f"artifacts/{name}", data)
+        for name, data in (extra or {}).items():
+            zipped.writestr(name, data)
+    return hashlib.sha256(manifest).hexdigest()
 
 
 class StageCandidateTests(unittest.TestCase):
@@ -36,30 +61,55 @@ class StageCandidateTests(unittest.TestCase):
             root = Path(temporary)
             archive = root / "candidate.zip"
             output = root / "packages"
-            with zipfile.ZipFile(archive, "w") as zipped:
-                zipped.writestr("artifacts/Elsa.3.10.0.nupkg", b"elsa")
-                zipped.writestr("artifacts/Elsa.Studio.DomInterop.3.10.0.nupkg", b"dom")
-                zipped.writestr("artifacts/Elsa.3.10.0.snupkg", b"symbols")
-                zipped.writestr("preupload-manifest.json", b"{}")
+            packages = {
+                "Elsa.3.10.0.nupkg": b"elsa",
+                "Elsa.Studio.DomInterop.3.10.0.nupkg": b"dom",
+            }
+            write_sealed_archive(
+                archive,
+                packages,
+                extra={"artifacts/Elsa.3.10.0.snupkg": b"symbols"},
+            )
             staged = stage.extract_nupkgs(archive, output)
             names = sorted(path.name for path in staged)
             self.assertEqual(["Elsa.3.10.0.nupkg", "Elsa.Studio.DomInterop.3.10.0.nupkg"], names)
             self.assertEqual(b"elsa", (output / "Elsa.3.10.0.nupkg").read_bytes())
             self.assertFalse((output / "Elsa.3.10.0.snupkg").exists())
 
+    def test_seal_hash_and_nupkg_hashes_must_match(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive = root / "candidate.zip"
+            packages = {"Elsa.3.10.0.nupkg": b"elsa"}
+            digest = write_sealed_archive(archive, packages)
+            sealed = stage.sealed_nupkg_hashes(archive, digest)
+            self.assertEqual({"Elsa.3.10.0.nupkg": hashlib.sha256(b"elsa").hexdigest()}, sealed)
+            staged = [root / "Elsa.3.10.0.nupkg"]
+            staged[0].write_bytes(b"elsa")
+            stage.verify_nupkg_hashes(staged, sealed)
+
+            with self.assertRaises(SystemExit):
+                stage.sealed_nupkg_hashes(archive, "0" * 64)
+
+            staged[0].write_bytes(b"tampered")
+            with self.assertRaises(SystemExit):
+                stage.verify_nupkg_hashes(staged, sealed)
+
     def test_stage_command_refuses_a_token_and_requires_the_pinned_tag(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             archive = root / "candidate.zip"
-            with zipfile.ZipFile(archive, "w") as zipped:
-                zipped.writestr("artifacts/Elsa.3.10.0.nupkg", b"elsa")
+            packages = {"Elsa.3.10.0.nupkg": b"elsa"}
+            digest = write_sealed_archive(archive, packages)
             env = {
                 key: value for key, value in os.environ.items()
                 if key not in ("GH_TOKEN", "GITHUB_TOKEN", "ACTIONS_READ_TOKEN")
             }
             env.update(REF="refs/tags/3.10.0", CANDIDATE_ARCHIVE=str(archive), PACKAGES_DIR=str(root / "out"))
-            accepted = subprocess.run([sys.executable, str(SCRIPT), "stage"], env=env, capture_output=True, text=True)
-            self.assertEqual(0, accepted.returncode, accepted.stderr)
+            with unittest.mock.patch.dict(os.environ, env, clear=True), unittest.mock.patch.object(
+                candidate_input, "MANIFEST_SHA256", digest
+            ):
+                self.assertEqual(0, stage.main(["stage"]))
             self.assertTrue((root / "out" / "Elsa.3.10.0.nupkg").is_file())
 
             rejected_tag = subprocess.run(
@@ -80,6 +130,27 @@ class StageCandidateTests(unittest.TestCase):
             self.assertEqual(1, rejected_token.returncode)
             self.assertIn("must not enter candidate staging", rejected_token.stderr)
 
+    def test_stage_command_rejects_a_tampered_nupkg(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive = root / "candidate.zip"
+            packages = {"Elsa.3.10.0.nupkg": b"elsa"}
+            digest = write_sealed_archive(archive, packages)
+            with zipfile.ZipFile(archive, "w") as zipped:
+                zipped.writestr(stage.SEAL_NAME, _manifest_bytes(packages))
+                zipped.writestr("artifacts/Elsa.3.10.0.nupkg", b"tampered")
+            env = {
+                key: value for key, value in os.environ.items()
+                if key not in ("GH_TOKEN", "GITHUB_TOKEN", "ACTIONS_READ_TOKEN")
+            }
+            env.update(REF="refs/tags/3.10.0", CANDIDATE_ARCHIVE=str(archive), PACKAGES_DIR=str(root / "out"))
+            with unittest.mock.patch.dict(os.environ, env, clear=True), unittest.mock.patch.object(
+                candidate_input, "MANIFEST_SHA256", digest
+            ):
+                with self.assertRaises(SystemExit) as raised:
+                    stage.main(["stage"])
+            self.assertIn("hash mismatch", str(raised.exception))
+
 
 class WorkflowPromotionTests(unittest.TestCase):
     def test_packages_workflow_promotes_candidate_bytes_on_stable_310_nuget(self):
@@ -92,6 +163,8 @@ class WorkflowPromotionTests(unittest.TestCase):
         self.assertIn("startsWith(github.ref, 'refs/tags/3.10.') && contains(github.ref_name, '-')", source)
         self.assertNotIn("candidate_artifact_id:", source)
         self.assertNotIn("candidate_run_id:", source)
+        self.assertNotIn("CONSOLIDATED_RELEASE_CANDIDATE", source)
+        self.assertNotIn("build_studio_clientlibs.sh", source)
         retrieve = source.find("name: Retrieve verified candidate archive")
         login = source.find("name: NuGet login (OIDC)")
         self.assertGreater(retrieve, 0)

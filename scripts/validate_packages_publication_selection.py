@@ -16,12 +16,12 @@ import os
 import re
 import sys
 
-from validate_packages_id_set import is_stable_310
+from validate_packages_id_set import STABLE_310_PATTERN, is_stable_310
 
 # Release tags carry no "v" prefix: 3.8.4, 3.8.0-rc2, 3.8.0-preview1.
 RELEASE_TAG = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?")
-# Same canonical 3.10 patch as packages.yml and ConsolidatedPackageProof.targets, plus an optional prerelease suffix.
-CANONICAL_310 = re.compile(r"3\.10\.(0|[1-9][0-9]*)(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?")
+# Python source of the 3.10 patch is STABLE_310_PATTERN; this only adds the optional prerelease suffix.
+CANONICAL_310 = re.compile(STABLE_310_PATTERN + r"(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?")
 # Only these branches upload a Pages artifact that deploy_coverage can deploy.
 COVERAGE_REFS = ("refs/heads/main", "refs/heads/release/3.6.1")
 

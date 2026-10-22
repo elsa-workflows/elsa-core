@@ -367,44 +367,31 @@ jobs:
             VERSION="${{env.base_version}}-preview.${{github.run_number}}"
           fi
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
-          # Stable 3.10.x only (3.10.0, 3.10.1, ...). Reject 3.10.01-style patches.
-          # Previews and other lines keep the default pack.
-          if [[ "${VERSION}" =~ ^3\.10\.(0|[1-9][0-9]*)$ ]]; then
-            echo "CONSOLIDATED_RELEASE_CANDIDATE=true" >> $GITHUB_ENV
-          fi
 
+      # Stable 3.10.x nuget.org promotes the pinned candidate; this job must not pack.
       - uses: actions/setup-dotnet@v4
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}
         with:
           dotnet-version: 10.x
 
       # NUKE builds the embedded React assets before Compile and Pack. Keep the
       # existing 3.10 release base; React packages are eligible starting at 3.11.
       - name: Set up Node for React Studio assets
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22'
 
-      - name: Build Studio ClientLib bundles
-        if: ${{ env.CONSOLIDATED_RELEASE_CANDIDATE == 'true' }}
-        run: bash scripts/integration-program/build_studio_clientlibs.sh
-
       - name: Compile+Pack
-        env:
-          ConsolidatedReleaseCandidate: ${{ env.CONSOLIDATED_RELEASE_CANDIDATE }}
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}
         run: ./build.sh Compile+Pack --version "${VERSION}" --analyseCode true
-
-      - name: Guard package ID set
-        if: ${{ env.CONSOLIDATED_RELEASE_CANDIDATE == 'true' }}
-        env:
-          PACKAGES_DIR: packages
-        run: python3 scripts/validate_packages_id_set.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: elsa-nuget-packages
           path: packages/*nupkg
-        if: ${{ github.event_name == 'release' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.publish_preview_feedz || inputs.publish_nuget)) }}
+        if: ${{ (github.event_name == 'release' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.publish_preview_feedz || inputs.publish_nuget))) && !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}
 
   publish_preview_feedz:
     name: Publish to feedz.io

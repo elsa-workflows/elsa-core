@@ -2,8 +2,10 @@
 """Stage the pinned 3.10.0 candidate nupkgs for a nuget.org promotion.
 
 packages.yml publish_nuget calls this for stable 3.10.0 instead of rebuilding.
-It never publishes. Retrieve uses GH_TOKEN only to download the archive; stage
-refuses to run while that token is present.
+It never publishes. Retrieve downloads the pinned run/artifact. Stage verifies
+each .nupkg sha256 against the candidate seal, then the caller runs the ID-set
+and Studio content guards on those bytes. Retrieve uses GH_TOKEN only to
+download the archive; stage refuses to run while that token is present.
 """
 
 from __future__ import annotations
@@ -30,6 +32,7 @@ CANDIDATE_NAME = (
 )
 CANDIDATE_SIZE = 92659861
 CANDIDATE_EXPIRES = "2026-11-05T12:13:30Z"
+SEAL_NAME = "preupload-manifest.json"
 
 
 def require(condition: bool, message: str) -> None:
@@ -61,6 +64,46 @@ def extract_nupkgs(archive: Path, output: Path) -> list[Path]:
             staged.append(destination)
     require(bool(staged), f"Candidate archive {archive} contains no .nupkg files.")
     return staged
+
+
+def file_sha256(path: Path) -> str:
+    with path.open("rb") as stream:
+        return hashlib.file_digest(stream, "sha256").hexdigest()
+
+
+def sealed_nupkg_hashes(archive: Path, expected_manifest_sha256: str) -> dict[str, str]:
+    """Read {nupkg filename: sha256} from the candidate seal and check the seal hash."""
+    require(archive.is_file() and not archive.is_symlink(), "Candidate archive missing.")
+    with zipfile.ZipFile(archive) as zipped:
+        require(SEAL_NAME in zipped.namelist(), "Candidate seal missing.")
+        data = zipped.read(SEAL_NAME)
+    require(hashlib.sha256(data).hexdigest() == expected_manifest_sha256, "Candidate seal hash mismatch.")
+    manifest = json.loads(data)
+    require(
+        manifest.get("schema") == 1 and manifest.get("published") is False and manifest.get("version") == "3.10.0",
+        "Candidate seal identity mismatch.",
+    )
+    hashes: dict[str, str] = {}
+    for row in manifest.get("files") or []:
+        name = PurePosixPath(row["path"]).name
+        if not PACKAGE_FILE.fullmatch(name):
+            continue
+        require(name not in hashes, f"Duplicate sealed package: {name}")
+        require(isinstance(row.get("sha256"), str) and bool(row["sha256"]), f"Sealed package {name} is missing sha256.")
+        hashes[name] = row["sha256"]
+    require(bool(hashes), "Candidate seal lists no .nupkg files.")
+    return hashes
+
+
+def verify_nupkg_hashes(staged: list[Path], sealed: dict[str, str]) -> None:
+    """Fail closed when staged bytes differ from the sealed sha256 set."""
+    names = {path.name for path in staged}
+    missing = sorted(set(sealed) - names)
+    extra = sorted(names - set(sealed))
+    require(not missing and not extra, "Staged nupkgs do not match the candidate seal.")
+    for path in staged:
+        digest = file_sha256(path)
+        require(digest == sealed[path.name], f"Candidate nupkg hash mismatch: {path.name}")
 
 
 def retrieve_archive(destination: Path) -> None:
@@ -126,8 +169,10 @@ def main(argv: list[str] | None = None) -> int:
         require(not os.environ.get(token), "Artifact-reading token must not enter candidate staging.")
     packages = Path(os.environ.get("PACKAGES_DIR") or "")
     require(bool(os.environ.get("PACKAGES_DIR")), "PACKAGES_DIR must be set.")
+    sealed = sealed_nupkg_hashes(archive, candidate_input.MANIFEST_SHA256)
     staged = extract_nupkgs(archive, packages)
-    print(f"Staged {len(staged)} candidate nupkgs into {packages}.")
+    verify_nupkg_hashes(staged, sealed)
+    print(f"Staged {len(staged)} candidate nupkgs into {packages}; each sha256 matched the candidate seal.")
     return 0
 
 

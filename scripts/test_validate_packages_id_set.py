@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from validate_packages_id_set import (
     DEFAULT_EXPECTED,
+    STABLE_310_PATTERN,
     STUDIO_CONTENT,
     id_set_errors,
     is_stable_310,
@@ -22,15 +23,23 @@ SCRIPT = Path(__file__).with_name("validate_packages_id_set.py")
 
 
 class Stable310Tests(unittest.TestCase):
-    def test_stable_310_tags_enable_the_consolidated_pack(self):
+    def test_stable_310_versions_match_the_canonical_pattern(self):
         for version in ("3.10.0", "3.10.1", "3.10.12"):
             with self.subTest(version=version):
                 self.assertTrue(is_stable_310(version))
 
-    def test_previews_other_lines_and_noncanonical_patches_keep_the_default_pack(self):
+    def test_previews_other_lines_and_noncanonical_patches_are_not_stable_310(self):
         for version in ("3.10.0-preview.1", "3.10.0-rc1", "3.10.1-preview.2", "3.9.0", "3.11.0", "3.10", "3.10.01", ""):
             with self.subTest(version=version):
                 self.assertFalse(is_stable_310(version))
+
+    def test_python_stable_310_pattern_is_the_single_source(self):
+        from validate_packages_publication_selection import CANONICAL_310
+
+        self.assertEqual(STABLE_310_PATTERN, r"3\.10\.(0|[1-9][0-9]*)")
+        self.assertEqual(CANONICAL_310.pattern, STABLE_310_PATTERN + r"(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?")
+        targets = Path(__file__).resolve().parents[1] / "build/ConsolidatedPackageProof.targets"
+        self.assertIn(STABLE_310_PATTERN, targets.read_text(encoding="utf-8"))
 
 
 class IdSetTests(unittest.TestCase):
@@ -47,10 +56,11 @@ class IdSetTests(unittest.TestCase):
     def write_packages(self, directory, ids, version="3.10.0"):
         for package_id in ids:
             path = directory / f"{package_id}.{version}.nupkg"
-            entry = STUDIO_CONTENT.get(package_id)
-            if entry:
+            entries = STUDIO_CONTENT.get(package_id)
+            if entries:
                 with zipfile.ZipFile(path, "w") as archive:
-                    archive.writestr(entry, b"bundle")
+                    for entry in entries:
+                        archive.writestr(entry, b"bundle")
             else:
                 path.write_bytes(b"nupkg")
             (directory / f"{package_id}.{version}.snupkg").write_bytes(b"snupkg")
@@ -91,7 +101,7 @@ class IdSetTests(unittest.TestCase):
             )
             self.assertEqual(0, accepted.returncode, accepted.stderr)
             self.assertIn("231 expected IDs", accepted.stdout)
-            self.assertIn("Studio package content matches 2 required entries.", accepted.stdout)
+            self.assertIn("Studio package content matches 6 required entries.", accepted.stdout)
 
             (directory / "Elsa.3.10.0.nupkg").unlink()
             missing = subprocess.run(
@@ -163,22 +173,37 @@ class IdSetTests(unittest.TestCase):
 
 
 class StudioContentTests(unittest.TestCase):
-    def test_required_bundle_entry_is_accepted(self):
+    def test_required_assets_match_clientlib_assets(self):
+        sys.path.insert(0, str(Path(__file__).resolve().parent / "integration-program"))
+        from prove_consolidated_packages import CLIENTLIB_ASSETS
+
+        expected = {
+            package_id: tuple(f"staticwebassets/{name}" for name in files)
+            for package_id, (_project, files) in CLIENTLIB_ASSETS.items()
+        }
+        self.assertEqual(expected, STUDIO_CONTENT)
+        self.assertEqual(3, len(STUDIO_CONTENT["Elsa.Studio.Workflows.Designer"]))
+        self.assertEqual(3, len(STUDIO_CONTENT["Elsa.Studio.DomInterop"]))
+
+    def test_required_bundle_entries_are_accepted(self):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
-            for package_id, entry in STUDIO_CONTENT.items():
+            for package_id, entries in STUDIO_CONTENT.items():
                 with zipfile.ZipFile(directory / f"{package_id}.3.10.0.nupkg", "w") as archive:
-                    archive.writestr(entry, b"bundle")
+                    for entry in entries:
+                        archive.writestr(entry, b"bundle")
             self.assertEqual([], studio_content_errors(directory))
 
     def test_missing_bundle_entry_fails(self):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
-            package_id, entry = next(iter(STUDIO_CONTENT.items()))
+            package_id, entries = next(iter(STUDIO_CONTENT.items()))
             with zipfile.ZipFile(directory / f"{package_id}.3.10.0.nupkg", "w") as archive:
                 archive.writestr("lib/net10.0/placeholder.dll", b"dll")
+                for entry in entries[1:]:
+                    archive.writestr(entry, b"bundle")
             errors = studio_content_errors(directory)
-            self.assertEqual([f"Missing required content {entry} in {package_id}.3.10.0.nupkg."], errors)
+            self.assertEqual([f"Missing required content {entries[0]} in {package_id}.3.10.0.nupkg."], errors)
 
     def test_script_rejects_a_studio_nupkg_with_the_bundle_removed(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -186,13 +211,15 @@ class StudioContentTests(unittest.TestCase):
             expected = load_expected_ids(DEFAULT_EXPECTED)
             for package_id in expected:
                 path = directory / f"{package_id}.3.10.0.nupkg"
-                entry = STUDIO_CONTENT.get(package_id)
+                entries = STUDIO_CONTENT.get(package_id)
                 with zipfile.ZipFile(path, "w") as archive:
-                    if entry:
-                        archive.writestr(entry, b"bundle")
+                    if entries:
+                        for entry in entries:
+                            archive.writestr(entry, b"bundle")
                     else:
                         archive.writestr("lib/net10.0/placeholder.dll", b"dll")
-            package_id, entry = next(iter(STUDIO_CONTENT.items()))
+            package_id, entries = next(iter(STUDIO_CONTENT.items()))
+            entry = entries[0]
             mutated = directory / f"{package_id}.3.10.0.nupkg"
             with zipfile.ZipFile(mutated) as archive:
                 others = [name for name in archive.namelist() if name != entry]
@@ -212,19 +239,20 @@ class StudioContentTests(unittest.TestCase):
 
 
 class WorkflowConditionTests(unittest.TestCase):
-    def test_packages_workflow_enables_crc_only_for_stable_310(self):
+    def test_packages_workflow_promotes_stable_310_instead_of_packing(self):
         workflow = Path(__file__).resolve().parents[1] / ".github/workflows/packages.yml"
         source = workflow.read_text(encoding="utf-8")
-        self.assertIn('if [[ "${VERSION}" =~ ^3\\.10\\.(0|[1-9][0-9]*)$ ]]; then', source)
-        self.assertIn("CONSOLIDATED_RELEASE_CANDIDATE=true", source)
+        self.assertNotIn("CONSOLIDATED_RELEASE_CANDIDATE", source)
+        self.assertNotIn("ConsolidatedReleaseCandidate", source)
+        self.assertNotIn("build_studio_clientlibs.sh", source)
+        self.assertIn("python3 scripts/stage_consolidated_candidate_nupkgs.py retrieve", source)
+        self.assertIn("python3 scripts/stage_consolidated_candidate_nupkgs.py stage", source)
         self.assertIn("python3 scripts/validate_packages_id_set.py", source)
-        self.assertIn("scripts/integration-program/build_studio_clientlibs.sh", source)
-        self.assertLess(
-            source.find("scripts/integration-program/build_studio_clientlibs.sh"),
-            source.find("name: Compile+Pack"),
+        compile_if = (
+            "if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget"
+            " && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}"
         )
-        self.assertIn("ConsolidatedReleaseCandidate: ${{ env.CONSOLIDATED_RELEASE_CANDIDATE }}", source)
-        self.assertIn("if: ${{ env.CONSOLIDATED_RELEASE_CANDIDATE == 'true' }}", source)
+        self.assertIn(compile_if, source)
 
 
 if __name__ == "__main__":
