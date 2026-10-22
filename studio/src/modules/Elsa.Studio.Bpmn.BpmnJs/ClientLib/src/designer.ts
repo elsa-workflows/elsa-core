@@ -338,12 +338,15 @@ function hasForeignAttributes(element: ModdleElement): boolean {
 
 type ElementState = 'faulted' | 'blocked' | 'active' | 'canceled' | 'completed' | 'idle';
 
-/** The one state an element's marker shows, most urgent first. */
+/**
+ * The one state an element's marker shows, most urgent first, in the X6 designer's order. A cancellation outranks
+ * blocked and active: the stats keep both after an element is cancelled, but a cancelled element is not running.
+ */
 function stateOf(stats: BpmnElementStats): ElementState {
     if (stats.faulted) return 'faulted';
+    if (stats.canceled) return 'canceled';
     if (stats.blocked) return 'blocked';
     if ((stats.active ?? 0) > 0) return 'active';
-    if (stats.canceled) return 'canceled';
     if ((stats.completed ?? 0) > 0) return 'completed';
     return 'idle';
 }

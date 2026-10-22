@@ -20,3 +20,18 @@ test('overlays draw one badge per element with stats, and clearing removes them'
     await apply(null);
     expect(await badges()).toBe(0);
 });
+
+test('a badge shows a cancellation over blocked and active, and a fault over everything', async ({ harness }) => {
+    const xml = await fixture('order.bpmn');
+    await harness.evaluate(async xml => {
+        const harness = (window as any).harness;
+        harness.create({});
+        await harness.designer.load(xml);
+    }, xml);
+    const apply = (stats: unknown) => harness.evaluate(stats => (window as any).harness.designer.applyOverlays(stats), stats);
+
+    await apply({ Charge: { canceled: true, blocked: true }, Review: { canceled: true, active: 2 } });
+    await expect(harness.locator('.elsa-bpmn-badge-canceled')).toHaveCount(2);
+    await apply({ Charge: { faulted: true, canceled: true } });
+    await expect(harness.locator('.elsa-bpmn-badge-faulted')).toHaveCount(1);
+});
