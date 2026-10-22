@@ -305,6 +305,65 @@ internal static class MigrationHelper
         SqlIgnoringOracleError(migrationBuilder, $"DROP INDEX {Identifier(schema.Schema)}.{Identifier(name)}", -1418, "ORA-01418: the index is already gone, so an earlier run got at least this far.");
     }
 
+    /// <summary>
+    /// Creates a function-based unique index on <c>NVL(TenantId, CHR(1))</c> plus any extra columns.
+    /// </summary>
+    /// <remarks>
+    /// Oracle stores <c>''</c> as <c>NULL</c>, and a unique index on a nullable <c>TenantId</c> would allow
+    /// two default-tenant rows. <c>CHR(1)</c> is not a tenant id; it only exists so those nulls share one
+    /// index key, matching <c>SecretDefaultTenantUniqueness</c>. Function-based indexes appear in
+    /// <c>ALL_IND_COLUMNS</c> under system names, so this helper only checks that an index of the given
+    /// name exists — it does not validate the column list.
+    /// </remarks>
+    public static void CreateNvlUniqueIndexIfMissing(MigrationBuilder migrationBuilder, IElsaDbContextSchema schema, string name, string table, params string[] additionalColumns)
+    {
+        var nvlTenant = $"NVL({Identifier("TenantId")}, CHR(1))";
+        var columnList = additionalColumns.Length == 0
+            ? nvlTenant
+            : nvlTenant + ", " + string.Join(", ", additionalColumns.Select(Identifier));
+        var quotedIndexName = $"{Identifier(schema.Schema)}.{Identifier(name)}";
+        var createIndex = $"CREATE UNIQUE INDEX {quotedIndexName} ON {QualifyTable(schema, table)} ({columnList})".Replace("'", "''");
+
+        migrationBuilder.Sql($"""
+                              DECLARE
+                                  l_count INTEGER;
+                              BEGIN
+                                  SELECT COUNT(*) INTO l_count FROM ALL_INDEXES WHERE OWNER = {Literal(schema.Schema)} AND INDEX_NAME = {Literal(name)};
+
+                                  IF l_count = 0 THEN
+                                      EXECUTE IMMEDIATE '{createIndex}';
+                                  END IF;
+                              END;
+                              """);
+    }
+
+    /// <summary>
+    /// Raises if any row still has a null <paramref name="column"/>, so a <c>Down()</c> that restores NOT NULL
+    /// fails before Oracle would reject the default tenant (it cannot store <c>''</c>).
+    /// </summary>
+    public static void EnsureNoNullValues(MigrationBuilder migrationBuilder, IElsaDbContextSchema schema, string table, string column)
+    {
+        var qualifiedTable = QualifyTable(schema, table);
+        var quotedColumn = Identifier(column);
+        var countQuery = $"SELECT COUNT(*) FROM {qualifiedTable} WHERE {quotedColumn} IS NULL".Replace("'", "''");
+        var message = $" row(s) in {qualifiedTable} have a null {quotedColumn}; Oracle cannot store '' in a NOT NULL column. Remove or reassign those default-tenant rows before downgrading.".Replace("'", "''");
+
+        migrationBuilder.Sql($"""
+                              DECLARE
+                                  l_count INTEGER;
+                              BEGIN
+                                  EXECUTE IMMEDIATE '{countQuery}' INTO l_count;
+
+                                  IF l_count > 0 THEN
+                                      RAISE_APPLICATION_ERROR(-20006, l_count || '{message}');
+                                  END IF;
+                              EXCEPTION
+                                  WHEN NO_DATA_FOUND THEN
+                                      NULL;
+                              END;
+                              """);
+    }
+
     private static string QualifyTable(IElsaDbContextSchema schema, string table) => $"{Identifier(schema.Schema)}.{Identifier(table)}";
 
     /// <summary>

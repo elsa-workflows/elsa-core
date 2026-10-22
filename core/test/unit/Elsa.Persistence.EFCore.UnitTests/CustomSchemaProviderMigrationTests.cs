@@ -96,8 +96,8 @@ public class CustomSchemaProviderMigrationTests
             "20260823231437_PerTenantIdentityUniqueness",
             (builder, assembly, options) => builder.UseElsaPostgreSql(assembly, "Host=unused", options)),
         "Oracle" => new(
-            typeof(Elsa.Persistence.EFCore.Oracle.Migrations.Management.WorkflowDefinitionRegistryGeneration).Assembly,
-            "20260924222221_WorkflowDefinitionRegistryGeneration",
+            typeof(Elsa.Persistence.EFCore.Oracle.Migrations.Management.NullableDefaultTenant).Assembly,
+            "20261022120000_NullableDefaultTenant",
             "20260823231459_PerTenantIdentityUniqueness",
             (builder, assembly, options) => builder.UseElsaOracle(assembly, "Data Source=unused", options)),
         "Sqlite" => new(

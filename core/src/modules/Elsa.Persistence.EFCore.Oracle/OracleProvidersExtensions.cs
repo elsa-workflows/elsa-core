@@ -71,18 +71,19 @@ public static class OracleProvidersExtensions
         
         var management = new Management();
         var runtime = new Runtime();
-        
+
         options.ConfigureModel<ManagementElsaDbContext>(modelBuilder => modelBuilder
             .ApplyConfiguration<WorkflowDefinition>(management)
-            .ApplyConfiguration<WorkflowInstance>(management));
-        
+            .ApplyConfiguration<WorkflowInstance>(management)
+            .ApplyConfiguration<WorkflowDefinitionRegistryGeneration>(management));
+
         options.ConfigureModel<RuntimeElsaDbContext>(modelBuilder => modelBuilder
             .ApplyConfiguration<StoredTrigger>(runtime)
             .ApplyConfiguration<WorkflowExecutionLogRecord>(runtime)
             .ApplyConfiguration<ActivityExecutionRecord>(runtime)
             .ApplyConfiguration<StoredBookmark>(runtime)
             .ApplyConfiguration<WorkflowInboxMessage>(runtime));
-        
+
         return options;
     }
 
