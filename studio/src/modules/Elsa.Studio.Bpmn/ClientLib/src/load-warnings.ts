@@ -201,11 +201,11 @@ function compareLayout(before: Document, after: Document, warnings: BpmnLoadWarn
             continue;
         }
 
+        const geometryChanges = kept.geometry.length !== layout.geometry.length || kept.geometry.some((value, index) => value !== layout.geometry[index]);
         if (kept.plane !== layout.plane) {
-            warnings.push(warning('rewritten', `The diagram layout of '${elementId}' moves to the diagram of '${kept.plane ?? '(none)'}', unchanged.`, elementId));
-        }
-
-        if (kept.geometry.length !== layout.geometry.length || kept.geometry.some((value, index) => value !== layout.geometry[index])) {
+            const how = geometryChanges ? 'and its position or size changes' : 'unchanged';
+            warnings.push(warning('rewritten', `The diagram layout of '${elementId}' moves to the diagram of '${kept.plane ?? '(none)'}', ${how}.`, elementId));
+        } else if (geometryChanges) {
             warnings.push(warning('rewritten', `The diagram layout of '${elementId}' changes.`, elementId));
         }
 

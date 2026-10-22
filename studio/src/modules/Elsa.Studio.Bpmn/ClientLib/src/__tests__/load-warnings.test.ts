@@ -140,6 +140,15 @@ describe('computeLoadWarnings', () => {
             ]);
         });
 
+        it('reports layout that moves to another plane and changes as one rewritten warning', () => {
+            const original = definitions(content, diagram('D1', 'Process_1', `${shape('Sub', 100)}${shape('Inner', 300)}`));
+            const saved = definitions(content, diagram('D1', 'Process_1', shape('Sub', 100)) + diagram('D2', 'Sub', shape('Inner', 180)));
+
+            expect(computeLoadWarnings(original, saved)).toEqual([
+                { kind: 'rewritten', message: "The diagram layout of 'Inner' moves to the diagram of 'Sub', and its position or size changes.", elementId: 'Inner' }
+            ]);
+        });
+
         it('ignores the ids of diagram elements', () => {
             const original = definitions(content, diagram('D1', 'Process_1', `${shape('Sub', 100)}${shape('Inner', 300)}`));
             const saved = original.replaceAll('_di"', '_shape"').replace('D1', 'Diagram').replace('D1_plane', 'Plane');

@@ -54,7 +54,8 @@ It does not rely on its parser's own messages alone, because content a parser ac
   elements that share an `id`, the one a save does not keep is `dropped`.
 - A BPMN attribute the save leaves out is not reported when it held its schema default.
 - Diagram layout is matched by the element it draws, whichever diagram plane holds it. Layout that moves to another
-  plane with the same geometry is `rewritten`. Diagram element ids do not matter.
+  plane, or whose bounds or waypoints change, is `rewritten`, with one warning per element. Diagram element ids do not
+  matter.
 - A lost XML comment is `dropped`.
 
 A document that draws nothing (no shape or edge in any diagram) is loaded with a generated layout for its first
