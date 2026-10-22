@@ -216,10 +216,11 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
         async load(xml: string): Promise<BpmnLoadResult> {
             ensureLive();
             loading = true;
-            // bpmn-js can replace the document before an import fails, so keep what a save would write now.
             const definitions = bpmnjs!.getDefinitions();
-            const previous = hasDocument ? { xml: await serialize(), isDirty: currentStateId() !== savedStateId } : null;
+            let previous: { xml: string; isDirty: boolean } | null = null;
             try {
+                // bpmn-js can replace the document before an import fails, so keep what a save would write now.
+                if (hasDocument) previous = { xml: await serialize(), isDirty: currentStateId() !== savedStateId };
                 clearOverlays();
                 const layout = await withGeneratedLayout(xml);
                 await bpmnjs!.importXML(layout.xml);
