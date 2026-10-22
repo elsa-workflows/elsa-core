@@ -54,6 +54,11 @@ export const BPMN_ATTRIBUTE_DEFAULTS: Readonly<Record<string, string>> = {
     waitForCompletion: 'true'
 };
 
+/** The same for attributes of the BPMN DI namespace, such as a shape's or an edge's. */
+export const BPMNDI_ATTRIBUTE_DEFAULTS: Readonly<Record<string, string>> = {
+    messageVisibleKind: 'initiating'
+};
+
 interface CanonicalElement {
     /** Namespace URI and local name, as `{uri}local`. */
     readonly key: string;
@@ -88,10 +93,16 @@ function qualified(node: { namespaceURI: string | null; localName: string }): st
     return node.namespaceURI ? `{${node.namespaceURI}}${node.localName}` : node.localName;
 }
 
-function canonical(element: Element): CanonicalElement {
+/**
+ * The element as the comparison sees it. Diagrams are left out: compareLayout compares them separately. With
+ * `skip`, the elements it matches are left out too, and so are `id` attributes: that is how compareLayout reads
+ * diagram content, apart from geometry, which it compares on its own, and apart from ids, which do not matter there.
+ */
+function canonical(element: Element, skip?: (child: Element) => boolean): CanonicalElement {
     const attributes = new Map<string, { name: string; value: string }>();
     for (const attribute of Array.from(element.attributes)) {
         if (attribute.namespaceURI === XMLNS) continue;
+        if (skip && attribute.namespaceURI === null && attribute.localName === 'id') continue;
         const isType = attribute.namespaceURI === XSI && attribute.localName === 'type';
         attributes.set(qualified(attribute), { name: attribute.name, value: isType ? resolveQName(element, attribute.value) : attribute.value });
     }
@@ -102,8 +113,8 @@ function canonical(element: Element): CanonicalElement {
         if (child.nodeType === 1) {
             const childElement = child as Element;
             // DI is compared by the element it draws, not by its place in the tree: see compareLayout.
-            if (childElement.namespaceURI === BPMNDI && childElement.localName === 'BPMNDiagram') continue;
-            children.push(canonical(childElement));
+            if (isBpmnDi(childElement, 'BPMNDiagram') || skip?.(childElement)) continue;
+            children.push(canonical(childElement, skip));
         } else if (child.nodeType === 3 || child.nodeType === 4) {
             text += child.nodeValue ?? '';
         }
@@ -136,9 +147,8 @@ function groupChildren(node: CanonicalElement): Map<string, CanonicalElement[]> 
     return groups;
 }
 
-function compareElements(before: CanonicalElement, after: CanonicalElement, ownerId: string | null, warnings: BpmnLoadWarning[]): void {
+function compareElements(before: CanonicalElement, after: CanonicalElement, ownerId: string | null, warnings: BpmnLoadWarning[], subject = describe(before, ownerId)): void {
     const id = before.attributes.get('id')?.value ?? ownerId;
-    const subject = describe(before, ownerId);
 
     for (const [key, attribute] of before.attributes) {
         const kept = after.attributes.get(key);
@@ -177,8 +187,12 @@ function describe(node: CanonicalElement, ownerId: string | null): string {
 }
 
 function isOmittedDefault(elementKey: string, attributeKey: string, value: string): boolean {
-    // Only a BPMN element's attributes have these defaults. They are unqualified, so their key is the bare local name.
-    return elementKey.startsWith(`{${BPMN_NAMESPACE_URI}}`) && Object.hasOwn(BPMN_ATTRIBUTE_DEFAULTS, attributeKey) && BPMN_ATTRIBUTE_DEFAULTS[attributeKey] === value;
+    // Only the BPMN and BPMN DI elements' attributes have these defaults. They are unqualified, so their key is the bare
+    // local name.
+    const defaults = elementKey.startsWith(`{${BPMN_NAMESPACE_URI}}`) ? BPMN_ATTRIBUTE_DEFAULTS
+        : elementKey.startsWith(`{${BPMNDI}}`) ? BPMNDI_ATTRIBUTE_DEFAULTS
+        : null;
+    return defaults !== null && Object.hasOwn(defaults, attributeKey) && defaults[attributeKey] === value;
 }
 
 interface Layout {
@@ -188,7 +202,8 @@ interface Layout {
     readonly plane: string | null;
     /** Bounds, waypoints and label bounds, as numbers in document order. */
     readonly geometry: number[];
-    readonly attributes: Map<string, { name: string; value: string }>;
+    /** Everything else the shape or edge holds: its attributes, its label and any foreign content. */
+    readonly content: CanonicalElement;
 }
 
 function compareLayout(before: Document, after: Document, warnings: BpmnLoadWarning[]): void {
@@ -209,12 +224,45 @@ function compareLayout(before: Document, after: Document, warnings: BpmnLoadWarn
             warnings.push(warning('rewritten', `The diagram layout of '${elementId}' changes.`, elementId));
         }
 
-        for (const [key, attribute] of layout.attributes) {
-            const keptAttribute = kept.attributes.get(key);
-            if (keptAttribute === undefined) warnings.push(warning('dropped', `The diagram attribute '${attribute.name}' of '${elementId}' is lost.`, elementId));
-            else if (keptAttribute.value !== attribute.value) warnings.push(warning('rewritten', `The diagram attribute '${attribute.name}' of '${elementId}' changes.`, elementId));
-        }
+        compareElements(layout.content, kept.content, elementId, warnings, `the diagram layout of '${elementId}'`);
     }
+
+    // What diagrams and planes hold besides shapes and edges, such as label styles and foreign content. A diagram is
+    // matched by the element its plane draws, so one that moves keeps its match.
+    const keptDiagrams = diagramsOf(after);
+    for (const [elementId, diagram] of diagramsOf(before)) {
+        const subject = `the diagram of '${elementId}'`;
+        const kept = keptDiagrams.get(elementId);
+        if (kept) compareElements(diagram, kept, elementId, warnings, subject);
+        else if (hasOwnContent(diagram)) warnings.push(warning('dropped', `The diagram of '${elementId}' is lost.`, elementId));
+    }
+}
+
+/** Whether a diagram holds anything besides a plane naming the element it draws: a name, a label style, foreign content. */
+function hasOwnContent(diagram: CanonicalElement): boolean {
+    const plane = `{${BPMNDI}}BPMNPlane`;
+    return diagram.attributes.size > 0 || diagram.children.some(child =>
+        child.key !== plane || child.children.length > 0 || [...child.attributes.keys()].some(key => key !== 'bpmnElement'));
+}
+
+const isGeometry = (element: Element): boolean =>
+    (element.namespaceURI === DC && element.localName === 'Bounds') || (element.namespaceURI === DI && element.localName === 'waypoint');
+
+const isDrawing = (element: Element): boolean => isBpmnDi(element, 'BPMNShape') || isBpmnDi(element, 'BPMNEdge');
+
+function isBpmnDi(element: Element, localName: string): boolean {
+    return element.namespaceURI === BPMNDI && element.localName === localName;
+}
+
+/** Each diagram's own content, without its shapes and edges, keyed by the element its plane draws. */
+function diagramsOf(document: Document): Map<string, CanonicalElement> {
+    const diagrams = new Map<string, CanonicalElement>();
+    for (const element of Array.from(document.getElementsByTagNameNS(BPMNDI, 'BPMNDiagram'))) {
+        const plane = Array.from(element.children).find(child => isBpmnDi(child, 'BPMNPlane'));
+        const elementId = plane?.getAttribute('bpmnElement');
+        if (elementId && !diagrams.has(elementId)) diagrams.set(elementId, canonical(element, isDrawing));
+    }
+    return diagrams;
 }
 
 function layoutOf(document: Document): Map<string, Layout> {
@@ -224,15 +272,7 @@ function layoutOf(document: Document): Map<string, Layout> {
             const elementId = element.getAttribute('bpmnElement');
             if (!elementId || layouts.has(elementId)) continue;
 
-            const attributes = new Map<string, { name: string; value: string }>();
-            for (const attribute of Array.from(element.attributes)) {
-                // The shape's own id is not layout, and bpmn-js writes this edge default only when it differs.
-                if (attribute.namespaceURI === XMLNS || attribute.name === 'id' || attribute.name === 'bpmnElement') continue;
-                if (attribute.name === 'messageVisibleKind' && attribute.value === 'initiating') continue;
-                attributes.set(qualified(attribute), { name: attribute.name, value: attribute.value });
-            }
-
-            layouts.set(elementId, { elementId, plane: planeOf(element), geometry: geometryOf(element), attributes });
+            layouts.set(elementId, { elementId, plane: planeOf(element), geometry: geometryOf(element), content: canonical(element, isGeometry) });
         }
     }
     return layouts;

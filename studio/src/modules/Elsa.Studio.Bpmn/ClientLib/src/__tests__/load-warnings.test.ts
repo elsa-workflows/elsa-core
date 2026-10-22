@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { describe, expect, it } from 'vitest';
-import { BPMN_ATTRIBUTE_DEFAULTS, computeLoadWarnings, lacksDiagramLayout } from '../load-warnings.js';
+import { BPMN_ATTRIBUTE_DEFAULTS, BPMNDI_ATTRIBUTE_DEFAULTS, computeLoadWarnings, lacksDiagramLayout } from '../load-warnings.js';
 import { createModdle } from './moddle.js';
 
 const NAMESPACES = 'xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" ' +
@@ -173,9 +173,40 @@ describe('computeLoadWarnings', () => {
                 '<bpmndi:BPMNShape id="Sub_di" bpmnElement="Sub" isExpanded="false"><dc:Bounds x="1" y="2" width="3" height="4" /></bpmndi:BPMNShape>'));
 
             expect(computeLoadWarnings(original, saved)).toEqual([
-                { kind: 'rewritten', message: "The diagram attribute 'isExpanded' of 'Sub' changes.", elementId: 'Sub' },
-                { kind: 'dropped', message: "The diagram attribute 'vendor:color' of 'Sub' is lost.", elementId: 'Sub' }
+                { kind: 'rewritten', message: "The attribute 'isExpanded' of the diagram layout of 'Sub' changes from 'true' to 'false'.", elementId: 'Sub' },
+                { kind: 'dropped', message: "The attribute 'vendor:color' of the diagram layout of 'Sub' is lost.", elementId: 'Sub' }
             ]);
+        });
+
+        it('reports foreign content inside a shape that a save loses', async () => {
+            const original = definitions(content, diagram('D1', 'Process_1',
+                '<bpmndi:BPMNShape id="Sub_di" bpmnElement="Sub"><dc:Bounds x="1" y="2" width="3" height="4" /><vendor:hint level="2" /></bpmndi:BPMNShape>'));
+
+            expect(computeLoadWarnings(original, await roundTrip(original))).toEqual([
+                { kind: 'dropped', message: "A vendor:hint element inside 'Sub' is lost.", elementId: 'Sub' }
+            ]);
+        });
+
+        it('reports a lost label, and the lost content of a diagram', () => {
+            const labelled = '<bpmndi:BPMNShape id="Sub_di" bpmnElement="Sub"><dc:Bounds x="1" y="2" width="3" height="4" /><bpmndi:BPMNLabel labelStyle="Style" /></bpmndi:BPMNShape>';
+            const original = definitions(content, '<bpmndi:BPMNDiagram id="D1" name="Main"><bpmndi:BPMNPlane id="P1" bpmnElement="Process_1">' + labelled +
+                '</bpmndi:BPMNPlane><bpmndi:BPMNLabelStyle id="Style"><dc:Font name="Arial" size="11" /></bpmndi:BPMNLabelStyle></bpmndi:BPMNDiagram>');
+            const saved = definitions(content, diagram('D1', 'Process_1', shape('Sub', 1).replace('x="1" y="80" width="100" height="80"', 'x="1" y="2" width="3" height="4"')));
+
+            expect(computeLoadWarnings(original, saved)).toEqual([
+                { kind: 'dropped', message: "A bpmndi:BPMNLabel element inside 'Sub' is lost.", elementId: 'Sub' },
+                { kind: 'dropped', message: "The attribute 'name' of the diagram of 'Process_1' is lost.", elementId: 'Process_1' },
+                { kind: 'dropped', message: "A bpmndi:BPMNLabelStyle element inside 'Process_1' is lost.", elementId: 'Process_1' }
+            ]);
+        });
+
+        it('reports a lost diagram only when it held more than its shapes', () => {
+            const withName = definitions(content, '<bpmndi:BPMNDiagram id="D2" name="Sub diagram"><bpmndi:BPMNPlane id="P2" bpmnElement="Sub" /></bpmndi:BPMNDiagram>');
+            const bare = definitions(content, '<bpmndi:BPMNDiagram id="D2"><bpmndi:BPMNPlane id="P2" bpmnElement="Sub" /></bpmndi:BPMNDiagram>');
+            const saved = definitions(content);
+
+            expect(computeLoadWarnings(withName, saved)).toEqual([{ kind: 'dropped', message: "The diagram of 'Sub' is lost.", elementId: 'Sub' }]);
+            expect(computeLoadWarnings(bare, saved)).toEqual([]);
         });
     });
 
@@ -192,19 +223,27 @@ describe('lacksDiagramLayout', () => {
     });
 });
 
-describe('BPMN_ATTRIBUTE_DEFAULTS', () => {
-    it("matches every attribute default in bpmn-moddle's BPMN schema", () => {
-        const require = createRequire(import.meta.url);
-        const schema = JSON.parse(readFileSync(require.resolve('bpmn-moddle/resources/bpmn/json/bpmn.json'), 'utf8')) as {
-            types: { properties?: { name: string; default?: unknown }[] }[];
-        };
-        const defaults: Record<string, string> = {};
-        for (const type of schema.types) {
-            for (const property of type.properties ?? []) {
-                if (property.default !== undefined) defaults[property.name] = String(property.default);
-            }
+/** Every attribute default a bpmn-moddle schema file declares, by property name. */
+function schemaDefaults(file: string): Record<string, string> {
+    const require = createRequire(import.meta.url);
+    const schema = JSON.parse(readFileSync(require.resolve(`bpmn-moddle/resources/bpmn/json/${file}`), 'utf8')) as {
+        types: { properties?: { name: string; default?: unknown }[] }[];
+    };
+    const defaults: Record<string, string> = {};
+    for (const type of schema.types) {
+        for (const property of type.properties ?? []) {
+            if (property.default !== undefined) defaults[property.name] = String(property.default);
         }
+    }
+    return defaults;
+}
 
-        expect(BPMN_ATTRIBUTE_DEFAULTS).toEqual(defaults);
+describe('attribute defaults', () => {
+    it("BPMN_ATTRIBUTE_DEFAULTS matches every attribute default in bpmn-moddle's BPMN schema", () => {
+        expect(BPMN_ATTRIBUTE_DEFAULTS).toEqual(schemaDefaults('bpmn.json'));
+    });
+
+    it("BPMNDI_ATTRIBUTE_DEFAULTS matches every attribute default in bpmn-moddle's BPMN DI schema", () => {
+        expect(BPMNDI_ATTRIBUTE_DEFAULTS).toEqual(schemaDefaults('bpmndi.json'));
     });
 });
