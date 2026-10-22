@@ -193,7 +193,12 @@ public sealed class BpmnInterchangeDocumentService(
     /// Reports what a document contains and what a read would cost, without persisting anything.
     /// </summary>
     /// <exception cref="BpmnInterchangeException">The document cannot be read at all.</exception>
-    public BpmnImportAnalysis Analyze(string xml) => reader.Analyze(xml, new BpmnImportOptions());
+    /// <exception cref="BpmnDuplicateElementIdException">Two flow nodes in one process or subprocess body share an id, which the reader cannot read.</exception>
+    public BpmnImportAnalysis Analyze(string xml)
+    {
+        EnsureNoFlowNodeIdRepeatsInOneScope(xml);
+        return reader.Analyze(xml, new BpmnImportOptions());
+    }
 
     /// <summary>
     /// Reads a document, refuses it if the host cannot run what it declares, and binds it into the <see cref="BpmnProcess"/>

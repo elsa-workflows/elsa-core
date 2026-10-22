@@ -71,6 +71,46 @@ public class BpmnForeignContentTests
         Assert.Equal(["T element hint"], dropped);
     }
 
+    [Fact(DisplayName = "Text split across CDATA sections or around a comment is the same text written in one piece")]
+    public void DroppedBetween_JoinsTextBetweenChildElements()
+    {
+        var stored = Document("acme", """<bpmn:task id="T"><acme:hint>a<![CDATA[b]]>c<!-- note -->d<acme:x/>e</acme:hint></bpmn:task>""");
+        var same = Document("acme", """<bpmn:task id="T"><acme:hint>abcd<acme:x/>e</acme:hint></bpmn:task>""");
+        var moved = Document("acme", """<bpmn:task id="T"><acme:hint>abc<acme:x/>de</acme:hint></bpmn:task>""");
+
+        Assert.Empty(BpmnForeignContent.DroppedBetween(stored, same));
+        Assert.Single(BpmnForeignContent.DroppedBetween(stored, moved));
+    }
+
+    [Fact(DisplayName = "Renaming the only process keeps the content it carries; with two processes, ids still decide")]
+    public void DroppedBetween_ComparesTheOnlyProcessUnderOneOwnerWhateverItsId()
+    {
+        const string bpmn = "http://www.omg.org/spec/BPMN/20100524/MODEL";
+        string Definitions(string processes) => $"""<bpmn:definitions xmlns:bpmn="{bpmn}" xmlns:acme="urn:acme" id="D" targetNamespace="x">{processes}</bpmn:definitions>""";
+
+        var renamed = BpmnForeignContent.DroppedBetween(
+            Definitions("""<bpmn:process id="P" acme:a="1"><bpmn:extensionElements><acme:hint/></bpmn:extensionElements></bpmn:process>"""),
+            Definitions("""<bpmn:process id="Q" acme:a="1"><bpmn:extensionElements><acme:hint/></bpmn:extensionElements></bpmn:process>"""));
+        var oneOfTwoRenamed = BpmnForeignContent.DroppedBetween(
+            Definitions("""<bpmn:process id="P" acme:a="1"/><bpmn:process id="R"/>"""),
+            Definitions("""<bpmn:process id="Q" acme:a="1"/><bpmn:process id="R"/>"""));
+
+        Assert.Empty(renamed);
+        Assert.Equal(["P attribute a"], oneOfTwoRenamed.Select(item => $"{item.ElementId} {item.Kind} {item.Name}"));
+    }
+
+    [Fact(DisplayName = "A deeply nested extension is compared without exhausting the call stack")]
+    public void DroppedBetween_ComparesADeeplyNestedExtension()
+    {
+        const int depth = 20_000;
+        string Nested(string leaf) => string.Concat(Enumerable.Repeat("<acme:n>", depth)) + leaf + string.Concat(Enumerable.Repeat("</acme:n>", depth));
+
+        var stored = Document("acme", $"""<bpmn:task id="T">{Nested("a")}</bpmn:task>""");
+        var saved = Document("acme", $"""<bpmn:task id="T">{Nested("b")}</bpmn:task>""");
+
+        Assert.Equal(["T element n"], BpmnForeignContent.DroppedBetween(stored, saved).Select(item => $"{item.ElementId} {item.Kind} {item.Name}"));
+    }
+
     [Theory(DisplayName = "Nothing is reported without a stored document, or when one cannot be parsed")]
     [InlineData(null)]
     [InlineData("")]

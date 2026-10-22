@@ -237,8 +237,9 @@ activity graph is derived from it on every save.
   had that the posted one does not, each as `{ elementId, kind, namespace, name }`: `kind` is `element` or
   `attribute`, and `elementId` is the nearest element id that carried it. Foreign content is anything in a namespace
   other than BPMN's own (model, DI, DC, DD), `xsi`, `xml`, Elsa's `elsa:` binding namespace and the library's vendor
-  namespace. A renamed prefix, reordered attributes or changed whitespace is not a loss; changed content is, and
-  content that moves to another element counts as dropped from the first. The save succeeds either way — the
+  namespace. A renamed prefix, reordered attributes, changed whitespace or text rewritten as CDATA is not a loss;
+  changed content is, and content that moves to another element counts as dropped from the first. Renaming the only
+  process does not move its content, since the save binds it whatever its id. The save succeeds either way — the
   modeler asks the user to acknowledge such a loss before it saves, and this list tells a client that did not.
 
 ### The document endpoints and the JSON payload format
@@ -365,14 +366,16 @@ first reaches the broken subprocess. At run time this also covers a BPMN process
 
 ### Duplicate element id refusal
 
-BPMN requires every element id to be unique within a document. `Import` and the document `PUT` both refuse, with
+BPMN requires every element id to be unique within a document. `Import` and the document and XML `PUT` refuse, with
 `422 Unprocessable Entity`, a document that repeats one — most often a subprocess nested inside another subprocess
 that reuses its parent's id. This is not just an ordinary validation rule: reading or writing such a document walks
 into a nested process by matching the repeated id back out of a flat binding list, in three different places (this
 service's own capability walk, the work binder, and the interchange library's own writer), and each of those walks
 would otherwise recurse without ever terminating and crash the process outright — .NET cannot catch a
-`StackOverflowException`. Both endpoints check this before any of that recursion runs. `Analyze` never performs this
-check, since the plain read it does never walks a nested process this way to begin with.
+`StackOverflowException`. These endpoints check this before any of that recursion runs. `Analyze` does not refuse
+such a repeat, since the plain read it does never walks a nested process this way to begin with. It does refuse, with
+the same code, two flow nodes that share an id inside one process or subprocess body: the library's reader cannot
+read such a document at all.
 
 ### Export's limitation
 
@@ -449,7 +452,7 @@ element that has a stored body but no `bindingRef`, are uncoded.
 | --- | --- | --- | --- |
 | `bpmn.import.capability-unsupported` | `POST bpmn/import`, document and XML `PUT` | 422 | `capabilities: string[]` (missing capability names), `elementIds: string[]` (offending element ids, combined across every missing capability) |
 | `bpmn.import.binding-invalid` | `POST bpmn/import`, document and XML `PUT` | 422 | — |
-| `bpmn.import.duplicate-element-id` | `POST bpmn/import`, document and XML `PUT` | 422 | `elementIds: string[]` (the duplicated ids) |
+| `bpmn.import.duplicate-element-id` | `POST bpmn/import`, document and XML `PUT`; `POST bpmn/analyze` for two flow nodes sharing an id in one body | 422 | `elementIds: string[]` (the duplicated ids) |
 | `bpmn.import.process-invalid` | `POST bpmn/import`, document and XML `PUT` | 422 | — |
 | `bpmn.import.condition-language-unsupported` | `POST bpmn/import`, document and XML `PUT` | 422 | `elementIds: string[]` (the sequence flows whose expression is in a language Elsa does not evaluate, across the whole document including nested subprocesses, sorted and distinct) |
 | `bpmn.import.condition-conflict` | `POST bpmn/import`, document and XML `PUT` | 422 | `elementIds: string[]` (the sequence flows that carry both an outcome and an author-written expression, across the whole document including nested subprocesses, sorted and distinct) |

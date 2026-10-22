@@ -29,6 +29,10 @@ internal static class BpmnForeignContent
     private static readonly XNamespace SchemaInstance = "http://www.w3.org/2001/XMLSchema-instance";
     private static readonly XNamespace ElsaBinding = BpmnActivityBindingFormat.NamespaceUri;
     private static readonly XNamespace LibraryVendor = BpmnXmlNames.VendorNamespaceName;
+    private static readonly XName Process = (XNamespace)BpmnXmlNames.Model + "process";
+
+    // Not a valid XML id, so it cannot collide with an element's own.
+    private const string SingleProcessOwnerKey = "\0process";
 
     /// <summary>
     /// The foreign content in <paramref name="storedXml"/> that <paramref name="newXml"/> no longer has, in document
@@ -42,14 +46,20 @@ internal static class BpmnForeignContent
         if (stored is null || kept is null)
             return [];
 
+        // A document with one process binds it whatever its id is now, so when both have one, renaming it does not
+        // move the content it carries.
+        var storedProcess = SingleProcess(stored);
+        var keptProcess = SingleProcess(kept);
+        var processesCorrespond = storedProcess is not null && keptProcess is not null;
+
         var remaining = new Dictionary<string, int>(StringComparer.Ordinal);
 
-        foreach (var item in Collect(kept))
+        foreach (var item in Collect(kept, processesCorrespond ? keptProcess : null))
             remaining[item.Key] = remaining.GetValueOrDefault(item.Key) + 1;
 
         var dropped = new List<BpmnForeignContentModel>();
 
-        foreach (var item in Collect(stored))
+        foreach (var item in Collect(stored, processesCorrespond ? storedProcess : null))
         {
             if (remaining.TryGetValue(item.Key, out var count) && count > 0)
                 remaining[item.Key] = count - 1;
@@ -77,6 +87,12 @@ internal static class BpmnForeignContent
         }
     }
 
+    private static XElement? SingleProcess(XDocument document)
+    {
+        var processes = document.Root!.Elements(Process).Take(2).ToList();
+        return processes.Count == 1 ? processes[0] : null;
+    }
+
     private static bool IsForeign(XNamespace ns) =>
         ns != XNamespace.None
         && !BpmnXmlNames.IsOwnedNamespace(ns)
@@ -84,23 +100,30 @@ internal static class BpmnForeignContent
         && ns != ElsaBinding
         && ns != LibraryVendor;
 
-    private static IEnumerable<(string Key, BpmnForeignContentModel Model)> Collect(XDocument document)
+    /// <param name="document">The document to collect from.</param>
+    /// <param name="singleProcess">
+    /// The document's only process when the other document also has only one, so the content each carries is compared
+    /// under one owner whatever their ids; otherwise null, and every owner is compared by its id.
+    /// </param>
+    private static IEnumerable<(string Key, BpmnForeignContentModel Model)> Collect(XDocument document, XElement? singleProcess)
     {
-        var pending = new Stack<(XElement Element, string? OwnerId)>();
-        pending.Push((document.Root!, null));
+        var pending = new Stack<(XElement Element, string? OwnerId, string? OwnerKey)>();
+        pending.Push((document.Root!, null, null));
 
         // Depth-first in document order: children are pushed in reverse so the first one is visited first.
         while (pending.Count > 0)
         {
-            var (element, inheritedOwnerId) = pending.Pop();
-            var ownerId = (string?)element.Attribute("id") ?? inheritedOwnerId;
+            var (element, inheritedOwnerId, inheritedOwnerKey) = pending.Pop();
+            var id = (string?)element.Attribute("id");
+            var ownerId = id ?? inheritedOwnerId;
+            var ownerKey = element == singleProcess ? SingleProcessOwnerKey : id ?? inheritedOwnerKey;
 
             foreach (var attribute in element.Attributes())
             {
                 if (attribute.IsNamespaceDeclaration || !IsForeign(attribute.Name.Namespace))
                     continue;
 
-                yield return Item(ownerId, "attribute", attribute.Name, $"={attribute.Value}");
+                yield return Item(ownerId, ownerKey, "attribute", attribute.Name, attribute.Value);
             }
 
             var children = new List<XElement>();
@@ -108,20 +131,20 @@ internal static class BpmnForeignContent
             foreach (var child in element.Elements())
             {
                 if (IsForeign(child.Name.Namespace))
-                    yield return Item(ownerId, "element", child.Name, Canonical(child));
+                    yield return Item(ownerId, ownerKey, "element", child.Name, Canonical(child));
                 else
                     children.Add(child);
             }
 
             for (var index = children.Count - 1; index >= 0; index--)
-                pending.Push((children[index], ownerId));
+                pending.Push((children[index], ownerId, ownerKey));
         }
     }
 
-    private static (string Key, BpmnForeignContentModel Model) Item(string? ownerId, string kind, XName name, string value)
+    private static (string Key, BpmnForeignContentModel Model) Item(string? ownerId, string? ownerKey, string kind, XName name, string value)
     {
         var key = new StringBuilder();
-        AppendToken(key, ownerId ?? "");
+        AppendToken(key, ownerKey ?? "");
         AppendToken(key, kind);
         AppendToken(key, name.NamespaceName);
         AppendToken(key, name.LocalName);
@@ -134,39 +157,77 @@ internal static class BpmnForeignContent
     private static string Canonical(XElement element)
     {
         var builder = new StringBuilder();
-        Append(element, builder);
+
+        // An explicit stack rather than recursion, so a deeply nested extension cannot exhaust the call stack. A null
+        // entry closes the element whose children were pushed above it.
+        var pending = new Stack<object?>();
+        pending.Push(element);
+
+        while (pending.Count > 0)
+        {
+            switch (pending.Pop())
+            {
+                case null:
+                    builder.Append('>');
+                    break;
+                case XElement current:
+                    builder.Append('<');
+                    AppendToken(builder, current.Name.NamespaceName);
+                    AppendToken(builder, current.Name.LocalName);
+
+                    foreach (var attribute in current.Attributes().Where(attribute => !attribute.IsNamespaceDeclaration).OrderBy(attribute => attribute.Name.ToString(), StringComparer.Ordinal))
+                    {
+                        builder.Append('@');
+                        AppendToken(builder, attribute.Name.NamespaceName);
+                        AppendToken(builder, attribute.Name.LocalName);
+                        AppendToken(builder, attribute.Value);
+                    }
+
+                    pending.Push(null);
+
+                    foreach (var child in ChildrenWithTextJoined(current).Reverse())
+                        pending.Push(child);
+
+                    break;
+                case string text when !string.IsNullOrWhiteSpace(text):
+                    builder.Append('#');
+                    AppendToken(builder, text);
+                    break;
+            }
+        }
+
         return builder.ToString();
     }
 
-    private static void Append(XElement element, StringBuilder builder)
+    /// <summary>
+    /// The element's child elements, with each run of text between them joined into one string: text split across
+    /// CDATA sections, or around a comment, is the same text as when written in one piece.
+    /// </summary>
+    private static IEnumerable<object> ChildrenWithTextJoined(XElement element)
     {
-        builder.Append('<');
-        AppendToken(builder, element.Name.NamespaceName);
-        AppendToken(builder, element.Name.LocalName);
-
-        foreach (var attribute in element.Attributes().Where(attribute => !attribute.IsNamespaceDeclaration).OrderBy(attribute => attribute.Name.ToString(), StringComparer.Ordinal))
-        {
-            builder.Append('@');
-            AppendToken(builder, attribute.Name.NamespaceName);
-            AppendToken(builder, attribute.Name.LocalName);
-            AppendToken(builder, attribute.Value);
-        }
+        var text = new StringBuilder();
 
         foreach (var node in element.Nodes())
         {
             switch (node)
             {
-                case XElement child:
-                    Append(child, builder);
+                case XText piece:
+                    text.Append(piece.Value);
                     break;
-                case XText text when !string.IsNullOrWhiteSpace(text.Value):
-                    builder.Append('#');
-                    AppendToken(builder, text.Value);
+                case XElement child:
+                    if (text.Length > 0)
+                    {
+                        yield return text.ToString();
+                        text.Clear();
+                    }
+
+                    yield return child;
                     break;
             }
         }
 
-        builder.Append('>');
+        if (text.Length > 0)
+            yield return text.ToString();
     }
 
     /// <summary>

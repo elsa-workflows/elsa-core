@@ -136,6 +136,21 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     }
 
     [Fact]
+    public async Task Analyze_OfADocumentWithTwoFlowNodesSharingAnIdInOneBody_ReturnsUnprocessableEntity()
+    {
+        // The reader cannot read such a document at all, so a preview refuses it the way the import would.
+        using var content = new MultipartFormDataContent();
+        AddBpmnFile(content, ReadAsset("camunda-order-process.bpmn").Replace("<bpmn:endEvent id=\"EndEvent_1\"", "<bpmn:endEvent id=\"StartEvent_1\""), "file");
+
+        var response = await PostAuthenticatedAsync("bpmn/analyze", content, "workflows/definitions:view");
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Equal(BpmnErrorCodes.ImportDuplicateElementId, CodeOf(body));
+        Assert.Equal(["StartEvent_1"], ElementIdsOf(body));
+    }
+
+    [Fact]
     public async Task Import_OfADocumentWithAnUnboundTask_ReturnsUnprocessableEntity()
     {
         using var content = new MultipartFormDataContent();
