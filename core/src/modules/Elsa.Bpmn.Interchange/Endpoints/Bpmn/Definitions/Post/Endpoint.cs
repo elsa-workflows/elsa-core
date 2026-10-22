@@ -1,3 +1,4 @@
+using System.Xml;
 using Elsa.Authorization;
 using Elsa.Abstractions;
 using Elsa.Bpmn.Interchange.Endpoints.Bpmn.Document;
@@ -39,6 +40,14 @@ internal sealed class Post(BpmnInterchangeDocumentService documentService) : Els
             return;
         }
 
+        // The name becomes the process's name attribute, which XML cannot hold every character in.
+        if (!IsXmlText(name))
+        {
+            AddError("The name contains a character that XML cannot hold, such as a control character.");
+            await Send.ErrorsAsync(StatusCodes.Status400BadRequest, cancellationToken);
+            return;
+        }
+
         var result = await BpmnImportErrorResponses.RunAsync(
             () => documentService.CreateAsync(name, cancellationToken),
             HttpContext.Response,
@@ -64,5 +73,18 @@ internal sealed class Post(BpmnInterchangeDocumentService documentService) : Els
                 Analysis = BpmnImportAnalysisModel.From(result.Analysis)
             },
             cancellation: cancellationToken);
+    }
+
+    private static bool IsXmlText(string text)
+    {
+        try
+        {
+            XmlConvert.VerifyXmlChars(text);
+            return true;
+        }
+        catch (XmlException)
+        {
+            return false;
+        }
     }
 }

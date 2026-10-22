@@ -993,6 +993,17 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     }
 
     [Fact]
+    public async Task Create_WithANameXmlCannotHold_ReturnsBadRequest()
+    {
+        using var content = new StringContent("{\"name\":\"Order\\u0001approval\"}", Encoding.UTF8, "application/json");
+
+        var response = await PostAuthenticatedAsync("bpmn/definitions", content, "workflows/definitions:write");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.Contains("XML", await response.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
     public async Task Create_WhenAuthenticatedWithoutTheRequiredPermission_ReturnsForbidden()
     {
         using var content = new StringContent("{\"name\":\"Order approval\"}", Encoding.UTF8, "application/json");
