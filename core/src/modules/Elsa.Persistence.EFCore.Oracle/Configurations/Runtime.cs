@@ -48,6 +48,11 @@ public class Runtime :
         // To use data more than 2000 char we have to use NCLOB.
         // In Oracle, we have to explicitly say the column is NCLOB otherwise it would be considered nvarchar(2000).
         builder.Property<string>("SerializedPayload").HasColumnType("NCLOB");
+
+        // V3_3 created ActivityId as NVARCHAR2(2000) and no later migration changes it.
+        // The V3_6 unique index would otherwise widen it to NVARCHAR2(450) and emit a
+        // spurious AlterColumn.
+        builder.Property(x => x.ActivityId).HasColumnType("NVARCHAR2(2000)");
     }
 
     /// <inheritdoc />

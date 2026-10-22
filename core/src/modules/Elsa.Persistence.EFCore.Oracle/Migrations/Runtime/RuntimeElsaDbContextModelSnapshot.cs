@@ -391,7 +391,7 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Runtime
 
                     b.Property<string>("ActivityId")
                         .IsRequired()
-                        .HasColumnType("NVARCHAR2(450)");
+                        .HasColumnType("NVARCHAR2(2000)");
 
                     b.Property<string>("Hash")
                         .HasColumnType("NVARCHAR2(450)");

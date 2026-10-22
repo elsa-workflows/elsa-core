@@ -14,8 +14,10 @@ namespace Elsa.Persistence.EFCore.UnitTests;
 /// does not emit a spurious CreateIndex or AlterColumn.
 /// </summary>
 /// <remarks>
-/// Other pending snapshot gaps (for example the StoredTrigger unique-index columns addressed
-/// by #8868) are out of scope. This test does not require
+/// After the StoredTrigger unique-index, Scheduling*, NCLOB and Triggers.ActivityId
+/// alignments, the Oracle runtime snapshot matches the configured model, so that
+/// provider reports no pending model diff. Other providers still have out-of-scope
+/// gaps, so this suite does not require
 /// <see cref="Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade.HasPendingModelChanges"/>
 /// to be globally false.
 /// </remarks>
@@ -47,18 +49,15 @@ public class RuntimeSnapshotDriftTests
     }
 
     [Fact]
-    public void Oracle_RuntimeModel_HasNoSchedulingCreateIndex_AndNoAlterColumn()
+    public void Oracle_RuntimeModel_HasNoPendingModelDiff()
     {
         var operations = RuntimeModelDiffer.GetDifferences(ConfigureOracle);
 
-        AssertNoSchedulingCreateIndex(operations);
-        var alterColumns = operations.OfType<AlterColumnOperation>().ToArray();
-
         Assert.True(
-            alterColumns.Length == 0,
-            "Expected no Oracle AlterColumn operations against the runtime snapshot, but found:"
+            operations.Count == 0,
+            "Expected no pending Oracle runtime model diff, but found:"
             + Environment.NewLine
-            + RuntimeModelDiffer.Format(alterColumns));
+            + RuntimeModelDiffer.Format(operations));
     }
 
     [Fact]
@@ -90,6 +89,7 @@ public class RuntimeSnapshotDriftTests
         AssertSnapshotColumnType(typeof(WorkflowExecutionLogRecord), "Message", "NVARCHAR2(2000)");
         AssertSnapshotColumnType(typeof(WorkflowExecutionLogRecord), "Source", "NVARCHAR2(2000)");
         AssertSnapshotColumnType(typeof(WorkflowInboxMessage), "TenantId", "NVARCHAR2(2000)");
+        AssertSnapshotColumnType(typeof(StoredTrigger), "ActivityId", "NVARCHAR2(2000)");
     }
 
     private static void AssertSnapshotColumnType(Type entityType, string propertyName, string expectedColumnType)
