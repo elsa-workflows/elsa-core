@@ -160,6 +160,20 @@ public sealed class WorkflowDefinitionListBpmnCreateTests : BunitContext, IAsync
         Assert.Empty(_opened);
     }
 
+    [Fact(DisplayName = "A create that times out is reported, opens nothing, and leaves the dialog closable")]
+    public void ATimeout_IsReported()
+    {
+        EnableDesigner();
+        _bpmnXml.CreateException = new TaskCanceledException("the request timed out");
+        OpenDialog();
+
+        _dialogs.Find("[data-testid='bpmn-create-submit']").Click();
+
+        _dialogs.WaitForAssertion(() => Assert.Contains(Services.GetRequiredService<ISnackbar>().ShownSnackbars, snackbar => snackbar.Message.Contains("the request timed out", StringComparison.Ordinal)));
+        Assert.Empty(_opened);
+        Assert.Empty(_dialogs.FindAll("[data-testid='bpmn-create-submit']"));
+    }
+
     [Fact(DisplayName = "Cancelling the dialog creates nothing")]
     public void Cancelling_CreatesNothing()
     {

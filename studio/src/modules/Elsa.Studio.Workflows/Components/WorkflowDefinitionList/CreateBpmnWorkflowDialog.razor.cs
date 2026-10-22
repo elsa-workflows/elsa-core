@@ -68,8 +68,21 @@ public partial class CreateBpmnWorkflowDialog : IDisposable
 
             var options = MudDialog.Options;
             await MudDialog.SetOptionsAsync(options with { CloseOnEscapeKey = false, CloseButton = false, BackdropClick = false });
-            var result = await CreateAsync();
-            await MudDialog.SetOptionsAsync(options);
+            Result<BpmnXmlSaveResult, BpmnDocumentFailure> result;
+
+            try
+            {
+                result = await CreateAsync();
+            }
+            finally
+            {
+                // A dialog closed while the workflow was created is gone, so there is nothing to give its options back to.
+                if (!_lifetime.IsCancellationRequested)
+                {
+                    await MudDialog.SetOptionsAsync(options);
+                }
+            }
+
             MudDialog.Close(result);
         }
         finally
@@ -87,6 +100,11 @@ public partial class CreateBpmnWorkflowDialog : IDisposable
         }
         catch (HttpRequestException exception)
         {
+            return new(new BpmnDocumentFailure(BpmnDocumentFailureReason.Unknown, exception.Message));
+        }
+        catch (OperationCanceledException exception) when (!_lifetime.IsCancellationRequested)
+        {
+            // The request timed out; only the dialog closing cancels it otherwise.
             return new(new BpmnDocumentFailure(BpmnDocumentFailureReason.Unknown, exception.Message));
         }
     }
