@@ -79,12 +79,13 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Adds the workflows module with remote backend BPMN interchange API support.
+    /// Adds the workflows module with remote backend BPMN interchange and BPMN XML API support.
     /// </summary>
     public static IServiceCollection AddWorkflowsModule(this IServiceCollection services, BackendApiConfig backendApiConfig)
     {
         return services
             .AddWorkflowsModule()
-            .AddRemoteApi<IBpmnInterchangeApi>(backendApiConfig);
+            .AddRemoteApi<IBpmnInterchangeApi>(backendApiConfig)
+            .AddRemoteApi<IBpmnXmlApi>(backendApiConfig);
     }
 }

@@ -53,6 +53,7 @@ public static class ServiceCollectionExtensions
             .AddScoped<IActivityResolver, DefaultActivityResolver>()
             .AddScoped<IWorkflowJsonDetector, CompatWorkflowJsonDetector>()
             .AddScoped<IBpmnInterchangeService, RemoteBpmnInterchangeService>()
+            .AddScoped<IBpmnXmlService, RemoteBpmnXmlService>()
             ;
 
         services.AddActivityDisplaySettingsProvider<DefaultActivityDisplaySettingsProvider>();
