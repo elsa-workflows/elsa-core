@@ -59,9 +59,29 @@ REQUIRED_ACCEPTANCES = (
     ("NuGet from a stable 3.10.x tag", "refs/tags/3.10.0", {"nuget": True}),
 )
 PROMOTE_STABLE_REF = "startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')"
+# Exact if: bodies after ${{ }} unwrap. Substring checks miss polarity
+# (inverted Compile+Pack) and a leading `false &&` (disabled staging).
+SKIP_STABLE_310_PACK = (
+    "!(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && "
+    f"{PROMOTE_STABLE_REF})"
+)
+PROMOTE_STABLE_310 = PROMOTE_STABLE_REF
+SKIP_STABLE_310_DOWNLOAD = f"!({PROMOTE_STABLE_REF})"
+UPLOAD_PACKAGES = (
+    "(github.event_name == 'release' || github.event_name == 'push' || "
+    "(github.event_name == 'workflow_dispatch' && (inputs.publish_preview_feedz || inputs.publish_nuget))) && "
+    "!(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && "
+    f"{PROMOTE_STABLE_REF})"
+)
 RETRIEVE_CANDIDATE = "python3 scripts/stage_consolidated_candidate_nupkgs.py retrieve"
 STAGE_CANDIDATE = "python3 scripts/stage_consolidated_candidate_nupkgs.py stage"
 GUARD_CANDIDATE = "python3 scripts/validate_packages_id_set.py"
+# Exact non-empty run: lines after horizontal-whitespace collapse. A joined
+# string would accept YAML `>-`, which folds the block into one no-op `set`.
+CANDIDATE_GUARD_LINES = ("set -euo pipefail", STAGE_CANDIDATE, GUARD_CANDIDATE)
+NUGET_GUARD_LINES = (STAGE_CANDIDATE, GUARD_CANDIDATE)
+CANDIDATE_GUARD_REF = "refs/tags/3.10.0"
+GUARD_STEP_KEYS = frozenset({"name", "env", "run", "id", "if", "continue-on-error"})
 FORBIDDEN_PACK_ROUTE = (
     ("CONSOLIDATED_RELEASE_CANDIDATE", "packages.yml must not set CONSOLIDATED_RELEASE_CANDIDATE; the candidate workflow owns that pack"),
     ("ConsolidatedReleaseCandidate:", "packages.yml must not pack ConsolidatedReleaseCandidate; the candidate workflow owns that pack"),
@@ -317,6 +337,35 @@ def _step_run(step: dict) -> str:
     return " ".join(str(step.get("run") or "").split())
 
 
+def _run_lines(step: dict) -> list[str]:
+    """Whitespace-normalized non-empty lines of a step's run: body."""
+    return [" ".join(line.split()) for line in str(step.get("run") or "").splitlines() if line.strip()]
+
+
+def _has_defaults_run_shell(node: Any) -> bool:
+    if not isinstance(node, dict):
+        return False
+    defaults = node.get("defaults")
+    if not isinstance(defaults, dict):
+        return False
+    run = defaults.get("run")
+    return isinstance(run, dict) and "shell" in run
+
+
+def _guard_step_extra_keys(step: dict) -> list[str]:
+    return sorted(set(step) - GUARD_STEP_KEYS)
+
+
+def _unique_step(steps: list[dict], match, *, missing: str | None, duplicate: str) -> tuple[int | None, list[str]]:
+    """Index of the only matching step. missing=None means optional (zero or one)."""
+    found = [index for index, step in enumerate(steps) if match(step)]
+    if len(found) > 1:
+        return None, [duplicate]
+    if not found:
+        return None, [missing] if missing else []
+    return found[0], []
+
+
 def promotion_job_violations(jobs: dict) -> list[str]:
     """Stable 3.10.x nuget.org must promote pinned candidate bytes, never a rebuild."""
     violations = []
@@ -326,38 +375,105 @@ def promotion_job_violations(jobs: dict) -> list[str]:
     steps = [step for step in job.get("steps") or [] if isinstance(step, dict)]
     if any(node.get("continue-on-error") not in (None, False) for node in (job, *steps)):
         violations.append("publish_nuget must not continue on error; a failed candidate guard must block the push")
-    retrieve = next((index for index, step in enumerate(steps) if RETRIEVE_CANDIDATE in _step_run(step)), None)
-    stage = next((index for index, step in enumerate(steps) if STAGE_CANDIDATE in _step_run(step)), None)
-    guard = next((index for index, step in enumerate(steps) if GUARD_CANDIDATE in _step_run(step)), None)
+    retrieve_missing = "publish_nuget must retrieve the pinned candidate, stage it, and run the ID-set guard before NuGet login"
+    retrieve, extra = _unique_step(
+        steps,
+        lambda step: RETRIEVE_CANDIDATE in _step_run(step),
+        missing=retrieve_missing,
+        duplicate="publish_nuget must contain exactly one candidate retrieve step",
+    )
+    violations += extra
+    stage, extra = _unique_step(
+        steps,
+        lambda step: STAGE_CANDIDATE in _step_run(step),
+        missing=retrieve_missing,
+        duplicate="publish_nuget must contain exactly one candidate staging step",
+    )
+    violations += extra
+    guard, extra = _unique_step(
+        steps,
+        lambda step: GUARD_CANDIDATE in _step_run(step),
+        missing=retrieve_missing,
+        duplicate="publish_nuget must contain exactly one candidate guard step",
+    )
+    violations += extra
     login = next(
         (index for index, step in enumerate(steps) if "nuget/login" in str(step.get("uses") or "").lower()),
         None,
     )
-    if None in (retrieve, stage, guard, login):
-        violations.append("publish_nuget must retrieve the pinned candidate, stage it, and run the ID-set guard before NuGet login")
-    elif not retrieve < stage <= guard < login:
+    if login is None and None not in (retrieve, stage, guard):
+        violations.append(retrieve_missing)
+    elif None not in (retrieve, stage, guard, login) and not retrieve < stage <= guard < login:
         violations.append("publish_nuget must retrieve, stage, and guard the pinned candidate before NuGet login")
-    for index in (retrieve, stage, guard):
+    if guard is not None:
+        if _run_lines(steps[guard]) != list(NUGET_GUARD_LINES):
+            violations.append("publish_nuget candidate staging run: must be exactly stage and the ID-set guard")
+        if _guard_step_extra_keys(steps[guard]):
+            violations.append(
+                "publish_nuget candidate staging keys must be among name, env, run, id, if, continue-on-error"
+            )
+    if _has_defaults_run_shell(job):
+        violations.append("publish_nuget must not set defaults.run.shell")
+    for index, expected, message in (
+        (retrieve, PROMOTE_STABLE_310, "publish_nuget candidate retrieve if: must be exactly the stable 3.10.x tag condition"),
+        (stage, PROMOTE_STABLE_310, "publish_nuget candidate staging if: must be exactly the stable 3.10.x tag condition"),
+        (guard, PROMOTE_STABLE_310, "publish_nuget candidate guard if: must be exactly the stable 3.10.x tag condition"),
+    ):
         if index is None:
             continue
         expression = if_expression(steps[index].get("if"))
-        if expression is None or PROMOTE_STABLE_REF not in expression:
-            violations.append("publish_nuget candidate promotion steps must run only for stable 3.10.x tags")
+        if expression != expected:
+            violations.append(message)
         if STATUS_FUNCTION.search(expression or ""):
             violations.append("publish_nuget candidate promotion steps must not call always(), failure() or cancelled()")
+    download, extra = _unique_step(
+        steps,
+        lambda step: step.get("name") == "Download Packages",
+        missing="publish_nuget must contain Download Packages",
+        duplicate="publish_nuget must contain exactly one Download Packages step",
+    )
+    violations += extra
+    if download is not None and if_expression(steps[download].get("if")) != SKIP_STABLE_310_DOWNLOAD:
+        violations.append("publish_nuget Download Packages if: must skip stable 3.10.x tags")
     build = jobs.get(BUILD_JOB)
-    compile_step = None
-    if isinstance(build, dict):
-        compile_step = next(
-            (step for step in build.get("steps") or [] if isinstance(step, dict) and step.get("name") == "Compile+Pack"),
-            None,
-        )
-    if compile_step is None:
-        violations.append("build job must still contain Compile+Pack for non-promote publication")
-    else:
-        expression = if_expression(compile_step.get("if"))
-        if expression is None or PROMOTE_STABLE_REF not in expression:
-            violations.append("build Compile+Pack must skip a stable 3.10.x nuget.org promotion")
+    build_steps = [step for step in (build or {}).get("steps") or [] if isinstance(step, dict)] if isinstance(build, dict) else []
+    compile_step, extra = _unique_step(
+        build_steps,
+        lambda step: step.get("name") == "Compile+Pack",
+        missing="build job must still contain Compile+Pack for non-promote publication",
+        duplicate="build job must contain exactly one Compile+Pack step",
+    )
+    violations += extra
+    setup_dotnet, extra = _unique_step(
+        build_steps,
+        lambda step: "setup-dotnet" in str(step.get("uses") or "").lower(),
+        missing="build job must contain setup-dotnet",
+        duplicate="build job must contain exactly one setup-dotnet step",
+    )
+    violations += extra
+    # Node is only for main's React Studio assets; release/3.10.0 does not have it.
+    setup_node, extra = _unique_step(
+        build_steps,
+        lambda step: step.get("name") == "Set up Node for React Studio assets",
+        missing=None,
+        duplicate="build job must contain at most one Node setup step",
+    )
+    violations += extra
+    upload, extra = _unique_step(
+        build_steps,
+        lambda step: step.get("name") == "Upload artifact",
+        missing="build job must contain Upload artifact",
+        duplicate="build job must contain exactly one Upload artifact step",
+    )
+    violations += extra
+    if compile_step is not None and if_expression(build_steps[compile_step].get("if")) != SKIP_STABLE_310_PACK:
+        violations.append("build Compile+Pack must skip a stable 3.10.x nuget.org promotion")
+    if setup_dotnet is not None and if_expression(build_steps[setup_dotnet].get("if")) != SKIP_STABLE_310_PACK:
+        violations.append("build setup-dotnet must skip a stable 3.10.x nuget.org promotion")
+    if setup_node is not None and if_expression(build_steps[setup_node].get("if")) != SKIP_STABLE_310_PACK:
+        violations.append("build Node setup must skip a stable 3.10.x nuget.org promotion")
+    if upload is not None and if_expression(build_steps[upload].get("if")) != UPLOAD_PACKAGES:
+        violations.append("build Upload artifact must skip a stable 3.10.x nuget.org promotion")
     return violations
 
 
@@ -393,6 +509,14 @@ def candidate_publisher_violations(source: str) -> list[str]:
         violations.append(
             "publish-consolidated-original-candidate.yml must run the same ID-set guard before Feedz"
         )
+    if _has_defaults_run_shell(workflow) or _has_defaults_run_shell(job):
+        violations.append(
+            "publish-consolidated-original-candidate.yml must not set defaults.run.shell"
+        )
+    if isinstance(job, dict) and "continue-on-error" in job and job.get("continue-on-error") is not False:
+        violations.append(
+            "publish-consolidated-original-candidate.yml must not continue on error"
+        )
     for step in guard_steps:
         # Absent or continue-on-error: false is GitHub's default and the same
         # allowlist publish_nuget uses. Any other value, including 0 or '', is a
@@ -406,6 +530,32 @@ def candidate_publisher_violations(source: str) -> list[str]:
             violations.append(
                 "publish-consolidated-original-candidate.yml guard step must not have an if:"
             )
+        if _guard_step_extra_keys(step):
+            violations.append(
+                "publish-consolidated-original-candidate.yml guard step keys must be among name, env, run, id, if, continue-on-error"
+            )
+        if _run_lines(step) != list(CANDIDATE_GUARD_LINES):
+            violations.append(
+                "publish-consolidated-original-candidate.yml guard run: must be exactly set -euo pipefail, stage, and the ID-set guard"
+            )
+        env = step.get("env") if isinstance(step.get("env"), dict) else {}
+        if " ".join(str(env.get("REF") or "").split()) != CANDIDATE_GUARD_REF:
+            violations.append(
+                "publish-consolidated-original-candidate.yml guard env REF must be refs/tags/3.10.0"
+            )
+    # Recheck and publish must not be gated by always()/failure()/cancelled().
+    # The evidence upload's if: always() is the one allowed status-function use.
+    for step in steps:
+        uses = str(step.get("uses") or "").lower()
+        if "upload-artifact" in uses:
+            continue
+        if GUARD_CANDIDATE in _step_run(step):
+            continue
+        expression = if_expression(step.get("if")) if "if" in step else ""
+        if STATUS_FUNCTION.search(expression or ""):
+            violations.append(
+                "publish-consolidated-original-candidate.yml recheck and publish steps must not call always(), failure() or cancelled()"
+            )
     return violations
 
 
@@ -413,6 +563,7 @@ def workflow_violations(workflow: Any) -> list[str]:
     if not isinstance(workflow, dict) or not isinstance(workflow.get("jobs"), dict):
         return ["the workflow has no jobs mapping"]
     jobs = workflow["jobs"]
+    defaults = ["the workflow must not set defaults.run.shell"] if _has_defaults_run_shell(workflow) else []
     return [
         *trigger_violations(workflow),
         *capability_violations(workflow),
@@ -421,6 +572,7 @@ def workflow_violations(workflow: Any) -> list[str]:
         *selection_violations(jobs),
         *pages_upload_violations(jobs),
         *promotion_job_violations(jobs),
+        *defaults,
     ]
 
 

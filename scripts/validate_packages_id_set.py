@@ -20,6 +20,7 @@ from pathlib import Path
 
 # Same release-version shape as validate_packages_publication_selection.RELEASE_TAG.
 PACKAGE_FILE = re.compile(r"(.+)\.[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?\.nupkg")
+PACKAGE_VERSION = re.compile(r"\.([0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?)\.nupkg$")
 # Canonical stable 3.10.x patch. Python callers import this; MSBuild keeps the same
 # source string in ConsolidatedPackageProof.targets. Rejects 3.10.01.
 STABLE_310_PATTERN = r"3\.10\.(0|[1-9][0-9]*)"
@@ -59,13 +60,20 @@ def load_expected_ids(path: Path) -> list[str]:
 def packed_ids(directory: Path) -> list[str]:
     """Return package IDs from *.nupkg names, ignoring symbol packages."""
     ids = []
+    versions = set()
     for nupkg in sorted(directory.glob("*.nupkg")):
         match = PACKAGE_FILE.fullmatch(nupkg.name)
         if match is None:
             raise SystemExit(f"Cannot parse package ID from {nupkg.name!r}.")
+        version = PACKAGE_VERSION.search(nupkg.name)
+        if version is None:
+            raise SystemExit(f"Cannot parse package version from {nupkg.name!r}.")
         ids.append(match.group(1))
+        versions.add(version.group(1))
     if len(ids) != len(set(ids)):
         raise SystemExit("Produced packages list a package ID more than once.")
+    if len(versions) > 1:
+        raise SystemExit(f"Produced packages mix versions: {', '.join(sorted(versions))}.")
     return ids
 
 
