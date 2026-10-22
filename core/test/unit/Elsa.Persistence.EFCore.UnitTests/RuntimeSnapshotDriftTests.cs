@@ -81,6 +81,7 @@ public class RuntimeSnapshotDriftTests
     public void Oracle_RuntimeSnapshot_HasColumnTypesCreatedByMigrations()
     {
         AssertSnapshotColumnType(typeof(ActivityExecutionRecord), "ActivityNodeId", "NCLOB");
+        AssertSnapshotColumnType(typeof(ActivityExecutionRecord), "SerializedMetadata", "NCLOB");
         AssertSnapshotColumnType(typeof(WorkflowExecutionLogRecord), "ActivityNodeId", "NCLOB");
         AssertSnapshotColumnType(typeof(ActivityExecutionRecord), "SchedulingActivityExecutionId", "NVARCHAR2(200)");
         AssertSnapshotColumnType(typeof(ActivityExecutionRecord), "SchedulingActivityId", "NVARCHAR2(200)");
