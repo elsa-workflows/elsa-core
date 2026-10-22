@@ -43,18 +43,16 @@ export interface BpmnDesigner {
     dispose(): void;
 }
 
-export interface BpmnLoadResult {
-    /** `false` when the document could not be shown at all; `error` then says why. */
-    imported: boolean;
-    error?: string;
-    warnings: BpmnLoadWarning[];
-}
+/** `imported` is `false` when the document could not be shown at all; `error` then says why. */
+export type BpmnLoadResult =
+    | { imported: true; warnings: BpmnLoadWarning[] }
+    | { imported: false; error: string; warnings: BpmnLoadWarning[] };
 
 /**
- * `dropped`: content a save would lose. `rewritten`: content a save keeps but writes differently. A host treats a
- * kind it does not know as `dropped`.
+ * `dropped`: content a save would lose. `rewritten`: content a save keeps but writes differently. A later designer may
+ * report a kind added since, so a host treats a kind it does not know as `dropped`.
  */
-export type BpmnLoadWarningKind = 'dropped' | 'rewritten';
+export type BpmnLoadWarningKind = 'dropped' | 'rewritten' | (string & {});
 
 export interface BpmnLoadWarning {
     kind: BpmnLoadWarningKind;
