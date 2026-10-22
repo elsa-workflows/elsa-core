@@ -166,7 +166,9 @@ public partial class BpmnViewerCanvas
                 }
                 catch (Exception exception) when (exception is not OperationCanceledException)
                 {
-                    // The host shows why the designer could not be created; there is nothing to show state on.
+                    // The host shows why the designer could not be created; there is nothing to show state on. A load
+                    // that failed for another reason is tried again when the document is asked for again.
+                    _loadedXml = null;
                     return;
                 }
 

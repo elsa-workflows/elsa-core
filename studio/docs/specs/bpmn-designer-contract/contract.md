@@ -201,7 +201,7 @@ a BPMN-imported workflow's source document in it, created with `readOnly`. Witho
   no selection as the root. Selecting an activity from the journal selects its element, and the `selection` event that
   raises is not reported back. An activity selected while `load` runs is selected once it returns.
 - A document the designer cannot import shows the error `load` returned, and is loaded again the next time the viewer
-  is asked to show it.
+  is asked to show it. So is a document whose `load` call threw.
 - Zoom to fit and Center do nothing on this canvas, because the contract has no viewport calls.
 
 ## Versioning

@@ -156,6 +156,21 @@ public sealed class BpmnViewerCanvasTests : BunitContext, IAsyncLifetime
         Assert.Single(_designer.Calls, call => call.Identifier == "applyOverlays");
     }
 
+    [Fact(DisplayName = "A document whose load failed is loaded again when asked for again")]
+    public async Task AThrownLoad_IsRetried()
+    {
+        EnableDesigner();
+        _designer.Handlers["load"] = _ => Task.FromException<object?>(new JSException("The connection was lost."));
+        var cut = Render<BpmnViewerCanvas>(parameters => parameters.Add(x => x.Activity, OrderProcess()).Add(x => x.SourceXml, SourceXml));
+        cut.WaitForAssertion(() => Assert.Contains(_designer.Calls, call => call.Identifier == "load"));
+
+        _designer.Returns("load", new BpmnDesignerLoadResult(true, null, []));
+        await cut.InvokeAsync(() => cut.Instance.LoadBpmnAsync(OrderProcess(), SourceXml, null));
+
+        Assert.Equal(2, _designer.Calls.Count(call => call.Identifier == "load"));
+        Assert.Single(_designer.Calls, call => call.Identifier == "applyOverlays");
+    }
+
     [Fact(DisplayName = "A selected element is reported as its bound activity, an unbound one as its scope, and no selection as the root")]
     public async Task ReportsSelectionAsActivities()
     {
