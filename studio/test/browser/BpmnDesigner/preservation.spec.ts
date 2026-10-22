@@ -42,6 +42,25 @@ async function record(name: string, source: string, result: LoadResult, saved: s
     }, null, 2));
 }
 
+/**
+ * How many elements, and how many namespaced attributes, each namespace contributes to `xml`. It does not rely on the
+ * designer's own load warnings, so a save that loses content those warnings miss still changes it.
+ */
+function inventory(page: Page, xml: string): Promise<Record<string, number>> {
+    return page.evaluate(xml => {
+        const counts: Record<string, number> = {};
+        const add = (key: string) => (counts[key] = (counts[key] ?? 0) + 1);
+        const ignored = ['http://www.w3.org/2000/xmlns/', 'http://www.w3.org/2001/XMLSchema-instance'];
+        for (const element of Array.from(new DOMParser().parseFromString(xml, 'application/xml').getElementsByTagName('*'))) {
+            add(`{${element.namespaceURI}}${element.localName}`);
+            for (const attribute of Array.from(element.attributes)) {
+                if (attribute.namespaceURI && !ignored.includes(attribute.namespaceURI)) add(`@{${attribute.namespaceURI}}${attribute.localName}`);
+            }
+        }
+        return counts;
+    }, xml);
+}
+
 /** A saved document opens with no warnings, and saving it again writes the same document. */
 async function expectStable(page: Page, saved: string): Promise<void> {
     const again = await roundTrip(page, saved);
@@ -56,6 +75,7 @@ test.describe('the preservation fixture', () => {
         const { result, saved } = await roundTrip(harness, await readFile(source, 'utf8'));
 
         expect(result).toEqual({ imported: true, warnings: [] });
+        expect(await inventory(harness, saved)).toEqual(await inventory(harness, await readFile(source, 'utf8')));
         await expectStable(harness, saved);
         await record('preservation', source, result, saved);
     });
@@ -87,6 +107,8 @@ test.describe('the preservation fixture', () => {
         const reloaded = await roundTrip(harness, xml);
 
         expect(reloaded.result).toEqual({ imported: true, warnings: [] });
+        // The edit replaces a binding with another of the same shape, so every element and foreign attribute remains.
+        expect(await inventory(harness, xml)).toEqual(await inventory(harness, await readFile(source, 'utf8')));
         expect(await getBinding(harness, 'Task_Deep')).toEqual(edited);
         expect(await getBinding(harness, 'Task_Bound')).toEqual(untouched);
         expect(xml).toMatch(/<elsa:activityBinding activityType="Elsa.Delay">[\s\S]*?<\/elsa:activityBinding>\s*<acme:note>deep foreign content<\/acme:note>/);

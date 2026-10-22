@@ -91,11 +91,16 @@ async Task<JsonObject> ImportAsync(string xml)
             ["elementCounts"] = JsonSerializer.SerializeToNode(result.Analysis.ElementCounts.OrderBy(pair => pair.Key, StringComparer.Ordinal).ToDictionary())
         };
     }
-    catch (Exception exception)
+    catch (Exception exception) when (IsRefusal(exception))
     {
         return new JsonObject { ["refused"] = $"{exception.GetType().Name}: {exception.Message}" };
     }
 }
+
+// The import refuses a document by throwing one of its own exceptions, or one of the Bpmn.* libraries it reads documents
+// with. Anything else is a fault in the import itself: it fails the check instead of comparing equal to the same fault.
+static bool IsRefusal(Exception exception) =>
+    exception.GetType().Namespace is { } name && (name.StartsWith("Elsa.Bpmn", StringComparison.Ordinal) || name.StartsWith("Bpmn.", StringComparison.Ordinal));
 
 static List<string> Differences(JsonObject before, JsonObject after) =>
     before.Select(property => property.Key)
