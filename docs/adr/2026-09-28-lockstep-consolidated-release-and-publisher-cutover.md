@@ -21,7 +21,7 @@ Two publishers for one package ID and version line would let them race or overwr
    - disable the original repositories' publishing for 3.10 and later.
 
    From then on, each package ID has one publisher per version line.
-3. **Publication stays behind the existing gates.** The root workflow publishes only on an approved `workflow_dispatch` ([package publisher gates](../integration-program/consolidation/package-publisher-gates.md)), and 3.10.x goes only to Feedz. The imported Extensions and Studio `packages.yml` files stay inert at their `.source` paths.
+3. **Publication stays behind the existing gates.** The root workflow publishes only on an approved `workflow_dispatch` ([package publisher gates](../integration-program/consolidation/package-publisher-gates.md)). Stable 3.10.x may publish to NuGet.org the same way earlier stable lines do; branch previews and 3.10.x prerelease tags keep the Feedz path. The imported Extensions and Studio `packages.yml` files stay inert at their `.source` paths.
 4. **Deprecated packages get no consolidated version.** The legacy Extensions Secrets packages (`Elsa.Secrets.Api`, `.Core`, `.Management`, `.Models`, `.Scripting`) also carry their own `IsPackable=false`, so they stay out when the cutover lifts the product-wide setting. A guard test checks it. They are marked deprecated on NuGet at 3.10.0 and keep their 3.8.x versions ([upgrade guide](../../core/docs/migrations/secrets-legacy-extensions-upgrade.md)).
 5. **The #8260 proof publishes nothing.** It runs on the import head with a clean local feed and consumer restores. No proof package goes to Feedz or NuGet.org.
 

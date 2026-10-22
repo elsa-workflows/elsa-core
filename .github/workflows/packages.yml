@@ -9,7 +9,7 @@ on:
         type: boolean
         default: false
       publish_nuget:
-        description: Publish a release-tag package to NuGet.org for this run; 3.10.x tags are Feedz-only (requires publisher approval).
+        description: Publish a release-tag package to NuGet.org for this run (requires publisher approval).
         required: true
         type: boolean
         default: false
@@ -49,7 +49,7 @@ jobs:
           sparse-checkout: scripts
           fetch-depth: 1
 
-      # Strict release tags only; 3.10.x tags are Feedz-only. Tested by
+      # Strict release tags only. Tested by
       # scripts/test_validate_packages_publication_selection.py.
       - name: Reject incompatible publication refs
         env:
@@ -398,7 +398,7 @@ jobs:
     timeout-minutes: 30
     # Push and release events stay non-publishing. An approved operator must
     # dispatch this workflow and opt in for this run: from a branch for previews,
-    # or from a 3.10.x release tag, which ships to Feedz only.
+    # or from a 3.10.x release tag.
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_preview_feedz && (startsWith(github.ref, 'refs/heads/') || startsWith(github.ref, 'refs/tags/3.10.')) }}
     steps:
       - name: Check out the push action
@@ -431,10 +431,9 @@ jobs:
     # starting pushes once its own deadline passes, so the runner never has to
     # cancel a publish half-done. Move the two together.
     timeout-minutes: 30
-    # NuGet publication requires an explicit dispatch on a release tag. 3.10.x is
-    # Feedz-only: the selection check rejects it, and this guard keeps it off
-    # NuGet.org even if that check were bypassed.
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/') && !startsWith(github.ref_name, '3.10.') }}
+    # NuGet publication requires an explicit dispatch on a release tag, including
+    # stable 3.10.x, the same way earlier stable lines publish.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/') }}
     permissions:
       contents: read
       id-token: write # Required: lets this job request the OIDC token that nuget.org exchanges for a temporary API key.

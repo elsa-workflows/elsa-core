@@ -32,16 +32,15 @@ def selection_errors(ref: str, *, feedz: bool = False, nuget: bool = False, cove
         tag = ref[len("refs/tags/"):]
         if not RELEASE_TAG.fullmatch(tag):
             return [f"Tag {tag!r} is not a release version such as 3.8.4 or 3.8.0-rc2."]
-        # 3.10.x ships to Feedz only, at the tag's release version.
+        # 3.10.x tags may still publish to Feedz at the tag's release version.
+        # They may also publish to NuGet.org, like earlier release tags.
         major, minor = (int(part) for part in tag.split(".")[:2])
-        feedz_only = (major, minor) == (3, 10)
-        if feedz_only and not tag.startswith("3.10."):
-            # NuGet would normalize 03.10.0 to 3.10.0, and the publish jobs match the literal 3.10. prefix.
+        feedz_from_tag = (major, minor) == (3, 10)
+        if feedz_from_tag and not tag.startswith("3.10."):
+            # NuGet would normalize 03.10.0 to 3.10.0, and the Feedz job matches the literal 3.10. prefix.
             return [f"Tag {tag!r} names a 3.10 release without the canonical 3.10. prefix."]
-        if feedz and not feedz_only:
+        if feedz and not feedz_from_tag:
             errors.append("Feedz publication from a tag is limited to 3.10.x release tags; publish previews from a branch.")
-        if nuget and feedz_only:
-            errors.append("3.10.x is Feedz-only; NuGet.org publication is rejected for 3.10.x tags.")
     else:
         return [f"Ref {ref!r} is neither a branch nor a tag."]
     if coverage and ref not in COVERAGE_REFS:

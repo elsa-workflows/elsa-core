@@ -12,7 +12,7 @@ import validate_packages_workflow_gates as gates
 
 NUGET_IF = (
     "if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget"
-    " && startsWith(github.ref, 'refs/tags/') && !startsWith(github.ref_name, '3.10.') }}"
+    " && startsWith(github.ref, 'refs/tags/') }}"
 )
 COVERAGE_REFS_IF = "github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release/3.6.1') }}"
 SELECTION_RUN = "        run: python3 scripts/validate_packages_publication_selection.py\n"
@@ -294,18 +294,14 @@ class WorkflowGateTests(unittest.TestCase):
                 gates.triggers(workflow)["workflow_dispatch"]["inputs"][name]["default"] = True
                 self.assertIn(f"workflow_dispatch input {name!r} must default to false", gates.workflow_violations(workflow))
 
-    def test_rejects_nuget_publisher_without_the_3_10_exclusion(self):
-        source = self.mutated(" && !startsWith(github.ref_name, '3.10.')", "")
-        self.assert_rejected(source, "publish_nuget if: must require !startsWith(github.ref_name, '3.10.')")
-
     def test_rejects_other_publication_bypasses(self):
         for description, old, new, expected in OTHER_BYPASSES:
             with self.subTest(description):
                 self.assert_rejected(self.mutated(old, new), expected)
 
-    def test_rejects_selection_script_that_allows_3_10_on_nuget(self):
+    def test_rejects_selection_script_that_allows_a_non_release_tag(self):
         with unittest.mock.patch.object(gates, "selection_errors", return_value=[]):
-            self.assert_rejected(self.source, "the selection script must reject NuGet.org publication of a 3.10.x tag")
+            self.assert_rejected(self.source, "the selection script must reject a v-prefixed tag")
 
     def test_accepts_ungated_job_whose_string_literal_merely_contains_secrets_bracket(self):
         source = self.mutated(None, """

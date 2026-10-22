@@ -32,8 +32,6 @@ MANUAL_DISPATCH = "github.event_name == 'workflow_dispatch'"
 REQUIRED_REF_CONDITIONS = {
     "publish_nuget": (
         "startsWith(github.ref, 'refs/tags/')",
-        # Defense in depth: 3.10.x stays off NuGet.org even if the selection job were bypassed.
-        "!startsWith(github.ref_name, '3.10.')",
     ),
     "deploy_coverage": (" || ".join(f"github.ref == '{ref}'" for ref in COVERAGE_REFS),),
 }
@@ -46,7 +44,6 @@ SELECTION_ENV = {
 }
 # Probed against the script the selection job runs, not a copy of its rules.
 REQUIRED_REJECTIONS = (
-    ("NuGet.org publication of a 3.10.x tag", "refs/tags/3.10.0", {"nuget": True}),
     ("a v-prefixed tag", "refs/tags/v3.10.0", {}),
     ("a non-release tag", "refs/tags/test-1", {}),
 )

@@ -19,7 +19,11 @@ ACCEPTED = (
     ("refs/tags/3.8.0-rc2", {"nuget"}),
     ("refs/tags/2.17.0", {"nuget"}),
     ("refs/tags/3.10.0", {"feedz"}),
+    ("refs/tags/3.10.0", {"nuget"}),
+    ("refs/tags/3.10.0-rc1", {"nuget"}),
+    ("refs/tags/3.10.0", {"feedz", "nuget"}),
     ("refs/tags/3.10.1-preview.2", {"feedz"}),
+    ("refs/tags/3.10.1-preview.2", {"nuget"}),
     ("refs/heads/main", {"coverage"}),
     ("refs/heads/release/3.6.1", {"coverage"}),
     ("refs/heads/main", {"feedz", "coverage"}),
@@ -31,9 +35,6 @@ REJECTED = (
     ("refs/heads/3.8.5", {"nuget"}, "requires a release tag"),
     ("refs/tags/3.8.5", {"feedz"}, "limited to 3.10.x"),
     ("refs/tags/3.8.0-rc2", {"feedz"}, "limited to 3.10.x"),
-    ("refs/tags/3.10.0", {"nuget"}, "Feedz-only"),
-    ("refs/tags/3.10.0-rc1", {"nuget"}, "Feedz-only"),
-    ("refs/tags/3.10.0", {"feedz", "nuget"}, "Feedz-only"),
     ("refs/tags/03.10.0", {"nuget"}, "canonical 3.10."),
     ("refs/tags/3.010.0", {"feedz"}, "canonical 3.10."),
     ("refs/tags/v3.10.0", set(), "not a release version"),
@@ -72,6 +73,7 @@ class SelectionErrorsTests(unittest.TestCase):
             with self.subTest(selector=selector), self.assertRaises(TypeError):
                 selection_errors("refs/tags/3.10.0", **{selector: True})
         self.assertEqual([], errors("refs/tags/3.10.0", {"feedz"}))
+        self.assertEqual([], errors("refs/tags/3.10.0", {"nuget"}))
         self.assertEqual([], errors("refs/tags/3.8.5", {"nuget"}))
         self.assertEqual([], errors("refs/tags/3.9.1", {"nuget"}))
 
@@ -95,13 +97,15 @@ class SelectionScriptTests(unittest.TestCase):
         return subprocess.run([sys.executable, str(SCRIPT)], env=env, capture_output=True, text=True)
 
     def test_accepted_selection_exits_zero(self):
-        result = self.run_script("refs/tags/3.10.0", feedz="true")
-        self.assertEqual(0, result.returncode, result.stderr)
+        for kwargs in ({"feedz": "true"}, {"nuget": "true"}):
+            with self.subTest(kwargs):
+                result = self.run_script("refs/tags/3.10.0", **kwargs)
+                self.assertEqual(0, result.returncode, result.stderr)
 
     def test_rejected_selection_fails_the_step_with_its_reason(self):
-        result = self.run_script("refs/tags/3.10.0", nuget="true")
+        result = self.run_script("refs/tags/3.8.5", feedz="true")
         self.assertEqual(1, result.returncode)
-        self.assertIn("Feedz-only", result.stderr)
+        self.assertIn("limited to 3.10.x", result.stderr)
 
     def test_input_that_is_not_a_boolean_fails_the_step(self):
         for value in ("", "True", "yes"):
