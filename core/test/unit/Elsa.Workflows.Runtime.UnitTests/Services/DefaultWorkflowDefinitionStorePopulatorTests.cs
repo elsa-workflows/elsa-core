@@ -2,6 +2,7 @@ using Elsa.Common;
 using Elsa.Common.Multitenancy;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;
@@ -262,20 +263,20 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
         await _storeMock.Received(1).SaveManyAsync(Arg.Any<IEnumerable<WorkflowDefinition>>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact(DisplayName = "PopulateStoreAsync logs the 3.10.1 upgrade step when a shared CLR save hits another tenant")]
-    public async Task PopulateStoreAsync_CrossTenantIdCollision_LogsUpgradeStepAndSkips()
+    [Fact(DisplayName = "PopulateStoreAsync skips a non-CLR save that hits another tenant without an upgrade hint")]
+    public async Task PopulateStoreAsync_CrossTenantIdCollision_LogsAndSkipsWithoutUpgradeHint()
     {
         var logger = new CapturingLogger();
         _storeMock
             .When(x => x.SaveManyAsync(Arg.Any<IEnumerable<WorkflowDefinition>>(), Arg.Any<CancellationToken>()))
             .Do(_ => throw new InvalidOperationException(
-                "A record with ID 'shared-v1' already exists in another tenant. If this is a shared CLR workflow left from a pre-3.10.1 Dapper host, see the 3.10.1 upgrade step in extensions/docs/changelogs/3.10.1.md."));
+                "A record with ID 'shared-v1' already exists in another tenant."));
 
         var workflow = new MaterializedWorkflow(new()
         {
             Identity = new("shared-workflow", 1, "shared-v1", Tenant.AgnosticTenantId),
             Publication = new(true, true)
-        }, "CLR", "ClrWorkflowMaterializer");
+        }, "Test", "TestProvider");
         var populator = CreatePopulatorWithTenant("tenant-b", logger, workflow);
 
         var result = (await populator.PopulateStoreAsync()).ToList();
@@ -283,21 +284,23 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
         Assert.Empty(result);
         Assert.Contains(logger.Messages, message =>
             message.Contains("Skipping adding workflow", StringComparison.Ordinal)
-            && message.Contains("3.10.1 upgrade step", StringComparison.Ordinal)
-            && message.Contains("extensions/docs/changelogs/3.10.1.md", StringComparison.Ordinal));
+            && message.Contains("already exists in another tenant", StringComparison.Ordinal));
+        Assert.DoesNotContain(logger.Messages, message =>
+            message.Contains("3.10.1", StringComparison.Ordinal)
+            || message.Contains("upgrade step", StringComparison.Ordinal));
     }
 
-    [Fact(DisplayName = "PopulateStoreAsync errors when a tenant-declared CLR workflow was wrongly stored as '*'")]
-    public async Task PopulateStoreAsync_ExistingStarRow_DeclaredConcreteTenant_LogsErrorAndSkips()
+    [Fact(DisplayName = "PopulateStoreAsync restamps a tenant-declared CLR workflow stored as '*'")]
+    public async Task PopulateStoreAsync_ExistingStarRow_DeclaredConcreteTenant_RestampsAndSaves()
     {
-        var logger = new CapturingLogger();
         _storeMock.FindAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>())
             .Returns(new WorkflowDefinition
             {
                 Id = "owned-v1",
                 DefinitionId = "owned-workflow",
                 Version = 1,
-                TenantId = Tenant.AgnosticTenantId
+                TenantId = Tenant.AgnosticTenantId,
+                ProviderName = "CLR"
             });
 
         var workflow = new MaterializedWorkflow(new()
@@ -305,18 +308,33 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
             Identity = new("owned-workflow", 1, "owned-v1", "tenant-a"),
             Publication = new(true, true)
         }, "CLR", "ClrWorkflowMaterializer");
-        var populator = CreatePopulatorWithTenant("tenant-a", logger, workflow);
+        var populator = CreatePopulatorWithTenant("tenant-a", workflow);
+
+        var result = (await populator.PopulateStoreAsync()).ToList();
+
+        Assert.Single(result);
+        await _storeMock.Received().SaveManyAsync(Arg.Is<IEnumerable<WorkflowDefinition>>(definitions =>
+            definitions.Any(definition =>
+                definition.Id == "owned-v1"
+                && definition.TenantId == "tenant-a")), Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "PopulateStoreAsync restamps every CLR workflow, including those it then skips")]
+    public async Task PopulateStoreAsync_OtherTenantClrWorkflow_RestampsBeforeSkip()
+    {
+        var restamper = Substitute.For<IClrWorkflowDefinitionTenantRestamper>();
+        var workflow = new MaterializedWorkflow(new()
+        {
+            Identity = new("owned-workflow", 1, "owned-v1", "tenant-a"),
+            Publication = new(true, true)
+        }, "CLR", "ClrWorkflowMaterializer");
+        var populator = CreatePopulatorWithTenant("tenant-b", restamper, workflow);
 
         var result = (await populator.PopulateStoreAsync()).ToList();
 
         Assert.Empty(result);
+        await restamper.Received(1).RestampAsync("owned-workflow", 1, "tenant-a", Arg.Any<CancellationToken>());
         await _storeMock.DidNotReceive().SaveManyAsync(Arg.Any<IEnumerable<WorkflowDefinition>>(), Arg.Any<CancellationToken>());
-        Assert.Contains(logger.Messages, message =>
-            message.Contains("stored as '*'", StringComparison.Ordinal)
-            && message.Contains("declares tenant", StringComparison.Ordinal)
-            && message.Contains("visible to and runnable by every tenant", StringComparison.Ordinal)
-            && message.Contains("restore UPDATE", StringComparison.Ordinal)
-            && message.Contains("3.10.1 upgrade step", StringComparison.Ordinal));
     }
 
     [Theory(DisplayName = "PopulateStoreAsync handles null/empty tenant IDs correctly")]
@@ -353,11 +371,24 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
     }
 
     private DefaultWorkflowDefinitionStorePopulator CreatePopulatorWithTenant(string? tenantId, params MaterializedWorkflow[] workflows) =>
-        CreatePopulatorWithTenant(tenantId, Substitute.For<ILogger<DefaultWorkflowDefinitionStorePopulator>>(), workflows);
+        CreatePopulatorWithTenant(tenantId, Substitute.For<ILogger<DefaultWorkflowDefinitionStorePopulator>>(), restamper: null, workflows);
 
     private DefaultWorkflowDefinitionStorePopulator CreatePopulatorWithTenant(
         string? tenantId,
         ILogger<DefaultWorkflowDefinitionStorePopulator> logger,
+        params MaterializedWorkflow[] workflows) =>
+        CreatePopulatorWithTenant(tenantId, logger, restamper: null, workflows);
+
+    private DefaultWorkflowDefinitionStorePopulator CreatePopulatorWithTenant(
+        string? tenantId,
+        IClrWorkflowDefinitionTenantRestamper restamper,
+        params MaterializedWorkflow[] workflows) =>
+        CreatePopulatorWithTenant(tenantId, Substitute.For<ILogger<DefaultWorkflowDefinitionStorePopulator>>(), restamper, workflows);
+
+    private DefaultWorkflowDefinitionStorePopulator CreatePopulatorWithTenant(
+        string? tenantId,
+        ILogger<DefaultWorkflowDefinitionStorePopulator> logger,
+        IClrWorkflowDefinitionTenantRestamper? restamper,
         params MaterializedWorkflow[] workflows)
     {
         var tenantAccessor = Substitute.For<ITenantAccessor>();
@@ -378,7 +409,8 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
             Substitute.For<ISystemClock>(),
             Substitute.For<IIdentityGraphService>(),
             tenantAccessor,
-            logger);
+            logger,
+            restamper);
     }
 
     private sealed class CapturingLogger : ILogger<DefaultWorkflowDefinitionStorePopulator>

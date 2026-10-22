@@ -4,6 +4,7 @@ using System.Text.Json;
 using Dapper;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Persistence.Dapper.Contracts;
 using Elsa.Persistence.Dapper.Extensions;
@@ -14,6 +15,8 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Runtime;
+using Elsa.Workflows.Runtime.Providers;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows;
@@ -30,7 +33,7 @@ namespace Elsa.Persistence.Dapper.Modules.Management.Stores;
 /// </summary>
 [UsedImplicitly]
 internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> store, IPayloadSerializer payloadSerializer, IDbConnectionProvider connectionProvider)
-    : IWorkflowDefinitionStore
+    : IWorkflowDefinitionStore, IClrWorkflowDefinitionTenantRestamper
 {
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
@@ -118,6 +121,37 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
     {
         var record = Map(definition);
         await store.SaveAsync(record, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<WorkflowDefinition?> RestampAsync(string definitionId, int version, string declaredTenantId, CancellationToken cancellationToken = default)
+    {
+        var record = await store.FindAsync(query =>
+        {
+            query.Is(nameof(WorkflowDefinitionRecord.DefinitionId), definitionId);
+            query.Is(nameof(WorkflowDefinitionRecord.Version), version);
+            query.Is(nameof(WorkflowDefinitionRecord.ProviderName), ClrWorkflowsProvider.ProviderName);
+        }, tenantAgnostic: true, cancellationToken);
+
+        if (record == null)
+        {
+            return null;
+        }
+
+        var declared = string.IsNullOrEmpty(declaredTenantId) ? Tenant.AgnosticTenantId : declaredTenantId;
+        if (string.Equals(record.TenantId ?? string.Empty, declared, StringComparison.Ordinal))
+        {
+            return Map(record);
+        }
+
+        record.TenantId = declared;
+        using var connection = connectionProvider.GetConnection();
+        var write = connectionProvider.CreateQuery()
+            .Update(store.TableName, record, [nameof(WorkflowDefinitionRecord.TenantId)])
+            .Is(store.PrimaryKey, record.Id)
+            .Is(nameof(WorkflowDefinitionRecord.ProviderName), ClrWorkflowsProvider.ProviderName);
+        await write.ExecuteAsync(connection);
+        return Map(record);
     }
 
     /// <inheritdoc />

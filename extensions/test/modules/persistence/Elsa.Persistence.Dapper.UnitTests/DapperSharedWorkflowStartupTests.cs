@@ -6,6 +6,7 @@ using Elsa.Persistence.Dapper.Modules.Management.Records;
 using Elsa.Persistence.Dapper.Modules.Management.Stores;
 using Elsa.Persistence.Dapper.Modules.Runtime.Stores;
 using Elsa.Persistence.Dapper.Services;
+using Elsa.Common.Models;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Entities;
@@ -97,19 +98,14 @@ public sealed class DapperSharedWorkflowStartupTests : IDisposable
     }
 
     [Fact]
-    public async Task UpgradedDatabase_ClrWorkflowStampedToLastTenant_ThrowsWithUpgradeHint()
+    public async Task UpgradedDatabase_ClrWorkflowStampedToLastTenant_StoreSaveStillThrowsWithoutUpgradeHint()
     {
         using (_tenantAccessor.PushContext(AgnosticTenant()))
         {
             await _definitions.SaveAsync(Definition());
         }
 
-        using (var connection = _provider.GetConnection())
-        {
-            connection.Execute(
-                $"update {Q(_definitionsTable)} set {Q("TenantId")} = @tenantId, {Q("ProviderName")} = @provider where {Q("Id")} = @id",
-                new { id = "shared-v1", tenantId = "tenant-a", provider = "CLR" });
-        }
+        StampDefinition("shared-v1", "tenant-a", "CLR");
 
         Exception? exception;
         using (_tenantAccessor.PushContext(TenantB()))
@@ -119,9 +115,86 @@ public sealed class DapperSharedWorkflowStartupTests : IDisposable
 
         var invalidOperation = Assert.IsType<InvalidOperationException>(exception);
         Assert.Contains("already exists in another tenant", invalidOperation.Message, StringComparison.Ordinal);
-        Assert.Contains("3.10.1 upgrade step", invalidOperation.Message, StringComparison.Ordinal);
-        Assert.Contains("extensions/docs/changelogs/3.10.1.md", invalidOperation.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("3.10.1", invalidOperation.Message, StringComparison.Ordinal);
         Assert.Equal("tenant-a", LoadDefinitionTenantId());
+    }
+
+    [Fact]
+    public async Task UpgradedDatabase_ClrWorkflowStampedToLastTenant_RestampToStar_VisibleToOtherTenants()
+    {
+        using (_tenantAccessor.PushContext(AgnosticTenant()))
+        {
+            await _definitions.SaveAsync(Definition());
+        }
+
+        StampDefinition("shared-v1", "tenant-a", "CLR");
+
+        using (_tenantAccessor.PushContext(TenantB()))
+        {
+            var restamped = await _definitions.RestampAsync("shared-workflow", 1, Tenant.AgnosticTenantId);
+            Assert.NotNull(restamped);
+            Assert.Equal(Tenant.AgnosticTenantId, restamped.TenantId);
+
+            var found = await _definitions.FindAsync(new WorkflowDefinitionFilter { DefinitionId = "shared-workflow" });
+            Assert.NotNull(found);
+            Assert.Equal(Tenant.AgnosticTenantId, found.TenantId);
+        }
+
+        Assert.Equal(Tenant.AgnosticTenantId, LoadDefinitionTenantId());
+    }
+
+    [Fact]
+    public async Task DeclaredTenantClrRowResetToStar_RestampRestores_HiddenFromTenantB()
+    {
+        using (_tenantAccessor.PushContext(AgnosticTenant()))
+        {
+            await _definitions.SaveAsync(Definition("owned-v1", "owned-workflow", Tenant.AgnosticTenantId, "CLR"));
+        }
+
+        using (_tenantAccessor.PushContext(TenantA()))
+        {
+            var restamped = await _definitions.RestampAsync("owned-workflow", 1, "tenant-a");
+            Assert.NotNull(restamped);
+            Assert.Equal("tenant-a", restamped.TenantId);
+        }
+
+        using (_tenantAccessor.PushContext(TenantB()))
+        {
+            var byId = await _definitions.FindAsync(new WorkflowDefinitionFilter { DefinitionId = "owned-workflow" });
+            var published = await _definitions.FindAsync(new WorkflowDefinitionFilter
+            {
+                DefinitionId = "owned-workflow",
+                VersionOptions = VersionOptions.Published
+            });
+            var summaries = (await _definitions.FindSummariesAsync(new WorkflowDefinitionFilter { DefinitionId = "owned-workflow" })).ToList();
+
+            Assert.Null(byId);
+            Assert.Null(published);
+            Assert.Empty(summaries);
+        }
+
+        using (var connection = _provider.GetConnection())
+        {
+            Assert.Equal("tenant-a", connection.QuerySingle<string?>(
+                $"select {Q("TenantId")} from {Q(_definitionsTable)} where {Q("Id")} = 'owned-v1'"));
+        }
+    }
+
+    [Fact]
+    public async Task NonClrStarRow_IsNeverRestamped()
+    {
+        using (_tenantAccessor.PushContext(AgnosticTenant()))
+        {
+            await _definitions.SaveAsync(Definition());
+        }
+
+        using (_tenantAccessor.PushContext(TenantA()))
+        {
+            var found = await _definitions.RestampAsync("shared-workflow", 1, "tenant-a");
+            Assert.Null(found);
+        }
+
+        Assert.Equal(Tenant.AgnosticTenantId, LoadDefinitionTenantId());
     }
 
     public void Dispose()
@@ -199,17 +272,29 @@ public sealed class DapperSharedWorkflowStartupTests : IDisposable
         return connection.QuerySingle<string?>($"select {Q("TenantId")} from {Q(_triggersTable)} where {Q("Id")} = 'shared-trigger'");
     }
 
-    private static WorkflowDefinition Definition() => new()
+    private void StampDefinition(string id, string tenantId, string provider)
     {
-        Id = "shared-v1",
-        DefinitionId = "shared-workflow",
+        using var connection = _provider.GetConnection();
+        connection.Execute(
+            $"update {Q(_definitionsTable)} set {Q("TenantId")} = @tenantId, {Q("ProviderName")} = @provider where {Q("Id")} = @id",
+            new { id, tenantId, provider });
+    }
+
+    private static WorkflowDefinition Definition() =>
+        Definition("shared-v1", "shared-workflow", Tenant.AgnosticTenantId, providerName: null);
+
+    private static WorkflowDefinition Definition(string id, string definitionId, string tenantId, string? providerName) => new()
+    {
+        Id = id,
+        DefinitionId = definitionId,
         Version = 1,
         Name = "Shared",
         IsLatest = true,
         IsPublished = true,
         MaterializerName = "Json",
+        ProviderName = providerName,
         CreatedAt = DateTimeOffset.UtcNow,
-        TenantId = Tenant.AgnosticTenantId
+        TenantId = tenantId
     };
 
     private static StoredTrigger Trigger() => new()

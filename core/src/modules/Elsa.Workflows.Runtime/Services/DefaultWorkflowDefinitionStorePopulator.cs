@@ -5,6 +5,7 @@ using Elsa.Workflows.Activities;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Runtime.Providers;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 
@@ -21,6 +22,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
     private readonly ISystemClock _systemClock;
     private readonly IIdentityGraphService _identityGraphService;
     private readonly ITenantAccessor _tenantAccessor;
+    private readonly IClrWorkflowDefinitionTenantRestamper? _clrTenantRestamper;
     private readonly ILogger<DefaultWorkflowDefinitionStorePopulator> _logger;
     private readonly SemaphoreSlim _semaphore = new(1, 1);
 
@@ -36,7 +38,8 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         ISystemClock systemClock,
         IIdentityGraphService identityGraphService,
         ITenantAccessor tenantAccessor,
-        ILogger<DefaultWorkflowDefinitionStorePopulator> logger)
+        ILogger<DefaultWorkflowDefinitionStorePopulator> logger,
+        IClrWorkflowDefinitionTenantRestamper? clrTenantRestamper = null)
     {
         _workflowDefinitionProviders = workflowDefinitionProviders;
         _triggerIndexer = triggerIndexer;
@@ -47,6 +50,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         _identityGraphService = identityGraphService;
         _tenantAccessor = tenantAccessor;
         _logger = logger;
+        _clrTenantRestamper = clrTenantRestamper;
     }
 
     /// <inheritdoc />
@@ -68,6 +72,8 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
 
             foreach (var result in results)
             {
+                await RestampClrTenantAsync(result, cancellationToken);
+
                 // Normalize tenant IDs for comparison (null becomes empty string)
                 var definitionTenantId = result.Workflow.Identity.TenantId.NormalizeTenantId();
 
@@ -129,16 +135,9 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
             if (e is InvalidOperationException && e.Message.Contains("already exists in another tenant", StringComparison.Ordinal))
             {
                 _logger.LogError(e,
-                    "Skipping adding workflow {WorkflowId} from provider {Provider} because a record with that Id already exists in another tenant. If this is a shared CLR workflow left from a pre-3.10.1 Dapper host, see the 3.10.1 upgrade step in extensions/docs/changelogs/3.10.1.md.",
+                    "Skipping adding workflow {WorkflowId} from provider {Provider} because a record with that Id already exists in another tenant.",
                     materializedWorkflow.Workflow.Identity.DefinitionId,
                     materializedWorkflow.ProviderName);
-            }
-            else if (e is InvalidOperationException && e.Message.Contains("stored as tenant-agnostic", StringComparison.Ordinal))
-            {
-                _logger.LogError(e,
-                    "Skipping adding workflow {WorkflowId} because it is stored as '*' but declares tenant '{DeclaredTenantId}'. Until TenantId is restored, this workflow is visible to and runnable by every tenant. Set TenantId back to the declared tenant with the restore UPDATE in the 3.10.1 upgrade step in extensions/docs/changelogs/3.10.1.md.",
-                    materializedWorkflow.Workflow.Identity.DefinitionId,
-                    materializedWorkflow.Workflow.Identity.TenantId);
             }
             else
             {
@@ -197,20 +196,10 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
             VersionOptions = VersionOptions.SpecificVersion(workflow.Identity.Version)
         };
 
-        var existingDefinitionVersion = await _workflowDefinitionStore.FindAsync(specificVersionFilter, cancellationToken);
+        await RestampClrTenantAsync(materializedWorkflow, cancellationToken);
 
-        // A 3.10.1 Dapper upgrade SQL that reset every CLR row to '*' can hide a
-        // code-first workflow that declared a concrete tenant. Do not treat that row
-        // as shared: leave TenantId as stored and fail the import so triggers are not
-        // indexed for every tenant.
-        var declaredTenantId = workflow.Identity.TenantId;
-        if (existingDefinitionVersion?.TenantId == Tenant.AgnosticTenantId
-            && !string.IsNullOrEmpty(declaredTenantId)
-            && declaredTenantId != Tenant.AgnosticTenantId)
-        {
-            throw new InvalidOperationException(
-                $"Workflow '{definitionId}' is stored as tenant-agnostic ('*') but declares tenant '{declaredTenantId}'. Until TenantId is restored to '{declaredTenantId}', this workflow is visible to and runnable by every tenant. Set TenantId back to the declared tenant with the restore UPDATE in the 3.10.1 upgrade step in extensions/docs/changelogs/3.10.1.md.");
-        }
+        var existingDefinitionVersion = await _workflowDefinitionStore.FindAsync(specificVersionFilter, cancellationToken);
+        ApplyDeclaredClrTenant(materializedWorkflow, existingDefinitionVersion);
 
         // Set up a list to collect all workflow definitions to be persisted.
         var workflowDefinitionsToSave = new HashSet<WorkflowDefinition>();
@@ -344,6 +333,38 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
             }
         }
     }
+
+    private async Task RestampClrTenantAsync(MaterializedWorkflow materializedWorkflow, CancellationToken cancellationToken)
+    {
+        if (_clrTenantRestamper == null || !IsClr(materializedWorkflow))
+        {
+            return;
+        }
+
+        var identity = materializedWorkflow.Workflow.Identity;
+        await _clrTenantRestamper.RestampAsync(
+            identity.DefinitionId,
+            identity.Version,
+            identity.TenantId ?? Tenant.AgnosticTenantId,
+            cancellationToken);
+    }
+
+    private static void ApplyDeclaredClrTenant(MaterializedWorkflow materializedWorkflow, WorkflowDefinition? existing)
+    {
+        if (existing == null || !IsClr(materializedWorkflow) || existing.ProviderName != ClrWorkflowsProvider.ProviderName)
+        {
+            return;
+        }
+
+        var declaredTenantId = materializedWorkflow.Workflow.Identity.TenantId ?? Tenant.AgnosticTenantId;
+        if (!string.Equals(existing.TenantId ?? string.Empty, declaredTenantId, StringComparison.Ordinal))
+        {
+            existing.TenantId = declaredTenantId;
+        }
+    }
+
+    private static bool IsClr(MaterializedWorkflow materializedWorkflow) =>
+        string.Equals(materializedWorkflow.ProviderName, ClrWorkflowsProvider.ProviderName, StringComparison.Ordinal);
 
     /// <summary>
     /// Syncs the items in the primary list with existing items in the secondary list, even when the object instances are not the same (but their IDs are).
