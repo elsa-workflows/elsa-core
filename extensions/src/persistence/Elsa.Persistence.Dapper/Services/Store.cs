@@ -7,6 +7,7 @@ using Elsa.Common.Multitenancy;
 using Elsa.Persistence.Dapper.Contracts;
 using Elsa.Persistence.Dapper.Extensions;
 using Elsa.Persistence.Dapper.Models;
+using Elsa.Persistence.Dapper.Modules.Management.Records;
 using Elsa.Persistence.Dapper.Records;
 using Elsa.Extensions;
 using JetBrains.Annotations;
@@ -754,8 +755,16 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
         return existing != null;
     }
 
-    internal static InvalidOperationException CrossTenantConflict(object? key) =>
-        new($"A record with ID '{key}' already exists in another tenant. If this is a shared CLR workflow left from a pre-3.10.1 Dapper host, see the 3.10.1 upgrade step in extensions/docs/changelogs/3.10.1.md.");
+    private InvalidOperationException CrossTenantConflict(object? key)
+    {
+        var message = $"A record with ID '{key}' already exists in another tenant.";
+        if (typeof(T) == typeof(WorkflowDefinitionRecord))
+        {
+            message += " If this is a shared CLR workflow left from a pre-3.10.1 Dapper host, see the 3.10.1 upgrade step in extensions/docs/changelogs/3.10.1.md.";
+        }
+
+        return new InvalidOperationException(message);
+    }
 
     private static bool CanWriteExistingRow(Record owned, T record)
     {
@@ -824,9 +833,9 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
     private static bool SameTenant(string? left, string? right) =>
         string.Equals(left ?? string.Empty, right ?? string.Empty, StringComparison.Ordinal);
 
-    protected virtual int? ConsumeForcedAffectedRows() => null;
+    internal virtual int? ConsumeForcedAffectedRows() => null;
 
-    protected virtual void OnAfterExistingRowLookup(T record, T? existing)
+    internal virtual void OnAfterExistingRowLookup(T record, T? existing)
     {
     }
 }

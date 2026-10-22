@@ -62,6 +62,7 @@ public sealed class DapperStoreTenantUpsertTests : IDisposable
 
         var invalidOperation = Assert.IsType<InvalidOperationException>(exception);
         Assert.Contains("another tenant", invalidOperation.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("3.10.1 upgrade step", invalidOperation.Message, StringComparison.Ordinal);
         Assert.Equal([("shared", "tenant-a", "owned-by-a")], LoadItems());
     }
 
@@ -348,7 +349,7 @@ public sealed class DapperStoreTenantUpsertTests : IDisposable
 
         var invalidOperation = Assert.IsType<InvalidOperationException>(exception);
         Assert.Contains("another tenant", invalidOperation.Message, StringComparison.Ordinal);
-        Assert.Contains("3.10.1 upgrade step", invalidOperation.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("3.10.1 upgrade step", invalidOperation.Message, StringComparison.Ordinal);
         Assert.Equal([("shared", "tenant-a", "owned-by-a")], LoadItems());
     }
 

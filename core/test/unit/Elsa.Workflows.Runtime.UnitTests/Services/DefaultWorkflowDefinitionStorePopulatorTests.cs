@@ -314,6 +314,8 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
         Assert.Contains(logger.Messages, message =>
             message.Contains("stored as '*'", StringComparison.Ordinal)
             && message.Contains("declares tenant", StringComparison.Ordinal)
+            && message.Contains("visible to and runnable by every tenant", StringComparison.Ordinal)
+            && message.Contains("restore UPDATE", StringComparison.Ordinal)
             && message.Contains("3.10.1 upgrade step", StringComparison.Ordinal));
     }
 

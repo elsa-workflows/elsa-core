@@ -136,7 +136,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
             else if (e is InvalidOperationException && e.Message.Contains("stored as tenant-agnostic", StringComparison.Ordinal))
             {
                 _logger.LogError(e,
-                    "Skipping adding workflow {WorkflowId} because it is stored as '*' but declares tenant '{DeclaredTenantId}'. Restore TenantId to the declared tenant; if this followed the 3.10.1 CLR upgrade SQL, exclude this DefinitionId. See the 3.10.1 upgrade step in extensions/docs/changelogs/3.10.1.md.",
+                    "Skipping adding workflow {WorkflowId} because it is stored as '*' but declares tenant '{DeclaredTenantId}'. Until TenantId is restored, this workflow is visible to and runnable by every tenant. Set TenantId back to the declared tenant with the restore UPDATE in the 3.10.1 upgrade step in extensions/docs/changelogs/3.10.1.md.",
                     materializedWorkflow.Workflow.Identity.DefinitionId,
                     materializedWorkflow.Workflow.Identity.TenantId);
             }
@@ -209,7 +209,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
             && declaredTenantId != Tenant.AgnosticTenantId)
         {
             throw new InvalidOperationException(
-                $"Workflow '{definitionId}' is stored as tenant-agnostic ('*') but declares tenant '{declaredTenantId}'. Restore TenantId to the declared tenant; if this followed the 3.10.1 CLR upgrade SQL, exclude this DefinitionId. See the 3.10.1 upgrade step in extensions/docs/changelogs/3.10.1.md.");
+                $"Workflow '{definitionId}' is stored as tenant-agnostic ('*') but declares tenant '{declaredTenantId}'. Until TenantId is restored to '{declaredTenantId}', this workflow is visible to and runnable by every tenant. Set TenantId back to the declared tenant with the restore UPDATE in the 3.10.1 upgrade step in extensions/docs/changelogs/3.10.1.md.");
         }
 
         // Set up a list to collect all workflow definitions to be persisted.
