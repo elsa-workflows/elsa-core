@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using AspNetCore.Authentication.ApiKey;
 using Elsa;
 using Elsa.Identity.Models;
@@ -35,7 +37,7 @@ public class AdminApiKeyProvider(IOptions<AdminApiKeyOptions> options) : IApiKey
     public Task<IApiKey?> ProvideAsync(string key)
     {
         var apiKeyOptions = options.Value;
-        if (string.IsNullOrWhiteSpace(apiKeyOptions.ApiKey) || key != apiKeyOptions.ApiKey)
+        if (string.IsNullOrWhiteSpace(apiKeyOptions.ApiKey) || !SecretEquals(key, apiKeyOptions.ApiKey))
         {
             return Task.FromResult<IApiKey?>(null);
         }
@@ -53,5 +55,22 @@ public class AdminApiKeyProvider(IOptions<AdminApiKeyOptions> options) : IApiKey
 
         var apiKey = new ApiKey(key, apiKeyOptions.OwnerName, claims);
         return Task.FromResult<IApiKey>(apiKey)!;
+    }
+
+    /// <summary>
+    /// Compares UTF-8 secret bytes in constant time. A length mismatch still
+    /// runs <see cref="CryptographicOperations.FixedTimeEquals"/> against a
+    /// dummy buffer of the expected length so the compare is not skipped.
+    /// </summary>
+    private static bool SecretEquals(string provided, string expected)
+    {
+        var providedBytes = Encoding.UTF8.GetBytes(provided);
+        var expectedBytes = Encoding.UTF8.GetBytes(expected);
+        var comparand = providedBytes.Length == expectedBytes.Length
+            ? providedBytes
+            : new byte[expectedBytes.Length];
+
+        return CryptographicOperations.FixedTimeEquals(expectedBytes, comparand)
+               && providedBytes.Length == expectedBytes.Length;
     }
 }
