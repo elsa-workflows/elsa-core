@@ -82,7 +82,7 @@ test('creates the designer from URLs relative to the base URL, links its stylesh
         out.readOnlySetBinding = readOnly.setBinding('Charge', null);
         readOnly.dispose();
 
-        out.stylesheets = [...document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')].map(link => new URL(link.href).pathname);
+        out.stylesheets = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')).map(link => new URL(link.href).pathname);
         return out;
     }, { id, xml, shimUrl: SHIM_URL, designerUrl: DESIGNER_URL, stylesheetUrl: STYLESHEET_URL });
 
