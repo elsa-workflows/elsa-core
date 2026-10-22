@@ -146,25 +146,33 @@ public partial class BpmnCanvasHost : IAsyncDisposable
 
     private async Task DisposeDesignerAsync()
     {
+        // Disposal and a creation that finishes after it can both get here, interleaved at their awaits. Each takes the
+        // references there are now and clears them before it awaits, so each releases only what it took, and once.
+        var designer = _designer;
+        var hostModule = _hostModule;
+        var listener = _listener;
+        _designer = null;
+        _hostModule = null;
+        _listener = null;
+
         try
         {
-            if (_designer is not null)
+            if (designer is not null)
             {
-                await _designer.InvokeVoidAsync("dispose");
-                await _designer.DisposeAsync();
+                await designer.InvokeVoidAsync("dispose");
+                await designer.DisposeAsync();
             }
 
-            if (_hostModule is not null)
-                await _hostModule.DisposeAsync();
+            if (hostModule is not null)
+                await hostModule.DisposeAsync();
         }
         catch (JSDisconnectedException)
         {
             // The circuit is gone, and the browser's state with it.
         }
-
-        _designer = null;
-        _hostModule = null;
-        _listener?.Dispose();
-        _listener = null;
+        finally
+        {
+            listener?.Dispose();
+        }
     }
 }

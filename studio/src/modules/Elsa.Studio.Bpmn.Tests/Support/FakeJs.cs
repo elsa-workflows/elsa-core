@@ -38,9 +38,12 @@ internal sealed class FakeJsObject : IJSObjectReference
         return (TValue)(await handler(args ?? []))!;
     }
 
-    public ValueTask DisposeAsync()
+    /// <summary>Completes when <see cref="DisposeAsync"/> may finish; already completed unless a test holds it back.</summary>
+    public Task DisposeGate { get; set; } = Task.CompletedTask;
+
+    public async ValueTask DisposeAsync()
     {
+        await DisposeGate;
         IsDisposed = true;
-        return ValueTask.CompletedTask;
     }
 }

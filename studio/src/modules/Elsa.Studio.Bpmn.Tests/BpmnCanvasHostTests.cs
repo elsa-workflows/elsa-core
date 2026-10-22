@@ -154,6 +154,30 @@ public class BpmnCanvasHostTests : IAsyncDisposable
         Assert.Equal("dispose", Assert.Single(_designer.Calls).Identifier);
     }
 
+    [Fact(DisplayName = "Two clean-ups that overlap, disposal and a creation finishing after it, each release what they hold, once")]
+    public async Task OverlappingCleanups_ReleaseEverythingOnce()
+    {
+        var created = new TaskCompletionSource<object?>();
+        var hostModuleReleased = new TaskCompletionSource();
+        var designerDisposed = new TaskCompletionSource<object?>();
+        _js.HostModule.Handlers["createDesigner"] = _ => created.Task;
+        _js.HostModule.DisposeGate = hostModuleReleased.Task;
+        _designer.Handlers["dispose"] = _ => designerDisposed.Task;
+        var cut = Render();
+
+        // Disposal starts while the designer is being created and waits on the host module; the creation then finishes
+        // and starts its own clean-up, which waits on the designer; then both resume, disposal first.
+        var disposal = cut.InvokeAsync(() => cut.Instance.DisposeAsync().AsTask());
+        await cut.InvokeAsync(() => created.SetResult(_designer));
+        await cut.InvokeAsync(hostModuleReleased.SetResult);
+        await cut.InvokeAsync(() => designerDisposed.SetResult(null));
+        await disposal;
+
+        cut.WaitForAssertion(() => Assert.True(_designer.IsDisposed));
+        Assert.True(_js.HostModule.IsDisposed);
+        Assert.Equal("dispose", Assert.Single(_designer.Calls).Identifier);
+    }
+
     public async ValueTask DisposeAsync() => await _context.DisposeAsync();
 
     private IRenderedComponent<BpmnCanvasHost> Render(bool readOnly = false) =>
