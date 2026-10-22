@@ -59,7 +59,57 @@ try {
   await expect(page.getByRole("heading", { name: "Workflow definitions", exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByRole("heading", { name: "Workflow definitions", exact: true })).toBeVisible();
-  console.log("PASS: paired containers apply runtime config, sign in, list real workflows and reload a deep link");
+
+  const name = `CoreFlow ${Date.now()}`;
+  let definitionId;
+  try {
+    await page.getByRole("button", { name: "Create workflow", exact: true }).click();
+    const create = page.getByRole("dialog", { name: "Create workflow", exact: true });
+    await create.getByLabel("Name").fill(name);
+    await create.getByRole("radio", { name: /Sequence/ }).click();
+    await create.getByRole("button", { name: "Create", exact: true }).click();
+    await expect(page).toHaveURL(/\/studio-preview\/workflows\/definitions\/[^/]+\/edit$/);
+    definitionId = new URL(page.url()).pathname.split("/").at(-2);
+    await expect(page.getByText("Sequence · runs top to bottom")).toBeVisible();
+
+    await page.getByRole("button", { name: "Add step", exact: true }).click();
+    const palette = page.getByRole("dialog", { name: "Add activity", exact: true });
+    await palette.locator("input").fill("Write Line");
+    await page.getByRole("option").filter({ hasText: /Write Line/i }).first().click();
+    await expect(page.getByText("WriteLine1")).toBeVisible();
+    await expect(page.getByText("Saved", { exact: true })).toBeVisible({ timeout: 15_000 });
+
+    await page.getByRole("button", { name: "Publish", exact: true }).click();
+    await expect(page.getByText(/Published version/)).toBeVisible();
+
+    await page.getByRole("button", { name: "Run", exact: true }).click();
+    const run = page.getByRole("dialog").filter({ hasText: "Dispatches the published version" });
+    await run.getByRole("button", { name: "Run", exact: true }).click();
+    await expect(page.getByText("Workflow started", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Open", exact: true }).click();
+    await expect(page).toHaveURL(/\/studio-preview\/workflows\/instances\/[^/]+\/view$/);
+    await expect(page.getByText("Finished", { exact: true }).first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole("tree", { name: "Workflow journal" })).toBeVisible();
+    await expect(page.getByRole("treeitem").filter({ hasText: /WriteLine/ })).toBeVisible();
+
+    await page.goto(`${origin}/studio-preview/settings`);
+    await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Open Appearance", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Appearance", exact: true })).toBeVisible();
+  } finally {
+    if (definitionId) {
+      const login = await fetch(`${api}/identity/login`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: "admin", password: "password" }),
+      });
+      const tokens = await login.json();
+      await fetch(`${api}/workflow-definitions/${encodeURIComponent(definitionId)}`, {
+        method: "DELETE", headers: { Authorization: `Bearer ${tokens.accessToken}` },
+      }).catch(() => {});
+    }
+  }
+
+  console.log("PASS: paired containers apply runtime config, sign in, list, create, edit, publish, run, journal and settings");
 } finally {
   await browser.close();
 }
