@@ -143,10 +143,11 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
     });
 
     function emitChange(): void {
-        const commandStack = service<{ canUndo(): boolean; canRedo(): boolean }>('commandStack');
+        // A read-only designer is a NavigatedViewer, which has no command stack: it can never undo or redo.
+        const commandStack = readOnly ? null : service<{ canUndo(): boolean; canRedo(): boolean }>('commandStack');
         const elementIds = [...changedIds];
         changedIds = new Set();
-        emit('change', { elementIds, isDirty: currentStateId() !== savedStateId, canUndo: commandStack.canUndo(), canRedo: commandStack.canRedo() });
+        emit('change', { elementIds, isDirty: currentStateId() !== savedStateId, canUndo: commandStack?.canUndo() ?? false, canRedo: commandStack?.canRedo() ?? false });
     }
 
     subscribe('selection.changed', (event: { newSelection: DiagramElement[] }) => {
@@ -177,20 +178,20 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
      * it on import. With no document to put back, the designer holds none.
      */
     async function restore(previous: { xml: string; isDirty: boolean } | null): Promise<void> {
-        if (previous) {
-            try {
-                await bpmnjs!.importXML(previous.xml);
-                // A state id no command gets, so a dirty document stays dirty until it is saved.
-                savedStateId = previous.isDirty ? -1 : currentStateId();
-                changedIds = new Set();
-                emitChange();
-                return;
-            } catch {
-                // The document imported before, so this is not expected; the designer then holds no document.
-            }
+        try {
+            if (!previous) throw new Error('There is no earlier document.');
+            await bpmnjs!.importXML(previous.xml);
+        } catch {
+            // Without an earlier document, or if it no longer imports, the designer holds no document.
+            bpmnjs!.clear();
+            hasDocument = false;
+            return;
         }
-        bpmnjs!.clear();
-        hasDocument = false;
+        // A state id no command gets, so a dirty document stays dirty until it is saved.
+        savedStateId = previous.isDirty ? -1 : currentStateId();
+        changedIds = new Set();
+        // The import cleared the undo history. A read-only designer never had one, so nothing changed for it.
+        if (!readOnly) emitChange();
     }
 
     async function serialize(): Promise<string> {
@@ -383,10 +384,24 @@ function stateOf(stats: BpmnElementStats): ElementState {
     return 'idle';
 }
 
+/** The number a badge shows for its state, as the X6 designer shows it: a running element counts its active tokens. */
+function countOf(stats: BpmnElementStats, state: ElementState): number {
+    switch (state) {
+        case 'active':
+            return stats.active ?? 0;
+        case 'completed':
+            return stats.completed ?? 0;
+        case 'idle':
+            return stats.completed ?? stats.started ?? 0;
+        default:
+            return stats.started ?? stats.completed ?? 0;
+    }
+}
+
 function badge(stats: BpmnElementStats, state: ElementState): HTMLElement {
     const element = document.createElement('div');
     element.className = `elsa-bpmn-badge elsa-bpmn-badge-${state}`;
-    element.textContent = String(stats.completed ?? stats.started ?? 0);
+    element.textContent = String(countOf(stats, state));
     element.title = `Started ${stats.started ?? 0}, completed ${stats.completed ?? 0}, active ${stats.active ?? 0}`;
     return element;
 }

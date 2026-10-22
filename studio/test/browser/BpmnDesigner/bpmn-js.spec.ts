@@ -54,3 +54,33 @@ test('a load that fails after bpmn-js replaced the document puts the earlier one
     expect(result.xml).not.toContain('Only');
     expect(result.changes).toEqual([expect.objectContaining({ isDirty: true, canUndo: false })]);
 });
+
+test('a read-only designer keeps its document when a load fails after bpmn-js replaced it', async ({ harness }) => {
+    const undrawable = '<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="D" targetNamespace="x"><bpmn:message id="M" name="Only" /></bpmn:definitions>';
+    const result = await harness.evaluate(async ([order, undrawable]) => {
+        const harness = (window as any).harness;
+        harness.create({ readOnly: true });
+        await harness.designer.load(order);
+        const load = await harness.designer.load(undrawable);
+        return { load, xml: (await harness.designer.save()).xml, shapes: document.querySelectorAll('.djs-shape').length };
+    }, [await fixture('order.bpmn'), undrawable] as const);
+
+    expect(result.load.imported).toBe(false);
+    expect(result.xml).toContain('id="Charge"');
+    expect(result.shapes).toBeGreaterThan(0);
+});
+
+test('a badge shows the count of its state', async ({ harness }) => {
+    await harness.evaluate(async xml => {
+        const harness = (window as any).harness;
+        harness.create({});
+        await harness.designer.load(xml);
+    }, await fixture('order.bpmn'));
+
+    await harness.evaluate(stats => (window as any).harness.designer.applyOverlays(stats), {
+        Charge: { started: 3, completed: 1, active: 2 },
+        Review: { started: 4, completed: 4 }
+    });
+    await expect(harness.locator('.elsa-bpmn-badge-active')).toHaveText('2');
+    await expect(harness.locator('.elsa-bpmn-badge-completed')).toHaveText('4');
+});
