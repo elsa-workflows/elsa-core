@@ -367,8 +367,9 @@ jobs:
             VERSION="${{env.base_version}}-preview.${{github.run_number}}"
           fi
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
-          # Stable 3.10.x only (3.10.0, 3.10.1, ...). Previews and other lines keep the default pack.
-          if [[ "${VERSION}" =~ ^3\.10\.[0-9]+$ ]]; then
+          # Stable 3.10.x only (3.10.0, 3.10.1, ...). Reject 3.10.01-style patches.
+          # Previews and other lines keep the default pack.
+          if [[ "${VERSION}" =~ ^3\.10\.(0|[1-9][0-9]*)$ ]]; then
             echo "CONSOLIDATED_RELEASE_CANDIDATE=true" >> $GITHUB_ENV
           fi
 
@@ -382,6 +383,10 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22'
+
+      - name: Build Studio ClientLib bundles
+        if: ${{ env.CONSOLIDATED_RELEASE_CANDIDATE == 'true' }}
+        run: bash scripts/integration-program/build_studio_clientlibs.sh
 
       - name: Compile+Pack
         env:

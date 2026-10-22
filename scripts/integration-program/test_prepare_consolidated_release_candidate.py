@@ -205,7 +205,7 @@ class CandidateContractsTests(unittest.TestCase):
         self.assertEqual("Restore;PrepareForBuild;Pack;GenerateNuspec", target.get("BeforeTargets"))
         errors = [node.get("Condition") for node in target.findall("Error")]
         self.assertIn("'$(ConsolidatedPackageProof)' == 'true'", errors)
-        self.assertIn("'$(Version)' != '$(PackageVersion)' or '$(Configuration)' != 'Release' or !$([System.Text.RegularExpressions.Regex]::IsMatch('$(Version)', '^3\\.10\\.[0-9]+$'))", errors)
+        self.assertIn("'$(Version)' != '$(PackageVersion)' or '$(Configuration)' != 'Release' or !$([System.Text.RegularExpressions.Regex]::IsMatch('$(Version)', '^3\\.10\\.(0|[1-9][0-9]*)$'))", errors)
         build = (ROOT / "build/Build.cs").read_text()
         for start, end in (("RestoreSettings", "CompileSettings"), ("CompileSettings", "PackSettings"), ("PackSettings", "TestProjects")):
             section = build.split(start, 1)[1].split(end, 1)[0]
@@ -233,9 +233,12 @@ class CandidateContractsTests(unittest.TestCase):
                 with self.subTest(category=category), self.assertRaisesRegex(ValueError, "inventory changed"):
                     candidate.compare_inventory(changed, baseline, output)
                 self.assertTrue(json.loads(output.read_text())["changes"][category]["removed"])
-            sample = next(row for row in manifest["packages"] if row["id"] == "Elsa.SamplePackage")
-            sample["nupkg"] = "Elsa.SamplePackage.1.0.1.nupkg"
-            with self.assertRaisesRegex(ValueError, "SamplePackage"):
+            self.assertTrue(any(row["id"] == "Elsa.SamplePackage" for row in baseline["exclusions"]))
+            self.assertFalse(any(row["id"] == "Elsa.SamplePackage" for row in baseline["packages"]))
+            sample = next(row for row in manifest["exclusions"] if row["id"] == "Elsa.SamplePackage")
+            manifest["packages"].append({**sample, "nupkg": "Elsa.SamplePackage.3.10.0.nupkg"})
+            manifest["exclusions"] = [row for row in manifest["exclusions"] if row["id"] != "Elsa.SamplePackage"]
+            with self.assertRaisesRegex(ValueError, "inventory changed|SamplePackage"):
                 candidate.compare_inventory(manifest, baseline, output)
 
     def test_dedicated_workflow_has_no_publisher_or_privileged_consumer_route(self):

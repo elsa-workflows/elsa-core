@@ -18,6 +18,8 @@ import sys
 
 # Release tags carry no "v" prefix: 3.8.4, 3.8.0-rc2, 3.8.0-preview1.
 RELEASE_TAG = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?")
+# Same canonical 3.10 patch as packages.yml and ConsolidatedPackageProof.targets, plus an optional prerelease suffix.
+CANONICAL_310 = re.compile(r"3\.10\.(0|[1-9][0-9]*)(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?")
 # Only these branches upload a Pages artifact that deploy_coverage can deploy.
 COVERAGE_REFS = ("refs/heads/main", "refs/heads/release/3.6.1")
 
@@ -39,6 +41,8 @@ def selection_errors(ref: str, *, feedz: bool = False, nuget: bool = False, cove
         if feedz_from_tag and not tag.startswith("3.10."):
             # NuGet would normalize 03.10.0 to 3.10.0, and the Feedz job matches the literal 3.10. prefix.
             return [f"Tag {tag!r} names a 3.10 release without the canonical 3.10. prefix."]
+        if feedz_from_tag and not CANONICAL_310.fullmatch(tag):
+            return [f"Tag {tag!r} names a 3.10 release without a canonical patch number."]
         if feedz and not feedz_from_tag:
             errors.append("Feedz publication from a tag is limited to 3.10.x release tags; publish previews from a branch.")
     else:

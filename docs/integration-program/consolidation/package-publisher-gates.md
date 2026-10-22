@@ -3,7 +3,7 @@
 The Packages workflow now builds and tests normally on pushes and release events, but those events cannot publish packages or deploy coverage. The three publication jobs are default-off `workflow_dispatch` options:
 
 - `publish_preview_feedz` publishes the run's packages to Feedz. Dispatch from a branch for a preview build (`<base_version>-preview.<run number>`), or from a 3.10.x release tag, which publishes at the tag's release version.
-- `publish_nuget` publishes the release-tag build to NuGet.org. Dispatch from a release-version tag, including stable 3.10.x. A stable 3.10.x tag pack also sets `ConsolidatedReleaseCandidate` and must match `scripts/validate_packages_id_set.txt` before any push.
+- `publish_nuget` publishes the release-tag build to NuGet.org. Dispatch from a release-version tag, including stable 3.10.x. A stable 3.10.x tag pack also sets `ConsolidatedReleaseCandidate`, builds Studio ClientLib bundles, and must match `scripts/validate_packages_id_set.txt` plus the required Studio package contents before any push.
 - `deploy_coverage` deploys the coverage report to GitHub Pages. Dispatch from `main` or `release/3.6.1`, the refs whose coverage run uploads a Pages artifact.
 
 A tag dispatch accepts only release-version tags matching `^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?$`, such as `3.8.4`, `3.8.0-rc2` or `3.10.0`. Tags such as `v3.10.0` or `test-1` are rejected whatever the options, and so is a 3.10 release spelled without the literal `3.10.` prefix (for example `03.10.0`). The tagged commit must also be contained in `main` or a `release/*` branch; the build checks this before packing.

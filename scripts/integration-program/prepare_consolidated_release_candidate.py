@@ -52,8 +52,7 @@ def compare_inventory(manifest: dict, baseline: dict, output: Path) -> None:
     included = {row["id"] for row in manifest["packages"]}
     excluded = {row["id"] for row in manifest["exclusions"]}
     packages.require(LEGACY_SECRETS <= excluded and not LEGACY_SECRETS & included, "Legacy Secrets package exclusion changed")
-    sample = next((row for row in manifest["packages"] if row["id"] == "Elsa.SamplePackage"), None)
-    packages.require(sample is not None and sample["nupkg"] == "Elsa.SamplePackage.3.10.0.nupkg", "SamplePackage must use common candidate 3.10.0")
+    packages.require("Elsa.SamplePackage" in excluded and "Elsa.SamplePackage" not in included, "SamplePackage must remain unpackable")
 
 
 def seal(root: Path, source: str) -> dict:
