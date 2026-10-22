@@ -111,6 +111,55 @@ public sealed class WorkflowDefinitionListBpmnCreateTests : BunitContext, IAsync
         Assert.Single(_bpmnXml.Creates);
     }
 
+    [Fact(DisplayName = "Closing the dialog while the name is checked creates nothing")]
+    public async Task ClosingDuringTheNameCheck_CreatesNothing()
+    {
+        EnableDesigner();
+        _bpmnXml.CreateResult = new(new BpmnXmlSaveResult(new() { DefinitionId = "new-process" }, "\"REVISION-1\"", []));
+        OpenDialog();
+        _uniquenessGate = new();
+
+        _dialogs.Find("[data-testid='bpmn-create-submit']").Click();
+        _dialogs.Find(".mud-button-close").Click();
+        _dialogs.WaitForAssertion(() => Assert.Empty(_dialogs.FindAll("[data-testid='bpmn-create-submit']")));
+        await _dialogs.InvokeAsync(() => _uniquenessGate.SetResult(true));
+        await _dialogs.InvokeAsync(() => { });
+
+        Assert.Empty(_bpmnXml.Creates);
+        Assert.Empty(_opened);
+    }
+
+    [Fact(DisplayName = "While the workflow is created, the dialog cannot be closed, so the workflow is always opened")]
+    public void WhileCreating_TheDialogStaysOpen()
+    {
+        EnableDesigner();
+        _bpmnXml.CreateResult = new(new BpmnXmlSaveResult(new() { DefinitionId = "new-process" }, "\"REVISION-1\"", []));
+        _bpmnXml.CreateGate = new();
+        OpenDialog();
+
+        _dialogs.Find("[data-testid='bpmn-create-submit']").Click();
+
+        _dialogs.WaitForAssertion(() => Assert.Single(_bpmnXml.Creates));
+        Assert.Empty(_dialogs.FindAll(".mud-button-close"));
+        Assert.True(_dialogs.FindAll("button").Single(button => button.TextContent.Trim() == "Cancel").HasAttribute("disabled"));
+
+        _dialogs.InvokeAsync(() => _bpmnXml.CreateGate.SetResult());
+        _dialogs.WaitForAssertion(() => Assert.Equal(["new-process"], _opened));
+    }
+
+    [Fact(DisplayName = "A create that never gets an answer is reported, and opens nothing")]
+    public void AConnectionFailure_IsReported()
+    {
+        EnableDesigner();
+        _bpmnXml.CreateException = new HttpRequestException("the connection was reset");
+        OpenDialog();
+
+        _dialogs.Find("[data-testid='bpmn-create-submit']").Click();
+
+        _dialogs.WaitForAssertion(() => Assert.Contains(Services.GetRequiredService<ISnackbar>().ShownSnackbars, snackbar => snackbar.Message.Contains("the connection was reset", StringComparison.Ordinal)));
+        Assert.Empty(_opened);
+    }
+
     [Fact(DisplayName = "Cancelling the dialog creates nothing")]
     public void Cancelling_CreatesNothing()
     {
@@ -123,6 +172,12 @@ public sealed class WorkflowDefinitionListBpmnCreateTests : BunitContext, IAsync
         _dialogs.WaitForAssertion(() => Assert.Empty(_dialogs.FindAll("[data-testid='bpmn-create-submit']")));
         Assert.Empty(_bpmnXml.Creates);
         Assert.Empty(_opened);
+    }
+
+    private void OpenDialog()
+    {
+        OpenCreateMenu(RenderList()).Single(item => item.TextContent.Contains("Create BPMN workflow", StringComparison.Ordinal)).Click();
+        _dialogs.WaitForAssertion(() => Assert.NotEmpty(_dialogs.FindAll("[data-testid='bpmn-create-submit']")));
     }
 
     private void EnableDesigner() => Services.AddBpmnDesigner(new BpmnDesignerDescriptor("test-designer", "_content/Test/designer.js"));

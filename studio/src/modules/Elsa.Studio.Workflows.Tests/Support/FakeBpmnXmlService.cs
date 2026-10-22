@@ -60,10 +60,23 @@ internal sealed class FakeBpmnXmlService : IBpmnXmlService
     /// <summary>What a create answers with; unset, a create is not expected and throws.</summary>
     public Result<BpmnXmlSaveResult, BpmnDocumentFailure>? CreateResult { get; set; }
 
-    public Task<Result<BpmnXmlSaveResult, BpmnDocumentFailure>> CreateAsync(string name, CancellationToken cancellationToken = default)
+    /// <summary>When set, a create awaits it before answering, so a test can act while one is in flight.</summary>
+    public TaskCompletionSource? CreateGate { get; set; }
+
+    /// <summary>When set, a create throws it, as a dropped connection would.</summary>
+    public Exception? CreateException { get; set; }
+
+    public async Task<Result<BpmnXmlSaveResult, BpmnDocumentFailure>> CreateAsync(string name, CancellationToken cancellationToken = default)
     {
         Creates.Add(name);
-        return Task.FromResult(CreateResult ?? throw new NotSupportedException("No create result was set."));
+
+        if (CreateGate != null)
+            await CreateGate.Task;
+
+        if (CreateException != null)
+            throw CreateException;
+
+        return CreateResult ?? throw new NotSupportedException("No create result was set.");
     }
 
     private FakeBpmnXmlService Add<T>(List<T> results, T result)

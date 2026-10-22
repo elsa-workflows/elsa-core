@@ -1,4 +1,6 @@
+using Elsa.Studio.Models;
 using Elsa.Studio.Workflows.Domain.Contracts;
+using Elsa.Studio.Workflows.Domain.Models.Bpmn;
 using Elsa.Studio.Workflows.Models;
 using Elsa.Studio.Workflows.Validators;
 using Microsoft.AspNetCore.Components;
@@ -11,9 +13,14 @@ namespace Elsa.Studio.Workflows.Components.WorkflowDefinitionList;
 /// Asks for the name of a new BPMN workflow and creates it through <see cref="IBpmnXmlService.CreateAsync"/>: a draft
 /// holding a minimal process, to be drawn in the enabled BPMN designer. Closes with the create result.
 /// </summary>
+/// <remarks>
+/// Closing the dialog while the name is checked creates nothing. Once the create is sent, the dialog cannot be closed
+/// until it answers, so a workflow the server created is always opened.
+/// </remarks>
 public partial class CreateBpmnWorkflowDialog : IDisposable
 {
     private readonly WorkflowMetadataModel _metadataModel = new();
+    private readonly CancellationTokenSource _lifetime = new();
     private EditContext _editContext = null!;
     private WorkflowPropertiesModelValidator _validator = null!;
     private WorkflowMetadataSubmitValidator _submitValidator = null!;
@@ -52,8 +59,14 @@ public partial class CreateBpmnWorkflowDialog : IDisposable
 
         try
         {
-            if (await _submitValidator.ValidateAndPublishAsync())
-                MudDialog.Close(await BpmnXmlService.CreateAsync(_metadataModel.Name!));
+            if (!await _submitValidator.ValidateAndPublishAsync() || _lifetime.IsCancellationRequested)
+                return;
+
+            var options = MudDialog.Options;
+            await MudDialog.SetOptionsAsync(options with { CloseOnEscapeKey = false, CloseButton = false, BackdropClick = false });
+            var result = await CreateAsync();
+            await MudDialog.SetOptionsAsync(options);
+            MudDialog.Close(result);
         }
         finally
         {
@@ -61,6 +74,24 @@ public partial class CreateBpmnWorkflowDialog : IDisposable
         }
     }
 
+    /// <summary>Creates the workflow, reporting a request that never got an answer as a failure rather than an exception.</summary>
+    private async Task<Result<BpmnXmlSaveResult, BpmnDocumentFailure>> CreateAsync()
+    {
+        try
+        {
+            return await BpmnXmlService.CreateAsync(_metadataModel.Name!, _lifetime.Token);
+        }
+        catch (HttpRequestException exception)
+        {
+            return new(new BpmnDocumentFailure(BpmnDocumentFailureReason.Unknown, exception.Message));
+        }
+    }
+
     /// <inheritdoc />
-    public void Dispose() => _submitValidator?.Dispose();
+    public void Dispose()
+    {
+        _lifetime.Cancel();
+        _lifetime.Dispose();
+        _submitValidator?.Dispose();
+    }
 }
