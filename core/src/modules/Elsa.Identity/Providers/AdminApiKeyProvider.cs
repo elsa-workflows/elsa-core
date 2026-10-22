@@ -1,4 +1,6 @@
+using System.Runtime.InteropServices;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using AspNetCore.Authentication.ApiKey;
 using Elsa;
 using Elsa.Identity.Models;
@@ -35,7 +37,7 @@ public class AdminApiKeyProvider(IOptions<AdminApiKeyOptions> options) : IApiKey
     public Task<IApiKey?> ProvideAsync(string key)
     {
         var apiKeyOptions = options.Value;
-        if (string.IsNullOrWhiteSpace(apiKeyOptions.ApiKey) || key != apiKeyOptions.ApiKey)
+        if (string.IsNullOrWhiteSpace(apiKeyOptions.ApiKey) || !SecretEquals(key, apiKeyOptions.ApiKey))
         {
             return Task.FromResult<IApiKey?>(null);
         }
@@ -54,4 +56,12 @@ public class AdminApiKeyProvider(IOptions<AdminApiKeyOptions> options) : IApiKey
         var apiKey = new ApiKey(key, apiKeyOptions.OwnerName, claims);
         return Task.FromResult<IApiKey>(apiKey)!;
     }
+
+    /// <summary>
+    /// Compares UTF-16 code units in constant time so unpaired surrogates stay distinct from U+FFFD.
+    /// </summary>
+    private static bool SecretEquals(string provided, string expected) =>
+        CryptographicOperations.FixedTimeEquals(
+            MemoryMarshal.AsBytes(provided.AsSpan()),
+            MemoryMarshal.AsBytes(expected.AsSpan()));
 }
