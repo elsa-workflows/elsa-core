@@ -16,7 +16,8 @@ public class ValidateIdentityTokenOptions : IValidateOptions<IdentityTokenOption
     private static readonly HashSet<string> KnownDefaultSigningKeys = new(StringComparer.OrdinalIgnoreCase)
     {
         "sufficiently-large-secret-signing-key",
-        "CHANGE_ME_TO_A_SECURE_RANDOM_KEY"
+        "CHANGE_ME_TO_A_SECURE_RANDOM_KEY",
+        "large-signing-key-for-signing-JWT-tokens"
     };
 
     private readonly IHostEnvironment? _environment;
