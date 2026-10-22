@@ -430,8 +430,9 @@ stable candidate bytes: applicable persisted compatibility checks must bind to
 these exact production bytes before publication.
 
 This task implements no publisher handoff. Ordinary approved Core publication
-selection remains a `packages.yml` dispatch: nuget.org for a stable 3.10.0 tag,
-Feedz for branch previews and 3.10.x prerelease tags. That
+selection remains a `packages.yml` dispatch: 3.10.x tags may publish to Feedz,
+or to NuGet.org when dispatched with `publish_nuget`. Branch previews stay on
+Feedz. That
 workflow accepts no candidate opt-in, candidate artifact/run selector or candidate
 workflow ID. A future separately reviewed **publish-only** workflow must bind to
 the exact original candidate identity without restore/build/pack, after the
