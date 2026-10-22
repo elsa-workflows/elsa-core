@@ -257,10 +257,10 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
                 return Refuse(new(BpmnDocumentFailureReason.Unknown, $"The designer could not export the document: {exception.Message}"));
             }
 
-            // The designer now counts the exported document as saved. An edit made while it exported raised a change
-            // event of its own, which already says whether the designer is still dirty.
-            if (_changeSequence == changeSequence)
-                _canvasDirty = false;
+            // The designer now counts the exported document as saved. A change event raised while it exported, an edit or
+            // an undo, measured dirtiness against the state saved before, so it cannot tell whether the canvas still
+            // differs from what was just exported. Such a canvas stays unsaved until the designer's next change event.
+            _canvasDirty = _changeSequence != changeSequence;
 
             _unsavedExport = true;
 

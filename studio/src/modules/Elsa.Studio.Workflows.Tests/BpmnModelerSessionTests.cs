@@ -90,6 +90,20 @@ public class BpmnModelerSessionTests
         Assert.True(_session.IsDirty);
     }
 
+    [Fact(DisplayName = "An undo made while the designer exports keeps the document dirty, though the designer called it clean")]
+    public async Task UndoDuringExport_StaysDirty()
+    {
+        await OpenAsync();
+        _service.AcceptsPut("\"REVISION-2\"");
+        Edit();
+        // Back to the state loaded before the save: clean against it, but no longer the document being saved.
+        _canvas.DuringSave = () => _session.CanvasChanged(new(["Task_1"], IsDirty: false, CanUndo: false, CanRedo: true));
+
+        await _session.SaveAsync();
+
+        Assert.True(_session.IsDirty);
+    }
+
     [Fact(DisplayName = "Nothing is sent while the content the designer cannot keep is not acknowledged")]
     public async Task UnacknowledgedDroppedContent_SendsNothing()
     {
