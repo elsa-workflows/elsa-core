@@ -37,7 +37,10 @@ Every element is identified by its BPMN element id. After `dispose`, every metho
 
 Replaces the canvas content with the document. It returns `{ imported, error?, warnings }`:
 
-- `imported` is `false` when the document could not be shown at all; `error` then says why.
+- `imported` is `false` when the document could not be shown at all; `error` then says why. The designer keeps the
+  document it had, and whether it was dirty, so `save` still returns that document. Its undo history and overlays may
+  be cleared; when the undo state changes, `change` is raised. A designer that had no document still has none, and
+  `save` throws until a load succeeds.
 - `warnings` lists what the designer cannot represent or will change. Each warning is
   `{ kind, message, elementId? }`:
   - **`dropped`:** content that a save would lose.
@@ -142,4 +145,4 @@ takes no part in this: the host owns it (`BpmnSaveGate` in `Elsa.Studio.Bpmn`).
 A change that an existing designer or host could not handle is a new contract version. Examples are removing or
 renaming a member, changing a payload's shape, or adding a required option. Adding an optional member is not. A host
 treats a warning kind it does not know as `dropped`, so adding a warning kind is not a new version either. Every
-designer passes the conformance suite for the version it declares.
+designer passes the conformance suite for the version it declares: `studio/test/browser/BpmnDesigner`.

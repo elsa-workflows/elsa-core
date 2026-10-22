@@ -16,6 +16,8 @@ dom="$studio/framework/Elsa.Studio.DomInterop"
 # The BPMN designer contract and shared rules. It builds no browser asset of its own, and older pinned Studio sources
 # predate it, so it is tested only where it exists.
 bpmn_shared="$studio/modules/Elsa.Studio.Bpmn/ClientLib"
+# The bpmn-js designer bundles the shared rules, so it is built only where they exist too.
+bpmn_js="$studio/modules/Elsa.Studio.Bpmn.BpmnJs"
 locks="$(cd "$(dirname "${BASH_SOURCE[0]}")/consolidated-build/studio-clientlib-lockfiles" && pwd -P)"
 
 for package in "$designer/ClientLib/package.json" "$dom/ClientLib/package.json"; do
@@ -35,6 +37,9 @@ clientlibs=("$designer/ClientLib:$locks/designer.package-lock.json" \
             "$dom/ClientLib:$locks/dom-interop.package-lock.json")
 if [[ -f "$bpmn_shared/package.json" ]]; then
     clientlibs+=("$bpmn_shared:$locks/bpmn-shared.package-lock.json")
+fi
+if [[ -f "$bpmn_shared/package.json" && -f "$bpmn_js/ClientLib/package.json" ]]; then
+    clientlibs+=("$bpmn_js/ClientLib:$locks/bpmn-js.package-lock.json")
 fi
 
 for entry in "${clientlibs[@]}"; do
@@ -63,6 +68,9 @@ assets=(
     "$dom/wwwroot/clipboard.entry.js"
     "$dom/wwwroot/files.entry.js"
 )
+if [[ -f "$bpmn_shared/package.json" && -f "$bpmn_js/ClientLib/package.json" ]]; then
+    assets+=("$bpmn_js/wwwroot/bpmn-js-designer.js" "$bpmn_js/wwwroot/bpmn-js-designer.css")
+fi
 for asset in "${assets[@]}"; do
     if [[ -L "$asset" ]]; then
         echo "Studio browser asset cannot be a symlink: $asset" >&2
@@ -97,6 +105,14 @@ if [[ -f "$bpmn_shared/package.json" ]]; then
         npm test
     )
 fi
+if [[ -f "$bpmn_shared/package.json" && -f "$bpmn_js/ClientLib/package.json" ]]; then
+    (
+        # The build also enforces the designer's size budget.
+        cd "$bpmn_js/ClientLib"
+        npm ci --force
+        npm run build
+    )
+fi
 
 for asset in "${assets[@]}"; do
     if [[ ! -s "$asset" ]]; then
@@ -105,4 +121,4 @@ for asset in "${assets[@]}"; do
     fi
 done
 
-echo "Studio ClientLib proof passed: generated BPMN types, Designer tests, both bundles, six required assets."
+echo "Studio ClientLib proof passed: generated BPMN types, Designer tests, the Studio bundles and ${#assets[@]} required assets."

@@ -13,6 +13,7 @@ on:
       - 'scripts/integration-program/consolidated-build/studio-bpmn-generator-layout.patch'
       - 'scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/**'
       - 'studio/test/browser/DesignerHover/**'
+      - 'studio/test/browser/BpmnDesigner/**'
       - '.github/workflows/studio-clientlib-build.yml'
   workflow_dispatch:
 
@@ -58,6 +59,12 @@ jobs:
           npm test
       - name: Build Studio ClientLibs
         run: scripts/integration-program/build_studio_clientlibs.sh .
+      - name: Verify the bpmn-js designer against the BPMN designer contract
+        working-directory: studio/test/browser/BpmnDesigner
+        run: |
+          npm ci
+          npx --no-install playwright install --with-deps chromium
+          npm test
       - name: Verify real X6 edge-hover behavior
         working-directory: studio/test/browser/DesignerHover
         run: |

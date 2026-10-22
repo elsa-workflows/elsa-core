@@ -128,6 +128,7 @@
       "studio/src/modules/Elsa.Studio.Authentication.Themes/Elsa.Studio.Authentication.Themes.csproj",
       "studio/src/modules/Elsa.Studio.Authentication.UI.Tests/Elsa.Studio.Authentication.UI.Tests.csproj",
       "studio/src/modules/Elsa.Studio.Authentication.UI/Elsa.Studio.Authentication.UI.csproj",
+      "studio/src/modules/Elsa.Studio.Bpmn.BpmnJs/Elsa.Studio.Bpmn.BpmnJs.csproj",
       "studio/src/modules/Elsa.Studio.Bpmn.Tests/Elsa.Studio.Bpmn.Tests.csproj",
       "studio/src/modules/Elsa.Studio.Bpmn/Elsa.Studio.Bpmn.csproj",
       "studio/src/modules/Elsa.Studio.Counter/Elsa.Studio.Counter.csproj",
