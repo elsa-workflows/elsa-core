@@ -38,8 +38,35 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         ISystemClock systemClock,
         IIdentityGraphService identityGraphService,
         ITenantAccessor tenantAccessor,
+        ILogger<DefaultWorkflowDefinitionStorePopulator> logger)
+        : this(
+            workflowDefinitionProviders,
+            triggerIndexer,
+            workflowDefinitionStore,
+            activitySerializer,
+            payloadSerializer,
+            systemClock,
+            identityGraphService,
+            tenantAccessor,
+            logger,
+            clrTenantRestamper: null)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DefaultWorkflowDefinitionStorePopulator"/> class.
+    /// </summary>
+    public DefaultWorkflowDefinitionStorePopulator(
+        Func<IEnumerable<IWorkflowsProvider>> workflowDefinitionProviders,
+        ITriggerIndexer triggerIndexer,
+        IWorkflowDefinitionStore workflowDefinitionStore,
+        IActivitySerializer activitySerializer,
+        IPayloadSerializer payloadSerializer,
+        ISystemClock systemClock,
+        IIdentityGraphService identityGraphService,
+        ITenantAccessor tenantAccessor,
         ILogger<DefaultWorkflowDefinitionStorePopulator> logger,
-        IClrWorkflowDefinitionTenantRestamper? clrTenantRestamper = null)
+        IClrWorkflowDefinitionTenantRestamper? clrTenantRestamper)
     {
         _workflowDefinitionProviders = workflowDefinitionProviders;
         _triggerIndexer = triggerIndexer;
@@ -342,11 +369,21 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         }
 
         var identity = materializedWorkflow.Workflow.Identity;
-        await _clrTenantRestamper.RestampAsync(
-            identity.DefinitionId,
-            identity.Version,
-            identity.TenantId ?? Tenant.AgnosticTenantId,
-            cancellationToken);
+        try
+        {
+            await _clrTenantRestamper.RestampAsync(
+                identity.DefinitionId,
+                identity.Version,
+                identity.TenantId ?? Tenant.AgnosticTenantId,
+                cancellationToken);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError(e,
+                "Skipping CLR tenant re-stamp for workflow {WorkflowId} (Version: {Version}). Population continues.",
+                identity.DefinitionId,
+                identity.Version);
+        }
     }
 
     private static void ApplyDeclaredClrTenant(MaterializedWorkflow materializedWorkflow, WorkflowDefinition? existing)

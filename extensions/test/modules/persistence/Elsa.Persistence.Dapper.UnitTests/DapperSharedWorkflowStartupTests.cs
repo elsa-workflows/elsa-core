@@ -131,9 +131,7 @@ public sealed class DapperSharedWorkflowStartupTests : IDisposable
 
         using (_tenantAccessor.PushContext(TenantB()))
         {
-            var restamped = await _definitions.RestampAsync("shared-workflow", 1, Tenant.AgnosticTenantId);
-            Assert.NotNull(restamped);
-            Assert.Equal(Tenant.AgnosticTenantId, restamped.TenantId);
+            Assert.True(await _definitions.RestampAsync("shared-workflow", 1, Tenant.AgnosticTenantId));
 
             var found = await _definitions.FindAsync(new WorkflowDefinitionFilter { DefinitionId = "shared-workflow" });
             Assert.NotNull(found);
@@ -153,9 +151,7 @@ public sealed class DapperSharedWorkflowStartupTests : IDisposable
 
         using (_tenantAccessor.PushContext(TenantA()))
         {
-            var restamped = await _definitions.RestampAsync("owned-workflow", 1, "tenant-a");
-            Assert.NotNull(restamped);
-            Assert.Equal("tenant-a", restamped.TenantId);
+            Assert.True(await _definitions.RestampAsync("owned-workflow", 1, "tenant-a"));
         }
 
         using (_tenantAccessor.PushContext(TenantB()))
@@ -190,11 +186,39 @@ public sealed class DapperSharedWorkflowStartupTests : IDisposable
 
         using (_tenantAccessor.PushContext(TenantA()))
         {
-            var found = await _definitions.RestampAsync("shared-workflow", 1, "tenant-a");
-            Assert.Null(found);
+            Assert.False(await _definitions.RestampAsync("shared-workflow", 1, "tenant-a"));
         }
 
         Assert.Equal(Tenant.AgnosticTenantId, LoadDefinitionTenantId());
+    }
+
+    [Fact]
+    public async Task MalformedClrProps_RestampDoesNotThrow_AndStillUpdatesTenantId()
+    {
+        using (_tenantAccessor.PushContext(AgnosticTenant()))
+        {
+            await _definitions.SaveAsync(Definition("bad-v1", "bad-workflow", Tenant.AgnosticTenantId, "CLR"));
+        }
+
+        using (var connection = _provider.GetConnection())
+        {
+            connection.Execute(
+                $"update {Q(_definitionsTable)} set {Q("TenantId")} = @tenantId, {Q("Props")} = @props where {Q("Id")} = @id",
+                new { id = "bad-v1", tenantId = "tenant-a", props = "not-json" });
+        }
+
+        bool restamped;
+        using (_tenantAccessor.PushContext(TenantB()))
+        {
+            restamped = await _definitions.RestampAsync("bad-workflow", 1, Tenant.AgnosticTenantId);
+        }
+
+        Assert.True(restamped);
+        using (var connection = _provider.GetConnection())
+        {
+            Assert.Equal(Tenant.AgnosticTenantId, connection.QuerySingle<string?>(
+                $"select {Q("TenantId")} from {Q(_definitionsTable)} where {Q("Id")} = 'bad-v1'"));
+        }
     }
 
     public void Dispose()

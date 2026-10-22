@@ -1,5 +1,3 @@
-using Elsa.Workflows.Management.Entities;
-
 namespace Elsa.Workflows.Runtime;
 
 /// <summary>
@@ -11,8 +9,8 @@ public interface IClrWorkflowDefinitionTenantRestamper
     /// <summary>
     /// Finds the CLR row for <paramref name="definitionId"/> and <paramref name="version"/>
     /// without a tenant filter. When its stored tenant differs from
-    /// <paramref name="declaredTenantId"/>, updates only that row. Returns the row
-    /// (re-stamped or already matching), or <c>null</c> when no CLR row exists.
+    /// <paramref name="declaredTenantId"/>, updates only that row. Returns
+    /// <c>true</c> when a CLR row was found. Does not materialize the definition.
     /// </summary>
-    Task<WorkflowDefinition?> RestampAsync(string definitionId, int version, string declaredTenantId, CancellationToken cancellationToken = default);
+    Task<bool> RestampAsync(string definitionId, int version, string declaredTenantId, CancellationToken cancellationToken = default);
 }

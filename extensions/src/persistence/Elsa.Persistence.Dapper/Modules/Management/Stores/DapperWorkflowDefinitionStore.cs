@@ -124,7 +124,7 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
     }
 
     /// <inheritdoc />
-    public async Task<WorkflowDefinition?> RestampAsync(string definitionId, int version, string declaredTenantId, CancellationToken cancellationToken = default)
+    public async Task<bool> RestampAsync(string definitionId, int version, string declaredTenantId, CancellationToken cancellationToken = default)
     {
         var record = await store.FindAsync(query =>
         {
@@ -135,13 +135,13 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
 
         if (record == null)
         {
-            return null;
+            return false;
         }
 
-        var declared = string.IsNullOrEmpty(declaredTenantId) ? Tenant.AgnosticTenantId : declaredTenantId;
+        var declared = declaredTenantId ?? Tenant.AgnosticTenantId;
         if (string.Equals(record.TenantId ?? string.Empty, declared, StringComparison.Ordinal))
         {
-            return Map(record);
+            return true;
         }
 
         record.TenantId = declared;
@@ -151,7 +151,7 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
             .Is(store.PrimaryKey, record.Id)
             .Is(nameof(WorkflowDefinitionRecord.ProviderName), ClrWorkflowsProvider.ProviderName);
         await write.ExecuteAsync(connection);
-        return Map(record);
+        return true;
     }
 
     /// <inheritdoc />

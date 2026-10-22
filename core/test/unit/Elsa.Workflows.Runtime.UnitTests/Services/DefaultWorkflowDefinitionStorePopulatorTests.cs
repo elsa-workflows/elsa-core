@@ -1,8 +1,10 @@
 using Elsa.Common;
 using Elsa.Common.Multitenancy;
+using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Runtime;
+using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
 using Microsoft.Extensions.Logging;
@@ -337,6 +339,52 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
         await _storeMock.DidNotReceive().SaveManyAsync(Arg.Any<IEnumerable<WorkflowDefinition>>(), Arg.Any<CancellationToken>());
     }
 
+    [Fact(DisplayName = "A failing CLR re-stamp is skipped so later workflows still populate, index, and reload")]
+    public async Task PopulateAsync_MalformedClrRestamp_StillPopulatesIndexesAndReloads()
+    {
+        var restamper = Substitute.For<IClrWorkflowDefinitionTenantRestamper>();
+        restamper
+            .RestampAsync("bad-workflow", Arg.Any<int>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns<Task<bool>>(_ => throw new InvalidOperationException("malformed Props"));
+        restamper
+            .RestampAsync("good-workflow", Arg.Any<int>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(true);
+
+        var triggerIndexer = Substitute.For<ITriggerIndexer>();
+        var notificationSender = Substitute.For<INotificationSender>();
+        var logger = new CapturingLogger();
+        var bad = new MaterializedWorkflow(new()
+        {
+            Identity = new("bad-workflow", 1, "bad-v1", Tenant.AgnosticTenantId),
+            Publication = new(true, true)
+        }, "CLR", "ClrWorkflowMaterializer");
+        var good = new MaterializedWorkflow(new()
+        {
+            Identity = new("good-workflow", 1, "good-v1", Tenant.AgnosticTenantId),
+            Publication = new(true, true)
+        }, "CLR", "ClrWorkflowMaterializer");
+        var storePopulator = CreatePopulatorWithTenant("tenant-a", logger, restamper, triggerIndexer, bad, good);
+        var registries = new DefaultRegistriesPopulator(
+            storePopulator,
+            Substitute.For<IActivityRegistryPopulator>(),
+            notificationSender);
+
+        await registries.PopulateAsync();
+
+        await _storeMock.Received().SaveManyAsync(Arg.Is<IEnumerable<WorkflowDefinition>>(definitions =>
+            definitions.Any(definition => definition.DefinitionId == "good-workflow")), Arg.Any<CancellationToken>());
+        await triggerIndexer.Received().IndexTriggersAsync(
+            Arg.Is<WorkflowDefinition>(definition => definition.DefinitionId == "good-workflow"),
+            Arg.Any<CancellationToken>());
+        await notificationSender.Received().SendAsync(
+            Arg.Is<WorkflowDefinitionsReloaded>(notification =>
+                notification.ReloadedWorkflowDefinitions.Any(definition => definition.DefinitionId == "good-workflow")),
+            Arg.Any<CancellationToken>());
+        Assert.Contains(logger.Messages, message =>
+            message.Contains("Skipping CLR tenant re-stamp", StringComparison.Ordinal)
+            && message.Contains("bad-workflow", StringComparison.Ordinal));
+    }
+
     [Theory(DisplayName = "PopulateStoreAsync handles null/empty tenant IDs correctly")]
     [InlineData(null, null, true)]  // Both null - should import
     [InlineData("", "", true)]      // Both empty - should import
@@ -389,6 +437,14 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
         string? tenantId,
         ILogger<DefaultWorkflowDefinitionStorePopulator> logger,
         IClrWorkflowDefinitionTenantRestamper? restamper,
+        params MaterializedWorkflow[] workflows) =>
+        CreatePopulatorWithTenant(tenantId, logger, restamper, triggerIndexer: null, workflows);
+
+    private DefaultWorkflowDefinitionStorePopulator CreatePopulatorWithTenant(
+        string? tenantId,
+        ILogger<DefaultWorkflowDefinitionStorePopulator> logger,
+        IClrWorkflowDefinitionTenantRestamper? restamper,
+        ITriggerIndexer? triggerIndexer,
         params MaterializedWorkflow[] workflows)
     {
         var tenantAccessor = Substitute.For<ITenantAccessor>();
@@ -402,7 +458,7 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
 
         return new(
             () => new List<IWorkflowsProvider> { provider },
-            Substitute.For<ITriggerIndexer>(),
+            triggerIndexer ?? Substitute.For<ITriggerIndexer>(),
             _storeMock,
             Substitute.For<IActivitySerializer>(),
             Substitute.For<IPayloadSerializer>(),

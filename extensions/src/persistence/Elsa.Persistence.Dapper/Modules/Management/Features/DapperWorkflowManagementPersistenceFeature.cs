@@ -8,6 +8,7 @@ using Elsa.Features.Services;
 using Elsa.Workflows.Management.Features;
 using Elsa.Workflows.Runtime;
 using JetBrains.Annotations;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Elsa.Persistence.Dapper.Modules.Management.Features;
@@ -41,6 +42,6 @@ public class DapperWorkflowManagementPersistenceFeature : FeatureBase
         
         Services.AddDapperStore<DapperWorkflowInstanceStore, WorkflowInstanceRecord>("WorkflowInstances");
         Services.AddDapperStore<DapperWorkflowDefinitionStore, WorkflowDefinitionRecord>("WorkflowDefinitions");
-        Services.AddScoped<IClrWorkflowDefinitionTenantRestamper>(sp => sp.GetRequiredService<DapperWorkflowDefinitionStore>());
+        Services.TryAddScoped<IClrWorkflowDefinitionTenantRestamper>(sp => sp.GetRequiredService<DapperWorkflowDefinitionStore>());
     }
 }
