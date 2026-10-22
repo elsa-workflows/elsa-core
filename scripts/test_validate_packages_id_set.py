@@ -145,31 +145,25 @@ class IdSetTests(unittest.TestCase):
 
     def test_missing_expected_list_fails_clearly(self):
         with tempfile.TemporaryDirectory() as temporary:
-            directory = Path(temporary)
-            missing = directory / "missing-ids.txt"
-            result = subprocess.run(
-                [sys.executable, str(SCRIPT)],
-                env={**os.environ, "PACKAGES_DIR": str(directory), "EXPECTED_IDS": str(missing)},
-                capture_output=True,
-                text=True,
-            )
-            self.assertEqual(1, result.returncode)
-            self.assertIn("Expected ID list not found", result.stderr)
-            self.assertNotIn("Traceback", result.stderr)
+            missing = Path(temporary) / "missing-ids.txt"
+            with self.assertRaises(SystemExit) as ctx:
+                load_expected_ids(missing)
+            self.assertIn("Expected ID list not found", str(ctx.exception))
 
     def test_empty_expected_list_fails_clearly(self):
         with tempfile.TemporaryDirectory() as temporary:
-            directory = Path(temporary)
-            empty = directory / "empty-ids.txt"
+            empty = Path(temporary) / "empty-ids.txt"
             empty.write_text("", encoding="utf-8")
-            result = subprocess.run(
-                [sys.executable, str(SCRIPT)],
-                env={**os.environ, "PACKAGES_DIR": str(directory), "EXPECTED_IDS": str(empty)},
-                capture_output=True,
-                text=True,
-            )
-            self.assertEqual(1, result.returncode)
-            self.assertIn("lists no package IDs", result.stderr)
+            with self.assertRaises(SystemExit) as ctx:
+                load_expected_ids(empty)
+            self.assertIn("lists no package IDs", str(ctx.exception))
+
+    def test_script_has_no_skip_bypass_or_override(self):
+        source = SCRIPT.read_text(encoding="utf-8")
+        self.assertNotIn("EXPECTED_IDS", source)
+        lowered = source.lower()
+        for marker in ("skip_id_set", "skip_guard", "bypass_id_set", "bypass_guard", "--skip", "--bypass"):
+            self.assertNotIn(marker, lowered)
 
 
 class StudioContentTests(unittest.TestCase):
@@ -236,6 +230,54 @@ class StudioContentTests(unittest.TestCase):
             )
             self.assertEqual(1, result.returncode)
             self.assertIn(f"Missing required content {entry}", result.stderr)
+
+
+# Oct 6 pin (artifact 11412848210): 231 minus these seven, plus Elsa.SamplePackage = 225.
+STALE_OCT6_MISSING = (
+    "Elsa.Connections",
+    "Elsa.Connections.Credentials.Persistence.EFCore",
+    "Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql",
+    "Elsa.Connections.Credentials.Workflows",
+    "Elsa.Workflows.Admission",
+    "Elsa.Workflows.Admission.Persistence.EFCore",
+    "Elsa.Workflows.Admission.Persistence.EFCore.PostgreSql",
+)
+GUARD_COMMAND = "python3 scripts/validate_packages_id_set.py"
+
+
+class SharedPublisherGuardTests(unittest.TestCase):
+    def test_stale_225_set_can_never_be_published_as_310(self):
+        expected = load_expected_ids(DEFAULT_EXPECTED)
+        for package_id in STALE_OCT6_MISSING:
+            self.assertIn(package_id, expected)
+        stale = [package_id for package_id in expected if package_id not in STALE_OCT6_MISSING]
+        stale.append("Elsa.SamplePackage")
+        self.assertEqual(225, len(stale))
+        errors = id_set_errors(stale, expected)
+        text = "\n".join(errors)
+        self.assertTrue(errors)
+        self.assertIn("Missing (7):", text)
+        for package_id in STALE_OCT6_MISSING:
+            self.assertIn(package_id, text)
+        self.assertIn("Unexpected (1):", text)
+        self.assertIn("Elsa.SamplePackage", text)
+
+    def test_both_publishers_run_the_same_id_set_guard_before_push(self):
+        root = Path(__file__).resolve().parents[1]
+        packages = (root / ".github/workflows/packages.yml").read_text(encoding="utf-8")
+        candidate = (root / ".github/workflows/publish-consolidated-original-candidate.yml").read_text(encoding="utf-8")
+        self.assertIn(GUARD_COMMAND, packages)
+        self.assertIn(GUARD_COMMAND, candidate)
+        self.assertLess(packages.find(GUARD_COMMAND), packages.find("NuGet login (OIDC)"))
+        self.assertLess(
+            candidate.find(GUARD_COMMAND),
+            candidate.find("consolidated_package_executor.py publish"),
+        )
+        for source in (packages, candidate):
+            lowered = source.lower()
+            for marker in ("skip_id_set", "skip_guard", "bypass_id_set", "bypass_guard"):
+                self.assertNotIn(marker, lowered)
+            self.assertNotIn("EXPECTED_IDS", source)
 
 
 class WorkflowConditionTests(unittest.TestCase):

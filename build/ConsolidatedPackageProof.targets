@@ -6,7 +6,7 @@
            Code="ELSA0003"
            Text="ConsolidatedPackageProof requires PackageVersion 3.10.0-proof.&lt;positive run&gt;.&lt;positive attempt&gt;. Publication and publisher cutover remain separate approvals." />
   </Target>
-  <!-- ConsolidatedReleaseCandidate packs the 231-ID 3.10.x set for the candidate workflow only. packages.yml does not pack this set; a stable 3.10.x nuget.org dispatch promotes the admitted candidate bytes. Publication still needs a separate approved dispatch. -->
+  <!-- ConsolidatedReleaseCandidate is a verification pack for the candidate workflow only, not the published bytes. Stable 3.10.x nuget.org and candidate Feedz publication are blocked until re-pin (#9016). -->
   <Target Name="ValidateConsolidatedReleaseCandidate" BeforeTargets="Restore;PrepareForBuild;Pack;GenerateNuspec"
           Condition="'$(ConsolidatedReleaseCandidate)' == 'true'">
     <Error Condition="'$(ConsolidatedPackageProof)' == 'true'" Code="ELSA0004"

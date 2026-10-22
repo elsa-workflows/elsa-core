@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - '.github/workflows/packages.yml'
+      - '.github/workflows/publish-consolidated-original-candidate.yml'
       - '.github/workflows/validate-packages-gates.yml'
       - 'scripts/validate_packages_*.py'
       - 'scripts/validate_packages_id_set.txt'
@@ -30,6 +31,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/packages.yml'
+      - '.github/workflows/publish-consolidated-original-candidate.yml'
       - '.github/workflows/validate-packages-gates.yml'
       - 'scripts/validate_packages_*.py'
       - 'scripts/validate_packages_id_set.txt'

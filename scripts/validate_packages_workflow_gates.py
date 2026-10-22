@@ -23,6 +23,8 @@ from validate_packages_publication_selection import COVERAGE_REFS, selection_err
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github/workflows/packages.yml"
+CANDIDATE_WORKFLOW = ROOT / ".github/workflows/publish-consolidated-original-candidate.yml"
+CANDIDATE_PUBLISH = "consolidated_package_executor.py publish"
 
 SELECTION_JOB = "validate_publication_selection"
 # Each gated job is switched on by the workflow_dispatch input of the same name.
@@ -363,6 +365,28 @@ def promotion_source_violations(source: str) -> list[str]:
     return [message for needle, message in FORBIDDEN_PACK_ROUTE if needle in source]
 
 
+def candidate_publisher_violations(source: str) -> list[str]:
+    """The candidate Feedz publisher must run the same 231-ID guard before any push."""
+    violations = []
+    lowered = source.lower()
+    for marker in ("skip_id_set", "skip_guard", "bypass_id_set", "bypass_guard", "expected_ids"):
+        if marker in lowered:
+            violations.append(
+                "publish-consolidated-original-candidate.yml must not offer a skip, bypass, or ID-list override"
+            )
+    guard = source.find(GUARD_CANDIDATE)
+    publish = source.find(CANDIDATE_PUBLISH)
+    if guard < 0:
+        violations.append(
+            "publish-consolidated-original-candidate.yml must run the same ID-set guard before Feedz"
+        )
+    elif publish < 0 or guard > publish:
+        violations.append(
+            "publish-consolidated-original-candidate.yml must run the ID-set guard before the Feedz publish"
+        )
+    return violations
+
+
 def workflow_violations(workflow: Any) -> list[str]:
     if not isinstance(workflow, dict) or not isinstance(workflow.get("jobs"), dict):
         return ["the workflow has no jobs mapping"]
@@ -386,9 +410,15 @@ def source_violations(source: str) -> list[str]:
 
 
 def main() -> int:
-    violations = source_violations(WORKFLOW.read_text(encoding="utf-8"))
+    violations = [
+        *(f"{WORKFLOW.relative_to(ROOT)}: {violation}" for violation in source_violations(WORKFLOW.read_text(encoding="utf-8"))),
+        *(
+            f"{CANDIDATE_WORKFLOW.relative_to(ROOT)}: {violation}"
+            for violation in candidate_publisher_violations(CANDIDATE_WORKFLOW.read_text(encoding="utf-8"))
+        ),
+    ]
     for violation in violations:
-        print(f"{WORKFLOW.relative_to(ROOT)}: {violation}", file=sys.stderr)
+        print(violation, file=sys.stderr)
     if violations:
         return 1
     print("Package publication gates hold: only the three default-off, validated dispatch jobs can publish or deploy.")

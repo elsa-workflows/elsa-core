@@ -349,6 +349,22 @@ class WorkflowGateTests(unittest.TestCase):
             """)
         self.assertEqual([], gates.source_violations(source))
 
+    def test_candidate_publisher_must_run_the_same_id_set_guard_before_feedz(self):
+        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
+        self.assertEqual([], gates.candidate_publisher_violations(source))
+        stripped = source.replace(gates.GUARD_CANDIDATE, "true")
+        self.assertIn(
+            "publish-consolidated-original-candidate.yml must run the same ID-set guard before Feedz",
+            gates.candidate_publisher_violations(stripped),
+        )
+        reordered = source.replace(gates.GUARD_CANDIDATE, "GUARD_PLACEHOLDER").replace(
+            gates.CANDIDATE_PUBLISH, f"{gates.CANDIDATE_PUBLISH}\n          {gates.GUARD_CANDIDATE}"
+        ).replace("GUARD_PLACEHOLDER", "true")
+        self.assertIn(
+            "publish-consolidated-original-candidate.yml must run the ID-set guard before the Feedz publish",
+            gates.candidate_publisher_violations(reordered),
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

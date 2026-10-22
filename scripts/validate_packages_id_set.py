@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Compare packed NuGet IDs with the expected consolidated 3.10 set.
 
-packages.yml publish_nuget runs this on the pinned candidate nupkgs before a
-stable 3.10.x nuget.org push. The package directory arrives as an environment
-variable, never as script text:
+Both publishers run this same script before any 3.10.0 push: packages.yml
+(nuget.org promote) and publish-consolidated-original-candidate.yml (Feedz).
+There is no skip, bypass, or override input. The package directory arrives as:
 
     PACKAGES_DIR   directory containing the produced .nupkg files
-    EXPECTED_IDS   optional path to the ID list; defaults to validate_packages_id_set.txt
+
+The expected ID list is always scripts/validate_packages_id_set.txt.
 """
 
 from __future__ import annotations
@@ -118,8 +119,7 @@ def main() -> int:
     packages = Path(packages_dir)
     if not packages.is_dir():
         raise SystemExit("PACKAGES_DIR must be a directory of packed .nupkg files.")
-    expected_path = Path(os.environ.get("EXPECTED_IDS") or DEFAULT_EXPECTED)
-    expected = load_expected_ids(expected_path)
+    expected = load_expected_ids(DEFAULT_EXPECTED)
     produced = packed_ids(packages)
     errors = id_set_errors(produced, expected)
     errors.extend(studio_content_errors(packages))
