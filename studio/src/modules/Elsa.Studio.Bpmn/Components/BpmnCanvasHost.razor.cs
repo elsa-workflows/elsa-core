@@ -150,7 +150,7 @@ public partial class BpmnCanvasHost : IAsyncDisposable
         // references there are now and clears them before it awaits, so each releases only what it took, and once.
         var designer = _designer;
         var hostModule = _hostModule;
-        var listener = _listener;
+        using var listener = _listener;
         _designer = null;
         _hostModule = null;
         _listener = null;
@@ -169,10 +169,6 @@ public partial class BpmnCanvasHost : IAsyncDisposable
         catch (JSDisconnectedException)
         {
             // The circuit is gone, and the browser's state with it.
-        }
-        finally
-        {
-            listener?.Dispose();
         }
     }
 }
