@@ -30,17 +30,22 @@ try {
   const second = await client.bpmn.import(new File([exported], 'exported.bpmn'), { name: `BpmnReimport${Date.now()}` });
   cleanup.push(second.definitionId);
   assert.equal(await (await client.bpmn.export(second.definitionId)).text(), exported);
-  const condition = xml.replace('sourceRef="Start" targetRef="End"/>', 'sourceRef="Start" targetRef="End"><bpmn:conditionExpression>value &gt; 0</bpmn:conditionExpression></bpmn:sequenceFlow>');
+  const condition = xml.replace('sourceRef="Start" targetRef="End"/>', 'sourceRef="Start" targetRef="End"><bpmn:conditionExpression language="JavaScript">true</bpmn:conditionExpression></bpmn:sequenceFlow>');
+  const conditional = await client.bpmn.import(new File([condition], 'conditional.bpmn'), { name: `BpmnConditional${Date.now()}` });
+  cleanup.push(conditional.definitionId);
+  const conditionalExport = await (await client.bpmn.export(conditional.definitionId)).text();
+  assert.match(conditionalExport, /conditionExpression[^>]*language="JavaScript"[^>]*>true</);
+  const unsupported = condition.replace('language="JavaScript"', 'language="XPath"');
   await assert.rejects((async () => {
-    const unexpected = await client.bpmn.import(new File([condition], 'conditional.bpmn'));
+    const unexpected = await client.bpmn.import(new File([unsupported], 'unsupported-condition.bpmn'));
     cleanup.push(unexpected.definitionId);
   })(), error => {
     assert(error instanceof ApiError);
-    assert.equal(error.problem.raw.code, 'bpmn.import.condition-unsupported');
+    assert.equal(error.problem.raw.code, 'bpmn.import.condition-language-unsupported');
     assert.deepEqual(error.problem.raw.data.elementIds, ['Flow']);
     return true;
   });
-  console.log('PASS: actual Core API analyzes, imports, exports canonical XML without changing process/flow counts, reimports and exports identically, and refuses expression conditions with structured flow IDs');
+  console.log('PASS: actual Core API analyzes, imports, exports canonical XML without changing process/flow counts, reimports and exports identically, preserves supported expression conditions, and refuses unsupported condition languages with structured flow IDs');
 } catch (error) {
   primaryError = error;
   throw error;
