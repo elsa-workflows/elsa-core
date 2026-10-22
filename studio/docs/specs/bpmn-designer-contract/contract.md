@@ -76,12 +76,21 @@ or `null` when the element has no binding. Each `value` is the input's JSON text
 | `not-bindable` | The element cannot carry a binding (see below). |
 | `read-only` | The designer was created with `readOnly`. |
 
+`setBinding` throws a `TypeError` for a binding Elsa's import would refuse: one without an activity type, or one that
+names an input twice.
+
 An element can carry a binding when Elsa's import would bind it: any task (`bpmn:task` and the task kinds derived
 from it), except a `sendTask` or `receiveTask` that names a message (`messageRef`). Elsa runs those as message
 publishing and waiting. Gateways, events, subprocesses and call activities cannot carry one.
 
 The binding format is defined by `BpmnActivityBindingFormat` in `Elsa.Bpmn.Interchange`. Its namespace is
 `https://elsaworkflows.io/schemas/bpmn/v1`.
+
+### `undo()` and `redo()`
+
+`undo` reverts the last edit and `redo` re-applies the last edit `undo` reverted. Each raises `change`. They return
+`false` when there is nothing to undo or redo, and always in a designer created with `readOnly`. The `change` event's
+`canUndo` and `canRedo` say whether they would do anything, so a host can enable its undo and redo controls.
 
 ### `applyOverlays(statsById | null)` and `clearOverlays()`
 

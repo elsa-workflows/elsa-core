@@ -32,6 +32,10 @@ export interface BpmnDesigner {
     select(elementId: string | null): boolean;
     getBinding(elementId: string): BpmnActivityBinding | null;
     setBinding(elementId: string, binding: BpmnActivityBinding | null): BpmnSetBindingResult;
+    /** Undoes the last edit. Returns `false` when there is nothing to undo, and always in a read-only designer. */
+    undo(): boolean;
+    /** Redoes the last undone edit. Returns `false` when there is nothing to redo, and always in a read-only designer. */
+    redo(): boolean;
     applyOverlays(statsById: Record<string, BpmnElementStats> | null): BpmnOverlayResult;
     clearOverlays(): BpmnOverlayResult;
     on(event: 'change', listener: (event: BpmnChangeEvent) => void): () => void;
