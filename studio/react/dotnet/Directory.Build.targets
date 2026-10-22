@@ -1,0 +1,24 @@
+<Project>
+  <Import Project="../../../Directory.Build.targets" />
+  <!-- #8848: React Studio starts with 3.11. Keep the existing 3.10 release
+       stream intact without accidentally publishing these new packages in it. -->
+  <PropertyGroup>
+    <_ReactStudioReleaseVersion Condition="'$(PackageVersion)' != ''">$(PackageVersion)</_ReactStudioReleaseVersion>
+    <_ReactStudioReleaseVersion Condition="'$(_ReactStudioReleaseVersion)' == ''">$(Version)</_ReactStudioReleaseVersion>
+    <_ReactStudioReleaseBase>$([System.Text.RegularExpressions.Regex]::Match('$(_ReactStudioReleaseVersion)', '^\d+\.\d+\.\d+').Value)</_ReactStudioReleaseBase>
+    <IsPackable Condition="'$(_ReactStudioReleaseBase)' != '' and $([MSBuild]::VersionLessThan('$(_ReactStudioReleaseBase)', '3.11.0'))">false</IsPackable>
+  </PropertyGroup>
+  <Target Name="RequireReactStudioVersionConsistency" BeforeTargets="GenerateNuspec" Condition="'$(IsPackable)' == 'true'">
+    <Error Condition="'$(Version)' != '$(PackageVersion)'" Text="React Studio packages use lockstep package and assembly versions. Set Version instead of overriding PackageVersion alone." />
+  </Target>
+  <ItemGroup Condition="'$(IsTestProject)' == 'true'">
+    <PackageReference Include="GitHubActionsTestLogger" PrivateAssets="All" />
+  </ItemGroup>
+  <!-- Razor's default JSON content discovery includes workspace manifests.
+       Publish only the prebuilt feature assets, never Client/package.json. -->
+  <Target Name="ExcludeReactClientBuildInputs" BeforeTargets="AssignTargetPaths">
+    <ItemGroup>
+      <Content Remove="Client/**/*" />
+    </ItemGroup>
+  </Target>
+</Project>

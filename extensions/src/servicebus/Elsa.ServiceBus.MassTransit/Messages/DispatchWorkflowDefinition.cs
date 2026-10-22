@@ -75,4 +75,10 @@ public record DispatchWorkflowDefinition
     /// The ID of the activity that triggered the workflow.
     /// </summary>
     public string? TriggerActivityId { get; init; }
+
+    /// <summary>
+    /// When creating a new instance with a fixed <see cref="InstanceId"/>, skip the dispatch if an instance with that ID already exists.
+    /// This makes redelivery (for example an outbox retry) idempotent.
+    /// </summary>
+    public bool SkipIfInstanceExists { get; init; }
 }

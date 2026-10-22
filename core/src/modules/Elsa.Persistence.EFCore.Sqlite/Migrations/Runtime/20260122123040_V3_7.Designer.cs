@@ -143,6 +143,15 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Runtime
                     b.HasIndex("HasBookmarks")
                         .HasDatabaseName("IX_ActivityExecutionRecord_HasBookmarks");
 
+                    b.HasIndex("SchedulingActivityExecutionId")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_SchedulingActivityExecutionId");
+
+                    b.HasIndex("SchedulingActivityId")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_SchedulingActivityId");
+
+                    b.HasIndex("SchedulingWorkflowInstanceId")
+                        .HasDatabaseName("IX_ActivityExecutionRecord_SchedulingWorkflowInstanceId");
+
                     b.HasIndex("StartedAt")
                         .HasDatabaseName("IX_ActivityExecutionRecord_StartedAt");
 
@@ -325,9 +334,9 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Runtime
                     b.HasIndex("WorkflowDefinitionVersionId")
                         .HasDatabaseName("IX_StoredTrigger_WorkflowDefinitionVersionId");
 
-                    b.HasIndex("WorkflowDefinitionId", "Hash", "ActivityId")
+                    b.HasIndex("WorkflowDefinitionId", "Hash", "ActivityId", "TenantId")
                         .IsUnique()
-                        .HasDatabaseName("IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId");
+                        .HasDatabaseName("IX_StoredTrigger_Unique_WorkflowDefinitionId_Hash_ActivityId_TenantId");
 
                     b.ToTable("Triggers", "Elsa");
                 });

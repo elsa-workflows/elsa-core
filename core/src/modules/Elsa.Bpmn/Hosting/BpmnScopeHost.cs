@@ -6,8 +6,14 @@ using Elsa.Bpmn.Activities;
 using Elsa.Bpmn.Exceptions;
 using Elsa.Bpmn.Signals;
 using Elsa.Extensions;
+using Elsa.Scheduling;
+using Elsa.Scheduling.Bookmarks;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities.Flowchart.Models;
+using Elsa.Workflows.Exceptions;
+using Elsa.Workflows.Runtime;
+using Elsa.Workflows.Runtime.Activities;
+using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Signals;
 using Microsoft.Extensions.Logging;
 
@@ -60,11 +66,13 @@ internal sealed class BpmnScopeHost
 
     private readonly ActivityExecutionContext _context;
     private readonly BpmnProcess _process;
+    private readonly BpmnScopeConditions _conditions;
 
     private BpmnScopeHost(ActivityExecutionContext context)
     {
         _context = context;
         _process = (BpmnProcess)context.Activity;
+        _conditions = new BpmnScopeConditions(context);
     }
 
     /// <summary>Returns the host for the given BPMN scope context.</summary>
@@ -80,8 +88,24 @@ internal sealed class BpmnScopeHost
     // --- The interpreter's four entry points ---------------------------------------------------------
 
     /// <summary>The scope is beginning.</summary>
-    public ValueTask StartAsync() => EvaluateAsync(memory =>
-        Interpreter.Start(new BpmnStartRequest(Graph, memory.State, Snapshot(memory))));
+    public async ValueTask StartAsync()
+    {
+        // A scope that no other BPMN scope started is where a run begins: every scope it can reach is built now, so a
+        // body that cannot run is refused before anything has run rather than when a token first reaches it.
+        if (InvocationCorrelation.Count == 0)
+        {
+            BpmnProcessGraphs.BuildEach(ScopesBeneath());
+        }
+
+        // Resolving by the matched trigger may read the trigger store, so it happens before the synchronous evaluation.
+        var triggeredStart = await ResolveTriggeredStartAsync();
+
+        await EvaluateAsync(memory =>
+        {
+            var request = new BpmnStartRequest(Graph, memory.State, Snapshot(memory), triggeredStart ?? ResolveStartSignal());
+            return () => Interpreter.Start(request);
+        });
+    }
 
     /// <summary>A unit of work finished, reporting zero or more outcome names.</summary>
     public ValueTask OnWorkCompletedAsync(ActivityExecutionContext childContext, object? result) => EvaluateAsync(memory =>
@@ -96,10 +120,15 @@ internal sealed class BpmnScopeHost
         memory.Work.Remove(record);
         memory.SaveWork();
 
-        var outcomeNames = result is Outcomes outcomes ? outcomes.Names : [];
+        var outcomeNames = result is Outcomes outcomes ? outcomes.Names : CallActivityOutcomeNames(record, childContext);
 
-        return Interpreter.OnWorkCompleted(new BpmnWorkCompletedRequest(
-            Graph, memory.State, Snapshot(memory), record.BindingRef, record.Handle, outcomeNames, record.IterationId));
+        var request = new BpmnWorkCompletedRequest(
+            Graph, memory.State, Snapshot(memory), record.BindingRef, record.Handle, outcomeNames, record.IterationId)
+        {
+            WorkTokenId = record.TokenId
+        };
+
+        return () => Interpreter.OnWorkCompleted(request);
     });
 
     /// <summary>A nested scope this one invoked signalled outward.</summary>
@@ -125,8 +154,13 @@ internal sealed class BpmnScopeHost
             if (memory.Work.FindByHandle(signalling.Handle) is not { } record)
                 return null;
 
-            return Interpreter.OnWorkSignalled(new BpmnWorkSignalledRequest(
-                Graph, memory.State, Snapshot(memory), record.BindingRef, record.Handle, signal.Code, signal.Payload, record.IterationId));
+            var request = new BpmnWorkSignalledRequest(
+                Graph, memory.State, Snapshot(memory), record.BindingRef, record.Handle, signal.Code, signal.Payload, record.IterationId)
+            {
+                WorkTokenId = record.TokenId
+            };
+
+            return () => Interpreter.OnWorkSignalled(request);
         });
     }
 
@@ -151,15 +185,24 @@ internal sealed class BpmnScopeHost
         memory.Work.Remove(record);
         memory.SaveWork();
 
-        var evaluation = Interpreter.OnWorkFaulted(new BpmnWorkFaultedRequest(
-            Graph, memory.State, Snapshot(memory), record.BindingRef, record.Handle, signal.Exception.Message));
+        // The iteration and the token id name the failed unit among several live instances of one binding: without
+        // either, the interpreter refuses a fault it cannot pin on exactly one of them.
+        var request = new BpmnWorkFaultedRequest(
+            Graph, memory.State, Snapshot(memory), record.BindingRef, record.Handle, signal.Exception.Message)
+        {
+            FaultedIterationId = record.IterationId,
+            WorkTokenId = record.TokenId,
+            ErrorCode = ErrorCodeOf(signal.Exception)
+        };
+
+        var evaluation = await _conditions.InterpretAsync(() => Interpreter.OnWorkFaulted(request));
 
         ProjectDiagnostics(evaluation.State, memory.State);
 
         memory.State = evaluation.State.Prune();
         memory.SaveState();
 
-        if (evaluation.Disposition is not BpmnErrorDisposition.Caught)
+        if (evaluation.ErrorDisposition is not BpmnErrorDisposition.Caught)
             return;
 
         signalContext.StopPropagation();
@@ -178,14 +221,49 @@ internal sealed class BpmnScopeHost
 
     // --- Plumbing ------------------------------------------------------------------------------------
 
-    private ValueTask EvaluateAsync(Func<BpmnScopeMemory, BpmnEvaluation?> evaluate) =>
+    /// <summary>
+    /// This scope and every BPMN scope beneath it in the workflow graph: its subprocess bodies, and any process composed
+    /// into other work (D11), such as a <c>Flowchart</c> or an <c>If</c> branch. Elsa's own port resolvers built that
+    /// graph, so it reaches every port an activity has. A composed process is a root scope of its own and would otherwise
+    /// build only when its wrapper starts it.
+    /// </summary>
+    private IEnumerable<BpmnProcess> ScopesBeneath() =>
+        (_context.WorkflowExecutionContext.FindNodeByActivity(_process)?.Descendants() ?? [])
+        .Select(node => node.Activity)
+        .OfType<BpmnProcess>()
+        .Prepend(_process);
+
+    /// <summary>
+    /// The outcome names a call activity's completed work reports for how its called workflow ended. Only a call
+    /// activity's <see cref="DispatchWorkflow"/> reports them: the same activity bound to any other element keeps
+    /// reporting none, as before.
+    /// </summary>
+    private IReadOnlyCollection<string> CallActivityOutcomeNames(BpmnWorkRecord record, ActivityExecutionContext childContext)
+    {
+        if (childContext.Activity is not DispatchWorkflow || Graph.FindElementByBindingRef(record.BindingRef) is not { } element || !BpmnElementFamilies.IsCallActivity(element))
+        {
+            return [];
+        }
+
+        return BpmnCallActivityOutcomes.For(DispatchWorkflow.IsChildActivationDenied(childContext), DispatchWorkflow.GetChildWorkflowSubStatus(childContext));
+    }
+
+    /// <summary>
+    /// Runs one interpreter call through the dispatcher. <paramref name="prepare"/> does the host's own bookkeeping and
+    /// returns the call, or <c>null</c> when there is nothing to evaluate; the call runs once per condition it asks
+    /// for (see <see cref="BpmnScopeConditions"/>), so it must call the interpreter and nothing else.
+    /// </summary>
+    private ValueTask EvaluateAsync(Func<BpmnScopeMemory, Func<BpmnEvaluation>?> prepare) =>
         DispatcherOf(_context.WorkflowExecutionContext).PostAsync(async () =>
         {
             var memory = BpmnScopeMemory.Load(_context);
-            var evaluation = evaluate(memory);
 
-            if (evaluation is null)
+            if (prepare(memory) is not { } interpret)
+            {
                 return;
+            }
+
+            var evaluation = await _conditions.InterpretAsync(interpret);
 
             // Diagnostics are audit-only and capped: projecting from persisted state later would lose whatever
             // Prune() already dropped, so this runs on the evaluation's own state, before pruning. memory.State is
@@ -214,7 +292,7 @@ internal sealed class BpmnScopeHost
             case BpmnContinuation.Defer:
                 break;
             case BpmnContinuation.Fault fault:
-                throw new BpmnScopeFaultException(fault.Code, fault.Message);
+                throw new BpmnScopeFaultException(fault.Code, fault.Message) { ErrorCode = fault.ErrorCode };
             default:
                 throw new NotSupportedException($"The BPMN continuation '{evaluation.Continuation.GetType().Name}' is not supported by this host.");
         }
@@ -330,6 +408,18 @@ internal sealed class BpmnScopeHost
     }
 
     /// <summary>
+    /// The BPMN error a failed unit of work raised: a <see cref="FaultException"/>'s code, which is how Elsa's
+    /// <c>Fault</c> activity names a business error, or the error a subprocess ended with when nothing in it caught one.
+    /// Any other exception is an uncoded error, which only a catch-all error catcher catches.
+    /// </summary>
+    private static string? ErrorCodeOf(Exception exception) => exception switch
+    {
+        FaultException fault => fault.Code,
+        BpmnScopeFaultException scopeFault => scopeFault.ErrorCode,
+        _ => null
+    };
+
+    /// <summary>
     /// Finds the unit of work this scope started that the failing activity belongs to, walking outward from the
     /// failure.
     /// </summary>
@@ -350,6 +440,56 @@ internal sealed class BpmnScopeHost
         return null;
     }
 
+    /// <summary>
+    /// The start event that registered the stored trigger the runtime reports as having started this process, or
+    /// <c>null</c> when this scope was not started by its own trigger, the run carries no trigger hash, or none of the
+    /// start events registered it. <see cref="ResolveStartSignal"/> then decides from the trigger kind.
+    /// </summary>
+    private async ValueTask<BpmnStartSignal?> ResolveTriggeredStartAsync()
+    {
+        if (!_context.IsTriggerOfWorkflow() || _process.Process is not { } process)
+        {
+            return null;
+        }
+
+        var workflowExecutionContext = _context.WorkflowExecutionContext;
+
+        if (workflowExecutionContext.GetTriggerStimulusHash() is not { } stimulusHash)
+        {
+            return null;
+        }
+
+        return await BpmnStartEventResolver.ResolveByStimulusHashAsync(
+            process,
+            stimulusHash,
+            _context.GetRequiredService<IStimulusHasher>(),
+            async () =>
+            {
+                var trigger = await _context.GetRequiredService<ITriggerStore>().FindAsync(new TriggerFilter
+                {
+                    Hash = stimulusHash,
+                    Name = SchedulingStimulusNames.Timer,
+                    WorkflowDefinitionVersionId = workflowExecutionContext.Workflow.Identity.Id
+                }, _context.CancellationToken);
+
+                return trigger?.GetPayload<TimerTriggerPayload>().Interval;
+            });
+    }
+
+    /// <summary>
+    /// The start event a trigger of the kind that fired registered, when this scope is the activity whose trigger
+    /// started the workflow; otherwise <c>null</c>, so a direct invocation begins at the plain start events and a nested
+    /// scope at whatever its invocation carries. The fallback for a run that carries no trigger hash.
+    /// </summary>
+    private BpmnStartSignal? ResolveStartSignal()
+    {
+        if (!_context.IsTriggerOfWorkflow() || _process.Process is not { } process)
+            return null;
+
+        var startedByEvent = _context.WorkflowExecutionContext.Input.ContainsKey(Event.EventInputWorkflowInputKey);
+        return BpmnStartEventResolver.Resolve(process, startedByEvent);
+    }
+
     private BpmnHostSnapshot Snapshot(BpmnScopeMemory memory)
     {
         var invocationCorrelation = InvocationCorrelation;
@@ -362,7 +502,10 @@ internal sealed class BpmnScopeHost
             LiveWork: memory.Work.ToLiveWork(),
             InvocationCorrelation: invocationCorrelation,
             Variables: new BpmnScopeVariables(_context),
-            Capabilities: Capabilities);
+            Capabilities: Capabilities)
+        {
+            Conditions = _conditions
+        };
     }
 
     /// <summary>
@@ -373,15 +516,5 @@ internal sealed class BpmnScopeHost
     private IReadOnlyDictionary<string, string> InvocationCorrelation =>
         BpmnScopeMemory.Read<Dictionary<string, string>>(_context, InvocationCorrelationPropertyKey) ?? NoCorrelation;
 
-    private BpmnGraph BuildGraph()
-    {
-        var definition = _process.Process
-                         ?? throw new InvalidOperationException($"BPMN process activity '{_process.Id}' has no process definition to execute.");
-
-        // Every binding the definition declares, with the nested definition attached where the bound activity is
-        // itself a BPMN scope. The graph validator reads that for an event subprocess body's start trigger.
-        var boundWork = BpmnBoundWork.Derive(definition, bindingRef => (_process.FindWorkActivity(bindingRef) as BpmnProcess)?.Process);
-
-        return BpmnGraph.Build(definition, boundWork, Capabilities);
-    }
+    private BpmnGraph BuildGraph() => BpmnProcessGraphs.Build(_process);
 }

@@ -1,9 +1,12 @@
 using Elsa.ServiceBus.MassTransit.Messages;
+using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Messages;
 using JetBrains.Annotations;
 using MassTransit;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Elsa.ServiceBus.MassTransit.Consumers;
 
@@ -11,10 +14,19 @@ namespace Elsa.ServiceBus.MassTransit.Consumers;
 /// A consumer of various dispatch message types to asynchronously execute workflows.
 /// </summary>
 [UsedImplicitly]
-public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflowDefinitionService, IWorkflowRuntime workflowRuntime) :
+public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflowDefinitionService, IWorkflowRuntime workflowRuntime, ILogger<DispatchWorkflowRequestConsumer> logger) :
     IConsumer<DispatchWorkflowDefinition>,
     IConsumer<DispatchWorkflowInstance>
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DispatchWorkflowRequestConsumer"/> class without a logger.
+    /// </summary>
+    [Obsolete("Use the constructor that takes an ILogger instead. Removed in the next major version.")]
+    public DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflowDefinitionService, IWorkflowRuntime workflowRuntime)
+        : this(workflowDefinitionService, workflowRuntime, NullLogger<DispatchWorkflowRequestConsumer>.Instance)
+    {
+    }
+
     /// <inheritdoc />
     public async Task Consume(ConsumeContext<DispatchWorkflowDefinition> context)
     {
@@ -56,6 +68,13 @@ public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflow
             throw new Exception($"Workflow definition version with ID '{definitionVersionId}' not found");
 
         var workflowClient = await workflowRuntime.CreateClientAsync(message.InstanceId, cancellationToken);
+
+        // Same rule as the default dispatcher: a redelivered message must not create a second instance with the same ID.
+        if (message.SkipIfInstanceExists && !string.IsNullOrWhiteSpace(message.InstanceId) && await workflowClient.InstanceExistsAsync(cancellationToken))
+        {
+            return;
+        }
+
         var createWorkflowInstanceRequest = new CreateAndRunWorkflowInstanceRequest
         {
             WorkflowDefinitionHandle = workflowGraph.Workflow.DefinitionHandle,
@@ -72,6 +91,14 @@ public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflow
     {
         if (string.IsNullOrWhiteSpace(message.InstanceId)) throw new ArgumentException("The instance ID is required when dispatching an existing workflow instance.");
 
+        var workflowClient = await workflowRuntime.CreateClientAsync(message.InstanceId, cancellationToken);
+        var state = await workflowClient.ExportStateAsync(cancellationToken);
+        if (state.SubStatus != WorkflowSubStatus.Pending)
+        {
+            logger.LogDebug("Skipping existing-instance dispatch of {InstanceId}: sub-status is {SubStatus}", message.InstanceId, state.SubStatus);
+            return;
+        }
+
         var request = new RunWorkflowInstanceRequest
         {
             TriggerActivityId = message.TriggerActivityId,
@@ -79,7 +106,6 @@ public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflow
             Properties = message.Properties
         };
 
-        var workflowClient = await workflowRuntime.CreateClientAsync(message.InstanceId, cancellationToken);
         await workflowClient.RunInstanceAsync(request, cancellationToken);
     }
 }

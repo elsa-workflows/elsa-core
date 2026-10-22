@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json.Nodes;
+using System.Xml.Linq;
 using Bpmn.Interchange;
 using Bpmn.Model;
 using Bpmn.Semantics;
@@ -86,10 +87,16 @@ namespace Elsa.Bpmn.Interchange.Services;
 /// is the static half of the same check <c>BpmnGraph.Build</c> performs at first execution: it needs only the
 /// definition, not bound work or a host snapshot. Running it at import means an unrunnable diagram is rejected before
 /// it is ever persisted, naming the missing capability and the elements that need it, rather than surfacing as an
-/// incident the first time the workflow runs. <c>BpmnGraph.Build</c> itself is deliberately not called here: building
-/// the graph also validates structural invariants that belong to the runtime module's own execution path
-/// (<c>Elsa.Bpmn.Hosting.BpmnScopeHost</c>), and re-running that here would duplicate it outside the module that owns
-/// it.
+/// incident the first time the workflow runs. After binding, import also builds the graph of the process and of every
+/// subprocess body it can reach through <see cref="BpmnProcessGraphs"/>, the runtime module's own build, which the scope
+/// host runs when a run starts; a process that could never run is refused with
+/// <see cref="BpmnErrorCodes.ImportProcessInvalid"/> rather than faulting on its first run.
+/// </para>
+/// <para>
+/// <b>Conditions Elsa cannot evaluate as written are refused here too, and nothing opts out of it.</b> Elsa evaluates a
+/// sequence flow's standard <c>conditionExpression</c> with its own expression engine, so import refuses only a flow
+/// that carries both an outcome and an expression, and an expression in a language Elsa does not evaluate (see
+/// <see cref="EnsureConditionsEvaluable"/>). <see cref="Analyze"/> refuses nothing.
 /// </para>
 /// </remarks>
 public sealed class BpmnInterchangeDocumentService(
@@ -177,7 +184,8 @@ public sealed class BpmnInterchangeDocumentService(
         BpmnHostCapabilities.SubtreeCancellation,
         BpmnHostCapabilities.ScopeSignalling,
         BpmnHostCapabilities.IterationScopes,
-        BpmnHostCapabilities.ScopeVariables
+        BpmnHostCapabilities.ScopeVariables,
+        BpmnHostCapabilities.ConditionEvaluation
     ];
 
     /// <summary>
@@ -199,6 +207,8 @@ public sealed class BpmnInterchangeDocumentService(
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <exception cref="BpmnInterchangeException">The document cannot be read, or declares more than one process and <paramref name="processId"/> does not pick one.</exception>
     /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
+    /// <exception cref="BpmnConditionRefusedException">A sequence flow carries a condition Elsa cannot evaluate as written.</exception>
+    /// <exception cref="BpmnProcessInvalidException">The process, or a subprocess body it can reach, cannot run.</exception>
     /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
     public Task<BpmnDocumentImportResult> ImportAsync(string xml, string? definitionId, string? name, string? processId, CancellationToken cancellationToken) =>
         ImportCoreAsync(xml, definitionId, name, processId, preserveMetadataFrom: null, expectedETag: null, compareAndSwap: false, cancellationToken);
@@ -234,6 +244,8 @@ public sealed class BpmnInterchangeDocumentService(
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <exception cref="BpmnInterchangeException">The document cannot be read, or declares more than one process and <paramref name="processId"/> does not pick one.</exception>
     /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
+    /// <exception cref="BpmnConditionRefusedException">A sequence flow carries a condition Elsa cannot evaluate as written.</exception>
+    /// <exception cref="BpmnProcessInvalidException">The process, or a subprocess body it can reach, cannot run.</exception>
     /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
     private async Task<BpmnDocumentImportResult> ImportCoreAsync(
         string xml,
@@ -256,8 +268,10 @@ public sealed class BpmnInterchangeDocumentService(
         var rootDefinition = ResolveRootDefinition(result.Definitions, processId);
 
         EnsureCapabilitiesSatisfied(rootDefinition, result.Bindings);
+        EnsureConditionsEvaluable(result);
 
         var process = binder.Bind(rootDefinition, result.Bindings);
+        EnsureProcessBuilds(process);
 
         // Whoever composes a bound scope into a workflow says explicitly that it is an entry point; an import is
         // exactly that, for the process the caller asked to import.
@@ -575,6 +589,8 @@ public sealed class BpmnInterchangeDocumentService(
     /// subprocess element that has a stored body but no bindingRef to write that body back under.
     /// </exception>
     /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
+    /// <exception cref="BpmnConditionRefusedException">A sequence flow carries a condition Elsa cannot evaluate as written.</exception>
+    /// <exception cref="BpmnProcessInvalidException">The process, or a subprocess body it can reach, cannot run.</exception>
     /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
     public async Task<BpmnDocumentImportResult> ImportDocumentAsync(
         BpmnDefinitions document,
@@ -968,6 +984,80 @@ public sealed class BpmnInterchangeDocumentService(
             + "This is most often a subprocess nested inside another subprocess that reuses its parent's id. Reading or writing such a document "
             + "cannot be done safely, so it is refused rather than attempted.",
             duplicateIds);
+    }
+
+    /// <summary>
+    /// Refuses a document with a sequence flow, anywhere in it, whose condition Elsa cannot evaluate as its author meant:
+    /// one that carries both a <c>conditionOutcome</c> and an author-written <c>conditionExpression</c>, or an expression
+    /// in a language <see cref="BpmnConditionLanguages"/> does not resolve. Names the offending flow ids.
+    /// </summary>
+    /// <remarks>
+    /// Per <c>docs/adr/2026-10-20-elsa-evaluates-bpmn-conditions.md</c>, and no opt-in overrides either refusal. The
+    /// <c>outcome == '...'</c> predicate the library writes for an outcome flow is consumed by the reader rather than
+    /// modeled, so it never counts as the second condition. The language is the expression's own, else its process's
+    /// <see cref="BpmnProcessDefinition.ExpressionLanguage"/>, as the interpreter resolves it at run time. The document is
+    /// checked whole, every top-level process and every nested process body, like <see cref="EnsureElementIdsUnique"/>.
+    /// <see cref="Analyze"/> does not call this: a preview refuses nothing.
+    /// </remarks>
+    /// <exception cref="BpmnConditionRefusedException">A sequence flow carries a condition Elsa cannot evaluate as written.</exception>
+    internal static void EnsureConditionsEvaluable(BpmnImportResult result)
+    {
+        var conditionalFlows = result.Definitions.Processes
+            .Concat(result.Bindings.OfType<BpmnWorkBinding.NestedProcess>().Select(nested => nested.Definition))
+            .SelectMany(process => process.SequenceFlows
+                .Where(flow => flow.ConditionExpression is not null)
+                .Select(flow => (Flow: flow, Language: flow.ConditionExpression!.Language ?? process.ExpressionLanguage)))
+            .ToList();
+
+        var conflictingFlowIds = SortedDistinct(conditionalFlows.Where(x => x.Flow.ConditionOutcome is not null).Select(x => x.Flow.FlowId));
+
+        if (conflictingFlowIds.Count > 0)
+        {
+            throw new BpmnConditionRefusedException(
+                BpmnErrorCodes.ImportConditionConflict,
+                $"The document's sequence flows carry both an outcome and a condition expression: {string.Join(", ", conflictingFlowIds)}. "
+                + "Elsa cannot tell which of the two the author meant to decide the route. "
+                + "Remove either the conditionOutcome attribute or the conditionExpression from each of these flows.",
+                conflictingFlowIds);
+        }
+
+        var unsupported = conditionalFlows
+            .Where(x => x.Flow.ConditionOutcome is null && !BpmnConditionLanguages.TryResolveExpressionType(x.Language, out _))
+            .ToList();
+
+        if (unsupported.Count == 0)
+        {
+            return;
+        }
+
+        var unsupportedFlowIds = SortedDistinct(unsupported.Select(x => x.Flow.FlowId));
+        var languages = string.Join(", ", unsupported.Select(x => $"'{x.Language}'").Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal));
+
+        throw new BpmnConditionRefusedException(
+            BpmnErrorCodes.ImportConditionLanguageUnsupported,
+            $"The document's sequence flows carry condition expressions in a language Elsa does not evaluate ({languages}): {string.Join(", ", unsupportedFlowIds)}. "
+            + "Write each of these conditions in JavaScript, C# or Liquid, and set the language to javascript, csharp or liquid, or leave it out for JavaScript.",
+            unsupportedFlowIds);
+
+        static IReadOnlyList<string> SortedDistinct(IEnumerable<string> flowIds) =>
+            flowIds.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
+    }
+
+    /// <summary>
+    /// Refuses a process that could never run: builds its graph and the graph of every subprocess body it can reach, as
+    /// the runtime does when a run starts (see <see cref="BpmnProcessGraphs"/>).
+    /// </summary>
+    /// <exception cref="BpmnProcessInvalidException">The process or a body it can reach cannot run.</exception>
+    internal static void EnsureProcessBuilds(BpmnProcess process)
+    {
+        try
+        {
+            BpmnProcessGraphs.BuildAll(process);
+        }
+        catch (BpmnExecutionException exception)
+        {
+            throw new BpmnProcessInvalidException(exception.Message, exception);
+        }
     }
 
     /// <summary>

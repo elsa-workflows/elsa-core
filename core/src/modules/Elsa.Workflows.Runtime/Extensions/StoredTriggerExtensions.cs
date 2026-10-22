@@ -1,6 +1,5 @@
-using System.Text.Json;
 using Elsa.Workflows.Runtime.Entities;
-using Elsa.Workflows.Serialization.Serializers;
+using Elsa.Workflows.Serialization.Helpers;
 
 // ReSharper disable once CheckNamespace
 namespace Elsa.Extensions;
@@ -10,8 +9,6 @@ namespace Elsa.Extensions;
 /// </summary>
 public static class StoredTriggerExtensions
 {
-    private static readonly JsonSerializerOptions PayloadSerializerOptions = JsonPayloadSerializer.CreateBaseOptions();
-
     /// <summary>
     /// Returns the Data property of the stored trigger as a strongly-typed object.
     /// </summary>
@@ -20,13 +17,7 @@ public static class StoredTriggerExtensions
     /// <returns>The Data property of the stored trigger as a strongly-typed object.</returns>
     /// <remarks>
     /// A payload reloaded from a trigger store can come back untyped (for example as an ExpandoObject or a JsonElement).
-    /// Such a payload is converted to <typeparamref name="T"/> using the payload serializer's options.
+    /// Such a payload is converted to <typeparamref name="T"/> by <see cref="PayloadConverter"/>.
     /// </remarks>
-    public static T GetPayload<T>(this StoredTrigger storedTrigger) => storedTrigger.Payload switch
-    {
-        T payload => payload,
-        null => default!,
-        JsonElement element => element.Deserialize<T>(PayloadSerializerOptions)!,
-        var payload => JsonSerializer.SerializeToElement(payload, PayloadSerializerOptions).Deserialize<T>(PayloadSerializerOptions)!
-    };
+    public static T GetPayload<T>(this StoredTrigger storedTrigger) => PayloadConverter.ConvertTo<T>(storedTrigger.Payload);
 }

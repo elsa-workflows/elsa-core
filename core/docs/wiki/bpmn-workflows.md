@@ -21,7 +21,7 @@ elsa.UseBpmnInterchange();
 
 ### Trying it
 
-The sample host `src/apps/Elsa.Server.Web` has BPMN interchange enabled (`.UseBpmnInterchange()` in its `Program.cs`), so it can be used to try the analyze endpoint against a real server. If you have not already trusted the local ASP.NET Core development certificate, run `dotnet dev-certs https --trust` once, otherwise the `curl` calls below will fail TLS verification. Sign in with one of the development users (e.g. `admin`/`password`, see `appsettings.Development.json`) to obtain a bearer token, then call the endpoint:
+The sample host `core/src/apps/Elsa.Server.Web` has BPMN interchange enabled (`.UseBpmnInterchange()` in its `Program.cs`), so it can be used to try the analyze endpoint against a real server. If you have not already trusted the local ASP.NET Core development certificate, run `dotnet dev-certs https --trust` once, otherwise the `curl` calls below will fail TLS verification. Sign in with one of the development users (e.g. `admin`/`password`, see `appsettings.Development.json`) to obtain a bearer token, then call the endpoint from the repository root:
 
 ```bash
 TOKEN=$(curl -s -X POST https://localhost:5001/elsa/api/identity/login \
@@ -30,7 +30,7 @@ TOKEN=$(curl -s -X POST https://localhost:5001/elsa/api/identity/login \
 
 curl -s -X POST https://localhost:5001/elsa/api/bpmn/analyze \
   -H "Authorization: Bearer $TOKEN" \
-  -F "file=@test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Assets/camunda-order-process.bpmn"
+  -F "file=@core/test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Assets/camunda-order-process.bpmn"
 ```
 
 This returns a JSON body of process ids, element counts, and findings (e.g. informational notes about unbound service tasks or retained vendor extensions).
@@ -55,9 +55,13 @@ A root scope registers one workflow trigger per start event that declares how th
 
 A process whose start events are all plain (none) start events, which covers most Camunda models, registers no trigger at all. It is started directly, through the workflow execution API, and publishes like any other workflow without a trigger. `BpmnProcess` declares this to the trigger indexer through `TriggerIndexingContext.RegistersNoTriggers`, so the indexer does not store the `null`-payload placeholder it keeps for other triggers that return no payloads.
 
+When one of these triggers starts the workflow, the process begins at the start event that registered it, not at its plain start events. The runtime reports which stored trigger fired (`WorkflowExecutionContext.GetTriggerStimulusHash()`, see [Workflow Runtime](workflow-runtime.md#triggers-and-bookmarks)), and the scope begins at the start event whose registered stimulus has that hash, so two message starts on different names, or two timer starts on different intervals, each begin their own path. Message, signal and cron starts are matched by hashing the stimulus the start event registers; an interval timer's stored trigger carries the instant it was indexed, which is part of its hash, so its interval is read back from the stored trigger instead. Start events that register the same stimulus are one trigger, and the process begins at the first of them.
+
+A run that carries no trigger hash, because it was started directly with the process as its trigger activity or was dispatched before the runtime recorded the hash, falls back to the kind of trigger: an event stimulus (`PublishEvent` or `IEventPublisher`) selects the message and signal starts, and a scheduled start selects the timer starts. When start events of that kind register different stimuli, that fallback cannot tell them apart and the process faults with `elsa.bpmn.start.ambiguous-trigger` instead of guessing. A process run directly, through the workflow execution API, still begins at its plain start events.
+
 A start event that declares a message, signal or timer the scope cannot register, such as a timer whose interval is not a positive ISO-8601 duration, is logged and skipped. The scope's other start events still register. If that leaves the scope with nothing to register, publication fails with `Trigger should have a payload`, so the process is not published as though the start had never been declared. Nested scopes (subprocess and event-subprocess bodies, or a scope nested through a `Flowchart`) never register triggers of their own.
 
-Test coverage: `test/integration/Elsa.Bpmn.IntegrationTests/Scenarios/Triggers/BpmnProcessTriggerTests.cs` and `test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Scenarios/Publishing/BpmnStartTriggerPublishTests.cs`.
+Test coverage: `test/integration/Elsa.Bpmn.IntegrationTests/Scenarios/Triggers/BpmnProcessTriggerTests.cs`, `test/integration/Elsa.Bpmn.IntegrationTests/Scenarios/Triggers/BpmnTriggeredStartTests.cs` and `test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Scenarios/Publishing/BpmnStartTriggerPublishTests.cs`.
 
 ## Work Ledger
 
@@ -83,9 +87,54 @@ The ledger is serialized to JSON as part of the scope's `ActivityExecutionContex
 | `MessagePublish` | Message throw event | `PublishEvent` |
 | `CallProcess` | Call activity | `DispatchWorkflow` |
 | `NestedProcess` | Embedded subprocess | Recursively bound `BpmnProcess` |
-| `UnboundTask` | Service / send / user / script task | Author-declared via `elsa:activityBinding` (see below) |
+| `UnboundTask` | Task, user, service, script, manual or business rule task; a send or receive task without a resolvable message | Author-declared via `elsa:activityBinding` (see below) |
 
-BPMN describes *what* a task is for, not *how* to perform it. An unbound task gets its implementation from an `elsa:activityBinding` vendor extension inside the BPMN element's `<extensionElements>`.
+BPMN describes *what* a task is for, not *how* to perform it. An unbound task gets its implementation from an `elsa:activityBinding` vendor extension inside the BPMN element's `<extensionElements>`. A send or receive task whose `messageRef` resolves to a named message is not unbound: it binds to `MessagePublish` or `MessageWait` like a message throw or catch event. `elsa:activityBinding` is accepted only on an unbound task; the binder refuses one on any other element, such as a gateway, an event, or a send or receive task bound to its message, because nothing would ever run it.
+
+### BPMN errors
+
+A unit of work that fails raises a BPMN error, and `Bpmn.Semantics` routes it to the error catcher that declares its
+code, else to a catch-all (an error boundary event or error event subprocess that declares no code), else the scope
+faults with that code. Elsa names the error a failed unit of work raised:
+
+- a `FaultException`, which Elsa's `Fault` activity throws, raises an error coded with its `Code`;
+- an embedded subprocess that ended because nothing in it caught an error, including one its own error end event
+  threw, raises that error's code in the enclosing scope, so a coded error boundary on the subprocess catches it;
+- any other exception raises an error with no code, which only a catch-all catches.
+
+An error end event's code is the `errorCode` of the `<error>` its `errorRef` names, else that error's id; an error end
+event without an `errorRef` throws an error with no code. A called workflow's fault reaches its call activity without a
+code (see below).
+[ADR "Use an Elsa fault's code as its BPMN error code"](../../../docs/adr/2026-10-22-elsa-fault-codes-are-bpmn-error-codes.md)
+records this rule.
+
+### Call activity failure
+
+A waiting call activity takes its normal outgoing flow only when the called workflow finishes successfully. When the
+called workflow faults, the scope host reports the call activity's work as completed with
+`BpmnInterpreter.CallActivityFaultedOutcomeName`, and with `BpmnInterpreter.CallActivityCancelledOutcomeName` when its
+final sub-status is `Cancelled`. When the called workflow never starts because its activation strategy denies the new
+instance (the dispatch returns `CannotStart`), it reports `BpmnInterpreter.CallActivityDispatchFailedOutcomeName`. The
+interpreter routes that failure the way BPMN routes an error with no code:
+
+1. a catch-all error boundary event (one that declares no error code) attached to the call activity fires and its path
+   is taken;
+2. otherwise the scope's catch-all error event subprocess starts;
+3. otherwise the process faults with `bpmn.call-activity.faulted` (or `bpmn.call-activity.cancelled`, or
+   `bpmn.call-activity.dispatch-failed`).
+
+Since `Bpmn.Semantics` 0.4.0 an error catcher that declares a code catches only an error with that code, and none of
+these failures carries one, so a coded catcher does not catch them.
+
+Only call activities do this. `DispatchWorkflow` itself completes the same way whatever its child's sub-status, so a
+`Flowchart` that waits for a child still continues on `Done` after the child faults, and after its activation is denied,
+with `CannotStart` in its result. The scope host reads how the child ended, which `DispatchWorkflow` records when it
+resumes, instead.
+
+A child cancelled through the cancellation API resumes its waiting parent as well, and reaches this path with
+`BpmnInterpreter.CallActivityCancelledOutcomeName`.
+
+Test coverage: `test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Scenarios/Runtime/BpmnCallActivityTests.cs`.
 
 ## The `elsa:` Vendor Extension
 
@@ -157,9 +206,13 @@ whole-definition import and resets them from the document, same as it always has
   dispatched before persist so a rejecting handler fails the request before anything is written; handlers
   may mutate that draft, and the compare-and-swap writes that same instance. If name, description or the
   ETag-covered graph moved in that window the swap is `412` rather than silently overwriting the other
-  write. A lost race is still `412`. The swap is implemented on the in-memory and EF Core definition stores
-  (`IWorkflowDefinitionStore.TryUpdateLatestAsync`). Mongo, Dapper and Event Sourcing providers need the same
-  method before this endpoint is concurrency-safe on those stores.
+  write. A lost race is still `412`. The swap is `IWorkflowDefinitionStore.TryUpdateLatestAsync`, which every
+  definition store in this repository implements: in-memory (one lock), EF Core and Dapper (one database
+  transaction; Dapper's is serializable) and MongoDB (one session transaction with snapshot read concern). MongoDB
+  transactions need a deployment that supports them, such as a replica set: against a standalone server the store
+  throws `NotSupportedException` without writing anything, so the `PUT` fails instead of saving an unguarded
+  edit. A third-party definition store must implement the method with the same guarantee for this
+  endpoint to be concurrency-safe on it.
 
 ### The document endpoints and the JSON payload format
 
@@ -188,9 +241,10 @@ restores it from the definition's stored BPMN source:
   stored body with it; nothing of that body is written back, not even under a new element that reuses its
   `bindingRef`. A subprocess element with no stored body — one this edit adds — is written as posted, empty.
 - The subprocess element itself is the posted one: its name, flags, boundary events and multi-instance marker come
-  from the document, and a changed or removed marker is written as posted. (`Bpmn.Interchange` 0.2.0 also keeps a
-  copy of an interpreted marker inside the body it reads; `PUT` drops that copy so it cannot override the posted
-  marker or pile up on every write. `Export` still writes that copy alongside the element's own marker.)
+  from the document, and a changed or removed marker is written as posted. (`Bpmn.Interchange` before 0.3.1 also kept a
+  copy of an interpreted marker inside the body it read, and `Export` wrote it alongside the element's own marker.
+  0.3.1 no longer keeps that copy; `PUT` still drops one if a stored body carries it, so it cannot override the
+  posted marker or pile up on every write.)
 - A subprocess element that has a stored body but no `bindingRef` is refused with `400 Bad Request` before anything
   is persisted: the writer attaches a body through the element's `bindingRef`, so writing it would silently empty
   the subprocess. Send each element back with the `bindingRef` `GET` returned.
@@ -231,6 +285,56 @@ nested processes — before persisting anything, and refuses with `422 Unprocess
 capabilities and the offending element ids, rather than persisting a definition that only fails the first time it
 runs. `Analyze` never performs this check, since it does not persist; a document that `Analyze` reports cleanly can
 still be refused by `Import` on capability grounds.
+
+### Conditions
+
+Elsa evaluates a sequence flow's standard BPMN `<conditionExpression>` with its own expression engine, against the
+process's data, the same way it evaluates any other expression in a workflow (ADR "Evaluate BPMN conditions with Elsa
+expressions", `docs/adr/2026-10-20-elsa-evaluates-bpmn-conditions.md`). `Bpmn.Semantics` decides which conditions are
+asked, in what order, and what the answers mean for routing; Elsa only answers each one.
+
+- **Language.** The expression's own `language` attribute, else the document's `definitions/@expressionLanguage`,
+  selects the Elsa expression type: `javascript`, `csharp` or `liquid`, case-insensitively, written as that name or as
+  a URI whose last path segment is that name. JavaScript is used when neither names a language. Any other language,
+  such as XPath, JUEL or FEEL, is refused at import (see below); it is never mapped onto one of these. A language whose
+  Elsa module the host has not enabled fails when the condition is evaluated.
+- **Data.** The expression runs in the BPMN scope's expression context, so it sees the workflow's input and the
+  variables of the process and of every enclosing scope, for example `getInput('amount') > 1000` in JavaScript.
+  Camunda's `${...}` syntax is JUEL, not JavaScript, so such an expression fails unless it is rewritten.
+- **Routing.** An exclusive gateway takes the first flow, in declaration order, whose condition holds; a flow with no
+  condition that is not the default counts as true. An inclusive gateway and an activity take every flow whose
+  condition holds, plus every flow with no condition. The default flow is taken only when nothing else is. Without one, the scope faults: a gateway with
+  `bpmn.gateway.no-flow-selected`, any other element with `bpmn.flow.none-taken`.
+- **Result.** A condition must evaluate to a boolean; nothing is converted, so `1` or `'yes'` is not true. Liquid
+  renders text, so a Liquid condition answers with the text `true` or `false`.
+- **Failure.** A condition that throws or does not evaluate to a boolean faults its BPMN scope (the process or the
+  subprocess) with `bpmn.condition.failed`, naming the flow and the expression's error or result, which Elsa records
+  as an incident like any other fault.
+
+`Import` and the document `PUT` refuse two kinds of condition, with `422 Unprocessable Entity`, before persisting
+anything. The check covers the whole document, including the bodies of nested subprocesses, `data.elementIds` lists
+the offending sequence flow ids, sorted, and no opt-in overrides either refusal:
+
+- `bpmn.import.condition-language-unsupported`: an expression in a language Elsa does not evaluate.
+- `bpmn.import.condition-conflict`: a flow that carries both a `vw:conditionOutcome` and an author-written
+  `conditionExpression`, because either precedence rule would route some documents differently from what their
+  author meant. The readable `outcome == '...'` expression the library's writer emits beside an outcome is the outcome
+  restated, so it does not count.
+
+A flow conditional on an outcome name through the library's own `vw:conditionOutcome` attribute keeps working as
+before. `Analyze` does not refuse.
+
+### Process build refusal
+
+Each subprocess body runs as its own scope, with its own graph. `Import` and the document `PUT` build the graph of the
+process and of every subprocess body it can reach, at any depth, through `Elsa.Bpmn.Hosting.BpmnProcessGraphs`, and
+refuse a document `Bpmn.Semantics` refuses to build, with `422 Unprocessable Entity` and the code
+`bpmn.import.process-invalid`, before persisting anything. Examples are a cycle on which nothing can wait, a default
+flow that does not leave its element, and an event subprocess body without exactly one start event. The message is the
+library's own and names the elements. A run does the same when it starts: a root BPMN scope builds every body it can
+reach before anything runs, so a definition stored before this check faults at its start rather than when a token
+first reaches the broken subprocess. At run time this also covers a BPMN process composed into other work, such as a
+`Flowchart` or an `If` branch: the root finds it in the workflow graph, through whatever ports its wrapper has.
 
 ### Duplicate element id refusal
 
@@ -319,6 +423,9 @@ element that has a stored body but no `bindingRef`, are uncoded.
 | `bpmn.import.capability-unsupported` | `POST bpmn/import`, document `PUT` | 422 | `capabilities: string[]` (missing capability names), `elementIds: string[]` (offending element ids, combined across every missing capability) |
 | `bpmn.import.binding-invalid` | `POST bpmn/import`, document `PUT` | 422 | — |
 | `bpmn.import.duplicate-element-id` | `POST bpmn/import`, document `PUT` | 422 | `elementIds: string[]` (the duplicated ids) |
+| `bpmn.import.process-invalid` | `POST bpmn/import`, document `PUT` | 422 | — |
+| `bpmn.import.condition-language-unsupported` | `POST bpmn/import`, document `PUT` | 422 | `elementIds: string[]` (the sequence flows whose expression is in a language Elsa does not evaluate, across the whole document including nested subprocesses, sorted and distinct) |
+| `bpmn.import.condition-conflict` | `POST bpmn/import`, document `PUT` | 422 | `elementIds: string[]` (the sequence flows that carry both an outcome and an author-written expression, across the whole document including nested subprocesses, sorted and distinct) |
 | `bpmn.export.not-imported` | `GET .../export`, document `GET` | 422 | — |
 | `bpmn.export.source-stale` | `GET .../export`, document `GET` | 422 | — |
 | `bpmn.export.source-version-unknown` | `GET .../export`, document `GET` | 422 | — |
@@ -353,10 +460,10 @@ Test coverage: `test/integration/Elsa.Bpmn.IntegrationTests/Scenarios/HostPort/B
 
 A `BpmnProcess` is a `Container` and can be nested inside any Elsa composite activity (e.g. a `Flowchart`). The workflow that hosts it is responsible for marking the outermost scope as the entry point (`IsRootScope = true`). Nested BPMN scopes — embedded subprocesses, event subprocesses — are themselves `BpmnProcess` instances bound as child work by the binder and need no special treatment from the containing workflow.
 
-To find code fast:
+To find code fast, from the repository root:
 
 ```bash
-rg "class BpmnProcess" src/modules
-rg "class BpmnWorkLedger" src/modules
-rg "elsa:activityBinding" test/
+rg "class BpmnProcess" core/src/modules
+rg "class BpmnWorkLedger" core/src/modules
+rg "elsa:activityBinding" core/test/
 ```

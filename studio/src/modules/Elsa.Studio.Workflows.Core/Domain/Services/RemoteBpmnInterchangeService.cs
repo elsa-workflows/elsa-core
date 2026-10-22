@@ -150,6 +150,7 @@ public class RemoteBpmnInterchangeService(IBackendApiClientProvider backendApiCl
             BpmnErrorCodes.DocumentPreconditionFailed => BpmnDocumentFailureReason.PreconditionFailed,
             BpmnErrorCodes.ImportBindingInvalid => BpmnDocumentFailureReason.BindingInvalid,
             BpmnErrorCodes.ImportCapabilityUnsupported => BpmnDocumentFailureReason.CapabilityUnsupported,
+            BpmnErrorCodes.ImportConditionUnsupported => BpmnDocumentFailureReason.ConditionUnsupported,
             BpmnErrorCodes.ExportNotImported or BpmnErrorCodes.ExportSourceVersionUnknown => BpmnDocumentFailureReason.NotImportedFromBpmn,
             BpmnErrorCodes.ExportSourceStale => BpmnDocumentFailureReason.SourceStale,
             _ => response.StatusCode switch
@@ -162,7 +163,8 @@ public class RemoteBpmnInterchangeService(IBackendApiClientProvider backendApiCl
         };
 
         var capabilityRefusal = reason == BpmnDocumentFailureReason.CapabilityUnsupported ? BpmnCapabilityRefusal.FromData(errors?.Data) : null;
-        return new(reason, message, capabilityRefusal);
+        var conditionRefusal = reason == BpmnDocumentFailureReason.ConditionUnsupported ? BpmnConditionRefusal.FromData(errors?.Data) : null;
+        return new(reason, message, capabilityRefusal) { ConditionRefusal = conditionRefusal };
     }
 
     /// <summary>The <c>ETag</c> header verbatim, quotes included, or <see langword="null"/> when there is none.</summary>

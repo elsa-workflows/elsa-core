@@ -116,13 +116,26 @@ jobs:
           fi
 
           for project in "${projects[@]}"; do
-            echo "Building test project ${project}"
-            dotnet build "$project" --configuration Release --framework net10.0
+            # Run on net10.0 where the project targets it. A project that cannot (the MySQL tests, because Pomelo
+            # stops at EF Core 9) runs on its single target framework and rolls forward to the 10.x runtime.
+            framework=net10.0
+            target_frameworks="$(dotnet msbuild "$project" -getProperty:TargetFrameworks)"
+            target_framework="$(dotnet msbuild "$project" -getProperty:TargetFramework)"
+            if [[ ";${target_frameworks};${target_framework};" != *";net10.0;"* ]]; then
+              framework="${target_framework}"
+              if [ -z "$framework" ]; then
+                echo "${project} does not target net10.0 and declares no single TargetFramework to run instead." >&2
+                exit 1
+              fi
+            fi
 
-            echo "Running tests with coverage for ${project}"
+            echo "Building test project ${project} (${framework})"
+            dotnet build "$project" --configuration Release --framework "$framework"
+
+            echo "Running tests with coverage for ${project} (${framework})"
             dotnet test "$project" \
               --configuration Release \
-              --framework net10.0 \
+              --framework "$framework" \
               --no-build \
               --logger "GitHubActions;report-warnings=false" \
               /p:CollectCoverage=true
@@ -357,6 +370,13 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.x
+
+      # NUKE builds the embedded React assets before Compile and Pack. Keep the
+      # existing 3.10 release base; React packages are eligible starting at 3.11.
+      - name: Set up Node for React Studio assets
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
 
       - name: Compile+Pack
         run: ./build.sh Compile+Pack --version "${VERSION}" --analyseCode true

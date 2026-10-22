@@ -35,6 +35,15 @@ public class DispatchWorkflowsTests : AppComponentTest
         Assert.Equal(ExpectedWriteLineCount, writeLineExecutionRecords.Count);
     }
 
+    [Fact(DisplayName = "DispatchWorkflow waiting for a child returns exactly the child's output as its result")]
+    public async Task DispatchAndWaitForOutput_ResultIsTheChildOutput()
+    {
+        var result = await RunWorkflowAsync(DispatchAndWaitForOutputWorkflow.DefinitionId);
+
+        AssertWorkflowFinished(result);
+        Assert.Contains(DispatchAndWaitForOutputWorkflow.ResultKeysPrefix + ChildWorkflowWithOutput.OutputName, WrittenTexts(result));
+    }
+
     [Fact(DisplayName = "DispatchWorkflow should dispatch and not wait when WaitForCompletion is false")]
     public async Task DispatchFireAndForget_ShouldNotWaitForChildWorkflow()
     {
@@ -100,6 +109,12 @@ public class DispatchWorkflowsTests : AppComponentTest
     {
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowExecutionContext.SubStatus);
     }
+
+    private static List<string> WrittenTexts(TestWorkflowExecutionResult result) =>
+        result.ActivityExecutionRecords
+            .Where(x => x.ActivityType == "Elsa.WriteLine")
+            .Select(x => x.ActivityState?[nameof(WriteLine.Text)] as string ?? string.Empty)
+            .ToList();
 
     private async Task<(TestWorkflowExecutionResult Result, List<WorkflowState> CompletedChildWorkflows)> RunWorkflowAndWaitForChildWorkflowAsync(
         string parentWorkflowDefinitionId,

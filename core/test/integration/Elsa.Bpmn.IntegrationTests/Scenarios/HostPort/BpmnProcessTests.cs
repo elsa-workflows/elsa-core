@@ -1,6 +1,9 @@
+using Elsa.Bpmn.Activities;
 using Elsa.Common.Models;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Activities.Flowchart.Activities;
 using Elsa.Workflows.IncidentStrategies;
 using Elsa.Workflows.Models;
 using Xunit.Abstractions;
@@ -105,6 +108,137 @@ public class BpmnProcessTests(ITestOutputHelper testOutputHelper)
 
         Assert.Empty(result.WorkflowState.Incidents);
         Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+    }
+
+    [Fact(DisplayName = "An error boundary inside a subprocess catches a failure there, however the scopes' tokens are numbered")]
+    public async Task ErrorBoundaryInsideSubprocess_CatchesTheFailure()
+    {
+        // valence-works/bpmn#32, reported against Elsa as #8834: the failure was resolved against the root's token,
+        // so the boundary inside the body caught it only when the two scopes' token ids happened to coincide.
+
+        // Act
+        var result = await _host.RunAsync(BpmnTestProcesses.ErrorBoundaryInsideSubprocess(_host.Log), typeof(FaultStrategy));
+
+        // Assert
+        Assert.Equal(["executed:first", "executed:second", "executed:subRisky", "cancelled:subRisky", "executed:subRecover", "executed:after"], _host.Log.Entries);
+        Assert.Equal(ActivityStatus.Canceled, StatusOf(result, "subRisky"));
+        Assert.Empty(result.WorkflowState.Incidents);
+        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+    }
+
+    [Fact(DisplayName = "A failing instance of a parallel multi-instance task is told apart from its live sibling, and its error boundary catches it")]
+    public async Task FailingParallelMultiInstance_IsPinnedOnItsOwnInstance()
+    {
+        // #8834: two instances of one binding are live when the first fails. Bpmn.Semantics 0.4.0 refuses a fault it
+        // cannot pin on exactly one of them, so the host must name the failed instance by its iteration and token id.
+
+        // Act
+        var result = await _host.RunAsync(BpmnTestProcesses.ParallelMultiInstanceTaskWithErrorBoundary(_host.Log), typeof(FaultStrategy));
+
+        // Assert
+        Assert.Equal(1, _host.Log.Occurrences("executed:recover"));
+        Assert.Empty(result.WorkflowState.Incidents);
+        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+    }
+
+    [Fact(DisplayName = "A coded fault is caught by the error boundary that declares its code, ahead of the catch-all")]
+    public async Task CodedFault_IsCaughtByTheBoundaryForItsCode()
+    {
+        // The FaultException's code is the BPMN error the work raised; a catcher that declares it wins over a catch-all.
+
+        // Act
+        var result = await _host.RunAsync(BpmnTestProcesses.CodedErrorBoundaries(_host.Log, code: "PAY-01", boundaryCode: "PAY-01", withCatchAll: true), typeof(FaultStrategy));
+
+        // Assert
+        Assert.Contains("executed:handleCoded", _host.Log.Entries);
+        Assert.DoesNotContain("executed:handleAny", _host.Log.Entries);
+        Assert.Empty(result.WorkflowState.Incidents);
+        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+    }
+
+    [Fact(DisplayName = "A coded fault passes over an error boundary for another code and reaches the catch-all")]
+    public async Task CodedFault_PassesOverABoundaryForAnotherCode()
+    {
+        // Act
+        var result = await _host.RunAsync(BpmnTestProcesses.CodedErrorBoundaries(_host.Log, code: "PAY-02", boundaryCode: "PAY-01", withCatchAll: true), typeof(FaultStrategy));
+
+        // Assert
+        Assert.Contains("executed:handleAny", _host.Log.Entries);
+        Assert.DoesNotContain("executed:handleCoded", _host.Log.Entries);
+        Assert.Empty(result.WorkflowState.Incidents);
+        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+    }
+
+    [Fact(DisplayName = "A fault with no code is not caught by an error boundary that declares one")]
+    public async Task UncodedFault_IsNotCaughtByACodedBoundary()
+    {
+        // An ordinary exception names no BPMN error, so only a catch-all catches it; with none, it is an incident.
+
+        // Act
+        var result = await _host.RunAsync(BpmnTestProcesses.CodedErrorBoundaries(_host.Log, code: null, boundaryCode: "PAY-01", withCatchAll: false), typeof(FaultStrategy));
+
+        // Assert
+        Assert.DoesNotContain("executed:handleCoded", _host.Log.Entries);
+        Assert.Single(result.WorkflowState.Incidents);
+        Assert.Equal(WorkflowSubStatus.Faulted, result.WorkflowState.SubStatus);
+    }
+
+    [Fact(DisplayName = "An error end event nothing in a subprocess catches is caught by the boundary on the subprocess that declares its code")]
+    public async Task ErrorEndEventInASubprocess_IsCaughtByItsCodeInTheEnclosingScope()
+    {
+        // The body faults with bpmn.error.thrown and the error's code; the enclosing scope reports that code as the
+        // error its subprocess raised.
+
+        // Act
+        var result = await _host.RunAsync(BpmnTestProcesses.ErrorEndEventCaughtByTheEnclosingScope(_host.Log, "SHIP-01"), typeof(FaultStrategy));
+
+        // Assert
+        Assert.Contains("executed:subRecover", _host.Log.Entries);
+        Assert.DoesNotContain("executed:after", _host.Log.Entries);
+        Assert.Empty(result.WorkflowState.Incidents);
+        Assert.Equal(WorkflowSubStatus.Finished, result.WorkflowState.SubStatus);
+    }
+
+    [Fact(DisplayName = "A subprocess body that cannot run is refused before the process runs anything")]
+    public async Task SubprocessBodyThatCannotRun_IsRefusedBeforeAnythingRuns()
+    {
+        // The body's graph used to be built only when a token reached the subprocess, after "first" had already run.
+        // The root now builds every body it can reach before it starts.
+
+        // Act
+        var result = await _host.RunAsync(BpmnTestProcesses.SubprocessWithABodyThatCannotRun(_host.Log), typeof(FaultStrategy));
+
+        // Assert
+        Assert.Empty(_host.Log.Entries);
+        Assert.Equal(WorkflowSubStatus.Faulted, result.WorkflowState.SubStatus);
+        var incident = Assert.Single(result.WorkflowState.Incidents);
+        Assert.Contains("loopA", incident.Exception!.Message);
+    }
+
+    [Theory(DisplayName = "A BPMN process that cannot run, composed into other work, is refused before anything runs")]
+    [InlineData("flowchart activity")]
+    [InlineData("flowchart start only")]
+    [InlineData("if branch")]
+    public async Task ComposedProcessThatCannotRun_IsRefusedBeforeAnythingRuns(string composition)
+    {
+        // The composed process is a root scope of its own, so it used to build its graph only when its wrapper started
+        // it, after "first" had already run. The root now finds it through whatever ports the wrapper has.
+        Func<BpmnProcess, IActivity> compose = composition switch
+        {
+            "flowchart activity" => inner => new Flowchart { Id = "wrapped", Start = inner, Activities = { inner } },
+            "flowchart start only" => inner => new Flowchart { Id = "wrapped", Start = inner },
+            "if branch" => inner => new If(() => true) { Id = "wrapped", Then = inner },
+            _ => throw new ArgumentOutOfRangeException(nameof(composition), composition, null)
+        };
+
+        // Act
+        var result = await _host.RunAsync(BpmnTestProcesses.ComposedProcessThatCannotRun(_host.Log, compose), typeof(FaultStrategy));
+
+        // Assert
+        Assert.Empty(_host.Log.Entries);
+        Assert.Equal(WorkflowSubStatus.Faulted, result.WorkflowState.SubStatus);
+        var incident = Assert.Single(result.WorkflowState.Incidents);
+        Assert.Contains("loopA", incident.Exception!.Message);
     }
 
     [Fact(DisplayName = "A collection-mode multi-instance runs one instance per item of a container-scoped variable")]

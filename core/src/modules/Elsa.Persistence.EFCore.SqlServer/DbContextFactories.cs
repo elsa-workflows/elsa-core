@@ -35,6 +35,7 @@ public class SqlServerDesignTimeDbContextFactory<TDbContext> : DesignTimeDbConte
 {
     protected override void ConfigureBuilder(DbContextOptionsBuilder<TDbContext> builder, string connectionString)
     {
-        builder.UseElsaSqlServer(GetType().Assembly, connectionString);
+        var options = new ElsaDbContextOptions().ConfigureSqlServer();
+        builder.UseElsaSqlServer(GetType().Assembly, connectionString, options);
     }
 }

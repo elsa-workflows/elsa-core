@@ -1,0 +1,6 @@
+{
+  "title": "Elsa test Studio",
+  "servers": [{ "name": "Test backend", "url": "http://127.0.0.1:5001/elsa/api" }],
+  "auth": { "provider": "none" },
+  "features": { "settings": { "enabled": true } }
+}

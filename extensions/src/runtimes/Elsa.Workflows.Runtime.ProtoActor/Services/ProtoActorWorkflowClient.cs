@@ -1,9 +1,11 @@
 using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Actors.ProtoActor;
+using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime.ProtoActor.ProtoBuf;
 using Elsa.Workflows.State;
 using JetBrains.Annotations;
+using Microsoft.Extensions.DependencyInjection;
 using Proto.Cluster;
 using CreateAndRunWorkflowInstanceRequest = Elsa.Workflows.Runtime.Messages.CreateAndRunWorkflowInstanceRequest;
 using CreateWorkflowInstanceRequest = Elsa.Workflows.Runtime.Messages.CreateWorkflowInstanceRequest;
@@ -21,16 +23,33 @@ public class ProtoActorWorkflowClient : IWorkflowClient
 {
     private readonly Mappers.Mappers _mappers;
     private readonly ITenantAccessor _tenantAccessor;
+    private readonly IWorkflowInstanceManager? _workflowInstanceManager;
     private readonly WorkflowInstanceClient _actorClient;
 
     /// <summary>
     /// A workflow client that uses Proto.Actor to communicate with the workflow running in the cluster.
     /// </summary>
+    [Obsolete("Use the constructor that accepts IWorkflowInstanceManager. Removed in the next major version.")]
     public ProtoActorWorkflowClient(string workflowInstanceId, Cluster cluster, Mappers.Mappers mappers, ITenantAccessor tenantAccessor, IWorkflowActivationStrategyEvaluator workflowActivationStrategyEvaluator)
+        : this(workflowInstanceId, cluster, mappers, tenantAccessor, workflowInstanceManager: null)
+    {
+    }
+
+    /// <summary>
+    /// A workflow client that uses Proto.Actor to communicate with the workflow running in the cluster.
+    /// </summary>
+    [ActivatorUtilitiesConstructor]
+    public ProtoActorWorkflowClient(string workflowInstanceId, Cluster cluster, Mappers.Mappers mappers, ITenantAccessor tenantAccessor, IWorkflowActivationStrategyEvaluator workflowActivationStrategyEvaluator, IWorkflowInstanceManager workflowInstanceManager)
+        : this(workflowInstanceId, cluster, mappers, tenantAccessor, workflowInstanceManager)
+    {
+    }
+
+    private ProtoActorWorkflowClient(string workflowInstanceId, Cluster cluster, Mappers.Mappers mappers, ITenantAccessor tenantAccessor, IWorkflowInstanceManager? workflowInstanceManager)
     {
         WorkflowInstanceId = workflowInstanceId;
         _mappers = mappers;
         _tenantAccessor = tenantAccessor;
+        _workflowInstanceManager = workflowInstanceManager;
         _actorClient = cluster.GetNamedWorkflowInstanceClient(WorkflowInstanceId);
     }
 
@@ -91,9 +110,17 @@ public class ProtoActorWorkflowClient : IWorkflowClient
         await _actorClient.ImportState(request, CreateHeaders(), cancellationToken);
     }
 
+    /// <inheritdoc />
     public Task<bool> InstanceExistsAsync(CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException();
+        // Ask the instance store, not the grain: the proto InstanceExists RPC only inspects in-memory
+        // create state, and sending that message would activate the actor.
+        if (_workflowInstanceManager is null)
+        {
+            throw new InvalidOperationException("InstanceExistsAsync requires the constructor that accepts IWorkflowInstanceManager.");
+        }
+
+        return _workflowInstanceManager.ExistsAsync(WorkflowInstanceId, cancellationToken);
     }
 
     private IDictionary<string, string> CreateHeaders()

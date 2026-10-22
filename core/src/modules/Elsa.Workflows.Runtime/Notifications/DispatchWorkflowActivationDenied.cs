@@ -25,6 +25,12 @@ internal static class DispatchWorkflowActivationDeniedRoute
         properties[StimulusHashKey] = stimulusHash;
     }
 
+    public static bool IsForActivityType(IDictionary<string, object>? properties, string activityTypeName) =>
+        properties is not null
+        && properties.TryGetValue(ActivityTypeNameKey, out var value)
+        && value is string recorded
+        && recorded == activityTypeName;
+
     public static IDictionary<string, object>? SanitizeAndRead(IDictionary<string, object>? properties, out (string ActivityTypeName, string StimulusHash)? route)
     {
         route = null;

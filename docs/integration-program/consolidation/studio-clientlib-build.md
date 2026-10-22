@@ -39,7 +39,9 @@ required CI build on the imported Studio source remain open under #8286 and
 cleanup and verification command against pinned standalone Studio source on
 Linux before import, then switches its source path to `src/studio` after
 import. Studio `Directory.Packages.props` and build-props changes also trigger
-the workflow. Its passing pre-import run cannot substitute for the later
+the workflow, as do root `Directory.Packages.props` changes, because
+`npm run check:generated` also fails when Studio's `BpmnModelVersion` drifts
+from Core's `Bpmn.Model` pin (#8906). Its passing pre-import run cannot substitute for the later
 imported-source run. The
 package install reported four Designer dependency advisories
 (three moderate, one high); the .NET restore reported `NU1902` for

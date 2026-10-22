@@ -1,5 +1,12 @@
 # Elsa Studio documentation
 
+The opt-in [React Studio Preview](../react/README.md) lives under `studio/react/`.
+Start with [Try the React Studio Preview](try-react-studio-preview.md) and its
+[3.11 release preparation notes](releases/3.11.0-react-studio-preview.md).
+Its [source import receipt](../../docs/integration-program/studio-react-source-import.md)
+preserves the original tree and history; the [delivery plan](specs/react-studio-preview/plan.md)
+tracks the remaining Preview requirements.
+
 Studio's backend-facing clients, Blazor modules and hosts live under
 [`studio/src`](../src), with browser fixtures under [`studio/test`](../test),
 existing .NET tests beside their modules/framework under `studio/src/`, and samples under
@@ -63,3 +70,15 @@ All three documents are byte-for-byte copies of the corresponding files at
 Studio commit `f0eeb3c7428443b09512049fe890635fa4f7b427`. The first two
 import dispositions and verification are recorded in the
 [integration-program asset note](../../docs/integration-program/consolidation/studio-document-assets.md).
+
+The React Studio preview is being prepared for 3.11 under
+[#8859](https://github.com/elsa-workflows/elsa-core/issues/8859). Its
+[delivery plan](specs/react-studio-preview/plan.md) tracks the import and package,
+hosting, feature-parity and release gates. The independent
+[modularity spike](../samples/ReactStudio.Modularity/README.md) exercises loading
+React UI modules from packed NuGet packages; it is an architecture proof, not the
+integrated preview. The Blazor Studio remains the default.
+
+## Planned native compensation
+
+The [Native compensation authoring, inspection and recovery program](../../core/docs/compensation/README.md) is the current program entrypoint for scope, ownership and readiness. The [Studio interaction plan](specs/native-compensation/plan.md) records Studio design details within the reviewed [Elsa 3 adaptation packet](../../core/docs/specs/native-compensation/README.md). Standing owner authorization permits delivery through the remaining technical gates; these plans do not claim implementation or proof.

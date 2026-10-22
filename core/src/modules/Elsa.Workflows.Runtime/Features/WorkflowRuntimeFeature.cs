@@ -458,8 +458,10 @@ public class WorkflowRuntimeFeature(IModule module) : FeatureBase(module)
 
         Services.TryAddScoped<IWorkflowDispatchOutbox>(sp => ActivatorUtilities.CreateInstance<WorkflowDispatchOutbox>(sp));
         Services.TryAddScoped(WorkflowDispatchOutboxStore);
+        Services.TryAddScoped<IWorkflowDispatchOutboxMarkerCleaner, WorkflowDispatchOutboxMarkerCleaner>();
         // Explicit factory: the processor also has an obsolete constructor, which would make container activation ambiguous.
         Services.TryAddScoped<IWorkflowDispatchOutboxProcessor>(sp => new WorkflowDispatchOutboxProcessor(
+            sp.GetRequiredService<IWorkflowDispatchOutboxMarkerCleaner>(),
             sp.GetRequiredService<IWorkflowDispatchOutboxStore>(),
             sp.GetRequiredService<IWorkflowInstanceStore>(),
             sp.GetRequiredKeyedService<IWorkflowDispatcher>(WorkflowDispatcherServiceKeys.Inner),

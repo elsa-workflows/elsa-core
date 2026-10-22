@@ -55,6 +55,14 @@ class SolutionGroupsTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "missing from scripts/solution/solution-groups.json"):
             sg.classify([*self.projects, stray], self.manifest)
 
+    def test_react_studio_filter_contains_all_production_features_without_spike_projects(self) -> None:
+        groups = sg.classify(self.projects, self.manifest)
+        selected = sg.filters(groups, self.projects, list(self.manifest["domains"]))["Elsa.ReactStudio.slnf"]
+        production = sorted(project.path for project in self.projects if project.path.startswith("studio/react/dotnet/"))
+        self.assertEqual(20, len(production))
+        self.assertEqual(production, selected)
+        self.assertTrue(all(groups[project] == sg.REACT_STUDIO for project in self.projects if project.path in selected))
+
     def test_apps_filter_preserves_released_package_consumer_boundary(self) -> None:
         projects = [sg.SolutionProject("Elsa.Server", "apps/src/Elsa.Server/Elsa.Server.csproj", "1" * 32),
                     sg.SolutionProject("Elsa.Server.Web", "core/src/apps/Elsa.Server.Web/Elsa.Server.Web.csproj", "2" * 32)]

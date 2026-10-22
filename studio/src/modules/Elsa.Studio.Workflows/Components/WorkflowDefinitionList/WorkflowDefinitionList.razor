@@ -45,7 +45,8 @@
               RowStyle="cursor: pointer;"
               MultiSelection="true"
               SelectOnRowClick="false"
-              CurrentPage="InitialPage"
+              @bind-CurrentPage="InitialPage"
+              @bind-RowsPerPage="InitialPageSize"
               Class="definitions-table"
               @bind-SelectedItems="_selectedRows">
         <ToolBarContent>

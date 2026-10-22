@@ -1,0 +1,22 @@
+{
+  "name": "elsa-bpmn-js-designer",
+  "description": "The bpmn-js BPMN designer for Elsa Studio: implements the BPMN designer contract on bpmn-js.",
+  "repository": "https://github.com/elsa-workflows/elsa-core",
+  "license": "MIT",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@bpmn-io/properties-panel": "3.56.1",
+    "bpmn-js": "18.31.0",
+    "bpmn-js-properties-panel": "5.65.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "typescript": "5.8.3"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit && node build.mjs"
+  }
+}

@@ -1,0 +1,142 @@
+# Retained #8840 provenance guard; required while the imported history is maintained.
+name: React Studio source validation
+
+on:
+  pull_request:
+    paths:
+      - 'studio/react/**'
+      - 'docs/integration-program/studio-react-source-import.*'
+      - 'scripts/integration-program/*studio_react_source_import.py'
+      - '.github/workflows/studio-react-source-validation.yml'
+      - '.github/workflows/studio-react-release.yml'
+      - 'docker/ElsaServer.Dockerfile'
+      - 'docker/ElsaServer-Datadog.Dockerfile'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: studio-react-source-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  provenance:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Test rejection of broken import history
+        run: python3 -m unittest discover -s scripts/integration-program -p 'test_verify_studio_react_source_import.py' -v
+      - name: Verify original donor tree and history
+        run: python3 scripts/integration-program/verify_studio_react_source_import.py
+
+  frontend-and-host:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: '10.0.x'
+      - name: Install pinned pnpm and frozen dependencies
+        working-directory: studio/react
+        run: |
+          npm install --global pnpm@10.33.0
+          pnpm install --frozen-lockfile
+      - name: Check frontend and build with dependency notices
+        working-directory: studio/react
+        run: |
+          pnpm lint
+          pnpm typecheck
+          pnpm check:boundaries
+          pnpm localization:check
+          pnpm test
+          pnpm benchmark:expressions
+          pnpm docs:api
+          pnpm audit
+          pnpm build
+      - name: Build the host on all supported frameworks and test runtime configuration
+        run: |
+          dotnet build Elsa.ReactStudio.slnf
+          dotnet test studio/react/dotnet/Elsa.ReactStudio.Host.Tests/Elsa.ReactStudio.Host.Tests.csproj --logger trx --results-directory "$RUNNER_TEMP/react-studio-tests"
+      - name: Exercise History API navigation through the ASP.NET host
+        working-directory: studio/react
+        run: |
+          pnpm exec playwright install --with-deps chromium
+          pnpm test:browser
+      - name: Pack the Preview feature libraries without publishing
+        run: |
+          python3 studio/react/scripts/test-release-selection.py
+          python3 studio/react/scripts/test-package-version-policy.py
+          dotnet pack Elsa.ReactStudio.slnf -c Release \
+            --output "$RUNNER_TEMP/react-studio-packages" -p:Version=3.11.0-preview.${{ github.run_id }}
+          python3 studio/react/scripts/verify-nuget-packages.py \
+            "$RUNNER_TEMP/react-studio-packages" 3.11.0-preview.${{ github.run_id }}
+      - name: Prepare and install the lockstep npm release artifacts
+        working-directory: studio/react
+        run: |
+          node scripts/prepare-npm-release.mjs 3.11.0-preview.${{ github.run_id }} "$RUNNER_TEMP/react-studio-npm"
+          node scripts/test-npm-release.mjs "$RUNNER_TEMP/react-studio-npm"
+          pnpm test:packages --npm-feed "$RUNNER_TEMP/react-studio-npm"
+      - name: Generate and verify an independently packaged third-party module
+        working-directory: studio/react
+        run: pnpm test:module --nuget-feed "$RUNNER_TEMP/react-studio-packages" --studio-version 3.11.0-preview.${{ github.run_id }} --npm-feed "$RUNNER_TEMP/react-studio-npm"
+      - name: Build and start the standalone Preview image without publishing
+        run: |
+          docker build -f studio/react/Dockerfile -t elsa-react-studio:ci .
+          test "$(docker inspect elsa-react-studio:ci --format '{{.Config.User}}')" != '0'
+          test -n "$(docker inspect elsa-react-studio:ci --format '{{.Config.User}}')"
+          docker run -d --name react-studio-preview -p 127.0.0.1:5202:8080 \
+            -e STUDIO_SERVER_URL=http://127.0.0.1:5001/elsa/api \
+            -e STUDIO_TITLE='Container Preview' -e STUDIO_AUTH_PROVIDER=none elsa-react-studio:ci
+          trap 'docker logs react-studio-preview; docker rm -f react-studio-preview' EXIT
+          curl --fail --silent --show-error --retry 30 --retry-all-errors --retry-delay 1 \
+            http://127.0.0.1:5202/studio-preview/studio-config > "$RUNNER_TEMP/container-config.json"
+          python3 - <<'PY'
+          import json, re, urllib.request
+          config = json.load(open(__import__('os').environ['RUNNER_TEMP'] + '/container-config.json'))
+          assert config['title'] == 'Container Preview' and config['auth']['provider'] == 'none'
+          origin = 'http://127.0.0.1:5202'
+          html = urllib.request.urlopen(origin + '/studio-preview/workflows/definitions').read().decode()
+          assert '<base href="/studio-preview/"' in html
+          asset = re.search(r'src="([^"]+\.js)"', html).group(1)
+          response = urllib.request.urlopen(origin + asset)
+          assert response.status == 200 and len(response.read()) > 1000
+          assert urllib.request.urlopen(origin + '/studio-preview/THIRD-PARTY-NOTICES.txt').status == 200
+          PY
+      - name: Verify the paired reference server and Preview containers
+        env:
+          ELSA_SERVER_PORT: '5203'
+          ELSA_STUDIO_PORT: '5204'
+          ELSA_REACT_STUDIO_IMAGE: elsa-react-studio:ci
+        run: |
+          set -euo pipefail
+          docker build -f docker/ElsaServer.Dockerfile -t elsa-server:react-preview .
+          docker compose -p react-studio-ci -f studio/react/compose.yaml up --no-build -d
+          trap 'docker compose -p react-studio-ci -f studio/react/compose.yaml logs; docker compose -p react-studio-ci -f studio/react/compose.yaml down -v' EXIT
+          (cd studio/react && node scripts/test-container-pair.mjs)
+      - name: Verify source remained unchanged
+        run: git diff --exit-code HEAD --
+      - name: Retain validation results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: react-studio-validation-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/react-studio-tests/*.trx
+            studio/react/test-results/**
+            studio/react/docs/api/**
+            ${{ runner.temp }}/react-studio-packages/*.nupkg
+            ${{ runner.temp }}/react-studio-npm/*
+          if-no-files-found: warn
+          retention-days: 14

@@ -15,6 +15,16 @@ registries:
     url: https://f.feedz.io/valence-works/loom/nuget/index.json
 
 updates:
+  # React Studio has an independent pnpm lockfile; keep it in its own bounded job.
+  - package-ecosystem: "npm"
+    directory: "/studio/react"
+    target-branch: "main"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 1
+    commit-message:
+      prefix: "deps"
+      include: "scope"
   # Five bounded starting sets; shared imports/references can still overlap.
   # Limit 1 applies per entry (up to five version-update PRs), not repository-wide.
   # Core production

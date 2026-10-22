@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><IsPackable>true</IsPackable></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../modules/Elsa.ReactStudio.Shell/Elsa.ReactStudio.Shell.csproj" />
+    <ProjectReference Include="../modules/Elsa.ReactStudio.Dashboard/Elsa.ReactStudio.Dashboard.csproj" />
+    <ProjectReference Include="../modules/Elsa.ReactStudio.WorkflowDefinitions/Elsa.ReactStudio.WorkflowDefinitions.csproj" />
+    <ProjectReference Include="../modules/Elsa.ReactStudio.Designer/Elsa.ReactStudio.Designer.csproj" />
+    <ProjectReference Include="../modules/Elsa.ReactStudio.ActivityEditors/Elsa.ReactStudio.ActivityEditors.csproj" />
+    <ProjectReference Include="../modules/Elsa.ReactStudio.WorkflowInstances/Elsa.ReactStudio.WorkflowInstances.csproj" />
+    <ProjectReference Include="../modules/Elsa.ReactStudio.Alterations/Elsa.ReactStudio.Alterations.csproj" />
+    <ProjectReference Include="../modules/Elsa.ReactStudio.Labels/Elsa.ReactStudio.Labels.csproj" />
+    <ProjectReference Include="../modules/Elsa.ReactStudio.Security/Elsa.ReactStudio.Security.csproj" />
+    <ProjectReference Include="../modules/Elsa.ReactStudio.Secrets/Elsa.ReactStudio.Secrets.csproj" />
+    <ProjectReference Include="../modules/Elsa.ReactStudio.UserTasks/Elsa.ReactStudio.UserTasks.csproj" />
+    <ProjectReference Include="../modules/Elsa.ReactStudio.Environments/Elsa.ReactStudio.Environments.csproj" />
+    <ProjectReference Include="../modules/Elsa.ReactStudio.Settings/Elsa.ReactStudio.Settings.csproj" />
+    <ProjectReference Include="../modules/Elsa.ReactStudio.Appearance/Elsa.ReactStudio.Appearance.csproj" />
+    <ProjectReference Include="../modules/Elsa.ReactStudio.Diagnostics.ConsoleLogs/Elsa.ReactStudio.Diagnostics.ConsoleLogs.csproj" />
+    <ProjectReference Include="../modules/Elsa.ReactStudio.Diagnostics.StructuredLogs/Elsa.ReactStudio.Diagnostics.StructuredLogs.csproj" />
+  </ItemGroup>
+</Project>
