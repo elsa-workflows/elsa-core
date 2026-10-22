@@ -163,6 +163,28 @@ wait until the designer exists, and it raises `Changed` and `SelectionChanged` f
 save on its own; the code around it loads, saves and applies `BpmnSaveGate`. `studio/test/browser/BpmnDesigner/host.spec.ts`
 runs the shim against the designer under test.
 
+### In the workflow editor
+
+When the resolver picks a designer and the React Flow canvas is not in effect, the workflow editor edits a
+BPMN-imported workflow's whole document in it. Without one, the workflow keeps the read-only canvas and the
+"Performed by" panel.
+
+- The document is read with `GET bpmn/definitions/{id}/xml` and saved with `PUT bpmn/definitions/{id}/xml`, carrying
+  the `ETag` of the revision the edit was made against. A refused save is reported and never retried. The editor never
+  uses the document `GET`/`PUT` pair or the ordinary workflow save for the graph.
+- Before the first save of a document whose load returned `dropped` warnings, the editor lists them and saves only if
+  the user accepts losing that content. After a save, it names any foreign content the server reports as dropped.
+- A save keeps the canvas, its undo history and any edit made while the save ran. The canvas loads the document again
+  only when it is read again: on Reload, or when an import replaces it.
+- An ordinary save of the workflow's other properties can move the `ETag` without changing the document. The editor
+  then reads the document and adopts the new `ETag` if the document is the one the designer was given. A different
+  document replaces it when the designer has nothing unsaved; otherwise the next save is refused as a conflict.
+- Diagram changes are saved with Save only; auto-save covers the workflow's other properties, as it does for the
+  "Performed by" panel. Publishing is refused while the diagram has unsaved changes.
+- The editor shows the selected element. Choosing the activity that performs a task through `getBinding` and
+  `setBinding` is not wired yet, and neither are the viewport tools (Zoom to fit, Center), which this contract does not
+  have.
+
 ## Versioning
 
 A change that an existing designer or host could not handle is a new contract version. Examples are removing or

@@ -55,6 +55,12 @@ public partial class BpmnDesignerWrapper
     /// </summary>
     [CascadingParameter(Name = ElementSelectedCascadeName)] public EventCallback<BpmnElementSelection?> ElementSelected { get; set; }
 
+    /// <summary>
+    /// The document an editor edits in the enabled BPMN designer, or <see langword="null"/> to show the read-only canvas.
+    /// When set, the designer shows the document itself, so the activity, stats and selection calls below do nothing.
+    /// </summary>
+    [Parameter] public BpmnModelerSession? ModelerSession { get; set; }
+
     [Inject] private IOptions<DesignerOptions> DesignerOptions { get; set; } = null!;
 
     private BpmnDesigner? Designer { get; set; }
