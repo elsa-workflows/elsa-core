@@ -43,18 +43,39 @@ internal static class BpmnDesignerBindings
         return new(binding.ActivityType, binding.Inputs.Select(input => new BpmnDesignerBindingInput(input.Name, input.Value!.ToJsonString(InputTextOptions))).ToList());
     }
 
-    /// <summary>Whether two bindings name the same activity with the same input values, whatever their order or spacing.</summary>
+    /// <summary>
+    /// Whether two bindings name the same activity with the same input values, whatever their order or spacing. An input
+    /// whose value is JSON <c>null</c> counts as absent, since <see cref="BpmnActivityBindingFormat.Create"/> writes none.
+    /// </summary>
     public static bool AreEquivalent(BpmnDesignerBinding? left, BpmnDesignerBinding? right)
     {
         if (left is null || right is null)
             return left is null && right is null;
 
-        if (left.ActivityType != right.ActivityType || left.Inputs.Count != right.Inputs.Count)
+        var leftInputs = ValuedInputs(left);
+        var rightInputs = ValuedInputs(right);
+
+        if (left.ActivityType != right.ActivityType || leftInputs.Count != rightInputs.Count)
             return false;
 
-        var rightInputs = right.Inputs.ToDictionary(input => input.Name, StringComparer.Ordinal);
+        var rightByName = rightInputs.ToDictionary(input => input.Name, StringComparer.Ordinal);
 
-        return left.Inputs.All(input => rightInputs.TryGetValue(input.Name, out var other) && IsSameJson(input.Value, other.Value));
+        return leftInputs.All(input => rightByName.TryGetValue(input.Name, out var other) && IsSameJson(input.Value, other.Value));
+    }
+
+    private static List<BpmnDesignerBindingInput> ValuedInputs(BpmnDesignerBinding binding) =>
+        binding.Inputs.Where(input => !IsJsonNull(input.Value)).ToList();
+
+    private static bool IsJsonNull(string value)
+    {
+        try
+        {
+            return JsonNode.Parse(value) is null;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
     }
 
     private static JsonNode? Parse(BpmnDesignerBindingInput input, string activityType)

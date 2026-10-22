@@ -46,6 +46,16 @@ public class BpmnDesignerBindingsTests
         Assert.True(BpmnDesignerBindings.AreEquivalent(null, null));
     }
 
+    [Fact(DisplayName = "An input whose value is JSON null counts as absent, as a written binding leaves it out")]
+    public void TreatsANullInputAsAbsent()
+    {
+        var withNull = new BpmnDesignerBinding("Elsa.WriteLine", [new("text", "\"hi\""), new("delay", "null")]);
+        var draft = BpmnActivityBindingDraft.FromBinding(BpmnDesignerBindings.Read(withNull), WriteLine(), TaskId);
+
+        Assert.True(BpmnDesignerBindings.AreEquivalent(withNull, BpmnDesignerBindings.From(draft)));
+        Assert.False(BpmnDesignerBindings.AreEquivalent(withNull, new("Elsa.WriteLine", [new("text", "\"bye\"")])));
+    }
+
     [Fact(DisplayName = "Each value is read as the JSON node it holds")]
     public void ReadsValuesAsJson()
     {
