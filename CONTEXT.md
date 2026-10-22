@@ -142,6 +142,10 @@ _Avoid_: Broker security invariant
 An Elsa-owned protection for the broker and its clients that connection administrators cannot weaken through Studio.
 _Avoid_: Provider Trust Setting
 
+**Foreign Content**:
+The elements and attributes of a BPMN document that only some other tool interprets: those in a namespace other than BPMN's own, `xsi`, `xml`, Elsa's `elsa:` binding namespace and the BPMN library's vendor namespace. Elsa keeps it when it imports and saves a document, and the BPMN XML `PUT` reports any that a save dropped.
+_Avoid_: Vendor extension (only one kind of it), unknown element
+
 ## React Studio
 
 **Studio Module**:

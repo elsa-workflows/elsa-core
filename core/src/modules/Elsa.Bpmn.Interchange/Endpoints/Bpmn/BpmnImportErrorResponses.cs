@@ -8,7 +8,7 @@ namespace Elsa.Bpmn.Interchange.Endpoints.Bpmn;
 
 /// <summary>
 /// The exception-to-response mapping shared by every endpoint that imports a BPMN document through
-/// <c>BpmnInterchangeDocumentService</c> — <c>Import</c> and the document <c>Put</c> endpoint — plus the identical
+/// <c>BpmnInterchangeDocumentService</c> — <c>Import</c> and the document and XML <c>Put</c> endpoints — plus the identical
 /// handling both give a result whose <c>ImportResult</c> did not succeed.
 /// </summary>
 internal static class BpmnImportErrorResponses

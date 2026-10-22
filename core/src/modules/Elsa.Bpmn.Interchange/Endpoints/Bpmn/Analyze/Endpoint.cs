@@ -1,6 +1,7 @@
 using Elsa.Authorization;
 using Bpmn.Interchange;
 using Elsa.Abstractions;
+using Elsa.Bpmn.Interchange.Exceptions;
 using Elsa.Bpmn.Interchange.Services;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
@@ -48,6 +49,10 @@ internal sealed class Analyze(BpmnInterchangeDocumentService documentService) : 
         {
             AddError(exception.Message);
             await Send.ErrorsAsync(StatusCodes.Status400BadRequest, cancellationToken);
+        }
+        catch (BpmnDuplicateElementIdException exception)
+        {
+            await BpmnErrorResponse.SendAsync(HttpContext.Response, BpmnImportErrorResponses.DuplicateElementIdResponseFor(exception), cancellationToken);
         }
     }
 }

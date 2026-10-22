@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json.Nodes;
+using System.Xml;
 using System.Xml.Linq;
 using Bpmn.Interchange;
 using Bpmn.Model;
@@ -25,8 +26,8 @@ using Elsa.Workflows.Models;
 namespace Elsa.Bpmn.Interchange.Services;
 
 /// <summary>
-/// The one code path the Analyze, Import, Export and document (<see cref="ReadDocument"/>/<see cref="ImportDocumentAsync"/>)
-/// endpoints all sit on top of.
+/// The one code path the Analyze, Import, Export, document (<see cref="ReadDocument"/>/<see cref="ImportDocumentAsync"/>)
+/// and XML (<see cref="ReadSourceXml"/>/<see cref="ImportXmlAsync"/>) endpoints all sit on top of.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -192,7 +193,12 @@ public sealed class BpmnInterchangeDocumentService(
     /// Reports what a document contains and what a read would cost, without persisting anything.
     /// </summary>
     /// <exception cref="BpmnInterchangeException">The document cannot be read at all.</exception>
-    public BpmnImportAnalysis Analyze(string xml) => reader.Analyze(xml, new BpmnImportOptions());
+    /// <exception cref="BpmnDuplicateElementIdException">Two flow nodes in one process or subprocess body share an id, which the reader cannot read.</exception>
+    public BpmnImportAnalysis Analyze(string xml)
+    {
+        EnsureNoFlowNodeIdRepeatsInOneScope(xml);
+        return reader.Analyze(xml, new BpmnImportOptions());
+    }
 
     /// <summary>
     /// Reads a document, refuses it if the host cannot run what it declares, and binds it into the <see cref="BpmnProcess"/>
@@ -257,6 +263,7 @@ public sealed class BpmnInterchangeDocumentService(
         bool compareAndSwap,
         CancellationToken cancellationToken)
     {
+        EnsureNoFlowNodeIdRepeatsInOneScope(xml);
         var result = reader.Read(xml, new BpmnImportOptions { ProcessId = processId });
 
         // Before anything below walks into a nested process by matching an id, refuse a document that repeats one:
@@ -530,6 +537,57 @@ public sealed class BpmnInterchangeDocumentService(
     {
         var xml = ResolveSourceXml(definition);
         return reader.Read(xml, new BpmnImportOptions()).Definitions;
+    }
+
+    /// <summary>
+    /// Resolves the BPMN source a workflow definition was imported from and returns it exactly as stored, refusing a
+    /// missing or stale source as <see cref="Export(WorkflowDefinition)"/> does. Unlike <c>Export</c>, the text is not
+    /// written again through the library's writer: a modeler that saves it back through <see cref="ImportXmlAsync"/>
+    /// edits exactly the text the document <c>ETag</c> covers.
+    /// </summary>
+    /// <param name="definition">The workflow definition to read, as read from the store.</param>
+    /// <exception cref="BpmnExportUnavailableException">
+    /// The definition does not currently carry BPMN source, or it does but the definition has changed since the
+    /// source was recorded.
+    /// </exception>
+    public string ReadSourceXml(WorkflowDefinition definition) => ResolveSourceXml(definition);
+
+    /// <summary>
+    /// Accepts a complete BPMN 2.0 XML document for an existing workflow definition and imports it the way
+    /// <see cref="ImportDocumentAsync"/> imports a <see cref="BpmnDefinitions"/> document: same refusals, and only the
+    /// activity graph and the <c>Bpmn:*</c> custom properties change, saved through the same compare-and-swap.
+    /// </summary>
+    /// <remarks>
+    /// The XML carries every subprocess body itself, so nothing is restored from the stored source. A document that
+    /// declares exactly one process binds that process whatever its id now is, so a modeler may rename it;
+    /// <paramref name="storedProcessId"/> picks the process only when the document declares more than one.
+    /// </remarks>
+    /// <param name="xml">The complete BPMN 2.0 XML document.</param>
+    /// <param name="definitionId">The workflow definition to update.</param>
+    /// <param name="storedProcessId">
+    /// The process the definition was last bound to (<see cref="SourceProcessIdCustomPropertyKey"/>), if recorded.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <param name="expectedETag">As for <see cref="ImportDocumentAsync"/>.</param>
+    /// <exception cref="Exceptions.BpmnDefinitionNotFoundException">The workflow definition to edit no longer exists.</exception>
+    /// <exception cref="BpmnDocumentPreconditionFailedException"><paramref name="expectedETag"/> no longer matches the stored definition.</exception>
+    /// <exception cref="BpmnInterchangeException">
+    /// The document is not BPMN 2.0 XML, or it declares more than one process and none of them is <paramref name="storedProcessId"/>.
+    /// </exception>
+    /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
+    /// <exception cref="BpmnConditionRefusedException">A sequence flow carries a condition Elsa cannot evaluate as written.</exception>
+    /// <exception cref="BpmnProcessInvalidException">The process, or a subprocess body it can reach, cannot run.</exception>
+    /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
+    public Task<BpmnDocumentImportResult> ImportXmlAsync(
+        string xml,
+        string definitionId,
+        string? storedProcessId,
+        CancellationToken cancellationToken,
+        string? expectedETag = null)
+    {
+        EnsureNoFlowNodeIdRepeatsInOneScope(xml);
+        var processId = reader.Analyze(xml, new BpmnImportOptions()).ProcessIds.Count > 1 ? storedProcessId : null;
+        return ImportCoreAsync(xml, definitionId, name: null, processId, preserveMetadataFrom: null, expectedETag, compareAndSwap: true, cancellationToken);
     }
 
     /// <summary>
@@ -907,6 +965,57 @@ public sealed class BpmnInterchangeDocumentService(
 
         throw new BpmnInterchangeException(
             $"The document declares {definitions.Processes.Count} processes ({declared}); specify which one to import.");
+    }
+
+    /// <summary>The BPMN 2.0 flow nodes: the events, activities and gateways a process or subprocess body contains.</summary>
+    private static readonly HashSet<string> FlowNodeLocalNames = new(StringComparer.Ordinal)
+    {
+        "startEvent", "endEvent", "intermediateCatchEvent", "intermediateThrowEvent", "boundaryEvent", "implicitThrowEvent",
+        "task", "serviceTask", "userTask", "manualTask", "scriptTask", "businessRuleTask", "sendTask", "receiveTask",
+        "callActivity", "subProcess", "transaction", "adHocSubProcess",
+        "exclusiveGateway", "inclusiveGateway", "parallelGateway", "eventBasedGateway", "complexGateway"
+    };
+
+    /// <summary>
+    /// Refuses, before the reader runs, a document in which two flow nodes in the same process or subprocess body share
+    /// an id: the one repeat <see cref="EnsureElementIdsUnique"/> would refuse too, but too late, because the library's
+    /// reader indexes each body's flow nodes by id and throws an unhandled <see cref="ArgumentException"/> on it.
+    /// A document that is not well-formed XML is left to the reader, which refuses it with its own message.
+    /// </summary>
+    /// <exception cref="BpmnDuplicateElementIdException">Two flow nodes in one body share an id.</exception>
+    internal static void EnsureNoFlowNodeIdRepeatsInOneScope(string xml)
+    {
+        XDocument document;
+
+        try
+        {
+            using var xmlReader = XmlReader.Create(new StringReader(xml), new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null });
+            document = XDocument.Load(xmlReader);
+        }
+        catch (XmlException)
+        {
+            return;
+        }
+
+        var duplicateIds = document.Descendants()
+            .Where(element => element.Name.Namespace == BpmnXmlNames.Model)
+            .SelectMany(container => container.Elements()
+                .Where(child => child.Name.Namespace == BpmnXmlNames.Model && FlowNodeLocalNames.Contains(child.Name.LocalName))
+                .Select(child => (string?)child.Attribute("id"))
+                .OfType<string>()
+                .GroupBy(id => id, StringComparer.Ordinal)
+                .Where(group => group.Count() > 1)
+                .Select(group => group.Key))
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
+        if (duplicateIds.Count == 0)
+            return;
+
+        throw new BpmnDuplicateElementIdException(
+            $"The document declares the same element id more than once, which BPMN requires to be unique: {string.Join(", ", duplicateIds)}. "
+            + "Two flow nodes in the same process or subprocess body share it, so the document cannot be read.",
+            duplicateIds);
     }
 
     /// <summary>

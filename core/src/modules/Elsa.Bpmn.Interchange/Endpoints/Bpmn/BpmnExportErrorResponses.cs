@@ -6,7 +6,7 @@ namespace Elsa.Bpmn.Interchange.Endpoints.Bpmn;
 
 /// <summary>
 /// The exception-to-response mapping shared by every endpoint that reads a workflow definition's stored BPMN source
-/// back out through <c>BpmnInterchangeDocumentService</c> — <c>Export</c> and the document <c>Get</c> endpoint —
+/// back out through <c>BpmnInterchangeDocumentService</c> — <c>Export</c> and the document and XML <c>Get</c> endpoints —
 /// refusing the same "missing" and "stale" cases the same way.
 /// </summary>
 internal static class BpmnExportErrorResponses
