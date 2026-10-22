@@ -121,6 +121,41 @@ public sealed class BpmnViewerCanvasTests : BunitContext, IAsyncLifetime
         Assert.Equal(2, _designer.Calls.Count(call => call.Identifier == "select"));
     }
 
+    [Fact(DisplayName = "An activity selected while the document loads is selected once it has loaded")]
+    public async Task ASelectionDuringTheLoad_IsMadeAfterIt()
+    {
+        EnableDesigner();
+        var load = new TaskCompletionSource<object?>();
+        _designer.Handlers["load"] = _ => load.Task;
+        var cut = Render<BpmnViewerCanvas>(parameters => parameters.Add(x => x.Activity, OrderProcess()).Add(x => x.SourceXml, SourceXml));
+        cut.WaitForAssertion(() => Assert.Contains(_designer.Calls, call => call.Identifier == "load"));
+
+        await cut.InvokeAsync(() => cut.Instance.SelectActivityAsync(NotifyActivityId));
+        Assert.DoesNotContain(_designer.Calls, call => call.Identifier == "select");
+
+        await cut.InvokeAsync(() => load.SetResult(new BpmnDesignerLoadResult(true, null, [])));
+
+        cut.WaitForAssertion(() => Assert.Equal(["NotifyWarehouse"], Assert.Single(_designer.Calls, call => call.Identifier == "select").Args));
+    }
+
+    [Fact(DisplayName = "A document the designer cannot show says why, and is loaded again when asked for again")]
+    public async Task AFailedLoad_IsShownAndRetried()
+    {
+        EnableDesigner();
+        _designer.Returns("load", new BpmnDesignerLoadResult(false, "The document is not valid BPMN.", []));
+        var cut = Render<BpmnViewerCanvas>(parameters => parameters.Add(x => x.Activity, OrderProcess()).Add(x => x.SourceXml, SourceXml));
+
+        cut.WaitForAssertion(() => Assert.Contains("The document is not valid BPMN.", cut.Find("[data-testid=bpmn-viewer-load-error]").TextContent));
+        Assert.DoesNotContain(_designer.Calls, call => call.Identifier == "applyOverlays");
+
+        _designer.Returns("load", new BpmnDesignerLoadResult(true, null, []));
+        await cut.InvokeAsync(() => cut.Instance.LoadBpmnAsync(OrderProcess(), SourceXml, null));
+
+        Assert.Equal(2, _designer.Calls.Count(call => call.Identifier == "load"));
+        Assert.Empty(cut.FindAll("[data-testid=bpmn-viewer-load-error]"));
+        Assert.Single(_designer.Calls, call => call.Identifier == "applyOverlays");
+    }
+
     [Fact(DisplayName = "A selected element is reported as its bound activity, an unbound one as its scope, and no selection as the root")]
     public async Task ReportsSelectionAsActivities()
     {
@@ -171,6 +206,17 @@ public sealed class BpmnViewerCanvasTests : BunitContext, IAsyncLifetime
         Assert.Contains("has no content yet", cut.Markup);
     }
 
+    [Fact(DisplayName = "With a designer enabled, the source document's nested scopes are shown along with the root")]
+    public void WithADesigner_NestedScopesAreShown()
+    {
+        EnableDesigner();
+        var designer = NewDesigner(Services.GetRequiredService<BpmnDesignerResolver>());
+
+        Assert.True(designer.ShowsNestedScopes(OrderProcess(), DefinitionWith(SourceXml)));
+        Assert.False(designer.ShowsNestedScopes(OrderProcess(), DefinitionWith(sourceXml: null)));
+        Assert.False(NewDesigner().ShowsNestedScopes(OrderProcess(), DefinitionWith(SourceXml)));
+    }
+
     private void EnableDesigner() => Services.AddBpmnDesigner(new BpmnDesignerDescriptor("test-designer", "_content/Test/designer.js"));
 
     private IRenderedComponent<BpmnViewerCanvas> RenderViewer(IDictionary<string, ActivityStats>? stats = null)
@@ -186,6 +232,12 @@ public sealed class BpmnViewerCanvasTests : BunitContext, IAsyncLifetime
 
     private IRenderedComponent<RenderFragmentHost> RenderDiagram(JsonObject root, string? sourceXml)
     {
+        var definition = DefinitionWith(sourceXml);
+        return Render<RenderFragmentHost>(parameters => parameters.Add(x => x.Content, NewDesigner().DisplayDesigner(new DisplayContext(root) { WorkflowDefinition = definition })));
+    }
+
+    private static WorkflowDefinition DefinitionWith(string? sourceXml)
+    {
         var definition = new WorkflowDefinition();
 
         if (sourceXml != null)
@@ -193,7 +245,7 @@ public sealed class BpmnViewerCanvasTests : BunitContext, IAsyncLifetime
             definition.CustomProperties[BpmnProcessConstants.SourceXmlCustomPropertyKey] = sourceXml;
         }
 
-        return Render<RenderFragmentHost>(parameters => parameters.Add(x => x.Content, NewDesigner().DisplayDesigner(new DisplayContext(root) { WorkflowDefinition = definition })));
+        return definition;
     }
 
     private IReadOnlyDictionary<string, BpmnDesignerElementStats> LastOverlay() =>
@@ -201,7 +253,8 @@ public sealed class BpmnViewerCanvasTests : BunitContext, IAsyncLifetime
 
     private static JsonObject EmptyScope() => new() { ["id"] = "Process_1", ["type"] = "Elsa.BpmnProcess" };
 
-    private static BpmnDiagramDesigner NewDesigner() => new(new TestLocalizer(), Microsoft.Extensions.Options.Options.Create(new DesignerOptions()), null!, null!, null!, null!);
+    private static BpmnDiagramDesigner NewDesigner(BpmnDesignerResolver? designerResolver = null) =>
+        new(new TestLocalizer(), Microsoft.Extensions.Options.Options.Create(new DesignerOptions()), null!, null!, null!, null!, designerResolver);
 
     /// <summary>Renders a fragment, as the diagram designer wrapper renders a designer's display.</summary>
     private sealed class RenderFragmentHost : ComponentBase

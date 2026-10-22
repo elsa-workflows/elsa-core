@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Elsa.Api.Client.Extensions;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
+using Elsa.Studio.Bpmn.Designers;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.DomInterop.Contracts;
 using Elsa.Studio.Localization;
@@ -29,8 +30,24 @@ public class BpmnDiagramDesigner(
     IDialogService dialogService,
     IBpmnInterchangeService bpmnInterchangeService,
     IFiles files,
-    IUserMessageService userMessageService) : IDiagramDesignerToolboxProvider, IBpmnElementStatsSink
+    IUserMessageService userMessageService,
+    BpmnDesignerResolver? designerResolver) : IDiagramDesignerToolboxProvider, IBpmnElementStatsSink, INestedScopesDiagramDesigner
 {
+    /// <summary>
+    /// Creates a designer that does not know which BPMN designer is enabled, so it never reports that it shows nested
+    /// scopes.
+    /// </summary>
+    public BpmnDiagramDesigner(
+        ILocalizer localizer,
+        IOptions<DesignerOptions> designerOptions,
+        IDialogService dialogService,
+        IBpmnInterchangeService bpmnInterchangeService,
+        IFiles files,
+        IUserMessageService userMessageService)
+        : this(localizer, designerOptions, dialogService, bpmnInterchangeService, files, userMessageService, null)
+    {
+    }
+
     private readonly Guid _id = Guid.NewGuid();
     private BpmnDesignerWrapper? _designerWrapper;
     private JsonObject _rootActivity = [];
@@ -151,6 +168,14 @@ public class BpmnDiagramDesigner(
             builder.CloseComponent();
         }
     }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// The enabled BPMN designer shows the whole source document, subprocess bodies included, where the read-only canvas
+    /// shows one scope at a time.
+    /// </remarks>
+    public bool ShowsNestedScopes(JsonObject container, WorkflowDefinition? workflowDefinition) =>
+        !designerOptions.Value.UseReactFlow && designerResolver?.Resolve() != null && GetSourceXml(workflowDefinition) != null;
 
     /// <inheritdoc />
     public IEnumerable<RenderFragment> GetToolboxItems(bool isReadOnly)

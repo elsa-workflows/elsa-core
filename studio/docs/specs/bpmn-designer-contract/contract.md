@@ -191,13 +191,17 @@ When the resolver picks a designer and the React Flow canvas is not in effect, t
 a BPMN-imported workflow's source document in it, created with `readOnly`. Without one, they keep the read-only canvas.
 
 - The designer shows the whole document, subprocess bodies included, so the viewers never open a nested scope for it.
+  An instance's state covers the activities of every scope the document shows, and selecting a nested activity from
+  the journal selects its element without opening its scope.
 - Instance state reaches it through `applyOverlays`, keyed by element id. Each bound activity's state lands on the element
   its `elsa:activityBinding` names; gateways, events and sequence flows bring their own. When an element has both, its
   own counts win, and a fault or block on either shows, as on the read-only canvas. State that arrives while `load`
   runs is applied once it returns.
 - A selected element is reported as the activity bound to it, an element bound to none as the scope that holds it, and
   no selection as the root. Selecting an activity from the journal selects its element, and the `selection` event that
-  raises is not reported back.
+  raises is not reported back. An activity selected while `load` runs is selected once it returns.
+- A document the designer cannot import shows the error `load` returned, and is loaded again the next time the viewer
+  is asked to show it.
 - Zoom to fit and Center do nothing on this canvas, because the contract has no viewport calls.
 
 ## Versioning

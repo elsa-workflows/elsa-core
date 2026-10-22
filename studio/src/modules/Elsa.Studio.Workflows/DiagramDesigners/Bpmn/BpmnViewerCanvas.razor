@@ -1,4 +1,9 @@
 @using Elsa.Studio.Bpmn.Components
 @inherits StudioComponentBase
+@inject ILocalizer Localizer
 
+@if (_loadError != null)
+{
+    <MudAlert Severity="Severity.Error" data-testid="bpmn-viewer-load-error">@_loadError</MudAlert>
+}
 <BpmnCanvasHost @ref="_host" Designer="@Designer" ReadOnly="true" SelectionChanged="@OnSelectionChanged" Style="height: 100%;" />

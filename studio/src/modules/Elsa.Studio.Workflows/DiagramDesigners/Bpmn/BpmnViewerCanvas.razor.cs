@@ -30,6 +30,8 @@ public partial class BpmnViewerCanvas
     private bool _rendered;
     private string? _selectedElementId;
     private string? _requestedElementId;
+    private string? _pendingSelectionActivityId;
+    private string? _loadError;
 
     /// <summary>The root <c>Elsa.BpmnProcess</c> activity the document was imported into, which names the element each activity is bound to.</summary>
     [Parameter, EditorRequired] public JsonObject Activity { get; set; } = null!;
@@ -116,7 +118,14 @@ public partial class BpmnViewerCanvas
     /// </summary>
     public async Task SelectActivityAsync(string activityId)
     {
-        if (!_isLoaded || _map.ElementIdOf(activityId) is not { } elementId || elementId == _selectedElementId)
+        // Asked for while the document loads, the selection is made once it has loaded.
+        if (!_isLoaded)
+        {
+            _pendingSelectionActivityId = activityId;
+            return;
+        }
+
+        if (_map.ElementIdOf(activityId) is not { } elementId || elementId == _selectedElementId)
         {
             return;
         }
@@ -162,15 +171,36 @@ public partial class BpmnViewerCanvas
                 }
 
                 // A newer document asked for while this one loaded waits its turn, and shows the state once it has loaded.
-                if (!result.Imported || SourceXml != xml)
+                if (SourceXml != xml)
                 {
                     return;
                 }
 
+                // A document the designer could not show is said so, and is loaded again when asked for again.
+                if (!result.Imported)
+                {
+                    _loadError = result.Error ?? Localizer["The designer could not show this BPMN document."];
+                    _loadedXml = null;
+                    StateHasChanged();
+                    return;
+                }
+
                 _isLoaded = true;
+
+                if (_loadError != null)
+                {
+                    _loadError = null;
+                    StateHasChanged();
+                }
             }
 
             await ApplyOverlaysAsync();
+
+            if (_pendingSelectionActivityId is { } pendingActivityId)
+            {
+                _pendingSelectionActivityId = null;
+                await SelectActivityAsync(pendingActivityId);
+            }
         }
         finally
         {
