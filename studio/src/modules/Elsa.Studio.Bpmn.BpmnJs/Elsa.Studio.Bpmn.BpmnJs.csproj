@@ -3,12 +3,6 @@
     <PropertyGroup>
         <Description>The bpmn-js BPMN designer for Elsa Studio.</Description>
         <PackageTags>elsa studio module bpmn bpmn-js designer</PackageTags>
-        <!--
-            Not packed yet: hosts get this designer through the Studio BPMN feature, which does not reference it until
-            the designer is registered. The step that adds that reference makes it packable and adds it to the release
-            inventory.
-        -->
-        <IsPackable>false</IsPackable>
     </PropertyGroup>
 
     <ItemGroup>

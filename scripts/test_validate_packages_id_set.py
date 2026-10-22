@@ -101,7 +101,7 @@ class IdSetTests(unittest.TestCase):
             )
             self.assertEqual(0, accepted.returncode, accepted.stderr)
             self.assertIn("231 expected IDs", accepted.stdout)
-            self.assertIn("Studio package content matches 6 required entries.", accepted.stdout)
+            self.assertIn("Studio package content matches 8 required entries.", accepted.stdout)
 
             (directory / "Elsa.3.10.0.nupkg").unlink()
             missing = subprocess.run(
@@ -178,6 +178,7 @@ class StudioContentTests(unittest.TestCase):
         self.assertEqual(expected, STUDIO_CONTENT)
         self.assertEqual(3, len(STUDIO_CONTENT["Elsa.Studio.Workflows.Designer"]))
         self.assertEqual(3, len(STUDIO_CONTENT["Elsa.Studio.DomInterop"]))
+        self.assertEqual(2, len(STUDIO_CONTENT["Elsa.Studio.Bpmn.BpmnJs"]))
 
     def test_required_bundle_entries_are_accepted(self):
         with tempfile.TemporaryDirectory() as temporary:

@@ -15,6 +15,7 @@ using Elsa.Studio.Workflows.Domain.Models.Bpmn;
 using Elsa.Studio.Workflows.Extensions;
 using Elsa.Studio.Workflows.Tests.Support;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using MudBlazor;
 using MudBlazor.Services;
 using MudExtensions.Services;
@@ -61,9 +62,12 @@ public sealed class WorkflowDefinitionListBpmnCreateTests : BunitContext, IAsync
         await base.DisposeAsync();
     }
 
-    [Fact(DisplayName = "Without a BPMN designer, creating a BPMN workflow is not offered")]
+    [Fact(DisplayName = "When no BPMN designer resolves, creating a BPMN workflow is not offered")]
     public void WithoutADesigner_IsNotOffered()
     {
+        // The workflows module falls back to bpmn-js, so a host has no designer only when that default is taken out.
+        Services.RemoveAll<DefaultBpmnDesigner>();
+
         var items = OpenCreateMenu(RenderList());
 
         Assert.Contains(items, item => item.TextContent.Contains("Import BPMN", StringComparison.Ordinal));

@@ -25,7 +25,7 @@ PACKAGE_FILE = re.compile(r"(.+)\.[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+(\.[0-9A-Z
 STABLE_310_PATTERN = r"3\.10\.(0|[1-9][0-9]*)"
 STABLE_310 = re.compile(STABLE_310_PATTERN)
 DEFAULT_EXPECTED = Path(__file__).with_name("validate_packages_id_set.txt")
-# Same three packed entries per package as prove_consolidated_packages.CLIENTLIB_ASSETS.
+# Same packed entries per package as prove_consolidated_packages.CLIENTLIB_ASSETS.
 STUDIO_CONTENT = {
     "Elsa.Studio.Workflows.Designer": (
         "staticwebassets/designer.entry.js",
@@ -36,6 +36,10 @@ STUDIO_CONTENT = {
         "staticwebassets/dom.entry.js",
         "staticwebassets/clipboard.entry.js",
         "staticwebassets/files.entry.js",
+    ),
+    "Elsa.Studio.Bpmn.BpmnJs": (
+        "staticwebassets/bpmn-js-designer.js",
+        "staticwebassets/bpmn-js-designer.css",
     ),
 }
 

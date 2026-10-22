@@ -24,6 +24,18 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
+    /// Makes <paramref name="designer"/> the designer to use when the host enables none. A Studio feature that shows BPMN
+    /// calls this, so that its hosts get a designer without enabling one; a host that enables a designer itself uses that
+    /// one instead. Only the first default registered counts.
+    /// </summary>
+    public static IServiceCollection AddDefaultBpmnDesigner(this IServiceCollection services, BpmnDesignerDescriptor designer)
+    {
+        services.AddBpmnDesignerResolver();
+        services.TryAddSingleton(new DefaultBpmnDesigner(designer));
+        return services;
+    }
+
+    /// <summary>
     /// Registers the <see cref="BpmnDesignerResolver"/> and the check that makes an ambiguous designer choice fail at
     /// startup. Callers that only need to ask which designer is enabled, such as the workflow editor, call this; it is
     /// safe to call more than once.

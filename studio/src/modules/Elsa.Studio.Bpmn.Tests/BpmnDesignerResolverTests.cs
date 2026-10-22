@@ -75,6 +75,49 @@ public class BpmnDesignerResolverTests
         Assert.Same(First, provider.GetRequiredService<BpmnDesignerResolver>().Resolve());
     }
 
+    [Fact(DisplayName = "With no designer enabled, the default is resolved, and the options may name it")]
+    public void NoDesigner_ResolvesTheDefault()
+    {
+        Assert.Same(First, ResolverWithDefault(designerId: null, defaultDesigner: First).Resolve());
+        Assert.Same(First, ResolverWithDefault(designerId: "first", defaultDesigner: First).Resolve());
+    }
+
+    [Fact(DisplayName = "With no designer enabled, choosing one other than the default fails")]
+    public void NoDesigner_ChoosingAnotherThanTheDefault_Fails()
+    {
+        var exception = Assert.Throws<InvalidOperationException>(() => ResolverWithDefault(designerId: "second", defaultDesigner: First).Resolve());
+
+        Assert.Contains("'second'", exception.Message);
+    }
+
+    [Fact(DisplayName = "A designer the host enables replaces the default, which is never counted as enabled")]
+    public void AnEnabledDesigner_ReplacesTheDefault()
+    {
+        Assert.Same(Second, ResolverWithDefault(designerId: null, defaultDesigner: First, Second).Resolve());
+        Assert.Throws<InvalidOperationException>(() => ResolverWithDefault(designerId: "first", defaultDesigner: First, Second).Resolve());
+    }
+
+    [Fact(DisplayName = "AddDefaultBpmnDesigner makes its designer the one a host that enables none uses, and the first default registered wins")]
+    public async Task AddDefaultBpmnDesigner_IsUsedWhenNoneIsEnabled()
+    {
+        using var provider = new ServiceCollection().AddDefaultBpmnDesigner(First).AddDefaultBpmnDesigner(Second).BuildServiceProvider();
+
+        foreach (var startupTask in provider.GetServices<IStartupTask>())
+        {
+            await startupTask.ExecuteAsync();
+        }
+
+        Assert.Same(First, provider.GetRequiredService<BpmnDesignerResolver>().Resolve());
+    }
+
+    [Fact(DisplayName = "A host that enables a designer uses it rather than the default AddDefaultBpmnDesigner registered")]
+    public void AddDefaultBpmnDesigner_GivesWayToAnEnabledDesigner()
+    {
+        using var provider = new ServiceCollection().AddDefaultBpmnDesigner(First).AddBpmnDesigner(Second).BuildServiceProvider();
+
+        Assert.Same(Second, provider.GetRequiredService<BpmnDesignerResolver>().Resolve());
+    }
+
     [Fact(DisplayName = "AddBpmnJsDesigner enables the bpmn-js designer from its static web assets")]
     public void AddBpmnJsDesigner_EnablesBpmnJs()
     {
@@ -110,4 +153,7 @@ public class BpmnDesignerResolverTests
 
     private static BpmnDesignerResolver Resolver(string? designerId = null, params BpmnDesignerDescriptor[] designers) =>
         new(designers, Microsoft.Extensions.Options.Options.Create(new BpmnDesignerOptions { DesignerId = designerId }));
+
+    private static BpmnDesignerResolver ResolverWithDefault(string? designerId, BpmnDesignerDescriptor defaultDesigner, params BpmnDesignerDescriptor[] designers) =>
+        new(designers, Microsoft.Extensions.Options.Options.Create(new BpmnDesignerOptions { DesignerId = designerId }), new DefaultBpmnDesigner(defaultDesigner));
 }

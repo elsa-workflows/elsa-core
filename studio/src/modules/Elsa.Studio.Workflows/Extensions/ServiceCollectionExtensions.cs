@@ -1,4 +1,5 @@
 using Elsa.Studio.ActivityPortProviders.Extensions;
+using Elsa.Studio.Bpmn.BpmnJs;
 using Elsa.Studio.Bpmn.Extensions;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.DomInterop.Extensions;
@@ -49,7 +50,7 @@ public static class ServiceCollectionExtensions
             .AddDomInterop()
             .AddClipboardInterop()
             .AddDownloadInterop()
-            .AddBpmnDesignerResolver()
+            .AddDefaultBpmnDesigner(BpmnJsDesigner.Descriptor)
             ;
 
         services
