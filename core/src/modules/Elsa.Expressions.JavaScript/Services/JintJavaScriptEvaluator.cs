@@ -105,6 +105,10 @@ public class JintJavaScriptEvaluator(IConfiguration configuration, INotification
         if (_jintOptions.MaxRecursionDepth is { } maxRecursionDepth)
             options.LimitRecursion(maxRecursionDepth);
 
+        // Jint 4.x leaves the native stack-overflow guard off. Without it, a few hundred recursive calls
+        // exhaust the CLR stack and end the process; a .NET StackOverflowException cannot be caught.
+        options.Constraints.StackOverflowGuard = _jintOptions.EnableStackOverflowGuard;
+
         // Cancelling the workflow should also abort a script that is still running.
         options.CancellationToken(cancellationToken);
     }
