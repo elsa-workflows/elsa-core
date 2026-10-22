@@ -1,0 +1,16 @@
+@using Variant = MudBlazor.Variant
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+<MudDialog>
+    <DialogContent>
+        <EditForm @key="_editContext" EditContext="_editContext" OnSubmit="OnSubmit">
+            <FluentValidator Validator="_validator" AsyncMode="true"/>
+            <MudTextField Label="@Localizer["Name"]" @bind-Value="_metadataModel.Name" For="@(() => _metadataModel.Name)" HelperText="@Localizer["The name of the new workflow, which its BPMN process also takes."]" Variant="Variant.Outlined" Margin="Margin.Dense" data-testid="bpmn-create-name" />
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelClicked">@Localizer["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Disabled="_isCreating" OnClick="OnSubmitClicked" data-testid="bpmn-create-submit">@Localizer["Create"]</MudButton>
+    </DialogActions>
+</MudDialog>

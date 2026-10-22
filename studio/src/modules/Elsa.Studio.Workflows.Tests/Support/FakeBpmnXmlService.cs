@@ -7,7 +7,7 @@ namespace Elsa.Studio.Workflows.Tests.Support;
 
 /// <summary>
 /// An in-memory <see cref="IBpmnXmlService"/>: each GET and PUT answers with the next result a test queued, the last one
-/// repeating, and every PUT is recorded as it was sent.
+/// repeating, and every PUT and create is recorded as it was sent.
 /// </summary>
 internal sealed class FakeBpmnXmlService : IBpmnXmlService
 {
@@ -54,7 +54,17 @@ internal sealed class FakeBpmnXmlService : IBpmnXmlService
         return Next(_putResults, Puts.Count - 1);
     }
 
-    public Task<Result<BpmnXmlSaveResult, BpmnDocumentFailure>> CreateAsync(string name, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    /// <summary>The name of every workflow a test created, in order.</summary>
+    public List<string> Creates { get; } = [];
+
+    /// <summary>What a create answers with; unset, a create is not expected and throws.</summary>
+    public Result<BpmnXmlSaveResult, BpmnDocumentFailure>? CreateResult { get; set; }
+
+    public Task<Result<BpmnXmlSaveResult, BpmnDocumentFailure>> CreateAsync(string name, CancellationToken cancellationToken = default)
+    {
+        Creates.Add(name);
+        return Task.FromResult(CreateResult ?? throw new NotSupportedException("No create result was set."));
+    }
 
     private FakeBpmnXmlService Add<T>(List<T> results, T result)
     {

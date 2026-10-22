@@ -169,6 +169,9 @@ When the resolver picks a designer and the React Flow canvas is not in effect, t
 BPMN-imported workflow's whole document in it. Without one, the workflow keeps the read-only canvas and the
 "Performed by" panel.
 
+- The workflow definition list offers "Create BPMN workflow". It asks for a name, creates a draft holding a minimal
+  process with `POST bpmn/definitions`, and opens it in the editor. Without a designer it is not offered, since nothing
+  could draw the new process.
 - The document is read with `GET bpmn/definitions/{id}/xml` and saved with `PUT bpmn/definitions/{id}/xml`, carrying
   the `ETag` of the revision the edit was made against. A refused save is reported and never retried. The editor never
   uses the document `GET`/`PUT` pair or the ordinary workflow save for the graph.
