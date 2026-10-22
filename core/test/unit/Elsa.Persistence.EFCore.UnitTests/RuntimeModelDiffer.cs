@@ -80,11 +80,11 @@ internal static class RuntimeModelDiffer
         return string.Join(Environment.NewLine, list.Select(operation => operation switch
         {
             CreateIndexOperation create =>
-                $"CreateIndex {create.Name} on {create.Table} ({string.Join(", ", create.Columns)})",
+                $"CreateIndex {create.Name} on {create.Table} ({string.Join(", ", create.Columns)}) unique={create.IsUnique} filter={create.Filter}",
             DropIndexOperation drop =>
                 $"DropIndex {drop.Name} on {drop.Table}",
             AlterColumnOperation alter =>
-                $"AlterColumn {alter.Table}.{alter.Name} {alter.OldColumn.ColumnType} -> {alter.ColumnType}",
+                $"AlterColumn {alter.Table}.{alter.Name} {alter.OldColumn.ColumnType} nullable={alter.OldColumn.IsNullable} -> {alter.ColumnType} nullable={alter.IsNullable}",
             _ => operation.GetType().Name
         }));
     }
