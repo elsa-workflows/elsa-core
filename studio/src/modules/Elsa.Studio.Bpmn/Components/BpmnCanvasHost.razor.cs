@@ -112,9 +112,9 @@ public partial class BpmnCanvasHost : IAsyncDisposable
             await DisposeDesignerAsync();
             return;
         }
-        catch (JSException exception)
+        catch (Exception exception)
         {
-            _failure = $"The BPMN designer '{Designer.DesignerId}' could not be loaded: {exception.Message}";
+            _failure = $"The BPMN designer '{Designer?.DesignerId}' could not be loaded: {exception.Message}";
             _designerReady.TrySetException(new InvalidOperationException(_failure, exception));
             StateHasChanged();
             return;

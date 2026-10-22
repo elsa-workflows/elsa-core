@@ -98,6 +98,16 @@ public class BpmnCanvasHostTests : IAsyncDisposable
         await Assert.ThrowsAsync<InvalidOperationException>(() => cut.Instance.LoadAsync("<definitions/>"));
     }
 
+    [Fact(DisplayName = "A creation that fails other than in JavaScript, such as a lost connection, also makes calls fail rather than wait")]
+    public async Task ANonJsCreationFailure_MakesCallsFail()
+    {
+        _js.HostModule.Handlers["createDesigner"] = _ => throw new TaskCanceledException("The connection was lost.");
+        var cut = Render();
+
+        Assert.Contains("The connection was lost.", cut.Find("[role=alert]").TextContent);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => cut.Instance.SaveAsync());
+    }
+
     [Fact(DisplayName = "The designer's change and selection events reach the component's callbacks")]
     public async Task EventsReachTheCallbacks()
     {
