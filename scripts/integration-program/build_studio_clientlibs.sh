@@ -13,6 +13,9 @@ else
 fi
 designer="$studio/modules/Elsa.Studio.Workflows.Designer"
 dom="$studio/framework/Elsa.Studio.DomInterop"
+# The BPMN designer contract and shared rules. It builds no browser asset of its own, and older pinned Studio sources
+# predate it, so it is tested only where it exists.
+bpmn_shared="$studio/modules/Elsa.Studio.Bpmn/ClientLib"
 locks="$(cd "$(dirname "${BASH_SOURCE[0]}")/consolidated-build/studio-clientlib-lockfiles" && pwd -P)"
 
 for package in "$designer/ClientLib/package.json" "$dom/ClientLib/package.json"; do
@@ -28,8 +31,13 @@ if [[ "$node_major" != 22 ]]; then
     exit 1
 fi
 
-for entry in "$designer/ClientLib:$locks/designer.package-lock.json" \
-             "$dom/ClientLib:$locks/dom-interop.package-lock.json"; do
+clientlibs=("$designer/ClientLib:$locks/designer.package-lock.json" \
+            "$dom/ClientLib:$locks/dom-interop.package-lock.json")
+if [[ -f "$bpmn_shared/package.json" ]]; then
+    clientlibs+=("$bpmn_shared:$locks/bpmn-shared.package-lock.json")
+fi
+
+for entry in "${clientlibs[@]}"; do
     clientlib="${entry%%:*}"
     reviewed_lock="${entry#*:}"
     checkout_lock="$clientlib/package-lock.json"
@@ -82,6 +90,13 @@ dotnet restore "$designer/Elsa.Studio.Workflows.Designer.csproj"
     npm ci --force
     npm run build
 )
+if [[ -f "$bpmn_shared/package.json" ]]; then
+    (
+        cd "$bpmn_shared"
+        npm ci --force
+        npm test
+    )
+fi
 
 for asset in "${assets[@]}"; do
     if [[ ! -s "$asset" ]]; then
