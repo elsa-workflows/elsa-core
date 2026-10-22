@@ -1,0 +1,53 @@
+@using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.ActivityProperties.Tabs
+@using Variant = MudBlazor.Variant
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+<CascadingValue Value="_expressionDescriptorProvider">
+    <MudStack Spacing="2" data-testid="bpmn-modeler-binding">
+        @if (!IsTask)
+        {
+            <MudText Typo="Typo.body2" data-testid="bpmn-no-work">@Localizer["'{0}' performs no work, so no activity is bound to it.", ElementLabel]</MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.h6">@Localizer["Performed by"]</MudText>
+
+            @if (_bindingError != null)
+            {
+                <MudAlert Severity="Severity.Error" data-testid="bpmn-binding-unreadable">@Localizer["The binding the document declares for this task cannot be read: {0}", _bindingError]</MudAlert>
+            }
+
+            @if (_refusal != null)
+            {
+                <MudAlert Severity="Severity.Warning" data-testid="bpmn-binding-refused">@DescribeRefusal(_refusal)</MudAlert>
+            }
+
+            <MudStack Row="true" AlignItems="MudBlazor.AlignItems.Center">
+                <MudText data-testid="bpmn-bound-activity">@(BoundActivityName ?? Localizer["Not bound"])</MudText>
+                <MudSpacer />
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="@(!_isInitialized || !Session.IsDocumentReady)" OnClick="OnPickActivityClicked" data-testid="bpmn-pick-activity">@(BoundActivityName == null ? Localizer["Choose activity"] : Localizer["Change activity"])</MudButton>
+            </MudStack>
+
+            @if (!Session.IsDocumentReady)
+            {
+                <MudText Typo="Typo.body2" data-testid="bpmn-binding-loading">@Localizer["The diagram is loading."]</MudText>
+            }
+            else if (_draft != null)
+            {
+                @if (_draft.Descriptor.Inputs.Any(input => input.IsBrowsable is not false))
+                {
+                    <InputsTab @key="_draftGeneration" WorkflowDefinition="WorkflowDefinition" Activity="_draft.Activity" ActivityDescriptor="_draft.Descriptor" OnActivityUpdated="OnDraftUpdatedAsync" />
+                }
+                else
+                {
+                    <MudText Typo="Typo.body2">@Localizer["This activity does not have any input properties."]</MudText>
+                }
+            }
+            else if (_binding != null && _bindingError == null)
+            {
+                <MudAlert Severity="Severity.Warning" data-testid="bpmn-activity-type-unavailable">@Localizer["The activity type '{0}' is not available in this Studio, so its inputs cannot be edited here.", _binding.ActivityType]</MudAlert>
+            }
+        }
+    </MudStack>
+</CascadingValue>

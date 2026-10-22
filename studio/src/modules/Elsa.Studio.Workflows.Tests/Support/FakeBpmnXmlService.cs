@@ -1,3 +1,4 @@
+using Elsa.Studio.Bpmn.Designers;
 using Elsa.Studio.Models;
 using Elsa.Studio.Workflows.DiagramDesigners.Bpmn;
 using Elsa.Studio.Workflows.Domain.Contracts;
@@ -66,9 +67,24 @@ internal sealed class FakeBpmnXmlService : IBpmnXmlService
         results.Count == 0 ? throw new InvalidOperationException("No result was queued for this call.") : results[Math.Min(index, results.Count - 1)];
 }
 
-/// <summary>A canvas whose designer exports <see cref="Xml"/>, or throws <see cref="SaveException"/>, and counts undo and redo.</summary>
+/// <summary>
+/// A canvas whose designer exports <see cref="Xml"/>, or throws <see cref="SaveException"/>, counts undo and redo, and
+/// keeps each element's binding in <see cref="Bindings"/>.
+/// </summary>
 internal sealed class FakeModelerCanvas : IBpmnModelerCanvas
 {
+    /// <summary>Each element's binding, as the designer's document holds it.</summary>
+    public Dictionary<string, BpmnDesignerBinding> Bindings { get; } = new(StringComparer.Ordinal);
+
+    /// <summary>Every binding the designer was asked to set, in order.</summary>
+    public List<(string ElementId, BpmnDesignerBinding Binding)> SetBindings { get; } = [];
+
+    /// <summary>When set, <c>setBinding</c> refuses with this reason instead of applying the binding.</summary>
+    public string? SetBindingRefusal { get; set; }
+
+    /// <summary>Raised after a binding is applied, as the designer raises <c>change</c>.</summary>
+    public Action<string>? BindingApplied { get; set; }
+
     public string Xml { get; set; } = "<edited/>";
     public Exception? SaveException { get; set; }
 
@@ -96,5 +112,46 @@ internal sealed class FakeModelerCanvas : IBpmnModelerCanvas
     {
         Redos++;
         return Task.CompletedTask;
+    }
+
+    /// <summary>When set, the next <c>getBinding</c> reads the binding at once but returns it only once this completes.</summary>
+    public TaskCompletionSource? NextGetBindingGate { get; set; }
+
+    /// <summary>When set, the next <c>setBinding</c> applies the binding only once this completes.</summary>
+    public TaskCompletionSource? NextSetBindingGate { get; set; }
+
+    public async Task<BpmnDesignerBinding?> GetBindingAsync(string elementId)
+    {
+        var gate = NextGetBindingGate;
+        NextGetBindingGate = null;
+        var binding = Bindings.TryGetValue(elementId, out var found) ? found : null;
+
+        if (gate != null)
+        {
+            await gate.Task;
+        }
+
+        return binding;
+    }
+
+    public async Task<BpmnDesignerSetBindingResult> SetBindingAsync(string elementId, BpmnDesignerBinding binding)
+    {
+        var gate = NextSetBindingGate;
+        NextSetBindingGate = null;
+        SetBindings.Add((elementId, binding));
+
+        if (gate != null)
+        {
+            await gate.Task;
+        }
+
+        if (SetBindingRefusal != null)
+        {
+            return new(false, SetBindingRefusal);
+        }
+
+        Bindings[elementId] = binding;
+        BindingApplied?.Invoke(elementId);
+        return new(true);
     }
 }

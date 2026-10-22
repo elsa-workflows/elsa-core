@@ -28,6 +28,12 @@ namespace Elsa.Studio.Workflows.DiagramDesigners.Bpmn;
 /// </remarks>
 public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string definitionId)
 {
+    /// <summary>
+    /// The reason <see cref="SetBindingAsync"/> gives for not applying a binding while the designer does not show the
+    /// latest document read: the edit would be made in a document that is about to be replaced.
+    /// </summary>
+    public const string DocumentNotReadyRefusal = "document-not-ready";
+
     private IBpmnModelerCanvas? _canvas;
     private Task? _loadTask;
     private Task<Result<BpmnXmlSaveResult, BpmnDocumentFailure>>? _saveTask;
@@ -87,6 +93,16 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
 
     /// <summary>Whether the designer has an undone edit to redo.</summary>
     public bool CanRedo { get; private set; }
+
+    /// <summary>
+    /// Whether the designer shows the latest document read, so an edit made in it now is kept and saved. It is not while
+    /// a read is in flight or until the canvas has loaded what a read returned, since loading it discards the designer's
+    /// edits.
+    /// </summary>
+    public bool IsDocumentReady => _canvas != null && Xml != null && CanvasLoadError == null && !IsLoading && _canvasDocumentVersion == DocumentVersion;
+
+    /// <summary>Counts the designer's <c>change</c> events, so a reader of the document can tell it may have changed.</summary>
+    public long ChangeSequence => _changeSequence;
 
     /// <summary>The element selected on the canvas, or <see langword="null"/> when none is.</summary>
     public BpmnDesignerSelectedElement? SelectedElement { get; private set; }
@@ -173,6 +189,23 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
 
     /// <summary>Redoes the designer's last undone edit.</summary>
     public Task RedoAsync() => _canvas?.RedoAsync() ?? Task.CompletedTask;
+
+    /// <summary>
+    /// The <c>elsa:activityBinding</c> of the element with <paramref name="elementId"/> in the designer's document, or
+    /// <see langword="null"/> when it has none or no designer shows the document.
+    /// </summary>
+    public Task<BpmnDesignerBinding?> GetBindingAsync(string elementId) =>
+        _canvas != null && CanvasLoadError == null ? _canvas.GetBindingAsync(elementId) : Task.FromResult<BpmnDesignerBinding?>(null);
+
+    /// <summary>
+    /// Makes <paramref name="binding"/> the binding of the element with <paramref name="elementId"/> in the designer's
+    /// document, as one undoable edit. Like every designer edit, it is sent with the next <see cref="SaveAsync"/>. While
+    /// the document is not <see cref="IsDocumentReady"/>, it is refused with <see cref="DocumentNotReadyRefusal"/>.
+    /// </summary>
+    public Task<BpmnDesignerSetBindingResult> SetBindingAsync(string elementId, BpmnDesignerBinding binding) =>
+        IsDocumentReady
+            ? _canvas!.SetBindingAsync(elementId, binding)
+            : Task.FromResult(new BpmnDesignerSetBindingResult(false, DocumentNotReadyRefusal));
 
     /// <summary>
     /// Sends the designer's document through the XML <c>PUT</c>, against the revision it was loaded or last saved as.

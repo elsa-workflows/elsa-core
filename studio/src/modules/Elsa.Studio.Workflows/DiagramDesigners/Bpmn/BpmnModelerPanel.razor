@@ -47,7 +47,7 @@
                 <MudText Typo="Typo.h6">@(string.IsNullOrWhiteSpace(element.Name) ? element.Id : element.Name)</MudText>
                 <MudText Typo="Typo.caption">@element.Id · @element.Type</MudText>
             </div>
-            <MudText Typo="Typo.body2" data-testid="bpmn-bindings-not-available">@Localizer["Choosing the activity that performs a task is not available in this designer yet."]</MudText>
+            <BpmnModelerBindingSection @key="element.Id" Session="@Session" Element="@element" WorkflowDefinition="@WorkflowDefinition" />
         }
         else
         {

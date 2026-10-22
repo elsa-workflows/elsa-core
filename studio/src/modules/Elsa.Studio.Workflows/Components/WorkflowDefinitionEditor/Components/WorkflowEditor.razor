@@ -83,7 +83,7 @@
         @if (_bpmnModelerSession is { } bpmnModelerSession)
         {
             @* The enabled BPMN designer edits the whole document; the panel reports on it and on the selected element. *@
-            <BpmnModelerPanel Session="@bpmnModelerSession" SaveRequested="@SaveBpmnModelerDefinitionAsync" ReloadRequested="@ReloadBpmnDocumentBackedDefinitionAsync"
+            <BpmnModelerPanel Session="@bpmnModelerSession" WorkflowDefinition="@_workflowDefinition" SaveRequested="@SaveBpmnModelerDefinitionAsync" ReloadRequested="@ReloadBpmnDocumentBackedDefinitionAsync"
                               VisiblePaneHeight="@_activityPropertiesPaneHeight" />
         }
         else if (_bpmnDocumentSession is { } bpmnDocumentSession)

@@ -1,3 +1,4 @@
+using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Studio.Workflows.Domain.Models.Bpmn;
 using Microsoft.AspNetCore.Components;
 
@@ -13,6 +14,9 @@ public partial class BpmnModelerPanel : IDisposable
 
     /// <summary>The document the designer edits.</summary>
     [Parameter, EditorRequired] public BpmnModelerSession Session { get; set; } = null!;
+
+    /// <summary>The workflow definition being edited, for input editors that read its variables.</summary>
+    [Parameter] public WorkflowDefinition? WorkflowDefinition { get; set; }
 
     /// <summary>Invoked to save the workflow, which is the only thing that writes the document back.</summary>
     [Parameter] public Func<Task>? SaveRequested { get; set; }
