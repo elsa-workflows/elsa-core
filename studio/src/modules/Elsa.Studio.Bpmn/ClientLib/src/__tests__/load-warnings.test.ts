@@ -115,6 +115,17 @@ describe('computeLoadWarnings', () => {
         ]);
     });
 
+    it('compares text exactly, but ignores whitespace between elements', () => {
+        const original = definitions('<bpmn:task id="A"><bpmn:documentation> Pay now </bpmn:documentation></bpmn:task>');
+        const saved = definitions(`<bpmn:task id="A">
+            <bpmn:documentation>Pay now</bpmn:documentation>
+        </bpmn:task>`);
+
+        expect(computeLoadWarnings(original, saved)).toEqual([
+            { kind: 'rewritten', message: "The text of a bpmn:documentation element inside 'A' changes.", elementId: 'A' }
+        ]);
+    });
+
     it('reports lost comments as dropped', async () => {
         const original = definitions('<!-- one --><bpmn:task id="Task" /><!-- two -->');
 
@@ -197,6 +208,23 @@ describe('computeLoadWarnings', () => {
                 { kind: 'dropped', message: "A bpmndi:BPMNLabel element inside 'Sub' is lost.", elementId: 'Sub' },
                 { kind: 'dropped', message: "The attribute 'name' of the diagram of 'Process_1' is lost.", elementId: 'Process_1' },
                 { kind: 'dropped', message: "A bpmndi:BPMNLabelStyle element inside 'Process_1' is lost.", elementId: 'Process_1' }
+            ]);
+        });
+
+        it('reports a second drawing of an element that a save loses', () => {
+            const original = definitions(content, diagram('D1', 'Process_1', shape('Sub', 100)) + diagram('D2', 'Process_1', shape('Sub', 400)));
+            const saved = definitions(content, diagram('D1', 'Process_1', shape('Sub', 100)));
+
+            expect(computeLoadWarnings(original, saved)).toEqual([
+                { kind: 'dropped', message: "A diagram layout of 'Sub' is lost.", elementId: 'Sub' }
+            ]);
+        });
+
+        it('reports the lost content of a second diagram of the same element', () => {
+            const named = (name: string) => `<bpmndi:BPMNDiagram id="${name}" name="${name}"><bpmndi:BPMNPlane id="${name}_plane" bpmnElement="Process_1" /></bpmndi:BPMNDiagram>`;
+
+            expect(computeLoadWarnings(definitions(content, named('First') + named('Second')), definitions(content, named('First')))).toEqual([
+                { kind: 'dropped', message: "A diagram of 'Process_1' is lost.", elementId: 'Process_1' }
             ]);
         });
 

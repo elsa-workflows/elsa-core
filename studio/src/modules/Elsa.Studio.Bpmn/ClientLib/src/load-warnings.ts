@@ -120,7 +120,8 @@ function canonical(element: Element, skip?: (child: Element) => boolean): Canoni
         }
     }
 
-    return { key: qualified(element), name: element.nodeName, attributes, children, text: text.trim() };
+    // Whitespace between elements is formatting; any other text is compared exactly, spaces included.
+    return { key: qualified(element), name: element.nodeName, attributes, children, text: text.trim() === '' ? '' : text };
 }
 
 /** Resolves a prefixed QName value (used for `xsi:type`) to `{uri}local`, so a renamed prefix is not a difference. */
@@ -207,35 +208,44 @@ interface Layout {
 }
 
 function compareLayout(before: Document, after: Document, warnings: BpmnLoadWarning[]): void {
-    const keptLayout = layoutOf(after);
+    const keptLayouts = layoutOf(after);
 
-    for (const [elementId, layout] of layoutOf(before)) {
-        const kept = keptLayout.get(elementId);
-        if (!kept) {
-            warnings.push(warning('dropped', `The diagram layout of '${elementId}' is lost.`, elementId));
-            continue;
+    for (const [elementId, layouts] of layoutOf(before)) {
+        // An element can be drawn more than once, for example in two diagrams. Each drawing is matched to one the save
+        // keeps on the same plane, else to any it keeps; one left without a match is lost.
+        const unmatched = [...(keptLayouts.get(elementId) ?? [])];
+        for (const layout of layouts) {
+            const samePlane = unmatched.findIndex(kept => kept.plane === layout.plane);
+            const kept = unmatched.splice(samePlane >= 0 ? samePlane : 0, 1)[0];
+            if (kept) compareDrawing(layout, kept, warnings);
+            else warnings.push(warning('dropped', `${layouts.length > 1 ? 'A' : 'The'} diagram layout of '${elementId}' is lost.`, elementId));
         }
-
-        const geometryChanges = kept.geometry.length !== layout.geometry.length || kept.geometry.some((value, index) => value !== layout.geometry[index]);
-        if (kept.plane !== layout.plane) {
-            const how = geometryChanges ? 'and its position or size changes' : 'unchanged';
-            warnings.push(warning('rewritten', `The diagram layout of '${elementId}' moves to the diagram of '${kept.plane ?? '(none)'}', ${how}.`, elementId));
-        } else if (geometryChanges) {
-            warnings.push(warning('rewritten', `The diagram layout of '${elementId}' changes.`, elementId));
-        }
-
-        compareElements(layout.content, kept.content, elementId, warnings, `the diagram layout of '${elementId}'`);
     }
 
     // What diagrams and planes hold besides shapes and edges, such as label styles and foreign content. A diagram is
-    // matched by the element its plane draws, so one that moves keeps its match.
+    // matched by the element its plane draws, so one that moves keeps its match; diagrams of the same element are
+    // matched in document order.
     const keptDiagrams = diagramsOf(after);
-    for (const [elementId, diagram] of diagramsOf(before)) {
-        const subject = `the diagram of '${elementId}'`;
-        const kept = keptDiagrams.get(elementId);
-        if (kept) compareElements(diagram, kept, elementId, warnings, subject);
-        else if (hasOwnContent(diagram)) warnings.push(warning('dropped', `The diagram of '${elementId}' is lost.`, elementId));
+    for (const [elementId, diagrams] of diagramsOf(before)) {
+        const kept = keptDiagrams.get(elementId) ?? [];
+        diagrams.forEach((diagram, index) => {
+            if (kept[index]) compareElements(diagram, kept[index], elementId, warnings, `the diagram of '${elementId}'`);
+            else if (hasOwnContent(diagram)) warnings.push(warning('dropped', `${diagrams.length > 1 ? 'A' : 'The'} diagram of '${elementId}' is lost.`, elementId));
+        });
     }
+}
+
+function compareDrawing(layout: Layout, kept: Layout, warnings: BpmnLoadWarning[]): void {
+    const elementId = layout.elementId;
+    const geometryChanges = kept.geometry.length !== layout.geometry.length || kept.geometry.some((value, index) => value !== layout.geometry[index]);
+    if (kept.plane !== layout.plane) {
+        const how = geometryChanges ? 'and its position or size changes' : 'unchanged';
+        warnings.push(warning('rewritten', `The diagram layout of '${elementId}' moves to the diagram of '${kept.plane ?? '(none)'}', ${how}.`, elementId));
+    } else if (geometryChanges) {
+        warnings.push(warning('rewritten', `The diagram layout of '${elementId}' changes.`, elementId));
+    }
+
+    compareElements(layout.content, kept.content, elementId, warnings, `the diagram layout of '${elementId}'`);
 }
 
 /** Whether a diagram holds anything besides a plane naming the element it draws: a name, a label style, foreign content. */
@@ -255,24 +265,25 @@ function isBpmnDi(element: Element, localName: string): boolean {
 }
 
 /** Each diagram's own content, without its shapes and edges, keyed by the element its plane draws. */
-function diagramsOf(document: Document): Map<string, CanonicalElement> {
-    const diagrams = new Map<string, CanonicalElement>();
+function diagramsOf(document: Document): Map<string, CanonicalElement[]> {
+    const diagrams = new Map<string, CanonicalElement[]>();
     for (const element of Array.from(document.getElementsByTagNameNS(BPMNDI, 'BPMNDiagram'))) {
         const plane = Array.from(element.children).find(child => isBpmnDi(child, 'BPMNPlane'));
         const elementId = plane?.getAttribute('bpmnElement');
-        if (elementId && !diagrams.has(elementId)) diagrams.set(elementId, canonical(element, isDrawing));
+        if (elementId) diagrams.set(elementId, [...(diagrams.get(elementId) ?? []), canonical(element, isDrawing)]);
     }
     return diagrams;
 }
 
-function layoutOf(document: Document): Map<string, Layout> {
-    const layouts = new Map<string, Layout>();
+/** Every shape and edge, grouped by the element it draws, in document order. */
+function layoutOf(document: Document): Map<string, Layout[]> {
+    const layouts = new Map<string, Layout[]>();
     for (const localName of ['BPMNShape', 'BPMNEdge']) {
         for (const element of Array.from(document.getElementsByTagNameNS(BPMNDI, localName))) {
             const elementId = element.getAttribute('bpmnElement');
-            if (!elementId || layouts.has(elementId)) continue;
-
-            layouts.set(elementId, { elementId, plane: planeOf(element), geometry: geometryOf(element), content: canonical(element, isGeometry) });
+            if (!elementId) continue;
+            const layout = { elementId, plane: planeOf(element), geometry: geometryOf(element), content: canonical(element, isGeometry) };
+            layouts.set(elementId, [...(layouts.get(elementId) ?? []), layout]);
         }
     }
     return layouts;
