@@ -14,6 +14,8 @@ on:
       - 'scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/**'
       - 'studio/test/browser/DesignerHover/**'
       - 'studio/test/browser/BpmnDesigner/**'
+      # host.spec.ts runs the Blazor host's designer shim, which is hand-written rather than built from a ClientLib.
+      - 'studio/src/modules/Elsa.Studio.Bpmn/wwwroot/**'
       # The designer suite checks that Elsa imports a designer's saved copy of each test asset as it imports the original.
       - 'core/src/modules/Elsa.Bpmn/**'
       - 'core/src/modules/Elsa.Bpmn.Interchange/**'

@@ -9,12 +9,12 @@ const here = dirname(fileURLToPath(import.meta.url));
  * The designer under test: a directory holding its module and stylesheet. Defaults to the bpmn-js designer's build
  * output. Every designer passes the same suite, so another designer runs it by pointing these at its own build.
  */
-const designerDirectory = resolve(process.env.BPMN_DESIGNER_DIRECTORY ?? join(here, '../../../src/modules/Elsa.Studio.Bpmn.BpmnJs/wwwroot'));
-const designerModule = process.env.BPMN_DESIGNER_MODULE ?? 'bpmn-js-designer.js';
-const designerStylesheet = process.env.BPMN_DESIGNER_STYLESHEET ?? 'bpmn-js-designer.css';
+export const designerDirectory = resolve(process.env.BPMN_DESIGNER_DIRECTORY ?? join(here, '../../../src/modules/Elsa.Studio.Bpmn.BpmnJs/wwwroot'));
+export const designerModule = process.env.BPMN_DESIGNER_MODULE ?? 'bpmn-js-designer.js';
+export const designerStylesheet = process.env.BPMN_DESIGNER_STYLESHEET ?? 'bpmn-js-designer.css';
 
 const ORIGIN = 'http://designer.test';
-const CONTENT_TYPES: Record<string, string> = {
+export const CONTENT_TYPES: Record<string, string> = {
     '.js': 'text/javascript', '.css': 'text/css', '.woff2': 'font/woff2', '.woff': 'font/woff', '.ttf': 'font/ttf', '.eot': 'application/vnd.ms-fontobject', '.svg': 'image/svg+xml'
 };
 

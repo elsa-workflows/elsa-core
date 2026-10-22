@@ -140,6 +140,29 @@ Before the first save after a `load` that reported any `dropped` warning, the ho
 after the user acknowledges them. `rewritten` warnings need no acknowledgement. A new `load` starts over. The designer
 takes no part in this: the host owns it (`BpmnSaveGate` in `Elsa.Studio.Bpmn`).
 
+## Hosting a designer in the Blazor Studio
+
+A designer module also ships a registration method, such as `AddBpmnJsDesigner()` in `Elsa.Studio.Bpmn.BpmnJs`, that
+enables it with a `BpmnDesignerDescriptor`: its id and the URLs of its module and stylesheet, relative to the page's base
+URL. `BpmnDesignerResolver` in `Elsa.Studio.Bpmn` picks the designer a host uses:
+
+| Designers enabled | Result |
+| --- | --- |
+| None | None. The caller keeps the BPMN view it has. |
+| One | That one. `BpmnDesignerOptions.DesignerId`, when set, must name it. |
+| Several | The one `BpmnDesignerOptions.DesignerId` names. Leaving it unset is an error. |
+
+A choice that names no enabled designer is an error, and so are two enabled designers that declare the same id.
+Enabling the same designer twice enables it once. Errors fail the host at startup, through an `IStartupTask`, rather
+than when a BPMN workflow is first opened.
+
+`BpmnCanvasHost` draws with the chosen designer. On its first render it imports `bpmn-canvas-host.js`, which imports the
+designer's module on demand and links its stylesheet once. The shim refuses a module whose `designerId` differs from the
+descriptor's or whose `contractVersion` is not `1`; the component then shows why. Its methods wrap the designer's and
+wait until the designer exists, and it raises `Changed` and `SelectionChanged` for the designer's events. It does not
+save on its own; the code around it loads, saves and applies `BpmnSaveGate`. `studio/test/browser/BpmnDesigner/host.spec.ts`
+runs the shim against the designer under test.
+
 ## Versioning
 
 A change that an existing designer or host could not handle is a new contract version. Examples are removing or

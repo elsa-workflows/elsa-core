@@ -16,6 +16,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ProjectReference Include="../Elsa.Studio.Bpmn/Elsa.Studio.Bpmn.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
         <!-- ClientLib is built by npm into wwwroot, not by MSBuild; keep its manifests and dependencies out of the project. -->
         <Content Remove="ClientLib\**"/>
         <None Remove="ClientLib\**"/>
