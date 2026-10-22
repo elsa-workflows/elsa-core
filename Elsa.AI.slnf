@@ -105,6 +105,7 @@
       "extensions/src/agents/Elsa.Agents.Persistence/Elsa.Agents.Persistence.csproj",
       "extensions/src/agents/Elsa.Agents/Elsa.Agents.csproj",
       "extensions/src/agents/Elsa.Studio.Agents/Elsa.Studio.Agents.csproj",
+      "extensions/test/modules/agents/Elsa.Agents.Core.UnitTests/Elsa.Agents.Core.UnitTests.csproj",
       "extensions/test/modules/agents/Elsa.Studio.Agents.Tests/Elsa.Studio.Agents.Tests.csproj",
       "extensions/test/workbench/Elsa.TestServer.Web/Elsa.TestServer.Web.csproj",
       "studio/src/framework/Elsa.Studio.Core/Elsa.Studio.Core.csproj",
