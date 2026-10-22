@@ -68,7 +68,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         IIdentityGraphService identityGraphService,
         ITenantAccessor tenantAccessor,
         ILogger<DefaultWorkflowDefinitionStorePopulator> logger,
-        IClrWorkflowDefinitionTenantRestamper? clrTenantRestamper)
+        IClrWorkflowDefinitionTenantRestamper? clrTenantRestamper = null)
     {
         _workflowDefinitionProviders = workflowDefinitionProviders;
         _triggerIndexer = triggerIndexer;
@@ -159,7 +159,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
             var workflowDefinition = await AddOrUpdateCoreAsync(materializedWorkflow, cancellationToken);
             return Result.Success(workflowDefinition);
         }
-        catch (Exception e) when (e is not OperationCanceledException)
+        catch (Exception e) when (!(e is OperationCanceledException && cancellationToken.IsCancellationRequested))
         {
             if (e is InvalidOperationException && e.Message.Contains("already exists in another tenant", StringComparison.Ordinal))
             {
@@ -379,7 +379,7 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
                 identity.TenantId ?? Tenant.AgnosticTenantId,
                 cancellationToken);
         }
-        catch (Exception e) when (e is not OperationCanceledException)
+        catch (Exception e) when (!(e is OperationCanceledException && cancellationToken.IsCancellationRequested))
         {
             _logger.LogError(e,
                 "Skipping CLR tenant re-stamp for workflow {WorkflowId} (Version: {Version}). Population continues.",
