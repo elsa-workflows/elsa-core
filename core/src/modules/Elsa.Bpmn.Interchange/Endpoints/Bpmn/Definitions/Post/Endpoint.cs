@@ -47,7 +47,9 @@ internal sealed class Post(BpmnInterchangeDocumentService documentService) : Els
             cancellationToken);
 
         if (result is null)
+        {
             return;
+        }
 
         var definition = result.ImportResult.WorkflowDefinition;
         HttpContext.Response.Headers.ETag = BpmnDocumentETag.From(definition);
