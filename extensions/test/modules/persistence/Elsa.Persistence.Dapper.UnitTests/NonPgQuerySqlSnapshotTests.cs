@@ -213,7 +213,7 @@ public sealed class NonPgQuerySqlSnapshotTests
             "",
             "",
             ")"),
-        ["upsert"] = Join("INSERT OR REPLACE INTO WorkflowInstances (Id, Name, Status) VALUES (@Id, @Name, @Status);"),
+        ["upsert"] = Join("INSERT INTO WorkflowInstances (Id, Name, Status) VALUES (@Id, @Name, @Status) ON CONFLICT(Id) DO UPDATE SET Name = @Name, Status = @Status;"),
     });
 
     private static readonly IReadOnlyDictionary<string, string> SqlServerExpected = Merge(SharedExpected, new Dictionary<string, string>

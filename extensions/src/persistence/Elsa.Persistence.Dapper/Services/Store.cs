@@ -1,3 +1,4 @@
+using System.Data;
 using System.Linq.Expressions;
 using Dapper;
 using Elsa.Common.Entities;
@@ -349,10 +350,11 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
     /// <param name="cancellationToken">The cancellation token.</param>
     public async Task SaveAsync(T record, CancellationToken cancellationToken = default)
     {
-        using var connection = dbConnectionProvider.GetConnection();
         SetTenantId(record);
+        using var connection = dbConnectionProvider.GetConnection();
         var query = new ParameterizedQuery(dbConnectionProvider.Dialect).Upsert(TableName, PrimaryKey, record);
-        await query.ExecuteAsync(connection);
+        var affected = await query.ExecuteAsync(connection);
+        await ThrowIfCrossTenantIdCollisionAsync(record, affected, connection);
     }
 
     /// <summary>
@@ -362,24 +364,8 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
     /// <param name="cancellationToken">The cancellation token.</param>
     public async Task SaveManyAsync(IEnumerable<T> records, CancellationToken cancellationToken = default)
     {
-        var recordsList = records.ToList();
-
-        if (!recordsList.Any())
-            return;
-
-        var query = new ParameterizedQuery(dbConnectionProvider.Dialect);
-        var currentIndex = 0;
-
-        foreach (var record in recordsList)
-        {
-            var index = currentIndex;
-            SetTenantId(record);
-            query.Upsert(TableName, PrimaryKey, record, field => $"{field}_{index}");
-            currentIndex++;
-        }
-
-        using var connection = dbConnectionProvider.GetConnection();
-        await query.ExecuteAsync(connection);
+        foreach (var record in records)
+            await SaveAsync(record, cancellationToken);
     }
 
     /// <summary>
@@ -554,8 +540,24 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
         if (record is not Record recordWithTenant)
             return;
 
-        var tenant = tenantAccessor.Tenant;
-        var tenantId = tenant?.Id;
-        recordWithTenant.TenantId = tenantId;
+        // Stamp the ambient tenant. Do not trust a caller-supplied TenantId (see #9010).
+        recordWithTenant.TenantId = tenantAccessor.Tenant?.Id;
+    }
+
+    private async Task ThrowIfCrossTenantIdCollisionAsync(T record, int affected, IDbConnection connection)
+    {
+        if (affected > 0 || record is not Record incoming)
+            return;
+
+        var lookup = new ParameterizedQuery(dbConnectionProvider.Dialect).From(TableName);
+        lookup.Is(PrimaryKey, incoming.Id);
+        var existing = await lookup.FirstOrDefaultAsync<T>(connection);
+        if (existing is not Record owned)
+            return;
+
+        if (string.Equals(owned.TenantId ?? string.Empty, incoming.TenantId ?? string.Empty, StringComparison.Ordinal))
+            return;
+
+        throw new InvalidOperationException($"A record with ID '{incoming.Id}' already exists in another tenant.");
     }
 }
