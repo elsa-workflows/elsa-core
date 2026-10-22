@@ -17,6 +17,15 @@ try {
   cleanup.push(first.definitionId);
   const second = (await client.workflowDefinitions.save({ model: { ...first, description: 'Second version' }, publish: true })).workflowDefinition;
   assert.equal(second.version, 2);
+
+  const reverted = await client.workflowDefinitions.revert(first.definitionId, 1);
+  assert.equal(reverted.definitionId, first.definitionId);
+  assert.equal(reverted.version, 3);
+  const publishedChild = await client.workflowDefinitions.publish(first.definitionId);
+  assert.equal(publishedChild.workflowDefinition.isPublished, true);
+  assert.equal(publishedChild.workflowDefinition.version, 3);
+  assert.equal((await client.workflowDefinitions.getByDefinitionId(first.definitionId)).id, publishedChild.workflowDefinition.id);
+
   const descriptors = await client.descriptors.activities(true);
   const descriptor = descriptors.items.find(item => item.customProperties?.WorkflowDefinitionId === first.definitionId && item.version === 2);
   assert(descriptor, 'Reusable workflow descriptor version 2 missing');
@@ -46,12 +55,13 @@ try {
   assert.equal(retracted.definitionId, parent.definitionId);
   assert.equal(retracted.isPublished, false);
   assert.equal((await client.workflowDefinitions.getByDefinitionId(parent.definitionId)).isPublished, false);
-  const reverted = await client.workflowDefinitions.revert(first.definitionId, 1);
-  assert.equal(reverted.definitionId, first.definitionId);
-  assert.equal(reverted.version, 3);
-  assert.equal((await client.workflowDefinitions.getByDefinitionId(first.definitionId)).id, reverted.id);
+
   const updated = await client.workflowDefinitions.updateReferences(first.definitionId);
   assert(updated.affectedWorkflows.includes(parent.name));
+  const reloaded = await client.workflowDefinitions.getByDefinitionId(parent.definitionId);
+  const updatedChild = reloaded.root.activities.find(item => item.id === child.id);
+  assert.equal(updatedChild.workflowDefinitionVersionId, publishedChild.workflowDefinition.id);
+  assert.equal(updatedChild.version, 3);
   console.log('PASS: actual Core API round-trips commit, logging strategy/expression, resilience expression, task mode, custom data, and the reusable activity version pair; dedicated publish, retract, revert and update-references actions accept their requests and return the expected models');
 } catch (error) {
   primaryError = error;
