@@ -56,10 +56,25 @@ public class JintOptions
     /// The maximum recursion depth allowed within a single JavaScript expression. Set to <c>null</c> (the default) to remove the limit.
     /// </summary>
     /// <remarks>
-    /// Unbounded recursion in a script exhausts the CLR stack, which cannot be recovered from. Hosts that evaluate
-    /// user-defined workflows are encouraged to set a limit.
+    /// Unbounded recursion in a script exhausts the CLR stack, which cannot be recovered from. A count has to suit the
+    /// smallest stack the host might run on: in-process IIS hosting reserves 512 KB per thread, which survives only
+    /// about 130 calls through callbacks. A limit that low breaks legitimate scripts on larger stacks; a higher one
+    /// does not prevent a crash. Prefer the default <see cref="EnableStackOverflowGuard"/>, which measures remaining
+    /// stack, and set this only when you also want a hard frame count.
     /// </remarks>
     public int? MaxRecursionDepth { get; set; }
+
+    /// <summary>
+    /// When <c>true</c> (the default), Jint checks remaining native stack before entering a script function and
+    /// raises a catchable <c>RangeError</c> instead of overflowing the CLR stack.
+    /// </summary>
+    /// <remarks>
+    /// A .NET <see cref="StackOverflowException"/> cannot be caught and ends the host process. The guard measures
+    /// remaining stack rather than counting calls, so it is correct on every host — including in-process IIS, which
+    /// reserves 512 KB per thread. Set to <c>false</c> only when every script is trusted and you can bound recursion
+    /// yourself.
+    /// </remarks>
+    public bool EnableStackOverflowGuard { get; set; } = true;
 
     /// <summary>
     /// The timeout for script caching.

@@ -46,6 +46,8 @@ elsa.UseJavaScript(options =>
 });
 ```
 
+By default the evaluator applies a 30-second execution timeout and Jint's native stack-overflow guard, so a runaway loop or unbounded recursion fails the expression instead of occupying the thread forever or ending the host process. [JintOptions](../../src/modules/Elsa.Expressions.JavaScript/Options/JintOptions.cs) also exposes opt-in statement, memory and recursion-count limits.
+
 Additional JavaScript libraries are in [Elsa.Expressions.JavaScript.Libraries](../../src/modules/Elsa.Expressions.JavaScript.Libraries), including Lodash, Lodash FP, and Moment feature packages.
 
 ## CSharp
