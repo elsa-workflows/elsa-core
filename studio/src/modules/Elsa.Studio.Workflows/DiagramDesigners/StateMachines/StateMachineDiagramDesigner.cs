@@ -54,6 +54,7 @@ public class StateMachineDiagramDesigner(ILocalizer localizer) : IDiagramDesigne
     public RenderFragment DisplayDesigner(DisplayContext context)
     {
         var stateMachine = context.Activity;
+        var documentBackendContextKey = NativeCompensationDraftDocumentContext.GetBackendContextKey(context.WorkflowDefinition) ?? "";
         _rootActivity = stateMachine;
         var sequence = 0;
 
@@ -63,6 +64,7 @@ public class StateMachineDiagramDesigner(ILocalizer localizer) : IDiagramDesigne
             builder.SetKey(_id);
             builder.AddAttribute(sequence++, nameof(StateMachineDesignerWrapper.StateMachine), stateMachine);
             builder.AddAttribute(sequence++, nameof(StateMachineDesignerWrapper.IsReadOnly), context.IsReadOnly);
+            builder.AddAttribute(sequence++, nameof(StateMachineDesignerWrapper.DocumentBackendContextKey), documentBackendContextKey);
             builder.AddAttribute(sequence++, nameof(StateMachineDesignerWrapper.ActivityStats), context.ActivityStats);
             builder.AddAttribute(sequence++, nameof(StateMachineDesignerWrapper.ActivitySelected), context.ActivitySelectedCallback);
             builder.AddAttribute(sequence++, nameof(StateMachineDesignerWrapper.ActivityDoubleClick), context.ActivityDoubleClickCallback);

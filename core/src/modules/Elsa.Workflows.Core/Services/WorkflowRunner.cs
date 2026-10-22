@@ -1,6 +1,7 @@
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Activities.Compensation;
 using Elsa.Workflows.CommitStates;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
@@ -74,6 +75,8 @@ public class WorkflowRunner(
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(WorkflowGraph workflowGraph, RunWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
+        CompensationScopeExecutionGuard.DemandExecutable(workflowGraph);
+
         // Set up a workflow execution context.
         var instanceId = options?.WorkflowInstanceId ?? identityGenerator.GenerateId();
         await PreflightAsync(instanceId, cancellationToken);
@@ -122,6 +125,7 @@ public class WorkflowRunner(
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(WorkflowGraph workflowGraph, WorkflowState workflowState, RunWorkflowOptions? options = null, CancellationToken cancellationToken = default)
     {
+        CompensationScopeExecutionGuard.DemandExecutable(workflowGraph);
         await PreflightAsync(workflowState.Id, cancellationToken);
         // Create a workflow execution context.
         var input = options?.Input;
@@ -215,6 +219,7 @@ public class WorkflowRunner(
     /// <inheritdoc />
     public async Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)
     {
+        CompensationScopeExecutionGuard.DemandExecutable(workflowExecutionContext);
         var guard = serviceProvider.GetService(typeof(IWorkflowExecutionGuard)) as IWorkflowExecutionGuard ?? workflowExecutionContext.GetService<IWorkflowExecutionGuard>();
         IWorkflowExecutionAuthorization? authorization = null;
         if (guard != null)
@@ -248,6 +253,9 @@ public class WorkflowRunner(
             await notificationSender.SendAsync(new WorkflowStarted(workflow, workflowExecutionContext), cancellationToken);
         }
 
+        // Notifications can mutate the graph after the initial admission check.
+        CompensationScopeExecutionGuard.DemandExecutable(workflowExecutionContext);
+
         // Authority denial is not a business workflow fault. Keep these checks outside the
         // execution catch/telemetry, after callbacks and before any middleware entry.
         if (authorization != null)
@@ -255,6 +263,8 @@ public class WorkflowRunner(
             authorizedInvocation!.Value.Validate();
             await authorization.RevalidateAsync(cancellationToken);
             authorizedInvocation!.Value.Validate();
+            // Revalidation is a host callback and can mutate the live graph after notification checks.
+            CompensationScopeExecutionGuard.DemandExecutable(workflowExecutionContext);
         }
 
         var telemetryScope = WorkflowInstrumentation.StartWorkflow(workflowExecutionContext, isStarting);

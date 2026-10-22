@@ -1,4 +1,5 @@
 using Elsa.Workflows.Middleware.Activities;
+using Elsa.Workflows.Activities.Compensation;
 
 namespace Elsa.Workflows.Pipelines.ActivityExecution;
 
@@ -53,7 +54,11 @@ public class ActivityExecutionPipeline : IActivityExecutionPipeline
     public ActivityMiddlewareDelegate Pipeline => _pipeline ??= CreateDefaultPipeline();
 
     /// <inheritdoc />
-    public async Task ExecuteAsync(ActivityExecutionContext context) => await Pipeline(context);
+    public async Task ExecuteAsync(ActivityExecutionContext context)
+    {
+        CompensationScopeExecutionGuard.DemandExecutable(context.WorkflowExecutionContext);
+        await Pipeline(context);
+    }
         
     internal async ValueTask DemandPublicInvocationAsync(WorkflowExecutionContext context)
     {
@@ -66,6 +71,7 @@ public class ActivityExecutionPipeline : IActivityExecutionPipeline
 
     internal ValueTask ExecuteAuthorizedAsync(ActivityExecutionContext context)
     {
+        CompensationScopeExecutionGuard.DemandExecutable(context.WorkflowExecutionContext);
         if (!WorkflowExecutionPhase.Contains(context.WorkflowExecutionContext))
         {
             throw new InvalidOperationException("The authorized activity invocation has unwound.");

@@ -1,8 +1,13 @@
 using Elsa.Common;
+using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
 using Elsa.Testing.Shared;
+using Elsa.Workflows;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Activities.Compensation;
 using Elsa.Workflows.CommitStates;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
 using Elsa.Workflows.Notifications;
 using Elsa.Workflows.Pipelines.WorkflowExecution;
 using Elsa.Workflows.Pipelines.ActivityExecution;
@@ -203,6 +208,304 @@ public class WorkflowExecutionGuardTests : IAsyncLifetime
         Assert.True(calls > 0);
     }
 
+    [Fact]
+    public async Task RunnerRejectsTypedOpaqueAndIdentityOnlyScopesBeforeContextCreation()
+    {
+        var serializationServices = new ServiceCollection();
+        serializationServices.AddElsa();
+        await using var serializationProvider = serializationServices.BuildServiceProvider();
+        var scopeSerializer = serializationProvider.GetRequiredService<IActivitySerializer>();
+        const string aliasedScopeJson = """{"id":"scope-alias","Type":"Elsa.CompensationScope","version":1,"draftSchemaVersion":1,"steps":[]}""";
+        var aliasedScope = Assert.IsType<NotFoundActivity>(scopeSerializer.Deserialize(aliasedScopeJson));
+        Assert.Equal(aliasedScopeJson, aliasedScope.OriginalActivityJson);
+
+        foreach (var scope in new IActivity[]
+                 {
+                     new CompensationScope(),
+                     new CompensationScope { Type = "Elsa.OtherActivity" },
+                     new NotFoundActivity(missingTypeName: CompensationScope.ActivityTypeName) { OriginalActivityJson = "not-json" },
+                     new NotFoundActivity(missingTypeName: CompensationScope.ActivityTypeName),
+                     aliasedScope
+                 })
+        {
+            var scopeNode = AddGraphActivity(scope);
+            var identityGenerator = Substitute.For<IIdentityGenerator>();
+            var notifications = Substitute.For<INotificationSender>();
+            var pipeline = new WorkflowExecutionPipeline(_context.ServiceProvider, Configure);
+            var runner = CreateRunner(pipeline, notifications, new WorkflowLoggerStateGenerator(), identityGenerator);
+
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => runner.RunAsync(_context.WorkflowGraph));
+
+            Assert.Equal(CompensationScope.DraftOnlyRefusalMessage, exception.Message);
+            identityGenerator.DidNotReceiveWithAnyArgs().GenerateId();
+            await notifications.DidNotReceiveWithAnyArgs().SendAsync(default!, default);
+            _context.WorkflowGraph.Nodes.Remove(scopeNode);
+        }
+    }
+
+    [Fact]
+    public async Task RunnerRejectsScopeAlreadyInExecutionContextBeforeNotifications()
+    {
+        var scopeNode = AddGraphActivity(new CompensationScope());
+        var notifications = Substitute.For<INotificationSender>();
+        var loggerState = Substitute.For<ILoggerStateGenerator<WorkflowExecutionContext>>();
+        var runner = CreateRunner(new WorkflowExecutionPipeline(_context.ServiceProvider, Configure), notifications, loggerState);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => runner.RunAsync(_context));
+
+        await notifications.DidNotReceiveWithAnyArgs().SendAsync(default!, default);
+        loggerState.DidNotReceiveWithAnyArgs().GenerateLoggerState(default!);
+        _context.WorkflowGraph.Nodes.Remove(scopeNode);
+    }
+
+    [Fact]
+    public async Task RunnerRechecksWholeGraphAfterNotificationsBeforeMiddleware()
+    {
+        var notifications = Substitute.For<INotificationSender>();
+        notifications.SendAsync(Arg.Any<INotification>(), Arg.Any<CancellationToken>()).Returns(call =>
+        {
+            if (call.Arg<INotification>() is WorkflowExecuting)
+                AddGraphActivity(new NotFoundActivity(missingTypeName: CompensationScope.ActivityTypeName) { OriginalActivityJson = "not-json" });
+
+            return Task.CompletedTask;
+        });
+        var middlewareCalls = 0;
+        WorkflowMiddlewareDelegate Count(WorkflowMiddlewareDelegate next) => async context =>
+        {
+            middlewareCalls++;
+            await next(context);
+        };
+        var pipeline = new WorkflowExecutionPipeline(_context.ServiceProvider, builder => builder.Use(Count));
+        var runner = CreateRunner(pipeline, notifications, new WorkflowLoggerStateGenerator());
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => runner.RunAsync(_context));
+
+        Assert.Equal(CompensationScope.DraftOnlyRefusalMessage, exception.Message);
+        Assert.Equal(0, middlewareCalls);
+        await notifications.Received(1).SendAsync(Arg.Is<INotification>(x => x is WorkflowExecuting), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RunnerRechecksAfterAuthorizationRevalidationBeforeMiddleware()
+    {
+        var middlewareCalls = 0;
+        WorkflowMiddlewareDelegate Count(WorkflowMiddlewareDelegate next) => async context =>
+        {
+            middlewareCalls++;
+            await next(context);
+        };
+        _guard.AuthorizeRunner = true;
+        _guard.Ticket.OnRevalidate = () => AddGraphActivity(new CompensationScope());
+        var pipeline = new WorkflowExecutionPipeline(_context.ServiceProvider, builder => builder.Use(Count));
+        var runner = CreateRunner(pipeline, Substitute.For<INotificationSender>(), new WorkflowLoggerStateGenerator());
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => runner.RunAsync(_context));
+
+        Assert.Equal(CompensationScope.DraftOnlyRefusalMessage, exception.Message);
+        Assert.Equal(1, _guard.Ticket.Revalidations);
+        Assert.Equal(0, middlewareCalls);
+    }
+
+    [Theory]
+    [InlineData("not-json")]
+    [InlineData("null")]
+    [InlineData("[]")]
+    [InlineData("42")]
+    [InlineData("\"future\"")]
+    [InlineData("{\"type\":\"Elsa.UnknownActivity\",\"originalActivityJson\":\"null\"}")]
+    [InlineData("{\"type\":\"Elsa.UnknownActivity\",\"originalActivityJson\":\"\\\"future\\\"\"}")]
+    public async Task WorkflowPublicDelegatesCheckBeforeHostAuthorizationAndUseCurrentGraphAtInvocation(string ordinaryOriginalActivityJson)
+    {
+        var calls = 0;
+        WorkflowMiddlewareDelegate Count(WorkflowMiddlewareDelegate next) => context =>
+        {
+            calls++;
+            return next(context);
+        };
+        var pipeline = new WorkflowExecutionPipeline(_context.ServiceProvider, builder => builder.Use(Count));
+        var configured = pipeline.Setup(builder => builder.Use(Count));
+        var builder = new WorkflowExecutionPipelineBuilder(_context.ServiceProvider);
+        builder.Use(Count);
+        var built = builder.Build();
+        var cachedBuilder = new WorkflowExecutionPipelineBuilder(_context.ServiceProvider);
+        cachedBuilder.Use(Count);
+        var cached = cachedBuilder.Build();
+        WorkflowMiddlewareDelegate[] delegates = [pipeline.Pipeline, configured, built, cached];
+
+        foreach (var activity in new IActivity[]
+                 {
+                     new CompensationScope(),
+                     new NotFoundActivity(missingTypeName: CompensationScope.ActivityTypeName) { OriginalActivityJson = "not-json" }
+                 })
+        {
+            var node = AddGraphActivity(activity);
+            var authorizationCalls = _guard.AuthorizationCalls;
+            foreach (var invoke in delegates)
+            {
+                var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => invoke(_context).AsTask());
+                Assert.Equal(CompensationScope.DraftOnlyRefusalMessage, exception.Message);
+            }
+
+            Assert.Equal(authorizationCalls, _guard.AuthorizationCalls);
+            Assert.Equal(0, calls);
+            _context.WorkflowGraph.Nodes.Remove(node);
+        }
+
+        foreach (var invoke in delegates)
+            await invoke(_context);
+        Assert.True(calls > 0);
+        var unrelatedUnknown = AddGraphActivity(new NotFoundActivity(missingTypeName: "Elsa.UnknownActivity") { OriginalActivityJson = ordinaryOriginalActivityJson });
+        foreach (var invoke in delegates)
+            await invoke(_context);
+        Assert.True(calls > delegates.Length);
+        _context.WorkflowGraph.Nodes.Remove(unrelatedUnknown);
+    }
+
+    [Fact]
+    public async Task WorkflowDelegateRechecksAfterHostAuthorizationMutatesGraph()
+    {
+        var calls = 0;
+        WorkflowMiddlewareDelegate Count(WorkflowMiddlewareDelegate next) => context =>
+        {
+            calls++;
+            return next(context);
+        };
+        var pipeline = new WorkflowExecutionPipeline(_context.ServiceProvider, builder => builder.Use(Count));
+        _guard.OnAuthorize = () => AddGraphActivity(new NotFoundActivity(missingTypeName: CompensationScope.ActivityTypeName) { OriginalActivityJson = "not-json" });
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => pipeline.Pipeline(_context).AsTask());
+
+        Assert.Equal(CompensationScope.DraftOnlyRefusalMessage, exception.Message);
+        Assert.Equal(1, _guard.AuthorizationCalls);
+        Assert.Equal(0, calls);
+    }
+
+    [Fact]
+    public async Task ActivityPublicDelegatesCheckBeforeHostAuthorizationAndUseCurrentGraphAtInvocation()
+    {
+        var calls = 0;
+        ActivityMiddlewareDelegate Count(ActivityMiddlewareDelegate next) => context =>
+        {
+            calls++;
+            return next(context);
+        };
+        var pipeline = new ActivityExecutionPipeline(_context.ServiceProvider, builder => builder.Use(Count));
+        var configured = pipeline.Setup(builder => builder.Use(Count));
+        var builder = new ActivityExecutionPipelinePipelineBuilder(_context.ServiceProvider);
+        builder.Use(Count);
+        var built = builder.Build();
+        var cachedBuilder = new ActivityExecutionPipelinePipelineBuilder(_context.ServiceProvider);
+        cachedBuilder.Use(Count);
+        var cached = cachedBuilder.Build();
+        ActivityMiddlewareDelegate[] delegates = [pipeline.Pipeline, configured, built, cached];
+
+        foreach (var activity in new IActivity[]
+                 {
+                     new CompensationScope(),
+                     new NotFoundActivity(missingTypeName: CompensationScope.ActivityTypeName) { OriginalActivityJson = "not-json" }
+                 })
+        {
+            var node = AddGraphActivity(activity);
+            var authorizationCalls = _guard.AuthorizationCalls;
+            foreach (var invoke in delegates)
+            {
+                var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => invoke(_activityContext).AsTask());
+                Assert.Equal(CompensationScope.DraftOnlyRefusalMessage, exception.Message);
+            }
+
+            Assert.Equal(authorizationCalls, _guard.AuthorizationCalls);
+            Assert.Equal(0, calls);
+            _context.WorkflowGraph.Nodes.Remove(node);
+        }
+
+        foreach (var invoke in delegates)
+            await invoke(_activityContext);
+        Assert.True(calls > 0);
+    }
+
+    [Fact]
+    public async Task ActivityDelegateRechecksAfterHostAuthorizationMutatesGraph()
+    {
+        var calls = 0;
+        ActivityMiddlewareDelegate Count(ActivityMiddlewareDelegate next) => context =>
+        {
+            calls++;
+            return next(context);
+        };
+        var pipeline = new ActivityExecutionPipeline(_context.ServiceProvider, builder => builder.Use(Count));
+        _guard.OnAuthorize = () => AddGraphActivity(new CompensationScope());
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => pipeline.Pipeline(_activityContext).AsTask());
+
+        Assert.Equal(CompensationScope.DraftOnlyRefusalMessage, exception.Message);
+        Assert.Equal(1, _guard.AuthorizationCalls);
+        Assert.Equal(0, calls);
+    }
+
+    [Fact]
+    public async Task ActivityInvokerRejectsTypedAndOpaqueScopesBeforeCreatingChildExecutionContext()
+    {
+        var middlewareCalls = 0;
+        ActivityMiddlewareDelegate Count(ActivityMiddlewareDelegate next) => context =>
+        {
+            middlewareCalls++;
+            return next(context);
+        };
+        var invoker = new ActivityInvoker(new ActivityExecutionPipeline(_context.ServiceProvider, builder => builder.Use(Count)),
+            new ActivityLoggerStateGenerator(), NullLogger<ActivityInvoker>.Instance);
+
+        foreach (var activity in new IActivity[]
+                 {
+                     new CompensationScope(),
+                     new NotFoundActivity(missingTypeName: CompensationScope.ActivityTypeName) { OriginalActivityJson = "not-json" }
+                 })
+        {
+            var node = AddGraphActivity(activity);
+            var contextCount = _context.ActivityExecutionContexts.Count;
+
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => invoker.InvokeAsync(_context, new WriteLine("target")));
+
+            Assert.Equal(CompensationScope.DraftOnlyRefusalMessage, exception.Message);
+            Assert.Equal(contextCount, _context.ActivityExecutionContexts.Count);
+            await Assert.ThrowsAsync<InvalidOperationException>(() => invoker.InvokeAsync(_activityContext));
+            Assert.Equal(0, middlewareCalls);
+            _context.WorkflowGraph.Nodes.Remove(node);
+        }
+
+        await invoker.InvokeAsync(_activityContext);
+        Assert.True(middlewareCalls > 0);
+    }
+
+    [Fact]
+    public async Task ActivityInvokerRechecksAfterHostAuthorizationBeforeCreatingChildContextOrApplyingInput()
+    {
+        var middlewareCalls = 0;
+        ActivityMiddlewareDelegate Count(ActivityMiddlewareDelegate next) => context =>
+        {
+            middlewareCalls++;
+            return next(context);
+        };
+        var invoker = new ActivityInvoker(new ActivityExecutionPipeline(_context.ServiceProvider, builder => builder.Use(Count)),
+            new ActivityLoggerStateGenerator(), NullLogger<ActivityInvoker>.Instance);
+        var options = new ActivityInvocationOptions { Input = new Dictionary<string, object> { ["Text"] = "must not be applied" } };
+        var contextCount = _context.ActivityExecutionContexts.Count;
+        _guard.OnAuthorize = () => AddGraphActivity(new CompensationScope());
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => invoker.InvokeAsync(_context, new WriteLine("target"), options));
+
+        Assert.Equal(CompensationScope.DraftOnlyRefusalMessage, exception.Message);
+        Assert.Equal(contextCount, _context.ActivityExecutionContexts.Count);
+        Assert.Equal("must not be applied", options.Input["Text"]);
+        Assert.Equal(0, middlewareCalls);
+    }
+
+    private ActivityNode AddGraphActivity(IActivity activity)
+    {
+        var node = new ActivityNode(activity, "test");
+        _context.WorkflowGraph.Nodes.Add(node);
+        return node;
+    }
+
     private void Configure(IWorkflowExecutionPipelineBuilder builder) => builder.Use(Count);
     private WorkflowMiddlewareDelegate Count(WorkflowMiddlewareDelegate next) => async context =>
     {
@@ -211,15 +514,17 @@ public class WorkflowExecutionGuardTests : IAsyncLifetime
     };
 
     private WorkflowRunner CreateRunner(IWorkflowExecutionPipeline pipeline, INotificationSender notifications,
-        ILoggerStateGenerator<WorkflowExecutionContext> loggerState) => new(_context.ServiceProvider, pipeline,
+        ILoggerStateGenerator<WorkflowExecutionContext> loggerState, IIdentityGenerator? identityGenerator = null) => new(_context.ServiceProvider, pipeline,
         Substitute.For<IWorkflowStateExtractor>(), Substitute.For<IWorkflowBuilderFactory>(), Substitute.For<IWorkflowGraphBuilder>(),
-        Substitute.For<IIdentityGenerator>(), notifications, loggerState, Substitute.For<ICommitStateHandler>(), NullLogger<WorkflowRunner>.Instance);
+        identityGenerator ?? Substitute.For<IIdentityGenerator>(), notifications, loggerState, Substitute.For<ICommitStateHandler>(), NullLogger<WorkflowRunner>.Instance);
 
     private sealed class TestGuard : IWorkflowExecutionGuard
     {
         public bool Owned { get; set; }
         public bool AuthorizeRunner { get; set; }
         public Ticket Ticket { get; } = new();
+        public int AuthorizationCalls { get; private set; }
+        public Action? OnAuthorize { get; set; }
         public ValueTask DemandUnownedAsync(string instanceId, CancellationToken cancellationToken = default)
         {
             if (Owned)
@@ -230,6 +535,8 @@ public class WorkflowExecutionGuardTests : IAsyncLifetime
         }
         public async ValueTask<IWorkflowExecutionAuthorization?> AuthorizeAsync(WorkflowExecutionContext context, WorkflowExecutionEntryPoint entryPoint)
         {
+            AuthorizationCalls++;
+            OnAuthorize?.Invoke();
             if (AuthorizeRunner && entryPoint == WorkflowExecutionEntryPoint.Runner)
             {
                 return Ticket;
@@ -243,9 +550,11 @@ public class WorkflowExecutionGuardTests : IAsyncLifetime
     {
         public bool Invalid { get; set; }
         public int Revalidations { get; private set; }
+        public Action? OnRevalidate { get; set; }
         public ValueTask RevalidateAsync(CancellationToken cancellationToken = default)
         {
             Revalidations++;
+            OnRevalidate?.Invoke();
             if (Invalid)
             {
                 throw new InvalidOperationException("Changed prepared invocation");

@@ -139,6 +139,24 @@ requires reconciling the list. Delete the harness after E1's findings have been 
 into the accepted runtime/persistence design and lasting regression tests; its local
 README records that exit condition. E1 evidence and M1 readiness remain separate gates.
 
+## Temporary Studio browser proof disposition
+
+Issue [#8956](https://github.com/elsa-workflows/elsa-core/issues/8956) explicitly builds
+this isolated Data Protection startup library for the native draft-authoring browser proof:
+
+- `scripts/native-compensation-draft-proof/StudioProofDataProtectionStartup/StudioProofDataProtectionStartup.csproj`
+
+The nonpackable startup fixture lives outside the broad Studio updater root and stays
+outside `Elsa.sln`, application dependencies and product update inputs. It adds one
+manifest to the complete census and explicit unselected union; none of the five updater selectors, batch counts, feeds or release-unit inventory
+changes. The regression reconciles every tracked manifest under this script-proof
+folder with this exact documented list, checks uniqueness, `IsPackable=false` and
+exclusion from the solution. Future projects need their own disposition; this is not a
+blanket directory exclusion. Program #8884 owns removal when the maintained Studio
+compensation qualification suite replaces this fixture and accepted evidence is retained.
+The fixture's presence, build or census pass does not qualify the actual browser journey
+or the later backend process-kill/restart recovery proof.
+
 ## Central package and build imports
 
 The temporary React Studio modularity proof under #8839 adds four independent

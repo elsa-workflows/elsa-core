@@ -1,4 +1,5 @@
 using Elsa.Workflows.Middleware.Workflows;
+using Elsa.Workflows.Activities.Compensation;
 
 namespace Elsa.Workflows.Pipelines.WorkflowExecution;
 
@@ -60,7 +61,11 @@ public class WorkflowExecutionPipeline : IWorkflowExecutionPipeline
     }
 
     /// <inheritdoc />
-    public async Task ExecuteAsync(WorkflowExecutionContext context) => await Pipeline(context);
+    public async Task ExecuteAsync(WorkflowExecutionContext context)
+    {
+        CompensationScopeExecutionGuard.DemandExecutable(context);
+        await Pipeline(context);
+    }
 
     internal (Action Validate, WorkflowMiddlewareDelegate Execute) CaptureAuthorizedInvocation()
     {

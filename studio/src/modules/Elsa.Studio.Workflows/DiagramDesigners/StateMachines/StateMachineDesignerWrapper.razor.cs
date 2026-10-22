@@ -25,7 +25,7 @@ namespace Elsa.Studio.Workflows.DiagramDesigners.StateMachines;
 /// <summary>
 /// Coordinates State Machine semantics, X6 visuals, and Blazor inspectors.
 /// </summary>
-public partial class StateMachineDesignerWrapper
+public partial class StateMachineDesignerWrapper : IDisposable
 {
     private StateMachineEditorSession? _session;
     private StateMachineCanvasGraph? _canvasGraph;
@@ -50,6 +50,7 @@ public partial class StateMachineDesignerWrapper
     [Parameter] public JsonObject StateMachine { get; set; } = [];
     [Parameter] public IDictionary<string, ActivityStats>? ActivityStats { get; set; }
     [Parameter] public bool IsReadOnly { get; set; }
+    [Parameter] public string DocumentBackendContextKey { get; set; } = "";
     [Parameter] public EventCallback<JsonObject> ActivitySelected { get; set; }
     [Parameter] public EventCallback<JsonObject> ActivityDoubleClick { get; set; }
     [Parameter] public EventCallback GraphUpdated { get; set; }
@@ -62,6 +63,9 @@ public partial class StateMachineDesignerWrapper
     [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private IDiagramDesignerService DiagramDesignerService { get; set; } = null!;
     [Inject] private IExpressionService ExpressionService { get; set; } = null!;
+    [Inject] private IRemoteFeatureProvider RemoteFeatureProvider { get; set; } = null!;
+    [Inject] private IBackendApiClientProvider BackendApiClientProvider { get; set; } = null!;
+    private bool _disposed;
 
     private StateMachineStateNode? SelectedState =>
         _session != null && _selectedStateId != null ? TryGetState(_selectedStateId) : null;
@@ -485,17 +489,52 @@ public partial class StateMachineDesignerWrapper
 
     private async Task OpenActivityPickerAsync(string slotName, bool replacing, bool isStateSlot)
     {
-        if (IsReadOnly || _session == null ||
+        if (_disposed || IsReadOnly || _session == null ||
             (isStateSlot && (_selectedStateId == null || !IsStateActivitySlot(slotName))) ||
             (!isStateSlot && (_selectedTransitionId == null || !IsTransitionActivitySlot(slotName))))
             return;
+
+        var session = _session;
+        var stateMachine = StateMachine;
+        var selectedStateId = _selectedStateId;
+        var selectedTransitionId = _selectedTransitionId;
+        var documentBackendContextKey = DocumentBackendContextKey;
+        var selectedState = isStateSlot ? TryGetState(selectedStateId!) : null;
+        var selectedTransition = isStateSlot ? null : TryGetTransition(selectedTransitionId!);
+        var originalSlot = selectedState != null
+            ? GetStateSlot(selectedState, slotName)
+            : selectedTransition != null ? GetTransitionSlot(selectedTransition, slotName) : null;
+        var originalSlotSnapshot = originalSlot?.DeepClone();
+
+        bool IsTargetCurrent()
+        {
+            if (_disposed || IsReadOnly ||
+                !ReferenceEquals(_session, session) ||
+                !ReferenceEquals(StateMachine, stateMachine) ||
+                !string.Equals(DocumentBackendContextKey, documentBackendContextKey, StringComparison.Ordinal))
+                return false;
+
+            if (isStateSlot)
+                return selectedState != null &&
+                       string.Equals(_selectedStateId, selectedStateId, StringComparison.Ordinal) &&
+                       ReferenceEquals(TryGetState(selectedStateId!), selectedState) &&
+                       ReferenceEquals(GetStateSlot(selectedState, slotName), originalSlot) &&
+                       JsonNode.DeepEquals(GetStateSlot(selectedState, slotName), originalSlotSnapshot);
+
+            return selectedTransition != null &&
+                   string.Equals(_selectedTransitionId, selectedTransitionId, StringComparison.Ordinal) &&
+                   ReferenceEquals(TryGetTransition(selectedTransitionId!), selectedTransition) &&
+                   ReferenceEquals(GetTransitionSlot(selectedTransition, slotName), originalSlot) &&
+                   JsonNode.DeepEquals(GetTransitionSlot(selectedTransition, slotName), originalSlotSnapshot);
+        }
 
         var title = GetActivityPickerTitle(slotName, replacing);
         var parameters = new DialogParameters<StateMachineActivityPickerDialog>
         {
             { x => x.SlotName, slotName },
             { x => x.IsReplacing, replacing },
-            { x => x.RecentActivityTypes, _recentActivityTypes.ToArray() }
+            { x => x.RecentActivityTypes, _recentActivityTypes.ToArray() },
+            { x => x.DocumentBackendContextKey, DocumentBackendContextKey }
         };
         var options = new DialogOptions
         {
@@ -510,6 +549,10 @@ public partial class StateMachineDesignerWrapper
         // Do not touch the slot until the picker returns an explicit descriptor. In particular,
         // cancelling Replace leaves the exact existing JSON object in place.
         if (result is not { Canceled: false, Data: ActivityDescriptor descriptor })
+            return;
+
+        if (NativeCompensationDraftCapability.IsCompensationScopeActivity(descriptor.TypeName) &&
+            !IsTargetCurrent())
             return;
 
         RememberRecentActivity(descriptor.TypeName);
@@ -568,11 +611,37 @@ public partial class StateMachineDesignerWrapper
 
     private async Task ApplyStateActivityDescriptorAsync(string slotName, ActivityDescriptor descriptor, bool clearDragPayload = false)
     {
-        if (IsReadOnly || _session == null || _selectedStateId == null || !IsStateActivitySlot(slotName))
+        if (_disposed || IsReadOnly || _session == null || _selectedStateId == null || !IsStateActivitySlot(slotName))
             return;
 
-        _session.SetStateSlot(_selectedStateId, ParseStateSlot(slotName), CreateSlotActivity(descriptor));
-        if (clearDragPayload)
+        var session = _session;
+        var stateMachine = StateMachine;
+        var stateId = _selectedStateId;
+        var documentBackendContextKey = DocumentBackendContextKey;
+        var state = TryGetState(stateId);
+        if (state == null)
+            return;
+
+        var originalSlot = GetStateSlot(state, slotName);
+        var originalSlotSnapshot = originalSlot?.DeepClone();
+        bool IsTargetCurrent() =>
+            string.Equals(_selectedStateId, stateId, StringComparison.Ordinal) &&
+            ReferenceEquals(TryGetState(stateId), state) &&
+            ReferenceEquals(GetStateSlot(state, slotName), originalSlot) &&
+            JsonNode.DeepEquals(GetStateSlot(state, slotName), originalSlotSnapshot);
+
+        if (NativeCompensationDraftCapability.IsCompensationScopeActivity(descriptor.TypeName) &&
+            !await CanApplyNativeDescriptorAsync(descriptor, session, stateMachine, documentBackendContextKey, IsTargetCurrent))
+            return;
+
+        if (_disposed || IsReadOnly ||
+            !ReferenceEquals(_session, session) ||
+            !ReferenceEquals(StateMachine, stateMachine) ||
+            !IsTargetCurrent())
+            return;
+
+        _session.SetStateSlot(stateId, ParseStateSlot(slotName), CreateSlotActivity(descriptor));
+        if (clearDragPayload && ReferenceEquals(DragDropManager.Payload, descriptor))
             DragDropManager.Payload = null;
         await ApplySessionChangesAndRefreshSlotAsync(slotName, true);
     }
@@ -587,14 +656,62 @@ public partial class StateMachineDesignerWrapper
 
     private async Task ApplyTransitionActivityDescriptorAsync(string slotName, ActivityDescriptor descriptor, bool clearDragPayload = false)
     {
-        if (IsReadOnly || _session == null || _selectedTransitionId == null || !IsTransitionActivitySlot(slotName))
+        if (_disposed || IsReadOnly || _session == null || _selectedTransitionId == null || !IsTransitionActivitySlot(slotName))
+            return;
+
+        var session = _session;
+        var stateMachine = StateMachine;
+        var transitionId = _selectedTransitionId;
+        var documentBackendContextKey = DocumentBackendContextKey;
+        var transition = TryGetTransition(transitionId);
+        if (transition == null)
+            return;
+
+        var originalSlot = GetTransitionSlot(transition, slotName);
+        var originalSlotSnapshot = originalSlot?.DeepClone();
+        bool IsTargetCurrent() =>
+            string.Equals(_selectedTransitionId, transitionId, StringComparison.Ordinal) &&
+            ReferenceEquals(TryGetTransition(transitionId), transition) &&
+            ReferenceEquals(GetTransitionSlot(transition, slotName), originalSlot) &&
+            JsonNode.DeepEquals(GetTransitionSlot(transition, slotName), originalSlotSnapshot);
+
+        if (NativeCompensationDraftCapability.IsCompensationScopeActivity(descriptor.TypeName) &&
+            !await CanApplyNativeDescriptorAsync(descriptor, session, stateMachine, documentBackendContextKey, IsTargetCurrent))
+            return;
+
+        if (_disposed || IsReadOnly ||
+            !ReferenceEquals(_session, session) ||
+            !ReferenceEquals(StateMachine, stateMachine) ||
+            !IsTargetCurrent())
             return;
 
         var activity = CreateSlotActivity(descriptor);
-        _session.SetTransitionSlot(_selectedTransitionId, ParseTransitionSlot(slotName), activity);
-        if (clearDragPayload)
+        _session.SetTransitionSlot(transitionId, ParseTransitionSlot(slotName), activity);
+        if (clearDragPayload && ReferenceEquals(DragDropManager.Payload, descriptor))
             DragDropManager.Payload = null;
         await ApplySessionChangesAndRefreshSlotAsync(slotName, true);
+    }
+
+    private async Task<bool> CanApplyNativeDescriptorAsync(
+        ActivityDescriptor descriptor,
+        StateMachineEditorSession session,
+        JsonObject stateMachine,
+        string documentBackendContextKey,
+        Func<bool> targetIsCurrent)
+    {
+        if (!await NativeCompensationDraftCapability.IsActivityCreationEnabledForDocumentAsync(
+                descriptor.TypeName,
+                RemoteFeatureProvider,
+                BackendApiClientProvider,
+                documentBackendContextKey))
+            return false;
+
+        return !_disposed && !IsReadOnly &&
+               ReferenceEquals(_session, session) &&
+               ReferenceEquals(StateMachine, stateMachine) &&
+               string.Equals(DocumentBackendContextKey, documentBackendContextKey, StringComparison.Ordinal) &&
+               string.Equals(BackendApiClientProvider.ContextKey, documentBackendContextKey, StringComparison.Ordinal) &&
+               targetIsCurrent();
     }
 
     private static bool IsTransitionActivitySlot(string slotName) =>
@@ -1168,4 +1285,6 @@ public partial class StateMachineDesignerWrapper
     }
 
     private static bool IsSyntheticStateId(string id) => id.StartsWith("missing-", StringComparison.Ordinal);
+
+    public void Dispose() => _disposed = true;
 }

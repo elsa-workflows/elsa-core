@@ -45,7 +45,8 @@ public class ActivityWriter(IActivityRegistry activityRegistry, SyntheticPropert
 
         foreach (var property in properties)
         {
-            if (property.GetCustomAttribute<JsonIgnoreAttribute>() != null)
+            var ignoreCondition = property.GetCustomAttribute<JsonIgnoreAttribute>()?.Condition ?? JsonIgnoreCondition.Never;
+            if (ignoreCondition == JsonIgnoreCondition.Always)
                 continue;
 
             if (excludeChildren)
@@ -60,9 +61,38 @@ public class ActivityWriter(IActivityRegistry activityRegistry, SyntheticPropert
             if (propertyFilter?.Invoke(property) == true)
                 continue;
 
-            var propName = options.PropertyNamingPolicy?.ConvertName(property.Name) ?? property.Name;
-            writer.WritePropertyName(propName);
             var input = property.GetValue(value);
+
+            if (input == null && ignoreCondition is JsonIgnoreCondition.WhenWritingNull or JsonIgnoreCondition.WhenWritingDefault ||
+                ignoreCondition == JsonIgnoreCondition.WhenWritingDefault && property.PropertyType.IsValueType &&
+                Equals(input, Activator.CreateInstance(property.PropertyType)))
+                continue;
+
+            if (property.GetCustomAttribute<JsonExtensionDataAttribute>() != null)
+            {
+                if (input is IDictionary<string, JsonElement> jsonElements)
+                {
+                    foreach (var (name, element) in jsonElements)
+                    {
+                        writer.WritePropertyName(name);
+                        element.WriteTo(writer);
+                    }
+                }
+                else if (input is IDictionary<string, object?> objects)
+                {
+                    foreach (var (name, item) in objects)
+                    {
+                        writer.WritePropertyName(name);
+                        JsonSerializer.Serialize(writer, item, options);
+                    }
+                }
+
+                continue;
+            }
+
+            var propName = property.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ??
+                           options.PropertyNamingPolicy?.ConvertName(property.Name) ?? property.Name;
+            writer.WritePropertyName(propName);
 
             if (input == null)
             {

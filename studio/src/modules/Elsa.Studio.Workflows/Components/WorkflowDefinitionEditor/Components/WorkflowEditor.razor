@@ -1,9 +1,13 @@
 @using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.ActivityProperties
+@using Elsa.Studio.Workflows.Components
+@using Elsa.Studio.Workflows.Domain.Models
 @using Elsa.Studio.Workflows.DiagramDesigners.Bpmn
 @using Orientation = Radzen.Orientation
 @using Variant = MudBlazor.Variant
 @inherits WorkflowEditorComponentBase
 @inject ILocalizer Localizer
+
+<NativeCompensationDraftRefusalSummary Refusal="@CurrentNativeCompensationDraftRefusal" DefinitionId="@CurrentNativeCompensationDraftRefusalDefinitionId" />
 
 <RadzenSplitter Orientation="Orientation.Vertical" Style="height: calc(100vh - var(--mud-appbar-height) - 50px);" Resize="@OnResize">
     <RadzenSplitterPane Size="70%">
@@ -34,7 +38,7 @@
                     @if (CanPublish)
                     {
                         <MudTooltip Text="@Localizer["Publish workflow"]" Delay="500">
-                            <MudIconButton Icon="@Icons.Material.Filled.CloudUpload" Color="Color.Primary" OnClick="@OnPublishClicked" />
+                            <MudIconButton Icon="@Icons.Material.Filled.CloudUpload" Color="Color.Primary" aria-label="@Localizer["Publish workflow"]" OnClick="@OnPublishClicked" />
                         </MudTooltip>
                     }
                     <Zone Name="@ZoneNames.WorkflowDefinitionEditorToolbarActions" Attributes="@WorkflowDefinitionEditorToolbarActionAttributes" />

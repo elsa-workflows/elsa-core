@@ -52,6 +52,7 @@ public class SequenceDiagramDesigner(ILocalizer localizer) : IDiagramDesignerToo
     /// <inheritdoc />
     public RenderFragment DisplayDesigner(DisplayContext context)
     {
+        var documentBackendContextKey = NativeCompensationDraftDocumentContext.GetBackendContextKey(context.WorkflowDefinition) ?? "";
         var sequence = 0;
 
         return builder =>
@@ -60,6 +61,7 @@ public class SequenceDiagramDesigner(ILocalizer localizer) : IDiagramDesignerToo
             builder.SetKey(_id);
             builder.AddAttribute(sequence++, nameof(SequenceDesignerWrapper.Sequence), context.Activity);
             builder.AddAttribute(sequence++, nameof(SequenceDesignerWrapper.IsReadOnly), context.IsReadOnly);
+            builder.AddAttribute(sequence++, nameof(SequenceDesignerWrapper.DocumentBackendContextKey), documentBackendContextKey);
             builder.AddAttribute(sequence++, nameof(SequenceDesignerWrapper.ActivityStats), context.ActivityStats);
             builder.AddAttribute(sequence++, nameof(SequenceDesignerWrapper.ActivitySelected), context.ActivitySelectedCallback);
             builder.AddAttribute(sequence++, nameof(SequenceDesignerWrapper.ActivityUpdated), context.ActivityUpdated);

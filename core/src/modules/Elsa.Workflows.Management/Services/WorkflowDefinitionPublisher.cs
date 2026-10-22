@@ -88,6 +88,10 @@ public class WorkflowDefinitionPublisher(
     public async Task<PublishWorkflowDefinitionResult> PublishAsync(WorkflowDefinition definition, CancellationToken cancellationToken = default)
     {
         var workflowGraph = await workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
+        var compensationDraftErrors = CompensationDraftPublishDiagnostics.Create(workflowGraph);
+        if (compensationDraftErrors.Count > 0)
+            return new(false, compensationDraftErrors.ToList(), new([]));
+
         var validationErrors = (await workflowValidator.ValidateAsync(workflowGraph.Workflow, cancellationToken)).ToList();
 
         if (validationErrors.Any() && options.Value.FailOnValidationErrors)

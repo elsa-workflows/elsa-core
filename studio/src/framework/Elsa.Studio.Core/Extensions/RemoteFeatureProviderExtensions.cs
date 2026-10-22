@@ -13,10 +13,19 @@ public static class RemoteFeatureProviderExtensions
     /// Checks whether the specified remote feature is enabled, returning <c>false</c> when the check cannot complete.
     /// </summary>
     public static async Task<bool> IsEnabledOrDefaultAsync(this IRemoteFeatureProvider remoteFeatureProvider, string featureName, CancellationToken cancellationToken = default)
+        => await IsEnabledOrDefaultAsync(() => remoteFeatureProvider.IsEnabledAsync(featureName, cancellationToken));
+
+    /// <summary>
+    /// Checks the current remote feature catalog without reusing a cached result, returning <c>false</c> when the check cannot complete.
+    /// </summary>
+    public static async Task<bool> IsEnabledFreshOrDefaultAsync(this IRemoteFeatureProviderWithFreshCheck remoteFeatureProvider, string featureName, CancellationToken cancellationToken = default)
+        => await IsEnabledOrDefaultAsync(() => remoteFeatureProvider.IsEnabledFreshAsync(featureName, cancellationToken));
+
+    private static async Task<bool> IsEnabledOrDefaultAsync(Func<Task<bool>> check)
     {
         try
         {
-            return await remoteFeatureProvider.IsEnabledAsync(featureName, cancellationToken);
+            return await check();
         }
         catch (ApiException e) when (e.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
         {

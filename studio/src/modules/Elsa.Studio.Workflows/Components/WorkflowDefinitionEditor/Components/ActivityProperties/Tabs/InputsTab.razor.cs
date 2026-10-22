@@ -50,6 +50,7 @@ public partial class InputsTab
     private ICollection<ActivityInputDisplayModel> InputDisplayModels { get; set; } = new List<ActivityInputDisplayModel>();
     private string? _lastActivityId;
     private string? _lastActivityDescriptorTypeName;
+    private bool? _lastWorkspaceIsReadOnly;
 
     /// <inheritdoc />
     protected override async Task OnParametersSetAsync()
@@ -61,12 +62,14 @@ public partial class InputsTab
         var currentActivityId = Activity.GetProperty("id")?.ToString();
         var currentDescriptorTypeName = ActivityDescriptor.TypeName;
         var activityOrDescriptorChanged = currentActivityId != _lastActivityId || currentDescriptorTypeName != _lastActivityDescriptorTypeName;
+        var currentWorkspaceIsReadOnly = Workspace?.IsReadOnly ?? false;
+        var workspaceReadOnlyChanged = currentWorkspaceIsReadOnly != _lastWorkspaceIsReadOnly;
 
         InputDescriptors = ActivityDescriptor.Inputs.ToList();
         OutputDescriptors = ActivityDescriptor.Outputs.ToList();
 
-        // Only rebuild display models if the activity/descriptor actually changed
-        if (activityOrDescriptorChanged || InputDisplayModels.Count == 0)
+        // Rebuild when the activity/descriptor or workspace editability changes.
+        if (activityOrDescriptorChanged || workspaceReadOnlyChanged || InputDisplayModels.Count == 0)
         {
             // Yield to allow the Blazor renderer to complete the disposal cycle.
             // This ensures BlazorMonaco's internal editor registry is updated before we create new editors.
@@ -75,6 +78,7 @@ public partial class InputsTab
             InputDisplayModels = (await BuildInputEditorModels()).ToList();
             _lastActivityId = currentActivityId;
             _lastActivityDescriptorTypeName = currentDescriptorTypeName;
+            _lastWorkspaceIsReadOnly = currentWorkspaceIsReadOnly;
         }
     }
 

@@ -46,6 +46,7 @@ namespace Elsa.Workflows.Management.Features;
 [DependsOn(typeof(WorkflowsFeature))]
 [DependsOn(typeof(WorkflowDefinitionsFeature))]
 [DependsOn(typeof(WorkflowInstancesFeature))]
+[DependsOn(typeof(NativeCompensationDraftAuthoringV1Feature))]
 [UsedImplicitly]
 public class WorkflowManagementFeature(IModule module) : FeatureBase(module)
 {

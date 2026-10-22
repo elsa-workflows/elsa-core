@@ -24,6 +24,7 @@
 
     <ItemGroup>
         <ProjectReference Include="../Elsa.Studio.Workflows/Elsa.Studio.Workflows.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Authentication.ElsaIdentity/Elsa.Studio.Authentication.ElsaIdentity.csproj" />
     </ItemGroup>
 
     <ItemGroup>

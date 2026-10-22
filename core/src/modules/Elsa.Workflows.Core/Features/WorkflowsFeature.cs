@@ -7,6 +7,7 @@ using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
 using Elsa.Features.Services;
 using Elsa.Workflows.ActivationValidators;
+using Elsa.Workflows.Activities.Compensation;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Builders;
 using Elsa.Workflows.CommitStates;
@@ -296,6 +297,7 @@ public class WorkflowsFeature : FeatureBase
             .AddScoped<IPropertyUIHandler, JsonCodeOptionsProvider>()
             .AddScoped<DictionaryValueEvaluator>()
             .AddSingleton<IActivityDescriptorModifier, DictionaryUIHintInputModifier>()
+            .AddSingleton<IActivityDescriptorModifier, CompensationScopeConstructionPropertiesModifier>()
 
             // Logger state generators.
             .AddSingleton(WorkflowLoggerStateGenerator)

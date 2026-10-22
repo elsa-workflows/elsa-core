@@ -6,6 +6,7 @@ using Elsa.Workflows.Api.Requirements;
 using Elsa.Workflows.Api.Security;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Management.Services;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authorization;
 
@@ -52,6 +53,13 @@ internal class Publish(
         }
 
         var workflowGraph = await workflowDefinitionService.MaterializeWorkflowAsync(definition, cancellationToken);
+        var compensationDraftErrors = CompensationDraftPublishDiagnostics.Create(workflowGraph);
+        if (compensationDraftErrors.Count > 0)
+        {
+            await CompensationDraftPublishFailure.TrySendAsync(HttpContext, compensationDraftErrors, cancellationToken);
+            return;
+        }
+
         var scriptAuthorizationResult = await scriptAuthorizationService.AuthorizeAsync(workflowGraph.Workflow, cancellationToken);
         if (!scriptAuthorizationResult.Succeeded)
         {
@@ -64,6 +72,9 @@ internal class Publish(
 
         if (result is { Succeeded: false })
         {
+            if (await CompensationDraftPublishFailure.TrySendAsync(HttpContext, result.ValidationErrors, cancellationToken))
+                return;
+
             foreach (var validationError in result.ValidationErrors)
                 AddError(validationError.Message);
 

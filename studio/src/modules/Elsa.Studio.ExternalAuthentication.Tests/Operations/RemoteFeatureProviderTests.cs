@@ -2,6 +2,7 @@ using Elsa.Api.Client.Resources.Features.Contracts;
 using Elsa.Api.Client.Resources.Features.Models;
 using Elsa.Api.Client.Shared.Models;
 using Elsa.Studio.Contracts;
+using Elsa.Studio.Models;
 using Elsa.Studio.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Refit;
@@ -172,6 +173,96 @@ public class RemoteFeatureProviderTests
     }
 
     [Fact]
+    public async Task FreshFeatureChecks_RefetchWhenCatalogChangesAtSameUrl()
+    {
+        var api = new FeaturesApi();
+        var provider = new RemoteFeatureProvider(new BackendApiClientProvider(api));
+
+        Assert.True(await provider.IsEnabledFreshAsync("Elsa.ExternalAuthentication"));
+        api.Features = new([], 0);
+
+        Assert.False(await provider.IsEnabledFreshAsync("Elsa.ExternalAuthentication"));
+        Assert.Equal(2, api.ListCalls);
+    }
+
+    [Fact]
+    public async Task FreshFeatureChecks_DiscardLateCatalogWhenSameUrlContextChanges()
+    {
+        var firstListStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseFirstList = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var api = new FeaturesApi();
+        api.Responses.Enqueue(async _ =>
+        {
+            firstListStarted.SetResult();
+            await releaseFirstList.Task;
+            return FeaturesFor("Elsa.A");
+        });
+        api.Responses.Enqueue(_ => Task.FromResult(FeaturesFor("Elsa.B")));
+        api.Responses.Enqueue(_ => Task.FromResult(FeaturesFor("Elsa.A")));
+
+        var backend = new BackendApiClientProvider(api) { ContextKey = "tenant-a" };
+        var provider = new RemoteFeatureProvider(backend);
+        var staleCheck = provider.IsEnabledFreshAsync("Elsa.A");
+        await firstListStarted.Task;
+        var currentCheck = provider.IsEnabledFreshAsync("Elsa.A");
+        backend.ContextKey = "tenant-b";
+        releaseFirstList.SetResult();
+
+        Assert.False(await staleCheck);
+        Assert.False(await currentCheck);
+        backend.ContextKey = "tenant-a";
+        Assert.True(await provider.IsEnabledFreshAsync("Elsa.A"));
+        Assert.Equal(3, api.ListCalls);
+    }
+
+    [Fact]
+    public async Task FreshFeatureChecks_DiscardLateCatalogWhenAuthenticationChangesAtSameUrl()
+    {
+        var firstListStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseFirstList = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var api = new FeaturesApi();
+        api.Responses.Enqueue(async _ =>
+        {
+            firstListStarted.SetResult();
+            await releaseFirstList.Task;
+            return FeaturesFor("Elsa.A");
+        });
+        api.Responses.Enqueue(_ => Task.FromResult(FeaturesFor("Elsa.A")));
+
+        var authentication = new AuthenticationStateProviderStub();
+        authentication.SetUser("user-a");
+        var provider = new RemoteFeatureProvider(new BackendApiClientProvider(api), authentication);
+        var staleCheck = provider.IsEnabledFreshAsync("Elsa.A");
+        await firstListStarted.Task;
+
+        authentication.SetUser("user-b");
+        releaseFirstList.SetResult();
+
+        Assert.False(await staleCheck);
+        Assert.True(await provider.IsEnabledFreshAsync("Elsa.A"));
+        Assert.Equal(2, api.ListCalls);
+    }
+
+    [Fact]
+    public void BackendContextKey_ChangesWhenAuthenticationChangesAtTheSameUrl()
+    {
+        var url = new Uri("https://elsa.example.test/");
+        var authentication = new AuthenticationStateProviderStub();
+        authentication.SetUser("user-a");
+        using var provider = new DefaultBackendApiClientProvider(
+            new ContextRemoteBackendAccessor(url, "production"),
+            new BlazorServiceAccessor(),
+            new EmptyServiceProvider(),
+            authentication);
+        var userAContextKey = provider.ContextKey;
+
+        authentication.SetUser("user-b");
+
+        Assert.Equal(url, provider.Url);
+        Assert.NotEqual(userAContextKey, provider.ContextKey);
+    }
+
+    [Fact]
     public async Task FeatureChecks_DoNotCacheUnderStaleUrlWhenEnvironmentChangesMidLoad()
     {
         var firstListStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -197,7 +288,7 @@ public class RemoteFeatureProviderTests
         backend.Url = new("https://b.example.test/");
         releaseFirstList.SetResult();
 
-        Assert.True(await firstCheck);
+        Assert.False(await firstCheck);
         Assert.False(await secondCheck);
 
         backend.Url = new("https://elsa.example.test/");
@@ -211,7 +302,14 @@ public class RemoteFeatureProviderTests
 
     private sealed class BackendApiClientProvider(IFeaturesApi api) : IBackendApiClientProvider
     {
+        private string? _contextKey;
+
         public Uri Url { get; set; } = new("https://elsa.example.test/");
+        public string ContextKey
+        {
+            get => _contextKey ?? Url.ToString();
+            set => _contextKey = value;
+        }
 
         public ValueTask<T> GetApiAsync<T>(CancellationToken cancellationToken = default) where T : class =>
             ValueTask.FromResult((T)api);
@@ -246,14 +344,37 @@ public class RemoteFeatureProviderTests
 
     private sealed class AuthenticationStateProviderStub : AuthenticationStateProvider
     {
-        public bool IsAuthenticated { get; set; }
+        private string? _userName;
+
+        public bool IsAuthenticated
+        {
+            get => _userName != null;
+            set => SetUser(value ? "admin" : null);
+        }
+
+        public void SetUser(string? userName)
+        {
+            _userName = userName;
+            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+        }
 
         public override Task<AuthenticationState> GetAuthenticationStateAsync()
         {
-            var identity = IsAuthenticated
-                ? new ClaimsIdentity([new Claim(ClaimTypes.Name, "admin")], "test")
+            var identity = _userName != null
+                ? new ClaimsIdentity([new Claim(ClaimTypes.Name, _userName)], "test")
                 : new ClaimsIdentity();
             return Task.FromResult(new AuthenticationState(new ClaimsPrincipal(identity)));
         }
+    }
+
+    private sealed class ContextRemoteBackendAccessor(Uri url, string contextKey) : IRemoteBackendAccessor
+    {
+        public RemoteBackend RemoteBackend { get; } = new(url);
+        public string ContextKey { get; } = contextKey;
+    }
+
+    private sealed class EmptyServiceProvider : IServiceProvider
+    {
+        public object? GetService(Type serviceType) => null;
     }
 }

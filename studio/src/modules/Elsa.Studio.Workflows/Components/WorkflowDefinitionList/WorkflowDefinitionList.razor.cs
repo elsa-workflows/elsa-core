@@ -1,6 +1,8 @@
+using System.Net;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Enums;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Requests;
+using Elsa.Api.Client.Resources.WorkflowDefinitions.Responses;
 using Elsa.Api.Client.Resources.WorkflowInstances.Requests;
 using Elsa.Api.Client.Shared.Models;
 using Elsa.Studio.Authorization;
@@ -10,21 +12,26 @@ using Elsa.Studio.DomInterop.Contracts;
 using Elsa.Studio.Models;
 using Elsa.Studio.Workflows.Contracts;
 using Elsa.Studio.Workflows.Domain.Contracts;
+using Elsa.Studio.Workflows.Domain.Extensions;
 using Elsa.Studio.Workflows.Domain.Models;
 using Elsa.Studio.Workflows.Extensions;
 using Humanizer;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using MudBlazor;
+using Refit;
 
 namespace Elsa.Studio.Workflows.Components.WorkflowDefinitionList;
 
 /// Displays a list of workflow definitions.
-public partial class WorkflowDefinitionList
+public partial class WorkflowDefinitionList : IDisposable
 {
     private MudTable<WorkflowDefinitionRow> _table = null!;
     private HashSet<WorkflowDefinitionRow> _selectedRows = new();
     private long _totalCount;
+    private NativeCompensationDraftPublishRefusalState? _nativeCompensationDraftPublishRefusal;
+    private IPermissionRefreshSignal? _permissionRefreshSignal;
+    private bool _disposed;
     private const int truncationLength = 40;
 
     /// An event that is invoked when a workflow definition is edited.
@@ -33,6 +40,7 @@ public partial class WorkflowDefinitionList
     [Inject] private IDialogService DialogService { get; set; } = null!;
     [Inject] private IUserMessageService UserMessageService { get; set; } = null!;
     [Inject] private IWorkflowDefinitionService WorkflowDefinitionService { get; set; } = null!;
+    [Inject] private IServiceProvider ServiceProvider { get; set; } = null!;
     [Inject] private IWorkflowDefinitionEditorService WorkflowDefinitionEditorService { get; set; } = null!;
     [Inject] private IWorkflowInstanceService WorkflowInstanceService { get; set; } = null!;
     [Inject] private IWorkflowDefinitionImporter WorkflowDefinitionImporter { get; set; } = null!;
@@ -53,6 +61,65 @@ public partial class WorkflowDefinitionList
     private bool CanExecute => Permissions.CanExecuteDefinitions();
     private bool CanCancelInstances => Permissions.CanCancelInstances();
 
+    private NativeCompensationDraftRefusal? CurrentNativeCompensationDraftRefusal
+    {
+        get
+        {
+            if (_nativeCompensationDraftPublishRefusal is not { } state)
+                return null;
+
+            if (state.BackendApiClientProvider == null)
+                return state.Refusal;
+
+            var backendApiClientProvider = GetQualifiedBackendApiClientProvider();
+            return ReferenceEquals(state.BackendApiClientProvider, backendApiClientProvider) &&
+                   string.Equals(state.BackendContextKey, backendApiClientProvider?.ContextKey, StringComparison.Ordinal)
+                ? state.Refusal
+                : null;
+        }
+    }
+
+    private string? CurrentNativeCompensationDraftPublishDefinitionId =>
+        CurrentNativeCompensationDraftRefusal != null && _nativeCompensationDraftPublishRefusal?.BackendApiClientProvider != null
+            ? _nativeCompensationDraftPublishRefusal.DefinitionId
+            : null;
+
+    private IBackendApiClientProvider? GetQualifiedBackendApiClientProvider()
+    {
+        var provider = ServiceProvider.GetService(typeof(IBackendApiClientProvider)) as IBackendApiClientProvider;
+        return provider is IBackendRequestContextBinding { SupportsAuthenticatedRequestContextBinding: true } ? provider : null;
+    }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _permissionRefreshSignal = ServiceProvider.GetService(typeof(IPermissionRefreshSignal)) as IPermissionRefreshSignal;
+        if (_permissionRefreshSignal != null)
+            _permissionRefreshSignal.Raised += OnBackendContextChanged;
+    }
+
+    private void OnBackendContextChanged()
+    {
+        if (_disposed)
+            return;
+
+        _ = InvokeAsync(() =>
+        {
+            if (_disposed)
+                return;
+
+            _nativeCompensationDraftPublishRefusal = null;
+            StateHasChanged();
+        });
+    }
+
+    public void Dispose()
+    {
+        _disposed = true;
+        if (_permissionRefreshSignal != null)
+            _permissionRefreshSignal.Raised -= OnBackendContextChanged;
+    }
+
     private string SearchTerm { get; set; } = string.Empty;
     private bool IsReadOnlyMode { get; set; }
     private string ReadonlyWorkflowsExcluded => Localizer["The read-only workflows will not be affected."];
@@ -70,6 +137,7 @@ public partial class WorkflowDefinitionList
 
     private async Task<TableData<WorkflowDefinitionRow>> ServerReload(TableState state, CancellationToken cancellationToken)
     {
+        _nativeCompensationDraftPublishRefusal = null;
         var request = new ListWorkflowDefinitionsRequest
         {
             IsSystem = false,
@@ -305,7 +373,16 @@ public partial class WorkflowDefinitionList
             return;
 
         var workflowDefinitionIds = _selectedRows.Select(x => x.DefinitionId).ToList();
-        var response = await WorkflowDefinitionService.BulkPublishAsync(workflowDefinitionIds);
+        BulkPublishWorkflowDefinitionsResponse response;
+        try
+        {
+            response = await WorkflowDefinitionService.BulkPublishAsync(workflowDefinitionIds);
+        }
+        catch (NativeCompensationDraftPublishUnavailableException)
+        {
+            ShowNativeCompensationDraftPublishRefusalWithoutDiagnostics();
+            return;
+        }
 
         if (response.Published.Count > 0)
         {
@@ -487,7 +564,44 @@ public partial class WorkflowDefinitionList
 
     private async Task OnPublishClicked(string definitionId)
     {
-        var response = await WorkflowDefinitionService.PublishAsync(definitionId);
+        _nativeCompensationDraftPublishRefusal = null;
+        var requestContextProvider = GetQualifiedBackendApiClientProvider();
+        var backendContextKey = requestContextProvider?.ContextKey;
+        SaveWorkflowDefinitionResponse response;
+        try
+        {
+            response = await WorkflowDefinitionService.PublishAsync(definitionId);
+        }
+        catch (NativeCompensationDraftPublishUnavailableException)
+        {
+            ShowNativeCompensationDraftPublishRefusalWithoutDiagnostics();
+            return;
+        }
+        catch (ApiException exception) when (exception.StatusCode == HttpStatusCode.BadRequest)
+        {
+            var validationErrors = NativeCompensationDraftRefusal.TryGetValidationErrorsFromContent(exception.Content, exception.StatusCode)
+                                   ?? exception.GetValidationErrors();
+            var refusal = NativeCompensationDraftRefusal.FromValidationErrors(validationErrors);
+            if (refusal == null)
+                throw;
+
+            if (requestContextProvider == null)
+            {
+                // Without a qualifying request-context binding, show only the fixed refusal and omit all IDs.
+                ShowNativeCompensationDraftPublishRefusalWithoutDiagnostics();
+                return;
+            }
+
+            var currentProvider = GetQualifiedBackendApiClientProvider();
+            if (currentProvider == null ||
+                !ReferenceEquals(requestContextProvider, currentProvider) ||
+                !string.Equals(backendContextKey, currentProvider.ContextKey, StringComparison.Ordinal))
+                return;
+
+            _nativeCompensationDraftPublishRefusal = new(refusal, requestContextProvider, backendContextKey, definitionId);
+            return;
+        }
+
         if (response.AlreadyPublished)
         {
             UserMessageService.ShowSnackbarTextMessage(Localizer["Workflow was already published"], Severity.Info, options => { options.SnackbarVariant = Variant.Filled; });
@@ -510,6 +624,26 @@ public partial class WorkflowDefinitionList
 
         Reload();
     }
+
+    private void ShowNativeCompensationDraftPublishRefusalWithoutDiagnostics() =>
+        _nativeCompensationDraftPublishRefusal = new(new([]), null, null, null);
+
+    protected override void OnParametersSet()
+    {
+        if (_nativeCompensationDraftPublishRefusal is not { BackendApiClientProvider: { } expectedProvider, BackendContextKey: { } expectedContextKey })
+            return;
+
+        var currentProvider = GetQualifiedBackendApiClientProvider();
+        if (!ReferenceEquals(expectedProvider, currentProvider) ||
+            !string.Equals(expectedContextKey, currentProvider?.ContextKey, StringComparison.Ordinal))
+            _nativeCompensationDraftPublishRefusal = null;
+    }
+
+    private sealed record NativeCompensationDraftPublishRefusalState(
+        NativeCompensationDraftRefusal Refusal,
+        IBackendApiClientProvider? BackendApiClientProvider,
+        string? BackendContextKey,
+        string? DefinitionId);
 
     private async Task OnRetractClicked(string definitionId)
     {

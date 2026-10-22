@@ -4,6 +4,7 @@ using Elsa.Api.Client.Extensions;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Enums;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Models;
 using Elsa.Api.Client.Shared.Models;
+using Elsa.Studio.Contracts;
 using Elsa.Studio.Workflows.Designer.Components;
 using Elsa.Studio.Workflows.Designer.Models;
 using Elsa.Studio.Workflows.Designer.Options;
@@ -23,7 +24,7 @@ namespace Elsa.Studio.Workflows.DiagramDesigners.Flowcharts;
 /// <summary>
 /// A wrapper around the <see cref="FlowchartDesigner"/> component that provides interactivity such as drag and drop and displaying the designer in edit or read-only mode.
 /// </summary>
-public partial class FlowchartDesignerWrapper
+public partial class FlowchartDesignerWrapper : IDisposable
 {
     /// <summary>
     /// The flowchart to display.
@@ -39,6 +40,7 @@ public partial class FlowchartDesignerWrapper
     /// Whether the designer is read-only.
     /// </summary>
     [Parameter] public bool IsReadOnly { get; set; }
+    [Parameter] public string DocumentBackendContextKey { get; set; } = "";
 
     /// <summary>
     /// An event raised when an activity is selected.
@@ -66,9 +68,12 @@ public partial class FlowchartDesignerWrapper
     [Inject] private IIdentityGenerator IdentityGenerator { get; set; } = null!;
     [Inject] private IActivityNameGenerator ActivityNameGenerator { get; set; } = null!;
     [Inject] private IOptions<DesignerOptions> DesignerOptions { get; set; } = null!;
+    [Inject] private IRemoteFeatureProvider RemoteFeatureProvider { get; set; } = null!;
+    [Inject] private IBackendApiClientProvider BackendApiClientProvider { get; set; } = null!;
     private FlowchartDesigner? Designer { get; set; }
     private ReactFlowDesigner? ReactDesigner { get; set; }
     private bool UseReactFlow => DesignerOptions.Value.UseReactFlow;
+    private bool _disposed;
 
     private string? _lastFlowchartId;
 
@@ -199,13 +204,34 @@ public partial class FlowchartDesignerWrapper
 
     private async Task AddNewActivityAsync(ActivityDescriptor activityDescriptor, double x, double y)
     {
-        var activities = Flowchart.GetActivities().ToList();
+        if (_disposed || IsReadOnly)
+            return;
+
+        var targetFlowchart = Flowchart;
+        var targetDesigner = (object?)ReactDesigner ?? Designer;
+        var documentBackendContextKey = DocumentBackendContextKey;
+        if (NativeCompensationDraftCapability.IsCompensationScopeActivity(activityDescriptor.TypeName))
+        {
+            if (!await NativeCompensationDraftCapability.IsActivityCreationEnabledForDocumentAsync(
+                    activityDescriptor.TypeName,
+                    RemoteFeatureProvider,
+                    BackendApiClientProvider,
+                    documentBackendContextKey) ||
+                _disposed || IsReadOnly ||
+                !ReferenceEquals(Flowchart, targetFlowchart) ||
+                !ReferenceEquals((object?)ReactDesigner ?? Designer, targetDesigner) ||
+                !string.Equals(DocumentBackendContextKey, documentBackendContextKey, StringComparison.Ordinal) ||
+                !string.Equals(BackendApiClientProvider.ContextKey, documentBackendContextKey, StringComparison.Ordinal))
+                return;
+        }
+
+        var activities = targetFlowchart.GetActivities().ToList();
         var newActivityId = IdentityGenerator.GenerateId();
 
         var newActivity = new JsonObject(new Dictionary<string, JsonNode?>
         {
             ["id"] = newActivityId,
-            ["nodeId"] = $"{Flowchart.GetNodeId()}:{newActivityId}",
+            ["nodeId"] = $"{targetFlowchart.GetNodeId()}:{newActivityId}",
             ["name"] = ActivityNameGenerator.GenerateNextName(activities, activityDescriptor),
             ["type"] = activityDescriptor.TypeName,
             ["version"] = activityDescriptor.Version,
@@ -228,10 +254,10 @@ public partial class FlowchartDesignerWrapper
         if (activityDescriptor.Kind == ActivityKind.Trigger && activities.All(activity => activity.GetCanStartWorkflow() != true))
             newActivity.SetCanStartWorkflow(true);
 
-        if (ReactDesigner is not null)
-            await ReactDesigner.AddActivityAsync(newActivity);
-        else if (Designer is not null)
-            await Designer.AddActivityAsync(newActivity);
+        if (targetDesigner is ReactFlowDesigner reactDesigner)
+            await reactDesigner.AddActivityAsync(newActivity);
+        else if (targetDesigner is FlowchartDesigner designer)
+            await designer.AddActivityAsync(newActivity);
 
         if (ActivitySelected.HasDelegate)
             await ActivitySelected.InvokeAsync(newActivity);
@@ -267,4 +293,6 @@ public partial class FlowchartDesignerWrapper
 
     private Task OnZoomToFitClick() => ZoomToFitAsync();
     private Task OnCenterContentClick() => CenterContentAsync();
+
+    public void Dispose() => _disposed = true;
 }

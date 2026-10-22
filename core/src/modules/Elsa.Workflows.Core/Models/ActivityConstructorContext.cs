@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using Elsa.Expressions.Helpers;
 using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
+using Elsa.Workflows.Activities.Compensation;
 using Elsa.Workflows.Exceptions;
 using Elsa.Workflows.Memory;
 using Humanizer;
@@ -38,8 +39,12 @@ public static class JsonActivityConstructorContextHelper
         // 2) Parse into a JsonNode so we can mutate
         var node = JsonNode.Parse(raw)!;
 
-        // 3) Strip out any "_type" metadata wrappers
-        StripTypeMetadata(node);
+        // 3) Strip out any "_type" metadata wrappers. Compensation scopes retain their raw
+        // mappings and extension JSON; only their owned activity children need constructor cleanup.
+        if (type == typeof(CompensationScope))
+            StripCompensationScopeChildActivityMetadata(node);
+        else
+            StripTypeMetadata(node);
 
         // 4) Get a cleaned JSON string
         var cleanedJson = node.ToJsonString(new(JsonSerializerDefaults.Web));
@@ -76,6 +81,9 @@ public static class JsonActivityConstructorContextHelper
     /// </summary>
     private static void StripTypeMetadata(JsonNode node)
     {
+        if (node is JsonObject compensationScope && IsCompensationScope(compensationScope))
+            return;
+
         switch (node)
         {
             case JsonObject obj:
@@ -83,7 +91,7 @@ public static class JsonActivityConstructorContextHelper
                 foreach (var key in obj.Select(kvp => kvp.Key).ToList())
                 {
                     var child = obj[key];
-                    if (child is JsonObject wrapper && wrapper.ContainsKey("_type"))
+                    if (child is JsonObject wrapper && wrapper.ContainsKey("_type") && !IsCompensationScope(wrapper))
                     {
                         // If it has an "items" array, replace the whole property with that array
                         if (wrapper["items"] is JsonArray items)
@@ -115,7 +123,7 @@ public static class JsonActivityConstructorContextHelper
                 for (var i = 0; i < arr.Count; i++)
                 {
                     var element = arr[i];
-                    if (element is JsonObject w && w.ContainsKey("_type"))
+                    if (element is JsonObject w && w.ContainsKey("_type") && !IsCompensationScope(w))
                     {
                         if (w["items"] is JsonArray items)
                         {
@@ -141,6 +149,26 @@ public static class JsonActivityConstructorContextHelper
             // primitives—nothing to do
             default:
                 break;
+        }
+    }
+
+    private static bool IsCompensationScope(JsonObject obj) =>
+        obj["type"] is JsonValue typeValue &&
+        typeValue.TryGetValue<string>(out var typeName) &&
+        string.Equals(typeName, CompensationScope.ActivityTypeName, StringComparison.Ordinal);
+
+    private static void StripCompensationScopeChildActivityMetadata(JsonNode node)
+    {
+        if (node is not JsonObject scope || scope["steps"] is not JsonArray steps)
+            return;
+
+        foreach (var step in steps.OfType<JsonObject>())
+        {
+            foreach (var propertyName in new[] { "forward", "handler" })
+            {
+                if (step[propertyName] is { } activity)
+                    StripTypeMetadata(activity);
+            }
         }
     }
 

@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Net.Mime;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Elsa.Api.Client.Converters;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Contracts;
@@ -17,8 +18,42 @@ namespace Elsa.Studio.Workflows.Domain.Services;
 /// <summary>
 /// A workflow definition service that uses a remote backend to retrieve workflow definitions.
 /// </summary>
-public class WorkflowDefinitionImporter(IBackendApiClientProvider backendApiClientProvider, IMediator mediator, IWorkflowJsonDetector workflowJsonDetector) : IWorkflowDefinitionImporter
+public class WorkflowDefinitionImporter : IWorkflowDefinitionImporter
 {
+    private readonly IBackendApiClientProvider backendApiClientProvider;
+    private readonly IMediator mediator;
+    private readonly IWorkflowJsonDetector workflowJsonDetector;
+    private readonly IRemoteFeatureProvider? remoteFeatureProvider;
+    private readonly INativeCompensationDraftGraphClassifier nativeDraftGraphClassifier;
+
+    public WorkflowDefinitionImporter(IBackendApiClientProvider backendApiClientProvider, IMediator mediator, IWorkflowJsonDetector workflowJsonDetector)
+        : this(backendApiClientProvider, mediator, workflowJsonDetector, null, new NativeCompensationDraftGraphClassifier())
+    {
+    }
+
+    public WorkflowDefinitionImporter(
+        IBackendApiClientProvider backendApiClientProvider,
+        IMediator mediator,
+        IWorkflowJsonDetector workflowJsonDetector,
+        IRemoteFeatureProvider? remoteFeatureProvider)
+        : this(backendApiClientProvider, mediator, workflowJsonDetector, remoteFeatureProvider, new NativeCompensationDraftGraphClassifier())
+    {
+    }
+
+    public WorkflowDefinitionImporter(
+        IBackendApiClientProvider backendApiClientProvider,
+        IMediator mediator,
+        IWorkflowJsonDetector workflowJsonDetector,
+        IRemoteFeatureProvider? remoteFeatureProvider,
+        INativeCompensationDraftGraphClassifier nativeDraftGraphClassifier)
+    {
+        this.backendApiClientProvider = backendApiClientProvider;
+        this.mediator = mediator;
+        this.workflowJsonDetector = workflowJsonDetector;
+        this.remoteFeatureProvider = remoteFeatureProvider;
+        this.nativeDraftGraphClassifier = nativeDraftGraphClassifier;
+    }
+
     private async Task<IWorkflowDefinitionsApi> GetApiAsync(CancellationToken cancellationToken = default)
     {
         return await backendApiClientProvider.GetApiAsync<IWorkflowDefinitionsApi>(cancellationToken);
@@ -106,6 +141,7 @@ public class WorkflowDefinitionImporter(IBackendApiClientProvider backendApiClie
     public async Task<WorkflowImportResult> ImportJsonAsync(string fileName, string json, ImportOptions? options)
     {
         var jsonSerializerOptions = CreateJsonSerializerOptions();
+        var backendContextKey = backendApiClientProvider.ContextKey;
 
         try
         {
@@ -126,8 +162,37 @@ public class WorkflowDefinitionImporter(IBackendApiClientProvider backendApiClie
                 model.DefinitionId = options.DefinitionId;
 
             await mediator.NotifyAsync(new ImportingWorkflowDefinition(model));
+            var requestModel = WorkflowDefinitionModelSnapshot.WithRoot(model, model.Root);
+            var analysis = await nativeDraftGraphClassifier.AnalyzeAsync(requestModel.Root);
+            EnsureSameBackendContext(backendContextKey);
+            if (analysis.MustRejectProtectedWrite)
+                throw new InvalidOperationException("The imported workflow contains a native compensation scope Studio cannot safely classify or import.");
+            var containsCompensationDraft = analysis.ContainsCompensationScope;
+            if (containsCompensationDraft)
+            {
+                EnsureSameBackendContext(backendContextKey);
+                if (!await NativeCompensationDraftCapability.IsEnabledForContextAsync(remoteFeatureProvider, backendApiClientProvider, backendContextKey))
+                    throw backendApiClientProvider.ContextKey == backendContextKey
+                        ? new InvalidOperationException("This server does not advertise native compensation draft authoring. The workflow was not imported.")
+                        : new OperationCanceledException("The selected backend changed while importing the workflow.");
+            }
+
+            EnsureSameBackendContext(backendContextKey);
             var api = await GetApiAsync();
-            var newWorkflowDefinition = await api.ImportAsync(model);
+            EnsureSameBackendContext(backendContextKey);
+            WorkflowDefinition newWorkflowDefinition;
+            if (containsCompensationDraft)
+            {
+                var binding = (IBackendRequestContextBinding)backendApiClientProvider;
+                using (binding.BindRequestContext(backendContextKey))
+                    newWorkflowDefinition = await api.ImportAsync(requestModel);
+            }
+            else
+                newWorkflowDefinition = await api.ImportAsync(requestModel);
+
+            EnsureSameBackendContext(backendContextKey);
+            if (!NativeCompensationDraftDocumentContext.TryBind(newWorkflowDefinition, backendContextKey))
+                throw new OperationCanceledException("The imported workflow is already bound to a different backend context.");
 
             if (options?.ImportedCallback != null)
                 await options.ImportedCallback(newWorkflowDefinition);
@@ -163,5 +228,11 @@ public class WorkflowDefinitionImporter(IBackendApiClientProvider backendApiClie
         options.Converters.Add(new JsonStringEnumConverter());
         options.Converters.Add(new VersionOptionsJsonConverter());
         return options;
+    }
+
+    private void EnsureSameBackendContext(string expected)
+    {
+        if (!string.Equals(backendApiClientProvider.ContextKey, expected, StringComparison.Ordinal))
+            throw new OperationCanceledException("The selected backend changed while importing the workflow.");
     }
 }

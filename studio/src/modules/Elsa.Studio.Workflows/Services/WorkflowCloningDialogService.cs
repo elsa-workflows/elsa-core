@@ -72,6 +72,8 @@ public class WorkflowCloningDialogService(
             IsReadonly = false
         };
 
+        NativeCompensationDraftDocumentContext.Copy(workflowDefinition, newDefinition);
+
         var result = await WorkflowDefinitionEditorService.SaveAsync(newDefinition, false, async definition =>
         {
             UserMessageService.ShowSnackbarTextMessage(Localizer[$"{type} successfully saved."], Severity.Success);

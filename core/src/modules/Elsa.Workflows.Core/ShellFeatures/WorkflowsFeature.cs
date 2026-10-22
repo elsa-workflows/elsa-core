@@ -5,6 +5,7 @@ using Elsa.Common;
 using Elsa.Expressions.ShellFeatures;
 using Elsa.Extensions;
 using Elsa.Workflows.ActivationValidators;
+using Elsa.Workflows.Activities.Compensation;
 using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Activities.Flowchart.Options;
 using Elsa.Workflows.Activities.Flowchart.Serialization;
@@ -216,6 +217,7 @@ public class WorkflowsFeature : IShellFeature
             .AddScoped<IPropertyUIHandler, JsonCodeOptionsProvider>()
             .AddScoped<DictionaryValueEvaluator>()
             .AddSingleton<IActivityDescriptorModifier, DictionaryUIHintInputModifier>()
+            .AddSingleton<IActivityDescriptorModifier, CompensationScopeConstructionPropertiesModifier>()
 
             // Logger state generators.
             .AddSingleton(WorkflowLoggerStateGenerator)

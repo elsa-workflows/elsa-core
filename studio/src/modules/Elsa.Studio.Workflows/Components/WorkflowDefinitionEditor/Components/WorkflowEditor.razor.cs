@@ -45,6 +45,8 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
     private bool _isDirty;
     private bool _disposed;
     private WorkflowDefinition? _lastImportedWorkflowDefinition;
+    private string? _workflowDefinitionBackendContextKey;
+    private NativeCompensationDraftRefusalState? _nativeCompensationDraftRefusalState;
     private long _workflowDefinitionGeneration;
     private long _progressOperationSequence;
     private long? _progressOperationOwner;
@@ -97,6 +99,7 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
     public string? SelectedActivityId { get; private set; }
 
     [Inject] private IWorkflowDefinitionEditorService WorkflowDefinitionEditorService { get; set; } = null!;
+    [Inject] private INativeCompensationDraftGraphClassifier NativeDraftGraphClassifier { get; set; } = null!;
     [Inject] private IWorkflowDefinitionImporter WorkflowDefinitionImporter { get; set; } = null!;
     [Inject] private IActivityVisitor ActivityVisitor { get; set; } = null!;
     [Inject] private IActivityRegistry ActivityRegistry { get; set; } = null!;
@@ -125,6 +128,14 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
     [JSInvokable] public async Task OnHotKeysCtrlShiftS() => await OnSaveAsClick();
 
     private JsonObject? Activity => _workflowDefinition?.Root;
+    private NativeCompensationDraftRefusal? CurrentNativeCompensationDraftRefusal =>
+        _nativeCompensationDraftRefusalState is { } state &&
+        string.Equals(state.BackendContextKey, BackendApiClientProvider.ContextKey, StringComparison.Ordinal) &&
+        string.Equals(state.DocumentDefinitionId, _workflowDefinition?.DefinitionId, StringComparison.Ordinal)
+            ? state.Refusal
+            : null;
+    private string? CurrentNativeCompensationDraftRefusalDefinitionId =>
+        CurrentNativeCompensationDraftRefusal != null ? _nativeCompensationDraftRefusalState?.DisplayDefinitionId : null;
     private bool IsDirty => _isDirty || _bpmnDocumentSession?.IsDirty == true;
     private bool CanPublish => Permissions.CanPublishDefinitions();
     private bool CanRetract => Permissions.CanRetractDefinitions();
@@ -175,6 +186,7 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
 
         _bpmnElementSelected = EventCallback.Factory.Create<BpmnElementSelection?>(this, OnBpmnElementSelectedAsync);
         _workflowDefinition = WorkflowDefinition;
+        _workflowDefinitionBackendContextKey = GetWorkflowDefinitionBackendContextKey(_workflowDefinition);
         AdoptServerDefinition(_workflowDefinition);
 
         await ActivityRegistry.EnsureLoadedAsync();
@@ -191,12 +203,15 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
         if (_disposed)
             return;
 
+        ClearStaleNativeCompensationDraftRefusal();
+
         if (ReferenceEquals(WorkflowDefinition, _workflowDefinition))
             return;
 
         InvalidateWorkflowDefinitionOperations();
 
         var workflowDefinition = _workflowDefinition = WorkflowDefinition;
+        _workflowDefinitionBackendContextKey = GetWorkflowDefinitionBackendContextKey(workflowDefinition);
         var expectedWorkflowDefinitionGeneration = _workflowDefinitionGeneration;
         AdoptServerDefinition(workflowDefinition);
 
@@ -254,11 +269,13 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
         _workflowDefinitionGeneration++;
         _progressOperationOwner = null;
         IsProgressing = false;
+        ClearNativeCompensationDraftRefusal();
     }
 
     private async Task HandleChangesAsync(bool readDiagram, bool force = false)
     {
         var workflowDefinitionGeneration = _workflowDefinitionGeneration;
+        ClearNativeCompensationDraftRefusal();
         _isDirty = true;
         await InvokeAsync(StateHasChanged);
 
@@ -293,11 +310,24 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
             workflowDefinition.Root = root;
         }
 
-        var result = await WorkflowDefinitionEditorService.SaveAsync(workflowDefinition, publish, async definition =>
+        var analysis = await NativeDraftGraphClassifier.AnalyzeAsync(workflowDefinition.Root);
+        if (analysis.MustRejectProtectedWrite)
+            return new(new ValidationErrors([new("This workflow contains a native compensation scope Studio cannot safely classify or edit. The workflow was not saved.")]));
+        var containsCompensationDraft = analysis.ContainsCompensationScope;
+        if (containsCompensationDraft && _workflowDefinitionBackendContextKey != BackendApiClientProvider.ContextKey)
+            return new(new ValidationErrors([new(Localizer["This compensation draft was loaded from a different backend context. Reload the workflow before saving."])]));
+
+        var saveCallback = async (WorkflowDefinition definition) =>
         {
-            if (IsCurrentWorkflowOperation(workflowDefinitionGeneration))
+            if (IsCurrentWorkflowOperation(workflowDefinitionGeneration) &&
+                (!containsCompensationDraft || _workflowDefinitionBackendContextKey == BackendApiClientProvider.ContextKey))
                 await SetWorkflowDefinitionAsync(definition);
-        });
+        };
+        var result = containsCompensationDraft
+            ? WorkflowDefinitionEditorService is IContextBoundWorkflowDefinitionEditorService contextBoundService && _workflowDefinitionBackendContextKey is { } expectedContextKey
+                ? await contextBoundService.SaveNativeCompensationDraftAsync(workflowDefinition, publish, expectedContextKey, saveCallback)
+                : new(new ValidationErrors([new(Localizer["This Studio cannot save compensation drafts with backend context binding."])]))
+            : await WorkflowDefinitionEditorService.SaveAsync(workflowDefinition, publish, saveCallback);
 
         if (IsCurrentWorkflowOperation(workflowDefinitionGeneration))
         {
@@ -347,6 +377,8 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
 
         if (!IsCurrentWorkflowOperation(expectedWorkflowDefinitionGeneration))
             return;
+
+        ClearNativeCompensationDraftRefusal();
 
         var progressOperationOwner = showLoader ? BeginProgressOperation() : null;
 
@@ -428,10 +460,32 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
 
             }).ConfigureAwait(false);
 
-            await result.OnFailedAsync(errors =>
+            await result.OnFailedAsync(async errors =>
             {
                 if (!IsCurrentWorkflowOperation(expectedWorkflowDefinitionGeneration))
-                    return Task.CompletedTask;
+                    return;
+
+                var compensationRefusal = NativeCompensationDraftRefusal.FromValidationErrors(errors);
+                if (compensationRefusal != null)
+                {
+                    var backendContextKey = _workflowDefinitionBackendContextKey;
+                    if (backendContextKey == null ||
+                        !string.Equals(backendContextKey, BackendApiClientProvider.ContextKey, StringComparison.Ordinal))
+                        return;
+
+                    var supportsAuthenticatedRequestContextBinding =
+                        BackendApiClientProvider is IBackendRequestContextBinding { SupportsAuthenticatedRequestContextBinding: true };
+                    var safeRefusal = supportsAuthenticatedRequestContextBinding
+                        ? compensationRefusal
+                        : compensationRefusal with { Diagnostics = [] };
+                    _nativeCompensationDraftRefusalState = new(
+                        safeRefusal,
+                        backendContextKey,
+                        _workflowDefinition?.DefinitionId,
+                        supportsAuthenticatedRequestContextBinding ? _workflowDefinition?.DefinitionId : null);
+                    await InvokeAsync(StateHasChanged);
+                    return;
+                }
 
                 onFailure?.Invoke(errors);
                 UserMessageService.ShowSnackbarTextMessage(
@@ -439,7 +493,6 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
                     Severity.Error,
                     options => options.VisibleStateDuration = 5000
                 );
-                return Task.CompletedTask;
             });
         }
         catch (DiagramDesignerValidationException e)
@@ -465,6 +518,27 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
     }
 
     private long? BeginProgressOperation() => _progressOperationOwner = ++_progressOperationSequence;
+
+    private void ClearStaleNativeCompensationDraftRefusal()
+    {
+        if (_nativeCompensationDraftRefusalState is not { } state)
+            return;
+
+        if (!string.Equals(state.BackendContextKey, BackendApiClientProvider.ContextKey, StringComparison.Ordinal) ||
+            !string.Equals(state.DocumentDefinitionId, WorkflowDefinition?.DefinitionId, StringComparison.Ordinal))
+            ClearNativeCompensationDraftRefusal();
+    }
+
+    private void ClearNativeCompensationDraftRefusal()
+    {
+        _nativeCompensationDraftRefusalState = null;
+    }
+
+    private sealed record NativeCompensationDraftRefusalState(
+        NativeCompensationDraftRefusal Refusal,
+        string BackendContextKey,
+        string? DocumentDefinitionId,
+        string? DisplayDefinitionId);
 
     private bool IsCurrentWorkflowOperation(long workflowDefinitionGeneration) => !_disposed && workflowDefinitionGeneration == _workflowDefinitionGeneration;
 
@@ -521,6 +595,7 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
 
     private async Task SetWorkflowDefinitionAsync(WorkflowDefinition workflowDefinition, bool isExternalReplacement = false, bool isServerDefinition = true)
     {
+        ClearNativeCompensationDraftRefusal();
         if (isExternalReplacement)
             InvalidateWorkflowDefinitionOperations();
 
@@ -539,6 +614,8 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
     {
         var isNewImport = !ReferenceEquals(_lastImportedWorkflowDefinition, workflowDefinition);
         _lastImportedWorkflowDefinition = workflowDefinition;
+        if (isNewImport)
+            _workflowDefinitionBackendContextKey = GetWorkflowDefinitionBackendContextKey(workflowDefinition);
         await SetWorkflowDefinitionAsync(workflowDefinition, isNewImport);
 
         if (isNewImport && workflowDefinition.Root != null)
@@ -552,6 +629,11 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
 
         _workflowDefinition.Root = await _diagramDesigner.GetActivityAsync();
         return _workflowDefinition;
+    }
+
+    private string? GetWorkflowDefinitionBackendContextKey(WorkflowDefinition? workflowDefinition)
+    {
+        return NativeCompensationDraftDocumentContext.GetBackendContextKey(workflowDefinition);
     }
 
     /// <summary>
@@ -614,6 +696,7 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
 
     private async Task OnSelectedActivityUpdated(JsonObject activity)
     {
+        ClearNativeCompensationDraftRefusal();
         _isDirty = true;
         StateHasChanged();
         await _diagramDesigner.UpdateActivityAsync(SelectedActivityId!, activity);
@@ -830,7 +913,82 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
 
     private Task OnBpmnDocumentChangedAsync() => InvokeAsync(StateHasChanged);
 
-    private async Task OnGraphUpdated() => await HandleChangesAsync(true);
+    private async Task OnGraphUpdated()
+    {
+        var workflowDefinition = _workflowDefinition;
+        var currentRoot = workflowDefinition?.Root;
+
+        if (workflowDefinition != null && _diagramDesigner != null &&
+            (NativeCompensationDraftCapability.ContainsPotentialScopeMarker(currentRoot) ||
+             NativeCompensationDraftCapability.ContainsPotentialScopeMarker(_diagramDesigner.GetCurrentContainerActivityOrRoot())))
+        {
+            var workflowDefinitionGeneration = _workflowDefinitionGeneration;
+            var definitionId = workflowDefinition.DefinitionId;
+            var documentBackendContextKey = _workflowDefinitionBackendContextKey;
+            var backendContextKey = BackendApiClientProvider.ContextKey;
+
+            bool IsCurrentWorkflowGraphUpdate() =>
+                IsCurrentWorkflowOperation(workflowDefinitionGeneration) &&
+                ReferenceEquals(_workflowDefinition, workflowDefinition) &&
+                string.Equals(_workflowDefinition?.DefinitionId, definitionId, StringComparison.Ordinal) &&
+                string.Equals(BackendApiClientProvider.ContextKey, backendContextKey, StringComparison.Ordinal);
+
+            JsonObject root;
+            try
+            {
+                root = await _diagramDesigner.GetActivityAsync();
+            }
+            catch (Exception) when (!IsCurrentWorkflowGraphUpdate())
+            {
+                return;
+            }
+
+            if (!IsCurrentWorkflowGraphUpdate())
+                return;
+
+            NativeCompensationDraftGraphAnalysis analysis;
+            try
+            {
+                analysis = await NativeDraftGraphClassifier.AnalyzeAsync(root);
+            }
+            catch (Exception) when (!IsCurrentWorkflowGraphUpdate())
+            {
+                return;
+            }
+            catch
+            {
+                analysis = NativeCompensationDraftGraphAnalysis.Indeterminate;
+            }
+
+            if (!IsCurrentWorkflowGraphUpdate())
+                return;
+
+            // A scope-like marker in user data is only a reason to classify the graph. Ordinary data
+            // must retain the existing editor update path, even when the document has no native origin.
+            if (analysis.RequiresNativeProtection)
+            {
+                bool IsCurrentNativeGraphUpdate() =>
+                    IsCurrentWorkflowGraphUpdate() &&
+                    !string.IsNullOrWhiteSpace(documentBackendContextKey) &&
+                    string.Equals(documentBackendContextKey, backendContextKey, StringComparison.Ordinal) &&
+                    string.Equals(_workflowDefinitionBackendContextKey, documentBackendContextKey, StringComparison.Ordinal) &&
+                    string.Equals(NativeCompensationDraftDocumentContext.GetBackendContextKey(workflowDefinition), documentBackendContextKey, StringComparison.Ordinal);
+
+                if (!IsCurrentNativeGraphUpdate())
+                    return;
+
+                workflowDefinition.Root = root;
+
+                if (WorkflowDefinitionUpdated != null)
+                    await WorkflowDefinitionUpdated();
+
+                if (!IsCurrentNativeGraphUpdate())
+                    return;
+            }
+        }
+
+        await HandleChangesAsync(true);
+    }
     
     private async Task OnActivityUpdated(JsonObject activity)
     {

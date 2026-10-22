@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Elsa.Expressions.Contracts;
 using Elsa.Extensions;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Activities.Compensation;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Serialization.Helpers;
@@ -28,6 +29,33 @@ public class ActivityJsonConverter(
             throw new JsonException("Failed to parse JsonDocument");
 
         var activityRoot = doc.RootElement;
+        var clonedOptions = GetClonedOptions(options);
+
+        // Inspect a recognized compensation scope before ordinary descriptor lookup can
+        // replace missing or unavailable pins with the Latest activity version.
+        var protectedScopeRoot = activityRoot;
+        JsonDocument? wrappedOriginalDocument = null;
+        var hasProtectedScope = CompensationScopeDraftJson.IsRecognizedScope(activityRoot);
+        if (!hasProtectedScope &&
+            activityRoot.TryGetProperty("type", out var outerType) &&
+            outerType.ValueKind == JsonValueKind.String &&
+            outerType.GetString() == ActivityTypeNameHelper.GenerateTypeName<NotFoundActivity>() &&
+            activityRoot.TryGetProperty("originalActivityJson", out var wrappedOriginalActivityJson) &&
+            wrappedOriginalActivityJson.ValueKind == JsonValueKind.String)
+        {
+            wrappedOriginalDocument = JsonDocument.Parse(wrappedOriginalActivityJson.GetString()!);
+            protectedScopeRoot = wrappedOriginalDocument.RootElement;
+            hasProtectedScope = CompensationScopeDraftJson.IsRecognizedScope(protectedScopeRoot);
+        }
+
+        if (hasProtectedScope && !CompensationScopeDraftJson.IsMaterializable(protectedScopeRoot, activityRegistry, clonedOptions))
+        {
+            var opaqueScope = CreateNotFoundActivity(protectedScopeRoot, activityRoot, clonedOptions);
+            wrappedOriginalDocument?.Dispose();
+            return opaqueScope;
+        }
+
+        wrappedOriginalDocument?.Dispose();
         var activityTypeName = GetActivityDetails(activityRoot, out var activityTypeVersion, out var activityDescriptor);
         var notFoundActivityTypeName = ActivityTypeNameHelper.GenerateTypeName<NotFoundActivity>();
 
@@ -38,40 +66,9 @@ public class ActivityJsonConverter(
             activityTypeName = GetActivityDetails(activityRoot, out activityTypeVersion, out activityDescriptor);
         }
 
-        var clonedOptions = GetClonedOptions(options);
         // If the activity type is not found, create a NotFoundActivity instead.
         if (activityDescriptor == null)
-        {
-            var notFoundActivityDescriptor = activityRegistry.Find<NotFoundActivity>()!;
-            var notFoundActivityResult = JsonActivityConstructorContextHelper.CreateActivity<NotFoundActivity>(notFoundActivityDescriptor, activityRoot, clonedOptions);
-            LogExceptionsIfAny(notFoundActivityResult);
-
-            var notFoundActivity = notFoundActivityResult.Activity;
-            notFoundActivity.Type = notFoundActivityTypeName;
-            notFoundActivity.Version = 1;
-            notFoundActivity.MissingTypeName = activityTypeName;
-            notFoundActivity.MissingTypeVersion = activityTypeVersion;
-            notFoundActivity.OriginalActivityJson = activityRoot.ToString();
-
-            // Extract metadata from doc.RootElement rather than activityRoot.
-            // In round-trip scenarios, activityRoot may have been reassigned to the inner originalActivityJson (see line 37),
-            // but we want the metadata from the current activity being deserialized, which represents the NotFoundActivity
-            // placeholder's position and annotations in the designer.
-            if (doc.RootElement.TryGetProperty("metadata", out var outerMetadataElement))
-            {
-                var outerMetadata = JsonSerializer.Deserialize<IDictionary<string, object>>(outerMetadataElement.GetRawText(), clonedOptions);
-                if (outerMetadata != null)
-                {
-                    notFoundActivity.Metadata = outerMetadata;
-                }
-            }
-
-            // Set display text and description after metadata assignment to ensure they always reflect the current state
-            notFoundActivity.SetDisplayText($"Not Found: {activityTypeName}");
-            notFoundActivity.SetDescription($"Could not find activity type {activityTypeName} with version {activityTypeVersion}");
-
-            return notFoundActivity;
-        }
+            return CreateNotFoundActivity(activityRoot, doc.RootElement, clonedOptions, activityTypeName, activityTypeVersion);
 
         var context = JsonActivityConstructorContextHelper.Create(activityDescriptor, activityRoot, clonedOptions);
         var activityResult = activityDescriptor.Constructor(context);
@@ -88,6 +85,82 @@ public class ActivityJsonConverter(
         var logger = serviceProvider.GetRequiredService<ILogger<ActivityJsonConverter>>();
         foreach (var exception in result.Exceptions)
             logger.LogWarning("An exception was thrown while constructing activity with id '{activityId}': {Message}", result.Activity.Id, exception.Message);
+    }
+
+    private IActivity CreateNotFoundActivity(JsonElement activityRoot, JsonElement outerRoot, JsonSerializerOptions options, string? missingTypeName = null, int? missingTypeVersion = null)
+    {
+        var isOpaqueCompensationScope = CompensationScopeDraftJson.IsRecognizedScope(activityRoot);
+        if (isOpaqueCompensationScope)
+            missingTypeName = CompensationScope.ActivityTypeName;
+
+        missingTypeName ??= activityRoot.TryGetProperty("type", out var typeElement) && typeElement.ValueKind == JsonValueKind.String
+            ? typeElement.GetString()!
+            : "Unknown";
+        missingTypeVersion ??= activityRoot.TryGetProperty("version", out var versionElement) &&
+                               versionElement.ValueKind == JsonValueKind.Number &&
+                               versionElement.TryGetInt32(out var version)
+            ? version
+            : 0;
+
+        // Unsupported scopes retain their entire raw document without first trying to
+        // hydrate typed fields such as Version from the very schema we just rejected.
+        NotFoundActivity notFoundActivity;
+        if (isOpaqueCompensationScope)
+        {
+            notFoundActivity = new NotFoundActivity();
+            if (activityRoot.TryGetProperty("id", out var id) && id.ValueKind == JsonValueKind.String)
+                notFoundActivity.Id = id.GetString()!;
+            if (activityRoot.TryGetProperty("nodeId", out var nodeId) && nodeId.ValueKind == JsonValueKind.String)
+                notFoundActivity.NodeId = nodeId.GetString()!;
+        }
+        else
+        {
+            var descriptor = activityRegistry.Find<NotFoundActivity>()!;
+            var result = JsonActivityConstructorContextHelper.CreateActivity<NotFoundActivity>(descriptor, activityRoot, options);
+            LogExceptionsIfAny(result);
+            notFoundActivity = result.Activity;
+        }
+        notFoundActivity.Type = ActivityTypeNameHelper.GenerateTypeName<NotFoundActivity>();
+        notFoundActivity.Version = 1;
+        notFoundActivity.MissingTypeName = missingTypeName;
+        notFoundActivity.MissingTypeVersion = missingTypeVersion.Value;
+        notFoundActivity.OriginalActivityJson = activityRoot.GetRawText();
+
+        if (isOpaqueCompensationScope)
+        {
+            var metadata = CopyMetadata(activityRoot) ?? new Dictionary<string, object>();
+            var outerMetadata = CopyMetadata(outerRoot);
+            if (outerMetadata != null)
+            {
+                foreach (var (key, value) in outerMetadata)
+                    metadata[key] = value;
+            }
+
+            if (metadata.Count > 0)
+                notFoundActivity.Metadata = metadata;
+        }
+        else if (outerRoot.TryGetProperty("metadata", out var metadataElement))
+        {
+            var metadata = JsonSerializer.Deserialize<IDictionary<string, object>>(metadataElement.GetRawText(), options);
+            if (metadata != null)
+                notFoundActivity.Metadata = metadata;
+        }
+
+        notFoundActivity.SetDisplayText($"Not Found: {missingTypeName}");
+        notFoundActivity.SetDescription($"Could not find activity type {missingTypeName} with version {missingTypeVersion}");
+        return notFoundActivity;
+    }
+
+    private static Dictionary<string, object>? CopyMetadata(JsonElement activityRoot)
+    {
+        if (!activityRoot.TryGetProperty("metadata", out var metadataElement) || metadataElement.ValueKind != JsonValueKind.Object)
+            return null;
+
+        var metadata = new Dictionary<string, object>(StringComparer.Ordinal);
+        foreach (var property in metadataElement.EnumerateObject())
+            metadata[property.Name] = property.Value.Clone();
+
+        return metadata;
     }
 
     /// <inheritdoc />

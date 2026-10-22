@@ -59,6 +59,7 @@ public class FlowchartDiagramDesigner(ILocalizer localizer, IDialogService dialo
     public RenderFragment DisplayDesigner(DisplayContext context)
     {
         var flowchart = context.Activity;
+        var documentBackendContextKey = NativeCompensationDraftDocumentContext.GetBackendContextKey(context.WorkflowDefinition) ?? "";
         var sequence = 0;
 
         _workflowDefinition = context.WorkflowDefinition;
@@ -69,6 +70,7 @@ public class FlowchartDiagramDesigner(ILocalizer localizer, IDialogService dialo
             builder.SetKey(_id);
             builder.AddAttribute(sequence++, nameof(FlowchartDesignerWrapper.Flowchart),  flowchart);
             builder.AddAttribute(sequence++, nameof(FlowchartDesignerWrapper.IsReadOnly), context.IsReadOnly);
+            builder.AddAttribute(sequence++, nameof(FlowchartDesignerWrapper.DocumentBackendContextKey), documentBackendContextKey);
             builder.AddAttribute(sequence++, nameof(FlowchartDesignerWrapper.ActivityStats), context.ActivityStats);
             builder.AddAttribute(sequence++, nameof(FlowchartDesignerWrapper.ActivitySelected), context.ActivitySelectedCallback);
             builder.AddAttribute(sequence++, nameof(FlowchartDesignerWrapper.ActivityUpdated), context.ActivityUpdated);

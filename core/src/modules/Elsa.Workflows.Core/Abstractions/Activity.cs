@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json.Serialization;
 using Elsa.Extensions;
+using Elsa.Workflows.Activities.Compensation;
 using Elsa.Workflows.Behaviors;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Models;
@@ -17,6 +18,7 @@ namespace Elsa.Workflows;
 public abstract class Activity : IActivity, ISignalHandler
 {
     private readonly ICollection<SignalHandlerRegistration> _signalReceivedHandlers = new List<SignalHandlerRegistration>();
+    private string _type = null!;
 
     /// <summary>
     /// Constructor.
@@ -46,7 +48,16 @@ public abstract class Activity : IActivity, ISignalHandler
     public string? Name { get; set; }
 
     /// <inheritdoc />
-    public string Type { get; set; }
+    public string Type
+    {
+        get => _type;
+        set
+        {
+            var previousType = _type;
+            _type = value;
+            CompensationScopeExecutionState.OnDiscriminatorChanged(previousType, value);
+        }
+    }
 
     /// <inheritdoc />
     public int Version { get; set; }

@@ -1,0 +1,102 @@
+using System.Text.Json;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Activities.Compensation;
+using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Management.Services;
+using Elsa.Workflows.Models;
+
+namespace Elsa.Workflows.Management.UnitTests.Services;
+
+public class CompensationDraftPublishDiagnosticsTests
+{
+    [Fact]
+    public void Create_ReportsStableScopeStepRoleAndMappingIdsWithoutAuthoredValues()
+    {
+        var forward = new Sequence { Id = "forward-activity" };
+        var handler = new Sequence { Id = "handler-activity" };
+        using var mappingDocument = JsonDocument.Parse("""
+            {"mappingId":"mapping-1","source":"secret capture value"}
+            """);
+        var scope = new CompensationScope
+        {
+            Id = "scope-1",
+            Steps =
+            [
+                new CompensationStep
+                {
+                    StepId = "step-1",
+                    Name = "private row label",
+                    Forward = forward,
+                    Handler = handler,
+                    Mappings = [mappingDocument.RootElement.Clone()]
+                }
+            ]
+        };
+        var root = new Sequence { Id = "root" };
+        var rootNode = new ActivityNode(root, "root");
+        var scopeNode = new ActivityNode(scope, "scope");
+        scopeNode.AddParent(rootNode);
+        rootNode.AddChild(scopeNode);
+        var graph = new WorkflowGraph(new Workflow(root), rootNode, [rootNode, scopeNode]);
+
+        var diagnostics = CompensationDraftPublishDiagnostics.Create(graph);
+        var byRole = diagnostics.ToDictionary(error => CompensationDraftTestData.GetDataString(error, "role"));
+
+        Assert.Equal(new[] { "forward", "handler", "mapping", "scope" }, byRole.Keys.Order().ToArray());
+        Assert.All(diagnostics, diagnostic => Assert.Equal(CompensationDraftPublishDiagnostics.Code, diagnostic.Code));
+        Assert.Equal("scope-1", CompensationDraftTestData.GetDataString(byRole["scope"], "scopeActivityId"));
+        Assert.Equal("step-1", CompensationDraftTestData.GetDataString(byRole["forward"], "stepId"));
+        Assert.Equal("forward-activity", CompensationDraftTestData.GetDataArray(byRole["forward"], "relatedActivityIds").Single());
+        Assert.Equal("handler-activity", CompensationDraftTestData.GetDataArray(byRole["handler"], "relatedActivityIds").Single());
+        Assert.Equal("mapping-1", CompensationDraftTestData.GetDataArray(byRole["mapping"], "mappingIds").Single());
+
+        var serialized = JsonSerializer.Serialize(diagnostics);
+        Assert.DoesNotContain("private row label", serialized, StringComparison.Ordinal);
+        Assert.DoesNotContain("secret capture value", serialized, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Create_RefusesOpaqueCompensationTypeEvenWhenOriginalJsonIsUnavailable()
+    {
+        var root = new Sequence { Id = "root" };
+        var rootNode = new ActivityNode(root, "root");
+        var opaque = new NotFoundActivity(missingTypeName: CompensationScope.ActivityTypeName)
+        {
+            Id = "opaque-scope",
+            OriginalActivityJson = "not-json"
+        };
+        var opaqueNode = new ActivityNode(opaque, "scope");
+        opaqueNode.AddParent(rootNode);
+        rootNode.AddChild(opaqueNode);
+        var graph = new WorkflowGraph(new Workflow(root), rootNode, [rootNode, opaqueNode]);
+
+        var diagnostic = Assert.Single(CompensationDraftPublishDiagnostics.Create(graph));
+
+        Assert.Equal(CompensationScope.DraftOnlyDiagnosticCode, diagnostic.Code);
+        Assert.Equal("opaque-scope", diagnostic.ActivityId);
+    }
+
+    [Theory]
+    [InlineData("not-json")]
+    [InlineData("null")]
+    [InlineData("[]")]
+    [InlineData("42")]
+    [InlineData("\"future\"")]
+    [InlineData("{\"type\":\"Elsa.UnknownActivity\",\"originalActivityJson\":\"[]\"}")]
+    public void Create_LeavesOrdinaryOpaqueActivitiesUnchanged(string originalActivityJson)
+    {
+        var root = new Sequence { Id = "root" };
+        var rootNode = new ActivityNode(root, "root");
+        var unknownNode = new ActivityNode(new NotFoundActivity(missingTypeName: "Elsa.UnknownActivity")
+        {
+            Id = "ordinary-unknown",
+            OriginalActivityJson = originalActivityJson
+        }, "unknown");
+        unknownNode.AddParent(rootNode);
+        rootNode.AddChild(unknownNode);
+        var graph = new WorkflowGraph(new Workflow(root), rootNode, [rootNode, unknownNode]);
+
+        Assert.Empty(CompensationDraftPublishDiagnostics.Create(graph));
+    }
+
+}

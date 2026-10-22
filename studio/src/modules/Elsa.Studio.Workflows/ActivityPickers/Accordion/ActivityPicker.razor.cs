@@ -1,6 +1,8 @@
 ﻿using Elsa.Api.Client.Resources.ActivityDescriptors.Models;
 using Elsa.Studio.Contracts;
+using Elsa.Studio.Extensions;
 using Elsa.Studio.Workflows.Domain.Contracts;
+using Elsa.Studio.Workflows.Domain.Models;
 using Elsa.Studio.Workflows.Domain.Extensions;
 using Elsa.Studio.Workflows.Models;
 using Elsa.Studio.Workflows.UI.Contracts;
@@ -45,6 +47,8 @@ public partial class ActivityPicker
     [Inject] private IActivityRegistry ActivityRegistry { get; set; } = default!;
     [Inject] private IActivityDisplaySettingsRegistry ActivityDisplaySettingsRegistry { get; set; } = default!;
     [Inject] private IMediator Mediator { get; set; } = default!;
+    [Inject] private IRemoteFeatureProvider RemoteFeatureProvider { get; set; } = default!;
+    [Inject] private IBackendApiClientProvider BackendApiClientProvider { get; set; } = default!;
 
     private IEnumerable<ActivityDescriptor> ActivityDescriptors { get; set; } = new List<ActivityDescriptor>();
 
@@ -57,12 +61,24 @@ public partial class ActivityPicker
     private async Task Refresh()
     {
         await ActivityRegistry.EnsureLoadedAsync();
-        ActivityDescriptors = ActivityRegistry.ListBrowsable();
+        var descriptors = ActivityRegistry.ListBrowsable();
+        var backendContextKey = BackendApiClientProvider.ContextKey;
+        var supportsCompensationDrafts = await NativeCompensationDraftCapability.IsEnabledForContextAsync(
+            RemoteFeatureProvider, BackendApiClientProvider, backendContextKey);
+        ActivityDescriptors = supportsCompensationDrafts
+            ? descriptors
+            : descriptors.Where(x => !NativeCompensationDraftCapability.IsCompensationScopeActivity(x.TypeName));
         StateHasChanged();
     }
 
-    private void OnDragStart(ActivityDescriptor activityDescriptor)
+    private Task OnDragStart(ActivityDescriptor activityDescriptor)
     {
-        DragDropManager.Payload = activityDescriptor;
+        // Native descriptors can only be dragged if they survived the current filtered picker view.
+        // Creation boundaries repeat the fresh check, so dragstart stays synchronous and cannot lose a drop.
+        var nativeDescriptorIsOffered =
+            !NativeCompensationDraftCapability.IsCompensationScopeActivity(activityDescriptor.TypeName) ||
+            ActivityDescriptors.Any(x => ReferenceEquals(x, activityDescriptor));
+        DragDropManager.Payload = nativeDescriptorIsOffered ? activityDescriptor : null;
+        return Task.CompletedTask;
     }
 }

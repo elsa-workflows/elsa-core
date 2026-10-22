@@ -55,12 +55,7 @@
                                              title="@(item.ActivityDescriptor?.Description is { } description ? Localizer[description] : "")"
                                              @bind-Expanded="@item.Expanded"
                                              draggable="@(item.ActivityDescriptor is not null ? "true" : "false")"
-                                             @ondragstart="@(() => {
-                                                 if (item.ActivityDescriptor is not null)
-                                                 {
-                                                     OnDragStart(item.ActivityDescriptor);
-                                                 }
-                                             })">
+                                             @ondragstart="@(() => OnDragStart(item.ActivityDescriptor))">
                             </MudTreeViewItem>
                         </ItemTemplate>
                     </MudTreeView>

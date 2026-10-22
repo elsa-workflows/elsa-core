@@ -31,6 +31,7 @@ class DependabotDiscoveryTests < Minitest::Test
     "docs/integration-program/consolidation/dependabot-recursive-discovery.md")).freeze
   DOCUMENTED_PROBES = DISCOVERY_DOCUMENTATION.scan(/`(scripts\/[^`]+\.csproj)`/).flatten.sort.freeze
   DOCUMENTED_CORE_EXPERIMENTS = DISCOVERY_DOCUMENTATION.scan(/`(core\/experiments\/[^`]+\.csproj)`/).flatten.sort.freeze
+  DOCUMENTED_BROWSER_PROOFS = DISCOVERY_DOCUMENTATION.scan(/`(scripts\/native-compensation-draft-proof\/[^`]+\.csproj)`/).flatten.sort.freeze
 
   # #8845 production feature assemblies and their hosts are root solution members.
   REACT_STUDIO_PROJECTS = %w[
@@ -143,16 +144,11 @@ class DependabotDiscoveryTests < Minitest::Test
   end
 
   def test_core_experiments_have_an_explicit_temporary_nonproduct_disposition
-    assert_equal tracked_projects.grep(%r{^core/experiments/}).sort, DOCUMENTED_CORE_EXPERIMENTS,
-      "Every Core experiment needs its own documented disposition; do not ignore the directory"
-    assert_equal DOCUMENTED_CORE_EXPERIMENTS.uniq.length, DOCUMENTED_CORE_EXPERIMENTS.length
-    solution = solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln"))
-    assert_empty solution & DOCUMENTED_CORE_EXPERIMENTS,
-      "Temporary research must stay outside the product solution"
-    DOCUMENTED_CORE_EXPERIMENTS.each do |project|
-      assert_equal ["false"], project_xml(project).get_elements("//IsPackable").map(&:text),
-        "#{project} must explicitly remain nonpackable"
-    end
+    assert_temporary_nonproduct_disposition(DOCUMENTED_CORE_EXPERIMENTS, "core/experiments/")
+  end
+
+  def test_studio_browser_proofs_have_an_explicit_temporary_nonproduct_disposition
+    assert_temporary_nonproduct_disposition(DOCUMENTED_BROWSER_PROOFS, "scripts/native-compensation-draft-proof/")
   end
 
   def test_apps_have_an_explicit_independent_consumer_disposition
@@ -406,6 +402,19 @@ class DependabotDiscoveryTests < Minitest::Test
       output, status = Open3.capture2("git", "ls-files", "-z", chdir: REPOSITORY_ROOT)
       assert status.success?, "Could not enumerate tracked files"
       output.split("\0").sort
+    end
+  end
+
+  def assert_temporary_nonproduct_disposition(documented_projects, prefix)
+    assert_equal tracked_projects.select { |path| path.start_with?(prefix) }.sort, documented_projects,
+      "Every temporary project under #{prefix} needs its own documented disposition"
+    assert_equal documented_projects.uniq.length, documented_projects.length
+    solution = solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln"))
+    assert_empty solution & documented_projects,
+      "Temporary proof projects must stay outside the product solution"
+    documented_projects.each do |project|
+      assert_equal ["false"], project_xml(project).get_elements("//IsPackable").map(&:text),
+        "#{project} must explicitly remain nonpackable"
     end
   end
 
