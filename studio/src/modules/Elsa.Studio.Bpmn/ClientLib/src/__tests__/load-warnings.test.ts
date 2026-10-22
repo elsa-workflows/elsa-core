@@ -205,6 +205,15 @@ describe('computeLoadWarnings', () => {
             ]);
         });
 
+        it('compares the ids of foreign content inside a shape', () => {
+            const hinted = (id: string) => definitions(content, diagram('D1', 'Process_1',
+                `<bpmndi:BPMNShape id="Sub_di" bpmnElement="Sub"><dc:Bounds x="1" y="2" width="3" height="4" /><vendor:hint id="${id}" /></bpmndi:BPMNShape>`));
+
+            expect(computeLoadWarnings(hinted('Old'), hinted('New'))).toEqual([
+                { kind: 'dropped', message: "'Old' (vendor:hint) is lost.", elementId: 'Old' }
+            ]);
+        });
+
         it('reports a lost label, and the lost content of a diagram', () => {
             const labelled = '<bpmndi:BPMNShape id="Sub_di" bpmnElement="Sub"><dc:Bounds x="1" y="2" width="3" height="4" /><bpmndi:BPMNLabel labelStyle="Style" /></bpmndi:BPMNShape>';
             const original = definitions(content, '<bpmndi:BPMNDiagram id="D1" name="Main"><bpmndi:BPMNPlane id="P1" bpmnElement="Process_1">' + labelled +
@@ -227,11 +236,33 @@ describe('computeLoadWarnings', () => {
             ]);
         });
 
+        it('matches a drawing to one the save keeps on its own plane before one on another plane', () => {
+            const original = definitions(content, diagram('D1', 'Process_1', shape('Inner', 300)) + diagram('D2', 'Sub', shape('Inner', 50)));
+            const saved = definitions(content, diagram('D2', 'Sub', shape('Inner', 50)));
+
+            expect(computeLoadWarnings(original, saved)).toEqual([
+                { kind: 'dropped', message: "A diagram layout of 'Inner' is lost.", elementId: 'Inner' }
+            ]);
+        });
+
         it('reports the lost content of a second diagram of the same element', () => {
             const named = (name: string) => `<bpmndi:BPMNDiagram id="${name}" name="${name}"><bpmndi:BPMNPlane id="${name}_plane" bpmnElement="Process_1" /></bpmndi:BPMNDiagram>`;
 
             expect(computeLoadWarnings(definitions(content, named('First') + named('Second')), definitions(content, named('First')))).toEqual([
                 { kind: 'dropped', message: "A diagram of 'Process_1' is lost.", elementId: 'Process_1' }
+            ]);
+        });
+
+        it('matches a diagram to the one the save keeps of the same element, wherever it is', () => {
+            const named = (name: string) => `<bpmndi:BPMNDiagram id="${name}" name="${name}"><bpmndi:BPMNPlane id="${name}_plane" bpmnElement="Process_1" /></bpmndi:BPMNDiagram>`;
+            const bare = diagram('Bare', 'Process_1', '');
+
+            expect(computeLoadWarnings(definitions(content, bare + named('Main')), definitions(content, named('Main')))).toEqual([]);
+            expect(computeLoadWarnings(definitions(content, named('First') + named('Second')), definitions(content, named('Second')))).toEqual([
+                { kind: 'dropped', message: "A diagram of 'Process_1' is lost.", elementId: 'Process_1' }
+            ]);
+            expect(computeLoadWarnings(definitions(content, named('Old') + bare), definitions(content, bare + named('New')))).toEqual([
+                { kind: 'rewritten', message: "The attribute 'name' of the diagram of 'Process_1' changes from 'Old' to 'New'.", elementId: 'Process_1' }
             ]);
         });
 

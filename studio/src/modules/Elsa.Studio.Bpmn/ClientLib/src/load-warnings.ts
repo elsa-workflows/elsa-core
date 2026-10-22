@@ -95,14 +95,15 @@ function qualified(node: { namespaceURI: string | null; localName: string }): st
 
 /**
  * The element as the comparison sees it. Diagrams are left out: compareLayout compares them separately. With
- * `skip`, the elements it matches are left out too, and so are `id` attributes: that is how compareLayout reads
- * diagram content, apart from geometry, which it compares on its own, and apart from ids, which do not matter there.
+ * `skip`, the elements it matches are left out too: that is how compareLayout reads diagram content apart from
+ * geometry, which it compares on its own. The ids of diagram interchange elements do not matter and are left out;
+ * the ids of foreign content inside them are kept.
  */
 function canonical(element: Element, skip?: (child: Element) => boolean): CanonicalElement {
     const attributes = new Map<string, { name: string; value: string }>();
     for (const attribute of Array.from(element.attributes)) {
         if (attribute.namespaceURI === XMLNS) continue;
-        if (skip && attribute.namespaceURI === null && attribute.localName === 'id') continue;
+        if (isInterchange(element) && attribute.namespaceURI === null && attribute.localName === 'id') continue;
         const isType = attribute.namespaceURI === XSI && attribute.localName === 'type';
         attributes.set(qualified(attribute), { name: attribute.name, value: isType ? resolveQName(element, attribute.value) : attribute.value });
     }
@@ -213,26 +214,54 @@ function compareLayout(before: Document, after: Document, warnings: BpmnLoadWarn
     for (const [elementId, layouts] of layoutOf(before)) {
         // An element can be drawn more than once, for example in two diagrams. Each drawing is matched to one the save
         // keeps on the same plane, else to any it keeps; one left without a match is lost.
-        const unmatched = [...(keptLayouts.get(elementId) ?? [])];
-        for (const layout of layouts) {
-            const samePlane = unmatched.findIndex(kept => kept.plane === layout.plane);
-            const kept = unmatched.splice(samePlane >= 0 ? samePlane : 0, 1)[0];
+        const pairs = pair(layouts, keptLayouts.get(elementId) ?? [], (layout, kept) => kept.plane === layout.plane);
+        layouts.forEach((layout, index) => {
+            const kept = pairs[index];
             if (kept) compareDrawing(layout, kept, warnings);
             else warnings.push(warning('dropped', `${layouts.length > 1 ? 'A' : 'The'} diagram layout of '${elementId}' is lost.`, elementId));
-        }
+        });
     }
 
     // What diagrams and planes hold besides shapes and edges, such as label styles and foreign content. A diagram is
-    // matched by the element its plane draws, so one that moves keeps its match; diagrams of the same element are
-    // matched in document order.
+    // matched by the element its plane draws, so one that moves keeps its match. Of several diagrams of the same
+    // element, one is matched to an identical one the save keeps, else to one that has content, else to any. A diagram
+    // with no content of its own has nothing to lose, so it is not matched at all.
     const keptDiagrams = diagramsOf(after);
     for (const [elementId, diagrams] of diagramsOf(before)) {
-        const kept = keptDiagrams.get(elementId) ?? [];
-        diagrams.forEach((diagram, index) => {
-            if (kept[index]) compareElements(diagram, kept[index], elementId, warnings, `the diagram of '${elementId}'`);
-            else if (hasOwnContent(diagram)) warnings.push(warning('dropped', `${diagrams.length > 1 ? 'A' : 'The'} diagram of '${elementId}' is lost.`, elementId));
+        const withContent = diagrams.filter(hasOwnContent);
+        const pairs = pair(withContent, keptDiagrams.get(elementId) ?? [],
+            (diagram, kept) => fingerprint(kept) === fingerprint(diagram),
+            (_, kept) => hasOwnContent(kept));
+        withContent.forEach((diagram, index) => {
+            const kept = pairs[index];
+            if (kept) compareElements(diagram, kept, elementId, warnings, `the diagram of '${elementId}'`);
+            else warnings.push(warning('dropped', `${diagrams.length > 1 ? 'A' : 'The'} diagram of '${elementId}' is lost.`, elementId));
         });
     }
+}
+
+/**
+ * Pairs each original with a kept item: in a pass per preference, with the first one left that the preference
+ * accepts, and in a last pass with the first one left. Returns each original's match by index; undefined when none
+ * is left.
+ */
+function pair<T>(originals: T[], kept: T[], ...preferences: ((original: T, kept: T) => boolean)[]): (T | undefined)[] {
+    const unmatched = [...kept];
+    const pairs: (T | undefined)[] = originals.map(() => undefined);
+    for (const accepts of [...preferences, () => true]) {
+        originals.forEach((original, index) => {
+            if (pairs[index]) return;
+            const match = unmatched.findIndex(candidate => accepts(original, candidate));
+            if (match >= 0) pairs[index] = unmatched.splice(match, 1)[0];
+        });
+    }
+    return pairs;
+}
+
+/** The element as one string. Two elements have the same fingerprint when they are the same, apart from attribute order. */
+function fingerprint(node: CanonicalElement): string {
+    const attributes = [...node.attributes].map(([key, attribute]) => [key, attribute.value]).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+    return JSON.stringify([node.key, attributes, node.children.map(fingerprint), node.text]);
 }
 
 function compareDrawing(layout: Layout, kept: Layout, warnings: BpmnLoadWarning[]): void {
@@ -259,6 +288,8 @@ const isGeometry = (element: Element): boolean =>
     (element.namespaceURI === DC && element.localName === 'Bounds') || (element.namespaceURI === DI && element.localName === 'waypoint');
 
 const isDrawing = (element: Element): boolean => isBpmnDi(element, 'BPMNShape') || isBpmnDi(element, 'BPMNEdge');
+
+const isInterchange = (element: Element): boolean => element.namespaceURI === BPMNDI || element.namespaceURI === DC || element.namespaceURI === DI;
 
 function isBpmnDi(element: Element, localName: string): boolean {
     return element.namespaceURI === BPMNDI && element.localName === localName;
