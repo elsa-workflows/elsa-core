@@ -64,7 +64,9 @@ public partial class BpmnViewerCanvas
             _activityStats.Clear();
 
             foreach (var (key, stats) in ActivityStats ?? new Dictionary<string, ActivityStats>())
+            {
                 _activityStats[key] = stats;
+            }
         }
     }
 
@@ -72,7 +74,9 @@ public partial class BpmnViewerCanvas
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
+        {
             return;
+        }
 
         _rendered = true;
         await LoadAsync();
@@ -87,7 +91,9 @@ public partial class BpmnViewerCanvas
         OnParametersSet();
 
         if (_rendered)
+        {
             await LoadAsync();
+        }
     }
 
     /// <summary>Shows <paramref name="stats"/> as the state of the activity <paramref name="activityId"/>.</summary>
@@ -111,12 +117,16 @@ public partial class BpmnViewerCanvas
     public async Task SelectActivityAsync(string activityId)
     {
         if (!_isLoaded || _map.ElementIdOf(activityId) is not { } elementId || elementId == _selectedElementId)
+        {
             return;
+        }
 
         _requestedElementId = elementId;
 
         if (!await _host.SelectAsync(elementId))
+        {
             _requestedElementId = null;
+        }
     }
 
     /// <summary>
@@ -171,7 +181,9 @@ public partial class BpmnViewerCanvas
     private async Task ApplyOverlaysAsync()
     {
         if (_isLoaded)
+        {
             await _host.ApplyOverlaysAsync(_map.Overlay(_activityStats, _elementStats));
+        }
     }
 
     private async Task OnSelectionChanged(BpmnDesignerSelection selection)
@@ -181,7 +193,9 @@ public partial class BpmnViewerCanvas
         _requestedElementId = null;
 
         if (isRequested)
+        {
             return;
+        }
 
         var activityId = _selectedElementId != null ? _map.ActivityIdOf(_selectedElementId) : null;
         var activity = activityId != null ? Activity.FindActivity(activityId) : null;

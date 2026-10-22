@@ -113,7 +113,9 @@ public partial class BpmnDesignerWrapper
             await Designer.LoadBpmnAsync(activity, sourceXml, activityStats);
 
         if (Viewer != null && sourceXml != null)
+        {
             await Viewer.LoadBpmnAsync(activity, sourceXml, activityStats);
+        }
     }
 
     /// <summary>
@@ -135,7 +137,9 @@ public partial class BpmnDesignerWrapper
             await Designer.UpdateActivityStatsAsync(id, stats);
 
         if (Viewer != null)
+        {
             await Viewer.UpdateActivityStatsAsync(id, stats);
+        }
     }
 
     /// <summary>
@@ -149,7 +153,9 @@ public partial class BpmnDesignerWrapper
             await Designer.UpdateElementStatsAsync(elementStats);
 
         if (Viewer != null)
+        {
             await Viewer.UpdateElementStatsAsync(elementStats);
+        }
     }
 
     /// <summary>
@@ -171,13 +177,19 @@ public partial class BpmnDesignerWrapper
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender || _pendingElementStats == null)
+        {
             return;
+        }
 
         if (Designer != null)
+        {
             await Designer.UpdateElementStatsAsync(_pendingElementStats);
+        }
 
         if (Viewer != null)
+        {
             await Viewer.UpdateElementStatsAsync(_pendingElementStats);
+        }
     }
 
     /// <summary>
@@ -189,7 +201,9 @@ public partial class BpmnDesignerWrapper
             await Designer.SelectActivityAsync(id);
 
         if (Viewer != null)
+        {
             await Viewer.SelectActivityAsync(id);
+        }
     }
 
     /// <summary>

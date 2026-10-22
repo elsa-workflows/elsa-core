@@ -51,7 +51,9 @@ internal sealed class BpmnElementActivityMap
         foreach (var (key, stats) in activityStats)
         {
             if (ElementIdOfStatsKey(key) is { } elementId)
+            {
                 activityStatsByElementId[elementId] = stats;
+            }
         }
 
         var overlay = new Dictionary<string, BpmnDesignerElementStats>(StringComparer.Ordinal);
@@ -83,7 +85,9 @@ internal sealed class BpmnElementActivityMap
     private string? ElementIdOfStatsKey(string key)
     {
         if (ElementIdOf(key) is { } elementId)
+        {
             return elementId;
+        }
 
         var activityId = _elementIdByActivityId.Keys.Where(id => key.EndsWith(":" + id, StringComparison.Ordinal)).MaxBy(id => id.Length);
         return activityId != null ? _elementIdByActivityId[activityId] : null;
@@ -98,18 +102,24 @@ internal sealed class BpmnElementActivityMap
             foreach (var element in elements.OfType<JsonObject>())
             {
                 if (element["elementId"]?.GetValue<string>() is not { } elementId)
+                {
                     continue;
+                }
 
                 var activityId = element["bindingRef"]?.GetValue<string>() is { } bindingRef ? workBindings?[bindingRef]?.GetValue<string>() : null;
 
                 if (activityId != null)
+                {
                     _elementIdByActivityId[activityId] = elementId;
+                }
 
                 _activityIdByElementId[elementId] = activityId ?? scope.GetId();
             }
         }
 
         foreach (var child in scope.GetActivities())
+        {
             AddScope(child);
+        }
     }
 }

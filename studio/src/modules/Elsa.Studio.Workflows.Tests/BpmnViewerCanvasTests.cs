@@ -189,7 +189,9 @@ public sealed class BpmnViewerCanvasTests : BunitContext, IAsyncLifetime
         var definition = new WorkflowDefinition();
 
         if (sourceXml != null)
+        {
             definition.CustomProperties[BpmnProcessConstants.SourceXmlCustomPropertyKey] = sourceXml;
+        }
 
         return Render<RenderFragmentHost>(parameters => parameters.Add(x => x.Content, NewDesigner().DisplayDesigner(new DisplayContext(root) { WorkflowDefinition = definition })));
     }
