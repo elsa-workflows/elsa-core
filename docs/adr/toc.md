@@ -55,3 +55,4 @@
 * [2026-10-21. Guard compensation-aware snapshots at the native persistence boundary](2026-10-21-native-compensation-guarded-snapshots.md)
 * [2026-10-21. Use native owned children for compensation scopes](2026-10-21-native-compensation-owned-children.md)
 * [2026-10-21. Protect and authorize native compensation recovery data](2026-10-21-protect-native-compensation-recovery-data.md)
+* [2026-10-22. Use an Elsa fault's code as its BPMN error code](2026-10-22-elsa-fault-codes-are-bpmn-error-codes.md)

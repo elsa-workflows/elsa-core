@@ -105,6 +105,8 @@ faults with that code. Elsa names the error a failed unit of work raised:
 An error end event's code is the `errorCode` of the `<error>` its `errorRef` names, else that error's id; an error end
 event without an `errorRef` throws an error with no code. A called workflow's fault reaches its call activity without a
 code (see below).
+[ADR "Use an Elsa fault's code as its BPMN error code"](../../../docs/adr/2026-10-22-elsa-fault-codes-are-bpmn-error-codes.md)
+records this rule.
 
 ### Call activity failure
 
