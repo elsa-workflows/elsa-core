@@ -365,27 +365,40 @@ class WorkflowGateTests(unittest.TestCase):
             gates.candidate_publisher_violations(reordered),
         )
 
-    def test_candidate_guard_rejects_continue_on_error(self):
+    def _candidate_guard_with(self, extra_line: str) -> str:
         source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
-        mutated = source.replace(
+        return source.replace(
             "      - name: Guard the pinned candidate ID set before Feedz\n",
-            "      - name: Guard the pinned candidate ID set before Feedz\n        continue-on-error: true\n",
+            f"      - name: Guard the pinned candidate ID set before Feedz\n        {extra_line}\n",
         )
+
+    def test_candidate_guard_rejects_continue_on_error(self):
+        mutated = self._candidate_guard_with("continue-on-error: true")
         self.assertIn(
             "publish-consolidated-original-candidate.yml must not continue on error",
             gates.candidate_publisher_violations(mutated),
         )
 
+    def test_candidate_guard_allows_continue_on_error_false(self):
+        # Explicit false is GitHub's default and the existing publish_nuget contract.
+        mutated = self._candidate_guard_with("continue-on-error: false")
+        self.assertEqual([], gates.candidate_publisher_violations(mutated))
+
     def test_candidate_guard_rejects_an_if_condition(self):
-        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
-        mutated = source.replace(
-            "      - name: Guard the pinned candidate ID set before Feedz\n",
-            "      - name: Guard the pinned candidate ID set before Feedz\n        if: always()\n",
-        )
+        mutated = self._candidate_guard_with("if: always()")
         self.assertIn(
             "publish-consolidated-original-candidate.yml guard step must not have an if:",
             gates.candidate_publisher_violations(mutated),
         )
+
+    def test_candidate_guard_rejects_falsy_if_values(self):
+        for extra in ("if: false", "if: ''", "if: 0"):
+            with self.subTest(extra=extra):
+                mutated = self._candidate_guard_with(extra)
+                self.assertIn(
+                    "publish-consolidated-original-candidate.yml guard step must not have an if:",
+                    gates.candidate_publisher_violations(mutated),
+                )
 
 
 if __name__ == "__main__":

@@ -369,7 +369,7 @@ def check_admission(*, publish=False, api=None):
                              "preupload_manifest_sha256": candidate_input.MANIFEST_SHA256,
                              "expires_at": EXPIRY, "package_count": candidate_input.PIN_PACKAGE_COUNT,
                              "exclusion_count": candidate_input.PIN_EXCLUSION_COUNT,
-                             "excluded_id_count": 123}}
+                             "excluded_id_count": candidate_input.PIN_EXCLUSION_ID_COUNT}}
     if publish:
         reviews = api.get(f"{prefix}/actions/runs/{run}/approvals")
         require(isinstance(reviews, list) and len(reviews) < 100, "native_approval_invalid")

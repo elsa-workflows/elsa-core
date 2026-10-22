@@ -394,11 +394,15 @@ def candidate_publisher_violations(source: str) -> list[str]:
             "publish-consolidated-original-candidate.yml must run the same ID-set guard before Feedz"
         )
     for step in guard_steps:
-        if step.get("continue-on-error") not in (None, False):
+        # Absent or continue-on-error: false is GitHub's default and the same
+        # allowlist publish_nuget uses. Any other value, including 0 or '', is a
+        # violation. An if: key always disables or conditions the guard, including
+        # falsy values such as false, '' and 0.
+        if "continue-on-error" in step and step.get("continue-on-error") is not False:
             violations.append(
                 "publish-consolidated-original-candidate.yml must not continue on error"
             )
-        if step.get("if"):
+        if "if" in step:
             violations.append(
                 "publish-consolidated-original-candidate.yml guard step must not have an if:"
             )
