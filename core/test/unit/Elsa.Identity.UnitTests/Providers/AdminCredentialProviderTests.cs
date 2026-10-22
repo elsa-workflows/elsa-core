@@ -55,6 +55,22 @@ public class AdminCredentialProviderTests
     }
 
     [Fact]
+    public async Task AdminApiKeyProviderDoesNotTreatLoneSurrogateAsUtf8Replacement()
+    {
+        // Arrange
+        var configuredKey = "secret-\uD800";
+        var provider = CreateAdminApiKeyProvider(options => options.ApiKey = configuredKey);
+
+        // Act
+        var exact = await provider.ProvideAsync(configuredKey);
+        var replacement = await provider.ProvideAsync("secret-\uFFFD");
+
+        // Assert
+        Assert.NotNull(exact);
+        Assert.Null(replacement);
+    }
+
+    [Fact]
     public async Task AdminApiKeyProviderEmitsTheEmptySetSentinelWhenConfiguredWithNoPermissions()
     {
         var provider = CreateAdminApiKeyProvider(options =>

@@ -1,6 +1,6 @@
+using System.Runtime.InteropServices;
 using System.Security.Claims;
 using System.Security.Cryptography;
-using System.Text;
 using AspNetCore.Authentication.ApiKey;
 using Elsa;
 using Elsa.Identity.Models;
@@ -58,19 +58,10 @@ public class AdminApiKeyProvider(IOptions<AdminApiKeyOptions> options) : IApiKey
     }
 
     /// <summary>
-    /// Compares UTF-8 secret bytes in constant time. A length mismatch still
-    /// runs <see cref="CryptographicOperations.FixedTimeEquals"/> against a
-    /// dummy buffer of the expected length so the compare is not skipped.
+    /// Compares UTF-16 code units in constant time so unpaired surrogates stay distinct from U+FFFD.
     /// </summary>
-    private static bool SecretEquals(string provided, string expected)
-    {
-        var providedBytes = Encoding.UTF8.GetBytes(provided);
-        var expectedBytes = Encoding.UTF8.GetBytes(expected);
-        var comparand = providedBytes.Length == expectedBytes.Length
-            ? providedBytes
-            : new byte[expectedBytes.Length];
-
-        return CryptographicOperations.FixedTimeEquals(expectedBytes, comparand)
-               && providedBytes.Length == expectedBytes.Length;
-    }
+    private static bool SecretEquals(string provided, string expected) =>
+        CryptographicOperations.FixedTimeEquals(
+            MemoryMarshal.AsBytes(provided.AsSpan()),
+            MemoryMarshal.AsBytes(expected.AsSpan()));
 }
