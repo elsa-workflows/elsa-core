@@ -635,6 +635,29 @@ class WorkflowGateTests(unittest.TestCase):
         )
         self.assert_rejected(source, "build Compile+Pack must skip a stable 3.10.x nuget.org promotion")
 
+    def test_duplicate_compile_pack_is_rejected(self):
+        source = self.mutated(
+            "      - name: Compile+Pack\n"
+            "        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}\n"
+            "        run: ./build.sh Compile+Pack --version \"${VERSION}\" --analyseCode true\n",
+            "      - name: Compile+Pack\n"
+            "        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}\n"
+            "        run: ./build.sh Compile+Pack --version \"${VERSION}\" --analyseCode true\n"
+            "\n"
+            "      - name: Compile+Pack\n"
+            "        run: ./build.sh Compile+Pack --version \"${VERSION}\" --analyseCode true\n",
+        )
+        self.assert_rejected(source, "build job must contain exactly one Compile+Pack step")
+
+    def test_duplicate_download_packages_is_rejected(self):
+        source = self.mutated(
+            "      - name: NuGet login (OIDC)\n",
+            "      - name: Download Packages\n"
+            "        uses: actions/download-artifact@v4\n\n"
+            "      - name: NuGet login (OIDC)\n",
+        )
+        self.assert_rejected(source, "publish_nuget must contain exactly one Download Packages step")
+
     def test_staging_condition_prefixed_with_false_is_rejected(self):
         source = self.mutated(
             "      - name: Stage and guard verified candidate packages\n"

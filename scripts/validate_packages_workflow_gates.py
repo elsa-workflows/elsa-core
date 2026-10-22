@@ -356,6 +356,16 @@ def _guard_step_extra_keys(step: dict) -> list[str]:
     return sorted(set(step) - GUARD_STEP_KEYS)
 
 
+def _unique_step(steps: list[dict], match, *, missing: str | None, duplicate: str) -> tuple[int | None, list[str]]:
+    """Index of the only matching step. missing=None means optional (zero or one)."""
+    found = [index for index, step in enumerate(steps) if match(step)]
+    if len(found) > 1:
+        return None, [duplicate]
+    if not found:
+        return None, [missing] if missing else []
+    return found[0], []
+
+
 def promotion_job_violations(jobs: dict) -> list[str]:
     """Stable 3.10.x nuget.org must promote pinned candidate bytes, never a rebuild."""
     violations = []
@@ -365,16 +375,35 @@ def promotion_job_violations(jobs: dict) -> list[str]:
     steps = [step for step in job.get("steps") or [] if isinstance(step, dict)]
     if any(node.get("continue-on-error") not in (None, False) for node in (job, *steps)):
         violations.append("publish_nuget must not continue on error; a failed candidate guard must block the push")
-    retrieve = next((index for index, step in enumerate(steps) if RETRIEVE_CANDIDATE in _step_run(step)), None)
-    stage = next((index for index, step in enumerate(steps) if STAGE_CANDIDATE in _step_run(step)), None)
-    guard = next((index for index, step in enumerate(steps) if GUARD_CANDIDATE in _step_run(step)), None)
+    retrieve_missing = "publish_nuget must retrieve the pinned candidate, stage it, and run the ID-set guard before NuGet login"
+    retrieve, extra = _unique_step(
+        steps,
+        lambda step: RETRIEVE_CANDIDATE in _step_run(step),
+        missing=retrieve_missing,
+        duplicate="publish_nuget must contain exactly one candidate retrieve step",
+    )
+    violations += extra
+    stage, extra = _unique_step(
+        steps,
+        lambda step: STAGE_CANDIDATE in _step_run(step),
+        missing=retrieve_missing,
+        duplicate="publish_nuget must contain exactly one candidate staging step",
+    )
+    violations += extra
+    guard, extra = _unique_step(
+        steps,
+        lambda step: GUARD_CANDIDATE in _step_run(step),
+        missing=retrieve_missing,
+        duplicate="publish_nuget must contain exactly one candidate guard step",
+    )
+    violations += extra
     login = next(
         (index for index, step in enumerate(steps) if "nuget/login" in str(step.get("uses") or "").lower()),
         None,
     )
-    if None in (retrieve, stage, guard, login):
-        violations.append("publish_nuget must retrieve the pinned candidate, stage it, and run the ID-set guard before NuGet login")
-    elif not retrieve < stage <= guard < login:
+    if login is None and None not in (retrieve, stage, guard):
+        violations.append(retrieve_missing)
+    elif None not in (retrieve, stage, guard, login) and not retrieve < stage <= guard < login:
         violations.append("publish_nuget must retrieve, stage, and guard the pinned candidate before NuGet login")
     if guard is not None:
         if _run_lines(steps[guard]) != list(NUGET_GUARD_LINES):
@@ -397,42 +426,53 @@ def promotion_job_violations(jobs: dict) -> list[str]:
             violations.append(message)
         if STATUS_FUNCTION.search(expression or ""):
             violations.append("publish_nuget candidate promotion steps must not call always(), failure() or cancelled()")
-    download = next(
-        (index for index, step in enumerate(steps) if step.get("name") == "Download Packages"),
-        None,
+    download, extra = _unique_step(
+        steps,
+        lambda step: step.get("name") == "Download Packages",
+        missing="publish_nuget must contain Download Packages",
+        duplicate="publish_nuget must contain exactly one Download Packages step",
     )
-    if download is None:
-        violations.append("publish_nuget must contain Download Packages")
-    elif if_expression(steps[download].get("if")) != SKIP_STABLE_310_DOWNLOAD:
+    violations += extra
+    if download is not None and if_expression(steps[download].get("if")) != SKIP_STABLE_310_DOWNLOAD:
         violations.append("publish_nuget Download Packages if: must skip stable 3.10.x tags")
     build = jobs.get(BUILD_JOB)
-    compile_step = None
-    setup_dotnet = None
-    setup_node = None
-    upload = None
-    if isinstance(build, dict):
-        build_steps = [step for step in build.get("steps") or [] if isinstance(step, dict)]
-        compile_step = next((step for step in build_steps if step.get("name") == "Compile+Pack"), None)
-        setup_dotnet = next(
-            (step for step in build_steps if "setup-dotnet" in str(step.get("uses") or "").lower()),
-            None,
-        )
-        setup_node = next((step for step in build_steps if step.get("name") == "Set up Node for React Studio assets"), None)
-        upload = next((step for step in build_steps if step.get("name") == "Upload artifact"), None)
-    if compile_step is None:
-        violations.append("build job must still contain Compile+Pack for non-promote publication")
-    elif if_expression(compile_step.get("if")) != SKIP_STABLE_310_PACK:
-        violations.append("build Compile+Pack must skip a stable 3.10.x nuget.org promotion")
-    if setup_dotnet is None:
-        violations.append("build job must contain setup-dotnet")
-    elif if_expression(setup_dotnet.get("if")) != SKIP_STABLE_310_PACK:
-        violations.append("build setup-dotnet must skip a stable 3.10.x nuget.org promotion")
+    build_steps = [step for step in (build or {}).get("steps") or [] if isinstance(step, dict)] if isinstance(build, dict) else []
+    compile_step, extra = _unique_step(
+        build_steps,
+        lambda step: step.get("name") == "Compile+Pack",
+        missing="build job must still contain Compile+Pack for non-promote publication",
+        duplicate="build job must contain exactly one Compile+Pack step",
+    )
+    violations += extra
+    setup_dotnet, extra = _unique_step(
+        build_steps,
+        lambda step: "setup-dotnet" in str(step.get("uses") or "").lower(),
+        missing="build job must contain setup-dotnet",
+        duplicate="build job must contain exactly one setup-dotnet step",
+    )
+    violations += extra
     # Node is only for main's React Studio assets; release/3.10.0 does not have it.
-    if setup_node is not None and if_expression(setup_node.get("if")) != SKIP_STABLE_310_PACK:
+    setup_node, extra = _unique_step(
+        build_steps,
+        lambda step: step.get("name") == "Set up Node for React Studio assets",
+        missing=None,
+        duplicate="build job must contain at most one Node setup step",
+    )
+    violations += extra
+    upload, extra = _unique_step(
+        build_steps,
+        lambda step: step.get("name") == "Upload artifact",
+        missing="build job must contain Upload artifact",
+        duplicate="build job must contain exactly one Upload artifact step",
+    )
+    violations += extra
+    if compile_step is not None and if_expression(build_steps[compile_step].get("if")) != SKIP_STABLE_310_PACK:
+        violations.append("build Compile+Pack must skip a stable 3.10.x nuget.org promotion")
+    if setup_dotnet is not None and if_expression(build_steps[setup_dotnet].get("if")) != SKIP_STABLE_310_PACK:
+        violations.append("build setup-dotnet must skip a stable 3.10.x nuget.org promotion")
+    if setup_node is not None and if_expression(build_steps[setup_node].get("if")) != SKIP_STABLE_310_PACK:
         violations.append("build Node setup must skip a stable 3.10.x nuget.org promotion")
-    if upload is None:
-        violations.append("build job must contain Upload artifact")
-    elif if_expression(upload.get("if")) != UPLOAD_PACKAGES:
+    if upload is not None and if_expression(build_steps[upload].get("if")) != UPLOAD_PACKAGES:
         violations.append("build Upload artifact must skip a stable 3.10.x nuget.org promotion")
     return violations
 
