@@ -43,6 +43,11 @@ public class AgentFactory(
             builder.Services.AddSingleton(loggerFactory);
         }
 
+        // AddLogging uses TryAdd for ILoggerFactory, so the host instance registered
+        // above wins. The call still registers the open-generic ILogger<> used by
+        // custom kernel extensions that resolve loggers from the kernel container.
+        builder.Services.AddLogging();
+
         builder.Services.AddSingleton(agentConfig);
 
         ApplyAgentConfig(builder, agentConfig);
