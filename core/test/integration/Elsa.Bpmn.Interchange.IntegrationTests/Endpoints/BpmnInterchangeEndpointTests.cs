@@ -1,10 +1,12 @@
 using System.Net;
+using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using Elsa;
 using Elsa.Bpmn.Activities;
 using Elsa.Bpmn.Interchange.Features;
@@ -928,6 +930,79 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     }
 
     [Fact]
+    public async Task Create_WithAName_ReturnsCreatedWithAnEditableDraftAndItsETag()
+    {
+        var response = await CreateAsync("Order approval");
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var definitionId = body.RootElement.GetProperty("definitionId").GetString()!;
+        Assert.EndsWith($"bpmn/definitions/{definitionId}/xml", response.Headers.Location?.ToString());
+
+        var stored = await FindLatestDefinitionAsync(definitionId);
+        Assert.Equal("Order approval", stored.Name);
+        Assert.Equal(1, stored.Version);
+        Assert.False(stored.IsPublished);
+
+        // The ETag is the one the XML GET hands out, so the modeler can save without reading the document back first.
+        var (etag, xml) = await GetXmlAsync(definitionId);
+        Assert.Equal(etag, ETagOf(response));
+        var process = XDocument.Parse(xml).Descendants(XName.Get("process", "http://www.omg.org/spec/BPMN/20100524/MODEL")).Single();
+        Assert.Equal("Order approval", (string?)process.Attribute("name"));
+        Assert.Equal(
+            ["EndEvent_1", "Flow_1", "StartEvent_1"],
+            XDocument.Parse(xml).Descendants().Where(element => element.Name.LocalName is "BPMNShape" or "BPMNEdge").Select(element => (string)element.Attribute("bpmnElement")!).Order());
+    }
+
+    [Fact]
+    public async Task Create_ThenAnXmlPutWithTheReturnedETag_SavesTheEdit()
+    {
+        var created = await CreateAsync("Order approval");
+        using var body = JsonDocument.Parse(await created.Content.ReadAsStringAsync());
+        var definitionId = body.RootElement.GetProperty("definitionId").GetString()!;
+        var (_, xml) = await GetXmlAsync(definitionId);
+
+        var response = await PutXmlAsync(definitionId, xml.Replace("<bpmn:endEvent id=\"EndEvent_1\">", "<bpmn:endEvent id=\"EndEvent_1\" name=\"Approved\">"), ETagOf(created));
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("name=\"Approved\"", (await GetXmlAsync(definitionId)).Xml);
+    }
+
+    [Fact]
+    public async Task Create_WithANameThatNeedsEscaping_KeepsTheNameExactly()
+    {
+        const string name = "Orders & <Returns> \"Q4\"";
+
+        var response = await CreateAsync(name);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        using var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        Assert.Equal(name, (await FindLatestDefinitionAsync(body.RootElement.GetProperty("definitionId").GetString()!)).Name);
+    }
+
+    [Theory]
+    [InlineData("{}")]
+    [InlineData("{\"name\":\"   \"}")]
+    public async Task Create_WithoutAName_ReturnsBadRequest(string requestJson)
+    {
+        using var content = new StringContent(requestJson, Encoding.UTF8, "application/json");
+
+        var response = await PostAuthenticatedAsync("bpmn/definitions", content, "workflows/definitions:write");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Create_WhenAuthenticatedWithoutTheRequiredPermission_ReturnsForbidden()
+    {
+        using var content = new StringContent("{\"name\":\"Order approval\"}", Encoding.UTF8, "application/json");
+
+        var response = await PostAuthenticatedAsync("bpmn/definitions", content, "workflows/definitions:view");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
     public async Task XmlGet_OfAMissingDefinition_ReturnsNotFound()
     {
         var response = await GetAuthenticatedAsync("bpmn/definitions/does-not-exist/xml", "workflows/definitions:view");
@@ -1315,6 +1390,9 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         return (ETagOf(response), await response.Content.ReadAsStringAsync());
     }
+
+    private Task<HttpResponseMessage> CreateAsync(string name) =>
+        PostAuthenticatedAsync("bpmn/definitions", JsonContent.Create(new { name }), "workflows/definitions:write");
 
     private async Task<(string? ETag, string Xml)> GetXmlAsync(string definitionId)
     {

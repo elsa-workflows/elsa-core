@@ -26,8 +26,9 @@ using Elsa.Workflows.Models;
 namespace Elsa.Bpmn.Interchange.Services;
 
 /// <summary>
-/// The one code path the Analyze, Import, Export, document (<see cref="ReadDocument"/>/<see cref="ImportDocumentAsync"/>)
-/// and XML (<see cref="ReadSourceXml"/>/<see cref="ImportXmlAsync"/>) endpoints all sit on top of.
+/// The one code path the Analyze, Import, Export, create (<see cref="CreateAsync"/>), document
+/// (<see cref="ReadDocument"/>/<see cref="ImportDocumentAsync"/>) and XML (<see cref="ReadSourceXml"/>/<see cref="ImportXmlAsync"/>)
+/// endpoints all sit on top of.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -218,6 +219,19 @@ public sealed class BpmnInterchangeDocumentService(
     /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
     public Task<BpmnDocumentImportResult> ImportAsync(string xml, string? definitionId, string? name, string? processId, CancellationToken cancellationToken) =>
         ImportCoreAsync(xml, definitionId, name, processId, preserveMetadataFrom: null, expectedETag: null, compareAndSwap: false, cancellationToken);
+
+    /// <summary>
+    /// Creates a workflow definition from a new, minimal BPMN process — a plain start event connected to an end event,
+    /// with diagram layout — so a process can be authored in a modeler without uploading a file first. The new
+    /// definition is an unpublished draft, imported through <see cref="ImportAsync"/> like any other document.
+    /// </summary>
+    /// <param name="name">The workflow definition's name, and its process's.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public Task<BpmnDocumentImportResult> CreateAsync(string name, CancellationToken cancellationToken)
+    {
+        var xml = BpmnStarterDocument.Create($"Process_{identityGenerator.GenerateId()}", name);
+        return ImportAsync(xml, definitionId: null, name, processId: null, cancellationToken);
+    }
 
     /// <summary>
     /// The shared import logic behind both the public <see cref="ImportAsync"/> and <see cref="ImportDocumentAsync"/>:
