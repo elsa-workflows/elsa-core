@@ -34,6 +34,43 @@ public class AdminCredentialProviderTests
     }
 
     [Fact]
+    public async Task AdminApiKeyProviderComparesKeysForMatchMismatchAndMissingKey()
+    {
+        // Arrange
+        const string configuredKey = "admin-secret-key";
+        var configuredProvider = CreateAdminApiKeyProvider(options => options.ApiKey = configuredKey);
+        var missingKeyProvider = CreateAdminApiKeyProvider();
+
+        // Act
+        var match = await configuredProvider.ProvideAsync(configuredKey);
+        var mismatch = await configuredProvider.ProvideAsync("admin-secret-kez");
+        var differentLength = await configuredProvider.ProvideAsync("short");
+        var missingKey = await missingKeyProvider.ProvideAsync(configuredKey);
+
+        // Assert
+        Assert.NotNull(match);
+        Assert.Null(mismatch);
+        Assert.Null(differentLength);
+        Assert.Null(missingKey);
+    }
+
+    [Fact]
+    public async Task AdminApiKeyProviderDoesNotTreatLoneSurrogateAsUtf8Replacement()
+    {
+        // Arrange
+        var configuredKey = "secret-\uD800";
+        var provider = CreateAdminApiKeyProvider(options => options.ApiKey = configuredKey);
+
+        // Act
+        var exact = await provider.ProvideAsync(configuredKey);
+        var replacement = await provider.ProvideAsync("secret-\uFFFD");
+
+        // Assert
+        Assert.NotNull(exact);
+        Assert.Null(replacement);
+    }
+
+    [Fact]
     public async Task AdminApiKeyProviderEmitsTheEmptySetSentinelWhenConfiguredWithNoPermissions()
     {
         var provider = CreateAdminApiKeyProvider(options =>
