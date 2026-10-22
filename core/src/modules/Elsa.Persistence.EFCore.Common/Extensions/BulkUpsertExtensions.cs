@@ -394,17 +394,24 @@ public static class BulkUpsertExtensions
                 // the quoted references in ON, UPDATE SET, and INSERT/VALUES below.
                 var quotedAlias = sqlGenerationHelper.DelimitIdentifier(property.GetColumnName(storeObject)!);
 
-                // In a SELECT … FROM DUAL subquery, ODP.NET has no target column to
-                // derive bind parameter types from and defaults to VARCHAR2 for .NET
-                // strings. Elsa's Oracle migrations define string columns as NVARCHAR2,
-                // so an explicit CAST is required to avoid a datatype mismatch error.
-                // The full EF Core column type string (e.g. "NVARCHAR2(450)") is
-                // used directly in the CAST so all Oracle type variants are handled
-                // correctly without any string parsing.
+                // SELECT ... FROM DUAL has no target column to supply bind types.
+                // Match text binds to the column's character set and type null scalars
+                // explicitly before combining the source rows with UNION ALL.
                 var columnType = property.GetColumnType() ?? string.Empty;
-                var expr = columnType.StartsWith("NVARCHAR2", StringComparison.OrdinalIgnoreCase)
-                    ? $"CAST({paramName} AS {columnType})"
-                    : paramName;
+                // Null scalar values otherwise bind as strings, conflicting with non-null
+                // numbers, timestamps or booleans in another UNION ALL row.
+                var providerClrType = converter?.ProviderClrType ?? property.ClrType;
+                var requiresCast = providerClrType == typeof(string) || (value is null && providerClrType.IsValueType);
+                // Normalize LOB and JSON sources for every row, including nulls, so UNION ALL
+                // sees consistent datatypes and character sets regardless of bind inference.
+                var expr = columnType.ToUpperInvariant() switch
+                {
+                    "NCLOB" or "JSON" => $"TO_NCLOB({paramName})",
+                    "CLOB" => $"TO_CLOB({paramName})",
+                    "BLOB" => $"TO_BLOB({paramName})",
+                    _ when requiresCast => $"CAST({paramName} AS {columnType})",
+                    _ => paramName
+                };
 
                 lineParts.Add($"{expr} AS {quotedAlias}");
             }
