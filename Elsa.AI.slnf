@@ -81,6 +81,7 @@
       "core/test/unit/Elsa.Identity.UnitTests/Elsa.Identity.UnitTests.csproj",
       "core/test/unit/Elsa.Labels.UnitTests/Elsa.Labels.UnitTests.csproj",
       "core/test/unit/Elsa.Mediator.UnitTests/Elsa.Mediator.UnitTests.csproj",
+      "core/test/unit/Elsa.Persistence.EFCore.MySql.UnitTests/Elsa.Persistence.EFCore.MySql.UnitTests.csproj",
       "core/test/unit/Elsa.Persistence.EFCore.UnitTests/Elsa.Persistence.EFCore.UnitTests.csproj",
       "core/test/unit/Elsa.Resilience.Core.UnitTests/Elsa.Resilience.Core.UnitTests.csproj",
       "core/test/unit/Elsa.SasTokens.UnitTests/Elsa.SasTokens.UnitTests.csproj",

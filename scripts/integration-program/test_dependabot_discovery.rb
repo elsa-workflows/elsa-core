@@ -11,6 +11,7 @@ require "yaml"
 class DependabotDiscoveryTests < Minitest::Test
   REPOSITORY_ROOT = File.expand_path("../..", __dir__)
   CONFIGURATION = YAML.load_file(File.join(REPOSITORY_ROOT, ".github/dependabot.yml"))
+  NUGET_UPDATES = CONFIGURATION.fetch("updates").select { |entry| entry.fetch("package-ecosystem") == "nuget" }.freeze
   UNMODELED_PROJECT_EXTENSIONS = %w[.proj .fsproj .vbproj].freeze
   APPS_PROJECTS = JSON.parse(File.read(File.join(REPOSITORY_ROOT,
     "Elsa.Apps.slnf"))).fetch("solution").fetch("projects").sort.freeze
@@ -18,6 +19,42 @@ class DependabotDiscoveryTests < Minitest::Test
     "scripts/solution/solution-groups.json"))).fetch("independentProducts").fetch("templates").freeze
   TEMPLATES_PROJECTS = (TEMPLATES.fetch("projects") + TEMPLATES.fetch("buildData")).sort.freeze
   LEGACY_CORE_PROJECT = "extensions/src/Elsa.Testing.Extensions/Elsa.Testing.Extensions.csproj"
+  # Temporary package-consumer proof owned by #8839. These stay outside Elsa.sln
+  # but are covered by the Studio updater until production coverage replaces them.
+  REACT_STUDIO_SPIKE_PROJECTS = %w[
+    studio/samples/ReactStudio.Modularity/Host/Host.csproj
+    studio/samples/ReactStudio.Modularity/Labels/Elsa.ReactStudio.Spike.Labels.csproj
+    studio/samples/ReactStudio.Modularity/Runtime/Elsa.ReactStudio.Spike.csproj
+    studio/samples/ReactStudio.Modularity/ThirdParty/Example.ReactStudio.Spike.Weather.csproj
+  ].sort.freeze
+  DISCOVERY_DOCUMENTATION = File.read(File.join(REPOSITORY_ROOT,
+    "docs/integration-program/consolidation/dependabot-recursive-discovery.md")).freeze
+  DOCUMENTED_PROBES = DISCOVERY_DOCUMENTATION.scan(/`(scripts\/[^`]+\.csproj)`/).flatten.sort.freeze
+  DOCUMENTED_CORE_EXPERIMENTS = DISCOVERY_DOCUMENTATION.scan(/`(core\/experiments\/[^`]+\.csproj)`/).flatten.sort.freeze
+
+  # #8845 production feature assemblies and their hosts are root solution members.
+  REACT_STUDIO_PROJECTS = %w[
+    studio/react/dotnet/Elsa.ReactStudio.Host/Elsa.ReactStudio.Host.csproj
+    studio/react/dotnet/Elsa.ReactStudio.Host.Tests/Elsa.ReactStudio.Host.Tests.csproj
+    studio/react/dotnet/Elsa.ReactStudio.Server/Elsa.ReactStudio.Server.csproj
+    studio/react/dotnet/Elsa.ReactStudio/Elsa.ReactStudio.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.ActivityEditors/Elsa.ReactStudio.ActivityEditors.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.Alterations/Elsa.ReactStudio.Alterations.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.Appearance/Elsa.ReactStudio.Appearance.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.Dashboard/Elsa.ReactStudio.Dashboard.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.Designer/Elsa.ReactStudio.Designer.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.Diagnostics.ConsoleLogs/Elsa.ReactStudio.Diagnostics.ConsoleLogs.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.Diagnostics.StructuredLogs/Elsa.ReactStudio.Diagnostics.StructuredLogs.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.Environments/Elsa.ReactStudio.Environments.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.Labels/Elsa.ReactStudio.Labels.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.Secrets/Elsa.ReactStudio.Secrets.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.Security/Elsa.ReactStudio.Security.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.Settings/Elsa.ReactStudio.Settings.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.Shell/Elsa.ReactStudio.Shell.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.UserTasks/Elsa.ReactStudio.UserTasks.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.WorkflowDefinitions/Elsa.ReactStudio.WorkflowDefinitions.csproj
+    studio/react/dotnet/modules/Elsa.ReactStudio.WorkflowInstances/Elsa.ReactStudio.WorkflowInstances.csproj
+  ].sort.freeze
 
   def setup
     @workspace = Dir.mktmpdir("dependabot-discovery-")
@@ -59,22 +96,24 @@ class DependabotDiscoveryTests < Minitest::Test
       FileUtils.mkdir_p(File.dirname(destination))
       FileUtils.cp(File.join(REPOSITORY_ROOT, path), destination)
     end
-    expected = solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")) - APPS_PROJECTS + [LEGACY_CORE_PROJECT]
+    expected = solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")) - APPS_PROJECTS +
+      [LEGACY_CORE_PROJECT] + REACT_STUDIO_SPIKE_PROJECTS
 
-    batches = CONFIGURATION.fetch("updates").map { |entry| discovered_projects(entry.fetch("directories")) }
+    batches = NUGET_UPDATES.map { |entry| discovered_projects(entry.fetch("directories")) }
     assert_equal expected.sort, batches.flatten.sort, "Reconcile batch selectors when solution membership changes"
     assert_equal batches.flatten.length, batches.flatten.uniq.length, "Project starting sets must not overlap"
-    assert_equal [114, 68, 100, 73, 1], batches.map(&:length)
-    assert_equal 173, batches.flatten.grep(%r{^(extensions|studio)/}).length
+    assert_equal [114, 69, 100, 101, 1], batches.map(&:length)
+    assert_equal 201, batches.flatten.grep(%r{^(extensions|studio)/}).length
     assert_includes batches[2], LEGACY_CORE_PROJECT
-    CONFIGURATION.fetch("updates").each do |entry|
+    NUGET_UPDATES.each do |entry|
       refute_includes entry.fetch("directories"), "/", "Never select the root solution as a batch"
     end
     %w[core extensions studio apps templates].each do |product|
       unselected = case product
       when "apps" then APPS_PROJECTS
       when "templates" then TEMPLATES_PROJECTS
-      else ["core/test/TlsSmoke/TlsSmoke.csproj"].select { |path| path.start_with?("#{product}/") }
+      else (["core/test/TlsSmoke/TlsSmoke.csproj"] + DOCUMENTED_CORE_EXPERIMENTS)
+        .select { |path| path.start_with?("#{product}/") }.sort
       end
       assert_equal unselected,
         projects.select { |path| path.start_with?("#{product}/") } - expected,
@@ -83,13 +122,37 @@ class DependabotDiscoveryTests < Minitest::Test
     assert_includes expected, "build/_build.csproj"
     # These are version-pinned historical/contract probes, not product update inputs.
     # The complete list is reconciled in the discovery documentation under #8636.
-    documented_probes = File.read(File.join(REPOSITORY_ROOT,
-      "docs/integration-program/consolidation/dependabot-recursive-discovery.md"))
-      .scan(/`(scripts\/[^`]+\.csproj)`/).flatten.sort
-    assert_equal projects.grep(%r{^scripts/}).sort, documented_probes
-    assert_equal (APPS_PROJECTS + TEMPLATES_PROJECTS + ["core/test/TlsSmoke/TlsSmoke.csproj"] + documented_probes).sort,
+    assert_equal projects.grep(%r{^scripts/}).sort, DOCUMENTED_PROBES
+    assert_equal (APPS_PROJECTS + TEMPLATES_PROJECTS + ["core/test/TlsSmoke/TlsSmoke.csproj"] +
+      DOCUMENTED_PROBES + DOCUMENTED_CORE_EXPERIMENTS).sort,
       (projects - expected).sort
-    assert_empty expected - projects, "Solution entries must name tracked manifests"
+    assert_empty expected - projects, "Selected entries must name tracked manifests"
+  end
+
+  def test_react_studio_spike_has_an_explicit_independent_sample_disposition
+    assert_equal REACT_STUDIO_SPIKE_PROJECTS,
+      tracked_projects.grep(%r{^studio/samples/ReactStudio\.Modularity/}).sort
+    assert_empty solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")) & REACT_STUDIO_SPIKE_PROJECTS
+  end
+
+  def test_react_studio_production_projects_are_in_the_solution_and_focused_filter
+    assert_equal REACT_STUDIO_PROJECTS, tracked_projects.grep(%r{^studio/react/}).sort
+    assert_equal REACT_STUDIO_PROJECTS, solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")).grep(%r{^studio/react/}).sort
+    assert_equal REACT_STUDIO_PROJECTS, JSON.parse(File.read(File.join(REPOSITORY_ROOT,
+      "Elsa.ReactStudio.slnf"))).fetch("solution").fetch("projects").sort
+  end
+
+  def test_core_experiments_have_an_explicit_temporary_nonproduct_disposition
+    assert_equal tracked_projects.grep(%r{^core/experiments/}).sort, DOCUMENTED_CORE_EXPERIMENTS,
+      "Every Core experiment needs its own documented disposition; do not ignore the directory"
+    assert_equal DOCUMENTED_CORE_EXPERIMENTS.uniq.length, DOCUMENTED_CORE_EXPERIMENTS.length
+    solution = solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln"))
+    assert_empty solution & DOCUMENTED_CORE_EXPERIMENTS,
+      "Temporary research must stay outside the product solution"
+    DOCUMENTED_CORE_EXPERIMENTS.each do |project|
+      assert_equal ["false"], project_xml(project).get_elements("//IsPackable").map(&:text),
+        "#{project} must explicitly remain nonpackable"
+    end
   end
 
   def test_apps_have_an_explicit_independent_consumer_disposition
@@ -103,9 +166,7 @@ class DependabotDiscoveryTests < Minitest::Test
     assert_equal ["false"], targets.get_elements("//IsPackable").map(&:text)
     assert_equal ["$(MSBuildThisFileDirectory)NuGet.Config"], targets.get_elements("//RestoreConfigFile").map(&:text)
     assert_empty targets.get_elements("//Import"), "Apps must not import root source/pack policy"
-    assert_includes File.read(File.join(REPOSITORY_ROOT,
-      "docs/integration-program/consolidation/dependabot-recursive-discovery.md")),
-      "independent released-package consumers"
+    assert_includes DISCOVERY_DOCUMENTATION, "independent released-package consumers"
   end
 
   def test_templates_have_an_explicit_independent_build_and_data_disposition
@@ -168,11 +229,13 @@ class DependabotDiscoveryTests < Minitest::Test
   end
 
   def test_selected_projects_reconcile_central_package_imports
-    selected = solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")) + [LEGACY_CORE_PROJECT]
+    selected = solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")) +
+      [LEGACY_CORE_PROJECT] + REACT_STUDIO_SPIKE_PROJECTS
     central_versions = {}
     import_chains = {}
     selected.each do |project|
       expected = case project
+      when %r{^studio/samples/ReactStudio\.Modularity/} then "Directory.Packages.props"
       when %r{^extensions/} then "extensions/src/Directory.Packages.props"
       when %r{^studio/} then "studio/src/Directory.Packages.props"
       when %r{^apps/} then "apps/Directory.Packages.props"
@@ -193,7 +256,12 @@ class DependabotDiscoveryTests < Minitest::Test
   end
 
   def test_static_project_reference_and_build_import_closure_stays_available
-    selected = solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")) + [LEGACY_CORE_PROJECT]
+    REACT_STUDIO_SPIKE_PROJECTS.each do |project|
+      assert_empty project_xml(project).get_elements("//ProjectReference"),
+        "#{project}: the independent spike must compose packed packages only"
+    end
+    selected = solution_projects(File.join(REPOSITORY_ROOT, "Elsa.sln")) +
+      [LEGACY_CORE_PROJECT] + REACT_STUDIO_SPIKE_PROJECTS
     closure = selected.flat_map { |project| static_source_closure(project) }.uniq
     references = closure.flat_map do |path|
       project_xml(path).get_elements("//ProjectReference").map do |reference|
@@ -212,7 +280,7 @@ class DependabotDiscoveryTests < Minitest::Test
   end
 
   def test_batch_policy_preserves_feeds_and_makes_per_job_caps_explicit
-    entries = CONFIGURATION.fetch("updates")
+    entries = NUGET_UPDATES
     assert_equal 5, entries.length
     assert_equal [
       ["/core/src/**/*"], ["/core/test/**/Elsa.*"], ["/extensions/**/*"],
@@ -245,7 +313,7 @@ class DependabotDiscoveryTests < Minitest::Test
     ]
     (projects + ["core/test/TlsSmoke/TlsSmoke.csproj"]).each { |project| add_project(project) }
     File.write(File.join(@workspace, "Elsa.sln"), 'invalid solution must never be opened')
-    actual = CONFIGURATION.fetch("updates").flat_map { |entry| discovered_projects(entry.fetch("directories")) }
+    actual = NUGET_UPDATES.flat_map { |entry| discovered_projects(entry.fetch("directories")) }
     assert_equal projects.sort, actual.sort
     add_project("core/test/unit/deeper/Other.Tests/Other.Tests.csproj")
     refute_includes discovered_projects(["/core/test/**/Elsa.*"]),
@@ -285,11 +353,21 @@ class DependabotDiscoveryTests < Minitest::Test
     tool_directory = File.join(@workspace, ".config")
     FileUtils.mkdir_p(tool_directory)
     FileUtils.cp(File.join(REPOSITORY_ROOT, ".config/dotnet-tools.json"), tool_directory)
-    entry = CONFIGURATION.fetch("updates").last
+    entry = NUGET_UPDATES.last
     assert_includes entry.fetch("directories"), "/.config"
     assert_equal [".config"], native_matching_directories("/.config")
     tools = JSON.parse(File.read(File.join(tool_directory, "dotnet-tools.json"))).fetch("tools")
     refute_empty tools.fetch("dotnet-ef").fetch("version"), "Keep the root tool discoverable as its version changes"
+  end
+
+  def test_react_studio_pnpm_lockfile_has_a_bounded_updater
+    entries = CONFIGURATION.fetch("updates").select { |entry| entry.fetch("package-ecosystem") == "npm" }
+    assert_equal 1, entries.length
+    assert_equal "/studio/react", entries.first.fetch("directory")
+    assert_equal "main", entries.first.fetch("target-branch")
+    assert_equal 1, entries.first.fetch("open-pull-requests-limit")
+    assert_includes tracked_files, "studio/react/pnpm-lock.yaml"
+    assert_equal "pnpm@10.33.0", JSON.parse(File.read(File.join(REPOSITORY_ROOT, "studio/react/package.json"))).fetch("packageManager")
   end
 
   def test_coverage_workflow_runs_when_discovery_inputs_change

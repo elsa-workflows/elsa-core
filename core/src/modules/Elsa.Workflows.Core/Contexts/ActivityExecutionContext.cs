@@ -413,12 +413,14 @@ public partial class ActivityExecutionContext : IExecutionContext, IDisposable
     }
 
     /// <summary>
-    /// Adds each bookmark to the list of bookmarks.
+    /// Adds bookmarks whose IDs are not already present in the workflow's bookmark list.
+    /// If the input contains duplicate IDs, only the first bookmark with each ID is added.
     /// </summary>
-    /// <param name="bookmarks">The bookmarks to add.</param>
+    /// <param name="bookmarks">The bookmarks to add, skipping duplicate IDs.</param>
     public void AddBookmarks(IEnumerable<Bookmark> bookmarks)
     {
-        WorkflowExecutionContext.Bookmarks.AddRange(bookmarks);
+        var existingIds = WorkflowExecutionContext.Bookmarks.Select(x => x.Id).ToHashSet();
+        WorkflowExecutionContext.Bookmarks.AddRange(bookmarks.Where(x => existingIds.Add(x.Id)));
         Taint();
     }
 

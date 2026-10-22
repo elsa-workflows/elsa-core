@@ -121,7 +121,42 @@ Task [#8748](https://github.com/elsa-workflows/elsa-core/issues/8748) retains ni
 
 Templates uses scoped props, CPM, targets and official-only NuGet configuration. Its [source workflow](../../../.github/workflows/templates-source-validation.yml) owns real pack/install/generate/build proof. The [import record](../templates-source-import.md) preserves the exact original 65-file mapping and independent release/publisher handoff. The historical inventory table and five source-package starting-set counts above remain unchanged.
 
+## Temporary Core experiment disposition
+
+Issue [#8930](https://github.com/elsa-workflows/elsa-core/issues/8930) adds this exact
+separately invoked native-runtime process-kill evidence harness:
+
+- `core/experiments/NativeCompensation.E1/NativeCompensation.E1.csproj`
+
+This temporary research project is explicitly nonpackable, remains outside `Elsa.sln`
+and is not a product update input. It adds one manifest to the complete tracked census
+and its explicit unselected/disposition union; it changes none of the five batch counts,
+selectors, feeds or release-unit inventory. The discovery regression reconciles the
+tracked Core experiment manifests against this list and checks explicit
+`IsPackable=false` and absence from the product solution. This is an exact disposition,
+not a blanket exclusion for future projects under the directory. Any addition/removal
+requires reconciling the list. Delete the harness after E1's findings have been adopted
+into the accepted runtime/persistence design and lasting regression tests; its local
+README records that exit condition. E1 evidence and M1 readiness remain separate gates.
+
 ## Central package and build imports
+
+The temporary React Studio modularity proof under #8839 adds four independent
+Studio sample projects outside `Elsa.sln`: its Runtime, Labels, third-party Weather
+and consuming Host. They are included in the Studio updater's existing recursive
+selector, bringing its starting set to 77 projects. The #8843 Vite port adds three
+explicitly inventoried host/server/test projects under `studio/react/dotnet`. The
+#8845 extraction adds 16 feature libraries and one aggregate hosting library, and
+includes all 20 production React projects in `Elsa.sln` and `Elsa.ReactStudio.slnf`.
+The Studio starting set is now 97 projects (197 across Extensions/Studio); the
+five NuGet counts are 114, 69, 100, 97 and 1. The census explicitly names all 20
+production projects and the four independent proof projects, and rejects omissions
+or unexpected root-solution membership for the proof.
+Their scoped central file imports the root package versions for CShells/YARP;
+their sample package IDs resolve only from a local feed. Their package references
+must remain independent of source project references to preserve the proof. Remove
+this temporary disposition when production React Studio coverage replaces #8839's
+sample. The historical inventory tables above predate this addition.
 
 The coverage test walks from each of the 356 selected project manifests to its nearest
 `Directory.Packages.props`, then follows the literal import chain. Core and build reach

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "sourceRepository": "https://github.com/elsa-workflows/elsa-studio-react",
+  "destination": "studio/react",
+  "snapshotTime": "2026-10-19T07:00:00Z",
+  "snapshotCommit": "fdd823b8faabe8a9c06a90bc8bedffbeb992be95",
+  "sourceCommit": "fdd823b8faabe8a9c06a90bc8bedffbeb992be95",
+  "sourceTree": "cab2f95b188fa691da1ab0ee8ef600ff76f9a2dd",
+  "sourceHistoryCommits": 14,
+  "sourceRefs": [
+    {
+      "ref": "refs/heads/main",
+      "commit": "fdd823b8faabe8a9c06a90bc8bedffbeb992be95"
+    }
+  ],
+  "postSnapshotCommits": [],
+  "coreBase": "1587a7904e9aae5d410a00655c64f531685755d8",
+  "importCommit": "b452c521f5f1e847094a02aab65edb9950b3460c",
+  "licenseAtImport": "No license file in the donor tree; no license or copyright ownership is inferred by this receipt.",
+  "employerClearance": "Not required per the task owner instruction on 2026-10-20.",
+  "sourceCutover": "Pending independent import review and merge; source repository remains active."
+}

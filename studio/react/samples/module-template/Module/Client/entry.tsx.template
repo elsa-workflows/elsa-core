@@ -1,0 +1,46 @@
+import { useState } from "react";
+import type { StudioApi, StudioSlots } from "@elsa-workflows/react-studio-sdk";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+import { useAuth } from "@elsa-workflows/react-studio-auth";
+import { useElsaClient } from "@elsa-workflows/react-studio-api-client/react";
+import { Button } from "@elsa-workflows/react-studio-ui/button";
+import { Input } from "@elsa-workflows/react-studio-ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@elsa-workflows/react-studio-ui/card";
+import "./module.css";
+
+function Forecast() {
+  const t = useTranslation("__MODULE_ID__");
+  const { user } = useAuth();
+  const client = useElsaClient();
+  const [refreshes, setRefreshes] = useState(0);
+  return <Card className="__MODULE_ID__" data-api-base={client.http.baseUrl}>
+    <CardHeader><CardTitle><h2>__NAME__</h2></CardTitle></CardHeader>
+    <CardContent>
+      <p>{t("Clear skies for {{name}}.", { name: user?.name ?? t("guest") })}</p>
+      <Button variant="outline" onClick={() => setRefreshes(value => value + 1)}>{t("Refresh forecast")}</Button>
+      <p role="status">{t("Refreshes: {{count}}", { count: refreshes })}</p>
+    </CardContent>
+  </Card>;
+}
+
+const Notes: StudioSlots["activityPropertiesTabs"]["component"] = ({ activity, context }) => {
+  const t = useTranslation("__MODULE_ID__");
+  return <div className="__MODULE_ID__">
+  <label htmlFor={`__MODULE_ID__-${activity.id}`}>{t("__NAME__ note")}</label>
+  <Input id={`__MODULE_ID__-${activity.id}`} readOnly={context.readOnly}
+    value={typeof activity.customProperties?.["__MODULE_ID__.note"] === "string" ? activity.customProperties["__MODULE_ID__.note"] : ""}
+    onChange={event => context.updateActivity(activity.id, { customProperties: { ...activity.customProperties, "__MODULE_ID__.note": event.target.value } })} />
+</div>;
+};
+
+/** Registrations belong to this module; the host removes them when it unloads. */
+export function register(api: StudioApi) {
+  api.contribute("translations", { id: "en", culture: "en", messages: {
+    "Clear skies for {{name}}.": "Clear skies for {{name}}.", guest: "guest", "Refresh forecast": "Refresh forecast", "Refreshes: {{count}}": "Refreshes: {{count}}", "__NAME__ note": "__NAME__ note",
+  } });
+  api.contribute("translations", { id: "nl", culture: "nl", messages: {
+    "Clear skies for {{name}}.": "Een heldere hemel voor {{name}}.", guest: "gast", "Refresh forecast": "Verwachting vernieuwen", "Refreshes: {{count}}": "Vernieuwingen: {{count}}", "__NAME__ note": "__NAME__-notitie",
+  } });
+  api.contribute("dashboardWidgets", { id: "forecast", zone: "primary", order: 100, component: Forecast });
+  api.contribute("activityPropertiesTabs", { id: "notes", label: "__NAME__", order: 100, component: Notes });
+}

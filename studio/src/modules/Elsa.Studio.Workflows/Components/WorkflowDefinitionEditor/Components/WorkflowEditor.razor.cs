@@ -771,7 +771,12 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
 
             if (!result.IsSuccess)
             {
-                UserMessageService.ShowSnackbarTextMessage(Localizer["The binding changes were not saved."], Severity.Error);
+                // A refusal for expression conditions concerns the whole process rather than the edited task, so the
+                // flows are named here too, not only in the Performed by panel.
+                var message = result.Failure?.ConditionRefusal is { } conditionRefusal
+                    ? Localizer["The binding changes were not saved: the process's sequence flows {0} carry expression conditions, which Elsa does not evaluate yet.", string.Join(", ", conditionRefusal.FlowIds.Select(id => $"'{id}'"))]
+                    : Localizer["The binding changes were not saved."];
+                UserMessageService.ShowSnackbarTextMessage(message, Severity.Error);
                 return;
             }
 

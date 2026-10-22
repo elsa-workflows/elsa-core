@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PackageId>__PACKAGE_ID__</PackageId>
+    <AssemblyName>__PACKAGE_ID__</AssemblyName>
+    <Version>1.0.0-preview.1</Version>
+    <Description>__NAME__ module for Elsa React Studio Preview.</Description>
+    <PackageTags>Elsa;ReactStudio;Preview</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Elsa.ReactStudio.Host" Version="__STUDIO_VERSION__" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <EmbeddedResource Include="wwwroot/**/*" LogicalName="ReactStudio.Module/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Content Remove="Client/**/*" />
+    <None Include="../README.md" Pack="true" PackagePath="/README.md" />
+  </ItemGroup>
+  <Target Name="RequireModuleAssets" BeforeTargets="PrepareForBuild;GenerateNuspec">
+    <Error Condition="!Exists('wwwroot/entry.js') Or !Exists('wwwroot/module.css')" Text="Build the module frontend first: cd Client and run pnpm install followed by pnpm build." />
+  </Target>
+</Project>

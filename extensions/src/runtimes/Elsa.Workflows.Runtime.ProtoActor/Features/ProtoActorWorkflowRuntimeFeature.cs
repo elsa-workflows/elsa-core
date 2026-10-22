@@ -5,6 +5,7 @@ using Elsa.Actors.ProtoActor;
 using Elsa.Actors.ProtoActor.Features;
 using Elsa.Workflows.Runtime.ProtoActor.ProtoBuf;
 using Elsa.Workflows.Features;
+using Elsa.Workflows.Management.Features;
 using Elsa.Workflows.Runtime.Features;
 using Elsa.Workflows.Runtime.ProtoActor.Actors;
 using Elsa.Workflows.Runtime.ProtoActor.Mappers;
@@ -19,6 +20,7 @@ namespace Elsa.Workflows.Runtime.ProtoActor.Features;
 /// </summary>
 [DependsOn(typeof(WorkflowsFeature))]
 [DependsOn(typeof(WorkflowRuntimeFeature))]
+[DependsOn(typeof(WorkflowManagementFeature))]
 [DependsOn(typeof(ProtoActorFeature))]
 public class ProtoActorWorkflowRuntimeFeature : FeatureBase
 {

@@ -379,8 +379,10 @@ public class WorkflowRuntimeFeature : IShellFeature
 
         services.TryAddScoped<IWorkflowDispatchOutbox>(sp => ActivatorUtilities.CreateInstance<WorkflowDispatchOutbox>(sp));
         services.TryAddScoped(WorkflowDispatchOutboxStore);
+        services.TryAddScoped<IWorkflowDispatchOutboxMarkerCleaner, WorkflowDispatchOutboxMarkerCleaner>();
         // Explicit factory: the processor also has an obsolete constructor, which would make container activation ambiguous.
         services.TryAddScoped<IWorkflowDispatchOutboxProcessor>(sp => new WorkflowDispatchOutboxProcessor(
+            sp.GetRequiredService<IWorkflowDispatchOutboxMarkerCleaner>(),
             sp.GetRequiredService<IWorkflowDispatchOutboxStore>(),
             sp.GetRequiredService<IWorkflowInstanceStore>(),
             sp.GetRequiredKeyedService<IWorkflowDispatcher>(WorkflowDispatcherServiceKeys.Inner),

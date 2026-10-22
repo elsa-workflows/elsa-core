@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  An exclusive gateway that routes on condition expressions Elsa evaluates. Large's condition names no language, so it
+  is JavaScript; Medium's names JavaScript by URI. Small is the default flow, taken when neither holds.
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:elsa="https://elsaworkflows.io/schemas/bpmn/v1"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  id="Definitions_route-by-amount"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="route-by-amount" isExecutable="true">
+    <bpmn:startEvent id="Start">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:exclusiveGateway id="Decide" name="Amount?" default="Flow_Small">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_Large</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Medium</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Small</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Large" name="Large order">
+      <bpmn:extensionElements>
+        <elsa:activityBinding activityType="Elsa.WriteLine">
+          <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"Large"}}</elsa:input>
+        </elsa:activityBinding>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Large</bpmn:incoming>
+      <bpmn:outgoing>Flow_Large_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Medium" name="Medium order">
+      <bpmn:extensionElements>
+        <elsa:activityBinding activityType="Elsa.WriteLine">
+          <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"Medium"}}</elsa:input>
+        </elsa:activityBinding>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Medium</bpmn:incoming>
+      <bpmn:outgoing>Flow_Medium_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="Small" name="Small order">
+      <bpmn:extensionElements>
+        <elsa:activityBinding activityType="Elsa.WriteLine">
+          <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"Small"}}</elsa:input>
+        </elsa:activityBinding>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Small</bpmn:incoming>
+      <bpmn:outgoing>Flow_Small_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="End">
+      <bpmn:incoming>Flow_Large_End</bpmn:incoming>
+      <bpmn:incoming>Flow_Medium_End</bpmn:incoming>
+      <bpmn:incoming>Flow_Small_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start" targetRef="Decide" />
+    <bpmn:sequenceFlow id="Flow_Large" sourceRef="Decide" targetRef="Large">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">getInput('amount') &gt; 1000</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Medium" sourceRef="Decide" targetRef="Medium">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" language="https://elsaworkflows.io/expressions/javascript">getInput('amount') &gt; 100</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Small" sourceRef="Decide" targetRef="Small" />
+    <bpmn:sequenceFlow id="Flow_Large_End" sourceRef="Large" targetRef="End" />
+    <bpmn:sequenceFlow id="Flow_Medium_End" sourceRef="Medium" targetRef="End" />
+    <bpmn:sequenceFlow id="Flow_Small_End" sourceRef="Small" targetRef="End" />
+  </bpmn:process>
+</bpmn:definitions>

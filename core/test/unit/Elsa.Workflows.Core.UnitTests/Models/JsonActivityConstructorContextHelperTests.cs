@@ -43,6 +43,35 @@ public sealed class JsonActivityConstructorContextHelperTests
         Assert.Single(result.Exceptions, e => e is InvalidActivityDescriptorInputException);
     }
 
+    [Theory]
+    [InlineData("""{"data":{"typeName":"String","memoryReference":null}}""")]
+    [InlineData("""{"data":{"typeName":"String"}}""")]
+    [InlineData("""{"data":{"typeName":"String","memoryReference":"x"}}""")]
+    [InlineData("""{"data":{"typeName":"String","memoryReference":{"id":5}}}""")]
+    [InlineData("""{"data":{"typeName":"String","memoryReference":{}}}""")]
+    [InlineData("""{"data":"text"}""")]
+    public void When_ReadSyntheticOutputWithoutMemoryReference_Then_SkipsUnboundOutput(string json)
+    {
+        var descriptor = new ActivityDescriptor
+        {
+            Outputs =
+            [
+                new OutputDescriptor
+                {
+                    Name = "Data",
+                    Type = typeof(string),
+                    IsSynthetic = true
+                }
+            ]
+        };
+
+        var result = JsonActivityConstructorContextHelper.CreateActivity<WorkflowAsActivity>(
+            descriptor, JsonElement.Parse(json), _serializerOptions);
+
+        Assert.False(result.HasExceptions);
+        Assert.False(result.Activity.SyntheticProperties.ContainsKey("Data"));
+    }
+
     private static JsonElement GetJsonElementWithReservedInputName(string inputName)
     {
         const string json = "{\"workflowDefinitionId\":\"Id\",\"id\":\"Id\",\"nodeId\":\"NodeId\",\"name\":\"Workflow-as-activity\",\"type\":\"WorkflowAsActivity\",\"customProperties\":{\"canStartWorkflow\":false,\"runAsynchronously\":false},\"metadata\":{\"designer\":{\"position\":{\"x\":1525.99609375,\"y\":171.5625},\"size\":{\"width\":230.4296875,\"height\":68.4375}},\"displayText\":\"Test\"},\"<inputName>\":{\"typeName\":\"Object\",\"expression\":{\"type\":\"JavaScript\",\"value\":\"return {\\n    \\u0022key\\u0022 : obj.value\\n}\"},\"memoryReference\":{\"id\":\"memref:input--name\"}}}";

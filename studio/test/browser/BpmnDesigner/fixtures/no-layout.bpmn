@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="Definitions_NoLayout" targetNamespace="https://example.com/no-layout">
+  <bpmn:process id="Process_NoLayout">
+    <bpmn:startEvent id="Start" />
+    <bpmn:task id="Work" name="Work" />
+    <bpmn:endEvent id="End" />
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start" targetRef="Work" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Work" targetRef="End" />
+  </bpmn:process>
+</bpmn:definitions>

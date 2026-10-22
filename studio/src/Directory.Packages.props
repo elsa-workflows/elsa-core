@@ -7,8 +7,13 @@
       Elsa.Studio.Workflows.Designer.csproj, which CPM does not manage. Naming the version here,
       once, keeps that PackageDownload's version pin from drifting from this file's PackageVersion
       entry. ClientLib/scripts/generate-bpmn-types.js also reads this property.
+
+      Keep it equal to Core's Bpmn.Model pin in the root Directory.Packages.props: Core's server
+      produces the payloads the generated types describe. `npm run check:generated` fails when the two
+      differ. To diverge deliberately, add <BpmnModelDivergesFromCoreVersion> naming Core's version
+      next to this property, with a comment saying why; the check then fails again on Core's next bump.
     -->
-    <BpmnModelVersion>0.2.0</BpmnModelVersion>
+    <BpmnModelVersion>0.4.0</BpmnModelVersion>
   </PropertyGroup>
   <ItemGroup Label="Elsa">
     <PackageVersion Include="Elsa.Api.Client" Version="3.8.4" />

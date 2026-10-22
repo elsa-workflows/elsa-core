@@ -223,6 +223,104 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         Assert.False(string.IsNullOrWhiteSpace(document.RootElement.GetProperty("definitionId").GetString()));
     }
 
+    [Theory]
+    [InlineData("expression-condition.bpmn")]
+    [InlineData("expression-condition-in-nested-subprocess.bpmn")]
+    public async Task Import_OfADocumentWithExpressionConditions_ReturnsOk(string assetFileName)
+    {
+        // Elsa evaluates condition expressions, in a nested subprocess's body as well as at the top level.
+        using var content = new MultipartFormDataContent();
+        AddBpmnFile(content, ReadAsset(assetFileName), "file");
+
+        var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Import_OfADocumentWithConditionsInAnUnsupportedLanguage_ReturnsUnprocessableEntityNamingTheFlowsAndPersistsNothing()
+    {
+        // Imported over an existing definition, so "persists nothing" is observable as that definition staying exactly as
+        // it was.
+        var definitionId = await ImportCamundaOrderProcessAsync();
+        var storedBeforeImport = await LatestStoredAsync(definitionId);
+
+        using var content = new MultipartFormDataContent();
+        AddBpmnFile(content, ReadAsset("expression-condition-unsupported-language.bpmn"), "file");
+        content.Add(new StringContent(definitionId), "DefinitionId");
+        var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Equal(BpmnErrorCodes.ImportConditionLanguageUnsupported, CodeOf(body));
+        Assert.Equal(new[] { "f2", "f3" }, ElementIdsOf(body));
+        Assert.Contains("XPath", body);
+        Assert.Equal(storedBeforeImport, await LatestStoredAsync(definitionId));
+    }
+
+    [Fact]
+    public async Task Import_OfANewDefinitionWithConditionsInAnUnsupportedLanguage_CreatesNoDefinition()
+    {
+        var definitionId = Guid.NewGuid().ToString("N");
+
+        using var content = new MultipartFormDataContent();
+        AddBpmnFile(content, ReadAsset("expression-condition-unsupported-language.bpmn"), "file");
+        content.Add(new StringContent(definitionId), "DefinitionId");
+        var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        Assert.Null(await FindLatestOrDefaultAsync(definitionId));
+    }
+
+    [Fact]
+    public async Task Import_OfADocumentWithASubprocessBodyThatCannotRun_ReturnsUnprocessableEntityAndCreatesNoDefinition()
+    {
+        // Import builds the graph of every body the process can reach, as the runtime does when a run starts.
+        var definitionId = Guid.NewGuid().ToString("N");
+
+        using var content = new MultipartFormDataContent();
+        AddBpmnFile(content, ReadAsset("invalid-nested-body.bpmn"), "file");
+        content.Add(new StringContent(definitionId), "DefinitionId");
+        var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        var body = await response.Content.ReadAsStringAsync();
+        Assert.Equal(BpmnErrorCodes.ImportProcessInvalid, CodeOf(body));
+        Assert.Contains("Inner_Decide", body);
+        Assert.Null(await FindLatestOrDefaultAsync(definitionId));
+    }
+
+    [Fact]
+    public async Task Import_OfADocumentWithConditionOutcomeFlows_ReturnsOk()
+    {
+        // vw:conditionOutcome is the library's own condition, which Bpmn.Semantics does evaluate — including when the
+        // flow also carries the readable <conditionExpression> the library's writer emits beside it.
+        using var content = new MultipartFormDataContent();
+        AddBpmnFile(content, ReadAsset("condition-outcome.bpmn"), "file");
+
+        var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Analyze_OfADocumentWithExpressionConditions_ReturnsOkWithoutDegradingTheFlows()
+    {
+        // Analyze is a preview: it reports what an import would cost and never refuses for it. The reader keeps an
+        // expression condition on the model, and Elsa evaluates it, so nothing about the flows is degraded.
+        using var content = new MultipartFormDataContent();
+        AddBpmnFile(content, ReadAsset("expression-condition.bpmn"), "file");
+
+        var response = await PostAuthenticatedAsync("bpmn/analyze", content, "workflows/definitions:view");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var degradedElementIds = document.RootElement.GetProperty("issues").EnumerateArray()
+            .Where(issue => issue.GetProperty("severity").GetString() == "Degraded")
+            .Select(issue => issue.GetProperty("elementId").GetString());
+        Assert.Empty(degradedElementIds);
+    }
+
     [Fact]
     public async Task Export_OfAMissingDefinition_ReturnsNotFound()
     {
@@ -598,6 +696,48 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     }
 
     [Fact]
+    public async Task DocumentPut_ThatAddsAnExpressionCondition_ReturnsOk()
+    {
+        var definitionId = await ImportWrittenBackAsync("camunda-order-process.bpmn");
+
+        var (etag, documentJson) = await GetDocumentAsync(definitionId);
+        var putResponse = await PutDocumentAsync(definitionId, WithAnExpressionConditionOn(documentJson, "Flow_2", "x > 1"), etag);
+
+        Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task DocumentPut_ThatAddsAnExpressionConditionToAnOutcomeFlow_ReturnsUnprocessableEntityAndOverwritesNothing()
+    {
+        // The flow already routes on the outcome Rejected; an expression beside it would make either precedence rule
+        // route some documents differently from what their author meant.
+        var definitionId = await ImportWrittenBackAsync("condition-outcome.bpmn");
+        var storedBeforePut = await LatestStoredAsync(definitionId);
+
+        var (etag, documentJson) = await GetDocumentAsync(definitionId);
+        var putResponse = await PutDocumentAsync(definitionId, WithAnExpressionConditionOn(documentJson, "Flow_Rejected", "x > 1"), etag);
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, putResponse.StatusCode);
+        var body = await putResponse.Content.ReadAsStringAsync();
+        Assert.Equal(BpmnErrorCodes.ImportConditionConflict, CodeOf(body));
+        Assert.Equal(new[] { "Flow_Rejected" }, ElementIdsOf(body));
+        Assert.Equal(storedBeforePut, await LatestStoredAsync(definitionId));
+    }
+
+    [Fact]
+    public async Task DocumentPut_OfAConditionOutcomeDocument_ReturnsOk()
+    {
+        // The library's writer emits a readable <conditionExpression> beside every vw:conditionOutcome it writes, so a
+        // document PUT re-reads one on each of these flows; it is the library's own condition, and stays accepted.
+        var definitionId = await ImportWrittenBackAsync("condition-outcome.bpmn");
+        var (etag, documentJson) = await GetDocumentAsync(definitionId);
+
+        var putResponse = await PutDocumentAsync(definitionId, documentJson, etag);
+
+        Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
+    }
+
+    [Fact]
     public async Task DocumentPut_UnchangedDocument_ReturnsOkAndTheSameFindingsAsImport()
     {
         var definitionId = await ImportCamundaOrderProcessAsync();
@@ -898,6 +1038,46 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         var firstElementId = elements[0]!["elementId"]!.GetValue<string>();
         elements[^1]!["elementId"] = firstElementId;
         return document.ToJsonString();
+    }
+
+    /// <summary>
+    /// Gives the top-level flow <paramref name="flowId"/> a standard BPMN <c>&lt;conditionExpression&gt;</c> child — the
+    /// shape a client that edits the document as retained content would send — leaving its <c>conditionOutcome</c>, if
+    /// any, as it is.
+    /// </summary>
+    private static string WithAnExpressionConditionOn(string documentJson, string flowId, string expression)
+    {
+        var document = JsonNode.Parse(documentJson)!;
+        var flow = document["processes"]![0]!["sequenceFlows"]!.AsArray().Single(candidate => candidate!["flowId"]!.GetValue<string>() == flowId)!;
+        var extensions = flow["extensions"] as JsonObject ?? new JsonObject();
+        flow["extensions"] = extensions;
+        var foreignChildren = extensions["foreignChildren"] as JsonArray ?? new JsonArray();
+        extensions["foreignChildren"] = foreignChildren;
+        foreignChildren.Add(new JsonObject
+        {
+            ["element"] = new JsonObject
+            {
+                ["name"] = new JsonObject { ["ns"] = "http://www.omg.org/spec/BPMN/20100524/MODEL", ["localName"] = "conditionExpression" },
+                ["value"] = expression
+            },
+            ["index"] = 0
+        });
+        return document.ToJsonString();
+    }
+
+    /// <summary>The <c>data.elementIds</c> of a coded BPMN error response body, in the order the response lists them.</summary>
+    private static IReadOnlyList<string?> ElementIdsOf(string body)
+    {
+        using var document = JsonDocument.Parse(body);
+        return document.RootElement.GetProperty("data").GetProperty("elementIds").EnumerateArray().Select(id => id.GetString()).ToList();
+    }
+
+    /// <summary>The latest version of <paramref name="definitionId"/>, or <c>null</c> when no version of it exists.</summary>
+    private async Task<WorkflowDefinition?> FindLatestOrDefaultAsync(string definitionId)
+    {
+        using var scope = _app!.Services.CreateScope();
+        var store = scope.ServiceProvider.GetRequiredService<IWorkflowDefinitionStore>();
+        return await store.FindAsync(WorkflowDefinitionHandle.ByDefinitionId(definitionId, VersionOptions.Latest).ToFilter());
     }
 
     /// <summary>Renames the document's top-level process id to <paramref name="subprocessId"/>, so it collides with a subprocess that already declares that id (elsa-core#8074).</summary>

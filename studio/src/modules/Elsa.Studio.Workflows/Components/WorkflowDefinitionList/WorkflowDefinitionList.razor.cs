@@ -119,9 +119,6 @@ public partial class WorkflowDefinitionList
             })
             .ToList();
 
-        // Update initialPage to preserve current page during re-renders
-        InitialPage = state.Page;
-
         // Update URL to reflect current table state & filters
         TryUpdateUrlFromState(state);
 
@@ -135,9 +132,7 @@ public partial class WorkflowDefinitionList
     /// <inheritdoc/>
     protected override async Task ApplyQueryParameters(IDictionary<string, string> query)
     {
-        // Paging
-        if (query.TryGetValue("page", out var pageValue) && int.TryParse(pageValue, out var page)) InitialPage = page - 1;
-        if (query.TryGetValue("pageSize", out var pageSizeValue) && int.TryParse(pageSizeValue, out var pageSize)) _table.SetRowsPerPage(pageSize);
+        ApplyPagingFromQuery(query);
 
         // Filters
         if (query.TryGetValue("search", out var searchValue)) SearchTerm = searchValue;
@@ -428,10 +423,10 @@ public partial class WorkflowDefinitionList
             UserMessageService.ShowSnackbarTextMessage(Localizer["Workflow imported successfully."], Severity.Success, options => { options.SnackbarVariant = Variant.Filled; });
             await EditAsync(workflowDefinition.DefinitionId);
         }
-        else if (result.Failure is { } failure && failure.FailureType != WorkflowImportFailureType.CapabilityRefusal)
+        else if (result.Failure is { } failure && failure.FailureType is not (WorkflowImportFailureType.CapabilityRefusal or WorkflowImportFailureType.ConditionRefusal))
         {
-            // A capability refusal was already reported in its own dialog by BpmnImportUiService; a snackbar here
-            // would just repeat it.
+            // A capability or condition refusal was already reported in its own dialog by BpmnImportUiService; a
+            // snackbar here would just repeat it.
             UserMessageService.ShowSnackbarTextMessage(Localizer["Failed to import BPMN document. Reason: {0}", failure.ErrorMessage], Severity.Error, options =>
             {
                 options.SnackbarVariant = Variant.Filled;

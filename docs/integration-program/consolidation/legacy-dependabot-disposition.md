@@ -23,8 +23,10 @@ and referenced projects can overlap; the integration owner reconciles proposals
 and requires all affected-product CI and ordinary review/merge gates.
 
 The ledger preserves the original #8495 decision, merge and imported source pins.
-Its active configuration blob identifies this candidate and its active update
-links to #8724. #8640 and #8719 remain historical evidence. The
+Its active configuration blob includes the subsequent React Studio npm entry in
+[PR #8925](https://github.com/elsa-workflows/elsa-core/pull/8925), and its active
+update links to that PR. The separate weekly npm job has a one-PR cap and preserves
+all five NuGet entries unchanged. #8724, #8640 and #8719 remain historical evidence. The
 [bounded discovery record](dependabot-recursive-discovery.md) records the complete
 census, static import checks and remaining native/managed acceptance gates.
 This does not claim approval or merge of #8724, completed evaluated discovery,

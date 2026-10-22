@@ -1,0 +1,8 @@
+{
+  "entryPoints": ["packages/sdk/src/index.ts", "packages/sdk/src/config.ts", "packages/api-client/src/index.ts", "packages/auth/src/index.ts", "packages/ui/src/index.ts"],
+  "name": "Elsa React Studio SDK v1 Preview",
+  "out": "docs/api",
+  "readme": "packages/sdk/README.md",
+  "excludeInternal": true,
+  "treatWarningsAsErrors": true
+}

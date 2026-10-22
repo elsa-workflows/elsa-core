@@ -4,13 +4,16 @@ using Elsa.Extensions;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Helpers;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Runtime.Requests;
 using Elsa.Workflows.Runtime.Stimuli;
 using Elsa.Workflows.Runtime.UIHints;
+using Elsa.Workflows.Signals;
 using Elsa.Workflows.UIHints;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Logging;
 
 namespace Elsa.Workflows.Runtime.Activities;
 
@@ -18,14 +21,33 @@ namespace Elsa.Workflows.Runtime.Activities;
 /// Creates a new workflow instance of the specified workflow and dispatches it for execution.
 /// When <see cref="WaitForCompletion"/> is enabled and activation is denied, the activity completes with a result dictionary containing
 /// <c>CannotStart</c> set to <c>true</c> and the requested <c>WorkflowInstanceId</c>.
+/// When <see cref="WaitForCompletion"/> is enabled and the activity is cancelled while it waits, the child workflow it is waiting for is cancelled too.
+/// With the transactional outbox on, when the activity is cancelled in the burst that dispatched the child and the parent has not
+/// committed since the dispatch, the child's pending dispatch is withdrawn from the outbox and the child is never created. Otherwise this only reaches a child that has made its
+/// first commit: until then a new child exists only in memory and is invisible to the workflow instance store. A child is missed when the
+/// activity is cancelled in the same burst that dispatched it without the outbox, while the dispatch queue or message transport is
+/// backlogged, or while the child's first burst is still running. Cancelling the parent workflow, which cascades by parent instance ID,
+/// has the same gap.
 /// </summary>
 [Activity("Elsa", "Composition", "Create a new workflow instance of the specified workflow and dispatch it for execution.")]
 [UsedImplicitly]
 public class DispatchWorkflow : Activity<object>
 {
+    private const string WaitedChildInstanceIdKey = "WaitedChildInstanceId";
+    private const string ChildWorkflowSubStatusKey = "ChildWorkflowSubStatus";
+    private const string ChildActivationDeniedKey = "ChildActivationDenied";
+
+    /// <summary>
+    /// The resume input key under which <see cref="Handlers.ResumeDispatchWorkflowActivity"/> passes the waited-for child's final
+    /// sub-status beside its output. The activity takes it out of the input before the input becomes <see cref="Result"/>,
+    /// so the result stays exactly the child's output.
+    /// </summary>
+    internal const string ChildWorkflowSubStatusInputKey = "Elsa:DispatchWorkflow:ChildWorkflowSubStatus";
+
     /// <inheritdoc />
     public DispatchWorkflow([CallerFilePath] string? source = null, [CallerLineNumber] int? line = null) : base(source, line)
     {
+        OnSignalReceived<CancelSignal>(OnCancelledAsync);
     }
 
     /// <summary>
@@ -55,6 +77,8 @@ public class DispatchWorkflow : Activity<object>
 
     /// <summary>
     /// True to wait for the child workflow to complete before completing this activity, false to "fire and forget".
+    /// A waiting activity completes once the child is finished, whether it finished successfully, faulted or was cancelled,
+    /// including a cancellation through the cancellation API.
     /// </summary>
     [Input(Description = "Wait for the child workflow to complete before completing this activity.")]
     public Input<bool> WaitForCompletion { get; set; } = null!;
@@ -87,6 +111,9 @@ public class DispatchWorkflow : Activity<object>
         // If we need to wait for the child workflow to complete, create a bookmark.
         if (waitForCompletion)
         {
+            // Remember the child this activity waits for, so cancelling the activity can cancel exactly that instance.
+            context.SetProperty(WaitedChildInstanceIdKey, instanceId);
+
             var bookmarkOptions = new CreateBookmarkArgs
             {
                 Callback = OnChildWorkflowCompletedAsync,
@@ -121,7 +148,7 @@ public class DispatchWorkflow : Activity<object>
         };
 
         // If we need to wait for the child workflow to complete, set the property. This will be used by the ResumeDispatchWorkflowActivity handler.
-        if (waitForCompletion) properties["WaitForCompletion"] = true;
+        if (waitForCompletion) properties[WorkflowDispatchProperties.WaitForCompletion] = true;
         if (startNewTrace) properties["StartNewTrace"] = true;
         
         input["ParentInstanceId"] = parentInstanceId;
@@ -162,10 +189,105 @@ public class DispatchWorkflow : Activity<object>
         return instanceId;
     }
 
+    /// <summary>
+    /// The sub-status the child workflow finished with, recorded when this activity resumed after waiting for it:
+    /// <see cref="WorkflowSubStatus.Finished"/>, <see cref="WorkflowSubStatus.Faulted"/> or <see cref="WorkflowSubStatus.Cancelled"/>.
+    /// </summary>
+    /// <remarks>
+    /// The activity completes the same way whatever the child's sub-status, so a flowchart continues after a faulted child
+    /// exactly as after a successful one. This lets the BPMN host, which binds a call activity to this activity, read how
+    /// the child ended while it handles the activity's completion.
+    /// </remarks>
+    /// <param name="context">The execution context of a <see cref="DispatchWorkflow"/> activity.</param>
+    /// <returns>
+    /// The child's final sub-status, or <c>null</c> when the activity did not wait for its child, has not resumed yet, or
+    /// completed because the child's activation was denied.
+    /// </returns>
+    internal static WorkflowSubStatus? GetChildWorkflowSubStatus(ActivityExecutionContext context) =>
+        Enum.TryParse<WorkflowSubStatus>(context.GetProperty<string>(ChildWorkflowSubStatusKey), out var subStatus) ? subStatus : null;
+
+    /// <summary>
+    /// Whether this activity completed because the activation of the child it was waiting for was denied, so the child
+    /// never started. Recorded when the activity resumes with the <c>CannotStart</c> result described on this type.
+    /// </summary>
+    /// <remarks>
+    /// As with <see cref="GetChildWorkflowSubStatus"/>, the activity completes the same way either way; this lets the BPMN
+    /// host tell a call whose child could not be started from one whose child finished.
+    /// </remarks>
+    /// <param name="context">The execution context of a <see cref="DispatchWorkflow"/> activity.</param>
+    internal static bool IsChildActivationDenied(ActivityExecutionContext context) => context.GetProperty<bool>(ChildActivationDeniedKey);
+
     private async ValueTask OnChildWorkflowCompletedAsync(ActivityExecutionContext context)
     {
         var input = context.WorkflowInput;
+
+        // The resume handler passes the child's sub-status beside its output. Record it, and keep it out of the result.
+        if (input.TryGetValue(ChildWorkflowSubStatusInputKey, out var childSubStatus))
+        {
+            input.Remove(ChildWorkflowSubStatusInputKey);
+            context.SetProperty(ChildWorkflowSubStatusKey, childSubStatus?.ToString());
+        }
+        // A denied activation resumes with CannotStart and the instance id this activity reserved for the child, and no
+        // sub-status, since no child ran. Matching the id keeps a finished child's own output from reading as a denial.
+        else if (IsActivationDenial(context, input))
+        {
+            context.SetProperty(ChildActivationDeniedKey, true);
+        }
+
         context.Set(Result, input);
         await context.CompleteActivityAsync();
+    }
+
+    private static bool IsActivationDenial(ActivityExecutionContext context, IDictionary<string, object> input) =>
+        // Compared as text, like the sub-status above, so a value that came back through serialization still matches.
+        input.TryGetValue("CannotStart", out var cannotStart) && string.Equals(cannotStart?.ToString(), bool.TrueString, StringComparison.OrdinalIgnoreCase)
+        && input.TryGetValue("WorkflowInstanceId", out var instanceId)
+        && string.Equals(instanceId?.ToString(), context.GetProperty<string>(WaitedChildInstanceIdKey), StringComparison.Ordinal);
+
+    /// <summary>
+    /// Cancels the child this activity was waiting for. When this burst dispatched it through the transactional outbox,
+    /// the pending dispatch is withdrawn first; if the parent has not committed since the dispatch, the child is never created.
+    /// After a mid-burst commit, a delivery already in flight can still create the child, and if that delivery fails the
+    /// failure path may save the withdrawn row again until this cancel burst commits. Only that instance
+    /// is targeted: cancelling by parent instance would also reach fire-and-forget and sibling dispatches of the same
+    /// parent. A child that has already finished is left alone, together with anything it dispatched. If the child finishes between the read and the cancellation,
+    /// the cancellation service still cascades to that child's own children. A failure looking up or cancelling the child
+    /// is logged so this best-effort cleanup does not fault the parent's cancel path.
+    /// </summary>
+    private async ValueTask OnCancelledAsync(CancelSignal signal, SignalContext signalContext)
+    {
+        if (!signalContext.IsSelf)
+            return;
+
+        var context = signalContext.ReceiverActivityExecutionContext;
+        var childInstanceId = context.GetProperty<string>(WaitedChildInstanceIdKey);
+
+        if (string.IsNullOrEmpty(childInstanceId))
+            return;
+
+        var cancellationToken = signalContext.CancellationToken;
+        await context.WorkflowExecutionContext.WithdrawPendingChildDispatchAsync(childInstanceId, cancellationToken);
+
+        try
+        {
+            var child = await context.GetRequiredService<IWorkflowInstanceStore>().FindAsync(new WorkflowInstanceFilter { Id = childInstanceId }, cancellationToken);
+
+            if (child is not { Status: WorkflowStatus.Running })
+                return;
+
+            // The cancellation service hands the child to the workflow cancellation dispatcher, the same way the
+            // workflow-level cascade does, so the child is not cancelled inside this workflow's execution. It also cancels
+            // the child's own children.
+            await context.GetRequiredService<IWorkflowCancellationService>().CancelWorkflowAsync(childInstanceId, cancellationToken);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            context.GetRequiredService<ILogger<DispatchWorkflow>>().LogWarning(
+                ex,
+                "Failed to cancel waited-for child workflow {ChildWorkflowInstanceId} of parent {ParentWorkflowInstanceId} for activity {ActivityInstanceId}.",
+                childInstanceId,
+                context.WorkflowExecutionContext.Id,
+                context.Id);
+        }
     }
 }

@@ -26,4 +26,12 @@ public class BpmnScopeFaultException : Exception
     /// The interpreter's stable fault code.
     /// </summary>
     public string Code { get; }
+
+    /// <summary>
+    /// The code of the BPMN error the scope ended with, when it ended because nothing in it caught an error: an error
+    /// end event's, or the one a failed unit of work raised. <c>null</c> for an uncoded error and for every other fault.
+    /// An enclosing scope reports it as the error its subprocess raised, so a catcher there that declares the code
+    /// catches it.
+    /// </summary>
+    public string? ErrorCode { get; init; }
 }
