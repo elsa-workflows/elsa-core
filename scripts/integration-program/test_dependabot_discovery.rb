@@ -102,8 +102,8 @@ class DependabotDiscoveryTests < Minitest::Test
     batches = NUGET_UPDATES.map { |entry| discovered_projects(entry.fetch("directories")) }
     assert_equal expected.sort, batches.flatten.sort, "Reconcile batch selectors when solution membership changes"
     assert_equal batches.flatten.length, batches.flatten.uniq.length, "Project starting sets must not overlap"
-    assert_equal [114, 69, 100, 97, 1], batches.map(&:length)
-    assert_equal 197, batches.flatten.grep(%r{^(extensions|studio)/}).length
+    assert_equal [114, 69, 100, 99, 1], batches.map(&:length)
+    assert_equal 199, batches.flatten.grep(%r{^(extensions|studio)/}).length
     assert_includes batches[2], LEGACY_CORE_PROJECT
     NUGET_UPDATES.each do |entry|
       refute_includes entry.fetch("directories"), "/", "Never select the root solution as a batch"
