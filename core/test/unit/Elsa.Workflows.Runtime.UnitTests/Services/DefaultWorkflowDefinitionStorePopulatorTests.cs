@@ -1,3 +1,4 @@
+using System.Reflection;
 using Elsa.Common;
 using Elsa.Common.Multitenancy;
 using Elsa.Mediator.Contracts;
@@ -7,6 +8,7 @@ using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Models;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Open.Linq.AsyncExtensions;
 using NSubstitute;
@@ -385,6 +387,150 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
             && message.Contains("bad-workflow", StringComparison.Ordinal));
     }
 
+    [Fact(DisplayName = "Cancelled restamp cancellation propagates with no per-workflow error logs")]
+    public async Task PopulateStoreAsync_CancelledToken_Restamp_PropagatesWithoutPerWorkflowLogs()
+    {
+        // Arrange
+        var logger = new CapturingLogger();
+        using var cts = new CancellationTokenSource();
+        var restamper = Substitute.For<IClrWorkflowDefinitionTenantRestamper>();
+        restamper
+            .RestampAsync(Arg.Any<string>(), Arg.Any<int>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns<Task<bool>>(_ =>
+            {
+                cts.Cancel();
+                throw new OperationCanceledException(cts.Token);
+            });
+        var workflow = new MaterializedWorkflow(new()
+        {
+            Identity = new("shared-workflow", 1, "shared-v1", Tenant.AgnosticTenantId),
+            Publication = new(true, true)
+        }, "CLR", "ClrWorkflowMaterializer");
+        var populator = CreatePopulatorWithTenant("tenant-a", logger, restamper, workflow);
+
+        // Act / Assert
+        await Assert.ThrowsAsync<OperationCanceledException>(() => populator.PopulateStoreAsync(cts.Token));
+        Assert.Empty(logger.Messages);
+    }
+
+    [Fact(DisplayName = "Cancelled store cancellation propagates with no per-workflow error logs")]
+    public async Task PopulateStoreAsync_CancelledToken_StoreFind_PropagatesWithoutPerWorkflowLogs()
+    {
+        // Arrange
+        var logger = new CapturingLogger();
+        using var cts = new CancellationTokenSource();
+        _storeMock
+            .When(x => x.FindAsync(Arg.Any<WorkflowDefinitionFilter>(), Arg.Any<CancellationToken>()))
+            .Do(_ =>
+            {
+                cts.Cancel();
+                throw new OperationCanceledException(cts.Token);
+            });
+        var workflow = new MaterializedWorkflow(new()
+        {
+            Identity = new("shared-workflow", 1, "shared-v1", Tenant.AgnosticTenantId),
+            Publication = new(true, true)
+        }, "Test", "TestProvider");
+        var populator = CreatePopulatorWithTenant("tenant-a", logger, workflow);
+
+        // Act / Assert
+        await Assert.ThrowsAsync<OperationCanceledException>(() => populator.PopulateStoreAsync(cts.Token));
+        Assert.Empty(logger.Messages);
+    }
+
+    [Fact(DisplayName = "A live-token store cancellation is logged and later workflows still populate")]
+    public async Task PopulateStoreAsync_LiveToken_StoreCancellation_LogsAndContinues()
+    {
+        // Arrange
+        var logger = new CapturingLogger();
+        _storeMock
+            .When(x => x.FindAsync(
+                Arg.Is<WorkflowDefinitionFilter>(filter => filter.DefinitionId == "bad-workflow"),
+                Arg.Any<CancellationToken>()))
+            .Do(_ => throw new TaskCanceledException());
+        var bad = new MaterializedWorkflow(new()
+        {
+            Identity = new("bad-workflow", 1, "bad-v1", Tenant.AgnosticTenantId),
+            Publication = new(true, true)
+        }, "Test", "TestProvider");
+        var good = new MaterializedWorkflow(new()
+        {
+            Identity = new("good-workflow", 1, "good-v1", Tenant.AgnosticTenantId),
+            Publication = new(true, true)
+        }, "Test", "TestProvider");
+        var populator = CreatePopulatorWithTenant("tenant-a", logger, bad, good);
+
+        // Act
+        var result = (await populator.PopulateStoreAsync()).ToList();
+
+        // Assert
+        Assert.Single(result);
+        Assert.Equal("good-workflow", result[0].DefinitionId);
+        Assert.Contains(logger.Messages, message =>
+            message.Contains("An error occurred while populating", StringComparison.Ordinal)
+            && message.Contains("bad-workflow", StringComparison.Ordinal));
+        await _storeMock.Received().SaveManyAsync(Arg.Is<IEnumerable<WorkflowDefinition>>(definitions =>
+            definitions.Any(definition => definition.DefinitionId == "good-workflow")), Arg.Any<CancellationToken>());
+    }
+
+    [Theory(DisplayName = "The full constructor activates with or without a restamper")]
+    [InlineData("container", false)]
+    [InlineData("container", true)]
+    [InlineData("create-instance", false)]
+    [InlineData("create-instance", true)]
+    [InlineData("get-service-or-create", false)]
+    [InlineData("get-service-or-create", true)]
+    [InlineData("create-factory", false)]
+    [InlineData("create-factory", true)]
+    public void CreatePopulator_UsesFullConstructor_WithOptionalRestamper(string path, bool registerRestamper)
+    {
+        // Arrange
+        var restamper = Substitute.For<IClrWorkflowDefinitionTenantRestamper>();
+        var services = new ServiceCollection();
+        services.AddSingleton<Func<IEnumerable<IWorkflowsProvider>>>(() => []);
+        services.AddSingleton(Substitute.For<ITriggerIndexer>());
+        services.AddSingleton(Substitute.For<IWorkflowDefinitionStore>());
+        services.AddSingleton(Substitute.For<IActivitySerializer>());
+        services.AddSingleton(Substitute.For<IPayloadSerializer>());
+        services.AddSingleton(Substitute.For<ISystemClock>());
+        services.AddSingleton(Substitute.For<IIdentityGraphService>());
+        services.AddSingleton(Substitute.For<ITenantAccessor>());
+        services.AddSingleton(Substitute.For<ILogger<DefaultWorkflowDefinitionStorePopulator>>());
+        if (registerRestamper)
+        {
+            services.AddSingleton(restamper);
+        }
+
+        if (path == "container")
+        {
+            services.AddSingleton<DefaultWorkflowDefinitionStorePopulator>();
+        }
+
+        using var provider = services.BuildServiceProvider();
+
+        // Act
+        var populator = path switch
+        {
+            "container" => provider.GetRequiredService<DefaultWorkflowDefinitionStorePopulator>(),
+            "create-instance" => ActivatorUtilities.CreateInstance<DefaultWorkflowDefinitionStorePopulator>(provider),
+            "get-service-or-create" => ActivatorUtilities.GetServiceOrCreateInstance<DefaultWorkflowDefinitionStorePopulator>(provider),
+            "create-factory" => (DefaultWorkflowDefinitionStorePopulator)ActivatorUtilities.CreateFactory(typeof(DefaultWorkflowDefinitionStorePopulator), Type.EmptyTypes)(provider, null),
+            _ => throw new ArgumentOutOfRangeException(nameof(path), path, null)
+        };
+
+        // Assert
+        Assert.NotNull(populator);
+        var assignedRestamper = GetClrTenantRestamper(populator);
+        if (registerRestamper)
+        {
+            Assert.Same(restamper, assignedRestamper);
+        }
+        else
+        {
+            Assert.Null(assignedRestamper);
+        }
+    }
+
     [Theory(DisplayName = "PopulateStoreAsync handles null/empty tenant IDs correctly")]
     [InlineData(null, null, true)]  // Both null - should import
     [InlineData("", "", true)]      // Both empty - should import
@@ -407,6 +553,13 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
             Assert.Empty(result);
             await _storeMock.DidNotReceive().SaveManyAsync(Arg.Any<IEnumerable<WorkflowDefinition>>(), Arg.Any<CancellationToken>());
         }
+    }
+
+    private static IClrWorkflowDefinitionTenantRestamper? GetClrTenantRestamper(DefaultWorkflowDefinitionStorePopulator populator)
+    {
+        return (IClrWorkflowDefinitionTenantRestamper?)typeof(DefaultWorkflowDefinitionStorePopulator)
+            .GetField("_clrTenantRestamper", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .GetValue(populator);
     }
 
     private MaterializedWorkflow CreateMaterializedWorkflow(string definitionId, string id, string? tenantId)
