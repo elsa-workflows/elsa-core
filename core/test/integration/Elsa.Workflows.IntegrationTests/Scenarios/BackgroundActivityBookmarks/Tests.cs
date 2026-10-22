@@ -51,8 +51,7 @@ public class Tests
         Assert.True(state.Incidents.Count == 0, $"The background activity faulted: {state.Incidents.FirstOrDefault()?.Exception?.Message}");
         Assert.Equal(WorkflowSubStatus.Suspended, state.SubStatus);
         Assert.True(state.Bookmarks.Any(IsBackgroundBookmark), "The resumed run did not restore the bookmark the background work created.");
-        // DistinctBy is deliberate until #8809 is fixed: AddBookmarks appends the restored bookmarks without de-duplicating.
-        var bookmark = Assert.Single(state.Bookmarks.Where(IsBackgroundBookmark).DistinctBy(x => x.Id));
+        var bookmark = Assert.Single(state.Bookmarks.Where(IsBackgroundBookmark));
         var payload = Assert.IsType<EventBookmarkPayload>(bookmark.Payload);
         Assert.Equal(EventName, payload.EventName);
     }
