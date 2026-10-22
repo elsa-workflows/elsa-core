@@ -3,6 +3,7 @@ using Elsa.Api.Client.Resources.ActivityDescriptors.Models;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Responses;
 using Elsa.Api.Client.Shared.Models;
+using Elsa.Studio.Bpmn.Designers;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.DomInterop.Contracts;
 using Elsa.Studio.Extensions;
@@ -13,6 +14,7 @@ using Elsa.Studio.Workflows.Contracts;
 using Elsa.Studio.Workflows.DiagramDesigners;
 using Elsa.Studio.Workflows.DiagramDesigners.Bpmn;
 using Elsa.Studio.Workflows.Designer.Models;
+using Elsa.Studio.Workflows.Designer.Options;
 using Elsa.Studio.Workflows.Domain.Contracts;
 using Elsa.Studio.Workflows.Domain.Models;
 using Elsa.Studio.Workflows.Domain.Models.Bpmn;
@@ -64,6 +66,18 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
     /// </summary>
     private BpmnDocumentSession? _bpmnDocumentSession;
 
+    /// <summary>
+    /// The BPMN document of a BPMN-imported workflow while the enabled BPMN designer edits it, in place of
+    /// <see cref="_bpmnDocumentSession"/>, or <see langword="null"/>. See <see cref="AdoptServerDefinition"/>.
+    /// </summary>
+    private BpmnModelerSession? _bpmnModelerSession;
+
+    /// <summary>
+    /// Whether a save of the designer's document is running, from the ordinary save before it to the reload after it.
+    /// Until that reload, the graph this editor holds predates the document just saved.
+    /// </summary>
+    private bool _isSavingBpmnModelerDefinition;
+
     private BpmnElementSelection? _selectedBpmnElement;
     private EventCallback<BpmnElementSelection?> _bpmnElementSelected;
 
@@ -112,6 +126,10 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
     [Inject] private IWorkflowExportDialogService WorkflowExportDialogService { get; set; } = null!;
     [Inject] private IBpmnImportUiService BpmnImportUiService { get; set; } = null!;
     [Inject] private IBpmnInterchangeService BpmnInterchangeService { get; set; } = null!;
+    [Inject] private IBpmnXmlService BpmnXmlService { get; set; } = null!;
+    [Inject] private IDialogService DialogService { get; set; } = null!;
+    [Inject] private BpmnDesignerResolver BpmnDesignerResolver { get; set; } = null!;
+    [Inject] private IOptions<DesignerOptions> DesignerOptions { get; set; } = null!;
     [Inject] private IOptions<WorkflowDefinitionOptions> WorkflowDefinitionOptions { get; set; } = null!;
 
     /// <summary>
@@ -125,7 +143,16 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
     [JSInvokable] public async Task OnHotKeysCtrlShiftS() => await OnSaveAsClick();
 
     private JsonObject? Activity => _workflowDefinition?.Root;
-    private bool IsDirty => _isDirty || _bpmnDocumentSession?.IsDirty == true;
+    private bool IsDirty => _isDirty || _bpmnDocumentSession?.IsDirty == true || _bpmnModelerSession?.IsDirty == true;
+
+    /// <summary>Whether the workflow's activities come from its BPMN document, however that document is edited.</summary>
+    private bool IsBpmnDocumentBackedEdit => _bpmnDocumentSession != null || _bpmnModelerSession != null;
+
+    /// <summary>
+    /// Whether a BPMN-imported workflow's document is edited in the enabled BPMN designer. Without one, or while the
+    /// React Flow canvas is in effect, it is shown on the read-only canvas and bound in the Performed by panel.
+    /// </summary>
+    private bool UsesBpmnDesigner => BpmnDesignerResolver.Resolve() != null && !DesignerOptions.Value.UseReactFlow;
     private bool CanPublish => Permissions.CanPublishDefinitions();
     private bool CanRetract => Permissions.CanRetractDefinitions();
     private JsonObject? SelectedActivity { get; set; }
@@ -246,6 +273,7 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
         IsProgressing = false;
         Mediator.Unsubscribe(this);
         _rateLimitedSaveChangesAsync.Dispose();
+        SetBpmnModelerSession(null);
     }
 
     /// Invalidates asynchronous operations that belong to the current workflow definition.
@@ -273,7 +301,7 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
     {
         var workflowDefinition = _workflowDefinition ?? new WorkflowDefinition();
 
-        if (_bpmnDocumentSession != null)
+        if (IsBpmnDocumentBackedEdit)
         {
             // A BPMN-imported workflow's graph is derived from its BPMN document, and elsa-core refuses to read or export
             // that document once an ordinary save has rewritten the graph behind it. Bindings are edited in the document
@@ -405,6 +433,11 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
                 // working copy with unsaved edits is left alone: its save reports a moved ETag as a conflict itself.
                 if (_bpmnDocumentSession is { IsDirty: false } bpmnDocumentSession)
                     await bpmnDocumentSession.ReloadAsync();
+
+                // The designer's document is not read again: that would replace its edits and undo history. Only the
+                // ETag is brought up to date, if the stored document is still the one the designer was given.
+                if (_bpmnModelerSession != null)
+                    await _bpmnModelerSession.RefreshRevisionAfterOrdinarySaveAsync();
 
                 if (!string.IsNullOrEmpty(currentSelectedActivityId))
                 {
@@ -543,6 +576,17 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
 
         if (isNewImport && workflowDefinition.Root != null)
             await _diagramDesigner.LoadActivityAsync(workflowDefinition.Root);
+
+        // An import replaces the document. A designer save does not: the definition then carries the document the
+        // designer already shows, and reading it again would only cost the designer its undo history. Its ETag can still
+        // have moved, as when an import of the same document opens a new draft, so that much is read again.
+        if (isNewImport && _bpmnModelerSession is { } modelerSession)
+        {
+            if (BpmnDiagramDesigner.GetSourceXml(workflowDefinition) != modelerSession.Xml)
+                await modelerSession.ReloadAsync();
+            else
+                await modelerSession.RefreshRevisionAfterOrdinarySaveAsync();
+        }
     }
 
     private async Task<WorkflowDefinition?> GetWorkflowDefinitionSnapshotAsync()
@@ -621,6 +665,12 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
 
     private async Task OnSaveClick()
     {
+        if (_bpmnModelerSession != null)
+        {
+            await SaveBpmnModelerDefinitionAsync();
+            return;
+        }
+
         if (_bpmnDocumentSession != null)
         {
             await SaveBpmnDocumentBackedDefinitionAsync();
@@ -652,6 +702,19 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
         if (_bpmnDocumentSession?.IsDirty == true)
         {
             UserMessageService.ShowSnackbarTextMessage(Localizer["Save or discard the binding changes before publishing."], Severity.Warning);
+            return;
+        }
+
+        // Publishing saves the graph this editor holds, which until a diagram save's reload predates the saved document.
+        if (_isSavingBpmnModelerDefinition)
+        {
+            UserMessageService.ShowSnackbarTextMessage(Localizer["Wait for the diagram to finish saving before publishing."], Severity.Warning);
+            return;
+        }
+
+        if (_bpmnModelerSession?.IsDirty == true)
+        {
+            UserMessageService.ShowSnackbarTextMessage(Localizer["Save the diagram changes before publishing."], Severity.Warning);
             return;
         }
 
@@ -703,7 +766,18 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
         if (workflowDefinition is null || !IsBpmnDocumentBacked(workflowDefinition))
         {
             _bpmnDocumentSession = null;
+            SetBpmnModelerSession(null);
             _selectedBpmnElement = null;
+            return;
+        }
+
+        if (UsesBpmnDesigner)
+        {
+            _bpmnDocumentSession = null;
+
+            if (_bpmnModelerSession?.DefinitionId != workflowDefinition.DefinitionId)
+                SetBpmnModelerSession(new(BpmnXmlService, workflowDefinition.DefinitionId));
+
             return;
         }
 
@@ -712,6 +786,23 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
 
         _bpmnDocumentSession = new(BpmnInterchangeService, workflowDefinition.DefinitionId);
         _selectedBpmnElement = null;
+    }
+
+    private void SetBpmnModelerSession(BpmnModelerSession? session)
+    {
+        if (_bpmnModelerSession != null)
+            _bpmnModelerSession.Changed -= OnBpmnModelerSessionChanged;
+
+        _bpmnModelerSession = session;
+
+        if (session != null)
+            session.Changed += OnBpmnModelerSessionChanged;
+    }
+
+    private void OnBpmnModelerSessionChanged()
+    {
+        if (!_disposed)
+            _ = InvokeAsync(StateHasChanged);
     }
 
     private static bool IsBpmnDocumentBacked(WorkflowDefinition? workflowDefinition) =>
@@ -791,6 +882,104 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
     }
 
     /// <summary>
+    /// Saves a BPMN workflow whose document the enabled BPMN designer edits: unsaved changes to its other properties
+    /// first, through the ordinary save, then the designer's document through the XML PUT. Before the first save of a
+    /// document the designer reported content it cannot keep for, the user has to accept losing it.
+    /// </summary>
+    private async Task SaveBpmnModelerDefinitionAsync()
+    {
+        if (_isSavingBpmnModelerDefinition)
+            return;
+
+        _isSavingBpmnModelerDefinition = true;
+
+        try
+        {
+            await SaveBpmnModelerDefinitionCoreAsync(_bpmnModelerSession!);
+        }
+        finally
+        {
+            _isSavingBpmnModelerDefinition = false;
+        }
+    }
+
+    private async Task SaveBpmnModelerDefinitionCoreAsync(BpmnModelerSession session)
+    {
+        if (_isDirty || !session.IsDirty)
+        {
+            var saved = false;
+
+            // The ordinary save also brings the session's ETag up to date; see SaveChangesAsync.
+            await SaveChangesAsync(false, true, false, _ =>
+            {
+                saved = true;
+                return Task.CompletedTask;
+            });
+
+            if (!saved || !session.IsDirty)
+            {
+                if (saved)
+                    UserMessageService.ShowSnackbarTextMessage(Localizer["Workflow saved"], Severity.Success);
+
+                return;
+            }
+        }
+
+        if (session.SaveGate.RequiresAcknowledgement && !await AcknowledgeDroppedContentAsync(session.SaveGate))
+            return;
+
+        await ProgressAsync(async () =>
+        {
+            var result = await session.SaveAsync();
+
+            if (_disposed)
+                return;
+
+            if (!result.IsSuccess)
+            {
+                var message = result.Failure?.ConditionRefusal is { } conditionRefusal
+                    ? Localizer["The diagram changes were not saved: the process's sequence flows {0} carry expression conditions, which Elsa does not evaluate yet.", string.Join(", ", conditionRefusal.FlowIds.Select(id => $"'{id}'"))]
+                    : Localizer["The diagram changes were not saved."];
+                UserMessageService.ShowSnackbarTextMessage(message, Severity.Error);
+                return;
+            }
+
+            if (!await ReloadDefinitionFromServerAsync())
+                return;
+
+            var dropped = result.Success!.DroppedForeignContent;
+
+            if (dropped.Count > 0)
+                UserMessageService.ShowSnackbarTextMessage(Localizer["Workflow saved. The saved document no longer has this content from other tools: {0}.", string.Join(", ", dropped.Select(DescribeForeignContent))], Severity.Warning, options => options.VisibleStateDuration = 10000);
+            else if (session.SavedButRevisionUnknown)
+                UserMessageService.ShowSnackbarTextMessage(Localizer["Workflow saved, but Studio could not confirm the saved revision. Reload before saving again."], Severity.Warning);
+            else
+                UserMessageService.ShowSnackbarTextMessage(Localizer["Workflow saved"], Severity.Success);
+        });
+    }
+
+    private static string DescribeForeignContent(BpmnForeignContentModel content) =>
+        content.ElementId == null ? $"{content.Kind} '{content.Name}'" : $"{content.Kind} '{content.Name}' on '{content.ElementId}'";
+
+    /// <summary>
+    /// Shows the content the designer reported it cannot keep, and records the user's acceptance in
+    /// <paramref name="saveGate"/>. Returns whether the save may go ahead.
+    /// </summary>
+    private async Task<bool> AcknowledgeDroppedContentAsync(BpmnSaveGate saveGate)
+    {
+        var parameters = new DialogParameters<BpmnDroppedContentDialog> { { x => x.Warnings, saveGate.DroppedWarnings } };
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseButton = true, CloseOnEscapeKey = true };
+        var dialog = await DialogService.ShowAsync<BpmnDroppedContentDialog>(Localizer["Save without this content?"], parameters, options);
+        var result = await dialog.Result;
+
+        if (result?.Canceled is not false)
+            return false;
+
+        saveGate.Acknowledge();
+        return true;
+    }
+
+    /// <summary>
     /// Reloads a BPMN-imported workflow and its document from the server, discarding every unsaved change: what a user
     /// does after the document was changed by someone else, or went stale.
     /// </summary>
@@ -798,8 +987,14 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
     {
         await ProgressAsync(async () =>
         {
-            if (await ReloadDefinitionFromServerAsync() && _bpmnDocumentSession != null)
+            if (!await ReloadDefinitionFromServerAsync())
+                return;
+
+            if (_bpmnDocumentSession != null)
                 await _bpmnDocumentSession.ReloadAsync();
+
+            if (_bpmnModelerSession != null)
+                await _bpmnModelerSession.ReloadAsync();
         });
     }
 

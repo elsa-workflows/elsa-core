@@ -13,6 +13,7 @@ using Elsa.Studio.Workflows.Extensions;
 using Elsa.Studio.Workflows.UI.Contexts;
 using Elsa.Studio.Workflows.UI.Contracts;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.Extensions.Options;
 using MudBlazor;
 
@@ -108,22 +109,31 @@ public class BpmnDiagramDesigner(
     public RenderFragment DisplayDesigner(DisplayContext context)
     {
         var activity = context.Activity;
-        var sequence = 0;
 
         _rootActivity = activity;
         _sourceXml = GetSourceXml(context.WorkflowDefinition);
         _workflowDefinition = context.WorkflowDefinition;
 
+        // Keyed on the editor's modeler session when there is one, so the designer survives this designer being replaced
+        // on every reload of the workflow; otherwise on this designer, so each displayed scope gets a canvas of its own.
         return builder =>
         {
-            builder.OpenComponent<BpmnDesignerWrapper>(sequence++);
-            builder.SetKey(_id);
-            builder.AddAttribute(sequence++, nameof(BpmnDesignerWrapper.Activity), activity);
-            builder.AddAttribute(sequence++, nameof(BpmnDesignerWrapper.SourceXml), _sourceXml);
-            builder.AddAttribute(sequence++, nameof(BpmnDesignerWrapper.ActivityStats), context.ActivityStats);
-            builder.AddAttribute(sequence++, nameof(BpmnDesignerWrapper.ActivitySelected), context.ActivitySelectedCallback);
-            builder.AddAttribute(sequence++, nameof(BpmnDesignerWrapper.ActivityDoubleClick), context.ActivityDoubleClickCallback);
-            builder.AddComponentReferenceCapture(sequence++, @ref =>
+            builder.OpenComponent<BpmnModelerScope>(0);
+            builder.AddAttribute(1, nameof(BpmnModelerScope.ChildContent), (RenderFragment<BpmnModelerSession?>)(session => wrapper => BuildWrapper(wrapper, session)));
+            builder.CloseComponent();
+        };
+
+        void BuildWrapper(RenderTreeBuilder builder, BpmnModelerSession? session)
+        {
+            builder.OpenComponent<BpmnDesignerWrapper>(0);
+            builder.SetKey(session ?? (object)_id);
+            builder.AddAttribute(1, nameof(BpmnDesignerWrapper.Activity), activity);
+            builder.AddAttribute(2, nameof(BpmnDesignerWrapper.SourceXml), _sourceXml);
+            builder.AddAttribute(3, nameof(BpmnDesignerWrapper.ActivityStats), context.ActivityStats);
+            builder.AddAttribute(4, nameof(BpmnDesignerWrapper.ActivitySelected), context.ActivitySelectedCallback);
+            builder.AddAttribute(5, nameof(BpmnDesignerWrapper.ActivityDoubleClick), context.ActivityDoubleClickCallback);
+            builder.AddAttribute(6, nameof(BpmnDesignerWrapper.ModelerSession), session);
+            builder.AddComponentReferenceCapture(7, @ref =>
             {
                 var isFirstMount = _designerWrapper == null;
                 _designerWrapper = (BpmnDesignerWrapper)@ref;
@@ -139,7 +149,7 @@ public class BpmnDiagramDesigner(
             });
 
             builder.CloseComponent();
-        };
+        }
     }
 
     /// <inheritdoc />
@@ -215,7 +225,7 @@ public class BpmnDiagramDesigner(
     /// Reads the imported BPMN document's source XML from the workflow definition's custom
     /// properties, or null when there is none.
     /// </summary>
-    private static string? GetSourceXml(WorkflowDefinition? workflowDefinition)
+    internal static string? GetSourceXml(WorkflowDefinition? workflowDefinition)
     {
         if (workflowDefinition == null || !workflowDefinition.CustomProperties.TryGetValue(BpmnProcessConstants.SourceXmlCustomPropertyKey, out var value) || value == null!)
             return null;

@@ -1,0 +1,57 @@
+@using Elsa.Studio.Workflows.Domain.Models.Bpmn
+@using Variant = MudBlazor.Variant
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+<ScrollableWell MaxHeight="VisiblePaneHeight">
+    <MudStack Spacing="2" data-testid="bpmn-modeler-panel">
+        @if (Session.IsLoading || Session.IsSaving)
+        {
+            <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+        }
+
+        @if (Session.LoadFailure is { } loadFailure)
+        {
+            <MudAlert Severity="Severity.Warning" data-testid="bpmn-xml-load-failure">@DescribeLoadFailure(loadFailure)</MudAlert>
+        }
+
+        @if (Session.CanvasLoadError is { } canvasLoadError)
+        {
+            <MudAlert Severity="Severity.Error" data-testid="bpmn-canvas-load-failure">@Localizer["The BPMN designer could not show this document: {0}", canvasLoadError]</MudAlert>
+        }
+
+        @if (Session.SaveFailure is { } saveFailure)
+        {
+            <MudAlert Severity="Severity.Error" data-testid="bpmn-xml-save-failure">@DescribeSaveFailure(saveFailure)</MudAlert>
+        }
+
+        @if (Session.LoadFailure != null || Session.SavedButRevisionUnknown || Session.SaveFailure?.Reason is BpmnDocumentFailureReason.PreconditionFailed or BpmnDocumentFailureReason.PreconditionRequired)
+        {
+            <div>
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="OnReloadClicked" data-testid="bpmn-reload">@Localizer["Reload"]</MudButton>
+            </div>
+        }
+
+        @if (Session.IsDirty)
+        {
+            <MudStack Row="true" AlignItems="MudBlazor.AlignItems.Center" data-testid="bpmn-unsaved">
+                <MudText Typo="Typo.body2">@Localizer["Unsaved diagram changes"]</MudText>
+                <MudSpacer />
+                <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary" Disabled="Session.IsSaving" OnClick="OnSaveClicked" data-testid="bpmn-save">@Localizer["Save"]</MudButton>
+            </MudStack>
+        }
+
+        @if (Session.SelectedElement is { } element)
+        {
+            <div data-testid="bpmn-selected-element">
+                <MudText Typo="Typo.h6">@(string.IsNullOrWhiteSpace(element.Name) ? element.Id : element.Name)</MudText>
+                <MudText Typo="Typo.caption">@element.Id · @element.Type</MudText>
+            </div>
+            <MudText Typo="Typo.body2" data-testid="bpmn-bindings-not-available">@Localizer["Choosing the activity that performs a task is not available in this designer yet."]</MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.body2">@Localizer["Select an element on the canvas to see it here."]</MudText>
+        }
+    </MudStack>
+</ScrollableWell>

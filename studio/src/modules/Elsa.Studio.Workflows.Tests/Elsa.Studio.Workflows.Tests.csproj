@@ -20,6 +20,7 @@
         <Compile Include="..\..\testing\StubPermissionService.cs" Link="Support\StubPermissionService.cs" />
         <Compile Include="..\..\testing\TestLocalizer.cs" Link="Support\TestLocalizer.cs" />
         <Compile Include="..\..\testing\ApiExceptions.cs" Link="Support\ApiExceptions.cs" />
+        <Compile Include="..\Elsa.Studio.Bpmn.Tests\Support\FakeJs.cs" Link="Support\FakeJs.cs" />
     </ItemGroup>
 
     <ItemGroup>

@@ -272,6 +272,7 @@
       "studio/src/framework/Elsa.Studio.Shared/Elsa.Studio.Shared.csproj",
       "studio/src/modules/Elsa.Studio.ActivityPortProviders/Elsa.Studio.ActivityPortProviders.csproj",
       "studio/src/modules/Elsa.Studio.Authentication.Abstractions/Elsa.Studio.Authentication.Abstractions.csproj",
+      "studio/src/modules/Elsa.Studio.Bpmn/Elsa.Studio.Bpmn.csproj",
       "studio/src/modules/Elsa.Studio.UIHints/Elsa.Studio.UIHints.csproj",
       "studio/src/modules/Elsa.Studio.Workflows.Core/Elsa.Studio.Workflows.Core.csproj",
       "studio/src/modules/Elsa.Studio.Workflows.Designer/Elsa.Studio.Workflows.Designer.csproj",
