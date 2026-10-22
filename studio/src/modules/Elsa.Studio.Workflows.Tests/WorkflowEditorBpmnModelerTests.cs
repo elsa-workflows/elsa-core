@@ -91,7 +91,8 @@ public sealed class WorkflowEditorBpmnModelerTests : BunitContext, IAsyncLifetim
     {
         var cut = RenderEditor();
         await EditAsync(cut);
-        _xmlService.AcceptsPut("\"REVISION-2\"");
+        var version = Session(cut).DocumentVersion;
+        _xmlService.AcceptsPut("\"REVISION-2\"").ReturnsXml(_canvas.Xml, "\"REVISION-2\"");
         var reloaded = _definitionService.Latest = Definition(sourceXml: _canvas.Xml);
 
         await InvokeAsync(cut, "OnSaveClick");
@@ -101,7 +102,7 @@ public sealed class WorkflowEditorBpmnModelerTests : BunitContext, IAsyncLifetim
         Assert.Empty(_documentService.Puts);
         Assert.Same(reloaded, cut.Instance.WorkflowDefinition);
         Assert.False(Session(cut).IsDirty);
-        Assert.Equal(1, _xmlService.GetCount);
+        Assert.Equal(version, Session(cut).DocumentVersion);
         Assert.Contains("Workflow saved", _messages.Messages);
     }
 
@@ -224,7 +225,22 @@ public sealed class WorkflowEditorBpmnModelerTests : BunitContext, IAsyncLifetim
         await cut.InvokeAsync(() => cut.FindComponent<BpmnModelerPanel>().Instance.ReloadRequested!());
 
         Assert.Equal(version + 1, Session(cut).DocumentVersion);
-        Assert.Equal(2, _xmlService.GetCount);
+    }
+
+    [Fact(DisplayName = "Importing the same document again keeps the designer's document and adopts the new draft's ETag")]
+    public async Task ImportOfTheSameDocument_RefreshesTheETag()
+    {
+        var cut = RenderEditor();
+        await EditAsync(cut);
+        var version = Session(cut).DocumentVersion;
+        _xmlService.ReturnsXml(StoredXml, "\"REVISION-1B\"").AcceptsPut("\"REVISION-2\"").ReturnsXml(_canvas.Xml, "\"REVISION-2\"");
+        _definitionService.Latest = Definition(sourceXml: _canvas.Xml);
+
+        await cut.InvokeAsync(() => cut.Instance.SetImportedWorkflowDefinitionAsync(Definition()));
+        await InvokeAsync(cut, "OnSaveClick");
+
+        Assert.Equal(version, Session(cut).DocumentVersion);
+        Assert.Equal("\"REVISION-1B\"", Assert.Single(_xmlService.Puts).IfMatch);
     }
 
     [Fact(DisplayName = "Importing a different document into the workflow makes the designer load it")]
@@ -252,7 +268,7 @@ public sealed class WorkflowEditorBpmnModelerTests : BunitContext, IAsyncLifetim
         {
             await session.EnsureLoadedAsync();
             session.AttachCanvas(_canvas);
-            session.CanvasLoaded(new(true, null, warnings ?? []));
+            session.CanvasLoaded(new(true, null, warnings ?? []), session.DocumentVersion);
             session.CanvasChanged(new(["Task_1"], IsDirty: true, CanUndo: true, CanRedo: false));
         });
     }

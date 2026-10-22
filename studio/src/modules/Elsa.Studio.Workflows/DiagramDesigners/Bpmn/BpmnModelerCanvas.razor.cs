@@ -75,12 +75,12 @@ public partial class BpmnModelerCanvas : IBpmnModelerCanvas, IDisposable
 
             try
             {
-                session.CanvasLoaded(await _host.LoadAsync(xml));
+                session.CanvasLoaded(await _host.LoadAsync(xml), _loadedVersion);
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
                 // The host shows why the designer could not be created; the session records that nothing was loaded.
-                session.CanvasLoaded(new(false, exception.Message, []));
+                session.CanvasLoaded(new(false, exception.Message, []), _loadedVersion);
             }
             finally
             {

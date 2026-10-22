@@ -20,6 +20,9 @@ internal sealed class FakeBpmnXmlService : IBpmnXmlService
     /// <summary>When set, a PUT awaits it before answering, so a test can act while one is in flight.</summary>
     public TaskCompletionSource? PutGate { get; set; }
 
+    /// <summary>When set, a PUT throws it once it would answer, as a timeout would.</summary>
+    public Exception? PutException { get; set; }
+
     public FakeBpmnXmlService ReturnsXml(string xml, string eTag) => Add(_getResults, new(new BpmnXmlRevision(xml, eTag)));
     public FakeBpmnXmlService RefusesGet(BpmnDocumentFailureReason reason) => Add(_getResults, new(new BpmnDocumentFailure(reason, "refused")));
     public FakeBpmnXmlService AcceptsPut(string? newETag, params BpmnForeignContentModel[] dropped) => Add(_putResults, new(new BpmnXmlSaveResult(new BpmnImportResultModel(), newETag, dropped)));
@@ -44,6 +47,9 @@ internal sealed class FakeBpmnXmlService : IBpmnXmlService
 
         if (PutGate != null)
             await PutGate.Task;
+
+        if (PutException != null)
+            throw PutException;
 
         return Next(_putResults, Puts.Count - 1);
     }

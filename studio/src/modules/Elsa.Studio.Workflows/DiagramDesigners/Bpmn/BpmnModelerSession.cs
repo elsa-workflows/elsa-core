@@ -35,6 +35,7 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
     private bool _canvasDirty;
     private bool _unsavedExport;
     private long _changeSequence;
+    private int _canvasDocumentVersion;
 
     /// <summary>The workflow definition whose document this is.</summary>
     public string DefinitionId { get; } = definitionId;
@@ -98,11 +99,13 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
 
     /// <summary>
     /// Reads the document again; the canvas then loads it, discarding the designer's unsaved edits. A save in flight
-    /// finishes first, so the read cannot return the document from before it and hand that to the canvas as current.
+    /// finishes first, so the read cannot return the document from before it and hand that to the canvas as current, and
+    /// a read already in flight finishes first too, so the latest read is the one that lands and <see cref="IsLoading"/>
+    /// stays set until it has.
     /// </summary>
     public Task ReloadAsync(CancellationToken cancellationToken = default)
     {
-        _loadTask = LoadAfterSaveAsync(cancellationToken);
+        _loadTask = LoadAfterAsync(_loadTask, _saveTask, cancellationToken);
         Changed?.Invoke();
         return _loadTask;
     }
@@ -127,13 +130,14 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
         Changed?.Invoke();
     }
 
-    /// <summary>Records what the designer's <c>load</c> of <see cref="Xml"/> returned.</summary>
-    internal void CanvasLoaded(BpmnDesignerLoadResult result)
+    /// <summary>Records what the designer's <c>load</c> of <see cref="Xml"/>, as of <paramref name="documentVersion"/>, returned.</summary>
+    internal void CanvasLoaded(BpmnDesignerLoadResult result, int documentVersion)
     {
         CanvasLoadError = result.Imported ? null : result.Error ?? "The designer could not show the document.";
 
         if (result.Imported)
         {
+            _canvasDocumentVersion = documentVersion;
             SaveGate.Loaded(result.Warnings);
             _canvasDirty = _unsavedExport = false;
             CanUndo = CanRedo = false;
@@ -187,8 +191,9 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
         if (_canvas == null || Xml == null || CanvasLoadError != null)
             return Task.FromResult(Refuse(new(BpmnDocumentFailureReason.Unknown, "The BPMN document is not open in a designer, so there is nothing to save.")));
 
-        // The read replaces the designer's document when it lands, so what this save would send is about to be discarded.
-        if (IsLoading)
+        // A read replaces the designer's document when the canvas has loaded it, so until then what this save would send
+        // is about to be discarded, and the revision it would be sent against is no longer the one it was edited from.
+        if (IsLoading || _canvasDocumentVersion != DocumentVersion)
             return Task.FromResult(Refuse(new(BpmnDocumentFailureReason.Unknown, "The BPMN document is being read again, so nothing was saved.")));
 
         if (_eTag == null)
@@ -214,11 +219,8 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
     /// <returns><see langword="true"/> if <see cref="SaveAsync"/> may proceed; otherwise the refusal is in <see cref="SaveFailure"/>.</returns>
     public async Task<bool> RefreshRevisionAfterOrdinarySaveAsync(CancellationToken cancellationToken = default)
     {
-        if (_saveTask is { IsCompleted: false })
-            await _saveTask;
-
-        if (_loadTask is { IsCompleted: false })
-            await _loadTask;
+        await WaitQuietlyAsync(_saveTask);
+        await WaitQuietlyAsync(_loadTask);
 
         if (Xml == null)
             return false;
@@ -303,12 +305,27 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
         return result.Success is { } revision && revision.Xml == xml ? revision.ETag : null;
     }
 
-    private async Task LoadAfterSaveAsync(CancellationToken cancellationToken)
+    private async Task LoadAfterAsync(Task? previousLoad, Task? save, CancellationToken cancellationToken)
     {
-        if (_saveTask is { IsCompleted: false } saveTask)
-            await saveTask;
-
+        await WaitQuietlyAsync(previousLoad);
+        await WaitQuietlyAsync(save);
         await LoadAsync(cancellationToken);
+    }
+
+    /// <summary>Waits for <paramref name="task"/> without taking on its failure, which its own caller observes.</summary>
+    private static async Task WaitQuietlyAsync(Task? task)
+    {
+        if (task == null)
+            return;
+
+        try
+        {
+            await task;
+        }
+        catch (Exception)
+        {
+            // The operation's own caller sees this failure; the operation waiting on it still has to run.
+        }
     }
 
     private async Task LoadAsync(CancellationToken cancellationToken)

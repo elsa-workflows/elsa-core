@@ -578,9 +578,15 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
             await _diagramDesigner.LoadActivityAsync(workflowDefinition.Root);
 
         // An import replaces the document. A designer save does not: the definition then carries the document the
-        // designer already shows, and reading it again would only cost the designer its undo history.
-        if (isNewImport && _bpmnModelerSession is { } modelerSession && BpmnDiagramDesigner.GetSourceXml(workflowDefinition) != modelerSession.Xml)
-            await modelerSession.ReloadAsync();
+        // designer already shows, and reading it again would only cost the designer its undo history. Its ETag can still
+        // have moved, as when an import of the same document opens a new draft, so that much is read again.
+        if (isNewImport && _bpmnModelerSession is { } modelerSession)
+        {
+            if (BpmnDiagramDesigner.GetSourceXml(workflowDefinition) != modelerSession.Xml)
+                await modelerSession.ReloadAsync();
+            else
+                await modelerSession.RefreshRevisionAfterOrdinarySaveAsync();
+        }
     }
 
     private async Task<WorkflowDefinition?> GetWorkflowDefinitionSnapshotAsync()

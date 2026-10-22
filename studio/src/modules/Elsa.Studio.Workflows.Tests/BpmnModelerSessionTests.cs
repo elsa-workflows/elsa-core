@@ -142,6 +142,67 @@ public class BpmnModelerSessionTests
         Assert.Equal(0, _canvas.Saves);
     }
 
+    [Fact(DisplayName = "A save asked for before the canvas has loaded a newly read document is refused")]
+    public async Task SaveBeforeTheCanvasLoadsANewRevision_IsRefused()
+    {
+        await OpenAsync();
+        _service.ReturnsXml("<newer/>", "\"REVISION-2\"");
+        Edit();
+
+        await _session.ReloadAsync();
+        var refused = await _session.SaveAsync();
+        _session.CanvasLoaded(new(true, null, []), _session.DocumentVersion);
+        Edit();
+        _service.AcceptsPut("\"REVISION-3\"");
+        var saved = await _session.SaveAsync();
+
+        Assert.False(refused.IsSuccess);
+        Assert.True(saved.IsSuccess);
+        Assert.Equal("\"REVISION-2\"", Assert.Single(_service.Puts).IfMatch);
+        Assert.Equal(1, _canvas.Saves);
+    }
+
+    [Fact(DisplayName = "A reload asked for while another is reading waits for it, and reading stays reported until the last one lands")]
+    public async Task OverlappingReloads_RunInTurn()
+    {
+        await OpenAsync();
+        var first = _service.GetGate = new();
+        var firstReload = _session.ReloadAsync();
+        var second = _service.GetGate = new();
+        var secondReload = _session.ReloadAsync();
+
+        second.SetResult();
+        await Task.Yield();
+
+        Assert.True(_session.IsLoading);
+
+        first.SetResult();
+        await firstReload;
+        await secondReload;
+
+        Assert.False(_session.IsLoading);
+        Assert.Equal(3, _service.GetCount);
+    }
+
+    [Fact(DisplayName = "A reload waiting for a save still reads when the save fails with an exception")]
+    public async Task ReloadAfterAFailedSave_StillReads()
+    {
+        await OpenAsync();
+        _service.PutGate = new();
+        _service.PutException = new TaskCanceledException("The request timed out.");
+        Edit();
+
+        var save = _session.SaveAsync();
+        var reload = _session.ReloadAsync();
+        _service.PutGate.SetResult();
+
+        await Assert.ThrowsAsync<TaskCanceledException>(() => save);
+        await reload;
+
+        Assert.Equal(2, _service.GetCount);
+        Assert.Null(_session.LoadFailure);
+    }
+
     [Fact(DisplayName = "Nothing is sent while the content the designer cannot keep is not acknowledged")]
     public async Task UnacknowledgedDroppedContent_SendsNothing()
     {
@@ -178,7 +239,7 @@ public class BpmnModelerSessionTests
     {
         await _session.EnsureLoadedAsync();
         _session.AttachCanvas(_canvas);
-        _session.CanvasLoaded(new(false, "not BPMN", []));
+        _session.CanvasLoaded(new(false, "not BPMN", []), _session.DocumentVersion);
 
         var result = await _session.SaveAsync();
 
@@ -287,7 +348,7 @@ public class BpmnModelerSessionTests
     {
         await _session.EnsureLoadedAsync();
         _session.AttachCanvas(_canvas);
-        _session.CanvasLoaded(new(true, null, warnings ?? []));
+        _session.CanvasLoaded(new(true, null, warnings ?? []), _session.DocumentVersion);
     }
 
     private void Edit() => _session.CanvasChanged(new(["Task_1"], IsDirty: true, CanUndo: true, CanRedo: false));
