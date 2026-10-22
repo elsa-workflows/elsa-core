@@ -24,6 +24,12 @@ public class OracleDefaultTenantIncrementTests
         var interceptor = fixture.Interceptor;
 
         Assert.Equal(1, await store.IncrementAsync(Tenant.DefaultTenantId));
+
+        fixture.DbContext.ChangeTracker.Clear();
+        var materialized = await fixture.DbContext.WorkflowDefinitionRegistryGenerations.SingleAsync();
+        Assert.Null(materialized.TenantId);
+        Assert.Equal(Tenant.DefaultTenantId, materialized.TenantId ?? Tenant.DefaultTenantId);
+
         Assert.Equal(2, await store.IncrementAsync(string.Empty));
         Assert.Equal(2, await store.GetGenerationAsync(Tenant.DefaultTenantId));
 
@@ -69,14 +75,14 @@ public class OracleDefaultTenantIncrementTests
             CommandCaptureInterceptor interceptor)
         {
             _connection = connection;
-            _dbContext = dbContext;
+            DbContext = dbContext;
             Store = store;
             Interceptor = interceptor;
         }
 
         private readonly SqliteConnection _connection;
-        private readonly ManagementElsaDbContext _dbContext;
 
+        public ManagementElsaDbContext DbContext { get; }
         public EFCoreWorkflowDefinitionRegistryGenerationStore Store { get; }
         public CommandCaptureInterceptor Interceptor { get; }
 
@@ -137,7 +143,7 @@ public class OracleDefaultTenantIncrementTests
 
         public async ValueTask DisposeAsync()
         {
-            await _dbContext.DisposeAsync();
+            await DbContext.DisposeAsync();
             await _connection.DisposeAsync();
         }
     }

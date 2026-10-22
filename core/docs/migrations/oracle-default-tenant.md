@@ -12,10 +12,15 @@ The Oracle-only `NullableDefaultTenant` management migration:
 3. Creates a function-based unique index on `NVL(TenantId, CHR(1))` so two default-tenant rows still
    collide. `CHR(1)` is not a tenant id.
 
-Reads and writes of `""` go through an Oracle value converter. Increment and lookup branch
-the default tenant to `TenantId == null` (so `ExecuteUpdate` is `IS NULL`, not a
-parameterized `= NULL`) and keep `|| TenantId == ""` so other providers still match the
-empty-string key. SQLite, SQL Server, PostgreSQL and MySQL behaviour is unchanged.
+Writes of `""` go through an Oracle value converter (`""` → `NULL`). Increment and lookup branch
+the default tenant to `TenantId == null` (so `ExecuteUpdate` is `IS NULL`, not a parameterized
+`= NULL`) and keep `|| TenantId == ""` so other providers still match the empty-string key.
 
-`Down()` refuses to restore `NOT NULL` while any `TenantId` is null, because Oracle cannot store
-`''` in a `NOT NULL` column.
+EF Core does not invoke the converter for database `NULL`, so a materialized default-tenant
+`TenantId` stays `null`. Treat `null` as the default tenant when reading this column. SQLite,
+SQL Server, PostgreSQL and MySQL behaviour is unchanged.
+
+`Down()` checks for null `TenantId` rows **before** dropping the NVL unique index. Oracle commits
+`DROP INDEX`, so a later ORA-20006 would otherwise leave the migration applied with no uniqueness.
+`Down()` still refuses to restore `NOT NULL` while any `TenantId` is null, because Oracle cannot
+store `''` in a `NOT NULL` column.

@@ -66,18 +66,18 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Management
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            MigrationHelper.DropIndexIfPresent(
-                migrationBuilder,
-                _schema,
-                "IX_WorkflowDefinitionRegistryGenerations_TenantId");
-
-            // Oracle cannot store '' in a NOT NULL column, so a default-tenant (NULL) row has to be
-            // removed or reassigned before the original PK on TenantId can come back.
+            // Oracle commits DROP INDEX. If this ran first, a later ORA-20006 would leave the
+            // migration applied with no NVL unique index, so check for NULL TenantId rows first.
             MigrationHelper.EnsureNoNullValues(
                 migrationBuilder,
                 _schema,
                 "WorkflowDefinitionRegistryGenerations",
                 "TenantId");
+
+            MigrationHelper.DropIndexIfPresent(
+                migrationBuilder,
+                _schema,
+                "IX_WorkflowDefinitionRegistryGenerations_TenantId");
 
             migrationBuilder.DropPrimaryKey(
                 name: "PK_WorkflowDefinitionRegistryGenerations",

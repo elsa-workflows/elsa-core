@@ -4,6 +4,7 @@ using Elsa.Persistence.EFCore.Modules.Management;
 using Elsa.Workflows.Management.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations.Operations;
 
 namespace Elsa.Persistence.EFCore.UnitTests;
 
@@ -35,6 +36,33 @@ public class OracleDefaultTenantNullabilityTests
         Assert.Contains("PK_WorkflowDefinitionRegistryGenerations", script, StringComparison.Ordinal);
         Assert.Contains("\"Id\"", script, StringComparison.Ordinal);
         Assert.DoesNotContain("CREATE TABLE", script, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [InlineData("Elsa", MigrationsSqlGenerationOptions.Default)]
+    [InlineData("Elsa", MigrationsSqlGenerationOptions.Idempotent)]
+    [InlineData("custom_schema", MigrationsSqlGenerationOptions.Default)]
+    public void NewOracleMigration_DownChecksNullTenantBeforeDroppingNvlIndex(string schema, MigrationsSqlGenerationOptions options)
+    {
+        var script = GenerateManagementScript(NullableDefaultTenantMigration, RegistryGenerationMigration, schema, options);
+        var ensure = script.IndexOf("RAISE_APPLICATION_ERROR(-20006", StringComparison.Ordinal);
+        var drop = script.IndexOf("IX_WorkflowDefinitionRegistryGenerations_TenantId", StringComparison.Ordinal);
+
+        Assert.True(ensure >= 0, "Down script must emit EnsureNoNullValues (ORA-20006).\n" + script);
+        Assert.True(drop >= 0, "Down script must drop the NVL unique index.\n" + script);
+        Assert.True(ensure < drop, "EnsureNoNullValues must run before DROP INDEX so a failed rollback keeps uniqueness.\n" + script);
+
+        var migration = MigrationScriptGenerator.CreateMigration<ManagementElsaDbContext>(
+            builder => builder.UseElsaOracle(
+                typeof(Elsa.Persistence.EFCore.Oracle.Migrations.Management.NullableDefaultTenant).Assembly,
+                "Data Source=unused",
+                new ElsaDbContextOptions { SchemaName = schema }),
+            NullableDefaultTenantMigration);
+        var sql = migration.DownOperations.OfType<SqlOperation>().ToList();
+        var ensureOp = sql.FindIndex(operation => operation.Sql.Contains("RAISE_APPLICATION_ERROR(-20006", StringComparison.Ordinal));
+        var dropOp = sql.FindIndex(operation => operation.Sql.Contains("IX_WorkflowDefinitionRegistryGenerations_TenantId", StringComparison.Ordinal));
+
+        Assert.True(ensureOp >= 0 && dropOp >= 0 && ensureOp < dropOp);
     }
 
     [Fact]
@@ -81,7 +109,7 @@ public class OracleDefaultTenantNullabilityTests
     }
 
     [Fact]
-    public void Oracle_RegistryGenerationTenantId_IsOptionalAndConvertsEmptyStringToNull()
+    public void Oracle_RegistryGenerationTenantId_IsOptionalAndWritesEmptyStringAsNull()
     {
         using var dbContext = ManagementModelDiffer.Create(ConfigureOracle);
         var entity = dbContext.Model.FindEntityType(typeof(WorkflowDefinitionRegistryGeneration));
@@ -98,12 +126,12 @@ public class OracleDefaultTenantNullabilityTests
         Assert.Null(converter.ConvertToProvider(string.Empty));
         Assert.Equal("acme", converter.ConvertToProvider("acme"));
 
-        var convertFrom = (Func<string?, string>)converter.ConvertFromProviderExpression.Compile();
-        Assert.Equal(Tenant.DefaultTenantId, convertFrom(null));
-
         var id = entity.FindProperty("Id");
         Assert.NotNull(id);
         Assert.True(id.IsPrimaryKey());
+
+        Assert.Null(dbContext.Model.FindEntityType(typeof(WorkflowDefinition))?.FindProperty("TenantId")?.GetValueConverter());
+        Assert.Null(dbContext.Model.FindEntityType(typeof(WorkflowInstance))?.FindProperty("TenantId")?.GetValueConverter());
     }
 
     [Fact]
