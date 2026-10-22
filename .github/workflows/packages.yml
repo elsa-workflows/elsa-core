@@ -4,12 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       publish_preview_feedz:
-        description: Publish this run's packages to Feedz - branch previews, or a 3.10.x release tag (requires publisher approval).
+        description: Publish this run's packages to Feedz - branch previews, or a 3.10.x prerelease tag (requires publisher approval). Stable 3.10.x Feedz is owned by publish-consolidated-original-candidate.yml.
         required: true
         type: boolean
         default: false
       publish_nuget:
-        description: Publish a release-tag package to NuGet.org for this run (requires publisher approval).
+        description: Publish a release-tag package to NuGet.org for this run (requires publisher approval). Stable 3.10.x promotes the verified candidate nupkgs instead of rebuilding.
         required: true
         type: boolean
         default: false
@@ -416,8 +416,9 @@ jobs:
     timeout-minutes: 30
     # Push and release events stay non-publishing. An approved operator must
     # dispatch this workflow and opt in for this run: from a branch for previews,
-    # or from a 3.10.x release tag.
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_preview_feedz && (startsWith(github.ref, 'refs/heads/') || startsWith(github.ref, 'refs/tags/3.10.')) }}
+    # or from a 3.10.x prerelease tag. Stable 3.10.x Feedz is owned only by
+    # the candidate executor.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_preview_feedz && (startsWith(github.ref, 'refs/heads/') || (startsWith(github.ref, 'refs/tags/3.10.') && contains(github.ref_name, '-'))) }}
     steps:
       - name: Check out the push action
         # Every third-party action in this job runs before a feed API key is handed
@@ -449,11 +450,12 @@ jobs:
     # starting pushes once its own deadline passes, so the runner never has to
     # cancel a publish half-done. Move the two together.
     timeout-minutes: 30
-    # NuGet publication requires an explicit dispatch on a release tag, including
-    # stable 3.10.x, the same way earlier stable lines publish.
+    # NuGet publication requires an explicit dispatch on a release tag. Stable
+    # 3.10.x promotes the pinned candidate nupkgs; other tags push this run's pack.
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/') }}
     permissions:
       contents: read
+      actions: read # Stable 3.10.x reads the pinned candidate artifact; unused on other tags.
       id-token: write # Required: lets this job request the OIDC token that nuget.org exchanges for a temporary API key.
     steps:
       - name: Check out the push action
@@ -463,14 +465,37 @@ jobs:
         # substitute the composite before it receives the credential.
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          sparse-checkout: .github/actions
+          sparse-checkout: |
+            .github/actions
+            scripts
           fetch-depth: 1
+          persist-credentials: false
 
       - name: Download Packages
-        # Pinned for the reason given on the checkout above.
+        # Pinned for the reason given on the checkout above. Skipped for stable
+        # 3.10.x, which promotes the verified candidate instead of this rebuild.
+        if: ${{ !(startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}
         uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
         with:
           name: elsa-nuget-packages
+
+      - name: Retrieve verified candidate archive
+        if: ${{ startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-') }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REF: ${{ github.ref }}
+          CANDIDATE_ARCHIVE: ${{ runner.temp }}/candidate.zip
+        run: python3 scripts/stage_consolidated_candidate_nupkgs.py retrieve
+
+      - name: Stage and guard verified candidate packages
+        if: ${{ startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-') }}
+        env:
+          REF: ${{ github.ref }}
+          CANDIDATE_ARCHIVE: ${{ runner.temp }}/candidate.zip
+          PACKAGES_DIR: ${{ github.workspace }}
+        run: |
+          python3 scripts/stage_consolidated_candidate_nupkgs.py stage
+          python3 scripts/validate_packages_id_set.py
 
       # Exchanges a GitHub OIDC token for a temporary nuget.org API key (valid 1 hour).
       # Requires a Trusted Publishing policy on nuget.org matching:

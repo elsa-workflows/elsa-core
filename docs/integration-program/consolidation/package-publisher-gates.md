@@ -2,8 +2,8 @@
 
 The Packages workflow now builds and tests normally on pushes and release events, but those events cannot publish packages or deploy coverage. The three publication jobs are default-off `workflow_dispatch` options:
 
-- `publish_preview_feedz` publishes the run's packages to Feedz. Dispatch from a branch for a preview build (`<base_version>-preview.<run number>`), or from a 3.10.x release tag, which publishes at the tag's release version.
-- `publish_nuget` publishes the release-tag build to NuGet.org. Dispatch from a release-version tag, including stable 3.10.x. A stable 3.10.x tag pack also sets `ConsolidatedReleaseCandidate`, builds Studio ClientLib bundles, and must match `scripts/validate_packages_id_set.txt` plus the required Studio package contents before any push.
+- `publish_preview_feedz` publishes the run's packages to Feedz. Dispatch from a branch for a preview build (`<base_version>-preview.<run number>`), or from a 3.10.x prerelease tag. Stable 3.10.x Feedz is owned only by `publish-consolidated-original-candidate.yml`.
+- `publish_nuget` publishes a release-tag package to NuGet.org. Dispatch from a release-version tag. Stable 3.10.x promotes the pinned candidate `.nupkg` set after the 231-ID list and Studio content guards; it does not rebuild those packages. Other tags push this run's pack.
 - `deploy_coverage` deploys the coverage report to GitHub Pages. Dispatch from `main` or `release/3.6.1`, the refs whose coverage run uploads a Pages artifact.
 
 A tag dispatch accepts only release-version tags matching `^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?$`, such as `3.8.4`, `3.8.0-rc2` or `3.10.0`. Tags such as `v3.10.0` or `test-1` are rejected whatever the options, and so is a 3.10 release spelled without the literal `3.10.` prefix (for example `03.10.0`). The tagged commit must also be contained in `main` or a `release/*` branch; the build checks this before packing.
@@ -19,7 +19,9 @@ Each option defaults to `false`. An authorized operator should set only the opti
 | Dispatch from any branch or release tag | none | yes; no artifact | no | no | no |
 | Dispatch from a branch | `publish_preview_feedz` | yes | preview version | no | no |
 | Dispatch from a release tag | `publish_nuget` | yes, at the tag version | no | tag version | no |
-| Dispatch from a 3.10.x release tag | `publish_preview_feedz` | yes, at the tag version | tag version | no | no |
+| Dispatch from a 3.10.x prerelease tag | `publish_preview_feedz` | yes, at the tag version | tag version | no | no |
+| Dispatch from a stable 3.10.x tag | `publish_preview_feedz` | rejected | no | no | no |
+| Dispatch from a stable 3.10.x tag | `publish_nuget` | yes; nuget.org promotes the pinned candidate nupkgs | no | candidate 3.10.0 | no |
 | Dispatch from `main` or `release/3.6.1` | `deploy_coverage` | yes | no | no | deployed |
 | Dispatch from a branch | `publish_nuget` | rejected | no | no | no |
 | Dispatch from a release tag other than 3.10.x | `publish_preview_feedz` | rejected | no | no | no |

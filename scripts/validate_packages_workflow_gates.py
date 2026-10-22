@@ -46,6 +46,7 @@ SELECTION_ENV = {
 REQUIRED_REJECTIONS = (
     ("a v-prefixed tag", "refs/tags/v3.10.0", {}),
     ("a non-release tag", "refs/tags/test-1", {}),
+    ("Feedz from a stable 3.10.x tag", "refs/tags/3.10.0", {"feedz": True}),
 )
 # Capabilities only a gated job may reference. Expression contexts and action names are case-insensitive.
 PUBLICATION_REFERENCES = {
