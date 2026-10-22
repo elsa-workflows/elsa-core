@@ -1,4 +1,6 @@
 import { chromium, expect } from "@playwright/test";
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 const origin = `http://localhost:${process.env.ELSA_STUDIO_PORT ?? "5201"}`;
 const api = `http://localhost:${process.env.ELSA_SERVER_PORT ?? "5001"}/elsa/api`;
@@ -32,6 +34,13 @@ while (!config && Date.now() < studioDeadline) {
 if (!config) throw new Error("Compose Studio did not become ready", { cause: studioFailure });
 if (config.servers[0].url !== api || config.auth.provider !== "elsa-identity" || !config.title.includes("Preview"))
   throw new Error("Compose STUDIO_* overrides were not applied");
+
+for (const script of ["test-settings-roundtrip.mjs", "test-bpmn-roundtrip.mjs"]) {
+  execFileSync(process.execPath, [fileURLToPath(new URL(script, import.meta.url))], {
+    env: { ...process.env, ELSA_TEST_API_URL: api, ELSA_TEST_USERNAME: "admin", ELSA_TEST_PASSWORD: "password" },
+    stdio: "inherit", timeout: 60_000,
+  });
+}
 
 const browser = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
   ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH } : {});

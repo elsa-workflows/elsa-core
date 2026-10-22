@@ -40,7 +40,19 @@ try {
   assert.equal(saved.workflowDefinitionVersionId, second.id);
   const versions = await client.workflowDefinitions.list({ definitionIds: [first.definitionId], versionOptions: 'AllVersions', page: 0, pageSize: 10 });
   assert(versions.items.some(item => item.id === second.id && item.version === 2));
-  console.log('PASS: actual Core API round-trips commit, logging strategy/expression, resilience expression, task mode, custom data, and the reusable activity version pair');
+  const published = await client.workflowDefinitions.publish(parent.definitionId);
+  assert.equal(published.workflowDefinition.isPublished, true);
+  const retracted = await client.workflowDefinitions.retract(parent.definitionId);
+  assert.equal(retracted.definitionId, parent.definitionId);
+  assert.equal(retracted.isPublished, false);
+  assert.equal((await client.workflowDefinitions.getByDefinitionId(parent.definitionId)).isPublished, false);
+  const updated = await client.workflowDefinitions.updateReferences(first.definitionId);
+  assert(Array.isArray(updated.affectedWorkflows));
+  const reverted = await client.workflowDefinitions.revert(first.definitionId, 1);
+  assert.equal(reverted.definitionId, first.definitionId);
+  assert.equal(reverted.version, 3);
+  assert.equal((await client.workflowDefinitions.getByDefinitionId(first.definitionId)).id, reverted.id);
+  console.log('PASS: actual Core API round-trips commit, logging strategy/expression, resilience expression, task mode, custom data, and the reusable activity version pair; dedicated publish, retract, revert and update-references actions accept their requests and return the expected models');
 } catch (error) {
   primaryError = error;
   throw error;

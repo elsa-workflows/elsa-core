@@ -47,11 +47,13 @@ modules through the real ASP.NET host and substitute deterministic API responses
 They cover rendering and HTTP contracts; they do not claim to exercise server retry
 execution. The separate reference-backend check creates and publishes two reusable
 workflow versions, saves a parent with commit/log/resilience/task settings, reloads
-and verifies every setting and version ID, then removes its temporary definitions.
+and verifies every setting and version ID. It also exercises the dedicated publish,
+retract, version revert and reference-update actions before removing its temporary definitions.
+The paired-container CI check runs this test against the reference backend.
 
 
 To repeat the reference-backend check, set `ELSA_TEST_API_URL`,
 `ELSA_TEST_USERNAME` and `ELSA_TEST_PASSWORD` for a disposable development server,
-then run `pnpm test:settings-server`. The test needs workflow create, publish, view
-and delete permissions and creates temporary published definitions. Credentials
+then run `pnpm test:settings-server`. The test needs workflow create, publish, view,
+retract, update-references and delete permissions and creates temporary published definitions. Credentials
 remain in memory; temporary definitions are deleted in its cleanup handler.

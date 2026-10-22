@@ -60,10 +60,10 @@ export function workflowDefinitionsApi(http: HttpClient) {
       http.post<SaveWorkflowDefinitionResponse>("workflow-definitions", request),
 
     publish: (definitionId: string) =>
-      http.post<SaveWorkflowDefinitionResponse>(`workflow-definitions/${encodeURIComponent(definitionId)}/publish`),
+      http.post<SaveWorkflowDefinitionResponse>(`workflow-definitions/${encodeURIComponent(definitionId)}/publish`, {}),
 
     retract: (definitionId: string) =>
-      http.post<SaveWorkflowDefinitionResponse>(`workflow-definitions/${encodeURIComponent(definitionId)}/retract`),
+      http.post<WorkflowDefinition>(`workflow-definitions/${encodeURIComponent(definitionId)}/retract`, {}),
 
     delete: (definitionId: string) =>
       http.delete<void>(`workflow-definitions/${encodeURIComponent(definitionId)}`, { parse: "none" }),
@@ -72,7 +72,7 @@ export function workflowDefinitionsApi(http: HttpClient) {
       http.delete<void>(`workflow-definition-versions/${encodeURIComponent(versionId)}`, { parse: "none" }),
 
     revert: (definitionId: string, version: number) =>
-      http.post<WorkflowDefinition>(`workflow-definitions/${encodeURIComponent(definitionId)}/revert/${version}`),
+      http.post<WorkflowDefinitionSummary>(`workflow-definitions/${encodeURIComponent(definitionId)}/revert/${version}`),
 
     bulkDelete: (definitionIds: string[]) =>
       http.post<BulkDeleteResponse>("bulk-actions/delete/workflow-definitions/by-definition-id", { definitionIds }),
@@ -111,7 +111,7 @@ export function workflowDefinitionsApi(http: HttpClient) {
       http.post<DispatchWorkflowDefinitionResponse>(`workflow-definitions/${encodeURIComponent(definitionId)}/dispatch`, request),
 
     updateReferences: (definitionId: string) =>
-      http.post<{ affectedWorkflows: string[] }>(`workflow-definitions/${encodeURIComponent(definitionId)}/update-references`),
+      http.post<{ affectedWorkflows: string[] }>(`workflow-definitions/${encodeURIComponent(definitionId)}/update-references`, {}),
   };
 }
 
