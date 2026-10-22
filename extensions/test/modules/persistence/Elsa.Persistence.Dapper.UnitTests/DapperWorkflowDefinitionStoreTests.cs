@@ -67,7 +67,7 @@ public sealed class DapperWorkflowDefinitionStoreTests : IDisposable
             schema = schema.Replace("Id text", "Id varchar(255)").Replace("blob", "varbinary(max)").Replace("CreatedAt text", "CreatedAt datetimeoffset").Replace(" text", " nvarchar(max)");
         }
         connection.Execute(schema);
-        _store = new DapperWorkflowDefinitionStore(new Store<WorkflowDefinitionRecord>(_provider, _tenant, _table), _serializer, _provider, _tenant);
+        _store = new DapperWorkflowDefinitionStore(new Store<WorkflowDefinitionRecord>(_provider, _tenant, _table), _serializer, _provider);
     }
 
     [Fact]

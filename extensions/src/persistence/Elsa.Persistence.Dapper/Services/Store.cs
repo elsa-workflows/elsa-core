@@ -353,7 +353,12 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
         SetTenantId(record);
         using var connection = dbConnectionProvider.GetConnection();
         var affected = await ExecuteUpsertAsync(record, connection);
-        if (WriteApplied(affected))
+        if (affected > 0)
+        {
+            return;
+        }
+
+        if (affected < 0 && await ConfirmNegativeCountWriteAsync(record, connection))
         {
             return;
         }
@@ -389,8 +394,8 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
         var affected = await query.ExecuteAsync(connection);
         // PostgreSQL, SQL Server, and Microsoft.Data.Sqlite all sum affected rows across
         // the statements of one command, so a full batch reports `recordCount`. SQL Server
-        // with NOCOUNT ON reports -1, which is also a successful write.
-        if (affected < 0 || affected == recordsList.Count)
+        // with NOCOUNT ON reports -1, which is indeterminate: confirm each row is ours.
+        if (affected == recordsList.Count)
         {
             return;
         }
@@ -448,12 +453,12 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
         using var connection = dbConnectionProvider.GetConnection();
         SetTenantId(record);
         var affected = await ExecuteTenantScopedUpdateAsync(record, connection);
-        if (WriteApplied(affected))
+        if (affected > 0)
         {
             return;
         }
 
-        await ResolveZeroRowWriteAsync(record, connection, (item, db) => ExecuteTenantScopedUpdateAsync(item, db));
+        await ResolveZeroRowUpdateAsync(record, connection);
     }
     
     public async Task UpdateAsync(T record, Expression<Func<T, object>>[] props, CancellationToken cancellationToken = default)
@@ -462,12 +467,12 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
         SetTenantId(record);
         var fields = props.Select(x => x.GetPropertyName()).ToArray();
         var affected = await ExecuteTenantScopedUpdateAsync(record, connection, fields);
-        if (WriteApplied(affected))
+        if (affected > 0)
         {
             return;
         }
 
-        await ResolveZeroRowWriteAsync(record, connection, (item, db) => ExecuteTenantScopedUpdateAsync(item, db, fields));
+        await ResolveZeroRowUpdateAsync(record, connection);
     }
 
     /// <summary>
@@ -572,7 +577,7 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
         ApplyTenantVisibility(query);
     }
 
-    private void ApplyTenantVisibility(ParameterizedQuery query)
+    internal void ApplyTenantVisibility(ParameterizedQuery query)
     {
         var tenantId = tenantAccessor.Tenant?.Id;
         var ident = query.Dialect.QuoteIdentifier(nameof(Record.TenantId));
@@ -624,9 +629,9 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
             return;
         }
 
-        // Architect #9010: stamp when null; keep '*'; keep an explicit id only when it equals
-        // the ambient tenant or there is no ambient tenant. Do not copy EF's trust of any
-        // explicit concrete id.
+        // Keep an explicit '*'. Stamp only when TenantId is null. Keep an explicit concrete
+        // id only when it equals the ambient tenant or there is no ambient tenant. Do not
+        // trust any other explicit concrete id.
         var ambient = tenantAccessor.Tenant;
         var ambientId = ambient?.Id;
         var explicitId = recordWithTenant.TenantId;
@@ -650,34 +655,50 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
         throw new InvalidOperationException($"The record tenant '{explicitId}' does not match the current tenant '{ambientId}'.");
     }
 
-    // Cross-tenant Id rule (#9010):
+    // Cross-tenant Id rule:
     // - Existing '*': a concrete tenant cannot take it over. Incoming '*' updates the shared
     //   row in place. Incoming ambient/concrete throws and leaves TenantId as '*'.
     // - Existing concrete tenant A, incoming other tenant B: throw.
-    // - Same tenant, treating NULL and '' as the default tenant: retry the tenant-scoped write.
-    // - Missing row after a 0-row write: retry once, then throw. -1 counts as success (SQL
-    //   Server NOCOUNT ON).
+    // - Same tenant, treating NULL and '' as the default tenant: retry the tenant-scoped upsert.
+    // - Missing row after a 0-row upsert: retry once, then throw.
+    // - Update of a missing row is a no-op (heartbeats). Updates never retry.
+    // - A negative affected count (SQL Server NOCOUNT ON) is indeterminate: look the row up
+    //   and throw if it belongs to another tenant.
     private async Task ResolveZeroRowWriteAsync(T record, IDbConnection connection, Func<T, IDbConnection, Task<int>> write)
     {
         var key = GetPrimaryKeyValue(record);
         var existing = await LookupByKeyAsync(key, connection);
-        TestAfterExistingRowLookup?.Invoke(record, existing);
+        OnAfterExistingRowLookup(record, existing);
 
-        if (existing is Record owned)
+        if (existing is Record owned && !CanWriteExistingRow(owned, record))
         {
-            if (!CanWriteExistingRow(owned, record))
-            {
-                throw new InvalidOperationException($"A record with ID '{key}' already exists in another tenant.");
-            }
+            throw CrossTenantConflict(key);
         }
 
         var retried = await write(record, connection);
-        if (WriteApplied(retried))
+        if (retried > 0)
+        {
+            return;
+        }
+
+        if (retried < 0 && await ConfirmNegativeCountWriteAsync(record, connection))
         {
             return;
         }
 
         throw new InvalidOperationException($"Failed to save a record with ID '{key}'.");
+    }
+
+    private async Task ResolveZeroRowUpdateAsync(T record, IDbConnection connection)
+    {
+        var key = GetPrimaryKeyValue(record);
+        var existing = await LookupByKeyAsync(key, connection);
+        OnAfterExistingRowLookup(record, existing);
+
+        if (existing is Record owned && !CanWriteExistingRow(owned, record))
+        {
+            throw CrossTenantConflict(key);
+        }
     }
 
     private async Task ResolveBatchTenantConflictsAsync(IReadOnlyList<T> records, IDbConnection connection)
@@ -702,16 +723,18 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
         foreach (var record in records)
         {
             var key = GetPrimaryKeyValue(record);
-            if (key != null && existingByKey.TryGetValue(key, out var existing) && existing is Record owned)
+            if (key != null && existingByKey.TryGetValue(key, out var existing) && existing is Record owned && !CanWriteExistingRow(owned, record))
             {
-                if (!CanWriteExistingRow(owned, record))
-                {
-                    throw new InvalidOperationException($"A record with ID '{key}' already exists in another tenant.");
-                }
+                throw CrossTenantConflict(key);
             }
 
             var retried = await ExecuteUpsertAsync(record, connection);
-            if (WriteApplied(retried))
+            if (retried > 0)
+            {
+                continue;
+            }
+
+            if (retried < 0 && await ConfirmNegativeCountWriteAsync(record, connection))
             {
                 continue;
             }
@@ -719,6 +742,20 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
             throw new InvalidOperationException($"Failed to save a record with ID '{key}'.");
         }
     }
+
+    private async Task<bool> ConfirmNegativeCountWriteAsync(T record, IDbConnection connection)
+    {
+        var existing = await LookupByKeyAsync(GetPrimaryKeyValue(record), connection);
+        if (existing is Record owned && !CanWriteExistingRow(owned, record))
+        {
+            throw CrossTenantConflict(GetPrimaryKeyValue(record));
+        }
+
+        return existing != null;
+    }
+
+    internal static InvalidOperationException CrossTenantConflict(object? key) =>
+        new($"A record with ID '{key}' already exists in another tenant. If this is a shared CLR workflow left from a pre-3.10.1 Dapper host, see the 3.10.1 upgrade step in extensions/docs/changelogs/3.10.1.md.");
 
     private static bool CanWriteExistingRow(Record owned, T record)
     {
@@ -735,9 +772,8 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
 
     private async Task<int> ExecuteUpsertAsync(T record, IDbConnection connection)
     {
-        if (TestForcedAffectedRows is { } forced)
+        if (ConsumeForcedAffectedRows() is { } forced)
         {
-            TestForcedAffectedRows = null;
             return forced;
         }
 
@@ -747,9 +783,8 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
 
     private async Task<int> ExecuteTenantScopedUpdateAsync(T record, IDbConnection connection, string[]? fields = null)
     {
-        if (TestForcedAffectedRows is { } forced)
+        if (ConsumeForcedAffectedRows() is { } forced)
         {
-            TestForcedAffectedRows = null;
             return forced;
         }
 
@@ -789,10 +824,9 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
     private static bool SameTenant(string? left, string? right) =>
         string.Equals(left ?? string.Empty, right ?? string.Empty, StringComparison.Ordinal);
 
-    // SQL Server with NOCOUNT ON reports -1 for a successful write.
-    private static bool WriteApplied(int affected) => affected != 0;
+    protected virtual int? ConsumeForcedAffectedRows() => null;
 
-    internal int? TestForcedAffectedRows { get; set; }
-
-    internal Action<T, T?>? TestAfterExistingRowLookup { get; set; }
+    protected virtual void OnAfterExistingRowLookup(T record, T? existing)
+    {
+    }
 }

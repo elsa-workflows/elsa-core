@@ -126,10 +126,20 @@ public class DefaultWorkflowDefinitionStorePopulator : IWorkflowDefinitionStoreP
         }
         catch (Exception e)
         {
-            _logger.LogError(e, "An error occurred while populating the workflow definition store for workflow {WorkflowId} (Name: {WorkflowName}, Version: {Version})",
-                materializedWorkflow.Workflow.Identity.DefinitionId,
-                materializedWorkflow.Workflow.WorkflowMetadata.Name,
-                materializedWorkflow.Workflow.Identity.Version);
+            if (e is InvalidOperationException && e.Message.Contains("already exists in another tenant", StringComparison.Ordinal))
+            {
+                _logger.LogError(e,
+                    "Skipping adding workflow {WorkflowId} from provider {Provider} because a record with that Id already exists in another tenant. If this is a shared CLR workflow left from a pre-3.10.1 Dapper host, see the 3.10.1 upgrade step in extensions/docs/changelogs/3.10.1.md.",
+                    materializedWorkflow.Workflow.Identity.DefinitionId,
+                    materializedWorkflow.ProviderName);
+            }
+            else
+            {
+                _logger.LogError(e, "An error occurred while populating the workflow definition store for workflow {WorkflowId} (Name: {WorkflowName}, Version: {Version})",
+                    materializedWorkflow.Workflow.Identity.DefinitionId,
+                    materializedWorkflow.Workflow.WorkflowMetadata.Name,
+                    materializedWorkflow.Workflow.Identity.Version);
+            }
 
             return Result.Failure<WorkflowDefinition>(e);
         }

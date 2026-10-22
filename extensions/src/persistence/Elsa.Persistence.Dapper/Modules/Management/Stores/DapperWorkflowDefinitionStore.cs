@@ -4,7 +4,6 @@ using System.Text.Json;
 using Dapper;
 using Elsa.Common.Entities;
 using Elsa.Common.Models;
-using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Persistence.Dapper.Contracts;
 using Elsa.Persistence.Dapper.Extensions;
@@ -30,7 +29,7 @@ namespace Elsa.Persistence.Dapper.Modules.Management.Stores;
 /// Provides a Dapper implementation of <see cref="IWorkflowDefinitionStore"/>.
 /// </summary>
 [UsedImplicitly]
-internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> store, IPayloadSerializer payloadSerializer, IDbConnectionProvider connectionProvider, ITenantAccessor? tenantAccessor = null)
+internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> store, IPayloadSerializer payloadSerializer, IDbConnectionProvider connectionProvider)
     : IWorkflowDefinitionStore
 {
     /// <inheritdoc />
@@ -213,7 +212,7 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
                 }
                 if (!filter.TenantAgnostic)
                 {
-                    ApplyTenantVisibility(query);
+                    store.ApplyTenantVisibility(query);
                 }
 
                 return connection.QueryFirstOrDefaultAsync<WorkflowDefinitionRecord?>(new CommandDefinition(
@@ -274,28 +273,6 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
         }, cancellationToken);
 
         return !exists;
-    }
-
-    /// <summary>
-    /// Mirror <c>Store&lt;T&gt;</c> read visibility: ambient match OR <c>*</c> OR
-    /// (<c>NULL</c>/<c>''</c> when ambient is default). Writes still cannot change
-    /// <c>TenantId</c>, so a concrete tenant cannot take over a shared row.
-    /// </summary>
-    private void ApplyTenantVisibility(ParameterizedQuery query)
-    {
-        var tenantId = tenantAccessor?.Tenant?.Id;
-        var ident = query.Dialect.QuoteIdentifier(nameof(WorkflowDefinitionRecord.TenantId));
-
-        if (string.IsNullOrEmpty(tenantId))
-        {
-            query.Sql.AppendLine($"and ({ident} is null or {ident} = '' or {ident} = @AgnosticTenantId)");
-            query.Parameters.Add("@AgnosticTenantId", Tenant.AgnosticTenantId);
-            return;
-        }
-
-        query.Sql.AppendLine($"and ({ident} = @AmbientTenantId or {ident} = @AgnosticTenantId)");
-        query.Parameters.Add("@AmbientTenantId", tenantId);
-        query.Parameters.Add("@AgnosticTenantId", Tenant.AgnosticTenantId);
     }
 
     private void ApplyFilter(ParameterizedQuery query, WorkflowDefinitionFilter filter)

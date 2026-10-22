@@ -16,7 +16,7 @@ public sealed class DapperStoreTenantUpsertTests : IDisposable
     private readonly string _path = Path.Combine(Path.GetTempPath(), $"elsa-dapper-store-upsert-{Guid.NewGuid():N}.db");
     private readonly string _table = $"Items_{Guid.NewGuid():N}";
     private readonly IDbConnectionProvider _provider;
-    private readonly Store<ItemRecord> _store;
+    private readonly TenantConflictTestStore<ItemRecord> _store;
     private readonly RoleTestTenantAccessor _tenantAccessor = new();
 
     private string Q(string identifier) => _backend == "postgres" ? $"\"{identifier}\"" : identifier;
@@ -43,7 +43,7 @@ public sealed class DapperStoreTenantUpsertTests : IDisposable
 
         connection.Execute(schema);
 
-        _store = new Store<ItemRecord>(_provider, _tenantAccessor, _table);
+        _store = new TenantConflictTestStore<ItemRecord>(_provider, _tenantAccessor, _table);
     }
 
     [Fact]
@@ -286,7 +286,7 @@ public sealed class DapperStoreTenantUpsertTests : IDisposable
         using (_tenantAccessor.PushContext(TenantA()))
         {
             await _store.SaveAsync(Item("shared", "payload-1"));
-            _store.TestForcedAffectedRows = 0;
+            _store.ForcedAffectedRows = 0;
             await _store.SaveAsync(Item("shared", "payload-2"));
         }
 
@@ -298,8 +298,8 @@ public sealed class DapperStoreTenantUpsertTests : IDisposable
     {
         Seed("shared", Tenant.AgnosticTenantId, "shared-star");
 
-        _store.TestForcedAffectedRows = 0;
-        _store.TestAfterExistingRowLookup = (_, _) =>
+        _store.ForcedAffectedRows = 0;
+        _store.AfterExistingRowLookup = (_, _) =>
         {
             using var connection = _provider.GetConnection();
             connection.Execute(
@@ -319,15 +319,74 @@ public sealed class DapperStoreTenantUpsertTests : IDisposable
     }
 
     [Fact]
-    public async Task ZeroRowUpsert_MinusOneAffectedRows_IsTreatedAsSuccess()
+    public async Task ZeroRowUpsert_MinusOneAffectedRows_ExistingOwnRow_IsAccepted()
     {
         using (_tenantAccessor.PushContext(TenantA()))
         {
-            _store.TestForcedAffectedRows = -1;
-            await _store.SaveAsync(Item("fresh", "from-a"));
+            await _store.SaveAsync(Item("shared", "payload-1"));
+            _store.ForcedAffectedRows = -1;
+            await _store.SaveAsync(Item("shared", "payload-1"));
+        }
+
+        Assert.Equal([("shared", "tenant-a", "payload-1")], LoadItems());
+    }
+
+    [Fact]
+    public async Task ZeroRowUpsert_MinusOneAffectedRows_ExistingForeignTenant_Throws()
+    {
+        using (_tenantAccessor.PushContext(TenantA()))
+        {
+            await _store.SaveAsync(Item("shared", "owned-by-a"));
+        }
+
+        Exception? exception;
+        using (_tenantAccessor.PushContext(TenantB()))
+        {
+            _store.ForcedAffectedRows = -1;
+            exception = await Record.ExceptionAsync(() => _store.SaveAsync(Item("shared", "from-b")));
+        }
+
+        var invalidOperation = Assert.IsType<InvalidOperationException>(exception);
+        Assert.Contains("another tenant", invalidOperation.Message, StringComparison.Ordinal);
+        Assert.Contains("3.10.1 upgrade step", invalidOperation.Message, StringComparison.Ordinal);
+        Assert.Equal([("shared", "tenant-a", "owned-by-a")], LoadItems());
+    }
+
+    [Fact]
+    public async Task UpdateAsync_MissingRow_IsNoOp()
+    {
+        using (_tenantAccessor.PushContext(TenantA()))
+        {
+            var exception = await Record.ExceptionAsync(() => _store.UpdateAsync(Item("missing", "gone")));
+            Assert.Null(exception);
         }
 
         Assert.Empty(LoadItems());
+    }
+
+    [Fact]
+    public async Task UpdateAsync_MissingRow_PropsOverload_IsNoOp()
+    {
+        using (_tenantAccessor.PushContext(TenantA()))
+        {
+            var exception = await Record.ExceptionAsync(() => _store.UpdateAsync(Item("missing", "gone"), [x => x.Name]));
+            Assert.Null(exception);
+        }
+
+        Assert.Empty(LoadItems());
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ZeroRow_SameTenantLookup_DoesNotRetry()
+    {
+        using (_tenantAccessor.PushContext(TenantA()))
+        {
+            await _store.SaveAsync(Item("shared", "payload-1"));
+            _store.ForcedAffectedRows = 0;
+            await _store.UpdateAsync(Item("shared", "payload-2"));
+        }
+
+        Assert.Equal([("shared", "tenant-a", "payload-1")], LoadItems());
     }
 
     public void Dispose()

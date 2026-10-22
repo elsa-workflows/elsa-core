@@ -57,8 +57,7 @@ public sealed class DapperSharedWorkflowStartupTests : IDisposable
         _definitions = new DapperWorkflowDefinitionStore(
             new Store<WorkflowDefinitionRecord>(_provider, _tenantAccessor, _definitionsTable),
             serializer,
-            _provider,
-            _tenantAccessor);
+            _provider);
         _triggers = new DapperTriggerStore(new Store<Elsa.Persistence.Dapper.Modules.Runtime.Records.StoredTriggerRecord>(_provider, _tenantAccessor, _triggersTable), serializer);
     }
 
@@ -95,6 +94,34 @@ public sealed class DapperSharedWorkflowStartupTests : IDisposable
 
         Assert.Equal(Tenant.AgnosticTenantId, LoadDefinitionTenantId());
         Assert.Equal(Tenant.AgnosticTenantId, LoadTriggerTenantId());
+    }
+
+    [Fact]
+    public async Task UpgradedDatabase_ClrWorkflowStampedToLastTenant_ThrowsWithUpgradeHint()
+    {
+        using (_tenantAccessor.PushContext(AgnosticTenant()))
+        {
+            await _definitions.SaveAsync(Definition());
+        }
+
+        using (var connection = _provider.GetConnection())
+        {
+            connection.Execute(
+                $"update {Q(_definitionsTable)} set {Q("TenantId")} = @tenantId, {Q("ProviderName")} = @provider where {Q("Id")} = @id",
+                new { id = "shared-v1", tenantId = "tenant-a", provider = "CLR" });
+        }
+
+        Exception? exception;
+        using (_tenantAccessor.PushContext(TenantB()))
+        {
+            exception = await Record.ExceptionAsync(() => _definitions.SaveAsync(Definition()));
+        }
+
+        var invalidOperation = Assert.IsType<InvalidOperationException>(exception);
+        Assert.Contains("already exists in another tenant", invalidOperation.Message, StringComparison.Ordinal);
+        Assert.Contains("3.10.1 upgrade step", invalidOperation.Message, StringComparison.Ordinal);
+        Assert.Contains("extensions/docs/changelogs/3.10.1.md", invalidOperation.Message, StringComparison.Ordinal);
+        Assert.Equal("tenant-a", LoadDefinitionTenantId());
     }
 
     public void Dispose()

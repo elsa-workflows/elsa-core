@@ -262,6 +262,31 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
         await _storeMock.Received(1).SaveManyAsync(Arg.Any<IEnumerable<WorkflowDefinition>>(), Arg.Any<CancellationToken>());
     }
 
+    [Fact(DisplayName = "PopulateStoreAsync logs the 3.10.1 upgrade step when a shared CLR save hits another tenant")]
+    public async Task PopulateStoreAsync_CrossTenantIdCollision_LogsUpgradeStepAndSkips()
+    {
+        var logger = new CapturingLogger();
+        _storeMock
+            .When(x => x.SaveManyAsync(Arg.Any<IEnumerable<WorkflowDefinition>>(), Arg.Any<CancellationToken>()))
+            .Do(_ => throw new InvalidOperationException(
+                "A record with ID 'shared-v1' already exists in another tenant. If this is a shared CLR workflow left from a pre-3.10.1 Dapper host, see the 3.10.1 upgrade step in extensions/docs/changelogs/3.10.1.md."));
+
+        var workflow = new MaterializedWorkflow(new()
+        {
+            Identity = new("shared-workflow", 1, "shared-v1", Tenant.AgnosticTenantId),
+            Publication = new(true, true)
+        }, "CLR", "ClrWorkflowMaterializer");
+        var populator = CreatePopulatorWithTenant("tenant-b", logger, workflow);
+
+        var result = (await populator.PopulateStoreAsync()).ToList();
+
+        Assert.Empty(result);
+        Assert.Contains(logger.Messages, message =>
+            message.Contains("Skipping adding workflow", StringComparison.Ordinal)
+            && message.Contains("3.10.1 upgrade step", StringComparison.Ordinal)
+            && message.Contains("extensions/docs/changelogs/3.10.1.md", StringComparison.Ordinal));
+    }
+
     [Theory(DisplayName = "PopulateStoreAsync handles null/empty tenant IDs correctly")]
     [InlineData(null, null, true)]  // Both null - should import
     [InlineData("", "", true)]      // Both empty - should import
@@ -295,7 +320,13 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
         }, "Test", "TestProvider");
     }
 
-    private DefaultWorkflowDefinitionStorePopulator CreatePopulatorWithTenant(string? tenantId, params MaterializedWorkflow[] workflows)
+    private DefaultWorkflowDefinitionStorePopulator CreatePopulatorWithTenant(string? tenantId, params MaterializedWorkflow[] workflows) =>
+        CreatePopulatorWithTenant(tenantId, Substitute.For<ILogger<DefaultWorkflowDefinitionStorePopulator>>(), workflows);
+
+    private DefaultWorkflowDefinitionStorePopulator CreatePopulatorWithTenant(
+        string? tenantId,
+        ILogger<DefaultWorkflowDefinitionStorePopulator> logger,
+        params MaterializedWorkflow[] workflows)
     {
         var tenantAccessor = Substitute.For<ITenantAccessor>();
         tenantAccessor.Tenant.Returns(tenantId != null ? new Tenant { Id = tenantId } : null);
@@ -315,6 +346,28 @@ public class DefaultWorkflowDefinitionStorePopulatorTests
             Substitute.For<ISystemClock>(),
             Substitute.For<IIdentityGraphService>(),
             tenantAccessor,
-            Substitute.For<ILogger<DefaultWorkflowDefinitionStorePopulator>>());
+            logger);
+    }
+
+    private sealed class CapturingLogger : ILogger<DefaultWorkflowDefinitionStorePopulator>
+    {
+        public List<string> Messages { get; } = [];
+
+        public IDisposable BeginScope<TState>(TState state) where TState : notnull => NullScope.Instance;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            Messages.Add(formatter(state, exception));
+        }
+
+        private sealed class NullScope : IDisposable
+        {
+            public static readonly NullScope Instance = new();
+            public void Dispose()
+            {
+            }
+        }
     }
 }
