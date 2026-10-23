@@ -7,6 +7,7 @@ build and every publisher. The ref and inputs arrive as environment variables, n
     REF                    github.ref, e.g. refs/heads/main or refs/tags/3.10.0
     PUBLISH_PREVIEW_FEEDZ  inputs.publish_preview_feedz ("true" or "false")
     PUBLISH_NUGET          inputs.publish_nuget
+    PUBLISH_NPM            inputs.publish_npm
     DEPLOY_COVERAGE        inputs.deploy_coverage
 """
 
@@ -26,12 +27,14 @@ CANONICAL_310 = re.compile(STABLE_310_PATTERN + r"(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)
 COVERAGE_REFS = ("refs/heads/main", "refs/heads/release/3.6.1")
 
 
-def selection_errors(ref: str, *, feedz: bool = False, nuget: bool = False, coverage: bool = False) -> list[str]:
+def selection_errors(ref: str, *, feedz: bool = False, nuget: bool = False, npm: bool = False, coverage: bool = False) -> list[str]:
     """Return why this selection must not run; an empty list means it may."""
     errors = []
     if ref.startswith("refs/heads/"):
         if nuget:
             errors.append("NuGet.org publication requires a release tag ref, not a branch.")
+        if npm:
+            errors.append("Studio npm publication requires a release tag ref, not a branch.")
     elif ref.startswith("refs/tags/"):
         tag = ref[len("refs/tags/"):]
         if not RELEASE_TAG.fullmatch(tag):
@@ -70,6 +73,7 @@ def main() -> int:
         ref,
         feedz=_flag("PUBLISH_PREVIEW_FEEDZ"),
         nuget=_flag("PUBLISH_NUGET"),
+        npm=_flag("PUBLISH_NPM"),
         coverage=_flag("DEPLOY_COVERAGE"),
     )
     for error in errors:
