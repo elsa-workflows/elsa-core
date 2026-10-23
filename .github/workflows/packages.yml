@@ -564,6 +564,27 @@ jobs:
           echo "Stable 3.10.x Studio npm pair stays fail-closed until the 231-ID nuget.org promote guard can pass."
           exit 1
 
+      - name: Publish Studio npm pair to Feedz
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          registry-url: https://f.feedz.io/elsa-workflows/elsa-3/npm/
+
+      - name: npm publish to Feedz
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.FEEDZ_API_KEY_BASE64 }}
+        run: |
+          set -euo pipefail
+          for file in "$RUNNER_TEMP"/studio-npm-pair/retained/*.tgz
+          do
+            npm publish "$file" --access public
+          done
+
+      - name: "Fail closed: npmjs trusted publishing not yet confirmed"
+        run: |
+          echo "npmjs.com upload stays fail-closed until trusted publishing is confirmed for elsa-workflows/elsa-core (#8725)."
+          exit 1
+
       - name: Upgrade npm for trusted publishing
         run: npm install -g npm@11
 
@@ -586,22 +607,6 @@ jobs:
             esac
             echo "Publishing $file ($version) with --tag $tag"
             npm publish "$file" --access public --tag "$tag"
-          done
-
-      - name: Publish Studio npm pair to Feedz
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: '22'
-          registry-url: https://f.feedz.io/elsa-workflows/elsa-3/npm/
-
-      - name: npm publish to Feedz
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.FEEDZ_API_KEY_BASE64 }}
-        run: |
-          set -euo pipefail
-          for file in "$RUNNER_TEMP"/studio-npm-pair/retained/*.tgz
-          do
-            npm publish "$file" --access public
           done
 
   deploy_coverage:
