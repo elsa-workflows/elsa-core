@@ -98,6 +98,11 @@ CANDIDATE_PACK_LINES = (
     GUARD_CANDIDATE,
 )
 NPM_PAIR = "python3 scripts/integration-program/prove_studio_npm_pair.py"
+NPMJS_FAIL_CLOSED = "Fail closed: npmjs trusted publishing not yet confirmed"
+NPMJS_FAIL_CLOSED_LINES = (
+    "echo \"npmjs.com upload stays fail-closed until trusted publishing is confirmed for elsa-workflows/elsa-core (#8725).\"",
+    "exit 1",
+)
 ID_SET = ROOT / "scripts/validate_packages_id_set.txt"
 EXPECTED_PACKAGE_COUNT = 231
 # Exact non-empty run: lines after horizontal-whitespace collapse. A joined
@@ -528,7 +533,7 @@ def id_set_count_violations() -> list[str]:
 
 
 def npm_job_violations(jobs: dict) -> list[str]:
-    """The Studio npm publisher must exist, stay gated, and fail closed on stable 3.10.x."""
+    """The Studio npm publisher must exist, stay gated, and fail closed on npmjs until confirmed."""
     job = jobs.get("publish_npm")
     if not isinstance(job, dict):
         return ["gated job 'publish_npm' is missing"]
@@ -557,11 +562,39 @@ def npm_job_violations(jobs: dict) -> list[str]:
             violations.append("publish_npm fail-closed step must exit 1")
         if STATUS_FUNCTION.search(if_expression(steps[closed].get("if")) or ""):
             violations.append("publish_npm fail-closed step must not call always(), failure() or cancelled()")
+    npmjs_closed, extra = _unique_step(
+        steps,
+        lambda step: step.get("name") == NPMJS_FAIL_CLOSED,
+        missing="publish_npm must fail closed on npmjs until trusted publishing is confirmed",
+        duplicate="publish_npm must contain exactly one npmjs fail-closed step",
+    )
+    violations += extra
+    if npmjs_closed is not None:
+        if "if" in steps[npmjs_closed]:
+            violations.append("publish_npm npmjs fail-closed step must not have an if:")
+        if _run_lines(steps[npmjs_closed]) != list(NPMJS_FAIL_CLOSED_LINES):
+            violations.append("publish_npm npmjs fail-closed run: must be exactly the #8725 reason and exit 1")
+    feedz_publish, extra = _unique_step(
+        steps,
+        lambda step: step.get("name") == "npm publish to Feedz",
+        missing="publish_npm must contain npm publish to Feedz",
+        duplicate="publish_npm must contain exactly one Feedz npm publish step",
+    )
+    violations += extra
+    npmjs_publish, extra = _unique_step(
+        steps,
+        lambda step: step.get("name") == "npm publish to npmjs.com",
+        missing="publish_npm must contain npm publish to npmjs.com",
+        duplicate="publish_npm must contain exactly one npmjs publish step",
+    )
+    violations += extra
     publishes = [index for index, step in enumerate(steps) if re.search(r"\bnpm[\s\\]+publish\b", _step_run(step), re.IGNORECASE)]
     if len(publishes) != 2:
         violations.append("publish_npm must contain exactly two npm publish steps")
     if None not in (build_pair, closed) and publishes and not build_pair < closed < publishes[0]:
         violations.append("publish_npm must build the pair and fail closed on stable 3.10.x before npm publish")
+    if None not in (feedz_publish, npmjs_closed, npmjs_publish) and not feedz_publish < npmjs_closed < npmjs_publish:
+        violations.append("publish_npm must run Feedz, then the npmjs fail-closed step, before the npmjs publish")
     return violations
 
 

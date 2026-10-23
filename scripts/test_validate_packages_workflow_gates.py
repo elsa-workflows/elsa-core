@@ -694,6 +694,15 @@ class WorkflowGateTests(unittest.TestCase):
             "publish_npm must fail closed on a stable 3.10.x tag",
         )
 
+    def test_npm_job_must_fail_closed_on_npmjs_until_confirmed(self):
+        self.assert_rejected(
+            self.mutated(
+                '      - name: "Fail closed: npmjs trusted publishing not yet confirmed"\n',
+                '      - name: "Skip closed: npmjs trusted publishing not yet confirmed"\n',
+            ),
+            "publish_npm must fail closed on npmjs until trusted publishing is confirmed",
+        )
+
     def test_id_set_count_is_pinned(self):
         self.assertEqual([], gates.id_set_count_violations())
         self.assertEqual(231, gates.EXPECTED_PACKAGE_COUNT)
