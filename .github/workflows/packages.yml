@@ -14,7 +14,7 @@ on:
         type: boolean
         default: false
       publish_npm:
-        description: Publish the Studio npm pair to npmjs.org and Feedz for this run (requires publisher approval). Stable 3.10.x stays fail-closed until the 231-ID nuget.org promote guard can pass.
+        description: Publish the Studio npm pair to Feedz for this run (requires publisher approval). Live for 3.10.x prerelease tags. npmjs.com is not in this job until trusted publishing is confirmed. Stable 3.10.x stays fail-closed until the 231-ID nuget.org promote guard can pass.
         required: true
         type: boolean
         default: false
@@ -400,6 +400,9 @@ jobs:
         if: ${{ !((github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) || ((github.event_name == 'release' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/tags/3.10.0')) }}
         run: ./build.sh Compile+Pack --version "${VERSION}" --analyseCode true
 
+      # --version 3.10.0 matches the refs/tags/3.10.0 guard above. The inventory
+      # baseline is per branch: this file on main is main's evaluation. A [3.10]
+      # pick must regenerate it from release/3.10.0; the two are not the same.
       - name: Pack consolidated 3.10.0 set
         if: ${{ (github.event_name == 'release' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/tags/3.10.0' && !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget) }}
         env:
@@ -414,7 +417,7 @@ jobs:
         with:
           name: elsa-nuget-packages
           path: packages/*nupkg
-        if: ${{ (github.event_name == 'release' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.publish_preview_feedz || inputs.publish_nuget || inputs.publish_npm))) && !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}
+        if: ${{ (github.event_name == 'release' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.publish_preview_feedz || inputs.publish_nuget))) && !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}
 
   publish_preview_feedz:
     name: Publish to feedz.io
@@ -523,15 +526,14 @@ jobs:
           feed-source: ${{ env.nuget_feed_source }}
           api-key: ${{ steps.nuget_login.outputs.NUGET_API_KEY }}
 
-  publish_npm:
-    name: Publish Studio npm pair
-    needs: [build, validate_publication_selection]
+  build_npm:
+    name: Build Studio npm pair
+    needs: [validate_publication_selection]
     runs-on: ubuntu-latest
     timeout-minutes: 120
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_npm && startsWith(github.ref, 'refs/tags/') }}
     permissions:
       contents: read
-      id-token: write
     steps:
       - name: Check out the Studio npm pair
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -542,9 +544,9 @@ jobs:
         with:
           python-version: '3.12'
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
-          dotnet-version: 10.x
+          dotnet-version: '10.0.300'
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -558,46 +560,63 @@ jobs:
             --run-id "${GITHUB_RUN_ID}" --run-attempt "${GITHUB_RUN_ATTEMPT}" \
             --release-candidate --output "$RUNNER_TEMP/studio-npm-pair"
 
+      - name: Upload Studio npm pair
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: studio-npm-pair
+          path: ${{ runner.temp }}/studio-npm-pair/retained/*.tgz
+          if-no-files-found: error
+          retention-days: 30
+
+  publish_npm:
+    name: Publish Studio npm pair
+    needs: [build_npm, validate_publication_selection]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_npm && startsWith(github.ref, 'refs/tags/') }}
+    permissions:
+      contents: read
+    steps:
       - name: Fail closed on stable 3.10.x
         if: ${{ startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-') }}
         run: |
           echo "Stable 3.10.x Studio npm pair stays fail-closed until the 231-ID nuget.org promote guard can pass."
           exit 1
 
-      - name: Publish Studio npm pair to Feedz
+      - name: Configure Feedz registry
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22'
           registry-url: https://f.feedz.io/elsa-workflows/elsa-3/npm/
+
+      - name: Download Studio npm pair
+        uses: actions/download-artifact@65a9edc5881444af0b9093a5e628f2fe47ea3b2e # v4.1.7
+        with:
+          name: studio-npm-pair
+          path: ${{ runner.temp }}/studio-npm-pair
+
+      - name: Verify Studio npm pair
+        run: |
+          set -euo pipefail
+          dir="$RUNNER_TEMP/studio-npm-pair"
+          wasm="elsa-workflows-elsa-studio-wasm-${GITHUB_REF_NAME}.tgz"
+          react="elsa-workflows-elsa-studio-wasm-react-${GITHUB_REF_NAME}.tgz"
+          test -f "$dir/$wasm"
+          test -f "$dir/$react"
+          count=$(find "$dir" -maxdepth 1 -name '*.tgz' | wc -l)
+          test "$count" -eq 2
 
       - name: npm publish to Feedz
         env:
           NODE_AUTH_TOKEN: ${{ secrets.FEEDZ_API_KEY_BASE64 }}
         run: |
           set -euo pipefail
-          for file in "$RUNNER_TEMP"/studio-npm-pair/retained/*.tgz
-          do
-            npm publish "$file" --access public
-          done
-
-      - name: "Fail closed: npmjs trusted publishing not yet confirmed"
-        run: |
-          echo "npmjs.com upload stays fail-closed until trusted publishing is confirmed for elsa-workflows/elsa-core (#8725)."
-          exit 1
-
-      - name: Upgrade npm for trusted publishing
-        run: npm install -g npm@11
-
-      - name: Publish Studio npm pair to npmjs.com
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: '22'
-          registry-url: https://registry.npmjs.org/
-
-      - name: npm publish to npmjs.com
-        run: |
-          set -euo pipefail
-          for file in "$RUNNER_TEMP"/studio-npm-pair/retained/*.tgz
+          if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
+            echo "::error::Feedz npm key resolved empty; nothing was published."
+            exit 1
+          fi
+          status=0
+          for file in "$RUNNER_TEMP"/studio-npm-pair/*.tgz
           do
             version=$(tar -xzOf "$file" package/package.json \
               | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>console.log(JSON.parse(s).version))")
@@ -606,8 +625,18 @@ jobs:
               *)   tag=latest ;;
             esac
             echo "Publishing $file ($version) with --tag $tag"
-            npm publish "$file" --access public --tag "$tag"
+            if output=$(npm publish "$file" --access public --tag "$tag" 2>&1); then
+              echo "$output"
+            else
+              echo "$output"
+              if echo "$output" | grep -qiE 'EPUBLISHCONFLICT|cannot publish over'; then
+                echo "::notice::$file is already published at this version - skipping"
+              else
+                status=1
+              fi
+            fi
           done
+          exit $status
 
   deploy_coverage:
     name: Deploy coverage to GitHub Pages

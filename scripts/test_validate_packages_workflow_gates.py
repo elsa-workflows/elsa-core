@@ -694,13 +694,40 @@ class WorkflowGateTests(unittest.TestCase):
             "publish_npm must fail closed on a stable 3.10.x tag",
         )
 
-    def test_npm_job_must_fail_closed_on_npmjs_until_confirmed(self):
+    def test_build_npm_must_pin_setup_dotnet(self):
         self.assert_rejected(
             self.mutated(
-                '      - name: "Fail closed: npmjs trusted publishing not yet confirmed"\n',
-                '      - name: "Skip closed: npmjs trusted publishing not yet confirmed"\n',
+                "      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1\n        with:\n          dotnet-version: '10.0.300'\n",
+                "      - uses: actions/setup-dotnet@v4\n        with:\n          dotnet-version: 10.x\n",
             ),
-            "publish_npm must fail closed on npmjs until trusted publishing is confirmed",
+            "build_npm must pin setup-dotnet to the studio-npm-pair SHA",
+        )
+
+    def test_build_npm_must_pin_sdk_version(self):
+        self.assert_rejected(
+            self.mutated(
+                "          dotnet-version: '10.0.300'\n",
+                "          dotnet-version: 10.x\n",
+            ),
+            "build_npm must pin setup-dotnet to 10.0.300",
+        )
+
+    def test_publish_npm_must_not_build_the_pair(self):
+        self.assert_rejected(
+            self.mutated(
+                "      - name: Verify Studio npm pair\n",
+                "      - name: Build the Studio npm pair\n        run: python3 scripts/integration-program/prove_studio_npm_pair.py\n\n      - name: Verify Studio npm pair\n",
+            ),
+            "publish_npm must not build the Studio pair; build_npm owns that step",
+        )
+
+    def test_feedz_publish_must_pass_a_dist_tag(self):
+        self.assert_rejected(
+            self.mutated(
+                '            if output=$(npm publish "$file" --access public --tag "$tag" 2>&1); then\n',
+                '            if output=$(npm publish "$file" --access public 2>&1); then\n',
+            ),
+            "publish_npm Feedz publish must pass a dist-tag",
         )
 
     def test_id_set_count_is_pinned(self):

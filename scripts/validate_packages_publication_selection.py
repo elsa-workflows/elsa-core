@@ -53,6 +53,8 @@ def selection_errors(ref: str, *, feedz: bool = False, nuget: bool = False, npm:
             errors.append("Feedz publication for stable 3.10.x is owned by publish-consolidated-original-candidate.yml.")
         elif feedz and not feedz_from_tag:
             errors.append("Feedz publication from a tag is limited to 3.10.x prerelease tags; publish previews from a branch.")
+        if npm and is_stable_310(tag):
+            errors.append("Studio npm publication for stable 3.10.x stays fail-closed until the 231-ID nuget.org promote guard can pass.")
     else:
         return [f"Ref {ref!r} is neither a branch nor a tag."]
     if coverage and ref not in COVERAGE_REFS:
