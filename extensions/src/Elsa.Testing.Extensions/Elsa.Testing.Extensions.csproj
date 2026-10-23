@@ -5,7 +5,6 @@
             Extensions for testing Elsa Workflows in integration tests.
         </Description>
         <PackageTags>elsa testing integration</PackageTags>
-        <IsPackable>false</IsPackable>
     </PropertyGroup>
 
     <ItemGroup>

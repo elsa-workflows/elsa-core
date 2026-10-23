@@ -3,7 +3,6 @@
     <PropertyGroup>
         <Description>The BPMN designer contract and the rules every Elsa Studio BPMN designer shares.</Description>
         <PackageTags>elsa studio module bpmn</PackageTags>
-        <IsPackable>false</IsPackable>
     </PropertyGroup>
 
     <ItemGroup>
