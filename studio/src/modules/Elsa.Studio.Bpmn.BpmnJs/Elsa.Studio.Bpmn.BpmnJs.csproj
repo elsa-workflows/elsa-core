@@ -3,6 +3,7 @@
     <PropertyGroup>
         <Description>The bpmn-js BPMN designer for Elsa Studio.</Description>
         <PackageTags>elsa studio module bpmn bpmn-js designer</PackageTags>
+        <IsPackable>false</IsPackable>
     </PropertyGroup>
 
     <ItemGroup>
