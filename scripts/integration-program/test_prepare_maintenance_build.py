@@ -1,5 +1,6 @@
 from contextlib import ExitStack
 import hashlib
+import base64
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import io
 import json
@@ -17,6 +18,8 @@ import zipfile
 
 import prepare_maintenance_build as maintenance
 import prove_consolidated_packages as consolidated
+import core_source_continuation as continuation
+import selected_core_producer as core
 
 
 class SelectionTests(unittest.TestCase):
@@ -106,6 +109,69 @@ class MaintenanceContracts(unittest.TestCase):
                                     'PATH': '/safe'}, clear=True):
             self.assertEqual(maintenance.build_environment(), {'PATH': '/safe', 'EmbedUntrackedSources': 'true'})
 
+    def test_recipe_restore_config_comes_only_from_source_and_preserves_core_environment(self):
+        """Verify recipe restore config comes only from source and preserves Core environment."""
+        config = self.root / 'NuGet.Config'; config.write_text('<configuration />')
+        gate = 'ELSA_POSTGRES_DB'
+        for product in ('studio', 'extensions', 'core'):
+            with self.subTest(product=product), patch.dict(os.environ,
+                    {'HOME': '/unchanged-home', 'RestoreConfigFile': '/untrusted/config',
+                     'GITHUB_TOKEN': 'secret'}, clear=True), \
+                    patch.object(maintenance, 'original_core', return_value=product == 'core'), \
+                    patch('selected_core_producer.environment', return_value={'VERSION': '3.8.999', gate: 'connection'}):
+                environment = maintenance.recipe_environment({'product': product}, '3.8.999', self.root)
+                self.assertEqual(str(config.resolve()), environment['RestoreConfigFile'])
+                self.assertNotIn('GITHUB_TOKEN', environment)
+                if product == 'core':
+                    self.assertEqual('3.8.999', environment['VERSION'])
+                    self.assertEqual('connection', environment[gate])
+                else:
+                    self.assertEqual('/unchanged-home', environment['HOME'])
+        with patch.dict(os.environ, {'RestoreConfigFile': '/untrusted/config'}, clear=True):
+            self.assertNotIn('RestoreConfigFile', maintenance.build_environment())
+
+    def test_recipe_restore_config_missing_directory_or_symlink_fails(self):
+        """Verify recipe restore config missing directory or symlink fails."""
+        config = self.root / 'NuGet.Config'
+        for kind in ('missing', 'directory', 'symlink'):
+            if kind == 'directory':
+                config.mkdir()
+            elif kind == 'symlink':
+                config.rmdir()
+                other = self.root / 'Other.Config'; other.write_text('<configuration />')
+                config.symlink_to(other)
+            with self.subTest(kind=kind), self.assertRaisesRegex(ValueError, 'regular file'):
+                maintenance.recipe_environment(self.row, '3.8.999', self.root)
+
+    def test_prepare_passes_bound_environment_and_rejects_changed_source_config_before_tools(self):
+        """Verify prepare passes bound environment and rejects changed source config before
+        tools.
+        """
+        original = b'<configuration />'
+        for product, changed in (('studio', False), ('extensions', False), ('extensions', True), ('extensions', 'plan')):
+            row = next(row for row in self.register['sources'] if row['product'] == product)
+            output = self.root / (product + str(changed))
+            def checkout(root, *args, **_kwargs):
+                if args[:1] == ('checkout',):
+                    (root / 'NuGet.Config').write_bytes(b'<changed />' if changed is True else original)
+                return 'd' * 40
+            with self.subTest(product=product, changed=changed), \
+                    patch.object(maintenance, 'git', side_effect=checkout), \
+                    patch.object(maintenance, 'git_bytes', return_value=original), \
+                    patch.object(maintenance, 'verify_source'), \
+                    patch.object(maintenance, 'inspect_toolchain', return_value={}) as tools, \
+                    patch.object(maintenance, 'recipes', return_value=[('.', ['fixture-only'])]), \
+                    patch.object(maintenance, 'run_build_command', side_effect=ValueError('stop-before-build')) as command:
+                with self.assertRaisesRegex(ValueError, 'differs from plan' if changed == 'plan' else
+                        'differs from source' if changed else 'stop-before-build'):
+                    plan = {'consumer_feed_policy': {'config_sha256': '0' * 64}} if changed == 'plan' else None
+                    maintenance.prepare(maintenance.ROOT, row, '3.8.999', output, plan=plan)
+                if changed:
+                    tools.assert_not_called(); command.assert_not_called()
+                else:
+                    self.assertEqual(str((output / 'source/NuGet.Config').resolve()),
+                                     command.call_args.kwargs['environment']['RestoreConfigFile'])
+
     def test_source_tree_parent_and_workflow_inventory_are_verified(self):
         maintenance.verify_source(maintenance.ROOT, self.row)
         for field in ['tree', 'parent']:
@@ -169,11 +235,17 @@ class MaintenanceContracts(unittest.TestCase):
         self.assertNotIn('source changed', json.dumps(receipt))
         self.assertNotIn(str(self.root), json.dumps(receipt))
 
-    def prepare_inventory_fixture(self, failure=None):
+    def prepare_inventory_fixture(self, failure=None, metadata_stage=None):
+        """Run a mocked maintenance recipe with optional inventory or metadata-stage failures."""
         output = self.root / ('proof-' + (failure or 'success'))
         policy = {'id': 'Fixture', 'project': 'src/Fixture.csproj', 'assembly_name': 'Fixture',
                   'frameworks': ['net8.0'], 'symbols': True, 'include_build_output': True, 'satellites': [],
                   'private_context': '/private-secret/context'}
+        config = b'<configuration />'
+        def checkout(root, *args, **_kwargs):
+            if args[:1] == ('checkout',):
+                (root / 'NuGet.Config').write_bytes(config)
+            return 'd' * 40
         def tests(*_args):
             if failure == 'test-evidence':
                 raise ValueError('Test evidence rejected')
@@ -182,7 +254,10 @@ class MaintenanceContracts(unittest.TestCase):
             if command[:2] == ['dotnet', 'build'] and failure == 'symbol-inspector':
                 raise ValueError('/private-secret/helper failure')
             return '10.0.300'
-        def stage(*_args):
+        def stage(*_args, **_kwargs):
+            self.assertEqual(_kwargs['diagnostics'], output / 'sdk-metadata-diagnostics')
+            if metadata_stage is not None:
+                return metadata_stage()
             policy.update(expected_dependency_groups=[], sdk_nuspec_sha256='a' * 64,
                 expected_framework_reference_groups=[{'framework': 'net8.0', 'references': ['Microsoft.AspNetCore.App']}],
                 expected_symbol_framework_reference_groups=[],
@@ -191,12 +266,18 @@ class MaintenanceContracts(unittest.TestCase):
                     'sdk_root': '/private-secret/sdk', 'compiler_sha256': 'c' * 64, 'tools': {}}}})
             if failure == 'sdk-metadata':
                 raise ValueError('/private-secret/metadata failure')
+        def artifacts(*args):
+            if failure == 'package-verification':
+                args[-1].update(package='Fixture', framework='net8.0')
+                raise maintenance.SourceProducerVerificationError('generator-content-changed')
+            return []
         with ExitStack() as stack:
             for name, options in {
-                'git': {'return_value': 'd' * 40}, 'verify_source': {'return_value': None},
+                'git': {'side_effect': checkout}, 'git_bytes': {'return_value': config},
+                'verify_source': {'return_value': None},
                 'recipes': {'return_value': []}, 'run': {'side_effect': execute},
                 'evaluate_inventory': {'return_value': [policy]}, 'verify_tests': {'side_effect': tests},
-                'stage_maintenance_metadata': {'side_effect': stage}, 'verify_artifacts': {'return_value': []},
+                'stage_maintenance_metadata': {'side_effect': stage}, 'verify_artifacts': {'side_effect': artifacts},
             }.items():
                 stack.enter_context(patch.object(maintenance, name, **options))
             if failure:
@@ -236,6 +317,7 @@ class MaintenanceContracts(unittest.TestCase):
                          'compiler_sha256': 'c' * 64, 'tools': {}}})
         receipt = json.loads((output / 'receipt.json').read_text())
         self.assertTrue(receipt['success'])
+        self.assertNotIn('inventory_diagnostics', receipt)
         self.assertEqual(receipt['stage'], 'complete')
         self.assertFalse(receipt['published'])
         self.assertFalse(receipt['maintenance_refs_activated'])
@@ -308,43 +390,257 @@ class MaintenanceContracts(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Tracked source checksum mismatch'):
             maintenance.verify_documents(dict(details, documents=[tracked]), maintenance.ROOT, self.row, policy, 'net8.0')
 
-    def test_external_hints_require_archive_bytes_and_actual_compile_membership(self):
-        row = next(row for row in self.register['sources'] if row['product'] == 'extensions')
-        archive = self.root / 'package.nupkg'; archive.write_bytes(b'archive')
-        entry = 'contentFiles/cs/any/Hints/Hint.cs'
-        extracted = self.root / entry; extracted.parent.mkdir(parents=True); extracted.write_bytes(b'hints')
-        checksum = hashlib.sha256(b'hints').hexdigest()
-        document = {'path': '/_1/elsa.platform.packagemanifest.generator/0.0.1-preview.50/' + entry,
-                    'algorithm': 'sha256', 'checksum': checksum, 'embedded_checksum': checksum}
-        inputs = [{'path': entry, 'tracked': False}]
-        policy = {'source_commit': row['commit'], 'frameworks': ['net10.0'], 'project': 'Fixture.csproj',
-                  'framework_properties': {'net10.0': {'compiler_evidence': {'compile_inputs': inputs}}}}
-        external = {'archive_entry': entry, 'archive_sha256': 'a' * 64, 'external_package':
-                    'Elsa.Platform.PackageManifest.Generator/0.0.1-preview.50', 'feed': 'official'}
-        identity = {'archive_sha256': 'a' * 64, 'restore_sha512': 'restored hash'}
-        with patch.object(maintenance, 'verify_external_document', return_value=external), \
-             patch.object(maintenance, 'restored_assets', return_value={}), \
-             patch.object(maintenance, 'restored_archive', return_value=(archive, identity)):
-            result = maintenance.verify_non_git_document(document, None, self.root, row, policy, 'net10.0', {})
-            self.assertEqual(result['family'], 'manifest-hints')
-            self.assertNotIn(str(self.root), json.dumps(result))
-            inputs[:] = [{'path': extracted.resolve().as_posix()}]
-            self.assertEqual(maintenance.verify_non_git_document(document, None, self.root / 'other-source',
-                row, policy, 'net10.0', {})['family'], 'manifest-hints')
-            for mutation in ['membership', 'bytes', 'archive', 'version']:
-                selected = dict(document)
-                inputs[:] = [{'path': entry}]
-                extracted.write_bytes(b'hints'); identity['archive_sha256'] = 'a' * 64
-                if mutation == 'membership':
-                    inputs.clear()
-                elif mutation == 'bytes':
-                    extracted.write_bytes(b'changed')
-                elif mutation == 'archive':
-                    identity['archive_sha256'] = 'b' * 64
-                else:
-                    selected['path'] = selected['path'].replace('preview.50', 'preview.53')
-                with self.subTest(mutation=mutation), self.assertRaisesRegex(ValueError, '^Source producer evidence rejected$'):
-                    maintenance.verify_non_git_document(selected, None, self.root, row, policy, 'net10.0', {})
+    def test_non_git_failure_keeps_closed_check_without_private_message(self):
+        """Verify non Git failure keeps closed check without private message."""
+        policy = {'source_commit': self.row['commit'], 'frameworks': ['net8.0'],
+                  'framework_properties': {'net8.0': {}}}
+        document = {'path': '/private/secret.cs', 'checksum': 'a' * 64, 'embedded_checksum': None}
+        with self.assertRaisesRegex(ValueError, '^Source producer evidence rejected$') as caught:
+            maintenance.verify_non_git_document(document, None, self.root, self.row, policy, 'net8.0', {})
+        self.assertEqual(caught.exception.check, 'embedded-checksum-mismatch')
+        self.assertNotIn('/private/secret', str(caught.exception))
+
+    def test_generator_failures_keep_only_closed_checks_and_unknown_fails_closed(self):
+        """Verify generator failures keep only closed checks and unknown fails closed."""
+        policy = {'source_commit': self.row['commit'], 'frameworks': ['net8.0'],
+                  'framework_properties': {'net8.0': {}}}
+        document = {'path': '/private/secret.cs', 'checksum': 'a' * 64, 'embedded_checksum': 'a' * 64}
+        failures = [(ValueError(message + ' /private/secret'), code)
+                    for message, code in maintenance.SOURCE_PRODUCER_ERRORS.items()]
+        failures += [(ValueError('/private/secret'), 'unknown-check-failure'),
+                     (KeyError('/private/secret'), 'producer-context-invalid'),
+                     (TypeError('/private/secret'), 'producer-context-invalid'),
+                     (OSError('/private/secret'), 'producer-file-unavailable')]
+        for error, expected in failures:
+            with self.subTest(expected=expected), \
+                    patch.object(maintenance, 'maintenance_family', return_value='sdk'), \
+                    patch.object(maintenance, 'verify_generator_identity', side_effect=error):
+                with self.assertRaisesRegex(ValueError, '^Source producer evidence rejected$') as caught:
+                    maintenance.verify_non_git_document(document, 'generated.cs', self.root,
+                                                        self.row, policy, 'net8.0', {})
+                self.assertEqual(caught.exception.check, expected)
+                self.assertNotIn('/private/secret', str(caught.exception))
+
+    def test_package_verification_receipt_retains_closed_source_check(self):
+        """Verify package verification receipt retains closed source check."""
+        output = self.prepare_inventory_fixture('package-verification')
+        receipt = json.loads((output / 'receipt.json').read_text())
+        self.assertEqual(receipt['error'], {'code': 'package-verification-failed',
+            'reason': 'source-producer-unverified', 'source_producer_check': 'generator-content-changed'})
+        self.assertEqual(receipt['focus'], {'package': 'Fixture', 'framework': 'net8.0'})
+        self.assertFalse(receipt['success'])
+        self.assertNotIn('/private-secret', json.dumps(receipt))
+
+    def restored_hint_fixture(self, version='0.0.1-preview.50', framework='net10.0', row=None,
+                              entry_name='ManifestExtensionAttribute.cs', trailing_separator=True):
+        """Create a restored generator archive, assets, and embedded document checksum fixture."""
+        root = self.root.resolve() / f'hints-{len(list(self.root.iterdir()))}'
+        root.mkdir()
+        identifier = 'elsa.platform.packagemanifest.generator'
+        folder = root / 'producer-cache'
+        package = folder / identifier / version
+        package.mkdir(parents=True)
+        archive = package / f'{identifier}.{version}.nupkg'
+        with zipfile.ZipFile(archive, 'w') as contents:
+            for entry in sorted(consolidated.GENERATOR_SOURCE_ENTRIES[version]):
+                # Fixed bytes exercise a canonical preview.53 SHA-512 beginning with '/'.
+                contents.writestr(zipfile.ZipInfo(entry, (2000, 1, 1, 0, 2, 48)), b'hints')
+                extracted = package / entry
+                extracted.parent.mkdir(parents=True, exist_ok=True)
+                extracted.write_bytes(b'hints')
+        entry = consolidated.GENERATOR_HINTS_PREFIX + entry_name
+        assets = {'libraries': {f'Elsa.Platform.PackageManifest.Generator/{version}': {
+            'type': 'package', 'path': f'{identifier}/{version}',
+            'sha512': base64.b64encode(hashlib.sha512(archive.read_bytes()).digest()).decode()}},
+            'packageFolders': {folder.as_posix() + ('/' if trailing_separator else ''): {}}}
+        source = root / 'source'
+        source.mkdir()
+        assets_file = source / 'project.assets.json'
+        assets_file.write_text(json.dumps(assets))
+        row = row or next(row for row in self.register['sources'] if row['product'] == 'extensions')
+        policy = {'id': 'Fixture', 'source_commit': row['commit'], 'project': 'Fixture.csproj',
+            'frameworks': [framework], 'restore_assets': [{'framework': framework,
+                'path': 'project.assets.json', 'sha256': maintenance.digest(assets_file.read_bytes())}],
+            'framework_properties': {framework: {'compiler_evidence': {
+                'compile_inputs': [{'path': (package / entry).as_posix(), 'tracked': False}]}}}}
+        checksum = maintenance.digest(b'hints')
+        document = {'path': (package / entry).as_posix(), 'algorithm': 'sha256',
+                    'checksum': checksum, 'embedded_checksum': checksum}
+        return source, row, policy, document, archive, assets
+
+    def core_hint_sources(self):
+        """Return original and reviewed-continuation source bindings for both Core lines."""
+        originals = json.loads(core.CONTRACT.read_bytes())['sources']
+        shapes = json.loads(Path(__file__).with_name('selected_product_plan_shapes.json').read_bytes())['cells']
+        return [row for line, original in originals.items() for row in (
+            {'product': 'core', 'line': line, 'kind': 'observed-core-release-branch',
+             'commit': original['commit'], 'tree': original['tree']},
+            continuation.bind(line, shapes['core-' + line]['source']['observation'], continuation.load_contract()))]
+
+    def test_restored_manifest_hint_accepts_canonical_cache_roots_with_optional_trailing_separator(self):
+        for version, row in (('0.0.1-preview.50', None), ('0.0.1-preview.53', self.core_hint_sources()[1])):
+            for framework in ('net8.0', 'net9.0', 'net10.0'):
+                for trailing_separator in (False, True):
+                    with self.subTest(version=version, framework=framework, trailing_separator=trailing_separator):
+                        root, row, policy, document, archive, _ = self.restored_hint_fixture(
+                            version, framework, row, trailing_separator=trailing_separator)
+                        with patch.dict(consolidated.GENERATOR_SOURCE_PINS, {version: maintenance.digest(archive.read_bytes())}):
+                            actual = maintenance.verify_non_git_document(document, None, root, row, policy, framework, {})
+                            mapped = document | {'path': '/_1/elsa.platform.packagemanifest.generator/' + version + '/' +
+                                                 actual['producer']['archive_entry']}
+                            self.assertEqual(maintenance.verify_non_git_document(mapped, None, root, row, policy, framework, {}), actual)
+                            self.assertEqual(actual['family'], 'manifest-hints')
+
+    def test_original_core_preview53_hints_are_restore_and_compile_bound_for_all_frameworks(self):
+        """Verify original Core preview.53 hints are restore and compile bound for all
+        frameworks.
+        """
+        version = '0.0.1-preview.53'
+        for row in self.core_hint_sources():
+            for framework in ('net8.0', 'net9.0', 'net10.0'):
+                with self.subTest(line=row['line'], kind=row['kind'], framework=framework):
+                    root, row, policy, document, archive, _ = self.restored_hint_fixture(
+                        version, framework, row, entry_name='ManifestFeatureCategoryAttribute.cs')
+                    with patch.dict(consolidated.GENERATOR_SOURCE_PINS, {version: maintenance.digest(archive.read_bytes())}):
+                        actual = maintenance.verify_non_git_document(document, None, root, row, policy, framework, {})
+                        entry = actual['producer']['archive_entry']
+                        for prefix in ('/_1/', '/_42/'):
+                            mapped = document | {'path': prefix + 'elsa.platform.packagemanifest.generator/' + version + '/' + entry}
+                            self.assertEqual(maintenance.verify_non_git_document(mapped, None, root, row, policy, framework, {}), actual)
+                        self.assertEqual(actual['family'], 'manifest-hints')
+                        self.assertEqual(actual['producer']['external_package'], 'Elsa.Platform.PackageManifest.Generator/' + version)
+                        self.assertNotIn(root.as_posix(), json.dumps(actual))
+
+    def test_preview53_route_requires_exact_admitted_core_source_and_product_version_pair(self):
+        """Verify preview.53 route requires exact admitted Core source and product version pair."""
+        admitted = self.core_hint_sources()[1]
+        invalid = (
+            ('0.0.1-preview.50', admitted),
+            ('0.0.1-preview.53', None),
+            ('0.0.1-preview.53', admitted | {'product': 'studio'}),
+            ('0.0.1-preview.53', admitted | {'kind': 'metadata-bridge'}),
+            ('0.0.1-preview.53', admitted | {'commit': 'f' * 40}),
+            ('0.0.1-preview.53', admitted | {'tree': 'f' * 40}),
+            ('0.0.1-preview.53', admitted | {'source_repository': 'other/repository'}),
+            ('0.0.1-preview.53', admitted | {'continuation_contract_sha256': 'f' * 64}),
+        )
+        for version, row in invalid:
+            with self.subTest(version=version, row=row):
+                root, row, policy, document, archive, _ = self.restored_hint_fixture(version=version, row=row)
+                with patch.dict(consolidated.GENERATOR_SOURCE_PINS, {version: maintenance.digest(archive.read_bytes())}), \
+                        self.assertRaisesRegex(ValueError, '^Source producer evidence rejected$'):
+                    maintenance.verify_non_git_document(document, None, root, row, policy, 'net10.0', {})
+
+    def test_actual_restored_manifest_hint_path_is_archive_and_compile_bound(self):
+        """Verify actual restored manifest hint path is archive and compile bound."""
+        root, row, policy, document, archive, _ = self.restored_hint_fixture()
+        with patch.dict(consolidated.GENERATOR_SOURCE_PINS,
+                        {'0.0.1-preview.50': maintenance.digest(archive.read_bytes())}):
+            for line in ('3.8', '3.9'):
+                selected = next(item for item in self.register['sources']
+                                if item['product'] == 'extensions' and item['line'] == line)
+                selected_policy = dict(policy, source_commit=selected['commit'])
+                result = maintenance.verify_non_git_document(document, None, root, selected,
+                                                            selected_policy, 'net10.0', {})
+                self.assertEqual(result['family'], 'manifest-hints')
+                self.assertEqual(result['producer']['archive_entry'],
+                                 consolidated.GENERATOR_HINTS_PREFIX + 'ManifestExtensionAttribute.cs')
+                self.assertNotIn(root.as_posix(), json.dumps(result))
+            deterministic = dict(document, path='/_1/elsa.platform.packagemanifest.generator/0.0.1-preview.50/' +
+                                 result['producer']['archive_entry'])
+            self.assertEqual(maintenance.verify_non_git_document(deterministic, None, root, row,
+                              policy, 'net10.0', {}), result)
+            self.assertIsNone(consolidated.verify_external_document(root, policy, 'net10.0', document, {}))
+
+    def test_restored_manifest_hint_rejects_unbound_paths_bytes_and_context(self):
+        """Verify restored manifest hint rejects unbound paths bytes and context."""
+        for version, row in (('0.0.1-preview.50', None), ('0.0.1-preview.53', self.core_hint_sources()[1])):
+            for mutation in ('foreign-root', 'version', 'member', 'traversal', 'normalization', 'membership',
+                             'bytes', 'archive', 'restore-hash', 'assets-bytes', 'embedded', 'missing-embedded', 'checksum',
+                             'file-symlink', 'parent-symlink', 'archive-symlink', 'root-symlink', 'ambiguous',
+                             'root-relative', 'root-dot', 'root-traversal', 'root-repeated-separator',
+                             'root-repeated-trailing-separator', 'ambiguous-root-alias',
+                             'library-path', 'framework', 'source', 'product', 'missing-archive',
+                             'missing-restored-library', 'official-pin'):
+                with self.subTest(version=version, mutation=mutation):
+                    self.reject_restored_hint_mutation(mutation, version, row)
+
+    def reject_restored_hint_mutation(self, mutation, version, row):
+        """Mutate restored hint evidence and require a generic source-producer rejection."""
+        root, row, policy, document, archive, assets = self.restored_hint_fixture(version=version, row=row)
+        pinned = maintenance.digest(archive.read_bytes())
+        extracted = Path(document['path'])
+        if mutation == 'foreign-root':
+            document['path'] = document['path'].replace('producer-cache', 'foreign-cache')
+        elif mutation == 'version':
+            document['path'] = document['path'].replace(version, '0.0.1-preview.54')
+        elif mutation == 'member':
+            document['path'] = document['path'].replace('ManifestExtensionAttribute.cs', 'Unknown.cs')
+        elif mutation == 'traversal':
+            document['path'] = str(extracted.parent) + '/../Hints/' + extracted.name
+        elif mutation == 'normalization':
+            document['path'] = str(extracted.parent) + '/./' + extracted.name
+        elif mutation == 'membership':
+            policy['framework_properties']['net10.0']['compiler_evidence']['compile_inputs'].clear()
+        elif mutation == 'bytes':
+            extracted.write_bytes(b'changed')
+        elif mutation == 'archive':
+            archive.write_bytes(b'changed')
+        elif mutation == 'restore-hash':
+            next(iter(assets['libraries'].values()))['sha512'] = 'changed'
+        elif mutation == 'assets-bytes':
+            (root / 'project.assets.json').write_text('{}')
+        elif mutation in ('embedded', 'missing-embedded', 'checksum'):
+            document['embedded_checksum' if mutation != 'checksum' else 'checksum'] = (
+                None if mutation == 'missing-embedded' else '0' * 64)
+        elif mutation in ('file-symlink', 'archive-symlink'):
+            target = extracted if mutation == 'file-symlink' else archive
+            moved = target.with_name(target.name + '.real')
+            target.rename(moved); target.symlink_to(moved)
+        elif mutation in ('parent-symlink', 'root-symlink'):
+            target = extracted.parent if mutation == 'parent-symlink' else Path(next(iter(assets['packageFolders'])))
+            moved = target.with_name(target.name + '.real')
+            target.rename(moved); target.symlink_to(moved, target_is_directory=True)
+        elif mutation == 'ambiguous':
+            second = root / 'second-cache'
+            target = second / archive.relative_to(Path(next(iter(assets['packageFolders']))))
+            target.parent.mkdir(parents=True); target.write_bytes(archive.read_bytes())
+            assets['packageFolders'][str(second)] = {}
+        elif mutation.startswith('root-') or mutation == 'ambiguous-root-alias':
+            folder = next(iter(assets['packageFolders']))
+            canonical = Path(folder).as_posix()
+            if mutation == 'ambiguous-root-alias':
+                assets['packageFolders'][canonical] = {}
+            else:
+                malformed = {'root-relative': canonical.lstrip('/'),
+                             'root-dot': canonical + '/./',
+                             'root-traversal': canonical + '/../producer-cache/',
+                             'root-repeated-separator': canonical.replace('/producer-cache', '//producer-cache'),
+                             'root-repeated-trailing-separator': canonical + '//'}[mutation]
+                assets['packageFolders'] = {malformed: {}}
+        elif mutation == 'missing-restored-library':
+            assets['libraries'].clear()
+        elif mutation == 'official-pin':
+            pinned = '0' * 64
+        elif mutation == 'library-path':
+            next(iter(assets['libraries'].values()))['path'] = '../foreign'
+        elif mutation == 'framework':
+            policy['restore_assets'][0]['framework'] = 'net9.0'
+        elif mutation == 'source':
+            policy['source_commit'] = '0' * 40
+        elif mutation == 'product':
+            row = dict(row, product='studio')
+        else:
+            archive.unlink()
+        if mutation in ('restore-hash', 'ambiguous', 'library-path', 'missing-restored-library',
+                        'root-relative', 'root-dot', 'root-traversal', 'root-repeated-separator',
+                        'root-repeated-trailing-separator', 'ambiguous-root-alias'):
+            path = root / 'project.assets.json'
+            path.write_text(json.dumps(assets))
+            policy['restore_assets'][0]['sha256'] = maintenance.digest(path.read_bytes())
+        with patch.dict(consolidated.GENERATOR_SOURCE_PINS, {version: pinned}), \
+             self.assertRaisesRegex(ValueError, '^Source producer evidence rejected$'):
+            maintenance.verify_non_git_document(document, None, root, row, policy, 'net10.0', {})
 
     def test_physical_families_are_original_project_and_release_bound(self):
         row = next(row for row in self.register['sources'] if row['product'] == 'extensions' and row['line'] == '3.8')
@@ -359,6 +655,178 @@ class MaintenanceContracts(unittest.TestCase):
                 (row, dict(policy, id='Other'), 'net10.0', prefix + grain),
                 (row, policy, 'net8.0', prefix + grain), (row, policy, 'net10.0', prefix + 'Proto/Arbitrary.cs')]:
             self.assertIsNone(maintenance.maintenance_family(selected, selected_policy, framework, path))
+
+    def test_original_core_swagger_family_is_source_project_and_framework_bound(self):
+        policy = {'id': 'Elsa.Api.Common', 'project':
+                  'src/common/Elsa.Api.Common/Elsa.Api.Common.csproj'}
+        prefix = 'src/common/Elsa.Api.Common/obj/Release/'
+        filename = 'SwaggerExportPathInitializer.g.cs'
+        for row in self.core_hint_sources():
+            with self.subTest(line=row['line'], kind=row['kind']):
+                self.assertIsNone(consolidated.generated_family(policy, 'net10.0', prefix + 'net10.0/' + filename))
+                self.assertEqual(maintenance.maintenance_family(row, policy, 'net10.0', prefix + 'net10.0/' + filename), 'swagger')
+                for selected, selected_policy, framework, path in (
+                        (row | {'product': 'studio'}, policy, 'net10.0', prefix + 'net10.0/' + filename),
+                        (row | {'kind': 'metadata-bridge'}, policy, 'net10.0', prefix + 'net10.0/' + filename),
+                        (row, policy | {'id': 'Other'}, 'net10.0', prefix + 'net10.0/' + filename),
+                        (row, policy | {'project': 'src/Other/Other.csproj'}, 'net10.0', 'src/Other/obj/Release/net10.0/' + filename),
+                        (row, policy, 'net8.0', prefix + 'net8.0/' + filename),
+                        (row, policy, 'net9.0', prefix + 'net9.0/' + filename),
+                        (row, policy, 'net10.0', prefix + 'net9.0/' + filename),
+                        (row, policy, 'net10.0', prefix + 'net10.0/Other.g.cs'),
+                        (row, policy, 'net10.0', prefix + 'net10.0/subdir/' + filename),
+                        (row, policy, 'net10.0', prefix + 'net10.0/../net10.0/' + filename),
+                        (row, policy, 'net10.0', prefix.replace('/Release/', '/Debug/') + 'net10.0/' + filename)):
+                    with self.subTest(selected=selected, framework=framework, path=path):
+                        self.assertIsNone(maintenance.maintenance_family(selected, selected_policy, framework, path))
+                for change in ({'commit': '0' * 40}, {'tree': '0' * 40}, {'line': '3.10'},
+                               {'source_repository': 'foreign/repository'}):
+                    with self.subTest(change=change), self.assertRaises(ValueError):
+                        maintenance.maintenance_family(row | change, policy, 'net10.0', prefix + 'net10.0/' + filename)
+
+    def test_original_core_swagger_mapping_matches_immutable_source_dependencies(self):
+        for row in self.core_hint_sources():
+            with self.subTest(line=row['line'], kind=row['kind']):
+                project = ET.fromstring(maintenance.git_bytes(maintenance.ROOT, row['commit'],
+                    'src/common/Elsa.Api.Common/Elsa.Api.Common.csproj'))
+                self.assertEqual(len(project.findall(".//PackageReference[@Include='FastEndpoints.Swagger']")), 1)
+                packages = ET.fromstring(maintenance.git_bytes(maintenance.ROOT, row['commit'], 'Directory.Packages.props'))
+                net10 = packages.find("ItemGroup[@Condition=\"'$(TargetFramework)' == 'net10.0'\"]")
+                self.assertIsNotNone(net10)
+                self.assertEqual(net10.find("PackageVersion[@Include='FastEndpoints.Swagger']").get('Version'), '8.2.0')
+
+    def core_swagger_fixture(self, row, *, runtime=''):
+        """Stage synthetic restored Swagger bytes and real shared compiler evidence."""
+        temporary = tempfile.TemporaryDirectory(dir=self.root)
+        self.addCleanup(temporary.cleanup)
+        source = Path(temporary.name).resolve()
+        identifier, version = 'FastEndpoints.Swagger', '8.2.0'
+        entry = consolidated.PHYSICAL_GENERATORS['swagger'][1]
+        package = source / 'nuget' / identifier.lower() / version
+        tool = package / entry
+        tool.parent.mkdir(parents=True)
+        tool.write_bytes(b'synthetic source-emitting Swagger target')
+        archive = package / f'{identifier.lower()}.{version}.nupkg'
+        with zipfile.ZipFile(archive, 'w') as contents:
+            contents.writestr(entry, tool.read_bytes())
+        assets = {'libraries': {identifier + '/' + version: {'type': 'package',
+            'sha512': base64.b64encode(hashlib.sha512(archive.read_bytes()).digest()).decode()}},
+            'packageFolders': {str(source / 'nuget'): {}},
+            'targets': {'net10.0' + ('/' + runtime if runtime else ''): {identifier + '/' + version: {'type': 'package'}}}}
+        assets_file = source / 'project.assets.json'
+        assets_file.write_text(json.dumps(assets))
+        project = 'src/common/Elsa.Api.Common/Elsa.Api.Common.csproj'
+        generated = 'src/common/Elsa.Api.Common/obj/Release/net10.0/SwaggerExportPathInitializer.g.cs'
+        policy = {'id': 'Elsa.Api.Common', 'project': project, 'source_commit': row['commit'], 'frameworks': ['net10.0'],
+            'framework_properties': {'net10.0': {}}, 'restore_assets': [{'framework': 'net10.0',
+                'path': 'project.assets.json', 'sha256': maintenance.digest(assets_file.read_bytes())}]}
+        compiler = source / 'sdk/10.0.300/Roslyn/bincore/csc.dll'
+        compiler.parent.mkdir(parents=True)
+        compiler.write_bytes(b'synthetic compiler')
+        resolved = {'Properties': {'MSBuildToolsPath': str(compiler.parents[2]), 'NETCoreSdkVersion': '10.0.300',
+            'RuntimeIdentifier': runtime}, 'Items': {'Analyzer': [], 'Compile': [{'FullPath': str(source / generated)}],
+            'ResolvedFrameworkReference': [{'Identity': 'Microsoft.NETCore.App', 'TargetingPackName': 'Microsoft.NETCore.App.Ref',
+                'TargetingPackVersion': '10.0.8', 'TargetingPackPath': str(source / 'packs/10.0.8')}]}}
+        checksum = maintenance.digest(b'synthetic generated source')
+        document = {'path': generated, 'algorithm': 'sha256', 'checksum': checksum, 'embedded_checksum': checksum}
+        return source, policy, document, archive, tool, assets, resolved
+
+    def capture_core_swagger(self, source, row, policy, resolved):
+        """Exercise the maintenance adapter with the unchanged shared capture implementation."""
+        evidence = maintenance.capture_compiler_evidence(source, policy, 'net10.0', resolved,
+            {'source_commit': row['commit'], ('compile_input_paths', row['commit']): set(),
+             'archive_inspector': Path('/fixture-inspector.dll')},
+            physical_families=maintenance.physical_families(row, policy, 'net10.0'))
+        policy['framework_properties']['net10.0']['compiler_evidence'] = evidence
+        return evidence
+
+    def test_original_core_swagger_captures_and_verifies_exact_resolved_producer(self):
+        for row in self.core_hint_sources():
+            for runtime in ('', 'linux-x64'):
+                with self.subTest(line=row['line'], kind=row['kind'], runtime=runtime):
+                    source, policy, document, archive, tool, _, resolved = self.core_swagger_fixture(row, runtime=runtime)
+                    evidence = self.capture_core_swagger(source, row, policy, resolved)
+                    self.assertEqual(evidence['compiler_sha256'], maintenance.digest(b'synthetic compiler'))
+                    self.assertEqual(evidence['compile_inputs'], [{'path': document['path'], 'tracked': False}])
+                    actual = maintenance.verify_non_git_document(document, document['path'], source, row, policy, 'net10.0', {})
+                    self.assertEqual(actual['family'], 'swagger')
+                    producer = actual['producer']
+                    self.assertEqual((producer['package_id'], producer['package_version']), ('FastEndpoints.Swagger', '8.2.0'))
+                    self.assertEqual(producer['archive_sha256'], maintenance.digest(archive.read_bytes()))
+                    self.assertEqual(producer['content_sha256'], maintenance.digest(tool.read_bytes()))
+                    self.assertEqual(producer['nuget_content_hash'], producer['restore_sha512'])
+                    self.assertEqual(producer['checked_archive_contents'], {producer['archive_entry']: producer['content_sha256']})
+                    self.assertNotIn(str(source), json.dumps(actual))
+
+    def test_original_core_swagger_preserves_signed_nuget_content_hash_join(self):
+        row = self.core_hint_sources()[1]
+        source, policy, document, archive, tool, assets, resolved = self.core_swagger_fixture(row)
+        with zipfile.ZipFile(archive, 'w') as contents:
+            contents.writestr(consolidated.PHYSICAL_GENERATORS['swagger'][1], tool.read_bytes())
+            contents.writestr('.signature.p7s', b'synthetic signature')
+        content_hash = base64.b64encode(hashlib.sha512(b'synthetic native NuGet content hash').digest()).decode()
+        assets['libraries']['FastEndpoints.Swagger/8.2.0']['sha512'] = content_hash
+        assets_file = source / 'project.assets.json'
+        assets_file.write_text(json.dumps(assets))
+        policy['restore_assets'][0]['sha256'] = maintenance.digest(assets_file.read_bytes())
+        inspected = {'signed': True, 'archive_sha256': maintenance.digest(archive.read_bytes()), 'content_hash': content_hash}
+        with patch.object(consolidated, 'run', return_value=json.dumps(inspected)) as inspector:
+            self.capture_core_swagger(source, row, policy, resolved)
+            actual = maintenance.verify_non_git_document(document, document['path'], source, row, policy, 'net10.0',
+                {'archive_inspector': Path('/fixture-inspector.dll')})
+        self.assertEqual(inspector.call_count, 2)
+        self.assertEqual(actual['producer']['restore_sha512'], content_hash)
+        self.assertEqual(actual['producer']['nuget_content_hash'], content_hash)
+        self.assertTrue(actual['producer']['signed'])
+
+    def test_original_core_swagger_rejects_wrong_restore_target_or_changed_producer(self):
+        row = self.core_hint_sources()[1]
+        for mutation in ('wrong-framework', 'wrong-runtime', 'wrong-package', 'unrestored-version', 'ambiguous-version',
+                         'restore-hash', 'tool', 'archive', 'assets', 'record-version', 'missing-evidence', 'source', 'embedded'):
+            with self.subTest(mutation=mutation):
+                source, policy, document, archive, tool, assets, resolved = self.core_swagger_fixture(row)
+                if mutation in ('wrong-framework', 'wrong-runtime', 'wrong-package', 'unrestored-version', 'ambiguous-version', 'restore-hash'):
+                    if mutation == 'wrong-framework':
+                        assets['targets']['net9.0'] = assets['targets'].pop('net10.0')
+                    elif mutation == 'wrong-runtime':
+                        resolved['Properties']['RuntimeIdentifier'] = 'linux-x64'
+                    elif mutation == 'wrong-package':
+                        assets['targets']['net10.0'] = {'Other/8.2.0': {'type': 'package'}}
+                    elif mutation == 'unrestored-version':
+                        assets['targets']['net10.0'] = {'FastEndpoints.Swagger/99.0.0': {'type': 'package'}}
+                    elif mutation == 'ambiguous-version':
+                        assets['targets']['net10.0']['FastEndpoints.Swagger/99.0.0'] = {'type': 'package'}
+                    else:
+                        assets['libraries']['FastEndpoints.Swagger/8.2.0']['sha512'] = 'changed'
+                    assets_file = source / 'project.assets.json'
+                    assets_file.write_text(json.dumps(assets))
+                    policy['restore_assets'][0]['sha256'] = maintenance.digest(assets_file.read_bytes())
+                    if mutation == 'wrong-package':
+                        # Shared capture permits absent Swagger on package trains without a target;
+                        # an actual Swagger document must still have exact producer evidence.
+                        self.capture_core_swagger(source, row, policy, resolved)
+                    else:
+                        with self.assertRaises(ValueError):
+                            self.capture_core_swagger(source, row, policy, resolved)
+                        continue
+                else:
+                    evidence = self.capture_core_swagger(source, row, policy, resolved)
+                    if mutation == 'tool':
+                        tool.write_bytes(b'changed target')
+                    elif mutation == 'archive':
+                        archive.write_bytes(b'changed archive')
+                    elif mutation == 'assets':
+                        (source / 'project.assets.json').write_text('{}')
+                    elif mutation == 'record-version':
+                        evidence['tools']['swagger']['package_version'] = '99.0.0'
+                    elif mutation == 'missing-evidence':
+                        evidence['tools'].clear()
+                    elif mutation == 'source':
+                        policy['source_commit'] = '0' * 40
+                    else:
+                        document['embedded_checksum'] = '0' * 64
+                with self.assertRaisesRegex(ValueError, '^Source producer evidence rejected$'):
+                    maintenance.verify_non_git_document(document, document['path'], source, row, policy, 'net10.0', {})
 
     def test_known_generated_families_still_require_actual_producer_verification(self):
         policy = {'id': 'Fixture', 'project': 'src/Fixture/Fixture.csproj', 'source_commit': self.row['commit'],
@@ -380,11 +848,15 @@ class MaintenanceContracts(unittest.TestCase):
                 self.assertEqual(result['family'], family)
                 self.assertEqual(verifier.call_args.args[3], family)
 
-    def test_metadata_stage_binds_restore_and_retains_only_public_projection(self):
+    def metadata_stage_fixture(self, *, identifier='Fixture', project='Fixture.csproj', frameworks=('net8.0',)):
+        """Create isolated package metadata and a mock MSBuild executor that records inputs."""
         source = self.root / 'source'; source.mkdir()
-        (source / 'Fixture.csproj').write_text('<Project Sdk="Microsoft.NET.Sdk" />')
+        (source / 'NuGet.Config').write_text('<configuration />')
+        project_file = source / project
+        project_file.parent.mkdir(parents=True, exist_ok=True)
+        project_file.write_text('<Project Sdk="Microsoft.NET.Sdk" />')
         assets = source / 'obj/project.assets.json'; assets.parent.mkdir(); assets.write_text('{}')
-        policy = {'id': 'Fixture', 'project': 'Fixture.csproj', 'symbols': True, 'frameworks': ['net8.0']}
+        policy = {'id': identifier, 'project': project, 'symbols': True, 'frameworks': list(frameworks)}
         evidence = {'sdk_version': '10.0.300', 'compiler_sha256': 'c' * 64, 'sdk_root': '/private-secret/sdk',
                     'compile_inputs': [{'path': '/private-secret/compile'}], 'tools': {'refit': {
                         'kind': 'nuget', 'package_id': 'Refit', 'package_version': '9.0.2',
@@ -399,12 +871,32 @@ class MaintenanceContracts(unittest.TestCase):
             if '-target:_GetRestoreProjectStyle;GenerateNuspec' in command:
                 destination = Path(next(arg.split('=', 1)[1] for arg in command if arg.startswith('-p:NuspecOutputPath=')))
                 for suffix in ['', '.symbols']:
-                    (destination / ('Fixture.3.8.4-proof.42.1' + suffix + '.nuspec')).write_text(
-                        '<package><metadata><id>Fixture</id><dependencies><group targetFramework="net8.0" /></dependencies>'
+                    (destination / (identifier + '.3.8.4-proof.42.1' + suffix + '.nuspec')).write_text(
+                        '<package><metadata><id>' + identifier + '</id><dependencies>' +
+                        ''.join('<group targetFramework="' + framework + '" />' for framework in frameworks) + '</dependencies>'
                         '<frameworkReferences><group targetFramework="net8.0">'
                         '<frameworkReference name="Microsoft.AspNetCore.App" /></group></frameworkReferences></metadata></package>')
                 return ''
-            return json.dumps({'Properties': {'ProjectAssetsFile': str(assets)}, 'Items': {}})
+            return json.dumps({'Properties': {'ProjectAssetsFile': str(assets), 'GenerateElsaPackageManifest': '',
+                'ElsaPackageManifestIncludeInPackage': '', 'ElsaPackageManifestPackagePath': '',
+                'AssemblyVersion': '1.0.0.0', 'InformationalVersion': '1.0.0'}, 'Items': {}})
+        return source, policy, evidence, commands, execute
+
+    def test_original_core_metadata_stage_captures_swagger_only_for_net10(self):
+        row = self.core_hint_sources()[1]
+        source, policy, evidence, _, execute = self.metadata_stage_fixture(identifier='Elsa.Api.Common',
+            project='src/common/Elsa.Api.Common/Elsa.Api.Common.csproj', frameworks=('net8.0', 'net9.0', 'net10.0'))
+        with patch.object(maintenance, 'run', side_effect=execute), \
+             patch.object(maintenance, 'capture_compiler_evidence', return_value=evidence) as captured, \
+             patch.object(maintenance, 'capture_sdk_assets', return_value=[]):
+            maintenance.stage_maintenance_metadata(source, row, [policy], '3.8.4-proof.42.1', Path('/inspector'))
+        self.assertEqual([(call.args[2], call.kwargs['physical_families']) for call in captured.call_args_list],
+            [('net8.0', ()), ('net9.0', ()), ('net10.0',
+                consolidated.PHYSICAL_GENERATED_PROJECTS[('Elsa.Api.Common', 'core/' + policy['project'])])])
+
+    def test_metadata_stage_binds_restore_and_retains_only_public_projection(self):
+        """Verify metadata stage binds restore and retains only public projection."""
+        source, policy, evidence, commands, execute = self.metadata_stage_fixture()
         with patch.dict(os.environ, {'GH_TOKEN': 'private-secret'}), patch.object(maintenance, 'run', side_effect=execute), \
              patch.object(maintenance, 'capture_compiler_evidence', return_value=evidence) as captured:
             maintenance.stage_maintenance_metadata(source, self.row, [policy], '3.8.4-proof.42.1', Path('/inspector'))
@@ -420,6 +912,138 @@ class MaintenanceContracts(unittest.TestCase):
         self.assertEqual(retained[0]['restore_inputs'][0]['sha256'], hashlib.sha256(b'{}').hexdigest())
         self.assertNotIn('private-secret', json.dumps(retained))
         self.assertNotIn(str(source), json.dumps(retained))
+        self.assertEqual(list(source.glob('maintenance-metadata-*')), [])
+
+    def test_metadata_json_failure_is_private_and_cleans_original_stage(self):
+        """Verify metadata JSON failure is private and cleans original stage."""
+        source, policy, evidence, commands, execute = self.metadata_stage_fixture()
+        diagnostics = self.root / 'proof-sdk-metadata/sdk-metadata-diagnostics'
+        actual_stage = maintenance.stage_maintenance_metadata
+        private = '/private-secret/sdk-output token=secret-value'
+        nuspecs = {}
+        def malformed(command, *args, **kwargs):
+            if '-getItem:Analyzer,ResolvedFrameworkReference,Compile' in command:
+                return private
+            stdout = execute(command, *args, **kwargs)
+            if '-target:_GetRestoreProjectStyle;GenerateNuspec' in command:
+                destination = Path(next(arg.split('=', 1)[1] for arg in command if arg.startswith('-p:NuspecOutputPath=')))
+                nuspecs.update({path.name + '.txt': path.read_bytes() for path in destination.glob('*.nuspec')})
+            return stdout
+        def stage():
+            with patch.object(maintenance, 'run', side_effect=malformed):
+                actual_stage(source, self.row, [policy], '3.8.4-proof.42.1',
+                    Path('/inspector'), diagnostics=diagnostics)
+        output = self.prepare_inventory_fixture('sdk-metadata', metadata_stage=stage)
+        failure = (diagnostics / 'failure.txt').read_text()
+        command = (diagnostics / 'command-0003.txt').read_text()
+        self.assertIn('JSONDecodeError', failure)
+        self.assertIn('"package": "Fixture"', failure)
+        self.assertIn('"framework": "net8.0"', failure)
+        self.assertIn('"operation": "compiler-metadata"', failure)
+        self.assertIn(private, command)
+        self.assertIn('-p:TargetFramework=net8.0', command)
+        self.assertEqual(len(nuspecs), 2)
+        self.assertEqual({path.name: path.read_bytes() for path in (diagnostics / '0').glob('*.nuspec.txt')}, nuspecs)
+        self.assertEqual(list(source.glob('maintenance-metadata-*')), [])
+        receipt = json.loads((output / 'receipt.json').read_text())
+        self.assertEqual(receipt['error'], {'code': 'sdk-metadata-failed', 'reason': 'unknown-check-failure'})
+        self.assertFalse(receipt['success'])
+        for value in ('private-secret', 'secret-value', 'sdk-metadata-diagnostics'):
+            self.assertNotIn(value, json.dumps(receipt))
+        self.assertEqual(list(output.glob('*.txt')), [])
+
+    def test_metadata_cleanup_failure_is_recorded_without_bypassing_cleanup(self):
+        """Verify metadata cleanup failure is recorded without bypassing cleanup."""
+        source, policy, evidence, commands, execute = self.metadata_stage_fixture()
+        diagnostics = self.root / 'sdk-diagnostics'
+        original = tempfile.TemporaryDirectory
+        error = OSError('/private-secret/cleanup-failure')
+        class CleanupFailure:
+            def __init__(self, **kwargs):
+                self.temporary = original(**kwargs)
+            def __enter__(self):
+                return self.temporary.__enter__()
+            def __exit__(self, *args):
+                self.temporary.__exit__(*args)
+                raise error
+        with patch.object(maintenance.tempfile, 'TemporaryDirectory', CleanupFailure), \
+             patch.object(maintenance, 'run', side_effect=execute), \
+             patch.object(maintenance, 'capture_compiler_evidence', return_value=evidence):
+            with self.assertRaises(OSError) as caught:
+                maintenance.stage_maintenance_metadata(source, self.row, [policy], '3.8.4-proof.42.1',
+                    Path('/inspector'), diagnostics=diagnostics)
+        self.assertIs(caught.exception, error)
+        self.assertEqual(list(source.glob('maintenance-metadata-*')), [])
+        failure = (diagnostics / 'failure.txt').read_text()
+        self.assertIn('temporary-cleanup', failure)
+        self.assertIn('/private-secret/cleanup-failure', failure)
+        self.assertEqual(maintenance.verification_reason(str(error)), 'unknown-check-failure')
+
+    def test_metadata_diagnostic_copy_rejects_symlink_and_preserves_command_failure(self):
+        """Verify metadata diagnostic copy rejects symlink and preserves command failure."""
+        source, policy, evidence, commands, execute = self.metadata_stage_fixture()
+        secret = self.root / 'outside.nuspec'; secret.write_text('outside-private-secret')
+        error = ValueError('/private-secret/original-command-failure')
+        for fails in (False, True):
+            with self.subTest(command_fails=fails):
+                diagnostics = self.root / ('sdk-diagnostics-' + str(fails))
+                def unsafe(command, *args, **kwargs):
+                    if '-target:_GetRestoreProjectStyle;GenerateNuspec' in command:
+                        destination = Path(next(arg.split('=', 1)[1] for arg in command if arg.startswith('-p:NuspecOutputPath=')))
+                        (destination / 'outside.nuspec').symlink_to(secret)
+                        if fails:
+                            raise error
+                        return ''
+                    return execute(command, *args, **kwargs)
+                with patch.object(maintenance, 'run', side_effect=unsafe):
+                    with self.assertRaises(ValueError) as caught:
+                        maintenance.stage_maintenance_metadata(source, self.row, [policy], '3.8.4-proof.42.1',
+                            Path('/inspector'), diagnostics=diagnostics)
+                if fails:
+                    self.assertIs(caught.exception, error)
+                else:
+                    self.assertEqual(str(caught.exception), 'Invalid staged nuspec diagnostic input')
+                self.assertEqual(list(diagnostics.rglob('*.nuspec.txt')), [])
+                self.assertEqual(list(source.glob('maintenance-metadata-*')), [])
+
+    def test_metadata_failure_record_io_cannot_replace_original_exception(self):
+        """Verify metadata failure record I/O cannot replace original exception."""
+        source, policy, evidence, commands, execute = self.metadata_stage_fixture()
+        diagnostics = self.root / 'sdk-diagnostics'
+        error = ValueError('/private-secret/original-command-failure')
+        original = Path.write_text
+        def write(path, *args, **kwargs):
+            if path.name == 'failure.txt':
+                raise OSError('/private-secret/secondary-diagnostic-failure')
+            return original(path, *args, **kwargs)
+        with patch.object(maintenance, 'run', side_effect=error), patch.object(Path, 'write_text', write):
+            with self.assertRaises(ValueError) as caught:
+                maintenance.stage_maintenance_metadata(source, self.row, [policy], '3.8.4-proof.42.1',
+                    Path('/inspector'), diagnostics=diagnostics)
+        self.assertIs(caught.exception, error)
+        self.assertEqual(list(source.glob('maintenance-metadata-*')), [])
+        self.assertEqual(maintenance.verification_reason(str(error)), 'unknown-check-failure')
+
+    def test_metadata_package_advance_clears_previous_framework(self):
+        """Verify metadata package advance clears previous framework."""
+        source, policy, evidence, commands, execute = self.metadata_stage_fixture()
+        diagnostics = self.root / 'sdk-diagnostics'
+        error = ValueError('/private-secret/next-package-failure')
+        def next_package(command, *args, **kwargs):
+            if '-getProperty:ProjectAssetsFile' in command and len(commands) == 3:
+                raise error
+            return execute(command, *args, **kwargs)
+        second = dict(policy, id='Second')
+        with patch.object(maintenance, 'run', side_effect=next_package), \
+             patch.object(maintenance, 'capture_compiler_evidence', return_value=evidence):
+            with self.assertRaises(ValueError) as caught:
+                maintenance.stage_maintenance_metadata(source, self.row, [policy, second], '3.8.4-proof.42.1',
+                    Path('/inspector'), diagnostics=diagnostics)
+        self.assertIs(caught.exception, error)
+        failure = (diagnostics / 'failure.txt').read_text()
+        self.assertIn('"package": "Second"', failure)
+        self.assertIn('"framework": null', failure)
+        self.assertIn('"operation": "restore-input"', failure)
         self.assertEqual(list(source.glob('maintenance-metadata-*')), [])
 
     def test_proof_embedding_property_is_fixed_in_environment_and_studio_commands(self):
@@ -732,7 +1356,9 @@ class MaintenanceContracts(unittest.TestCase):
                 maintenance.verify_documents(details | {'source_link': {'documents': maps}}, maintenance.ROOT, self.row)
 
     def test_inventory_records_explicit_source_build_output_and_assembly_identity(self):
+        """Verify inventory records explicit source build output and assembly identity."""
         source = self.root / 'source'; source.mkdir()
+        (source / 'NuGet.Config').write_text('<configuration />')
         (source / 'Elsa.Studio.sln').write_text('Project("{fixture}") = "Fixture", "Fixture.csproj", "{fixture}"\n')
         values = {'IsPackable': 'true', 'IsTestProject': 'true', 'AssemblyName': 'Evaluated.Assembly',
                   'PackageId': 'Elsa.Studio.Fixture', 'PackageVersion': '3.8.4-proof.42.1',
@@ -751,6 +1377,45 @@ class MaintenanceContracts(unittest.TestCase):
             values['IncludeBuildOutput'] = ''
             with self.assertRaisesRegex(ValueError, 'not evaluated'):
                 maintenance.evaluate_inventory(source, self.row, '3.8.4-proof.42.1', self.root)
+
+    def test_package_focus_is_absent_before_next_archive_and_aggregate_checks(self):
+        policy = self.framework_reference_policy_fixture(symbols=False)
+        for case in ('complete', 'unknown-next-archive', 'missing-inventory', 'extra-file'):
+            with self.subTest(case=case):
+                artifacts = self.write_package_fixture()
+                inventory = [policy]
+                if case == 'unknown-next-archive':
+                    (artifacts / 'z-duplicate.nupkg').write_bytes((artifacts / 'fixture.nupkg').read_bytes())
+                elif case == 'missing-inventory':
+                    inventory = [policy, policy | {'id': 'Missing.Package'}]
+                elif case == 'extra-file':
+                    (artifacts / 'private-extra').write_text('private-canary')
+                context = {'package': 'Previous.Package', 'framework': 'net9.0'}
+                if case == 'complete':
+                    maintenance.verify_artifacts(artifacts, inventory, self.row, '3.8.4-proof.42.1',
+                        maintenance.ROOT, Path('/unused'), self.root, context=context)
+                else:
+                    with self.assertRaises(ValueError):
+                        maintenance.verify_artifacts(artifacts, inventory, self.row, '3.8.4-proof.42.1',
+                            maintenance.ROOT, Path('/unused'), self.root, context=context)
+                self.assertEqual({}, context)
+                for extra in ('z-duplicate.nupkg', 'private-extra'):
+                    (artifacts / extra).unlink(missing_ok=True)
+
+    def test_manifest_failure_focus_clears_previous_package_framework_and_reason_is_closed(self):
+        """Verify manifest failure focus clears previous package framework and reason is closed."""
+        artifacts = self.write_package_fixture()
+        policy = self.framework_reference_policy_fixture()
+        policy['framework_properties'] = {'net8.0': {'manifest_required': True, 'manifest_path': 'elsa-package.json'}}
+        with zipfile.ZipFile(artifacts / 'fixture.nupkg', 'a') as archive:
+            archive.writestr('elsa-package.json', json.dumps({'package': {'id': policy['id'], 'version': '1.0.0'}}))
+        context = {'package': 'Previous.Package', 'framework': 'net9.0'}
+        with patch.object(maintenance, 'verify_sdk_dependencies'), patch.object(maintenance, 'verify_sdk_assets'):
+            with self.assertRaisesRegex(ValueError, 'Generated package manifest identity/version mismatch') as failure:
+                maintenance.verify_artifacts(artifacts, [policy], self.row | {'product': 'extensions'},
+                    '3.8.4-proof.42.1', self.root, Path('unused-inspector'), self.root, context=context)
+        self.assertEqual({'package': policy['id']}, context)
+        self.assertEqual('package-manifest-identity-version-mismatch', maintenance.verification_reason(str(failure.exception)))
 
     def write_package_fixture(self, dependency='3.8.4', packed_version='3.8.4-proof.42.1', frameworks=(), groups=None,
                               references='', symbol_references=None):
@@ -935,6 +1600,7 @@ class MaintenanceContracts(unittest.TestCase):
             maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT, Path('/unused'), self.root)
 
     def test_every_evaluated_framework_requires_its_named_assembly_and_verified_symbols(self):
+        """Verify every evaluated framework requires its named assembly and verified symbols."""
         frameworks = ['net8.0', 'net9.0']
         artifacts = self.write_package_fixture(frameworks=frameworks)
         version = '3.8.4-proof.42.1'
@@ -963,15 +1629,27 @@ class MaintenanceContracts(unittest.TestCase):
                     'stamp': 1, 'checksum_algorithm': 'SHA256', 'declared_checksum': 'fixture-checksum',
                     'normalized_checksum': 'fixture-checksum', 'pdb_sha256': hashlib.sha256(symbols).hexdigest(),
                     'pdb_size': len(symbols)}})
+        context = {}
         with patch.object(maintenance, 'run', side_effect=inspect):
-            receipt = maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT, Path('/inspector'), self.root)
+            receipt = maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT,
+                Path('/inspector'), self.root, context=context)
+        self.assertEqual({}, context)
         self.assertEqual(inspected, frameworks)
         self.assertEqual(receipt[0]['frameworks'], frameworks)
         self.assertEqual([symbol['assembly'] for symbol in receipt[0]['symbols']],
                          ['lib/net8.0/Elsa.Studio.Fixture.dll', 'lib/net9.0/Elsa.Studio.Fixture.dll'])
         self.assertTrue(all(symbol['documents'][0]['source'] == 'original-git' for symbol in receipt[0]['symbols']))
+
+        with patch.object(maintenance, 'run', side_effect=inspect), patch.object(maintenance, 'verify_documents',
+                side_effect=[[{'fixture': True}], ValueError('injected framework failure')]):
+            with self.assertRaisesRegex(ValueError, 'injected framework failure'):
+                maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT,
+                    Path('/inspector'), self.root, context=context)
+        self.assertEqual({'package': policy[0]['id'], 'framework': 'net9.0'}, context)
+
         # SDK-evaluated resource satellites have exact emitted bytes but no primary-style PDB.
         source = self.root / 'source'; source.mkdir()
+        (source / 'NuGet.Config').write_text('<configuration />')
         subprocess.run(['git', 'init', '-q'], cwd=source, check=True)
         objects = Path(maintenance.git(maintenance.ROOT, 'rev-parse', '--path-format=absolute', '--git-common-dir')) / 'objects'
         (source / '.git/objects/info/alternates').write_text(str(objects) + '\n')
@@ -1096,6 +1774,9 @@ class MaintenanceContracts(unittest.TestCase):
         self.assertEqual(outcome, {'status': 'start-failed', 'exit_code': None})
 
     def test_verification_receipt_maps_only_known_static_reasons_and_hides_private_exceptions(self):
+        """Verify verification receipt maps only known static reasons and hides private
+        exceptions.
+        """
         for index, (message, expected) in enumerate([
                 ('Packed repository provenance mismatch', 'package-repository-mismatch'),
                 ('Tracked source checksum mismatch', 'source-checksum-mismatch'),
@@ -1104,6 +1785,8 @@ class MaintenanceContracts(unittest.TestCase):
                 ('Unexpected Elsa dependency: private-secret /private/runner-host', 'elsa-dependency-mismatch'),
                 ('Unexpected Elsa dependency suffix: private-secret', 'unknown-check-failure'),
                 ('Command failed: Unexpected Elsa dependency: private-secret', 'unknown-check-failure'),
+                ('Generated package manifest identity/version mismatch: private-package-id', 'package-manifest-identity-version-mismatch'),
+                ('Generated package manifest identity/version mismatch suffix: private-secret', 'unknown-check-failure'),
                 ('secret-password /private/runner-host-42', 'unknown-check-failure')]):
             output = self.root / f'proof-{index}'
             with patch.object(maintenance, 'verify_source', side_effect=ValueError(message)):
@@ -1116,6 +1799,9 @@ class MaintenanceContracts(unittest.TestCase):
 
 
     def test_core_package_and_assembly_metadata_bind_preserved_recipe_and_exact_selected_commit(self):
+        """Verify Core package and assembly metadata bind preserved recipe and exact selected
+        commit.
+        """
         for candidate in maintenance.load_candidates()['candidates']:
             with self.subTest(product=candidate['product'], line=candidate['line']):
                 original = next(row for row in self.register['sources'] if row['commit'] == candidate['original_commit'])
@@ -1128,6 +1814,9 @@ class MaintenanceContracts(unittest.TestCase):
                 artifacts = packages()
                 policy = [{'id': 'Elsa.Studio.Fixture', 'assembly_name': 'Elsa.Studio.Fixture', 'frameworks': ['net8.0'],
                            'include_build_output': True, 'symbols': True, 'satellites': [],
+                           'expected_sdk_assets': [{'path': 'build/Fixture.targets', 'source_path': 'Fixture.targets',
+                               'sha256': hashlib.sha256(b'<Project/>').hexdigest()}], 'framework_properties': {
+                               'net8.0': {'manifest_required': False, 'manifest_path': ''}},
                            **self.sdk_dependency_fixture(self.row['dependency_version'])}]
                 prefix = f"https://raw.githubusercontent.com/{self.row['source_repository']}/{self.row['commit']}/"
                 informational_prefix = version if candidate['product'] == 'studio' else '1.0.0'
@@ -1156,13 +1845,15 @@ class MaintenanceContracts(unittest.TestCase):
                                                          Path('/inspector'), self.root)
                     details['informational_version'] = informational_prefix + '+' + self.row['commit']
                     for symbols in (False, True):
-                        for field in ('commit', 'version'):
+                        for field in ('commit', 'version', 'url'):
                             packages()
                             path = artifacts / ('fixture.snupkg' if symbols else 'fixture.nupkg')
                             with zipfile.ZipFile(path) as archive:
                                 entries = {name: archive.read(name) for name in archive.namelist()}
-                            before = self.row['commit'] if field == 'commit' else version
-                            after = 'a' * 40 if field == 'commit' else '99.0.0-proof.42.1'
+                            before = {'commit': self.row['commit'], 'version': version,
+                                      'url': 'https://github.com/' + self.row['source_repository']}[field]
+                            after = {'commit': 'a' * 40, 'version': '99.0.0-proof.42.1',
+                                     'url': 'https://example.invalid/repository'}[field]
                             entries['fixture.nuspec'] = entries['fixture.nuspec'].replace(before.encode(), after.encode())
                             with zipfile.ZipFile(path, 'w') as archive:
                                 for name, data in entries.items():
@@ -1171,6 +1862,236 @@ class MaintenanceContracts(unittest.TestCase):
                                     self.assertRaisesRegex(ValueError, 'repository provenance|Symbol metadata|Packed version|Symbol identity'):
                                 maintenance.verify_artifacts(artifacts, policy, self.row, version, maintenance.ROOT,
                                                              Path('/inspector'), self.root)
+
+
+class InventoryDiagnosticsTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name)
+        self.output = self.root / 'proof'
+        self.row = next(row for row in maintenance.load_register()['sources']
+                        if row['product'] == 'studio' and row['line'] == '3.8')
+        self.version = '3.8.4-proof.42.1'
+        self.config = b'<configuration />'
+        self.plan = {'consumer_feed_policy': {'config_sha256': maintenance.digest(self.config)}}
+        self.properties = {'IsPackable': 'true', 'IsTestProject': 'true', 'AssemblyName': 'Fixture',
+                           'PackageId': 'Elsa.Studio.Fixture', 'PackageVersion': self.version,
+                           'TargetFrameworks': 'net8.0', 'TargetFramework': '', 'IncludeSymbols': 'true',
+                           'IncludeBuildOutput': 'true'}
+        self.failure = subprocess.TimeoutExpired(['dotnet', '/private/secret'], 300,
+                                                output='secret stdout', stderr='secret stderr')
+        self.source = self.root / 'source'
+        self.source.mkdir()
+        self.checkout(self.source, 'checkout')
+
+    def checkout(self, source, *args, **kwargs):
+        if args[:1] == ('checkout',):
+            (source / 'NuGet.Config').write_bytes(self.config)
+            (source / 'Elsa.Studio.sln').write_text(
+                'Project("{fixture}") = "Build", "build/_build.csproj", "{fixture}"\n'
+                'Project("{fixture}") = "Fixture", "src/Fixture.csproj", "{fixture}"\n')
+        return 'd' * 40
+
+    def prepare_failure(self, execute, *, inventory=None, same_error=True, legacy=False):
+        def build(command, source, log, record, **kwargs):
+            record.update(success=True, process={'status': 'exited', 'exit_code': 0})
+
+        with ExitStack() as stack:
+            for name, options in {
+                'git': {'side_effect': self.checkout}, 'git_bytes': {'return_value': self.config},
+                'verify_source': {}, 'inspect_toolchain': {'return_value': {'dotnet': ['10.0.300']}},
+                'recipes': {'return_value': [('.', ['./build.sh', 'Compile+Test+Pack'])]},
+                'run_build_command': {'side_effect': build}, 'run': {'side_effect': execute},
+            }.items():
+                stack.enter_context(patch.object(maintenance, name, **options))
+            if inventory is not None:
+                stack.enter_context(patch.object(maintenance, 'evaluate_inventory', side_effect=inventory))
+            with self.assertRaises(type(self.failure)) as caught:
+                maintenance.prepare(maintenance.ROOT, self.row, self.version, self.output,
+                                    plan=None if legacy else self.plan)
+        if same_error:
+            self.assertIs(caught.exception, self.failure)
+        receipt = json.loads((self.output / 'receipt.json').read_text())
+        self.assertEqual(receipt['stage'], 'inventory')
+        self.assertFalse(receipt['success'])
+        if legacy:
+            self.assertEqual(receipt['focus'], {'step': 1, 'directory': '.'})
+            self.assertNotIn('inventory_diagnostics', receipt)
+        else:
+            self.assertNotIn('focus', receipt)
+        self.assertEqual(receipt['error'], {'code': 'inventory-failed', 'reason': 'unknown-check-failure'})
+        for private in ('secret', str(self.root), '/private/'):
+            self.assertNotIn(private, json.dumps(receipt))
+        return receipt if legacy else receipt['inventory_diagnostics']
+
+    def metadata_result(self, command, source, **kwargs):
+        if kwargs.get('outcome') is not None:
+            kwargs['outcome'].update(status='exited', exit_code=0)
+        if '-target:SatelliteDllsProjectOutputGroup' in command:
+            return json.dumps({'Items': {'SatelliteDllsProjectOutputGroupOutput': []}})
+        values = self.properties
+        if command[2] == 'build/_build.csproj':
+            values = values | {'IsPackable': 'false', 'IsTestProject': 'false'}
+        return json.dumps({'Properties': values})
+
+    def timeout(self, command, source, **kwargs):
+        self.assertNotIn('timeout', kwargs)
+        if kwargs.get('outcome') is not None:
+            kwargs['outcome'].update(status='timed-out', exit_code=-9)
+        raise self.failure
+
+    def test_property_timeout_retains_private_command_focus_and_original_failure(self):
+        context = self.prepare_failure(self.timeout)
+        self.assertEqual(context['exception_kind'], 'timeout')
+        self.assertEqual(context['status'], 'observed')
+        self.assertEqual(context['phase'], 'project-properties')
+        self.assertEqual(context['operation'], 'execute')
+        self.assertEqual(context['command_count'], 1)
+        command = context['command']
+        self.assertEqual({key: value for key, value in command.items() if key != 'elapsed_seconds'},
+                         {'project': 'build/_build.csproj', 'framework': None,
+                          'timeout_seconds': 300, 'process': {'status': 'timed-out', 'exit_code': -9}})
+        self.assertGreaterEqual(command['elapsed_seconds'], 0)
+
+    def test_satellite_failure_replaces_property_focus_and_retains_process_exit(self):
+        self.failure = ValueError('/private/secret command failure')
+
+        def execute(command, source, **kwargs):
+            if '-target:SatelliteDllsProjectOutputGroup' in command:
+                kwargs['outcome'].update(status='exited', exit_code=7)
+                raise self.failure
+            return self.metadata_result(command, source, **kwargs)
+
+        context = self.prepare_failure(execute)
+        self.assertEqual(context['command_count'], 3)
+        self.assertEqual(context['phase'], 'satellite-output-group')
+        self.assertEqual(context['operation'], 'execute')
+        self.assertEqual(context['exception_kind'], 'validation')
+        self.assertEqual(context['command']['project'], 'src/Fixture.csproj')
+        self.assertEqual(context['command']['framework'], 'net8.0')
+        self.assertEqual(context['command']['process'], {'status': 'exited', 'exit_code': 7})
+        self.assertEqual(set(context), {'command_count', 'status', 'phase', 'operation', 'command', 'exception_kind'})
+
+    def test_successful_command_followed_by_invalid_json_retains_decode_operation(self):
+        self.failure = json.JSONDecodeError('/private/secret decode failure', 'secret output', 0)
+
+        def execute(command, source, **kwargs):
+            result = self.metadata_result(command, source, **kwargs)
+            return 'secret invalid JSON' if command[2] == 'src/Fixture.csproj' else result
+
+        context = self.prepare_failure(execute, same_error=False)
+        self.assertEqual(context['command_count'], 2)
+        self.assertEqual(context['exception_kind'], 'json-decode')
+        self.assertEqual(context['operation'], 'decode')
+        self.assertEqual(context['phase'], 'project-properties')
+        self.assertEqual(context['command']['process'], {'status': 'exited', 'exit_code': 0})
+
+    def test_successful_query_followed_by_policy_rejection_retains_validation_operation(self):
+        self.failure = ValueError('Build-output policy was not evaluated')
+        self.properties['IncludeBuildOutput'] = ''
+        context = self.prepare_failure(self.metadata_result, same_error=False)
+        self.assertEqual(context['exception_kind'], 'validation')
+        self.assertEqual(context['operation'], 'validate')
+        self.assertEqual(context['phase'], 'project-properties')
+        self.assertEqual(context['command_count'], 2)
+        self.assertEqual(context['command']['process'], {'status': 'exited', 'exit_code': 0})
+
+    def test_failure_without_command_context_is_explicitly_unavailable(self):
+        self.failure = OSError('/private/secret before a command')
+        context = self.prepare_failure(None, inventory=self.failure)
+        self.assertEqual(context, {'status': 'unavailable', 'exception_kind': 'io'})
+
+    def test_legacy_receipt_keeps_existing_fields_without_private_inventory_context(self):
+        self.prepare_failure(self.timeout, legacy=True)
+
+    def test_post_evaluation_write_failure_keeps_context_without_previous_query_focus(self):
+        self.failure = OSError('/private/secret inventory write failure')
+
+        def inventory(source, row, version, output, *, context):
+            context.update(status='observed', phase='project-properties', operation='validate', command_count=4,
+                           command={'project': 'Previous.csproj', 'framework': 'net8.0'})
+            return []
+
+        original_write = maintenance.write_json
+        def write(path, value):
+            if path.name == 'evaluated-inventory.json':
+                raise self.failure
+            original_write(path, value)
+
+        with patch.object(maintenance, 'write_json', side_effect=write):
+            context = self.prepare_failure(None, inventory=inventory)
+        self.assertEqual(context, {'status': 'unavailable', 'phase': 'inventory-validation',
+                                   'operation': 'validate', 'command_count': 4, 'exception_kind': 'io'})
+
+    def test_unrecognized_command_identities_are_not_retained_as_raw_diagnostics(self):
+        for project in ('/private/secret.csproj', 'C:/private/secret.csproj', '../private/secret.csproj',
+                        'src/secret\x00.csproj', 'x' * 1025 + '.csproj'):
+            context = {}
+            with self.subTest(project=project[:40]), patch.object(maintenance, 'run', side_effect=self.timeout), \
+                    self.assertRaises(subprocess.TimeoutExpired):
+                maintenance.evaluate_satellites(self.source, project, '/private/secret-framework', 'Fixture',
+                                               self.version, self.row, context=context)
+            self.assertEqual(context['status'], 'incomplete')
+            self.assertNotIn('project', context['command'])
+            self.assertNotIn('framework', context['command'])
+            self.assertNotIn('secret', json.dumps(context))
+            self.assertLess(len(json.dumps(context)), 500)
+
+    def test_later_project_validation_clears_previous_query_focus(self):
+        solution = self.source / 'Elsa.Studio.sln'
+        solution.write_text(solution.read_text() +
+                            'Project("{fixture}") = "Unsafe", "../private/secret.csproj", "{fixture}"\n')
+        context = {}
+        with patch.object(maintenance, 'run', side_effect=self.metadata_result), \
+                self.assertRaisesRegex(ValueError, 'Unsafe solution project'):
+            maintenance.evaluate_inventory(self.source, self.row, self.version, self.root, context=context)
+        self.assertEqual(context, {'status': 'unavailable', 'phase': 'inventory-validation',
+                                   'operation': 'validate', 'command_count': 3})
+
+    def test_final_inventory_validation_does_not_retain_last_project_focus(self):
+        self.properties['IsPackable'] = 'false'
+        context = {}
+        with patch.object(maintenance, 'run', side_effect=self.metadata_result), \
+                self.assertRaisesRegex(ValueError, 'Empty/duplicate package inventory'):
+            maintenance.evaluate_inventory(self.source, self.row, self.version, self.root, context=context)
+        self.assertEqual(context, {'status': 'unavailable', 'phase': 'inventory-validation',
+                                   'operation': 'validate', 'command_count': 2})
+
+    def test_satellite_validation_retains_only_current_framework(self):
+        self.properties['TargetFrameworks'] = 'net8.0;net9.0'
+        self.failure = ValueError('Unexpected evaluated satellite identity')
+
+        def execute(command, source, **kwargs):
+            result = self.metadata_result(command, source, **kwargs)
+            if '-p:TargetFramework=net9.0' in command:
+                return json.dumps({'Items': {'SatelliteDllsProjectOutputGroupOutput': [
+                    {'Culture': '/private/secret', 'TargetPath': 'secret.dll'}]}})
+            return result
+
+        context = self.prepare_failure(execute, same_error=False)
+        self.assertEqual(context['operation'], 'validate')
+        self.assertEqual(context['phase'], 'satellite-output-group')
+        self.assertEqual(context['command_count'], 4)
+        self.assertEqual(context['command']['framework'], 'net9.0')
+        self.assertNotIn('net8.0', json.dumps(context))
+
+    def test_optional_context_preserves_inventory_outputs_commands_and_environment(self):
+        calls, results = [], []
+        for context in (None, {}):
+            with patch.object(maintenance, 'run', side_effect=self.metadata_result) as runner:
+                results.append(maintenance.evaluate_inventory(
+                    self.source, self.row, self.version, self.root, context=context))
+            calls.append([(call.args, {key: value for key, value in call.kwargs.items() if key != 'outcome'})
+                          for call in runner.call_args_list])
+            if context is None:
+                self.assertTrue(all('outcome' not in call.kwargs for call in runner.call_args_list))
+                original_tests = (self.root / 'test-inventory.json').read_bytes()
+        self.assertEqual(results[0], results[1])
+        self.assertEqual(calls[0], calls[1])
+        self.assertEqual((self.root / 'test-inventory.json').read_bytes(), original_tests)
+        self.assertEqual(set(results[0][0]), {'id', 'project', 'assembly_name', 'include_build_output',
+                                             'frameworks', 'symbols', 'satellites'})
 
 
 class CoreCandidateContracts(unittest.TestCase):
@@ -1221,10 +2142,19 @@ class CoreCandidateContracts(unittest.TestCase):
             self.assertEqual(maintenance.selection(self.register, original['product'], original['line'],
                 original['commit'], original['dependency_version'] + '-proof.42.1'), original)
 
-    def test_all_four_registered_descendants_retain_exact_one_property_delta(self):
+    def test_four_metadata_descendants_and_four_exact_continuations_remain_exact(self):
+        """Verify four metadata descendants and four exact continuations remain exact."""
+        from historical_studio_npm_continuation import CONTINUATIONS
+        from extensions_manifest_continuation import CONTINUATIONS as EXTENSIONS
+        from extensions_mysql_continuation import load_contract
+        MYSQL = {item['commit']: item for source in load_contract()['sources'].values() for item in source['chain']}
         descendants = [row for row in self.candidates['candidates'] if row['kind'] == 'maintenance']
-        self.assertEqual(len(descendants), 4)
-        for candidate in descendants:
+        self.assertEqual(len(descendants), 18)
+        metadata = [row for row in descendants if [change['path'] for change in row['delta']] == ['Directory.Build.props']]
+        self.assertEqual(len(metadata), 4)
+        self.assertEqual({row['commit'] for row in descendants if row not in metadata},
+                         {row['commit'] for row in (*CONTINUATIONS.values(), *EXTENSIONS.values(), *MYSQL.values())})
+        for candidate in metadata:
             with self.subTest(product=candidate['product'], line=candidate['line']):
                 maintenance.verify_core_candidate(maintenance.ROOT, self.select(candidate))
                 self.assertEqual([change['path'] for change in candidate['delta']], ['Directory.Build.props'])
@@ -1507,8 +2437,8 @@ class MaintenanceWorkflowSelectionContracts(unittest.TestCase):
             with self.subTest(run=run), self.assertRaises(ValueError):
                 maintenance.workflow_selections(self.register, self.environment | {'GITHUB_RUN_ID': run})
         candidates = maintenance.load_candidates()
-        with patch.object(maintenance, 'load_candidates', return_value=candidates | {'candidates': candidates['candidates'][:-1]}), \
-                self.assertRaisesRegex(ValueError, 'Incomplete maintenance rehearsal cells'):
+        with patch.object(maintenance, 'load_candidates', return_value=candidates | {'candidates': [r for r in candidates['candidates'] if r['commit'] != candidates['rehearsal_sources'][-1]['commit']]}), \
+                self.assertRaisesRegex(ValueError, 'Incomplete maintenance rehearsal cells|Core candidate parent chain mismatch'):
             maintenance.workflow_selections(self.register, self.environment)
 
     def test_manual_main_selects_only_requested_exact_original_or_core_commit(self):

@@ -4,22 +4,37 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
+import stat
 import subprocess
 
+import core_source_continuation as continuation
+import extensions_mysql_continuation as mysql
 import prepare_maintenance_build as maintenance
 from package_impact import InventoryGraph
 from prove_consolidated_packages import dependency_groups, framework_reference_groups, parse_metadata, require, run
 
 ROOT = Path(__file__).resolve().parents[2]
 SDK = '10.0.300'
+PLANNER_INPUTS = frozenset({
+    'scripts/integration-program/plan_product_release.py',
+    'scripts/integration-program/product_release_metadata.py',
+    'scripts/integration-program/ProductReleaseSemantics/Program.cs',
+    'scripts/integration-program/ProductReleaseSemantics/ProductReleaseSemantics.csproj',
+    'scripts/integration-program/extensions_mysql_continuation.py',
+    'scripts/integration-program/extensions_mysql_continuation_contract.json',
+    'scripts/integration-program/core_source_continuation.py',
+    'scripts/integration-program/core_source_continuation_contract.json',
+    'scripts/integration-program/selected_core_contract.json',
+})
 CORE_REFS = {'3.8': 'refs/heads/release/3.8.4', '3.9': 'refs/heads/release/3.9.0'}
 DESCENDANTS = {
-    ('studio', '3.8'): '41ed15db7bfce7af5be2d362001518e8e692c22e',
-    ('studio', '3.9'): 'e7cf096bc117d970dc0bbc11e26dabd2ea2e1b00',
-    ('extensions', '3.8'): '92c27a3dd2c7f1dc107cba34749dd293a5d77743',
-    ('extensions', '3.9'): 'bd7b846efae7e93676c6c3a594e682a5a958b766',
+    ('studio', '3.8'): 'da2dec10ba36c65e376138ee45e1c34525e45e49',
+    ('studio', '3.9'): '98a3f23d9c3c67080f3926eeb584036c49855b72',
+    ('extensions', '3.8'): '20c7a51599b4c85bf591c4615d34674e0f5706bf',
+    ('extensions', '3.9'): 'e4935c95e211f2885c0348a4ab9872f112df7b4a',
 }
 OWNERSHIP_DOCUMENT = 'docs/integration-program/consolidation/secrets-legacy-package-disposition.md'
 OWNERSHIP_SHA256 = '1796509a72de4bd6d3831765df9453da773fb41069cb1202166505fb695b5958'
@@ -35,6 +50,19 @@ PROPERTIES = ('IsPackable,IsTestProject,PackageId,PackageVersion,AssemblyName,Ta
 
 def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+def read_regular_file(path: Path, *, maximum: int) -> bytes:
+    """Read bounded regular bytes without following any symlink component."""
+    require(type(maximum) is int and 0 < maximum <= 64 * 1024 ** 2, 'diagnostic_invalid')
+    require(not any(part.is_symlink() for part in (path, *path.parents)), 'diagnostic_invalid')
+    descriptor = os.open(path, os.O_RDONLY | os.O_NONBLOCK | getattr(os, 'O_NOFOLLOW', 0))
+    with os.fdopen(descriptor, 'rb') as stream:
+        info = os.fstat(stream.fileno())
+        require(stat.S_ISREG(info.st_mode) and info.st_size <= maximum, 'diagnostic_invalid')
+        data = stream.read(maximum + 1)
+    require(len(data) <= maximum, 'diagnostic_invalid')
+    return data
 
 
 def canonical_hash(value: object) -> str:
@@ -85,9 +113,17 @@ def git(root: Path, *args: str) -> str:
 
 
 def bind_source(controller: Path, product: str, line: str, commit: str, observation: dict | None = None) -> dict:
+    """Verify an admitted maintenance source and return its immutable selection binding."""
     require(product in ('core', 'studio', 'extensions') and line in ('3.8', '3.9'), 'source_selection')
     require(re.fullmatch(r'[a-f0-9]{40}', commit) is not None, 'source_selection')
     if product == 'core':
+        contract = continuation.load_contract()
+        candidate = contract['sources'][line]
+        if commit == candidate['commit']:
+            binding = continuation.bind(line, observation, contract)
+            original = json.loads(continuation.CONTRACT.with_name('selected_core_contract.json').read_bytes())['sources'][line]
+            continuation.verify_source(controller, binding, original, contract)
+            return binding
         require(observation is not None and observation['ref'] == CORE_REFS[line] and
                 observation['commit'] == commit and observation['tree'] == git(controller, 'rev-parse', commit + '^{tree}'),
                 'source_selection')
@@ -103,7 +139,8 @@ def bind_source(controller: Path, product: str, line: str, commit: str, observat
             **{key: row[key] for key in ('commit', 'tree', 'parents', 'original_commit', 'original_parents',
                                         'contained_commit', 'contained_tree')},
             'candidate_register_sha256': sha256(maintenance.CANDIDATES.read_bytes()),
-            'original_register_sha256': sha256(maintenance.REGISTER.read_bytes())}
+            'original_register_sha256': sha256(maintenance.REGISTER.read_bytes()),
+            **mysql.binding(row, mysql.load_contract())}
 
 
 def checkout_source(controller: Path, binding: dict, destination: Path) -> None:
@@ -116,16 +153,28 @@ def checkout_source(controller: Path, binding: dict, destination: Path) -> None:
             'source_checkout_identity')
 
 
-def metadata_command(project: str, version: str) -> list[str]:
-    return ['dotnet', 'msbuild', project, '-nologo', '-p:Configuration=Release', f'-p:Version={version}',
-            f'-p:PackageVersion={version}', '-p:NoBuild=true', '-p:BuildProjectReferences=false',
+def metadata_command(project: str, version: str, binding: dict | None = None) -> list[str]:
+    """Build a metadata-only MSBuild command preserving the selected version policy."""
+    versions = maintenance.version_arguments(binding or {}, version)
+    if binding is None or not maintenance.original_core(binding):
+        versions.append(f'-p:PackageVersion={version}')
+    return ['dotnet', 'msbuild', project, '-nologo', '-p:Configuration=Release', *versions,
+            '-p:NoBuild=true', '-p:BuildProjectReferences=false',
             '-p:GeneratePackageOnBuild=false', '-p:ContinuePackingAfterGeneratingNuspec=false']
 
 
-def evaluate_project(source: Path, project: str, version: str) -> dict:
-    values = json.loads(run(metadata_command(project, version) +
+def metadata_environment(source: Path, binding: dict, version: str) -> dict:
+    """Select the isolated metadata environment, retaining original Core recipe inputs."""
+    return (maintenance.recipe_environment(binding, version, source) if maintenance.original_core(binding)
+            else maintenance.build_environment())
+
+
+def evaluate_project(source: Path, project: str, version: str, *, binding: dict) -> dict:
+    """Evaluate project properties and references separately for each target framework."""
+    environment = metadata_environment(source, binding, version)
+    values = json.loads(run(metadata_command(project, version, binding) +
         ['-getProperty:' + PROPERTIES], source,
-        env=maintenance.build_environment()))
+        env=environment))
     properties = values['Properties']
     require(properties['NETCoreSdkVersion'] == SDK, 'metadata_sdk_identity')
     frameworks = (properties['TargetFrameworks'] or properties['TargetFramework']).split(';')
@@ -133,9 +182,9 @@ def evaluate_project(source: Path, project: str, version: str) -> dict:
     by_framework = {}
     project_union, package_union = {}, {}
     for framework in frameworks:
-        inner = json.loads(run(metadata_command(project, version) + [f'-p:TargetFramework={framework}',
+        inner = json.loads(run(metadata_command(project, version, binding) + [f'-p:TargetFramework={framework}',
             '-getProperty:PackageId,TargetFramework,NETCoreSdkVersion', '-getItem:ProjectReference,PackageReference'],
-            source, env=maintenance.build_environment()))
+            source, env=environment))
         require(inner['Properties'] == {'PackageId': properties['PackageId'], 'TargetFramework': framework,
                                        'NETCoreSdkVersion': SDK}, 'metadata_framework_identity')
         references, packages = {}, {}
@@ -184,17 +233,18 @@ def project_scope(project: dict, product: str, recipe_projects: set[str]) -> str
     return 'canonical_owner_' + owner if owner != product else None
 
 
-def stage_project(source: Path, project: dict, version: str, destination: Path) -> dict:
+def stage_project(source: Path, project: dict, version: str, destination: Path, *, binding: dict) -> dict:
     """Only output-file collection is projected away; SDK groups remain actual."""
     destination.mkdir(parents=True)
-    command = metadata_command(project['path'], version) + ['-restore',
+    command = metadata_command(project['path'], version, binding) + ['-restore',
         '-target:_GetRestoreProjectStyle;GenerateNuspec', '-p:IncludeBuildOutput=false',
         '-p:ElsaPackageManifestIncludeInPackage=false', '-p:IncludeContentInPack=false',
         f'-p:RestoreConfigFile={source / "NuGet.Config"}', f'-p:NuspecOutputPath={destination}',
         f'-p:PackageOutputPath={destination / "forbidden-packages"}']
     stage = 'generate_nuspec'
     try:
-        run(command, source, env=maintenance.build_environment(), timeout=300, log=destination / 'command.private.log')
+        environment = metadata_environment(source, binding, version)
+        run(command, source, env=environment, timeout=300, log=destination / 'command.private.log')
         stage = 'nuspec_metadata'
         files = list(destination.glob('*.nuspec'))
         main = [path for path in files if not path.name.endswith('.symbols.nuspec')]
@@ -209,14 +259,14 @@ def stage_project(source: Path, project: dict, version: str, destination: Path) 
         require(assets.is_file() and not assets.is_symlink(), 'metadata_restore_identity')
         restored = json.loads(assets.read_text())
         stage = 'original_output_policy'
-        original = evaluate_project(source, project['path'], version)
+        original = evaluate_project(source, project['path'], version, binding=binding)
         require(all(original[key] == project[key] for key in ('path', 'package_id', 'is_packable', 'target_frameworks')),
                 'restored_project_identity')
         original_policies = {}
         for framework in project['target_frameworks']:
-            properties = json.loads(run(metadata_command(project['path'], version) +
+            properties = json.loads(run(metadata_command(project['path'], version, binding) +
                 [f'-p:TargetFramework={framework}', '-getProperty:' + PROPERTIES], source,
-                env=maintenance.build_environment()))['Properties']
+                env=environment))['Properties']
             require(properties['PackageId'] == project['package_id'] and properties['PackageVersion'] == version,
                     'restored_project_identity')
             original_policies[framework] = {key: properties[key] for key in ('IncludeBuildOutput', 'IncludeContentInPack', 'IncludeSymbols',
@@ -249,6 +299,7 @@ def stage_project(source: Path, project: dict, version: str, destination: Path) 
 
 
 def evaluate_inventory(source: Path, binding: dict, version: str, private: Path, *, workers: int = 4) -> dict:
+    """Evaluate the source project universe and hash its public release inventory."""
     paths = git(source, 'ls-files', '*.csproj').splitlines()
     require(paths and len(paths) == len(set(paths)) and all(not Path(path).is_absolute() and '..' not in Path(path).parts
             and (source / path).is_file() and not (source / path).is_symlink() for path in paths), 'source_project_universe')
@@ -266,8 +317,13 @@ def evaluate_inventory(source: Path, binding: dict, version: str, private: Path,
         require(b'dotnet pack Elsa.Studio.sln' in (source / workflow).read_bytes(), 'original_recipe_identity')
     owner_policy = ownership_policy()
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        projects = list(pool.map(lambda path: evaluate_project(source, path, version), paths))
+        projects = list(pool.map(lambda path: evaluate_project(source, path, version, binding=binding), paths))
     validate_project_references(projects)
+    if binding['product'] == 'extensions' and 'support_policy_sha256' in binding:
+        support = mysql.load_contract()
+        require(mysql.binding(binding, support) == {'support_policy_sha256': binding['support_policy_sha256']},
+                'source_mysql_support_policy')
+        mysql.validate_net10_references(projects, support)
     selected, excluded = [], []
     for project in projects:
         reason = project_scope(project, binding['product'], recipe_projects)
@@ -286,7 +342,7 @@ def evaluate_inventory(source: Path, binding: dict, version: str, private: Path,
     # Recursive restores share referenced projects' obj outputs; stage one at a time.
     for row in selected:
         row['metadata'] = stage_project(source, by_path[row['project']], version,
-                                       private / sha256(row['project'].encode())[:16])
+                                       private / sha256(row['project'].encode())[:16], binding=binding)
     graph = InventoryGraph({'repositories': {'source': {'slug': 'source'}}, 'project_inventory': {'source': projects}})
     closure = graph.affected_tests([('source', row['project']) for row in selected])
     require(not list(source.glob('**/bin/**/*.dll')) and not list(source.glob('**/*.nupkg')), 'product_build_forbidden')
