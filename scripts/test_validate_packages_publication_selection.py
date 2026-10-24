@@ -20,6 +20,7 @@ ACCEPTED = (
     ("refs/tags/2.17.0", {"nuget"}),
     ("refs/tags/3.10.0", {"nuget"}),
     ("refs/tags/3.10.0-rc1", {"nuget"}),
+    ("refs/tags/3.10.0-rc1", {"npm"}),
     ("refs/tags/3.10.0-rc1", {"feedz"}),
     ("refs/tags/3.10.1-preview.2", {"feedz"}),
     ("refs/tags/3.10.1-preview.2", {"nuget"}),
@@ -31,10 +32,12 @@ ACCEPTED = (
 # Each rejection names the reason it must be rejected for, so a case cannot pass on an unrelated error.
 REJECTED = (
     ("refs/heads/main", {"nuget"}, "requires a release tag"),
+    ("refs/heads/main", {"npm"}, "requires a release tag"),
     ("refs/heads/3.8.5", {"nuget"}, "requires a release tag"),
     ("refs/tags/3.8.5", {"feedz"}, "limited to 3.10.x prerelease"),
     ("refs/tags/3.8.0-rc2", {"feedz"}, "limited to 3.10.x prerelease"),
     ("refs/tags/3.10.0", {"feedz"}, "owned by publish-consolidated-original-candidate"),
+    ("refs/tags/3.10.0", {"npm"}, "fail-closed"),
     ("refs/tags/3.10.1", {"feedz"}, "owned by publish-consolidated-original-candidate"),
     ("refs/tags/3.10.0", {"feedz", "nuget"}, "owned by publish-consolidated-original-candidate"),
     ("refs/tags/03.10.0", {"nuget"}, "canonical 3.10."),
@@ -60,7 +63,13 @@ REJECTED = (
 
 
 def errors(ref, selected):
-    return selection_errors(ref, feedz="feedz" in selected, nuget="nuget" in selected, coverage="coverage" in selected)
+    return selection_errors(
+        ref,
+        feedz="feedz" in selected,
+        nuget="nuget" in selected,
+        npm="npm" in selected,
+        coverage="coverage" in selected,
+    )
 
 
 class SelectionErrorsTests(unittest.TestCase):
@@ -95,12 +104,13 @@ class SelectionErrorsTests(unittest.TestCase):
 class SelectionScriptTests(unittest.TestCase):
     """The job runs the script with the ref and inputs in its environment."""
 
-    def run_script(self, ref, feedz="false", nuget="false", coverage="false"):
+    def run_script(self, ref, feedz="false", nuget="false", npm="false", coverage="false"):
         env = {
             **os.environ,
             "REF": ref,
             "PUBLISH_PREVIEW_FEEDZ": feedz,
             "PUBLISH_NUGET": nuget,
+            "PUBLISH_NPM": npm,
             "DEPLOY_COVERAGE": coverage,
         }
         return subprocess.run([sys.executable, str(SCRIPT)], env=env, capture_output=True, text=True)
