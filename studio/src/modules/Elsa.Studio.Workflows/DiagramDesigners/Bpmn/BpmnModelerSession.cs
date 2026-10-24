@@ -355,7 +355,10 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
             }
 
             // The server imported what was sent, so nothing refuses it: its findings are the problems.
-            ShowProblems(BpmnDocumentProblem.From(result.Success!.Import.Analysis));
+            if (_analyzer != null)
+            {
+                ShowProblems(BpmnDocumentProblem.From(result.Success!.Import.Analysis));
+            }
 
             _unsavedExport = false;
             Xml = xml;

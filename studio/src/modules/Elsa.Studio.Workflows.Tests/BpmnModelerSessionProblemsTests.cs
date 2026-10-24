@@ -133,13 +133,16 @@ public class BpmnModelerSessionProblemsTests
         Assert.Equal([[]], _canvas.AppliedMarkers);
     }
 
-    [Fact(DisplayName = "A session created without an analyzer analyzes nothing and marks nothing")]
+    [Fact(DisplayName = "A session created without an analyzer reports no problems, not even a save's own findings, and marks nothing")]
     public async Task WithoutAnAnalyzer_ThereAreNoProblems()
     {
         var session = new BpmnModelerSession(_xml, DefinitionId);
         await session.EnsureLoadedAsync();
         session.AttachCanvas(_canvas);
         session.CanvasLoaded(new(true, null, []), session.DocumentVersion);
+        _xml.AcceptsPutReporting("\"REVISION-2\"", new BpmnImportAnalysisModel { Issues = [Issue("Degraded", "Timer simplified.", "Wait")] });
+        session.CanvasChanged(new(["Charge"], IsDirty: true, CanUndo: true, CanRedo: false));
+        await session.SaveAsync();
         await session.Analysis;
 
         Assert.Empty(session.Problems);
