@@ -347,9 +347,13 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
         const property = readOnly || !drawn?.bounds.has(elementId) ? undefined : editableProperty(elementId);
         if (!property) return;
         finishEditing(true);
-        const view = graph!.findViewByCell(`${elementId}::label`) ?? graph!.findViewByCell(elementId);
+        const labelView = graph!.findViewByCell(`${elementId}::label`);
+        const view = labelView ?? graph!.findViewByCell(elementId);
         if (!view) return;
-        const area = view.container.getBoundingClientRect();
+        // An edge without a label gets a box on its midpoint, not one spanning the whole edge.
+        const midpoint = labelView ? undefined : drawn!.midpoints.get(elementId);
+        const client = midpoint ? graph!.localToClient(midpoint) : undefined;
+        const area = client ? { left: client.x, top: client.y, width: 0, height: 0 } : view.container.getBoundingClientRect();
         const origin = canvas.getBoundingClientRect();
         const input = document.createElement('textarea');
         input.className = 'elsa-x6-name-editor';
@@ -366,6 +370,8 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
         // Keys typed into the box are the box's: Backspace edits text, it does not delete the element.
         input.addEventListener('keydown', event => {
             event.stopPropagation();
+            // Enter or Escape during text composition, as with an IME, belongs to the composition.
+            if (event.isComposing) return;
             if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
                 finishEditing(true);

@@ -462,12 +462,39 @@ test('F2 edits the selected element, an edge gets a label when named, and read-o
     const flow = (await cell(harness, 'Flow_2').locator('path').first().boundingBox())!;
     await harness.mouse.dblclick(flow.x + flow.width / 2, flow.y + flow.height / 2);
     await editor(harness).fill('Charged');
+    // Enter that confirms a text composition, as with an IME, does not save.
+    await editor(harness).dispatchEvent('keydown', { key: 'Enter', isComposing: true });
+    await expect(editor(harness)).toHaveCount(1);
     await editor(harness).press('Enter');
     await expect(cell(harness, 'Flow_2::label')).toContainText('Charged');
 
     await loaded(harness, 'order.bpmn', { readOnly: true });
     await cell(harness, 'Charge').dblclick();
     await expect(editor(harness)).toHaveCount(0);
+});
+
+test('an edge without a label is edited in a compact box on its midpoint, not one spanning the edge', async ({ harness }) => {
+    // Flow_2 rerouted around a long detour, so its bounding box is large and its centre is not its midpoint.
+    const xml = (await fixture('order.bpmn')).replace(
+        '<di:waypoint x="340" y="120" />\n        <di:waypoint x="395" y="120" />',
+        '<di:waypoint x="340" y="120" />\n        <di:waypoint x="340" y="400" />\n        <di:waypoint x="700" y="400" />\n        <di:waypoint x="700" y="300" />'
+    );
+    expect(xml).toContain('<di:waypoint x="700" y="300" />');
+    await loadedXml(harness, xml);
+    const path = cell(harness, 'Flow_2').locator('path').first();
+    const midpoint = await path.evaluate((element: SVGPathElement) => {
+        const point = element.getPointAtLength(element.getTotalLength() / 2);
+        const screen = new DOMPoint(point.x, point.y).matrixTransform(element.getScreenCTM()!);
+        return { x: screen.x, y: screen.y };
+    });
+
+    await harness.mouse.dblclick(midpoint.x, midpoint.y);
+
+    const box = (await editor(harness).boundingBox())!;
+    expect(box.width).toBe(120);
+    expect(box.height).toBe(40);
+    expect(Math.abs(box.x + box.width / 2 - midpoint.x)).toBeLessThan(2);
+    expect(Math.abs(box.y + box.height / 2 - midpoint.y)).toBeLessThan(2);
 });
 
 test('fits a document loaded while the container had no size once the container is shown', async ({ harness }) => {

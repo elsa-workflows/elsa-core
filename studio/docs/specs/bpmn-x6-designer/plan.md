@@ -119,6 +119,7 @@ the X6 designer's own Playwright tests, the kernel tests, and the cross-designer
   - Escape giving up an edit, and Backspace in the box editing text rather than deleting the element;
   - an empty name removing the name;
   - F2 on the selected element;
-  - an edge named in place getting a label;
+  - an edge named in place getting a label, edited in a compact box on its midpoint;
+  - Enter that confirms a text composition not saving;
   - a read-only designer opening no editor.
 - The conformance suite still passes against both designers.
