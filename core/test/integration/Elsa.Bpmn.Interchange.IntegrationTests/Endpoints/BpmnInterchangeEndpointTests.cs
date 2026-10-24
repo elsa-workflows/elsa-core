@@ -1491,12 +1491,11 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     [Fact]
     public async Task Analyze_OfADocumentWithAnUnboundTask_ReportsTheRefusalOfThatTask()
     {
-        var refusal = await AnalyzeRefusalAsync(ReadAsset("unbound-task-process.bpmn"));
+        var refusal = Assert.NotNull(await AnalyzeRefusalAsync(ReadAsset("unbound-task-process.bpmn")));
 
-        Assert.NotNull(refusal);
-        Assert.Equal(BpmnErrorCodes.ImportBindingInvalid, refusal.Value.Code);
-        Assert.Equal(["Unbound_1"], refusal.Value.ElementIds);
-        Assert.Contains("nothing binds it to an Elsa activity", refusal.Value.Message);
+        Assert.Equal(BpmnErrorCodes.ImportBindingInvalid, refusal.Code);
+        Assert.Equal(["Unbound_1"], refusal.ElementIds);
+        Assert.Contains("nothing binds it to an Elsa activity", refusal.Message);
     }
 
     [Fact]
@@ -1505,31 +1504,28 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         // The binding format reads a declaration without knowing whose it is; the refusal still names the task.
         var xml = ReadAsset("camunda-order-process.bpmn").Replace("activityType=\"Elsa.WriteLine\"", "activityType=\"Elsa.NoSuchActivity\"");
 
-        var refusal = await AnalyzeRefusalAsync(xml);
+        var refusal = Assert.NotNull(await AnalyzeRefusalAsync(xml));
 
-        Assert.NotNull(refusal);
-        Assert.Equal(BpmnErrorCodes.ImportBindingInvalid, refusal.Value.Code);
-        Assert.Equal(["NotifyWarehouse"], refusal.Value.ElementIds);
+        Assert.Equal(BpmnErrorCodes.ImportBindingInvalid, refusal.Code);
+        Assert.Equal(["NotifyWarehouse"], refusal.ElementIds);
     }
 
     [Fact]
     public async Task Analyze_OfADocumentWithConditionsInALanguageElsaDoesNotEvaluate_ReportsTheRefusedFlows()
     {
-        var refusal = await AnalyzeRefusalAsync(ReadAsset("expression-condition-unsupported-language.bpmn"));
+        var refusal = Assert.NotNull(await AnalyzeRefusalAsync(ReadAsset("expression-condition-unsupported-language.bpmn")));
 
-        Assert.NotNull(refusal);
-        Assert.Equal(BpmnErrorCodes.ImportConditionLanguageUnsupported, refusal.Value.Code);
-        Assert.Contains("f3", refusal.Value.ElementIds);
+        Assert.Equal(BpmnErrorCodes.ImportConditionLanguageUnsupported, refusal.Code);
+        Assert.Contains("f3", refusal.ElementIds);
     }
 
     [Fact]
     public async Task Analyze_OfADocumentWithASubprocessBodyThatCannotRun_ReportsTheRefusal()
     {
-        var refusal = await AnalyzeRefusalAsync(ReadAsset("invalid-nested-body.bpmn"));
+        var refusal = Assert.NotNull(await AnalyzeRefusalAsync(ReadAsset("invalid-nested-body.bpmn")));
 
-        Assert.NotNull(refusal);
-        Assert.Equal(BpmnErrorCodes.ImportProcessInvalid, refusal.Value.Code);
-        Assert.Contains("Inner_Decide", refusal.Value.Message);
+        Assert.Equal(BpmnErrorCodes.ImportProcessInvalid, refusal.Code);
+        Assert.Contains("Inner_Decide", refusal.Message);
     }
 
     [Fact]
