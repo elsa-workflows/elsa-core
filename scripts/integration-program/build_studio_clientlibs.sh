@@ -16,8 +16,9 @@ dom="$studio/framework/Elsa.Studio.DomInterop"
 # The BPMN designer contract and shared rules. It builds no browser asset of its own, and older pinned Studio sources
 # predate it, so it is tested only where it exists.
 bpmn_shared="$studio/modules/Elsa.Studio.Bpmn/ClientLib"
-# The bpmn-js designer bundles the shared rules, so it is built only where they exist too.
+# The bpmn-js and X6 designers bundle the shared rules, so each is built only where they and it exist.
 bpmn_js="$studio/modules/Elsa.Studio.Bpmn.BpmnJs"
+bpmn_x6="$studio/modules/Elsa.Studio.Bpmn.X6"
 locks="$(cd "$(dirname "${BASH_SOURCE[0]}")/consolidated-build/studio-clientlib-lockfiles" && pwd -P)"
 
 for package in "$designer/ClientLib/package.json" "$dom/ClientLib/package.json"; do
@@ -40,6 +41,9 @@ if [[ -f "$bpmn_shared/package.json" ]]; then
 fi
 if [[ -f "$bpmn_shared/package.json" && -f "$bpmn_js/ClientLib/package.json" ]]; then
     clientlibs+=("$bpmn_js/ClientLib:$locks/bpmn-js.package-lock.json")
+fi
+if [[ -f "$bpmn_shared/package.json" && -f "$bpmn_x6/ClientLib/package.json" ]]; then
+    clientlibs+=("$bpmn_x6/ClientLib:$locks/bpmn-x6.package-lock.json")
 fi
 
 for entry in "${clientlibs[@]}"; do
@@ -70,6 +74,9 @@ assets=(
 )
 if [[ -f "$bpmn_shared/package.json" && -f "$bpmn_js/ClientLib/package.json" ]]; then
     assets+=("$bpmn_js/wwwroot/bpmn-js-designer.js" "$bpmn_js/wwwroot/bpmn-js-designer.css")
+fi
+if [[ -f "$bpmn_shared/package.json" && -f "$bpmn_x6/ClientLib/package.json" ]]; then
+    assets+=("$bpmn_x6/wwwroot/x6-designer.js" "$bpmn_x6/wwwroot/x6-designer.css")
 fi
 for asset in "${assets[@]}"; do
     if [[ -L "$asset" ]]; then
@@ -109,6 +116,14 @@ if [[ -f "$bpmn_shared/package.json" && -f "$bpmn_js/ClientLib/package.json" ]];
     (
         # The build also enforces the designer's size budget.
         cd "$bpmn_js/ClientLib"
+        npm ci --force
+        npm run build
+    )
+fi
+if [[ -f "$bpmn_shared/package.json" && -f "$bpmn_x6/ClientLib/package.json" ]]; then
+    (
+        # The build also enforces the designer's size budget.
+        cd "$bpmn_x6/ClientLib"
         npm ci --force
         npm run build
     )

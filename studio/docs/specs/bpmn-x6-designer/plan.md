@@ -42,3 +42,13 @@ the X6 designer's own Playwright tests, the kernel tests, and the cross-designer
 - The kernel's load warnings for each of them equal the bpmn-js designer's, as `preservation.spec.ts` records them with
   `BPMN_DESIGNER_OUTPUT` set. The semantic part of each save is byte-identical to the bpmn-js designer's; only diagram
   elements differ in order and placement (spec.md, "Reading").
+
+## Step 2 verification
+
+- The shared conformance suite passes against the X6 designer's build: `contract`, `host` and `preservation`, with the
+  optional problem markers. CI runs it beside the bpmn-js run, and runs the Elsa import equivalence check on the X6
+  designer's round trips.
+- `x6.spec.ts` checks what the designer draws: one cell per drawn element named by its id, external labels, the plane a
+  collapsed subprocess opens (from `select`, its button and the breadcrumb), selection by click, instance-state badges,
+  problem markers on shapes and edges, and that nothing can be moved.
+- The bundle stays within its budget, and `Elsa.Studio.Bpmn.Tests` covers `AddX6BpmnDesigner`.
