@@ -93,6 +93,8 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
         | { kind: 'move'; elementId: string; start: Point; followers: Map<string, Point> }
         | { kind: 'resize'; elementId: string; corner: Corner; start: Bounds; resized: Bounds }
         | null = null;
+    // What the breadcrumbs show, so they are only replaced when that changes.
+    let shownBreadcrumbs = '';
     // The name being edited in place, and the property it edits: a text annotation's text, else the name.
     let editing: { elementId: string; property: 'name' | 'text'; input: HTMLTextAreaElement } | null = null;
     // Loads run one after another, so the last one called is the one that shows.
@@ -201,6 +203,11 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
 
     function renderBreadcrumbs(): void {
         const path = planes && currentKey ? planes.path(currentKey) : [];
+        // Unchanged breadcrumbs are kept, so one pressed while an edit in place is saved on leaving its box still takes
+        // the click.
+        const shown = JSON.stringify(path.map(plane => [plane.key, plane.title]));
+        if (shown === shownBreadcrumbs) return;
+        shownBreadcrumbs = shown;
         breadcrumbs.replaceChildren();
         breadcrumbs.hidden = path.length < 2;
         path.forEach((plane, index) => {

@@ -121,5 +121,6 @@ the X6 designer's own Playwright tests, the kernel tests, and the cross-designer
   - F2 on the selected element;
   - an edge named in place getting a label, edited in a compact box on its midpoint;
   - Enter that confirms a text composition not saving;
+  - a breadcrumb pressed during an edit saving the name and going back in one click;
   - a read-only designer opening no editor.
 - The conformance suite still passes against both designers.

@@ -473,6 +473,21 @@ test('F2 edits the selected element, an edge gets a label when named, and read-o
     await expect(editor(harness)).toHaveCount(0);
 });
 
+test('a breadcrumb clicked while a name is being edited saves the name and goes back in one click', async ({ harness }) => {
+    await loaded(harness, 'legacy-collapsed.bpmn');
+    expect(await call(harness, 'select', 'Inner')).toBe(true);
+    await cell(harness, 'Inner').dblclick();
+    await editor(harness).fill('Renamed');
+
+    // Pressing the breadcrumb leaves the box, which saves the name; the breadcrumb must still take the click.
+    await harness.locator('#canvas .elsa-x6-breadcrumb', { hasText: 'Process_Legacy' }).click();
+
+    await expect(cell(harness, 'Sub')).toHaveCount(1);
+    await expect(harness.locator('#canvas .elsa-x6-breadcrumbs')).toBeHidden();
+    const { xml } = await call<{ xml: string }>(harness, 'save');
+    expect(xml).toContain('name="Renamed"');
+});
+
 test('an edge without a label is edited in a compact box on its midpoint, not one spanning the edge', async ({ harness }) => {
     // Flow_2 rerouted around a long detour, so its bounding box is large and its centre is not its midpoint.
     const xml = (await fixture('order.bpmn')).replace(
