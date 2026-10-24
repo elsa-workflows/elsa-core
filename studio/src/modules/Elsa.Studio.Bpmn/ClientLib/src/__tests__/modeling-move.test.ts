@@ -176,6 +176,25 @@ describe('moveShapes', () => {
         expect((await session.save()).xml).toBe(original);
     });
 
+    it('keeps the foreign attributes of the waypoints it moves, and adds bend points without them', async () => {
+        const xml = ROW
+            .replace('xmlns:di="http://www.omg.org/spec/DD/20100524/DI"', 'xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:vendor="http://vendor.example/schema"')
+            .replace('<di:waypoint x="136" y="120" />', '<di:waypoint x="136" y="120" vendor:hint="start" />')
+            .replace('<di:waypoint x="300" y="120" />', '<di:waypoint x="300" y="120" vendor:hint="first" />')
+            .replace('<di:waypoint x="350" y="240" />', '<di:waypoint x="350" y="240" vendor:hint="bend" />');
+        const { session, document, planeId } = await loaded(xml);
+
+        session.execute(moveShapes(document, planeId, ['A'], { x: 10, y: 20 }));
+
+        const saved = (await session.save()).xml;
+        // Flow_1 gained two bend points; its ends keep their attributes.
+        expect(saved).toContain('<di:waypoint x="136" y="120" vendor:hint="start" />');
+        // Flow_2 kept its count, so every point keeps its own.
+        expect(saved).toContain('<di:waypoint x="310" y="140" vendor:hint="first" />');
+        expect(saved).toContain('<di:waypoint x="350" y="240" vendor:hint="bend" />');
+        expect(saved.match(/vendor:hint=/g)).toHaveLength(3);
+    });
+
     it('applies the elements given when the command was created, not later changes to that array', async () => {
         const { session, document, planeId, bounds } = await loaded(ROW);
         const elementIds = ['B'];

@@ -83,7 +83,7 @@ function planMove(document: BpmnDocument, planeId: string, elementIds: readonly 
         if (!di || edge.waypoints.length < 2) continue;
 
         const waypoints = sourceMoved && targetMoved ? edge.waypoints.map(point => add(point, delta)) : followEnd(edge, sourceMoved ? 'source' : 'target', delta);
-        changes.push({ target: di, name: 'waypoint', before: di.waypoint, after: waypoints.map(({ x, y }) => document.moddle.create('dc:Point', { x, y })) });
+        changes.push({ target: di, name: 'waypoint', before: di.waypoint, after: waypointElements(document, (di.waypoint as ModdleElement[] | undefined) ?? [], waypoints) });
         const labelBounds = (di.label as ModdleElement | undefined)?.bounds as ModdleElement | undefined;
         changes.push(...translateBounds(labelBounds, subtract(midpointOf(waypoints), midpointOf(edge.waypoints))));
     }
@@ -169,6 +169,22 @@ function followEnd(edge: BpmnEdgeView, end: 'source' | 'target', delta: Point): 
     }
 
     return end === 'source' ? result : result.reverse();
+}
+
+/**
+ * The `dc:Point` elements for `waypoints`, each keeping the foreign attributes of the point it replaces: point for point
+ * when the count is unchanged, else the two ends, the bend points added between them having none.
+ */
+function waypointElements(document: BpmnDocument, original: readonly ModdleElement[], waypoints: readonly Point[]): ModdleElement[] {
+    return waypoints.map(({ x, y }, index) => {
+        const replaced = waypoints.length === original.length ? original[index]
+            : index === 0 ? original[0]
+            : index === waypoints.length - 1 ? original[original.length - 1]
+            : undefined;
+        const point = document.moddle.create('dc:Point', { x, y });
+        Object.assign(point.$attrs as Record<string, unknown>, (replaced?.$attrs as Record<string, unknown> | undefined) ?? {});
+        return point;
+    });
 }
 
 /** The point halfway along a path, by length. */

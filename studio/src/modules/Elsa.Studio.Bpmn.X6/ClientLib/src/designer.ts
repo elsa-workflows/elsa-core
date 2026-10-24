@@ -53,7 +53,19 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
         container: canvas,
         autoResize: true,
         async: false,
-        interacting: readOnly ? false : { nodeMovable: view => isMovable(String(view.cell.id)) },
+        // X6 enables every interaction an object leaves out, so each one the kernel has no command for yet is turned off.
+        interacting: readOnly ? false : {
+            nodeMovable: view => isMovable(String(view.cell.id)),
+            edgeMovable: false,
+            edgeLabelMovable: false,
+            arrowheadMovable: false,
+            vertexMovable: false,
+            vertexAddable: false,
+            vertexDeletable: false,
+            magnetConnectable: false,
+            useEdgeTools: false,
+            toolsAddable: false
+        },
         panning: { enabled: true },
         mousewheel: { enabled: true, modifiers: ['ctrl', 'meta'], factor: 1.1 }
     });
@@ -107,6 +119,8 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
     /** Draws the current plane from the document, with its badges, markers and selection. */
     function render(fit: boolean): void {
         const target = graph!;
+        // The cells a drag started on are replaced, so its drop must not apply to what is drawn now.
+        dragging = null;
         const document = session.document;
         const plane = document && planes && currentKey ? planes.plane(currentKey) : undefined;
         if (!document || !plane) {

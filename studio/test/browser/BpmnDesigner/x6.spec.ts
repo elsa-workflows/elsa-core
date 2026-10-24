@@ -236,8 +236,15 @@ test('dragging a shape moves it in the document, its label following, and the ke
     expect(await savedBounds(harness, 'Gateway')).toEqual(moved);
 });
 
-test('a label and an edge cannot be dragged on their own', async ({ harness }) => {
+test('a label and an edge cannot be dragged on their own, on screen or in the document', async ({ harness }) => {
     await loaded(harness, 'order.bpmn');
+    const edge = () => cell(harness, 'Flow_2').locator('path').first().getAttribute('d');
+    // Where the label is relative to its gateway: a drag on the label pans the canvas, which moves both.
+    const labelOffset = async () => {
+        const [label, gateway] = [(await cell(harness, 'Gateway::label').boundingBox())!, (await cell(harness, 'Gateway').boundingBox())!];
+        return { x: label.x - gateway.x, y: label.y - gateway.y };
+    };
+    const [edgeBefore, labelBefore] = [await edge(), await labelOffset()];
     for (const id of ['Gateway::label', 'Flow_2']) {
         const box = (await cell(harness, id).boundingBox())!;
         await harness.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
@@ -245,7 +252,31 @@ test('a label and an edge cannot be dragged on their own', async ({ harness }) =
         await harness.mouse.move(box.x + 80, box.y + 60, { steps: 5 });
         await harness.mouse.up();
     }
+    expect(await edge()).toBe(edgeBefore);
+    expect(await labelOffset()).toEqual(labelBefore);
     expect(await call(harness, 'undo')).toBe(false);
+});
+
+test('an undo during a drag cancels the drag, so its drop is no edit', async ({ harness }) => {
+    await loaded(harness, 'order.bpmn');
+    const original = await savedBounds(harness, 'Gateway');
+    const drag = async (finish: () => Promise<void>) => {
+        const box = (await cell(harness, 'Gateway').boundingBox())!;
+        await harness.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        await harness.mouse.down();
+        await harness.mouse.move(box.x + box.width / 2 + 60, box.y + box.height / 2 + 40, { steps: 5 });
+        await finish();
+        await harness.mouse.up();
+    };
+    await drag(async () => undefined);
+    const moved = await savedBounds(harness, 'Gateway');
+    expect(moved).not.toEqual(original);
+
+    // Undo while the second drag is held: the drop that follows applies nothing, and redo is still there.
+    await drag(() => harness.keyboard.press('Control+z'));
+    expect(await savedBounds(harness, 'Gateway')).toEqual(original);
+    expect(await call(harness, 'redo')).toBe(true);
+    expect(await savedBounds(harness, 'Gateway')).toEqual(moved);
 });
 
 test('nothing can be moved when read-only, and the keyboard does not undo', async ({ harness }) => {
