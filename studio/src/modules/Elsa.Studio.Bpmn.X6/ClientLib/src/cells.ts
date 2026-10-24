@@ -138,11 +138,16 @@ function activityAttrs(shape: BpmnShapeView, element: ModdleElement | undefined,
     const loopGlyph = !loop ? null
         : loop.$type === 'bpmn:MultiInstanceLoopCharacteristics'
             ? (loop.isSequential ? ACTIVITY_MARKER_GLYPHS.multiInstanceSequential : ACTIVITY_MARKER_GLYPHS.multiInstanceParallel)
-            : ACTIVITY_MARKER_GLYPHS.multiInstanceSequential;
+            : ACTIVITY_MARKER_GLYPHS.loop;
     // A collapsed call activity shows the collapsed marker too, as bpmn-js draws it.
     const collapsed = collapsedSubprocess || (shape.type === 'bpmn:CallActivity' && shape.isExpanded === false);
-    const markers = [collapsed ? ACTIVITY_MARKER_GLYPHS.collapsed : null, loopGlyph]
-        .filter((glyph): glyph is Glyph => glyph !== null);
+    // In the order BPMN lists them along the bottom edge.
+    const markers = [
+        loopGlyph,
+        element?.isForCompensation === true ? ACTIVITY_MARKER_GLYPHS.compensation : null,
+        collapsed ? ACTIVITY_MARKER_GLYPHS.collapsed : null,
+        shape.type === 'bpmn:AdHocSubProcess' ? ACTIVITY_MARKER_GLYPHS.adHoc : null
+    ].filter((glyph): glyph is Glyph => glyph !== null);
 
     return {
         body: {
@@ -158,6 +163,8 @@ function activityAttrs(shape: BpmnShapeView, element: ModdleElement | undefined,
             : { text: name },
         markerA: markerAttrs(markers, 0),
         markerB: markerAttrs(markers, 1),
+        markerC: markerAttrs(markers, 2),
+        markerD: markerAttrs(markers, 3),
         drill: { display: collapsedSubprocess && drillable(shape.elementId) ? 'block' : 'none' }
     };
 }
@@ -172,7 +179,7 @@ function markerAttrs(markers: Glyph[], index: number): Attrs {
 function glyphAttrs(glyph: Glyph | null, throwing: boolean): Attrs {
     if (!glyph) return { display: 'none' };
     const solid = glyph.fill === 'solid' || (glyph.fill === 'direction' && throwing);
-    return { display: 'block', d: glyph.d, fill: solid ? STROKE : 'none' };
+    return { display: 'block', d: glyph.d, fill: solid ? STROKE : 'none', strokeWidth: glyph.strokeWidth ?? 1.2 };
 }
 
 function eventGlyph(element: ModdleElement | undefined): Glyph | null {
@@ -184,7 +191,6 @@ function eventGlyph(element: ModdleElement | undefined): Glyph | null {
 }
 
 function gatewayGlyph(shape: BpmnShapeView): Glyph | null {
-    if (shape.type === 'bpmn:ComplexGateway') return GATEWAY_GLYPHS.parallelGateway;
     return GATEWAY_GLYPHS[localName(shape.type)] ?? null;
 }
 

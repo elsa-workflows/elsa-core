@@ -14,11 +14,14 @@ export type GlyphFill = 'outline' | 'solid' | 'direction';
 export interface Glyph {
     readonly d: string;
     readonly fill: GlyphFill;
+    /** Wider than the default 1.2 for a glyph made of strokes alone. */
+    readonly strokeWidth?: number;
 }
 
 const outline = (d: string): Glyph => ({ d, fill: 'outline' });
 const solid = (d: string): Glyph => ({ d, fill: 'solid' });
 const directional = (d: string): Glyph => ({ d, fill: 'direction' });
+const bold = (d: string): Glyph => ({ d, fill: 'outline', strokeWidth: 3 });
 
 /**
  * Event-definition icons, keyed by the definition's moddle type without its `bpmn:` prefix and `EventDefinition`
@@ -30,7 +33,8 @@ export const EVENT_DEFINITION_GLYPHS: Readonly<Record<string, Glyph>> = {
     error: directional('M -6 7 L -2 -4 L 2 1 L 6 -7 L 2 4 L -2 -1 Z'),
     escalation: directional('M 0 -7 L 6 7 L 0 1 L -6 7 Z'),
     cancel: directional('M -6.5 -5 L -5 -6.5 L 0 -1.5 L 5 -6.5 L 6.5 -5 L 1.5 0 L 6.5 5 L 5 6.5 L 0 1.5 L -5 6.5 L -6.5 5 L -1.5 0 Z'),
-    compensation: directional('M -7 0 L -1 -4.5 L -1 4.5 Z M -1 0 L 5 -4.5 L 5 4.5 Z'),
+    // The key the moddle type `bpmn:CompensateEventDefinition` derives, as cells.ts derives keys.
+    compensate: directional('M -7 0 L -1 -4.5 L -1 4.5 Z M -1 0 L 5 -4.5 L 5 4.5 Z'),
     signal: directional('M 0 -6 L 7 6 L -7 6 Z'),
     terminate: solid('M -7 0 A 7 7 0 1 0 7 0 A 7 7 0 1 0 -7 0 Z'),
     conditional: outline('M -6 -7 L 6 -7 L 6 7 L -6 7 Z M -4 -4 L 4 -4 M -4 -1 L 4 -1 M -4 2 L 4 2 M -4 5 L 1 5'),
@@ -53,6 +57,8 @@ export const TASK_TYPE_GLYPHS: Readonly<Record<string, Glyph>> = {
 
 /** The marker drawn in the middle of a gateway's diamond. */
 export const GATEWAY_GLYPHS: Readonly<Record<string, Glyph>> = {
+    // An asterisk, drawn as bold strokes: BPMN's marker for a complex gateway.
+    complexGateway: bold('M 0 -8 L 0 8 M -8 0 L 8 0 M -5.7 -5.7 L 5.7 5.7 M -5.7 5.7 L 5.7 -5.7'),
     exclusiveGateway: solid('M -6.5 -8 L 0 -3 L 6.5 -8 L 8 -6.5 L 3 0 L 8 6.5 L 6.5 8 L 0 3 L -6.5 8 L -8 6.5 L -3 0 L -8 -6.5 Z'),
     parallelGateway: solid('M -2.5 -10 L 2.5 -10 L 2.5 -2.5 L 10 -2.5 L 10 2.5 L 2.5 2.5 L 2.5 10 L -2.5 10 L -2.5 2.5 L -10 2.5 L -10 -2.5 L -2.5 -2.5 Z'),
     inclusiveGateway: outline('M 0 -9 A 9 9 0 1 0 0.01 -9 Z'),
@@ -67,6 +73,10 @@ export const ACTIVITY_MARKER_GLYPHS = {
     multiInstanceParallel: solid('M -5.5 -6 L -3 -6 L -3 6 L -5.5 6 Z M -1.25 -6 L 1.25 -6 L 1.25 6 L -1.25 6 Z M 3 -6 L 5.5 -6 L 5.5 6 L 3 6 Z'),
     /** A sequential multi-instance activity. */
     multiInstanceSequential: solid('M -6 -5.5 L 6 -5.5 L 6 -3 L -6 -3 Z M -6 -1.25 L 6 -1.25 L 6 1.25 L -6 1.25 Z M -6 3 L 6 3 L 6 5.5 L -6 5.5 Z'),
+    /** A standard loop: an arrow that runs almost all the way round. */
+    loop: outline('M -2.9 5.4 A 6 6 0 1 1 3.5 5 M 3.5 5 L 3.3 1.3 M 3.5 5 L 7 4'),
+    /** An ad-hoc subprocess. */
+    adHoc: outline('M -7 1.5 C -4.5 -2.5 -2.5 -2.5 0 0 C 2.5 2.5 4.5 2.5 7 -1.5'),
     /** A compensation handler. */
     compensation: solid('M -6.5 0 L -0.5 -4 L -0.5 4 Z M -0.5 0 L 5.5 -4 L 5.5 4 Z'),
 } satisfies Readonly<Record<string, Glyph>>;

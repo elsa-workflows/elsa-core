@@ -94,6 +94,8 @@ export function registerShapes(): void {
             { tagName: 'text', selector: 'label' },
             { tagName: 'path', selector: 'markerA' },
             { tagName: 'path', selector: 'markerB' },
+            { tagName: 'path', selector: 'markerC' },
+            { tagName: 'path', selector: 'markerD' },
             { tagName: 'g', selector: 'drill', children: [{ tagName: 'rect', selector: 'drillButton' }, { tagName: 'path', selector: 'drillIcon' }] }
         ],
         attrs: {
@@ -103,6 +105,8 @@ export function registerShapes(): void {
             label: text({ textWrap: { width: -16, height: -12, ellipsis: true } }),
             markerA: { ...glyph, refX: '50%', refY: '100%', refY2: -10 },
             markerB: { ...glyph, refX: '50%', refY: '100%', refY2: -10 },
+            markerC: { ...glyph, refX: '50%', refY: '100%', refY2: -10 },
+            markerD: { ...glyph, refX: '50%', refY: '100%', refY2: -10 },
             // Opens the plane a collapsed subprocess draws its content on. The designer listens for `node:drill`.
             drill: { display: 'none', event: 'node:drill', title: 'Open subprocess', cursor: 'pointer', refX: '100%', refX2: -20, refY: 4 },
             drillButton: { width: 16, height: 16, rx: 3, ry: 3, fill: SURFACE, stroke: MUTED, strokeWidth: 1 },
@@ -166,10 +170,14 @@ export function registerShapes(): void {
         }
     }, true);
 
-    // An element's name drawn where its DI places its label: events, gateways, data and flows.
+    // An element's name drawn where its DI places its label: events, gateways, data and flows. A click anywhere in its
+    // bounds selects the element, through the transparent hit area: the text alone would leave gaps between letters.
     Graph.registerNode(SHAPES.label, {
-        markup: [{ tagName: 'text', selector: 'label' }],
-        attrs: { label: text({ fontSize: 11, textWrap: { width: '100%', height: '100%' } }) }
+        markup: [{ tagName: 'rect', selector: 'hit' }, { tagName: 'text', selector: 'label' }],
+        attrs: {
+            hit: { refWidth: '100%', refHeight: '100%', fill: 'transparent', stroke: 'none' },
+            label: text({ fontSize: 11, textWrap: { width: '100%', height: '100%' } })
+        }
     }, true);
 
     Graph.registerNode(SHAPES.badge, {

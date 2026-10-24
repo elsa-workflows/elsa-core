@@ -34,8 +34,8 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
     if (!(container instanceof HTMLElement)) throw new TypeError('A BPMN designer needs a container element.');
 
     const readOnly = options.readOnly === true;
-    // The designer has no properties panel of its own: the host's activity picker and input editors edit bindings.
-    const propertiesContainer = options.propertiesContainer instanceof HTMLElement ? options.propertiesContainer : null;
+    // The designer renders no properties panel, so it ignores `propertiesContainer` and leaves the host's content in it:
+    // the host's activity picker and input editors edit bindings.
 
     registerShapes();
     container.classList.add(CONTAINER_CLASS);
@@ -349,7 +349,6 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
             graph = null;
             container.replaceChildren();
             container.classList.remove(CONTAINER_CLASS);
-            propertiesContainer?.replaceChildren();
         }
     } satisfies BpmnDesigner;
 }
