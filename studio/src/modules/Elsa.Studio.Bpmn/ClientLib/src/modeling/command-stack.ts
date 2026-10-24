@@ -19,6 +19,8 @@ export interface Command {
  * reverted and the error is rethrown, so a refused compound leaves the document as it found it.
  */
 export function compound(commands: readonly Command[]): Command {
+    // A copy, so a caller changing the array afterwards cannot change what undo and redo run.
+    commands = [...commands];
     return {
         elementIds: [...new Set(commands.flatMap(command => command.elementIds))],
         execute: () => {

@@ -119,4 +119,15 @@ describe('compound', () => {
         expect(session.undo()).toBe(false);
         expect((await session.save()).xml).toBe(original);
     });
+
+    it('undoes the commands it was created with, not later changes to that array', async () => {
+        const { session, document, original } = await loaded();
+        const commands = [updateProperties(document, 'Review', { name: 'Check order' })];
+
+        session.execute(compound(commands));
+        commands.length = 0;
+
+        expect(session.undo()).toBe(true);
+        expect((await session.save()).xml).toBe(original);
+    });
 });
