@@ -2,7 +2,7 @@
  * The edits the modeling kernel makes, as undoable commands. Creating a command checks it and changes nothing; the
  * command stack executes it.
  */
-import { extensionValuesWithBinding, type ModdleElement } from '../binding.js';
+import { extensionValuesWithBinding, type ModdleElement, readBinding } from '../binding.js';
 import type { BpmnActivityBinding } from '../contract.js';
 import type { Command } from './command-stack.js';
 import type { BpmnDocument } from './document.js';
@@ -11,15 +11,18 @@ import type { BpmnDocument } from './document.js';
  * Sets properties of the element with `elementId`. A property set to `undefined` is removed, and a namespaced attribute
  * the BPMN schema does not declare, such as `vendor:origin`, is set or removed as that attribute.
  *
- * @throws Error when the document has no element with `elementId`, or when `properties` gives it an id another element has.
+ * @throws Error when the document has no element with `elementId`, or when `properties` gives it an id that is not a
+ * non-empty string or that another element has.
  */
 export function updateProperties(document: BpmnDocument, elementId: string, properties: Record<string, unknown>): Command {
     const element = document.element(elementId);
     if (!element) throw new Error(`The document has no element '${elementId}'.`);
 
+    // An `id` set to undefined would remove the id, and with it the element from the index, leaving references to it.
+    const hasIdProperty = Object.prototype.hasOwnProperty.call(properties, 'id');
     const newId = properties.id;
-    const isRename = newId !== undefined && newId !== elementId;
-    if (isRename && (typeof newId !== 'string' || newId === '')) throw new Error(`An element id must be a non-empty string.`);
+    if (hasIdProperty && (typeof newId !== 'string' || newId === '')) throw new Error(`An element id must be a non-empty string.`);
+    const isRename = hasIdProperty && newId !== elementId;
     // Checked when the command is created and again each time it executes: another rename executed in between, such
     // as an earlier one in the same compound, can have taken the id since.
     const requireFreeId = () => {
@@ -34,7 +37,7 @@ export function updateProperties(document: BpmnDocument, elementId: string, prop
 /**
  * Replaces the binding of `element` with `binding`, or removes it for `null`, as one command. An emptied
  * `extensionElements` is removed, unless it carries foreign attributes, which the element has to keep. Returns `null`
- * when there is nothing to change: no binding to remove and no extension content.
+ * when there is nothing to change: no binding to remove, and no empty extension content to drop.
  *
  * @throws TypeError when `binding` names no activity type, or names an input twice.
  */
@@ -42,6 +45,10 @@ export function setBinding(document: BpmnDocument, element: ModdleElement, bindi
     const values = extensionValuesWithBinding(document.moddle, element, binding);
     const extensionElements = element.extensionElements as ModdleElement | undefined;
     const elementIds = [String(element.id)];
+
+    // Removing a binding the element does not have changes nothing, unless it leaves an empty extensionElements to drop.
+    const isEmptyContainer = extensionElements !== undefined && values.length === 0 && !hasForeignAttributes(extensionElements);
+    if (binding === null && readBinding(element) === null && !isEmptyContainer) return null;
 
     if (extensionElements && (values.length > 0 || hasForeignAttributes(extensionElements))) {
         return propertyChange(document, extensionElements, { values }, elementIds);

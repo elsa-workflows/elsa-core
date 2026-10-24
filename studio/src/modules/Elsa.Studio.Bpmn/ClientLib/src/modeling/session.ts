@@ -66,7 +66,8 @@ export class BpmnModelingSession {
         // write() serializes before it returns its promise, so the XML is exactly the state captured here.
         const stateId = this.stack.stateId;
         const xml = await document.write();
-        this.stack.markSaved(stateId);
+        // A load that replaced the document while this save ran started a new history; the old state means nothing to it.
+        if (this.current === document) this.stack.markSaved(stateId);
         return { xml };
     }
 

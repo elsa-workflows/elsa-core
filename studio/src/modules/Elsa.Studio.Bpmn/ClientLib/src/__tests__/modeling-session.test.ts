@@ -139,6 +139,18 @@ describe('bindings', () => {
         expect(session.undo()).toBe(false);
     });
 
+    it('setBinding removing a binding already removed keeps the foreign extension content without another edit', async () => {
+        const { session, changes } = await loaded('order.bpmn');
+        session.setBinding('Charge', null);
+        changes.length = 0;
+
+        expect(session.setBinding('Charge', null)).toEqual({ applied: true });
+
+        expect(changes).toEqual([]);
+        expect(session.undo()).toBe(true);
+        expect(session.undo()).toBe(false);
+    });
+
     it('setBinding refuses an unknown element, an element that cannot carry a binding, and a message task', async () => {
         const { session, changes } = await loaded('order.bpmn');
 
@@ -200,6 +212,23 @@ describe('change, undo and redo', () => {
 
         expect(xml).not.toMatch(/<bpmn:userTask id="Review"[^>]*>\s*<bpmn:extensionElements>/);
         expect(changes.map(change => change.isDirty)).toEqual([false, true]);
+    });
+
+    it('a save that a load overtakes leaves the newly loaded document clean', async () => {
+        const { session } = await loaded('order.bpmn');
+        session.setBinding('Review', CHARGE_BINDING);
+        // Hold the save's write open until the load has replaced the document.
+        const saved = session.document!;
+        const write = saved.write.bind(saved);
+        let release!: () => void;
+        saved.write = () => write().then(xml => new Promise<string>(resolve => (release = () => resolve(xml))));
+
+        const saving = session.save();
+        await session.load(fixture('order.bpmn'));
+        release();
+        await saving;
+
+        expect(session.isDirty).toBe(false);
     });
 
     it('undo and redo return false when there is nothing to do', async () => {

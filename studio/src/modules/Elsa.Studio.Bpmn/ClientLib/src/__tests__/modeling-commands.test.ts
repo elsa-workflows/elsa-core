@@ -24,6 +24,15 @@ describe('updateProperties', () => {
         expect((await session.save()).xml).toBe(original);
     });
 
+    it('refuses an id that is not a non-empty string, including one set to undefined', async () => {
+        const { document } = await loaded();
+
+        for (const id of [undefined, '', 42]) {
+            expect(() => updateProperties(document, 'Review', { id })).toThrow('An element id must be a non-empty string.');
+        }
+        expect(document.element('Review')).toBeDefined();
+    });
+
     it('refuses two renames to one id in one compound, and leaves the document and its history as they were', async () => {
         const { session, document, original } = await loaded();
         const both = compound([updateProperties(document, 'Review', { id: 'Check' }), updateProperties(document, 'Charge', { id: 'Check' })]);
