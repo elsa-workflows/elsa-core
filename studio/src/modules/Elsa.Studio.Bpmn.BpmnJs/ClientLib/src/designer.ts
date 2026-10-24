@@ -1,7 +1,7 @@
 /**
  * The bpmn-js BPMN designer: BPMN designer contract version 1 on bpmn-js.
  *
- * Elements are identified by their BPMN element id everywhere: selection, bindings, change events and overlays. A
+ * Elements are identified by their BPMN element id everywhere: selection, bindings, change events, overlays and markers. A
  * designer created with `readOnly` is a bpmn-js viewer, so it has no editing tools at all.
  */
 import Modeler from 'bpmn-js/lib/Modeler';
@@ -18,6 +18,7 @@ import {
     type BpmnChangeEvent,
     type BpmnDesigner,
     type BpmnDesignerOptions,
+    type BpmnElementMarker,
     type BpmnElementStats,
     type BpmnLoadResult,
     type BpmnOverlayResult,
@@ -34,6 +35,17 @@ interface DiagramElement {
     readonly type: string;
     readonly businessObject?: ModdleElement;
     readonly labelTarget?: unknown;
+    readonly parent?: unknown;
+}
+
+interface Overlays {
+    add(element: DiagramElement, type: string, overlay: { position: Record<string, number>; html: HTMLElement }): void;
+    remove(filter: { type: string }): void;
+}
+
+interface Canvas {
+    addMarker(element: DiagramElement, marker: string): void;
+    removeMarker(element: DiagramElement, marker: string): void;
 }
 
 interface ElementRegistry {
@@ -49,6 +61,7 @@ interface Modeling {
 type CommandStackTrigger = 'execute' | 'undo' | 'redo' | 'clear' | null;
 
 const OVERLAY_TYPE = 'elsa-element-state';
+const PROBLEM_OVERLAY_TYPE = 'elsa-element-problem';
 const CONTAINER_CLASS = 'elsa-bpmn-js-designer';
 
 export function createDesigner(container: HTMLElement, options: BpmnDesignerOptions = {}): BpmnDesigner {
@@ -75,6 +88,7 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
     const eventBus = service<{ on(event: string, priority: number, callback: (event: any) => void): void; off(event: string, callback: (event: any) => void): void }>('eventBus');
     const unsubscribers: (() => void)[] = [];
     const markedElements = new Map<string, string>();
+    const problemElements = new Map<string, string>();
     let changedIds = new Set<string>();
     let loading = false;
     let hasDocument = false;
@@ -203,14 +217,25 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
     // Methods never use `this`: a JS interop host may call them detached from the designer.
     function clearOverlays(): BpmnOverlayResult {
         ensureLive();
-        service<{ remove(filter: { type: string }): void }>('overlays').remove({ type: OVERLAY_TYPE });
-        const canvas = service<{ removeMarker(element: DiagramElement, marker: string): void }>('canvas');
-        for (const [shapeId, marker] of markedElements) {
+        removeDrawing(OVERLAY_TYPE, markedElements);
+        return { applied: [], unknownElementIds: [] };
+    }
+
+    function clearMarkers(): BpmnOverlayResult {
+        ensureLive();
+        removeDrawing(PROBLEM_OVERLAY_TYPE, problemElements);
+        return { applied: [], unknownElementIds: [] };
+    }
+
+    /** Removes the overlays of `type` and the canvas markers `marked` records, keyed by shape id. */
+    function removeDrawing(type: string, marked: Map<string, string>): void {
+        service<Overlays>('overlays').remove({ type });
+        const canvas = service<Canvas>('canvas');
+        for (const [shapeId, marker] of marked) {
             const element = service<ElementRegistry>('elementRegistry').get(shapeId);
             if (element) canvas.removeMarker(element, marker);
         }
-        markedElements.clear();
-        return { applied: [], unknownElementIds: [] };
+        marked.clear();
     }
 
     return {
@@ -223,6 +248,7 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
                 // bpmn-js can replace the document before an import fails, so keep what a save would write now.
                 if (hasDocument) previous = { xml: await serialize(), isDirty: currentStateId() !== savedStateId };
                 clearOverlays();
+                clearMarkers();
                 const layout = await withGeneratedLayout(xml);
                 await bpmnjs!.importXML(layout.xml);
                 // What a save right after loading writes, compared with what the host gave us.
@@ -315,8 +341,8 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
 
         applyOverlays(statsById: Record<string, BpmnElementStats> | null): BpmnOverlayResult {
             clearOverlays();
-            const overlays = service<{ add(element: DiagramElement, type: string, overlay: { position: Record<string, number>; html: HTMLElement }): void }>('overlays');
-            const canvas = service<{ addMarker(element: DiagramElement, marker: string): void }>('canvas');
+            const overlays = service<Overlays>('overlays');
+            const canvas = service<Canvas>('canvas');
             const applied: string[] = [];
             const unknownElementIds: string[] = [];
 
@@ -340,6 +366,42 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
 
         clearOverlays,
 
+        applyMarkers(markers: BpmnElementMarker[] | null): BpmnOverlayResult {
+            ensureLive();
+            for (const marker of markers ?? []) {
+                if (typeof marker?.elementId !== 'string' || typeof marker.severity !== 'string' || typeof marker.message !== 'string')
+                    throw new TypeError('A BPMN element marker needs a string elementId, severity and message.');
+            }
+            clearMarkers();
+
+            // Each element's markers, in the order the list first names the element.
+            const byElementId = new Map<string, BpmnElementMarker[]>();
+            for (const marker of markers ?? []) byElementId.set(marker.elementId, [...(byElementId.get(marker.elementId) ?? []), marker]);
+
+            const overlays = service<Overlays>('overlays');
+            const canvas = service<Canvas>('canvas');
+            const applied: string[] = [];
+            const unknownElementIds: string[] = [];
+
+            for (const [elementId, elementMarkers] of byElementId) {
+                // The root is the process or collaboration itself, which the canvas does not draw as a shape.
+                const element = findElement(elementId);
+                if (!element?.parent) {
+                    unknownElementIds.push(elementId);
+                    continue;
+                }
+                const severity = elementMarkers.some(marker => severityOf(marker) === 'error') ? 'error' : 'warning';
+                canvas.addMarker(element, `elsa-problem-${severity}`);
+                problemElements.set(element.id, `elsa-problem-${severity}`);
+                overlays.add(element, PROBLEM_OVERLAY_TYPE, { position: { bottom: 10, left: -10 }, html: problemBadge(elementMarkers, severity) });
+                applied.push(elementId);
+            }
+
+            return { applied, unknownElementIds };
+        },
+
+        clearMarkers,
+
         on(event: 'change' | 'selection', listener: ((event: BpmnChangeEvent) => void) | ((event: BpmnSelectionEvent) => void)): () => void {
             ensureLive();
             const set = listeners[event] as Set<unknown> | undefined;
@@ -357,6 +419,7 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
             listeners.change.clear();
             listeners.selection.clear();
             markedElements.clear();
+            problemElements.clear();
             bpmnjs!.destroy();
             bpmnjs = null;
             container.classList.remove(CONTAINER_CLASS);
@@ -403,5 +466,20 @@ function badge(stats: BpmnElementStats, state: ElementState): HTMLElement {
     element.className = `elsa-bpmn-badge elsa-bpmn-badge-${state}`;
     element.textContent = String(countOf(stats, state));
     element.title = `Started ${stats.started ?? 0}, completed ${stats.completed ?? 0}, active ${stats.active ?? 0}`;
+    return element;
+}
+
+/** A marker's severity as drawn: one the designer does not know shows as an error. */
+function severityOf(marker: BpmnElementMarker): 'error' | 'warning' {
+    return marker.severity === 'warning' ? 'warning' : 'error';
+}
+
+function problemBadge(markers: BpmnElementMarker[], severity: 'error' | 'warning'): HTMLElement {
+    const element = document.createElement('div');
+    element.className = `elsa-bpmn-problem elsa-bpmn-problem-${severity}`;
+    element.textContent = '!';
+    element.title = markers.map(marker => marker.message).join('\n');
+    element.setAttribute('role', 'img');
+    element.setAttribute('aria-label', element.title);
     return element;
 }

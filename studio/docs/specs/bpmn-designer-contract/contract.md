@@ -119,6 +119,29 @@ The binding format is defined by `BpmnActivityBindingFormat` in `Elsa.Bpmn.Inter
 the new map are removed, and `null` or an empty map clears the overlay, as `clearOverlays` does. Both return
 `{ applied, unknownElementIds }`, which are empty after a clear.
 
+### `applyMarkers(markers | null)` and `clearMarkers()` (optional)
+
+Problem markers show what is wrong with an element, such as a reason Elsa's import would refuse the document. A designer
+implements both methods or neither. A host checks that `applyMarkers` exists before it calls either. Without them,
+the host shows problems some other way, such as in a list.
+
+`applyMarkers` takes a list of `{ elementId, severity, message }` and replaces every marker. `null` or an empty list
+clears them, as `clearMarkers` does.
+
+- **Severity.** `severity` is `error` or `warning`. A designer shows a severity it does not know as `error`.
+- **Several markers on one element.** The element shows the most severe one and every message.
+- **Sequence flows.** A sequence flow can be marked like any other element.
+- **Result.** Both methods return `{ applied, unknownElementIds }`, which are empty after a clear.
+  - `applied` lists each marked element once, in the order the list first names it.
+  - `unknownElementIds` lists the same way each id the designer does not draw, such as a process's own id.
+- **Lifetime.**
+  - Markers stay until the next `applyMarkers`, `clearMarkers` or `load`.
+  - An edit that removes an element removes its markers too.
+  - Markers and overlays are independent: neither pair of methods changes what the other shows.
+  - Markers work in a designer created with `readOnly` as well.
+- **Errors.** `applyMarkers` throws a `TypeError` for a marker whose `elementId`, `severity` or `message` is not a
+  string.
+
 ### `on(event, listener)`
 
 Subscribes and returns the function that unsubscribes. The events are:

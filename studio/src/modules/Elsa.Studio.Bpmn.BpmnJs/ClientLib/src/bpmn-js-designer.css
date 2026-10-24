@@ -9,8 +9,9 @@
  * visible, and a dark canvas would hide it. The palette, context pad and properties panel follow bpmn.io's `--bio-*`
  * tokens, which a host may map onto its own theme.
  *
- * Instance state uses `--elsa-bpmn-state-*`, so a host can match its palette. Shapes are drawn with inline styles,
- * so the markers need !important.
+ * Instance state uses `--elsa-bpmn-state-*` and problem markers `--elsa-bpmn-problem-*`, so a host can match its
+ * palette. Shapes are drawn with inline styles, so the markers need !important. A problem marker comes after the state
+ * markers, so it wins on an element that has both.
  */
 .elsa-bpmn-js-designer {
     --elsa-bpmn-state-faulted: #d32f2f;
@@ -19,6 +20,8 @@
     --elsa-bpmn-state-completed: #2e7d32;
     --elsa-bpmn-state-canceled: #9e9e9e;
     --elsa-bpmn-state-idle: #616161;
+    --elsa-bpmn-problem-error: #d32f2f;
+    --elsa-bpmn-problem-warning: #ed6c02;
     background: #ffffff;
     color-scheme: light;
 }
@@ -28,6 +31,8 @@
 .elsa-bpmn-js-designer .djs-element.elsa-active .djs-visual > :first-child { stroke: var(--elsa-bpmn-state-active) !important; }
 .elsa-bpmn-js-designer .djs-element.elsa-completed .djs-visual > :first-child { stroke: var(--elsa-bpmn-state-completed) !important; }
 .elsa-bpmn-js-designer .djs-element.elsa-canceled .djs-visual > :first-child { stroke: var(--elsa-bpmn-state-canceled) !important; }
+.elsa-bpmn-js-designer .djs-element.elsa-problem-warning .djs-visual > :first-child { stroke: var(--elsa-bpmn-problem-warning) !important; }
+.elsa-bpmn-js-designer .djs-element.elsa-problem-error .djs-visual > :first-child { stroke: var(--elsa-bpmn-problem-error) !important; }
 
 .elsa-bpmn-badge {
     min-width: 18px;
@@ -43,3 +48,15 @@
 .elsa-bpmn-badge-active { background: var(--elsa-bpmn-state-active); }
 .elsa-bpmn-badge-completed { background: var(--elsa-bpmn-state-completed); }
 .elsa-bpmn-badge-canceled { background: var(--elsa-bpmn-state-canceled); }
+
+.elsa-bpmn-problem {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    font: 700 12px/18px sans-serif;
+    text-align: center;
+    color: #ffffff;
+    cursor: help;
+}
+.elsa-bpmn-problem-error { background: var(--elsa-bpmn-problem-error); }
+.elsa-bpmn-problem-warning { background: var(--elsa-bpmn-problem-warning); }

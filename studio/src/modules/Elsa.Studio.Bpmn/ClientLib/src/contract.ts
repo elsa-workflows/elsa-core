@@ -38,6 +38,13 @@ export interface BpmnDesigner {
     redo(): boolean;
     applyOverlays(statsById: Record<string, BpmnElementStats> | null): BpmnOverlayResult;
     clearOverlays(): BpmnOverlayResult;
+    /**
+     * Optional, with `clearMarkers`. Replaces every problem marker with `markers`; `null` or an empty list clears them.
+     * Throws a `TypeError` for a marker whose `elementId`, `severity` or `message` is not a string.
+     */
+    applyMarkers?(markers: BpmnElementMarker[] | null): BpmnOverlayResult;
+    /** Optional, with `applyMarkers`. Clears every problem marker. */
+    clearMarkers?(): BpmnOverlayResult;
     on(event: 'change', listener: (event: BpmnChangeEvent) => void): () => void;
     on(event: 'selection', listener: (event: BpmnSelectionEvent) => void): () => void;
     dispose(): void;
@@ -91,6 +98,16 @@ export interface BpmnElementStats {
     readonly blocked?: boolean;
     readonly faulted?: boolean;
     readonly canceled?: boolean;
+}
+
+/** How serious a marker's problem is. A designer shows a severity it does not know as `error`. */
+export type BpmnMarkerSeverity = 'error' | 'warning' | (string & {});
+
+/** A problem to show on an element, such as a reason Elsa's import would refuse the document. */
+export interface BpmnElementMarker {
+    elementId: string;
+    severity: BpmnMarkerSeverity;
+    message: string;
 }
 
 export interface BpmnOverlayResult {

@@ -22,11 +22,12 @@ To use a Chromium that is already installed, set `BPMN_DESIGNER_CHROMIUM` to its
 ## What it checks
 
 - `contract.spec.ts`: every member of the contract: loading and its warnings, saving, selection, bindings, undo and
-  redo, read-only designers, overlays and disposal.
+  redo, read-only designers, overlays, problem markers and disposal. The marker tests are skipped for a designer
+  without the optional `applyMarkers`.
 - `host.spec.ts`: the Blazor host's shim (`Elsa.Studio.Bpmn/wwwroot/bpmn-canvas-host.js`) with the designer under
   test: URLs resolved against the page's base URL, one stylesheet link, events forwarded, and the refusal of a module
   with another id or contract version.
-- `bpmn-js.spec.ts`: what the bpmn-js designer draws, such as its overlay badges. The contract leaves drawing to
+- `bpmn-js.spec.ts`: what the bpmn-js designer draws, such as its overlay and problem badges. The contract leaves drawing to
   each designer, so it runs only against bpmn-js.
 - `preservation.spec.ts`: round trips. `fixtures/preservation.bpmn` holds everything a designer must keep: `elsa:`
   bindings with escaped and non-ASCII JSON, foreign extension elements and attributes, subprocess bodies three levels

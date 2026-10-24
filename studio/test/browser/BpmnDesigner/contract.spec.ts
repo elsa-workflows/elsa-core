@@ -312,6 +312,87 @@ test.describe('overlays', () => {
     });
 });
 
+/** Whether the designer under test implements the optional problem markers. */
+function hasMarkers(page: Page): Promise<boolean> {
+    return page.evaluate(() => typeof (window as unknown as { harness: Harness }).harness.designer.applyMarkers === 'function');
+}
+
+test.describe('markers', () => {
+    test.beforeEach(async ({ harness }) => {
+        await create(harness);
+        test.skip(!(await hasMarkers(harness)), 'The designer does not implement the optional problem markers.');
+    });
+
+    test('a designer that has applyMarkers has clearMarkers too', async ({ harness }) => {
+        expect(await harness.evaluate(() => typeof (window as unknown as { harness: Harness }).harness.designer.clearMarkers)).toBe('function');
+    });
+
+    test('applyMarkers replaces the markers, names each element once and reports unknown ids; null and clearMarkers clear them', async ({ harness }) => {
+        await loaded(harness, 'order.bpmn');
+
+        expect(await call(harness, 'applyMarkers', [
+            { elementId: 'Charge', severity: 'error', message: 'Unbound.' },
+            { elementId: 'Nope', severity: 'error', message: 'Missing.' },
+            { elementId: 'Flow_2', severity: 'warning', message: 'Never taken.' },
+            { elementId: 'Charge', severity: 'warning', message: 'Also this.' },
+            { elementId: 'Nope', severity: 'warning', message: 'Still missing.' }
+        ])).toEqual({ applied: ['Charge', 'Flow_2'], unknownElementIds: ['Nope'] });
+        expect(await call(harness, 'applyMarkers', [{ elementId: 'Review', severity: 'error', message: 'Unbound.' }]))
+            .toEqual({ applied: ['Review'], unknownElementIds: [] });
+        expect(await call(harness, 'applyMarkers', null)).toEqual({ applied: [], unknownElementIds: [] });
+        await call(harness, 'applyMarkers', [{ elementId: 'Charge', severity: 'error', message: 'Unbound.' }]);
+        expect(await call(harness, 'clearMarkers')).toEqual({ applied: [], unknownElementIds: [] });
+    });
+
+    test('a process is not an element the designer draws', async ({ harness }) => {
+        await loaded(harness, 'order.bpmn');
+
+        expect(await call(harness, 'applyMarkers', [{ elementId: 'Process_Order', severity: 'error', message: 'No start event.' }]))
+            .toEqual({ applied: [], unknownElementIds: ['Process_Order'] });
+    });
+
+    test('a marker that is not three strings is refused with a TypeError', async ({ harness }) => {
+        await loaded(harness, 'order.bpmn');
+
+        for (const marker of [{ severity: 'error', message: 'x' }, { elementId: 'Charge', message: 'x' }, { elementId: 'Charge', severity: 'error', message: 1 }, null]) {
+            const error = await harness.evaluate(marker => {
+                try {
+                    (window as unknown as { harness: Harness }).harness.designer.applyMarkers([marker]);
+                    return null;
+                } catch (error) {
+                    return (error as Error).name;
+                }
+            }, marker);
+            expect(error, JSON.stringify(marker)).toBe('TypeError');
+        }
+    });
+
+    test('a severity the designer does not know is still applied', async ({ harness }) => {
+        await loaded(harness, 'order.bpmn');
+
+        expect(await call(harness, 'applyMarkers', [{ elementId: 'Charge', severity: 'fatal', message: 'Unbound.' }]))
+            .toEqual({ applied: ['Charge'], unknownElementIds: [] });
+    });
+
+    test('markers work in a read-only designer', async ({ harness }) => {
+        await loaded(harness, 'order.bpmn', { readOnly: true });
+
+        expect(await call(harness, 'applyMarkers', [{ elementId: 'Charge', severity: 'error', message: 'Unbound.' }]))
+            .toEqual({ applied: ['Charge'], unknownElementIds: [] });
+    });
+
+    test('markers raise no change and leave the document clean', async ({ harness }) => {
+        await loaded(harness, 'order.bpmn');
+        await clearEvents(harness);
+
+        await call(harness, 'applyMarkers', [{ elementId: 'Charge', severity: 'error', message: 'Unbound.' }]);
+        await call(harness, 'clearMarkers');
+
+        expect(await events(harness, 'change')).toEqual([]);
+        expect(await call(harness, 'undo')).toBe(false);
+    });
+});
+
 test.describe('dispose', () => {
     test('is idempotent, empties the hosts, and makes every other method throw', async ({ harness }) => {
         await loaded(harness, 'order.bpmn', { withProperties: true });
@@ -323,6 +404,11 @@ test.describe('dispose', () => {
         expect(await harness.locator('#properties').innerHTML()).toBe('');
         for (const [method, args] of [['load', ['<x/>']], ['save', []], ['select', [null]], ['getBinding', ['Charge']], ['setBinding', ['Charge', null]], ['undo', []], ['redo', []], ['applyOverlays', [null]], ['clearOverlays', []]] as const) {
             await expect(call(harness, method, ...args), method).rejects.toThrow(/disposed/);
+        }
+        if (await hasMarkers(harness)) {
+            for (const [method, args] of [['applyMarkers', [null]], ['clearMarkers', []]] as const) {
+                await expect(call(harness, method, ...args), method).rejects.toThrow(/disposed/);
+            }
         }
         await expect(harness.evaluate(() => (window as unknown as { harness: Harness }).harness.designer.on('change', () => {}))).rejects.toThrow(/disposed/);
     });
