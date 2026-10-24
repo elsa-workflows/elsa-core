@@ -2,6 +2,7 @@ using System.Text.Json;
 using Bpmn.Interchange;
 using Bpmn.Model;
 using Elsa.Bpmn.Activities;
+using Elsa.Bpmn.Interchange.Activities;
 using Elsa.Bpmn.Interchange.Binding;
 using Elsa.Bpmn.Interchange.Exceptions;
 using Elsa.Scheduling.Activities;
@@ -238,15 +239,17 @@ public class BpmnWorkBinderTests(ITestOutputHelper testOutputHelper) : BpmnBindi
         Assert.Empty(result.WorkflowState.Incidents);
     }
 
-    [Fact(DisplayName = "An unbound task the document does not bind is refused, naming the element")]
-    public void UnboundTask_WithNoDeclarationIsRefused()
+    [Theory(DisplayName = "An unbound task the document does not bind, and whose type implies no activity here, binds to a placeholder naming the element")]
+    [InlineData(BpmnElementTypes.ServiceTask)]
+    [InlineData(BpmnElementTypes.Task)]
+    // A userTask implies the User Tasks module's activity, which this application does not register.
+    [InlineData(BpmnElementTypes.UserTask)]
+    public void UnboundTask_WithNoDeclaration_BindsToAPlaceholder(string taskType)
     {
-        // The failure that has to be loud. Skipping the binding instead would produce a scope whose interpreter
-        // schedules work for a binding ref nothing maps, which surfaces much later and much further away.
-        var exception = Assert.Throws<BpmnBindingException>(() => Bind(Definition(Element("approve", BpmnElementTypes.UserTask)), Unbound("approve")));
+        var scope = Bind(Definition(Element("approve", taskType)), new BpmnWorkBinding.UnboundTask(ProcessId, "approve", Ref("approve"), BpmnBindingSlot.Primary, taskType));
 
-        Assert.Contains("approve", exception.Message);
-        Assert.Contains(BpmnActivityBindingFormat.BindingElementName, exception.Message);
+        var placeholder = Assert.IsType<BpmnUnboundTask>(WorkOf(scope, "approve"));
+        Assert.Equal(("approve", taskType), (placeholder.ElementId, placeholder.TaskType));
     }
 
     [Fact(DisplayName = "An unbound task the document binds resolves to the declared activity, inputs intact")]

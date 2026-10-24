@@ -35,6 +35,8 @@ curl -s -X POST https://localhost:5001/elsa/api/bpmn/analyze \
 
 This returns a JSON body of process ids, element counts, and findings (e.g. informational notes about unbound service tasks or retained vendor extensions).
 
+It also lists in `unboundElementIds` the tasks an import would accept without an activity to perform them (see [Tasks without a binding](#tasks-without-a-binding)); publishing is refused until they are bound.
+
 It also runs the checks an import makes before it saves, and reports in `refusal` why an import of the document would be refused: `{ code, message, elementIds }`, with the same code and message an import responds with, and `null` when the document would import. The checks are capabilities, conditions, bindings and whether the process can run. A refusal of an element's binding, a condition or a capability names the elements it is about; a process that cannot run names none yet. An import stops at its first refusal, so analyze reports that one. A document that declares more than one process is checked only when the `processId` query parameter names the process an import would bind.
 
 ## BpmnProcess Activity
@@ -89,7 +91,7 @@ The ledger is serialized to JSON as part of the scope's `ActivityExecutionContex
 | `MessagePublish` | Message throw event | `PublishEvent` |
 | `CallProcess` | Call activity | `DispatchWorkflow` |
 | `NestedProcess` | Embedded subprocess | Recursively bound `BpmnProcess` |
-| `UnboundTask` | Task, user, service, script, manual or business rule task; a send or receive task without a resolvable message | Author-declared via `elsa:activityBinding` (see below) |
+| `UnboundTask` | Task, user, service, script, manual or business rule task; a send or receive task without a resolvable message | Author-declared via `elsa:activityBinding` (see below); otherwise the type's default, or a placeholder (see [Tasks without a binding](#tasks-without-a-binding)) |
 
 BPMN describes *what* a task is for, not *how* to perform it. An unbound task gets its implementation from an `elsa:activityBinding` vendor extension inside the BPMN element's `<extensionElements>`. A send or receive task whose `messageRef` resolves to a named message is not unbound: it binds to `MessagePublish` or `MessageWait` like a message throw or catch event. `elsa:activityBinding` is accepted only on an unbound task; the binder refuses one on any other element, such as a gateway, an event, or a send or receive task bound to its message, because nothing would ever run it.
 
@@ -159,6 +161,17 @@ Namespace URI: `https://elsaworkflows.io/schemas/bpmn/v1`, conventional prefix `
 An exported `.bpmn` is self-contained: all binding configuration, including input expressions, travels verbatim in the document. Handle exported files with the same care as the workflow definitions they represent.
 
 **The names in this format are a compatibility surface.** Changing `NamespaceUri`, `BindingElementName`, `ActivityTypeAttributeName`, `InputElementName`, or `InputNameAttributeName` breaks every previously exported `.bpmn` file. Studio and any other tooling that reads or writes this extension must agree on these constants.
+
+### Tasks without a binding
+
+A task that declares no `elsa:activityBinding` is not refused, so a process can be drawn first and implemented later:
+
+- A `userTask` binds to the User Tasks module's `UserTask` activity (`Elsa.UserTask`), titled with the element's name or, without one, its id, when that module is enabled.
+- Any other unbound task, and a `userTask` when the User Tasks module is not enabled, binds to a hidden `BpmnUnboundTask` placeholder. The placeholder faults if it runs.
+
+Import and both `PUT` endpoints accept the document and list the placeholder tasks in `analysis.unboundElementIds`; `bpmn/analyze` lists them in `unboundElementIds`. Publishing is refused while any placeholder remains, with a validation error naming the element. Binding a task means declaring its `elsa:activityBinding`.
+
+A default binding is not written into the stored document: exporting the process gives back the task as it was imported, and importing it again applies the default again.
 
 ## REST Endpoints
 
@@ -454,7 +467,7 @@ element that has a stored body but no `bindingRef`, are uncoded.
 | Code (`Elsa.Bpmn.Interchange.BpmnErrorCodes`) | Sent by | Status | `data` |
 | --- | --- | --- | --- |
 | `bpmn.import.capability-unsupported` | `POST bpmn/import`, document and XML `PUT` | 422 | `capabilities: string[]` (missing capability names), `elementIds: string[]` (offending element ids, combined across every missing capability) |
-| `bpmn.import.binding-invalid` | `POST bpmn/import`, document and XML `PUT` | 422 | `elementIds: string[]` (the element whose binding is refused), when the refusal is about one element |
+| `bpmn.import.binding-invalid` | `POST bpmn/import`, document and XML `PUT` | 422 | `elementIds: string[]` (the element whose binding is refused), when the refusal is about one element. A task with no binding at all is not refused; see [Tasks without a binding](#tasks-without-a-binding) |
 | `bpmn.import.duplicate-element-id` | `POST bpmn/import`, document and XML `PUT`; `POST bpmn/analyze` for two flow nodes sharing an id in one body | 422 | `elementIds: string[]` (the duplicated ids) |
 | `bpmn.import.process-invalid` | `POST bpmn/import`, document and XML `PUT` | 422 | — |
 | `bpmn.import.condition-language-unsupported` | `POST bpmn/import`, document and XML `PUT` | 422 | `elementIds: string[]` (the sequence flows whose expression is in a language Elsa does not evaluate, across the whole document including nested subprocesses, sorted and distinct) |

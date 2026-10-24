@@ -7,6 +7,7 @@ using Bpmn.Model;
 using Bpmn.Semantics;
 using Elsa.Bpmn.Activities;
 using Elsa.Bpmn.Hosting;
+using Elsa.Bpmn.Interchange.Activities;
 using Elsa.Bpmn.Interchange.Binding;
 using Elsa.Bpmn.Interchange.Endpoints.Bpmn.Document;
 using Elsa.Bpmn.Interchange.Exceptions;
@@ -215,7 +216,19 @@ public sealed class BpmnInterchangeDocumentService(
     /// <exception cref="BpmnConditionRefusedException">A sequence flow carries a condition Elsa cannot evaluate as written.</exception>
     /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
     /// <exception cref="BpmnProcessInvalidException">The process, or a subprocess body it can reach, cannot run.</exception>
-    public void Validate(string xml, string? processId = null)
+    public void Validate(string xml, string? processId = null) => _ = ValidateCore(xml, processId);
+
+    /// <summary>
+    /// Runs the checks <see cref="Validate"/> runs, throwing what it throws, and returns the ids of the tasks an import
+    /// would accept unbound: those it binds to a <see cref="BpmnUnboundTask"/> placeholder, which publishing refuses.
+    /// Empty for a document <see cref="Validate"/> does not check because it does not know which process to check.
+    /// </summary>
+    /// <inheritdoc cref="Validate" path="/param"/>
+    /// <inheritdoc cref="Validate" path="/exception"/>
+    public IReadOnlyList<string> ValidateAndFindUnboundTasks(string xml, string? processId = null) =>
+        ValidateCore(xml, processId) is { } process ? UnboundElementIdsOf(process) : [];
+
+    private BpmnProcess? ValidateCore(string xml, string? processId)
     {
         EnsureNoFlowNodeIdRepeatsInOneScope(xml);
         var result = reader.Read(xml, new BpmnImportOptions { ProcessId = processId });
@@ -225,15 +238,29 @@ public sealed class BpmnInterchangeDocumentService(
 
         if (string.IsNullOrWhiteSpace(processId) && result.Definitions.Processes.Count != 1)
         {
-            return;
+            return null;
         }
 
         var rootDefinition = ResolveRootDefinition(result.Definitions, processId);
 
         EnsureCapabilitiesSatisfied(rootDefinition, result.Bindings);
         EnsureConditionsEvaluable(result);
-        EnsureProcessBuilds(binder.Bind(rootDefinition, result.Bindings));
+
+        var process = binder.Bind(rootDefinition, result.Bindings);
+        EnsureProcessBuilds(process);
+        return process;
     }
+
+    /// <summary>The ids of the elements bound to a <see cref="BpmnUnboundTask"/> placeholder in a scope or any scope nested in it.</summary>
+    private static IReadOnlyList<string> UnboundElementIdsOf(BpmnProcess scope) =>
+        scope.Activities
+            .SelectMany(IEnumerable<string> (activity) => activity switch
+            {
+                BpmnUnboundTask unbound => [unbound.ElementId],
+                BpmnProcess nested => UnboundElementIdsOf(nested),
+                _ => []
+            })
+            .ToList();
 
     /// <summary>
     /// Reads a document, refuses it if the host cannot run what it declares, and binds it into the <see cref="BpmnProcess"/>
@@ -376,7 +403,7 @@ public sealed class BpmnInterchangeDocumentService(
             await store.SaveAsync(persisted, cancellationToken);
         }
 
-        return new BpmnDocumentImportResult(importResult, result.Analysis);
+        return new BpmnDocumentImportResult(importResult, result.Analysis) { UnboundElementIds = UnboundElementIdsOf(process) };
     }
 
     /// <summary>
@@ -438,7 +465,7 @@ public sealed class BpmnInterchangeDocumentService(
         }
 
         await mediator.SendAsync(new WorkflowDefinitionDraftSaved(result.Definition!), cancellationToken);
-        return new BpmnDocumentImportResult(new ImportWorkflowResult(true, result.Definition!, []), analysis);
+        return new BpmnDocumentImportResult(new ImportWorkflowResult(true, result.Definition!, []), analysis) { UnboundElementIds = UnboundElementIdsOf(process) };
     }
 
     private WorkflowDefinition CloneForDraftSaving(WorkflowDefinition source)
@@ -1253,4 +1280,11 @@ public sealed class BpmnInterchangeDocumentService(
 }
 
 /// <summary>The outcome of <see cref="BpmnInterchangeDocumentService.ImportAsync"/>: the persisted definition, plus what the read cost.</summary>
-public sealed record BpmnDocumentImportResult(ImportWorkflowResult ImportResult, BpmnImportAnalysis Analysis);
+public sealed record BpmnDocumentImportResult(ImportWorkflowResult ImportResult, BpmnImportAnalysis Analysis)
+{
+    /// <summary>
+    /// The ids of the tasks the import accepted without an activity to perform them, each bound to a
+    /// <see cref="BpmnUnboundTask"/> placeholder. Publishing is refused until every one is bound.
+    /// </summary>
+    public IReadOnlyList<string> UnboundElementIds { get; init; } = [];
+}

@@ -159,6 +159,15 @@ public sealed class BpmnActivityBindingFormat(IActivitySerializer activitySerial
     }
 
     /// <summary>
+    /// The binding element declaring an activity of <paramref name="activityType"/> with the given inputs, each given as
+    /// the JSON <see cref="Read"/> expects for it.
+    /// </summary>
+    internal static BpmnExtensionElement Declare(string activityType, params (string Name, string Json)[] inputs) =>
+        new(BindingQName,
+            [Attribute(ActivityTypeAttributeName, activityType)],
+            inputs.Select(input => new BpmnExtensionElement(InputQName, [Attribute(InputNameAttributeName, input.Name)], null, input.Json)).ToList());
+
+    /// <summary>
     /// The binding element declaring that <paramref name="activity"/> performs the work, with each of its configured
     /// inputs serialized.
     /// </summary>

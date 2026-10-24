@@ -23,7 +23,8 @@ public static class BpmnErrorCodes
     /// <summary>
     /// <c>bpmn/import</c> and the document and XML <c>PUT</c> refuse a document whose work binding — an
     /// <c>elsa:activityBinding</c>, a timer duration, a call activity — cannot be turned into a runnable Elsa
-    /// activity.
+    /// activity. A task that declares no binding at all is not refused: it is bound to a placeholder, which publishing
+    /// refuses.
     /// </summary>
     public const string ImportBindingInvalid = "bpmn.import.binding-invalid";
 

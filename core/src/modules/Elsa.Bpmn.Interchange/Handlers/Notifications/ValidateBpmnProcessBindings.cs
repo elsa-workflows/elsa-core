@@ -1,6 +1,7 @@
 using Bpmn.Interchange;
 using Bpmn.Model;
 using Elsa.Bpmn.Activities;
+using Elsa.Bpmn.Interchange.Activities;
 using Elsa.Mediator.Contracts;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
@@ -10,13 +11,14 @@ using Elsa.Workflows.Management.Notifications;
 namespace Elsa.Bpmn.Interchange.Handlers.Notifications;
 
 /// <summary>
-/// The second net for <see cref="BpmnWorkBinding.UnboundTask"/>. <see cref="Binding.BpmnWorkBinder"/> already
-/// refuses an unbound task at <em>import</em>, but a definition can be edited after import — through Elsa's own
-/// workflow designer, not through the BPMN document — and an edit can remove the activity a task was bound to,
-/// or leave the binding pointing at an activity type that has since been uninstalled. Neither edit touches the
-/// BPMN document this scope still carries, so neither is visible to the bind-time refusal; this handler is what
-/// catches both before the definition publishes. The two are reported with different messages: an id with no
-/// bound activity at all is "not bound", while an id resolved through <see cref="IActivitySerializer"/> to a
+/// Refuses to publish a process with a <see cref="BpmnWorkBinding.UnboundTask"/> that no activity performs.
+/// <see cref="Binding.BpmnWorkBinder"/> accepts such a task at import and save, bound to a <see cref="BpmnUnboundTask"/>
+/// placeholder, so that a process can be drawn before it is implemented; this handler is what keeps the placeholder out
+/// of a published workflow. A definition can also be edited after import — through Elsa's own workflow designer, not
+/// through the BPMN document — and an edit can remove the activity a task was bound to, or leave the binding pointing
+/// at an activity type that has since been uninstalled. Neither edit touches the BPMN document this scope still
+/// carries; this handler catches both before the definition publishes. They are reported with different messages: a
+/// placeholder or an id with no bound activity at all is "not bound", while an id resolved through <see cref="IActivitySerializer"/> to a
 /// <see cref="NotFoundActivity"/> - the same placeholder <c>BpmnActivityBindingFormat</c> already refuses at bind
 /// time for the identical reason - is "bound to an activity type that is no longer installed"; an operator needs
 /// to know which.
@@ -46,8 +48,8 @@ namespace Elsa.Bpmn.Interchange.Handlers.Notifications;
 /// <see cref="BpmnElementTypes.SendTask"/> and <see cref="BpmnElementTypes.ReceiveTask"/> — can be an
 /// <see cref="BpmnWorkBinding.UnboundTask"/>; every other bindable kind (a call activity, a nested subprocess, a
 /// message/signal/timer catch or throw, a message/signal/timer boundary) binds to an Elsa activity automatically and
-/// takes no <c>elsa:activityBinding</c> declaration, so <see cref="Binding.BpmnWorkBinder"/> never refuses those for
-/// want of one. A send or receive task that resolved a BPMN <c>message</c> is excluded the same way
+/// takes no <c>elsa:activityBinding</c> declaration, so <see cref="Binding.BpmnWorkBinder"/> never leaves those
+/// unbound. A send or receive task that resolved a BPMN <c>message</c> is excluded the same way
 /// <c>Bpmn.Interchange</c>'s own reader tells the two apart: it carries
 /// <see cref="BpmnXmlReader.MessageNamePropertyKey"/> in its <see cref="BpmnElement.Properties"/>, which only that
 /// resolution ever sets.
@@ -81,7 +83,7 @@ public class ValidateBpmnProcessBindings(IWorkflowGraphBuilder workflowGraphBuil
             {
                 var boundActivity = FindBoundActivity(scope, element.BindingRef!);
 
-                if (boundActivity is null)
+                if (boundActivity is null or BpmnUnboundTask)
                 {
                     notification.ValidationErrors.Add(new(
                         $"BPMN element '{element.ElementId}' ({element.ElementType}) of process '{scope.Process.ProcessId}' is not bound to an Elsa activity. "
