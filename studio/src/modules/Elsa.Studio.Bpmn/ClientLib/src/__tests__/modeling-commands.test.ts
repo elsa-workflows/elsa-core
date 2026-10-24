@@ -33,6 +33,28 @@ describe('updateProperties', () => {
         expect(document.element('Review')).toBeDefined();
     });
 
+    it('applies the properties given when the command was created, not later changes to that object', async () => {
+        const { session, document } = await loaded();
+        const properties: Record<string, unknown> = { id: 'Check' };
+        const command = updateProperties(document, 'Review', properties);
+
+        properties.id = undefined;
+        session.execute(command);
+
+        expect(document.element('Check')).toBeDefined();
+    });
+
+    it('leaves the document and its history as they were when setting one of the properties throws', async () => {
+        const { session, document, original } = await loaded();
+        const command = updateProperties(document, 'Review', { name: 'Check order', '': 'invalid' });
+
+        expect(() => session.execute(command)).toThrow();
+
+        expect(session.canUndo).toBe(false);
+        expect(session.isDirty).toBe(false);
+        expect((await session.save()).xml).toBe(original);
+    });
+
     it('refuses two renames to one id in one compound, and leaves the document and its history as they were', async () => {
         const { session, document, original } = await loaded();
         const both = compound([updateProperties(document, 'Review', { id: 'Check' }), updateProperties(document, 'Charge', { id: 'Check' })]);

@@ -17,6 +17,8 @@ import type { BpmnDocument } from './document.js';
 export function updateProperties(document: BpmnDocument, elementId: string, properties: Record<string, unknown>): Command {
     const element = document.element(elementId);
     if (!element) throw new Error(`The document has no element '${elementId}'.`);
+    // A copy, so a caller changing the object afterwards cannot apply a value that was not checked.
+    properties = { ...properties };
 
     // An `id` set to undefined would remove the id, and with it the element from the index, leaving references to it.
     const hasIdProperty = Object.prototype.hasOwnProperty.call(properties, 'id');
@@ -69,19 +71,30 @@ function propertyChange(document: BpmnDocument, target: ModdleElement, propertie
     // Whether each property was set, and to what, so revert removes what execute added rather than setting undefined.
     // Taken when the command executes, so a command after another in a compound sees what the earlier one set.
     let before: { name: string; isSet: boolean; value: unknown }[] = [];
+    const restore = (properties: typeof before) => {
+        for (const { name, isSet, value } of properties) set(target, name, isSet ? value : undefined);
+        document.reindex();
+    };
 
     return {
         elementIds,
         execute() {
             check?.();
             before = names.map(name => ({ name, isSet: isSet(target, name), value: get(target, name) }));
-            for (const name of names) set(target, name, properties[name]);
+            let applied = 0;
+            try {
+                for (const name of names) {
+                    set(target, name, properties[name]);
+                    applied++;
+                }
+            } catch (error) {
+                // The properties set before the one that threw are put back, so a refused edit changes nothing.
+                restore(before.slice(0, applied));
+                throw error;
+            }
             document.reindex();
         },
-        revert() {
-            for (const { name, isSet, value } of before) set(target, name, isSet ? value : undefined);
-            document.reindex();
-        }
+        revert: () => restore(before)
     };
 }
 
