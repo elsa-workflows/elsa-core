@@ -1,20 +1,9 @@
-// bpmn-moddle ships types for the BPMN model, not for its constructor; this is the part of it the tests use.
-import { BpmnModdle as BpmnModdleConstructor } from 'bpmn-moddle';
-import { elsaModdleDescriptor } from '../elsa-moddle.js';
-import type { ModdleElement, ModdleFactory } from '../binding.js';
+import type { ModdleElement } from '../binding.js';
+import { createModdle, type Moddle } from '../modeling/moddle.js';
 
-interface Moddle extends ModdleFactory {
-    fromXML(xml: string, typeName?: string): Promise<{ rootElement: ModdleElement; warnings: unknown[] }>;
-    toXML(element: ModdleElement, options?: { format?: boolean }): Promise<{ xml: string }>;
-}
-
-const BpmnModdle = BpmnModdleConstructor as new (packages?: Record<string, unknown>) => Moddle;
+export { createModdle };
 
 export const FOREIGN_NAMESPACE_URI = 'https://example.com/schemas/vendor';
-
-export function createModdle(): Moddle {
-    return new BpmnModdle({ elsa: elsaModdleDescriptor });
-}
 
 /** A one-process document whose process holds `content`, with the elsa and a foreign vendor namespace declared. */
 export function document(content: string): string {
