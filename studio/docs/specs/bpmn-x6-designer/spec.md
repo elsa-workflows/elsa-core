@@ -192,7 +192,8 @@ target's type, as the bpmn-js designer does:
   `attachedToRef`, refers to the new one, and an exclusive gateway's shape shows its marker;
 - a start event loses its incoming flows and an end event its outgoing flows.
 
-It throws for an unknown element and a target not among its options.
+It throws for an unknown element and a target not among its options. A create or a replace makes its objects once, so
+a redo puts back the objects that the commands after it changed.
 
 ### Dirty tracking
 
@@ -226,9 +227,11 @@ What the designer draws and edits, as of step 4b:
 - A create outside every pool of a collaboration is refused, and nothing changes.
 - A selected task, gateway or event shows a wrench beside its top-right corner. The wrench, or R, opens the menu of
   what `replaceOptions` offers; arrow keys move through it, Enter or a click replaces, and Escape or a press elsewhere
-  closes it. The element stays selected, and `selection` is raised again with its new type. Subprocesses, call
-  activities, event subprocesses and their start events, and data references are not replaced until step 7. Flows an
-  event-based gateway cannot have are kept until step 5 adds connection rules.
+  closes it. The menu opens below the wrench, or on the side with more room, shortened to fit, when it does not fit
+  there. The element stays selected. Whenever an edit, undo or redo changes the selected element's type or name,
+  `selection` is raised again. Subprocesses, call activities, event subprocesses and their start events, and data
+  references are not replaced until step 7. Flows an event-based gateway cannot have are kept until step 5 adds
+  connection rules.
 - A shape dropped onto another subprocess, participant or lane stays in the one it was in.
 - Lanes, labels and edges cannot be dragged. A boundary event moves only with its activity, until step 5 attaches and
   detaches them.
