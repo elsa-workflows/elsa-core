@@ -226,7 +226,8 @@ What the designer draws and edits, as of step 4c:
   lasso, space or connect tool, and no expanded subprocess or participant: subprocesses come in step 7 and participants
   in step 6. It cannot be used from the keyboard. It is disabled on the page that shows
   what an older tool drew for a collapsed subprocess on its parent's plane, until step 7, and absent when read-only.
-- A create outside every pool of a collaboration is refused, and nothing changes.
+- A create outside every pool of a collaboration is refused, and nothing changes, except for a text annotation or a
+  group, which goes into the collaboration.
 - A selected task, gateway or event shows a wrench beside its top-right corner. The wrench, or R, opens the menu of
   what `replaceOptions` offers; arrow keys move through it, Enter or a click replaces, and Escape or a press elsewhere
   closes it. The menu opens below the wrench, or on the side with more room, shortened to fit, when it does not fit
