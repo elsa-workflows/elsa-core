@@ -18,6 +18,7 @@ export const SHAPES = {
     label: 'elsa-x6-label',
     badge: 'elsa-x6-badge',
     problem: 'elsa-x6-problem',
+    handle: 'elsa-x6-handle',
     edge: 'elsa-x6-edge'
 } as const;
 
@@ -188,6 +189,12 @@ export function registerShapes(): void {
             body: { refWidth: '100%', refHeight: '100%', rx: 9, ry: 9, stroke: 'none' },
             label: text({ fill: '#ffffff', fontSize: 11, fontWeight: 600, pointerEvents: 'none' })
         }
+    }, true);
+
+    // A corner of the selected shape, dragged to resize it.
+    Graph.registerNode(SHAPES.handle, {
+        markup: [{ tagName: 'rect', selector: 'body' }],
+        attrs: { body: { refWidth: '100%', refHeight: '100%', fill: '#ffffff', stroke: 'var(--elsa-x6-selection)', strokeWidth: 1.5 } }
     }, true);
 
     Graph.registerNode(SHAPES.problem, {
