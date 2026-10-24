@@ -194,7 +194,7 @@ export function registerShapes(): void {
     // A corner of the selected shape, dragged to resize it.
     Graph.registerNode(SHAPES.handle, {
         markup: [{ tagName: 'rect', selector: 'body' }],
-        attrs: { body: { refWidth: '100%', refHeight: '100%', fill: '#ffffff', stroke: 'var(--elsa-x6-selection)', strokeWidth: 1.5 } }
+        attrs: { body: { refWidth: '100%', refHeight: '100%', fill: SURFACE, stroke: 'var(--elsa-x6-selection)', strokeWidth: 1.5 } }
     }, true);
 
     Graph.registerNode(SHAPES.problem, {
