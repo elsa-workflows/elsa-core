@@ -2,7 +2,9 @@ import copy
 import json
 from pathlib import Path
 import unittest
+from unittest import mock
 
+import run_secrets_postgresql_upgrade_fixture as fixture
 from run_secrets_postgresql_upgrade_fixture import validate_known_baseline
 
 
@@ -83,6 +85,27 @@ class KnownBaselineTests(unittest.TestCase):
         for marker in ('secrets-fixture', 'Password=', 'POSTGRES_PASSWORD', 'Host=127.0.0.1'):
             with self.subTest(marker=marker):
                 self.assertNotIn(marker, rendered)
+
+
+
+class StartPostgresTests(unittest.TestCase):
+    def test_waits_for_the_server_that_accepts_tcp_connections(self):
+        # The image's temporary initialization server accepts only Unix sockets, so readiness over the socket can be
+        # reported before that server stops and the real one starts.
+        inspect = mock.Mock(stdout=json.dumps({'5432/tcp': [{'HostPort': '15432'}]}))
+        checks = []
+
+        def run(command, **_):
+            checks.append(command)
+            return mock.Mock(returncode=0)
+
+        with mock.patch.object(fixture, 'docker_run', side_effect=[None, inspect]), \
+                mock.patch.object(fixture.subprocess, 'run', side_effect=run):
+            name, connection = fixture.start_postgres('postgres@sha256:' + '0' * 64)
+
+        self.assertEqual(1, len(checks))
+        self.assertEqual(['docker', 'exec', name, 'pg_isready', '-h', '127.0.0.1', '-p', '5432'], checks[0][:8])
+        self.assertIn('Port=15432', connection)
 
 
 if __name__ == '__main__':
