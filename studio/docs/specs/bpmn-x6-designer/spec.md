@@ -131,6 +131,17 @@ These are recorded here until step 8 writes the designer's limits document.
 - A document with duplicate ids keeps the first element with each id in the index, as bpmn-moddle resolves references
   to it.
 
+What the designer draws, as of step 2:
+
+- It draws but does not edit: nothing can be moved, created or deleted until steps 3 to 7. `setBinding`, undo and redo
+  are the only edits.
+- Pools and lanes are drawn horizontally, whatever their DI says.
+- DI colours (`bioc:` and `color:` attributes) are kept in the document but not drawn.
+- An exclusive gateway always shows its X; the DI's `isMarkerVisible` is not read.
+- An element drawn twice on one plane is drawn once there, at its first DI.
+- A document with several diagrams opens on the first one that is not a subprocess's plane; the others are reached only
+  through `select`.
+
 ## Open questions for the owner
 
 None of these block steps 1 to 3.

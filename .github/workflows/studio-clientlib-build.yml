@@ -78,6 +78,19 @@ jobs:
           dotnet run -c Release
           --project studio/test/browser/BpmnDesigner/ImportEquivalence/BpmnImportEquivalence.csproj
           -- "$RUNNER_TEMP/bpmn-designer-round-trips" .
+      - name: Verify the X6 designer against the BPMN designer contract
+        working-directory: studio/test/browser/BpmnDesigner
+        env:
+          BPMN_DESIGNER_DIRECTORY: ${{ github.workspace }}/studio/src/modules/Elsa.Studio.Bpmn.X6/wwwroot
+          BPMN_DESIGNER_MODULE: x6-designer.js
+          BPMN_DESIGNER_STYLESHEET: x6-designer.css
+          BPMN_DESIGNER_OUTPUT: ${{ runner.temp }}/bpmn-x6-designer-round-trips
+        run: npm test
+      - name: Verify Elsa imports the X6 designer's saved documents as it imports the originals
+        run: >-
+          dotnet run -c Release
+          --project studio/test/browser/BpmnDesigner/ImportEquivalence/BpmnImportEquivalence.csproj
+          -- "$RUNNER_TEMP/bpmn-x6-designer-round-trips" .
       - name: Verify real X6 edge-hover behavior
         working-directory: studio/test/browser/DesignerHover
         run: |

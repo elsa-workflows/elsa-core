@@ -1,0 +1,20 @@
+{
+  "name": "elsa-bpmn-x6-designer",
+  "description": "The X6 BPMN designer for Elsa Studio: implements the BPMN designer contract on AntV X6 and the shared modeling kernel.",
+  "repository": "https://github.com/elsa-workflows/elsa-core",
+  "license": "MIT",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@antv/x6": "2.19.2"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "typescript": "5.8.3"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit && node build.mjs"
+  }
+}

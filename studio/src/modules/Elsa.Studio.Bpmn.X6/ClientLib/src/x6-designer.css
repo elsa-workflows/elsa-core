@@ -1,0 +1,95 @@
+/*
+ * Everything the X6 designer draws with. X6 adds its own stylesheet when the first graph is created.
+ *
+ * The canvas stays light in every theme, as the bpmn-js designer's does. Shapes are painted from `--elsa-x6-*`;
+ * instance state uses `--elsa-bpmn-state-*` and problem markers `--elsa-bpmn-problem-*`, the variables the bpmn-js
+ * designer uses, so a host matches its palette once for both. A problem marker comes after the state markers, so it
+ * wins on an element that has both; the selection comes last.
+ */
+.elsa-x6-designer {
+    --elsa-x6-stroke: #22242a;
+    --elsa-x6-surface: #ffffff;
+    --elsa-x6-text: #22242a;
+    --elsa-x6-muted: #6b7280;
+    --elsa-x6-container-surface: #ffffff;
+    --elsa-x6-header-surface: #f3f4f6;
+    --elsa-x6-selection: #2563eb;
+    --elsa-bpmn-state-faulted: #d32f2f;
+    --elsa-bpmn-state-blocked: #ed6c02;
+    --elsa-bpmn-state-active: #0288d1;
+    --elsa-bpmn-state-completed: #2e7d32;
+    --elsa-bpmn-state-canceled: #9e9e9e;
+    --elsa-bpmn-state-idle: #616161;
+    --elsa-bpmn-problem-error: #d32f2f;
+    --elsa-bpmn-problem-warning: #ed6c02;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #ffffff;
+    color: var(--elsa-x6-text);
+    color-scheme: light;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+.elsa-x6-canvas {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.elsa-x6-breadcrumbs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    border-bottom: 1px solid #e5e7eb;
+    font-size: 13px;
+}
+
+.elsa-x6-breadcrumbs[hidden] {
+    display: none;
+}
+
+.elsa-x6-breadcrumb {
+    padding: 2px 6px;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    color: var(--elsa-x6-selection);
+    font: inherit;
+    cursor: pointer;
+}
+
+.elsa-x6-breadcrumb:hover {
+    background: #eff6ff;
+}
+
+.elsa-x6-breadcrumb[aria-current='page'] {
+    color: var(--elsa-x6-text);
+    font-weight: 600;
+    cursor: default;
+}
+
+.elsa-x6-breadcrumb[aria-current='page']:hover {
+    background: none;
+}
+
+.elsa-x6-breadcrumb-separator {
+    color: var(--elsa-x6-muted);
+}
+
+.elsa-x6-designer .x6-cell.elsa-faulted .elsa-x6-outline { stroke: var(--elsa-bpmn-state-faulted); }
+.elsa-x6-designer .x6-cell.elsa-blocked .elsa-x6-outline { stroke: var(--elsa-bpmn-state-blocked); }
+.elsa-x6-designer .x6-cell.elsa-active .elsa-x6-outline { stroke: var(--elsa-bpmn-state-active); }
+.elsa-x6-designer .x6-cell.elsa-completed .elsa-x6-outline { stroke: var(--elsa-bpmn-state-completed); }
+.elsa-x6-designer .x6-cell.elsa-canceled .elsa-x6-outline { stroke: var(--elsa-bpmn-state-canceled); }
+.elsa-x6-designer .x6-cell.elsa-problem-warning .elsa-x6-outline { stroke: var(--elsa-bpmn-problem-warning); }
+.elsa-x6-designer .x6-cell.elsa-problem-error .elsa-x6-outline { stroke: var(--elsa-bpmn-problem-error); }
+.elsa-x6-designer .x6-cell.elsa-selected .elsa-x6-outline { stroke: var(--elsa-x6-selection); }
+
+.elsa-x6-designer .x6-node,
+.elsa-x6-designer .x6-edge {
+    cursor: pointer;
+}

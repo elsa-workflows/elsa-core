@@ -2,6 +2,8 @@ using Elsa.Studio.Bpmn.BpmnJs;
 using Elsa.Studio.Bpmn.BpmnJs.Extensions;
 using Elsa.Studio.Bpmn.Designers;
 using Elsa.Studio.Bpmn.Extensions;
+using Elsa.Studio.Bpmn.X6;
+using Elsa.Studio.Bpmn.X6.Extensions;
 using Elsa.Studio.Contracts;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
@@ -127,6 +129,17 @@ public class BpmnDesignerResolverTests
 
         Assert.Equal(new BpmnDesignerDescriptor("bpmn-js", "_content/Elsa.Studio.Bpmn.BpmnJs/bpmn-js-designer.js", "_content/Elsa.Studio.Bpmn.BpmnJs/bpmn-js-designer.css"), designer);
         Assert.Equal(BpmnJsDesigner.DesignerId, designer!.DesignerId);
+    }
+
+    [Fact(DisplayName = "AddX6BpmnDesigner enables the X6 designer from its static web assets")]
+    public void AddX6BpmnDesigner_EnablesX6()
+    {
+        using var provider = new ServiceCollection().AddX6BpmnDesigner().BuildServiceProvider();
+
+        var designer = provider.GetRequiredService<BpmnDesignerResolver>().Resolve();
+
+        Assert.Equal(new BpmnDesignerDescriptor("x6", "_content/Elsa.Studio.Bpmn.X6/x6-designer.js", "_content/Elsa.Studio.Bpmn.X6/x6-designer.css"), designer);
+        Assert.Equal(X6BpmnDesigner.DesignerId, designer!.DesignerId);
     }
 
     [Fact(DisplayName = "A host whose designer choice is ambiguous fails when its startup tasks run")]
