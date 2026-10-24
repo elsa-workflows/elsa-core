@@ -33,6 +33,11 @@
 .elsa-bpmn-js-designer .djs-element.elsa-canceled .djs-visual > :first-child { stroke: var(--elsa-bpmn-state-canceled) !important; }
 .elsa-bpmn-js-designer .djs-element.elsa-problem-warning .djs-visual > :first-child { stroke: var(--elsa-bpmn-problem-warning) !important; }
 .elsa-bpmn-js-designer .djs-element.elsa-problem-error .djs-visual > :first-child { stroke: var(--elsa-bpmn-problem-error) !important; }
+/* A sequence flow draws its arrowhead's <defs> first, then its line, so the line and the arrowhead are coloured themselves. */
+.elsa-bpmn-js-designer .djs-connection.elsa-problem-warning .djs-visual > path { stroke: var(--elsa-bpmn-problem-warning) !important; }
+.elsa-bpmn-js-designer .djs-connection.elsa-problem-warning .djs-visual marker path { stroke: var(--elsa-bpmn-problem-warning) !important; fill: var(--elsa-bpmn-problem-warning) !important; }
+.elsa-bpmn-js-designer .djs-connection.elsa-problem-error .djs-visual > path { stroke: var(--elsa-bpmn-problem-error) !important; }
+.elsa-bpmn-js-designer .djs-connection.elsa-problem-error .djs-visual marker path { stroke: var(--elsa-bpmn-problem-error) !important; fill: var(--elsa-bpmn-problem-error) !important; }
 
 .elsa-bpmn-badge {
     min-width: 18px;

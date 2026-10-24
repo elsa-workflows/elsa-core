@@ -87,8 +87,9 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
     };
     const eventBus = service<{ on(event: string, priority: number, callback: (event: any) => void): void; off(event: string, callback: (event: any) => void): void }>('eventBus');
     const unsubscribers: (() => void)[] = [];
-    const markedElements = new Map<string, string>();
-    const problemElements = new Map<string, string>();
+    // Keyed by the diagram element rather than its id, which an edit can change while the marker is shown.
+    const markedElements = new Map<DiagramElement, string>();
+    const problemElements = new Map<DiagramElement, string>();
     let changedIds = new Set<string>();
     let loading = false;
     let hasDocument = false;
@@ -227,13 +228,13 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
         return { applied: [], unknownElementIds: [] };
     }
 
-    /** Removes the overlays of `type` and the canvas markers `marked` records, keyed by shape id. */
-    function removeDrawing(type: string, marked: Map<string, string>): void {
+    /** Removes the overlays of `type` and the canvas markers `marked` records. A removed element's marker went with it. */
+    function removeDrawing(type: string, marked: Map<DiagramElement, string>): void {
         service<Overlays>('overlays').remove({ type });
         const canvas = service<Canvas>('canvas');
-        for (const [shapeId, marker] of marked) {
-            const element = service<ElementRegistry>('elementRegistry').get(shapeId);
-            if (element) canvas.removeMarker(element, marker);
+        const registry = service<ElementRegistry>('elementRegistry');
+        for (const [element, marker] of marked) {
+            if (registry.get(element.id) === element) canvas.removeMarker(element, marker);
         }
         marked.clear();
     }
@@ -355,7 +356,7 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
                 const state = stateOf(stats);
                 if (state !== 'idle') {
                     canvas.addMarker(element, `elsa-${state}`);
-                    markedElements.set(element.id, `elsa-${state}`);
+                    markedElements.set(element, `elsa-${state}`);
                 }
                 overlays.add(element, OVERLAY_TYPE, { position: { top: -10, right: 10 }, html: badge(stats, state) });
                 applied.push(elementId);
@@ -392,7 +393,7 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
                 }
                 const severity = elementMarkers.some(marker => severityOf(marker) === 'error') ? 'error' : 'warning';
                 canvas.addMarker(element, `elsa-problem-${severity}`);
-                problemElements.set(element.id, `elsa-problem-${severity}`);
+                problemElements.set(element, `elsa-problem-${severity}`);
                 overlays.add(element, PROBLEM_OVERLAY_TYPE, { position: { bottom: 10, left: -10 }, html: problemBadge(elementMarkers, severity) });
                 applied.push(elementId);
             }
