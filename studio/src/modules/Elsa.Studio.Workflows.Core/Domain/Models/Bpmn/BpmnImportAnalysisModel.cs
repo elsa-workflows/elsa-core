@@ -27,4 +27,10 @@ public class BpmnImportAnalysisModel
     /// declares several processes and none was chosen. Only <c>bpmn/analyze</c> reports it.
     /// </summary>
     public BpmnImportRefusalModel? Refusal { get; set; }
+
+    /// <summary>
+    /// The id of every task the document binds to no activity. Such a task is accepted with a placeholder that refuses
+    /// to run, so the workflow cannot be published until each one is bound.
+    /// </summary>
+    public IReadOnlyCollection<string> UnboundElementIds { get; set; } = [];
 }

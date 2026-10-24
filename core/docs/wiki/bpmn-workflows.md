@@ -182,6 +182,8 @@ A task that declares no `elsa:activityBinding` is not refused, so a process can 
 
 Import and both `PUT` endpoints accept the document and list the placeholder tasks in `analysis.unboundElementIds`; `bpmn/analyze` lists them in `unboundElementIds`. Publishing is refused while any placeholder remains, with a validation error naming the element. Binding a task means declaring its `elsa:activityBinding`.
 
+Studio lists each placeholder task as a warning under the BPMN editor's problems, marked on the task, and its "Performed by" panel and the canvas show the task as not bound.
+
 A default binding is not written into the stored document: exporting the process gives back the task as it was imported, and importing it again applies the default again.
 
 ## REST Endpoints

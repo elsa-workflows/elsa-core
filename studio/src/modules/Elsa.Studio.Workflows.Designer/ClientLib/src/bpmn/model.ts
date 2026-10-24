@@ -131,7 +131,10 @@ export interface BpmnRect extends Readonly<BpmnBounds> {
 export type BpmnBindingState =
     /** The element declares a binding ref and `workBindings` resolves it to an activity. */
     | 'bound'
-    /** The element needs work performed and declares no binding ref at all. A publish error (W8). */
+    /**
+     * The element needs work performed and declares no binding ref at all, or its binding ref resolves to
+     * `Elsa.BpmnUnboundTask`, the placeholder elsa-core binds a task with no activity to. A publish error (W8).
+     */
     | 'unbound'
     /** The element declares a binding ref that `workBindings` -- or `activities` -- does not resolve. */
     | 'unresolved';

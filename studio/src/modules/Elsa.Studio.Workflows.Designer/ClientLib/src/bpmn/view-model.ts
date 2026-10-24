@@ -493,6 +493,9 @@ function buildElement(
     };
 }
 
+/** The activity elsa-core binds a task to when its document declares no activity for it: `Elsa.BpmnUnboundTask`. */
+const UNBOUND_TASK_ACTIVITY_TYPE = 'Elsa.BpmnUnboundTask';
+
 /**
  * Resolves one binding ref through `workBindings` and the scope's own activities.
  *
@@ -528,6 +531,21 @@ function resolveBinding(
     if (activity == null) {
         return {
             state: 'unresolved',
+            kind,
+            bindingRef,
+            activityId,
+            activityType: null,
+            activityName: null,
+            displayName: null,
+            descriptor: null,
+        };
+    }
+
+    // elsa-core binds a task its document leaves unbound to a placeholder that only refuses to run, so the
+    // canvas shows it as what it is: not bound to an activity yet.
+    if (activity.type === UNBOUND_TASK_ACTIVITY_TYPE) {
+        return {
+            state: 'unbound',
             kind,
             bindingRef,
             activityId,

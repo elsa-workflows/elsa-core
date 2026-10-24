@@ -13,6 +13,13 @@ public static class BpmnProcessConstants
     public const string ActivityTypeName = "Elsa.BpmnProcess";
 
     /// <summary>
+    /// The activity type name elsa-core binds a task to when its document declares no activity for it:
+    /// <c>Elsa.Bpmn.Interchange.Activities.BpmnUnboundTask</c>. It only refuses to run, so Studio shows such a task as
+    /// not bound.
+    /// </summary>
+    public const string UnboundTaskActivityTypeName = "Elsa.BpmnUnboundTask";
+
+    /// <summary>
     /// The outcome a BPMN process completes with normally. Mirrors <c>Bpmn.Semantics.BpmnInterpreter.DoneOutcomeName</c>,
     /// which Studio cannot reference: the interpreter runs server-side and Studio never takes a dependency on it.
     /// </summary>
