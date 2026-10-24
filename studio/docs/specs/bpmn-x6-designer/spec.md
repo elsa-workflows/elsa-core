@@ -177,7 +177,7 @@ These are recorded here until step 9 writes the designer's limits document.
 - A document with duplicate ids keeps the first element with each id in the index, as bpmn-moddle resolves references
   to it.
 
-What the designer draws and edits, as of step 3c:
+What the designer draws and edits, as of step 3d:
 
 - Shapes can be moved by dragging, one at a time. A selected expanded subprocess, text annotation or group shows four
   corner handles that resize it; the resize stops at its minimum size and at what it contains. Delete or Backspace
@@ -188,6 +188,12 @@ What the designer draws and edits, as of step 3c:
 - A shape dropped onto another subprocess, participant or lane stays in the one it was in.
 - Lanes, labels and edges cannot be dragged. A boundary event moves only with its activity, until step 5 attaches and
   detaches them.
+- A double-click on an element, or F2 or Enter on the selected one, edits its name in a text box over its label; a
+  text annotation's text is edited the same way. Enter or leaving the box saves it as one `updateProperties` edit, an
+  empty name removing the name; Shift+Enter starts a new line; Escape gives up. A double-click on a collapsed
+  subprocess opens its plane instead, so F2 edits its name. A redraw during an edit gives the edit up.
+- A named edge without label layout is drawn with its name on its midpoint, as the bpmn-js designer places it. Naming
+  an element does not add or resize its label layout.
 - Ctrl+Z (Cmd+Z) undoes, and Ctrl+Shift+Z or Ctrl+Y redoes, while the canvas has focus.
 - Pools and lanes are drawn horizontally, whatever their DI says.
 - DI colours (`bioc:` and `color:` attributes) are kept in the document but not drawn.
