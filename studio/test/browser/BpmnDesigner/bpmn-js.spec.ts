@@ -84,3 +84,112 @@ test('a badge shows the count of its state', async ({ harness }) => {
     await expect(harness.locator('.elsa-bpmn-badge-active')).toHaveText('2');
     await expect(harness.locator('.elsa-bpmn-badge-completed')).toHaveText('4');
 });
+
+test('markers draw one problem badge per element, in its most severe colour, with every message', async ({ harness }) => {
+    await harness.evaluate(async xml => {
+        const harness = (window as any).harness;
+        harness.create({});
+        await harness.designer.load(xml);
+    }, await fixture('order.bpmn'));
+    const apply = (markers: unknown) => harness.evaluate(markers => (window as any).harness.designer.applyMarkers(markers), markers);
+
+    await apply([
+        { elementId: 'Charge', severity: 'warning', message: 'First.' },
+        { elementId: 'Charge', severity: 'error', message: 'Second.' },
+        { elementId: 'Flow_2', severity: 'warning', message: 'Never taken.' },
+        { elementId: 'Review', severity: 'fatal', message: 'Unknown severity.' }
+    ]);
+
+    await expect(harness.locator('.elsa-bpmn-problem')).toHaveCount(3);
+    await expect(harness.locator('.elsa-bpmn-problem-error')).toHaveCount(2);
+    await expect(harness.locator('.elsa-bpmn-problem-warning')).toHaveAttribute('title', 'Never taken.');
+    await expect(harness.locator('.djs-element[data-element-id="Charge"].elsa-problem-error')).toHaveCount(1);
+    await expect(harness.locator('.djs-element[data-element-id="Flow_2"].elsa-problem-warning')).toHaveCount(1);
+    expect(await harness.locator('.elsa-bpmn-problem-error').first().getAttribute('title')).toBe('First.\nSecond.');
+
+    await apply([{ elementId: 'Review', severity: 'warning', message: 'Only this.' }]);
+    await expect(harness.locator('.elsa-bpmn-problem')).toHaveCount(1);
+    await expect(harness.locator('.djs-element.elsa-problem-error')).toHaveCount(0);
+    await harness.evaluate(() => (window as any).harness.designer.clearMarkers());
+    await expect(harness.locator('.elsa-bpmn-problem')).toHaveCount(0);
+    await expect(harness.locator('.djs-element.elsa-problem-warning')).toHaveCount(0);
+});
+
+test('markers and overlays do not clear each other, and a load clears both', async ({ harness }) => {
+    const xml = await fixture('order.bpmn');
+    await harness.evaluate(async xml => {
+        const harness = (window as any).harness;
+        harness.create({});
+        await harness.designer.load(xml);
+        harness.designer.applyOverlays({ Charge: { faulted: true } });
+        harness.designer.applyMarkers([{ elementId: 'Charge', severity: 'error', message: 'Unbound.' }]);
+    }, xml);
+
+    await harness.evaluate(() => (window as any).harness.designer.clearOverlays());
+    await expect(harness.locator('.elsa-bpmn-problem')).toHaveCount(1);
+    await harness.evaluate(() => {
+        const designer = (window as any).harness.designer;
+        designer.applyOverlays({ Charge: { faulted: true } });
+        designer.clearMarkers();
+    });
+    await expect(harness.locator('.elsa-bpmn-badge')).toHaveCount(1);
+    await expect(harness.locator('.djs-element[data-element-id="Charge"].elsa-faulted')).toHaveCount(1);
+
+    await harness.evaluate(async xml => {
+        const designer = (window as any).harness.designer;
+        designer.applyMarkers([{ elementId: 'Charge', severity: 'error', message: 'Unbound.' }]);
+        await designer.load(xml);
+    }, xml);
+    await expect(harness.locator('.elsa-bpmn-badge')).toHaveCount(0);
+    await expect(harness.locator('.elsa-bpmn-problem')).toHaveCount(0);
+    await expect(harness.locator('.djs-element.elsa-problem-error')).toHaveCount(0);
+});
+
+test('deleting a marked element removes its marker', async ({ harness }) => {
+    await harness.evaluate(async xml => {
+        const harness = (window as any).harness;
+        harness.create({});
+        await harness.designer.load(xml);
+        harness.designer.applyMarkers([{ elementId: 'Charge', severity: 'error', message: 'Unbound.' }]);
+    }, await fixture('order.bpmn'));
+
+    await harness.locator('.djs-element[data-element-id="Charge"]').click();
+    await harness.keyboard.press('Delete');
+
+    await expect(harness.locator('.djs-element[data-element-id="Charge"]')).toHaveCount(0);
+    await expect(harness.locator('.elsa-bpmn-problem')).toHaveCount(0);
+});
+
+test('a marked sequence flow draws its line and arrowhead in the severity colour', async ({ harness }) => {
+    await harness.evaluate(async xml => {
+        const harness = (window as any).harness;
+        harness.create({});
+        await harness.designer.load(xml);
+        harness.designer.applyMarkers([{ elementId: 'Flow_2', severity: 'warning', message: 'Never taken.' }]);
+    }, await fixture('order.bpmn'));
+
+    const visual = harness.locator('.djs-element.djs-connection[data-element-id="Flow_2"] .djs-visual');
+    await expect(visual.locator('> path')).toHaveCSS('stroke', 'rgb(237, 108, 2)');
+    await expect(visual.locator('marker path')).toHaveCSS('fill', 'rgb(237, 108, 2)');
+});
+
+test('clearing markers removes the outline of an element whose id changed since', async ({ harness }) => {
+    await harness.evaluate(async xml => {
+        const harness = (window as any).harness;
+        harness.create({ withProperties: true });
+        await harness.designer.load(xml);
+        harness.designer.applyMarkers([{ elementId: 'Charge', severity: 'error', message: 'Unbound.' }]);
+    }, await fixture('order.bpmn'));
+
+    await harness.locator('.djs-element[data-element-id="Charge"]').click();
+    await expect(harness.locator('#bio-properties-panel-id')).toHaveValue('Charge');
+    // The harness gives the properties panel no height, so type into its id field the way an input event does.
+    await harness.locator('#bio-properties-panel-id').evaluate((input: HTMLInputElement) => {
+        input.value = 'Charged';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await expect(harness.locator('.djs-element[data-element-id="Charged"].elsa-problem-error')).toHaveCount(1);
+    await harness.evaluate(() => (window as any).harness.designer.clearMarkers());
+
+    await expect(harness.locator('.djs-element.elsa-problem-error')).toHaveCount(0);
+});
