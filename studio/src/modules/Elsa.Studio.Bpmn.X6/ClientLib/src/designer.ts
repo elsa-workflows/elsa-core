@@ -3,8 +3,8 @@
  *
  * The kernel's session holds the document and its undo history; X6 only draws it, one plane at a time, and is redrawn
  * from the document after every edit. A gesture becomes a kernel command: dragging a shape moves it, dragging a corner
- * of the selected shape resizes it, Delete removes the selection, a double-click or F2 edits a name in place, and the
- * keyboard undoes and redoes. Elements are identified by their BPMN element id everywhere.
+ * of the selected shape resizes it, the palette creates elements, Delete removes the selection, a double-click or F2
+ * edits a name in place, and the keyboard undoes and redoes. Elements are identified by their BPMN element id everywhere.
  */
 import { Graph } from '@antv/x6';
 import type {
@@ -20,8 +20,20 @@ import type {
     BpmnSelectionEvent,
     BpmnSetBindingResult
 } from '../../../Elsa.Studio.Bpmn/ClientLib/src/index.js';
-import { BpmnModelingSession, type Bounds, deleteElements, minimumSize, moveShapes, type Point, resizeShape, updateProperties } from '../../../Elsa.Studio.Bpmn/ClientLib/src/modeling/index.js';
+import {
+    BpmnModelingSession,
+    type Bounds,
+    creatableSize,
+    createShape,
+    deleteElements,
+    minimumSize,
+    moveShapes,
+    type Point,
+    resizeShape,
+    updateProperties
+} from '../../../Elsa.Studio.Bpmn/ClientLib/src/modeling/index.js';
 import { type PlaneCells, planeCells } from './cells.js';
+import { createPalette } from './palette.js';
 import { indexPlanes, type PlaneIndex } from './planes.js';
 import { registerShapes, SHAPES } from './shapes.js';
 
@@ -51,7 +63,12 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
     canvas.className = 'elsa-x6-canvas';
     // Focusable, so the keyboard shortcuts reach it.
     canvas.tabIndex = 0;
-    container.append(breadcrumbs, canvas);
+    // The palette sits beside the canvas, not in it: X6 handles every pointer event in its container.
+    const stage = document.createElement('div');
+    stage.className = 'elsa-x6-stage';
+    const palette = readOnly ? null : createPalette();
+    stage.append(canvas, ...(palette ? [palette] : []));
+    container.append(breadcrumbs, stage);
 
     let graph: Graph | null = new Graph({
         container: canvas,
@@ -95,6 +112,9 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
         | null = null;
     // What the breadcrumbs show, so they are only replaced when that changes.
     let shownBreadcrumbs = '';
+    // The element type being created from the palette, and its preview. It is dragged from the palette and dropped on
+    // the canvas, or armed by a click on the palette and placed by the next click on the canvas.
+    let creating: { type: string; preview: HTMLElement; armed: boolean; stop: AbortController } | null = null;
     // The name being edited in place, and the property it edits: a text annotation's text, else the name.
     let editing: { elementId: string; property: 'name' | 'text'; input: HTMLTextAreaElement } | null = null;
     // Loads run one after another, so the last one called is the one that shows.
@@ -143,12 +163,14 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
             drawn = null;
             target.resetCells([]);
             renderBreadcrumbs();
+            renderPalette();
             return;
         }
         drawn = planeCells(document, plane, subprocessId => planes?.drillTarget(subprocessId) !== undefined);
         target.resetCells([...drawn.nodes.map(node => target.createNode(node)), ...drawn.edges.map(edge => target.createEdge(edge))]);
         decorate();
         renderBreadcrumbs();
+        renderPalette();
         if (fit) fitToView();
     }
 
@@ -411,6 +433,120 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
         canvas.focus({ preventScroll: true });
     }
 
+    /**
+     * Enables the palette where the kernel can place what it creates. A page that shows the content an older tool drew
+     * for a collapsed subprocess on its parent's plane is not one of them until step 7.
+     */
+    function renderPalette(): void {
+        if (!palette) return;
+        const usable = session.document !== null && currentKey !== undefined && !currentKey.includes('/');
+        for (const button of palette.querySelectorAll('button')) button.disabled = !usable;
+        if (!usable) stopCreating();
+    }
+
+    /** Whether the pointer is over the canvas itself, not over the palette or an editor laid on it. */
+    function overCanvas(event: MouseEvent): boolean {
+        const target = document.elementFromPoint(event.clientX, event.clientY);
+        return target !== null && canvas.contains(target) && !target.closest('.elsa-x6-name-editor');
+    }
+
+    /**
+     * Starts creating an element of `type` from its palette button. Dropping it on the canvas places it there; a click
+     * on the button arms it instead, and the next click on the canvas places it. Escape gives it up.
+     */
+    function startCreating(type: string, button: HTMLElement, start: PointerEvent): void {
+        stopCreating();
+        // The press on the palette does not move focus, so a name being edited is saved here, as leaving its box saves it.
+        finishEditing(true);
+        const size = creatableSize(type);
+        if (!size) return;
+        const preview = document.createElement('div');
+        preview.className = 'elsa-x6-create-preview';
+        preview.hidden = true;
+        canvas.append(preview);
+        const stop = new AbortController();
+        const signal = stop.signal;
+        creating = { type, preview, armed: false, stop };
+        button.setAttribute('aria-pressed', 'true');
+
+        // Until it is armed, only the pointer that pressed the button drags it, and a cancelled press gives it up.
+        const dragged = (event: PointerEvent) => creating?.armed === false && event.pointerId === start.pointerId;
+        window.addEventListener('pointercancel', event => {
+            if (dragged(event)) stopCreating();
+        }, { signal });
+        window.addEventListener('pointermove', event => {
+            if (creating?.armed === false && event.pointerId !== start.pointerId) return;
+            preview.hidden = !overCanvas(event);
+            if (preview.hidden) return;
+            const origin = canvas.getBoundingClientRect();
+            const zoom = graph!.zoom();
+            Object.assign(preview.style, {
+                left: `${event.clientX - origin.left - (size.width * zoom) / 2}px`,
+                top: `${event.clientY - origin.top - (size.height * zoom) / 2}px`,
+                width: `${size.width * zoom}px`,
+                height: `${size.height * zoom}px`
+            });
+        }, { signal });
+        window.addEventListener('pointerup', event => {
+            if (!creating || !dragged(event)) return;
+            if (overCanvas(event)) place(event);
+            else if (button.contains(event.target as Node) && Math.hypot(event.clientX - start.clientX, event.clientY - start.clientY) < 4) creating.armed = true;
+            else stopCreating();
+        }, { signal });
+        // While armed, the next click on the canvas places the element. X6 then takes that click as one on the new
+        // element, which is drawn under the pointer, so the element stays selected.
+        canvas.addEventListener('click', event => {
+            if (creating?.armed) place(event);
+        }, { capture: true, signal });
+        window.addEventListener('pointerdown', event => {
+            const target = event.target as Node;
+            if (creating?.armed && !canvas.contains(target) && !button.contains(target)) stopCreating();
+        }, { capture: true, signal });
+        window.addEventListener('keydown', event => {
+            if (event.key === 'Escape') stopCreating();
+        }, { capture: true, signal });
+    }
+
+    function stopCreating(): void {
+        const current = creating;
+        if (!current) return;
+        creating = null;
+        current.stop.abort();
+        current.preview.remove();
+        palette?.querySelector('[aria-pressed="true"]')?.removeAttribute('aria-pressed');
+    }
+
+    /** Creates the element being created where `event` points, selects it, and opens a new task or annotation's text. */
+    function place(event: MouseEvent): void {
+        const current = creating;
+        stopCreating();
+        const document = session.document;
+        const planeId = diagramPlaneId();
+        if (!current || !document || !planeId || !graph) return;
+        const point = graph.clientToLocal(event.clientX, event.clientY);
+        let elementId: string;
+        try {
+            const command = createShape(document, planeId, current.type, { x: point.x, y: point.y });
+            session.execute(command);
+            elementId = command.elementIds[0];
+        } catch (error) {
+            // Such as a task dropped outside every pool of a collaboration.
+            console.error('elsa-x6-designer: a create was refused.', error);
+            return;
+        }
+        canvas.focus({ preventScroll: true });
+        setSelection(elementId);
+        // As in the bpmn-js designer, a new task or text annotation opens for its name or text.
+        if (current.type === 'bpmn:Task' || current.type === 'bpmn:TextAnnotation') startEditing(elementId);
+    }
+
+    palette?.addEventListener('pointerdown', event => {
+        const button = (event.target as Element).closest<HTMLButtonElement>('button');
+        if (!button || button.disabled || event.button !== 0 || !button.dataset.type) return;
+        event.preventDefault();
+        startCreating(button.dataset.type, button, event);
+    });
+
     // Delete and Backspace delete the selection; F2 and Enter edit its name; Ctrl+Z (Cmd+Z) undoes; Ctrl+Shift+Z and
     // Ctrl+Y redo.
     canvas.addEventListener('keydown', event => {
@@ -466,6 +602,8 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
     async function load(xml: string): Promise<BpmnLoadResult> {
         const result = await session.load(xml);
         if (disposed || !result.imported) return result;
+        // A create armed in the document that was showing does not carry over to this one.
+        stopCreating();
         stats.clear();
         markers.clear();
         selected = null;
@@ -603,6 +741,7 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
             if (disposed) return;
             disposed = true;
             editing = null;
+            stopCreating();
             unsubscribeSession();
             listeners.change.clear();
             listeners.selection.clear();

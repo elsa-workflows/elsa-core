@@ -512,6 +512,133 @@ test('an edge without a label is edited in a compact box on its midpoint, not on
     expect(Math.abs(box.y + box.height / 2 - midpoint.y)).toBeLessThan(2);
 });
 
+const entry = (page: Page, title: string) => page.getByRole('toolbar', { name: 'Create' }).getByRole('button', { name: title });
+
+/** A point on the canvas, below the order fixture's shapes, where nothing is drawn. */
+async function blankPoint(page: Page): Promise<{ x: number; y: number }> {
+    const box = (await page.locator('#canvas .elsa-x6-canvas').boundingBox())!;
+    return { x: box.x + box.width / 2, y: box.y + box.height - 60 };
+}
+
+/** `point`, a page position, relative to the canvas, as a drag's target position takes it. */
+async function relativeTo(page: Page, point: { x: number; y: number }): Promise<{ x: number; y: number }> {
+    const box = (await page.locator('#canvas .elsa-x6-canvas').boundingBox())!;
+    return { x: point.x - box.x, y: point.y - box.y };
+}
+
+/** The id of the element the last selection event named. */
+async function lastSelected(page: Page): Promise<string> {
+    const events = (await selections(page)) as { primary: { id: string; type: string } | null }[];
+    return events.at(-1)!.primary!.id;
+}
+
+test('an element dragged from the palette is created centred where it is dropped, selected, and undone in one step', async ({ harness }) => {
+    await loaded(harness, 'order.bpmn');
+    const before = (await call<{ xml: string }>(harness, 'save')).xml;
+    const target = await blankPoint(harness);
+    const button = (await entry(harness, 'Create end event').boundingBox())!;
+
+    await harness.mouse.move(button.x + button.width / 2, button.y + button.height / 2);
+    await harness.mouse.down();
+    await harness.mouse.move(target.x - 50, target.y - 20, { steps: 4 });
+    await expect(harness.locator('#canvas .elsa-x6-create-preview')).toBeVisible();
+    await harness.mouse.move(target.x, target.y, { steps: 4 });
+    await harness.mouse.up();
+
+    const id = await lastSelected(harness);
+    expect(id).toMatch(/^Event_[0-9a-z]{7}$/);
+    const created = (await cell(harness, id).boundingBox())!;
+    expect(Math.abs(created.x + created.width / 2 - target.x)).toBeLessThan(2);
+    expect(Math.abs(created.y + created.height / 2 - target.y)).toBeLessThan(2);
+    await expect(harness.locator('#canvas .elsa-x6-create-preview')).toHaveCount(0);
+    expect((await call<{ xml: string }>(harness, 'save')).xml).toContain(`<bpmn:endEvent id="${id}" />`);
+
+    await harness.keyboard.press('Control+z');
+    await expect(cell(harness, id)).toHaveCount(0);
+    expect((await call<{ xml: string }>(harness, 'save')).xml).toBe(before);
+});
+
+test('a click on the palette arms it, the next click places the element, and a new task opens for its name', async ({ harness }) => {
+    await loaded(harness, 'order.bpmn');
+    const target = await blankPoint(harness);
+
+    await entry(harness, 'Create task').click();
+    await expect(entry(harness, 'Create task')).toHaveAttribute('aria-pressed', 'true');
+    await harness.mouse.click(target.x, target.y);
+
+    await expect(entry(harness, 'Create task')).not.toHaveAttribute('aria-pressed');
+    await editor(harness).fill('Pay');
+    await editor(harness).press('Enter');
+    const id = await lastSelected(harness);
+    expect((await call<{ xml: string }>(harness, 'save')).xml).toContain(`<bpmn:task id="${id}" name="Pay" />`);
+    // The click that placed the task lands on it, so it stays selected.
+    expect(((await selections(harness)) as { primary: { id: string } | null }[]).at(-1)!.primary?.id).toBe(id);
+});
+
+test('a name being edited is saved when an element is dragged from the palette', async ({ harness }) => {
+    await loaded(harness, 'order.bpmn');
+    await cell(harness, 'Charge').dblclick();
+    await editor(harness).fill('Charged');
+    const target = await blankPoint(harness);
+
+    await entry(harness, 'Create end event').dragTo(harness.locator('#canvas .elsa-x6-canvas'), { targetPosition: await relativeTo(harness, target) });
+
+    const { xml } = await call<{ xml: string }>(harness, 'save');
+    expect(xml).toContain('name="Charged"');
+    expect(xml).toContain(`<bpmn:endEvent id="${await lastSelected(harness)}" />`);
+});
+
+test('a create armed before another document is loaded does not place anything in it', async ({ harness }) => {
+    await loaded(harness, 'order.bpmn');
+    await entry(harness, 'Create end event').click();
+    await expect(entry(harness, 'Create end event')).toHaveAttribute('aria-pressed', 'true');
+
+    const xml = await fixture('order.bpmn');
+    expect(await harness.evaluate(xml => (window as unknown as { harness: Harness }).harness.designer.load(xml), xml)).toMatchObject({ imported: true });
+    const before = (await call<{ xml: string }>(harness, 'save')).xml;
+    const target = await blankPoint(harness);
+    await harness.mouse.click(target.x, target.y);
+
+    await expect(entry(harness, 'Create end event')).not.toHaveAttribute('aria-pressed');
+    expect((await call<{ xml: string }>(harness, 'save')).xml).toBe(before);
+});
+
+test('a cancelled drag from the palette is given up, so a later release on the canvas creates nothing', async ({ harness }) => {
+    await loaded(harness, 'order.bpmn');
+    const before = (await call<{ xml: string }>(harness, 'save')).xml;
+    const button = (await entry(harness, 'Create end event').boundingBox())!;
+    const press = { pointerId: 7, isPrimary: true, button: 0, clientX: button.x + 5, clientY: button.y + 5, bubbles: true };
+
+    await entry(harness, 'Create end event').dispatchEvent('pointerdown', press);
+    await expect(entry(harness, 'Create end event')).toHaveAttribute('aria-pressed', 'true');
+    await harness.evaluate(press => window.dispatchEvent(new PointerEvent('pointercancel', press)), press);
+    const target = await blankPoint(harness);
+    await harness.mouse.click(target.x, target.y);
+
+    await expect(entry(harness, 'Create end event')).not.toHaveAttribute('aria-pressed');
+    await expect(harness.locator('#canvas .elsa-x6-create-preview')).toHaveCount(0);
+    expect((await call<{ xml: string }>(harness, 'save')).xml).toBe(before);
+});
+
+test('Escape gives up an armed create, a read-only designer has no palette, and a page an older tool drew disables it', async ({ harness }) => {
+    await loaded(harness, 'order.bpmn');
+    const before = (await call<{ xml: string }>(harness, 'save')).xml;
+    await entry(harness, 'Create gateway').click();
+    await harness.keyboard.press('Escape');
+    await expect(entry(harness, 'Create gateway')).not.toHaveAttribute('aria-pressed');
+    const target = await blankPoint(harness);
+    await harness.mouse.click(target.x, target.y);
+    expect((await call<{ xml: string }>(harness, 'save')).xml).toBe(before);
+
+    await loaded(harness, 'legacy-collapsed.bpmn');
+    await expect(entry(harness, 'Create task')).toBeEnabled();
+    expect(await call(harness, 'select', 'Inner')).toBe(true);
+    await expect(entry(harness, 'Create task')).toBeDisabled();
+
+    await loaded(harness, 'order.bpmn', { readOnly: true });
+    await expect(harness.getByRole('toolbar', { name: 'Create' })).toHaveCount(0);
+});
+
 test('fits a document loaded while the container had no size once the container is shown', async ({ harness }) => {
     await harness.evaluate(() => {
         document.getElementById('canvas')!.style.display = 'none';

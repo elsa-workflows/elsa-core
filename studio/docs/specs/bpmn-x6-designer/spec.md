@@ -54,7 +54,7 @@ It is a separate entry from the shared ClientLib's `src/index.ts`, so the bpmn-j
 | `BpmnDocument` | Reads and writes a document. Indexes its semantic elements by id, and its diagram planes. |
 | `planeView(planeId)` | What one plane draws, in a canvas's terms: shapes with bounds, labels, containers and attachments; edges with waypoints and ends. |
 | `CommandStack` | Undo, redo and dirty tracking by state id, ported from the bpmn-js designer. |
-| Commands | Undoable edits. Part 1 has `updateProperties` and `setBinding`; step 3 adds `moveShapes`, `resizeShape` and `deleteElements`; later steps add commands that change semantics and layout together. |
+| Commands | Undoable edits. Part 1 has `updateProperties` and `setBinding`; step 3 adds `moveShapes`, `resizeShape` and `deleteElements`; step 4 adds `createShape`; later steps add commands that change semantics and layout together. |
 | `BpmnModelingSession` | The contract's canvas-independent half: `load`, `save`, `getBinding`, `setBinding`, `undo`, `redo` and the change event. |
 
 Undo and redo live in the kernel, not in X6's History plugin, because the X6 graph is only a projection: undoing a
@@ -162,6 +162,21 @@ Every reference the rest of the document holds to what is deleted is removed, su
 `outgoing`, a gateway's `default` and a lane's `flowNodeRef`. Undo puts each element and reference back at its position.
 It throws for an unknown element and for participants, lanes and processes, which step 6 deletes.
 
+`createShape(document, planeId, type, position)` creates a start, intermediate throw or end event, an exclusive gateway, a
+task, a data object reference, a data store reference or a text annotation, with its shape centred on `position` at the
+size the bpmn-js designer gives it:
+
+- it goes into the innermost expanded subprocess or participant whose shape holds `position`, else into what the plane
+  draws: its process, or the subprocess a collapsed subprocess's plane opens;
+- a text annotation outside every participant of a collaboration goes into the collaboration;
+- a flow node is also referenced by the innermost lane of its process that holds `position`;
+- a data object reference gets a data object of its own.
+
+Ids follow the bpmn-js designer: `Activity_`, `Event_`, `Gateway_` or the type's name, a random suffix, and `_di` added
+for the shape. The command's `elementIds` start with the new element's id. Where the element goes is worked out when the
+command executes. It throws for an unknown plane, a type it cannot create, a position that is not finite, and anything
+but a text annotation outside every participant of a collaboration.
+
 ### Dirty tracking
 
 Each executed command gets a new state id; undo and redo move along the same history. The document is clean exactly when
@@ -177,14 +192,21 @@ These are recorded here until step 9 writes the designer's limits document.
 - A document with duplicate ids keeps the first element with each id in the index, as bpmn-moddle resolves references
   to it.
 
-What the designer draws and edits, as of step 3d:
+What the designer draws and edits, as of step 4a:
 
 - Shapes can be moved by dragging, one at a time. A selected expanded subprocess, text annotation or group shows four
   corner handles that resize it; the resize stops at its minimum size and at what it contains. Delete or Backspace
-  deletes the selected element. Nothing can yet be created (step 4). Participants and lanes are resized and deleted
-  in step 6, with their lanes.
+  deletes the selected element. Participants and lanes are resized and deleted in step 6, with their lanes.
   Dragging snaps a shape's position to a 10-pixel grid. Edges are redrawn when the drag ends, not during it.
 - An edit that removes the selected element clears the selection and raises `selection`.
+- The palette creates the elements `createShape` creates, in the bpmn-js designer's palette order and with its names,
+  and ends with a text annotation, which bpmn-js adds from its context pad. Drag an entry onto the canvas, or click it
+  and then click the canvas. Escape gives a create up. The new element is selected,
+  and a new task or text annotation opens for its name or text, as in the bpmn-js designer. The palette has no hand,
+  lasso, space or connect tool, and no group, expanded subprocess or participant: groups come in step 4b, subprocesses
+  in step 7 and participants in step 6. It cannot be used from the keyboard. It is disabled on the page that shows
+  what an older tool drew for a collapsed subprocess on its parent's plane, until step 7, and absent when read-only.
+- A create outside every pool of a collaboration is refused, and nothing changes.
 - A shape dropped onto another subprocess, participant or lane stays in the one it was in.
 - Lanes, labels and edges cannot be dragged. A boundary event moves only with its activity, until step 5 attaches and
   detaches them.
