@@ -2,8 +2,8 @@
  * The X6 BPMN designer: BPMN designer contract version 1 on AntV X6 and the shared modeling kernel.
  *
  * The kernel's session holds the document and its undo history; X6 only draws it, one plane at a time, and is redrawn
- * from the document after every edit. This step draws and selects but has no editing tools: the only edits are the
- * contract's `setBinding`, undo and redo. Elements are identified by their BPMN element id everywhere.
+ * from the document after every edit. A gesture becomes a kernel command: dragging a shape moves it, and the keyboard
+ * undoes and redoes. Elements are identified by their BPMN element id everywhere.
  */
 import { Graph } from '@antv/x6';
 import type {
@@ -19,7 +19,7 @@ import type {
     BpmnSelectionEvent,
     BpmnSetBindingResult
 } from '../../../Elsa.Studio.Bpmn/ClientLib/src/index.js';
-import { BpmnModelingSession, type Bounds, type Point } from '../../../Elsa.Studio.Bpmn/ClientLib/src/modeling/index.js';
+import { BpmnModelingSession, type Bounds, moveShapes, type Point } from '../../../Elsa.Studio.Bpmn/ClientLib/src/modeling/index.js';
 import { type PlaneCells, planeCells } from './cells.js';
 import { indexPlanes, type PlaneIndex } from './planes.js';
 import { registerShapes, SHAPES } from './shapes.js';
@@ -45,13 +45,15 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
     breadcrumbs.hidden = true;
     const canvas = document.createElement('div');
     canvas.className = 'elsa-x6-canvas';
+    // Focusable, so the keyboard shortcuts reach it.
+    canvas.tabIndex = 0;
     container.append(breadcrumbs, canvas);
 
     let graph: Graph | null = new Graph({
         container: canvas,
         autoResize: true,
         async: false,
-        interacting: false,
+        interacting: readOnly ? false : { nodeMovable: view => isMovable(String(view.cell.id)) },
         panning: { enabled: true },
         mousewheel: { enabled: true, modifiers: ['ctrl', 'meta'], factor: 1.1 }
     });
@@ -70,6 +72,8 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
     // Kept by element id across plane changes and edits, and drawn for the elements the current plane shows.
     const stats = new Map<string, BpmnElementStats>();
     const markers = new Map<string, BpmnElementMarker[]>();
+    // The shape being dragged, and where each cell that follows it started.
+    let dragging: { elementId: string; start: Point; followers: Map<string, Point> } | null = null;
     // Loads run one after another, so the last one called is the one that shows.
     let loading: Promise<unknown> = Promise.resolve();
     let disposed = false;
@@ -187,6 +191,73 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
 
     /** The element a cell stands for: a label or badge stands for the element it belongs to. */
     const elementOf = (cellId: string) => cellId.split('::')[0];
+
+    /** The diagram plane the current plane's shapes are on: a subprocess's hidden content is on its parent's plane. */
+    const diagramPlaneId = () => currentKey?.split('/')[0];
+
+    /**
+     * Whether a cell is a shape the user can drag. A lane moves with its participant and a boundary event with its
+     * activity, as the kernel requires; a label, badge or edge does not move on its own.
+     */
+    function isMovable(cellId: string): boolean {
+        const type = drawn?.types.get(cellId);
+        return !cellId.includes('::') && type !== undefined && !drawn!.midpoints.has(cellId) && type !== 'bpmn:Lane' && type !== 'bpmn:BoundaryEvent';
+    }
+
+    // While a shape is dragged, what moves with it follows on screen; its edges are redrawn from the document on drop.
+    graph.on('node:move', ({ node }) => {
+        const elementId = String(node.id);
+        const document = session.document;
+        const planeId = diagramPlaneId();
+        const start = drawn?.bounds.get(elementId);
+        if (!document || !planeId || !start || !isMovable(elementId)) return;
+        const moved = new Set(moveShapes(document, planeId, [elementId], { x: 0, y: 0 }).elementIds);
+        const followers = new Map<string, Point>();
+        for (const cell of graph!.getNodes()) {
+            const id = String(cell.id);
+            if (id !== elementId && moved.has(elementOf(id)) && !drawn!.midpoints.has(elementOf(id))) followers.set(id, cell.getPosition());
+        }
+        dragging = { elementId, start: { x: start.x, y: start.y }, followers };
+    });
+    graph.on('node:change:position', ({ node, options }) => {
+        if (!dragging || String(node.id) !== dragging.elementId || !options.ui) return;
+        const { x, y } = node.getPosition();
+        const delta = { x: x - dragging.start.x, y: y - dragging.start.y };
+        for (const [id, from] of dragging.followers) graph!.getCellById(id)?.setProp('position', { x: from.x + delta.x, y: from.y + delta.y });
+    });
+    graph.on('node:moved', ({ node }) => {
+        const current = dragging;
+        dragging = null;
+        const document = session.document;
+        const planeId = diagramPlaneId();
+        if (!current || String(node.id) !== current.elementId || !document || !planeId) return;
+        const { x, y } = node.getPosition();
+        const delta = { x: Math.round(x - current.start.x), y: Math.round(y - current.start.y) };
+        if (current.elementId !== selected) setSelection(current.elementId);
+        if (delta.x === 0 && delta.y === 0) {
+            render(false);
+            return;
+        }
+        try {
+            session.execute(moveShapes(document, planeId, [current.elementId], delta));
+        } catch (error) {
+            console.error('elsa-x6-designer: a move was refused.', error);
+            render(false);
+        }
+    });
+
+    // Ctrl+Z (Cmd+Z) undoes; Ctrl+Shift+Z and Ctrl+Y redo.
+    canvas.addEventListener('keydown', event => {
+        if (readOnly || !(event.ctrlKey || event.metaKey) || event.altKey) return;
+        const key = event.key.toLowerCase();
+        const redo = key === 'y' || (key === 'z' && event.shiftKey);
+        if (key !== 'z' && !redo) return;
+        event.preventDefault();
+        if (redo) session.redo();
+        else session.undo();
+    });
+    graph.on('cell:mousedown', () => canvas.focus({ preventScroll: true }));
+    graph.on('blank:mousedown', () => canvas.focus({ preventScroll: true }));
 
     graph.on('cell:click', ({ cell }) => {
         const elementId = elementOf(String(cell.id));

@@ -54,7 +54,7 @@ It is a separate entry from the shared ClientLib's `src/index.ts`, so the bpmn-j
 | `BpmnDocument` | Reads and writes a document. Indexes its semantic elements by id, and its diagram planes. |
 | `planeView(planeId)` | What one plane draws, in a canvas's terms: shapes with bounds, labels, containers and attachments; edges with waypoints and ends. |
 | `CommandStack` | Undo, redo and dirty tracking by state id, ported from the bpmn-js designer. |
-| Commands | Undoable edits. Part 1 has `updateProperties` and `setBinding`; later steps add commands that change semantics and layout together. |
+| Commands | Undoable edits. Part 1 has `updateProperties` and `setBinding`; step 3 adds `moveShapes`; later steps add commands that change semantics and layout together. |
 | `BpmnModelingSession` | The contract's canvas-independent half: `load`, `save`, `getBinding`, `setBinding`, `undo`, `redo` and the change event. |
 
 Undo and redo live in the kernel, not in X6's History plugin, because the X6 graph is only a projection: undoing a
@@ -116,6 +116,28 @@ document already uses, a diagram element's included.
 `extensionElements` is removed unless it carries foreign attributes, and removing a binding an element does not have
 is applied with no edit.
 
+`moveShapes(document, planeId, elementIds, delta)` changes layout only. These move by `delta`, with their labels:
+
+- the shapes of the elements given;
+- the shapes those contain, at any depth;
+- the boundary events attached to any of them.
+
+Edges follow:
+
+- An edge between two moved shapes moves as it is.
+- An edge with one moved end keeps its other end. The segment at the moved end stays horizontal or vertical if it
+  was: the bend after it follows on one axis, and a straight two-point edge gets two bend points halfway along.
+- An edge's label keeps its offset from the edge's midpoint.
+
+Positions come from the layout when the command executes, so two moves in one compound add up. A move never changes
+which subprocess, participant or lane an element belongs to. It throws for:
+
+- a lane, which moves with its participant;
+- a boundary event without its activity;
+- an element with no shape on the plane;
+- an unknown plane;
+- a delta that is not finite.
+
 ### Dirty tracking
 
 Each executed command gets a new state id; undo and redo move along the same history. The document is clean exactly when
@@ -131,10 +153,14 @@ These are recorded here until step 8 writes the designer's limits document.
 - A document with duplicate ids keeps the first element with each id in the index, as bpmn-moddle resolves references
   to it.
 
-What the designer draws, as of step 2:
+What the designer draws and edits, as of step 3a:
 
-- It draws but does not edit: nothing can be moved, created or deleted until steps 3 to 7. `setBinding`, undo and redo
-  are the only edits.
+- Shapes can be moved by dragging, one at a time; nothing can yet be resized, created or deleted (steps 3b to 7).
+  Dragging snaps a shape's position to a 10-pixel grid. Edges are redrawn when the drag ends, not during it.
+- A shape dropped onto another subprocess, participant or lane stays in the one it was in.
+- Lanes, labels and edges cannot be dragged. A boundary event moves only with its activity, until step 5 attaches and
+  detaches them.
+- Ctrl+Z (Cmd+Z) undoes, and Ctrl+Shift+Z or Ctrl+Y redoes, while the canvas has focus.
 - Pools and lanes are drawn horizontally, whatever their DI says.
 - DI colours (`bioc:` and `color:` attributes) are kept in the document but not drawn.
 - An exclusive gateway always shows its X; the DI's `isMarkerVisible` is not read.

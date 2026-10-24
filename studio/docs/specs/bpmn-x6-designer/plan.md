@@ -18,8 +18,11 @@ The steps that build the designer [spec.md](spec.md) describes, one pull request
    editing tools yet. CI runs the shared conformance suite (`contract`, `host`, `preservation`) and the import
    equivalence check against it, as against bpmn-js. It draws content a collapsed subprocess hides (`hiddenBy`) on a
    plane of its own, as bpmn-js does.
-3. **Basic editing:** moving and resizing with their layout, with labels and waypoints following; deleting, with what
-   depends on the deleted element; inline name editing; keyboard undo and redo.
+3. **Basic editing**, in four pull requests:
+   - 3a. moving shapes, with their labels, contents, boundary events and edges following, and keyboard undo and redo;
+   - 3b. resizing;
+   - 3c. deleting, with what depends on the deleted element;
+   - 3d. inline name editing.
 4. **The palette, creating elements, and replacing an element with another type.**
 5. **Connections:** sequence-flow rules, associations, edge editing, and attaching and detaching boundary events.
 6. **Pools, lanes and message flows.** Includes a check that a document the X6 designer saves opens in bpmn-js with no
@@ -52,3 +55,23 @@ the X6 designer's own Playwright tests, the kernel tests, and the cross-designer
   collapsed subprocess opens (from `select`, its button and the breadcrumb), selection by click, instance-state badges,
   problem markers on shapes and edges, and that nothing can be moved.
 - The bundle stays within its budget, and `Elsa.Studio.Bpmn.Tests` covers `AddX6BpmnDesigner`.
+
+## Step 3a verification
+
+- Kernel tests (`modeling-move.test.ts`) cover:
+  - a moved shape, and its straight and bent edges staying orthogonal;
+  - edge labels following the edge's midpoint;
+  - an edge between two moved shapes;
+  - an expanded subprocess's content and boundary events;
+  - a participant's lanes and content, with lane membership unchanged;
+  - refusals;
+  - two moves in one compound;
+  - undo back to the original XML, and redo.
+- `x6.spec.ts` covers:
+  - a drag that moves a shape in the document, with its label following during the drag;
+  - the change event with the edges it rerouted;
+  - selection of the dragged shape;
+  - keyboard undo and redo;
+  - labels and edges that cannot be dragged;
+  - a read-only designer where nothing moves and the keyboard does nothing.
+- The shared conformance suite still passes against the X6 designer.
