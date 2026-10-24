@@ -120,7 +120,8 @@ internal sealed class BpmnScopeHost
         memory.Work.Remove(record);
         memory.SaveWork();
 
-        var outcomeNames = result is Outcomes outcomes ? outcomes.Names : CallActivityOutcomeNames(record, childContext);
+        // An Outcomes may carry null, the port of a flowchart connection that names none, which is not an outcome name.
+        var outcomeNames = result is Outcomes outcomes ? outcomes.Names.Where(name => name != null).ToArray() : CallActivityOutcomeNames(record, childContext);
 
         var request = new BpmnWorkCompletedRequest(
             Graph, memory.State, Snapshot(memory), record.BindingRef, record.Handle, outcomeNames, record.IterationId)

@@ -95,6 +95,17 @@ The ledger is serialized to JSON as part of the scope's `ActivityExecutionContex
 
 BPMN describes *what* a task is for, not *how* to perform it. An unbound task gets its implementation from an `elsa:activityBinding` vendor extension inside the BPMN element's `<extensionElements>`. A send or receive task whose `messageRef` resolves to a named message is not unbound: it binds to `MessagePublish` or `MessageWait` like a message throw or catch event. `elsa:activityBinding` is accepted only on an unbound task; the binder refuses one on any other element, such as a gateway, an event, or a send or receive task bound to its message, because nothing would ever run it.
 
+### Routing on what a task's activity reports
+
+A task's outgoing sequence flows can be conditional on an outcome name, through `vw:conditionOutcome`. The bound
+activity's outcomes are what the flows are matched against: an activity that completes with `Outcomes` (such as
+`FlowDecision`'s `True` and `False`) reports their names; one that completes without them reports none.
+
+A `userTask` bound to `UserTask` reports `Done` and the action key the person completed it with, including the
+reserved `Timeout` and `Cancelled`. A flow conditional on `Approve` is therefore taken when the task is completed with
+the `Approve` action. A gateway after the task does not see that outcome: the BPMN interpreter routes a gateway on its
+own conditions, so put the outcome conditions on the task's own outgoing flows.
+
 ### BPMN errors
 
 A unit of work that fails raises a BPMN error, and `Bpmn.Semantics` routes it to the error catcher that declares its
