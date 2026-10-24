@@ -26,6 +26,11 @@ function selections(page: Page): Promise<unknown[]> {
     return page.evaluate(() => (window as unknown as { harness: Harness }).harness.events.filter(event => event.type === 'selection').map(({ type, ...event }) => event));
 }
 
+/** The element the last selection event named, as the host is told it. */
+async function lastPrimary(page: Page): Promise<unknown> {
+    return ((await selections(page)) as { primary: unknown }[]).at(-1)?.primary;
+}
+
 /** The cell that draws an element: its id is the element's id. */
 const cell = (page: Page, id: string) => page.locator(`#canvas .x6-cell[data-cell-id="${id}"]`);
 
@@ -429,9 +434,12 @@ test('a double-click edits a name in place, saved as one undoable edit', async (
     expect((await call<{ xml: string }>(harness, 'save')).xml).toContain('name="Take payment"');
     const changes = await harness.evaluate(() => (window as unknown as { harness: Harness }).harness.events.filter(event => event.type === 'change'));
     expect(changes.at(-1)).toMatchObject({ elementIds: ['Charge'], isDirty: true });
+    // The host is told the selected element's new name, and its old one again on undo.
+    expect(await lastPrimary(harness)).toEqual({ id: 'Charge', type: 'bpmn:Task', name: 'Take payment' });
 
     await harness.keyboard.press('Control+z');
     await expect(cell(harness, 'Charge')).toContainText('Charge card');
+    expect(await lastPrimary(harness)).toEqual({ id: 'Charge', type: 'bpmn:Task', name: 'Charge card' });
 });
 
 test('Escape gives up an edit, Backspace in it edits the text, and an empty name removes the name', async ({ harness }) => {
@@ -637,6 +645,96 @@ test('Escape gives up an armed create, a read-only designer has no palette, and 
 
     await loaded(harness, 'order.bpmn', { readOnly: true });
     await expect(harness.getByRole('toolbar', { name: 'Create' })).toHaveCount(0);
+});
+
+const replaceMenu = (page: Page) => page.getByRole('menu', { name: 'Change type' });
+
+test('the wrench beside a selected task opens its replace menu, and an entry replaces it, keeping its name, in one undoable step', async ({ harness }) => {
+    await loaded(harness, 'order.bpmn');
+    const before = (await call<{ xml: string }>(harness, 'save')).xml;
+    await cell(harness, 'Charge').click();
+
+    await expect(harness.locator('#canvas [role="button"][aria-label="Change type"]')).toHaveCount(1);
+    await cell(harness, 'Charge::replace').click();
+    await expect(replaceMenu(harness).getByRole('menuitem').first()).toBeFocused();
+    await expect(replaceMenu(harness).getByRole('menuitem').first()).toHaveText('User task');
+    await replaceMenu(harness).getByRole('menuitem', { name: 'Service task' }).click();
+
+    await expect(replaceMenu(harness)).toHaveCount(0);
+    expect((await call<{ xml: string }>(harness, 'save')).xml).toContain('<bpmn:serviceTask id="Charge" name="Charge card">');
+    expect(await lastPrimary(harness)).toMatchObject({ id: 'Charge', type: 'bpmn:ServiceTask' });
+    await harness.keyboard.press('Control+z');
+    expect((await call<{ xml: string }>(harness, 'save')).xml).toBe(before);
+    // Undo and redo tell the host the selected element's type again.
+    expect(await lastPrimary(harness)).toMatchObject({ id: 'Charge', type: 'bpmn:Task' });
+    await harness.keyboard.press('Control+y');
+    expect(await lastPrimary(harness)).toMatchObject({ id: 'Charge', type: 'bpmn:ServiceTask' });
+});
+
+test('R opens the replace menu, arrow keys and Enter pick an entry, Escape closes it, and a read-only designer has no wrench', async ({ harness }) => {
+    await loaded(harness, 'order.bpmn');
+    await cell(harness, 'Gateway').click();
+    await harness.keyboard.press('r');
+    await harness.keyboard.press('ArrowDown');
+    await expect(replaceMenu(harness).getByRole('menuitem', { name: 'Inclusive gateway' })).toBeFocused();
+    // The focused entry shows an outline, not only a faint background.
+    expect(await replaceMenu(harness).getByRole('menuitem', { name: 'Inclusive gateway' }).evaluate(item => getComputedStyle(item).outlineStyle)).toBe('solid');
+    await harness.keyboard.press('Enter');
+    expect((await call<{ xml: string }>(harness, 'save')).xml).toContain('<bpmn:inclusiveGateway id="Gateway" name="Paid?">');
+
+    const after = (await call<{ xml: string }>(harness, 'save')).xml;
+    await harness.keyboard.press('r');
+    // The menu is beside the canvas, so its keys do not reach the canvas: Delete does not delete the gateway.
+    await harness.keyboard.press('Delete');
+    await harness.keyboard.press('Escape');
+    await expect(replaceMenu(harness)).toHaveCount(0);
+    expect((await call<{ xml: string }>(harness, 'save')).xml).toBe(after);
+
+    await loaded(harness, 'order.bpmn', { readOnly: true });
+    await cell(harness, 'Charge').click();
+    await expect(cell(harness, 'Charge::replace')).toHaveCount(0);
+});
+
+test('the replace menu of an element at the bottom of the canvas opens above it, inside the designer', async ({ harness }) => {
+    // Two tasks far apart, so the lower one is drawn at the bottom of the fitted canvas.
+    await loadedXml(harness, `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_1"><bpmn:task id="Top" /><bpmn:task id="Bottom" /></bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_1"><bpmndi:BPMNPlane id="Plane_1" bpmnElement="Process_1">
+    ${shape('Top', 900, 0, 100, 80)}${shape('Bottom', 900, 520, 100, 80)}
+  </bpmndi:BPMNPlane></bpmndi:BPMNDiagram>
+</bpmn:definitions>`);
+    await cell(harness, 'Bottom').click();
+    await harness.keyboard.press('r');
+
+    const menu = (await replaceMenu(harness).boundingBox())!;
+    const stage = (await harness.locator('#canvas .elsa-x6-stage').boundingBox())!;
+    const task = (await cell(harness, 'Bottom').boundingBox())!;
+    expect(menu.y + menu.height).toBeLessThanOrEqual(stage.y + stage.height);
+    expect(menu.x + menu.width).toBeLessThanOrEqual(stage.x + stage.width);
+    expect(menu.y + menu.height).toBeLessThanOrEqual(task.y);
+});
+
+test('the replace menu in a designer too short for it below or above an element is shortened to fit beside it, and scrolls', async ({ harness }) => {
+    await harness.evaluate(() => {
+        document.getElementById('canvas')!.style.height = '240px';
+    });
+    await loadedXml(harness, `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_1"><bpmn:task id="Only" /></bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_1"><bpmndi:BPMNPlane id="Plane_1" bpmnElement="Process_1">${shape('Only', 100, 100, 100, 80)}</bpmndi:BPMNPlane></bpmndi:BPMNDiagram>
+</bpmn:definitions>`);
+    await cell(harness, 'Only').click();
+    await harness.keyboard.press('r');
+
+    const menu = (await replaceMenu(harness).boundingBox())!;
+    const stage = (await harness.locator('#canvas .elsa-x6-stage').boundingBox())!;
+    const wrench = (await cell(harness, 'Only::replace').boundingBox())!;
+    expect(menu.y).toBeGreaterThanOrEqual(stage.y);
+    expect(menu.y + menu.height).toBeLessThanOrEqual(stage.y + stage.height);
+    // It does not cover the wrench it opened from.
+    expect(menu.y + menu.height <= wrench.y || menu.y >= wrench.y + wrench.height).toBe(true);
+    expect(await replaceMenu(harness).evaluate(element => element.scrollHeight > element.clientHeight)).toBe(true);
 });
 
 test('fits a document loaded while the container had no size once the container is shown', async ({ harness }) => {

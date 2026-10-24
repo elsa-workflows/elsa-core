@@ -54,7 +54,7 @@ It is a separate entry from the shared ClientLib's `src/index.ts`, so the bpmn-j
 | `BpmnDocument` | Reads and writes a document. Indexes its semantic elements by id, and its diagram planes. |
 | `planeView(planeId)` | What one plane draws, in a canvas's terms: shapes with bounds, labels, containers and attachments; edges with waypoints and ends. |
 | `CommandStack` | Undo, redo and dirty tracking by state id, ported from the bpmn-js designer. |
-| Commands | Undoable edits. Part 1 has `updateProperties` and `setBinding`; step 3 adds `moveShapes`, `resizeShape` and `deleteElements`; step 4 adds `createShape`; later steps add commands that change semantics and layout together. |
+| Commands | Undoable edits. Part 1 has `updateProperties` and `setBinding`; step 3 adds `moveShapes`, `resizeShape` and `deleteElements`; step 4 adds `createShape` and `replaceElement`; later steps add commands that change semantics and layout together. |
 | `BpmnModelingSession` | The contract's canvas-independent half: `load`, `save`, `getBinding`, `setBinding`, `undo`, `redo` and the change event. |
 
 Undo and redo live in the kernel, not in X6's History plugin, because the X6 graph is only a projection: undoing a
@@ -177,6 +177,24 @@ for the shape. The command's `elementIds` start with the new element's id. Where
 command executes. It throws for an unknown plane, a type it cannot create, a position that is not finite, and anything
 but a text annotation outside every participant of a collaboration.
 
+`replaceOptions(document, elementId)` lists what the bpmn-js designer's replace menu offers for an element, with its
+labels, without what the element already is: other kinds of task, other gateways, and other events and event
+definitions. A cancel end or boundary event is offered only in or on a transaction, and a subprocess's start event is
+offered only as a plain event. `replaceElement(document, elementId, target)` replaces the element with one of the
+target's type, as the bpmn-js designer does:
+
+- it keeps the element's id, its place in its container and its shapes;
+- it keeps every property both types have, such as its name, documentation, binding, flows, default flow and loop
+  characteristics, and drops the rest, such as a script task's script;
+- an event keeps its event definitions when they are of the target's kind, gets a new one otherwise, or none for a
+  plain event; a boundary event's `cancelActivity` and a start event's `isInterrupting` come from the target;
+- every reference to the element, such as a flow's source or target, a lane's `flowNodeRef` and a boundary event's
+  `attachedToRef`, refers to the new one, and an exclusive gateway's shape shows its marker;
+- a start event loses its incoming flows and an end event its outgoing flows.
+
+It throws for an unknown element and a target not among its options. A create or a replace makes its objects once, so
+a redo puts back the objects that the commands after it changed.
+
 ### Dirty tracking
 
 Each executed command gets a new state id; undo and redo move along the same history. The document is clean exactly when
@@ -192,7 +210,7 @@ These are recorded here until step 9 writes the designer's limits document.
 - A document with duplicate ids keeps the first element with each id in the index, as bpmn-moddle resolves references
   to it.
 
-What the designer draws and edits, as of step 4a:
+What the designer draws and edits, as of step 4b:
 
 - Shapes can be moved by dragging, one at a time. A selected expanded subprocess, text annotation or group shows four
   corner handles that resize it; the resize stops at its minimum size and at what it contains. Delete or Backspace
@@ -203,10 +221,17 @@ What the designer draws and edits, as of step 4a:
   and ends with a text annotation, which bpmn-js adds from its context pad. Drag an entry onto the canvas, or click it
   and then click the canvas. Escape gives a create up. The new element is selected,
   and a new task or text annotation opens for its name or text, as in the bpmn-js designer. The palette has no hand,
-  lasso, space or connect tool, and no group, expanded subprocess or participant: groups come in step 4b, subprocesses
+  lasso, space or connect tool, and no group, expanded subprocess or participant: groups come in step 4c, subprocesses
   in step 7 and participants in step 6. It cannot be used from the keyboard. It is disabled on the page that shows
   what an older tool drew for a collapsed subprocess on its parent's plane, until step 7, and absent when read-only.
 - A create outside every pool of a collaboration is refused, and nothing changes.
+- A selected task, gateway or event shows a wrench beside its top-right corner. The wrench, or R, opens the menu of
+  what `replaceOptions` offers; arrow keys move through it, Enter or a click replaces, and Escape or a press elsewhere
+  closes it. The menu opens below the wrench, or on the side with more room, shortened to fit, when it does not fit
+  there. The element stays selected. Whenever an edit, undo or redo changes the selected element's type or name,
+  `selection` is raised again. Subprocesses, call activities, event subprocesses and their start events, and data
+  references are not replaced until step 7. Flows an event-based gateway cannot have are kept until step 5 adds
+  connection rules.
 - A shape dropped onto another subprocess, participant or lane stays in the one it was in.
 - Lanes, labels and edges cannot be dragged. A boundary event moves only with its activity, until step 5 attaches and
   detaches them.

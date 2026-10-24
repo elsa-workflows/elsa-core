@@ -41,7 +41,8 @@ export function creatableSize(type: string): { width: number; height: number } |
  *   shape's id is its element's with `_di` added.
  *
  * The command's `elementIds` start with the new element's id. Where the element goes is worked out again when the
- * command executes, from the layout at that time.
+ * command executes, from the layout at that time; what it creates is made once, so a redo puts back the objects that
+ * later commands refer to.
  *
  * @throws Error when the document has no such plane, when `type` cannot be created here, when `position` is not finite,
  * or when the plane is a collaboration's and `position` is outside every participant (for anything but a text
@@ -59,6 +60,7 @@ export function createShape(document: BpmnDocument, planeId: string, type: strin
 
     const id = freshId(document, idPrefix(document, type));
     const dataObjectId = type === 'bpmn:DataObjectReference' ? freshId(document, 'DataObject', [id]) : undefined;
+    let created: Created | undefined;
     let operations: Operation[] = [];
     return {
         elementIds: dataObjectId ? [id, dataObjectId] : [id],
@@ -67,7 +69,8 @@ export function createShape(document: BpmnDocument, planeId: string, type: strin
                 if (taken && document.hasId(taken)) throw new Error(`The document already has an element '${taken}'.`);
             }
             const placement = placementOf(document, planeId, type, point);
-            operations = planCreate(document, placement, type, id, dataObjectId, bounds);
+            created ??= make(document, type, id, dataObjectId, bounds);
+            operations = planCreate(placement, created);
             for (const operation of operations) operation.apply();
             document.reindex();
         },
@@ -139,23 +142,31 @@ function deepestOf(shapes: readonly BpmnShapeView[]): (candidates: readonly Bpmn
     return candidates => candidates.reduce<BpmnShapeView | undefined>((best, shape) => (!best || depth(shape) >= depth(best) ? shape : best), undefined);
 }
 
-function planCreate(document: BpmnDocument, placement: Placement, type: string, id: string, dataObjectId: string | undefined, bounds: Bounds): Operation[] {
+/** What a create adds: the element, the data object of a data object reference, and the element's shape. */
+interface Created {
+    element: ModdleElement;
+    dataObject?: ModdleElement;
+    shape: ModdleElement;
+}
+
+function make(document: BpmnDocument, type: string, id: string, dataObjectId: string | undefined, bounds: Bounds): Created {
     const { moddle } = document;
     const element = moddle.create(type, { id });
-    const operations: Operation[] = [];
-    const collection = type === 'bpmn:TextAnnotation' ? 'artifacts' : 'flowElements';
-    operations.push(append(placement.container, collection, element));
-    if (dataObjectId) {
-        const dataObject = moddle.create('bpmn:DataObject', { id: dataObjectId });
-        element.dataObjectRef = dataObject;
-        operations.push(append(placement.container, 'flowElements', dataObject));
-    }
-    if (placement.lane) operations.push(append(placement.lane, 'flowNodeRef', element, false));
-
+    const dataObject = dataObjectId ? moddle.create('bpmn:DataObject', { id: dataObjectId }) : undefined;
+    if (dataObject) element.dataObjectRef = dataObject;
     const shape = moddle.create('bpmndi:BPMNShape', { id: `${id}_di`, bpmnElement: element });
     const shapeBounds = moddle.create('dc:Bounds', { ...bounds });
     shapeBounds.$parent = shape;
     shape.bounds = shapeBounds;
+    return { element, dataObject, shape };
+}
+
+function planCreate(placement: Placement, { element, dataObject, shape }: Created): Operation[] {
+    const operations: Operation[] = [];
+    const collection = element.$instanceOf('bpmn:TextAnnotation') ? 'artifacts' : 'flowElements';
+    operations.push(append(placement.container, collection, element));
+    if (dataObject) operations.push(append(placement.container, 'flowElements', dataObject));
+    if (placement.lane) operations.push(append(placement.lane, 'flowNodeRef', element, false));
     operations.push(append(placement.plane, 'planeElement', shape));
     return operations;
 }
