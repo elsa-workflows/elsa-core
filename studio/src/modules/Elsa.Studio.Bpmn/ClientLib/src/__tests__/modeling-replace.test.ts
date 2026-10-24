@@ -154,6 +154,24 @@ describe('replaceElement', () => {
         expect(document.element('Renamed')!.$type).toBe('bpmn:ServiceTask');
         expect(document.element('Flow_5')!.targetRef).toBe(document.element('Renamed'));
     });
+
+    it('puts back the same element and event definition on redo, so the edits made to them after it redo too', async () => {
+        const { session, document, save } = await loaded();
+        session.execute(replaceElement(document, 'Last', { type: 'bpmn:ServiceTask' }));
+        session.execute(updateProperties(document, 'Last', { name: 'Call' }));
+        session.execute(replaceElement(document, 'Last', { type: 'bpmn:UserTask' }));
+        session.execute(replaceElement(document, 'Done', { type: 'bpmn:EndEvent', eventDefinitionType: 'bpmn:MessageEventDefinition' }));
+        const definitionId = String((document.element('Done')!.eventDefinitions as { id: string }[])[0].id);
+        session.execute(updateProperties(document, definitionId, { id: 'Sent' }));
+        const xml = await save();
+
+        for (let index = 0; index < 5; index++) expect(session.undo()).toBe(true);
+        for (let index = 0; index < 5; index++) expect(session.redo()).toBe(true);
+
+        expect(await save()).toBe(xml);
+        expect(xml).toContain('<bpmn:userTask id="Last" name="Call">');
+        expect(xml).toContain('<bpmn:messageEventDefinition id="Sent" />');
+    });
 });
 
 describe('replaceOptions', () => {

@@ -104,6 +104,8 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
     let currentKey: string | undefined;
     let drawn: PlaneCells | null = null;
     let selected: string | null = null;
+    // The selected element as the host was last told it, so an edit that changes its type or name tells it again.
+    let reported: string | undefined;
     // A plane drawn while the container had no size is fitted once it has one, such as when a hidden tab is shown.
     let fitPending = false;
     // Kept by element id across plane changes and edits, and drawn for the elements the current plane shows.
@@ -154,6 +156,7 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
         render(false);
         emit('change', event);
         if (lost) setSelection(null);
+        else if (selected !== null && JSON.stringify(primaryOf(selected)) !== reported) setSelection(selected);
     });
 
     /** Draws the current plane from the document, with its badges, markers and selection. */
@@ -249,10 +252,18 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
         }
         // In the stage beside the canvas, not in it, so X6 does not take presses on it for presses on the canvas.
         stage.append(menu);
-        // Below the wrench, or above it when it does not fit below, and inside the stage, which clips what overflows.
+        // Below the wrench, or, when it does not fit there, on the side with more room and no taller than that room: the
+        // stage clips what overflows it.
         const origin = stage.getBoundingClientRect();
         const below = anchor.bottom - origin.top + 4;
-        const top = below + menu.offsetHeight > origin.height ? Math.max(0, anchor.top - origin.top - 4 - menu.offsetHeight) : below;
+        const above = anchor.top - origin.top - 4;
+        let top = below;
+        if (below + menu.offsetHeight > origin.height) {
+            const upward = above > origin.height - below;
+            const height = Math.max(0, Math.min(menu.offsetHeight, upward ? above : origin.height - below));
+            menu.style.maxHeight = `${height}px`;
+            top = upward ? above - height : below;
+        }
         const left = Math.max(0, Math.min(anchor.left - origin.left, origin.width - menu.offsetWidth));
         Object.assign(menu.style, { left: `${left}px`, top: `${top}px` });
 
@@ -286,7 +297,7 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
         current.menu.remove();
     }
 
-    /** Replaces the element as the menu entry says, and selects it again, so the host sees its new type. */
+    /** Replaces the element as the menu entry says; the change tells the host the selected element's new type. */
     function applyReplace(elementId: string, entry: ReplaceOption): void {
         closeReplaceMenu();
         const document = session.document;
@@ -298,7 +309,6 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
             return;
         }
         canvas.focus({ preventScroll: true });
-        setSelection(elementId);
     }
 
     /**
@@ -347,12 +357,16 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
     function setSelection(elementId: string | null): void {
         selected = elementId;
         decorate();
-        const element = elementId ? session.document?.element(elementId) : undefined;
+        const primary = elementId ? primaryOf(elementId) : null;
+        reported = primary ? JSON.stringify(primary) : undefined;
+        emit('selection', { elementIds: elementId ? [elementId] : [], primary });
+    }
+
+    /** The element with `elementId` as a selection event names it. */
+    function primaryOf(elementId: string): NonNullable<BpmnSelectionEvent['primary']> {
+        const element = session.document?.element(elementId);
         const name = typeof element?.name === 'string' && element.name !== '' ? element.name : undefined;
-        emit('selection', {
-            elementIds: elementId ? [elementId] : [],
-            primary: elementId ? { id: elementId, type: String(element?.$type ?? drawn?.types.get(elementId) ?? ''), ...(name ? { name } : {}) } : null
-        });
+        return { id: elementId, type: String(element?.$type ?? drawn?.types.get(elementId) ?? ''), ...(name ? { name } : {}) };
     }
 
     /** The element a cell stands for: a label or badge stands for the element it belongs to. */

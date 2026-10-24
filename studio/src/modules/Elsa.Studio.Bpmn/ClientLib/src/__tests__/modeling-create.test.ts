@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { BpmnDocument, BpmnModelingSession, compound, CREATABLE_TYPES, createShape, moveShapes } from '../modeling/index.js';
+import { BpmnDocument, BpmnModelingSession, compound, CREATABLE_TYPES, createShape, moveShapes, updateProperties } from '../modeling/index.js';
 
 const shape = (id: string, x: number, y: number, width: number, height: number, extra = '') =>
     `<bpmndi:BPMNShape id="${id}_di" bpmnElement="${id}"${extra}><dc:Bounds x="${x}" y="${y}" width="${width}" height="${height}" /></bpmndi:BPMNShape>`;
@@ -74,6 +74,25 @@ describe('createShape', () => {
         expect(await save()).toBe(original);
         expect(session.redo()).toBe(true);
         expect(await save()).toBe(xml);
+    });
+
+    it('puts back the same element, data object and shape on redo, so the edits made to them after it redo too', async () => {
+        const { session, document, save } = await loaded(PROCESS);
+        const create = createShape(document, 'Plane_1', 'bpmn:DataObjectReference', { x: 150, y: 400 });
+        const [id, dataObjectId] = create.elementIds;
+        session.execute(create);
+        session.execute(updateProperties(document, id, { name: 'Order' }));
+        session.execute(updateProperties(document, dataObjectId, { isCollection: true }));
+        session.execute(moveShapes(document, 'Plane_1', [id], { x: 10, y: 0 }));
+        const xml = await save();
+
+        for (let index = 0; index < 4; index++) expect(session.undo()).toBe(true);
+        for (let index = 0; index < 4; index++) expect(session.redo()).toBe(true);
+
+        expect(await save()).toBe(xml);
+        expect(xml).toContain(`<bpmn:dataObjectReference id="${id}" name="Order" dataObjectRef="${dataObjectId}" />`);
+        expect(xml).toContain(`<bpmn:dataObject id="${dataObjectId}" isCollection="true" />`);
+        expect(xml).toContain('<dc:Bounds x="142" y="375" width="36" height="50" />');
     });
 
     it('creates inside the innermost expanded subprocess that holds the point, and on a collapsed subprocess\'s own plane', async () => {

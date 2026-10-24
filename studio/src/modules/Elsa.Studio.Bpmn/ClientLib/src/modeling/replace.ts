@@ -129,6 +129,9 @@ export function replaceOptions(document: BpmnDocument, elementId: string): Repla
  *   `attachedToRef`, refers to the new one;
  * - a start event loses its incoming flows and an end event its outgoing flows, which they cannot have.
  *
+ * The new element and any new event definition are made once, so a redo puts back the objects that later commands
+ * refer to.
+ *
  * @throws Error when the document has no element with `elementId`, or when `target` is not one of its replace options.
  */
 export function replaceElement(document: BpmnDocument, elementId: string, target: ReplaceTarget): Command {
@@ -139,6 +142,7 @@ export function replaceElement(document: BpmnDocument, elementId: string, target
     if (!allowed) throw new Error(`The element '${elementId}' cannot be replaced with a ${describe(chosen)}.`);
     const dropped = flowsDroppedBy(element, chosen.type).map(flow => String(flow.id));
 
+    const made: Made = {};
     let operations: Operation[] = [];
     let removal: Command | undefined;
     return {
@@ -146,7 +150,7 @@ export function replaceElement(document: BpmnDocument, elementId: string, target
         execute() {
             // The element found when the command was created: an earlier command in the same compound can have renamed it.
             if (!containerOf(element)) throw new Error(`The element '${elementId}' is no longer in the document.`);
-            operations = planReplace(document, element, chosen);
+            operations = planReplace(document, element, chosen, made);
             for (const operation of operations) operation.apply();
             document.reindex();
             const replacement = document.element(String(element.id))!;
@@ -165,6 +169,12 @@ export function replaceElement(document: BpmnDocument, elementId: string, target
 interface Operation {
     apply(): void;
     revert(): void;
+}
+
+/** The objects a replace makes, kept from its first execute for the ones after it. */
+interface Made {
+    replacement?: ModdleElement;
+    definition?: ModdleElement;
 }
 
 function candidatesFor(element: ModdleElement): ReplaceOption[] {
@@ -217,9 +227,9 @@ function flowsDroppedBy(element: ModdleElement, type: string): ModdleElement[] {
     return [];
 }
 
-function planReplace(document: BpmnDocument, element: ModdleElement, target: ReplaceTarget): Operation[] {
+function planReplace(document: BpmnDocument, element: ModdleElement, target: ReplaceTarget, made: Made): Operation[] {
     const { moddle } = document;
-    const replacement = moddle.create(target.type, { id: element.id });
+    const replacement = made.replacement ??= moddle.create(target.type, { id: element.id });
     const operations: Operation[] = [];
 
     // Everything both types declare and the element has set, except what the target decides.
@@ -242,7 +252,7 @@ function planReplace(document: BpmnDocument, element: ModdleElement, target: Rep
             replacement.eventDefinitions = [...definitions];
             operations.push(...adopt(definitions, replacement));
         } else {
-            const created = moddle.create(target.eventDefinitionType, { id: freshId(document, target.eventDefinitionType.replace(/^[^:]*:/, '')) });
+            const created = made.definition ??= moddle.create(target.eventDefinitionType, { id: freshId(document, target.eventDefinitionType.replace(/^[^:]*:/, '')) });
             if (target.eventDefinitionType === 'bpmn:LinkEventDefinition') created.name = '';
             created.$parent = replacement;
             replacement.eventDefinitions = [created];
