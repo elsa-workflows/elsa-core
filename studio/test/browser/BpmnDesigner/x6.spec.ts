@@ -347,6 +347,29 @@ test('dragging a corner of a selected expanded subprocess resizes it, its bounda
     expect(await savedBounds(harness, 'Timer')).toEqual(timer);
 });
 
+test('every handle stays on its corner during a resize, and a resize that stops at fractional content is kept', async ({ harness }) => {
+    await loadedXml(harness, CONTAINER.replace(shape('Inner', 150, 150, 100, 80), shape('Inner', 150.4, 150, 100, 80)));
+    expect(await call(harness, 'select', 'Sub')).toBe(true);
+    const handle = (await cell(harness, 'Sub::resize-se').boundingBox())!;
+    await harness.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
+    await harness.mouse.down();
+    await harness.mouse.move(handle.x + 60, handle.y + 40, { steps: 5 });
+    const centre = async (corner: string) => {
+        const box = (await cell(harness, `Sub::resize-${corner}`).boundingBox())!;
+        return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    };
+    const sub = (await cell(harness, 'Sub').locator('.elsa-x6-outline').boundingBox())!;
+    for (const [corner, x, y] of [['ne', sub.x + sub.width, sub.y], ['sw', sub.x, sub.y + sub.height], ['se', sub.x + sub.width, sub.y + sub.height]] as const) {
+        const at = await centre(corner);
+        expect(Math.abs(at.x - x), corner).toBeLessThan(2);
+        expect(Math.abs(at.y - y), corner).toBeLessThan(2);
+    }
+    // Past the task inside, which now ends at x 250.4: the resize stops there, fractional, and the drop keeps it.
+    await harness.mouse.move(handle.x - 400, handle.y - 400, { steps: 5 });
+    await harness.mouse.up();
+    expect(await savedBounds(harness, 'Sub')).toEqual([100, 100, 150.4, 130]);
+});
+
 test('a resize stops where the shape still contains its content, and a read-only designer shows no handles', async ({ harness }) => {
     await loadedXml(harness, CONTAINER);
     expect(await call(harness, 'select', 'Sub')).toBe(true);

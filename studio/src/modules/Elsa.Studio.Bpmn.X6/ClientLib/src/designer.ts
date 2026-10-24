@@ -275,6 +275,11 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
                 shape.setPosition(dragging.resized.x, dragging.resized.y);
                 shape.resize(dragging.resized.width, dragging.resized.height);
             }
+            // Every handle stays on its corner, the dragged one too when the resize stops at a limit.
+            for (const corner of CORNERS) {
+                const { x: handleX, y: handleY } = handleCell(dragging.elementId, corner, dragging.resized);
+                graph!.getCellById(`${dragging.elementId}::resize-${corner}`)?.setProp('position', { x: handleX, y: handleY });
+            }
             return;
         }
         if (String(node.id) !== dragging.elementId) return;
@@ -288,8 +293,9 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
         const document = session.document;
         const planeId = diagramPlaneId();
         if (current?.kind === 'resize' && document && planeId) {
+            // Not rounded: the resize may have stopped at content whose bounds are fractional, and rounding could cut it.
             const { x, y, width, height } = current.resized;
-            const bounds = { x: Math.round(x), y: Math.round(y), width: Math.round(width), height: Math.round(height) };
+            const bounds = { x, y, width, height };
             const unchanged = (['x', 'y', 'width', 'height'] as const).every(name => bounds[name] === current.start[name]);
             try {
                 if (unchanged) render(false);

@@ -49,9 +49,7 @@ export function resizeShape(document: BpmnDocument, planeId: string, elementId: 
     if (bounds.width < minimum.width || bounds.height < minimum.height) {
         throw new Error(`The shape of '${elementId}' must be at least ${minimum.width} by ${minimum.height}.`);
     }
-    for (const content of view.shapes.filter(candidate => candidate.parentId === elementId && candidate.type !== 'bpmn:BoundaryEvent')) {
-        if (!contains(bounds, content.bounds)) throw new Error(`The shape of '${elementId}' must still contain '${content.elementId}'.`);
-    }
+    requireContent(view.shapes, elementId, bounds);
     // A copy, so a caller changing it afterwards cannot change what the command applies.
     const target = { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
 
@@ -65,6 +63,8 @@ function planResize(document: BpmnDocument, planeId: string, elementId: string, 
     const view = document.planeView(planeId)!;
     const diById = diElementsOf(document, planeId);
     const shape = view.shapes.find(candidate => candidate.elementId === elementId)!;
+    // Checked again here: an earlier command in the same compound can have moved the content since.
+    requireContent(view.shapes, elementId, bounds);
     const before = shape.bounds;
     const changes: Change[] = [];
     const diBounds = diById.get(elementId)?.bounds as ModdleElement | undefined;
@@ -120,6 +120,13 @@ function followBorder(point: Point, before: Bounds, after: Bounds): Point {
         x: follow(point.x, before.x, before.width, after.x, after.width),
         y: follow(point.y, before.y, before.height, after.y, after.height)
     };
+}
+
+/** Throws unless `bounds` contain every shape the element's shape contains, its boundary events aside. */
+function requireContent(shapes: readonly BpmnShapeView[], elementId: string, bounds: Bounds): void {
+    for (const content of shapes.filter(candidate => candidate.parentId === elementId && candidate.type !== 'bpmn:BoundaryEvent')) {
+        if (!contains(bounds, content.bounds)) throw new Error(`The shape of '${elementId}' must still contain '${content.elementId}'.`);
+    }
 }
 
 function contains(outer: Bounds, inner: Bounds): boolean {

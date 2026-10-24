@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { BpmnModelingSession, compound, minimumSize, resizeShape } from '../modeling/index.js';
+import { BpmnModelingSession, compound, minimumSize, moveShapes, resizeShape } from '../modeling/index.js';
 
 const shape = (id: string, x: number, y: number, width: number, height: number, extra = '', label?: [number, number, number, number]) =>
     `<bpmndi:BPMNShape id="${id}_di" bpmnElement="${id}"${extra}><dc:Bounds x="${x}" y="${y}" width="${width}" height="${height}" />` +
@@ -123,6 +123,20 @@ describe('resizeShape', () => {
         expect(resize('Sub', { x: 100, y: 100, width: Number.POSITIVE_INFINITY, height: 200 })).toThrow('A resize needs finite bounds.');
         expect(resize('Missing', { x: 0, y: 0, width: 200, height: 200 })).toThrow("The plane 'Plane_1' has no shape for 'Missing'.");
         expect(() => resizeShape(document, 'Nowhere', 'Sub', { x: 0, y: 0, width: 200, height: 200 })).toThrow("The document has no plane 'Nowhere'.");
+    });
+
+    it('checks the content again when it executes, so a compound that moved the content first is refused and rolled back', async () => {
+        const { session, document, original } = await loaded();
+        const both = compound([
+            moveShapes(document, 'Plane_1', ['Inner'], { x: 20, y: 0 }),
+            // Created while Inner still fits: it reaches x 250, inside the new right side at 260.
+            resizeShape(document, 'Plane_1', 'Sub', { x: 100, y: 100, width: 160, height: 200 })
+        ]);
+
+        expect(() => session.execute(both)).toThrow("The shape of 'Sub' must still contain 'Inner'.");
+
+        expect(session.canUndo).toBe(false);
+        expect((await session.save()).xml).toBe(original);
     });
 
     it('applies the bounds given when the command was created, not later changes to that object', async () => {
