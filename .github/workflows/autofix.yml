@@ -1,0 +1,42 @@
+name: autofix.ci # required name: autofix.ci uses it to identify this workflow
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: autofix-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  autofix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.x
+
+      # Only format C# files this PR changes, so existing whitespace drift
+      # elsewhere in the repo is never rewritten. Uses the repo's .editorconfig.
+      - name: dotnet format whitespace (changed files only)
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          mapfile -t files < <(git diff --name-only --diff-filter=ACMR "$BASE_SHA" HEAD -- '*.cs')
+          if [ ${#files[@]} -eq 0 ]; then echo "No changed C# files."; exit 0; fi
+          printf 'Formatting %s\n' "${files[@]}"
+          dotnet format whitespace --folder --include "${files[@]}"
+          # .editorconfig says end_of_line = crlf, but almost all files are LF.
+          # Keep each file's existing line endings so only real whitespace changes remain.
+          for f in "${files[@]}"; do
+            git show "HEAD:$f" | grep -qU $'\r' || sed -i 's/\r$//' "$f"
+          done
+
+      - uses: autofix-ci/action@c5b2d67aa2274e7b5a18224e8171550871fc7e4a # v1.3.4
