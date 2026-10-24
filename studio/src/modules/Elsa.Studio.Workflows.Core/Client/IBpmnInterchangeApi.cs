@@ -18,6 +18,14 @@ public interface IBpmnInterchangeApi
     Task<BpmnImportAnalysisModel> AnalyzeAsync([AliasAs("file")] StreamPart file, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Reads a <c>.bpmn</c> document and reports the findings a read would produce, and checks it as an import of
+    /// <paramref name="processId"/> would, without persisting anything.
+    /// </summary>
+    [Multipart]
+    [Post("/bpmn/analyze")]
+    Task<BpmnImportAnalysisModel> AnalyzeAsync([AliasAs("file")] StreamPart file, [Query, AliasAs("processId")] string? processId, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Reads a <c>.bpmn</c> document and persists it as a draft workflow definition.
     /// </summary>
     [Multipart]

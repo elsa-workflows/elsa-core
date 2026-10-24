@@ -1,3 +1,4 @@
+@using Elsa.Studio.Bpmn.Designers
 @using Elsa.Studio.Workflows.Domain.Models.Bpmn
 @using Variant = MudBlazor.Variant
 @inherits StudioComponentBase
@@ -38,6 +39,23 @@
                 <MudText Typo="Typo.body2">@Localizer["Unsaved diagram changes"]</MudText>
                 <MudSpacer />
                 <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary" Disabled="Session.IsSaving" OnClick="OnSaveClicked" data-testid="bpmn-save">@Localizer["Save"]</MudButton>
+            </MudStack>
+        }
+
+        @if (Session.Problems.Count > 0)
+        {
+            <MudStack Spacing="1" data-testid="bpmn-problems">
+                <MudText Typo="Typo.subtitle2">@Localizer["Problems"]</MudText>
+                @foreach (var problem in Session.Problems)
+                {
+                    <MudAlert Severity="@(problem.Severity == BpmnDesignerMarker.Warning ? Severity.Warning : Severity.Error)" Dense="true" data-testid="bpmn-problem">
+                        <div>@problem.Message</div>
+                        @foreach (var elementId in problem.ElementIds)
+                        {
+                            <MudLink Typo="Typo.caption" Class="mr-2" OnClick="@(() => OnProblemElementClicked(elementId))" data-testid="bpmn-problem-element">@elementId</MudLink>
+                        }
+                    </MudAlert>
+                }
             </MudStack>
         }
 

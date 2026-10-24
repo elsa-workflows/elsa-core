@@ -27,6 +27,7 @@ internal sealed class FakeBpmnXmlService : IBpmnXmlService
     public FakeBpmnXmlService ReturnsXml(string xml, string eTag) => Add(_getResults, new(new BpmnXmlRevision(xml, eTag)));
     public FakeBpmnXmlService RefusesGet(BpmnDocumentFailureReason reason) => Add(_getResults, new(new BpmnDocumentFailure(reason, "refused")));
     public FakeBpmnXmlService AcceptsPut(string? newETag, params BpmnForeignContentModel[] dropped) => Add(_putResults, new(new BpmnXmlSaveResult(new BpmnImportResultModel(), newETag, dropped)));
+    public FakeBpmnXmlService AcceptsPutReporting(string? newETag, BpmnImportAnalysisModel analysis) => Add(_putResults, new(new BpmnXmlSaveResult(new BpmnImportResultModel { Analysis = analysis }, newETag, [])));
     public FakeBpmnXmlService RefusesPut(BpmnDocumentFailureReason reason) => Add(_putResults, new(new BpmnDocumentFailure(reason, "refused")));
 
     /// <summary>When set, a GET awaits it before answering, so a test can act while one is in flight.</summary>
@@ -114,6 +115,24 @@ internal sealed class FakeModelerCanvas : IBpmnModelerCanvas
 
     public string Xml { get; set; } = "<edited/>";
     public Exception? SaveException { get; set; }
+
+    /// <summary>Every element the designer was asked to select, in order.</summary>
+    public List<string> Selections { get; } = [];
+
+    /// <summary>The markers of each <c>applyMarkers</c> call, in order.</summary>
+    public List<IReadOnlyList<BpmnDesignerMarker>> AppliedMarkers { get; } = [];
+
+    public Task<bool> SelectAsync(string elementId)
+    {
+        Selections.Add(elementId);
+        return Task.FromResult(true);
+    }
+
+    public Task ApplyMarkersAsync(IReadOnlyList<BpmnDesignerMarker> markers)
+    {
+        AppliedMarkers.Add(markers);
+        return Task.CompletedTask;
+    }
 
     /// <summary>Runs while the designer exports, as an edit made during the export would.</summary>
     public Action? DuringSave { get; set; }

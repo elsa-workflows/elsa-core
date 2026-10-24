@@ -250,10 +250,22 @@ public class BpmnDiagramDesigner(
     /// Reads the imported BPMN document's source XML from the workflow definition's custom
     /// properties, or null when there is none.
     /// </summary>
-    internal static string? GetSourceXml(WorkflowDefinition? workflowDefinition)
+    internal static string? GetSourceXml(WorkflowDefinition? workflowDefinition) =>
+        GetStringCustomProperty(workflowDefinition, BpmnProcessConstants.SourceXmlCustomPropertyKey);
+
+    /// <summary>
+    /// Reads the id of the process the imported BPMN document was bound from, or null when the definition does not
+    /// record one.
+    /// </summary>
+    internal static string? GetSourceProcessId(WorkflowDefinition? workflowDefinition) =>
+        GetStringCustomProperty(workflowDefinition, BpmnProcessConstants.SourceProcessIdCustomPropertyKey);
+
+    private static string? GetStringCustomProperty(WorkflowDefinition? workflowDefinition, string key)
     {
-        if (workflowDefinition == null || !workflowDefinition.CustomProperties.TryGetValue(BpmnProcessConstants.SourceXmlCustomPropertyKey, out var value) || value == null!)
+        if (workflowDefinition == null || !workflowDefinition.CustomProperties.TryGetValue(key, out var value) || value == null!)
+        {
             return null;
+        }
 
         return value switch
         {

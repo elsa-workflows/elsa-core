@@ -109,6 +109,10 @@ public partial class BpmnModelerCanvas : IBpmnModelerCanvas, IDisposable
 
     Task<BpmnDesignerSetBindingResult> IBpmnModelerCanvas.SetBindingAsync(string elementId, BpmnDesignerBinding binding) => _host.SetBindingAsync(elementId, binding);
 
+    Task<bool> IBpmnModelerCanvas.SelectAsync(string elementId) => _host.SelectAsync(elementId);
+
+    Task IBpmnModelerCanvas.ApplyMarkersAsync(IReadOnlyList<BpmnDesignerMarker> markers) => _host.ApplyMarkersAsync(markers);
+
     private void Detach()
     {
         if (_attachedSession == null)
