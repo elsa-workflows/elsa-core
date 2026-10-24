@@ -92,13 +92,6 @@ public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflow
         if (string.IsNullOrWhiteSpace(message.InstanceId)) throw new ArgumentException("The instance ID is required when dispatching an existing workflow instance.");
 
         var workflowClient = await workflowRuntime.CreateClientAsync(message.InstanceId, cancellationToken);
-        var state = await workflowClient.ExportStateAsync(cancellationToken);
-        if (state.SubStatus != WorkflowSubStatus.Pending)
-        {
-            logger.LogDebug("Skipping existing-instance dispatch of {InstanceId}: sub-status is {SubStatus}", message.InstanceId, state.SubStatus);
-            return;
-        }
-
         var request = new RunWorkflowInstanceRequest
         {
             TriggerActivityId = message.TriggerActivityId,
@@ -106,6 +99,10 @@ public class DispatchWorkflowRequestConsumer(IWorkflowDefinitionService workflow
             Properties = message.Properties
         };
 
-        await workflowClient.RunInstanceAsync(request, cancellationToken);
+        // The pending guard is decided by the client under the instance lock (#8869): reading
+        // the sub-status here would be stale by the time the run takes the lock.
+        var response = await workflowClient.RunInstanceIfPendingAsync(request, cancellationToken);
+        if (response == null)
+            logger.LogDebug("Skipping existing-instance dispatch of {InstanceId}: it is no longer pending.", message.InstanceId);
     }
 }

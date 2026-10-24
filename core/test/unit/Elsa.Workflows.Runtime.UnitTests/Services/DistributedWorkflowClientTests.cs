@@ -111,4 +111,101 @@ public class DistributedWorkflowClientTests
         Assert.Equal("parent-instance-8", observedOptions.SchedulingWorkflowInstanceId);
         Assert.Equal(6, observedOptions.SchedulingCallStackDepth);
     }
+
+    [Fact]
+    public async Task RunInstanceIfPendingAsync_TakesTheInstanceLockAndRunsAPendingInstance()
+    {
+        var lockProvider = SubscribeLockProviderFor("instance-1");
+        var runner = Substitute.For<IWorkflowRunner>();
+
+        var client = CreatePendingGuardClient(WorkflowSubStatus.Pending, runner, lockProvider);
+
+        var response = await client.RunInstanceIfPendingAsync(new RunWorkflowInstanceRequest());
+
+        Assert.NotNull(response);
+        lockProvider.Received(1).CreateLock("workflow-instance:instance-1");
+        await runner.Received(1).RunAsync(Arg.Any<WorkflowGraph>(), Arg.Any<WorkflowState>(), Arg.Any<RunWorkflowOptions>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RunInstanceIfPendingAsync_SkipsWithoutRunningWhenTheInstanceLeftPending()
+    {
+        var lockProvider = SubscribeLockProviderFor("instance-1");
+        var runner = Substitute.For<IWorkflowRunner>();
+
+        var client = CreatePendingGuardClient(WorkflowSubStatus.Suspended, runner, lockProvider);
+
+        var response = await client.RunInstanceIfPendingAsync(new RunWorkflowInstanceRequest());
+
+        Assert.Null(response);
+        // The read still happens under the instance lock, so the decision cannot race a run.
+        lockProvider.Received(1).CreateLock("workflow-instance:instance-1");
+        await runner.DidNotReceive().RunAsync(Arg.Any<WorkflowGraph>(), Arg.Any<WorkflowState>(), Arg.Any<RunWorkflowOptions>(), Arg.Any<CancellationToken>());
+    }
+
+    private static IDistributedLockProvider SubscribeLockProviderFor(string instanceId)
+    {
+        var lockProvider = Substitute.For<IDistributedLockProvider>();
+        var distributedLock = Substitute.For<IDistributedLock>();
+        var lockHandle = Substitute.For<IDistributedSynchronizationHandle>();
+        lockProvider.CreateLock($"workflow-instance:{instanceId}").Returns(distributedLock);
+        distributedLock.AcquireAsync(Arg.Any<TimeSpan?>(), Arg.Any<CancellationToken>())
+            .Returns(ValueTask.FromResult(lockHandle));
+        return lockProvider;
+    }
+
+    private static DistributedWorkflowClient CreatePendingGuardClient(
+        WorkflowSubStatus subStatus,
+        IWorkflowRunner runner,
+        IDistributedLockProvider lockProvider)
+    {
+        var instanceManager = Substitute.For<IWorkflowInstanceManager>();
+        var definitionService = Substitute.For<IWorkflowDefinitionService>();
+
+        var workflow = new Workflow { Id = "definition-1", Identity = new WorkflowIdentity("definition-1", 1, "version-1") };
+        var node = new ActivityNode(workflow, "root");
+        var graph = new WorkflowGraph(workflow, node, [node]);
+        var definition = new WorkflowDefinition { Id = "version-1", DefinitionId = "definition-1" };
+        definitionService.TryFindWorkflowGraphAsync(Arg.Any<WorkflowDefinitionHandle>(), Arg.Any<CancellationToken>())
+            .Returns(new WorkflowGraphFindResult(definition, graph));
+
+        var state = new WorkflowState
+        {
+            Id = "instance-1",
+            DefinitionId = "definition-1",
+            DefinitionVersionId = "version-1",
+            Status = WorkflowStatus.Running,
+            SubStatus = subStatus
+        };
+        var instance = new WorkflowInstance
+        {
+            Id = "instance-1",
+            DefinitionId = "definition-1",
+            DefinitionVersionId = "version-1",
+            Status = WorkflowStatus.Running,
+            SubStatus = subStatus,
+            WorkflowState = state
+        };
+        instanceManager.FindByIdAsync("instance-1", Arg.Any<CancellationToken>()).Returns(instance);
+        runner.RunAsync(Arg.Any<WorkflowGraph>(), Arg.Any<WorkflowState>(), Arg.Any<RunWorkflowOptions>(), Arg.Any<CancellationToken>())
+            .Returns(new RunWorkflowResult(null!, state, workflow, null, Journal.Empty));
+
+        var services = new ServiceCollection()
+            .AddSingleton(instanceManager)
+            .AddSingleton(definitionService)
+            .AddSingleton(runner)
+            .AddSingleton(Substitute.For<IWorkflowCanceler>())
+            .AddSingleton(Substitute.For<IWorkflowActivationGate>())
+            .AddSingleton(Substitute.For<WorkflowStateMapper>())
+            .AddSingleton(Substitute.For<ILogger<LocalWorkflowClient>>())
+            .BuildServiceProvider();
+
+        return new DistributedWorkflowClient(
+            "instance-1",
+            lockProvider,
+            Substitute.For<ITransientExceptionDetector>(),
+            Microsoft.Extensions.Options.Options.Create(new DistributedLockingOptions()),
+            services,
+            Substitute.For<ILogger<DistributedWorkflowClient>>());
+    }
 }
