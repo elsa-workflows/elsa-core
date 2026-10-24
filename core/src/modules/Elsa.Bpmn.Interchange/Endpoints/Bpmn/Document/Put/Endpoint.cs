@@ -109,7 +109,7 @@ internal sealed class Put(IWorkflowDefinitionStore store, BpmnInterchangeDocumen
             Id = persisted.Id,
             DefinitionId = persisted.DefinitionId,
             Version = persisted.Version,
-            Analysis = BpmnImportAnalysisModel.From(result.Analysis)
+            Analysis = BpmnImportAnalysisModel.From(result)
         }, cancellationToken);
     }
 }

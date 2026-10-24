@@ -153,17 +153,16 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     }
 
     [Fact]
-    public async Task Import_OfADocumentWithAnUnboundTask_ReturnsUnprocessableEntity()
+    public async Task Import_OfADocumentWithAnUnboundTask_SucceedsAndReportsTheTask()
     {
+        // An unbound task is unfinished work, not an error: the draft imports, and publishing it is what is refused.
         using var content = new MultipartFormDataContent();
         AddBpmnFile(content, ReadAsset("unbound-task-process.bpmn"), "file");
 
         var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
 
-        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
-        var body = await response.Content.ReadAsStringAsync();
-        Assert.Equal(BpmnErrorCodes.ImportBindingInvalid, CodeOf(body));
-        Assert.Contains("nothing binds it to an Elsa activity", body);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal(["Unbound_1"], UnboundElementIdsOf(await response.Content.ReadAsStringAsync()));
     }
 
     [Fact]
@@ -656,18 +655,16 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     }
 
     [Fact]
-    public async Task DocumentPut_ThatRemovesARequiredActivityBinding_ReturnsUnprocessableEntityAndPersistsNoNewDraft()
+    public async Task DocumentPut_ThatRemovesAnActivityBinding_SavesTheTaskUnbound()
     {
         var definitionId = await ImportCamundaOrderProcessAsync();
-        var versionBeforePut = await LatestVersionOfAsync(definitionId);
 
         var getResponse = await GetAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", "workflows/definitions:view");
         Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
         var documentJson = await getResponse.Content.ReadAsStringAsync();
 
-        // Strips the one <elsa:activityBinding> the document carries (on "NotifyWarehouse"), reproducing exactly
-        // what Import itself refuses for unbound-task-process.bpmn: a task-family element the document describes
-        // but does not say how to perform.
+        // Strips the one <elsa:activityBinding> the document carries (on "NotifyWarehouse"), leaving a task-family
+        // element the document describes but does not say how to perform.
         using var editedDocument = JsonDocument.Parse(documentJson);
         using var stream = new MemoryStream();
 
@@ -681,11 +678,8 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
 
         var putResponse = await PutAuthenticatedAsync($"bpmn/definitions/{definitionId}/document", putContent, ETagOf(getResponse), "workflows/definitions:write");
 
-        Assert.Equal(HttpStatusCode.UnprocessableEntity, putResponse.StatusCode);
-        var body = await putResponse.Content.ReadAsStringAsync();
-        Assert.Equal(BpmnErrorCodes.ImportBindingInvalid, CodeOf(body));
-        Assert.Contains("nothing binds it to an Elsa activity", body);
-        Assert.Equal(versionBeforePut, await LatestVersionOfAsync(definitionId));
+        Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
+        Assert.Equal(["NotifyWarehouse"], UnboundElementIdsOf(await putResponse.Content.ReadAsStringAsync()));
     }
 
     [Fact]
@@ -1489,13 +1483,18 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     }
 
     [Fact]
-    public async Task Analyze_OfADocumentWithAnUnboundTask_ReportsTheRefusalOfThatTask()
+    public async Task Analyze_OfADocumentWithAnUnboundTask_ReportsTheTaskAndNoRefusal()
     {
-        var refusal = Assert.NotNull(await AnalyzeRefusalAsync(ReadAsset("unbound-task-process.bpmn")));
+        var xml = ReadAsset("unbound-task-process.bpmn");
 
-        Assert.Equal(BpmnErrorCodes.ImportBindingInvalid, refusal.Code);
-        Assert.Equal(["Unbound_1"], refusal.ElementIds);
-        Assert.Contains("nothing binds it to an Elsa activity", refusal.Message);
+        Assert.Null(await AnalyzeRefusalAsync(xml));
+        Assert.Equal(["Unbound_1"], await AnalyzeUnboundElementIdsAsync(xml));
+    }
+
+    [Fact]
+    public async Task Analyze_OfADocumentWhoseTasksAreAllBound_ReportsNoUnboundTask()
+    {
+        Assert.Empty(await AnalyzeUnboundElementIdsAsync(ReadAsset("camunda-order-process.bpmn")));
     }
 
     [Fact]
@@ -1536,34 +1535,27 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
         var secondProcessEnd = xml.LastIndexOf("</bpmn:process>", StringComparison.Ordinal);
         var withAnUnboundTaskInTheSecond = xml.Insert(secondProcessEnd, "<bpmn:task id=\"Unbound_9\" />");
 
-        Assert.Null(await AnalyzeRefusalAsync(withAnUnboundTaskInTheSecond));
-        Assert.Null(await AnalyzeRefusalAsync(withAnUnboundTaskInTheSecond, "first-process"));
-        Assert.Equal(["Unbound_9"], (await AnalyzeRefusalAsync(withAnUnboundTaskInTheSecond, "second-process"))?.ElementIds);
+        Assert.Empty(await AnalyzeUnboundElementIdsAsync(withAnUnboundTaskInTheSecond));
+        Assert.Empty(await AnalyzeUnboundElementIdsAsync(withAnUnboundTaskInTheSecond, "first-process"));
+        Assert.Equal(["Unbound_9"], await AnalyzeUnboundElementIdsAsync(withAnUnboundTaskInTheSecond, "second-process"));
     }
 
     [Fact]
-    public async Task Import_OfADocumentWithAnUnboundTask_NamesTheTask()
+    public async Task Import_OfADocumentWhoseBindingNamesAnUnknownActivity_NamesTheTask()
     {
         using var content = new MultipartFormDataContent();
-        AddBpmnFile(content, ReadAsset("unbound-task-process.bpmn"), "file");
+        AddBpmnFile(content, ReadAsset("camunda-order-process.bpmn").Replace("activityType=\"Elsa.WriteLine\"", "activityType=\"Elsa.NoSuchActivity\""), "file");
 
         var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
 
         Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
-        Assert.Equal(["Unbound_1"], ElementIdsOf(await response.Content.ReadAsStringAsync()));
+        Assert.Equal(["NotifyWarehouse"], ElementIdsOf(await response.Content.ReadAsStringAsync()));
     }
 
     /// <summary>The refusal <c>bpmn/analyze</c> reports for <paramref name="xml"/>, or null when it reports none.</summary>
     private async Task<(string Code, string Message, IReadOnlyList<string?> ElementIds)?> AnalyzeRefusalAsync(string xml, string? processId = null)
     {
-        using var content = new MultipartFormDataContent();
-        AddBpmnFile(content, xml, "file");
-        var path = processId is null ? "bpmn/analyze" : $"bpmn/analyze?processId={Uri.EscapeDataString(processId)}";
-
-        var response = await PostAuthenticatedAsync(path, content, "workflows/definitions:view");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        using var document = JsonDocument.Parse(await AnalyzeAsync(xml, processId));
 
         if (!document.RootElement.TryGetProperty("refusal", out var refusal) || refusal.ValueKind == JsonValueKind.Null)
         {
@@ -1574,6 +1566,33 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
             refusal.GetProperty("code").GetString()!,
             refusal.GetProperty("message").GetString()!,
             refusal.GetProperty("elementIds").EnumerateArray().Select(id => id.GetString()).ToList());
+    }
+
+    /// <summary>The tasks <c>bpmn/analyze</c> reports an import of <paramref name="xml"/> would accept unbound.</summary>
+    private async Task<IReadOnlyList<string?>> AnalyzeUnboundElementIdsAsync(string xml, string? processId = null)
+    {
+        using var document = JsonDocument.Parse(await AnalyzeAsync(xml, processId));
+        return document.RootElement.GetProperty("unboundElementIds").EnumerateArray().Select(id => id.GetString()).ToList();
+    }
+
+    /// <summary>The body of a successful <c>bpmn/analyze</c> of <paramref name="xml"/>.</summary>
+    private async Task<string> AnalyzeAsync(string xml, string? processId)
+    {
+        using var content = new MultipartFormDataContent();
+        AddBpmnFile(content, xml, "file");
+        var path = processId is null ? "bpmn/analyze" : $"bpmn/analyze?processId={Uri.EscapeDataString(processId)}";
+
+        var response = await PostAuthenticatedAsync(path, content, "workflows/definitions:view");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        return await response.Content.ReadAsStringAsync();
+    }
+
+    /// <summary>The <c>analysis.unboundElementIds</c> of a successful import or save response body.</summary>
+    private static IReadOnlyList<string?> UnboundElementIdsOf(string body)
+    {
+        using var document = JsonDocument.Parse(body);
+        return document.RootElement.GetProperty("analysis").GetProperty("unboundElementIds").EnumerateArray().Select(id => id.GetString()).ToList();
     }
 
     private static IReadOnlyList<string?> ElementIdsOf(string body)

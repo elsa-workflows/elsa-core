@@ -128,7 +128,7 @@ public class BpmnActivityBindingFormatTests(ITestOutputHelper testOutputHelper) 
     {
         // Two <elsa:input name="text"> children for the same activity type. The second would otherwise silently win,
         // leaving the author's first configuration in the file but never applied — exactly the quiet wrong answer
-        // this binder refuses everywhere else (an unbound task, a dead declaration, an unregistered activity type, a
+        // this binder refuses everywhere else (a dead declaration, an unregistered activity type, a
         // malformed timer duration, a call activity with no calledElement).
         var inputName = new BpmnQName(BpmnActivityBindingFormat.NamespaceUri, BpmnActivityBindingFormat.InputElementName);
         var nameAttribute = Attribute(BpmnActivityBindingFormat.InputNameAttributeName, "text");

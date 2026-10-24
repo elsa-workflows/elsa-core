@@ -57,7 +57,7 @@ internal sealed class Import(BpmnInterchangeDocumentService documentService) : E
             Id = definition.Id,
             DefinitionId = definition.DefinitionId,
             Version = definition.Version,
-            Analysis = BpmnImportAnalysisModel.From(result.Analysis)
+            Analysis = BpmnImportAnalysisModel.From(result)
         }, cancellationToken);
     }
 }

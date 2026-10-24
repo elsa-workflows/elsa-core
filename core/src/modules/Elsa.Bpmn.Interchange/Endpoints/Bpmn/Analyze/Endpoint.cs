@@ -10,7 +10,7 @@ namespace Elsa.Bpmn.Interchange.Endpoints.Bpmn.Analyze;
 
 /// <summary>
 /// Reads a <c>.bpmn</c> document and reports the element-scoped Info/Degraded/Dropped findings a read would produce,
-/// and the refusal an import of it would raise, without persisting anything.
+/// the refusal an import of it would raise, and the tasks it would accept unbound, without persisting anything.
 /// </summary>
 /// <remarks>
 /// A thin wrapper over <see cref="BpmnInterchangeDocumentService.Analyze"/>, which runs the same code
@@ -43,8 +43,8 @@ internal sealed class Analyze(BpmnInterchangeDocumentService documentService) : 
         try
         {
             var analysis = documentService.Analyze(xml);
-            var refusal = FindRefusal(xml, Query<string>("processId", isRequired: false));
-            await Send.OkAsync(BpmnImportAnalysisModel.From(analysis, refusal), cancellationToken);
+            var (refusal, unboundElementIds) = Check(xml, Query<string>("processId", isRequired: false));
+            await Send.OkAsync(BpmnImportAnalysisModel.From(analysis, refusal, unboundElementIds), cancellationToken);
         }
         catch (BpmnInterchangeException exception)
         {
@@ -57,16 +57,15 @@ internal sealed class Analyze(BpmnInterchangeDocumentService documentService) : 
         }
     }
 
-    private BpmnImportRefusalModel? FindRefusal(string xml, string? processId)
+    private (BpmnImportRefusalModel? Refusal, IReadOnlyList<string> UnboundElementIds) Check(string xml, string? processId)
     {
         try
         {
-            documentService.Validate(xml, processId);
-            return null;
+            return (null, documentService.ValidateAndFindUnboundTasks(xml, processId));
         }
         catch (Exception exception) when (BpmnImportRefusalModel.For(exception) is { } refusal)
         {
-            return refusal;
+            return (refusal, []);
         }
     }
 }

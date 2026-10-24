@@ -52,10 +52,10 @@ public class BpmnInterchangeDocumentServiceTests(ITestOutputHelper testOutputHel
         // A refusal, not a bug, and not a failed import: error events are always interrupting per BPMN, so the reader
         // reports the whole <subProcess> as Dropped and reads the rest of the document as written.
         //
-        // The import succeeding is what proves the drop was total. The dropped body declares an undeclared
-        // <serviceTask>, and an unbound task the binder can see is refused outright -- so a drop that reported the
-        // element but left its bindings behind would surface here as a BpmnBindingException naming 'HandleError',
-        // not as a quietly half-imported process.
+        // The import leaving nothing unbound is what proves the drop was total. The dropped body declares an
+        // undeclared <serviceTask>, and the binder gives an unbound task it can see a placeholder -- so a drop that
+        // reported the element but left its bindings behind would surface here as 'HandleError' among the unbound
+        // tasks, not as a quietly half-imported process.
         var xml = ReadAsset("non-interrupting-error-event-subprocess.bpmn");
 
         var analysis = DocumentService.Analyze(xml);
@@ -73,6 +73,7 @@ public class BpmnInterchangeDocumentServiceTests(ITestOutputHelper testOutputHel
         var imported = await DocumentService.ImportAsync(xml, definitionId: null, name: null, processId: null, CancellationToken.None);
 
         Assert.True(imported.ImportResult.Succeeded, string.Join("; ", imported.ImportResult.ValidationErrors.Select(error => error.Message)));
+        Assert.Empty(imported.UnboundElementIds);
     }
 
     [Fact(DisplayName = "Exporting an imported definition retains foreign extension elements, foreign attributes and waypoints byte-identically")]

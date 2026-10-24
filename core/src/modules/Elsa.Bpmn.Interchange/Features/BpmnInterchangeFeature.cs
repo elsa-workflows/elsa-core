@@ -1,5 +1,6 @@
 using Bpmn.Interchange;
 using Elsa.Bpmn.Features;
+using Elsa.Bpmn.Interchange.Activities;
 using Elsa.Bpmn.Interchange.Binding;
 using Elsa.Bpmn.Interchange.Handlers.Notifications;
 using Elsa.Bpmn.Interchange.Services;
@@ -37,6 +38,7 @@ public class BpmnInterchangeFeature : FeatureBase
     /// <inheritdoc />
     public override void Apply()
     {
+        Module.AddActivity<BpmnUnboundTask>();
         Services.AddSingleton<BpmnActivityBindingFormat>();
         Services.AddSingleton<BpmnWorkBinder>();
         Services.AddSingleton<BpmnXmlReader>();

@@ -70,7 +70,7 @@ internal sealed class Post(BpmnInterchangeDocumentService documentService) : Els
                 Id = definition.Id,
                 DefinitionId = definition.DefinitionId,
                 Version = definition.Version,
-                Analysis = BpmnImportAnalysisModel.From(result.Analysis)
+                Analysis = BpmnImportAnalysisModel.From(result)
             },
             cancellation: cancellationToken);
     }

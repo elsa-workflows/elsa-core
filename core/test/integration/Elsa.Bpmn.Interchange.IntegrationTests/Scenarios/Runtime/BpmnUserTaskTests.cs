@@ -26,9 +26,10 @@ namespace Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Runtime;
 /// <see cref="IUserTaskManager"/>, which is what the User Tasks API calls.
 /// </summary>
 /// <remarks>
-/// BPMN says a <c>userTask</c> is for a person and nothing about how one reaches them, so the binder never infers
-/// this binding; the document declares it. What is worth running is everything after that declaration: the bound
-/// activity's bookmark is projected into a task, and completing the task resumes the BPMN scope that is waiting on it.
+/// The document declares the binding here, to configure the task's assignee and actions; a <c>userTask</c> that declares
+/// none binds to a plain <see cref="UserTask"/>, which <see cref="BpmnUserTaskDefaultBindingTests"/> covers. What is
+/// worth running is everything after the binding: the bound activity's bookmark is projected into a task, and completing
+/// the task resumes the BPMN scope that is waiting on it.
 /// </remarks>
 public class BpmnUserTaskTests(ITestOutputHelper testOutputHelper) : IAsyncLifetime
 {
