@@ -387,6 +387,34 @@ test('a resize stops where the shape still contains its content, and a read-only
     await expect(harness.locator('#canvas .x6-cell[data-cell-id^="Sub::resize-"]')).toHaveCount(0);
 });
 
+test('Delete removes the selected element with its flows, clears the selection, and undo brings them back', async ({ harness }) => {
+    await loaded(harness, 'order.bpmn');
+    await cell(harness, 'Notify').click();
+    await harness.keyboard.press('Delete');
+
+    for (const id of ['Notify', 'Flow_3', 'Flow_4']) await expect(cell(harness, id), id).toHaveCount(0);
+    await expect(cell(harness, 'Review')).toHaveCount(1);
+    const { xml } = await call<{ xml: string }>(harness, 'save');
+    expect(xml).not.toContain('Notify');
+    expect(await selections(harness)).toEqual([
+        { elementIds: ['Notify'], primary: { id: 'Notify', type: 'bpmn:SendTask', name: 'Notify shipping' } },
+        { elementIds: [], primary: null }
+    ]);
+
+    await harness.keyboard.press('Control+z');
+    for (const id of ['Notify', 'Flow_3', 'Flow_4']) await expect(cell(harness, id), id).toHaveCount(1);
+    // Nothing is selected, so Delete does nothing.
+    await harness.keyboard.press('Delete');
+    await expect(cell(harness, 'Notify')).toHaveCount(1);
+});
+
+test('Delete does nothing when read-only', async ({ harness }) => {
+    await loaded(harness, 'order.bpmn', { readOnly: true });
+    await cell(harness, 'Notify').click();
+    await harness.keyboard.press('Delete');
+    await expect(cell(harness, 'Notify')).toHaveCount(1);
+});
+
 test('fits a document loaded while the container had no size once the container is shown', async ({ harness }) => {
     await harness.evaluate(() => {
         document.getElementById('canvas')!.style.display = 'none';

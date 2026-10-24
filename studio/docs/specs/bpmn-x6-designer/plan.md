@@ -94,3 +94,19 @@ the X6 designer's own Playwright tests, the kernel tests, and the cross-designer
   - the resize stopping at the content;
   - undo;
   - no handles when read-only.
+
+## Step 3c verification
+
+- Kernel tests (`modeling-delete.test.ts`) cover:
+  - a task deleted with its boundary event, flows, data association, lane reference and drawings;
+  - a gateway default cleared;
+  - a collapsed subprocess deleted with its content and its own plane's diagram;
+  - a data object deleted with its last reference;
+  - associations deleted with their task;
+  - several elements in one undo step;
+  - refusals;
+  - undo back to the original XML, and redo.
+- `x6.spec.ts` covers:
+  - Delete removing the selected element and its flows, and clearing the selection;
+  - undo bringing them back;
+  - Delete with no selection, and when read-only, doing nothing.
