@@ -7,7 +7,7 @@ import type { ModdleElement } from '../binding.js';
 import type { Command } from './command-stack.js';
 import type { BpmnDocument, BpmnShapeView, Bounds, Point } from './document.js';
 
-/** What can be created, with the size bpmn-js gives each. Participants, groups and subprocesses come in later steps. */
+/** What can be created, with the size bpmn-js gives each. Participants and subprocesses come in later steps. */
 const CREATABLE: Readonly<Record<string, { width: number; height: number }>> = {
     'bpmn:StartEvent': { width: 36, height: 36 },
     'bpmn:IntermediateThrowEvent': { width: 36, height: 36 },
@@ -16,7 +16,14 @@ const CREATABLE: Readonly<Record<string, { width: number; height: number }>> = {
     'bpmn:Task': { width: 100, height: 80 },
     'bpmn:DataObjectReference': { width: 36, height: 50 },
     'bpmn:DataStoreReference': { width: 50, height: 50 },
+    'bpmn:Group': { width: 300, height: 300 },
     'bpmn:TextAnnotation': { width: 100, height: 30 }
+};
+
+/** The id prefixes of what is created with an element of each type: a data object, or a group's category and value. */
+const COMPANIONS: Readonly<Record<string, readonly string[]>> = {
+    'bpmn:DataObjectReference': ['DataObject'],
+    'bpmn:Group': ['Category', 'CategoryValue']
 };
 
 /** The element types `createShape` creates. */
@@ -34,19 +41,21 @@ export function creatableSize(type: string): { width: number; height: number } |
  *
  * - It goes into the innermost expanded subprocess or participant whose shape holds `position`, else into what the
  *   plane draws: its process, or the subprocess a collapsed subprocess's plane opens.
- * - A text annotation on a collaboration's plane, outside every participant, goes into the collaboration.
+ * - A text annotation or group on a collaboration's plane, outside every participant, goes into the collaboration.
  * - A flow node is also referenced by the innermost lane of its process that holds `position`.
  * - A data object reference gets a new data object of its own.
+ * - A group gets a new category with one value, in the definitions, as the bpmn-js designer gives it one; the value
+ *   holds the group's name.
  * - Ids follow the bpmn-js designer: `Activity_`, `Event_`, `Gateway_` or the type's name, then a random suffix; a
  *   shape's id is its element's with `_di` added.
  *
- * The command's `elementIds` start with the new element's id. Where the element goes is worked out again when the
- * command executes, from the layout at that time; what it creates is made once, so a redo puts back the objects that
- * later commands refer to.
+ * The command's `elementIds` start with the new element's id, followed by the ids of what is created with it. Where
+ * the element goes is worked out again when the command executes, from the layout at that time; what it creates is made
+ * once, so a redo puts back the objects that later commands refer to.
  *
  * @throws Error when the document has no such plane, when `type` cannot be created here, when `position` is not finite,
  * or when the plane is a collaboration's and `position` is outside every participant (for anything but a text
- * annotation).
+ * annotation or a group).
  */
 export function createShape(document: BpmnDocument, planeId: string, type: string, position: Point): Command {
     const size = CREATABLE[type];
@@ -58,19 +67,19 @@ export function createShape(document: BpmnDocument, planeId: string, type: strin
     // Checked now, so a create that cannot apply is refused before it reaches the stack.
     placementOf(document, planeId, type, point);
 
-    const id = freshId(document, idPrefix(document, type));
-    const dataObjectId = type === 'bpmn:DataObjectReference' ? freshId(document, 'DataObject', [id]) : undefined;
+    const ids: string[] = [];
+    for (const prefix of [idPrefix(document, type), ...(COMPANIONS[type] ?? [])]) ids.push(freshId(document, prefix, ids));
     let created: Created | undefined;
     let operations: Operation[] = [];
     return {
-        elementIds: dataObjectId ? [id, dataObjectId] : [id],
+        elementIds: [...ids],
         execute() {
-            for (const taken of [id, dataObjectId, `${id}_di`]) {
-                if (taken && document.hasId(taken)) throw new Error(`The document already has an element '${taken}'.`);
+            for (const taken of [...ids, `${ids[0]}_di`]) {
+                if (document.hasId(taken)) throw new Error(`The document already has an element '${taken}'.`);
             }
             const placement = placementOf(document, planeId, type, point);
-            created ??= make(document, type, id, dataObjectId, bounds);
-            operations = planCreate(placement, created);
+            created ??= make(document, type, ids, bounds);
+            operations = planCreate(document, placement, created);
             for (const operation of operations) operation.apply();
             document.reindex();
         },
@@ -113,7 +122,7 @@ function placementOf(document: BpmnDocument, planeId: string, type: string, poin
     } else {
         const drawn = plane.bpmnElement as ModdleElement | undefined;
         if (drawn?.$instanceOf('bpmn:Collaboration')) {
-            if (type !== 'bpmn:TextAnnotation') throw new Error('On a collaboration, an element must be created inside a participant.');
+            if (!isA(document, type, 'bpmn:Artifact')) throw new Error('On a collaboration, an element must be created inside a participant.');
             container = drawn;
         } else if (drawn?.$instanceOf('bpmn:Process') || drawn?.$instanceOf('bpmn:SubProcess')) {
             container = drawn;
@@ -142,30 +151,43 @@ function deepestOf(shapes: readonly BpmnShapeView[]): (candidates: readonly Bpmn
     return candidates => candidates.reduce<BpmnShapeView | undefined>((best, shape) => (!best || depth(shape) >= depth(best) ? shape : best), undefined);
 }
 
-/** What a create adds: the element, the data object of a data object reference, and the element's shape. */
+/**
+ * What a create adds: the element, the data object of a data object reference, the category of a group, and the
+ * element's shape.
+ */
 interface Created {
     element: ModdleElement;
     dataObject?: ModdleElement;
+    category?: ModdleElement;
     shape: ModdleElement;
 }
 
-function make(document: BpmnDocument, type: string, id: string, dataObjectId: string | undefined, bounds: Bounds): Created {
+function make(document: BpmnDocument, type: string, ids: readonly string[], bounds: Bounds): Created {
     const { moddle } = document;
+    const [id, ...companions] = ids;
     const element = moddle.create(type, { id });
-    const dataObject = dataObjectId ? moddle.create('bpmn:DataObject', { id: dataObjectId }) : undefined;
+    const dataObject = type === 'bpmn:DataObjectReference' ? moddle.create('bpmn:DataObject', { id: companions[0] }) : undefined;
     if (dataObject) element.dataObjectRef = dataObject;
+    let category: ModdleElement | undefined;
+    if (type === 'bpmn:Group') {
+        category = moddle.create('bpmn:Category', { id: companions[0] });
+        const value = moddle.create('bpmn:CategoryValue', { id: companions[1] });
+        value.$parent = category;
+        category.categoryValue = [value];
+        element.categoryValueRef = value;
+    }
     const shape = moddle.create('bpmndi:BPMNShape', { id: `${id}_di`, bpmnElement: element });
     const shapeBounds = moddle.create('dc:Bounds', { ...bounds });
     shapeBounds.$parent = shape;
     shape.bounds = shapeBounds;
-    return { element, dataObject, shape };
+    return { element, dataObject, category, shape };
 }
 
-function planCreate(placement: Placement, { element, dataObject, shape }: Created): Operation[] {
+function planCreate(document: BpmnDocument, placement: Placement, { element, dataObject, category, shape }: Created): Operation[] {
     const operations: Operation[] = [];
-    const collection = element.$instanceOf('bpmn:TextAnnotation') ? 'artifacts' : 'flowElements';
-    operations.push(append(placement.container, collection, element));
+    operations.push(append(placement.container, element.$instanceOf('bpmn:Artifact') ? 'artifacts' : 'flowElements', element));
     if (dataObject) operations.push(append(placement.container, 'flowElements', dataObject));
+    if (category) operations.push(append(document.definitions, 'rootElements', category));
     if (placement.lane) operations.push(append(placement.lane, 'flowNodeRef', element, false));
     operations.push(append(placement.plane, 'planeElement', shape));
     return operations;

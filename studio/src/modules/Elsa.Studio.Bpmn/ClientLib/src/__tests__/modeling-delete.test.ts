@@ -161,6 +161,35 @@ describe('deleteElements', () => {
         expect((await session.save()).xml).toBe(original);
     });
 
+    it('deletes a group\'s category value with its last group, and the category with its last value', async () => {
+        const session = new BpmnModelingSession();
+        expect((await session.load(`<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:category id="Category"><bpmn:categoryValue id="Shared" value="Shared" /><bpmn:categoryValue id="Own" value="Own" /></bpmn:category>
+  <bpmn:process id="Process_1"><bpmn:group id="First" categoryValueRef="Shared" /><bpmn:group id="Second" categoryValueRef="Shared" /><bpmn:group id="Third" categoryValueRef="Own" /></bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_1">
+    <bpmndi:BPMNPlane id="Plane_1" bpmnElement="Process_1">
+      ${shape('First', 0, 0, 100, 100)}${shape('Second', 200, 0, 100, 100)}${shape('Third', 400, 0, 100, 100)}
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>`)).imported).toBe(true);
+        const document = session.document!;
+        const original = (await session.save()).xml;
+
+        // Another group still has the shared value.
+        session.execute(deleteElements(document, ['First']));
+        expect(document.element('Shared')).toBeDefined();
+        session.execute(deleteElements(document, ['Third']));
+        expect(document.element('Own')).toBeUndefined();
+        expect(document.element('Category')).toBeDefined();
+        session.execute(deleteElements(document, ['Second']));
+        expect(document.element('Shared')).toBeUndefined();
+        expect(document.element('Category')).toBeUndefined();
+
+        while (session.undo()) { /* back to the start */ }
+        expect((await session.save()).xml).toBe(original);
+    });
+
     it('refuses what it cannot delete, and unknown elements', async () => {
         const { document } = await loaded();
 

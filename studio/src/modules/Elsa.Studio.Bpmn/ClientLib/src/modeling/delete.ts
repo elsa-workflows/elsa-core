@@ -20,6 +20,7 @@ const CONNECTIONS = ['bpmn:SequenceFlow', 'bpmn:MessageFlow', 'bpmn:Association'
  * - the boundary events attached to anything deleted;
  * - the sequence flows, message flows, associations and data associations with a deleted end;
  * - a data object whose last reference is deleted;
+ * - a group's category value when its last group is deleted, and a category when its last value is;
  * - the shapes and edges that draw any of it, and the diagram of a deleted subprocess's own plane.
  *
  * References the rest of the document holds to what is deleted are removed: a flow node's `incoming` and `outgoing`, a
@@ -88,6 +89,24 @@ function removalSet(document: BpmnDocument, elements: readonly ModdleElement[]):
         for (const [dataObject, owners] of references) {
             if (!removed.has(dataObject) && owners.every(owner => removed.has(owner))) {
                 add(dataObject);
+                grew = true;
+            }
+        }
+        // So do a group's category value with its last group, and a category with its last value.
+        const groups = new Map<ModdleElement, ModdleElement[]>();
+        walk(document.definitions, element => {
+            if (!element.$instanceOf('bpmn:Group')) return;
+            for (const value of referencesOf(element, 'categoryValueRef')) groups.set(value, [...(groups.get(value) ?? []), element]);
+        });
+        for (const [value, owners] of groups) {
+            const category = value.$parent as ModdleElement | undefined;
+            if (!removed.has(value) && owners.every(owner => removed.has(owner))) {
+                add(value);
+                grew = true;
+            }
+            const values = (category?.categoryValue as ModdleElement[] | undefined) ?? [];
+            if (category && !removed.has(category) && values.length > 0 && values.every(candidate => removed.has(candidate))) {
+                add(category);
                 grew = true;
             }
         }

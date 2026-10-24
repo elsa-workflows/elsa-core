@@ -50,6 +50,12 @@ const CORNERS = ['nw', 'ne', 'sw', 'se'] as const;
 type Corner = (typeof CORNERS)[number];
 const DISPOSED = 'This BPMN designer has been disposed.';
 
+/** The element an edit in place changes, and which of its properties. */
+interface EditTarget {
+    elementId: string;
+    property: 'name' | 'text' | 'value';
+}
+
 export function createDesigner(container: HTMLElement, options: BpmnDesignerOptions = {}): BpmnDesigner {
     if (!(container instanceof HTMLElement)) throw new TypeError('A BPMN designer needs a container element.');
 
@@ -123,8 +129,8 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
     let creating: { type: string; preview: HTMLElement; armed: boolean; stop: AbortController } | null = null;
     // The open replace menu and the element it replaces.
     let replacing: { elementId: string; menu: HTMLElement; stop: AbortController } | null = null;
-    // The name being edited in place, and the property it edits: a text annotation's text, else the name.
-    let editing: { elementId: string; property: 'name' | 'text'; input: HTMLTextAreaElement } | null = null;
+    // The name being edited in place: the element the box is over, and the element and property the edit changes.
+    let editing: { elementId: string; target: EditTarget; input: HTMLTextAreaElement } | null = null;
     // Loads run one after another, so the last one called is the one that shows.
     let loading: Promise<unknown> = Promise.resolve();
     let disposed = false;
@@ -464,13 +470,20 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
         }
     });
 
-    /** The property an edit in place changes on the element: a text annotation's text, else its name, if it has one. */
-    function editableProperty(elementId: string): 'name' | 'text' | undefined {
+    /**
+     * What an edit in place changes: a text annotation's text, a group's category value, as the bpmn-js designer names
+     * a group, else the element's name, if it has one.
+     */
+    function editTarget(elementId: string): EditTarget | undefined {
         const element = session.document?.element(elementId);
         if (!element) return undefined;
-        if (element.$instanceOf('bpmn:TextAnnotation')) return 'text';
+        if (element.$instanceOf('bpmn:TextAnnotation')) return { elementId, property: 'text' };
+        if (element.$instanceOf('bpmn:Group')) {
+            const value = element.categoryValueRef as { id?: unknown } | undefined;
+            return typeof value?.id === 'string' ? { elementId: value.id, property: 'value' } : undefined;
+        }
         const properties = (element.$descriptor as { properties: { name: string }[] } | undefined)?.properties ?? [];
-        return properties.some(property => property.name === 'name') ? 'name' : undefined;
+        return properties.some(property => property.name === 'name') ? { elementId, property: 'name' } : undefined;
     }
 
     /**
@@ -478,8 +491,8 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
      * the text as one undoable edit, an empty text removing the name; Shift+Enter starts a new line; Escape gives up.
      */
     function startEditing(elementId: string): void {
-        const property = readOnly || !drawn?.bounds.has(elementId) ? undefined : editableProperty(elementId);
-        if (!property) return;
+        const target = readOnly || !drawn?.bounds.has(elementId) ? undefined : editTarget(elementId);
+        if (!target) return;
         finishEditing(true);
         const labelView = graph!.findViewByCell(`${elementId}::label`);
         const view = labelView ?? graph!.findViewByCell(elementId);
@@ -491,8 +504,8 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
         const origin = canvas.getBoundingClientRect();
         const input = document.createElement('textarea');
         input.className = 'elsa-x6-name-editor';
-        input.setAttribute('aria-label', property === 'text' ? 'Text' : 'Name');
-        input.value = String(session.document!.element(elementId)![property] ?? '');
+        input.setAttribute('aria-label', target.property === 'text' ? 'Text' : 'Name');
+        input.value = String(session.document!.element(target.elementId)?.[target.property] ?? '');
         const width = Math.max(area.width, 120);
         const height = Math.max(area.height, 40);
         Object.assign(input.style, {
@@ -515,7 +528,7 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
             }
         });
         input.addEventListener('blur', () => finishEditing(true));
-        editing = { elementId, property, input };
+        editing = { elementId, target, input };
         canvas.append(input);
         input.focus();
         input.select();
@@ -528,11 +541,12 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
         editing = null;
         current.input.remove();
         const document = session.document;
-        const element = document?.element(current.elementId);
+        const { elementId, property } = current.target;
+        const element = document?.element(elementId);
         if (commit && document && element) {
             const value = current.input.value;
-            if (value !== String(element[current.property] ?? '')) {
-                session.execute(updateProperties(document, current.elementId, { [current.property]: value === '' ? undefined : value }));
+            if (value !== String(element[property] ?? '')) {
+                session.execute(updateProperties(document, elementId, { [property]: value === '' ? undefined : value }));
             }
         }
         canvas.focus({ preventScroll: true });
