@@ -24,7 +24,8 @@ const CONNECTIONS = ['bpmn:SequenceFlow', 'bpmn:MessageFlow', 'bpmn:Association'
  *
  * References the rest of the document holds to what is deleted are removed: a flow node's `incoming` and `outgoing`, a
  * gateway's `default`, a lane's `flowNodeRef`, and any other. Undo puts every element and reference back where it was.
- * What depends on what is worked out when the command executes.
+ * The elements are those with `elementIds` when the command is created, even if they are renamed before it executes;
+ * what depends on them is worked out when it executes.
  *
  * @throws Error when the document has no element with one of `elementIds`, or when one is not a flow element, an
  * artifact, a message flow or a data association.
@@ -37,15 +38,15 @@ export function deleteElements(document: BpmnDocument, elementIds: readonly stri
         if (!DELETABLE.some(type => element.$instanceOf(type))) throw new Error(`The element '${id}' cannot be deleted here.`);
         return element;
     });
-    const ids = [...elementIds];
     const affected = [...removalSet(document, elements)].map(element => element.id).filter((id): id is string => typeof id === 'string');
 
     let operations: Operation[] = [];
     return {
         elementIds: [...new Set(affected)],
         execute() {
-            const removed = removalSet(document, ids.map(id => document.element(id)).filter((element): element is ModdleElement => element !== undefined));
-            operations = planDelete(document, removed);
+            // The elements found when the command was created, not their ids again: an earlier command in the same compound
+            // can have renamed one.
+            operations = planDelete(document, removalSet(document, elements));
             for (const operation of operations) operation.apply();
             document.reindex();
         },

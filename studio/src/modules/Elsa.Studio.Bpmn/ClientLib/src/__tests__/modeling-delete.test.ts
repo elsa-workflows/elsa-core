@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { BpmnModelingSession, deleteElements } from '../modeling/index.js';
+import { BpmnModelingSession, compound, deleteElements, updateProperties } from '../modeling/index.js';
 
 const shape = (id: string, x: number, y: number, width = 100, height = 80, extra = '') =>
     `<bpmndi:BPMNShape id="${id}_di" bpmnElement="${id}"${extra}><dc:Bounds x="${x}" y="${y}" width="${width}" height="${height}" /></bpmndi:BPMNShape>`;
@@ -148,6 +148,17 @@ describe('deleteElements', () => {
         expect(session.undo()).toBe(true);
         expect(await save()).toBe(original);
         expect(session.canUndo).toBe(false);
+    });
+
+    it('deletes the elements it was created for, even when an earlier command in the same compound renamed one', async () => {
+        const { session, document, original } = await loaded();
+
+        session.execute(compound([updateProperties(document, 'A', { id: 'Renamed' }), deleteElements(document, ['A'])]));
+
+        for (const id of ['A', 'Renamed', 'Timer', 'Flow_1', 'Flow_2']) expect(document.element(id), id).toBeUndefined();
+        expect((await session.save()).xml).not.toMatch(/"(Renamed|Flow_1|Flow_2)(_di)?"/);
+        expect(session.undo()).toBe(true);
+        expect((await session.save()).xml).toBe(original);
     });
 
     it('refuses what it cannot delete, and unknown elements', async () => {

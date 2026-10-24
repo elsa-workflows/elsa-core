@@ -104,6 +104,7 @@ the X6 designer's own Playwright tests, the kernel tests, and the cross-designer
   - a data object deleted with its last reference;
   - associations deleted with their task;
   - several elements in one undo step;
+  - an element renamed earlier in the same compound still deleted;
   - refusals;
   - undo back to the original XML, and redo.
 - `x6.spec.ts` covers:
