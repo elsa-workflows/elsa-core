@@ -35,6 +35,8 @@ curl -s -X POST https://localhost:5001/elsa/api/bpmn/analyze \
 
 This returns a JSON body of process ids, element counts, and findings (e.g. informational notes about unbound service tasks or retained vendor extensions).
 
+It also runs the checks an import makes before it saves, and reports in `refusal` why an import of the document would be refused: `{ code, message, elementIds }`, with the same code and message an import responds with, and `null` when the document would import. The checks are capabilities, conditions, bindings and whether the process can run. A refusal of an element's binding, a condition or a capability names the elements it is about; a process that cannot run names none yet. An import stops at its first refusal, so analyze reports that one. A document that declares more than one process is checked only when the `processId` query parameter names the process an import would bind.
+
 ## BpmnProcess Activity
 
 `BpmnProcess` is a `Container` that wraps one BPMN scope. It drives the `Bpmn.Semantics` interpreter and applies the continuations the interpreter returns to its own `ActivityExecutionContext`. Key properties:
@@ -164,7 +166,7 @@ An exported `.bpmn` is self-contained: all binding configuration, including inpu
 
 | Method & route | Permission | What it does |
 | --- | --- | --- |
-| `POST bpmn/analyze` | `read:workflow-definitions` | Uploads a single `.bpmn` file (multipart) and returns the Info/Degraded/Dropped findings a read would produce, without persisting anything. |
+| `POST bpmn/analyze` | `read:workflow-definitions` | Uploads a single `.bpmn` file (multipart) and returns the Info/Degraded/Dropped findings a read would produce, and the `refusal` an import would raise (optional `processId` query parameter), without persisting anything. |
 | `POST bpmn/import` | `write:workflow-definitions` | Uploads a single `.bpmn` file and persists it as a new or updated workflow definition (as a draft; it is not published). Optional form fields: `DefinitionId` (update an existing definition instead of creating one), `Name`, `ProcessId` (required when the document declares more than one process). |
 | `POST bpmn/definitions` | `write:workflow-definitions` | Creates a BPMN workflow from scratch: a new draft workflow definition named after the JSON body's required `name`, holding a minimal process — a plain start event connected to an end event, with diagram layout — that a modeler can open and save through the XML `PUT`. Returns `201 Created` with the `Import` response shape, a `Location` header naming the definition's XML, and the `ETag` the first XML `PUT` needs. A missing or blank `name` is `400 Bad Request`. |
 | `GET bpmn/definitions/{definitionId}/export` | `read:workflow-definitions` | Writes the workflow definition's BPMN source back out as `.bpmn` XML. Optional `VersionOptions` query parameter (`Latest`, `Published`, or a specific version), defaulting to `Latest`. |
@@ -452,7 +454,7 @@ element that has a stored body but no `bindingRef`, are uncoded.
 | Code (`Elsa.Bpmn.Interchange.BpmnErrorCodes`) | Sent by | Status | `data` |
 | --- | --- | --- | --- |
 | `bpmn.import.capability-unsupported` | `POST bpmn/import`, document and XML `PUT` | 422 | `capabilities: string[]` (missing capability names), `elementIds: string[]` (offending element ids, combined across every missing capability) |
-| `bpmn.import.binding-invalid` | `POST bpmn/import`, document and XML `PUT` | 422 | — |
+| `bpmn.import.binding-invalid` | `POST bpmn/import`, document and XML `PUT` | 422 | `elementIds: string[]` (the element whose binding is refused), when the refusal is about one element |
 | `bpmn.import.duplicate-element-id` | `POST bpmn/import`, document and XML `PUT`; `POST bpmn/analyze` for two flow nodes sharing an id in one body | 422 | `elementIds: string[]` (the duplicated ids) |
 | `bpmn.import.process-invalid` | `POST bpmn/import`, document and XML `PUT` | 422 | — |
 | `bpmn.import.condition-language-unsupported` | `POST bpmn/import`, document and XML `PUT` | 422 | `elementIds: string[]` (the sequence flows whose expression is in a language Elsa does not evaluate, across the whole document including nested subprocesses, sorted and distinct) |

@@ -1480,6 +1480,102 @@ public class BpmnInterchangeEndpointTests(ITestOutputHelper testOutputHelper) : 
     }
 
     /// <summary>The <c>data.elementIds</c> of a coded BPMN error response body, in the order the response lists them.</summary>
+    [Fact]
+    public async Task Analyze_OfADocumentAnImportWouldAccept_ReportsNoRefusal()
+    {
+        var refusal = await AnalyzeRefusalAsync(ReadAsset("camunda-order-process.bpmn"));
+
+        Assert.Null(refusal);
+    }
+
+    [Fact]
+    public async Task Analyze_OfADocumentWithAnUnboundTask_ReportsTheRefusalOfThatTask()
+    {
+        var refusal = Assert.NotNull(await AnalyzeRefusalAsync(ReadAsset("unbound-task-process.bpmn")));
+
+        Assert.Equal(BpmnErrorCodes.ImportBindingInvalid, refusal.Code);
+        Assert.Equal(["Unbound_1"], refusal.ElementIds);
+        Assert.Contains("nothing binds it to an Elsa activity", refusal.Message);
+    }
+
+    [Fact]
+    public async Task Analyze_OfADocumentWhoseBindingNamesAnUnknownActivity_ReportsTheRefusalOfThatTask()
+    {
+        // The binding format reads a declaration without knowing whose it is; the refusal still names the task.
+        var xml = ReadAsset("camunda-order-process.bpmn").Replace("activityType=\"Elsa.WriteLine\"", "activityType=\"Elsa.NoSuchActivity\"");
+
+        var refusal = Assert.NotNull(await AnalyzeRefusalAsync(xml));
+
+        Assert.Equal(BpmnErrorCodes.ImportBindingInvalid, refusal.Code);
+        Assert.Equal(["NotifyWarehouse"], refusal.ElementIds);
+    }
+
+    [Fact]
+    public async Task Analyze_OfADocumentWithConditionsInALanguageElsaDoesNotEvaluate_ReportsTheRefusedFlows()
+    {
+        var refusal = Assert.NotNull(await AnalyzeRefusalAsync(ReadAsset("expression-condition-unsupported-language.bpmn")));
+
+        Assert.Equal(BpmnErrorCodes.ImportConditionLanguageUnsupported, refusal.Code);
+        Assert.Contains("f3", refusal.ElementIds);
+    }
+
+    [Fact]
+    public async Task Analyze_OfADocumentWithASubprocessBodyThatCannotRun_ReportsTheRefusal()
+    {
+        var refusal = Assert.NotNull(await AnalyzeRefusalAsync(ReadAsset("invalid-nested-body.bpmn")));
+
+        Assert.Equal(BpmnErrorCodes.ImportProcessInvalid, refusal.Code);
+        Assert.Contains("Inner_Decide", refusal.Message);
+    }
+
+    [Fact]
+    public async Task Analyze_OfATwoProcessDocument_ChecksOnlyTheProcessItIsAskedToCheck()
+    {
+        // An import of such a document needs the process to bind; without one there is nothing to check it as.
+        var xml = ReadAsset("two-process.bpmn");
+        var secondProcessEnd = xml.LastIndexOf("</bpmn:process>", StringComparison.Ordinal);
+        var withAnUnboundTaskInTheSecond = xml.Insert(secondProcessEnd, "<bpmn:task id=\"Unbound_9\" />");
+
+        Assert.Null(await AnalyzeRefusalAsync(withAnUnboundTaskInTheSecond));
+        Assert.Null(await AnalyzeRefusalAsync(withAnUnboundTaskInTheSecond, "first-process"));
+        Assert.Equal(["Unbound_9"], (await AnalyzeRefusalAsync(withAnUnboundTaskInTheSecond, "second-process"))?.ElementIds);
+    }
+
+    [Fact]
+    public async Task Import_OfADocumentWithAnUnboundTask_NamesTheTask()
+    {
+        using var content = new MultipartFormDataContent();
+        AddBpmnFile(content, ReadAsset("unbound-task-process.bpmn"), "file");
+
+        var response = await PostAuthenticatedAsync("bpmn/import", content, "workflows/definitions:write");
+
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        Assert.Equal(["Unbound_1"], ElementIdsOf(await response.Content.ReadAsStringAsync()));
+    }
+
+    /// <summary>The refusal <c>bpmn/analyze</c> reports for <paramref name="xml"/>, or null when it reports none.</summary>
+    private async Task<(string Code, string Message, IReadOnlyList<string?> ElementIds)?> AnalyzeRefusalAsync(string xml, string? processId = null)
+    {
+        using var content = new MultipartFormDataContent();
+        AddBpmnFile(content, xml, "file");
+        var path = processId is null ? "bpmn/analyze" : $"bpmn/analyze?processId={Uri.EscapeDataString(processId)}";
+
+        var response = await PostAuthenticatedAsync(path, content, "workflows/definitions:view");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+
+        if (!document.RootElement.TryGetProperty("refusal", out var refusal) || refusal.ValueKind == JsonValueKind.Null)
+        {
+            return null;
+        }
+
+        return (
+            refusal.GetProperty("code").GetString()!,
+            refusal.GetProperty("message").GetString()!,
+            refusal.GetProperty("elementIds").EnumerateArray().Select(id => id.GetString()).ToList());
+    }
+
     private static IReadOnlyList<string?> ElementIdsOf(string body)
     {
         using var document = JsonDocument.Parse(body);
