@@ -285,8 +285,10 @@ def start_postgres(image):
         ports = json.loads(docker_run(['inspect', '--format', '{{json .NetworkSettings.Ports}}', name], capture=True).stdout)
         port = int(ports['5432/tcp'][0]['HostPort'])
         for _ in range(60):
+            # Over TCP: the image's temporary initialization server accepts only Unix sockets, and a check over the
+            # socket can pass before that server stops and the real one starts.
             check = subprocess.run(
-                ['docker', 'exec', name, 'pg_isready', '-U', 'postgres', '-d', 'postgres'],
+                ['docker', 'exec', name, 'pg_isready', '-h', '127.0.0.1', '-p', '5432', '-U', 'postgres', '-d', 'postgres'],
                 text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             if check.returncode == 0:
                 return name, f'Host=127.0.0.1;Port={port};Database=postgres;Username=postgres;Password={password}'
