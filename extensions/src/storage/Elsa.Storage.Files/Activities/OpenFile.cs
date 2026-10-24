@@ -24,7 +24,7 @@ public class OpenFile : CodeActivity<Stream>
         var path = Path.Get(context);
         var blobStorageProvider = context.GetRequiredService<IBlobStorageProvider>();
         var blobStorage = blobStorageProvider.GetBlobStorage();
-        var data = await blobStorage.OpenReadAsync(path, cancellationToken);
+        var data = await blobStorage.OpenRead(path, cancellationToken);
         
         Result.Set(context, data);
     }

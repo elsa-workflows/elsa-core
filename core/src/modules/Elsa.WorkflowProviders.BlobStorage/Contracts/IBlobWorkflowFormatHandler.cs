@@ -1,5 +1,5 @@
 using Elsa.Workflows.Runtime;
-using FluentStorage.Blobs;
+using FluentStorage.Model;
 
 namespace Elsa.WorkflowProviders.BlobStorage.Contracts;
 
@@ -27,7 +27,7 @@ public interface IBlobWorkflowFormatHandler
     /// </summary>
     /// <param name="blob">The blob to check.</param>
     /// <param name="contentType">The content type from blob metadata, if available.</param>
-    bool CanHandle(Blob blob, string? contentType);
+    bool CanHandle(StoreObject blob, string? contentType);
 
     /// <summary>
     /// Attempts to parse the blob content into a MaterializedWorkflow.
@@ -37,7 +37,7 @@ public interface IBlobWorkflowFormatHandler
     /// <param name="content">The text content of the blob.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     ValueTask<MaterializedWorkflow?> TryParseAsync(
-        Blob blob,
+        StoreObject blob,
         string content,
         CancellationToken cancellationToken = default);
 }

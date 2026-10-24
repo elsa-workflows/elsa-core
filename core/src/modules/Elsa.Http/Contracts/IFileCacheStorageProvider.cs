@@ -1,4 +1,4 @@
-using FluentStorage.Blobs;
+using FluentStorage.Storage;
 
 namespace Elsa.Http;
 
@@ -11,5 +11,5 @@ public interface IFileCacheStorageProvider
     /// Gets the storage.
     /// </summary>
     /// <returns></returns>
-    IBlobStorage GetStorage();
+    IStore GetStorage();
 }
