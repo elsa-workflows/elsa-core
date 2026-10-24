@@ -1,7 +1,9 @@
 using Elsa.Authorization;
 using Elsa.Abstractions;
+using Elsa.Secrets.Exceptions;
 using Elsa.Secrets.Permissions;
 using Elsa.Secrets.Services;
+using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Secrets.Endpoints.Secrets.Update;
 
@@ -23,6 +25,11 @@ internal class Endpoint(ISecretManager manager) : ElsaEndpoint<UpdateSecretReque
         catch (KeyNotFoundException)
         {
             await Send.NotFoundAsync(cancellationToken);
+        }
+        catch (SecretTenantOwnershipException e)
+        {
+            AddError(e.Message);
+            await Send.ErrorsAsync(StatusCodes.Status403Forbidden, cancellationToken);
         }
     }
 }
