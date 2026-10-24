@@ -67,6 +67,22 @@ public class BpmnCanvasHostTests : IAsyncDisposable
         Assert.Same(stats, _designer.Calls[4].Args[0]);
     }
 
+    [Fact(DisplayName = "Problem markers go to the designer's applyMarkers and clearMarkers, and a designer without them answers null")]
+    public async Task MarkersCallTheDesigner()
+    {
+        var applied = new BpmnDesignerOverlayResult(["Task_1"], ["Process_1"]);
+        _designer.Returns("applyMarkers", applied);
+        _designer.Returns("clearMarkers", null);
+        var host = Render().Instance;
+        IReadOnlyList<BpmnDesignerMarker> markers = [new("Task_1", BpmnDesignerMarker.Error, "Unbound."), new("Process_1", BpmnDesignerMarker.Warning, "Dropped.")];
+
+        Assert.Same(applied, await host.ApplyMarkersAsync(markers));
+        Assert.Null(await host.ClearMarkersAsync());
+
+        Assert.Equal(["applyMarkers", "clearMarkers"], _designer.Calls.Select(call => call.Identifier));
+        Assert.Same(markers, _designer.Calls[0].Args[0]);
+    }
+
     [Fact(DisplayName = "A call made while the designer is still being created waits for it")]
     public async Task CallsWaitForTheDesigner()
     {

@@ -776,7 +776,7 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
             _bpmnDocumentSession = null;
 
             if (_bpmnModelerSession?.DefinitionId != workflowDefinition.DefinitionId)
-                SetBpmnModelerSession(new(BpmnXmlService, workflowDefinition.DefinitionId));
+                SetBpmnModelerSession(new(BpmnXmlService, BpmnInterchangeService, workflowDefinition.DefinitionId));
 
             return;
         }

@@ -215,6 +215,15 @@ BPMN-imported workflow's whole document in it. Without one, the workflow keeps t
   the document kept is read back in place of the refused draft. While the document is read again, and until the designer
   has loaded what the read returned, the editors are hidden and `setBinding` is not called, since loading the document
   discards the designer's edits.
+- The panel lists the problems the server finds in the document, which come from three places:
+  - `POST bpmn/analyze` of each document the designer loads;
+  - `POST bpmn/analyze` of each document a refused save sent;
+  - a successful save's own import findings.
+
+  Why an import would be refused is an error. A finding that degrades or drops content is a warning; `Info` findings are
+  not listed. Clicking an element a problem names selects it, and a designer with `applyMarkers` marks those elements.
+  The designer's working copy is analyzed only when it is saved, because exporting it marks it saved. An analysis that
+  fails leaves no problems listed.
 - The viewport tools (Zoom to fit, Center) do nothing on this canvas; this contract does not have them.
 
 ### In the viewers

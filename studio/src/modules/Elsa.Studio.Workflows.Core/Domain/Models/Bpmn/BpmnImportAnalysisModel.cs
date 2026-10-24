@@ -21,4 +21,10 @@ public class BpmnImportAnalysisModel
     /// Every finding, in the order the reader produced it.
     /// </summary>
     public IReadOnlyCollection<BpmnImportIssueModel> Issues { get; set; } = [];
+
+    /// <summary>
+    /// Why an import of the document would be refused, or <see langword="null"/> when it would not or when the document
+    /// declares several processes and none was chosen. Only <c>bpmn/analyze</c> reports it.
+    /// </summary>
+    public BpmnImportRefusalModel? Refusal { get; set; }
 }

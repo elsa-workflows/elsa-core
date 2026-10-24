@@ -255,6 +255,25 @@ public sealed class WorkflowEditorBpmnModelerTests : BunitContext, IAsyncLifetim
         Assert.Equal(version + 1, Session(cut).DocumentVersion);
     }
 
+    [Fact(DisplayName = "The panel lists the problems the server finds in the document, and clicking an element a problem names selects it")]
+    public async Task Problems_AreListedAndSelectTheirElements()
+    {
+        _documentService.Analyzes = _ => Task.FromResult(new Result<BpmnImportAnalysisModel, ValidationErrors>(new BpmnImportAnalysisModel
+        {
+            Refusal = new() { Code = BpmnErrorCodes.ImportBindingInvalid, Message = "Task_1 is unbound.", ElementIds = ["Task_1"] }
+        }));
+        var cut = RenderEditor();
+        await EditAsync(cut);
+        await Session(cut).Analysis;
+
+        var problem = cut.WaitForElement("[data-testid=bpmn-problem]");
+        Assert.Contains("Task_1 is unbound.", problem.TextContent);
+        await cut.InvokeAsync(() => cut.Find("[data-testid=bpmn-problem-element]").Click());
+
+        Assert.Equal(["Task_1"], _canvas.Selections);
+        Assert.Equal([new BpmnDesignerMarker("Task_1", BpmnDesignerMarker.Error, "Task_1 is unbound.")], Assert.Single(_canvas.AppliedMarkers));
+    }
+
     private IRenderedComponent<WorkflowEditor> RenderEditor(WorkflowDefinition? definition = null) =>
         Render<WorkflowEditor>(parameters => parameters.Add(x => x.WorkflowDefinition, definition ?? Definition()));
 

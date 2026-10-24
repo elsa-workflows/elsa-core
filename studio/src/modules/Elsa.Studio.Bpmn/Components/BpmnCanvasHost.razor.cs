@@ -86,6 +86,18 @@ public partial class BpmnCanvasHost : IAsyncDisposable
     public async Task<BpmnDesignerOverlayResult> ClearOverlaysAsync() =>
         await (await GetDesignerAsync()).InvokeAsync<BpmnDesignerOverlayResult>("clearOverlays");
 
+    /// <summary>
+    /// Marks each element a problem is about, replacing the markers shown before; <see langword="null"/> or an empty list
+    /// clears them. Returns <see langword="null"/> when the designer has no problem markers, which the contract leaves
+    /// optional.
+    /// </summary>
+    public async Task<BpmnDesignerOverlayResult?> ApplyMarkersAsync(IReadOnlyList<BpmnDesignerMarker>? markers) =>
+        await (await GetDesignerAsync()).InvokeAsync<BpmnDesignerOverlayResult?>("applyMarkers", markers);
+
+    /// <summary>Removes every problem marker. Returns <see langword="null"/> when the designer has no problem markers.</summary>
+    public async Task<BpmnDesignerOverlayResult?> ClearMarkersAsync() =>
+        await (await GetDesignerAsync()).InvokeAsync<BpmnDesignerOverlayResult?>("clearMarkers");
+
     /// <summary>Called by the designer when the document or its undo state changes.</summary>
     [JSInvokable]
     public Task OnDesignerChanged(BpmnDesignerChange change) => Changed.InvokeAsync(change);

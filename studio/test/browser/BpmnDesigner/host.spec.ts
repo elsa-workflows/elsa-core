@@ -16,6 +16,7 @@ const SHIM_URL = '_content/Elsa.Studio.Bpmn/bpmn-canvas-host.js';
 const DESIGNER_URL = `_content/designer/${designerModule}`;
 const STYLESHEET_URL = `_content/designer/${designerStylesheet}`;
 const OTHER_VERSION_URL = 'other-version.js';
+const NO_MARKERS_URL = 'no-markers.js';
 
 const PAGE = '<!doctype html><html><head><meta charset="utf-8"><base href="/app/"></head><body style="margin:0"><div id="canvas" style="width:1000px;height:600px"></div></body></html>';
 
@@ -28,6 +29,10 @@ async function openHost(page: Page): Promise<void> {
         if (path === `/app/${SHIM_URL}`) return route.fulfill({ contentType: 'text/javascript', body: await readFile(shim) });
         if (path === `/app/${OTHER_VERSION_URL}`) {
             return route.fulfill({ contentType: 'text/javascript', body: 'export default { designerId: "other", contractVersion: 2, createDesigner() { throw new Error("A host must not call this."); } };' });
+        }
+        if (path === `/app/${NO_MARKERS_URL}`) {
+            // A designer without the optional problem markers, reduced to what the shim calls while creating it.
+            return route.fulfill({ contentType: 'text/javascript', body: 'export default { designerId: "plain", contractVersion: 1, createDesigner() { return { on() { return () => {}; }, dispose() {} }; } };' });
         }
         const prefix = '/app/_content/designer/';
         if (!path.startsWith(prefix)) return route.fulfill({ status: 404 });
@@ -118,4 +123,39 @@ test('refuses a module that implements a contract version the host does not supp
     }, { shimUrl: SHIM_URL, otherVersionUrl: OTHER_VERSION_URL });
 
     expect(message).toBe(`The BPMN designer module '${OTHER_VERSION_URL}' implements contract version 2, but this host supports version 1.`);
+});
+
+test('passes problem markers to a designer that has them, and answers null for one that does not', async ({ host }) => {
+    const id = await designerId(host);
+    const xml = await fixture('order.bpmn');
+
+    const result = await host.evaluate(async ({ id, xml, shimUrl, designerUrl, noMarkersUrl }) => {
+        const { createDesigner } = await import(new URL(shimUrl, document.baseURI).href);
+        const listener = { invokeMethodAsync: () => Promise.resolve() };
+        const canvas = document.getElementById('canvas');
+
+        const designer = await createDesigner(id, designerUrl, null, canvas, false, listener);
+        await designer.load(xml);
+        // Whether the designer under test has the optional markers, asked of a designer of its own.
+        const probe = (await import(new URL(designerUrl, document.baseURI).href)).default.createDesigner(document.createElement('div'));
+        const hasMarkers = typeof probe.applyMarkers === 'function';
+        probe.dispose();
+        const applied = designer.applyMarkers([{ elementId: 'Charge', severity: 'error', message: 'Unbound.' }]);
+        const cleared = designer.clearMarkers();
+        designer.dispose();
+
+        const plain = await createDesigner('plain', noMarkersUrl, null, canvas, false, listener);
+        const plainResult = { applied: plain.applyMarkers([{ elementId: 'Charge', severity: 'error', message: 'Unbound.' }]), cleared: plain.clearMarkers() };
+        plain.dispose();
+
+        return { hasMarkers, applied, cleared, plain: plainResult };
+    }, { id, xml, shimUrl: SHIM_URL, designerUrl: DESIGNER_URL, noMarkersUrl: NO_MARKERS_URL });
+
+    expect(result.plain).toEqual({ applied: null, cleared: null });
+    if (result.hasMarkers) {
+        expect(result.applied).toEqual({ applied: ['Charge'], unknownElementIds: [] });
+        expect(result.cleared).toEqual({ applied: [], unknownElementIds: [] });
+    } else {
+        expect(result).toEqual(expect.objectContaining({ applied: null, cleared: null }));
+    }
 });

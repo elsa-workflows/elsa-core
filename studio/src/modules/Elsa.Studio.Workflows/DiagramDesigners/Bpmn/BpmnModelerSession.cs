@@ -1,3 +1,4 @@
+using System.Text;
 using Elsa.Studio.Bpmn.Designers;
 using Elsa.Studio.Models;
 using Elsa.Studio.Workflows.Domain.Contracts;
@@ -25,6 +26,12 @@ namespace Elsa.Studio.Workflows.DiagramDesigners.Bpmn;
 /// The session does not ask the user; the editor does, before it calls <see cref="SaveAsync"/>, which refuses while an
 /// acknowledgement is still owed.
 /// </para>
+/// <para>
+/// <b>Problems.</b> Created with an <see cref="IBpmnInterchangeService"/>, the session has the server analyze each
+/// document the canvas loads and each one a save sends, and reports what is wrong with it in <see cref="Problems"/>,
+/// which it also marks on the canvas. The designer's working copy is not analyzed between saves: exporting it would mark
+/// it saved.
+/// </para>
 /// </remarks>
 public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string definitionId)
 {
@@ -42,6 +49,18 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
     private bool _unsavedExport;
     private long _changeSequence;
     private int _canvasDocumentVersion;
+    private readonly IBpmnInterchangeService? _analyzer;
+    private long _analysisSequence;
+    private Task _analysis = Task.CompletedTask;
+
+    /// <summary>
+    /// Creates a session that also has the server analyze its documents, so <see cref="Problems"/> reports what is wrong
+    /// with them.
+    /// </summary>
+    public BpmnModelerSession(IBpmnXmlService bpmnXmlService, IBpmnInterchangeService analyzer, string definitionId) : this(bpmnXmlService, definitionId)
+    {
+        _analyzer = analyzer;
+    }
 
     /// <summary>The workflow definition whose document this is.</summary>
     public string DefinitionId { get; } = definitionId;
@@ -78,6 +97,15 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
     /// <c>ETag</c>, and the document read back was not the one sent. The next save is refused as stale until a reload.
     /// </summary>
     public bool SavedButRevisionUnknown { get; private set; }
+
+    /// <summary>
+    /// What the server reported wrong with the document the canvas last loaded or a save last sent: why its import would
+    /// be refused, and content its read degrades or drops. Empty for a session created without an analyzer.
+    /// </summary>
+    public IReadOnlyList<BpmnDocumentProblem> Problems { get; private set; } = [];
+
+    /// <summary>The analysis behind <see cref="Problems"/> that is in flight, or a completed task.</summary>
+    internal Task Analysis => _analysis;
 
     /// <summary>The foreign content the server reported as dropped by the last successful save.</summary>
     public IReadOnlyList<BpmnForeignContentModel> DroppedForeignContent { get; private set; } = [];
@@ -158,6 +186,10 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
             _canvasDirty = _unsavedExport = false;
             CanUndo = CanRedo = false;
             SelectedElement = null;
+            if (Xml is { } xml)
+            {
+                Analyze(xml);
+            }
         }
 
         Changed?.Invoke();
@@ -183,6 +215,10 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
         SelectedElement = selection.Primary;
         Changed?.Invoke();
     }
+
+    /// <summary>Selects the element with <paramref name="elementId"/> on the canvas. Returns whether the designer has it.</summary>
+    public Task<bool> SelectAsync(string elementId) =>
+        _canvas != null && CanvasLoadError == null ? _canvas.SelectAsync(elementId) : Task.FromResult(false);
 
     /// <summary>Undoes the designer's last edit.</summary>
     public Task UndoAsync() => _canvas?.UndoAsync() ?? Task.CompletedTask;
@@ -312,7 +348,14 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
             var result = await TryAsync(() => bpmnXmlService.PutXmlAsync(DefinitionId, xml, eTag, cancellationToken));
 
             if (!result.IsSuccess)
+            {
+                // The refusal names one problem; the analysis finds where it is.
+                Analyze(xml);
                 return Refuse(result.Failure!);
+            }
+
+            // The server imported what was sent, so nothing refuses it: its findings are the problems.
+            ShowProblems(BpmnDocumentProblem.From(result.Success!.Import.Analysis));
 
             _unsavedExport = false;
             Xml = xml;
@@ -325,6 +368,74 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
         {
             _saveTask = null;
             Changed?.Invoke();
+        }
+    }
+
+    /// <summary>
+    /// Has the server analyze <paramref name="xml"/> and shows what it reports as <see cref="Problems"/>, unless a later
+    /// analysis or save result has replaced it by then. Without an analyzer, there are no problems to show.
+    /// </summary>
+    private void Analyze(string xml)
+    {
+        if (_analyzer == null)
+        {
+            return;
+        }
+
+        var sequence = ++_analysisSequence;
+        _analysis = AnalyzeCoreAsync(_analyzer, xml, sequence);
+    }
+
+    private async Task AnalyzeCoreAsync(IBpmnInterchangeService analyzer, string xml, long sequence)
+    {
+        IReadOnlyList<BpmnDocumentProblem> problems;
+
+        try
+        {
+            using var content = new MemoryStream(Encoding.UTF8.GetBytes(xml));
+            var result = await analyzer.AnalyzeAsync(content, $"{DefinitionId}.bpmn");
+            problems = result.IsSuccess ? BpmnDocumentProblem.From(result.Success!) : BpmnDocumentProblem.From(result.Failure!);
+        }
+        catch (Exception)
+        {
+            // The analysis only explains the document, so one that fails, such as for a server that cannot be reached,
+            // leaves nothing to explain rather than taking the editor down.
+            problems = [];
+        }
+
+        if (sequence == _analysisSequence)
+        {
+            await ShowProblemsAsync(problems);
+        }
+    }
+
+    /// <summary>Shows <paramref name="problems"/> in place of any analysis still in flight.</summary>
+    private void ShowProblems(IReadOnlyList<BpmnDocumentProblem> problems)
+    {
+        _analysisSequence++;
+        _analysis = ShowProblemsAsync(problems);
+    }
+
+    /// <summary>Makes <paramref name="problems"/> the session's problems and marks their elements on the canvas.</summary>
+    private async Task ShowProblemsAsync(IReadOnlyList<BpmnDocumentProblem> problems)
+    {
+        Problems = problems;
+        Changed?.Invoke();
+
+        if (_canvas == null || CanvasLoadError != null)
+        {
+            return;
+        }
+
+        var markers = problems.SelectMany(problem => problem.ElementIds.Select(elementId => new BpmnDesignerMarker(elementId, problem.Severity, problem.Message))).ToList();
+
+        try
+        {
+            await _canvas.ApplyMarkersAsync(markers);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            // Markers only point at the problems the panel lists; a designer that cannot show them leaves the list.
         }
     }
 

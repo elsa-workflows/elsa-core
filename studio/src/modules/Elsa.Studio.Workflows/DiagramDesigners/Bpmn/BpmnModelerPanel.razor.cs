@@ -6,7 +6,8 @@ namespace Elsa.Studio.Workflows.DiagramDesigners.Bpmn;
 
 /// <summary>
 /// What a BPMN workflow's properties pane shows while the enabled BPMN designer edits its document: whether the
-/// document could be read, shown and saved, the unsaved state, and the element selected on the canvas.
+/// document could be read, shown and saved, the unsaved state, the problems the server found in it, and the element
+/// selected on the canvas.
 /// </summary>
 public partial class BpmnModelerPanel : IDisposable
 {
@@ -54,6 +55,9 @@ public partial class BpmnModelerPanel : IDisposable
         if (SaveRequested != null)
             await SaveRequested();
     }
+
+    /// <summary>Selects the element a problem is about, so the panel shows it.</summary>
+    private Task OnProblemElementClicked(string elementId) => Session.SelectAsync(elementId);
 
     private async Task OnReloadClicked()
     {

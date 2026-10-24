@@ -8,8 +8,8 @@ namespace Elsa.Studio.Workflows.Tests.Support;
 
 /// <summary>
 /// An <see cref="IBpmnInterchangeService"/> whose document endpoints answer with results a test queues up — the last
-/// one repeating once the queue runs dry — and record every call; analyze, import and export throw to flag an
-/// unexpected call.
+/// one repeating once the queue runs dry — and record every call; import and export throw to flag an unexpected call,
+/// and so does analyze unless <see cref="Analyzes"/> answers it.
 /// </summary>
 internal sealed class FakeBpmnDocumentService : IBpmnInterchangeService
 {
@@ -51,7 +51,18 @@ internal sealed class FakeBpmnDocumentService : IBpmnInterchangeService
         return Next(_putResults, Puts.Count - 1);
     }
 
-    public Task<Result<BpmnImportAnalysisModel, ValidationErrors>> AnalyzeAsync(Stream content, string fileName, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+    /// <summary>Answers each analysis, given the document's XML. Unset, an analysis throws.</summary>
+    public Func<string, Task<Result<BpmnImportAnalysisModel, ValidationErrors>>>? Analyzes { get; set; }
+
+    /// <summary>The XML of every document the service was asked to analyze, in order.</summary>
+    public List<string> Analyzed { get; } = [];
+
+    public async Task<Result<BpmnImportAnalysisModel, ValidationErrors>> AnalyzeAsync(Stream content, string fileName, CancellationToken cancellationToken = default)
+    {
+        var xml = await new StreamReader(content).ReadToEndAsync(cancellationToken);
+        Analyzed.Add(xml);
+        return Analyzes != null ? await Analyzes(xml) : throw new NotSupportedException();
+    }
     public Task<Result<BpmnImportResultModel, ValidationErrors>> ImportAsync(Stream content, string fileName, string? definitionId, string? name, string? processId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     public Task<Result<FileDownload, BpmnExportFailure>> ExportAsync(string definitionId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
 

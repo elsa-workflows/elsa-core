@@ -39,6 +39,9 @@ export async function createDesigner(designerId, moduleUrl, stylesheetUrl, conta
         redo: () => designer.redo(),
         applyOverlays: statsById => designer.applyOverlays(statsById),
         clearOverlays: () => designer.clearOverlays(),
+        // Problem markers are optional in the contract. Null tells .NET that this designer has none.
+        applyMarkers: markers => (typeof designer.applyMarkers === 'function' ? designer.applyMarkers(markers) : null),
+        clearMarkers: () => (typeof designer.clearMarkers === 'function' ? designer.clearMarkers() : null),
         dispose() {
             for (const unsubscribe of subscriptions.splice(0)) unsubscribe();
             designer.dispose();
