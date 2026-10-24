@@ -111,3 +111,14 @@ the X6 designer's own Playwright tests, the kernel tests, and the cross-designer
   - Delete removing the selected element and its flows, and clearing the selection;
   - undo bringing them back;
   - Delete with no selection, and when read-only, doing nothing.
+
+## Step 3d verification
+
+- `x6.spec.ts` covers:
+  - a double-click edit saved as one undoable edit, with its change event;
+  - Escape giving up an edit, and Backspace in the box editing text rather than deleting the element;
+  - an empty name removing the name;
+  - F2 on the selected element;
+  - an edge named in place getting a label;
+  - a read-only designer opening no editor.
+- The conformance suite still passes against both designers.

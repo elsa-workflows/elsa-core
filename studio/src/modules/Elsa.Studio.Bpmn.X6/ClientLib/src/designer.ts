@@ -3,7 +3,8 @@
  *
  * The kernel's session holds the document and its undo history; X6 only draws it, one plane at a time, and is redrawn
  * from the document after every edit. A gesture becomes a kernel command: dragging a shape moves it, dragging a corner
- * of the selected shape resizes it, Delete removes the selection, and the keyboard undoes and redoes. Elements are identified by their BPMN element id everywhere.
+ * of the selected shape resizes it, Delete removes the selection, a double-click or F2 edits a name in place, and the
+ * keyboard undoes and redoes. Elements are identified by their BPMN element id everywhere.
  */
 import { Graph } from '@antv/x6';
 import type {
@@ -19,7 +20,7 @@ import type {
     BpmnSelectionEvent,
     BpmnSetBindingResult
 } from '../../../Elsa.Studio.Bpmn/ClientLib/src/index.js';
-import { BpmnModelingSession, type Bounds, deleteElements, minimumSize, moveShapes, type Point, resizeShape } from '../../../Elsa.Studio.Bpmn/ClientLib/src/modeling/index.js';
+import { BpmnModelingSession, type Bounds, deleteElements, minimumSize, moveShapes, type Point, resizeShape, updateProperties } from '../../../Elsa.Studio.Bpmn/ClientLib/src/modeling/index.js';
 import { type PlaneCells, planeCells } from './cells.js';
 import { indexPlanes, type PlaneIndex } from './planes.js';
 import { registerShapes, SHAPES } from './shapes.js';
@@ -92,6 +93,8 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
         | { kind: 'move'; elementId: string; start: Point; followers: Map<string, Point> }
         | { kind: 'resize'; elementId: string; corner: Corner; start: Bounds; resized: Bounds }
         | null = null;
+    // The name being edited in place, and the property it edits: a text annotation's text, else the name.
+    let editing: { elementId: string; property: 'name' | 'text'; input: HTMLTextAreaElement } | null = null;
     // Loads run one after another, so the last one called is the one that shows.
     let loading: Promise<unknown> = Promise.resolve();
     let disposed = false;
@@ -128,8 +131,10 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
     /** Draws the current plane from the document, with its badges, markers and selection. */
     function render(fit: boolean): void {
         const target = graph!;
-        // The cells a drag started on are replaced, so its drop must not apply to what is drawn now.
+        // The cells a drag started on are replaced, so its drop must not apply to what is drawn now; an edit in place
+        // is given up the same way.
         dragging = null;
+        finishEditing(false);
         const document = session.document;
         const plane = document && planes && currentKey ? planes.plane(currentKey) : undefined;
         if (!document || !plane) {
@@ -325,9 +330,83 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
         }
     });
 
-    // Delete and Backspace delete the selection; Ctrl+Z (Cmd+Z) undoes; Ctrl+Shift+Z and Ctrl+Y redo.
+    /** The property an edit in place changes on the element: a text annotation's text, else its name, if it has one. */
+    function editableProperty(elementId: string): 'name' | 'text' | undefined {
+        const element = session.document?.element(elementId);
+        if (!element) return undefined;
+        if (element.$instanceOf('bpmn:TextAnnotation')) return 'text';
+        const properties = (element.$descriptor as { properties: { name: string }[] } | undefined)?.properties ?? [];
+        return properties.some(property => property.name === 'name') ? 'name' : undefined;
+    }
+
+    /**
+     * Opens a text box over the element's label, or over the element when it has none. Enter or leaving the box saves
+     * the text as one undoable edit, an empty text removing the name; Shift+Enter starts a new line; Escape gives up.
+     */
+    function startEditing(elementId: string): void {
+        const property = readOnly || !drawn?.bounds.has(elementId) ? undefined : editableProperty(elementId);
+        if (!property) return;
+        finishEditing(true);
+        const view = graph!.findViewByCell(`${elementId}::label`) ?? graph!.findViewByCell(elementId);
+        if (!view) return;
+        const area = view.container.getBoundingClientRect();
+        const origin = canvas.getBoundingClientRect();
+        const input = document.createElement('textarea');
+        input.className = 'elsa-x6-name-editor';
+        input.setAttribute('aria-label', property === 'text' ? 'Text' : 'Name');
+        input.value = String(session.document!.element(elementId)![property] ?? '');
+        const width = Math.max(area.width, 120);
+        const height = Math.max(area.height, 40);
+        Object.assign(input.style, {
+            left: `${area.left - origin.left + (area.width - width) / 2}px`,
+            top: `${area.top - origin.top + (area.height - height) / 2}px`,
+            width: `${width}px`,
+            height: `${height}px`
+        });
+        // Keys typed into the box are the box's: Backspace edits text, it does not delete the element.
+        input.addEventListener('keydown', event => {
+            event.stopPropagation();
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                finishEditing(true);
+            } else if (event.key === 'Escape') {
+                event.preventDefault();
+                finishEditing(false);
+            }
+        });
+        input.addEventListener('blur', () => finishEditing(true));
+        editing = { elementId, property, input };
+        canvas.append(input);
+        input.focus();
+        input.select();
+    }
+
+    /** Closes the edit in place, saving its text when `commit` is set and it changed. */
+    function finishEditing(commit: boolean): void {
+        const current = editing;
+        if (!current) return;
+        editing = null;
+        current.input.remove();
+        const document = session.document;
+        const element = document?.element(current.elementId);
+        if (commit && document && element) {
+            const value = current.input.value;
+            if (value !== String(element[current.property] ?? '')) {
+                session.execute(updateProperties(document, current.elementId, { [current.property]: value === '' ? undefined : value }));
+            }
+        }
+        canvas.focus({ preventScroll: true });
+    }
+
+    // Delete and Backspace delete the selection; F2 and Enter edit its name; Ctrl+Z (Cmd+Z) undoes; Ctrl+Shift+Z and
+    // Ctrl+Y redo.
     canvas.addEventListener('keydown', event => {
         if (readOnly) return;
+        if ((event.key === 'F2' || event.key === 'Enter') && selected && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            event.preventDefault();
+            startEditing(selected);
+            return;
+        }
         if ((event.key === 'Delete' || event.key === 'Backspace') && !event.ctrlKey && !event.metaKey && !event.altKey) {
             const document = session.document;
             if (!selected || !document) return;
@@ -362,7 +441,14 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
     graph.on('resize', () => {
         if (fitPending && drawn) fitToView();
     });
-    graph.on('node:dblclick', ({ node }) => openPlane(planes?.drillTarget(elementOf(String(node.id)))));
+    // A double-click opens a collapsed subprocess's plane, and edits the name of anything else.
+    graph.on('node:dblclick', ({ node }) => {
+        const elementId = elementOf(String(node.id));
+        const target = planes?.drillTarget(elementId);
+        if (target) openPlane(target);
+        else startEditing(elementId);
+    });
+    graph.on('edge:dblclick', ({ edge }) => startEditing(String(edge.id)));
 
     async function load(xml: string): Promise<BpmnLoadResult> {
         const result = await session.load(xml);
@@ -503,6 +589,7 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
         dispose(): void {
             if (disposed) return;
             disposed = true;
+            editing = null;
             unsubscribeSession();
             listeners.change.clear();
             listeners.selection.clear();

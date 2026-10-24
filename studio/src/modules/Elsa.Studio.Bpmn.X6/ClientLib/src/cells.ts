@@ -81,7 +81,9 @@ export function planeCells(document: BpmnDocument, plane: ShownPlane, drillable:
         types.set(edge.elementId, edge.type);
         midpoints.set(edge.elementId, midpointOf(edge.waypoints));
         edges.push(edgeCell(edge, document.element(edge.elementId)));
-        if (edge.name && edge.label) nodes.push(labelCell(edge.elementId, edge.name, edge.label));
+        // A name without label layout is drawn centred on the edge's midpoint, as the bpmn-js designer places it.
+        const midpoint = midpoints.get(edge.elementId)!;
+        if (edge.name) nodes.push(labelCell(edge.elementId, edge.name, edge.label ?? { x: midpoint.x - 50, y: midpoint.y - 14, width: 100, height: 28 }));
     }
 
     return { nodes, edges, bounds, types, midpoints };

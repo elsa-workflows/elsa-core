@@ -415,6 +415,61 @@ test('Delete does nothing when read-only', async ({ harness }) => {
     await expect(cell(harness, 'Notify')).toHaveCount(1);
 });
 
+const editor = (page: Page) => page.locator('#canvas textarea.elsa-x6-name-editor');
+
+test('a double-click edits a name in place, saved as one undoable edit', async ({ harness }) => {
+    await loaded(harness, 'order.bpmn');
+    await cell(harness, 'Charge').dblclick();
+    await expect(editor(harness)).toHaveValue('Charge card');
+    await editor(harness).fill('Take payment');
+    await editor(harness).press('Enter');
+
+    await expect(editor(harness)).toHaveCount(0);
+    await expect(cell(harness, 'Charge')).toContainText('Take payment');
+    expect((await call<{ xml: string }>(harness, 'save')).xml).toContain('name="Take payment"');
+    const changes = await harness.evaluate(() => (window as unknown as { harness: Harness }).harness.events.filter(event => event.type === 'change'));
+    expect(changes.at(-1)).toMatchObject({ elementIds: ['Charge'], isDirty: true });
+
+    await harness.keyboard.press('Control+z');
+    await expect(cell(harness, 'Charge')).toContainText('Charge card');
+});
+
+test('Escape gives up an edit, Backspace in it edits the text, and an empty name removes the name', async ({ harness }) => {
+    await loaded(harness, 'order.bpmn');
+    await cell(harness, 'Charge').dblclick();
+    await editor(harness).press('End');
+    await editor(harness).press('Backspace');
+    await expect(editor(harness)).toHaveValue('Charge car');
+    await editor(harness).press('Escape');
+    await expect(editor(harness)).toHaveCount(0);
+    await expect(cell(harness, 'Charge')).toHaveCount(1);
+    expect(await call(harness, 'undo')).toBe(false);
+
+    await cell(harness, 'Charge').dblclick();
+    await editor(harness).fill('');
+    await editor(harness).press('Enter');
+    expect((await call<{ xml: string }>(harness, 'save')).xml).toContain('<bpmn:task id="Charge">');
+});
+
+test('F2 edits the selected element, an edge gets a label when named, and read-only opens no editor', async ({ harness }) => {
+    await loaded(harness, 'order.bpmn');
+    await cell(harness, 'Gateway').click();
+    await harness.keyboard.press('F2');
+    await expect(editor(harness)).toHaveValue('Paid?');
+    await editor(harness).press('Escape');
+
+    // A straight edge has no height, so it is double-clicked at its midpoint rather than through its locator.
+    const flow = (await cell(harness, 'Flow_2').locator('path').first().boundingBox())!;
+    await harness.mouse.dblclick(flow.x + flow.width / 2, flow.y + flow.height / 2);
+    await editor(harness).fill('Charged');
+    await editor(harness).press('Enter');
+    await expect(cell(harness, 'Flow_2::label')).toContainText('Charged');
+
+    await loaded(harness, 'order.bpmn', { readOnly: true });
+    await cell(harness, 'Charge').dblclick();
+    await expect(editor(harness)).toHaveCount(0);
+});
+
 test('fits a document loaded while the container had no size once the container is shown', async ({ harness }) => {
     await harness.evaluate(() => {
         document.getElementById('canvas')!.style.display = 'none';

@@ -93,3 +93,21 @@
 .elsa-x6-designer .x6-edge {
     cursor: pointer;
 }
+
+.elsa-x6-name-editor {
+    position: absolute;
+    z-index: 10;
+    box-sizing: border-box;
+    padding: 4px 6px;
+    border: 1px solid var(--elsa-x6-selection);
+    border-radius: 4px;
+    background: var(--elsa-x6-surface);
+    color: var(--elsa-x6-text);
+    font-family: inherit;
+    font-size: 12px;
+    line-height: 1.3;
+    text-align: center;
+    resize: none;
+    outline: none;
+    box-shadow: 0 1px 4px rgb(0 0 0 / 0.15);
+}
