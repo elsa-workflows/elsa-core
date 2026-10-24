@@ -14,11 +14,25 @@ export interface Command {
     revert(): void;
 }
 
-/** Several commands that undo and redo as one step. */
+/**
+ * Several commands that undo and redo as one step. When one of them throws while executing, the ones before it are
+ * reverted and the error is rethrown, so a refused compound leaves the document as it found it.
+ */
 export function compound(commands: readonly Command[]): Command {
     return {
         elementIds: [...new Set(commands.flatMap(command => command.elementIds))],
-        execute: () => commands.forEach(command => command.execute()),
+        execute: () => {
+            const executed: Command[] = [];
+            try {
+                for (const command of commands) {
+                    command.execute();
+                    executed.push(command);
+                }
+            } catch (error) {
+                for (const command of executed.reverse()) command.revert();
+                throw error;
+            }
+        },
         revert: () => [...commands].reverse().forEach(command => command.revert())
     };
 }

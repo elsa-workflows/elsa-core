@@ -19,7 +19,22 @@ describe('updateProperties', () => {
         const { xml } = await session.save();
         expect(xml).toContain('<bpmn:userTask id="Review" name="Check order" vendor:priority="high">');
         expect(xml).toContain('<bpmn:startEvent id="Start">');
-        expect(session.undo() && session.undo()).toBe(true);
+        expect(session.undo()).toBe(true);
+        expect(session.undo()).toBe(true);
+        expect((await session.save()).xml).toBe(original);
+    });
+
+    it('refuses two renames to one id in one compound, and leaves the document and its history as they were', async () => {
+        const { session, document, original } = await loaded();
+        const both = compound([updateProperties(document, 'Review', { id: 'Check' }), updateProperties(document, 'Charge', { id: 'Check' })]);
+
+        expect(() => session.execute(both)).toThrow("The document already has an element 'Check'.");
+
+        expect(document.element('Review')).toBeDefined();
+        expect(document.element('Charge')).toBeDefined();
+        expect(document.element('Check')).toBeUndefined();
+        expect(session.canUndo).toBe(false);
+        expect(session.isDirty).toBe(false);
         expect((await session.save()).xml).toBe(original);
     });
 

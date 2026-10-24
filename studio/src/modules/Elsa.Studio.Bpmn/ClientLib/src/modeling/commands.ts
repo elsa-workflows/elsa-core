@@ -18,13 +18,17 @@ export function updateProperties(document: BpmnDocument, elementId: string, prop
     if (!element) throw new Error(`The document has no element '${elementId}'.`);
 
     const newId = properties.id;
-    if (newId !== undefined && newId !== elementId) {
-        if (typeof newId !== 'string' || newId === '') throw new Error(`An element id must be a non-empty string.`);
-        if (document.hasId(newId)) throw new Error(`The document already has an element '${newId}'.`);
-    }
+    const isRename = newId !== undefined && newId !== elementId;
+    if (isRename && (typeof newId !== 'string' || newId === '')) throw new Error(`An element id must be a non-empty string.`);
+    // Checked when the command is created and again each time it executes: another rename executed in between, such
+    // as an earlier one in the same compound, can have taken the id since.
+    const requireFreeId = () => {
+        if (isRename && document.hasId(newId as string)) throw new Error(`The document already has an element '${newId}'.`);
+    };
+    requireFreeId();
 
-    const elementIds = typeof newId === 'string' && newId !== elementId ? [elementId, newId] : [elementId];
-    return propertyChange(document, element, properties, elementIds);
+    const elementIds = isRename ? [elementId, newId as string] : [elementId];
+    return propertyChange(document, element, properties, elementIds, requireFreeId);
 }
 
 /**
@@ -49,8 +53,11 @@ export function setBinding(document: BpmnDocument, element: ModdleElement, bindi
     return null;
 }
 
-/** Sets `properties` on `target`, any moddle element of the document, and puts back exactly what was there on revert. */
-function propertyChange(document: BpmnDocument, target: ModdleElement, properties: Record<string, unknown>, elementIds: string[]): Command {
+/**
+ * Sets `properties` on `target`, any moddle element of the document, and puts back exactly what was there on revert.
+ * `check`, when given, runs before each execute and may throw to refuse it, which then changes nothing.
+ */
+function propertyChange(document: BpmnDocument, target: ModdleElement, properties: Record<string, unknown>, elementIds: string[], check?: () => void): Command {
     const names = Object.keys(properties);
     // Whether each property was set, and to what, so revert removes what execute added rather than setting undefined.
     // Taken when the command executes, so a command after another in a compound sees what the earlier one set.
@@ -59,6 +66,7 @@ function propertyChange(document: BpmnDocument, target: ModdleElement, propertie
     return {
         elementIds,
         execute() {
+            check?.();
             before = names.map(name => ({ name, isSet: isSet(target, name), value: get(target, name) }));
             for (const name of names) set(target, name, properties[name]);
             document.reindex();
