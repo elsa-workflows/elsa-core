@@ -9,4 +9,19 @@ namespace Elsa.Bpmn.Interchange.Exceptions;
 /// alternatives (an unbound task quietly dropped, a call activity dispatching nothing, a timer of zero) all produce a
 /// workflow that runs to completion looking healthy while doing none of what the document says.
 /// </remarks>
-public class BpmnBindingException(string message) : Exception(message);
+public class BpmnBindingException : Exception
+{
+    /// <summary>Creates a refusal that names no single element.</summary>
+    public BpmnBindingException(string message) : base(message)
+    {
+    }
+
+    /// <summary>Creates a refusal of the element <paramref name="elementId"/>'s binding.</summary>
+    public BpmnBindingException(string message, string? elementId) : base(message)
+    {
+        ElementId = elementId;
+    }
+
+    /// <summary>The BPMN id of the element whose binding is refused, when the refusal is about one element.</summary>
+    public string? ElementId { get; }
+}

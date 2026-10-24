@@ -10,7 +10,7 @@ namespace Elsa.Bpmn.Interchange.Endpoints.Bpmn.Analyze;
 
 /// <summary>
 /// Reads a <c>.bpmn</c> document and reports the element-scoped Info/Degraded/Dropped findings a read would produce,
-/// without persisting anything.
+/// and the refusal an import of it would raise, without persisting anything.
 /// </summary>
 /// <remarks>
 /// A thin wrapper over <see cref="BpmnInterchangeDocumentService.Analyze"/>, which runs the same code
@@ -43,7 +43,8 @@ internal sealed class Analyze(BpmnInterchangeDocumentService documentService) : 
         try
         {
             var analysis = documentService.Analyze(xml);
-            await Send.OkAsync(BpmnImportAnalysisModel.From(analysis), cancellationToken);
+            var refusal = FindRefusal(xml, Query<string>("processId", isRequired: false));
+            await Send.OkAsync(BpmnImportAnalysisModel.From(analysis, refusal), cancellationToken);
         }
         catch (BpmnInterchangeException exception)
         {
@@ -53,6 +54,19 @@ internal sealed class Analyze(BpmnInterchangeDocumentService documentService) : 
         catch (BpmnDuplicateElementIdException exception)
         {
             await BpmnErrorResponse.SendAsync(HttpContext.Response, BpmnImportErrorResponses.DuplicateElementIdResponseFor(exception), cancellationToken);
+        }
+    }
+
+    private BpmnImportRefusalModel? FindRefusal(string xml, string? processId)
+    {
+        try
+        {
+            documentService.Validate(xml, processId);
+            return null;
+        }
+        catch (Exception exception) when (BpmnImportRefusalModel.For(exception) is { } refusal)
+        {
+            return refusal;
         }
     }
 }

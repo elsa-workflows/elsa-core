@@ -98,7 +98,8 @@ namespace Elsa.Bpmn.Interchange.Services;
 /// <b>Conditions Elsa cannot evaluate as written are refused here too, and nothing opts out of it.</b> Elsa evaluates a
 /// sequence flow's standard <c>conditionExpression</c> with its own expression engine, so import refuses only a flow
 /// that carries both an outcome and an expression, and an expression in a language Elsa does not evaluate (see
-/// <see cref="EnsureConditionsEvaluable"/>). <see cref="Analyze"/> refuses nothing.
+/// <see cref="EnsureConditionsEvaluable"/>). <see cref="Analyze"/> refuses nothing; <see cref="Validate"/> runs these checks
+/// without saving.
 /// </para>
 /// </remarks>
 public sealed class BpmnInterchangeDocumentService(
@@ -199,6 +200,39 @@ public sealed class BpmnInterchangeDocumentService(
     {
         EnsureNoFlowNodeIdRepeatsInOneScope(xml);
         return reader.Analyze(xml, new BpmnImportOptions());
+    }
+
+    /// <summary>
+    /// Runs the checks an import makes before it saves a document, and throws what the import would throw, without
+    /// persisting anything. A document that declares more than one process is checked only when
+    /// <paramref name="processId"/> names the one to check, since an import of it needs that choice too.
+    /// </summary>
+    /// <param name="xml">The BPMN 2.0 XML to check.</param>
+    /// <param name="processId">The process an import would bind, when the document declares more than one.</param>
+    /// <exception cref="BpmnInterchangeException">The document cannot be read, or does not declare <paramref name="processId"/>.</exception>
+    /// <exception cref="BpmnDuplicateElementIdException">The document repeats an element id.</exception>
+    /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
+    /// <exception cref="BpmnConditionRefusedException">A sequence flow carries a condition Elsa cannot evaluate as written.</exception>
+    /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
+    /// <exception cref="BpmnProcessInvalidException">The process, or a subprocess body it can reach, cannot run.</exception>
+    public void Validate(string xml, string? processId = null)
+    {
+        EnsureNoFlowNodeIdRepeatsInOneScope(xml);
+        var result = reader.Read(xml, new BpmnImportOptions { ProcessId = processId });
+
+        // The same steps, in the same order, as ImportCoreAsync takes before it builds the definition it saves.
+        EnsureElementIdsUnique(result.Definitions.Processes, result.Bindings);
+
+        if (string.IsNullOrWhiteSpace(processId) && result.Definitions.Processes.Count != 1)
+        {
+            return;
+        }
+
+        var rootDefinition = ResolveRootDefinition(result.Definitions, processId);
+
+        EnsureCapabilitiesSatisfied(rootDefinition, result.Bindings);
+        EnsureConditionsEvaluable(result);
+        EnsureProcessBuilds(binder.Bind(rootDefinition, result.Bindings));
     }
 
     /// <summary>

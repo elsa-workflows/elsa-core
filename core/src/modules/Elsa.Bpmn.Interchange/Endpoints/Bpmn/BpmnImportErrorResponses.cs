@@ -110,9 +110,16 @@ internal static class BpmnImportErrorResponses
     internal static BpmnErrorResponse ProcessInvalidResponseFor(BpmnProcessInvalidException exception) =>
         BpmnErrorResponse.Create(exception.Message, BpmnErrorCodes.ImportProcessInvalid, StatusCodes.Status422UnprocessableEntity);
 
-    /// <summary>The <see cref="BpmnErrorCodes.ImportBindingInvalid"/> response for <paramref name="exception"/>.</summary>
+    /// <summary>
+    /// The <see cref="BpmnErrorCodes.ImportBindingInvalid"/> response for <paramref name="exception"/>, carrying the
+    /// refused element's id as <c>data.elementIds</c> when the refusal is about one element.
+    /// </summary>
     internal static BpmnErrorResponse BindingInvalidResponseFor(BpmnBindingException exception) =>
-        BpmnErrorResponse.Create(exception.Message, BpmnErrorCodes.ImportBindingInvalid, StatusCodes.Status422UnprocessableEntity);
+        BpmnErrorResponse.Create(
+            exception.Message,
+            BpmnErrorCodes.ImportBindingInvalid,
+            StatusCodes.Status422UnprocessableEntity,
+            exception.ElementId is { } elementId ? new { ElementIds = new[] { elementId } } : null);
 
     /// <summary>
     /// The <see cref="BpmnErrorCodes.ImportDuplicateElementId"/> response for <paramref name="exception"/>, carrying

@@ -132,7 +132,7 @@ public sealed class BpmnWorkBinder(BpmnActivityBindingFormat format)
             BpmnWorkBinding.UnboundTask unbound => ReadDeclaredActivity(definition, unbound, consumed),
             // The binding hierarchy is closed, so this is reachable only from a library version that added a kind this
             // binder has never heard of. Skipping it would produce a scope whose interpreter starts work nothing maps.
-            _ => throw new BpmnBindingException($"The BPMN work binding kind '{binding.GetType().Name}' declared by element '{binding.ElementId}' is not supported by this binder.")
+            _ => throw new BpmnBindingException($"The BPMN work binding kind '{binding.GetType().Name}' declared by element '{binding.ElementId}' is not supported by this binder.", binding.ElementId)
         };
 
     private IActivity ReadDeclaredActivity(BpmnProcessDefinition definition, BpmnWorkBinding.UnboundTask unbound, ISet<string> consumed)
@@ -143,12 +143,21 @@ public sealed class BpmnWorkBinder(BpmnActivityBindingFormat format)
         {
             throw new BpmnBindingException(
                 $"BPMN element '{unbound.ElementId}' of process '{unbound.ProcessId}' is a '{unbound.TaskType}': the document says what it is for, not how to perform it, and nothing binds it to an Elsa activity. "
-                + $"Declare one with an <{BpmnActivityBindingFormat.NamespacePrefix}:{BpmnActivityBindingFormat.BindingElementName}> element inside the element's <extensionElements>.");
+                + $"Declare one with an <{BpmnActivityBindingFormat.NamespacePrefix}:{BpmnActivityBindingFormat.BindingElementName}> element inside the element's <extensionElements>.",
+                unbound.ElementId);
         }
 
         consumed.Add(unbound.ElementId);
 
-        return format.Read(declaration);
+        try
+        {
+            return format.Read(declaration);
+        }
+        catch (BpmnBindingException exception) when (exception.ElementId is null)
+        {
+            // The format reads a declaration without knowing whose it is; the refusal is this element's.
+            throw new BpmnBindingException(exception.Message, unbound.ElementId);
+        }
     }
 
     /// <summary>
@@ -165,7 +174,8 @@ public sealed class BpmnWorkBinder(BpmnActivityBindingFormat format)
         {
             throw new BpmnBindingException(
                 $"BPMN element '{element.ElementId}' ({element.ElementType}) of process '{definition.ProcessId}' carries an <{BpmnActivityBindingFormat.NamespacePrefix}:{BpmnActivityBindingFormat.BindingElementName}> element, but its work is not an unbound task, so nothing would ever run it. "
-                + "Only a task the document describes without implementing takes an authored activity binding.");
+                + "Only a task the document describes without implementing takes an authored activity binding.",
+                element.ElementId);
         }
     }
 
@@ -177,12 +187,12 @@ public sealed class BpmnWorkBinder(BpmnActivityBindingFormat format)
         }
         catch (Exception exception) when (exception is FormatException or OverflowException or ArgumentNullException)
         {
-            throw new BpmnBindingException($"BPMN element '{timer.ElementId}' declares the timer duration '{timer.IsoDuration}', which is not an ISO-8601 duration Elsa can wait for.");
+            throw new BpmnBindingException($"BPMN element '{timer.ElementId}' declares the timer duration '{timer.IsoDuration}', which is not an ISO-8601 duration Elsa can wait for.", timer.ElementId);
         }
     }
 
     private static string CalledElementOf(BpmnWorkBinding.CallProcess call) =>
         !string.IsNullOrWhiteSpace(call.CalledElement)
             ? call.CalledElement
-            : throw new BpmnBindingException($"BPMN element '{call.ElementId}' is a call activity that names no calledElement, so there is no workflow definition to dispatch.");
+            : throw new BpmnBindingException($"BPMN element '{call.ElementId}' is a call activity that names no calledElement, so there is no workflow definition to dispatch.", call.ElementId);
 }
