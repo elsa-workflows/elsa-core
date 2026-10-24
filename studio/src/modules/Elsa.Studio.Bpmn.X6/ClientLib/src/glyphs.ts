@@ -2,7 +2,7 @@
  * The SVG path data for BPMN's markers, each centred on its own origin in a nominal 16x16 box.
  *
  * Copied from the read-only X6 BPMN view (Elsa.Studio.Workflows.Designer/ClientLib/src/designer/bpmn/glyphs.ts), so
- * this designer does not depend on a view that may be retired (spec.md, open question 1).
+ * this designer does not depend on a view that is to be retired (spec.md, decision 1).
  */
 
 /**

@@ -4,7 +4,7 @@
         <Description>The X6 BPMN designer for Elsa Studio.</Description>
         <PackageTags>elsa studio module bpmn x6 designer</PackageTags>
         <!--
-            Not packed yet: the designer draws but cannot edit until the later steps of #8928. Step 8 makes it packable
+            Not packed yet: the designer draws but cannot edit until the later steps of #8928. Step 9 makes it packable
             and adds it to the release inventory and the packaged browser-asset checks.
         -->
         <IsPackable>false</IsPackable>
