@@ -3,7 +3,7 @@
  *
  * The kernel's session holds the document and its undo history; X6 only draws it, one plane at a time, and is redrawn
  * from the document after every edit. A gesture becomes a kernel command: dragging a shape moves it, dragging a corner
- * of the selected shape resizes it, and the keyboard undoes and redoes. Elements are identified by their BPMN element id everywhere.
+ * of the selected shape resizes it, Delete removes the selection, and the keyboard undoes and redoes. Elements are identified by their BPMN element id everywhere.
  */
 import { Graph } from '@antv/x6';
 import type {
@@ -19,7 +19,7 @@ import type {
     BpmnSelectionEvent,
     BpmnSetBindingResult
 } from '../../../Elsa.Studio.Bpmn/ClientLib/src/index.js';
-import { BpmnModelingSession, type Bounds, minimumSize, moveShapes, type Point, resizeShape } from '../../../Elsa.Studio.Bpmn/ClientLib/src/modeling/index.js';
+import { BpmnModelingSession, type Bounds, deleteElements, minimumSize, moveShapes, type Point, resizeShape } from '../../../Elsa.Studio.Bpmn/ClientLib/src/modeling/index.js';
 import { type PlaneCells, planeCells } from './cells.js';
 import { indexPlanes, type PlaneIndex } from './planes.js';
 import { registerShapes, SHAPES } from './shapes.js';
@@ -117,9 +117,12 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
         // An edit can rename or remove what a plane draws, so the planes are rebuilt from the document.
         planes = indexPlanes(session.document!);
         if (!currentKey || !planes.plane(currentKey)) currentKey = planes.rootKey;
-        if (selected && !planes.planeOfElement(selected)) selected = null;
+        // An edit that removes the selected element, such as a delete or the undo of a create, clears the selection.
+        const lost = selected !== null && !planes.planeOfElement(selected);
+        if (lost) selected = null;
         render(false);
         emit('change', event);
+        if (lost) setSelection(null);
     });
 
     /** Draws the current plane from the document, with its badges, markers and selection. */
@@ -322,9 +325,22 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
         }
     });
 
-    // Ctrl+Z (Cmd+Z) undoes; Ctrl+Shift+Z and Ctrl+Y redo.
+    // Delete and Backspace delete the selection; Ctrl+Z (Cmd+Z) undoes; Ctrl+Shift+Z and Ctrl+Y redo.
     canvas.addEventListener('keydown', event => {
-        if (readOnly || !(event.ctrlKey || event.metaKey) || event.altKey) return;
+        if (readOnly) return;
+        if ((event.key === 'Delete' || event.key === 'Backspace') && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            const document = session.document;
+            if (!selected || !document) return;
+            event.preventDefault();
+            try {
+                session.execute(deleteElements(document, [selected]));
+            } catch (error) {
+                // A participant or a lane cannot be deleted yet; the selection stays.
+                console.error('elsa-x6-designer: a delete was refused.', error);
+            }
+            return;
+        }
+        if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
         const key = event.key.toLowerCase();
         const redo = key === 'y' || (key === 'z' && event.shiftKey);
         if (key !== 'z' && !redo) return;

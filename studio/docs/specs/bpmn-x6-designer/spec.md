@@ -54,7 +54,7 @@ It is a separate entry from the shared ClientLib's `src/index.ts`, so the bpmn-j
 | `BpmnDocument` | Reads and writes a document. Indexes its semantic elements by id, and its diagram planes. |
 | `planeView(planeId)` | What one plane draws, in a canvas's terms: shapes with bounds, labels, containers and attachments; edges with waypoints and ends. |
 | `CommandStack` | Undo, redo and dirty tracking by state id, ported from the bpmn-js designer. |
-| Commands | Undoable edits. Part 1 has `updateProperties` and `setBinding`; step 3 adds `moveShapes` and `resizeShape`; later steps add commands that change semantics and layout together. |
+| Commands | Undoable edits. Part 1 has `updateProperties` and `setBinding`; step 3 adds `moveShapes`, `resizeShape` and `deleteElements`; later steps add commands that change semantics and layout together. |
 | `BpmnModelingSession` | The contract's canvas-independent half: `load`, `save`, `getBinding`, `setBinding`, `undo`, `redo` and the change event. |
 
 Undo and redo live in the kernel, not in X6's History plugin, because the X6 graph is only a projection: undoing a
@@ -149,6 +149,19 @@ says which.
 
 It throws for a shape it cannot resize, bounds below the minimum or not finite, and bounds that leave out the content.
 
+`deleteElements(document, elementIds)` deletes flow elements, artifacts, message flows and data associations, and what
+depends on them, as the bpmn-js designer does:
+
+- what they contain, and the diagram of a deleted subprocess's own plane;
+- the boundary events attached to anything deleted;
+- the sequence flows, message flows, associations and data associations with a deleted end;
+- a data object whose last reference is deleted;
+- every drawing of any of it.
+
+Every reference the rest of the document holds to what is deleted is removed, such as a flow node's `incoming` and
+`outgoing`, a gateway's `default` and a lane's `flowNodeRef`. Undo puts each element and reference back at its position.
+It throws for an unknown element and for participants, lanes and processes, which step 6 deletes.
+
 ### Dirty tracking
 
 Each executed command gets a new state id; undo and redo move along the same history. The document is clean exactly when
@@ -164,12 +177,14 @@ These are recorded here until step 9 writes the designer's limits document.
 - A document with duplicate ids keeps the first element with each id in the index, as bpmn-moddle resolves references
   to it.
 
-What the designer draws and edits, as of step 3b:
+What the designer draws and edits, as of step 3c:
 
 - Shapes can be moved by dragging, one at a time. A selected expanded subprocess, text annotation or group shows four
-  corner handles that resize it; the resize stops at its minimum size and at what it contains. Nothing can yet be
-  created or deleted (steps 3c to 7). Participants and lanes are resized in step 6, with their lanes.
+  corner handles that resize it; the resize stops at its minimum size and at what it contains. Delete or Backspace
+  deletes the selected element. Nothing can yet be created (step 4). Participants and lanes are resized and deleted
+  in step 6, with their lanes.
   Dragging snaps a shape's position to a 10-pixel grid. Edges are redrawn when the drag ends, not during it.
+- An edit that removes the selected element clears the selection and raises `selection`.
 - A shape dropped onto another subprocess, participant or lane stays in the one it was in.
 - Lanes, labels and edges cannot be dragged. A boundary event moves only with its activity, until step 5 attaches and
   detaches them.
