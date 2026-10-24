@@ -14,7 +14,10 @@ namespace Elsa.Studio.Workflows.DiagramDesigners.Bpmn;
 /// <param name="ElementIds">The elements and sequence flows it is about; empty when it names none.</param>
 public sealed record BpmnDocumentProblem(string Severity, string Message, IReadOnlyList<string> ElementIds)
 {
-    /// <summary>The problems an analysis reports: its refusal first, then the findings that lose authored meaning.</summary>
+    /// <summary>
+    /// The problems an analysis reports: its refusal first, then the findings that lose authored meaning, then each task
+    /// bound to no activity.
+    /// </summary>
     public static IReadOnlyList<BpmnDocumentProblem> From(BpmnImportAnalysisModel analysis)
     {
         var problems = new List<BpmnDocumentProblem>();
@@ -28,6 +31,11 @@ public sealed record BpmnDocumentProblem(string Severity, string Message, IReadO
         foreach (var issue in analysis.Issues.Where(issue => !string.Equals(issue.Severity, "Info", StringComparison.OrdinalIgnoreCase)))
         {
             problems.Add(new(BpmnDesignerMarker.Warning, issue.Message, issue.ElementId is { } elementId ? [elementId] : []));
+        }
+
+        foreach (var elementId in analysis.UnboundElementIds)
+        {
+            problems.Add(new(BpmnDesignerMarker.Warning, $"Task '{elementId}' is not bound to an activity, so the workflow cannot be published until one is chosen under Performed by.", [elementId]));
         }
 
         return problems;

@@ -268,6 +268,13 @@ public partial class BpmnPerformedByPanel : IDisposable
             return null;
 
         var typeName = activity.GetTypeName();
+
+        // The placeholder a task with no activity is bound to performs nothing, so the task reads as not bound.
+        if (typeName == BpmnProcessConstants.UnboundTaskActivityTypeName)
+        {
+            return null;
+        }
+
         var name = activity.GetName();
 
         if (!string.IsNullOrWhiteSpace(name))

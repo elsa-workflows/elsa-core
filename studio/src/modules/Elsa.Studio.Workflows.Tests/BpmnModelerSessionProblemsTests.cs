@@ -56,6 +56,19 @@ public class BpmnModelerSessionProblemsTests
             Assert.Single(_canvas.AppliedMarkers));
     }
 
+    [Fact(DisplayName = "Each task the document binds to no activity is a warning, marked on the task")]
+    public async Task AnUnboundTask_IsAWarning()
+    {
+        _analyzer.Analyzes = _ => Task.FromResult(new Result<BpmnImportAnalysisModel, ValidationErrors>(new BpmnImportAnalysisModel { UnboundElementIds = ["Charge"] }));
+
+        await OpenAsync();
+
+        var problem = Assert.Single(_session.Problems);
+        Assert.Equal((BpmnDesignerMarker.Warning, "Charge"), (problem.Severity, Assert.Single(problem.ElementIds)));
+        Assert.Contains("not bound to an activity", problem.Message);
+        Assert.Equal([new("Charge", BpmnDesignerMarker.Warning, problem.Message)], Assert.Single(_canvas.AppliedMarkers));
+    }
+
     [Fact(DisplayName = "A refused save has the document it sent analyzed, so the problems point at what refused it")]
     public async Task ARefusedSave_AnalyzesTheSentDocument()
     {

@@ -8,6 +8,7 @@ using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.Activ
 using Elsa.Studio.Workflows.Designer.Models;
 using Elsa.Studio.Workflows.DiagramDesigners.Bpmn;
 using Elsa.Studio.Workflows.Domain.Models.Bpmn;
+using Elsa.Studio.Workflows.Extensions;
 using Elsa.Studio.Workflows.Tests.Support;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
@@ -237,6 +238,18 @@ public sealed class BpmnPerformedByPanelTests : BunitContext, IAsyncLifetime
         newGate.SetResult();
         await saveTask;
         cut.WaitForAssertion(() => Assert.Empty(cut.FindAll("[data-testid='bpmn-saving']")));
+    }
+
+    [Fact]
+    public void ATaskTheServerBoundToTheUnboundPlaceholder_ReadsAsNotBound()
+    {
+        UseService(new FakeBpmnDocumentService().RefusesGet(BpmnDocumentFailureReason.SourceStale));
+        var root = RootActivity();
+        root.FindActivity(BoundActivityId)!["type"] = BpmnProcessConstants.UnboundTaskActivityTypeName;
+
+        var cut = RenderPanel(TaskSelection, root);
+
+        Assert.Equal("Not bound", cut.Find("[data-testid='bpmn-bound-activity']").TextContent.Trim());
     }
 
     [Fact]

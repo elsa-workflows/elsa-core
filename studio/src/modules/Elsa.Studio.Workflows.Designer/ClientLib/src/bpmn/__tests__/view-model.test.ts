@@ -394,6 +394,29 @@ describe('binding display', () => {
         expect(diagnostic).toMatchObject({ severity: 'warning', elementId: 'NotifyWarehouse', scopeId: 'order-process' });
     });
 
+    it('reports a task bound to the unbound-task placeholder as unbound, not as bound to it', () => {
+        const fixture = loadFixture('camunda-order-process');
+        const activity = structuredClone(fixture.activity) as BpmnActivity;
+        const task = activity.process!.elements.find(candidate => candidate.elementId === 'NotifyWarehouse')!;
+        const placeholder = activity.activities!.find(candidate => candidate.id === activity.workBindings![task.bindingRef!])!;
+
+        (placeholder as { type: string }).type = 'Elsa.BpmnUnboundTask';
+
+        const model = buildBpmnViewModel({ activity, sourceXml: fixture.sourceXml });
+
+        expect(element(model, 'NotifyWarehouse').binding).toEqual({
+            state: 'unbound',
+            kind: 'unboundTask',
+            bindingRef: task.bindingRef,
+            activityId: placeholder.id,
+            activityType: null,
+            activityName: null,
+            displayName: null,
+            descriptor: null,
+        });
+        expect(model.diagnostics.find(candidate => candidate.code === 'unbound-work')).toMatchObject({ severity: 'warning', elementId: 'NotifyWarehouse' });
+    });
+
     it('reports a binding ref that workBindings does not map as unresolved, not as bound to nothing', () => {
         const fixture = loadFixture('camunda-order-process');
         const activity = structuredClone(fixture.activity) as BpmnActivity;
