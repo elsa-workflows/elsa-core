@@ -29,8 +29,10 @@ The steps that build the designer [spec.md](spec.md) describes, one pull request
    warnings.
 7. **Subprocesses at every depth:** expanded subprocesses as containers, collapsed subprocesses on their own plane,
    toggling between them, event subprocesses and transactions.
-8. **The designer's limits document, packaging, and the host opt-in documentation.** Completes "Done when".
-9. **Retiring the read-only view**, if the owner decides to (spec.md, open question 1).
+8. **The properties panel:** conditions, timers, message references, `cancelActivity` and the other BPMN properties
+   beyond the binding, in the contract's `propertiesContainer` (spec.md, decision 2).
+9. **The designer's limits document, packaging, and the host opt-in documentation.** Completes "Done when".
+10. **Retiring the read-only view** (spec.md, decision 1).
 
 ## Risk
 

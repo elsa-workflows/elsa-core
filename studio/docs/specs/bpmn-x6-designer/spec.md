@@ -146,7 +146,7 @@ while it runs stays dirty. A load clears the history and is clean.
 
 ## Limits
 
-These are recorded here until step 8 writes the designer's limits document.
+These are recorded here until step 9 writes the designer's limits document.
 
 - Concurrent loads are not ordered: the load that finishes last wins. The designer serializes them.
 - Element ids inside foreign extension content are not indexed. A rename can reuse one.
@@ -168,18 +168,24 @@ What the designer draws and edits, as of step 3a:
 - A document with several diagrams opens on the first one that is not a subprocess's plane; the others are reached only
   through `select`.
 
+## Decisions
+
+The owner answered the first three open questions on
+[#8928](https://github.com/elsa-workflows/elsa-core/issues/8928#issuecomment-6384399178).
+
+1. **The read-only view is retired** once the X6 designer ships, as plan step 10. It serves only workflow definitions
+   without `Bpmn:SourceXml`, which no designer can open.
+2. **BPMN properties beyond the binding are in scope.** These are conditions, timers, message references and
+   `cancelActivity`. Plan step 8 adds a properties panel to the X6 designer for them, rendered in the contract's
+   `propertiesContainer`. It is X6's own: the contract gains nothing, and the bpmn-js designer keeps its own panel.
+3. **Pools with their own executable process are drawn as black boxes.** Elsa binds one process per definition, so
+   the X6 designer edits the content of the pool whose process Elsa runs and draws every other pool as a collapsed
+   participant. Step 6 implements this, and the limits document records it.
+
 ## Open questions for the owner
 
-None of these block steps 1 to 3.
+None of these block the next steps.
 
-1. **Retiring the read-only view.** The read-only BPMN view now serves only workflow definitions without
-   `Bpmn:SourceXml`, which no designer can open. Retire it once the X6 designer ships (step 9), or keep it for those
-   definitions?
-2. **BPMN properties beyond the binding**, such as conditions, timers, message references and `cancelActivity`. Neither
-   designer can edit them in the Blazor Studio today. Recommendation: an optional contract addition, in a separate
-   issue, and a documented limit for this one.
-3. **Pools with their own executable process.** Elsa binds one process per definition. Recommendation: draw other pools
-   as black boxes, and document the limit.
-4. **Where the kernel lives.** It is in the shared `Elsa.Studio.Bpmn` ClientLib, as a separate entry, so both the X6
+1. **Where the kernel lives.** It is in the shared `Elsa.Studio.Bpmn` ClientLib, as a separate entry, so both the X6
    designer and a future React Flow designer import it by path, as the bpmn-js designer imports the shared rules. If the
    React Studio cannot import by path, the kernel moves to a package of its own. Keep it here until then?
