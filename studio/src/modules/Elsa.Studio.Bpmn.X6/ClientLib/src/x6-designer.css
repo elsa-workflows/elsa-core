@@ -205,8 +205,12 @@
     cursor: pointer;
 }
 
-.elsa-x6-replace-menu [role='menuitem']:hover,
+.elsa-x6-replace-menu [role='menuitem']:hover {
+    background: #f3f4f6;
+}
+
 .elsa-x6-replace-menu [role='menuitem']:focus-visible {
     background: #f3f4f6;
-    outline: none;
+    outline: 2px solid var(--elsa-x6-selection);
+    outline-offset: -2px;
 }

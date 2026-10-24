@@ -203,7 +203,19 @@ export function registerShapes(): void {
     Graph.registerNode(SHAPES.replace, {
         markup: [{ tagName: 'rect', selector: 'body' }, { tagName: 'path', selector: 'icon' }],
         attrs: {
-            body: { refWidth: '100%', refHeight: '100%', rx: 3, ry: 3, fill: SURFACE, stroke: 'var(--elsa-x6-selection)', strokeWidth: 1, cursor: 'pointer' },
+            body: {
+                refWidth: '100%',
+                refHeight: '100%',
+                rx: 3,
+                ry: 3,
+                fill: SURFACE,
+                stroke: 'var(--elsa-x6-selection)',
+                strokeWidth: 1,
+                cursor: 'pointer',
+                title: 'Change type (R)',
+                role: 'button',
+                'aria-label': 'Change type'
+            },
             icon: {
                 d: 'M 11.5 3 A 3.5 3.5 0 0 0 8.2 7.6 L 3.4 12.4 L 5.6 14.6 L 10.4 9.8 A 3.5 3.5 0 0 0 15 6.5 L 13 8.5 L 11 8.5 L 9.5 7 L 9.5 5 Z',
                 fill: 'var(--elsa-x6-selection)',

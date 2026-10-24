@@ -646,6 +646,7 @@ test('the wrench beside a selected task opens its replace menu, and an entry rep
     const before = (await call<{ xml: string }>(harness, 'save')).xml;
     await cell(harness, 'Charge').click();
 
+    await expect(harness.locator('#canvas [role="button"][aria-label="Change type"]')).toHaveCount(1);
     await cell(harness, 'Charge::replace').click();
     await expect(replaceMenu(harness).getByRole('menuitem').first()).toBeFocused();
     await expect(replaceMenu(harness).getByRole('menuitem').first()).toHaveText('User task');
@@ -664,6 +665,8 @@ test('R opens the replace menu, arrow keys and Enter pick an entry, Escape close
     await harness.keyboard.press('r');
     await harness.keyboard.press('ArrowDown');
     await expect(replaceMenu(harness).getByRole('menuitem', { name: 'Inclusive gateway' })).toBeFocused();
+    // The focused entry shows an outline, not only a faint background.
+    expect(await replaceMenu(harness).getByRole('menuitem', { name: 'Inclusive gateway' }).evaluate(item => getComputedStyle(item).outlineStyle)).toBe('solid');
     await harness.keyboard.press('Enter');
     expect((await call<{ xml: string }>(harness, 'save')).xml).toContain('<bpmn:inclusiveGateway id="Gateway" name="Paid?">');
 
@@ -678,6 +681,26 @@ test('R opens the replace menu, arrow keys and Enter pick an entry, Escape close
     await loaded(harness, 'order.bpmn', { readOnly: true });
     await cell(harness, 'Charge').click();
     await expect(cell(harness, 'Charge::replace')).toHaveCount(0);
+});
+
+test('the replace menu of an element at the bottom of the canvas opens above it, inside the designer', async ({ harness }) => {
+    // Two tasks far apart, so the lower one is drawn at the bottom of the fitted canvas.
+    await loadedXml(harness, `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_1"><bpmn:task id="Top" /><bpmn:task id="Bottom" /></bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_1"><bpmndi:BPMNPlane id="Plane_1" bpmnElement="Process_1">
+    ${shape('Top', 900, 0, 100, 80)}${shape('Bottom', 900, 520, 100, 80)}
+  </bpmndi:BPMNPlane></bpmndi:BPMNDiagram>
+</bpmn:definitions>`);
+    await cell(harness, 'Bottom').click();
+    await harness.keyboard.press('r');
+
+    const menu = (await replaceMenu(harness).boundingBox())!;
+    const stage = (await harness.locator('#canvas .elsa-x6-stage').boundingBox())!;
+    const task = (await cell(harness, 'Bottom').boundingBox())!;
+    expect(menu.y + menu.height).toBeLessThanOrEqual(stage.y + stage.height);
+    expect(menu.x + menu.width).toBeLessThanOrEqual(stage.x + stage.width);
+    expect(menu.y + menu.height).toBeLessThanOrEqual(task.y);
 });
 
 test('fits a document loaded while the container had no size once the container is shown', async ({ harness }) => {

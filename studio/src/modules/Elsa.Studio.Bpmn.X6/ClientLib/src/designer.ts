@@ -247,10 +247,14 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
             item.addEventListener('click', () => applyReplace(elementId, entry));
             menu.append(item);
         }
-        const origin = stage.getBoundingClientRect();
-        Object.assign(menu.style, { left: `${anchor.left - origin.left}px`, top: `${anchor.bottom - origin.top + 4}px` });
         // In the stage beside the canvas, not in it, so X6 does not take presses on it for presses on the canvas.
         stage.append(menu);
+        // Below the wrench, or above it when it does not fit below, and inside the stage, which clips what overflows.
+        const origin = stage.getBoundingClientRect();
+        const below = anchor.bottom - origin.top + 4;
+        const top = below + menu.offsetHeight > origin.height ? Math.max(0, anchor.top - origin.top - 4 - menu.offsetHeight) : below;
+        const left = Math.max(0, Math.min(anchor.left - origin.left, origin.width - menu.offsetWidth));
+        Object.assign(menu.style, { left: `${left}px`, top: `${top}px` });
 
         const stop = new AbortController();
         replacing = { elementId, menu, stop };
