@@ -90,6 +90,66 @@ public class BpmnUserTaskTests(ITestOutputHelper testOutputHelper) : IAsyncLifet
         Assert.True(completed.CompletedBy?.Matches(Alice(tenantId)));
     }
 
+    [Theory(DisplayName = "The action a person completes a userTask with selects the sequence flow named for it")]
+    [InlineData("Approve", "Ship", "Notify")]
+    [InlineData("Reject", "Notify", "Ship")]
+    public async Task UserTask_CompletedWithAnAction_TakesTheFlowForThatAction(string action, string taken, string notTaken)
+    {
+        await _host.PublishAsync(ProcessId, BindDecisionProcess());
+        var instanceId = await _host.StartAsync(ProcessId);
+
+        await CompleteTaskAsync(instanceId, action);
+
+        var finished = await _host.StateOfAsync(instanceId);
+        Assert.Equal(WorkflowSubStatus.Finished, finished.SubStatus);
+        Assert.Empty(finished.Incidents);
+
+        var statuses = await _host.ActivityStatusesOfAsync(instanceId);
+        Assert.Equal(ActivityStatus.Completed, statuses[WorkActivityId(ProcessId, taken)]);
+        Assert.False(statuses.ContainsKey(WorkActivityId(ProcessId, notTaken)), $"'{notTaken}' ran, though '{action}' does not select its flow.");
+    }
+
+    /// <summary>Completes the instance's one waiting user task with <paramref name="action"/>, as its assignee.</summary>
+    private async Task CompleteTaskAsync(string instanceId, string action)
+    {
+        var bookmark = Assert.Single((await _host.StateOfAsync(instanceId)).Bookmarks);
+        var tenantId = TenantOf(bookmark);
+        var task = Assert.IsType<Elsa.UserTasks.Models.UserTask>(await _host.Services.GetRequiredService<IUserTaskRepository>().FindByBookmarkIdAsync(tenantId, bookmark.Id));
+
+        using var scope = _host.Services.CreateScope();
+        var outcome = await scope.ServiceProvider.GetRequiredService<IUserTaskManager>()
+            .CompleteAsync(tenantId, task.Id, new UserTaskCompletionRequest(task.Revision, $"complete-{action}", action), AliceActor(tenantId));
+        Assert.True(outcome.Accepted, outcome.ConflictCode);
+    }
+
+    /// <summary>A userTask whose two outgoing flows are selected by the action it is completed with.</summary>
+    private BpmnProcess BindDecisionProcess()
+    {
+        var format = _host.Services.GetRequiredService<BpmnActivityBindingFormat>();
+        var approve = new UserTask("Approve order")
+        {
+            Assignee = new(Alice(DefaultTenantId)),
+            ActionDefinitions = new(new List<UserTaskActionDefinition> { new("Approve", "Approve"), new("Reject", "Reject") })
+        };
+
+        var definition = new BpmnProcessBuilder(ProcessId)
+            .StartEvent("Start")
+            .Element(Bound(format, "Approve", BpmnElementTypes.UserTask, approve))
+            .Element(Bound(format, "Ship", BpmnElementTypes.ServiceTask, new WriteLine("Shipping")))
+            .Element(Bound(format, "Notify", BpmnElementTypes.ServiceTask, new WriteLine("Rejected")))
+            .EndEvent("Shipped")
+            .EndEvent("Rejected")
+            .Connect("Start", "Approve")
+            .Connect("Approve", "Ship", condition: "Approve")
+            .Connect("Approve", "Notify", condition: "Reject")
+            .Connect("Ship", "Shipped")
+            .Connect("Notify", "Rejected")
+            .Build();
+
+        return _host.Services.GetRequiredService<BpmnWorkBinder>().Bind(definition,
+            [Unbound("Approve", BpmnElementTypes.UserTask), Unbound("Ship", BpmnElementTypes.ServiceTask), Unbound("Notify", BpmnElementTypes.ServiceTask)]);
+    }
+
     /// <summary>
     /// The process, bound by <see cref="BpmnWorkBinder"/> from a definition whose <c>userTask</c> carries an
     /// <c>elsa:activityBinding</c> naming <see cref="UserTask"/>, exactly as an imported document would.

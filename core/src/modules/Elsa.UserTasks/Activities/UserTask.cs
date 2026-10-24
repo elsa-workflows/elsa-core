@@ -117,8 +117,15 @@ public sealed class UserTask : Activity<UserTaskResult>
     {
         var stimulus = context.GetWorkflowInput<UserTaskStimulus>(InputKey);
         Result?.Set(context, new UserTaskResult(stimulus.ActionKey, stimulus.CompletionData, stimulus.CompletedBy, stimulus.CompletedAt ?? context.WorkflowExecutionContext.SystemClock.UtcNow));
-        await context.CompleteActivityAsync();
+        await context.CompleteActivityWithOutcomesAsync(OutcomesOf(stimulus.ActionKey));
     }
+
+    /// <summary>
+    /// The outcomes a completion with <paramref name="actionKey"/> reports: <c>Done</c>, so a flowchart's Done
+    /// connection is still taken, and the action itself, so a BPMN sequence flow can route on the action a person chose.
+    /// </summary>
+    internal static string[] OutcomesOf(string? actionKey) =>
+        string.IsNullOrEmpty(actionKey) || string.Equals(actionKey, "Done", StringComparison.Ordinal) ? ["Done"] : ["Done", actionKey];
 }
 
 /// <summary>
