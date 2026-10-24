@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { BpmnModelingSession, compound, minimumSize, moveShapes, resizeShape } from '../modeling/index.js';
+import { BpmnModelingSession, compound, minimumSize, moveShapes, resizeShape, updateProperties } from '../modeling/index.js';
 
 const shape = (id: string, x: number, y: number, width: number, height: number, extra = '', label?: [number, number, number, number]) =>
     `<bpmndi:BPMNShape id="${id}_di" bpmnElement="${id}"${extra}><dc:Bounds x="${x}" y="${y}" width="${width}" height="${height}" />` +
@@ -136,6 +136,17 @@ describe('resizeShape', () => {
         expect(() => session.execute(both)).toThrow("The shape of 'Sub' must still contain 'Inner'.");
 
         expect(session.canUndo).toBe(false);
+        expect((await session.save()).xml).toBe(original);
+    });
+
+    it('resizes the shape it was created for, even when an earlier command in the same compound renamed it', async () => {
+        const { session, document, original, bounds } = await loaded();
+
+        session.execute(compound([updateProperties(document, 'Sub', { id: 'Renamed' }), resizeShape(document, 'Plane_1', 'Sub', { x: 100, y: 100, width: 400, height: 260 })]));
+
+        expect(bounds('Renamed')).toEqual({ x: 100, y: 100, width: 400, height: 260 });
+        expect(bounds('Timer')).toEqual({ x: 382, y: 342, width: 36, height: 36 });
+        expect(session.undo()).toBe(true);
         expect((await session.save()).xml).toBe(original);
     });
 

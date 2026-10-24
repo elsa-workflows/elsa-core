@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from 'vitest';
-import { BpmnModelingSession, compound, moveShapes } from '../modeling/index.js';
+import { BpmnModelingSession, compound, moveShapes, updateProperties } from '../modeling/index.js';
 
 const shape = (id: string, x: number, y: number, width: number, height: number, extra = '', label?: [number, number, number, number]) =>
     `<bpmndi:BPMNShape id="${id}_di" bpmnElement="${id}"${extra}><dc:Bounds x="${x}" y="${y}" width="${width}" height="${height}" />` +
@@ -172,6 +172,16 @@ describe('moveShapes', () => {
         session.execute(compound([moveShapes(document, planeId, ['B'], { x: 10, y: 0 }), moveShapes(document, planeId, ['B'], { x: 10, y: 10 })]));
 
         expect(bounds('B')).toEqual({ x: 420, y: 210, width: 100, height: 80 });
+        expect(session.undo()).toBe(true);
+        expect((await session.save()).xml).toBe(original);
+    });
+
+    it('moves the shapes it was created for, even when an earlier command in the same compound renamed one', async () => {
+        const { session, document, planeId, original, bounds } = await loaded(ROW);
+
+        session.execute(compound([updateProperties(document, 'B', { id: 'Renamed' }), moveShapes(document, planeId, ['B'], { x: 10, y: 0 })]));
+
+        expect(bounds('Renamed')).toEqual({ x: 410, y: 200, width: 100, height: 80 });
         expect(session.undo()).toBe(true);
         expect((await session.save()).xml).toBe(original);
     });
