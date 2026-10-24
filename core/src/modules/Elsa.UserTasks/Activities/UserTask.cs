@@ -7,6 +7,7 @@ using Elsa.UserTasks.Contracts;
 using Elsa.UserTasks.Models;
 using Elsa.UserTasks.Options;
 using Elsa.Workflows;
+using Elsa.Workflows.Activities.Flowchart.Models;
 using Elsa.Workflows.Attributes;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
@@ -117,15 +118,16 @@ public sealed class UserTask : Activity<UserTaskResult>
     {
         var stimulus = context.GetWorkflowInput<UserTaskStimulus>(InputKey);
         Result?.Set(context, new UserTaskResult(stimulus.ActionKey, stimulus.CompletionData, stimulus.CompletedBy, stimulus.CompletedAt ?? context.WorkflowExecutionContext.SystemClock.UtcNow));
-        await context.CompleteActivityWithOutcomesAsync(OutcomesOf(stimulus.ActionKey));
+        await context.CompleteActivityAsync(OutcomesOf(stimulus.ActionKey));
     }
 
     /// <summary>
-    /// The outcomes a completion with <paramref name="actionKey"/> reports: <c>Done</c>, so a flowchart's Done
-    /// connection is still taken, and the action itself, so a BPMN sequence flow can route on the action a person chose.
+    /// The outcomes a completion with <paramref name="actionKey"/> reports: the default ones, so a flowchart's Done
+    /// connection and a connection that names no port are still taken, and the action itself, so a BPMN sequence flow
+    /// can route on the action a person chose.
     /// </summary>
-    internal static string[] OutcomesOf(string? actionKey) =>
-        string.IsNullOrEmpty(actionKey) || string.Equals(actionKey, "Done", StringComparison.Ordinal) ? ["Done"] : ["Done", actionKey];
+    internal static Outcomes OutcomesOf(string? actionKey) =>
+        string.IsNullOrEmpty(actionKey) || Outcomes.Default.Names.Contains(actionKey) ? Outcomes.Default : new([.. Outcomes.Default.Names, actionKey]);
 }
 
 /// <summary>
