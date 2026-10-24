@@ -53,6 +53,7 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
     private long _changeSequence;
     private int _canvasDocumentVersion;
     private readonly IBpmnInterchangeService? _analyzer;
+    private string? _processId;
     private long _analysisSequence;
     private Task _analysis = Task.CompletedTask;
 
@@ -75,9 +76,27 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
 
     /// <summary>
     /// The process the definition was imported from, which the analysis checks; <see langword="null"/> when the
-    /// definition does not record one. An import that binds another process of the same document changes it.
+    /// definition does not record one. An import that binds another process of the same document changes it, and the
+    /// document is then analyzed again for that process, in place of any analysis still in flight for the former one.
     /// </summary>
-    public string? ProcessId { get; internal set; }
+    public string? ProcessId
+    {
+        get => _processId;
+        internal set
+        {
+            if (string.Equals(_processId, value, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _processId = value;
+
+            if (Xml is { } xml)
+            {
+                Analyze(xml);
+            }
+        }
+    }
 
     /// <summary>The workflow definition whose document this is.</summary>
     public string DefinitionId { get; } = definitionId;

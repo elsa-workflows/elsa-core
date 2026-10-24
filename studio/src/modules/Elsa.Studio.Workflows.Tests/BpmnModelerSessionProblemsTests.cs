@@ -149,6 +149,26 @@ public class BpmnModelerSessionProblemsTests
         Assert.Equal(["second-process"], _analyzer.AnalyzedProcessIds);
     }
 
+    [Fact(DisplayName = "A change of the definition's process has the document analyzed again for it, and the analysis for the former process is ignored")]
+    public async Task AChangedProcess_IsAnalyzedInPlaceOfTheFormerOne()
+    {
+        var session = new BpmnModelerSession(_xml, _analyzer, DefinitionId, "first-process");
+        var former = new TaskCompletionSource<Result<BpmnImportAnalysisModel, ValidationErrors>>();
+        _analyzer.Analyzes = _ => former.Task;
+        await session.EnsureLoadedAsync();
+        session.AttachCanvas(_canvas);
+        session.CanvasLoaded(new(true, null, []), session.DocumentVersion);
+
+        _analyzer.Analyzes = _ => Analysis(null, Issue("Degraded", "Timer simplified.", "Wait"));
+        session.ProcessId = "second-process";
+        await session.Analysis;
+        former.SetResult(new(new BpmnImportAnalysisModel { Refusal = new() { Message = "Stale.", ElementIds = ["Charge"] } }));
+        await Task.Yield();
+
+        Assert.Equal(["first-process", "second-process"], _analyzer.AnalyzedProcessIds);
+        Assert.Equal(["Wait"], Assert.Single(session.Problems).ElementIds);
+    }
+
     [Fact(DisplayName = "An analysis that fails, such as for a server that cannot be reached, leaves no problems")]
     public async Task AFailedAnalysis_LeavesNoProblems()
     {
