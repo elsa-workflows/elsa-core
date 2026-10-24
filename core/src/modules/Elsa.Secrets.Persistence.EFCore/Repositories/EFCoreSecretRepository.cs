@@ -1,6 +1,7 @@
 using Elsa.Common.Multitenancy;
 using Elsa.Persistence.EFCore;
 using Elsa.Secrets.Contracts;
+using Elsa.Secrets.Exceptions;
 using Elsa.Secrets.Models;
 using Elsa.Tenants.Options;
 using Microsoft.EntityFrameworkCore;
@@ -116,7 +117,7 @@ public class EFCoreSecretRepository(
         {
             var incomingTenantId = secret.TenantId ?? dbContext.TenantId;
             if (tenancyEnabled && !TenantVisibility.CanReplaceOwnedRow(existingSecret.TenantId, incomingTenantId, dbContext.TenantId ?? Tenant.DefaultTenantId))
-                throw new InvalidOperationException($"A secret named '{secret.Name}' belongs to another tenant.");
+                throw new SecretTenantOwnershipException(secret.Name);
 
             Copy(secret, existingSecret, tenancyEnabled);
             SetNormalizedName(dbContext, existingSecret);
@@ -164,7 +165,7 @@ public class EFCoreSecretRepository(
     private static void EnsureNewSecretTenantIsOwnedByWriter(Secret secret, SecretsElsaDbContext dbContext, bool tenancyEnabled)
     {
         if (!IsNewSecretTenantOwnedByWriter(secret, dbContext, tenancyEnabled))
-            throw new InvalidOperationException($"A secret named '{secret.Name}' belongs to another tenant.");
+            throw new SecretTenantOwnershipException(secret.Name);
     }
 
     private static Task<bool> ExistsByNormalizedNameAsync(SecretsElsaDbContext dbContext, string normalizedName, CancellationToken cancellationToken)

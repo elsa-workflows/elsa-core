@@ -3,6 +3,7 @@ using Elsa.Persistence.EFCore;
 using Elsa.Persistence.EFCore.EntityHandlers;
 using Elsa.Persistence.EFCore.Extensions;
 using Elsa.Secrets.Contracts;
+using Elsa.Secrets.Exceptions;
 using Elsa.Secrets.Models;
 using Elsa.Secrets.Persistence.EFCore;
 using Elsa.Secrets.Persistence.EFCore.Repositories;
@@ -288,7 +289,7 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
                     Assert.False(await repository.TryAddOrReplaceDeletedAsync(secret));
                 else
                 {
-                    var error = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                    var error = await Assert.ThrowsAsync<SecretTenantOwnershipException>(() =>
                         operation == "add" ? repository.AddAsync(secret) : repository.SaveAsync(secret));
                     Assert.Equal($"A secret named '{name}' belongs to another tenant.", error.Message);
                 }
@@ -308,7 +309,7 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
         {
             using (UseTenant(tenantAccessor, "tenant-a"))
             {
-                await Assert.ThrowsAsync<InvalidOperationException>(() => repository.SaveAsync(new Secret
+                await Assert.ThrowsAsync<SecretTenantOwnershipException>(() => repository.SaveAsync(new Secret
                 {
                     Id = "forged-secret",
                     Name = "novel:legacy-constructor",
@@ -396,7 +397,7 @@ public class EFCoreSecretRepositoryTests : IAsyncLifetime
 
             using (UseTenant(tenantAccessor, "tenant-a"))
             {
-                var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => repository.SaveAsync(new Secret
+                var exception = await Assert.ThrowsAsync<SecretTenantOwnershipException>(() => repository.SaveAsync(new Secret
                 {
                     Id = "replacement-id",
                     Name = "SMTP:PASSWORD",

@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Elsa.Common.Multitenancy;
 using Elsa.Secrets.Contracts;
+using Elsa.Secrets.Exceptions;
 using Elsa.Secrets.Services;
 using Elsa.Tenants.Options;
 using Microsoft.Extensions.Logging;
@@ -169,7 +170,7 @@ public class FileSecretRepository : ISecretRepository
             else
             {
                 if (!SecretRepositoryTenant.CanReplace(secrets[index], secret, tenantAccessor, tenancyEnabled))
-                    throw new InvalidOperationException($"A secret named '{secret.Name}' belongs to another tenant.");
+                    throw new SecretTenantOwnershipException(secret.Name);
 
                 secrets[index] = ReplaceIdentityAndTenant(secrets[index], secret, tenancyEnabled);
             }
