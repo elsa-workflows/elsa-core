@@ -775,8 +775,16 @@ public partial class WorkflowEditor : WorkflowEditorComponentBase, INotification
         {
             _bpmnDocumentSession = null;
 
+            var processId = BpmnDiagramDesigner.GetSourceProcessId(workflowDefinition);
+
+            // The same definition keeps its session, and with it the canvas and its undo history, but an import can
+            // bind another process of the document to it, which the analysis has to check from then on.
             if (_bpmnModelerSession?.DefinitionId != workflowDefinition.DefinitionId)
-                SetBpmnModelerSession(new(BpmnXmlService, BpmnInterchangeService, workflowDefinition.DefinitionId, BpmnDiagramDesigner.GetSourceProcessId(workflowDefinition)));
+                SetBpmnModelerSession(new(BpmnXmlService, BpmnInterchangeService, workflowDefinition.DefinitionId, processId));
+            else
+            {
+                _bpmnModelerSession.ProcessId = processId;
+            }
 
             return;
         }

@@ -53,7 +53,6 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
     private long _changeSequence;
     private int _canvasDocumentVersion;
     private readonly IBpmnInterchangeService? _analyzer;
-    private readonly string? _processId;
     private long _analysisSequence;
     private Task _analysis = Task.CompletedTask;
 
@@ -71,8 +70,14 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
     public BpmnModelerSession(IBpmnXmlService bpmnXmlService, IBpmnInterchangeService analyzer, string definitionId, string? processId = null) : this(bpmnXmlService, definitionId)
     {
         _analyzer = analyzer;
-        _processId = processId;
+        ProcessId = processId;
     }
+
+    /// <summary>
+    /// The process the definition was imported from, which the analysis checks; <see langword="null"/> when the
+    /// definition does not record one. An import that binds another process of the same document changes it.
+    /// </summary>
+    public string? ProcessId { get; internal set; }
 
     /// <summary>The workflow definition whose document this is.</summary>
     public string DefinitionId { get; } = definitionId;
@@ -408,7 +413,7 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
         try
         {
             using var content = new MemoryStream(Encoding.UTF8.GetBytes(xml));
-            var result = await analyzer.AnalyzeAsync(content, $"{DefinitionId}.bpmn", _processId);
+            var result = await analyzer.AnalyzeAsync(content, $"{DefinitionId}.bpmn", ProcessId);
             problems = result.IsSuccess ? BpmnDocumentProblem.From(result.Success!)
                 : IsRefusalOfTheDocument(result.Failure!) ? BpmnDocumentProblem.From(result.Failure!)
                 : [];

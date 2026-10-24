@@ -287,6 +287,27 @@ public sealed class WorkflowEditorBpmnModelerTests : BunitContext, IAsyncLifetim
         Assert.Equal(["second-process"], _documentService.AnalyzedProcessIds);
     }
 
+    [Fact(DisplayName = "An import that binds another process of the document to the definition has the server check that process")]
+    public async Task Problems_FollowAnImportOfAnotherProcess()
+    {
+        _documentService.Analyzes = _ => Task.FromResult(new Result<BpmnImportAnalysisModel, ValidationErrors>(new BpmnImportAnalysisModel()));
+        var cut = RenderEditor(DefinitionOfProcess("first-process"));
+        await EditAsync(cut);
+        var session = Session(cut);
+
+        await cut.InvokeAsync(() => cut.Instance.SetImportedWorkflowDefinitionAsync(DefinitionOfProcess("second-process")));
+
+        Assert.Same(session, Session(cut));
+        Assert.Equal("second-process", session.ProcessId);
+    }
+
+    private static WorkflowDefinition DefinitionOfProcess(string processId)
+    {
+        var definition = Definition();
+        definition.CustomProperties[BpmnProcessConstants.SourceProcessIdCustomPropertyKey] = processId;
+        return definition;
+    }
+
     private IRenderedComponent<WorkflowEditor> RenderEditor(WorkflowDefinition? definition = null) =>
         Render<WorkflowEditor>(parameters => parameters.Add(x => x.WorkflowDefinition, definition ?? Definition()));
 
