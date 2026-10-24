@@ -155,6 +155,35 @@ describe('createShape', () => {
         expect(parentOf(document, create.elementIds[0])).toBe('Process_1');
     });
 
+    it('picks the deepest container and lane by what contains what, not by the order the shapes are drawn in', async () => {
+        // An inner subprocess and a child lane drawn before what contains them, as some tools order the DI.
+        const { session, document } = await loaded(definitions(`
+  <bpmn:collaboration id="Collaboration_1"><bpmn:participant id="Pool" processRef="Process_1" /></bpmn:collaboration>
+  <bpmn:process id="Process_1" isExecutable="true">
+    <bpmn:laneSet id="LaneSet_1"><bpmn:lane id="Parent"><bpmn:childLaneSet id="LaneSet_2"><bpmn:lane id="Child" /></bpmn:childLaneSet></bpmn:lane></bpmn:laneSet>
+    <bpmn:subProcess id="Outer"><bpmn:subProcess id="Inner" /></bpmn:subProcess>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_1">
+    <bpmndi:BPMNPlane id="Plane_1" bpmnElement="Collaboration_1">
+      ${shape('Inner', 700, 100, 200, 150, ' isExpanded="true"')}
+      ${shape('Child', 60, 0, 1140, 400, ' isHorizontal="true"')}
+      ${shape('Pool', 0, 0, 1200, 400, ' isHorizontal="true"')}
+      ${shape('Parent', 30, 0, 1170, 400, ' isHorizontal="true"')}
+      ${shape('Outer', 600, 50, 400, 300, ' isExpanded="true"')}
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>`));
+        const inInner = createShape(document, 'Plane_1', 'bpmn:Task', { x: 800, y: 175 });
+        const inChild = createShape(document, 'Plane_1', 'bpmn:Task', { x: 300, y: 200 });
+
+        session.execute(compound([inInner, inChild]));
+
+        expect(parentOf(document, inInner.elementIds[0])).toBe('Inner');
+        expect(parentOf(document, inChild.elementIds[0])).toBe('Process_1');
+        const xml = (await session.save()).xml;
+        expect(xml).toContain(`<bpmn:lane id="Child">\n            <bpmn:flowNodeRef>${inChild.elementIds[0]}</bpmn:flowNodeRef>`);
+        expect(xml).toContain('<bpmn:lane id="Parent">\n        <bpmn:childLaneSet');
+    });
+
     it('refuses an unknown plane or type, a position that is not finite, and a flow element outside every participant', async () => {
         const { document } = await loaded(PROCESS);
         expect(() => createShape(document, 'Nowhere', 'bpmn:Task', { x: 0, y: 0 })).toThrow("The document has no plane 'Nowhere'.");

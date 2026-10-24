@@ -469,7 +469,13 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
         creating = { type, preview, armed: false, stop };
         button.setAttribute('aria-pressed', 'true');
 
+        // Until it is armed, only the pointer that pressed the button drags it, and a cancelled press gives it up.
+        const dragged = (event: PointerEvent) => creating?.armed === false && event.pointerId === start.pointerId;
+        window.addEventListener('pointercancel', event => {
+            if (dragged(event)) stopCreating();
+        }, { signal });
         window.addEventListener('pointermove', event => {
+            if (creating?.armed === false && event.pointerId !== start.pointerId) return;
             preview.hidden = !overCanvas(event);
             if (preview.hidden) return;
             const origin = canvas.getBoundingClientRect();
@@ -482,7 +488,7 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
             });
         }, { signal });
         window.addEventListener('pointerup', event => {
-            if (!creating || creating.armed) return;
+            if (!creating || !dragged(event)) return;
             if (overCanvas(event)) place(event);
             else if (button.contains(event.target as Node) && Math.hypot(event.clientX - start.clientX, event.clientY - start.clientY) < 4) creating.armed = true;
             else stopCreating();
@@ -596,6 +602,8 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
     async function load(xml: string): Promise<BpmnLoadResult> {
         const result = await session.load(xml);
         if (disposed || !result.imported) return result;
+        // A create armed in the document that was showing does not carry over to this one.
+        stopCreating();
         stats.clear();
         markers.clear();
         selected = null;

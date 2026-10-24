@@ -100,7 +100,8 @@ function placementOf(document: BpmnDocument, planeId: string, type: string, poin
     if (!view) throw new Error(`The document has no plane '${planeId}'.`);
     const plane = planeElement(document, planeId)!;
     const holds = (shape: BpmnShapeView) => shape.hiddenBy === undefined && contains(shape.bounds, point);
-    const host = view.shapes.filter(shape => holds(shape) && shape.isExpanded === true && isContainerType(document, shape.elementId)).at(-1);
+    const deepest = deepestOf(view.shapes);
+    const host = deepest(view.shapes.filter(shape => holds(shape) && shape.isExpanded === true && isContainerType(document, shape.elementId)));
 
     let container: ModdleElement | undefined;
     if (host) {
@@ -117,14 +118,25 @@ function placementOf(document: BpmnDocument, planeId: string, type: string, poin
     }
     if (!container) throw new Error(`The plane '${planeId}' has nowhere to create an element.`);
 
-    // The innermost lane of the container that holds the point; lanes come after the lanes that contain them.
-    const lane = isA(document, type, 'bpmn:FlowNode') && container.$instanceOf('bpmn:Process')
-        ? view.shapes
-            .filter(shape => shape.type === 'bpmn:Lane' && holds(shape) && processOfLane(document.element(shape.elementId)!) === container)
-            .map(shape => document.element(shape.elementId)!)
-            .at(-1)
+    // The innermost lane of the container that holds the point.
+    const laneShape = isA(document, type, 'bpmn:FlowNode') && container.$instanceOf('bpmn:Process')
+        ? deepest(view.shapes.filter(shape => shape.type === 'bpmn:Lane' && holds(shape) && processOfLane(document.element(shape.elementId)!) === container))
         : undefined;
-    return { plane, container, lane };
+    return { plane, container, lane: laneShape ? document.element(laneShape.elementId) : undefined };
+}
+
+/**
+ * Picks, of shapes on a plane, the one with the most shapes of `shapes` around it, through each shape's `parentId`; the
+ * last such one in document order when there are several. The DI's order is not trusted to put a container first.
+ */
+function deepestOf(shapes: readonly BpmnShapeView[]): (candidates: readonly BpmnShapeView[]) => BpmnShapeView | undefined {
+    const byId = new Map(shapes.map(shape => [shape.elementId, shape]));
+    const depth = (shape: BpmnShapeView) => {
+        let count = 0;
+        for (let parent = shape.parentId; parent !== undefined && count < shapes.length; parent = byId.get(parent)?.parentId) count++;
+        return count;
+    };
+    return candidates => candidates.reduce<BpmnShapeView | undefined>((best, shape) => (!best || depth(shape) >= depth(best) ? shape : best), undefined);
 }
 
 function planCreate(document: BpmnDocument, placement: Placement, type: string, id: string, dataObjectId: string | undefined, bounds: Bounds): Operation[] {

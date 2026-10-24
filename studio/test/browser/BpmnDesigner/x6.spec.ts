@@ -588,6 +588,38 @@ test('a name being edited is saved when an element is dragged from the palette',
     expect(xml).toContain(`<bpmn:endEvent id="${await lastSelected(harness)}" />`);
 });
 
+test('a create armed before another document is loaded does not place anything in it', async ({ harness }) => {
+    await loaded(harness, 'order.bpmn');
+    await entry(harness, 'Create end event').click();
+    await expect(entry(harness, 'Create end event')).toHaveAttribute('aria-pressed', 'true');
+
+    const xml = await fixture('order.bpmn');
+    expect(await harness.evaluate(xml => (window as unknown as { harness: Harness }).harness.designer.load(xml), xml)).toMatchObject({ imported: true });
+    const before = (await call<{ xml: string }>(harness, 'save')).xml;
+    const target = await blankPoint(harness);
+    await harness.mouse.click(target.x, target.y);
+
+    await expect(entry(harness, 'Create end event')).not.toHaveAttribute('aria-pressed');
+    expect((await call<{ xml: string }>(harness, 'save')).xml).toBe(before);
+});
+
+test('a cancelled drag from the palette is given up, so a later release on the canvas creates nothing', async ({ harness }) => {
+    await loaded(harness, 'order.bpmn');
+    const before = (await call<{ xml: string }>(harness, 'save')).xml;
+    const button = (await entry(harness, 'Create end event').boundingBox())!;
+    const press = { pointerId: 7, isPrimary: true, button: 0, clientX: button.x + 5, clientY: button.y + 5, bubbles: true };
+
+    await entry(harness, 'Create end event').dispatchEvent('pointerdown', press);
+    await expect(entry(harness, 'Create end event')).toHaveAttribute('aria-pressed', 'true');
+    await harness.evaluate(press => window.dispatchEvent(new PointerEvent('pointercancel', press)), press);
+    const target = await blankPoint(harness);
+    await harness.mouse.click(target.x, target.y);
+
+    await expect(entry(harness, 'Create end event')).not.toHaveAttribute('aria-pressed');
+    await expect(harness.locator('#canvas .elsa-x6-create-preview')).toHaveCount(0);
+    expect((await call<{ xml: string }>(harness, 'save')).xml).toBe(before);
+});
+
 test('Escape gives up an armed create, a read-only designer has no palette, and a page an older tool drew disables it', async ({ harness }) => {
     await loaded(harness, 'order.bpmn');
     const before = (await call<{ xml: string }>(harness, 'save')).xml;

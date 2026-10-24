@@ -137,10 +137,12 @@ the X6 designer's own Playwright tests, the kernel tests, and the cross-designer
   - a data object reference with its data object;
   - each type's id prefix and size;
   - a container moved away earlier in the same compound;
+  - the deepest container and lane picked by what contains what, whatever order the DI draws them in;
   - refusals.
 - `x6.spec.ts` covers:
   - an element dragged from the palette, created centred on the drop point, selected, and undone in one step;
   - a click that arms an entry, the click that places it, and a new task opening for its name;
   - a name being edited saved when an element is dragged from the palette;
   - Escape giving up an armed create;
+  - an armed create not carried into another document, and a cancelled drag given up;
   - the palette disabled on an older tool's subprocess page and absent when read-only.
