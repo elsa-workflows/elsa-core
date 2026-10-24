@@ -17,7 +17,8 @@ import type { BpmnDocument, BpmnEdgeView, BpmnShapeView, Point } from './documen
  *   or vertical when it was: the next bend point follows it, and a straight two-point edge gets two bend points.
  * - An edge's label keeps its offset from the edge's midpoint.
  *
- * Positions are computed when the command executes, from the layout at that time.
+ * Positions are computed when the command executes, from the layout at that time. The shapes moved are those of the
+ * elements with `elementIds` when the command is created, even if they are renamed before it executes.
  *
  * @throws Error when the document has no such plane, when an element has no shape on it, when an element is a lane or
  * a boundary event (a lane moves with its participant, a boundary event with its activity), or when `delta` is not
@@ -37,12 +38,13 @@ export function moveShapes(document: BpmnDocument, planeId: string, elementIds: 
             throw new Error(`The boundary event '${elementId}' moves with the activity it is attached to.`);
         }
     }
-    // Copies, so a caller changing them afterwards cannot change what the command moves.
-    const ids = [...elementIds];
+    // The elements, not their ids, so a caller changing the array afterwards, or an earlier command in the same compound
+    // renaming one, cannot change what the command moves.
+    const elements = elementIds.map(id => document.element(id)!);
     const { x: dx, y: dy } = delta;
-    const { shapes: moved, edges } = affected(view.shapes, view.edges, ids);
+    const { shapes: moved, edges } = affected(view.shapes, view.edges, elementIds);
 
-    return layoutCommand([...moved, ...edges.keys()], () => planMove(document, planeId, ids, { x: dx, y: dy }));
+    return layoutCommand([...moved, ...edges.keys()], () => planMove(document, planeId, elements.map(element => String(element.id)), { x: dx, y: dy }));
 }
 
 function planMove(document: BpmnDocument, planeId: string, elementIds: readonly string[], delta: Point): Change[] {

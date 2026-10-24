@@ -32,7 +32,8 @@ export function minimumSize(shape: Pick<BpmnShapeView, 'type' | 'isExpanded'>): 
  * - An edge that ends on its border keeps that end on the border, the same way, and stays orthogonal as a move keeps it.
  * - What an expanded subprocess contains stays where it is. The new bounds must still contain it.
  *
- * Positions are computed when the command executes, from the layout at that time.
+ * Positions are computed when the command executes, from the layout at that time. The shape resized is that of the
+ * element with `elementId` when the command is created, even if it is renamed before it executes.
  *
  * @throws Error when the document has no such plane, when the element has no shape on it, when the shape cannot be
  * resized, when `bounds` is not finite or smaller than the shape's minimum size, or when it would leave out what the
@@ -56,7 +57,9 @@ export function resizeShape(document: BpmnDocument, planeId: string, elementId: 
     const attached = view.shapes.filter(candidate => candidate.attachedToId === elementId).map(candidate => candidate.elementId);
     const ends = new Set([elementId, ...attached]);
     const edges = [...new Set(view.edges.filter(edge => ends.has(edge.sourceId ?? '') || ends.has(edge.targetId ?? '')).map(edge => edge.elementId))];
-    return layoutCommand([elementId, ...attached, ...edges], () => planResize(document, planeId, elementId, target));
+    // The element, not its id, so an earlier command in the same compound renaming it cannot change what is resized.
+    const element = document.element(elementId)!;
+    return layoutCommand([elementId, ...attached, ...edges], () => planResize(document, planeId, String(element.id), target));
 }
 
 function planResize(document: BpmnDocument, planeId: string, elementId: string, bounds: Bounds): Change[] {
