@@ -194,29 +194,110 @@ test('draws problem markers with every message, on shapes and edges, and keeps t
     await expect(cell(harness, 'Review::problem')).toHaveCount(0);
 });
 
-for (const readOnly of [false, true]) {
-    test(`nothing can be moved, ${readOnly ? 'read-only' : 'editable'}`, async ({ harness }) => {
-        await loaded(harness, 'order.bpmn', { readOnly });
-        // A drag pans the canvas, so the shape keeps its place relative to the others.
-        const offset = async () => {
-            const [charge, start] = [await cell(harness, 'Charge').boundingBox(), await cell(harness, 'Start').boundingBox()];
-            return { x: charge!.x - start!.x, y: charge!.y - start!.y, width: charge!.width, height: charge!.height };
-        };
-        const before = await offset();
-        const original = await fixture('order.bpmn');
-        await cell(harness, 'Charge').hover();
-        const box = (await cell(harness, 'Charge').boundingBox())!;
-        await harness.mouse.down();
-        await harness.mouse.move(box.x + 200, box.y + 120, { steps: 5 });
-        await harness.mouse.up();
-        expect(await offset()).toEqual(before);
-        const { xml } = await call<{ xml: string }>(harness, 'save');
-        const bounds = (text: string) => text.match(/<bpmndi:BPMNShape id="Charge_di"[\s\S]*?<dc:Bounds([^>]*)>/)?.[1].match(/\d+(\.\d+)?/g);
-        expect(bounds(xml)).toBeDefined();
-        expect(bounds(xml)).toEqual(bounds(original));
-        expect(await call(harness, 'undo')).toBe(false);
-    });
+/** The bounds the saved document gives the shape with `id`. */
+async function savedBounds(page: Page, id: string): Promise<number[]> {
+    const { xml } = await call<{ xml: string }>(page, 'save');
+    const attributes = xml.match(new RegExp(`<bpmndi:BPMNShape id="${id}_di"[\\s\\S]*?<dc:Bounds([^>]*)>`))?.[1] ?? '';
+    return [...attributes.matchAll(/"(-?\d+(?:\.\d+)?)"/g)].map(match => Number(match[1]));
 }
+
+test('dragging a shape moves it in the document, its label following, and the keyboard undoes and redoes it', async ({ harness }) => {
+    await loaded(harness, 'order.bpmn');
+    const original = await savedBounds(harness, 'Gateway');
+    const label = await cell(harness, 'Gateway::label').boundingBox();
+    const box = (await cell(harness, 'Gateway').boundingBox())!;
+
+    await harness.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await harness.mouse.down();
+    await harness.mouse.move(box.x + box.width / 2 + 60, box.y + box.height / 2 + 40, { steps: 5 });
+    // The label follows while the shape is dragged.
+    const [during, shape] = [(await cell(harness, 'Gateway::label').boundingBox())!, (await cell(harness, 'Gateway').boundingBox())!];
+    expect(Math.abs(during.x - label!.x - (shape.x - box.x))).toBeLessThan(1);
+    expect(Math.abs(during.y - label!.y - (shape.y - box.y))).toBeLessThan(1);
+    await harness.mouse.up();
+
+    const moved = await savedBounds(harness, 'Gateway');
+    expect(moved[0]).toBeGreaterThan(original[0]);
+    expect(moved[1]).toBeGreaterThan(original[1]);
+    expect(moved.slice(2)).toEqual(original.slice(2));
+    const changes = await harness.evaluate(() => (window as unknown as { harness: Harness }).harness.events.filter(event => event.type === 'change'));
+    expect(changes).toHaveLength(1);
+    expect(changes[0]).toMatchObject({ isDirty: true, canUndo: true });
+    // The gateway, its label with it, and the edges at its ends.
+    expect(changes[0].elementIds).toEqual(['Gateway', 'Flow_2', 'Flow_3']);
+    expect(await selections(harness)).toEqual([{ elementIds: ['Gateway'], primary: { id: 'Gateway', type: 'bpmn:ExclusiveGateway', name: 'Paid?' } }]);
+
+    await harness.keyboard.press('Control+z');
+    expect(await savedBounds(harness, 'Gateway')).toEqual(original);
+    await harness.keyboard.press('Control+Shift+z');
+    expect(await savedBounds(harness, 'Gateway')).toEqual(moved);
+    await harness.keyboard.press('Control+z');
+    await harness.keyboard.press('Control+y');
+    expect(await savedBounds(harness, 'Gateway')).toEqual(moved);
+});
+
+test('a label and an edge cannot be dragged on their own, on screen or in the document', async ({ harness }) => {
+    await loaded(harness, 'order.bpmn');
+    const edge = () => cell(harness, 'Flow_2').locator('path').first().getAttribute('d');
+    // Where the label is relative to its gateway: a drag on the label pans the canvas, which moves both.
+    const labelOffset = async () => {
+        const [label, gateway] = [(await cell(harness, 'Gateway::label').boundingBox())!, (await cell(harness, 'Gateway').boundingBox())!];
+        return { x: label.x - gateway.x, y: label.y - gateway.y };
+    };
+    const [edgeBefore, labelBefore] = [await edge(), await labelOffset()];
+    for (const id of ['Gateway::label', 'Flow_2']) {
+        const box = (await cell(harness, id).boundingBox())!;
+        await harness.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        await harness.mouse.down();
+        await harness.mouse.move(box.x + 80, box.y + 60, { steps: 5 });
+        await harness.mouse.up();
+    }
+    expect(await edge()).toBe(edgeBefore);
+    expect(await labelOffset()).toEqual(labelBefore);
+    expect(await call(harness, 'undo')).toBe(false);
+});
+
+test('an undo during a drag cancels the drag, so its drop is no edit', async ({ harness }) => {
+    await loaded(harness, 'order.bpmn');
+    const original = await savedBounds(harness, 'Gateway');
+    const drag = async (finish: () => Promise<void>) => {
+        const box = (await cell(harness, 'Gateway').boundingBox())!;
+        await harness.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        await harness.mouse.down();
+        await harness.mouse.move(box.x + box.width / 2 + 60, box.y + box.height / 2 + 40, { steps: 5 });
+        await finish();
+        await harness.mouse.up();
+    };
+    await drag(async () => undefined);
+    const moved = await savedBounds(harness, 'Gateway');
+    expect(moved).not.toEqual(original);
+
+    // Undo while the second drag is held: the drop that follows applies nothing, and redo is still there.
+    await drag(() => harness.keyboard.press('Control+z'));
+    expect(await savedBounds(harness, 'Gateway')).toEqual(original);
+    expect(await call(harness, 'redo')).toBe(true);
+    expect(await savedBounds(harness, 'Gateway')).toEqual(moved);
+});
+
+test('nothing can be moved when read-only, and the keyboard does not undo', async ({ harness }) => {
+    await loaded(harness, 'order.bpmn', { readOnly: true });
+    const original = await savedBounds(harness, 'Charge');
+    // A drag pans the canvas, so the shape keeps its place relative to the others.
+    const offset = async () => {
+        const [charge, start] = [await cell(harness, 'Charge').boundingBox(), await cell(harness, 'Start').boundingBox()];
+        return { x: charge!.x - start!.x, y: charge!.y - start!.y, width: charge!.width, height: charge!.height };
+    };
+    const before = await offset();
+    const box = (await cell(harness, 'Charge').boundingBox())!;
+    await harness.mouse.move(box.x + 10, box.y + 10);
+    await harness.mouse.down();
+    await harness.mouse.move(box.x + 210, box.y + 130, { steps: 5 });
+    await harness.mouse.up();
+    expect(await offset()).toEqual(before);
+    expect(await savedBounds(harness, 'Charge')).toEqual(original);
+    await harness.keyboard.press('Control+z');
+    expect(await call(harness, 'undo')).toBe(false);
+});
 
 test('fits a document loaded while the container had no size once the container is shown', async ({ harness }) => {
     await harness.evaluate(() => {

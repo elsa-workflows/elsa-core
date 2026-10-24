@@ -9,6 +9,7 @@
 export type { Command } from './command-stack.js';
 export { compound } from './command-stack.js';
 export { updateProperties } from './commands.js';
+export { moveShapes } from './move.js';
 export type { BpmnEdgeView, BpmnPlane, BpmnPlaneView, BpmnReadResult, BpmnShapeView, Bounds, Point } from './document.js';
 export { BpmnDocument } from './document.js';
 export type { BpmnModelingSessionOptions } from './session.js';
