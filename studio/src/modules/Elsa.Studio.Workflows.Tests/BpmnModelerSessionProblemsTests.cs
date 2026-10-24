@@ -97,12 +97,13 @@ public class BpmnModelerSessionProblemsTests
         await _session.EnsureLoadedAsync();
         _session.AttachCanvas(_canvas);
         _session.CanvasLoaded(new(true, null, []), _session.DocumentVersion);
+        var staleAnalysis = _session.Analysis;
         _xml.AcceptsPut("\"REVISION-2\"");
         Edit();
 
         await _session.SaveAsync();
         analysis.SetResult(new(new BpmnImportAnalysisModel { Refusal = new() { Message = "Stale.", ElementIds = ["Charge"] } }));
-        await Task.Yield();
+        await staleAnalysis;
 
         Assert.Empty(_session.Problems);
         Assert.Equal([[]], _canvas.AppliedMarkers);
@@ -158,12 +159,13 @@ public class BpmnModelerSessionProblemsTests
         await session.EnsureLoadedAsync();
         session.AttachCanvas(_canvas);
         session.CanvasLoaded(new(true, null, []), session.DocumentVersion);
+        var formerAnalysis = session.Analysis;
 
         _analyzer.Analyzes = _ => Analysis(null, Issue("Degraded", "Timer simplified.", "Wait"));
         session.ProcessId = "second-process";
         await session.Analysis;
         former.SetResult(new(new BpmnImportAnalysisModel { Refusal = new() { Message = "Stale.", ElementIds = ["Charge"] } }));
-        await Task.Yield();
+        await formerAnalysis;
 
         Assert.Equal(["first-process", "second-process"], _analyzer.AnalyzedProcessIds);
         Assert.Equal(["Wait"], Assert.Single(session.Problems).ElementIds);
