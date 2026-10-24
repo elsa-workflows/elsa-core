@@ -2,8 +2,8 @@
  * The X6 BPMN designer: BPMN designer contract version 1 on AntV X6 and the shared modeling kernel.
  *
  * The kernel's session holds the document and its undo history; X6 only draws it, one plane at a time, and is redrawn
- * from the document after every edit. A gesture becomes a kernel command: dragging a shape moves it, and the keyboard
- * undoes and redoes. Elements are identified by their BPMN element id everywhere.
+ * from the document after every edit. A gesture becomes a kernel command: dragging a shape moves it, dragging a corner
+ * of the selected shape resizes it, and the keyboard undoes and redoes. Elements are identified by their BPMN element id everywhere.
  */
 import { Graph } from '@antv/x6';
 import type {
@@ -19,7 +19,7 @@ import type {
     BpmnSelectionEvent,
     BpmnSetBindingResult
 } from '../../../Elsa.Studio.Bpmn/ClientLib/src/index.js';
-import { BpmnModelingSession, type Bounds, moveShapes, type Point } from '../../../Elsa.Studio.Bpmn/ClientLib/src/modeling/index.js';
+import { BpmnModelingSession, type Bounds, minimumSize, moveShapes, type Point, resizeShape } from '../../../Elsa.Studio.Bpmn/ClientLib/src/modeling/index.js';
 import { type PlaneCells, planeCells } from './cells.js';
 import { indexPlanes, type PlaneIndex } from './planes.js';
 import { registerShapes, SHAPES } from './shapes.js';
@@ -28,6 +28,9 @@ const CONTAINER_CLASS = 'elsa-x6-designer';
 const STATE_CLASSES = ['elsa-faulted', 'elsa-blocked', 'elsa-active', 'elsa-completed', 'elsa-canceled'];
 const PROBLEM_CLASSES = ['elsa-problem-error', 'elsa-problem-warning'];
 const SELECTED_CLASS = 'elsa-selected';
+const HANDLE_SIZE = 8;
+const CORNERS = ['nw', 'ne', 'sw', 'se'] as const;
+type Corner = (typeof CORNERS)[number];
 const DISPOSED = 'This BPMN designer has been disposed.';
 
 export function createDesigner(container: HTMLElement, options: BpmnDesignerOptions = {}): BpmnDesigner {
@@ -84,8 +87,11 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
     // Kept by element id across plane changes and edits, and drawn for the elements the current plane shows.
     const stats = new Map<string, BpmnElementStats>();
     const markers = new Map<string, BpmnElementMarker[]>();
-    // The shape being dragged, and where each cell that follows it started.
-    let dragging: { elementId: string; start: Point; followers: Map<string, Point> } | null = null;
+    // The shape being dragged and where each cell that follows it started, or the corner of the shape being resized.
+    let dragging:
+        | { kind: 'move'; elementId: string; start: Point; followers: Map<string, Point> }
+        | { kind: 'resize'; elementId: string; corner: Corner; start: Bounds; resized: Bounds }
+        | null = null;
     // Loads run one after another, so the last one called is the one that shows.
     let loading: Promise<unknown> = Promise.resolve();
     let disposed = false;
@@ -165,6 +171,24 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
             }
             if (elementId === selected) view.addClass(SELECTED_CLASS);
         }
+        target.removeCells(target.getCells().filter(cell => cell.id.includes('::resize-')));
+        const bounds = selected ? drawn.bounds.get(selected) : undefined;
+        if (selected && bounds && resizeLimit(selected)) {
+            for (const corner of CORNERS) target.addNode(handleCell(selected, corner, bounds));
+        }
+    }
+
+    /**
+     * How far the shape drawn for `elementId` can shrink: its smallest size, and the bounds of what it contains, which
+     * it must keep containing. `undefined` when it cannot be resized here.
+     */
+    function resizeLimit(elementId: string): ResizeLimit | undefined {
+        const shapes = !readOnly && planes && currentKey ? planes.plane(currentKey)?.shapes : undefined;
+        const shape = shapes?.find(candidate => candidate.elementId === elementId);
+        const minimum = shape ? minimumSize(shape) : undefined;
+        if (!shapes || !minimum) return undefined;
+        const content = shapes.filter(candidate => candidate.parentId === elementId && candidate.type !== 'bpmn:BoundaryEvent').map(candidate => candidate.bounds);
+        return { minimum, content: content.length > 0 ? union(content) : undefined };
     }
 
     function renderBreadcrumbs(): void {
@@ -214,12 +238,19 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
      * activity, as the kernel requires; a label, badge or edge does not move on its own.
      */
     function isMovable(cellId: string): boolean {
+        if (cellId.includes('::resize-')) return true;
         const type = drawn?.types.get(cellId);
         return !cellId.includes('::') && type !== undefined && !drawn!.midpoints.has(cellId) && type !== 'bpmn:Lane' && type !== 'bpmn:BoundaryEvent';
     }
 
     // While a shape is dragged, what moves with it follows on screen; its edges are redrawn from the document on drop.
     graph.on('node:move', ({ node }) => {
+        const handle = /^(.*)::resize-(nw|ne|sw|se)$/.exec(String(node.id));
+        if (handle) {
+            const start = drawn?.bounds.get(handle[1]);
+            if (start) dragging = { kind: 'resize', elementId: handle[1], corner: handle[2] as Corner, start, resized: start };
+            return;
+        }
         const elementId = String(node.id);
         const document = session.document;
         const planeId = diagramPlaneId();
@@ -231,10 +262,27 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
             const id = String(cell.id);
             if (id !== elementId && moved.has(elementOf(id)) && !drawn!.midpoints.has(elementOf(id))) followers.set(id, cell.getPosition());
         }
-        dragging = { elementId, start: { x: start.x, y: start.y }, followers };
+        dragging = { kind: 'move', elementId, start: { x: start.x, y: start.y }, followers };
     });
     graph.on('node:change:position', ({ node, options }) => {
-        if (!dragging || String(node.id) !== dragging.elementId || !options.ui) return;
+        if (!options.ui || !dragging) return;
+        if (dragging.kind === 'resize') {
+            if (String(node.id) !== `${dragging.elementId}::resize-${dragging.corner}`) return;
+            const { x, y } = node.getPosition();
+            dragging.resized = resizedBounds(dragging.start, dragging.corner, { x: x + HANDLE_SIZE / 2, y: y + HANDLE_SIZE / 2 }, resizeLimit(dragging.elementId)!);
+            const shape = graph!.getCellById(dragging.elementId);
+            if (shape?.isNode()) {
+                shape.setPosition(dragging.resized.x, dragging.resized.y);
+                shape.resize(dragging.resized.width, dragging.resized.height);
+            }
+            // Every handle stays on its corner, the dragged one too when the resize stops at a limit.
+            for (const corner of CORNERS) {
+                const { x: handleX, y: handleY } = handleCell(dragging.elementId, corner, dragging.resized);
+                graph!.getCellById(`${dragging.elementId}::resize-${corner}`)?.setProp('position', { x: handleX, y: handleY });
+            }
+            return;
+        }
+        if (String(node.id) !== dragging.elementId) return;
         const { x, y } = node.getPosition();
         const delta = { x: x - dragging.start.x, y: y - dragging.start.y };
         for (const [id, from] of dragging.followers) graph!.getCellById(id)?.setProp('position', { x: from.x + delta.x, y: from.y + delta.y });
@@ -244,7 +292,21 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
         dragging = null;
         const document = session.document;
         const planeId = diagramPlaneId();
-        if (!current || String(node.id) !== current.elementId || !document || !planeId) return;
+        if (current?.kind === 'resize' && document && planeId) {
+            // Not rounded: the resize may have stopped at content whose bounds are fractional, and rounding could cut it.
+            const { x, y, width, height } = current.resized;
+            const bounds = { x, y, width, height };
+            const unchanged = (['x', 'y', 'width', 'height'] as const).every(name => bounds[name] === current.start[name]);
+            try {
+                if (unchanged) render(false);
+                else session.execute(resizeShape(document, planeId, current.elementId, bounds));
+            } catch (error) {
+                console.error('elsa-x6-designer: a resize was refused.', error);
+                render(false);
+            }
+            return;
+        }
+        if (current?.kind !== 'move' || String(node.id) !== current.elementId || !document || !planeId) return;
         const { x, y } = node.getPosition();
         const delta = { x: Math.round(x - current.start.x), y: Math.round(y - current.start.y) };
         if (current.elementId !== selected) setSelection(current.elementId);
@@ -436,6 +498,52 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
             container.classList.remove(CONTAINER_CLASS);
         }
     } satisfies BpmnDesigner;
+}
+
+/** A resize handle centred on one corner of `bounds`. */
+function handleCell(elementId: string, corner: Corner, bounds: Bounds) {
+    const x = corner.endsWith('w') ? bounds.x : bounds.x + bounds.width;
+    const y = corner.startsWith('n') ? bounds.y : bounds.y + bounds.height;
+    return {
+        id: `${elementId}::resize-${corner}`,
+        shape: SHAPES.handle,
+        x: x - HANDLE_SIZE / 2,
+        y: y - HANDLE_SIZE / 2,
+        width: HANDLE_SIZE,
+        height: HANDLE_SIZE,
+        zIndex: 450,
+        attrs: { body: { cursor: corner === 'nw' || corner === 'se' ? 'nwse-resize' : 'nesw-resize' } }
+    };
+}
+
+interface ResizeLimit {
+    minimum: { width: number; height: number };
+    /** The bounds of what the shape contains. */
+    content?: Bounds;
+}
+
+/**
+ * `start` with its `corner` dragged to `point` and the opposite corner fixed, no smaller than the minimum and still
+ * containing the content, as the bpmn-js designer stops a resize.
+ */
+function resizedBounds(start: Bounds, corner: Corner, point: Point, { minimum, content }: ResizeLimit): Bounds {
+    const right = start.x + start.width;
+    const bottom = start.y + start.height;
+    const west = corner.endsWith('w');
+    const north = corner.startsWith('n');
+    const contentWidth = content ? (west ? right - content.x : content.x + content.width - start.x) : 0;
+    const contentHeight = content ? (north ? bottom - content.y : content.y + content.height - start.y) : 0;
+    const width = Math.max(minimum.width, contentWidth, west ? right - point.x : point.x - start.x);
+    const height = Math.max(minimum.height, contentHeight, north ? bottom - point.y : point.y - start.y);
+    return { x: west ? right - width : start.x, y: north ? bottom - height : start.y, width, height };
+}
+
+function union(bounds: readonly Bounds[]): Bounds {
+    const x = Math.min(...bounds.map(candidate => candidate.x));
+    const y = Math.min(...bounds.map(candidate => candidate.y));
+    const width = Math.max(...bounds.map(candidate => candidate.x + candidate.width)) - x;
+    const height = Math.max(...bounds.map(candidate => candidate.y + candidate.height)) - y;
+    return { x, y, width, height };
 }
 
 type ElementState = 'faulted' | 'blocked' | 'active' | 'canceled' | 'completed' | 'idle';

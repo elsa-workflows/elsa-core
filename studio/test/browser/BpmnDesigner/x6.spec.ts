@@ -299,6 +299,94 @@ test('nothing can be moved when read-only, and the keyboard does not undo', asyn
     expect(await call(harness, 'undo')).toBe(false);
 });
 
+// An expanded subprocess holding a task, with a timer on its bottom border.
+const CONTAINER = `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Definitions_Container" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="Process_Container" isExecutable="true">
+    <bpmn:subProcess id="Sub" name="Sub"><bpmn:task id="Inner" name="Inner" /></bpmn:subProcess>
+    <bpmn:boundaryEvent id="Timer" attachedToRef="Sub"><bpmn:timerEventDefinition /></bpmn:boundaryEvent>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_Container">
+    <bpmndi:BPMNPlane id="Plane_Container" bpmnElement="Process_Container">
+      ${shape('Sub', 100, 100, 300, 200, ' isExpanded="true"')}
+      ${shape('Inner', 150, 150, 100, 80)}
+      ${shape('Timer', 282, 282, 36, 36)}
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>`;
+
+test('dragging a corner of a selected expanded subprocess resizes it, its boundary event following, and undo puts it back', async ({ harness }) => {
+    await loadedXml(harness, CONTAINER);
+    expect(await call(harness, 'select', 'Inner')).toBe(true);
+    // A task cannot be resized, so it shows no handles.
+    await expect(harness.locator('#canvas .x6-cell[data-cell-id^="Inner::resize-"]')).toHaveCount(0);
+
+    expect(await call(harness, 'select', 'Sub')).toBe(true);
+    await expect(harness.locator('#canvas .x6-cell[data-cell-id^="Sub::resize-"]')).toHaveCount(4);
+    const original = await savedBounds(harness, 'Sub');
+    const timer = await savedBounds(harness, 'Timer');
+    const handle = (await cell(harness, 'Sub::resize-se').boundingBox())!;
+    await harness.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
+    await harness.mouse.down();
+    await harness.mouse.move(handle.x + 80, handle.y + 60, { steps: 5 });
+    await harness.mouse.up();
+
+    const resized = await savedBounds(harness, 'Sub');
+    expect(resized.slice(0, 2)).toEqual(original.slice(0, 2));
+    expect(resized[2]).toBeGreaterThan(original[2]);
+    expect(resized[3]).toBeGreaterThan(original[3]);
+    // The timer is nearer the right and bottom sides, so it follows them.
+    const moved = await savedBounds(harness, 'Timer');
+    expect(moved[0] - timer[0]).toBe(resized[2] - original[2]);
+    expect(moved[1] - timer[1]).toBe(resized[3] - original[3]);
+    // The handles are drawn at the new corners.
+    await expect(harness.locator('#canvas .x6-cell[data-cell-id^="Sub::resize-"]')).toHaveCount(4);
+
+    expect(await call(harness, 'undo')).toBe(true);
+    expect(await savedBounds(harness, 'Sub')).toEqual(original);
+    expect(await savedBounds(harness, 'Timer')).toEqual(timer);
+});
+
+test('every handle stays on its corner during a resize, and a resize that stops at fractional content is kept', async ({ harness }) => {
+    await loadedXml(harness, CONTAINER.replace(shape('Inner', 150, 150, 100, 80), shape('Inner', 150.4, 150, 100, 80)));
+    expect(await call(harness, 'select', 'Sub')).toBe(true);
+    const handle = (await cell(harness, 'Sub::resize-se').boundingBox())!;
+    await harness.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
+    await harness.mouse.down();
+    await harness.mouse.move(handle.x + 60, handle.y + 40, { steps: 5 });
+    const centre = async (corner: string) => {
+        const box = (await cell(harness, `Sub::resize-${corner}`).boundingBox())!;
+        return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    };
+    const sub = (await cell(harness, 'Sub').locator('.elsa-x6-outline').boundingBox())!;
+    for (const [corner, x, y] of [['ne', sub.x + sub.width, sub.y], ['sw', sub.x, sub.y + sub.height], ['se', sub.x + sub.width, sub.y + sub.height]] as const) {
+        const at = await centre(corner);
+        expect(Math.abs(at.x - x), corner).toBeLessThan(2);
+        expect(Math.abs(at.y - y), corner).toBeLessThan(2);
+    }
+    // Past the task inside, which now ends at x 250.4: the resize stops there, fractional, and the drop keeps it.
+    await harness.mouse.move(handle.x - 400, handle.y - 400, { steps: 5 });
+    await harness.mouse.up();
+    expect(await savedBounds(harness, 'Sub')).toEqual([100, 100, 150.4, 130]);
+});
+
+test('a resize stops where the shape still contains its content, and a read-only designer shows no handles', async ({ harness }) => {
+    await loadedXml(harness, CONTAINER);
+    expect(await call(harness, 'select', 'Sub')).toBe(true);
+    const handle = (await cell(harness, 'Sub::resize-se').boundingBox())!;
+    await harness.mouse.move(handle.x + handle.width / 2, handle.y + handle.height / 2);
+    await harness.mouse.down();
+    await harness.mouse.move(handle.x - 400, handle.y - 400, { steps: 5 });
+    await harness.mouse.up();
+    // It stops at the task inside, which reaches x 250 and y 230; that is larger than the 140 by 120 minimum.
+    expect(await savedBounds(harness, 'Sub')).toEqual([100, 100, 150, 130]);
+    expect(await call(harness, 'undo')).toBe(true);
+
+    await loadedXml(harness, CONTAINER, { readOnly: true });
+    expect(await call(harness, 'select', 'Sub')).toBe(true);
+    await expect(harness.locator('#canvas .x6-cell[data-cell-id^="Sub::resize-"]')).toHaveCount(0);
+});
+
 test('fits a document loaded while the container had no size once the container is shown', async ({ harness }) => {
     await harness.evaluate(() => {
         document.getElementById('canvas')!.style.display = 'none';

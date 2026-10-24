@@ -54,7 +54,7 @@ It is a separate entry from the shared ClientLib's `src/index.ts`, so the bpmn-j
 | `BpmnDocument` | Reads and writes a document. Indexes its semantic elements by id, and its diagram planes. |
 | `planeView(planeId)` | What one plane draws, in a canvas's terms: shapes with bounds, labels, containers and attachments; edges with waypoints and ends. |
 | `CommandStack` | Undo, redo and dirty tracking by state id, ported from the bpmn-js designer. |
-| Commands | Undoable edits. Part 1 has `updateProperties` and `setBinding`; step 3 adds `moveShapes`; later steps add commands that change semantics and layout together. |
+| Commands | Undoable edits. Part 1 has `updateProperties` and `setBinding`; step 3 adds `moveShapes` and `resizeShape`; later steps add commands that change semantics and layout together. |
 | `BpmnModelingSession` | The contract's canvas-independent half: `load`, `save`, `getBinding`, `setBinding`, `undo`, `redo` and the change event. |
 
 Undo and redo live in the kernel, not in X6's History plugin, because the X6 graph is only a projection: undoing a
@@ -138,6 +138,17 @@ which subprocess, participant or lane an element belongs to. It throws for:
 - an unknown plane;
 - a delta that is not finite.
 
+`resizeShape(document, planeId, elementId, bounds)` gives a shape new bounds. Following the bpmn-js designer, it resizes
+only an expanded subprocess (minimum 140 by 120), a text annotation (50 by 30) and a group (50 by 50); `minimumSize`
+says which.
+
+- A boundary event attached to the shape stays on its border, keeping its distance from the nearer side on each axis.
+- An edge end on the border moves the same way, and the edge stays orthogonal as a move keeps it.
+- An edge end on one of those boundary events moves with the event.
+- What an expanded subprocess contains stays where it is, and the new bounds must still contain it.
+
+It throws for a shape it cannot resize, bounds below the minimum or not finite, and bounds that leave out the content.
+
 ### Dirty tracking
 
 Each executed command gets a new state id; undo and redo move along the same history. The document is clean exactly when
@@ -153,9 +164,11 @@ These are recorded here until step 9 writes the designer's limits document.
 - A document with duplicate ids keeps the first element with each id in the index, as bpmn-moddle resolves references
   to it.
 
-What the designer draws and edits, as of step 3a:
+What the designer draws and edits, as of step 3b:
 
-- Shapes can be moved by dragging, one at a time; nothing can yet be resized, created or deleted (steps 3b to 7).
+- Shapes can be moved by dragging, one at a time. A selected expanded subprocess, text annotation or group shows four
+  corner handles that resize it; the resize stops at its minimum size and at what it contains. Nothing can yet be
+  created or deleted (steps 3c to 7). Participants and lanes are resized in step 6, with their lanes.
   Dragging snaps a shape's position to a 10-pixel grid. Edges are redrawn when the drag ends, not during it.
 - A shape dropped onto another subprocess, participant or lane stays in the one it was in.
 - Lanes, labels and edges cannot be dragged. A boundary event moves only with its activity, until step 5 attaches and

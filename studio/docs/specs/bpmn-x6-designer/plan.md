@@ -77,3 +77,20 @@ the X6 designer's own Playwright tests, the kernel tests, and the cross-designer
   - labels and edges that cannot be dragged;
   - a read-only designer where nothing moves and the keyboard does nothing.
 - The shared conformance suite still passes against the X6 designer.
+
+## Step 3b verification
+
+- Kernel tests (`modeling-resize.test.ts`) cover:
+  - a resized expanded subprocess, with its boundary event and edge ends following the sides they are nearer;
+  - edge ends on a side that moves;
+  - a text annotation and its association;
+  - two resizes in one compound;
+  - refusals: tasks, events, boundary events, collapsed subprocesses, sizes under the minimum, bounds that leave out
+    the content;
+  - undo back to the original XML.
+- `x6.spec.ts` covers:
+  - handles shown only on a resizable selected shape;
+  - a corner drag that resizes in the document, with the boundary event following;
+  - the resize stopping at the content;
+  - undo;
+  - no handles when read-only.
