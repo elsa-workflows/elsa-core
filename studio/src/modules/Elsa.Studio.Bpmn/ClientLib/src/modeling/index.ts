@@ -9,6 +9,7 @@
 export type { Command } from './command-stack.js';
 export { compound } from './command-stack.js';
 export { updateProperties } from './commands.js';
+export { CREATABLE_TYPES, creatableSize, createShape } from './create.js';
 export { deleteElements } from './delete.js';
 export { moveShapes } from './move.js';
 export { minimumSize, resizeShape } from './resize.js';

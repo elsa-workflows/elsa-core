@@ -23,7 +23,9 @@ The steps that build the designer [spec.md](spec.md) describes, one pull request
    - 3b. resizing;
    - 3c. deleting, with what depends on the deleted element;
    - 3d. inline name editing.
-4. **The palette, creating elements, and replacing an element with another type.**
+4. **The palette, creating elements, and replacing an element with another type**, in two pull requests:
+   - 4a. the `createShape` command and the palette;
+   - 4b. replacing an element with another type, and creating groups.
 5. **Connections:** sequence-flow rules, associations, edge editing, and attaching and detaching boundary events.
 6. **Pools, lanes and message flows.** Includes a check that a document the X6 designer saves opens in bpmn-js with no
    warnings.
@@ -124,3 +126,21 @@ the X6 designer's own Playwright tests, the kernel tests, and the cross-designer
   - a breadcrumb pressed during an edit saving the name and going back in one click;
   - a read-only designer opening no editor.
 - The conformance suite still passes against both designers.
+
+## Step 4a verification
+
+- Kernel tests (`modeling-create.test.ts`) cover:
+  - a task centred on the point in its process, with its id and shape id, and undo and redo;
+  - the innermost expanded subprocess, a collapsed subprocess on its parent's plane, and a collapsed subprocess's own
+    plane;
+  - a participant's process and its lane, and a text annotation outside every participant;
+  - a data object reference with its data object;
+  - each type's id prefix and size;
+  - a container moved away earlier in the same compound;
+  - refusals.
+- `x6.spec.ts` covers:
+  - an element dragged from the palette, created centred on the drop point, selected, and undone in one step;
+  - a click that arms an entry, the click that places it, and a new task opening for its name;
+  - a name being edited saved when an element is dragged from the palette;
+  - Escape giving up an armed create;
+  - the palette disabled on an older tool's subprocess page and absent when read-only.
