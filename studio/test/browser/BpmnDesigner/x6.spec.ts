@@ -628,6 +628,25 @@ test('a cancelled drag from the palette is given up, so a later release on the c
     expect((await call<{ xml: string }>(harness, 'save')).xml).toBe(before);
 });
 
+test('a group created from the palette is named through its category value', async ({ harness }) => {
+    await loaded(harness, 'order.bpmn');
+    const target = await blankPoint(harness);
+
+    await entry(harness, 'Create group').click();
+    await harness.mouse.click(target.x, target.y - 100);
+    const id = await lastSelected(harness);
+    expect(id).toMatch(/^Group_[0-9a-z]{7}$/);
+    await harness.keyboard.press('F2');
+    await editor(harness).fill('Billing');
+    await editor(harness).press('Enter');
+
+    const { xml } = await call<{ xml: string }>(harness, 'save');
+    expect(xml).toMatch(new RegExp(`<bpmn:group id="${id}" categoryValueRef="(CategoryValue_[0-9a-z]{7})" />`));
+    expect(xml).toMatch(/<bpmn:categoryValue id="CategoryValue_[0-9a-z]{7}" value="Billing" \/>/);
+    // A group draws its name in its own shape.
+    await expect(cell(harness, id)).toContainText('Billing');
+});
+
 test('Escape gives up an armed create, a read-only designer has no palette, and a page an older tool drew disables it', async ({ harness }) => {
     await loaded(harness, 'order.bpmn');
     const before = (await call<{ xml: string }>(harness, 'save')).xml;

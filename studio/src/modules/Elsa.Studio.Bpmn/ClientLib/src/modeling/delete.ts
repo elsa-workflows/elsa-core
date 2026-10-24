@@ -20,6 +20,8 @@ const CONNECTIONS = ['bpmn:SequenceFlow', 'bpmn:MessageFlow', 'bpmn:Association'
  * - the boundary events attached to anything deleted;
  * - the sequence flows, message flows, associations and data associations with a deleted end;
  * - a data object whose last reference is deleted;
+ * - a group's category value when its last group is deleted, unless a flow element still refers to it through its
+ *   own `categoryValueRef`, and a category when its last value is;
  * - the shapes and edges that draw any of it, and the diagram of a deleted subprocess's own plane.
  *
  * References the rest of the document holds to what is deleted are removed: a flow node's `incoming` and `outgoing`, a
@@ -88,6 +90,26 @@ function removalSet(document: BpmnDocument, elements: readonly ModdleElement[]):
         for (const [dataObject, owners] of references) {
             if (!removed.has(dataObject) && owners.every(owner => removed.has(owner))) {
                 add(dataObject);
+                grew = true;
+            }
+        }
+        // So does a group's category value with its last group, unless a flow element still refers to it, and a category
+        // with its last value.
+        const referrers = new Map<ModdleElement, ModdleElement[]>();
+        walk(document.definitions, element => {
+            if (!element.$instanceOf('bpmn:Group') && !element.$instanceOf('bpmn:FlowElement')) return;
+            for (const value of referencesOf(element, 'categoryValueRef')) referrers.set(value, [...(referrers.get(value) ?? []), element]);
+        });
+        for (const [value, owners] of referrers) {
+            const category = value.$parent as ModdleElement | undefined;
+            const hasGroup = owners.some(owner => owner.$instanceOf('bpmn:Group'));
+            if (hasGroup && !removed.has(value) && owners.every(owner => removed.has(owner))) {
+                add(value);
+                grew = true;
+            }
+            const values = (category?.categoryValue as ModdleElement[] | undefined) ?? [];
+            if (category && !removed.has(category) && values.length > 0 && values.every(candidate => removed.has(candidate))) {
+                add(category);
                 grew = true;
             }
         }

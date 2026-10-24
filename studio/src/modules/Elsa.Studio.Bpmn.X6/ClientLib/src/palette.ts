@@ -27,6 +27,7 @@ const ENTRIES: readonly PaletteEntry[] = [
         title: 'Create data store reference',
         icon: '<path d="M4 6 L4 18 A8 3 0 0 0 20 18 L20 6 M4 6 A8 3 0 0 0 20 6 A8 3 0 0 0 4 6 M4 9 A8 3 0 0 0 20 9" stroke-width="1.5" />'
     },
+    { type: 'bpmn:Group', title: 'Create group', icon: '<rect x="3" y="3" width="18" height="18" rx="3" stroke-width="1.5" stroke-dasharray="4 2" />' },
     { type: 'bpmn:TextAnnotation', title: 'Create text annotation', icon: '<path d="M10 4 L5 4 L5 20 L10 20 M9 9 L19 9 M9 13 L19 13" stroke-width="1.5" />' }
 ];
 

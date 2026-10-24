@@ -140,6 +140,38 @@ describe('createShape', () => {
         expect(await save()).toContain(`<bpmn:dataObjectReference id="${id}" dataObjectRef="${dataObjectId}" />\n    <bpmn:dataObject id="${dataObjectId}" />`);
     });
 
+    it('creates a group with a category and value of its own in the definitions, inside or outside every participant', async () => {
+        const { session, document, original, save } = await loaded(COLLABORATION);
+        const inPool = createShape(document, 'Plane_1', 'bpmn:Group', { x: 300, y: 150 });
+        const outside = createShape(document, 'Plane_1', 'bpmn:Group', { x: 900, y: 150 });
+        const [id, categoryId, valueId] = inPool.elementIds;
+
+        session.execute(compound([inPool, outside]));
+
+        expect(categoryId).toMatch(/^Category_[0-9a-z]{7}$/);
+        expect(valueId).toMatch(/^CategoryValue_[0-9a-z]{7}$/);
+        expect(parentOf(document, id)).toBe('Process_1');
+        expect(parentOf(document, outside.elementIds[0])).toBe('Collaboration_1');
+        const xml = await save();
+        expect(xml).toContain(`<bpmn:group id="${id}" categoryValueRef="${valueId}" />`);
+        expect(xml).toContain(`<bpmn:category id="${categoryId}">\n    <bpmn:categoryValue id="${valueId}" />\n  </bpmn:category>`);
+        // A group is not a flow node, so no lane references it.
+        expect(xml).not.toContain(`<bpmn:flowNodeRef>${id}</bpmn:flowNodeRef>`);
+        expect(session.undo()).toBe(true);
+        expect(await save()).toBe(original);
+
+        // Its name, on the category value, is kept through an undo and redo of both.
+        expect(session.redo()).toBe(true);
+        session.execute(updateProperties(document, valueId, { value: 'Phase' }));
+        const named = await save();
+        expect(session.undo()).toBe(true);
+        expect(session.undo()).toBe(true);
+        expect(session.redo()).toBe(true);
+        expect(session.redo()).toBe(true);
+        expect(await save()).toBe(named);
+        expect(named).toContain(`<bpmn:categoryValue id="${valueId}" value="Phase" />`);
+    });
+
     it('gives each type the id prefix and size the bpmn-js designer gives it', async () => {
         const { document } = await loaded(PROCESS);
         const expected: Record<string, [RegExp, number, number]> = {
@@ -150,6 +182,7 @@ describe('createShape', () => {
             'bpmn:Task': [/^Activity_/, 100, 80],
             'bpmn:DataObjectReference': [/^DataObjectReference_/, 36, 50],
             'bpmn:DataStoreReference': [/^DataStoreReference_/, 50, 50],
+            'bpmn:Group': [/^Group_/, 300, 300],
             'bpmn:TextAnnotation': [/^TextAnnotation_/, 100, 30]
         };
         expect([...CREATABLE_TYPES].sort()).toEqual(Object.keys(expected).sort());
@@ -206,7 +239,7 @@ describe('createShape', () => {
     it('refuses an unknown plane or type, a position that is not finite, and a flow element outside every participant', async () => {
         const { document } = await loaded(PROCESS);
         expect(() => createShape(document, 'Nowhere', 'bpmn:Task', { x: 0, y: 0 })).toThrow("The document has no plane 'Nowhere'.");
-        for (const type of ['bpmn:Participant', 'bpmn:SubProcess', 'bpmn:Group', 'bpmn:SequenceFlow']) {
+        for (const type of ['bpmn:Participant', 'bpmn:SubProcess', 'bpmn:SequenceFlow']) {
             expect(() => createShape(document, 'Plane_1', type, { x: 0, y: 0 })).toThrow(`An element of type '${type}' cannot be created here.`);
         }
         expect(() => createShape(document, 'Plane_1', 'bpmn:Task', { x: Number.NaN, y: 0 })).toThrow('A create needs a finite position.');

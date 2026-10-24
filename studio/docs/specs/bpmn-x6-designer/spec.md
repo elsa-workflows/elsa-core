@@ -156,6 +156,8 @@ depends on them, as the bpmn-js designer does:
 - the boundary events attached to anything deleted;
 - the sequence flows, message flows, associations and data associations with a deleted end;
 - a data object whose last reference is deleted;
+- a group's category value when its last group is deleted, unless a flow element still refers to it through its own
+  `categoryValueRef`, and a category when its last value is;
 - every drawing of any of it.
 
 Every reference the rest of the document holds to what is deleted is removed, such as a flow node's `incoming` and
@@ -163,19 +165,20 @@ Every reference the rest of the document holds to what is deleted is removed, su
 It throws for an unknown element and for participants, lanes and processes, which step 6 deletes.
 
 `createShape(document, planeId, type, position)` creates a start, intermediate throw or end event, an exclusive gateway, a
-task, a data object reference, a data store reference or a text annotation, with its shape centred on `position` at the
-size the bpmn-js designer gives it:
+task, a data object reference, a data store reference, a group or a text annotation, with its shape centred on
+`position` at the size the bpmn-js designer gives it:
 
 - it goes into the innermost expanded subprocess or participant whose shape holds `position`, else into what the plane
   draws: its process, or the subprocess a collapsed subprocess's plane opens;
-- a text annotation outside every participant of a collaboration goes into the collaboration;
+- a text annotation or group outside every participant of a collaboration goes into the collaboration;
 - a flow node is also referenced by the innermost lane of its process that holds `position`;
-- a data object reference gets a data object of its own.
+- a data object reference gets a data object of its own;
+- a group gets a category of its own in the definitions, with one value that holds the group's name.
 
 Ids follow the bpmn-js designer: `Activity_`, `Event_`, `Gateway_` or the type's name, a random suffix, and `_di` added
 for the shape. The command's `elementIds` start with the new element's id. Where the element goes is worked out when the
 command executes. It throws for an unknown plane, a type it cannot create, a position that is not finite, and anything
-but a text annotation outside every participant of a collaboration.
+but a text annotation or group outside every participant of a collaboration.
 
 `replaceOptions(document, elementId)` lists what the bpmn-js designer's replace menu offers for an element, with its
 labels, without what the element already is: other kinds of task, other gateways, and other events and event
@@ -210,7 +213,7 @@ These are recorded here until step 9 writes the designer's limits document.
 - A document with duplicate ids keeps the first element with each id in the index, as bpmn-moddle resolves references
   to it.
 
-What the designer draws and edits, as of step 4b:
+What the designer draws and edits, as of step 4c:
 
 - Shapes can be moved by dragging, one at a time. A selected expanded subprocess, text annotation or group shows four
   corner handles that resize it; the resize stops at its minimum size and at what it contains. Delete or Backspace
@@ -221,10 +224,11 @@ What the designer draws and edits, as of step 4b:
   and ends with a text annotation, which bpmn-js adds from its context pad. Drag an entry onto the canvas, or click it
   and then click the canvas. Escape gives a create up. The new element is selected,
   and a new task or text annotation opens for its name or text, as in the bpmn-js designer. The palette has no hand,
-  lasso, space or connect tool, and no group, expanded subprocess or participant: groups come in step 4c, subprocesses
-  in step 7 and participants in step 6. It cannot be used from the keyboard. It is disabled on the page that shows
+  lasso, space or connect tool, and no expanded subprocess or participant: subprocesses come in step 7 and participants
+  in step 6. It cannot be used from the keyboard. It is disabled on the page that shows
   what an older tool drew for a collapsed subprocess on its parent's plane, until step 7, and absent when read-only.
-- A create outside every pool of a collaboration is refused, and nothing changes.
+- A create outside every pool of a collaboration is refused, and nothing changes, except for a text annotation or a
+  group, which goes into the collaboration.
 - A selected task, gateway or event shows a wrench beside its top-right corner. The wrench, or R, opens the menu of
   what `replaceOptions` offers; arrow keys move through it, Enter or a click replaces, and Escape or a press elsewhere
   closes it. The menu opens below the wrench, or on the side with more room, shortened to fit, when it does not fit
@@ -236,9 +240,11 @@ What the designer draws and edits, as of step 4b:
 - Lanes, labels and edges cannot be dragged. A boundary event moves only with its activity, until step 5 attaches and
   detaches them.
 - A double-click on an element, or F2 or Enter on the selected one, edits its name in a text box over its label; a
-  text annotation's text is edited the same way. Enter or leaving the box saves it as one `updateProperties` edit, an
-  empty name removing the name; Shift+Enter starts a new line; Escape gives up. A double-click on a collapsed
-  subprocess opens its plane instead, so F2 edits its name. A redraw during an edit gives the edit up.
+  text annotation's text is edited the same way, and a group's name is its category value's `value`, as in the
+  bpmn-js designer. A group without a category value has no name to edit. Enter or leaving the box saves it as one
+  `updateProperties` edit, an empty name removing the name; Shift+Enter starts a new line; Escape gives up. A
+  double-click on a collapsed subprocess opens its plane instead, so F2 edits its name. A redraw during an edit gives
+  the edit up.
 - A named edge without label layout is drawn with its name on its midpoint, as the bpmn-js designer places it. Naming
   an element does not add or resize its label layout.
 - Ctrl+Z (Cmd+Z) undoes, and Ctrl+Shift+Z or Ctrl+Y redoes, while the canvas has focus.

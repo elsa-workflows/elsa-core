@@ -161,6 +161,69 @@ describe('deleteElements', () => {
         expect((await session.save()).xml).toBe(original);
     });
 
+    it('deletes a group\'s category value with its last group, and the category with its last value', async () => {
+        const session = new BpmnModelingSession();
+        expect((await session.load(`<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:category id="Category"><bpmn:categoryValue id="Shared" value="Shared" /><bpmn:categoryValue id="Own" value="Own" /></bpmn:category>
+  <bpmn:process id="Process_1"><bpmn:group id="First" categoryValueRef="Shared" /><bpmn:group id="Second" categoryValueRef="Shared" /><bpmn:group id="Third" categoryValueRef="Own" /></bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_1">
+    <bpmndi:BPMNPlane id="Plane_1" bpmnElement="Process_1">
+      ${shape('First', 0, 0, 100, 100)}${shape('Second', 200, 0, 100, 100)}${shape('Third', 400, 0, 100, 100)}
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>`)).imported).toBe(true);
+        const document = session.document!;
+        const original = (await session.save()).xml;
+
+        // Another group still has the shared value.
+        session.execute(deleteElements(document, ['First']));
+        expect(document.element('Shared')).toBeDefined();
+        session.execute(deleteElements(document, ['Third']));
+        expect(document.element('Own')).toBeUndefined();
+        expect(document.element('Category')).toBeDefined();
+        session.execute(deleteElements(document, ['Second']));
+        expect(document.element('Shared')).toBeUndefined();
+        expect(document.element('Category')).toBeUndefined();
+
+        while (session.undo()) { /* back to the start */ }
+        expect((await session.save()).xml).toBe(original);
+    });
+
+    it('keeps a category value its last group shares with a task or a flow', async () => {
+        const session = new BpmnModelingSession();
+        expect((await session.load(`<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:category id="Category"><bpmn:categoryValue id="Phase" value="Phase" /></bpmn:category>
+  <bpmn:process id="Process_1">
+    <bpmn:task id="Tagged"><bpmn:categoryValueRef>Phase</bpmn:categoryValueRef></bpmn:task>
+    <bpmn:task id="Other" />
+    <bpmn:sequenceFlow id="Flow" sourceRef="Tagged" targetRef="Other"><bpmn:categoryValueRef>Phase</bpmn:categoryValueRef></bpmn:sequenceFlow>
+    <bpmn:group id="Only" categoryValueRef="Phase" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_1">
+    <bpmndi:BPMNPlane id="Plane_1" bpmnElement="Process_1">
+      ${shape('Tagged', 0, 0, 100, 80)}${shape('Other', 200, 0, 100, 80)}${shape('Only', 0, 200, 100, 100)}
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>`)).imported).toBe(true);
+        const document = session.document!;
+
+        session.execute(deleteElements(document, ['Only']));
+        expect(document.element('Phase')).toBeDefined();
+        expect(document.element('Category')).toBeDefined();
+        const xml = (await session.save()).xml;
+        expect(xml).toContain('<bpmn:task id="Tagged">\n      <bpmn:categoryValueRef>Phase</bpmn:categoryValueRef>');
+        expect(xml).toContain('<bpmn:sequenceFlow id="Flow" sourceRef="Tagged" targetRef="Other">\n      <bpmn:categoryValueRef>Phase</bpmn:categoryValueRef>');
+
+        // Deleted with the group, the task takes its flow with it, and then nothing refers to the value.
+        expect(session.undo()).toBe(true);
+        session.execute(deleteElements(document, ['Only', 'Tagged']));
+        expect(document.element('Flow')).toBeUndefined();
+        expect(document.element('Phase')).toBeUndefined();
+        expect(document.element('Category')).toBeUndefined();
+    });
+
     it('refuses what it cannot delete, and unknown elements', async () => {
         const { document } = await loaded();
 
