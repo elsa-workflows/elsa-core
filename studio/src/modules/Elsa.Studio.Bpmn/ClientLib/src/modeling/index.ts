@@ -12,6 +12,8 @@ export { updateProperties } from './commands.js';
 export { CREATABLE_TYPES, creatableSize, createShape } from './create.js';
 export { deleteElements } from './delete.js';
 export { moveShapes } from './move.js';
+export type { ReplaceOption, ReplaceTarget } from './replace.js';
+export { replaceElement, replaceOptions } from './replace.js';
 export { minimumSize, resizeShape } from './resize.js';
 export type { BpmnEdgeView, BpmnPlane, BpmnPlaneView, BpmnReadResult, BpmnShapeView, Bounds, Point } from './document.js';
 export { BpmnDocument } from './document.js';

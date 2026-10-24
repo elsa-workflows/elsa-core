@@ -639,6 +639,47 @@ test('Escape gives up an armed create, a read-only designer has no palette, and 
     await expect(harness.getByRole('toolbar', { name: 'Create' })).toHaveCount(0);
 });
 
+const replaceMenu = (page: Page) => page.getByRole('menu', { name: 'Change type' });
+
+test('the wrench beside a selected task opens its replace menu, and an entry replaces it, keeping its name, in one undoable step', async ({ harness }) => {
+    await loaded(harness, 'order.bpmn');
+    const before = (await call<{ xml: string }>(harness, 'save')).xml;
+    await cell(harness, 'Charge').click();
+
+    await cell(harness, 'Charge::replace').click();
+    await expect(replaceMenu(harness).getByRole('menuitem').first()).toBeFocused();
+    await expect(replaceMenu(harness).getByRole('menuitem').first()).toHaveText('User task');
+    await replaceMenu(harness).getByRole('menuitem', { name: 'Service task' }).click();
+
+    await expect(replaceMenu(harness)).toHaveCount(0);
+    expect((await call<{ xml: string }>(harness, 'save')).xml).toContain('<bpmn:serviceTask id="Charge" name="Charge card">');
+    expect(((await selections(harness)) as { primary: { type: string } | null }[]).at(-1)!.primary).toMatchObject({ id: 'Charge', type: 'bpmn:ServiceTask' });
+    await harness.keyboard.press('Control+z');
+    expect((await call<{ xml: string }>(harness, 'save')).xml).toBe(before);
+});
+
+test('R opens the replace menu, arrow keys and Enter pick an entry, Escape closes it, and a read-only designer has no wrench', async ({ harness }) => {
+    await loaded(harness, 'order.bpmn');
+    await cell(harness, 'Gateway').click();
+    await harness.keyboard.press('r');
+    await harness.keyboard.press('ArrowDown');
+    await expect(replaceMenu(harness).getByRole('menuitem', { name: 'Inclusive gateway' })).toBeFocused();
+    await harness.keyboard.press('Enter');
+    expect((await call<{ xml: string }>(harness, 'save')).xml).toContain('<bpmn:inclusiveGateway id="Gateway" name="Paid?">');
+
+    const after = (await call<{ xml: string }>(harness, 'save')).xml;
+    await harness.keyboard.press('r');
+    // The menu is beside the canvas, so its keys do not reach the canvas: Delete does not delete the gateway.
+    await harness.keyboard.press('Delete');
+    await harness.keyboard.press('Escape');
+    await expect(replaceMenu(harness)).toHaveCount(0);
+    expect((await call<{ xml: string }>(harness, 'save')).xml).toBe(after);
+
+    await loaded(harness, 'order.bpmn', { readOnly: true });
+    await cell(harness, 'Charge').click();
+    await expect(cell(harness, 'Charge::replace')).toHaveCount(0);
+});
+
 test('fits a document loaded while the container had no size once the container is shown', async ({ harness }) => {
     await harness.evaluate(() => {
         document.getElementById('canvas')!.style.display = 'none';

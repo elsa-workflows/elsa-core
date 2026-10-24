@@ -19,6 +19,7 @@ export const SHAPES = {
     badge: 'elsa-x6-badge',
     problem: 'elsa-x6-problem',
     handle: 'elsa-x6-handle',
+    replace: 'elsa-x6-replace',
     edge: 'elsa-x6-edge'
 } as const;
 
@@ -195,6 +196,20 @@ export function registerShapes(): void {
     Graph.registerNode(SHAPES.handle, {
         markup: [{ tagName: 'rect', selector: 'body' }],
         attrs: { body: { refWidth: '100%', refHeight: '100%', fill: SURFACE, stroke: 'var(--elsa-x6-selection)', strokeWidth: 1.5 } }
+    }, true);
+
+    // Beside the selected element, opens the menu that replaces it with another type: a wrench, as in the bpmn-js
+    // designer's context pad.
+    Graph.registerNode(SHAPES.replace, {
+        markup: [{ tagName: 'rect', selector: 'body' }, { tagName: 'path', selector: 'icon' }],
+        attrs: {
+            body: { refWidth: '100%', refHeight: '100%', rx: 3, ry: 3, fill: SURFACE, stroke: 'var(--elsa-x6-selection)', strokeWidth: 1, cursor: 'pointer' },
+            icon: {
+                d: 'M 11.5 3 A 3.5 3.5 0 0 0 8.2 7.6 L 3.4 12.4 L 5.6 14.6 L 10.4 9.8 A 3.5 3.5 0 0 0 15 6.5 L 13 8.5 L 11 8.5 L 9.5 7 L 9.5 5 Z',
+                fill: 'var(--elsa-x6-selection)',
+                pointerEvents: 'none'
+            }
+        }
     }, true);
 
     Graph.registerNode(SHAPES.problem, {

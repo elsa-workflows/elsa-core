@@ -3,8 +3,9 @@
  *
  * The kernel's session holds the document and its undo history; X6 only draws it, one plane at a time, and is redrawn
  * from the document after every edit. A gesture becomes a kernel command: dragging a shape moves it, dragging a corner
- * of the selected shape resizes it, the palette creates elements, Delete removes the selection, a double-click or F2
- * edits a name in place, and the keyboard undoes and redoes. Elements are identified by their BPMN element id everywhere.
+ * of the selected shape resizes it, the palette creates elements, the wrench beside the selection or R replaces it with
+ * another type, Delete removes the selection, a double-click or F2 edits a name in place, and the keyboard undoes and
+ * redoes. Elements are identified by their BPMN element id everywhere.
  */
 import { Graph } from '@antv/x6';
 import type {
@@ -29,6 +30,9 @@ import {
     minimumSize,
     moveShapes,
     type Point,
+    replaceElement,
+    type ReplaceOption,
+    replaceOptions,
     resizeShape,
     updateProperties
 } from '../../../Elsa.Studio.Bpmn/ClientLib/src/modeling/index.js';
@@ -115,6 +119,8 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
     // The element type being created from the palette, and its preview. It is dragged from the palette and dropped on
     // the canvas, or armed by a click on the palette and placed by the next click on the canvas.
     let creating: { type: string; preview: HTMLElement; armed: boolean; stop: AbortController } | null = null;
+    // The open replace menu and the element it replaces.
+    let replacing: { elementId: string; menu: HTMLElement; stop: AbortController } | null = null;
     // The name being edited in place, and the property it edits: a text annotation's text, else the name.
     let editing: { elementId: string; property: 'name' | 'text'; input: HTMLTextAreaElement } | null = null;
     // Loads run one after another, so the last one called is the one that shows.
@@ -157,6 +163,7 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
         // is given up the same way.
         dragging = null;
         finishEditing(false);
+        closeReplaceMenu();
         const document = session.document;
         const plane = document && planes && currentKey ? planes.plane(currentKey) : undefined;
         if (!document || !plane) {
@@ -208,6 +215,86 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
         if (selected && bounds && resizeLimit(selected)) {
             for (const corner of CORNERS) target.addNode(handleCell(selected, corner, bounds));
         }
+        target.removeCells(target.getCells().filter(cell => cell.id.endsWith('::replace')));
+        if (selected && bounds && replaceable(selected)) target.addNode(replaceCell(selected, bounds));
+    }
+
+    /** Whether the element can be replaced with another type here. */
+    function replaceable(elementId: string): boolean {
+        return !readOnly && session.document !== null && replaceOptions(session.document, elementId).length > 0;
+    }
+
+    /**
+     * Opens the menu of what the element can be replaced with, below its wrench. Arrow keys move through it, Enter or a
+     * click replaces, and Escape or a press elsewhere closes it.
+     */
+    function openReplaceMenu(elementId: string): void {
+        closeReplaceMenu();
+        const document = session.document;
+        if (!document || !replaceable(elementId)) return;
+        finishEditing(true);
+        const anchor = (graph!.findViewByCell(`${elementId}::replace`) ?? graph!.findViewByCell(elementId))?.container.getBoundingClientRect();
+        if (!anchor) return;
+        const menu = window.document.createElement('div');
+        menu.className = 'elsa-x6-replace-menu';
+        menu.setAttribute('role', 'menu');
+        menu.setAttribute('aria-label', 'Change type');
+        for (const entry of replaceOptions(document, elementId)) {
+            const item = window.document.createElement('button');
+            item.type = 'button';
+            item.setAttribute('role', 'menuitem');
+            item.textContent = entry.label;
+            item.addEventListener('click', () => applyReplace(elementId, entry));
+            menu.append(item);
+        }
+        const origin = stage.getBoundingClientRect();
+        Object.assign(menu.style, { left: `${anchor.left - origin.left}px`, top: `${anchor.bottom - origin.top + 4}px` });
+        // In the stage beside the canvas, not in it, so X6 does not take presses on it for presses on the canvas.
+        stage.append(menu);
+
+        const stop = new AbortController();
+        replacing = { elementId, menu, stop };
+        const items = () => [...menu.querySelectorAll<HTMLButtonElement>('[role="menuitem"]')];
+        menu.addEventListener('keydown', event => {
+            const all = items();
+            const index = all.indexOf(window.document.activeElement as HTMLButtonElement);
+            const step = event.key === 'ArrowDown' ? 1 : event.key === 'ArrowUp' ? -1 : 0;
+            if (step !== 0) {
+                event.preventDefault();
+                all[(index + step + all.length) % all.length]?.focus();
+            } else if (event.key === 'Escape') {
+                event.preventDefault();
+                closeReplaceMenu();
+                canvas.focus({ preventScroll: true });
+            }
+        }, { signal: stop.signal });
+        window.addEventListener('pointerdown', event => {
+            if (!menu.contains(event.target as Node)) closeReplaceMenu();
+        }, { capture: true, signal: stop.signal });
+        items()[0]?.focus();
+    }
+
+    function closeReplaceMenu(): void {
+        const current = replacing;
+        if (!current) return;
+        replacing = null;
+        current.stop.abort();
+        current.menu.remove();
+    }
+
+    /** Replaces the element as the menu entry says, and selects it again, so the host sees its new type. */
+    function applyReplace(elementId: string, entry: ReplaceOption): void {
+        closeReplaceMenu();
+        const document = session.document;
+        if (!document) return;
+        try {
+            session.execute(replaceElement(document, elementId, entry.target));
+        } catch (error) {
+            console.error('elsa-x6-designer: a replace was refused.', error);
+            return;
+        }
+        canvas.focus({ preventScroll: true });
+        setSelection(elementId);
     }
 
     /**
@@ -547,13 +634,18 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
         startCreating(button.dataset.type, button, event);
     });
 
-    // Delete and Backspace delete the selection; F2 and Enter edit its name; Ctrl+Z (Cmd+Z) undoes; Ctrl+Shift+Z and
-    // Ctrl+Y redo.
+    // Delete and Backspace delete the selection; F2 and Enter edit its name; R opens its replace menu; Ctrl+Z (Cmd+Z)
+    // undoes; Ctrl+Shift+Z and Ctrl+Y redo.
     canvas.addEventListener('keydown', event => {
         if (readOnly) return;
         if ((event.key === 'F2' || event.key === 'Enter') && selected && !event.ctrlKey && !event.metaKey && !event.altKey) {
             event.preventDefault();
             startEditing(selected);
+            return;
+        }
+        if (event.key.toLowerCase() === 'r' && selected && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            event.preventDefault();
+            openReplaceMenu(selected);
             return;
         }
         if ((event.key === 'Delete' || event.key === 'Backspace') && !event.ctrlKey && !event.metaKey && !event.altKey) {
@@ -582,6 +674,9 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
     graph.on('cell:click', ({ cell }) => {
         const elementId = elementOf(String(cell.id));
         if (drawn?.bounds.has(elementId) && elementId !== selected) setSelection(elementId);
+    });
+    graph.on('node:click', ({ node }) => {
+        if (String(node.id).endsWith('::replace')) openReplaceMenu(elementOf(String(node.id)));
     });
     graph.on('blank:click', () => {
         if (selected !== null) setSelection(null);
@@ -742,6 +837,7 @@ export function createDesigner(container: HTMLElement, options: BpmnDesignerOpti
             disposed = true;
             editing = null;
             stopCreating();
+            closeReplaceMenu();
             unsubscribeSession();
             listeners.change.clear();
             listeners.selection.clear();
@@ -870,4 +966,9 @@ function problemCell(elementId: string, bounds: Bounds, midpoint: Point | undefi
             body: { fill: `var(--elsa-bpmn-problem-${severity})` }
         }
     };
+}
+
+/** The wrench beside the top-right corner of `bounds` that opens the replace menu. */
+function replaceCell(elementId: string, bounds: Bounds) {
+    return { id: `${elementId}::replace`, shape: SHAPES.replace, x: bounds.x + bounds.width + 6, y: bounds.y - 2, width: 18, height: 18, zIndex: 450 };
 }

@@ -25,7 +25,8 @@ The steps that build the designer [spec.md](spec.md) describes, one pull request
    - 3d. inline name editing.
 4. **The palette, creating elements, and replacing an element with another type**, in two pull requests:
    - 4a. the `createShape` command and the palette;
-   - 4b. replacing an element with another type, and creating groups.
+   - 4b. replacing an element with another type;
+   - 4c. creating groups.
 5. **Connections:** sequence-flow rules, associations, edge editing, and attaching and detaching boundary events.
 6. **Pools, lanes and message flows.** Includes a check that a document the X6 designer saves opens in bpmn-js with no
    warnings.
@@ -146,3 +147,18 @@ the X6 designer's own Playwright tests, the kernel tests, and the cross-designer
   - Escape giving up an armed create;
   - an armed create not carried into another document, and a cancelled drag given up;
   - the palette disabled on an older tool's subprocess page and absent when read-only.
+
+## Step 4b verification
+
+- Kernel tests (`modeling-replace.test.ts`) cover:
+  - a task replaced with its id, name, binding, flows, lane reference, boundary event and data input kept, what the
+    new kind lacks dropped, and the rest of the document written as before; undo and redo;
+  - a gateway's default flow kept or dropped by kind, and an exclusive gateway's marker shown;
+  - a new event definition, a kept one, a non-interrupting boundary event, and a plain event without one;
+  - a start event's incoming flow dropped, and undo bringing it back;
+  - an element renamed earlier in the same compound;
+  - the options offered, by kind and by container, and refusals.
+- `x6.spec.ts` covers:
+  - the wrench opening the menu with its first entry focused, an entry replacing the task and keeping its name, the
+    new type raised with `selection`, and undo;
+  - R, arrow keys and Enter; Escape; Delete in the menu not reaching the canvas; no wrench when read-only.
