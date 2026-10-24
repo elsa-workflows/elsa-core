@@ -169,6 +169,6 @@ the X6 designer's own Playwright tests, the kernel tests, and the cross-designer
   - a group created with a category and value of its own, inside a participant and outside every participant, with
     no lane reference, undo back to the original XML, and a name on its value kept through undo and redo
     (`modeling-create.test.ts`);
-  - a shared category value kept while another group has it, and a value and then its category deleted with their
-    last group and value (`modeling-delete.test.ts`).
+  - a shared category value kept while another group, a task or a flow has it, and a value and then its category
+    deleted with the last of them (`modeling-delete.test.ts`).
 - `x6.spec.ts` covers a group created from the palette and named through its category value.

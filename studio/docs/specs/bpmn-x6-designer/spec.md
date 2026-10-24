@@ -156,7 +156,8 @@ depends on them, as the bpmn-js designer does:
 - the boundary events attached to anything deleted;
 - the sequence flows, message flows, associations and data associations with a deleted end;
 - a data object whose last reference is deleted;
-- a group's category value when its last group is deleted, and a category when its last value is;
+- a group's category value when its last group is deleted, unless a flow element still refers to it through its own
+  `categoryValueRef`, and a category when its last value is;
 - every drawing of any of it.
 
 Every reference the rest of the document holds to what is deleted is removed, such as a flow node's `incoming` and
@@ -240,9 +241,10 @@ What the designer draws and edits, as of step 4c:
   detaches them.
 - A double-click on an element, or F2 or Enter on the selected one, edits its name in a text box over its label; a
   text annotation's text is edited the same way, and a group's name is its category value's `value`, as in the
-  bpmn-js designer. A group without a category value has no name to edit. Enter or leaving the box saves it as one `updateProperties` edit, an
-  empty name removing the name; Shift+Enter starts a new line; Escape gives up. A double-click on a collapsed
-  subprocess opens its plane instead, so F2 edits its name. A redraw during an edit gives the edit up.
+  bpmn-js designer. A group without a category value has no name to edit. Enter or leaving the box saves it as one
+  `updateProperties` edit, an empty name removing the name; Shift+Enter starts a new line; Escape gives up. A
+  double-click on a collapsed subprocess opens its plane instead, so F2 edits its name. A redraw during an edit gives
+  the edit up.
 - A named edge without label layout is drawn with its name on its midpoint, as the bpmn-js designer places it. Naming
   an element does not add or resize its label layout.
 - Ctrl+Z (Cmd+Z) undoes, and Ctrl+Shift+Z or Ctrl+Y redoes, while the canvas has focus.
