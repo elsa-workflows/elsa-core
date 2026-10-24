@@ -57,10 +57,18 @@ internal sealed class FakeBpmnDocumentService : IBpmnInterchangeService
     /// <summary>The XML of every document the service was asked to analyze, in order.</summary>
     public List<string> Analyzed { get; } = [];
 
-    public async Task<Result<BpmnImportAnalysisModel, ValidationErrors>> AnalyzeAsync(Stream content, string fileName, CancellationToken cancellationToken = default)
+    /// <summary>The process each analysis was asked to check, in order.</summary>
+    public List<string?> AnalyzedProcessIds { get; } = [];
+
+    public Task<Result<BpmnImportAnalysisModel, ValidationErrors>> AnalyzeAsync(Stream content, string fileName, CancellationToken cancellationToken = default) =>
+        AnalyzeAsync(content, fileName, null, cancellationToken);
+
+    public async Task<Result<BpmnImportAnalysisModel, ValidationErrors>> AnalyzeAsync(Stream content, string fileName, string? processId, CancellationToken cancellationToken = default)
     {
-        var xml = await new StreamReader(content).ReadToEndAsync(cancellationToken);
+        using var reader = new StreamReader(content, leaveOpen: true);
+        var xml = await reader.ReadToEndAsync(cancellationToken);
         Analyzed.Add(xml);
+        AnalyzedProcessIds.Add(processId);
         return Analyzes != null ? await Analyzes(xml) : throw new NotSupportedException();
     }
     public Task<Result<BpmnImportResultModel, ValidationErrors>> ImportAsync(Stream content, string fileName, string? definitionId, string? name, string? processId, CancellationToken cancellationToken = default) => throw new NotSupportedException();

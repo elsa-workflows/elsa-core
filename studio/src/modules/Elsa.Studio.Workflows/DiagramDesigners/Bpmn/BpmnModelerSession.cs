@@ -1,7 +1,9 @@
+using System.Net;
 using System.Text;
 using Elsa.Studio.Bpmn.Designers;
 using Elsa.Studio.Models;
 using Elsa.Studio.Workflows.Domain.Contracts;
+using Elsa.Studio.Workflows.Domain.Models;
 using Elsa.Studio.Workflows.Domain.Models.Bpmn;
 
 namespace Elsa.Studio.Workflows.DiagramDesigners.Bpmn;
@@ -29,8 +31,9 @@ namespace Elsa.Studio.Workflows.DiagramDesigners.Bpmn;
 /// <para>
 /// <b>Problems.</b> Created with an <see cref="IBpmnInterchangeService"/>, the session has the server analyze each
 /// document the canvas loads and each one a save sends, and reports what is wrong with it in <see cref="Problems"/>,
-/// which it also marks on the canvas. The designer's working copy is not analyzed between saves: exporting it would mark
-/// it saved.
+/// which it also marks on the canvas. The analysis checks the process the definition was imported from, the one a save
+/// binds. A failed request, as opposed to a refused document, reports no problems. The designer's working copy is not
+/// analyzed between saves: exporting it would mark it saved.
 /// </para>
 /// </remarks>
 public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string definitionId)
@@ -50,6 +53,7 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
     private long _changeSequence;
     private int _canvasDocumentVersion;
     private readonly IBpmnInterchangeService? _analyzer;
+    private readonly string? _processId;
     private long _analysisSequence;
     private Task _analysis = Task.CompletedTask;
 
@@ -57,9 +61,17 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
     /// Creates a session that also has the server analyze its documents, so <see cref="Problems"/> reports what is wrong
     /// with them.
     /// </summary>
-    public BpmnModelerSession(IBpmnXmlService bpmnXmlService, IBpmnInterchangeService analyzer, string definitionId) : this(bpmnXmlService, definitionId)
+    /// <param name="bpmnXmlService">Reads and saves the document.</param>
+    /// <param name="analyzer">Analyzes each document the canvas loads and each one a refused save sends.</param>
+    /// <param name="definitionId">The workflow definition whose document this is.</param>
+    /// <param name="processId">
+    /// The process the definition was imported from, which a save of a document declaring more than one process binds;
+    /// the analysis checks that process too. <see langword="null"/> when the definition does not record one.
+    /// </param>
+    public BpmnModelerSession(IBpmnXmlService bpmnXmlService, IBpmnInterchangeService analyzer, string definitionId, string? processId = null) : this(bpmnXmlService, definitionId)
     {
         _analyzer = analyzer;
+        _processId = processId;
     }
 
     /// <summary>The workflow definition whose document this is.</summary>
@@ -396,8 +408,10 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
         try
         {
             using var content = new MemoryStream(Encoding.UTF8.GetBytes(xml));
-            var result = await analyzer.AnalyzeAsync(content, $"{DefinitionId}.bpmn");
-            problems = result.IsSuccess ? BpmnDocumentProblem.From(result.Success!) : BpmnDocumentProblem.From(result.Failure!);
+            var result = await analyzer.AnalyzeAsync(content, $"{DefinitionId}.bpmn", _processId);
+            problems = result.IsSuccess ? BpmnDocumentProblem.From(result.Success!)
+                : IsRefusalOfTheDocument(result.Failure!) ? BpmnDocumentProblem.From(result.Failure!)
+                : [];
         }
         catch (Exception)
         {
@@ -411,6 +425,14 @@ public sealed class BpmnModelerSession(IBpmnXmlService bpmnXmlService, string de
             await ShowProblemsAsync(problems);
         }
     }
+
+    /// <summary>
+    /// Whether a failed analysis says what is wrong with the document (<c>400</c> for one that cannot be read,
+    /// <c>422</c> for one the reader refuses) rather than that the request failed, such as a <c>404</c> or a <c>500</c>,
+    /// which says nothing about the document.
+    /// </summary>
+    private static bool IsRefusalOfTheDocument(ValidationErrors errors) =>
+        errors.StatusCode is HttpStatusCode.BadRequest or HttpStatusCode.UnprocessableEntity;
 
     /// <summary>Shows <paramref name="problems"/> in place of any analysis still in flight.</summary>
     private void ShowProblems(IReadOnlyList<BpmnDocumentProblem> problems)

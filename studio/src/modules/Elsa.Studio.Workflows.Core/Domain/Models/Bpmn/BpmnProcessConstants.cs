@@ -24,4 +24,11 @@ public static class BpmnProcessConstants
     /// is derived from that document and changes only through the document endpoints.
     /// </summary>
     public const string SourceXmlCustomPropertyKey = "Bpmn:SourceXml";
+
+    /// <summary>
+    /// The workflow definition custom property elsa-core's <c>BpmnInterchangeDocumentService</c> stores the id of the
+    /// process the definition was imported from under. A save of a document that declares more than one process binds
+    /// that process.
+    /// </summary>
+    public const string SourceProcessIdCustomPropertyKey = "Bpmn:SourceProcessId";
 }

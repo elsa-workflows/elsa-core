@@ -274,6 +274,19 @@ public sealed class WorkflowEditorBpmnModelerTests : BunitContext, IAsyncLifetim
         Assert.Equal([new BpmnDesignerMarker("Task_1", BpmnDesignerMarker.Error, "Task_1 is unbound.")], Assert.Single(_canvas.AppliedMarkers));
     }
 
+    [Fact(DisplayName = "The editor has the server check the process the definition was imported from")]
+    public async Task Problems_AreFoundForTheDefinitionsProcess()
+    {
+        _documentService.Analyzes = _ => Task.FromResult(new Result<BpmnImportAnalysisModel, ValidationErrors>(new BpmnImportAnalysisModel()));
+        var definition = Definition();
+        definition.CustomProperties[BpmnProcessConstants.SourceProcessIdCustomPropertyKey] = "second-process";
+        var cut = RenderEditor(definition);
+        await EditAsync(cut);
+        await Session(cut).Analysis;
+
+        Assert.Equal(["second-process"], _documentService.AnalyzedProcessIds);
+    }
+
     private IRenderedComponent<WorkflowEditor> RenderEditor(WorkflowDefinition? definition = null) =>
         Render<WorkflowEditor>(parameters => parameters.Add(x => x.WorkflowDefinition, definition ?? Definition()));
 

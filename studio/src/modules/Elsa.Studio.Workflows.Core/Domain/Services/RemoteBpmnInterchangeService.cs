@@ -18,14 +18,18 @@ namespace Elsa.Studio.Workflows.Domain.Services;
 public class RemoteBpmnInterchangeService(IBackendApiClientProvider backendApiClientProvider) : IBpmnInterchangeService
 {
     /// <inheritdoc />
-    public async Task<Result<BpmnImportAnalysisModel, ValidationErrors>> AnalyzeAsync(Stream content, string fileName, CancellationToken cancellationToken = default)
+    public Task<Result<BpmnImportAnalysisModel, ValidationErrors>> AnalyzeAsync(Stream content, string fileName, CancellationToken cancellationToken = default) =>
+        AnalyzeAsync(content, fileName, null, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<Result<BpmnImportAnalysisModel, ValidationErrors>> AnalyzeAsync(Stream content, string fileName, string? processId, CancellationToken cancellationToken = default)
     {
         var api = await GetApiAsync(cancellationToken);
         var file = new StreamPart(content, fileName, "application/xml");
 
         try
         {
-            var analysis = await api.AnalyzeAsync(file, cancellationToken);
+            var analysis = await api.AnalyzeAsync(file, processId, cancellationToken);
             return new(analysis);
         }
         catch (ApiException e)

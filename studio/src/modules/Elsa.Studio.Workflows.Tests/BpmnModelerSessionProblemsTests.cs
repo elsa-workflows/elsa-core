@@ -122,6 +122,33 @@ public class BpmnModelerSessionProblemsTests
         Assert.Equal(["Task_1"], problem.ElementIds);
     }
 
+    [Theory(DisplayName = "An analysis the server fails to answer, rather than refusing the document, leaves no problems")]
+    [InlineData(HttpStatusCode.NotFound)]
+    [InlineData(HttpStatusCode.InternalServerError)]
+    public async Task AnAnalysisRequestThatFails_LeavesNoProblems(HttpStatusCode statusCode)
+    {
+        _analyzer.Analyzes = _ => Task.FromResult(new Result<BpmnImportAnalysisModel, ValidationErrors>(new ValidationErrors([new("Server error.")], statusCode)));
+
+        await OpenAsync();
+
+        Assert.Empty(_session.Problems);
+        Assert.Equal([[]], _canvas.AppliedMarkers);
+    }
+
+    [Fact(DisplayName = "The analysis checks the process the definition was imported from, as a save of the document does")]
+    public async Task TheAnalysis_ChecksTheDefinitionsProcess()
+    {
+        var session = new BpmnModelerSession(_xml, _analyzer, DefinitionId, "second-process");
+        _analyzer.Analyzes = _ => Analysis();
+
+        await session.EnsureLoadedAsync();
+        session.AttachCanvas(_canvas);
+        session.CanvasLoaded(new(true, null, []), session.DocumentVersion);
+        await session.Analysis;
+
+        Assert.Equal(["second-process"], _analyzer.AnalyzedProcessIds);
+    }
+
     [Fact(DisplayName = "An analysis that fails, such as for a server that cannot be reached, leaves no problems")]
     public async Task AFailedAnalysis_LeavesNoProblems()
     {
