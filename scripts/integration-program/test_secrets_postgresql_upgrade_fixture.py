@@ -5,7 +5,6 @@ import unittest
 from unittest import mock
 
 import run_secrets_postgresql_upgrade_fixture as fixture
-from run_secrets_postgresql_upgrade_fixture import validate_known_baseline
 
 
 FIXTURE = Path(__file__).resolve().parent / 'secrets-postgresql-upgrade'
@@ -17,7 +16,7 @@ class KnownBaselineTests(unittest.TestCase):
         cls.report = json.loads((FIXTURE / 'observed-result.json').read_text())
 
     def validate(self, report):
-        validate_known_baseline(
+        fixture.validate_known_baseline(
             report['oldMigration'],
             report['coreUpgrade'],
             report['databaseBeforeCore'],
