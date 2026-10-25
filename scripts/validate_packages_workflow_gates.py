@@ -551,6 +551,9 @@ def build_npm_violations(jobs: dict) -> list[str]:
         violations.append("build_npm must need build")
     if SELECTION_JOB not in needs(job):
         violations.append("build_npm must need validate_publication_selection")
+    env = job.get("env") if isinstance(job.get("env"), dict) else {}
+    if str(env.get("PYTHONDONTWRITEBYTECODE") or "") != "1":
+        violations.append("build_npm must set PYTHONDONTWRITEBYTECODE to 1")
     if grants_id_token(job.get("permissions")):
         violations.append("build_npm must not request id-token: write")
     steps = [step for step in job.get("steps") or [] if isinstance(step, dict)]
