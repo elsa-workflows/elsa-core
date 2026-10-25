@@ -703,6 +703,15 @@ class WorkflowGateTests(unittest.TestCase):
             "build_npm must pin setup-dotnet to the studio-npm-pair SHA",
         )
 
+    def test_build_npm_must_need_build(self):
+        self.assert_rejected(
+            self.mutated(
+                "  build_npm:\n    name: Build Studio npm pair\n    needs: [build, validate_publication_selection]\n",
+                "  build_npm:\n    name: Build Studio npm pair\n    needs: [validate_publication_selection]\n",
+            ),
+            "build_npm must need build",
+        )
+
     def test_build_npm_must_pin_sdk_version(self):
         self.assert_rejected(
             self.mutated(

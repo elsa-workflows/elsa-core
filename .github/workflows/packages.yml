@@ -528,7 +528,7 @@ jobs:
 
   build_npm:
     name: Build Studio npm pair
-    needs: [validate_publication_selection]
+    needs: [build, validate_publication_selection]
     runs-on: ubuntu-latest
     timeout-minutes: 120
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_npm && startsWith(github.ref, 'refs/tags/') }}

@@ -547,6 +547,8 @@ def build_npm_violations(jobs: dict) -> list[str]:
     if not isinstance(job, dict):
         return ["job 'build_npm' is missing"]
     violations = []
+    if BUILD_JOB not in needs(job):
+        violations.append("build_npm must need build")
     if SELECTION_JOB not in needs(job):
         violations.append("build_npm must need validate_publication_selection")
     if grants_id_token(job.get("permissions")):
@@ -653,7 +655,7 @@ def npm_job_violations(jobs: dict) -> list[str]:
     publishes = [index for index, step in enumerate(steps) if re.search(r"\bnpm[\s\\]+publish\b", _step_run(step), re.IGNORECASE)]
     if len(publishes) != 1:
         violations.append("publish_npm must contain exactly one npm publish step")
-    if any(step.get("name") == "npm publish to npmjs.com" or "registry.npmjs.org" in _step_run(step) for step in steps):
+    if any(step.get("name") == "npm publish to npmjs.com" or re.search(r"registry\.npmjs\.(org|com)", _step_run(step)) for step in steps):
         violations.append("publish_npm must not publish to npmjs.com until trusted publishing is confirmed")
     if None not in (closed, download, verify, feedz_publish) and not closed < download < verify < feedz_publish:
         violations.append("publish_npm must fail closed on stable 3.10.x, download and verify the pair, then publish to Feedz")
