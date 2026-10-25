@@ -41,7 +41,7 @@ public class MemoryKeyValueStore : IKeyValueStore
         {
             ApplyCurrentTenant(keyValuePair);
             EnsureKeyAvailable(keyValuePair);
-            _store.Save(keyValuePair, kv => kv.Id);
+            _store.Save(Clone(keyValuePair), kv => kv.Id);
         }
 
         return Task.CompletedTask;
@@ -50,14 +50,14 @@ public class MemoryKeyValueStore : IKeyValueStore
     /// <inheritdoc />
     public Task<SerializedKeyValuePair?> FindAsync(KeyValueFilter filter, CancellationToken cancellationToken)
     {
-        var result = _store.Query(query => filter.Apply(query.WhereVisibleToTenant(CurrentTenantId))).FirstOrDefault();
+        var result = _store.Query(query => filter.Apply(query.WhereVisibleToTenant(CurrentTenantId))).Select(Clone).FirstOrDefault();
         return Task.FromResult(result);
     }
 
     /// <inheritdoc />
     public Task<IEnumerable<SerializedKeyValuePair>> FindManyAsync(KeyValueFilter filter, CancellationToken cancellationToken)
     {
-        var result = _store.Query(query => filter.Apply(query.WhereVisibleToTenant(CurrentTenantId)));
+        var result = _store.Query(query => filter.Apply(query.WhereVisibleToTenant(CurrentTenantId))).Select(Clone).ToList().AsEnumerable();
         return Task.FromResult(result);
     }
     
@@ -108,4 +108,12 @@ public class MemoryKeyValueStore : IKeyValueStore
 
         entity.TenantId ??= _tenantAccessor.TenantId;
     }
+
+    private static SerializedKeyValuePair Clone(SerializedKeyValuePair keyValuePair) =>
+        new()
+        {
+            Id = keyValuePair.Id,
+            TenantId = keyValuePair.TenantId,
+            SerializedValue = keyValuePair.SerializedValue
+        };
 }

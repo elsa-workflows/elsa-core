@@ -76,6 +76,28 @@ public class MemoryWorkflowInstanceStoreTenantIsolationTests
         Assert.Equal(1, await tenantB.CountAsync(RunningConversation("shared-correlation")));
     }
 
+    [Fact]
+    public async Task ChangingReturnedOrSavedInstanceDoesNotMoveTheStoredRowToAnotherTenant()
+    {
+        var backingStore = new MemoryStore<WorkflowInstance>();
+        var tenantA = new MemoryWorkflowInstanceStore(backingStore, new TestTenantAccessor("tenant-a"));
+        var tenantB = new MemoryWorkflowInstanceStore(backingStore, new TestTenantAccessor("tenant-b"));
+        var saved = RunningInstance("instance-a", correlationId: "conversation-1", tenantId: "tenant-a");
+        await tenantA.SaveAsync(saved);
+
+        saved.TenantId = "tenant-b";
+        var found = await tenantA.FindAsync(new WorkflowInstanceFilter { Id = "instance-a" });
+        Assert.NotNull(found);
+        found.TenantId = "tenant-b";
+        foreach (var instance in await tenantA.FindManyAsync(new WorkflowInstanceFilter { Id = "instance-a" }))
+            instance.TenantId = "tenant-b";
+
+        var stored = await tenantA.FindAsync(new WorkflowInstanceFilter { Id = "instance-a" });
+        Assert.NotNull(stored);
+        Assert.Equal("tenant-a", stored.TenantId);
+        Assert.Null(await tenantB.FindAsync(new WorkflowInstanceFilter { Id = "instance-a" }));
+    }
+
     private static WorkflowInstance RunningInstance(string id, string correlationId, string? tenantId) => new()
     {
         Id = id,
