@@ -393,8 +393,8 @@ jobs:
         run: ./build.sh Compile+Pack --version "${VERSION}" --analyseCode true
 
       # --version 3.10.0 matches the refs/tags/3.10.0 guard above. The inventory
-      # baseline is per branch: this file on main is main's evaluation. A [3.10]
-      # pick must regenerate it from release/3.10.0; the two are not the same.
+      # baseline is per branch: this file on release/3.10.0 is this branch's
+      # evaluation. It is not main's inventory; the two are not the same.
       - name: Pack consolidated 3.10.0 set
         if: ${{ (github.event_name == 'release' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/tags/3.10.0' && !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget) }}
         env:
