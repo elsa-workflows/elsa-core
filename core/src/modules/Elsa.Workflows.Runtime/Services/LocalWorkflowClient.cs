@@ -91,6 +91,21 @@ public class LocalWorkflowClient(
     }
 
     /// <inheritdoc />
+    public async Task<RunWorkflowInstanceResponse?> RunInstanceIfPendingAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
+    {
+        await DemandUnownedAsync(workflowInstanceId, cancellationToken);
+        var workflowInstance = await GetWorkflowInstanceAsync(cancellationToken);
+
+        if (workflowInstance.SubStatus != WorkflowSubStatus.Pending)
+        {
+            logger.LogDebug("Skipping run of workflow instance {WorkflowInstanceId}: sub-status is {SubStatus}, not Pending.", workflowInstanceId, workflowInstance.SubStatus);
+            return null;
+        }
+
+        return await RunInstanceAsync(workflowInstance, request, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public async Task<RunWorkflowInstanceResponse> CreateAndRunInstanceAsync(CreateAndRunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
     {
         await DemandUnownedAsync(workflowInstanceId, cancellationToken);

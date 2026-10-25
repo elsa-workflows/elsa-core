@@ -1,3 +1,4 @@
+using Elsa.Workflows;
 using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.State;
 
@@ -23,6 +24,21 @@ public interface IWorkflowClient
     /// Executes the workflow instance and waits for it to complete or reach a suspend point.
     /// </summary>
     Task<RunWorkflowInstanceResponse> RunInstanceAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Runs the instance only while it is still pending.
+    /// The default implementation exports the state and then runs, which is best-effort: another caller can change the
+    /// sub-status between the two calls. Implementations that can read and run under the same instance lock override
+    /// this method to make the guard atomic.
+    /// Returns <c>null</c> without running when the instance has already left the pending sub-status.
+    /// </summary>
+    async Task<RunWorkflowInstanceResponse?> RunInstanceIfPendingAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
+    {
+        var state = await ExportStateAsync(cancellationToken);
+        return state.SubStatus == WorkflowSubStatus.Pending
+            ? await RunInstanceAsync(request, cancellationToken)
+            : null;
+    }
     
     /// <summary>
     /// Creates a new workflow instance and executes it.

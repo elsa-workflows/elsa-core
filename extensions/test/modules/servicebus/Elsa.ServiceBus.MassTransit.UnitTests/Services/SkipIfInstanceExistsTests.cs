@@ -118,27 +118,30 @@ public class SkipIfInstanceExistsTests
     [Fact]
     public async Task ConsumerRunsExistingInstanceWhenPending()
     {
-        _client.Setup(x => x.ExportStateAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new WorkflowState { SubStatus = WorkflowSubStatus.Pending });
+        _client.Setup(x => x.RunInstanceIfPendingAsync(It.IsAny<RunWorkflowInstanceRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new RunWorkflowInstanceResponse());
 
         await CreateConsumer().Consume(CreateExistingInstanceContext());
 
-        _client.Verify(x => x.RunInstanceAsync(It.IsAny<RunWorkflowInstanceRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+        _client.Verify(x => x.RunInstanceIfPendingAsync(It.IsAny<RunWorkflowInstanceRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+        _client.Verify(x => x.RunInstanceAsync(It.IsAny<RunWorkflowInstanceRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+        _client.Verify(x => x.ExportStateAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    [Theory]
-    [InlineData(WorkflowSubStatus.Suspended)]
-    [InlineData(WorkflowSubStatus.Executing)]
-    [InlineData(WorkflowSubStatus.Finished)]
-    [InlineData(WorkflowSubStatus.Faulted)]
-    public async Task ConsumerSkipsExistingInstanceWhenNotPending(WorkflowSubStatus subStatus)
+    [Fact]
+    public async Task ConsumerLeavesThePendingDecisionToTheClient()
     {
-        _client.Setup(x => x.ExportStateAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new WorkflowState { SubStatus = subStatus });
+        // The guard must live inside the instance lock the run takes (#8869), so the consumer
+        // neither reads the state nor runs the instance itself; a null response means the
+        // instance had already left Pending.
+        _client.Setup(x => x.RunInstanceIfPendingAsync(It.IsAny<RunWorkflowInstanceRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((RunWorkflowInstanceResponse?)null);
 
         await CreateConsumer().Consume(CreateExistingInstanceContext());
 
+        _client.Verify(x => x.RunInstanceIfPendingAsync(It.IsAny<RunWorkflowInstanceRequest>(), It.IsAny<CancellationToken>()), Times.Once);
         _client.Verify(x => x.RunInstanceAsync(It.IsAny<RunWorkflowInstanceRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+        _client.Verify(x => x.ExportStateAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
