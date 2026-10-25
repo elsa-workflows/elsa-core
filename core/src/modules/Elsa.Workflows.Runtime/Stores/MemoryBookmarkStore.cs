@@ -15,28 +15,28 @@ public class MemoryBookmarkStore(MemoryStore<StoredBookmark> store, ITenantAcces
     /// <inheritdoc />
     public ValueTask SaveAsync(StoredBookmark record, CancellationToken cancellationToken = default)
     {
-        store.Save(record, x => x.Id);
+        store.Save(Clone(record), x => x.Id);
         return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc />
     public ValueTask SaveManyAsync(IEnumerable<StoredBookmark> records, CancellationToken cancellationToken)
     {
-        store.SaveMany(records, x => x.Id);
+        store.SaveMany(records.Select(Clone), x => x.Id);
         return ValueTask.CompletedTask;
     }
 
     /// <inheritdoc />
     public ValueTask<StoredBookmark?> FindAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
     {
-        var entity = store.Query(query => Filter(query, filter)).FirstOrDefault();
+        var entity = store.Query(query => Filter(query, filter)).Select(Clone).FirstOrDefault();
         return new(entity);
     }
 
     /// <inheritdoc />
     public ValueTask<IEnumerable<StoredBookmark>> FindManyAsync(BookmarkFilter filter, CancellationToken cancellationToken = default)
     {
-        var entities = store.Query(query => Filter(query, filter)).AsEnumerable();
+        var entities = store.Query(query => Filter(query, filter)).Select(Clone).ToList().AsEnumerable();
         return new(entities);
     }
 
@@ -44,7 +44,7 @@ public class MemoryBookmarkStore(MemoryStore<StoredBookmark> store, ITenantAcces
     public ValueTask<Page<StoredBookmark>> FindManyAsync(BookmarkFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         var count = store.Query(query => Filter(query, filter)).LongCount();
-        var result = store.Query(query => Filter(query, filter).OrderBy(x => x.Id).Paginate(pageArgs)).ToList();
+        var result = store.Query(query => Filter(query, filter).OrderBy(x => x.Id).Paginate(pageArgs)).Select(Clone).ToList();
         return new(Page.Of(result, count));
     }
 
@@ -63,4 +63,19 @@ public class MemoryBookmarkStore(MemoryStore<StoredBookmark> store, ITenantAcces
         filter.Apply(query.WhereVisibleToTenant(CurrentTenantId, filter.TenantAgnostic));
 
     private string CurrentTenantId => tenantAccessor?.TenantId ?? Tenant.DefaultTenantId;
+
+    private static StoredBookmark Clone(StoredBookmark bookmark) =>
+        new()
+        {
+            Id = bookmark.Id,
+            TenantId = bookmark.TenantId,
+            Name = bookmark.Name,
+            Hash = bookmark.Hash,
+            WorkflowInstanceId = bookmark.WorkflowInstanceId,
+            ActivityInstanceId = bookmark.ActivityInstanceId,
+            CorrelationId = bookmark.CorrelationId,
+            Payload = bookmark.Payload,
+            Metadata = bookmark.Metadata == null ? null : new Dictionary<string, string>(bookmark.Metadata),
+            CreatedAt = bookmark.CreatedAt
+        };
 }

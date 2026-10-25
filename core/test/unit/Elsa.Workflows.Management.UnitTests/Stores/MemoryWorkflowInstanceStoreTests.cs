@@ -184,6 +184,26 @@ public class MemoryWorkflowInstanceStoreTests
         }
     }
 
+    [Fact(DisplayName = "UpdateUpdatedTimestampAsync updates the stored instance")]
+    public async Task UpdateUpdatedTimestamp_UpdatesStoredInstance()
+    {
+        var store = CreateStore(new WorkflowInstance
+        {
+            Id = "instance-1",
+            DefinitionId = "def-1",
+            DefinitionVersionId = "ver-1",
+            Version = 1,
+            Status = WorkflowStatus.Running
+        });
+        var updatedAt = new DateTimeOffset(2026, 1, 2, 3, 4, 5, TimeSpan.Zero);
+
+        await store.UpdateUpdatedTimestampAsync("instance-1", updatedAt);
+
+        var instance = await store.FindAsync(new() { Id = "instance-1" });
+        Assert.NotNull(instance);
+        Assert.Equal(updatedAt, instance.UpdatedAt);
+    }
+
     private static MemoryWorkflowInstanceStore CreateStore(WorkflowInstance instance)
     {
         var store = new MemoryWorkflowInstanceStore(new MemoryStore<WorkflowInstance>());

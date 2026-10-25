@@ -92,6 +92,31 @@ public class MemoryBookmarkStoreTenantIsolationTests
         Assert.Equal("bm-a", found[0].Id);
     }
 
+    [Fact(DisplayName = "Changing a returned or saved bookmark does not move the stored row to another tenant")]
+    public async Task ChangingReturnedOrSavedBookmark_LeavesStoredRow()
+    {
+        var backing = new MemoryStore<StoredBookmark>();
+        var tenantA = new MemoryBookmarkStore(backing, new TestTenantAccessor("tenant-a"));
+        var tenantB = new MemoryBookmarkStore(backing, new TestTenantAccessor("tenant-b"));
+        var saved = Bookmark("bm-a", tenantId: "tenant-a");
+        await tenantA.SaveAsync(saved);
+        var savedMany = Bookmark("bm-a2", tenantId: "tenant-a");
+        await tenantA.SaveManyAsync([savedMany], CancellationToken.None);
+
+        saved.TenantId = "tenant-b";
+        savedMany.TenantId = "tenant-b";
+        var found = await tenantA.FindAsync(new BookmarkFilter { BookmarkId = "bm-a" });
+        Assert.NotNull(found);
+        found.TenantId = "tenant-b";
+        foreach (var bookmark in await tenantA.FindManyAsync(new BookmarkFilter()))
+            bookmark.TenantId = "tenant-b";
+
+        var stored = (await tenantA.FindManyAsync(new BookmarkFilter())).ToList();
+        Assert.Equal(["bm-a", "bm-a2"], stored.Select(x => x.Id).Order().ToList());
+        Assert.All(stored, x => Assert.Equal("tenant-a", x.TenantId));
+        Assert.Empty(await tenantB.FindManyAsync(new BookmarkFilter()));
+    }
+
     private static MemoryBookmarkStore CreateStore(string tenantId) =>
         new(new MemoryStore<StoredBookmark>(), new TestTenantAccessor(tenantId));
 
