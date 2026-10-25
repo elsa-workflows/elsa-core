@@ -63,9 +63,9 @@ OTHER_BYPASSES = (
     ),
     (
         "stable 3.10 nuget still packs",
-        "        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}\n        run: ./build.sh Compile+Pack",
+        "        if: ${{ !((github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) || ((github.event_name == 'release' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/tags/3.10.0')) }}\n        run: ./build.sh Compile+Pack",
         "        run: ./build.sh Compile+Pack",
-        "build Compile+Pack must skip a stable 3.10.x nuget.org promotion",
+        "build Compile+Pack must skip a stable 3.10.x nuget.org promotion and the 3.10.0 candidate pack",
     ),
     (
         "packages.yml packs the consolidated set again",
@@ -123,8 +123,8 @@ OTHER_BYPASSES = (
     ),
     (
         "selection script sees a fixed ref",
-        "          REF: ${{ github.ref }}\n          PUBLISH_PREVIEW_FEEDZ",
-        "          REF: refs/heads/main\n          PUBLISH_PREVIEW_FEEDZ",
+        "          REF: ${{ github.ref }}\n          PUBLISH_PREVIEW_FEEDZ: ${{ inputs.publish_preview_feedz }}\n          PUBLISH_NUGET: ${{ inputs.publish_nuget }}\n          PUBLISH_NPM: ${{ inputs.publish_npm }}",
+        "          REF: refs/heads/main\n          PUBLISH_PREVIEW_FEEDZ: ${{ inputs.publish_preview_feedz }}\n          PUBLISH_NUGET: ${{ inputs.publish_nuget }}\n          PUBLISH_NPM: ${{ inputs.publish_npm }}",
         "validate_publication_selection must pass REF: ${{ github.ref }}",
     ),
     (
@@ -141,7 +141,7 @@ OTHER_BYPASSES = (
     ),
     (
         "build drops setup-dotnet",
-        "      - uses: actions/setup-dotnet@v4\n        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}\n        with:\n          dotnet-version: 10.x\n",
+        "      - uses: actions/setup-dotnet@v4\n        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}\n        with:\n          dotnet-version: |\n            8.0.x\n            9.0.x\n            10.x\n",
         "      - uses: actions/setup-python@v5\n        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}\n        with:\n          python-version: '3.12'\n",
         "build job must contain setup-dotnet",
     ),
@@ -627,21 +627,21 @@ class WorkflowGateTests(unittest.TestCase):
     def test_inverted_compile_pack_condition_is_rejected(self):
         source = self.mutated(
             "      - name: Compile+Pack\n"
-            "        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}\n"
+            "        if: ${{ !((github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) || ((github.event_name == 'release' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/tags/3.10.0')) }}\n"
             "        run: ./build.sh Compile+Pack --version \"${VERSION}\" --analyseCode true\n",
             "      - name: Compile+Pack\n"
             "        if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-') }}\n"
             "        run: ./build.sh Compile+Pack --version \"${VERSION}\" --analyseCode true\n",
         )
-        self.assert_rejected(source, "build Compile+Pack must skip a stable 3.10.x nuget.org promotion")
+        self.assert_rejected(source, "build Compile+Pack must skip a stable 3.10.x nuget.org promotion and the 3.10.0 candidate pack")
 
     def test_duplicate_compile_pack_is_rejected(self):
         source = self.mutated(
             "      - name: Compile+Pack\n"
-            "        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}\n"
+            "        if: ${{ !((github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) || ((github.event_name == 'release' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/tags/3.10.0')) }}\n"
             "        run: ./build.sh Compile+Pack --version \"${VERSION}\" --analyseCode true\n",
             "      - name: Compile+Pack\n"
-            "        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}\n"
+            "        if: ${{ !((github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) || ((github.event_name == 'release' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/tags/3.10.0')) }}\n"
             "        run: ./build.sh Compile+Pack --version \"${VERSION}\" --analyseCode true\n"
             "\n"
             "      - name: Compile+Pack\n"
@@ -669,8 +669,79 @@ class WorkflowGateTests(unittest.TestCase):
 
     def test_real_workflow_uses_the_pinned_promote_conditions(self):
         self.assertEqual(gates.SKIP_STABLE_310_PACK, if_expression_of_real("Compile+Pack"))
+        self.assertEqual(gates.CANDIDATE_PACK, if_expression_of_real("Pack consolidated 3.10.0 set"))
         self.assertEqual(gates.PROMOTE_STABLE_310, if_expression_of_real("Stage and guard verified candidate packages"))
+        self.assertEqual(gates.PROMOTE_STABLE_310, if_expression_of_real("Fail closed on stable 3.10.x"))
         self.assertEqual([], gates.source_violations(self.source))
+
+    def test_candidate_pack_must_run_the_id_set_guard(self):
+        self.assert_rejected(
+            self.mutated(
+                "          python3 scripts/integration-program/prepare_consolidated_release_candidate.py --version 3.10.0 --output \"$RUNNER_TEMP/consolidated-candidate\" --remote-sources\n"
+                "          python3 scripts/validate_packages_id_set.py\n",
+                "          python3 scripts/integration-program/prepare_consolidated_release_candidate.py --version 3.10.0 --output \"$RUNNER_TEMP/consolidated-candidate\" --remote-sources\n"
+                "          true\n",
+            ),
+            "build candidate pack run: must be exactly prepare, then the ID-set guard",
+        )
+
+    def test_npm_job_must_fail_closed_on_stable_310(self):
+        self.assert_rejected(
+            self.mutated(
+                "      - name: Fail closed on stable 3.10.x\n",
+                "      - name: Skip closed on stable 3.10.x\n",
+            ),
+            "publish_npm must fail closed on a stable 3.10.x tag",
+        )
+
+    def test_build_npm_must_pin_setup_dotnet(self):
+        self.assert_rejected(
+            self.mutated(
+                "      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1\n        with:\n          dotnet-version: '10.0.300'\n",
+                "      - uses: actions/setup-dotnet@v4\n        with:\n          dotnet-version: 10.x\n",
+            ),
+            "build_npm must pin setup-dotnet to the studio-npm-pair SHA",
+        )
+
+    def test_build_npm_must_need_build(self):
+        self.assert_rejected(
+            self.mutated(
+                "  build_npm:\n    name: Build Studio npm pair\n    needs: [build, validate_publication_selection]\n",
+                "  build_npm:\n    name: Build Studio npm pair\n    needs: [validate_publication_selection]\n",
+            ),
+            "build_npm must need build",
+        )
+
+    def test_build_npm_must_pin_sdk_version(self):
+        self.assert_rejected(
+            self.mutated(
+                "          dotnet-version: '10.0.300'\n",
+                "          dotnet-version: 10.x\n",
+            ),
+            "build_npm must pin setup-dotnet to 10.0.300",
+        )
+
+    def test_publish_npm_must_not_build_the_pair(self):
+        self.assert_rejected(
+            self.mutated(
+                "      - name: Verify Studio npm pair\n",
+                "      - name: Build the Studio npm pair\n        run: python3 scripts/integration-program/prove_studio_npm_pair.py\n\n      - name: Verify Studio npm pair\n",
+            ),
+            "publish_npm must not build the Studio pair; build_npm owns that step",
+        )
+
+    def test_feedz_publish_must_pass_a_dist_tag(self):
+        self.assert_rejected(
+            self.mutated(
+                '            if output=$(npm publish "$file" --access public --tag "$tag" 2>&1); then\n',
+                '            if output=$(npm publish "$file" --access public 2>&1); then\n',
+            ),
+            "publish_npm Feedz publish must pass a dist-tag",
+        )
+
+    def test_id_set_count_is_pinned(self):
+        self.assertEqual([], gates.id_set_count_violations())
+        self.assertEqual(231, gates.EXPECTED_PACKAGE_COUNT)
 
 
 def if_expression_of_real(name: str) -> str:
