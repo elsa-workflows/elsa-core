@@ -28,7 +28,7 @@ CANDIDATE_PUBLISH = "consolidated_package_executor.py publish"
 
 SELECTION_JOB = "validate_publication_selection"
 # Each gated job is switched on by the workflow_dispatch input of the same name.
-GATED_JOBS = ("publish_preview_feedz", "publish_nuget", "deploy_coverage")
+GATED_JOBS = ("publish_preview_feedz", "publish_nuget", "publish_npm", "deploy_coverage")
 MANUAL_DISPATCH = "github.event_name == 'workflow_dispatch'"
 # Top-level conjuncts a gated job's if: needs beyond the dispatch and its own input.
 REQUIRED_REF_CONDITIONS = {
@@ -38,6 +38,9 @@ REQUIRED_REF_CONDITIONS = {
     "publish_nuget": (
         "startsWith(github.ref, 'refs/tags/')",
     ),
+    "publish_npm": (
+        "startsWith(github.ref, 'refs/tags/')",
+    ),
     "deploy_coverage": (" || ".join(f"github.ref == '{ref}'" for ref in COVERAGE_REFS),),
 }
 SELECTION_COMMAND = "python3 scripts/validate_packages_publication_selection.py"
@@ -45,6 +48,7 @@ SELECTION_ENV = {
     "REF": "${{ github.ref }}",
     "PUBLISH_PREVIEW_FEEDZ": "${{ inputs.publish_preview_feedz }}",
     "PUBLISH_NUGET": "${{ inputs.publish_nuget }}",
+    "PUBLISH_NPM": "${{ inputs.publish_npm }}",
     "DEPLOY_COVERAGE": "${{ inputs.deploy_coverage }}",
 }
 # Probed against the script the selection job runs, not a copy of its rules.
@@ -53,17 +57,29 @@ REQUIRED_REJECTIONS = (
     ("a non-release tag", "refs/tags/test-1", {}),
     ("Feedz from a stable 3.10.x tag", "refs/tags/3.10.0", {"feedz": True}),
     ("Feedz from a later stable 3.10.x tag", "refs/tags/3.10.1", {"feedz": True}),
+    ("npm from a stable 3.10.x tag", "refs/tags/3.10.0", {"npm": True}),
 )
 REQUIRED_ACCEPTANCES = (
     ("Feedz from a 3.10.x prerelease tag", "refs/tags/3.10.0-rc1", {"feedz": True}),
     ("NuGet from a stable 3.10.x tag", "refs/tags/3.10.0", {"nuget": True}),
+    ("npm from a 3.10.x prerelease tag", "refs/tags/3.10.0-rc1", {"npm": True}),
 )
 PROMOTE_STABLE_REF = "startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')"
+TAG_3100 = "github.ref == 'refs/tags/3.10.0'"
 # Exact if: bodies after ${{ }} unwrap. Substring checks miss polarity
 # (inverted Compile+Pack) and a leading `false &&` (disabled staging).
-SKIP_STABLE_310_PACK = (
+SKIP_STABLE_310_PROMOTE = (
     "!(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && "
     f"{PROMOTE_STABLE_REF})"
+)
+SKIP_STABLE_310_PACK = (
+    "!((github.event_name == 'workflow_dispatch' && inputs.publish_nuget && "
+    f"{PROMOTE_STABLE_REF}) || ((github.event_name == 'release' || "
+    f"github.event_name == 'workflow_dispatch') && {TAG_3100}))"
+)
+CANDIDATE_PACK = (
+    f"(github.event_name == 'release' || github.event_name == 'workflow_dispatch') && "
+    f"{TAG_3100} && !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget)"
 )
 PROMOTE_STABLE_310 = PROMOTE_STABLE_REF
 SKIP_STABLE_310_DOWNLOAD = f"!({PROMOTE_STABLE_REF})"
@@ -76,6 +92,21 @@ UPLOAD_PACKAGES = (
 RETRIEVE_CANDIDATE = "python3 scripts/stage_consolidated_candidate_nupkgs.py retrieve"
 STAGE_CANDIDATE = "python3 scripts/stage_consolidated_candidate_nupkgs.py stage"
 GUARD_CANDIDATE = "python3 scripts/validate_packages_id_set.py"
+PREPARE_CANDIDATE = "python3 scripts/integration-program/prepare_consolidated_release_candidate.py"
+CANDIDATE_PACK_LINES = (
+    "set -euo pipefail",
+    f"{PREPARE_CANDIDATE} --version 3.10.0 --output \"$RUNNER_TEMP/consolidated-candidate\" --remote-sources",
+    GUARD_CANDIDATE,
+)
+NPM_PAIR = "python3 scripts/integration-program/prove_studio_npm_pair.py"
+BUILD_NPM_JOB = "build_npm"
+SETUP_DOTNET_PIN = "actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9"
+DOTNET_SDK = "10.0.300"
+NPM_ARTIFACT = "studio-npm-pair"
+WASM_TGZ = "elsa-workflows-elsa-studio-wasm-${GITHUB_REF_NAME}.tgz"
+REACT_TGZ = "elsa-workflows-elsa-studio-wasm-react-${GITHUB_REF_NAME}.tgz"
+ID_SET = ROOT / "scripts/validate_packages_id_set.txt"
+EXPECTED_PACKAGE_COUNT = 231
 # Exact non-empty run: lines after horizontal-whitespace collapse. A joined
 # string would accept YAML `>-`, which folds the block into one no-op `set`.
 CANDIDATE_GUARD_LINES = ("set -euo pipefail", STAGE_CANDIDATE, GUARD_CANDIDATE)
@@ -95,6 +126,7 @@ PUBLICATION_REFERENCES = {
     "actions/deploy-pages": re.compile(r"\bactions/deploy-pages\b", re.IGNORECASE),
     "dotnet nuget push": re.compile(r"\bdotnet[\s\\]+nuget[\s\\]+push\b", re.IGNORECASE),
     "the push-nuget-packages action": re.compile(r"push-nuget-packages", re.IGNORECASE),
+    "npm publish": re.compile(r"\bnpm[\s\\]+publish\b", re.IGNORECASE),
 }
 EXPRESSION = re.compile(r"\$\{\{(.*?)\}\}", re.DOTALL)
 # Inside ${{ }}: the secrets context as a whole, e.g. toJSON(secrets), which carries every feed key.
@@ -467,13 +499,169 @@ def promotion_job_violations(jobs: dict) -> list[str]:
     )
     violations += extra
     if compile_step is not None and if_expression(build_steps[compile_step].get("if")) != SKIP_STABLE_310_PACK:
-        violations.append("build Compile+Pack must skip a stable 3.10.x nuget.org promotion")
-    if setup_dotnet is not None and if_expression(build_steps[setup_dotnet].get("if")) != SKIP_STABLE_310_PACK:
+        violations.append("build Compile+Pack must skip a stable 3.10.x nuget.org promotion and the 3.10.0 candidate pack")
+    if setup_dotnet is not None and if_expression(build_steps[setup_dotnet].get("if")) != SKIP_STABLE_310_PROMOTE:
         violations.append("build setup-dotnet must skip a stable 3.10.x nuget.org promotion")
-    if setup_node is not None and if_expression(build_steps[setup_node].get("if")) != SKIP_STABLE_310_PACK:
+    if setup_node is not None and if_expression(build_steps[setup_node].get("if")) != SKIP_STABLE_310_PROMOTE:
         violations.append("build Node setup must skip a stable 3.10.x nuget.org promotion")
     if upload is not None and if_expression(build_steps[upload].get("if")) != UPLOAD_PACKAGES:
         violations.append("build Upload artifact must skip a stable 3.10.x nuget.org promotion")
+    pack, extra = _unique_step(
+        build_steps,
+        lambda step: PREPARE_CANDIDATE in _step_run(step),
+        missing="build job must pack the 3.10.0 set via prepare_consolidated_release_candidate.py",
+        duplicate="build job must contain exactly one consolidated candidate pack step",
+    )
+    violations += extra
+    if pack is not None:
+        if if_expression(build_steps[pack].get("if")) != CANDIDATE_PACK:
+            violations.append("build candidate pack if: must be the 3.10.0 tag pack condition")
+        if _run_lines(build_steps[pack]) != list(CANDIDATE_PACK_LINES):
+            violations.append("build candidate pack run: must be exactly prepare, then the ID-set guard")
+        if GUARD_CANDIDATE not in _step_run(build_steps[pack]):
+            violations.append("build candidate pack must run the ID-set guard")
+    return violations
+
+
+def id_set_count_violations() -> list[str]:
+    ids = [
+        line.strip()
+        for line in ID_SET.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.startswith("#")
+    ]
+    if len(ids) != EXPECTED_PACKAGE_COUNT:
+        return [f"validate_packages_id_set.txt must list exactly {EXPECTED_PACKAGE_COUNT} package IDs"]
+    return []
+
+
+def _dotnet_version(step: dict) -> str:
+    value = (step.get("with") or {}).get("dotnet-version") if isinstance(step.get("with"), dict) else None
+    if isinstance(value, list):
+        value = "\n".join(str(item) for item in value)
+    return " ".join(str(value or "").split())
+
+
+def build_npm_violations(jobs: dict) -> list[str]:
+    """The Studio npm pair is built without credentials and uploaded for publish_npm."""
+    job = jobs.get(BUILD_NPM_JOB)
+    if not isinstance(job, dict):
+        return ["job 'build_npm' is missing"]
+    violations = []
+    if BUILD_JOB not in needs(job):
+        violations.append("build_npm must need build")
+    if SELECTION_JOB not in needs(job):
+        violations.append("build_npm must need validate_publication_selection")
+    env = job.get("env") if isinstance(job.get("env"), dict) else {}
+    if str(env.get("PYTHONDONTWRITEBYTECODE") or "") != "1":
+        violations.append("build_npm must set PYTHONDONTWRITEBYTECODE to 1")
+    if grants_id_token(job.get("permissions")):
+        violations.append("build_npm must not request id-token: write")
+    steps = [step for step in job.get("steps") or [] if isinstance(step, dict)]
+    if any(node.get("continue-on-error") not in (None, False) for node in (job, *steps)):
+        violations.append("build_npm must not continue on error")
+    if any(re.search(r"\bnpm[\s\\]+publish\b", _step_run(step), re.IGNORECASE) for step in steps):
+        violations.append("build_npm must not publish")
+    setup, extra = _unique_step(
+        steps,
+        lambda step: str(step.get("uses") or "").startswith("actions/setup-dotnet@"),
+        missing="build_npm must pin setup-dotnet to 10.0.300",
+        duplicate="build_npm must contain exactly one setup-dotnet step",
+    )
+    violations += extra
+    if setup is not None:
+        uses = str(steps[setup].get("uses") or "")
+        if uses != SETUP_DOTNET_PIN:
+            violations.append("build_npm must pin setup-dotnet to the studio-npm-pair SHA")
+        if _dotnet_version(steps[setup]) != DOTNET_SDK:
+            violations.append("build_npm must pin setup-dotnet to 10.0.300")
+    build_pair, extra = _unique_step(
+        steps,
+        lambda step: NPM_PAIR in _step_run(step),
+        missing="build_npm must build the Studio pair via prove_studio_npm_pair.py",
+        duplicate="build_npm must contain exactly one Studio pair build step",
+    )
+    violations += extra
+    upload, extra = _unique_step(
+        steps,
+        lambda step: str(step.get("uses") or "").startswith("actions/upload-artifact@")
+        and str((step.get("with") or {}).get("name") or "") == NPM_ARTIFACT,
+        missing="build_npm must upload the studio-npm-pair artifact",
+        duplicate="build_npm must contain exactly one studio-npm-pair upload",
+    )
+    violations += extra
+    if None not in (build_pair, upload) and not build_pair < upload:
+        violations.append("build_npm must build the pair before uploading it")
+    return violations
+
+
+def npm_job_violations(jobs: dict) -> list[str]:
+    """The Studio npm publisher downloads the pair and publishes only to Feedz."""
+    job = jobs.get("publish_npm")
+    if not isinstance(job, dict):
+        return ["gated job 'publish_npm' is missing"]
+    violations = []
+    if BUILD_NPM_JOB not in needs(job):
+        violations.append("publish_npm must need build_npm so it publishes the credential-free pair artifact")
+    if grants_id_token(job.get("permissions")):
+        violations.append("publish_npm must not request id-token: write until trusted publishing is confirmed")
+    steps = [step for step in job.get("steps") or [] if isinstance(step, dict)]
+    if any(node.get("continue-on-error") not in (None, False) for node in (job, *steps)):
+        violations.append("publish_npm must not continue on error")
+    if any(NPM_PAIR in _step_run(step) for step in steps):
+        violations.append("publish_npm must not build the Studio pair; build_npm owns that step")
+    if any(str(step.get("uses") or "").startswith("actions/setup-dotnet@") for step in steps):
+        violations.append("publish_npm must not install a .NET SDK; build_npm owns that step")
+    closed, extra = _unique_step(
+        steps,
+        lambda step: step.get("name") == "Fail closed on stable 3.10.x",
+        missing="publish_npm must fail closed on a stable 3.10.x tag",
+        duplicate="publish_npm must contain exactly one stable 3.10.x fail-closed step",
+    )
+    violations += extra
+    if closed is not None:
+        if if_expression(steps[closed].get("if")) != PROMOTE_STABLE_310:
+            violations.append("publish_npm fail-closed if: must be exactly the stable 3.10.x tag condition")
+        if "exit 1" not in _step_run(steps[closed]):
+            violations.append("publish_npm fail-closed step must exit 1")
+        if STATUS_FUNCTION.search(if_expression(steps[closed].get("if")) or ""):
+            violations.append("publish_npm fail-closed step must not call always(), failure() or cancelled()")
+    download, extra = _unique_step(
+        steps,
+        lambda step: str(step.get("uses") or "").startswith("actions/download-artifact@")
+        and str((step.get("with") or {}).get("name") or "") == NPM_ARTIFACT,
+        missing="publish_npm must download the studio-npm-pair artifact",
+        duplicate="publish_npm must contain exactly one studio-npm-pair download",
+    )
+    violations += extra
+    verify, extra = _unique_step(
+        steps,
+        lambda step: WASM_TGZ in _step_run(step) and REACT_TGZ in _step_run(step),
+        missing="publish_npm must verify the two Studio npm tarballs at the tag version",
+        duplicate="publish_npm must contain exactly one Studio npm pair verify step",
+    )
+    violations += extra
+    feedz_publish, extra = _unique_step(
+        steps,
+        lambda step: step.get("name") == "npm publish to Feedz",
+        missing="publish_npm must contain npm publish to Feedz",
+        duplicate="publish_npm must contain exactly one Feedz npm publish step",
+    )
+    violations += extra
+    if feedz_publish is not None:
+        run = _step_run(steps[feedz_publish])
+        if not re.search(r"\bnpm[\s\\]+publish\b.*--tag", run):
+            violations.append("publish_npm Feedz publish must pass a dist-tag")
+        if "EPUBLISHCONFLICT" not in run or "cannot publish over" not in run:
+            violations.append("publish_npm Feedz publish must skip a version that already exists")
+        if "::error::" not in run:
+            violations.append("publish_npm Feedz publish must fail closed when the Feedz key is empty")
+    publishes = [index for index, step in enumerate(steps) if re.search(r"\bnpm[\s\\]+publish\b", _step_run(step), re.IGNORECASE)]
+    if len(publishes) != 1:
+        violations.append("publish_npm must contain exactly one npm publish step")
+    if any(step.get("name") == "npm publish to npmjs.com" or re.search(r"registry\.npmjs\.(org|com)", _step_run(step)) for step in steps):
+        violations.append("publish_npm must not publish to npmjs.com until trusted publishing is confirmed")
+    if None not in (closed, download, verify, feedz_publish) and not closed < download < verify < feedz_publish:
+        violations.append("publish_npm must fail closed on stable 3.10.x, download and verify the pair, then publish to Feedz")
     return violations
 
 
@@ -572,6 +760,8 @@ def workflow_violations(workflow: Any) -> list[str]:
         *selection_violations(jobs),
         *pages_upload_violations(jobs),
         *promotion_job_violations(jobs),
+        *build_npm_violations(jobs),
+        *npm_job_violations(jobs),
         *defaults,
     ]
 
@@ -585,6 +775,7 @@ def source_violations(source: str) -> list[str]:
 
 def main() -> int:
     violations = [
+        *(f"{ID_SET.relative_to(ROOT)}: {violation}" for violation in id_set_count_violations()),
         *(f"{WORKFLOW.relative_to(ROOT)}: {violation}" for violation in source_violations(WORKFLOW.read_text(encoding="utf-8"))),
         *(
             f"{CANDIDATE_WORKFLOW.relative_to(ROOT)}: {violation}"
@@ -595,7 +786,7 @@ def main() -> int:
         print(violation, file=sys.stderr)
     if violations:
         return 1
-    print("Package publication gates hold: only the three default-off, validated dispatch jobs can publish or deploy.")
+    print("Package publication gates hold: only the four default-off, validated dispatch jobs can publish or deploy.")
     return 0
 
 
