@@ -52,7 +52,8 @@
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.24" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="8.0.24" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.24" PrivateAssets="all" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.24" />
+    <!-- WebAssembly.Server is pinned to the first patched version of this line. -->
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.32" />
     <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.24" />
     <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="8.0.24" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
@@ -71,7 +72,8 @@
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.13" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="9.0.13" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.13" PrivateAssets="all" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.13" />
+    <!-- WebAssembly.Server is pinned to the first patched version of this line. -->
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.21" />
     <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.13" />
     <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="9.0.13" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.18" />
@@ -90,7 +92,8 @@
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.3" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="10.0.3" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.3" PrivateAssets="all" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.3" />
+    <!-- WebAssembly.Server is pinned to the first patched version of this line. -->
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.13" />
     <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.3" />
     <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="10.0.3" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
