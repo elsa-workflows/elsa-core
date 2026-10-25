@@ -706,6 +706,15 @@ class WorkflowGateTests(unittest.TestCase):
             "build_npm must need build",
         )
 
+    def test_build_npm_must_set_pythondontwritebytecode(self):
+        self.assert_rejected(
+            self.mutated(
+                "    env:\n      PYTHONDONTWRITEBYTECODE: '1'\n",
+                "",
+            ),
+            "build_npm must set PYTHONDONTWRITEBYTECODE to 1",
+        )
+
     def test_build_npm_must_pin_sdk_version(self):
         self.assert_rejected(
             self.mutated(
