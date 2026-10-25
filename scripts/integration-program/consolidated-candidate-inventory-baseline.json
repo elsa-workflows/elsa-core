@@ -1,10 +1,10 @@
 {
   "evidence": {
     "scope": "Reviewed inventory comparison only; never relabel or reuse as candidate bytes.",
-    "source_commit": "5ee3e6b8861f7c1dc4fc2ff8f23592254452bd65",
+    "source_commit": "cd02e6549caf3eaea31e00b2bdc9912376a3f216",
     "version": "3.10.0",
     "package_count": 233,
-    "exclusion_count": 157,
+    "exclusion_count": 158,
     "issue": 8725,
     "note": "Main-branch evaluation only. release/3.10.0 must regenerate this file from that branch; the two inventories are not the same."
   },
@@ -722,6 +722,11 @@
     {
       "id": "Elsa.Studio.Bpmn.Tests",
       "project": "studio/src/modules/Elsa.Studio.Bpmn.Tests/Elsa.Studio.Bpmn.Tests.csproj",
+      "reason": "Project or inherited nonpackable setting remains active"
+    },
+    {
+      "id": "Elsa.Studio.Bpmn.X6",
+      "project": "studio/src/modules/Elsa.Studio.Bpmn.X6/Elsa.Studio.Bpmn.X6.csproj",
       "reason": "Project or inherited nonpackable setting remains active"
     },
     {
