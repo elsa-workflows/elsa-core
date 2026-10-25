@@ -1,5 +1,6 @@
 using Elsa.Common.Multitenancy;
 using Elsa.Secrets.Contracts;
+using Elsa.Secrets.Exceptions;
 using Elsa.Secrets.Services;
 using Elsa.Tenants.Options;
 using Microsoft.Extensions.Options;
@@ -140,7 +141,7 @@ public class InMemorySecretRepository : ISecretRepository
             if (existing is not null)
             {
                 if (!SecretRepositoryTenant.CanReplace(existing, secret, tenantAccessor, tenancyEnabled))
-                    throw new InvalidOperationException($"A secret named '{secret.Name}' belongs to another tenant.");
+                    throw new SecretTenantOwnershipException(secret.Name);
 
                 // EF updates the row found by name, retaining its primary key and tenant ownership.
                 var replacement = Clone(secret);

@@ -1,7 +1,9 @@
 using Elsa.Authorization;
 using Elsa.Abstractions;
+using Elsa.Secrets.Exceptions;
 using Elsa.Secrets.Permissions;
 using Elsa.Secrets.Services;
+using Microsoft.AspNetCore.Http;
 
 namespace Elsa.Secrets.Endpoints.Secrets.Rotate;
 
@@ -19,6 +21,11 @@ internal class Endpoint(ISecretManager manager) : ElsaEndpoint<RotateSecretReque
         {
             var secret = await manager.RotateAsync(Route<string>("name")!, request, cancellationToken);
             await Send.OkAsync(secret.ToModel(), cancellationToken);
+        }
+        catch (SecretTenantOwnershipException e)
+        {
+            AddError(e.Message);
+            await Send.ErrorsAsync(StatusCodes.Status403Forbidden, cancellationToken);
         }
         catch (InvalidOperationException e)
         {

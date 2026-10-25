@@ -37,7 +37,9 @@ readable from every tenant — is the exposure this change exists to close.
 ## Shared platform secrets
 
 Set `TenantId` to `*` (`Tenant.AgnosticTenantId`, per ADR 0009) for a secret every tenant should resolve, such
-as a platform-wide SMTP credential. Agnostic secrets are visible from every tenant context.
+as a platform-wide SMTP credential. Agnostic secrets are visible from every tenant context. When multitenancy is
+enabled, only the `*` context can change them: updating, rotating, revoking or deleting one from another tenant
+context returns `403`.
 
 When multitenancy is enabled, new EF-backed secrets can only be inserted for the ambient tenant. A named
 tenant cannot create an agnostic secret or assign a new secret to another tenant by supplying `TenantId` in
