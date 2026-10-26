@@ -161,7 +161,7 @@ public class MongoWorkflowInstanceStore(MongoDbStore<WorkflowInstance> mongoDbSt
         DateTimeOffset cancellingAt,
         CancellationToken cancellationToken = default)
     {
-        if (!IsCancellableSubStatus(expectedSubStatus))
+        if (!expectedSubStatus.IsCancellableSubStatus())
             return false;
 
         var filter = Builders<WorkflowInstance>.Filter.And(
@@ -186,7 +186,7 @@ public class MongoWorkflowInstanceStore(MongoDbStore<WorkflowInstance> mongoDbSt
         DateTimeOffset restoredAt,
         CancellationToken cancellationToken = default)
     {
-        if (!IsCancellableSubStatus(previousSubStatus))
+        if (!previousSubStatus.IsCancellableSubStatus())
             return false;
 
         var filter = Builders<WorkflowInstance>.Filter.And(
@@ -201,12 +201,6 @@ public class MongoWorkflowInstanceStore(MongoDbStore<WorkflowInstance> mongoDbSt
         var result = await mongoDbStore.UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
         return result.MatchedCount > 0;
     }
-
-    /// <summary>
-    /// Sub-statuses a non-executing running instance may leave for <see cref="WorkflowSubStatus.Cancelling"/>.
-    /// </summary>
-    private static bool IsCancellableSubStatus(WorkflowSubStatus subStatus) =>
-        subStatus is WorkflowSubStatus.Pending or WorkflowSubStatus.Suspended or WorkflowSubStatus.Interrupted;
 
     /// <inheritdoc />
     public async ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)

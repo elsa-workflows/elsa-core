@@ -223,7 +223,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         DateTimeOffset cancellingAt,
         CancellationToken cancellationToken = default)
     {
-        if (!IsCancellableSubStatus(expectedSubStatus))
+        if (!expectedSubStatus.IsCancellableSubStatus())
             return false;
 
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
@@ -251,7 +251,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
         DateTimeOffset restoredAt,
         CancellationToken cancellationToken = default)
     {
-        if (!IsCancellableSubStatus(previousSubStatus))
+        if (!previousSubStatus.IsCancellableSubStatus())
             return false;
 
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
@@ -268,12 +268,6 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
 
         return updated > 0;
     }
-
-    /// <summary>
-    /// Sub-statuses a non-executing running instance may leave for <see cref="WorkflowSubStatus.Cancelling"/>.
-    /// </summary>
-    private static bool IsCancellableSubStatus(WorkflowSubStatus subStatus) =>
-        subStatus is WorkflowSubStatus.Pending or WorkflowSubStatus.Suspended or WorkflowSubStatus.Interrupted;
 
     /// <inheritdoc />
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.SerializeAsync(WorkflowState, CancellationToken)")]

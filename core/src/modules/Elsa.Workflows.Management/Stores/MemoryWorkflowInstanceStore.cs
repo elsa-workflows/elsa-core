@@ -219,7 +219,7 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
         DateTimeOffset cancellingAt,
         CancellationToken cancellationToken = default)
     {
-        if (!IsCancellableSubStatus(expectedSubStatus))
+        if (!expectedSubStatus.IsCancellableSubStatus())
             return ValueTask.FromResult(false);
 
         // Same lock as Save/Update so a runner's commit cannot land between the predicate and the column writes.
@@ -247,7 +247,7 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
         DateTimeOffset restoredAt,
         CancellationToken cancellationToken = default)
     {
-        if (!IsCancellableSubStatus(previousSubStatus))
+        if (!previousSubStatus.IsCancellableSubStatus())
             return ValueTask.FromResult(false);
 
         lock (_sync)
@@ -264,12 +264,6 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
             return ValueTask.FromResult(true);
         }
     }
-
-    /// <summary>
-    /// Sub-statuses a non-executing running instance may leave for <see cref="WorkflowSubStatus.Cancelling"/>.
-    /// </summary>
-    private static bool IsCancellableSubStatus(WorkflowSubStatus subStatus) =>
-        subStatus is WorkflowSubStatus.Pending or WorkflowSubStatus.Suspended or WorkflowSubStatus.Interrupted;
 
     private static string GetId(WorkflowInstance workflowInstance) => workflowInstance.Id;
 

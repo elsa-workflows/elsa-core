@@ -186,7 +186,7 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
         DateTimeOffset cancellingAt,
         CancellationToken cancellationToken = default)
     {
-        if (!IsCancellableSubStatus(expectedSubStatus))
+        if (!expectedSubStatus.IsCancellableSubStatus())
             return false;
 
         // Conditional write: do not SaveAsync a Find snapshot. The script no-ops unless the source still matches,
@@ -225,7 +225,7 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
         DateTimeOffset restoredAt,
         CancellationToken cancellationToken = default)
     {
-        if (!IsCancellableSubStatus(previousSubStatus))
+        if (!previousSubStatus.IsCancellableSubStatus())
             return false;
 
         var updated = await _store.UpdateByQueryAsync(d =>
@@ -252,12 +252,6 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
 
         return updated > 0;
     }
-
-    /// <summary>
-    /// Sub-statuses a non-executing running instance may leave for <see cref="WorkflowSubStatus.Cancelling"/>.
-    /// </summary>
-    private static bool IsCancellableSubStatus(WorkflowSubStatus subStatus) =>
-        subStatus is WorkflowSubStatus.Pending or WorkflowSubStatus.Suspended or WorkflowSubStatus.Interrupted;
 
     private static SearchRequestDescriptor<WorkflowInstance> Sort<TProp>(SearchRequestDescriptor<WorkflowInstance> descriptor, WorkflowInstanceOrder<TProp> order)
     {

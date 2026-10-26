@@ -208,7 +208,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
         DateTimeOffset cancellingAt,
         CancellationToken cancellationToken = default)
     {
-        if (!IsCancellableSubStatus(expectedSubStatus))
+        if (!expectedSubStatus.IsCancellableSubStatus())
             return false;
 
         var record = new WorkflowInstanceRecord
@@ -246,7 +246,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
         DateTimeOffset restoredAt,
         CancellationToken cancellationToken = default)
     {
-        if (!IsCancellableSubStatus(previousSubStatus))
+        if (!previousSubStatus.IsCancellableSubStatus())
             return false;
 
         var record = new WorkflowInstanceRecord
@@ -274,12 +274,6 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
 
         return updated > 0;
     }
-
-    /// <summary>
-    /// Sub-statuses a non-executing running instance may leave for <see cref="WorkflowSubStatus.Cancelling"/>.
-    /// </summary>
-    private static bool IsCancellableSubStatus(WorkflowSubStatus subStatus) =>
-        subStatus is WorkflowSubStatus.Pending or WorkflowSubStatus.Suspended or WorkflowSubStatus.Interrupted;
 
     private void ApplyFilter(ParameterizedQuery query, WorkflowInstanceFilter filter)
     {

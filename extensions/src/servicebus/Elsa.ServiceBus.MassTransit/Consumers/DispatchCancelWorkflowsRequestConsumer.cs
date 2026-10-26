@@ -1,4 +1,5 @@
 using Elsa.Common;
+using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Requests;
@@ -51,7 +52,7 @@ public class DispatchCancelWorkflowsRequestConsumer(
                 request.WorkflowInstanceId,
                 previousSubStatus,
                 cancellingAt,
-                TruncateToMilliseconds(systemClock.UtcNow),
+                systemClock.UtcNow.TruncateToMilliseconds(),
                 CancellationToken.None);
 
             if (!restored)
@@ -69,11 +70,5 @@ public class DispatchCancelWorkflowsRequestConsumer(
                 "Failed to restore workflow instance {WorkflowInstanceId} after cancellation failed.",
                 request.WorkflowInstanceId);
         }
-    }
-
-    private static DateTimeOffset TruncateToMilliseconds(DateTimeOffset value)
-    {
-        var ticks = value.Ticks - (value.Ticks % TimeSpan.TicksPerMillisecond);
-        return new DateTimeOffset(ticks, value.Offset);
     }
 }

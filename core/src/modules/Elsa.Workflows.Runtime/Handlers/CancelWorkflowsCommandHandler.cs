@@ -50,7 +50,7 @@ public class CancelWorkflowsCommandHandler(
                 request.WorkflowInstanceId,
                 previousSubStatus,
                 cancellingAt,
-                TruncateToMilliseconds(systemClock.UtcNow),
+                systemClock.UtcNow.TruncateToMilliseconds(),
                 CancellationToken.None);
 
             if (!restored)
@@ -68,11 +68,5 @@ public class CancelWorkflowsCommandHandler(
                 "Failed to restore workflow instance {WorkflowInstanceId} after background cancellation failed.",
                 request.WorkflowInstanceId);
         }
-    }
-
-    private static DateTimeOffset TruncateToMilliseconds(DateTimeOffset value)
-    {
-        var ticks = value.Ticks - (value.Ticks % TimeSpan.TicksPerMillisecond);
-        return new DateTimeOffset(ticks, value.Offset);
     }
 }

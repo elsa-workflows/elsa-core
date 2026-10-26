@@ -228,35 +228,111 @@ public class MongoWorkflowInstanceStoreTests
 
     private static bool FilterMarksSuspendedRunning(FilterDefinition<WorkflowInstance> filter, string id)
     {
-        var rendered = RenderDocument(filter).ToJson();
-        return rendered.Contains(id, StringComparison.Ordinal)
-               && rendered.Contains(((int)WorkflowStatus.Running).ToString(), StringComparison.Ordinal)
-               && rendered.Contains(((int)WorkflowSubStatus.Suspended).ToString(), StringComparison.Ordinal)
-               && rendered.Contains("IsExecuting", StringComparison.Ordinal);
+        var document = RenderDocument(filter);
+        return FilterHasId(document, id)
+               && EqualsField(document, "Status", (int)WorkflowStatus.Running)
+               && EqualsField(document, "SubStatus", (int)WorkflowSubStatus.Suspended)
+               && ContainsField(document, "IsExecuting");
     }
 
     private static bool UpdateSetsCancellingOnly(UpdateDefinition<WorkflowInstance> update)
     {
-        var rendered = Render(update);
-        return rendered.Contains(((int)WorkflowSubStatus.Cancelling).ToString(), StringComparison.Ordinal)
-               && rendered.Contains("UpdatedAt", StringComparison.Ordinal)
-               && !rendered.Contains("WorkflowState", StringComparison.Ordinal)
-               && !rendered.Contains("\"Status\"", StringComparison.Ordinal);
+        var set = SetDocument(update);
+        return set.ElementCount == 2
+               && set["SubStatus"].ToInt32() == (int)WorkflowSubStatus.Cancelling
+               && set.Contains("UpdatedAt")
+               && !set.Contains("Status")
+               && !set.Contains("WorkflowState");
     }
 
     private static bool FilterRestoresCancellingGeneration(FilterDefinition<WorkflowInstance> filter, string id)
     {
-        var rendered = RenderDocument(filter).ToJson();
-        return rendered.Contains(id, StringComparison.Ordinal)
-               && rendered.Contains(((int)WorkflowSubStatus.Cancelling).ToString(), StringComparison.Ordinal)
-               && rendered.Contains("UpdatedAt", StringComparison.Ordinal);
+        var document = RenderDocument(filter);
+        return FilterHasId(document, id)
+               && EqualsField(document, "SubStatus", (int)WorkflowSubStatus.Cancelling)
+               && ContainsField(document, "UpdatedAt");
     }
 
     private static bool UpdateRestoresSuspendedOnly(UpdateDefinition<WorkflowInstance> update)
     {
-        var rendered = Render(update);
-        return rendered.Contains(((int)WorkflowSubStatus.Suspended).ToString(), StringComparison.Ordinal)
-               && rendered.Contains("UpdatedAt", StringComparison.Ordinal)
-               && !rendered.Contains("WorkflowState", StringComparison.Ordinal);
+        var set = SetDocument(update);
+        return set.ElementCount == 2
+               && set["SubStatus"].ToInt32() == (int)WorkflowSubStatus.Suspended
+               && set.Contains("UpdatedAt")
+               && !set.Contains("WorkflowState");
+    }
+
+    private static BsonDocument SetDocument(UpdateDefinition<WorkflowInstance> update)
+    {
+        var serializer = BsonSerializer.LookupSerializer<WorkflowInstance>();
+        var rendered = update.Render(new RenderArgs<WorkflowInstance>(serializer, BsonSerializer.SerializerRegistry));
+        return rendered["$set"].AsBsonDocument;
+    }
+
+    /// <summary>
+    /// Matches an equality on <paramref name="fieldName"/>. A <c>$ne</c> clause for the same field does not count.
+    /// </summary>
+    private static bool EqualsField(BsonValue node, string fieldName, int expected)
+    {
+        switch (node.BsonType)
+        {
+            case BsonType.Document:
+                foreach (var element in node.AsBsonDocument)
+                {
+                    if (element.Name == fieldName && IsEqualValue(element.Value, expected))
+                        return true;
+
+                    if (element.Name != fieldName && EqualsField(element.Value, fieldName, expected))
+                        return true;
+                }
+
+                return false;
+            case BsonType.Array:
+                foreach (var item in node.AsBsonArray)
+                {
+                    if (EqualsField(item, fieldName, expected))
+                        return true;
+                }
+
+                return false;
+            default:
+                return false;
+        }
+    }
+
+    private static bool IsEqualValue(BsonValue value, int expected)
+    {
+        if (value.IsNumeric)
+            return value.ToInt32() == expected;
+
+        return value.IsBsonDocument
+               && value.AsBsonDocument.TryGetValue("$eq", out var equal)
+               && equal.IsNumeric
+               && equal.ToInt32() == expected;
+    }
+
+    private static bool ContainsField(BsonValue node, string fieldName)
+    {
+        switch (node.BsonType)
+        {
+            case BsonType.Document:
+                foreach (var element in node.AsBsonDocument)
+                {
+                    if (element.Name == fieldName || ContainsField(element.Value, fieldName))
+                        return true;
+                }
+
+                return false;
+            case BsonType.Array:
+                foreach (var item in node.AsBsonArray)
+                {
+                    if (ContainsField(item, fieldName))
+                        return true;
+                }
+
+                return false;
+            default:
+                return false;
+        }
     }
 }

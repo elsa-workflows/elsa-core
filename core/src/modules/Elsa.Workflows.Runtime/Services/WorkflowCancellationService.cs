@@ -103,7 +103,7 @@ public class WorkflowCancellationService(
         }
 
         var previousSubStatus = instance.SubStatus;
-        var cancellingAt = TruncateToMilliseconds(systemClock.UtcNow);
+        var cancellingAt = systemClock.UtcNow.TruncateToMilliseconds();
         var marked = await workflowInstanceStore.TryMarkCancellingAsync(instance.Id, previousSubStatus, cancellingAt, cancellationToken);
 
         if (!marked)
@@ -136,7 +136,7 @@ public class WorkflowCancellationService(
     {
         if (instance.Status != WorkflowStatus.Running
             || instance.IsExecuting
-            || !IsCancellableSubStatus(instance.SubStatus))
+            || !instance.SubStatus.IsCancellableSubStatus())
         {
             logger.LogDebug(
                 "Workflow instance {WorkflowInstanceId} is executing or not a running cancellable sub-status. Leaving {SubStatus} unchanged.",
@@ -205,7 +205,7 @@ public class WorkflowCancellationService(
                 workflowInstanceId,
                 previousSubStatus,
                 cancellingAt,
-                TruncateToMilliseconds(systemClock.UtcNow),
+                systemClock.UtcNow.TruncateToMilliseconds(),
                 CancellationToken.None);
 
             if (!restored)
@@ -246,16 +246,4 @@ public class WorkflowCancellationService(
 
         await Task.WhenAll(tasks);
     }
-
-    /// <summary>
-    /// Millisecond stamps survive providers that round timestamps to microseconds.
-    /// </summary>
-    private static DateTimeOffset TruncateToMilliseconds(DateTimeOffset value)
-    {
-        var ticks = value.Ticks - (value.Ticks % TimeSpan.TicksPerMillisecond);
-        return new DateTimeOffset(ticks, value.Offset);
-    }
-
-    private static bool IsCancellableSubStatus(WorkflowSubStatus subStatus) =>
-        subStatus is WorkflowSubStatus.Pending or WorkflowSubStatus.Suspended or WorkflowSubStatus.Interrupted;
 }
