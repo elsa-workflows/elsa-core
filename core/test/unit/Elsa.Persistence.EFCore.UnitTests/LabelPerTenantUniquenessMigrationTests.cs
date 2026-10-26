@@ -2,8 +2,9 @@ namespace Elsa.Persistence.EFCore.UnitTests;
 
 /// <summary>
 /// PerTenantLabelUniqueness must stamp null TenantId to "" and must not
-/// auto-delete duplicate labels (associations would be at risk). A preflight
-/// lists leftover keys and aborts; CreateIndex then fails loudly if any remain.
+/// auto-delete duplicate labels (associations would be at risk). Providers that
+/// can abort from raw SQL list leftover keys first; SQLite cannot, so CreateIndex
+/// is the fail-loud path.
 /// SQL Server/MySQL/Oracle also preflight over-length Name/NormalizedName
 /// before narrowing those columns. PostgreSQL/SQLite keep provider column types.
 /// </summary>
@@ -26,8 +27,17 @@ public class LabelPerTenantUniquenessMigrationTests
         Assert.DoesNotContain("COALESCE", migration, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public void PerTenantLabelUniqueness_SqliteFailsLoudlyAtCreateIndex()
+    {
+        // SQLite cannot abort from a standalone SELECT, so CreateIndex unique is the fail-loud path.
+        var migration = FindMigration("Elsa.Persistence.EFCore.Sqlite");
+        Assert.DoesNotContain("RAISE", migration, StringComparison.Ordinal);
+        Assert.Contains("CreateIndex", migration, StringComparison.Ordinal);
+        Assert.Contains("unique: true", migration, StringComparison.Ordinal);
+    }
+
     [Theory]
-    [InlineData("Elsa.Persistence.EFCore.Sqlite", "RAISE")]
     [InlineData("Elsa.Persistence.EFCore.SqlServer", "THROW")]
     [InlineData("Elsa.Persistence.EFCore.PostgreSql", "RAISE EXCEPTION")]
     [InlineData("Elsa.Persistence.EFCore.MySql", "SIGNAL")]
