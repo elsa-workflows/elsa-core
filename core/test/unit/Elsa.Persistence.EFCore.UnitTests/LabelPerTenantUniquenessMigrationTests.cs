@@ -1,3 +1,7 @@
+using Elsa.Persistence.EFCore.Sqlite;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+
 namespace Elsa.Persistence.EFCore.UnitTests;
 
 /// <summary>
@@ -35,6 +39,29 @@ public class LabelPerTenantUniquenessMigrationTests
         Assert.DoesNotContain("RAISE", migration, StringComparison.Ordinal);
         Assert.Contains("CreateIndex", migration, StringComparison.Ordinal);
         Assert.Contains("unique: true", migration, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task PerTenantLabelUniqueness_SqliteMigrateAsync_SucceedsOnEmptyDatabase()
+    {
+        var databasePath = Path.Join(Path.GetTempPath(), $"elsa-labels-uniqueness-{Guid.NewGuid():N}.db");
+
+        try
+        {
+            await using var dbContext = new LabelsDbContextFactory()
+                .CreateDbContext(["--connectionString", $"Data Source={databasePath}"]);
+
+            await dbContext.Database.MigrateAsync();
+
+            var applied = await dbContext.Database.GetAppliedMigrationsAsync();
+            Assert.Contains(applied, id => id.Contains("PerTenantLabelUniqueness", StringComparison.Ordinal));
+        }
+        finally
+        {
+            SqliteConnection.ClearAllPools();
+            if (File.Exists(databasePath))
+                File.Delete(databasePath);
+        }
     }
 
     [Theory]
