@@ -9,6 +9,8 @@ on:
       - 'docker/**'
       - '.dockerignore'
       - 'scripts/test-ca-trust.sh'
+      - 'scripts/validate_studio_dockerfile.py'
+      - 'scripts/test_validate_studio_dockerfile.py'
       - 'core/test/TlsSmoke/**'
       - '.github/workflows/docker-ca.yml'
   push:
@@ -18,11 +20,27 @@ on:
       - 'docker/**'
       - '.dockerignore'
       - 'scripts/test-ca-trust.sh'
+      - 'scripts/validate_studio_dockerfile.py'
+      - 'scripts/test_validate_studio_dockerfile.py'
       - 'core/test/TlsSmoke/**'
       - '.github/workflows/docker-ca.yml'
 
 jobs:
+  validate-studio-dockerfile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Reject a Studio image that builds or runs the server
+        run: |
+          python3 -B scripts/validate_studio_dockerfile.py
+          python3 -B -m unittest discover -s scripts -p 'test_validate_studio_dockerfile.py'
+          python3 -B -O -m unittest discover -s scripts -p 'test_validate_studio_dockerfile.py'
+
   smoke:
+    needs: validate-studio-dockerfile
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -61,6 +79,17 @@ jobs:
 
       - name: Build ${{ matrix.name }} image
         run: docker build -f ${{ matrix.dockerfile }} -t ${{ matrix.image }} .
+
+      - name: Require the Studio image command to be the Studio host
+        if: matrix.name == 'elsa-studio'
+        run: |
+          set -euo pipefail
+          cmd="$(docker inspect -f '{{json .Config.Cmd}}' "${{ matrix.image }}")"
+          echo "$cmd"
+          test "$cmd" = '["dotnet","Elsa.Studio.Host.Server.dll"]'
+          case "$cmd" in
+            *ModularServer*|*Elsa.Server.Web*|*ServerAndStudio*) exit 1 ;;
+          esac
 
       - name: Run TLS smoke tests
         env:
