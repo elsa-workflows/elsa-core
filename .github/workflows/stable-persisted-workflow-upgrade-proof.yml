@@ -35,26 +35,26 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/upgrade-input"
-          gh api repos/elsa-workflows/elsa-core/actions/artifacts/11412848210 > "$RUNNER_TEMP/upgrade-input/artifact.json"
-          gh api repos/elsa-workflows/elsa-core/actions/runs/37456860080/attempts/1 > "$RUNNER_TEMP/upgrade-input/producer-run.json"
-          jq -e '.id == 37456860080 and .run_attempt == 1 and
-            .head_sha == "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205" and .conclusion == "success" and
+          gh api repos/elsa-workflows/elsa-core/actions/artifacts/12603436856 > "$RUNNER_TEMP/upgrade-input/artifact.json"
+          gh api repos/elsa-workflows/elsa-core/actions/runs/40202201744/attempts/1 > "$RUNNER_TEMP/upgrade-input/producer-run.json"
+          jq -e '.id == 40202201744 and .run_attempt == 1 and
+            .head_sha == "f60c00766b107cb15038c77873d84779f0680722" and .conclusion == "success" and
             (.event == "push" or .event == "workflow_dispatch") and
             .path == ".github/workflows/prepare-consolidated-release-candidate.yml"' "$RUNNER_TEMP/upgrade-input/producer-run.json" > /dev/null
-          jq -e '.id == 11412848210 and
-            .name == "consolidated-candidate-ba5b348aa2414fdf7c19d9d8806e87b7c91a4205-37456860080-1" and
-            .expired == false and .expires_at == "2026-11-05T12:13:30Z" and
-            .digest == "sha256:ace85260c3389916fe3dcd7ee9cd5b766e4030dd6cee13c7f89285ada79c944f" and
-            .size_in_bytes == 92659861 and .workflow_run.id == 37456860080 and
-            .workflow_run.head_sha == "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205"' "$RUNNER_TEMP/upgrade-input/artifact.json" > /dev/null
-          test "$(date -u -d '2026-11-05T12:13:30Z' +%s)" -gt "$(date -u +%s)"
-          gh api repos/elsa-workflows/elsa-core/actions/artifacts/11412848210/zip > "$RUNNER_TEMP/upgrade-input/candidate.zip"
-          test "$(stat -c %s "$RUNNER_TEMP/upgrade-input/candidate.zip")" -eq 92659861
+          jq -e '.id == 12603436856 and
+            .name == "consolidated-candidate-f60c00766b107cb15038c77873d84779f0680722-40202201744-1" and
+            .expired == false and .expires_at == "2026-11-24T15:03:46Z" and
+            .digest == "sha256:13241bc1889f03165d4925e6294e829eee3094cd9694b00ef37d904e69d01a0d" and
+            .size_in_bytes == 96125850 and .workflow_run.id == 40202201744 and
+            .workflow_run.head_sha == "f60c00766b107cb15038c77873d84779f0680722"' "$RUNNER_TEMP/upgrade-input/artifact.json" > /dev/null
+          test "$(date -u -d '2026-11-24T15:03:46Z' +%s)" -gt "$(date -u +%s)"
+          gh api repos/elsa-workflows/elsa-core/actions/artifacts/12603436856/zip > "$RUNNER_TEMP/upgrade-input/candidate.zip"
+          test "$(stat -c %s "$RUNNER_TEMP/upgrade-input/candidate.zip")" -eq 96125850
           printf '%s  %s\n' \
-            'ace85260c3389916fe3dcd7ee9cd5b766e4030dd6cee13c7f89285ada79c944f' \
+            '13241bc1889f03165d4925e6294e829eee3094cd9694b00ef37d904e69d01a0d' \
             "$RUNNER_TEMP/upgrade-input/candidate.zip" | sha256sum --check --status
           jq -nc --arg observed "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            '{schema:1,artifact_id:11412848210,archive_sha256:"ace85260c3389916fe3dcd7ee9cd5b766e4030dd6cee13c7f89285ada79c944f",retrieved_at:$observed}' \
+            '{schema:1,artifact_id:12603436856,archive_sha256:"13241bc1889f03165d4925e6294e829eee3094cd9694b00ef37d904e69d01a0d",retrieved_at:$observed}' \
             > "$RUNNER_TEMP/upgrade-input/live-retrieval.json"
       - name: Transfer only the verified original inputs
         id: transfer

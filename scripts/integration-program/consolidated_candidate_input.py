@@ -8,23 +8,30 @@ from pathlib import Path
 
 import prepare_consolidated_release_candidate as candidate
 
-SOURCE = "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205"
-RUN = 37456860080
+SOURCE = "f60c00766b107cb15038c77873d84779f0680722"
+RUN = 40202201744
 ATTEMPT = 1
-ARTIFACT = 11412848210
-ARCHIVE_SHA256 = "ace85260c3389916fe3dcd7ee9cd5b766e4030dd6cee13c7f89285ada79c944f"
-MANIFEST_SHA256 = "df25b11556bbf21210cfc33ef02f3d0841af6316a20ece69422c7b8143a11820"
-ENVELOPE_SHA256 = "ef5e772020b151089b64b90b819d36ff371ed5e65212f7fdc7b2934d9860ddda"
+ARTIFACT = 12603436856
+ARCHIVE_SHA256 = "13241bc1889f03165d4925e6294e829eee3094cd9694b00ef37d904e69d01a0d"
+MANIFEST_SHA256 = "ac881065f8c59465955032a37ad733dd95e3c32c91acdbbb10b267ed993524e6"
+ENVELOPE_SHA256 = "417f73adf02866c6ec4aaa261609c50320508bed683fd78b217e2dcbb8c35af8"
 ORIGINAL_ENVELOPE = Path(__file__).resolve().parent / "persisted-workflow-upgrade/stable-original-envelope.json"
-# Frozen Oct 6 pin inventory (225 packages, including Elsa.SamplePackage).
-# The forward-looking candidate baseline may differ; recovery and the executor
+# Frozen candidate pin inventory (231 packages). Recovery and the executor
 # use this snapshot so they still accept the real pinned artifact.
 PIN_INVENTORY = Path(__file__).resolve().parent / "consolidated-pin-inventory-baseline.json"
 PRODUCER = {"version": "3.10.0", "source_commit": SOURCE, "run_id": RUN, "run_attempt": ATTEMPT, "artifact_id": ARTIFACT}
 _PIN = json.loads(PIN_INVENTORY.read_text(encoding="utf-8"))
+_ENVELOPE = json.loads(ORIGINAL_ENVELOPE.read_text(encoding="utf-8"))
 PIN_PACKAGE_COUNT = len(_PIN["packages"])
 PIN_EXCLUSION_COUNT = len(_PIN["exclusions"])
 PIN_EXCLUSION_ID_COUNT = len({row["id"] for row in _PIN["exclusions"]})
+ARCHIVE_SIZE = _ENVELOPE["archive_size"]
+EXPIRES_AT = _ENVELOPE["expires_at"]
+if any(_ENVELOPE.get(key) != value for key, value in (
+        ("source_commit", SOURCE), ("run_id", RUN), ("run_attempt", ATTEMPT),
+        ("artifact_id", ARTIFACT), ("archive_sha256", ARCHIVE_SHA256),
+        ("preupload_manifest_sha256", MANIFEST_SHA256))):
+    raise RuntimeError("Pinned envelope identity does not match candidate input constants")
 
 
 def require(condition: bool, message: str) -> None:

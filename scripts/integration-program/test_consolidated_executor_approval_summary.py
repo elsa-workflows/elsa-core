@@ -70,18 +70,24 @@ class SummaryTests(unittest.TestCase):
             "credential_provenance_verified": False, "credential_isolation": "pending_authenticated_execution_check",
             "candidate": {**executor.candidate_input.PRODUCER, "archive_sha256": executor.candidate_input.ARCHIVE_SHA256,
                 "preupload_manifest_sha256": executor.candidate_input.MANIFEST_SHA256, "expires_at": executor.EXPIRY,
-                "package_count": 225, "exclusion_count": 124, "excluded_id_count": 123}}}
+                "package_count": executor.candidate_input.PIN_PACKAGE_COUNT,
+                "exclusion_count": executor.candidate_input.PIN_EXCLUSION_COUNT,
+                "excluded_id_count": executor.candidate_input.PIN_EXCLUSION_ID_COUNT}}}
 
     def render(self):
         return summary.render_summary(self.admission, self.verification, artifact_id=1234, artifact_digest="sha256:"+"c"*64,
                                       admission_hash="d"*64, verification_hash="e"*64)
 
-    def test_complete_missing_observation_reports_actual_668_and_immutable_bindings(self):
+    def test_complete_missing_observation_reports_actual_associations_and_immutable_bindings(self):
+        packages = executor.candidate_input.PIN_PACKAGE_COUNT
+        associations = packages + 7 + (packages - 7) * 2
         text = self.render()
         for value in (self.context["GITHUB_SHA"], executor.candidate_input.SOURCE, executor.candidate_input.ARCHIVE_SHA256,
                       executor.candidate_input.MANIFEST_SHA256, executor.candidate_input.ENVELOPE_SHA256,
-                      self.verification["original_provenance"]["inventory_sha256"], "668 DLL/PDB associations", "668 distinct PDB keys",
-                      "225 package pairs / 450 original archives", "0 matching, 225 missing", "Native approval is **pending**",
+                      self.verification["original_provenance"]["inventory_sha256"],
+                      f"{associations} DLL/PDB associations", f"{associations} distinct PDB keys",
+                      f"{packages} package pairs / {packages * 2} original archives",
+                      f"0 matching, {packages} missing", "Native approval is **pending**",
                       "Publication readiness remains **false**", "not release acceptance", "does not independently reconstruct",
                       "/actions/runs/99/artifacts/1234"):
             self.assertIn(value, text)
@@ -96,7 +102,7 @@ class SummaryTests(unittest.TestCase):
             row.update(classification="matching", status=200, pdb_sha256=pdbs[row["key"]])
         proof.update(counts=summary.counts(proof["packages"]), content_converged=True)
         self.verification["before"]["content_verified"] = self.verification["content_verified"] = True
-        self.assertIn("225 matching, 0 missing", self.render())
+        self.assertIn(f"{executor.candidate_input.PIN_PACKAGE_COUNT} matching, 0 missing", self.render())
         self.assertIn("Publication readiness remains **false**", self.render())
 
     def test_runtime_and_receipt_identity_mismatch_block(self):

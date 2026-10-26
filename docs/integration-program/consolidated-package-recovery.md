@@ -2,11 +2,11 @@
 
 [Task #8645](https://github.com/elsa-workflows/elsa-core/issues/8645) prepares read-only reconciliation for the original 3.10.0 candidate accepted by [#8631](https://github.com/elsa-workflows/elsa-core/issues/8631). It does not publish packages, complete the release, or authorize publisher cutover.
 
-The planner always covers the complete retained manifest: 225 NuGet packages and their paired symbol archives, plus 124 exclusion rows representing 123 package IDs. Exclusions retain project identity. There is no package subset, version override or feed override. Maintenance release publishers remain unchanged.
+The planner always covers the complete retained manifest: 231 NuGet packages and their paired symbol archives, plus 135 exclusion rows representing 134 package IDs. Exclusions retain project identity. There is no package subset, version override or feed override. Maintenance release publishers remain unchanged.
 
 ## Original inputs
 
-Use the original archive from Core run `37456860080`, attempt `1`, artifact `11412848210`, source `ba5b348aa2414fdf7c19d9d8806e87b7c91a4205`. The archive SHA-256 is `ace85260c3389916fe3dcd7ee9cd5b766e4030dd6cee13c7f89285ada79c944f` and its size is 92,659,861 bytes. It expires on 2026-11-05 at 12:13:30 UTC. Expiry or deletion blocks this candidate; it never authorizes rebuilding equivalent-looking bytes.
+Use the original archive from Core run `40202201744`, attempt `1`, artifact `12603436856`, source `f60c00766b107cb15038c77873d84779f0680722`. The archive SHA-256 is `13241bc1889f03165d4925e6294e829eee3094cd9694b00ef37d904e69d01a0d` and its size is 96,125,850 bytes. It expires on 2026-11-24 at 15:03:46 UTC. Expiry or deletion blocks this candidate; it never authorizes rebuilding equivalent-looking bytes.
 
 The input directory contains exactly:
 
@@ -48,7 +48,7 @@ Production reads are fixed to the Elsa Feedz repository. GETs reject redirects a
 
 Raw local and remote archive SHA-256 values are distinct from signature-aware payload hashes. Signature normalization reuses the maintenance verifier and does not verify a signing certificate. Symbol archive hashes identify the original local pairs; remote symbol publication and retrieval remain unverified.
 
-Any conflict or unverifiable package blocks reconciliation. `classification_complete` means every package has a classification other than unverifiable, so a complete ledger can still contain blocking conflicts. `content_converged` requires all 225 packages to match. Even a fully matching ledger always has `publication_ready: false` and `publication_performed: false`.
+Any conflict or unverifiable package blocks reconciliation. `classification_complete` means every package has a classification other than unverifiable, so a complete ledger can still contain blocking conflicts. `content_converged` requires all 231 packages to match. Even a fully matching ledger always has `publication_ready: false` and `publication_performed: false`.
 
 Intended-reader access, remote symbols, publisher authority, publisher quiescence, publication approval and full compatibility remain separate pending gates. The planner never treats a push exit status, `--skip-duplicate`, an anonymous absence or a previous successful invocation as permission to publish. Receipts retain fixed diagnostic categories and hashes, not credentials, response headers, raw server errors or private paths.
 

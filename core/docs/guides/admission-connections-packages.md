@@ -2,7 +2,7 @@
 
 These seven existing module identities are selected for the consolidated Core 3.10 line under [#8661](https://github.com/elsa-workflows/elsa-core/issues/8661). Their projects use the normal Core library packaging convention, inheriting target frameworks `net8.0`, `net9.0` and `net10.0`. This source baseline preserves existing APIs and schemas; it does not claim that the new packages have passed evaluated MSBuild, archive or PostgreSQL consumer verification. Exact-head hosted evidence is required for that acceptance.
 
-Use one tested head and version for the entire internal dependency closure. The accepted [lockstep/Core publisher policy](../../../docs/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md) applies: no independent version streams, historical candidate modification or publication is authorized by enabling these projects. The original stable candidate `11412848210` excludes these identities and cannot be reused as their package evidence. SQLite Connections persistence and other optional providers remain outside this promotion.
+Use one tested head and version for the entire internal dependency closure. The accepted [lockstep/Core publisher policy](../../../docs/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md) applies: no independent version streams, historical candidate modification or publication is authorized by enabling these projects. The Oct 6 candidate `11412848210` excluded these identities. The current pin (`12603436856`) includes them. SQLite Connections persistence and other optional providers remain outside this promotion.
 
 ## Public setup and contract baseline
 
