@@ -197,7 +197,8 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
             d.Query(q => q.Bool(b => b.Must(m => m.Match(mt => mt.Field(f => f.Id).Query(workflowInstanceId)))));
             d.Script(s => s
                 .Source("""
-                    if (ctx._source.status == params.running
+                    if (ctx._source.id == params.workflowInstanceId
+                        && ctx._source.status == params.running
                         && ctx._source.isExecuting != true
                         && ctx._source.subStatus == params.expected
                         && ctx._source.subStatus != params.executing) {
@@ -207,6 +208,7 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
                       ctx.op = 'noop';
                     }
                     """)
+                .AddParam("workflowInstanceId", workflowInstanceId)
                 .AddParam("running", WorkflowStatus.Running.ToString())
                 .AddParam("expected", expectedSubStatus.ToString())
                 .AddParam("executing", WorkflowSubStatus.Executing.ToString())
@@ -234,7 +236,8 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
             d.Query(q => q.Bool(b => b.Must(m => m.Match(mt => mt.Field(f => f.Id).Query(workflowInstanceId)))));
             d.Script(s => s
                 .Source("""
-                    if (ctx._source.status == params.running
+                    if (ctx._source.id == params.workflowInstanceId
+                        && ctx._source.status == params.running
                         && ctx._source.subStatus == params.cancelling
                         && ctx._source.updatedAt == params.expectedCancellingAt) {
                       ctx._source.subStatus = params.previous;
@@ -243,6 +246,7 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
                       ctx.op = 'noop';
                     }
                     """)
+                .AddParam("workflowInstanceId", workflowInstanceId)
                 .AddParam("running", WorkflowStatus.Running.ToString())
                 .AddParam("cancelling", WorkflowSubStatus.Cancelling.ToString())
                 .AddParam("expectedCancellingAt", expectedCancellingAt.ToString("O"))
