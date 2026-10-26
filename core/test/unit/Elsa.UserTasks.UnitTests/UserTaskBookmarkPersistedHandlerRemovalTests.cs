@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Elsa.Common;
+using Elsa.Common.Multitenancy;
 using Elsa.UserTasks.Contracts;
 using Elsa.UserTasks.Handlers;
 using Elsa.UserTasks.Models;
@@ -17,7 +18,7 @@ public class UserTaskBookmarkPersistedHandlerRemovalTests
     public async Task HandleAsync_FinalizesRemovedBookmarkWithCamelCasedPayload()
     {
         var projectionService = Substitute.For<IUserTaskProjectionService>();
-        var handler = new UserTaskBookmarkPersistedHandler(projectionService, Substitute.For<IUserTaskRepository>(), Substitute.For<ISystemClock>());
+        var handler = new UserTaskBookmarkPersistedHandler(projectionService, Substitute.For<IUserTaskRepository>(), Substitute.For<ISystemClock>(), new DefaultTenantAccessor());
         // Shape of a payload read back from storage without a registered type: an untyped, camelCased property bag.
         var payload = new Dictionary<string, object?> { ["tenantId"] = "tenant-1", ["taskId"] = "task-1" };
         var bookmark = new Bookmark("bookmark-1", "UserTask", "hash", payload, "a1", "n1", null, DateTimeOffset.UtcNow);
@@ -34,7 +35,7 @@ public class UserTaskBookmarkPersistedHandlerRemovalTests
     public async Task HandleAsync_FinalizesRemovedBookmarkWithJsonElementPayloadAndStringEnums()
     {
         var projectionService = Substitute.For<IUserTaskProjectionService>();
-        var handler = new UserTaskBookmarkPersistedHandler(projectionService, Substitute.For<IUserTaskRepository>(), Substitute.For<ISystemClock>());
+        var handler = new UserTaskBookmarkPersistedHandler(projectionService, Substitute.For<IUserTaskRepository>(), Substitute.For<ISystemClock>(), new DefaultTenantAccessor());
         // Full stored payload as read back from storage: camelCased, with enums written as strings.
         const string json = """
             {

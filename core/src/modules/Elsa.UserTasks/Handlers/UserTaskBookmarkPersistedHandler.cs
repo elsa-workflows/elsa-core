@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Elsa.Common;
+using Elsa.Common.Multitenancy;
 using Elsa.Mediator.Contracts;
 using Elsa.UserTasks.Contracts;
 using Elsa.UserTasks.Helpers;
@@ -16,7 +17,8 @@ namespace Elsa.UserTasks.Handlers;
 public sealed class UserTaskBookmarkPersistedHandler(
     IUserTaskProjectionService projectionService,
     IUserTaskRepository repository,
-    ISystemClock clock) : INotificationHandler<WorkflowBookmarksPersisted>
+    ISystemClock clock,
+    ITenantAccessor tenantAccessor) : INotificationHandler<WorkflowBookmarksPersisted>
 {
     public async Task HandleAsync(WorkflowBookmarksPersisted notification, CancellationToken cancellationToken)
     {
@@ -39,7 +41,7 @@ public sealed class UserTaskBookmarkPersistedHandler(
 
             if (taskId == null)
             {
-                tenantId ??= TryReadTenantId(bookmark.Payload) ?? "";
+                tenantId ??= TryReadTenantId(bookmark.Payload) ?? tenantAccessor.TenantId;
                 var task = await repository.FindByBookmarkIdAsync(tenantId, bookmark.Id, cancellationToken);
                 if (task == null)
                     continue;
@@ -49,7 +51,7 @@ public sealed class UserTaskBookmarkPersistedHandler(
             }
 
             await projectionService.FinalizeBookmarkRemovalAsync(new UserTaskBookmarkRemoval(
-                tenantId ?? "",
+                tenantId ?? tenantAccessor.TenantId,
                 taskId,
                 bookmark.Id,
                 clock.UtcNow), cancellationToken);

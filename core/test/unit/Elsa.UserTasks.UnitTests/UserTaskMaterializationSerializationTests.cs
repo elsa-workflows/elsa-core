@@ -1,4 +1,6 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
+using Elsa.UserTasks.Contracts;
 using Elsa.UserTasks.Handlers;
 using Elsa.UserTasks.Models;
 using Elsa.Workflows;
@@ -7,6 +9,7 @@ using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime.Notifications;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.DependencyInjection;
+using NSubstitute;
 using Xunit;
 
 namespace Elsa.UserTasks.UnitTests;
@@ -35,32 +38,57 @@ public class UserTaskMaterializationSerializationTests
     }
 
     [Fact]
+    public void UserTaskMaterialization_KeepsNamedConstructorAndDeconstruct()
+    {
+        var materialization = new UserTaskMaterialization(
+            TenantId: "tenant",
+            WorkflowDefinitionId: "definition",
+            WorkflowInstanceId: "instance",
+            ActivityInstanceId: "activity",
+            BookmarkId: "bookmark",
+            Definition: new UserTaskDefinitionSnapshot { Title = "Approve" },
+            SnapshotMembers: [],
+            SnapshotGroups: [],
+            CreatedAt: DateTimeOffset.UtcNow,
+            TaskId: "task-keep");
+
+        var (tenantId, _, _, _, _, _, _, _, _, taskId, _, _, _) = materialization;
+
+        Assert.Equal("tenant", tenantId);
+        Assert.Equal("task-keep", taskId);
+    }
+
+    [Fact]
     public async Task HandleAsync_FinalizesCompletingTaskAfterWorkflowStateSerializerRoundTrip()
     {
-        var fixture = new UserTaskTestFixture();
-        var actor = fixture.Actor("user-1");
-        var task = await fixture.ProjectAsync(actor.Subject);
-        var claimed = await fixture.Manager.ClaimAsync(UserTaskTestFixture.TenantId, task.Id, new(task.Revision, "claim-1"), actor);
-        Assert.True(claimed.Accepted);
-        var completing = await fixture.Manager.CompleteAsync(
-            UserTaskTestFixture.TenantId, task.Id, new(claimed.Task.Revision, "complete-1", "Approve"), actor);
-        Assert.True(completing.Accepted);
-        Assert.Equal(UserTaskStatus.Completing, completing.Task.Status);
+        await FinalizeAfterStateSerializerAsync(configure: null, useRepositorySubstitute: false);
+    }
 
-        using var serviceProvider = BuildUserTasksProvider();
-        var serializer = serviceProvider.GetRequiredService<IWorkflowStateSerializer>();
-        var bookmark = new Bookmark(task.BookmarkId, "UserTask", "hash", fixture.Materialization(actor.Subject), "a1", "n1", null, DateTimeOffset.UtcNow);
-        var state = serializer.Deserialize(serializer.Serialize(new WorkflowState { Id = "i", Bookmarks = [bookmark] }));
-        var payload = state.Bookmarks.Single().Payload;
-        Assert.IsType<UserTaskMaterialization>(payload);
-        Assert.Equal("task-1", ((UserTaskMaterialization)payload!).TaskId);
+    [Fact]
+    public async Task HandleAsync_FinalizesCompletingTaskWithInvitationAfterWorkflowStateSerializerRoundTrip()
+    {
+        var (payload, completed) = await FinalizeAfterStateSerializerAsync(
+            configure: definition => definition with { Invitations = [new("bearer", ["Approve"], BearerOnly: true)] },
+            useRepositorySubstitute: true);
 
-        var handler = new UserTaskBookmarkPersistedHandler(fixture.Projection, fixture.Repository, fixture.Clock);
-        await handler.HandleAsync(new WorkflowBookmarksPersisted(Diff.From<Bookmark>([], [state.Bookmarks.Single()], [])), CancellationToken.None);
+        var materialization = Assert.IsType<UserTaskMaterialization>(payload);
+        Assert.Single(materialization.Definition.Invitations);
+        Assert.Equal(UserTaskStatus.Completed, completed.Status);
+    }
 
-        var completed = await fixture.Repository.GetAsync(UserTaskTestFixture.TenantId, task.Id);
-        Assert.Equal(UserTaskStatus.Completed, completed!.Status);
-        Assert.NotNull(completed.CompletedAt);
+    [Fact]
+    public async Task HandleAsync_FinalizesCompletingTaskWithActionMetadataAfterWorkflowStateSerializerRoundTrip()
+    {
+        var (payload, completed) = await FinalizeAfterStateSerializerAsync(
+            configure: definition => definition with
+            {
+                Actions = [new("Approve", "Approve", new Dictionary<string, object?> { ["c"] = "g" })]
+            },
+            useRepositorySubstitute: true);
+
+        var materialization = Assert.IsType<UserTaskMaterialization>(payload);
+        Assert.NotNull(materialization.Definition.Actions.Single().Metadata);
+        Assert.Equal(UserTaskStatus.Completed, completed.Status);
     }
 
     [Fact]
@@ -84,13 +112,70 @@ public class UserTaskMaterializationSerializationTests
             }
         };
         var bookmark = new Bookmark(task.BookmarkId, "UserTask", "hash", payload, "a1", "n1", null, DateTimeOffset.UtcNow);
-        var handler = new UserTaskBookmarkPersistedHandler(fixture.Projection, fixture.Repository, fixture.Clock);
+        var handler = new UserTaskBookmarkPersistedHandler(fixture.Projection, fixture.Repository, fixture.Clock, new DefaultTenantAccessor());
 
         await handler.HandleAsync(new WorkflowBookmarksPersisted(Diff.From<Bookmark>([], [bookmark], [])), CancellationToken.None);
 
         var completed = await fixture.Repository.GetAsync(UserTaskTestFixture.TenantId, task.Id);
         Assert.Equal(UserTaskStatus.Completed, completed!.Status);
         Assert.NotNull(completed.CompletedAt);
+    }
+
+    [Fact]
+    public async Task HandleAsync_FinalizesCompletingTaskWhenPayloadIsNullOnNonDefaultTenant()
+    {
+        var fixture = new UserTaskTestFixture();
+        var actor = fixture.Actor("user-1");
+        var task = await fixture.ProjectAsync(actor.Subject);
+        var claimed = await fixture.Manager.ClaimAsync(UserTaskTestFixture.TenantId, task.Id, new(task.Revision, "claim-1"), actor);
+        var completing = await fixture.Manager.CompleteAsync(
+            UserTaskTestFixture.TenantId, task.Id, new(claimed.Task.Revision, "complete-1", "Approve"), actor);
+        Assert.Equal(UserTaskStatus.Completing, completing.Task.Status);
+
+        var tenantAccessor = new DefaultTenantAccessor();
+        using (tenantAccessor.PushContext(new Tenant { Id = UserTaskTestFixture.TenantId, Name = "Tenant" }))
+        {
+            var bookmark = new Bookmark(task.BookmarkId, "UserTask", "hash", null, "a1", "n1", null, DateTimeOffset.UtcNow);
+            var handler = new UserTaskBookmarkPersistedHandler(fixture.Projection, fixture.Repository, fixture.Clock, tenantAccessor);
+            await handler.HandleAsync(new WorkflowBookmarksPersisted(Diff.From<Bookmark>([], [bookmark], [])), CancellationToken.None);
+        }
+
+        var completed = await fixture.Repository.GetAsync(UserTaskTestFixture.TenantId, task.Id);
+        Assert.Equal(UserTaskStatus.Completed, completed!.Status);
+        Assert.NotNull(completed.CompletedAt);
+    }
+
+    private static async Task<(object? Payload, UserTask Completed)> FinalizeAfterStateSerializerAsync(
+        Func<UserTaskDefinitionSnapshot, UserTaskDefinitionSnapshot>? configure,
+        bool useRepositorySubstitute)
+    {
+        var fixture = new UserTaskTestFixture();
+        var actor = fixture.Actor("user-1");
+        var task = await fixture.ProjectAsync(actor.Subject);
+        var claimed = await fixture.Manager.ClaimAsync(UserTaskTestFixture.TenantId, task.Id, new(task.Revision, "claim-1"), actor);
+        Assert.True(claimed.Accepted);
+        var completing = await fixture.Manager.CompleteAsync(
+            UserTaskTestFixture.TenantId, task.Id, new(claimed.Task.Revision, "complete-1", "Approve"), actor);
+        Assert.True(completing.Accepted);
+        Assert.Equal(UserTaskStatus.Completing, completing.Task.Status);
+
+        using var serviceProvider = BuildUserTasksProvider();
+        var serializer = serviceProvider.GetRequiredService<IWorkflowStateSerializer>();
+        var bookmark = new Bookmark(task.BookmarkId, "UserTask", "hash", fixture.Materialization(actor.Subject, configure), "a1", "n1", null, DateTimeOffset.UtcNow);
+        var state = serializer.Deserialize(serializer.Serialize(new WorkflowState { Id = "i", Bookmarks = [bookmark] }));
+        var payload = state.Bookmarks.Single().Payload;
+        Assert.IsType<UserTaskMaterialization>(payload);
+        Assert.Equal("task-1", ((UserTaskMaterialization)payload!).TaskId);
+
+        // A substitute that returns nothing keeps the bookmark-id fallback from hiding a deserialize failure.
+        IUserTaskRepository repository = useRepositorySubstitute ? Substitute.For<IUserTaskRepository>() : fixture.Repository;
+        var handler = new UserTaskBookmarkPersistedHandler(fixture.Projection, repository, fixture.Clock, new DefaultTenantAccessor());
+        await handler.HandleAsync(new WorkflowBookmarksPersisted(Diff.From<Bookmark>([], [state.Bookmarks.Single()], [])), CancellationToken.None);
+
+        var completed = await fixture.Repository.GetAsync(UserTaskTestFixture.TenantId, task.Id);
+        Assert.Equal(UserTaskStatus.Completed, completed!.Status);
+        Assert.NotNull(completed.CompletedAt);
+        return (payload, completed);
     }
 
     private static ServiceProvider BuildUserTasksProvider()

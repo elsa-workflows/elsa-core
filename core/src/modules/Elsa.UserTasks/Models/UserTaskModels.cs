@@ -134,7 +134,17 @@ public sealed record UserTaskActor(
 public sealed record UserTaskAction(
     string Key,
     string Label,
-    IReadOnlyDictionary<string, object?>? Metadata = null);
+    IReadOnlyDictionary<string, object?>? Metadata = null)
+{
+    /// <summary>
+    /// Used by the workflow-state serializer. That path writes <c>$id</c> on <see cref="Metadata"/>, which
+    /// System.Text.Json cannot apply to a constructor parameter.
+    /// </summary>
+    [JsonConstructor]
+    public UserTaskAction() : this("", "")
+    {
+    }
+}
 
 /// <summary>
 /// Describes a guest invitation that is materialized with a task. The secret itself is created only
@@ -146,7 +156,17 @@ public sealed record UserTaskInvitationDefinition(
     TimeSpan? Lifetime = null,
     bool BearerOnly = false,
     string? Recipient = null,
-    IReadOnlyDictionary<string, object?>? Configuration = null);
+    IReadOnlyDictionary<string, object?>? Configuration = null)
+{
+    /// <summary>
+    /// Used by the workflow-state serializer. That path writes <c>$id</c> on <see cref="AllowedActions"/>, which
+    /// System.Text.Json cannot apply to a constructor parameter.
+    /// </summary>
+    [JsonConstructor]
+    public UserTaskInvitationDefinition() : this("", [])
+    {
+    }
+}
 
 public sealed record UserTaskFormReference(
     string ProviderName,
@@ -400,60 +420,29 @@ public sealed record UserTaskInvitationVerificationResultWithSession(
     DateTimeOffset? ExpiresAt = null,
     string? FailureCode = null);
 
-public sealed record UserTaskMaterialization
+public sealed record UserTaskMaterialization(
+    string TenantId,
+    string WorkflowDefinitionId,
+    string WorkflowInstanceId,
+    string ActivityInstanceId,
+    string BookmarkId,
+    UserTaskDefinitionSnapshot Definition,
+    IReadOnlyCollection<ParticipantReference> SnapshotMembers,
+    IReadOnlyCollection<ParticipantReference> SnapshotGroups,
+    DateTimeOffset CreatedAt,
+    string? TaskId = null,
+    string? WorkflowDefinitionName = null,
+    int? WorkflowDefinitionVersion = null,
+    string? WorkflowInstanceReference = null)
 {
     /// <summary>
     /// Used by the workflow-state serializer. That path writes <c>$id</c>/<c>$ref</c>, which System.Text.Json
     /// cannot apply to constructor parameters of a positional record.
     /// </summary>
     [JsonConstructor]
-    public UserTaskMaterialization()
+    public UserTaskMaterialization() : this("", "", "", "", "", new(), [], [], default)
     {
     }
-
-    public UserTaskMaterialization(
-        string tenantId,
-        string workflowDefinitionId,
-        string workflowInstanceId,
-        string activityInstanceId,
-        string bookmarkId,
-        UserTaskDefinitionSnapshot definition,
-        IReadOnlyCollection<ParticipantReference> snapshotMembers,
-        IReadOnlyCollection<ParticipantReference> snapshotGroups,
-        DateTimeOffset createdAt,
-        string? taskId = null,
-        string? workflowDefinitionName = null,
-        int? workflowDefinitionVersion = null,
-        string? workflowInstanceReference = null)
-    {
-        TenantId = tenantId;
-        WorkflowDefinitionId = workflowDefinitionId;
-        WorkflowInstanceId = workflowInstanceId;
-        ActivityInstanceId = activityInstanceId;
-        BookmarkId = bookmarkId;
-        Definition = definition;
-        SnapshotMembers = snapshotMembers;
-        SnapshotGroups = snapshotGroups;
-        CreatedAt = createdAt;
-        TaskId = taskId;
-        WorkflowDefinitionName = workflowDefinitionName;
-        WorkflowDefinitionVersion = workflowDefinitionVersion;
-        WorkflowInstanceReference = workflowInstanceReference;
-    }
-
-    public string TenantId { get; init; } = "";
-    public string WorkflowDefinitionId { get; init; } = "";
-    public string WorkflowInstanceId { get; init; } = "";
-    public string ActivityInstanceId { get; init; } = "";
-    public string BookmarkId { get; init; } = "";
-    public UserTaskDefinitionSnapshot Definition { get; init; } = new();
-    public IReadOnlyCollection<ParticipantReference> SnapshotMembers { get; init; } = [];
-    public IReadOnlyCollection<ParticipantReference> SnapshotGroups { get; init; } = [];
-    public DateTimeOffset CreatedAt { get; init; }
-    public string? TaskId { get; init; }
-    public string? WorkflowDefinitionName { get; init; }
-    public int? WorkflowDefinitionVersion { get; init; }
-    public string? WorkflowInstanceReference { get; init; }
 }
 
 public sealed record UserTaskStimulus(

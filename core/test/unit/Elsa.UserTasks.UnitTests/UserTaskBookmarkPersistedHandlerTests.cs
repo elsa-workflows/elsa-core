@@ -1,4 +1,5 @@
 using Elsa.Common;
+using Elsa.Common.Multitenancy;
 using Elsa.UserTasks.Contracts;
 using Elsa.UserTasks.Handlers;
 using Elsa.UserTasks.Models;
@@ -16,7 +17,7 @@ public class UserTaskBookmarkPersistedHandlerTests
     public async Task HandleAsync_IgnoresBookmarksFromOtherActivities()
     {
         var projectionService = Substitute.For<IUserTaskProjectionService>();
-        var handler = new UserTaskBookmarkPersistedHandler(projectionService, Substitute.For<IUserTaskRepository>(), Substitute.For<ISystemClock>());
+        var handler = new UserTaskBookmarkPersistedHandler(projectionService, Substitute.For<IUserTaskRepository>(), Substitute.For<ISystemClock>(), new DefaultTenantAccessor());
         var cronBookmark = new Bookmark("b1", "Elsa.Cron", "hash", new { CronExpression = "* * * * *" }, "a1", "n1", null, DateTimeOffset.UtcNow);
         var diff = Diff.From<Bookmark>([cronBookmark], [cronBookmark], []);
 
@@ -30,7 +31,7 @@ public class UserTaskBookmarkPersistedHandlerTests
     public async Task HandleAsync_ProjectsUserTaskBookmarksAndIgnoresOthers()
     {
         var projectionService = Substitute.For<IUserTaskProjectionService>();
-        var handler = new UserTaskBookmarkPersistedHandler(projectionService, Substitute.For<IUserTaskRepository>(), Substitute.For<ISystemClock>());
+        var handler = new UserTaskBookmarkPersistedHandler(projectionService, Substitute.For<IUserTaskRepository>(), Substitute.For<ISystemClock>(), new DefaultTenantAccessor());
         var materialization = new UserTaskMaterialization("tenant", "def", "wi1", "a1", "b1", null!, [], [], DateTimeOffset.UtcNow, "task1");
         var userTaskBookmark = new Bookmark("b1", "UserTask", "hash", materialization, "a1", "n1", null, DateTimeOffset.UtcNow);
         var cronBookmark = new Bookmark("b2", "Elsa.Cron", "hash", new { CronExpression = "* * * * *" }, "a2", "n2", null, DateTimeOffset.UtcNow);
