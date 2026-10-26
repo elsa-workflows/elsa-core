@@ -159,9 +159,6 @@ jobs:
           - name: elsa-server-and-studio
             dockerfile: docker/ElsaServerAndStudio.Dockerfile
             image: elsaworkflows/elsa-server-and-studio-v3
-          - name: elsa-studio
-            dockerfile: docker/ElsaStudio.Dockerfile
-            image: elsaworkflows/elsa-studio-v3
     steps:
       - name: Checkout ${{ needs.prepare.outputs.source_ref }}
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
