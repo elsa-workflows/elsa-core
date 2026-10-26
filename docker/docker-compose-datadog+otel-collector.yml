@@ -71,7 +71,7 @@ services:
       dockerfile: ./docker/ElsaStudio.Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      Backend__Url: "http://localhost:13000/elsa/api"
+      Backend__Url: "http://elsa-server:8080/elsa/api"
     ports:
       - "14000:8080"
   
