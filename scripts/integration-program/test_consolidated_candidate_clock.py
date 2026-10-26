@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import patch
 
 
-SYNTHETIC_NOW = datetime(2026, 10, 7, 12, tzinfo=timezone.utc)
+SYNTHETIC_NOW = datetime(2026, 10, 26, 14, tzinfo=timezone.utc)
 AFTER_EXPIRY = datetime(2030, 1, 1, tzinfo=timezone.utc)
 
 
@@ -45,7 +45,7 @@ class CandidateClockContracts(unittest.TestCase):
                 execution.FullInventoryTests("test_verify_missing_is_complete_observation_not_release_acceptance"),
                 execution.AdmissionTests("test_native_approval_and_exact_preexisting_policy"),
                 execution.AdmissionTests("test_preschedule_requires_policy_but_not_future_approval"),
-                approvals.SummaryTests("test_complete_missing_observation_reports_actual_668_and_immutable_bindings"),
+                approvals.SummaryTests("test_complete_missing_observation_reports_actual_associations_and_immutable_bindings"),
                 stable.StableAdapterContracts("test_two_package_scope_and_distinct_execution_identity"),
             ])
             output = io.StringIO()

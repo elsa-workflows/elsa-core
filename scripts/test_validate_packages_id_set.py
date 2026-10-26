@@ -264,14 +264,9 @@ class SharedPublisherGuardTests(unittest.TestCase):
         pin = json.loads(candidate_input.PIN_INVENTORY.read_text(encoding="utf-8"))
         pin_ids = {row["id"] for row in pin["packages"]}
         guard_ids = set(load_expected_ids(DEFAULT_EXPECTED))
-        unexpected = pin_ids - guard_ids
-        missing = guard_ids - pin_ids
-        stale_delta = unexpected == {"Elsa.SamplePackage"} and missing == set(STALE_OCT6_MISSING)
-        matched = not unexpected and not missing
-        self.assertTrue(
-            stale_delta or matched,
-            f"pin/guard delta must be the known fail-closed set or empty; unexpected={sorted(unexpected)} missing={sorted(missing)}",
-        )
+        self.assertEqual(pin_ids, guard_ids)
+        self.assertEqual(231, len(pin_ids))
+        self.assertEqual(candidate_input.PIN_PACKAGE_COUNT, len(pin_ids))
 
     def test_stale_225_set_can_never_be_published_as_310(self):
         expected = load_expected_ids(DEFAULT_EXPECTED)
@@ -288,6 +283,29 @@ class SharedPublisherGuardTests(unittest.TestCase):
             self.assertIn(package_id, text)
         self.assertIn("Unexpected (1):", text)
         self.assertIn("Elsa.SamplePackage", text)
+
+    def test_preflight_and_upgrade_workflows_pin_the_same_artifact(self):
+        root = Path(__file__).resolve().parents[1]
+        sys.path.insert(0, str(root / "scripts/integration-program"))
+        import consolidated_candidate_input as candidate_input
+
+        for relative in (
+            ".github/workflows/consolidated-package-recovery-preflight.yml",
+            ".github/workflows/stable-persisted-workflow-upgrade-proof.yml",
+        ):
+            source = (root / relative).read_text(encoding="utf-8")
+            for value in (
+                str(candidate_input.ARTIFACT),
+                str(candidate_input.RUN),
+                candidate_input.SOURCE,
+                candidate_input.ARCHIVE_SHA256,
+                str(candidate_input.ARCHIVE_SIZE),
+                candidate_input.EXPIRES_AT,
+            ):
+                self.assertIn(value, source)
+            self.assertNotIn("11412848210", source)
+            self.assertNotIn("37456860080", source)
+            self.assertNotIn("ba5b348aa2414fdf7c19d9d8806e87b7c91a4205", source)
 
     def test_both_publishers_run_the_same_id_set_guard_before_push(self):
         root = Path(__file__).resolve().parents[1]

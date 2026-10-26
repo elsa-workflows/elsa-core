@@ -39,7 +39,7 @@ METADATA_PATH = re.compile(r"repos/elsa-workflows/elsa-core/(?:actions/(?:secret
 PACKAGE_BASE = "https://f.feedz.io/elsa-workflows/elsa-3/nuget/v3/packages"
 PACKAGE_PUBLISH = "https://f.feedz.io/elsa-workflows/elsa-3/nuget"
 SYMBOL_PUBLISH = "https://f.feedz.io/elsa-workflows/elsa-3/symbols"
-EXPIRY = "2026-11-05T12:13:30Z"
+EXPIRY = candidate_input.EXPIRES_AT
 # A later separately approved source change must pin real existing IDs, exact
 # refs and the operational packet. No CLI/environment/artifact override exists.
 REVIEWED_OPERATIONAL_POLICY = None
