@@ -179,6 +179,86 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
         return updated > 0;
     }
 
+    /// <inheritdoc />
+    public async ValueTask<bool> TryMarkCancellingAsync(
+        string workflowInstanceId,
+        WorkflowSubStatus expectedSubStatus,
+        DateTimeOffset cancellingAt,
+        CancellationToken cancellationToken = default)
+    {
+        if (!IsCancellableSubStatus(expectedSubStatus))
+            return false;
+
+        // Conditional write: do not SaveAsync a Find snapshot. The script no-ops unless the source still matches,
+        // and a no-op does not increment the updated count.
+        var updated = await _store.UpdateByQueryAsync(d =>
+        {
+            d.Refresh(true);
+            d.Query(q => q.Bool(b => b.Must(m => m.Match(mt => mt.Field(f => f.Id).Query(workflowInstanceId)))));
+            d.Script(s => s
+                .Source("""
+                    if (ctx._source.status == params.running
+                        && ctx._source.isExecuting != true
+                        && ctx._source.subStatus == params.expected
+                        && ctx._source.subStatus != params.executing) {
+                      ctx._source.subStatus = params.cancelling;
+                      ctx._source.updatedAt = params.cancellingAt;
+                    } else {
+                      ctx.op = 'noop';
+                    }
+                    """)
+                .AddParam("running", WorkflowStatus.Running.ToString())
+                .AddParam("expected", expectedSubStatus.ToString())
+                .AddParam("executing", WorkflowSubStatus.Executing.ToString())
+                .AddParam("cancelling", WorkflowSubStatus.Cancelling.ToString())
+                .AddParam("cancellingAt", cancellingAt.ToString("O")));
+        }, cancellationToken);
+
+        return updated > 0;
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<bool> TryRestoreAsync(
+        string workflowInstanceId,
+        WorkflowSubStatus previousSubStatus,
+        DateTimeOffset expectedCancellingAt,
+        DateTimeOffset restoredAt,
+        CancellationToken cancellationToken = default)
+    {
+        if (!IsCancellableSubStatus(previousSubStatus))
+            return false;
+
+        var updated = await _store.UpdateByQueryAsync(d =>
+        {
+            d.Refresh(true);
+            d.Query(q => q.Bool(b => b.Must(m => m.Match(mt => mt.Field(f => f.Id).Query(workflowInstanceId)))));
+            d.Script(s => s
+                .Source("""
+                    if (ctx._source.status == params.running
+                        && ctx._source.subStatus == params.cancelling
+                        && ctx._source.updatedAt == params.expectedCancellingAt) {
+                      ctx._source.subStatus = params.previous;
+                      ctx._source.updatedAt = params.restoredAt;
+                    } else {
+                      ctx.op = 'noop';
+                    }
+                    """)
+                .AddParam("running", WorkflowStatus.Running.ToString())
+                .AddParam("cancelling", WorkflowSubStatus.Cancelling.ToString())
+                .AddParam("expectedCancellingAt", expectedCancellingAt.ToString("O"))
+                .AddParam("previous", previousSubStatus.ToString())
+                .AddParam("restoredAt", restoredAt.ToString("O")));
+        }, cancellationToken);
+
+        return updated > 0;
+    }
+
+    /// <summary>
+    /// Sub-statuses a non-executing running instance may leave for <see cref="WorkflowSubStatus.Cancelling"/>.
+    /// </summary>
+    private static bool IsCancellableSubStatus(WorkflowSubStatus subStatus) =>
+        subStatus is WorkflowSubStatus.Pending or WorkflowSubStatus.Suspended or WorkflowSubStatus.Interrupted;
+
     private static SearchRequestDescriptor<WorkflowInstance> Sort<TProp>(SearchRequestDescriptor<WorkflowInstance> descriptor, WorkflowInstanceOrder<TProp> order)
     {
         var sortDescriptor = new SortOptionsDescriptor<WorkflowInstance>();

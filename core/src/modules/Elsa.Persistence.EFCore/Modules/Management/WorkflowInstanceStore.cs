@@ -217,6 +217,65 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
+    public async ValueTask<bool> TryMarkCancellingAsync(
+        string workflowInstanceId,
+        WorkflowSubStatus expectedSubStatus,
+        DateTimeOffset cancellingAt,
+        CancellationToken cancellationToken = default)
+    {
+        if (!IsCancellableSubStatus(expectedSubStatus))
+            return false;
+
+        await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
+        // The tenant query filter applies to ExecuteUpdateAsync. Do not ignore it.
+        var updated = await dbContext.WorkflowInstances
+            .Where(x => x.Id == workflowInstanceId
+                && x.Status == WorkflowStatus.Running
+                && !x.IsExecuting
+                && x.SubStatus == expectedSubStatus
+                && x.SubStatus != WorkflowSubStatus.Executing)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(x => x.SubStatus, WorkflowSubStatus.Cancelling)
+                    .SetProperty(x => x.UpdatedAt, cancellingAt),
+                cancellationToken);
+
+        return updated > 0;
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<bool> TryRestoreAsync(
+        string workflowInstanceId,
+        WorkflowSubStatus previousSubStatus,
+        DateTimeOffset expectedCancellingAt,
+        DateTimeOffset restoredAt,
+        CancellationToken cancellationToken = default)
+    {
+        if (!IsCancellableSubStatus(previousSubStatus))
+            return false;
+
+        await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
+        var updated = await dbContext.WorkflowInstances
+            .Where(x => x.Id == workflowInstanceId
+                && x.Status == WorkflowStatus.Running
+                && x.SubStatus == WorkflowSubStatus.Cancelling
+                && x.UpdatedAt == expectedCancellingAt)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(x => x.SubStatus, previousSubStatus)
+                    .SetProperty(x => x.UpdatedAt, restoredAt),
+                cancellationToken);
+
+        return updated > 0;
+    }
+
+    /// <summary>
+    /// Sub-statuses a non-executing running instance may leave for <see cref="WorkflowSubStatus.Cancelling"/>.
+    /// </summary>
+    private static bool IsCancellableSubStatus(WorkflowSubStatus subStatus) =>
+        subStatus is WorkflowSubStatus.Pending or WorkflowSubStatus.Suspended or WorkflowSubStatus.Interrupted;
+
+    /// <inheritdoc />
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.SerializeAsync(WorkflowState, CancellationToken)")]
     public async ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {

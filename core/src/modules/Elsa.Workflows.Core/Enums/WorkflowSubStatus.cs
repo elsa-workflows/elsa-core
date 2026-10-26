@@ -43,4 +43,11 @@ public enum WorkflowSubStatus
     /// sub-status with a stale liveness timestamp.
     /// </summary>
     Interrupted,
+
+    /// <summary>
+    /// A cancellation request has been accepted and the instance is waiting for the cancellation pipeline to finish.
+    /// The main status stays <see cref="WorkflowStatus.Running"/> until the pipeline commits <see cref="Cancelled"/>
+    /// or the mark is restored to the previous sub-status.
+    /// </summary>
+    Cancelling,
 }

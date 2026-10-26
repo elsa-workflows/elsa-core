@@ -88,6 +88,53 @@ public class MongoWorkflowInstanceStoreTests
         Assert.False(marked);
     }
 
+    [Fact(DisplayName = "TryMarkCancellingAsync sets only SubStatus and UpdatedAt when the row is still the expected running sub-status")]
+    public async Task TryMarkCancellingAsync_TargetsSubStatusAndUpdatedAt()
+    {
+        var (store, collection) = CreateStore(matchedCount: 1);
+        var cancellingAt = new DateTimeOffset(2026, 10, 26, 12, 0, 0, TimeSpan.Zero);
+
+        var marked = await store.TryMarkCancellingAsync("wf-1", WorkflowSubStatus.Suspended, cancellingAt);
+
+        Assert.True(marked);
+        await collection.Received(1).UpdateOneAsync(
+            Arg.Is<FilterDefinition<WorkflowInstance>>(filter => FilterMarksSuspendedRunning(filter, "wf-1")),
+            Arg.Is<UpdateDefinition<WorkflowInstance>>(update => UpdateSetsCancellingOnly(update)),
+            Arg.Any<UpdateOptions>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "TryMarkCancellingAsync does not write when the expected sub-status is Executing")]
+    public async Task TryMarkCancellingAsync_DoesNotWriteWhenExpectedSubStatusIsExecuting()
+    {
+        var (store, collection) = CreateStore(matchedCount: 1);
+
+        var marked = await store.TryMarkCancellingAsync("wf-1", WorkflowSubStatus.Executing, DateTimeOffset.UtcNow);
+
+        Assert.False(marked);
+        await collection.DidNotReceive().UpdateOneAsync(
+            Arg.Any<FilterDefinition<WorkflowInstance>>(),
+            Arg.Any<UpdateDefinition<WorkflowInstance>>(),
+            Arg.Any<UpdateOptions>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "TryRestoreAsync matches Cancelling and the mark stamp, and writes only the previous sub-status")]
+    public async Task TryRestoreAsync_MatchesCancellingGeneration()
+    {
+        var (store, collection) = CreateStore(matchedCount: 0);
+        var cancellingAt = new DateTimeOffset(2026, 10, 26, 12, 0, 0, TimeSpan.Zero);
+
+        var restored = await store.TryRestoreAsync("wf-1", WorkflowSubStatus.Suspended, cancellingAt, cancellingAt.AddMinutes(1));
+
+        Assert.False(restored);
+        await collection.Received(1).UpdateOneAsync(
+            Arg.Is<FilterDefinition<WorkflowInstance>>(filter => FilterRestoresCancellingGeneration(filter, "wf-1")),
+            Arg.Is<UpdateDefinition<WorkflowInstance>>(update => UpdateRestoresSuspendedOnly(update)),
+            Arg.Any<UpdateOptions>(),
+            Arg.Any<CancellationToken>());
+    }
+
     private static (MongoWorkflowInstanceStore Store, IMongoCollection<WorkflowInstance> Collection) CreateStore(long matchedCount)
     {
         var collection = Substitute.For<IMongoCollection<WorkflowInstance>>();
@@ -177,5 +224,39 @@ public class MongoWorkflowInstanceStoreTests
         var serializer = BsonSerializer.LookupSerializer<WorkflowInstance>();
         var rendered = update.Render(new RenderArgs<WorkflowInstance>(serializer, BsonSerializer.SerializerRegistry));
         return rendered.ToJson();
+    }
+
+    private static bool FilterMarksSuspendedRunning(FilterDefinition<WorkflowInstance> filter, string id)
+    {
+        var rendered = RenderDocument(filter).ToJson();
+        return rendered.Contains(id, StringComparison.Ordinal)
+               && rendered.Contains(((int)WorkflowStatus.Running).ToString(), StringComparison.Ordinal)
+               && rendered.Contains(((int)WorkflowSubStatus.Suspended).ToString(), StringComparison.Ordinal)
+               && rendered.Contains("IsExecuting", StringComparison.Ordinal);
+    }
+
+    private static bool UpdateSetsCancellingOnly(UpdateDefinition<WorkflowInstance> update)
+    {
+        var rendered = Render(update);
+        return rendered.Contains(((int)WorkflowSubStatus.Cancelling).ToString(), StringComparison.Ordinal)
+               && rendered.Contains("UpdatedAt", StringComparison.Ordinal)
+               && !rendered.Contains("WorkflowState", StringComparison.Ordinal)
+               && !rendered.Contains("\"Status\"", StringComparison.Ordinal);
+    }
+
+    private static bool FilterRestoresCancellingGeneration(FilterDefinition<WorkflowInstance> filter, string id)
+    {
+        var rendered = RenderDocument(filter).ToJson();
+        return rendered.Contains(id, StringComparison.Ordinal)
+               && rendered.Contains(((int)WorkflowSubStatus.Cancelling).ToString(), StringComparison.Ordinal)
+               && rendered.Contains("UpdatedAt", StringComparison.Ordinal);
+    }
+
+    private static bool UpdateRestoresSuspendedOnly(UpdateDefinition<WorkflowInstance> update)
+    {
+        var rendered = Render(update);
+        return rendered.Contains(((int)WorkflowSubStatus.Suspended).ToString(), StringComparison.Ordinal)
+               && rendered.Contains("UpdatedAt", StringComparison.Ordinal)
+               && !rendered.Contains("WorkflowState", StringComparison.Ordinal);
     }
 }

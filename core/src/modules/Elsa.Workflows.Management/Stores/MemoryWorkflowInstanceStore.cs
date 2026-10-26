@@ -212,6 +212,65 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
         }
     }
 
+    /// <inheritdoc />
+    public ValueTask<bool> TryMarkCancellingAsync(
+        string workflowInstanceId,
+        WorkflowSubStatus expectedSubStatus,
+        DateTimeOffset cancellingAt,
+        CancellationToken cancellationToken = default)
+    {
+        if (!IsCancellableSubStatus(expectedSubStatus))
+            return ValueTask.FromResult(false);
+
+        // Same lock as Save/Update so a runner's commit cannot land between the predicate and the column writes.
+        lock (_sync)
+        {
+            var instance = _store.Find(x => x.Id == workflowInstanceId && TenantVisibility.IsVisible(x.TenantId, CurrentTenantId));
+            if (instance is null
+                || instance.Status != WorkflowStatus.Running
+                || instance.IsExecuting
+                || instance.SubStatus == WorkflowSubStatus.Executing
+                || instance.SubStatus != expectedSubStatus)
+                return ValueTask.FromResult(false);
+
+            instance.SubStatus = WorkflowSubStatus.Cancelling;
+            instance.UpdatedAt = cancellingAt;
+            return ValueTask.FromResult(true);
+        }
+    }
+
+    /// <inheritdoc />
+    public ValueTask<bool> TryRestoreAsync(
+        string workflowInstanceId,
+        WorkflowSubStatus previousSubStatus,
+        DateTimeOffset expectedCancellingAt,
+        DateTimeOffset restoredAt,
+        CancellationToken cancellationToken = default)
+    {
+        if (!IsCancellableSubStatus(previousSubStatus))
+            return ValueTask.FromResult(false);
+
+        lock (_sync)
+        {
+            var instance = _store.Find(x => x.Id == workflowInstanceId && TenantVisibility.IsVisible(x.TenantId, CurrentTenantId));
+            if (instance is null
+                || instance.Status != WorkflowStatus.Running
+                || instance.SubStatus != WorkflowSubStatus.Cancelling
+                || instance.UpdatedAt != expectedCancellingAt)
+                return ValueTask.FromResult(false);
+
+            instance.SubStatus = previousSubStatus;
+            instance.UpdatedAt = restoredAt;
+            return ValueTask.FromResult(true);
+        }
+    }
+
+    /// <summary>
+    /// Sub-statuses a non-executing running instance may leave for <see cref="WorkflowSubStatus.Cancelling"/>.
+    /// </summary>
+    private static bool IsCancellableSubStatus(WorkflowSubStatus subStatus) =>
+        subStatus is WorkflowSubStatus.Pending or WorkflowSubStatus.Suspended or WorkflowSubStatus.Interrupted;
+
     private static string GetId(WorkflowInstance workflowInstance) => workflowInstance.Id;
 
     private static WorkflowInstance Clone(WorkflowInstance instance) =>

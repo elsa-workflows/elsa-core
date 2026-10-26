@@ -63,6 +63,33 @@ public class MemoryWorkflowInstanceStoreTenantIsolationTests
     }
 
     [Fact]
+    public async Task TryMarkCancellingAsyncAppliesTheSameTenantVisibilityAsFind()
+    {
+        var backingStore = new MemoryStore<WorkflowInstance>();
+        var tenantA = new MemoryWorkflowInstanceStore(backingStore, new TestTenantAccessor("tenant-a"));
+        var tenantB = new MemoryWorkflowInstanceStore(backingStore, new TestTenantAccessor("tenant-b"));
+        var instance = RunningInstance("instance-a", correlationId: "conversation-1", tenantId: null);
+        instance.SubStatus = WorkflowSubStatus.Suspended;
+        await tenantA.SaveAsync(instance);
+        var cancellingAt = new DateTimeOffset(2026, 10, 26, 12, 0, 0, TimeSpan.Zero);
+
+        var markedByB = await tenantB.TryMarkCancellingAsync("instance-a", WorkflowSubStatus.Suspended, cancellingAt);
+
+        Assert.False(markedByB);
+        var stillOwnedByA = await tenantA.FindAsync(new WorkflowInstanceFilter { Id = "instance-a" });
+        Assert.NotNull(stillOwnedByA);
+        Assert.Equal(WorkflowSubStatus.Suspended, stillOwnedByA.SubStatus);
+
+        var markedByA = await tenantA.TryMarkCancellingAsync("instance-a", WorkflowSubStatus.Suspended, cancellingAt);
+
+        Assert.True(markedByA);
+        var cancelling = await tenantA.FindAsync(new WorkflowInstanceFilter { Id = "instance-a" });
+        Assert.NotNull(cancelling);
+        Assert.Equal(WorkflowSubStatus.Cancelling, cancelling.SubStatus);
+        Assert.Equal(cancellingAt, cancelling.UpdatedAt);
+    }
+
+    [Fact]
     public async Task AgnosticRowsRemainVisibleWithoutChangingTheirTenant()
     {
         var backingStore = new MemoryStore<WorkflowInstance>();

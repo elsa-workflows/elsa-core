@@ -211,9 +211,93 @@ public sealed class DapperWorkflowInstanceStoreTests : IDisposable
         Assert.Equal(("Running", "Executing", 1), ReadMarkers("running-other"));
     }
 
+    [Fact(DisplayName = "TryMarkCancellingAsync updates only SubStatus and UpdatedAt")]
+    public async Task TryMarkCancellingAsync_UpdatesSubStatusAndTimestamp()
+    {
+        var cancellingAt = new DateTimeOffset(2026, 10, 26, 12, 0, 0, TimeSpan.Zero);
+        InsertCancellable("wf-1", WorkflowSubStatus.Suspended, updatedAt: cancellingAt.AddDays(-1));
+
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var marked = await _store.TryMarkCancellingAsync("wf-1", WorkflowSubStatus.Suspended, cancellingAt);
+
+        Assert.True(marked);
+        Assert.Equal(("Running", "Cancelling", 0, "{}"), ReadCancellationRow("wf-1"));
+        Assert.Equal(cancellingAt, ReadUpdatedAt("wf-1"));
+    }
+
+    [Fact(DisplayName = "TryMarkCancellingAsync refuses an executing row")]
+    public async Task TryMarkCancellingAsync_RefusesExecuting()
+    {
+        InsertCancellable("wf-1", WorkflowSubStatus.Executing, isExecuting: true);
+
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var marked = await _store.TryMarkCancellingAsync("wf-1", WorkflowSubStatus.Executing, DateTimeOffset.UtcNow);
+
+        Assert.False(marked);
+        Assert.Equal("Executing", ReadMarkers("wf-1").SubStatus);
+    }
+
+    [Fact(DisplayName = "TryRestoreAsync restores the previous sub-status for the marked generation")]
+    public async Task TryRestoreAsync_RestoresPreviousSubStatus()
+    {
+        var cancellingAt = new DateTimeOffset(2026, 10, 26, 12, 0, 0, TimeSpan.Zero);
+        var restoredAt = cancellingAt.AddMinutes(2);
+        InsertCancellable("wf-1", WorkflowSubStatus.Suspended, updatedAt: cancellingAt.AddDays(-1));
+
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        Assert.True(await _store.TryMarkCancellingAsync("wf-1", WorkflowSubStatus.Suspended, cancellingAt));
+
+        var restored = await _store.TryRestoreAsync("wf-1", WorkflowSubStatus.Suspended, cancellingAt, restoredAt);
+
+        Assert.True(restored);
+        Assert.Equal(("Running", "Suspended", 0, "{}"), ReadCancellationRow("wf-1"));
+        Assert.Equal(restoredAt, ReadUpdatedAt("wf-1"));
+    }
+
+    [Fact(DisplayName = "TryRestoreAsync does not overwrite Cancelled")]
+    public async Task TryRestoreAsync_DoesNotOverwriteCancelled()
+    {
+        var cancellingAt = new DateTimeOffset(2026, 10, 26, 12, 0, 0, TimeSpan.Zero);
+        InsertCancellable("wf-1", WorkflowSubStatus.Cancelled, status: WorkflowStatus.Finished, updatedAt: cancellingAt);
+
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var restored = await _store.TryRestoreAsync("wf-1", WorkflowSubStatus.Suspended, cancellingAt, cancellingAt.AddMinutes(1));
+
+        Assert.False(restored);
+        Assert.Equal(("Finished", "Cancelled", 0, "{}"), ReadCancellationRow("wf-1"));
+    }
+
     public void Dispose()
     {
         File.Delete(_databasePath);
+    }
+
+    private void InsertCancellable(
+        string id,
+        WorkflowSubStatus subStatus,
+        bool isExecuting = false,
+        WorkflowStatus status = WorkflowStatus.Running,
+        DateTimeOffset? updatedAt = null)
+    {
+        using var connection = new SqliteConnection(_connectionString);
+        connection.Open();
+        Insert(connection, id, updatedAt ?? DateTimeOffset.UtcNow, isExecuting, status.ToString(), subStatus.ToString());
+    }
+
+    private (string Status, string SubStatus, long IsExecuting, string WorkflowState) ReadCancellationRow(string id)
+    {
+        using var connection = new SqliteConnection(_connectionString);
+        return connection.QuerySingle<(string, string, long, string)>(
+            "select Status, SubStatus, IsExecuting, WorkflowState from WorkflowInstances where Id = @Id",
+            new { Id = id });
+    }
+
+    private DateTimeOffset ReadUpdatedAt(string id)
+    {
+        using var connection = new SqliteConnection(_connectionString);
+        return connection.QuerySingle<DateTimeOffset>(
+            "select UpdatedAt from WorkflowInstances where Id = @Id",
+            new { Id = id });
     }
 
     private void InsertInterruptible(string id, WorkflowStatus status, WorkflowSubStatus subStatus, bool isExecuting, string tenantId = "tenant-a")

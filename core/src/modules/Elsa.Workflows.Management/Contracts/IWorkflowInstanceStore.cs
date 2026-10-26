@@ -199,4 +199,48 @@ public interface IWorkflowInstanceStore
     /// Implementations must not overwrite a concurrent naturally completed commit.
     /// </returns>
     ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default, bool allowFinishedCancelled = false);
+
+    /// <summary>
+    /// Sets <see cref="WorkflowInstance.SubStatus"/> to <see cref="WorkflowSubStatus.Cancelling"/> and
+    /// <see cref="WorkflowInstance.UpdatedAt"/> to <paramref name="cancellingAt"/> only when the stored instance is
+    /// still <see cref="WorkflowStatus.Running"/>, not executing, and still <paramref name="expectedSubStatus"/>.
+    /// </summary>
+    /// <remarks>
+    /// Touches only those two columns. <see cref="WorkflowInstance.WorkflowState"/>, bookmarks and execution progress stay as they are.
+    /// The default returns <c>false</c> so a provider that cannot do this conditional write fails closed.
+    /// Callers must not fall back to <see cref="SaveAsync"/>, <see cref="SaveManyAsync"/> or <see cref="UpdateAsync"/>.
+    /// </remarks>
+    /// <param name="workflowInstanceId">The workflow instance to mark.</param>
+    /// <param name="expectedSubStatus">The sub-status the row must still have. Executing and terminal sub-statuses are refused.</param>
+    /// <param name="cancellingAt">The stamp written to <see cref="WorkflowInstance.UpdatedAt"/>.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns><c>true</c> when the mark was applied; otherwise <c>false</c> and the row is unchanged.</returns>
+    ValueTask<bool> TryMarkCancellingAsync(
+        string workflowInstanceId,
+        WorkflowSubStatus expectedSubStatus,
+        DateTimeOffset cancellingAt,
+        CancellationToken cancellationToken = default) => ValueTask.FromResult(false);
+
+    /// <summary>
+    /// Restores <paramref name="previousSubStatus"/> only while the instance is still the Cancelling generation identified by <paramref name="expectedCancellingAt"/>.
+    /// </summary>
+    /// <remarks>
+    /// A compare-and-swap: the row must still be <see cref="WorkflowStatus.Running"/>, <see cref="WorkflowSubStatus.Cancelling"/>,
+    /// and <see cref="WorkflowInstance.UpdatedAt"/> must equal <paramref name="expectedCancellingAt"/>.
+    /// A commit that already reached <see cref="WorkflowSubStatus.Cancelled"/>, or any newer stamp, is left alone.
+    /// Only <see cref="WorkflowInstance.SubStatus"/> and <see cref="WorkflowInstance.UpdatedAt"/> are written.
+    /// The default returns <c>false</c>.
+    /// </remarks>
+    /// <param name="workflowInstanceId">The workflow instance to restore.</param>
+    /// <param name="previousSubStatus">The sub-status to put back. Terminal and executing sub-statuses are refused.</param>
+    /// <param name="expectedCancellingAt">The <see cref="WorkflowInstance.UpdatedAt"/> value written by <see cref="TryMarkCancellingAsync"/>.</param>
+    /// <param name="restoredAt">The stamp written when the restore succeeds.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns><c>true</c> when the previous sub-status was restored; otherwise <c>false</c> and the row is unchanged.</returns>
+    ValueTask<bool> TryRestoreAsync(
+        string workflowInstanceId,
+        WorkflowSubStatus previousSubStatus,
+        DateTimeOffset expectedCancellingAt,
+        DateTimeOffset restoredAt,
+        CancellationToken cancellationToken = default) => ValueTask.FromResult(false);
 }
