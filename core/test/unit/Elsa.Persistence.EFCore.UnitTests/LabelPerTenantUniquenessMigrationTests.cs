@@ -1,9 +1,14 @@
+using Elsa.Persistence.EFCore.Sqlite;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+
 namespace Elsa.Persistence.EFCore.UnitTests;
 
 /// <summary>
 /// PerTenantLabelUniqueness must stamp null TenantId to "" and must not
-/// auto-delete duplicate labels (associations would be at risk). A preflight
-/// lists leftover keys and aborts; CreateIndex then fails loudly if any remain.
+/// auto-delete duplicate labels (associations would be at risk). Providers that
+/// can abort from raw SQL list leftover keys first; SQLite cannot, so CreateIndex
+/// is the fail-loud path.
 /// SQL Server/MySQL/Oracle also preflight over-length Name/NormalizedName
 /// before narrowing those columns. PostgreSQL/SQLite keep provider column types.
 /// </summary>
@@ -26,8 +31,42 @@ public class LabelPerTenantUniquenessMigrationTests
         Assert.DoesNotContain("COALESCE", migration, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public void PerTenantLabelUniqueness_SqliteFailsLoudlyAtCreateIndex()
+    {
+        // SQLite cannot abort from a standalone SELECT, so CreateIndex unique is the fail-loud path.
+        var migration = FindMigration("Elsa.Persistence.EFCore.Sqlite");
+        Assert.DoesNotContain("RAISE", migration, StringComparison.Ordinal);
+        Assert.Contains("CreateIndex", migration, StringComparison.Ordinal);
+        Assert.Contains("unique: true", migration, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task PerTenantLabelUniqueness_SqliteMigrateAsync_SucceedsOnEmptyDatabase()
+    {
+        var databasePath = Path.Join(Path.GetTempPath(), $"elsa-labels-uniqueness-{Guid.NewGuid():N}.db");
+
+        try
+        {
+            await using var dbContext = new LabelsDbContextFactory()
+                .CreateDbContext(["--connectionString", $"Data Source={databasePath}"]);
+
+            await dbContext.Database.MigrateAsync();
+
+            var applied = await dbContext.Database.GetAppliedMigrationsAsync();
+            Assert.Contains(applied, id => id.Contains("PerTenantLabelUniqueness", StringComparison.Ordinal));
+        }
+        finally
+        {
+            SqliteConnection.ClearAllPools();
+            if (File.Exists(databasePath))
+            {
+                File.Delete(databasePath);
+            }
+        }
+    }
+
     [Theory]
-    [InlineData("Elsa.Persistence.EFCore.Sqlite", "RAISE")]
     [InlineData("Elsa.Persistence.EFCore.SqlServer", "THROW")]
     [InlineData("Elsa.Persistence.EFCore.PostgreSql", "RAISE EXCEPTION")]
     [InlineData("Elsa.Persistence.EFCore.MySql", "SIGNAL")]
@@ -74,6 +113,30 @@ public class LabelPerTenantUniquenessMigrationTests
     {
         var migration = FindMigration(providerProject);
         Assert.Contains(filter, migration, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void PerTenantLabelUniqueness_MySqlRawSqlDoesNotQualifySchema()
+    {
+        // Pomelo SchemaBehavior.Ignore creates tables in DATABASE(), not a database named Elsa.
+        // This repo has no MySQL Testcontainers coverage, so assert the emitted SQL instead.
+        var migration = FindMigration("Elsa.Persistence.EFCore.MySql");
+
+        Assert.DoesNotContain("`{_schema.Schema}`.", migration, StringComparison.Ordinal);
+        Assert.DoesNotContain("`Elsa`.", migration, StringComparison.Ordinal);
+        Assert.Contains("UPDATE `Labels`", migration, StringComparison.Ordinal);
+        Assert.Contains("FROM `Labels`", migration, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void PerTenantLabelUniqueness_SqliteRawSqlDoesNotQualifySchema()
+    {
+        // SQLite ignores schemas; "Elsa"."Labels" looks for an attached database named Elsa.
+        var migration = FindMigration("Elsa.Persistence.EFCore.Sqlite");
+
+        Assert.DoesNotContain("\"{_schema.Schema}\".\"Labels\"", migration, StringComparison.Ordinal);
+        Assert.Contains("UPDATE {table}", migration, StringComparison.Ordinal);
+        Assert.Contains("const string table = \"\\\"Labels\\\"\"", migration, StringComparison.Ordinal);
     }
 
     private static string FindMigration(string providerProject)

@@ -23,21 +23,22 @@ namespace Elsa.Secrets.Persistence.EFCore.MySql.Migrations.Secrets
                 schema: _schema.Schema,
                 table: "Secrets");
 
+            // Pomelo SchemaBehavior.Ignore stores tables in DATABASE(), not an Elsa schema.
             // Default tenant is "" (not null). Stamp leftover nulls so the unique index covers them.
-            migrationBuilder.Sql($"""
-                UPDATE `{_schema.Schema}`.`Secrets`
+            migrationBuilder.Sql("""
+                UPDATE `Secrets`
                 SET `TenantId` = ''
                 WHERE `TenantId` IS NULL;
                 """);
 
             // No silent dedupe. List leftover keys and abort; operators must resolve them before upgrading.
             // SIGNAL MESSAGE_TEXT is limited to 128 characters, so the listed keys are truncated.
-            migrationBuilder.Sql($"""
+            migrationBuilder.Sql("""
                 SET @duplicate_keys := (
                     SELECT GROUP_CONCAT(CONCAT('(', IFNULL(`TenantId`, '<null>'), ', ', `NormalizedName`, ')') SEPARATOR '; ')
                     FROM (
                         SELECT `TenantId`, `NormalizedName`
-                        FROM `{_schema.Schema}`.`Secrets`
+                        FROM `Secrets`
                         GROUP BY `TenantId`, `NormalizedName`
                         HAVING COUNT(*) > 1
                     ) AS Duplicates
