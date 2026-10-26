@@ -51,8 +51,8 @@ public sealed class UserTasksFeatureActivityRegistrationTests
         using var serviceProvider = services.BuildServiceProvider();
 
         var aliases = serviceProvider.GetRequiredService<IOptions<SerializationTypeOptions>>().Value;
-        Assert.True(aliases.TypeAliasDictionary.ContainsKey(typeof(UserTaskMaterialization)));
-        Assert.Equal(nameof(UserTaskMaterialization), aliases.TypeAliasDictionary[typeof(UserTaskMaterialization)]);
+        var alias = Assert.Contains(typeof(UserTaskMaterialization), aliases.TypeAliasDictionary);
+        Assert.Equal(nameof(UserTaskMaterialization), alias);
     }
 
     [Fact(DisplayName = "The User Tasks shell feature registers a UserTaskMaterialization type alias")]
@@ -63,7 +63,7 @@ public sealed class UserTasksFeatureActivityRegistrationTests
         using var serviceProvider = services.BuildServiceProvider();
 
         var aliases = serviceProvider.GetRequiredService<IOptions<SerializationTypeOptions>>().Value;
-        Assert.True(aliases.TypeAliasDictionary.ContainsKey(typeof(UserTaskMaterialization)));
-        Assert.Equal(nameof(UserTaskMaterialization), aliases.TypeAliasDictionary[typeof(UserTaskMaterialization)]);
+        var alias = Assert.Contains(typeof(UserTaskMaterialization), aliases.TypeAliasDictionary);
+        Assert.Equal(nameof(UserTaskMaterialization), alias);
     }
 }
