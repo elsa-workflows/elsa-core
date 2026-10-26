@@ -60,7 +60,9 @@ public class LabelPerTenantUniquenessMigrationTests
         {
             SqliteConnection.ClearAllPools();
             if (File.Exists(databasePath))
+            {
                 File.Delete(databasePath);
+            }
         }
     }
 
