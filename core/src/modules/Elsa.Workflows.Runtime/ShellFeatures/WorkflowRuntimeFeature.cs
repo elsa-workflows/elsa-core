@@ -167,6 +167,9 @@ public class WorkflowRuntimeFeature : IShellFeature
     /// <summary>
     /// Register the specified workflow type.
     /// </summary>
+    /// <remarks>
+    /// The workflow is built once per service container to populate the definition store, so its Build method must not depend on tenant-specific services.
+    /// </remarks>
     public WorkflowRuntimeFeature AddWorkflow<T>() where T : IWorkflow
     {
         return AddWorkflow(typeof(T));
@@ -175,6 +178,9 @@ public class WorkflowRuntimeFeature : IShellFeature
     /// <summary>
     /// Register the specified workflow type.
     /// </summary>
+    /// <remarks>
+    /// The workflow is built once per service container to populate the definition store, so its Build method must not depend on tenant-specific services.
+    /// </remarks>
     public WorkflowRuntimeFeature AddWorkflow(Type workflowType)
     {
         Workflows.Add(workflowType);
@@ -260,7 +266,8 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddScoped<IActivityExecutionManager, DefaultActivityExecutionManager>()
             .AddScoped<IActivityExecutionStatsService, ActivityExecutionStatsService>()
             .AddScoped<IActivityExecutionMapper, DefaultActivityExecutionMapper>()
-            .AddScoped<IWorkflowDefinitionStorePopulator, DefaultWorkflowDefinitionStorePopulator>()
+            .AddScoped<IWorkflowDefinitionStorePopulator>(DefaultWorkflowDefinitionStorePopulator.Create)
+            .AddSingleton<TenantAgnosticWorkflowsCache>()
             .AddScoped<IRegistriesPopulator, DefaultRegistriesPopulator>()
             .AddScoped<IWorkflowDefinitionsRefresher, WorkflowDefinitionsRefresher>()
             .AddScoped<IWorkflowDefinitionsReloader, WorkflowDefinitionsReloader>()
