@@ -46,4 +46,21 @@ public class UserTaskBookmarkPersistedHandlerTests
             Arg.Is<UserTaskBookmarkRemoval>(x => x.TaskId == "task1" && x.BookmarkId == "b1"),
             Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task HandleAsync_TwoArgumentConstructorStillFinalizesReadablePayload()
+    {
+        var projectionService = Substitute.For<IUserTaskProjectionService>();
+#pragma warning disable CS0618
+        var handler = new UserTaskBookmarkPersistedHandler(projectionService, Substitute.For<ISystemClock>());
+#pragma warning restore CS0618
+        var materialization = new UserTaskMaterialization("tenant", "def", "wi1", "a1", "b1", null!, [], [], DateTimeOffset.UtcNow, TaskId: "task1");
+        var bookmark = new Bookmark("b1", "UserTask", "hash", materialization, "a1", "n1", null, DateTimeOffset.UtcNow);
+
+        await handler.HandleAsync(new WorkflowBookmarksPersisted(Diff.From<Bookmark>([], [bookmark], [])), CancellationToken.None);
+
+        await projectionService.Received(1).FinalizeBookmarkRemovalAsync(
+            Arg.Is<UserTaskBookmarkRemoval>(x => x.TaskId == "task1" && x.BookmarkId == "b1"),
+            Arg.Any<CancellationToken>());
+    }
 }

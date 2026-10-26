@@ -14,12 +14,36 @@ namespace Elsa.UserTasks.Handlers;
 /// Bridges the workflow bookmark commit notification to the User Tasks projection. This keeps workflow
 /// and task persistence decoupled: task projection is never written from inside activity execution.
 /// </summary>
-public sealed class UserTaskBookmarkPersistedHandler(
-    IUserTaskProjectionService projectionService,
-    IUserTaskRepository repository,
-    ISystemClock clock,
-    ITenantAccessor tenantAccessor) : INotificationHandler<WorkflowBookmarksPersisted>
+public sealed class UserTaskBookmarkPersistedHandler : INotificationHandler<WorkflowBookmarksPersisted>
 {
+    private readonly IUserTaskProjectionService _projectionService;
+    private readonly IUserTaskRepository? _repository;
+    private readonly ISystemClock _clock;
+    private readonly ITenantAccessor _tenantAccessor;
+
+    /// <summary>
+    /// Compatible constructor. Bookmark-id fallback is unavailable without a repository.
+    /// </summary>
+    [Obsolete("Use the constructor that takes IUserTaskRepository and ITenantAccessor instead. Removed in the next major version.")]
+    public UserTaskBookmarkPersistedHandler(IUserTaskProjectionService projectionService, ISystemClock clock)
+    {
+        _projectionService = projectionService;
+        _clock = clock;
+        _tenantAccessor = new DefaultTenantAccessor();
+    }
+
+    public UserTaskBookmarkPersistedHandler(
+        IUserTaskProjectionService projectionService,
+        IUserTaskRepository repository,
+        ISystemClock clock,
+        ITenantAccessor tenantAccessor)
+    {
+        _projectionService = projectionService;
+        _repository = repository;
+        _clock = clock;
+        _tenantAccessor = tenantAccessor;
+    }
+
     public async Task HandleAsync(WorkflowBookmarksPersisted notification, CancellationToken cancellationToken)
     {
         var materializations = notification.Diff.Added
@@ -28,7 +52,7 @@ public sealed class UserTaskBookmarkPersistedHandler(
             .Select(x => x!)
             .ToArray();
         if (materializations.Length > 0)
-            await projectionService.ProjectCommittedBookmarksAsync(materializations, cancellationToken);
+            await _projectionService.ProjectCommittedBookmarksAsync(materializations, cancellationToken);
 
         foreach (var bookmark in notification.Diff.Removed)
         {
@@ -41,8 +65,11 @@ public sealed class UserTaskBookmarkPersistedHandler(
 
             if (taskId == null)
             {
-                tenantId ??= TryReadTenantId(bookmark.Payload) ?? tenantAccessor.TenantId;
-                var task = await repository.FindByBookmarkIdAsync(tenantId, bookmark.Id, cancellationToken);
+                if (_repository == null)
+                    continue;
+
+                tenantId ??= TryReadTenantId(bookmark.Payload) ?? _tenantAccessor.TenantId;
+                var task = await _repository.FindByBookmarkIdAsync(tenantId, bookmark.Id, cancellationToken);
                 if (task == null)
                     continue;
 
@@ -50,11 +77,11 @@ public sealed class UserTaskBookmarkPersistedHandler(
                 taskId = task.Id;
             }
 
-            await projectionService.FinalizeBookmarkRemovalAsync(new UserTaskBookmarkRemoval(
-                tenantId ?? tenantAccessor.TenantId,
+            await _projectionService.FinalizeBookmarkRemovalAsync(new UserTaskBookmarkRemoval(
+                tenantId ?? _tenantAccessor.TenantId,
                 taskId,
                 bookmark.Id,
-                clock.UtcNow), cancellationToken);
+                _clock.UtcNow), cancellationToken);
         }
     }
 
