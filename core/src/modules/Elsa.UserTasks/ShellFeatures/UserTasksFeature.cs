@@ -1,7 +1,10 @@
 using CShells.FastEndpoints.Features;
 using CShells.Features;
+using Elsa.Common.Serialization;
+using Elsa.Extensions;
 using Elsa.ShellFeatures;
 using Elsa.UserTasks.Extensions;
+using Elsa.UserTasks.Models;
 using Elsa.Workflows.Management.Extensions;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,5 +30,9 @@ public sealed class UserTasksFeature : IFastEndpointsShellFeature
         });
 
         services.AddActivitiesFrom<UserTasksFeature>();
+        services.Configure<SerializationTypeOptions>(options =>
+        {
+            options.AddTypeAlias<UserTaskMaterialization>();
+        });
     }
 }
