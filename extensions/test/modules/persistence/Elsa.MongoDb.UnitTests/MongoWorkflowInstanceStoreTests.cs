@@ -88,13 +88,13 @@ public class MongoWorkflowInstanceStoreTests
         Assert.False(marked);
     }
 
-    [Fact(DisplayName = "TryMarkCancellingAsync sets only SubStatus and UpdatedAt when the row is still the expected running sub-status")]
-    public async Task TryMarkCancellingAsync_TargetsSubStatusAndUpdatedAt()
+    [Fact(DisplayName = "TryTransitionSubStatusAsync sets only SubStatus and UpdatedAt when the row is still the expected running sub-status")]
+    public async Task TryTransitionSubStatusAsync_TargetsSubStatusAndUpdatedAt()
     {
         var (store, collection) = CreateStore(matchedCount: 1);
         var cancellingAt = new DateTimeOffset(2026, 10, 26, 12, 0, 0, TimeSpan.Zero);
 
-        var marked = await store.TryMarkCancellingAsync("wf-1", WorkflowSubStatus.Suspended, cancellingAt);
+        var marked = await store.TryTransitionSubStatusAsync("wf-1", WorkflowSubStatus.Suspended, null, WorkflowSubStatus.Cancelling, cancellingAt);
 
         Assert.True(marked);
         await collection.Received(1).UpdateOneAsync(
@@ -104,12 +104,12 @@ public class MongoWorkflowInstanceStoreTests
             Arg.Any<CancellationToken>());
     }
 
-    [Fact(DisplayName = "TryMarkCancellingAsync does not write when the expected sub-status is Executing")]
-    public async Task TryMarkCancellingAsync_DoesNotWriteWhenExpectedSubStatusIsExecuting()
+    [Fact(DisplayName = "TryTransitionSubStatusAsync does not write when the expected sub-status is Executing")]
+    public async Task TryTransitionSubStatusAsync_DoesNotWriteWhenExpectedSubStatusIsExecuting()
     {
         var (store, collection) = CreateStore(matchedCount: 1);
 
-        var marked = await store.TryMarkCancellingAsync("wf-1", WorkflowSubStatus.Executing, DateTimeOffset.UtcNow);
+        var marked = await store.TryTransitionSubStatusAsync("wf-1", WorkflowSubStatus.Executing, null, WorkflowSubStatus.Cancelling, DateTimeOffset.UtcNow);
 
         Assert.False(marked);
         await collection.DidNotReceive().UpdateOneAsync(
@@ -119,13 +119,13 @@ public class MongoWorkflowInstanceStoreTests
             Arg.Any<CancellationToken>());
     }
 
-    [Fact(DisplayName = "TryRestoreAsync matches Cancelling and the mark stamp, and writes only the previous sub-status")]
-    public async Task TryRestoreAsync_MatchesCancellingGeneration()
+    [Fact(DisplayName = "TryTransitionSubStatusAsync matches Cancelling and the mark stamp, and writes only the previous sub-status")]
+    public async Task TryTransitionSubStatusAsync_MatchesCancellingGeneration()
     {
         var (store, collection) = CreateStore(matchedCount: 0);
         var cancellingAt = new DateTimeOffset(2026, 10, 26, 12, 0, 0, TimeSpan.Zero);
 
-        var restored = await store.TryRestoreAsync("wf-1", WorkflowSubStatus.Suspended, cancellingAt, cancellingAt.AddMinutes(1));
+        var restored = await store.TryTransitionSubStatusAsync("wf-1", WorkflowSubStatus.Cancelling, cancellingAt, WorkflowSubStatus.Suspended, cancellingAt.AddMinutes(1));
 
         Assert.False(restored);
         await collection.Received(1).UpdateOneAsync(
@@ -249,6 +249,7 @@ public class MongoWorkflowInstanceStoreTests
     {
         var document = RenderDocument(filter);
         return FilterHasId(document, id)
+               && EqualsField(document, "Status", (int)WorkflowStatus.Running)
                && EqualsField(document, "SubStatus", (int)WorkflowSubStatus.Cancelling)
                && ContainsField(document, "UpdatedAt");
     }

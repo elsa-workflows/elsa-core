@@ -217,54 +217,35 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
-    public async ValueTask<bool> TryMarkCancellingAsync(
+    public async ValueTask<bool> TryTransitionSubStatusAsync(
         string workflowInstanceId,
-        WorkflowSubStatus expectedSubStatus,
-        DateTimeOffset cancellingAt,
+        WorkflowSubStatus expected,
+        DateTimeOffset? expectedUpdatedAt,
+        WorkflowSubStatus next,
+        DateTimeOffset stampedAt,
         CancellationToken cancellationToken = default)
     {
-        if (!expectedSubStatus.IsCancellableSubStatus())
+        if (!expected.IsPermittedSubStatusTransition(next))
             return false;
 
         await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
         // The tenant query filter applies to ExecuteUpdateAsync. Do not ignore it.
-        var updated = await dbContext.WorkflowInstances
-            .Where(x => x.Id == workflowInstanceId
-                && x.Status == WorkflowStatus.Running
-                && !x.IsExecuting
-                && x.SubStatus == expectedSubStatus
-                && x.SubStatus != WorkflowSubStatus.Executing)
-            .ExecuteUpdateAsync(
-                setters => setters
-                    .SetProperty(x => x.SubStatus, WorkflowSubStatus.Cancelling)
-                    .SetProperty(x => x.UpdatedAt, cancellingAt),
-                cancellationToken);
+        var query = dbContext.WorkflowInstances.Where(x =>
+            x.Id == workflowInstanceId
+            && x.Status == WorkflowStatus.Running
+            && x.SubStatus == expected);
 
-        return updated > 0;
-    }
+        if (expectedUpdatedAt is { } expectedStamp)
+            query = query.Where(x => x.UpdatedAt == expectedStamp);
 
-    /// <inheritdoc />
-    public async ValueTask<bool> TryRestoreAsync(
-        string workflowInstanceId,
-        WorkflowSubStatus previousSubStatus,
-        DateTimeOffset expectedCancellingAt,
-        DateTimeOffset restoredAt,
-        CancellationToken cancellationToken = default)
-    {
-        if (!previousSubStatus.IsCancellableSubStatus())
-            return false;
+        if (next == WorkflowSubStatus.Cancelling)
+            query = query.Where(x => !x.IsExecuting && x.SubStatus != WorkflowSubStatus.Executing);
 
-        await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
-        var updated = await dbContext.WorkflowInstances
-            .Where(x => x.Id == workflowInstanceId
-                && x.Status == WorkflowStatus.Running
-                && x.SubStatus == WorkflowSubStatus.Cancelling
-                && x.UpdatedAt == expectedCancellingAt)
-            .ExecuteUpdateAsync(
-                setters => setters
-                    .SetProperty(x => x.SubStatus, previousSubStatus)
-                    .SetProperty(x => x.UpdatedAt, restoredAt),
-                cancellationToken);
+        var updated = await query.ExecuteUpdateAsync(
+            setters => setters
+                .SetProperty(x => x.SubStatus, next)
+                .SetProperty(x => x.UpdatedAt, stampedAt),
+            cancellationToken);
 
         return updated > 0;
     }

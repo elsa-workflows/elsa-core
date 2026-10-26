@@ -14,6 +14,9 @@ public class WorkflowSubStatusMapper
             ProtoWorkflowSubStatus.Cancelled => WorkflowSubStatus.Cancelled,
             ProtoWorkflowSubStatus.Executing => WorkflowSubStatus.Executing,
             ProtoWorkflowSubStatus.Suspended => WorkflowSubStatus.Suspended,
+            // Instance-column markers. The runner does not transition to them, but a snapshot that carries one must not throw.
+            ProtoWorkflowSubStatus.Interrupted => WorkflowSubStatus.Interrupted,
+            ProtoWorkflowSubStatus.Cancelling => WorkflowSubStatus.Cancelling,
             _ => throw new ArgumentOutOfRangeException(nameof(subStatus), subStatus, null)
         };
     }
@@ -28,6 +31,9 @@ public class WorkflowSubStatusMapper
             WorkflowSubStatus.Cancelled => ProtoWorkflowSubStatus.Cancelled,
             WorkflowSubStatus.Executing => ProtoWorkflowSubStatus.Executing,
             WorkflowSubStatus.Suspended => ProtoWorkflowSubStatus.Suspended,
+            // Instance-column markers. The runner does not transition to them, but a snapshot that carries one must not throw.
+            WorkflowSubStatus.Interrupted => ProtoWorkflowSubStatus.Interrupted,
+            WorkflowSubStatus.Cancelling => ProtoWorkflowSubStatus.Cancelling,
             _ => throw new ArgumentOutOfRangeException(nameof(subStatus), subStatus, null)
         };
     }

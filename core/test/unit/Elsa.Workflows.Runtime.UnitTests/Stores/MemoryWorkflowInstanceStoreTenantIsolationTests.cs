@@ -63,7 +63,7 @@ public class MemoryWorkflowInstanceStoreTenantIsolationTests
     }
 
     [Fact]
-    public async Task TryMarkCancellingAsyncAppliesTheSameTenantVisibilityAsFind()
+    public async Task TryTransitionSubStatusAsyncAppliesTheSameTenantVisibilityAsFind()
     {
         var backingStore = new MemoryStore<WorkflowInstance>();
         var tenantA = new MemoryWorkflowInstanceStore(backingStore, new TestTenantAccessor("tenant-a"));
@@ -73,14 +73,14 @@ public class MemoryWorkflowInstanceStoreTenantIsolationTests
         await tenantA.SaveAsync(instance);
         var cancellingAt = new DateTimeOffset(2026, 10, 26, 12, 0, 0, TimeSpan.Zero);
 
-        var markedByB = await tenantB.TryMarkCancellingAsync("instance-a", WorkflowSubStatus.Suspended, cancellingAt);
+        var markedByB = await tenantB.TryTransitionSubStatusAsync("instance-a", WorkflowSubStatus.Suspended, null, WorkflowSubStatus.Cancelling, cancellingAt);
 
         Assert.False(markedByB);
         var stillOwnedByA = await tenantA.FindAsync(new WorkflowInstanceFilter { Id = "instance-a" });
         Assert.NotNull(stillOwnedByA);
         Assert.Equal(WorkflowSubStatus.Suspended, stillOwnedByA.SubStatus);
 
-        var markedByA = await tenantA.TryMarkCancellingAsync("instance-a", WorkflowSubStatus.Suspended, cancellingAt);
+        var markedByA = await tenantA.TryTransitionSubStatusAsync("instance-a", WorkflowSubStatus.Suspended, null, WorkflowSubStatus.Cancelling, cancellingAt);
 
         Assert.True(markedByA);
         var cancelling = await tenantA.FindAsync(new WorkflowInstanceFilter { Id = "instance-a" });

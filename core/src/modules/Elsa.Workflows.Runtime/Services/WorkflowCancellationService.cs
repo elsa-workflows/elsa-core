@@ -91,8 +91,9 @@ public class WorkflowCancellationService(
     }
 
     /// <summary>
-    /// Marks a non-executing, unowned instance as Cancelling, then dispatches.
-    /// A crash after the mark and before enqueue is not recovered here.
+    /// Marks a non-executing, unowned suspended instance as Cancelling, then dispatches.
+    /// Pending and Interrupted stay unmarked so the pending run path and the interrupted-workflow scan still own them.
+    /// A crash after this mark and before enqueue can leave a suspended instance in Cancelling.
     /// </summary>
     private async Task CancelInstanceAsync(WorkflowInstance instance, CancellationToken cancellationToken)
     {
@@ -104,7 +105,13 @@ public class WorkflowCancellationService(
 
         var previousSubStatus = instance.SubStatus;
         var cancellingAt = systemClock.UtcNow.TruncateToMilliseconds();
-        var marked = await workflowInstanceStore.TryMarkCancellingAsync(instance.Id, previousSubStatus, cancellingAt, cancellationToken);
+        var marked = await workflowInstanceStore.TryTransitionSubStatusAsync(
+            instance.Id,
+            previousSubStatus,
+            null,
+            WorkflowSubStatus.Cancelling,
+            cancellingAt,
+            cancellationToken);
 
         if (!marked)
         {
@@ -201,10 +208,11 @@ public class WorkflowCancellationService(
         try
         {
             // The caller's token may already be cancelled. The rollback still has to run.
-            var restored = await workflowInstanceStore.TryRestoreAsync(
+            var restored = await workflowInstanceStore.TryTransitionSubStatusAsync(
                 workflowInstanceId,
-                previousSubStatus,
+                WorkflowSubStatus.Cancelling,
                 cancellingAt,
+                previousSubStatus,
                 systemClock.UtcNow.TruncateToMilliseconds(),
                 CancellationToken.None);
 

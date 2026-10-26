@@ -36,6 +36,10 @@ public class DispatchCancelWorkflowsRequestConsumer(
             // retry only after this method throws, so the consumer cannot tell a terminal attempt from the first
             // of several. Roll the interim mark back, then rethrow so that policy still runs. A retry cancels
             // from the restored sub-status. The compare-and-swap does nothing if Cancelled was already committed.
+            //
+            // Under a host retry policy the row can flicker Cancelling, then the previous sub-status, then
+            // Cancelled. That flicker is expected. Do not skip the restore to hide it: a terminal attempt that
+            // never reaches Cancelled must not leave the instance stuck in Cancelling.
             await RestoreIfMarkedAsync(request, exception);
             throw;
         }
@@ -48,10 +52,11 @@ public class DispatchCancelWorkflowsRequestConsumer(
 
         try
         {
-            var restored = await workflowInstanceStore.TryRestoreAsync(
+            var restored = await workflowInstanceStore.TryTransitionSubStatusAsync(
                 request.WorkflowInstanceId,
-                previousSubStatus,
+                WorkflowSubStatus.Cancelling,
                 cancellingAt,
+                previousSubStatus,
                 systemClock.UtcNow.TruncateToMilliseconds(),
                 CancellationToken.None);
 

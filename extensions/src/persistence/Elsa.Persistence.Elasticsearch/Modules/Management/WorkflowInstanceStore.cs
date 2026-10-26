@@ -180,17 +180,19 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
-    public async ValueTask<bool> TryMarkCancellingAsync(
+    public async ValueTask<bool> TryTransitionSubStatusAsync(
         string workflowInstanceId,
-        WorkflowSubStatus expectedSubStatus,
-        DateTimeOffset cancellingAt,
+        WorkflowSubStatus expected,
+        DateTimeOffset? expectedUpdatedAt,
+        WorkflowSubStatus next,
+        DateTimeOffset stampedAt,
         CancellationToken cancellationToken = default)
     {
-        if (!expectedSubStatus.IsCancellableSubStatus())
+        if (!expected.IsPermittedSubStatusTransition(next))
             return false;
 
         // Conditional write: do not SaveAsync a Find snapshot. The script no-ops unless the source still matches,
-        // and a no-op does not increment the updated count.
+        // and a no-op does not increment the updated count. updatedAt is compared as a round-trip string.
         var updated = await _store.UpdateByQueryAsync(d =>
         {
             d.Refresh(true);
@@ -199,59 +201,24 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
                 .Source("""
                     if (ctx._source.id == params.workflowInstanceId
                         && ctx._source.status == params.running
-                        && ctx._source.isExecuting != true
                         && ctx._source.subStatus == params.expected
-                        && ctx._source.subStatus != params.executing) {
-                      ctx._source.subStatus = params.cancelling;
-                      ctx._source.updatedAt = params.cancellingAt;
+                        && (params.checkUpdatedAt == false || ctx._source.updatedAt == params.expectedUpdatedAt)
+                        && (params.requireNotExecuting == false || (ctx._source.isExecuting != true && ctx._source.subStatus != params.executing))) {
+                      ctx._source.subStatus = params.next;
+                      ctx._source.updatedAt = params.stampedAt;
                     } else {
                       ctx.op = 'noop';
                     }
                     """)
                 .AddParam("workflowInstanceId", workflowInstanceId)
                 .AddParam("running", WorkflowStatus.Running.ToString())
-                .AddParam("expected", expectedSubStatus.ToString())
+                .AddParam("expected", expected.ToString())
+                .AddParam("checkUpdatedAt", expectedUpdatedAt.HasValue)
+                .AddParam("expectedUpdatedAt", expectedUpdatedAt?.ToString("O") ?? string.Empty)
+                .AddParam("requireNotExecuting", next == WorkflowSubStatus.Cancelling)
                 .AddParam("executing", WorkflowSubStatus.Executing.ToString())
-                .AddParam("cancelling", WorkflowSubStatus.Cancelling.ToString())
-                .AddParam("cancellingAt", cancellingAt.ToString("O")));
-        }, cancellationToken);
-
-        return updated > 0;
-    }
-
-    /// <inheritdoc />
-    public async ValueTask<bool> TryRestoreAsync(
-        string workflowInstanceId,
-        WorkflowSubStatus previousSubStatus,
-        DateTimeOffset expectedCancellingAt,
-        DateTimeOffset restoredAt,
-        CancellationToken cancellationToken = default)
-    {
-        if (!previousSubStatus.IsCancellableSubStatus())
-            return false;
-
-        var updated = await _store.UpdateByQueryAsync(d =>
-        {
-            d.Refresh(true);
-            d.Query(q => q.Bool(b => b.Must(m => m.Match(mt => mt.Field(f => f.Id).Query(workflowInstanceId)))));
-            d.Script(s => s
-                .Source("""
-                    if (ctx._source.id == params.workflowInstanceId
-                        && ctx._source.status == params.running
-                        && ctx._source.subStatus == params.cancelling
-                        && ctx._source.updatedAt == params.expectedCancellingAt) {
-                      ctx._source.subStatus = params.previous;
-                      ctx._source.updatedAt = params.restoredAt;
-                    } else {
-                      ctx.op = 'noop';
-                    }
-                    """)
-                .AddParam("workflowInstanceId", workflowInstanceId)
-                .AddParam("running", WorkflowStatus.Running.ToString())
-                .AddParam("cancelling", WorkflowSubStatus.Cancelling.ToString())
-                .AddParam("expectedCancellingAt", expectedCancellingAt.ToString("O"))
-                .AddParam("previous", previousSubStatus.ToString())
-                .AddParam("restoredAt", restoredAt.ToString("O")));
+                .AddParam("next", next.ToString())
+                .AddParam("stampedAt", stampedAt.ToString("O")));
         }, cancellationToken);
 
         return updated > 0;

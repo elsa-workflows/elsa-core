@@ -213,13 +213,15 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
-    public ValueTask<bool> TryMarkCancellingAsync(
+    public ValueTask<bool> TryTransitionSubStatusAsync(
         string workflowInstanceId,
-        WorkflowSubStatus expectedSubStatus,
-        DateTimeOffset cancellingAt,
+        WorkflowSubStatus expected,
+        DateTimeOffset? expectedUpdatedAt,
+        WorkflowSubStatus next,
+        DateTimeOffset stampedAt,
         CancellationToken cancellationToken = default)
     {
-        if (!expectedSubStatus.IsCancellableSubStatus())
+        if (!expected.IsPermittedSubStatusTransition(next))
             return ValueTask.FromResult(false);
 
         // Same lock as Save/Update so a runner's commit cannot land between the predicate and the column writes.
@@ -228,39 +230,13 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
             var instance = _store.Find(x => x.Id == workflowInstanceId && TenantVisibility.IsVisible(x.TenantId, CurrentTenantId));
             if (instance is null
                 || instance.Status != WorkflowStatus.Running
-                || instance.IsExecuting
-                || instance.SubStatus == WorkflowSubStatus.Executing
-                || instance.SubStatus != expectedSubStatus)
+                || instance.SubStatus != expected
+                || (expectedUpdatedAt is { } expectedStamp && instance.UpdatedAt != expectedStamp)
+                || (next == WorkflowSubStatus.Cancelling && (instance.IsExecuting || instance.SubStatus == WorkflowSubStatus.Executing)))
                 return ValueTask.FromResult(false);
 
-            instance.SubStatus = WorkflowSubStatus.Cancelling;
-            instance.UpdatedAt = cancellingAt;
-            return ValueTask.FromResult(true);
-        }
-    }
-
-    /// <inheritdoc />
-    public ValueTask<bool> TryRestoreAsync(
-        string workflowInstanceId,
-        WorkflowSubStatus previousSubStatus,
-        DateTimeOffset expectedCancellingAt,
-        DateTimeOffset restoredAt,
-        CancellationToken cancellationToken = default)
-    {
-        if (!previousSubStatus.IsCancellableSubStatus())
-            return ValueTask.FromResult(false);
-
-        lock (_sync)
-        {
-            var instance = _store.Find(x => x.Id == workflowInstanceId && TenantVisibility.IsVisible(x.TenantId, CurrentTenantId));
-            if (instance is null
-                || instance.Status != WorkflowStatus.Running
-                || instance.SubStatus != WorkflowSubStatus.Cancelling
-                || instance.UpdatedAt != expectedCancellingAt)
-                return ValueTask.FromResult(false);
-
-            instance.SubStatus = previousSubStatus;
-            instance.UpdatedAt = restoredAt;
+            instance.SubStatus = next;
+            instance.UpdatedAt = stampedAt;
             return ValueTask.FromResult(true);
         }
     }

@@ -46,10 +46,11 @@ public class CancelWorkflowsCommandHandler(
 
         try
         {
-            var restored = await workflowInstanceStore.TryRestoreAsync(
+            var restored = await workflowInstanceStore.TryTransitionSubStatusAsync(
                 request.WorkflowInstanceId,
-                previousSubStatus,
+                WorkflowSubStatus.Cancelling,
                 cancellingAt,
+                previousSubStatus,
                 systemClock.UtcNow.TruncateToMilliseconds(),
                 CancellationToken.None);
 

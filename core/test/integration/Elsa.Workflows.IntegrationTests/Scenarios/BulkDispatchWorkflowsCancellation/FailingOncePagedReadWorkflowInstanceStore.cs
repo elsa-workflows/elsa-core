@@ -103,9 +103,12 @@ public class FailingOncePagedReadWorkflowInstanceStore(
     public ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default, bool allowFinishedCancelled = false) =>
         inner.TryMarkInterruptedAsync(workflowInstanceId, cancellationToken, allowFinishedCancelled);
 
-    public ValueTask<bool> TryMarkCancellingAsync(string workflowInstanceId, WorkflowSubStatus expectedSubStatus, DateTimeOffset cancellingAt, CancellationToken cancellationToken = default) =>
-        inner.TryMarkCancellingAsync(workflowInstanceId, expectedSubStatus, cancellingAt, cancellationToken);
-
-    public ValueTask<bool> TryRestoreAsync(string workflowInstanceId, WorkflowSubStatus previousSubStatus, DateTimeOffset expectedCancellingAt, DateTimeOffset restoredAt, CancellationToken cancellationToken = default) =>
-        inner.TryRestoreAsync(workflowInstanceId, previousSubStatus, expectedCancellingAt, restoredAt, cancellationToken);
+    public ValueTask<bool> TryTransitionSubStatusAsync(
+        string workflowInstanceId,
+        WorkflowSubStatus expected,
+        DateTimeOffset? expectedUpdatedAt,
+        WorkflowSubStatus next,
+        DateTimeOffset stampedAt,
+        CancellationToken cancellationToken = default) =>
+        inner.TryTransitionSubStatusAsync(workflowInstanceId, expected, expectedUpdatedAt, next, stampedAt, cancellationToken);
 }

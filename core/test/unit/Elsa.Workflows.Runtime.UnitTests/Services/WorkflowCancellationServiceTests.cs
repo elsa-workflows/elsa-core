@@ -77,6 +77,29 @@ public class WorkflowCancellationServiceTests
         Assert.Equal(WorkflowSubStatus.Cancelled, stored.SubStatus);
     }
 
+    [Theory]
+    [InlineData(WorkflowSubStatus.Pending)]
+    [InlineData(WorkflowSubStatus.Interrupted)]
+    public async Task Cancel_RecoverableSubStatus_IsDispatchedWithoutCancellingMark(WorkflowSubStatus subStatus)
+    {
+        var store = CreateStore(Running(subStatus));
+        var clock = new FixedClock(MarkedAt);
+        var dispatcher = new RecordingDispatcher(store, clock);
+        var sut = CreateSut(store, dispatcher, clock);
+
+        Assert.True(await sut.CancelWorkflowAsync("wf-1"));
+
+        var request = Assert.Single(dispatcher.Requests);
+        Assert.Null(request.PreviousSubStatus);
+        Assert.Null(request.CancellingAt);
+        Assert.Equal(subStatus, dispatcher.StatusAtDispatch["wf-1"]);
+        var stored = await store.FindAsync(new WorkflowInstanceFilter { Id = "wf-1" });
+        Assert.NotNull(stored);
+        Assert.Equal(WorkflowStatus.Running, stored.Status);
+        Assert.Equal(subStatus, stored.SubStatus);
+        Assert.Equal(MarkedAt.AddDays(-1), stored.UpdatedAt);
+    }
+
     [Fact]
     public async Task Cancel_ExecutingInstance_IsNotOverwrittenAndStillDispatched()
     {
@@ -136,7 +159,13 @@ public class WorkflowCancellationServiceTests
             .Returns(new ValueTask<WorkflowInstance?>(Suspended("wf-1")));
         store.FindManyAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
             .Returns(new ValueTask<IEnumerable<WorkflowInstance>>(Array.Empty<WorkflowInstance>()));
-        store.TryMarkCancellingAsync(Arg.Any<string>(), Arg.Any<WorkflowSubStatus>(), Arg.Any<DateTimeOffset>(), Arg.Any<CancellationToken>())
+        store.TryTransitionSubStatusAsync(
+                Arg.Any<string>(),
+                Arg.Any<WorkflowSubStatus>(),
+                Arg.Any<DateTimeOffset?>(),
+                Arg.Any<WorkflowSubStatus>(),
+                Arg.Any<DateTimeOffset>(),
+                Arg.Any<CancellationToken>())
             .Returns(new ValueTask<bool>(false));
         var dispatcher = Substitute.For<IWorkflowCancellationDispatcher>();
         dispatcher.DispatchAsync(Arg.Any<DispatchCancelWorkflowRequest>(), Arg.Any<CancellationToken>())
@@ -220,6 +249,24 @@ public class WorkflowCancellationServiceTests
         Status = WorkflowStatus.Running,
         SubStatus = WorkflowSubStatus.Suspended,
         Bookmarks = [new Bookmark("bm-1", "Wait", "hash", null, "activity", "node", "instance", default)]
+    };
+
+    private static WorkflowInstance Running(WorkflowSubStatus subStatus) => new()
+    {
+        Id = "wf-1",
+        DefinitionId = "def-1",
+        DefinitionVersionId = "ver-1",
+        Version = 1,
+        Status = WorkflowStatus.Running,
+        SubStatus = subStatus,
+        IsExecuting = false,
+        UpdatedAt = MarkedAt.AddDays(-1),
+        WorkflowState = new WorkflowState
+        {
+            Id = "wf-1",
+            Status = WorkflowStatus.Running,
+            SubStatus = subStatus
+        }
     };
 
     private static WorkflowInstance Suspended(string id, WorkflowState? state = null, string? parentId = null) => new()

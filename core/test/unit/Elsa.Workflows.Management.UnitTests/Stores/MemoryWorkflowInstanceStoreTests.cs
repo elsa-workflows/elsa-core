@@ -206,14 +206,14 @@ public class MemoryWorkflowInstanceStoreTests
         Assert.Equal(updatedAt, instance.UpdatedAt);
     }
 
-    [Fact(DisplayName = "TryMarkCancellingAsync writes only the sub-status and UpdatedAt")]
-    public async Task TryMarkCancelling_UpdatesSubStatusAndTimestampOnly()
+    [Fact(DisplayName = "TryTransitionSubStatusAsync writes only the sub-status and UpdatedAt")]
+    public async Task TryTransition_UpdatesSubStatusAndTimestampOnly()
     {
         var cancellingAt = new DateTimeOffset(2026, 10, 26, 12, 0, 0, TimeSpan.Zero);
         var state = SuspendedState();
         var store = CreateStore(SuspendedInstance(state));
 
-        var marked = await store.TryMarkCancellingAsync("wf-1", WorkflowSubStatus.Suspended, cancellingAt);
+        var marked = await store.TryTransitionSubStatusAsync("wf-1", WorkflowSubStatus.Suspended, null, WorkflowSubStatus.Cancelling, cancellingAt);
 
         Assert.True(marked);
         var instance = await store.FindAsync(new() { Id = "wf-1" });
@@ -226,8 +226,8 @@ public class MemoryWorkflowInstanceStoreTests
         Assert.Equal("bm-1", Assert.Single(state.Bookmarks).Id);
     }
 
-    [Fact(DisplayName = "TryMarkCancellingAsync refuses an executing instance and leaves it unchanged")]
-    public async Task TryMarkCancelling_RefusesExecutingInstance()
+    [Fact(DisplayName = "TryTransitionSubStatusAsync refuses an executing instance and leaves it unchanged")]
+    public async Task TryTransition_RefusesExecutingInstance()
     {
         var originalUpdatedAt = new DateTimeOffset(2026, 10, 1, 0, 0, 0, TimeSpan.Zero);
         var state = SuspendedState();
@@ -245,7 +245,7 @@ public class MemoryWorkflowInstanceStoreTests
             WorkflowState = state
         });
 
-        var marked = await store.TryMarkCancellingAsync("wf-1", WorkflowSubStatus.Executing, originalUpdatedAt.AddMinutes(1));
+        var marked = await store.TryTransitionSubStatusAsync("wf-1", WorkflowSubStatus.Executing, null, WorkflowSubStatus.Cancelling, originalUpdatedAt.AddMinutes(1));
 
         Assert.False(marked);
         var instance = await store.FindAsync(new() { Id = "wf-1" });
@@ -257,13 +257,13 @@ public class MemoryWorkflowInstanceStoreTests
         Assert.Equal("bm-1", Assert.Single(state.Bookmarks).Id);
     }
 
-    [Fact(DisplayName = "TryMarkCancellingAsync makes no change when the expected sub-status does not match")]
-    public async Task TryMarkCancelling_FailedPredicateMakesNoChange()
+    [Fact(DisplayName = "TryTransitionSubStatusAsync makes no change when the expected sub-status does not match")]
+    public async Task TryTransition_FailedPredicateMakesNoChange()
     {
         var originalUpdatedAt = new DateTimeOffset(2026, 10, 1, 0, 0, 0, TimeSpan.Zero);
         var store = CreateStore(SuspendedInstance(SuspendedState(), originalUpdatedAt));
 
-        var marked = await store.TryMarkCancellingAsync("wf-1", WorkflowSubStatus.Pending, originalUpdatedAt.AddMinutes(1));
+        var marked = await store.TryTransitionSubStatusAsync("wf-1", WorkflowSubStatus.Pending, null, WorkflowSubStatus.Cancelling, originalUpdatedAt.AddMinutes(1));
 
         Assert.False(marked);
         var instance = await store.FindAsync(new() { Id = "wf-1" });
@@ -272,16 +272,16 @@ public class MemoryWorkflowInstanceStoreTests
         Assert.Equal(originalUpdatedAt, instance.UpdatedAt);
     }
 
-    [Fact(DisplayName = "TryRestoreAsync puts the previous sub-status back only for the marked generation")]
-    public async Task TryRestore_RestoresPreviousSubStatusAndTimestamp()
+    [Fact(DisplayName = "TryTransitionSubStatusAsync puts the previous sub-status back only for the marked generation")]
+    public async Task TryTransition_RestoresPreviousSubStatusAndTimestamp()
     {
         var cancellingAt = new DateTimeOffset(2026, 10, 26, 12, 0, 0, TimeSpan.Zero);
         var restoredAt = cancellingAt.AddMinutes(2);
         var state = SuspendedState();
         var store = CreateStore(SuspendedInstance(state));
-        Assert.True(await store.TryMarkCancellingAsync("wf-1", WorkflowSubStatus.Suspended, cancellingAt));
+        Assert.True(await store.TryTransitionSubStatusAsync("wf-1", WorkflowSubStatus.Suspended, null, WorkflowSubStatus.Cancelling, cancellingAt));
 
-        var restored = await store.TryRestoreAsync("wf-1", WorkflowSubStatus.Suspended, cancellingAt, restoredAt);
+        var restored = await store.TryTransitionSubStatusAsync("wf-1", WorkflowSubStatus.Cancelling, cancellingAt, WorkflowSubStatus.Suspended, restoredAt);
 
         Assert.True(restored);
         var instance = await store.FindAsync(new() { Id = "wf-1" });
@@ -293,12 +293,12 @@ public class MemoryWorkflowInstanceStoreTests
         Assert.Equal("bm-1", Assert.Single(state.Bookmarks).Id);
     }
 
-    [Fact(DisplayName = "TryRestoreAsync does not overwrite a concurrent Cancelled commit")]
-    public async Task TryRestore_DoesNotOverwriteCancelled()
+    [Fact(DisplayName = "TryTransitionSubStatusAsync does not overwrite a concurrent Cancelled commit")]
+    public async Task TryTransition_DoesNotOverwriteCancelled()
     {
         var cancellingAt = new DateTimeOffset(2026, 10, 26, 12, 0, 0, TimeSpan.Zero);
         var store = CreateStore(SuspendedInstance(SuspendedState()));
-        Assert.True(await store.TryMarkCancellingAsync("wf-1", WorkflowSubStatus.Suspended, cancellingAt));
+        Assert.True(await store.TryTransitionSubStatusAsync("wf-1", WorkflowSubStatus.Suspended, null, WorkflowSubStatus.Cancelling, cancellingAt));
         await store.SaveAsync(new WorkflowInstance
         {
             Id = "wf-1",
@@ -312,7 +312,7 @@ public class MemoryWorkflowInstanceStoreTests
             WorkflowState = SuspendedState()
         });
 
-        var restored = await store.TryRestoreAsync("wf-1", WorkflowSubStatus.Suspended, cancellingAt, cancellingAt.AddMinutes(2));
+        var restored = await store.TryTransitionSubStatusAsync("wf-1", WorkflowSubStatus.Cancelling, cancellingAt, WorkflowSubStatus.Suspended, cancellingAt.AddMinutes(2));
 
         Assert.False(restored);
         var instance = await store.FindAsync(new() { Id = "wf-1" });
@@ -321,16 +321,16 @@ public class MemoryWorkflowInstanceStoreTests
         Assert.Equal(WorkflowSubStatus.Cancelled, instance.SubStatus);
     }
 
-    [Fact(DisplayName = "TryRestoreAsync does not apply a stale Cancelling snapshot over a concurrent Cancelled save")]
-    public async Task TryRestore_DoesNotClobberConcurrentCancelledSave()
+    [Fact(DisplayName = "TryTransitionSubStatusAsync does not apply a stale Cancelling snapshot over a concurrent Cancelled save")]
+    public async Task TryTransition_DoesNotClobberConcurrentCancelledSave()
     {
         var cancellingAt = new DateTimeOffset(2026, 10, 26, 12, 0, 0, TimeSpan.Zero);
         for (var i = 0; i < 50; i++)
         {
             var store = CreateStore(SuspendedInstance(SuspendedState(), id: "race-1"));
-            Assert.True(await store.TryMarkCancellingAsync("race-1", WorkflowSubStatus.Suspended, cancellingAt));
+            Assert.True(await store.TryTransitionSubStatusAsync("race-1", WorkflowSubStatus.Suspended, null, WorkflowSubStatus.Cancelling, cancellingAt));
 
-            var restore = Task.Run(() => store.TryRestoreAsync("race-1", WorkflowSubStatus.Suspended, cancellingAt, cancellingAt.AddMinutes(2)).AsTask());
+            var restore = Task.Run(() => store.TryTransitionSubStatusAsync("race-1", WorkflowSubStatus.Cancelling, cancellingAt, WorkflowSubStatus.Suspended, cancellingAt.AddMinutes(2)).AsTask());
             var complete = Task.Run(() => store.SaveAsync(new WorkflowInstance
             {
                 Id = "race-1",
@@ -351,6 +351,89 @@ public class MemoryWorkflowInstanceStoreTests
                 stored.Status == WorkflowStatus.Finished && stored.SubStatus != WorkflowSubStatus.Cancelled,
                 $"Finished row lost Cancelled during restore (iteration {i}).");
         }
+    }
+
+    [Fact(DisplayName = "TryTransitionSubStatusAsync refuses a suspended row that is executing")]
+    public async Task TryTransition_RefusesExecutingSuspendedRow()
+    {
+        var originalUpdatedAt = new DateTimeOffset(2026, 10, 1, 0, 0, 0, TimeSpan.Zero);
+        var store = CreateStore(new WorkflowInstance
+        {
+            Id = "wf-1",
+            DefinitionId = "def-1",
+            DefinitionVersionId = "ver-1",
+            Version = 1,
+            Status = WorkflowStatus.Running,
+            SubStatus = WorkflowSubStatus.Suspended,
+            IsExecuting = true,
+            UpdatedAt = originalUpdatedAt
+        });
+
+        var marked = await store.TryTransitionSubStatusAsync("wf-1", WorkflowSubStatus.Suspended, null, WorkflowSubStatus.Cancelling, originalUpdatedAt.AddMinutes(1));
+
+        Assert.False(marked);
+        var instance = await store.FindAsync(new() { Id = "wf-1" });
+        Assert.NotNull(instance);
+        Assert.Equal(WorkflowSubStatus.Suspended, instance.SubStatus);
+        Assert.True(instance.IsExecuting);
+        Assert.Equal(originalUpdatedAt, instance.UpdatedAt);
+    }
+
+    [Theory(DisplayName = "TryTransitionSubStatusAsync leaves Pending and Interrupted unmarked")]
+    [InlineData(WorkflowSubStatus.Pending)]
+    [InlineData(WorkflowSubStatus.Interrupted)]
+    public async Task TryTransition_LeavesRecoverableSubStatusesUnmarked(WorkflowSubStatus subStatus)
+    {
+        var originalUpdatedAt = new DateTimeOffset(2026, 10, 1, 0, 0, 0, TimeSpan.Zero);
+        var store = CreateStore(new WorkflowInstance
+        {
+            Id = "wf-1",
+            DefinitionId = "def-1",
+            DefinitionVersionId = "ver-1",
+            Version = 1,
+            Status = WorkflowStatus.Running,
+            SubStatus = subStatus,
+            IsExecuting = false,
+            UpdatedAt = originalUpdatedAt
+        });
+
+        var marked = await store.TryTransitionSubStatusAsync("wf-1", subStatus, null, WorkflowSubStatus.Cancelling, originalUpdatedAt.AddMinutes(1));
+
+        Assert.False(marked);
+        var instance = await store.FindAsync(new() { Id = "wf-1" });
+        Assert.NotNull(instance);
+        Assert.Equal(subStatus, instance.SubStatus);
+        Assert.Equal(originalUpdatedAt, instance.UpdatedAt);
+    }
+
+    [Fact(DisplayName = "TryTransitionSubStatusAsync does not restore when UpdatedAt is not the mark stamp")]
+    public async Task TryTransition_DoesNotRestoreWhenStampDiffers()
+    {
+        var cancellingAt = new DateTimeOffset(2026, 10, 26, 12, 0, 0, TimeSpan.Zero);
+        var movedAt = cancellingAt.AddMinutes(1);
+        var store = CreateStore(SuspendedInstance(SuspendedState()));
+        Assert.True(await store.TryTransitionSubStatusAsync("wf-1", WorkflowSubStatus.Suspended, null, WorkflowSubStatus.Cancelling, cancellingAt));
+        await store.SaveAsync(new WorkflowInstance
+        {
+            Id = "wf-1",
+            DefinitionId = "def-1",
+            DefinitionVersionId = "ver-1",
+            Version = 1,
+            Status = WorkflowStatus.Running,
+            SubStatus = WorkflowSubStatus.Cancelling,
+            IsExecuting = false,
+            UpdatedAt = movedAt,
+            WorkflowState = SuspendedState()
+        });
+
+        var restored = await store.TryTransitionSubStatusAsync("wf-1", WorkflowSubStatus.Cancelling, cancellingAt, WorkflowSubStatus.Suspended, cancellingAt.AddMinutes(2));
+
+        Assert.False(restored);
+        var instance = await store.FindAsync(new() { Id = "wf-1" });
+        Assert.NotNull(instance);
+        Assert.Equal(WorkflowStatus.Running, instance.Status);
+        Assert.Equal(WorkflowSubStatus.Cancelling, instance.SubStatus);
+        Assert.Equal(movedAt, instance.UpdatedAt);
     }
 
     private static MemoryWorkflowInstanceStore CreateStore(WorkflowInstance instance)

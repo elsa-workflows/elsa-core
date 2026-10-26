@@ -155,48 +155,37 @@ public class MongoWorkflowInstanceStore(MongoDbStore<WorkflowInstance> mongoDbSt
     }
 
     /// <inheritdoc />
-    public async ValueTask<bool> TryMarkCancellingAsync(
+    public async ValueTask<bool> TryTransitionSubStatusAsync(
         string workflowInstanceId,
-        WorkflowSubStatus expectedSubStatus,
-        DateTimeOffset cancellingAt,
+        WorkflowSubStatus expected,
+        DateTimeOffset? expectedUpdatedAt,
+        WorkflowSubStatus next,
+        DateTimeOffset stampedAt,
         CancellationToken cancellationToken = default)
     {
-        if (!expectedSubStatus.IsCancellableSubStatus())
+        if (!expected.IsPermittedSubStatusTransition(next))
             return false;
 
-        var filter = Builders<WorkflowInstance>.Filter.And(
+        var filters = new List<FilterDefinition<WorkflowInstance>>
+        {
             Builders<WorkflowInstance>.Filter.Eq(x => x.Id, workflowInstanceId),
             Builders<WorkflowInstance>.Filter.Eq(x => x.Status, WorkflowStatus.Running),
-            Builders<WorkflowInstance>.Filter.Eq(x => x.IsExecuting, false),
-            Builders<WorkflowInstance>.Filter.Eq(x => x.SubStatus, expectedSubStatus),
-            Builders<WorkflowInstance>.Filter.Ne(x => x.SubStatus, WorkflowSubStatus.Executing));
+            Builders<WorkflowInstance>.Filter.Eq(x => x.SubStatus, expected)
+        };
+
+        if (expectedUpdatedAt is { } expectedStamp)
+            filters.Add(Builders<WorkflowInstance>.Filter.Eq(x => x.UpdatedAt, expectedStamp));
+
+        if (next == WorkflowSubStatus.Cancelling)
+        {
+            filters.Add(Builders<WorkflowInstance>.Filter.Eq(x => x.IsExecuting, false));
+            filters.Add(Builders<WorkflowInstance>.Filter.Ne(x => x.SubStatus, WorkflowSubStatus.Executing));
+        }
+
+        var filter = Builders<WorkflowInstance>.Filter.And(filters);
         var update = Builders<WorkflowInstance>.Update
-            .Set(x => x.SubStatus, WorkflowSubStatus.Cancelling)
-            .Set(x => x.UpdatedAt, cancellingAt);
-
-        var result = await mongoDbStore.UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
-        return result.MatchedCount > 0;
-    }
-
-    /// <inheritdoc />
-    public async ValueTask<bool> TryRestoreAsync(
-        string workflowInstanceId,
-        WorkflowSubStatus previousSubStatus,
-        DateTimeOffset expectedCancellingAt,
-        DateTimeOffset restoredAt,
-        CancellationToken cancellationToken = default)
-    {
-        if (!previousSubStatus.IsCancellableSubStatus())
-            return false;
-
-        var filter = Builders<WorkflowInstance>.Filter.And(
-            Builders<WorkflowInstance>.Filter.Eq(x => x.Id, workflowInstanceId),
-            Builders<WorkflowInstance>.Filter.Eq(x => x.Status, WorkflowStatus.Running),
-            Builders<WorkflowInstance>.Filter.Eq(x => x.SubStatus, WorkflowSubStatus.Cancelling),
-            Builders<WorkflowInstance>.Filter.Eq(x => x.UpdatedAt, expectedCancellingAt));
-        var update = Builders<WorkflowInstance>.Update
-            .Set(x => x.SubStatus, previousSubStatus)
-            .Set(x => x.UpdatedAt, restoredAt);
+            .Set(x => x.SubStatus, next)
+            .Set(x => x.UpdatedAt, stampedAt);
 
         var result = await mongoDbStore.UpdateOneAsync(filter, update, cancellationToken: cancellationToken);
         return result.MatchedCount > 0;

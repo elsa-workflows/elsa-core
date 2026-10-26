@@ -202,20 +202,22 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     }
 
     /// <inheritdoc />
-    public async ValueTask<bool> TryMarkCancellingAsync(
+    public async ValueTask<bool> TryTransitionSubStatusAsync(
         string workflowInstanceId,
-        WorkflowSubStatus expectedSubStatus,
-        DateTimeOffset cancellingAt,
+        WorkflowSubStatus expected,
+        DateTimeOffset? expectedUpdatedAt,
+        WorkflowSubStatus next,
+        DateTimeOffset stampedAt,
         CancellationToken cancellationToken = default)
     {
-        if (!expectedSubStatus.IsCancellableSubStatus())
+        if (!expected.IsPermittedSubStatusTransition(next))
             return false;
 
         var record = new WorkflowInstanceRecord
         {
             Id = workflowInstanceId,
-            SubStatus = WorkflowSubStatus.Cancelling.ToString(),
-            UpdatedAt = cancellingAt
+            SubStatus = next.ToString(),
+            UpdatedAt = stampedAt
         };
 
         var updated = await store.UpdateAsync(
@@ -225,50 +227,24 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
             {
                 q.Is(nameof(WorkflowInstanceRecord.Id), workflowInstanceId);
                 q.Is(nameof(WorkflowInstanceRecord.Status), WorkflowStatus.Running.ToString());
-                q.Is(nameof(WorkflowInstanceRecord.IsExecuting), false);
-                // SET already binds @SubStatus to Cancelling. Keep the predicate parameter distinct.
-                q.Parameters.Add("@ExpectedSubStatus", expectedSubStatus.ToString());
-                q.Parameters.Add("@ExecutingSubStatus", WorkflowSubStatus.Executing.ToString());
+                // SET already binds @SubStatus and @UpdatedAt. Keep the predicate parameters distinct.
+                q.Parameters.Add("@ExpectedSubStatus", expected.ToString());
                 var subStatus = q.Dialect.QuoteIdentifier(nameof(WorkflowInstanceRecord.SubStatus));
                 q.Sql.AppendLine($"and {subStatus} = @ExpectedSubStatus");
-                q.Sql.AppendLine($"and not {subStatus} = @ExecutingSubStatus");
-            },
-            cancellationToken);
 
-        return updated > 0;
-    }
+                if (expectedUpdatedAt is { } expectedStamp)
+                {
+                    q.Parameters.Add("@ExpectedUpdatedAt", expectedStamp);
+                    var updatedAt = q.Dialect.QuoteIdentifier(nameof(WorkflowInstanceRecord.UpdatedAt));
+                    q.Sql.AppendLine($"and {updatedAt} = @ExpectedUpdatedAt");
+                }
 
-    /// <inheritdoc />
-    public async ValueTask<bool> TryRestoreAsync(
-        string workflowInstanceId,
-        WorkflowSubStatus previousSubStatus,
-        DateTimeOffset expectedCancellingAt,
-        DateTimeOffset restoredAt,
-        CancellationToken cancellationToken = default)
-    {
-        if (!previousSubStatus.IsCancellableSubStatus())
-            return false;
-
-        var record = new WorkflowInstanceRecord
-        {
-            Id = workflowInstanceId,
-            SubStatus = previousSubStatus.ToString(),
-            UpdatedAt = restoredAt
-        };
-
-        var updated = await store.UpdateAsync(
-            record,
-            [x => x.SubStatus, x => x.UpdatedAt],
-            q =>
-            {
-                q.Is(nameof(WorkflowInstanceRecord.Id), workflowInstanceId);
-                q.Is(nameof(WorkflowInstanceRecord.Status), WorkflowStatus.Running.ToString());
-                q.Parameters.Add("@CancellingSubStatus", WorkflowSubStatus.Cancelling.ToString());
-                q.Parameters.Add("@ExpectedCancellingAt", expectedCancellingAt);
-                var subStatus = q.Dialect.QuoteIdentifier(nameof(WorkflowInstanceRecord.SubStatus));
-                var updatedAt = q.Dialect.QuoteIdentifier(nameof(WorkflowInstanceRecord.UpdatedAt));
-                q.Sql.AppendLine($"and {subStatus} = @CancellingSubStatus");
-                q.Sql.AppendLine($"and {updatedAt} = @ExpectedCancellingAt");
+                if (next == WorkflowSubStatus.Cancelling)
+                {
+                    q.Is(nameof(WorkflowInstanceRecord.IsExecuting), false);
+                    q.Parameters.Add("@ExecutingSubStatus", WorkflowSubStatus.Executing.ToString());
+                    q.Sql.AppendLine($"and not {subStatus} = @ExecutingSubStatus");
+                }
             },
             cancellationToken);
 

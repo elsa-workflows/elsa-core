@@ -93,7 +93,7 @@ public class CancelWorkflowsCommandHandlerTests
             SubStatus = WorkflowSubStatus.Suspended,
             IsExecuting = false
         });
-        Assert.True(await store.TryMarkCancellingAsync("wf-1", WorkflowSubStatus.Suspended, CancellingAt));
+        Assert.True(await store.TryTransitionSubStatusAsync("wf-1", WorkflowSubStatus.Suspended, null, WorkflowSubStatus.Cancelling, CancellingAt));
         return store;
     }
 
