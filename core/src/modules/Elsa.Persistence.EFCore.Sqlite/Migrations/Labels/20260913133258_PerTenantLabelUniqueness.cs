@@ -18,9 +18,12 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Labels
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // SQLite ignores schemas; the table is created as "Labels".
+            const string table = "\"Labels\"";
+
             // Default tenant is "" (not null). Stamp leftover nulls so the unique index covers them.
             migrationBuilder.Sql($"""
-                UPDATE "{_schema.Schema}"."Labels"
+                UPDATE {table}
                 SET "TenantId" = ''
                 WHERE "TenantId" IS NULL;
                 """);
@@ -31,13 +34,13 @@ namespace Elsa.Persistence.EFCore.Sqlite.Migrations.Labels
                     (SELECT group_concat('(' || IFNULL("TenantId", '') || ', ' || "NormalizedName" || ')', ', ')
                      FROM (
                          SELECT "TenantId", "NormalizedName"
-                         FROM "{_schema.Schema}"."Labels"
+                         FROM {table}
                          GROUP BY "TenantId", "NormalizedName"
                          HAVING COUNT(*) > 1
                      )))
                 WHERE EXISTS (
                     SELECT 1
-                    FROM "{_schema.Schema}"."Labels"
+                    FROM {table}
                     GROUP BY "TenantId", "NormalizedName"
                     HAVING COUNT(*) > 1
                 );

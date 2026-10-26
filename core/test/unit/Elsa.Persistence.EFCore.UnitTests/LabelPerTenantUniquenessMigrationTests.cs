@@ -76,6 +76,30 @@ public class LabelPerTenantUniquenessMigrationTests
         Assert.Contains(filter, migration, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void PerTenantLabelUniqueness_MySqlRawSqlDoesNotQualifySchema()
+    {
+        // Pomelo SchemaBehavior.Ignore creates tables in DATABASE(), not a database named Elsa.
+        // This repo has no MySQL Testcontainers coverage, so assert the emitted SQL instead.
+        var migration = FindMigration("Elsa.Persistence.EFCore.MySql");
+
+        Assert.DoesNotContain("`{_schema.Schema}`.", migration, StringComparison.Ordinal);
+        Assert.DoesNotContain("`Elsa`.", migration, StringComparison.Ordinal);
+        Assert.Contains("UPDATE `Labels`", migration, StringComparison.Ordinal);
+        Assert.Contains("FROM `Labels`", migration, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void PerTenantLabelUniqueness_SqliteRawSqlDoesNotQualifySchema()
+    {
+        // SQLite ignores schemas; "Elsa"."Labels" looks for an attached database named Elsa.
+        var migration = FindMigration("Elsa.Persistence.EFCore.Sqlite");
+
+        Assert.DoesNotContain("\"{_schema.Schema}\".\"Labels\"", migration, StringComparison.Ordinal);
+        Assert.Contains("UPDATE {table}", migration, StringComparison.Ordinal);
+        Assert.Contains("const string table = \"\\\"Labels\\\"\"", migration, StringComparison.Ordinal);
+    }
+
     private static string FindMigration(string providerProject)
     {
         var repoRoot = FindRepoRoot();
