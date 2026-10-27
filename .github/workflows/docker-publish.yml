@@ -3,8 +3,8 @@
 # Images (Docker Hub only; these are the names the old Community publishers used,
 # and the names still referenced by the root README, wiki, samples, and docs):
 #   elsaworkflows/elsa-server-v3              <- docker/ElsaServer.Dockerfile
-#   elsaworkflows/elsa-studio-v3              <- docker/ElsaStudio.Dockerfile
 #   elsaworkflows/elsa-server-and-studio-v3   <- docker/ElsaServerAndStudio.Dockerfile
+# 3.10 does not publish elsaworkflows/elsa-studio-v3.
 #
 # Tags:
 #   every accepted version publishes its exact X.Y.Z or X.Y.Z-preview.N tag

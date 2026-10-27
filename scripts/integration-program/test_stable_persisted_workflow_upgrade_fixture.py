@@ -248,7 +248,7 @@ class StableWorkflowContracts(unittest.TestCase):
             self.assertNotIn(forbidden, retrieve.split("  retrieve:\n", 1)[1])
         for value in (str(stable.ARTIFACT), str(stable.RUN), stable.SOURCE, stable.ARCHIVE_SHA256):
             self.assertIn(value, retrieve)
-        self.assertIn("actions/runs/37456860080/attempts/1", retrieve)
+        self.assertIn(f"actions/runs/{stable.RUN}/attempts/1", retrieve)
         self.assertIn(".run_attempt == 1", retrieve)
         self.assertIn("actions: none", execution)
         self.assertIn("ref: ${{ github.sha }}", execution)
@@ -289,7 +289,7 @@ class StableWorkflowContracts(unittest.TestCase):
 
     def test_accepted_envelope_and_lifecycle_fixture_are_verbatim(self):
         # Pins here are independent of any test fixture patches.
-        self.assertEqual("ef5e772020b151089b64b90b819d36ff371ed5e65212f7fdc7b2934d9860ddda", fixture.sha256(stable.ORIGINAL_ENVELOPE))
+        self.assertEqual(stable.ENVELOPE_SHA256, fixture.sha256(stable.ORIGINAL_ENVELOPE))
         self.assertEqual(stable.FIXTURE_SHA256, fixture.sha256(fixture.FIXTURE))
 
 

@@ -2,11 +2,11 @@
 
 [Task #8645](https://github.com/elsa-workflows/elsa-core/issues/8645) prepares read-only reconciliation for the original 3.10.0 candidate accepted by [#8631](https://github.com/elsa-workflows/elsa-core/issues/8631). It does not publish packages, complete the release, or authorize publisher cutover.
 
-The planner always covers the complete retained manifest: 225 NuGet packages and their paired symbol archives, plus 124 exclusion rows representing 123 package IDs. Exclusions retain project identity. There is no package subset, version override or feed override. Maintenance release publishers remain unchanged.
+The planner always covers the complete retained manifest: 231 NuGet packages and their paired symbol archives, plus 135 exclusion rows representing 134 package IDs. Exclusions retain project identity. There is no package subset, version override or feed override. Maintenance release publishers remain unchanged.
 
 ## Original inputs
 
-Use the original archive from Core run `37456860080`, attempt `1`, artifact `11412848210`, source `ba5b348aa2414fdf7c19d9d8806e87b7c91a4205`. The archive SHA-256 is `ace85260c3389916fe3dcd7ee9cd5b766e4030dd6cee13c7f89285ada79c944f` and its size is 92,659,861 bytes. It expires on 2026-11-05 at 12:13:30 UTC. Expiry or deletion blocks this candidate; it never authorizes rebuilding equivalent-looking bytes.
+Use the original archive from Core run `40347931480`, attempt `1`, artifact `12664519771`, source `5cff67228e550b353b3483eb3b37dfdb73a41c74`. The archive SHA-256 is `2dd253e1f2946ddcb2b8e75ef397596001757ddbcb0a91f717e9505bbf28b4f6` and its size is 96,096,205 bytes. It expires on 2026-11-25 at 16:05:50 UTC. Expiry or deletion blocks this candidate; it never authorizes rebuilding equivalent-looking bytes.
 
 The input directory contains exactly:
 
@@ -48,7 +48,7 @@ Production reads are fixed to the Elsa Feedz repository. GETs reject redirects a
 
 Raw local and remote archive SHA-256 values are distinct from signature-aware payload hashes. Signature normalization reuses the maintenance verifier and does not verify a signing certificate. Symbol archive hashes identify the original local pairs; remote symbol publication and retrieval remain unverified.
 
-Any conflict or unverifiable package blocks reconciliation. `classification_complete` means every package has a classification other than unverifiable, so a complete ledger can still contain blocking conflicts. `content_converged` requires all 225 packages to match. Even a fully matching ledger always has `publication_ready: false` and `publication_performed: false`.
+Any conflict or unverifiable package blocks reconciliation. `classification_complete` means every package has a classification other than unverifiable, so a complete ledger can still contain blocking conflicts. `content_converged` requires all 231 packages to match. Even a fully matching ledger always has `publication_ready: false` and `publication_performed: false`.
 
 Intended-reader access, remote symbols, publisher authority, publisher quiescence, publication approval and full compatibility remain separate pending gates. The planner never treats a push exit status, `--skip-duplicate`, an anonymous absence or a previous successful invocation as permission to publish. Receipts retain fixed diagnostic categories and hashes, not credentials, response headers, raw server errors or private paths.
 
@@ -88,9 +88,9 @@ python3 scripts/integration-program/consolidated_package_executor.py verify \
 
 Use `rehearse` instead of `verify`, with separate new destinations, to exercise simulated uploads and recovery with the original complete candidate. Hosted commands additionally bind `--executor-run` and `--executor-attempt`. The workflow retains separate verification, rehearsal, admission and publication artifacts identified by the GitHub run and attempt. Before scheduling native approval, its job summary binds the exact executor revision, original producer/artifact/archive/manifest, observed feed index, complete same-run verification and GitHub-reported verification artifact ID/digest. The summary links the retained evidence and distinguishes verification with missing content from release acceptance.
 
-A successful `verify` exit means original inputs and every required local DLL/PDB association passed, and remote classifications are complete and nonconflicting. Missing packages or PDBs are allowed in this nonpublishing result. It is not release acceptance. A successful `rehearse` must demonstrate complete simulated convergence and interruption/resume across all 225 pairs, without writing to Feedz. Neither command grants upload authority.
+A successful `verify` exit means original inputs and every required local DLL/PDB association passed, and remote classifications are complete and nonconflicting. Missing packages or PDBs are allowed in this nonpublishing result. It is not release acceptance. A successful `rehearse` must demonstrate complete simulated convergence and interruption/resume across all 231 pairs, without writing to Feedz. Neither command grants upload authority.
 
-The symbol inspector preserves the existing SourceLink/document checks and emits the Portable PDB key, GUID, stamp, DLL-declared checksum and unchanged PDB hash. Readback compares actual remote PDB bytes with the corresponding original `.snupkg` member. The normalized DLL checksum and raw PDB hash are distinct. Deduplicated symbol requests must retain every package/framework association; assembly-free entries and inconsistent duplicate keys cannot be silently omitted. Full acceptance needs 225 matching packages and every expected symbol association. Original `.snupkg` archive readback remains a separate, unproven contract.
+The symbol inspector preserves the existing SourceLink/document checks and emits the Portable PDB key, GUID, stamp, DLL-declared checksum and unchanged PDB hash. Readback compares actual remote PDB bytes with the corresponding original `.snupkg` member. The normalized DLL checksum and raw PDB hash are distinct. Deduplicated symbol requests must retain every package/framework association; assembly-free entries and inconsistent duplicate keys cannot be silently omitted. Full acceptance needs 231 matching packages and every expected symbol association. Original `.snupkg` archive readback remains a separate, unproven contract.
 
 ## Publication admission and execution
 

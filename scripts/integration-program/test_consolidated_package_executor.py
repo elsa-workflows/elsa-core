@@ -21,6 +21,11 @@ import test_consolidated_package_recovery as recovery_fixtures
 from test_consolidated_candidate_clock import AFTER_EXPIRY, candidate_clock, install_candidate_clock
 from test_consolidated_package_recovery import package_bytes, provenance
 
+PIN_COUNT = executor.candidate_input.PIN_PACKAGE_COUNT
+PIN_EXCLUSIONS = executor.candidate_input.PIN_EXCLUSION_COUNT
+PIN_ARCHIVES = PIN_COUNT * 2
+PARTIAL_KEEP_STRIDE = 3  # keep every third accepted nupkg
+
 
 def loopback_server(test, handler):
     server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
@@ -123,15 +128,15 @@ class FullInventoryTests(unittest.TestCase):
             self.feed.accepted[row["nupkg"].lower()] = (self.root / "artifacts" / row["nupkg"]).read_bytes()
         self.feed.symbols.update({key: value["pdb"] for key, value in self.expected.items()})
 
-    def test_all_225_pairs_and_124_exclusions_converge(self):
+    def test_all_pin_pairs_and_exclusions_converge(self):
         result = self.run_executor()
         self.assertEqual(result["result"], "content_verified")
-        self.assertEqual(len(result["operations"]), 450)
-        self.assertEqual(len(result["associations"]), 225)
-        self.assertEqual(result["after"]["packages"]["counts"]["matching"], 225)
-        self.assertEqual(result["after"]["packages"]["exclusion_count"], 124)
-        self.assertEqual(len(result["after"]["symbols"]), 225)
-        self.assertEqual(len(self.feed.calls), 450)
+        self.assertEqual(len(result["operations"]), PIN_ARCHIVES)
+        self.assertEqual(len(result["associations"]), PIN_COUNT)
+        self.assertEqual(result["after"]["packages"]["counts"]["matching"], PIN_COUNT)
+        self.assertEqual(result["after"]["packages"]["exclusion_count"], PIN_EXCLUSIONS)
+        self.assertEqual(len(result["after"]["symbols"]), PIN_COUNT)
+        self.assertEqual(len(self.feed.calls), PIN_ARCHIVES)
         self.assertFalse(result["publication_ready"])
         self.assertFalse(result["remote_snupkg_archive_verified"])
         self.assertEqual(result["scope"], "injected_simulation")
@@ -139,7 +144,7 @@ class FullInventoryTests(unittest.TestCase):
             self.assertEqual(result[phase]["packages"]["observation_mode"], "injected_simulation")
         self.assertNotIn("private-synthetic-key", json.dumps(result))
         self.assertTrue(self.run_executor()["content_verified"])
-        self.assertEqual(len(self.feed.calls), 450)
+        self.assertEqual(len(self.feed.calls), PIN_ARCHIVES)
 
     def test_verify_missing_is_complete_observation_not_release_acceptance(self):
         result = self.run_executor(mode="verify", authorize=lambda: self.fail("verification requested authority"))
@@ -155,7 +160,7 @@ class FullInventoryTests(unittest.TestCase):
         self.assertEqual(result["result"], "verified")
         self.assertEqual(result["scope"], "production")
         self.assertEqual(result["before"]["packages"]["observation_mode"], "production")
-        self.assertEqual(reader.call_count, 452)  # Two index reads, all packages, all PDBs.
+        self.assertEqual(reader.call_count, PIN_ARCHIVES + 2)  # Two index reads, all packages, all PDBs.
         self.assertFalse(result["publication_performed"])
         self.assertFalse(result["upload_attempted"])
         self.assertEqual(self.feed.calls, [])
@@ -164,22 +169,22 @@ class FullInventoryTests(unittest.TestCase):
         for partial in (False, True):
             self.fill_feed()
             if partial:
-                self.feed.accepted = {key: value for index, (key, value) in enumerate(self.feed.accepted.items()) if index % 3 == 1}
+                self.feed.accepted = {key: value for index, (key, value) in enumerate(self.feed.accepted.items()) if index % PARTIAL_KEEP_STRIDE == 1}
             self.feed.symbols.clear()
             self.feed.calls.clear()
             result = self.run_executor()
             self.assertTrue(result["content_verified"])
-            self.assertEqual(len(self.feed.calls), 375 if partial else 225)
-            self.assertEqual(sum(row["kind"] == "snupkg" for row in self.feed.calls), 225)
+            self.assertEqual(len(self.feed.calls), (2 * PIN_COUNT - PIN_COUNT // PARTIAL_KEEP_STRIDE) if partial else PIN_COUNT)
+            self.assertEqual(sum(row["kind"] == "snupkg" for row in self.feed.calls), PIN_COUNT)
 
     def test_accepted_then_interrupted_resume_without_duplicate(self):
         self.feed.interrupt_next = True
         result = self.run_executor()
         self.assertEqual(result["failure_category"], "upload_acceptance_unknown")
-        self.assertEqual(len(result["operations"]), 450)
+        self.assertEqual(len(result["operations"]), PIN_ARCHIVES)
         self.assertEqual(len(self.feed.calls), 1)
         self.assertTrue(self.run_executor()["content_verified"])
-        self.assertEqual(len(self.feed.calls), 450)
+        self.assertEqual(len(self.feed.calls), PIN_ARCHIVES)
 
     def test_409_and_uncertain_results_stop_without_retry(self):
         for response in (recovery.ReadResult(409, b"raw-private-body", True), recovery.ReadResult(401, b"secret", True),
@@ -201,7 +206,7 @@ class FullInventoryTests(unittest.TestCase):
             result = self.run_executor()
         self.assertFalse(result["content_verified"])
         self.assertEqual(result["failure_category"], "readback_incomplete")
-        self.assertEqual(len(self.feed.calls), 450)
+        self.assertEqual(len(self.feed.calls), PIN_ARCHIVES)
 
     def test_package_and_pdb_conflicts_or_unreadable_block_every_upload(self):
         first = self.manifest["packages"][0]
@@ -256,7 +261,7 @@ class FullInventoryTests(unittest.TestCase):
             observed = result["before"] if change_after == 1 else result["after"]
             self.assertFalse(observed["feed_index_consistent"])
             self.assertTrue(observed["blocked"])
-            self.assertEqual(len(self.feed.calls), 0 if change_after == 1 else 450)
+            self.assertEqual(len(self.feed.calls), 0 if change_after == 1 else PIN_ARCHIVES)
 
     def test_authority_failure_never_uses_key(self):
         def blocked():
@@ -293,7 +298,7 @@ class FullInventoryTests(unittest.TestCase):
             result = executor.run_verified(self.root, self.provenance, self.inspector, mode="publish", transport=self.feed,
                 authorize=lambda: {"scope": "simulation_only"}, credential=lambda: "synthetic", checkpoint=checkpoint)
         self.assertEqual(result["failure_category"], "upload_acceptance_unknown")
-        self.assertEqual(len(snapshots[-1]["operations"]), 450)
+        self.assertEqual(len(snapshots[-1]["operations"]), PIN_ARCHIVES)
         self.assertEqual(snapshots[-1]["operations"][0]["state"], "acceptance_unknown")
 
     def test_expiry_blocks_before_network(self):
@@ -348,7 +353,7 @@ class FullInventoryTests(unittest.TestCase):
                 nonlocal calls
                 calls += 1
                 result = original(*args)
-                if calls > 225:
+                if calls > PIN_COUNT:
                     result["symbol"][field] = value
                 return result
             with patch.object(self.inspector, "inspect", side_effect=inspect):
@@ -369,9 +374,9 @@ class FullInventoryTests(unittest.TestCase):
         try:
             path.write_bytes(output.getvalue())
             associations, expected = executor.associations(self.root, self.manifest, self.inspector)
-            self.assertEqual(len(associations), 225)
-            self.assertEqual(sum(len(row["associations"]) for row in associations), 225)
-            self.assertEqual(len(expected), 224)
+            self.assertEqual(len(associations), PIN_COUNT)
+            self.assertEqual(sum(len(row["associations"]) for row in associations), PIN_COUNT)
+            self.assertEqual(len(expected), PIN_COUNT - 1)
         finally:
             path.write_bytes(original)
 
@@ -429,16 +434,16 @@ class FullInventoryTests(unittest.TestCase):
         root, original_provenance, manifest, feed = self.overlapping_inventory()
         result = self.publish_overlap(root, original_provenance, feed)
         self.assertTrue(result["content_verified"])
-        self.assertEqual(len(result["operations"]), 450)
-        self.assertEqual(len(result["associations"]), 225)
-        self.assertEqual(sum(len(row["associations"]) for row in result["associations"]), 225)
-        self.assertEqual(len(feed.attempts), 449)
+        self.assertEqual(len(result["operations"]), PIN_ARCHIVES)
+        self.assertEqual(len(result["associations"]), PIN_COUNT)
+        self.assertEqual(sum(len(row["associations"]) for row in result["associations"]), PIN_COUNT)
+        self.assertEqual(len(feed.attempts), PIN_ARCHIVES - 1)
         operation = result["operations"][3]
         self.assertEqual(operation["archive_sha256"], manifest["packages"][1]["snupkg_sha256"])
         self.assertEqual(operation["state"], "pdbs_already_matching_archive_unverified")
         self.assertIsNone(operation["status"])
         self.assertEqual([row["classification"] for row in operation["overlap_readback"]], ["matching"])
-        self.assertEqual(len(result["after"]["symbols"]), 224)
+        self.assertEqual(len(result["after"]["symbols"]), PIN_COUNT - 1)
         self.assertFalse(result["remote_snupkg_archive_verified"])
         self.assertFalse(result["publication_ready"])
 
@@ -498,16 +503,16 @@ class FullInventoryTests(unittest.TestCase):
         try:
             path.write_text(json.dumps(source))
             associations, expected = executor.associations(self.root, manifest, self.inspector)
-            self.assertEqual(len(associations), 225)
+            self.assertEqual(len(associations), PIN_COUNT)
             self.assertTrue(associations[0]["assembly_free"])
-            self.assertEqual(len(expected), 224)
+            self.assertEqual(len(expected), PIN_COUNT - 1)
         finally:
             path.write_bytes(original)
 
     def test_full_original_rehearsal(self):
         result = executor.rehearse(self.root, self.provenance, self.inspector)
         self.assertEqual(result["result"], "passed")
-        self.assertEqual(result["simulated_upload_count"], 450)
+        self.assertEqual(result["simulated_upload_count"], PIN_ARCHIVES)
         self.assertFalse(result["publication_performed"])
         self.assertTrue(result["resumed"]["content_verified"])
 
