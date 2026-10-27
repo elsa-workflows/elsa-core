@@ -3,11 +3,15 @@
 
 Both publishers run this same script before any 3.10.0 push: packages.yml
 (nuget.org promote) and publish-consolidated-original-candidate.yml (Feedz).
-There is no skip, bypass, or override input. The package directory arrives as:
+There is no skip, bypass, or override of the ID-set guard. The package
+directory arrives as:
 
     PACKAGES_DIR   directory containing the produced .nupkg files
+    EXCLUDE_IDS    optional comma-separated package IDs to skip (default empty)
 
-The expected ID list is always scripts/validate_packages_id_set.txt.
+The expected ID list is always scripts/validate_packages_id_set.txt. Empty
+EXCLUDE_IDS keeps that full set. A non-empty list must name distinct IDs from
+the artifact's package set; the expected count is then 231 minus that many.
 """
 
 from __future__ import annotations
@@ -98,6 +102,63 @@ def id_set_errors(produced: list[str], expected: list[str]) -> list[str]:
     return lines
 
 
+def parse_exclude_ids(raw: str | None) -> list[str]:
+    """Split a comma-separated exclude list. Empty input is none; empty entries fail."""
+    if raw is None or not raw.strip():
+        return []
+    parts = [part.strip() for part in raw.split(",")]
+    if any(not part for part in parts):
+        raise SystemExit("exclude_ids contains an empty entry.")
+    folded = [part.casefold() for part in parts]
+    if len(folded) != len(set(folded)):
+        raise SystemExit("exclude_ids lists a package ID more than once.")
+    return parts
+
+
+def resolve_exclude_ids(raw: str | None, available: list[str]) -> list[str]:
+    """Map requested IDs onto the artifact set. Unknown IDs fail closed."""
+    requested = parse_exclude_ids(raw)
+    if not requested:
+        return []
+    index = {package_id.casefold(): package_id for package_id in available}
+    resolved: list[str] = []
+    unknown: list[str] = []
+    for item in requested:
+        match = index.get(item.casefold())
+        if match is None:
+            unknown.append(item)
+        else:
+            resolved.append(match)
+    if unknown:
+        raise SystemExit("exclude_ids names IDs that are not in the artifact's package set: " + ", ".join(unknown))
+    return resolved
+
+
+def filename_package_id(name: str) -> str | None:
+    nupkg_name = name[:-7] + ".nupkg" if name.endswith(".snupkg") else name
+    match = PACKAGE_FILE.fullmatch(nupkg_name)
+    return None if match is None else match.group(1)
+
+
+def remove_excluded_packages(directory: Path, excluded: set[str]) -> None:
+    for path in sorted(directory.iterdir()):
+        if not path.is_file() or path.suffix not in {".nupkg", ".snupkg"}:
+            continue
+        package_id = filename_package_id(path.name)
+        if package_id in excluded:
+            path.unlink()
+
+
+def apply_exclude_ids(directory: Path, expected: list[str], raw: str | None) -> tuple[list[str], list[str]]:
+    """Drop excluded packages from directory and return the remaining expected IDs."""
+    excluded = resolve_exclude_ids(raw, packed_ids(directory))
+    if not excluded:
+        return expected, []
+    excluded_set = set(excluded)
+    remove_excluded_packages(directory, excluded_set)
+    return [package_id for package_id in expected if package_id not in excluded_set], excluded
+
+
 def studio_content_errors(directory: Path) -> list[str]:
     """Fail when a packed Studio ClientLib package is missing a required bundle entry."""
     errors = []
@@ -128,6 +189,7 @@ def main() -> int:
     if not packages.is_dir():
         raise SystemExit("PACKAGES_DIR must be a directory of packed .nupkg files.")
     expected = load_expected_ids(DEFAULT_EXPECTED)
+    expected, excluded = apply_exclude_ids(packages, expected, os.environ.get("EXCLUDE_IDS"))
     produced = packed_ids(packages)
     errors = id_set_errors(produced, expected)
     errors.extend(studio_content_errors(packages))
@@ -135,6 +197,7 @@ def main() -> int:
         print(error, file=sys.stderr)
     if errors:
         return 1
+    print("exclusions: none" if not excluded else "exclusions: " + ", ".join(excluded))
     print(f"Package ID set matches {len(expected)} expected IDs.")
     print(f"Studio package content matches {sum(len(entries) for entries in STUDIO_CONTENT.values())} required entries.")
     return 0
