@@ -1,4 +1,6 @@
+using Elsa.Common.Serialization;
 using Elsa.Extensions;
+using Elsa.UserTasks.Models;
 using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Options;
@@ -39,5 +41,29 @@ public sealed class UserTasksFeatureActivityRegistrationTests
 
         var activityTypes = serviceProvider.GetRequiredService<IOptions<ManagementOptions>>().Value.ActivityTypes;
         Assert.Contains(typeof(UserTask), activityTypes);
+    }
+
+    [Fact(DisplayName = "UseUserTasks registers a UserTaskMaterialization type alias")]
+    public void UseUserTasks_RegistersUserTaskMaterializationTypeAlias()
+    {
+        var services = new ServiceCollection();
+        services.AddElsa(elsa => elsa.UseUserTasks());
+        using var serviceProvider = services.BuildServiceProvider();
+
+        var aliases = serviceProvider.GetRequiredService<IOptions<SerializationTypeOptions>>().Value;
+        var alias = Assert.Contains(typeof(UserTaskMaterialization), aliases.TypeAliasDictionary);
+        Assert.Equal(nameof(UserTaskMaterialization), alias);
+    }
+
+    [Fact(DisplayName = "The User Tasks shell feature registers a UserTaskMaterialization type alias")]
+    public void UserTasksShellFeature_RegistersUserTaskMaterializationTypeAlias()
+    {
+        var services = new ServiceCollection();
+        new UserTasksShellFeature().ConfigureServices(services);
+        using var serviceProvider = services.BuildServiceProvider();
+
+        var aliases = serviceProvider.GetRequiredService<IOptions<SerializationTypeOptions>>().Value;
+        var alias = Assert.Contains(typeof(UserTaskMaterialization), aliases.TypeAliasDictionary);
+        Assert.Equal(nameof(UserTaskMaterialization), alias);
     }
 }
