@@ -12,8 +12,11 @@ from unittest.mock import patch
 import zipfile
 import warnings
 
+import consolidated_candidate_input as candidate_input
 import consolidated_package_recovery as recovery
 from run_consolidated_recovery_fixture import SimulatedFeed
+
+COUNT = recovery.PACKAGE_COUNT
 
 
 def package_bytes(package_id, *, version=recovery.VERSION, source=recovery.SOURCE, dependency="1.0.0", payload=b"original", signature=False):
@@ -28,8 +31,8 @@ def package_bytes(package_id, *, version=recovery.VERSION, source=recovery.SOURC
 
 
 def provenance(root):
-    return {"candidate_producer": {"version": recovery.VERSION, "source_commit": recovery.SOURCE, "run_id": 37456860080, "run_attempt": 1, "artifact_id": 11412848210},
-            "artifact_name": f"consolidated-candidate-{recovery.SOURCE}-37456860080-1", "archive_sha256": "a" * 64, "archive_size": 92659861,
+    return {"candidate_producer": {"version": recovery.VERSION, "source_commit": recovery.SOURCE, "run_id": candidate_input.RUN, "run_attempt": candidate_input.ATTEMPT, "artifact_id": candidate_input.ARTIFACT},
+            "artifact_name": f"consolidated-candidate-{recovery.SOURCE}-{candidate_input.RUN}-{candidate_input.ATTEMPT}", "archive_sha256": "a" * 64, "archive_size": candidate_input.ARCHIVE_SIZE,
             "original_envelope_sha256": "b" * 64, "preupload_manifest_sha256": recovery._sha((root / "preupload-manifest.json").read_bytes()),
             "verified_artifacts_sha256": recovery._sha((root / "verified-artifacts.json").read_bytes()), "inventory_sha256": recovery._sha(json.dumps(__import__("prepare_consolidated_release_candidate").inventory_identity(json.loads((root / "verified-artifacts.json").read_text())), sort_keys=True, separators=(",", ":")).encode()),
             "live_retrieval_sha256": "c" * 64, "observed_at": datetime.now(timezone.utc).isoformat(),
@@ -76,15 +79,15 @@ class RecoveryContracts(unittest.TestCase):
 
     def test_all_missing_full_set_is_visibility_only(self):
         result = self.plan()
-        self.assertEqual(result["counts"], {"missing": 225, "matching": 0, "conflicting": 0, "unverifiable": 0})
+        self.assertEqual(result["counts"], {"missing": COUNT, "matching": 0, "conflicting": 0, "unverifiable": 0})
         self.assertTrue(result["classification_complete"])
         self.assertFalse(result["reconciliation_blocked"])
         for key in ("publication_ready", "publication_performed", "remote_symbols_verified", "content_converged"):
             self.assertFalse(result[key])
         self.assertEqual(result["access_mode"], "anonymous")
         self.assertEqual(result["absence_scope"], "declared_access_visibility_only")
-        self.assertEqual(len(self.feed.calls), 226)
-        self.assertEqual(len({row["id"] for row in result["packages"]}), 225)
+        self.assertEqual(len(self.feed.calls), COUNT + 1)
+        self.assertEqual(len({row["id"] for row in result["packages"]}), COUNT)
         self.assertIn("intended_reader_access", result["pending_gates"])
 
     def test_all_matching_signature_aware_payload_and_distinct_raw_digest(self):
@@ -92,7 +95,7 @@ class RecoveryContracts(unittest.TestCase):
         self.feed.overrides["elsa.samplepackage"] = recovery.ReadResult(200, package_bytes("Elsa.SamplePackage", signature=True), True)
         result = self.plan()
         self.assertTrue(result["content_converged"])
-        self.assertEqual(result["counts"]["matching"], 225)
+        self.assertEqual(result["counts"]["matching"], COUNT)
         first = result["packages"][0]
         self.assertNotEqual(first["remote"]["archive_sha256"], first["local_nupkg_sha256"])
         self.assertEqual(first["remote"]["payload_sha256"], first["local_payload_sha256"])
@@ -102,10 +105,10 @@ class RecoveryContracts(unittest.TestCase):
         self.feed.overrides["elsa.samplepackage"] = recovery.ReadResult(200, package_bytes("Elsa.SamplePackage"), True)
         first = self.plan()
         self.assertEqual(first["counts"]["matching"], 1)
-        self.assertEqual(first["counts"]["missing"], 224)
+        self.assertEqual(first["counts"]["missing"], COUNT - 1)
         self.feed.outcome = 200
         self.assertTrue(self.plan()["content_converged"])
-        self.assertEqual(len(self.feed.calls), 452)
+        self.assertEqual(len(self.feed.calls), 2 * (COUNT + 1))
 
     def test_each_content_mismatch_blocks_reconciliation(self):
         for category, arguments in [("identity", {"version": "3.10.1"}), ("source", {"source": "f" * 40}), ("dependencies", {"dependency": "2.0.0"}), ("payload", {"payload": b"changed"})]:
@@ -134,19 +137,19 @@ class RecoveryContracts(unittest.TestCase):
             with self.subTest(bases=bases):
                 self.feed.calls.clear()
                 self.feed.index = recovery.ReadResult(200, json.dumps({"version": "3.0.0", "resources": [{"@type": "PackageBaseAddress/3.0.0", "@id": base} for base in bases]}).encode(), True)
-                self.assertEqual(self.plan()["counts"]["unverifiable"], 225)
+                self.assertEqual(self.plan()["counts"]["unverifiable"], COUNT)
                 self.assertEqual(len(self.feed.calls), 1)
 
     def test_duplicate_index_json_keys_fail_closed(self):
         self.feed.index = recovery.ReadResult(200, b'{"version":"3.0.0","resources":[],"resources":[]}', True)
-        self.assertEqual(self.plan()["counts"]["unverifiable"], 225)
+        self.assertEqual(self.plan()["counts"]["unverifiable"], COUNT)
 
     def test_last_local_symbol_pin_checked_before_first_get(self):
         path = self.root / "artifacts" / self.manifest["packages"][-1]["snupkg"]
         with self.changed_file(path, b"changed last symbols"):
             result = self.plan()
         self.assertEqual(self.feed.calls, [])
-        self.assertEqual(result["counts"]["unverifiable"], 225)
+        self.assertEqual(result["counts"]["unverifiable"], COUNT)
         self.assertEqual({row["failure_category"] for row in result["packages"]}, {"local_input_invalid"})
 
     def test_feedz_package_base_without_trailing_slash_preserves_the_full_path(self):
@@ -158,7 +161,7 @@ class RecoveryContracts(unittest.TestCase):
 
     def test_changed_manifest_duplicate_and_subset_rejected_before_get(self):
         path = self.root / "verified-artifacts.json"
-        for rows in (self.manifest["packages"][:-1], [self.manifest["packages"][0]] * 225):
+        for rows in (self.manifest["packages"][:-1], [self.manifest["packages"][0]] * COUNT):
             with self.changed_file(path, json.dumps(dict(self.manifest, packages=rows)).encode()):
                 with self.assertRaisesRegex(recovery.RecoveryError, "local_input_invalid"):
                     self.plan()
@@ -172,7 +175,7 @@ class RecoveryContracts(unittest.TestCase):
         self.feed.overrides["elsa.synthetic002"] = KeyboardInterrupt()
         result = self.plan()
         self.assertEqual(result["counts"]["missing"], 2)
-        self.assertEqual(result["counts"]["unverifiable"], 223)
+        self.assertEqual(result["counts"]["unverifiable"], COUNT - 2)
         self.assertEqual(len(self.feed.calls), 4)
         self.assertEqual(result["packages"][-1]["failure_category"], "interrupted")
 

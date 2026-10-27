@@ -257,10 +257,10 @@ class RecoveryInputTests(unittest.TestCase):
         self.rewrite_outer_archive()
         self.patch_constants()
 
-    def test_valid_inputs_recheck_all_225_pairs_and_emit_bound_provenance(self):
+    def test_valid_inputs_recheck_all_pin_pairs_and_emit_bound_provenance(self):
         root, provenance = self.run_prepare(planner_run=99, planner_attempt=2)
         self.assertEqual(self.destination, root)
-        self.assertEqual(225, len(json.loads((root / "verified-artifacts.json").read_text())["packages"]))
+        self.assertEqual(candidate_input.PIN_PACKAGE_COUNT, len(json.loads((root / "verified-artifacts.json").read_text())["packages"]))
         self.assertEqual(candidate_input.PRODUCER, provenance["candidate_producer"])
         self.assertEqual(self.archive_sha256, provenance["archive_sha256"])
         self.assertEqual(self.archive_size, provenance["archive_size"])
