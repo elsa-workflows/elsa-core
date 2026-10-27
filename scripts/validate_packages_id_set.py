@@ -192,7 +192,12 @@ def exclusion_dependency_errors(directory: Path, excluded: set[str]) -> list[str
         package_id = filename_package_id(nupkg.name)
         if package_id is None or package_id in excluded:
             continue
-        hits = sorted(nupkg_dependency_ids(nupkg) & excluded)
+        excluded_index = {package_id.casefold(): package_id for package_id in excluded}
+        hits = sorted({
+            excluded_index[dep.casefold()]
+            for dep in nupkg_dependency_ids(nupkg)
+            if dep.casefold() in excluded_index
+        })
         if hits:
             dependents.append(f"{package_id} depends on {', '.join(hits)}")
     if not dependents:

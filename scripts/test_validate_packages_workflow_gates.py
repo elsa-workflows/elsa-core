@@ -146,6 +146,24 @@ OTHER_BYPASSES = (
         "build job must contain setup-dotnet",
     ),
     (
+        "nuget guard hard-codes EXCLUDE_IDS",
+        "          PACKAGES_DIR: ${{ github.workspace }}\n          EXCLUDE_IDS: ${{ inputs.exclude_ids }}\n",
+        "          PACKAGES_DIR: ${{ github.workspace }}\n          EXCLUDE_IDS: Elsa.Studio.Workflows.Designer\n",
+        "publish_nuget candidate guard env EXCLUDE_IDS must be ${{ inputs.exclude_ids }}",
+    ),
+    (
+        "nuget publisher sets EXCLUDE_IDS at job level",
+        "    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/') }}\n    permissions:\n",
+        "    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/') }}\n    env:\n      EXCLUDE_IDS: Elsa.Studio.Workflows.Designer\n    permissions:\n",
+        "publish_nuget must not set EXCLUDE_IDS at job level",
+    ),
+    (
+        "packages.yml sets EXCLUDE_IDS at workflow level",
+        "  base_version: '3.10.0'\n",
+        "  base_version: '3.10.0'\n  EXCLUDE_IDS: Elsa.Studio.Workflows.Designer\n",
+        "packages.yml must not set EXCLUDE_IDS at workflow level",
+    ),
+    (
         "workflow is callable by another workflow",
         "on:\n  workflow_dispatch:\n",
         "on:\n  workflow_call:\n  workflow_dispatch:\n",
@@ -528,6 +546,16 @@ class WorkflowGateTests(unittest.TestCase):
         mutated = source.replace(old, "          REF: refs/tags/3.10.1\n")
         self.assertIn(
             "publish-consolidated-original-candidate.yml guard env REF must be refs/tags/3.10.0",
+            gates.candidate_publisher_violations(mutated),
+        )
+
+    def test_candidate_publisher_rejects_exclude_ids(self):
+        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
+        old = "          PACKAGES_DIR: ${{ runner.temp }}/candidate-nupkgs\n"
+        self.assertEqual(1, source.count(old))
+        mutated = source.replace(old, old + "          EXCLUDE_IDS: Elsa\n")
+        self.assertIn(
+            "publish-consolidated-original-candidate.yml must not set EXCLUDE_IDS",
             gates.candidate_publisher_violations(mutated),
         )
 

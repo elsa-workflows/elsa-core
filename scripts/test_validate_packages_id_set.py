@@ -319,6 +319,15 @@ class ExcludeIdsTests(unittest.TestCase):
             self.assertIn(f"{dependent} depends on {skipped}", rejected.stderr)
             self.assertNotIn(skipped, packed_ids(directory))
 
+    def test_exclusion_dependency_match_is_case_insensitive(self):
+        skipped = self.expected[0]
+        dependent = self.expected[1]
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            self.write_packages(directory, self.expected, dependencies={dependent: (skipped.lower(),)})
+            errors = exclusion_dependency_errors(directory, {skipped})
+            self.assertIn(f"{dependent} depends on {skipped}", errors)
+
     def test_exclusion_cannot_clear_an_unexpected_packed_id(self):
         stray = "Elsa.SamplePackage"
         self.assertNotIn(stray, self.expected)

@@ -52,6 +52,7 @@ SELECTION_ENV = {
     "DEPLOY_COVERAGE": "${{ inputs.deploy_coverage }}",
     "EXCLUDE_IDS": "${{ inputs.exclude_ids }}",
 }
+GUARD_EXCLUDE_IDS = SELECTION_ENV["EXCLUDE_IDS"]
 # Probed against the script the selection job runs, not a copy of its rules.
 REQUIRED_REJECTIONS = (
     ("a v-prefixed tag", "refs/tags/v3.10.0", {}),
@@ -442,6 +443,9 @@ def promotion_job_violations(jobs: dict) -> list[str]:
         violations.append(retrieve_missing)
     elif None not in (retrieve, stage, guard, login) and not retrieve < stage <= guard < login:
         violations.append("publish_nuget must retrieve, stage, and guard the pinned candidate before NuGet login")
+    job_env = job.get("env") if isinstance(job.get("env"), dict) else {}
+    if "EXCLUDE_IDS" in job_env:
+        violations.append("publish_nuget must not set EXCLUDE_IDS at job level")
     if guard is not None:
         if _run_lines(steps[guard]) != list(NUGET_GUARD_LINES):
             violations.append("publish_nuget candidate staging run: must be exactly stage and the ID-set guard")
@@ -449,6 +453,9 @@ def promotion_job_violations(jobs: dict) -> list[str]:
             violations.append(
                 "publish_nuget candidate staging keys must be among name, env, run, id, if, continue-on-error"
             )
+        env = steps[guard].get("env") if isinstance(steps[guard].get("env"), dict) else {}
+        if " ".join(str(env.get("EXCLUDE_IDS") or "").split()) != GUARD_EXCLUDE_IDS:
+            violations.append("publish_nuget candidate guard env EXCLUDE_IDS must be ${{ inputs.exclude_ids }}")
     if _has_defaults_run_shell(job):
         violations.append("publish_nuget must not set defaults.run.shell")
     for index, expected, message in (
@@ -683,6 +690,8 @@ def candidate_publisher_violations(source: str) -> list[str]:
             violations.append(
                 "publish-consolidated-original-candidate.yml must not offer a skip, bypass, or ID-list override"
             )
+    if "EXCLUDE_IDS" in source:
+        violations.append("publish-consolidated-original-candidate.yml must not set EXCLUDE_IDS")
     guard = source.find(GUARD_CANDIDATE)
     publish = source.find(CANDIDATE_PUBLISH)
     if guard < 0:
@@ -757,6 +766,12 @@ def workflow_violations(workflow: Any) -> list[str]:
         return ["the workflow has no jobs mapping"]
     jobs = workflow["jobs"]
     defaults = ["the workflow must not set defaults.run.shell"] if _has_defaults_run_shell(workflow) else []
+    workflow_env = workflow.get("env") if isinstance(workflow.get("env"), dict) else {}
+    exclude_ids = (
+        ["packages.yml must not set EXCLUDE_IDS at workflow level"]
+        if "EXCLUDE_IDS" in workflow_env
+        else []
+    )
     return [
         *trigger_violations(workflow),
         *capability_violations(workflow),
@@ -768,6 +783,7 @@ def workflow_violations(workflow: Any) -> list[str]:
         *build_npm_violations(jobs),
         *npm_job_violations(jobs),
         *defaults,
+        *exclude_ids,
     ]
 
 
