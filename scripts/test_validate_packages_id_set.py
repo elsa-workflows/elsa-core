@@ -21,6 +21,8 @@ from validate_packages_id_set import (
 )
 
 SCRIPT = Path(__file__).with_name("validate_packages_id_set.py")
+sys.path.insert(0, str(Path(__file__).resolve().parent / "integration-program"))
+import consolidated_candidate_input as candidate_input
 
 
 class Stable310Tests(unittest.TestCase):
@@ -257,9 +259,6 @@ GUARD_COMMAND = "python3 scripts/validate_packages_id_set.py"
 
 class SharedPublisherGuardTests(unittest.TestCase):
     def test_pin_inventory_ids_are_tied_to_the_guard_list(self):
-        sys.path.insert(0, str(Path(__file__).resolve().parent / "integration-program"))
-        import consolidated_candidate_input as candidate_input
-
         pin = json.loads(candidate_input.PIN_INVENTORY.read_text(encoding="utf-8"))
         pin_ids = {row["id"] for row in pin["packages"]}
         guard_ids = set(load_expected_ids(DEFAULT_EXPECTED))
@@ -285,9 +284,6 @@ class SharedPublisherGuardTests(unittest.TestCase):
 
     def test_preflight_and_upgrade_workflows_pin_the_same_artifact(self):
         root = Path(__file__).resolve().parents[1]
-        sys.path.insert(0, str(root / "scripts/integration-program"))
-        import consolidated_candidate_input as candidate_input
-
         for relative in (
             ".github/workflows/consolidated-package-recovery-preflight.yml",
             ".github/workflows/stable-persisted-workflow-upgrade-proof.yml",

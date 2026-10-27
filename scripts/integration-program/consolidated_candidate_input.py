@@ -14,7 +14,7 @@ ATTEMPT = 1
 ARTIFACT = 12664519771
 ARCHIVE_SHA256 = "2dd253e1f2946ddcb2b8e75ef397596001757ddbcb0a91f717e9505bbf28b4f6"
 MANIFEST_SHA256 = "b6a1750f1f796f68a441bef93f67386b4a862dbca94d498ecf64536b102c2994"
-ENVELOPE_SHA256 = "2369a297877ec51b5fc5da4f4f90df65f33dbf03036485109d994b7cae678328"
+ENVELOPE_SHA256 = "93fdcbd271fe712ab9c96d0ee868528c608e6bd13517c17d319eecd2c2f0be48"
 ORIGINAL_ENVELOPE = Path(__file__).resolve().parent / "persisted-workflow-upgrade/stable-original-envelope.json"
 # Frozen candidate pin inventory (231 packages). Recovery and the executor
 # use this snapshot so they still accept the real pinned artifact.
