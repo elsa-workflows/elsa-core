@@ -3,15 +3,17 @@
 
 Both publishers run this same script before any 3.10.0 push: packages.yml
 (nuget.org promote) and publish-consolidated-original-candidate.yml (Feedz).
-There is no skip, bypass, or override of the ID-set guard. The package
-directory arrives as:
+The package directory arrives as:
 
     PACKAGES_DIR   directory containing the produced .nupkg files
     EXCLUDE_IDS    optional comma-separated package IDs to skip (default empty)
 
 The expected ID list is always scripts/validate_packages_id_set.txt. Empty
-EXCLUDE_IDS keeps that full set. A non-empty list must name distinct IDs from
-the artifact's package set; the expected count is then 231 minus that many.
+EXCLUDE_IDS keeps that full set. A non-empty list is a reviewed, count-adjusting
+skip: it must name distinct IDs from the expected list, the remaining packages
+must not depend on an excluded ID, and the expected count is then 231 minus
+that many. Feedz never sets EXCLUDE_IDS. The publication-selection check rejects
+a non-empty list except on a publish_nuget dispatch for a stable 3.10 tag.
 """
 
 from __future__ import annotations
@@ -19,6 +21,7 @@ from __future__ import annotations
 import os
 import re
 import sys
+import xml.etree.ElementTree as ET
 import zipfile
 from pathlib import Path
 
@@ -130,7 +133,7 @@ def resolve_exclude_ids(raw: str | None, available: list[str]) -> list[str]:
         else:
             resolved.append(match)
     if unknown:
-        raise SystemExit("exclude_ids names IDs that are not in the artifact's package set: " + ", ".join(unknown))
+        raise SystemExit("exclude_ids names IDs that are not in the expected package set: " + ", ".join(unknown))
     return resolved
 
 
@@ -151,12 +154,50 @@ def remove_excluded_packages(directory: Path, excluded: set[str]) -> None:
 
 def apply_exclude_ids(directory: Path, expected: list[str], raw: str | None) -> tuple[list[str], list[str]]:
     """Drop excluded packages from directory and return the remaining expected IDs."""
-    excluded = resolve_exclude_ids(raw, packed_ids(directory))
+    excluded = resolve_exclude_ids(raw, expected)
     if not excluded:
         return expected, []
     excluded_set = set(excluded)
     remove_excluded_packages(directory, excluded_set)
     return [package_id for package_id in expected if package_id not in excluded_set], excluded
+
+
+def _xml_local_name(tag: str) -> str:
+    return tag.rsplit("}", 1)[-1]
+
+
+def nupkg_dependency_ids(nupkg: Path) -> set[str]:
+    """Return direct dependency IDs from a package's .nuspec."""
+    try:
+        with zipfile.ZipFile(nupkg) as archive:
+            names = [name for name in archive.namelist() if name.endswith(".nuspec")]
+            if len(names) != 1:
+                raise SystemExit(f"Cannot read {nupkg.name} as a NuGet package.")
+            root = ET.fromstring(archive.read(names[0]))
+    except zipfile.BadZipFile:
+        raise SystemExit(f"Cannot read {nupkg.name} as a NuGet package.") from None
+    except ET.ParseError:
+        raise SystemExit(f"Cannot read {nupkg.name} as a NuGet package.") from None
+    return {
+        package_id
+        for element in root.iter()
+        if _xml_local_name(element.tag) == "dependency" and (package_id := element.get("id"))
+    }
+
+
+def exclusion_dependency_errors(directory: Path, excluded: set[str]) -> list[str]:
+    """Fail when a remaining package depends on an excluded ID."""
+    dependents: list[str] = []
+    for nupkg in sorted(directory.glob("*.nupkg")):
+        package_id = filename_package_id(nupkg.name)
+        if package_id is None or package_id in excluded:
+            continue
+        hits = sorted(nupkg_dependency_ids(nupkg) & excluded)
+        if hits:
+            dependents.append(f"{package_id} depends on {', '.join(hits)}")
+    if not dependents:
+        return []
+    return ["Remaining packages depend on an excluded ID:", *dependents]
 
 
 def studio_content_errors(directory: Path) -> list[str]:
@@ -192,6 +233,8 @@ def main() -> int:
     expected, excluded = apply_exclude_ids(packages, expected, os.environ.get("EXCLUDE_IDS"))
     produced = packed_ids(packages)
     errors = id_set_errors(produced, expected)
+    if excluded:
+        errors.extend(exclusion_dependency_errors(packages, set(excluded)))
     errors.extend(studio_content_errors(packages))
     for error in errors:
         print(error, file=sys.stderr)

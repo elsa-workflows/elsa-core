@@ -50,6 +50,7 @@ SELECTION_ENV = {
     "PUBLISH_NUGET": "${{ inputs.publish_nuget }}",
     "PUBLISH_NPM": "${{ inputs.publish_npm }}",
     "DEPLOY_COVERAGE": "${{ inputs.deploy_coverage }}",
+    "EXCLUDE_IDS": "${{ inputs.exclude_ids }}",
 }
 # Probed against the script the selection job runs, not a copy of its rules.
 REQUIRED_REJECTIONS = (
@@ -58,11 +59,15 @@ REQUIRED_REJECTIONS = (
     ("Feedz from a stable 3.10.x tag", "refs/tags/3.10.0", {"feedz": True}),
     ("Feedz from a later stable 3.10.x tag", "refs/tags/3.10.1", {"feedz": True}),
     ("npm from a stable 3.10.x tag", "refs/tags/3.10.0", {"npm": True}),
+    ("exclude_ids on a prerelease tag", "refs/tags/3.10.0-rc1", {"nuget": True, "exclude_ids": "Elsa"}),
+    ("exclude_ids on a non-3.10 tag", "refs/tags/3.8.5", {"nuget": True, "exclude_ids": "Elsa"}),
+    ("exclude_ids when publish_nuget is false", "refs/tags/3.10.0", {"exclude_ids": "Elsa"}),
 )
 REQUIRED_ACCEPTANCES = (
     ("Feedz from a 3.10.x prerelease tag", "refs/tags/3.10.0-rc1", {"feedz": True}),
     ("NuGet from a stable 3.10.x tag", "refs/tags/3.10.0", {"nuget": True}),
     ("npm from a 3.10.x prerelease tag", "refs/tags/3.10.0-rc1", {"npm": True}),
+    ("exclude_ids on a stable 3.10 nuget dispatch", "refs/tags/3.10.0", {"nuget": True, "exclude_ids": "Elsa"}),
 )
 PROMOTE_STABLE_REF = "startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')"
 TAG_3100 = "github.ref == 'refs/tags/3.10.0'"
