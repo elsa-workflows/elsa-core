@@ -9,7 +9,7 @@ Studio, Extensions and Apps are folded into `elsa-core`; a release is one `elsa-
 What `elsa-core` actually does today (check `origin/main` before relying on it):
 
 - `.github/workflows/packages.yml` builds and uploads packages on `release: published` and on pushes to `main` and `release/*`. Those events never publish. Publication is an approved `workflow_dispatch`: `publish_preview_feedz` (Feedz, from a branch or a `3.10.x` prerelease tag) or `publish_nuget` (nuget.org, from a release-version tag). Stable `3.10.x` Feedz is owned only by `publish-consolidated-original-candidate.yml`.
-- Its `./build.sh Compile+Pack` packs Core only on branch pushes and non-`3.10.0` tags. A `3.10.0` tag `release` event (and a non-promote dispatch from that tag) packs the 231-ID set through `prepare_consolidated_release_candidate.py`. A `publish_nuget` dispatch on a stable `3.10.x` tag does not pack: it downloads the current pin (run `40202201744`, artifact `12603436856`, source `f60c00766b107cb15038c77873d84779f0680722`), verifies each `.nupkg` sha256 against that candidate's seal, and runs `scripts/validate_packages_id_set.py` (231 IDs plus the three Studio ClientLib assets per package) before any push. That pin's archive size and expiry (`2026-11-24T15:03:46Z`) come from `stable-original-envelope.json`. `Elsa.SamplePackage` is not packable. The five `Elsa.Secrets.*` IDs and the four `Elsa.Studio.Host.*` IDs stay unpackable and `Elsa.Templates` is not in core. The whole-product 3.10.0 candidate is [prepared without publishing](#consolidated-3100-candidate-preparation-nonpublishing); `publish-consolidated-original-candidate.yml` is the only Feedz publisher for those stable 3.10.x bytes and runs the same 231-ID guard before its Feedz push.
+- Its `./build.sh Compile+Pack` packs Core only on branch pushes and non-`3.10.0` tags. A `3.10.0` tag `release` event (and a non-promote dispatch from that tag) packs the 231-ID set through `prepare_consolidated_release_candidate.py`. A `publish_nuget` dispatch on a stable `3.10.x` tag does not pack: it downloads the current pin (run `40347931480`, artifact `12664519771`, source `5cff67228e550b353b3483eb3b37dfdb73a41c74`), verifies each `.nupkg` sha256 against that candidate's seal, and runs `scripts/validate_packages_id_set.py` (231 IDs plus the three Studio ClientLib assets per package) before any push. That pin's archive size and expiry (`2026-11-25T16:05:50Z`) come from `stable-original-envelope.json`. `Elsa.SamplePackage` is not packable. The five `Elsa.Secrets.*` IDs and the four `Elsa.Studio.Host.*` IDs stay unpackable and `Elsa.Templates` is not in core. The whole-product 3.10.0 candidate is [prepared without publishing](#consolidated-3100-candidate-preparation-nonpublishing); `publish-consolidated-original-candidate.yml` is the only Feedz publisher for those stable 3.10.x bytes and runs the same 231-ID guard before its Feedz push.
 - `studio-npm-pair.yml` is a local proof of the two Studio npm archives. `packages.yml` `publish_npm` publishes `@elsa-workflows/elsa-studio-wasm` and `@elsa-workflows/elsa-studio-wasm-react` to Feedz from a 3.10.x prerelease tag. The npmjs.com upload is not in this job until trusted publishing is confirmed for `elsa-workflows/elsa-core`. Stable `3.10.x` stays fail-closed until the 231-ID nuget.org promote guard can pass. The pair builder accepts 3.8–3.10 versions only.
 - Core has no container-image publishing workflow. The Apps workflow it used lived in `elsa-apps`.
 
@@ -380,7 +380,7 @@ python3 scripts/integration-program/prepare_consolidated_release_candidate.py \
 The canonical proof evaluator derives every package/exclusion from current
 Elsa.sln properties. It compares IDs, project paths and exclusion reasons with
 `consolidated-candidate-inventory-baseline.json`, derived from the accepted proof
-inventory. The 225 package/symbol pairs and 124 excluded projects (123 IDs) are
+inventory. The 231 package/symbol pairs and 135 excluded projects (134 IDs) are
 baseline sanity evidence, never an allowlist. A difference emits
 `inventory-diff.json` and stops before building. Review and commit any justified
 baseline update; do not silently shrink it. The five retired Extensions Secrets
@@ -430,8 +430,8 @@ stable candidate bytes: applicable persisted compatibility checks must bind to
 the admitted candidate production bytes before that candidate is published.
 `publish-consolidated-original-candidate.yml` is the only Feedz publisher for
 those stable 3.10.x bytes. A `packages.yml` nuget.org dispatch on a stable
-3.10.x tag downloads the current pin (run `40202201744`, artifact
-`12603436856`), verifies each `.nupkg` sha256 against the candidate seal, and
+3.10.x tag downloads the current pin (run `40347931480`, artifact
+`12664519771`), verifies each `.nupkg` sha256 against the candidate seal, and
 runs the same 231-ID and Studio content guards that the candidate Feedz
 publisher runs before its push. The promote path does not restore, build, or
 pack. `3.10.1` and later stay blocked until a new pin exists.

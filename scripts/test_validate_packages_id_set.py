@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 import sys
@@ -256,8 +257,6 @@ GUARD_COMMAND = "python3 scripts/validate_packages_id_set.py"
 
 class SharedPublisherGuardTests(unittest.TestCase):
     def test_pin_inventory_ids_are_tied_to_the_guard_list(self):
-        import json
-
         sys.path.insert(0, str(Path(__file__).resolve().parent / "integration-program"))
         import consolidated_candidate_input as candidate_input
 

@@ -28,26 +28,26 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/recovery-input"
-          gh api repos/elsa-workflows/elsa-core/actions/artifacts/12603436856 > "$RUNNER_TEMP/recovery-input/artifact.json"
-          gh api repos/elsa-workflows/elsa-core/actions/runs/40202201744/attempts/1 > "$RUNNER_TEMP/recovery-input/producer-run.json"
-          jq -e '.id == 40202201744 and .run_attempt == 1 and
-            .head_sha == "f60c00766b107cb15038c77873d84779f0680722" and .conclusion == "success" and
+          gh api repos/elsa-workflows/elsa-core/actions/artifacts/12664519771 > "$RUNNER_TEMP/recovery-input/artifact.json"
+          gh api repos/elsa-workflows/elsa-core/actions/runs/40347931480/attempts/1 > "$RUNNER_TEMP/recovery-input/producer-run.json"
+          jq -e '.id == 40347931480 and .run_attempt == 1 and
+            .head_sha == "5cff67228e550b353b3483eb3b37dfdb73a41c74" and .conclusion == "success" and
             (.event == "push" or .event == "workflow_dispatch") and
             .path == ".github/workflows/prepare-consolidated-release-candidate.yml"' "$RUNNER_TEMP/recovery-input/producer-run.json" > /dev/null
-          jq -e '.id == 12603436856 and
-            .name == "consolidated-candidate-f60c00766b107cb15038c77873d84779f0680722-40202201744-1" and
-            .expired == false and .expires_at == "2026-11-24T15:03:46Z" and
-            .digest == "sha256:13241bc1889f03165d4925e6294e829eee3094cd9694b00ef37d904e69d01a0d" and
-            .size_in_bytes == 96125850 and .workflow_run.id == 40202201744 and
-            .workflow_run.head_sha == "f60c00766b107cb15038c77873d84779f0680722"' "$RUNNER_TEMP/recovery-input/artifact.json" > /dev/null
-          test "$(date -u -d '2026-11-24T15:03:46Z' +%s)" -gt "$(date -u +%s)"
-          gh api repos/elsa-workflows/elsa-core/actions/artifacts/12603436856/zip > "$RUNNER_TEMP/recovery-input/candidate.zip"
-          test "$(stat -c %s "$RUNNER_TEMP/recovery-input/candidate.zip")" -eq 96125850
+          jq -e '.id == 12664519771 and
+            .name == "consolidated-candidate-5cff67228e550b353b3483eb3b37dfdb73a41c74-40347931480-1" and
+            .expired == false and .expires_at == "2026-11-25T16:05:50Z" and
+            .digest == "sha256:2dd253e1f2946ddcb2b8e75ef397596001757ddbcb0a91f717e9505bbf28b4f6" and
+            .size_in_bytes == 96096205 and .workflow_run.id == 40347931480 and
+            .workflow_run.head_sha == "5cff67228e550b353b3483eb3b37dfdb73a41c74"' "$RUNNER_TEMP/recovery-input/artifact.json" > /dev/null
+          test "$(date -u -d '2026-11-25T16:05:50Z' +%s)" -gt "$(date -u +%s)"
+          gh api repos/elsa-workflows/elsa-core/actions/artifacts/12664519771/zip > "$RUNNER_TEMP/recovery-input/candidate.zip"
+          test "$(stat -c %s "$RUNNER_TEMP/recovery-input/candidate.zip")" -eq 96096205
           printf '%s  %s\n' \
-            '13241bc1889f03165d4925e6294e829eee3094cd9694b00ef37d904e69d01a0d' \
+            '2dd253e1f2946ddcb2b8e75ef397596001757ddbcb0a91f717e9505bbf28b4f6' \
             "$RUNNER_TEMP/recovery-input/candidate.zip" | sha256sum --check --status
           jq -nc --arg observed "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            '{schema:1,artifact_id:12603436856,archive_sha256:"13241bc1889f03165d4925e6294e829eee3094cd9694b00ef37d904e69d01a0d",retrieved_at:$observed}' \
+            '{schema:1,artifact_id:12664519771,archive_sha256:"2dd253e1f2946ddcb2b8e75ef397596001757ddbcb0a91f717e9505bbf28b4f6",retrieved_at:$observed}' \
             > "$RUNNER_TEMP/recovery-input/live-retrieval.json"
       - name: Transfer only the verified original inputs
         id: transfer

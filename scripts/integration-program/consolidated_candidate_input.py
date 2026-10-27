@@ -8,13 +8,13 @@ from pathlib import Path
 
 import prepare_consolidated_release_candidate as candidate
 
-SOURCE = "f60c00766b107cb15038c77873d84779f0680722"
-RUN = 40202201744
+SOURCE = "5cff67228e550b353b3483eb3b37dfdb73a41c74"
+RUN = 40347931480
 ATTEMPT = 1
-ARTIFACT = 12603436856
-ARCHIVE_SHA256 = "13241bc1889f03165d4925e6294e829eee3094cd9694b00ef37d904e69d01a0d"
-MANIFEST_SHA256 = "ac881065f8c59465955032a37ad733dd95e3c32c91acdbbb10b267ed993524e6"
-ENVELOPE_SHA256 = "417f73adf02866c6ec4aaa261609c50320508bed683fd78b217e2dcbb8c35af8"
+ARTIFACT = 12664519771
+ARCHIVE_SHA256 = "2dd253e1f2946ddcb2b8e75ef397596001757ddbcb0a91f717e9505bbf28b4f6"
+MANIFEST_SHA256 = "b6a1750f1f796f68a441bef93f67386b4a862dbca94d498ecf64536b102c2994"
+ENVELOPE_SHA256 = "9c1840b8f6c68c70338390453995b9382f21feadf7d577b257dd7a95e8b1417b"
 ORIGINAL_ENVELOPE = Path(__file__).resolve().parent / "persisted-workflow-upgrade/stable-original-envelope.json"
 # Frozen candidate pin inventory (231 packages). Recovery and the executor
 # use this snapshot so they still accept the real pinned artifact.

@@ -6,7 +6,7 @@ import unittest
 from unittest.mock import patch
 
 
-SYNTHETIC_NOW = datetime(2026, 10, 26, 14, tzinfo=timezone.utc)
+SYNTHETIC_NOW = datetime(2026, 10, 27, 14, tzinfo=timezone.utc)
 AFTER_EXPIRY = datetime(2030, 1, 1, tzinfo=timezone.utc)
 
 

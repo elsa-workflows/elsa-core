@@ -24,6 +24,7 @@ from test_consolidated_package_recovery import package_bytes, provenance
 PIN_COUNT = executor.candidate_input.PIN_PACKAGE_COUNT
 PIN_EXCLUSIONS = executor.candidate_input.PIN_EXCLUSION_COUNT
 PIN_ARCHIVES = PIN_COUNT * 2
+PARTIAL_KEEP_STRIDE = 3  # keep every third accepted nupkg
 
 
 def loopback_server(test, handler):
@@ -168,12 +169,12 @@ class FullInventoryTests(unittest.TestCase):
         for partial in (False, True):
             self.fill_feed()
             if partial:
-                self.feed.accepted = {key: value for index, (key, value) in enumerate(self.feed.accepted.items()) if index % 3 == 1}
+                self.feed.accepted = {key: value for index, (key, value) in enumerate(self.feed.accepted.items()) if index % PARTIAL_KEEP_STRIDE == 1}
             self.feed.symbols.clear()
             self.feed.calls.clear()
             result = self.run_executor()
             self.assertTrue(result["content_verified"])
-            self.assertEqual(len(self.feed.calls), (2 * PIN_COUNT - PIN_COUNT // 3) if partial else PIN_COUNT)
+            self.assertEqual(len(self.feed.calls), (2 * PIN_COUNT - PIN_COUNT // PARTIAL_KEEP_STRIDE) if partial else PIN_COUNT)
             self.assertEqual(sum(row["kind"] == "snupkg" for row in self.feed.calls), PIN_COUNT)
 
     def test_accepted_then_interrupted_resume_without_duplicate(self):
