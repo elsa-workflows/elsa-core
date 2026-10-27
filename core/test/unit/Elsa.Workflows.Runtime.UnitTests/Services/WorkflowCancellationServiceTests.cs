@@ -183,6 +183,66 @@ public class WorkflowCancellationServiceTests
     }
 
     [Fact]
+    public async Task Cancel_WhenMarkThrows_DispatchesOnceWithoutCancellingStamp()
+    {
+        var store = Substitute.For<IWorkflowInstanceStore>();
+        store.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<WorkflowInstance?>(Suspended("wf-1")));
+        store.FindManyAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<IEnumerable<WorkflowInstance>>(Array.Empty<WorkflowInstance>()));
+        store.TryTransitionSubStatusAsync(
+                Arg.Any<string>(),
+                Arg.Any<WorkflowSubStatus>(),
+                Arg.Any<DateTimeOffset?>(),
+                Arg.Any<WorkflowSubStatus>(),
+                Arg.Any<DateTimeOffset>(),
+                Arg.Any<CancellationToken>())
+            .Returns<ValueTask<bool>>(_ => throw new TimeoutException("The store timed out."));
+        var dispatcher = Substitute.For<IWorkflowCancellationDispatcher>();
+        dispatcher.DispatchAsync(Arg.Any<DispatchCancelWorkflowRequest>(), Arg.Any<CancellationToken>())
+            .Returns(new DispatchCancelWorkflowsResponse());
+        var logger = new RecordingLogger();
+        var sut = CreateSut(store, dispatcher, new FixedClock(MarkedAt), logger: logger);
+
+        Assert.True(await sut.CancelWorkflowAsync("wf-1"));
+
+        await dispatcher.Received(1).DispatchAsync(
+            Arg.Is<DispatchCancelWorkflowRequest>(request =>
+                request.WorkflowInstanceId == "wf-1"
+                && request.PreviousSubStatus == null
+                && request.CancellingAt == null),
+            Arg.Any<CancellationToken>());
+        var warning = Assert.Single(logger.Entries, entry => entry.Level == LogLevel.Warning);
+        Assert.IsType<TimeoutException>(warning.Exception);
+    }
+
+    [Fact]
+    public async Task Cancel_WhenMarkIsCancelled_DoesNotDispatch()
+    {
+        using var cancellation = new CancellationTokenSource();
+        await cancellation.CancelAsync();
+        var store = Substitute.For<IWorkflowInstanceStore>();
+        store.FindAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<WorkflowInstance?>(Suspended("wf-1")));
+        store.FindManyAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<CancellationToken>())
+            .Returns(new ValueTask<IEnumerable<WorkflowInstance>>(Array.Empty<WorkflowInstance>()));
+        store.TryTransitionSubStatusAsync(
+                Arg.Any<string>(),
+                Arg.Any<WorkflowSubStatus>(),
+                Arg.Any<DateTimeOffset?>(),
+                Arg.Any<WorkflowSubStatus>(),
+                Arg.Any<DateTimeOffset>(),
+                Arg.Any<CancellationToken>())
+            .Returns<ValueTask<bool>>(_ => throw new OperationCanceledException(cancellation.Token));
+        var dispatcher = Substitute.For<IWorkflowCancellationDispatcher>();
+        var sut = CreateSut(store, dispatcher, new FixedClock(MarkedAt));
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => sut.CancelWorkflowAsync("wf-1", cancellation.Token));
+
+        await dispatcher.DidNotReceive().DispatchAsync(Arg.Any<DispatchCancelWorkflowRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public async Task Cancel_StillCancelsChildInstances()
     {
         var store = CreateStore(Suspended("parent"), Suspended("child", parentId: "parent"));
@@ -225,13 +285,14 @@ public class WorkflowCancellationServiceTests
         IWorkflowInstanceStore store,
         IWorkflowCancellationDispatcher dispatcher,
         ISystemClock clock,
-        IWorkflowExecutionGuard? guard = null) =>
+        IWorkflowExecutionGuard? guard = null,
+        ILogger<WorkflowCancellationService>? logger = null) =>
         new(
             Substitute.For<IWorkflowDefinitionService>(),
             store,
             dispatcher,
             clock,
-            Substitute.For<ILogger<WorkflowCancellationService>>(),
+            logger ?? Substitute.For<ILogger<WorkflowCancellationService>>(),
             guard);
 
     private static MemoryWorkflowInstanceStore CreateStore(params WorkflowInstance[] instances)
@@ -282,6 +343,18 @@ public class WorkflowCancellationServiceTests
         UpdatedAt = MarkedAt.AddDays(-1),
         WorkflowState = state ?? SuspendedState()
     };
+
+    private sealed class RecordingLogger : ILogger<WorkflowCancellationService>
+    {
+        public List<(LogLevel Level, Exception? Exception)> Entries { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) =>
+            Entries.Add((logLevel, exception));
+    }
 
     private sealed class FixedClock(DateTimeOffset utcNow) : ISystemClock
     {

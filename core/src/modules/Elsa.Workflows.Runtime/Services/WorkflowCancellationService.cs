@@ -94,6 +94,7 @@ public class WorkflowCancellationService(
     /// Marks a non-executing, unowned suspended instance as Cancelling, then dispatches.
     /// Pending and Interrupted stay unmarked so the pending run path and the interrupted-workflow scan still own them.
     /// A crash after this mark and before enqueue can leave a suspended instance in Cancelling.
+    /// The mark is best effort: a store failure still dispatches, without the interim sub-status.
     /// </summary>
     private async Task CancelInstanceAsync(WorkflowInstance instance, CancellationToken cancellationToken)
     {
@@ -105,13 +106,32 @@ public class WorkflowCancellationService(
 
         var previousSubStatus = instance.SubStatus;
         var cancellingAt = systemClock.UtcNow.TruncateToMilliseconds();
-        var marked = await workflowInstanceStore.TryTransitionSubStatusAsync(
-            instance.Id,
-            previousSubStatus,
-            null,
-            WorkflowSubStatus.Cancelling,
-            cancellingAt,
-            cancellationToken);
+        bool marked;
+        try
+        {
+            marked = await workflowInstanceStore.TryTransitionSubStatusAsync(
+                instance.Id,
+                previousSubStatus,
+                null,
+                WorkflowSubStatus.Cancelling,
+                cancellingAt,
+                cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            // A timeout, pool exhaustion, or version conflict must not drop the cancel. Dispatch unmarked.
+            logger.LogWarning(
+                exception,
+                "Workflow instance {WorkflowInstanceId} could not be marked {CancellingSubStatus}. Dispatching cancellation without an interim sub-status.",
+                instance.Id,
+                WorkflowSubStatus.Cancelling);
+            await DispatchCancellationAsync(instance, cancellationToken);
+            return;
+        }
 
         if (!marked)
         {

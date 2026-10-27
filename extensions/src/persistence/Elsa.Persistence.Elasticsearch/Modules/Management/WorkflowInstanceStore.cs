@@ -196,6 +196,9 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
         var updated = await _store.UpdateByQueryAsync(d =>
         {
             d.Refresh(true);
+            // Default conflicts=abort throws on a version conflict. Proceed reports the document as not updated,
+            // which is the compare-and-swap result for both the mark and the restore.
+            d.Conflicts(Conflicts.Proceed);
             d.Query(q => q.Bool(b => b.Must(m => m.Match(mt => mt.Field(f => f.Id).Query(workflowInstanceId)))));
             d.Script(s => s
                 .Source("""
