@@ -14,6 +14,7 @@ from validate_packages_id_set import (
     STABLE_310_PATTERN,
     STUDIO_CONTENT,
     apply_exclude_ids,
+    exclusion_dependency_errors,
     filename_package_id,
     id_set_errors,
     is_stable_310,
@@ -188,16 +189,30 @@ class ExcludeIdsTests(unittest.TestCase):
         self.expected = load_expected_ids(DEFAULT_EXPECTED)
         self.assertEqual(231, len(self.expected))
 
-    def write_packages(self, directory, ids, version="3.10.0"):
+    def write_packages(self, directory, ids, version="3.10.0", dependencies=None):
+        dependencies = dependencies or {}
         for package_id in ids:
             path = directory / f"{package_id}.{version}.nupkg"
-            entries = STUDIO_CONTENT.get(package_id)
-            if entries:
-                with zipfile.ZipFile(path, "w") as archive:
-                    for entry in entries:
-                        archive.writestr(entry, b"bundle")
-            else:
-                path.write_bytes(b"nupkg")
+            dep_xml = "".join(
+                f'<dependency id="{dep}" version="{version}" />'
+                for dep in dependencies.get(package_id, ())
+            )
+            nuspec = (
+                '<?xml version="1.0"?>'
+                '<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">'
+                "<metadata>"
+                f"<id>{package_id}</id>"
+                f"<version>{version}</version>"
+                "<authors>Elsa</authors>"
+                "<description>test</description>"
+                f"<dependencies>{dep_xml}</dependencies>"
+                "</metadata>"
+                "</package>"
+            )
+            with zipfile.ZipFile(path, "w") as archive:
+                archive.writestr(f"{package_id}.nuspec", nuspec)
+                for entry in STUDIO_CONTENT.get(package_id, ()):
+                    archive.writestr(entry, b"bundle")
             (directory / f"{package_id}.{version}.snupkg").write_bytes(b"snupkg")
 
     def test_empty_exclude_ids_leaves_the_full_set(self):
@@ -243,7 +258,7 @@ class ExcludeIdsTests(unittest.TestCase):
     def test_unknown_id_fails(self):
         with self.assertRaises(SystemExit) as raised:
             resolve_exclude_ids("NotAPackageId", self.expected)
-        self.assertIn("not in the artifact's package set", str(raised.exception))
+        self.assertIn("not in the expected package set", str(raised.exception))
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary)
             self.write_packages(directory, self.expected)
@@ -254,7 +269,7 @@ class ExcludeIdsTests(unittest.TestCase):
                 text=True,
             )
             self.assertEqual(1, rejected.returncode)
-            self.assertIn("not in the artifact's package set", rejected.stderr)
+            self.assertIn("not in the expected package set", rejected.stderr)
             self.assertEqual(231, len(packed_ids(directory)))
 
     def test_duplicate_id_fails(self):
@@ -282,6 +297,34 @@ class ExcludeIdsTests(unittest.TestCase):
             with self.subTest(raw=raw), self.assertRaises(SystemExit) as raised:
                 parse_exclude_ids(raw)
             self.assertIn("empty entry", str(raised.exception))
+
+    def test_exclusion_fails_when_a_remaining_package_depends_on_it(self):
+        skipped = self.expected[0]
+        dependent = self.expected[1]
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            self.write_packages(directory, self.expected, dependencies={dependent: (skipped,)})
+            errors = exclusion_dependency_errors(directory, {skipped})
+            self.assertTrue(errors)
+            self.assertIn("Remaining packages depend on an excluded ID:", errors)
+            self.assertIn(f"{dependent} depends on {skipped}", errors)
+            rejected = subprocess.run(
+                [sys.executable, str(SCRIPT)],
+                env={**os.environ, "PACKAGES_DIR": str(directory), "EXCLUDE_IDS": skipped},
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(1, rejected.returncode)
+            self.assertIn("Remaining packages depend on an excluded ID:", rejected.stderr)
+            self.assertIn(f"{dependent} depends on {skipped}", rejected.stderr)
+            self.assertNotIn(skipped, packed_ids(directory))
+
+    def test_exclusion_cannot_clear_an_unexpected_packed_id(self):
+        stray = "Elsa.SamplePackage"
+        self.assertNotIn(stray, self.expected)
+        with self.assertRaises(SystemExit) as raised:
+            resolve_exclude_ids(stray, self.expected)
+        self.assertIn("not in the expected package set", str(raised.exception))
 
 
 class StudioContentTests(unittest.TestCase):

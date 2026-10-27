@@ -24,7 +24,7 @@ on:
         type: boolean
         default: false
       exclude_ids:
-        description: Optional comma-separated package IDs skipped by nuget.org promotion. Empty means none.
+        description: Optional comma-separated package IDs skipped by a publish_nuget dispatch on a stable 3.10 tag. Empty means none. Rejected on any other path.
         required: false
         type: string
         default: ''
@@ -68,6 +68,7 @@ jobs:
           PUBLISH_NUGET: ${{ inputs.publish_nuget }}
           PUBLISH_NPM: ${{ inputs.publish_npm }}
           DEPLOY_COVERAGE: ${{ inputs.deploy_coverage }}
+          EXCLUDE_IDS: ${{ inputs.exclude_ids }}
         run: python3 scripts/validate_packages_publication_selection.py
 
   test_unit_integration:

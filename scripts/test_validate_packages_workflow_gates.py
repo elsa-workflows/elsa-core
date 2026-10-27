@@ -123,8 +123,8 @@ OTHER_BYPASSES = (
     ),
     (
         "selection script sees a fixed ref",
-        "          REF: ${{ github.ref }}\n          PUBLISH_PREVIEW_FEEDZ: ${{ inputs.publish_preview_feedz }}\n          PUBLISH_NUGET: ${{ inputs.publish_nuget }}\n          PUBLISH_NPM: ${{ inputs.publish_npm }}",
-        "          REF: refs/heads/main\n          PUBLISH_PREVIEW_FEEDZ: ${{ inputs.publish_preview_feedz }}\n          PUBLISH_NUGET: ${{ inputs.publish_nuget }}\n          PUBLISH_NPM: ${{ inputs.publish_npm }}",
+        "          REF: ${{ github.ref }}\n          PUBLISH_PREVIEW_FEEDZ: ${{ inputs.publish_preview_feedz }}\n          PUBLISH_NUGET: ${{ inputs.publish_nuget }}\n          PUBLISH_NPM: ${{ inputs.publish_npm }}\n          DEPLOY_COVERAGE: ${{ inputs.deploy_coverage }}\n          EXCLUDE_IDS: ${{ inputs.exclude_ids }}",
+        "          REF: refs/heads/main\n          PUBLISH_PREVIEW_FEEDZ: ${{ inputs.publish_preview_feedz }}\n          PUBLISH_NUGET: ${{ inputs.publish_nuget }}\n          PUBLISH_NPM: ${{ inputs.publish_npm }}\n          DEPLOY_COVERAGE: ${{ inputs.deploy_coverage }}\n          EXCLUDE_IDS: ${{ inputs.exclude_ids }}",
         "validate_publication_selection must pass REF: ${{ github.ref }}",
     ),
     (
