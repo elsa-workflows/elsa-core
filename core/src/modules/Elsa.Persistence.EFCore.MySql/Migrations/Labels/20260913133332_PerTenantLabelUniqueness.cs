@@ -18,21 +18,22 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Labels
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // Pomelo SchemaBehavior.Ignore stores tables in DATABASE(), not an Elsa schema.
             // Default tenant is "" (not null). Stamp leftover nulls so the unique index covers them.
-            migrationBuilder.Sql($"""
-                UPDATE `{_schema.Schema}`.`Labels`
+            migrationBuilder.Sql("""
+                UPDATE `Labels`
                 SET `TenantId` = ''
                 WHERE `TenantId` IS NULL;
                 """);
 
             // No silent dedupe. List leftover keys and abort; operators must resolve them before upgrading.
             // SIGNAL MESSAGE_TEXT is limited to 128 characters, so the listed keys are truncated.
-            migrationBuilder.Sql($"""
+            migrationBuilder.Sql("""
                 SET @duplicate_keys := (
                     SELECT GROUP_CONCAT(CONCAT('(', IFNULL(`TenantId`, '<null>'), ', ', `NormalizedName`, ')') SEPARATOR '; ')
                     FROM (
                         SELECT `TenantId`, `NormalizedName`
-                        FROM `{_schema.Schema}`.`Labels`
+                        FROM `Labels`
                         GROUP BY `TenantId`, `NormalizedName`
                         HAVING COUNT(*) > 1
                     ) AS Duplicates
@@ -56,10 +57,10 @@ namespace Elsa.Persistence.EFCore.MySql.Migrations.Labels
                 """);
 
             // Name/NormalizedName are not truncated; list over-length Ids and abort before ALTER.
-            migrationBuilder.Sql($"""
+            migrationBuilder.Sql("""
                 SET @over_length_ids := (
                     SELECT GROUP_CONCAT(`Id` SEPARATOR ', ')
-                    FROM `{_schema.Schema}`.`Labels`
+                    FROM `Labels`
                     WHERE CHAR_LENGTH(`Name`) > 255 OR CHAR_LENGTH(`NormalizedName`) > 255
                 );
 

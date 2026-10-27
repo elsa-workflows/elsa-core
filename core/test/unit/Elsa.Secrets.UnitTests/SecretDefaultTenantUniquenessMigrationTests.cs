@@ -52,6 +52,19 @@ public class SecretDefaultTenantUniquenessMigrationTests
     }
 
     [Fact]
+    public void SecretDefaultTenantUniqueness_MySqlRawSqlDoesNotQualifySchema()
+    {
+        // Pomelo SchemaBehavior.Ignore creates tables in DATABASE(), not a database named Elsa.
+        // This repo has no MySQL Testcontainers coverage, so assert the emitted SQL instead.
+        var migration = FindMigration("Elsa.Secrets.Persistence.EFCore.MySql");
+
+        Assert.DoesNotContain("`{_schema.Schema}`.", migration, StringComparison.Ordinal);
+        Assert.DoesNotContain("`Elsa`.", migration, StringComparison.Ordinal);
+        Assert.Contains("UPDATE `Secrets`", migration, StringComparison.Ordinal);
+        Assert.Contains("FROM `Secrets`", migration, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void SecretDefaultTenantUniqueness_SqlServerKeepsFilteredUniqueIndex()
     {
         var migration = FindMigration("Elsa.Secrets.Persistence.EFCore.SqlServer");
