@@ -23,6 +23,11 @@ on:
         required: true
         type: boolean
         default: false
+      exclude_ids:
+        description: Optional comma-separated package IDs skipped by nuget.org promotion. Empty means none.
+        required: false
+        type: string
+        default: ''
   push:
     branches:
       - 'main'
@@ -506,6 +511,7 @@ jobs:
           REF: ${{ github.ref }}
           CANDIDATE_ARCHIVE: ${{ runner.temp }}/candidate.zip
           PACKAGES_DIR: ${{ github.workspace }}
+          EXCLUDE_IDS: ${{ inputs.exclude_ids }}
         run: |
           python3 scripts/stage_consolidated_candidate_nupkgs.py stage
           python3 scripts/validate_packages_id_set.py

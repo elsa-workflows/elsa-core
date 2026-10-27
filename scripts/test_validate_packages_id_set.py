@@ -13,10 +13,14 @@ from validate_packages_id_set import (
     DEFAULT_EXPECTED,
     STABLE_310_PATTERN,
     STUDIO_CONTENT,
+    apply_exclude_ids,
+    filename_package_id,
     id_set_errors,
     is_stable_310,
     load_expected_ids,
     packed_ids,
+    parse_exclude_ids,
+    resolve_exclude_ids,
     studio_content_errors,
 )
 
@@ -112,6 +116,7 @@ class IdSetTests(unittest.TestCase):
                 text=True,
             )
             self.assertEqual(0, accepted.returncode, accepted.stderr)
+            self.assertIn("exclusions: none", accepted.stdout)
             self.assertIn("231 expected IDs", accepted.stdout)
             self.assertIn("Studio package content matches 8 required entries.", accepted.stdout)
 
@@ -176,6 +181,107 @@ class IdSetTests(unittest.TestCase):
         lowered = source.lower()
         for marker in ("skip_id_set", "skip_guard", "bypass_id_set", "bypass_guard", "--skip", "--bypass"):
             self.assertNotIn(marker, lowered)
+
+
+class ExcludeIdsTests(unittest.TestCase):
+    def setUp(self):
+        self.expected = load_expected_ids(DEFAULT_EXPECTED)
+        self.assertEqual(231, len(self.expected))
+
+    def write_packages(self, directory, ids, version="3.10.0"):
+        for package_id in ids:
+            path = directory / f"{package_id}.{version}.nupkg"
+            entries = STUDIO_CONTENT.get(package_id)
+            if entries:
+                with zipfile.ZipFile(path, "w") as archive:
+                    for entry in entries:
+                        archive.writestr(entry, b"bundle")
+            else:
+                path.write_bytes(b"nupkg")
+            (directory / f"{package_id}.{version}.snupkg").write_bytes(b"snupkg")
+
+    def test_empty_exclude_ids_leaves_the_full_set(self):
+        for raw in (None, "", "  "):
+            with self.subTest(raw=raw):
+                self.assertEqual([], parse_exclude_ids(raw))
+                self.assertEqual([], resolve_exclude_ids(raw, self.expected))
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            self.write_packages(directory, self.expected)
+            remaining, excluded = apply_exclude_ids(directory, list(self.expected), "")
+            self.assertEqual([], excluded)
+            self.assertEqual(self.expected, remaining)
+            self.assertEqual(231, len(packed_ids(directory)))
+            self.assertEqual(self.expected, packed_ids(directory))
+
+    def test_valid_exclusion_adjusts_the_expected_count(self):
+        skipped = self.expected[0]
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            self.write_packages(directory, self.expected)
+            remaining, excluded = apply_exclude_ids(directory, list(self.expected), f"  {skipped.lower()}  ")
+            self.assertEqual([skipped], excluded)
+            self.assertEqual(230, len(remaining))
+            self.assertNotIn(skipped, remaining)
+            self.assertEqual(230, len(packed_ids(directory)))
+            self.assertNotIn(skipped, packed_ids(directory))
+            self.assertFalse(any(filename_package_id(path.name) == skipped for path in directory.iterdir() if path.is_file()))
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            self.write_packages(directory, self.expected)
+            accepted = subprocess.run(
+                [sys.executable, str(SCRIPT)],
+                env={**os.environ, "PACKAGES_DIR": str(directory), "EXCLUDE_IDS": skipped},
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(0, accepted.returncode, accepted.stderr)
+            self.assertIn(f"exclusions: {skipped}", accepted.stdout)
+            self.assertIn("230 expected IDs", accepted.stdout)
+            self.assertNotIn(skipped, packed_ids(directory))
+
+    def test_unknown_id_fails(self):
+        with self.assertRaises(SystemExit) as raised:
+            resolve_exclude_ids("NotAPackageId", self.expected)
+        self.assertIn("not in the artifact's package set", str(raised.exception))
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            self.write_packages(directory, self.expected)
+            rejected = subprocess.run(
+                [sys.executable, str(SCRIPT)],
+                env={**os.environ, "PACKAGES_DIR": str(directory), "EXCLUDE_IDS": "NotAPackageId"},
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(1, rejected.returncode)
+            self.assertIn("not in the artifact's package set", rejected.stderr)
+            self.assertEqual(231, len(packed_ids(directory)))
+
+    def test_duplicate_id_fails(self):
+        package_id = self.expected[0]
+        for raw in (f"{package_id},{package_id}", f"{package_id}, {package_id.lower()}"):
+            with self.subTest(raw=raw), self.assertRaises(SystemExit) as raised:
+                parse_exclude_ids(raw)
+            self.assertIn("more than once", str(raised.exception))
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            self.write_packages(directory, self.expected)
+            rejected = subprocess.run(
+                [sys.executable, str(SCRIPT)],
+                env={**os.environ, "PACKAGES_DIR": str(directory), "EXCLUDE_IDS": f"{package_id},{package_id}"},
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(1, rejected.returncode)
+            self.assertIn("more than once", rejected.stderr)
+            self.assertEqual(231, len(packed_ids(directory)))
+
+    def test_empty_entry_fails(self):
+        package_id = self.expected[0]
+        for raw in (f"{package_id},", f",{package_id}", f"{package_id},,{self.expected[1]}"):
+            with self.subTest(raw=raw), self.assertRaises(SystemExit) as raised:
+                parse_exclude_ids(raw)
+            self.assertIn("empty entry", str(raised.exception))
 
 
 class StudioContentTests(unittest.TestCase):
@@ -331,6 +437,11 @@ class WorkflowConditionTests(unittest.TestCase):
         self.assertIn("python3 scripts/stage_consolidated_candidate_nupkgs.py retrieve", source)
         self.assertIn("python3 scripts/stage_consolidated_candidate_nupkgs.py stage", source)
         self.assertIn("python3 scripts/validate_packages_id_set.py", source)
+        self.assertIn("exclude_ids:", source)
+        self.assertIn("EXCLUDE_IDS: ${{ inputs.exclude_ids }}", source)
+        candidate = Path(__file__).resolve().parents[1] / ".github/workflows/publish-consolidated-original-candidate.yml"
+        self.assertNotIn("exclude_ids", candidate.read_text(encoding="utf-8"))
+        self.assertNotIn("EXCLUDE_IDS", candidate.read_text(encoding="utf-8"))
         compile_if = (
             "if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget"
             " && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}"
