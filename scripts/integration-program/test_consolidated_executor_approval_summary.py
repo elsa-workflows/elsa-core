@@ -15,6 +15,8 @@ import test_consolidated_package_executor as fixtures
 from test_consolidated_candidate_clock import AFTER_EXPIRY, candidate_clock, install_candidate_clock
 
 executor = summary.executor
+# First seven fixture rows add one extra framework; the rest add two.
+SINGLE_EXTRA_FRAMEWORK_COUNT = 7
 
 
 class SummaryTests(unittest.TestCase):
@@ -52,7 +54,7 @@ class SummaryTests(unittest.TestCase):
         # Give the receipt the actual candidate's association count without
         # creating additional archives or pretending this fixture is that proof.
         for index, row in enumerate(self.verification["associations"]):
-            for framework in ("net9.0",) if index < 7 else ("net9.0", "net10.0"):
+            for framework in ("net9.0",) if index < SINGLE_EXTRA_FRAMEWORK_COUNT else ("net9.0", "net10.0"):
                 item = copy.deepcopy(row["associations"][0])
                 item["framework"] = framework
                 digest = executor.sha((row["id"]+framework).encode())
@@ -80,7 +82,7 @@ class SummaryTests(unittest.TestCase):
 
     def test_complete_missing_observation_reports_actual_associations_and_immutable_bindings(self):
         packages = executor.candidate_input.PIN_PACKAGE_COUNT
-        associations = packages + 7 + (packages - 7) * 2
+        associations = packages + SINGLE_EXTRA_FRAMEWORK_COUNT + (packages - SINGLE_EXTRA_FRAMEWORK_COUNT) * 2
         text = self.render()
         for value in (self.context["GITHUB_SHA"], executor.candidate_input.SOURCE, executor.candidate_input.ARCHIVE_SHA256,
                       executor.candidate_input.MANIFEST_SHA256, executor.candidate_input.ENVELOPE_SHA256,

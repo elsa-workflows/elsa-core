@@ -6,7 +6,7 @@ The planner always covers the complete retained manifest: 231 NuGet packages and
 
 ## Original inputs
 
-Use the original archive from Core run `40202201744`, attempt `1`, artifact `12603436856`, source `f60c00766b107cb15038c77873d84779f0680722`. The archive SHA-256 is `13241bc1889f03165d4925e6294e829eee3094cd9694b00ef37d904e69d01a0d` and its size is 96,125,850 bytes. It expires on 2026-11-24 at 15:03:46 UTC. Expiry or deletion blocks this candidate; it never authorizes rebuilding equivalent-looking bytes.
+Use the original archive from Core run `40347931480`, attempt `1`, artifact `12664519771`, source `5cff67228e550b353b3483eb3b37dfdb73a41c74`. The archive SHA-256 is `2dd253e1f2946ddcb2b8e75ef397596001757ddbcb0a91f717e9505bbf28b4f6` and its size is 96,096,205 bytes. It expires on 2026-11-25 at 16:05:50 UTC. Expiry or deletion blocks this candidate; it never authorizes rebuilding equivalent-looking bytes.
 
 The input directory contains exactly:
 
