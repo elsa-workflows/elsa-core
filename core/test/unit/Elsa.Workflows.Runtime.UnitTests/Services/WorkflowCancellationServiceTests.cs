@@ -152,6 +152,30 @@ public class WorkflowCancellationServiceTests
     }
 
     [Fact]
+    public async Task Cancel_WhenOwnershipCheckIsCancelledInternally_StillDispatchesOnce()
+    {
+        using var internalTimeout = new CancellationTokenSource();
+        await internalTimeout.CancelAsync();
+        var store = CreateStore(Suspended("wf-1"));
+        var clock = new FixedClock(MarkedAt);
+        var dispatcher = new RecordingDispatcher(store, clock);
+        var guard = Substitute.For<IWorkflowExecutionGuard>();
+        guard.DemandUnownedAsync("wf-1", Arg.Any<CancellationToken>())
+            .Returns<ValueTask>(_ => throw new OperationCanceledException(internalTimeout.Token));
+        var sut = CreateSut(store, dispatcher, clock, guard);
+
+        Assert.True(await sut.CancelWorkflowAsync("wf-1"));
+
+        var request = Assert.Single(dispatcher.Requests);
+        Assert.Equal("wf-1", request.WorkflowInstanceId);
+        Assert.Null(request.PreviousSubStatus);
+        Assert.Null(request.CancellingAt);
+        var stored = await store.FindAsync(new WorkflowInstanceFilter { Id = "wf-1" });
+        Assert.NotNull(stored);
+        Assert.Equal(WorkflowSubStatus.Suspended, stored.SubStatus);
+    }
+
+    [Fact]
     public async Task Cancel_WhenConditionalMarkReturnsFalse_DoesNotSaveTheInstance()
     {
         var store = Substitute.For<IWorkflowInstanceStore>();

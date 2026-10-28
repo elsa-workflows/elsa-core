@@ -180,7 +180,7 @@ public class WorkflowCancellationService(
             await workflowExecutionGuard.DemandUnownedAsync(instance.Id, cancellationToken);
             return true;
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
             throw;
         }
