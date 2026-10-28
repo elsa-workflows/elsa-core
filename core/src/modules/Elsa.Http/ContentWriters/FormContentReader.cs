@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -54,8 +55,30 @@ internal static class FormContentReader
         string text => text,
         JsonElement element => element.ToString(),
         JsonNode jsonNode => JsonSerializer.SerializeToElement(jsonNode).ToString(),
-        _ => value.ToString() ?? string.Empty
+        _ => FormatValue(value)
     };
+
+    private static string FormatValue(object value)
+    {
+        // JSON numbers are already invariant. Format CLR numbers the same way.
+        switch (Type.GetTypeCode(value.GetType()))
+        {
+            case TypeCode.Byte:
+            case TypeCode.SByte:
+            case TypeCode.Int16:
+            case TypeCode.UInt16:
+            case TypeCode.Int32:
+            case TypeCode.UInt32:
+            case TypeCode.Int64:
+            case TypeCode.UInt64:
+            case TypeCode.Single:
+            case TypeCode.Double:
+            case TypeCode.Decimal:
+                return ((IFormattable)value).ToString(null, CultureInfo.InvariantCulture);
+            default:
+                return value.ToString() ?? string.Empty;
+        }
+    }
 
     private static void AppendJsonObject(List<KeyValuePair<string, object?>> fields, JsonElement element, string errorMessage)
     {

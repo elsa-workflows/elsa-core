@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Elsa.Http;
@@ -71,6 +72,32 @@ public class FormContentFactoryTests
     }
 
     [Fact]
+    public async Task FormUrlEncoded_NumericValues_UseInvariantCulture()
+    {
+        var originalCulture = CultureInfo.CurrentCulture;
+        var culture = (CultureInfo)CultureInfo.InvariantCulture.Clone();
+        culture.NumberFormat.NumberDecimalSeparator = ",";
+        CultureInfo.CurrentCulture = culture;
+
+        try
+        {
+            var factory = new FormUrlEncodedHttpContentFactory();
+            var fromDictionary = factory.CreateHttpContent(
+                new Dictionary<string, object?> { ["amount"] = 1.5m, ["active"] = true },
+                "application/x-www-form-urlencoded");
+            var fromJson = factory.CreateHttpContent(new JsonObject { ["amount"] = 1.5m }, "application/x-www-form-urlencoded");
+
+            AssertFormField(await fromDictionary.ReadAsStringAsync(), "amount", "1.5");
+            AssertFormField(await fromDictionary.ReadAsStringAsync(), "active", "True");
+            AssertFormField(await fromJson.ReadAsStringAsync(), "amount", "1.5");
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = originalCulture;
+        }
+    }
+
+    [Fact]
     public void FormUrlEncoded_NonObjectText_Throws()
     {
         var factory = new FormUrlEncodedHttpContentFactory();
@@ -138,6 +165,38 @@ public class FormContentFactoryTests
         Assert.Equal("form-file-body", parts["attachment"].Body);
         Assert.Equal("upload.txt", parts["attachment"].FileName);
         Assert.Equal("text/plain", parts["attachment"].MediaType);
+    }
+
+    [Fact]
+    public async Task Multipart_SharedFormFileStream_WritesEachFile()
+    {
+        var firstBytes = "one"u8.ToArray();
+        var secondBytes = "two-two"u8.ToArray();
+        var backing = new MemoryStream();
+        backing.Write(firstBytes);
+        backing.Write(secondBytes);
+
+        var first = new FormFile(backing, 0, firstBytes.Length, "a", "a.txt")
+        {
+            Headers = new HeaderDictionary(),
+            ContentType = "text/plain"
+        };
+        var second = new FormFile(backing, firstBytes.Length, secondBytes.Length, "b", "b.txt")
+        {
+            Headers = new HeaderDictionary(),
+            ContentType = "text/plain"
+        };
+        var factory = new MultipartFormDataHttpContentFactory();
+
+        var httpContent = factory.CreateHttpContent(
+            new Dictionary<string, object> { ["a"] = first, ["b"] = second },
+            "multipart/form-data");
+        var parts = await ReadPartsAsync(httpContent);
+
+        Assert.Equal("one", parts["a"].Body);
+        Assert.Equal("a.txt", parts["a"].FileName);
+        Assert.Equal("two-two", parts["b"].Body);
+        Assert.Equal("b.txt", parts["b"].FileName);
     }
 
     private static void AssertFormField(string body, string name, string expected)

@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Http;
 
@@ -40,12 +41,10 @@ public class MultipartFormDataHttpContentFactory : IHttpContentFactory
                 AddFile(multipartContent, name, file.Stream, string.IsNullOrWhiteSpace(file.Filename) ? name : file.Filename, file.ContentType);
                 return;
             case IFormFile formFile:
-                AddFile(
-                    multipartContent,
+                multipartContent.Add(
+                    new FormFileContent(formFile),
                     name,
-                    formFile.OpenReadStream(),
-                    string.IsNullOrWhiteSpace(formFile.FileName) ? name : formFile.FileName,
-                    formFile.ContentType);
+                    string.IsNullOrWhiteSpace(formFile.FileName) ? name : formFile.FileName);
                 return;
             default:
                 multipartContent.Add(new StringContent(FormContentReader.ToFormString(value)), name);
@@ -64,5 +63,38 @@ public class MultipartFormDataHttpContentFactory : IHttpContentFactory
             fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
 
         multipartContent.Add(fileContent, name, fileName);
+    }
+
+    /// <summary>
+    /// Reads an <see cref="IFormFile"/> while its part is serialized.
+    /// Opening every file first seeks a shared request stream and makes the earlier file unreadable.
+    /// The read stream is disposed before the next part is written.
+    /// </summary>
+    private sealed class FormFileContent : HttpContent
+    {
+        private readonly IFormFile _formFile;
+
+        public FormFileContent(IFormFile formFile)
+        {
+            _formFile = formFile;
+
+            if (!string.IsNullOrWhiteSpace(formFile.ContentType))
+                Headers.ContentType = MediaTypeHeaderValue.Parse(formFile.ContentType);
+        }
+
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context) =>
+            SerializeToStreamAsync(stream, context, CancellationToken.None);
+
+        protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context, CancellationToken cancellationToken)
+        {
+            await using var readStream = _formFile.OpenReadStream();
+            await readStream.CopyToAsync(stream, cancellationToken);
+        }
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = _formFile.Length;
+            return true;
+        }
     }
 }
