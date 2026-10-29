@@ -30,4 +30,8 @@
         <ProjectReference Include="../../../../core/src/modules/Elsa.Scheduling/Elsa.Scheduling.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <InternalsVisibleTo Include="Elsa.Scheduling.Quartz.UnitTests"/>
+    </ItemGroup>
+
 </Project>

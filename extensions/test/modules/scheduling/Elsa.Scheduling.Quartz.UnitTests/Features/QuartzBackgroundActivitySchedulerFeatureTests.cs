@@ -53,6 +53,9 @@ public class QuartzBackgroundActivitySchedulerFeatureTests
         Assert.Contains(services, d =>
             d.ServiceType == typeof(QuartzBackgroundActivityScheduler) &&
             d.Lifetime == ServiceLifetime.Singleton);
+        Assert.Contains(services, d =>
+            d.ServiceType == typeof(global::Quartz.Spi.IJobFactory) &&
+            d.ImplementationType == typeof(TenantAwareJobFactory));
     }
 
     [Fact]
