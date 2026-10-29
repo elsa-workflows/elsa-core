@@ -27,7 +27,7 @@ RUN dotnet restore "./studio/src/hosts/Elsa.Studio.Host.Server/Elsa.Studio.Host.
 
 # build and publish (UseAppHost=false creates platform independent binaries).
 WORKDIR /source/studio/src/hosts/Elsa.Studio.Host.Server
-RUN dotnet build "Elsa.Studio.Host.Server.csproj" -c Release -o /app/build
+RUN dotnet build "Elsa.Studio.Host.Server.csproj" -c Release -o /app/build -f net10.0
 RUN dotnet publish "Elsa.Studio.Host.Server.csproj" -c Release -o /app/publish /p:UseAppHost=false --no-restore -f net10.0
 
 # move binaries into smaller base image.

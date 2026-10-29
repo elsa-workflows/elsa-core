@@ -104,7 +104,8 @@ jobs:
           test -s /tmp/studio-designer.entry.js
           curl -fsS "http://127.0.0.1:18080/_content/Elsa.Studio.DomInterop/dom.entry.js" -o /tmp/studio-dom.entry.js
           test -s /tmp/studio-dom.entry.js
-          curl -fsS "http://127.0.0.1:18080/" | grep -F -q '_content/Elsa.Studio.Workflows.Designer/designer.css'
+          curl -fsS "http://127.0.0.1:18080/" -o /tmp/studio-index.html
+          grep -F -q '_content/Elsa.Studio.Workflows.Designer/designer.css' /tmp/studio-index.html
 
       - name: Run TLS smoke tests
         env:
