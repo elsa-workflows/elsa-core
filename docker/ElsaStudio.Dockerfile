@@ -1,8 +1,9 @@
-﻿FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+﻿FROM --platform=$BUILDPLATFORM node:22-bookworm AS node
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /source
 
 # Node 22 for Studio ClientLib bundles (designer.css and *.entry.js).
-COPY --from=node:22-bookworm /usr/local /usr/local
+COPY --from=node /usr/local /usr/local
 
 # copy sources.
 COPY core/src/. ./core/src
@@ -17,10 +18,11 @@ COPY scripts/integration-program/consolidated-build/studio-clientlib-lockfiles .
 
 # Studio-only Blazor Server host. Point this image at a separate Elsa API with
 # Backend__Url (for example http://elsa-server:8080/elsa/api).
-# ClientLib wwwroot files are generated, not checked in.
+# ClientLib wwwroot files are generated, not checked in. The image only builds
+# them; the ClientLib tests run in CI.
 RUN node --version \
     && chmod +x scripts/integration-program/build_studio_clientlibs.sh \
-    && scripts/integration-program/build_studio_clientlibs.sh .
+    && STUDIO_CLIENTLIB_SKIP_TESTS=1 scripts/integration-program/build_studio_clientlibs.sh .
 RUN dotnet restore "./studio/src/hosts/Elsa.Studio.Host.Server/Elsa.Studio.Host.Server.csproj"
 
 # build and publish (UseAppHost=false creates platform independent binaries).

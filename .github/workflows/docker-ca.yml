@@ -11,6 +11,8 @@ on:
       - 'scripts/test-ca-trust.sh'
       - 'scripts/integration-program/build_studio_clientlibs.sh'
       - 'scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/**'
+      - 'studio/src/**/ClientLib/**'
+      - 'studio/src/hosts/Elsa.Studio.Host.Server/**'
       - 'core/test/TlsSmoke/**'
       - '.github/workflows/docker-ca.yml'
   push:
@@ -22,6 +24,8 @@ on:
       - 'scripts/test-ca-trust.sh'
       - 'scripts/integration-program/build_studio_clientlibs.sh'
       - 'scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/**'
+      - 'studio/src/**/ClientLib/**'
+      - 'studio/src/hosts/Elsa.Studio.Host.Server/**'
       - 'core/test/TlsSmoke/**'
       - '.github/workflows/docker-ca.yml'
 
@@ -73,9 +77,6 @@ jobs:
           cmd="$(docker inspect -f '{{json .Config.Cmd}}' "${{ matrix.image }}")"
           echo "$cmd"
           test "$cmd" = '["dotnet","Elsa.Studio.Host.Server.dll"]'
-          case "$cmd" in
-            *ModularServer*|*Elsa.Server.Web*|*ServerAndStudio*) exit 1 ;;
-          esac
 
       - name: Require the Studio image to serve ClientLib assets
         if: matrix.name == 'elsa-studio'
@@ -87,7 +88,8 @@ jobs:
             -e Backend__Url=http://elsa-server:8080/elsa/api \
             -p 18080:8080 \
             "${{ matrix.image }}")"
-          trap 'docker rm -f "$cid" >/dev/null 2>&1 || true' EXIT
+          # On failure, print the container log before removing the container.
+          trap 'status=$?; if [ "$status" -ne 0 ]; then docker logs "$cid" || true; fi; docker rm -f "$cid" >/dev/null 2>&1 || true' EXIT
           ok=0
           for _ in $(seq 1 30); do
             if curl -fsS "http://127.0.0.1:18080/_content/Elsa.Studio.Workflows.Designer/designer.css" -o /tmp/studio-designer.css; then

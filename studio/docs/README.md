@@ -55,7 +55,6 @@ The published `elsaworkflows/elsa-studio-v3` image is this same UI-only host.
 It has no Elsa API. Set `Backend__Url` to a separate server. See the
 [elsa-studio-v3 upgrade note](docs/migrations/elsa-studio-v3.md).
 
-
 The [interface design system](design/system.md) is the Studio-approved baseline
 dated 2026-09-01. It describes UI conventions for Studio contributors; evaluate
 new work against the current module and its tests as well.

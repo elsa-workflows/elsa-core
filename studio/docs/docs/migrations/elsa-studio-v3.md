@@ -13,7 +13,8 @@ name ran `Elsa.ModularServer.Web` and therefore included a server.
 2. Point Studio at that API:
 
    ```bash
-   docker run -e ASPNETCORE_ENVIRONMENT=Development \
+   docker run --network <api-network> \
+     -e ASPNETCORE_ENVIRONMENT=Development \
      -e HTTP_PORTS=8080 \
      -e Backend__Url=http://elsa-server:8080/elsa/api \
      -p 14000:8080 \
@@ -22,4 +23,5 @@ name ran `Elsa.ModularServer.Web` and therefore included a server.
 
 `Backend__Url` binds the host `Backend:Url` setting. Use a URL the Studio
 container can reach (the Compose service name and container port, not
-`localhost` on the host-mapped port).
+`localhost` on the host-mapped port). `--network` joins the Docker network the
+API container runs on, so `elsa-server` resolves.
