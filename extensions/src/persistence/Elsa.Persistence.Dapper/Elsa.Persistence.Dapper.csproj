@@ -18,6 +18,7 @@
         <PackageReference Include="FluentMigrator.Runner.Core"/>
         <PackageReference Include="Microsoft.Data.Sqlite.Core"/>
         <PackageReference Include="Microsoft.Data.SqlClient"/>
+        <PackageReference Include="System.Security.Cryptography.Pkcs" />
         <PackageReference Include="Microsoft.Identity.Client"/>
         <PackageReference Include="Npgsql"/>
         <PackageReference Include="System.Formats.Asn1"/>

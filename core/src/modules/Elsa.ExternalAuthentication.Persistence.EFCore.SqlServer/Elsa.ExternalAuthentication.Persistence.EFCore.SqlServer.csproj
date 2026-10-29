@@ -9,6 +9,7 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+        <PackageReference Include="System.Security.Cryptography.Pkcs" />
         <ProjectReference Include="..\Elsa.Persistence.EFCore.SqlServer\Elsa.Persistence.EFCore.SqlServer.csproj" />
         <ProjectReference Include="..\Elsa.ExternalAuthentication.Persistence.EFCore\Elsa.ExternalAuthentication.Persistence.EFCore.csproj" />
     </ItemGroup>
