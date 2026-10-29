@@ -1,4 +1,5 @@
 using System.Globalization;
+using Elsa.Common.Multitenancy;
 using Elsa.Scheduling.Quartz.Contracts;
 using Elsa.Scheduling.Quartz.Jobs;
 using Quartz;
@@ -121,6 +122,63 @@ internal static class JobExecutionExtensions
             string stringValue when long.TryParse(stringValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedValue) => (int)Math.Clamp(parsedValue, int.MinValue, int.MaxValue),
             _ => 0
         };
+    }
+
+    /// <summary>
+    /// Finds the scheduled tenant when the job factory did not already set one.
+    /// Reads <c>TenantId</c> from the trigger first, then the job. Returns <c>null</c> when
+    /// a tenant is already present or the job data has no tenant id. The caller must push
+    /// the result so the AsyncLocal tenant write stays on the job's execution flow.
+    /// </summary>
+    public static async Task<Tenant?> FindScheduledTenantIfMissingAsync(
+        this IJobExecutionContext context,
+        ITenantAccessor tenantAccessor,
+        ITenantFinder tenantFinder,
+        CancellationToken cancellationToken = default)
+    {
+        if (tenantAccessor.Tenant is not null)
+            return null;
+
+        var tenantId = ReadTenantId(context);
+        if (tenantId is null)
+            return null;
+
+        return await tenantFinder.FindByIdAsync(tenantId, cancellationToken);
+    }
+
+    private static string? ReadTenantId(IJobExecutionContext context)
+    {
+        if (TryGetTenantId(context.Trigger.JobDataMap, out var tenantId))
+            return tenantId;
+
+        if (TryGetTenantId(context.JobDetail.JobDataMap, out tenantId))
+            return tenantId;
+
+        if (TryGetTenantId(context.MergedJobDataMap, out tenantId))
+            return tenantId;
+
+        return null;
+    }
+
+    private static bool TryGetTenantId(JobDataMap? map, out string tenantId)
+    {
+        tenantId = "";
+        if (map is null)
+            return false;
+
+        if (map.TryGetString("TenantId", out var value) && !string.IsNullOrWhiteSpace(value))
+        {
+            tenantId = value;
+            return true;
+        }
+
+        if (map.TryGetValue("TenantId", out var obj) && obj is string stringValue && !string.IsNullOrWhiteSpace(stringValue))
+        {
+            tenantId = stringValue;
+            return true;
+        }
+
+        return false;
     }
 
     /// <summary>

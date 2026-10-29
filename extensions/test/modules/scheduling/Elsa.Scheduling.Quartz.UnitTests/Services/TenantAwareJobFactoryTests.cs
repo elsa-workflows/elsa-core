@@ -1,5 +1,6 @@
 using Elsa.Common.Multitenancy;
 using Elsa.Scheduling.Quartz.Contracts;
+using Elsa.Scheduling.Quartz.Jobs;
 using Elsa.Scheduling.Quartz.Services;
 using Elsa.Scheduling.Quartz.UnitTests.Helpers;
 using Microsoft.Extensions.DependencyInjection;
@@ -108,6 +109,26 @@ public class TenantAwareJobFactoryTests
     }
 
     [Fact]
+    public async Task NewJob_WhenTenantLookupThrows_ForBackgroundActivityJob_DeletesJobAndDoesNotRetry()
+    {
+        var harness = Harness.Create();
+        var lookupFailure = new TimeoutException("tenant store down");
+        harness.Tenants.ThrowOn("tenant-b", lookupFailure);
+        harness.RetryScheduler.Setup(x => x.IsRetryable(lookupFailure)).Returns(true);
+        harness.RetryScheduler.Setup(x => x.ScheduleRetryAsync(It.IsAny<IJobExecutionContext>(), lookupFailure, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        var (context, scheduler) = QuartzJobTestHelper.CreateJobExecutionContext(new Dictionary<string, object>());
+        var bundle = CreateBundle(triggerTenantId: "tenant-b", jobType: typeof(ExecuteBackgroundActivityJob));
+
+        var job = harness.Factory.NewJob(bundle, Scheduler());
+        var thrown = await Assert.ThrowsAsync<TimeoutException>(() => job.Execute(context));
+
+        Assert.Same(lookupFailure, thrown);
+        scheduler.VerifyDeleted();
+        harness.RetryScheduler.Verify(x => x.ScheduleRetryAsync(It.IsAny<IJobExecutionContext>(), It.IsAny<Exception>(), It.IsAny<CancellationToken>()), Times.Never);
+        harness.Factory.ReturnJob(job);
+    }
+
+    [Fact]
     public void NewJob_WhenNoTenantId_UsesDefaultTenantBehavior()
     {
         // Arrange
@@ -184,9 +205,9 @@ public class TenantAwareJobFactoryTests
 
     private static QuartzScheduler Scheduler() => Mock.Of<QuartzScheduler>(s => s.Context == new SchedulerContext());
 
-    private static TriggerFiredBundle CreateBundle(string? triggerTenantId = null, string? jobTenantId = null, string jobName = "test-job")
+    private static TriggerFiredBundle CreateBundle(string? triggerTenantId = null, string? jobTenantId = null, string jobName = "test-job", Type? jobType = null)
     {
-        var jobBuilder = JobBuilder.Create<ProbeJob>().WithIdentity(jobName);
+        var jobBuilder = JobBuilder.Create(jobType ?? typeof(ProbeJob)).WithIdentity(jobName);
         if (jobTenantId is not null)
             jobBuilder.UsingJobData("TenantId", jobTenantId);
         var job = jobBuilder.Build();

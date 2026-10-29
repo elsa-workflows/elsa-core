@@ -1,3 +1,4 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Resilience;
 using Elsa.Scheduling.Quartz.Contracts;
 using Elsa.Scheduling.Quartz.Options;
@@ -208,4 +209,13 @@ public static class QuartzJobTestHelper
         public void VerifyRetryScheduled(IJobExecutionContext context) =>
             retryScheduler.Verify(x => x.ScheduleRetryAsync(context, It.IsAny<Exception>(), It.IsAny<CancellationToken>()), Times.Once);
     }
+}
+
+/// <summary>
+/// Returns a tenant whose id matches the requested id. Used by job tests that assert the Execute fallback.
+/// </summary>
+public sealed class AnyIdTenantFinder : ITenantFinder
+{
+    public Task<Tenant?> FindByIdAsync(string tenantId, CancellationToken cancellationToken = default) =>
+        Task.FromResult<Tenant?>(new Tenant { Id = tenantId, Name = tenantId });
 }

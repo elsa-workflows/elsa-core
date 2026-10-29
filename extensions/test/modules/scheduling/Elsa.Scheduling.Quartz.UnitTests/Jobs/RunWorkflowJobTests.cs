@@ -233,6 +233,25 @@ public class RunWorkflowJobTests
     }
 
     [Fact]
+    public async Task RunWorkflowJob_WithoutTenantAwareFactory_SeesTriggerTenantDuringStart()
+    {
+        var accessor = new DefaultTenantAccessor();
+        string? seen = "unset";
+        var starter = new Mock<IWorkflowStarter>();
+        starter.Setup(x => x.StartWorkflowAsync(It.IsAny<StartWorkflowRequest>(), It.IsAny<CancellationToken>()))
+            .Callback(() => seen = accessor.Tenant?.Id)
+            .ReturnsAsync(new StartWorkflowResponse { WorkflowInstanceId = "wf" });
+        var job = new RunWorkflowJob(accessor, new AnyIdTenantFinder(), starter.Object, Mock.Of<IQuartzJobRetryScheduler>(), Mock.Of<ILogger<RunWorkflowJob>>());
+        var (context, _) = QuartzJobTestHelper.CreateJobExecutionContext(
+            new Dictionary<string, object> { ["DefinitionVersionId"] = "def-1" },
+            triggerData: new Dictionary<string, object> { ["TenantId"] = "tenant-b" });
+
+        await job.Execute(context);
+
+        Assert.Equal("tenant-b", seen);
+    }
+
+    [Fact]
     public async Task Execute_UsesCorrectWorkflowDefinitionHandle()
     {
         var (context, _) = CreateJobExecutionContext();

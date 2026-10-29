@@ -213,6 +213,34 @@ public class ResumeWorkflowJobTests
     }
 
     [Fact]
+    public async Task ResumeWorkflowJob_WithoutTenantAwareFactory_SeesTriggerTenantDuringResume()
+    {
+        var accessor = new DefaultTenantAccessor();
+        string? seen = "unset";
+        var workflowClient = new Mock<IWorkflowClient>();
+        workflowClient.Setup(c => c.RunInstanceAsync(It.IsAny<RunWorkflowInstanceRequest>(), It.IsAny<CancellationToken>()))
+            .Callback(() => seen = accessor.Tenant?.Id)
+            .ReturnsAsync(new RunWorkflowInstanceResponse());
+        var workflowRuntime = new Mock<IWorkflowRuntime>();
+        workflowRuntime.Setup(r => r.CreateClientAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(workflowClient.Object);
+        var job = new ResumeWorkflowJob(
+            workflowRuntime.Object,
+            Mock.Of<IJsonSerializer>(),
+            new AnyIdTenantFinder(),
+            accessor,
+            Mock.Of<IQuartzJobRetryScheduler>(),
+            Mock.Of<ILogger<ResumeWorkflowJob>>());
+        var (context, _) = QuartzJobTestHelper.CreateJobExecutionContext(
+            new Dictionary<string, object> { ["WorkflowInstanceId"] = "wf-1" },
+            triggerData: new Dictionary<string, object> { ["TenantId"] = "tenant-b" });
+
+        await job.Execute(context);
+
+        Assert.Equal("tenant-b", seen);
+    }
+
+    [Fact]
     public async Task Execute_WithActivityHandle_DeserializesCorrectly()
     {
         var activityHandle = new ActivityHandle { ActivityId = "activity-123" };

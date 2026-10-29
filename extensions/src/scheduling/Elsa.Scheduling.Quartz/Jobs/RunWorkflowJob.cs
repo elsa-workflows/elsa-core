@@ -1,5 +1,6 @@
 using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
+using Elsa.Scheduling.Quartz;
 using Elsa.Scheduling.Quartz.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
@@ -12,8 +13,9 @@ namespace Elsa.Scheduling.Quartz.Jobs;
 
 /// <summary>
 /// A job that runs a workflow.
-/// Tenant context is established by the Quartz job factory. The tenant accessor and tenant finder
-/// constructor parameters are unused and kept for binary compatibility.
+/// Tenant context is established by the Quartz job factory when it is registered.
+/// When it is not, <paramref name="tenantAccessor"/> and <paramref name="tenantFinder"/> look up
+/// and push the trigger's tenant at the start of Execute.
 /// </summary>
 [UsedImplicitly]
 public class RunWorkflowJob(
@@ -31,28 +33,32 @@ public class RunWorkflowJob(
         StartWorkflowRequest? startRequest = null;
         try
         {
-            var map = context.MergedJobDataMap;
-
-            startRequest = new StartWorkflowRequest
+            var scheduledTenant = await context.FindScheduledTenantIfMissingAsync(tenantAccessor, tenantFinder, cancellationToken);
+            using (tenantAccessor.Tenant is null ? tenantAccessor.PushContext(scheduledTenant) : null)
             {
-                WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId((string)map.Get(nameof(ScheduleNewWorkflowInstanceRequest.WorkflowDefinitionHandle.DefinitionVersionId))),
-                CorrelationId = (string?)map.Get(nameof(ScheduleNewWorkflowInstanceRequest.CorrelationId)),
-                TriggerActivityId = (string?)map.Get(nameof(ScheduleNewWorkflowInstanceRequest.TriggerActivityId)),
-                Input = map.GetDictionary(nameof(ScheduleNewWorkflowInstanceRequest.Input)),
-                Variables = map.GetDictionary(nameof(ScheduleNewWorkflowInstanceRequest.Variables)),
-                Properties = map.GetDictionary(nameof(ScheduleNewWorkflowInstanceRequest.Properties)),
-                ParentId = (string?)map.Get(nameof(ScheduleNewWorkflowInstanceRequest.ParentId))
-            };
+                var map = context.MergedJobDataMap;
 
-            var startResponse = await workflowStarter.StartWorkflowAsync(startRequest, cancellationToken);
+                startRequest = new StartWorkflowRequest
+                {
+                    WorkflowDefinitionHandle = WorkflowDefinitionHandle.ByDefinitionVersionId((string)map.Get(nameof(ScheduleNewWorkflowInstanceRequest.WorkflowDefinitionHandle.DefinitionVersionId))),
+                    CorrelationId = (string?)map.Get(nameof(ScheduleNewWorkflowInstanceRequest.CorrelationId)),
+                    TriggerActivityId = (string?)map.Get(nameof(ScheduleNewWorkflowInstanceRequest.TriggerActivityId)),
+                    Input = map.GetDictionary(nameof(ScheduleNewWorkflowInstanceRequest.Input)),
+                    Variables = map.GetDictionary(nameof(ScheduleNewWorkflowInstanceRequest.Variables)),
+                    Properties = map.GetDictionary(nameof(ScheduleNewWorkflowInstanceRequest.Properties)),
+                    ParentId = (string?)map.Get(nameof(ScheduleNewWorkflowInstanceRequest.ParentId))
+                };
 
-            if (startResponse.CannotStart)
-            {
-                logger.LogWarning("Workflow activation strategy disallowed starting workflow {WorkflowDefinitionHandle} with correlation ID {CorrelationId}", startRequest.WorkflowDefinitionHandle, startRequest.CorrelationId);
-                return;
+                var startResponse = await workflowStarter.StartWorkflowAsync(startRequest, cancellationToken);
+
+                if (startResponse.CannotStart)
+                {
+                    logger.LogWarning("Workflow activation strategy disallowed starting workflow {WorkflowDefinitionHandle} with correlation ID {CorrelationId}", startRequest.WorkflowDefinitionHandle, startRequest.CorrelationId);
+                    return;
+                }
+
+                logger.LogInformation("Started workflow {WorkflowInstanceId} with correlation ID {CorrelationId}", startResponse.WorkflowInstanceId, startRequest.CorrelationId);
             }
-
-            logger.LogInformation("Started workflow {WorkflowInstanceId} with correlation ID {CorrelationId}", startResponse.WorkflowInstanceId, startRequest.CorrelationId);
         }
         catch (WorkflowGraphNotFoundException e)
         {

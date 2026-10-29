@@ -1,5 +1,8 @@
+using System.Runtime.ExceptionServices;
 using Elsa.Common.Multitenancy;
+using Elsa.Scheduling.Quartz;
 using Elsa.Scheduling.Quartz.Contracts;
+using Elsa.Scheduling.Quartz.Jobs;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -37,8 +40,8 @@ internal sealed class TenantAwareJobFactory(
         }
         catch (Exception exception)
         {
-            logger.LogWarning(exception, "Could not find tenant {TenantId} while building Quartz job {JobKey}. The failure will be retried on the next fire.", tenantId, bundle.JobDetail.Key);
-            return new TenantLookupFailedJob(exception, serviceProvider, logger);
+            logger.LogWarning(exception, "Could not find tenant {TenantId} while building Quartz job {JobKey}.", tenantId, bundle.JobDetail.Key);
+            return new TenantLookupFailedJob(exception, serviceProvider, logger, bundle.JobDetail.JobType);
         }
 
         if (tenant is null)
@@ -89,10 +92,17 @@ internal sealed class TenantAwareJobFactory(
         }
     }
 
-    private sealed class TenantLookupFailedJob(Exception exception, IServiceProvider serviceProvider, ILogger logger) : IJob
+    private sealed class TenantLookupFailedJob(Exception exception, IServiceProvider serviceProvider, ILogger logger, Type jobType) : IJob
     {
         public async Task Execute(IJobExecutionContext context)
         {
+            if (jobType == typeof(ExecuteBackgroundActivityJob))
+            {
+                logger.LogError(exception, "An error occurred while executing a background activity job {JobKey} after a tenant lookup failure.", context.JobDetail.Key);
+                await context.DeleteJob(context.JobDetail.Key, context.CancellationToken);
+                ExceptionDispatchInfo.Capture(exception).Throw();
+            }
+
             var retryScheduler = serviceProvider.GetService<IQuartzJobRetryScheduler>();
             if (retryScheduler is not null)
             {
@@ -103,7 +113,7 @@ internal sealed class TenantAwareJobFactory(
                 return;
             }
 
-            throw exception;
+            ExceptionDispatchInfo.Capture(exception).Throw();
         }
     }
 }

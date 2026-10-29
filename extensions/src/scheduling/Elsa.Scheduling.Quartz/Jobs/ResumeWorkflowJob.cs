@@ -1,6 +1,7 @@
 using Elsa.Common;
 using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
+using Elsa.Scheduling.Quartz;
 using Elsa.Scheduling.Quartz.Contracts;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Runtime;
@@ -13,8 +14,9 @@ namespace Elsa.Scheduling.Quartz.Jobs;
 
 /// <summary>
 /// A job that resumes a workflow.
-/// Tenant context is established by the Quartz job factory. The tenant accessor and tenant finder
-/// constructor parameters are unused and kept for binary compatibility.
+/// Tenant context is established by the Quartz job factory when it is registered.
+/// When it is not, <paramref name="tenantAccessor"/> and <paramref name="tenantFinder"/> look up
+/// and push the trigger's tenant at the start of Execute.
 /// </summary>
 public class ResumeWorkflowJob(
     IWorkflowRuntime workflowRuntime,
@@ -32,22 +34,26 @@ public class ResumeWorkflowJob(
         string? workflowInstanceId = null;
         try
         {
-            var map = context.MergedJobDataMap;
-            var serializedActivityHandle = (string)map.Get(nameof(ScheduleExistingWorkflowInstanceRequest.ActivityHandle));
-            var activityHandle = serializedActivityHandle != null! ? jsonSerializer.Deserialize<ActivityHandle>(serializedActivityHandle) : null;
-            workflowInstanceId = (string)map.Get(nameof(ScheduleExistingWorkflowInstanceRequest.WorkflowInstanceId));
-
-            var workflowClient = await workflowRuntime.CreateClientAsync(workflowInstanceId, cancellationToken);
-            var request = new RunWorkflowInstanceRequest
+            var scheduledTenant = await context.FindScheduledTenantIfMissingAsync(tenantAccessor, tenantFinder, cancellationToken);
+            using (tenantAccessor.Tenant is null ? tenantAccessor.PushContext(scheduledTenant) : null)
             {
-                BookmarkId = (string)map.Get(nameof(ScheduleExistingWorkflowInstanceRequest.BookmarkId)),
-                ActivityHandle = activityHandle,
-                Input = map.GetDictionary(nameof(ScheduleExistingWorkflowInstanceRequest.Input)),
-                Properties = map.GetDictionary(nameof(ScheduleExistingWorkflowInstanceRequest.Properties)),
-            };
-            await workflowClient.RunInstanceAsync(request, cancellationToken: cancellationToken);
+                var map = context.MergedJobDataMap;
+                var serializedActivityHandle = (string)map.Get(nameof(ScheduleExistingWorkflowInstanceRequest.ActivityHandle));
+                var activityHandle = serializedActivityHandle != null! ? jsonSerializer.Deserialize<ActivityHandle>(serializedActivityHandle) : null;
+                workflowInstanceId = (string)map.Get(nameof(ScheduleExistingWorkflowInstanceRequest.WorkflowInstanceId));
 
-            logger.LogInformation("Resumed workflow instance {WorkflowInstanceId}", workflowInstanceId);
+                var workflowClient = await workflowRuntime.CreateClientAsync(workflowInstanceId, cancellationToken);
+                var request = new RunWorkflowInstanceRequest
+                {
+                    BookmarkId = (string)map.Get(nameof(ScheduleExistingWorkflowInstanceRequest.BookmarkId)),
+                    ActivityHandle = activityHandle,
+                    Input = map.GetDictionary(nameof(ScheduleExistingWorkflowInstanceRequest.Input)),
+                    Properties = map.GetDictionary(nameof(ScheduleExistingWorkflowInstanceRequest.Properties)),
+                };
+                await workflowClient.RunInstanceAsync(request, cancellationToken: cancellationToken);
+
+                logger.LogInformation("Resumed workflow instance {WorkflowInstanceId}", workflowInstanceId);
+            }
         }
         catch (WorkflowGraphNotFoundException e)
         {

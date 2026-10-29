@@ -1,4 +1,5 @@
 using Elsa.Common.Multitenancy;
+using Elsa.Scheduling.Quartz;
 using Elsa.Workflows.Runtime;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
@@ -8,8 +9,9 @@ namespace Elsa.Scheduling.Quartz.Jobs;
 
 /// <summary>
 /// A job that executes a background activity.
-/// Tenant context is established by the Quartz job factory. The tenant accessor and tenant finder
-/// constructor parameters are unused and kept for binary compatibility.
+/// Tenant context is established by the Quartz job factory when it is registered.
+/// When it is not, <paramref name="tenantAccessor"/> and <paramref name="tenantFinder"/> look up
+/// and push the trigger's tenant at the start of Execute.
 /// </summary>
 [UsedImplicitly]
 public class ExecuteBackgroundActivityJob(
@@ -26,14 +28,18 @@ public class ExecuteBackgroundActivityJob(
 
         try
         {
-            var map = context.MergedJobDataMap;
-            workflowInstanceId = (string?)map.Get(nameof(ScheduledBackgroundActivity.WorkflowInstanceId));
-            var scheduledBackgroundActivity = new ScheduledBackgroundActivity(
-                workflowInstanceId!,
-                (string)map.Get(nameof(ScheduledBackgroundActivity.ActivityNodeId)),
-                (string)map.Get(nameof(ScheduledBackgroundActivity.BookmarkId)));
+            var scheduledTenant = await context.FindScheduledTenantIfMissingAsync(tenantAccessor, tenantFinder, cancellationToken);
+            using (tenantAccessor.Tenant is null ? tenantAccessor.PushContext(scheduledTenant) : null)
+            {
+                var map = context.MergedJobDataMap;
+                workflowInstanceId = (string?)map.Get(nameof(ScheduledBackgroundActivity.WorkflowInstanceId));
+                var scheduledBackgroundActivity = new ScheduledBackgroundActivity(
+                    workflowInstanceId!,
+                    (string)map.Get(nameof(ScheduledBackgroundActivity.ActivityNodeId)),
+                    (string)map.Get(nameof(ScheduledBackgroundActivity.BookmarkId)));
 
-            await backgroundActivityInvoker.ExecuteAsync(scheduledBackgroundActivity, cancellationToken);
+                await backgroundActivityInvoker.ExecuteAsync(scheduledBackgroundActivity, cancellationToken);
+            }
         }
         catch (Exception e)
         {
