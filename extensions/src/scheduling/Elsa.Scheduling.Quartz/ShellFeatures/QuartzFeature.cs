@@ -62,11 +62,12 @@ public class QuartzFeature : IShellFeature, IPostConfigureShellServices
     {
         services.AddQuartz(quartz =>
         {
-            quartz.UseJobFactory<TenantAwareJobFactory>();
             quartz.UseDefaultThreadPool();
             quartz.SchedulerId = SchedulerId;
             quartz.SchedulerName = SchedulerName;
         });
+
+        JobFactoryRegistration.TryUseTenantAwareJobFactory(services);
 
         // QuartzShellLifecycleHandler owns start/stop — no AddQuartzHostedService needed.
         // The Quartz hosted service is only invoked by the root IHost, which never sees

@@ -9,9 +9,9 @@ namespace Elsa.Scheduling.Quartz.Jobs;
 
 /// <summary>
 /// A job that executes a background activity.
-/// Tenant context is established by the Quartz job factory when it is registered.
-/// When it is not, <paramref name="tenantAccessor"/> and <paramref name="tenantFinder"/> look up
-/// and push the trigger's tenant at the start of Execute.
+/// Tenant context is established by the Quartz job factory.
+/// <paramref name="tenantAccessor"/> verifies that the scheduled tenant is already in context;
+/// <paramref name="tenantFinder"/> is retained for binary compatibility (lookup happens in the factory).
 /// </summary>
 [UsedImplicitly]
 public class ExecuteBackgroundActivityJob(
@@ -23,23 +23,22 @@ public class ExecuteBackgroundActivityJob(
     /// <inheritdoc />
     public async Task Execute(IJobExecutionContext context)
     {
+        _ = tenantFinder;
         var cancellationToken = context.CancellationToken;
         string? workflowInstanceId = null;
 
         try
         {
-            var scheduledTenant = await context.FindScheduledTenantIfMissingAsync(tenantAccessor, tenantFinder, cancellationToken);
-            using (tenantAccessor.Tenant is null ? tenantAccessor.PushContext(scheduledTenant) : null)
-            {
-                var map = context.MergedJobDataMap;
-                workflowInstanceId = (string?)map.Get(nameof(ScheduledBackgroundActivity.WorkflowInstanceId));
-                var scheduledBackgroundActivity = new ScheduledBackgroundActivity(
-                    workflowInstanceId!,
-                    (string)map.Get(nameof(ScheduledBackgroundActivity.ActivityNodeId)),
-                    (string)map.Get(nameof(ScheduledBackgroundActivity.BookmarkId)));
+            context.EnsureScheduledTenant(tenantAccessor, logger);
 
-                await backgroundActivityInvoker.ExecuteAsync(scheduledBackgroundActivity, cancellationToken);
-            }
+            var map = context.MergedJobDataMap;
+            workflowInstanceId = (string?)map.Get(nameof(ScheduledBackgroundActivity.WorkflowInstanceId));
+            var scheduledBackgroundActivity = new ScheduledBackgroundActivity(
+                workflowInstanceId!,
+                (string)map.Get(nameof(ScheduledBackgroundActivity.ActivityNodeId)),
+                (string)map.Get(nameof(ScheduledBackgroundActivity.BookmarkId)));
+
+            await backgroundActivityInvoker.ExecuteAsync(scheduledBackgroundActivity, cancellationToken);
         }
         catch (Exception e)
         {

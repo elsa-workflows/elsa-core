@@ -38,15 +38,14 @@ public class ExecuteBackgroundActivityJobTests
     }
 
     [Fact]
-    public async Task ExecuteBackgroundActivityJob_WithoutTenantAwareFactory_SeesTriggerTenantDuringExecute()
+    public async Task Execute_WhenTriggerTenantMissingFromContext_ThrowsNamingTenantIdAndJobKey()
     {
-        var accessor = new DefaultTenantAccessor();
-        string? seen = "unset";
-        var invoker = new Mock<IBackgroundActivityInvoker>();
-        invoker.Setup(i => i.ExecuteAsync(It.IsAny<ScheduledBackgroundActivity>(), It.IsAny<CancellationToken>()))
-            .Callback(() => seen = accessor.Tenant?.Id)
-            .Returns(Task.CompletedTask);
-        var job = new ExecuteBackgroundActivityJob(invoker.Object, new AnyIdTenantFinder(), accessor, Mock.Of<ILogger<ExecuteBackgroundActivityJob>>());
+        var logger = new Mock<ILogger<ExecuteBackgroundActivityJob>>();
+        var job = new ExecuteBackgroundActivityJob(
+            _invoker.Object,
+            new AnyIdTenantFinder(),
+            new DefaultTenantAccessor(),
+            logger.Object);
         var (context, scheduler) = QuartzJobTestHelper.CreateJobExecutionContext(
             new Dictionary<string, object>
             {
@@ -56,9 +55,12 @@ public class ExecuteBackgroundActivityJobTests
             },
             triggerData: new Dictionary<string, object> { ["TenantId"] = "tenant-b" });
 
-        await job.Execute(context);
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => job.Execute(context));
 
-        Assert.Equal("tenant-b", seen);
+        Assert.Contains("tenant-b", exception.Message);
+        Assert.Contains(context.JobDetail.Key.ToString(), exception.Message);
+        _invoker.Verify(i => i.ExecuteAsync(It.IsAny<ScheduledBackgroundActivity>(), It.IsAny<CancellationToken>()), Times.Never);
+        logger.VerifyLogged(LogLevel.Error, Times.AtLeastOnce());
         scheduler.VerifyDeleted();
     }
 

@@ -213,31 +213,26 @@ public class ResumeWorkflowJobTests
     }
 
     [Fact]
-    public async Task ResumeWorkflowJob_WithoutTenantAwareFactory_SeesTriggerTenantDuringResume()
+    public async Task Execute_WhenTriggerTenantMissingFromContext_ThrowsNamingTenantIdAndJobKey()
     {
-        var accessor = new DefaultTenantAccessor();
-        string? seen = "unset";
-        var workflowClient = new Mock<IWorkflowClient>();
-        workflowClient.Setup(c => c.RunInstanceAsync(It.IsAny<RunWorkflowInstanceRequest>(), It.IsAny<CancellationToken>()))
-            .Callback(() => seen = accessor.Tenant?.Id)
-            .ReturnsAsync(new RunWorkflowInstanceResponse());
-        var workflowRuntime = new Mock<IWorkflowRuntime>();
-        workflowRuntime.Setup(r => r.CreateClientAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(workflowClient.Object);
+        var logger = new Mock<ILogger<ResumeWorkflowJob>>();
         var job = new ResumeWorkflowJob(
-            workflowRuntime.Object,
-            Mock.Of<IJsonSerializer>(),
+            _workflowRuntime.Object,
+            _jsonSerializer.Object,
             new AnyIdTenantFinder(),
-            accessor,
-            Mock.Of<IQuartzJobRetryScheduler>(),
-            Mock.Of<ILogger<ResumeWorkflowJob>>());
+            new DefaultTenantAccessor(),
+            _retryScheduler.Object,
+            logger.Object);
         var (context, _) = QuartzJobTestHelper.CreateJobExecutionContext(
             new Dictionary<string, object> { ["WorkflowInstanceId"] = "wf-1" },
             triggerData: new Dictionary<string, object> { ["TenantId"] = "tenant-b" });
 
-        await job.Execute(context);
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => job.Execute(context));
 
-        Assert.Equal("tenant-b", seen);
+        Assert.Contains("tenant-b", exception.Message);
+        Assert.Contains(context.JobDetail.Key.ToString(), exception.Message);
+        _workflowRuntime.Verify(r => r.CreateClientAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        logger.VerifyLogged(LogLevel.Error, Times.Once());
     }
 
     [Fact]

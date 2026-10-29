@@ -125,11 +125,12 @@ public class QuartzFeature : FeatureBase
 
         Services
             .AddQuartz(configure => { ConfigureQuartzInternal(configure, ConfigureQuartz); });
+
+        JobFactoryRegistration.TryUseTenantAwareJobFactory(Services);
     }
 
     private static void ConfigureQuartzInternal(IServiceCollectionQuartzConfigurator quartz, Action<IServiceCollectionQuartzConfigurator>? configureQuartz)
     {
-        quartz.UseJobFactory<TenantAwareJobFactory>();
         configureQuartz?.Invoke(quartz);
     }
 }

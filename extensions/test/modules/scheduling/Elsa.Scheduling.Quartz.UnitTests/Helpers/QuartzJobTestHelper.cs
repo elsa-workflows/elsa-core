@@ -212,7 +212,7 @@ public static class QuartzJobTestHelper
 }
 
 /// <summary>
-/// Returns a tenant whose id matches the requested id. Used by job tests that assert the Execute fallback.
+/// Returns a tenant whose id matches the requested id.
 /// </summary>
 public sealed class AnyIdTenantFinder : ITenantFinder
 {
