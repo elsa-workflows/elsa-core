@@ -11,14 +11,12 @@ namespace Elsa.Scheduling.Quartz.UnitTests.Jobs;
 public class ExecuteBackgroundActivityJobTests
 {
     private readonly Mock<IBackgroundActivityInvoker> _invoker = new();
-    private readonly Mock<ITenantFinder> _tenantFinder = new();
-    private readonly Mock<ITenantAccessor> _tenantAccessor = QuartzJobTestHelper.CreateTenantAccessor();
     private readonly Mock<ILogger<ExecuteBackgroundActivityJob>> _logger = new();
     private readonly ExecuteBackgroundActivityJob _job;
 
     public ExecuteBackgroundActivityJobTests()
     {
-        _job = new(_invoker.Object, _tenantFinder.Object, _tenantAccessor.Object, _logger.Object);
+        _job = new(_invoker.Object, Mock.Of<ITenantFinder>(), Mock.Of<ITenantAccessor>(), _logger.Object);
     }
 
     [Fact]
@@ -36,22 +34,34 @@ public class ExecuteBackgroundActivityJobTests
         Assert.Equal("instance-1", captured.WorkflowInstanceId);
         Assert.Equal("node-1", captured.ActivityNodeId);
         Assert.Equal("bookmark-1", captured.BookmarkId);
-        _tenantAccessor.Verify(t => t.PushContext(null), Times.Once);
         scheduler.VerifyDeleted();
     }
 
     [Fact]
-    public async Task Execute_ResolvesTenantBeforeInvoking()
+    public async Task Execute_WhenTriggerTenantMissingFromContext_ThrowsNamingTenantIdAndJobKey()
     {
-        var tenant = new Tenant { Id = "tenant-123" };
-        _tenantFinder.Setup(f => f.FindByIdAsync("tenant-123", It.IsAny<CancellationToken>())).ReturnsAsync(tenant);
-        var (context, _) = CreateJobExecutionContext(withTenantId: true);
+        var logger = new Mock<ILogger<ExecuteBackgroundActivityJob>>();
+        var job = new ExecuteBackgroundActivityJob(
+            _invoker.Object,
+            new AnyIdTenantFinder(),
+            new DefaultTenantAccessor(),
+            logger.Object);
+        var (context, scheduler) = QuartzJobTestHelper.CreateJobExecutionContext(
+            new Dictionary<string, object>
+            {
+                [nameof(ScheduledBackgroundActivity.WorkflowInstanceId)] = "instance-1",
+                [nameof(ScheduledBackgroundActivity.ActivityNodeId)] = "node-1",
+                [nameof(ScheduledBackgroundActivity.BookmarkId)] = "bookmark-1"
+            },
+            triggerData: new Dictionary<string, object> { ["TenantId"] = "tenant-b" });
 
-        await _job.Execute(context);
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => job.Execute(context));
 
-        _tenantFinder.Verify(f => f.FindByIdAsync("tenant-123", It.IsAny<CancellationToken>()), Times.Once);
-        _tenantAccessor.Verify(t => t.PushContext(tenant), Times.Once);
-        _invoker.Verify(i => i.ExecuteAsync(It.IsAny<ScheduledBackgroundActivity>(), It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Contains("tenant-b", exception.Message);
+        Assert.Contains(context.JobDetail.Key.ToString(), exception.Message);
+        _invoker.Verify(i => i.ExecuteAsync(It.IsAny<ScheduledBackgroundActivity>(), It.IsAny<CancellationToken>()), Times.Never);
+        logger.VerifyLogged(LogLevel.Error, Times.AtLeastOnce());
+        scheduler.VerifyDeleted();
     }
 
     [Fact]
@@ -67,7 +77,7 @@ public class ExecuteBackgroundActivityJobTests
         scheduler.VerifyDeleted();
     }
 
-    private static (IJobExecutionContext Context, Mock<global::Quartz.IScheduler> Scheduler) CreateJobExecutionContext(bool withTenantId = false)
+    private static (IJobExecutionContext Context, Mock<global::Quartz.IScheduler> Scheduler) CreateJobExecutionContext()
     {
         var jobData = new Dictionary<string, object>
         {
@@ -75,9 +85,6 @@ public class ExecuteBackgroundActivityJobTests
             [nameof(ScheduledBackgroundActivity.ActivityNodeId)] = "node-1",
             [nameof(ScheduledBackgroundActivity.BookmarkId)] = "bookmark-1"
         };
-
-        if (withTenantId)
-            jobData["TenantId"] = "tenant-123";
 
         return QuartzJobTestHelper.CreateJobExecutionContext(jobData);
     }

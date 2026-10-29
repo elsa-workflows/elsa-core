@@ -123,8 +123,8 @@ OTHER_BYPASSES = (
     ),
     (
         "selection script sees a fixed ref",
-        "          REF: ${{ github.ref }}\n          PUBLISH_PREVIEW_FEEDZ: ${{ inputs.publish_preview_feedz }}\n          PUBLISH_NUGET: ${{ inputs.publish_nuget }}\n          PUBLISH_NPM: ${{ inputs.publish_npm }}",
-        "          REF: refs/heads/main\n          PUBLISH_PREVIEW_FEEDZ: ${{ inputs.publish_preview_feedz }}\n          PUBLISH_NUGET: ${{ inputs.publish_nuget }}\n          PUBLISH_NPM: ${{ inputs.publish_npm }}",
+        "          REF: ${{ github.ref }}\n          PUBLISH_PREVIEW_FEEDZ: ${{ inputs.publish_preview_feedz }}\n          PUBLISH_NUGET: ${{ inputs.publish_nuget }}\n          PUBLISH_NPM: ${{ inputs.publish_npm }}\n          DEPLOY_COVERAGE: ${{ inputs.deploy_coverage }}\n          EXCLUDE_IDS: ${{ inputs.exclude_ids }}",
+        "          REF: refs/heads/main\n          PUBLISH_PREVIEW_FEEDZ: ${{ inputs.publish_preview_feedz }}\n          PUBLISH_NUGET: ${{ inputs.publish_nuget }}\n          PUBLISH_NPM: ${{ inputs.publish_npm }}\n          DEPLOY_COVERAGE: ${{ inputs.deploy_coverage }}\n          EXCLUDE_IDS: ${{ inputs.exclude_ids }}",
         "validate_publication_selection must pass REF: ${{ github.ref }}",
     ),
     (
@@ -144,6 +144,24 @@ OTHER_BYPASSES = (
         "      - uses: actions/setup-dotnet@v4\n        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}\n        with:\n          dotnet-version: |\n            8.0.x\n            9.0.x\n            10.x\n",
         "      - uses: actions/setup-python@v5\n        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}\n        with:\n          python-version: '3.12'\n",
         "build job must contain setup-dotnet",
+    ),
+    (
+        "nuget guard hard-codes EXCLUDE_IDS",
+        "          PACKAGES_DIR: ${{ github.workspace }}\n          EXCLUDE_IDS: ${{ inputs.exclude_ids }}\n",
+        "          PACKAGES_DIR: ${{ github.workspace }}\n          EXCLUDE_IDS: Elsa.Studio.Workflows.Designer\n",
+        "publish_nuget candidate guard env EXCLUDE_IDS must be ${{ inputs.exclude_ids }}",
+    ),
+    (
+        "nuget publisher sets EXCLUDE_IDS at job level",
+        "    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/') }}\n    permissions:\n",
+        "    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_nuget && startsWith(github.ref, 'refs/tags/') }}\n    env:\n      EXCLUDE_IDS: Elsa.Studio.Workflows.Designer\n    permissions:\n",
+        "publish_nuget must not set EXCLUDE_IDS at job level",
+    ),
+    (
+        "packages.yml sets EXCLUDE_IDS at workflow level",
+        "  base_version: '3.10.0'\n",
+        "  base_version: '3.10.0'\n  EXCLUDE_IDS: Elsa.Studio.Workflows.Designer\n",
+        "packages.yml must not set EXCLUDE_IDS at workflow level",
     ),
     (
         "workflow is callable by another workflow",
@@ -494,7 +512,7 @@ class WorkflowGateTests(unittest.TestCase):
     def test_candidate_guard_rejects_job_defaults_shell(self):
         source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
         old = (
-            "    environment: elsa-3-10-feedz\n"
+            "    environment: feedz-publish\n"
             "    permissions:\n"
             "      contents: read\n"
             "      actions: none\n"
@@ -505,7 +523,7 @@ class WorkflowGateTests(unittest.TestCase):
         self.assertEqual(1, source.count(old))
         mutated = source.replace(
             old,
-            "    environment: elsa-3-10-feedz\n"
+            "    environment: feedz-publish\n"
             "    permissions:\n"
             "      contents: read\n"
             "      actions: none\n"
@@ -528,6 +546,16 @@ class WorkflowGateTests(unittest.TestCase):
         mutated = source.replace(old, "          REF: refs/tags/3.10.1\n")
         self.assertIn(
             "publish-consolidated-original-candidate.yml guard env REF must be refs/tags/3.10.0",
+            gates.candidate_publisher_violations(mutated),
+        )
+
+    def test_candidate_publisher_rejects_exclude_ids(self):
+        source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
+        old = "          PACKAGES_DIR: ${{ runner.temp }}/candidate-nupkgs\n"
+        self.assertEqual(1, source.count(old))
+        mutated = source.replace(old, old + "          EXCLUDE_IDS: Elsa\n")
+        self.assertIn(
+            "publish-consolidated-original-candidate.yml must not set EXCLUDE_IDS",
             gates.candidate_publisher_violations(mutated),
         )
 

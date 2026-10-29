@@ -9,6 +9,7 @@ build and every publisher. The ref and inputs arrive as environment variables, n
     PUBLISH_NUGET          inputs.publish_nuget
     PUBLISH_NPM            inputs.publish_npm
     DEPLOY_COVERAGE        inputs.deploy_coverage
+    EXCLUDE_IDS            inputs.exclude_ids (optional; empty means none)
 """
 
 from __future__ import annotations
@@ -17,7 +18,7 @@ import os
 import re
 import sys
 
-from validate_packages_id_set import STABLE_310_PATTERN, is_stable_310
+from validate_packages_id_set import STABLE_310_PATTERN, is_stable_310, parse_exclude_ids
 
 # Release tags carry no "v" prefix: 3.8.4, 3.8.0-rc2, 3.8.0-preview1.
 RELEASE_TAG = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?")
@@ -27,7 +28,15 @@ CANONICAL_310 = re.compile(STABLE_310_PATTERN + r"(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)
 COVERAGE_REFS = ("refs/heads/main", "refs/heads/release/3.6.1")
 
 
-def selection_errors(ref: str, *, feedz: bool = False, nuget: bool = False, npm: bool = False, coverage: bool = False) -> list[str]:
+def selection_errors(
+    ref: str,
+    *,
+    feedz: bool = False,
+    nuget: bool = False,
+    npm: bool = False,
+    coverage: bool = False,
+    exclude_ids: str | None = None,
+) -> list[str]:
     """Return why this selection must not run; an empty list means it may."""
     errors = []
     if ref.startswith("refs/heads/"):
@@ -59,6 +68,10 @@ def selection_errors(ref: str, *, feedz: bool = False, nuget: bool = False, npm:
         return [f"Ref {ref!r} is neither a branch nor a tag."]
     if coverage and ref not in COVERAGE_REFS:
         errors.append(f"Coverage deployment requires {' or '.join(COVERAGE_REFS)}.")
+    if parse_exclude_ids(exclude_ids):
+        tag = ref[len("refs/tags/"):] if ref.startswith("refs/tags/") else ""
+        if not (nuget and tag and is_stable_310(tag)):
+            errors.append("exclude_ids is only accepted on a publish_nuget dispatch for a stable 3.10 tag.")
     return errors
 
 
@@ -77,6 +90,7 @@ def main() -> int:
         nuget=_flag("PUBLISH_NUGET"),
         npm=_flag("PUBLISH_NPM"),
         coverage=_flag("DEPLOY_COVERAGE"),
+        exclude_ids=os.environ.get("EXCLUDE_IDS"),
     )
     for error in errors:
         print(error, file=sys.stderr)

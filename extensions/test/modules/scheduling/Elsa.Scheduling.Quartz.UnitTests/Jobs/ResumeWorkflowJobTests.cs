@@ -18,8 +18,6 @@ public class ResumeWorkflowJobTests
 {
     private readonly Mock<IWorkflowRuntime> _workflowRuntime = new();
     private readonly Mock<IJsonSerializer> _jsonSerializer = new();
-    private readonly Mock<ITenantFinder> _tenantFinder = new();
-    private readonly Mock<ITenantAccessor> _tenantAccessor = QuartzJobTestHelper.CreateTenantAccessor();
     private readonly Mock<IQuartzJobRetryScheduler> _retryScheduler = new();
     private readonly Mock<ILogger<ResumeWorkflowJob>> _logger = new();
     private readonly ResumeWorkflowJob _job;
@@ -29,8 +27,8 @@ public class ResumeWorkflowJobTests
         _job = new(
             _workflowRuntime.Object,
             _jsonSerializer.Object,
-            _tenantFinder.Object,
-            _tenantAccessor.Object,
+            Mock.Of<ITenantFinder>(),
+            Mock.Of<ITenantAccessor>(),
             _retryScheduler.Object,
             _logger.Object);
     }
@@ -197,19 +195,6 @@ public class ResumeWorkflowJobTests
     }
 
     [Fact]
-    public async Task Execute_TenantFinderThrowsTransientException_SchedulesRetryAndDoesNotPropagate()
-    {
-        var (context, _) = CreateJobExecutionContext(withTenantId: true);
-        _retryScheduler.SetupRetry(isRetryable: true);
-        _tenantFinder.Setup(f => f.FindByIdAsync("tenant-123", It.IsAny<CancellationToken>())).ThrowsAsync(new TimeoutException());
-
-        await _job.Execute(context);
-
-        _retryScheduler.VerifyRetryScheduled(context);
-        _workflowRuntime.Verify(r => r.CreateClientAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    [Fact]
     public async Task Execute_UsesCorrectWorkflowInstanceId()
     {
         var (context, _) = CreateJobExecutionContext();
@@ -225,6 +210,32 @@ public class ResumeWorkflowJobTests
         await _job.Execute(context);
 
         Assert.Equal("workflow-instance-123", capturedInstanceId);
+    }
+
+    [Fact]
+    public async Task Execute_WhenTriggerTenantMissingFromContext_ThrowsNamingTenantIdAndJobKey()
+    {
+        var logger = new Mock<ILogger<ResumeWorkflowJob>>();
+        var job = new ResumeWorkflowJob(
+            _workflowRuntime.Object,
+            _jsonSerializer.Object,
+            new AnyIdTenantFinder(),
+            new DefaultTenantAccessor(),
+            _retryScheduler.Object,
+            logger.Object);
+        var (context, scheduler) = QuartzJobTestHelper.CreateJobExecutionContext(
+            new Dictionary<string, object> { ["WorkflowInstanceId"] = "wf-1" },
+            triggerData: new Dictionary<string, object> { ["TenantId"] = "tenant-b" });
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => job.Execute(context));
+
+        Assert.Contains("tenant-b", exception.Message);
+        Assert.Contains(context.JobDetail.Key.ToString(), exception.Message);
+        _workflowRuntime.Verify(r => r.CreateClientAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _retryScheduler.Verify(x => x.ScheduleRetryAsync(It.IsAny<IJobExecutionContext>(), It.IsAny<Exception>(), It.IsAny<CancellationToken>()), Times.Never);
+        scheduler.VerifyNotDeleted();
+        scheduler.Verify(s => s.UnscheduleJob(It.IsAny<TriggerKey>(), It.IsAny<CancellationToken>()), Times.Never);
+        logger.VerifyLogged(LogLevel.Error, Times.Once());
     }
 
     [Fact]
@@ -253,7 +264,7 @@ public class ResumeWorkflowJobTests
     }
 
     private static (IJobExecutionContext, Mock<QuartzScheduler>) CreateJobExecutionContext(string? activityHandle = null,
-        string? jobKeyName = null, bool withTenantId = false)
+        string? jobKeyName = null)
     {
         var jobData = new Dictionary<string, object>
         {
@@ -263,9 +274,6 @@ public class ResumeWorkflowJobTests
 
         if (activityHandle != null)
             jobData.Add("ActivityHandle", activityHandle);
-
-        if (withTenantId)
-            jobData["TenantId"] = "tenant-123";
 
         return QuartzJobTestHelper.CreateJobExecutionContext(jobData, jobKeyName);
     }

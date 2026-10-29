@@ -32,14 +32,14 @@ import prove_consolidated_packages as packages
 
 REPOSITORY = "elsa-workflows/elsa-core"
 WORKFLOW = ".github/workflows/publish-consolidated-original-candidate.yml"
-ENVIRONMENT = "elsa-3-10-feedz"
+ENVIRONMENT = "feedz-publish"
 PUBLISH_SECRET = "ELSA_CONSOLIDATED_FEEDZ_PUBLISH_KEY"
 METADATA_SECRET = "ELSA_CONSOLIDATED_METADATA_READ_TOKEN"
-METADATA_PATH = re.compile(r"repos/elsa-workflows/elsa-core/(?:actions/(?:secrets|organization-secrets)|environments/elsa-3-10-feedz/secrets)\?per_page=100&page=[1-9][0-9]*\Z")
+METADATA_PATH = re.compile(r"repos/elsa-workflows/elsa-core/(?:actions/(?:secrets|organization-secrets)|environments/feedz-publish/secrets)\?per_page=100&page=[1-9][0-9]*\Z")
 PACKAGE_BASE = "https://f.feedz.io/elsa-workflows/elsa-3/nuget/v3/packages"
 PACKAGE_PUBLISH = "https://f.feedz.io/elsa-workflows/elsa-3/nuget"
 SYMBOL_PUBLISH = "https://f.feedz.io/elsa-workflows/elsa-3/symbols"
-EXPIRY = "2026-11-05T12:13:30Z"
+EXPIRY = candidate_input.EXPIRES_AT
 # A later separately approved source change must pin real existing IDs, exact
 # refs and the operational packet. No CLI/environment/artifact override exists.
 REVIEWED_OPERATIONAL_POLICY = None

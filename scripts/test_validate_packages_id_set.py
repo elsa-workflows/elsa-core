@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 import sys
@@ -12,14 +13,21 @@ from validate_packages_id_set import (
     DEFAULT_EXPECTED,
     STABLE_310_PATTERN,
     STUDIO_CONTENT,
+    apply_exclude_ids,
+    exclusion_dependency_errors,
+    filename_package_id,
     id_set_errors,
     is_stable_310,
     load_expected_ids,
     packed_ids,
+    parse_exclude_ids,
+    resolve_exclude_ids,
     studio_content_errors,
 )
 
 SCRIPT = Path(__file__).with_name("validate_packages_id_set.py")
+sys.path.insert(0, str(Path(__file__).resolve().parent / "integration-program"))
+import consolidated_candidate_input as candidate_input
 
 
 class Stable310Tests(unittest.TestCase):
@@ -109,6 +117,7 @@ class IdSetTests(unittest.TestCase):
                 text=True,
             )
             self.assertEqual(0, accepted.returncode, accepted.stderr)
+            self.assertIn("exclusions: none", accepted.stdout)
             self.assertIn("231 expected IDs", accepted.stdout)
             self.assertIn("Studio package content matches 8 required entries.", accepted.stdout)
 
@@ -173,6 +182,158 @@ class IdSetTests(unittest.TestCase):
         lowered = source.lower()
         for marker in ("skip_id_set", "skip_guard", "bypass_id_set", "bypass_guard", "--skip", "--bypass"):
             self.assertNotIn(marker, lowered)
+
+
+class ExcludeIdsTests(unittest.TestCase):
+    def setUp(self):
+        self.expected = load_expected_ids(DEFAULT_EXPECTED)
+        self.assertEqual(231, len(self.expected))
+
+    def write_packages(self, directory, ids, version="3.10.0", dependencies=None):
+        dependencies = dependencies or {}
+        for package_id in ids:
+            path = directory / f"{package_id}.{version}.nupkg"
+            dep_xml = "".join(
+                f'<dependency id="{dep}" version="{version}" />'
+                for dep in dependencies.get(package_id, ())
+            )
+            nuspec = (
+                '<?xml version="1.0"?>'
+                '<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">'
+                "<metadata>"
+                f"<id>{package_id}</id>"
+                f"<version>{version}</version>"
+                "<authors>Elsa</authors>"
+                "<description>test</description>"
+                f"<dependencies>{dep_xml}</dependencies>"
+                "</metadata>"
+                "</package>"
+            )
+            with zipfile.ZipFile(path, "w") as archive:
+                archive.writestr(f"{package_id}.nuspec", nuspec)
+                for entry in STUDIO_CONTENT.get(package_id, ()):
+                    archive.writestr(entry, b"bundle")
+            (directory / f"{package_id}.{version}.snupkg").write_bytes(b"snupkg")
+
+    def test_empty_exclude_ids_leaves_the_full_set(self):
+        for raw in (None, "", "  "):
+            with self.subTest(raw=raw):
+                self.assertEqual([], parse_exclude_ids(raw))
+                self.assertEqual([], resolve_exclude_ids(raw, self.expected))
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            self.write_packages(directory, self.expected)
+            remaining, excluded = apply_exclude_ids(directory, list(self.expected), "")
+            self.assertEqual([], excluded)
+            self.assertEqual(self.expected, remaining)
+            self.assertEqual(231, len(packed_ids(directory)))
+            self.assertEqual(self.expected, packed_ids(directory))
+
+    def test_valid_exclusion_adjusts_the_expected_count(self):
+        skipped = self.expected[0]
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            self.write_packages(directory, self.expected)
+            remaining, excluded = apply_exclude_ids(directory, list(self.expected), f"  {skipped.lower()}  ")
+            self.assertEqual([skipped], excluded)
+            self.assertEqual(230, len(remaining))
+            self.assertNotIn(skipped, remaining)
+            self.assertEqual(230, len(packed_ids(directory)))
+            self.assertNotIn(skipped, packed_ids(directory))
+            self.assertFalse(any(filename_package_id(path.name) == skipped for path in directory.iterdir() if path.is_file()))
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            self.write_packages(directory, self.expected)
+            accepted = subprocess.run(
+                [sys.executable, str(SCRIPT)],
+                env={**os.environ, "PACKAGES_DIR": str(directory), "EXCLUDE_IDS": skipped},
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(0, accepted.returncode, accepted.stderr)
+            self.assertIn(f"exclusions: {skipped}", accepted.stdout)
+            self.assertIn("230 expected IDs", accepted.stdout)
+            self.assertNotIn(skipped, packed_ids(directory))
+
+    def test_unknown_id_fails(self):
+        with self.assertRaises(SystemExit) as raised:
+            resolve_exclude_ids("NotAPackageId", self.expected)
+        self.assertIn("not in the expected package set", str(raised.exception))
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            self.write_packages(directory, self.expected)
+            rejected = subprocess.run(
+                [sys.executable, str(SCRIPT)],
+                env={**os.environ, "PACKAGES_DIR": str(directory), "EXCLUDE_IDS": "NotAPackageId"},
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(1, rejected.returncode)
+            self.assertIn("not in the expected package set", rejected.stderr)
+            self.assertEqual(231, len(packed_ids(directory)))
+
+    def test_duplicate_id_fails(self):
+        package_id = self.expected[0]
+        for raw in (f"{package_id},{package_id}", f"{package_id}, {package_id.lower()}"):
+            with self.subTest(raw=raw), self.assertRaises(SystemExit) as raised:
+                parse_exclude_ids(raw)
+            self.assertIn("more than once", str(raised.exception))
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            self.write_packages(directory, self.expected)
+            rejected = subprocess.run(
+                [sys.executable, str(SCRIPT)],
+                env={**os.environ, "PACKAGES_DIR": str(directory), "EXCLUDE_IDS": f"{package_id},{package_id}"},
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(1, rejected.returncode)
+            self.assertIn("more than once", rejected.stderr)
+            self.assertEqual(231, len(packed_ids(directory)))
+
+    def test_empty_entry_fails(self):
+        package_id = self.expected[0]
+        for raw in (f"{package_id},", f",{package_id}", f"{package_id},,{self.expected[1]}"):
+            with self.subTest(raw=raw), self.assertRaises(SystemExit) as raised:
+                parse_exclude_ids(raw)
+            self.assertIn("empty entry", str(raised.exception))
+
+    def test_exclusion_fails_when_a_remaining_package_depends_on_it(self):
+        skipped = self.expected[0]
+        dependent = self.expected[1]
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            self.write_packages(directory, self.expected, dependencies={dependent: (skipped,)})
+            errors = exclusion_dependency_errors(directory, {skipped})
+            self.assertTrue(errors)
+            self.assertIn("Remaining packages depend on an excluded ID:", errors)
+            self.assertIn(f"{dependent} depends on {skipped}", errors)
+            rejected = subprocess.run(
+                [sys.executable, str(SCRIPT)],
+                env={**os.environ, "PACKAGES_DIR": str(directory), "EXCLUDE_IDS": skipped},
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(1, rejected.returncode)
+            self.assertIn("Remaining packages depend on an excluded ID:", rejected.stderr)
+            self.assertIn(f"{dependent} depends on {skipped}", rejected.stderr)
+            self.assertNotIn(skipped, packed_ids(directory))
+
+    def test_exclusion_dependency_match_is_case_insensitive(self):
+        skipped = self.expected[0]
+        dependent = self.expected[1]
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            self.write_packages(directory, self.expected, dependencies={dependent: (skipped.lower(),)})
+            errors = exclusion_dependency_errors(directory, {skipped})
+            self.assertIn(f"{dependent} depends on {skipped}", errors)
+
+    def test_exclusion_cannot_clear_an_unexpected_packed_id(self):
+        stray = "Elsa.SamplePackage"
+        self.assertNotIn(stray, self.expected)
+        with self.assertRaises(SystemExit) as raised:
+            resolve_exclude_ids(stray, self.expected)
+        self.assertIn("not in the expected package set", str(raised.exception))
 
 
 class StudioContentTests(unittest.TestCase):
@@ -257,22 +418,12 @@ GUARD_COMMAND = "python3 scripts/validate_packages_id_set.py"
 
 class SharedPublisherGuardTests(unittest.TestCase):
     def test_pin_inventory_ids_are_tied_to_the_guard_list(self):
-        import json
-
-        sys.path.insert(0, str(Path(__file__).resolve().parent / "integration-program"))
-        import consolidated_candidate_input as candidate_input
-
         pin = json.loads(candidate_input.PIN_INVENTORY.read_text(encoding="utf-8"))
         pin_ids = {row["id"] for row in pin["packages"]}
         guard_ids = set(load_expected_ids(DEFAULT_EXPECTED))
-        unexpected = pin_ids - guard_ids
-        missing = guard_ids - pin_ids
-        stale_delta = unexpected == {"Elsa.SamplePackage"} and missing == set(STALE_OCT6_MISSING)
-        matched = not unexpected and not missing
-        self.assertTrue(
-            stale_delta or matched,
-            f"pin/guard delta must be the known fail-closed set or empty; unexpected={sorted(unexpected)} missing={sorted(missing)}",
-        )
+        self.assertEqual(pin_ids, guard_ids)
+        self.assertEqual(231, len(pin_ids))
+        self.assertEqual(candidate_input.PIN_PACKAGE_COUNT, len(pin_ids))
 
     def test_stale_225_set_can_never_be_published_as_310(self):
         expected = load_expected_ids(DEFAULT_EXPECTED)
@@ -289,6 +440,26 @@ class SharedPublisherGuardTests(unittest.TestCase):
             self.assertIn(package_id, text)
         self.assertIn("Unexpected (1):", text)
         self.assertIn("Elsa.SamplePackage", text)
+
+    def test_preflight_and_upgrade_workflows_pin_the_same_artifact(self):
+        root = Path(__file__).resolve().parents[1]
+        for relative in (
+            ".github/workflows/consolidated-package-recovery-preflight.yml",
+            ".github/workflows/stable-persisted-workflow-upgrade-proof.yml",
+        ):
+            source = (root / relative).read_text(encoding="utf-8")
+            for value in (
+                str(candidate_input.ARTIFACT),
+                str(candidate_input.RUN),
+                candidate_input.SOURCE,
+                candidate_input.ARCHIVE_SHA256,
+                str(candidate_input.ARCHIVE_SIZE),
+                candidate_input.EXPIRES_AT,
+            ):
+                self.assertIn(value, source)
+            self.assertNotIn("11412848210", source)
+            self.assertNotIn("37456860080", source)
+            self.assertNotIn("ba5b348aa2414fdf7c19d9d8806e87b7c91a4205", source)
 
     def test_both_publishers_run_the_same_id_set_guard_before_push(self):
         root = Path(__file__).resolve().parents[1]
@@ -318,6 +489,11 @@ class WorkflowConditionTests(unittest.TestCase):
         self.assertIn("python3 scripts/stage_consolidated_candidate_nupkgs.py retrieve", source)
         self.assertIn("python3 scripts/stage_consolidated_candidate_nupkgs.py stage", source)
         self.assertIn("python3 scripts/validate_packages_id_set.py", source)
+        self.assertIn("exclude_ids:", source)
+        self.assertIn("EXCLUDE_IDS: ${{ inputs.exclude_ids }}", source)
+        candidate = Path(__file__).resolve().parents[1] / ".github/workflows/publish-consolidated-original-candidate.yml"
+        self.assertNotIn("exclude_ids", candidate.read_text(encoding="utf-8"))
+        self.assertNotIn("EXCLUDE_IDS", candidate.read_text(encoding="utf-8"))
         compile_if = (
             "if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.publish_nuget"
             " && startsWith(github.ref, 'refs/tags/3.10.') && !contains(github.ref_name, '-')) }}"
