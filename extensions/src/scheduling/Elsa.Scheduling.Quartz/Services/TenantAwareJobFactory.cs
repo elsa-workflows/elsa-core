@@ -19,63 +19,48 @@ namespace Elsa.Scheduling.Quartz.Services;
 /// so constructor dependencies bind to that tenant instead of the default tenant.
 /// </summary>
 [UsedImplicitly]
-internal sealed class TenantAwareJobFactory(
-    IServiceProvider serviceProvider,
-    IOptions<QuartzOptions> options,
-    ILogger<TenantAwareJobFactory> logger)
-    : MicrosoftDependencyInjectionJobFactory(serviceProvider, options)
+internal sealed class TenantAwareJobFactory : MicrosoftDependencyInjectionJobFactory
 {
-    private const string TenantIdKey = "TenantId";
+    private readonly IServiceProvider _serviceProvider;
+    private readonly ILogger<TenantAwareJobFactory> _logger;
+
+    public TenantAwareJobFactory(
+        IServiceProvider serviceProvider,
+        IOptions<QuartzOptions> options,
+        ILogger<TenantAwareJobFactory> logger)
+        : base(serviceProvider, options)
+    {
+        _serviceProvider = serviceProvider;
+        _logger = logger;
+    }
 
     protected override IJob InstantiateJob(TriggerFiredBundle bundle, QuartzScheduler scheduler)
     {
-        var tenantId = ReadTenantId(bundle);
+        var tenantId = JobExecutionExtensions.ReadScheduledTenantId(bundle.Trigger.JobDataMap, bundle.JobDetail.JobDataMap);
         if (tenantId is null)
             return base.InstantiateJob(bundle, scheduler);
 
         Tenant? tenant;
         try
         {
-            tenant = serviceProvider.GetRequiredService<ITenantFinder>().FindByIdAsync(tenantId).GetAwaiter().GetResult();
+            tenant = _serviceProvider.GetRequiredService<ITenantFinder>().FindByIdAsync(tenantId).GetAwaiter().GetResult();
         }
         catch (Exception exception)
         {
-            logger.LogWarning(exception, "Could not find tenant {TenantId} while building Quartz job {JobKey}.", tenantId, bundle.JobDetail.Key);
-            return new TenantLookupFailedJob(exception, serviceProvider, logger, bundle.JobDetail.JobType);
+            _logger.LogWarning(exception, "Could not find tenant {TenantId} while building Quartz job {JobKey}.", tenantId, bundle.JobDetail.Key);
+            return new TenantLookupFailedJob(exception, _serviceProvider, _logger, bundle.JobDetail.JobType);
         }
 
         if (tenant is null)
         {
-            logger.LogError("Could not find tenant {TenantId} while building Quartz job {JobKey}. Quartz will put this job's triggers in the ERROR state.", tenantId, bundle.JobDetail.Key);
+            _logger.LogError("Could not find tenant {TenantId} while building Quartz job {JobKey}. Quartz will put this job's triggers in the ERROR state.", tenantId, bundle.JobDetail.Key);
             throw new InvalidOperationException($"Could not find tenant '{tenantId}' while building Quartz job '{bundle.JobDetail.Key}'. Quartz will put this job's triggers in the ERROR state.");
         }
 
-        var accessor = serviceProvider.GetRequiredService<ITenantAccessor>();
+        var accessor = _serviceProvider.GetRequiredService<ITenantAccessor>();
 
         using (accessor.PushContext(tenant))
             return new TenantJob(base.InstantiateJob(bundle, scheduler), accessor, tenant);
-    }
-
-    private static string? ReadTenantId(TriggerFiredBundle bundle)
-    {
-        if (TryGetTenantId(bundle.Trigger.JobDataMap, out var tenantId))
-            return tenantId;
-
-        if (TryGetTenantId(bundle.JobDetail.JobDataMap, out tenantId))
-            return tenantId;
-
-        return null;
-    }
-
-    private static bool TryGetTenantId(JobDataMap map, out string tenantId)
-    {
-        tenantId = "";
-
-        if (!map.TryGetString(TenantIdKey, out var value) || string.IsNullOrWhiteSpace(value))
-            return false;
-
-        tenantId = value;
-        return true;
     }
 
     /// <summary>

@@ -223,7 +223,7 @@ public class ResumeWorkflowJobTests
             new DefaultTenantAccessor(),
             _retryScheduler.Object,
             logger.Object);
-        var (context, _) = QuartzJobTestHelper.CreateJobExecutionContext(
+        var (context, scheduler) = QuartzJobTestHelper.CreateJobExecutionContext(
             new Dictionary<string, object> { ["WorkflowInstanceId"] = "wf-1" },
             triggerData: new Dictionary<string, object> { ["TenantId"] = "tenant-b" });
 
@@ -232,6 +232,9 @@ public class ResumeWorkflowJobTests
         Assert.Contains("tenant-b", exception.Message);
         Assert.Contains(context.JobDetail.Key.ToString(), exception.Message);
         _workflowRuntime.Verify(r => r.CreateClientAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        _retryScheduler.Verify(x => x.ScheduleRetryAsync(It.IsAny<IJobExecutionContext>(), It.IsAny<Exception>(), It.IsAny<CancellationToken>()), Times.Never);
+        scheduler.VerifyNotDeleted();
+        scheduler.Verify(s => s.UnscheduleJob(It.IsAny<TriggerKey>(), It.IsAny<CancellationToken>()), Times.Never);
         logger.VerifyLogged(LogLevel.Error, Times.Once());
     }
 

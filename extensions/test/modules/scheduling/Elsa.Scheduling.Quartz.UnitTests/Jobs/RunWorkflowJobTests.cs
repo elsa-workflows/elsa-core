@@ -242,7 +242,7 @@ public class RunWorkflowJobTests
             _workflowStarter.Object,
             _retryScheduler.Object,
             logger.Object);
-        var (context, _) = QuartzJobTestHelper.CreateJobExecutionContext(
+        var (context, scheduler) = QuartzJobTestHelper.CreateJobExecutionContext(
             new Dictionary<string, object> { ["DefinitionVersionId"] = "def-1" },
             triggerData: new Dictionary<string, object> { ["TenantId"] = "tenant-b" });
 
@@ -251,6 +251,9 @@ public class RunWorkflowJobTests
         Assert.Contains("tenant-b", exception.Message);
         Assert.Contains(context.JobDetail.Key.ToString(), exception.Message);
         _workflowStarter.Verify(x => x.StartWorkflowAsync(It.IsAny<StartWorkflowRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+        _retryScheduler.Verify(x => x.ScheduleRetryAsync(It.IsAny<IJobExecutionContext>(), It.IsAny<Exception>(), It.IsAny<CancellationToken>()), Times.Never);
+        scheduler.VerifyNotDeleted();
+        scheduler.Verify(s => s.UnscheduleJob(It.IsAny<TriggerKey>(), It.IsAny<CancellationToken>()), Times.Never);
         logger.VerifyLogged(LogLevel.Error, Times.Once());
     }
 
@@ -276,7 +279,7 @@ public class RunWorkflowJobTests
         var accessor = new DefaultTenantAccessor();
         using var _ = accessor.PushContext(new Tenant { Id = "tenant-a", Name = "tenant-a" });
         var job = new RunWorkflowJob(accessor, new AnyIdTenantFinder(), _workflowStarter.Object, _retryScheduler.Object, _logger.Object);
-        var (context, _) = QuartzJobTestHelper.CreateJobExecutionContext(
+        var (context, scheduler) = QuartzJobTestHelper.CreateJobExecutionContext(
             new Dictionary<string, object> { ["DefinitionVersionId"] = "def-1" },
             triggerData: new Dictionary<string, object> { ["TenantId"] = "tenant-b" });
 
@@ -285,6 +288,9 @@ public class RunWorkflowJobTests
         Assert.Contains("tenant-b", exception.Message);
         Assert.Contains(context.JobDetail.Key.ToString(), exception.Message);
         _workflowStarter.Verify(x => x.StartWorkflowAsync(It.IsAny<StartWorkflowRequest>(), It.IsAny<CancellationToken>()), Times.Never);
+        _retryScheduler.Verify(x => x.ScheduleRetryAsync(It.IsAny<IJobExecutionContext>(), It.IsAny<Exception>(), It.IsAny<CancellationToken>()), Times.Never);
+        scheduler.VerifyNotDeleted();
+        scheduler.Verify(s => s.UnscheduleJob(It.IsAny<TriggerKey>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

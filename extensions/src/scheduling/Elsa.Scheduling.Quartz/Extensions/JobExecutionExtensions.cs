@@ -131,7 +131,7 @@ internal static class JobExecutionExtensions
     /// </summary>
     public static void EnsureScheduledTenant(this IJobExecutionContext context, ITenantAccessor tenantAccessor, ILogger logger)
     {
-        var tenantId = ReadTenantId(context);
+        var tenantId = context.ReadScheduledTenantId();
         if (tenantId is null)
             return;
 
@@ -149,15 +149,18 @@ internal static class JobExecutionExtensions
             $"Quartz job '{context.JobDetail.Key}' is scheduled for tenant '{tenantId}' but the tenant in context is '{currentTenantId ?? "null"}'. TenantAwareJobFactory is not installed, or a custom IJobFactory did not resolve the job inside the trigger's tenant.");
     }
 
-    private static string? ReadTenantId(IJobExecutionContext context)
+    /// <summary>
+    /// Reads <c>TenantId</c> from trigger data first, then job data.
+    /// </summary>
+    public static string? ReadScheduledTenantId(this IJobExecutionContext context) =>
+        ReadScheduledTenantId(context.Trigger.JobDataMap, context.JobDetail.JobDataMap);
+
+    internal static string? ReadScheduledTenantId(JobDataMap? triggerData, JobDataMap? jobData)
     {
-        if (TryGetTenantId(context.Trigger.JobDataMap, out var tenantId))
+        if (TryGetTenantId(triggerData, out var tenantId))
             return tenantId;
 
-        if (TryGetTenantId(context.JobDetail.JobDataMap, out tenantId))
-            return tenantId;
-
-        if (TryGetTenantId(context.MergedJobDataMap, out tenantId))
+        if (TryGetTenantId(jobData, out tenantId))
             return tenantId;
 
         return null;
