@@ -1,6 +1,7 @@
 using CShells.Features;
 using CShells.Lifecycle;
 using Elsa.Platform.PackageManifest.Generator.Hints;
+using Elsa.Scheduling.Quartz.Services;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
@@ -65,6 +66,8 @@ public class QuartzFeature : IShellFeature, IPostConfigureShellServices
             quartz.SchedulerId = SchedulerId;
             quartz.SchedulerName = SchedulerName;
         });
+
+        JobFactoryRegistration.TryUseTenantAwareJobFactory(services);
 
         // QuartzShellLifecycleHandler owns start/stop — no AddQuartzHostedService needed.
         // The Quartz hosted service is only invoked by the root IHost, which never sees
