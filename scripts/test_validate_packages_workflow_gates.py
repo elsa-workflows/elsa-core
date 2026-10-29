@@ -512,7 +512,7 @@ class WorkflowGateTests(unittest.TestCase):
     def test_candidate_guard_rejects_job_defaults_shell(self):
         source = gates.CANDIDATE_WORKFLOW.read_text(encoding="utf-8")
         old = (
-            "    environment: elsa-3-10-feedz\n"
+            "    environment: feedz-publish\n"
             "    permissions:\n"
             "      contents: read\n"
             "      actions: none\n"
@@ -523,7 +523,7 @@ class WorkflowGateTests(unittest.TestCase):
         self.assertEqual(1, source.count(old))
         mutated = source.replace(
             old,
-            "    environment: elsa-3-10-feedz\n"
+            "    environment: feedz-publish\n"
             "    permissions:\n"
             "      contents: read\n"
             "      actions: none\n"

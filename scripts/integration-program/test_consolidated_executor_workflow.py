@@ -29,7 +29,7 @@ class ExecutorWorkflowTests(unittest.TestCase):
                 "status": result, "repository": "elsa-workflows/elsa-core",
                 "ref": "refs/heads/main", "source_commit": SOURCE,
                 "run_id": 123, "run_attempt": 1,
-                "environment_name": "elsa-3-10-feedz", "environment_id": 456,
+                "environment_name": "feedz-publish", "environment_id": 456,
                 "reviewer_ids": [789],
                 "branch_policies": [{"id": 321, "type": "branch", "name": "main"}],
                 "operational_packet_sha256": "b" * 64,
@@ -114,7 +114,7 @@ class ExecutorWorkflowTests(unittest.TestCase):
         self.assertIn("ELSA_ADMISSION_RECEIPT_FILTER", recheck["run"])
 
     def test_nonpublishing_jobs_cannot_receive_publisher_credentials(self):
-        self.assertEqual(self.jobs["publish"]["environment"], "elsa-3-10-feedz")
+        self.assertEqual(self.jobs["publish"]["environment"], "feedz-publish")
         self.assertIn("github.ref == 'refs/heads/main'", self.jobs["publish"]["if"])
         self.assertIn("needs.admit.outputs.admitted == 'true'", self.jobs["publish"]["if"])
         guard = self.jobs["admit"]["steps"][0]["run"]
