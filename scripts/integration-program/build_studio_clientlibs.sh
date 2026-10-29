@@ -110,11 +110,14 @@ dotnet restore "$designer/Elsa.Studio.Workflows.Designer.csproj"
     npm ci --force
     npm run build
 )
-if [[ -f "$bpmn_shared/package.json" && "$skip_tests" != 1 ]]; then
+if [[ -f "$bpmn_shared/package.json" ]]; then
     (
+        # The bpmn-js and X6 builds resolve the shared rules' dependencies from here, so install even without tests.
         cd "$bpmn_shared"
         npm ci --force
-        npm test
+        if [[ "$skip_tests" != 1 ]]; then
+            npm test
+        fi
     )
 fi
 if [[ -f "$bpmn_shared/package.json" && -f "$bpmn_js/ClientLib/package.json" ]]; then
