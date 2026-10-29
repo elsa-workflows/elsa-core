@@ -1,5 +1,4 @@
 using System.Globalization;
-using Elsa.Common.Multitenancy;
 using Elsa.Scheduling.Quartz.Contracts;
 using Elsa.Scheduling.Quartz.Jobs;
 using Quartz;
@@ -122,20 +121,6 @@ internal static class JobExecutionExtensions
             string stringValue when long.TryParse(stringValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsedValue) => (int)Math.Clamp(parsedValue, int.MinValue, int.MaxValue),
             _ => 0
         };
-    }
-
-    public static async Task<Tenant?> GetTenantAsync(this IJobExecutionContext context, ITenantFinder tenantFinder)
-    {
-        if(!context.MergedJobDataMap.ContainsKey("TenantId"))
-            return null;
-        
-        if(!context.MergedJobDataMap.TryGetString("TenantId", out var tenantId))
-            return null;
-        
-        if (string.IsNullOrWhiteSpace(tenantId))
-            return null;
-        
-        return await tenantFinder.FindByIdAsync(tenantId, context.CancellationToken);
     }
 
     /// <summary>

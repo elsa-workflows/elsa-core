@@ -1,4 +1,3 @@
-using Elsa.Common.Multitenancy;
 using Elsa.Resilience;
 using Elsa.Scheduling.Quartz.Contracts;
 using Elsa.Scheduling.Quartz.Options;
@@ -82,16 +81,6 @@ public static class QuartzJobTestHelper
     /// Wraps the specified options so they can be injected into a service that takes <see cref="IOptions{TOptions}"/>.
     /// </summary>
     public static IOptions<QuartzJobOptions> AsOptions(this QuartzJobOptions options) => Microsoft.Extensions.Options.Options.Create(options);
-
-    /// <summary>
-    /// Creates a mock tenant accessor that allows context pushing.
-    /// </summary>
-    public static Mock<ITenantAccessor> CreateTenantAccessor()
-    {
-        var tenantAccessor = new Mock<ITenantAccessor>();
-        tenantAccessor.Setup(t => t.PushContext(It.IsAny<Tenant>())).Returns((IDisposable)null!);
-        return tenantAccessor;
-    }
 
     extension(Mock<IWorkflowStarter> workflowStarter)
     {

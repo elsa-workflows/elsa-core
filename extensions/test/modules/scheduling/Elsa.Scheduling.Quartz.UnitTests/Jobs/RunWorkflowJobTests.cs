@@ -1,4 +1,3 @@
-using Elsa.Common.Multitenancy;
 using Elsa.Scheduling.Quartz.Contracts;
 using Elsa.Scheduling.Quartz.Jobs;
 using Elsa.Scheduling.Quartz.UnitTests.Helpers;
@@ -14,8 +13,6 @@ namespace Elsa.Scheduling.Quartz.UnitTests.Jobs;
 
 public class RunWorkflowJobTests
 {
-    private readonly Mock<ITenantAccessor> _tenantAccessor = QuartzJobTestHelper.CreateTenantAccessor();
-    private readonly Mock<ITenantFinder> _tenantFinder = new();
     private readonly Mock<IWorkflowStarter> _workflowStarter = new();
     private readonly Mock<IQuartzJobRetryScheduler> _retryScheduler = new();
     private readonly Mock<ILogger<RunWorkflowJob>> _logger = new();
@@ -24,8 +21,6 @@ public class RunWorkflowJobTests
     public RunWorkflowJobTests()
     {
         _job = new(
-            _tenantAccessor.Object,
-            _tenantFinder.Object,
             _workflowStarter.Object,
             _retryScheduler.Object,
             _logger.Object);
@@ -235,19 +230,6 @@ public class RunWorkflowJobTests
     }
 
     [Fact]
-    public async Task Execute_TenantFinderThrowsTransientException_SchedulesRetryAndDoesNotPropagate()
-    {
-        var (context, _) = CreateJobExecutionContext(withTenantId: true);
-        _retryScheduler.SetupRetry(isRetryable: true);
-        _tenantFinder.Setup(f => f.FindByIdAsync("tenant-123", It.IsAny<CancellationToken>())).ThrowsAsync(new TimeoutException());
-
-        await _job.Execute(context);
-
-        _retryScheduler.VerifyRetryScheduled(context);
-        _workflowStarter.Verify(w => w.StartWorkflowAsync(It.IsAny<StartWorkflowRequest>(), It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    [Fact]
     public async Task Execute_UsesCorrectWorkflowDefinitionHandle()
     {
         var (context, _) = CreateJobExecutionContext();
@@ -262,7 +244,7 @@ public class RunWorkflowJobTests
         Assert.Equal("workflow-def-123", capturedRequest.WorkflowDefinitionHandle.DefinitionVersionId);
     }
 
-    private static (IJobExecutionContext, Mock<QuartzScheduler>) CreateJobExecutionContext(string? jobKeyName = null, bool withTenantId = false)
+    private static (IJobExecutionContext, Mock<QuartzScheduler>) CreateJobExecutionContext(string? jobKeyName = null)
     {
         var jobData = new Dictionary<string, object>
         {
@@ -270,9 +252,6 @@ public class RunWorkflowJobTests
             { "CorrelationId", "corr-123" },
             { "TriggerActivityId", "trigger-123" }
         };
-
-        if (withTenantId)
-            jobData["TenantId"] = "tenant-123";
 
         return QuartzJobTestHelper.CreateJobExecutionContext(jobData, jobKeyName);
     }

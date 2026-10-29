@@ -1,4 +1,3 @@
-using Elsa.Common.Multitenancy;
 using Elsa.Workflows.Runtime;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
@@ -12,8 +11,6 @@ namespace Elsa.Scheduling.Quartz.Jobs;
 [UsedImplicitly]
 public class ExecuteBackgroundActivityJob(
     IBackgroundActivityInvoker backgroundActivityInvoker,
-    ITenantFinder tenantFinder,
-    ITenantAccessor tenantAccessor,
     ILogger<ExecuteBackgroundActivityJob> logger) : IJob
 {
     /// <inheritdoc />
@@ -24,18 +21,14 @@ public class ExecuteBackgroundActivityJob(
 
         try
         {
-            var tenant = await context.GetTenantAsync(tenantFinder);
-            using (tenantAccessor.PushContext(tenant))
-            {
-                var map = context.MergedJobDataMap;
-                workflowInstanceId = (string?)map.Get(nameof(ScheduledBackgroundActivity.WorkflowInstanceId));
-                var scheduledBackgroundActivity = new ScheduledBackgroundActivity(
-                    workflowInstanceId!,
-                    (string)map.Get(nameof(ScheduledBackgroundActivity.ActivityNodeId)),
-                    (string)map.Get(nameof(ScheduledBackgroundActivity.BookmarkId)));
+            var map = context.MergedJobDataMap;
+            workflowInstanceId = (string?)map.Get(nameof(ScheduledBackgroundActivity.WorkflowInstanceId));
+            var scheduledBackgroundActivity = new ScheduledBackgroundActivity(
+                workflowInstanceId!,
+                (string)map.Get(nameof(ScheduledBackgroundActivity.ActivityNodeId)),
+                (string)map.Get(nameof(ScheduledBackgroundActivity.BookmarkId)));
 
-                await backgroundActivityInvoker.ExecuteAsync(scheduledBackgroundActivity, cancellationToken);
-            }
+            await backgroundActivityInvoker.ExecuteAsync(scheduledBackgroundActivity, cancellationToken);
         }
         catch (Exception e)
         {

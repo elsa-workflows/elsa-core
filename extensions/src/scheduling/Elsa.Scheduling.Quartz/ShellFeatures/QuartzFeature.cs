@@ -1,6 +1,7 @@
 using CShells.Features;
 using CShells.Lifecycle;
 using Elsa.Platform.PackageManifest.Generator.Hints;
+using Elsa.Scheduling.Quartz.Services;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
@@ -61,6 +62,7 @@ public class QuartzFeature : IShellFeature, IPostConfigureShellServices
     {
         services.AddQuartz(quartz =>
         {
+            quartz.UseJobFactory<TenantAwareJobFactory>();
             quartz.UseDefaultThreadPool();
             quartz.SchedulerId = SchedulerId;
             quartz.SchedulerName = SchedulerName;

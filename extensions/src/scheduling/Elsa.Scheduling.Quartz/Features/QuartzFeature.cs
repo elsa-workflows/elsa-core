@@ -1,5 +1,6 @@
 using Elsa.Features.Abstractions;
 using Elsa.Features.Services;
+using Elsa.Scheduling.Quartz.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
 
@@ -128,6 +129,7 @@ public class QuartzFeature : FeatureBase
 
     private static void ConfigureQuartzInternal(IServiceCollectionQuartzConfigurator quartz, Action<IServiceCollectionQuartzConfigurator>? configureQuartz)
     {
+        quartz.UseJobFactory<TenantAwareJobFactory>();
         configureQuartz?.Invoke(quartz);
     }
 }
