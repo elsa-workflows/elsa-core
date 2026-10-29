@@ -10,7 +10,7 @@
     "@types/node": "22.15.21",
     "jsdom": "30.0.1",
     "typescript": "5.8.3",
-    "vitest": "4.1.11"
+    "vitest": "4.1.12"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
