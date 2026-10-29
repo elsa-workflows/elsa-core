@@ -10,6 +10,7 @@
     <ItemGroup>
         <PackageReference Include="AppAny.Quartz.EntityFrameworkCore.Migrations.SqlServer" />
         <PackageReference Include="Microsoft.Data.SqlClient" />
+        <PackageReference Include="System.Security.Cryptography.Pkcs" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
