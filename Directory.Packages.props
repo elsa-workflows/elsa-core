@@ -94,7 +94,6 @@
     </ItemGroup>
     <ItemGroup>
         <PackageVersion Include="AspNetCore.Authentication.ApiKey" Version="9.0.0"/>
-        <PackageVersion Include="AutoMapper" Version="16.0.0" PrivateAssets="All"/>
         <PackageVersion Include="Azure.Identity" Version="1.17.1"/>
         <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.20.1"/>
         <PackageVersion Include="Azure.ResourceManager" Version="1.13.2"/>
@@ -143,7 +142,6 @@
         <PackageVersion Include="Loom" Version="0.0.1-preview.10"/>
         <PackageVersion Include="Loom.Abstractions" Version="0.0.1-preview.10"/>
         <PackageVersion Include="Loom.Serialization.Json" Version="0.0.1-preview.10"/>
-        <PackageVersion Include="MailKit" Version="4.14.1"/>
         <PackageVersion Include="MassTransit" Version="8.5.7"/>
         <PackageVersion Include="MassTransit.Azure.ServiceBus.Core" Version="8.5.7"/>
         <PackageVersion Include="MassTransit.Extensions.DependencyInjection" Version="7.3.1"/>
@@ -162,7 +160,6 @@
 		<PackageVersion Include="Npgsql" Version="10.0.3"/>
         <PackageVersion Include="NSubstitute" Version="5.3.0"/>
         <PackageVersion Include="NuGet.Packaging" Version="7.6.0"/>
-        <PackageVersion Include="NuGet.Protocol" Version="7.0.1"/>
         <PackageVersion Include="Nuplane" Version="0.0.8"/>
         <PackageVersion Include="Nuplane.Abstractions" Version="0.0.8"/>
         <PackageVersion Include="Nuplane.Admin" Version="0.0.8"/>
