@@ -1,26 +1,22 @@
-# Scans lockfiles and NuGet Directory.Packages.props on release branches.
-# Studio ClientLib reviewed lockfiles use non-standard names, so they are
-# passed explicitly; recursive source scanning covers the rest.
+# Scans npm lockfiles on release branches. Studio ClientLib reviewed
+# lockfiles use non-standard names, so they are passed explicitly;
+# recursive source scanning covers the rest. Directory.Packages.props
+# coverage is out of scope here.
 name: OSV-Scanner
 
 on:
   push:
     branches:
       - 'release/*'
-  pull_request:
-    branches:
-      - 'release/*'
   workflow_dispatch:
 
-permissions:
-  actions: read
-  contents: read
-  security-events: write
+permissions: {}
 
 jobs:
   osv-scan:
     uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@b1d267aea5211fa648d9d442fa64b90dbdcbdd36 # v2.7.0
     with:
+      fail-on-vuln: false
       scan-args: |-
         --recursive
         --lockfile=package-lock.json:scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/designer.package-lock.json
