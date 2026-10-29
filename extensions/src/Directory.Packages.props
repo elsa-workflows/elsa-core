@@ -89,6 +89,8 @@
         <PackageVersion Include="Oracle.EntityFrameworkCore" Version="9.23.26200"/>
         <PackageVersion Include="System.DirectoryServices.Protocols" Version="9.0.13"/>
         <PackageVersion Include="System.Formats.Asn1" Version="9.0.17"/>
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="8.0.2" Condition="'$(TargetFramework)' == 'net8.0'"/>
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="9.0.21" Condition="'$(TargetFramework)' == 'net9.0'"/>
     </ItemGroup>
     <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
         <PackageVersion Include="Microsoft.AspNetCore.Components" Version="10.0.9"/>
@@ -125,6 +127,7 @@
         <PackageVersion Include="Oracle.EntityFrameworkCore" Version="10.23.26200"/>
         <PackageVersion Include="System.DirectoryServices.Protocols" Version="10.0.3"/>
         <PackageVersion Include="System.Formats.Asn1" Version="10.0.9"/>
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13"/>
     </ItemGroup>
     <ItemGroup>
         <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations" Version="0.5.1"/>
@@ -243,6 +246,7 @@
         <PackageVersion Include="System.Data.SqlClient" Version="4.9.0"/>
         <PackageVersion Include="System.Linq.Async" Version="7.0.1"/>
         <PackageVersion Include="System.Memory.Data" Version="10.0.3"/>
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="8.0.2" Condition="$(TargetFramework.StartsWith('netstandard'))"/>
         <PackageVersion Include="System.Text.Json" Version="10.0.9"/>
         <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3"/>
         <PackageVersion Include="SSH.NET" Version="2026.0.0"/>

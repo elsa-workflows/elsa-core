@@ -9,6 +9,7 @@
 
     <ItemGroup>
         <PackageReference Include="CShells" />
+        <PackageReference Include="System.Security.Cryptography.Pkcs" />
         <PackageReference Include="FluentMigrator.Runner.SQLite" />
         <PackageReference Include="Microsoft.Data.Sqlite" />
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
