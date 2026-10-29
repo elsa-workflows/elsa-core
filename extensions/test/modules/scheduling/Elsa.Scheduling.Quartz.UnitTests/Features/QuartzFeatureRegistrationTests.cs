@@ -24,7 +24,7 @@ public class QuartzFeatureRegistrationTests
     }
 
     [Fact]
-    public void SchedulerFeature_Apply_RegistersTenantAwareJobFactory()
+    public void SchedulerFeature_Apply_DoesNotRegisterTenantAwareJobFactory()
     {
         var services = new ServiceCollection();
         var module = new Mock<IModule>();
@@ -32,7 +32,7 @@ public class QuartzFeatureRegistrationTests
 
         new QuartzSchedulerFeature(module.Object).Apply();
 
-        Assert.Contains(services, descriptor =>
+        Assert.DoesNotContain(services, descriptor =>
             descriptor.ServiceType == typeof(IJobFactory) &&
             descriptor.ImplementationType == typeof(TenantAwareJobFactory));
     }

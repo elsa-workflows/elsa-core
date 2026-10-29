@@ -1,3 +1,4 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Scheduling.Quartz.Contracts;
 using Elsa.Workflows.Models;
@@ -11,9 +12,13 @@ namespace Elsa.Scheduling.Quartz.Jobs;
 
 /// <summary>
 /// A job that runs a workflow.
+/// Tenant context is established by the Quartz job factory. The tenant accessor and tenant finder
+/// constructor parameters are unused and kept for binary compatibility.
 /// </summary>
 [UsedImplicitly]
 public class RunWorkflowJob(
+    ITenantAccessor tenantAccessor,
+    ITenantFinder tenantFinder,
     IWorkflowStarter workflowStarter,
     IQuartzJobRetryScheduler retryScheduler,
     ILogger<RunWorkflowJob> logger,

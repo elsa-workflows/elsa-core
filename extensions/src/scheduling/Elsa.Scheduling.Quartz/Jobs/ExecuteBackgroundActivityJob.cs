@@ -1,3 +1,4 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Workflows.Runtime;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
@@ -7,10 +8,14 @@ namespace Elsa.Scheduling.Quartz.Jobs;
 
 /// <summary>
 /// A job that executes a background activity.
+/// Tenant context is established by the Quartz job factory. The tenant accessor and tenant finder
+/// constructor parameters are unused and kept for binary compatibility.
 /// </summary>
 [UsedImplicitly]
 public class ExecuteBackgroundActivityJob(
     IBackgroundActivityInvoker backgroundActivityInvoker,
+    ITenantFinder tenantFinder,
+    ITenantAccessor tenantAccessor,
     ILogger<ExecuteBackgroundActivityJob> logger) : IJob
 {
     /// <inheritdoc />

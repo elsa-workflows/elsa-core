@@ -1,8 +1,11 @@
 using Elsa.Common.Multitenancy;
+using Elsa.Scheduling.Quartz.Contracts;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Quartz;
+using Quartz.Simpl;
 using Quartz.Spi;
 using QuartzScheduler = Quartz.IScheduler;
 
@@ -15,38 +18,40 @@ namespace Elsa.Scheduling.Quartz.Services;
 [UsedImplicitly]
 internal sealed class TenantAwareJobFactory(
     IServiceProvider serviceProvider,
-    ILogger<TenantAwareJobFactory> logger) : IJobFactory
+    IOptions<QuartzOptions> options,
+    ILogger<TenantAwareJobFactory> logger)
+    : MicrosoftDependencyInjectionJobFactory(serviceProvider, options)
 {
     private const string TenantIdKey = "TenantId";
 
-    public IJob NewJob(TriggerFiredBundle bundle, QuartzScheduler scheduler)
+    protected override IJob InstantiateJob(TriggerFiredBundle bundle, QuartzScheduler scheduler)
     {
         var tenantId = ReadTenantId(bundle);
-        var scope = serviceProvider.CreateScope();
-        IDisposable? tenantContext = null;
+        if (tenantId is null)
+            return base.InstantiateJob(bundle, scheduler);
 
+        Tenant? tenant;
         try
         {
-            if (tenantId is not null)
-            {
-                var tenantFinder = serviceProvider.GetRequiredService<ITenantFinder>();
-                var tenantAccessor = serviceProvider.GetRequiredService<ITenantAccessor>();
-                var tenant = FindTenantOrThrow(tenantFinder, bundle, tenantId);
-                tenantContext = tenantAccessor.PushContext(tenant);
-            }
-
-            var job = (IJob)ActivatorUtilities.GetServiceOrCreateInstance(scope.ServiceProvider, bundle.JobDetail.JobType);
-            return new ScopedJob(job, scope, tenantContext);
+            tenant = serviceProvider.GetRequiredService<ITenantFinder>().FindByIdAsync(tenantId).GetAwaiter().GetResult();
         }
-        catch
+        catch (Exception exception)
         {
-            tenantContext?.Dispose();
-            scope.Dispose();
-            throw;
+            logger.LogWarning(exception, "Could not find tenant {TenantId} while building Quartz job {JobKey}. The failure will be retried on the next fire.", tenantId, bundle.JobDetail.Key);
+            return new TenantLookupFailedJob(exception, serviceProvider, logger);
         }
-    }
 
-    public void ReturnJob(IJob job) => (job as IDisposable)?.Dispose();
+        if (tenant is null)
+        {
+            logger.LogError("Could not find tenant {TenantId} while building Quartz job {JobKey}. Quartz will put this job's triggers in the ERROR state.", tenantId, bundle.JobDetail.Key);
+            throw new InvalidOperationException($"Could not find tenant '{tenantId}' while building Quartz job '{bundle.JobDetail.Key}'. Quartz will put this job's triggers in the ERROR state.");
+        }
+
+        var accessor = serviceProvider.GetRequiredService<ITenantAccessor>();
+
+        using (accessor.PushContext(tenant))
+            return new TenantJob(base.InstantiateJob(bundle, scheduler), accessor, tenant);
+    }
 
     private static string? ReadTenantId(TriggerFiredBundle bundle)
     {
@@ -70,38 +75,35 @@ internal sealed class TenantAwareJobFactory(
         return true;
     }
 
-    private Tenant FindTenantOrThrow(ITenantFinder tenantFinder, TriggerFiredBundle bundle, string tenantId)
+    /// <summary>
+    /// Not <see cref="IDisposable"/> on purpose: Quartz unwraps <see cref="IJobWrapper.Target"/> and async-disposes the base scope.
+    /// </summary>
+    private sealed class TenantJob(IJob inner, ITenantAccessor accessor, Tenant tenant) : IJob, IJobWrapper
     {
-        Tenant? tenant;
+        public IJob Target => inner;
 
-        try
+        public async Task Execute(IJobExecutionContext context)
         {
-            tenant = tenantFinder.FindByIdAsync(tenantId).GetAwaiter().GetResult();
+            using (accessor.PushContext(tenant))
+                await inner.Execute(context);
         }
-        catch (Exception exception)
-        {
-            logger.LogError(exception, "Could not find tenant {TenantId} while building Quartz job {JobKey}.", tenantId, bundle.JobDetail.Key);
-            throw;
-        }
-
-        if (tenant is not null)
-            return tenant;
-
-        logger.LogError("Could not find tenant {TenantId} while building Quartz job {JobKey}.", tenantId, bundle.JobDetail.Key);
-        throw new InvalidOperationException($"Could not find tenant '{tenantId}' while building Quartz job '{bundle.JobDetail.Key}'.");
     }
 
-    private sealed class ScopedJob(IJob innerJob, IServiceScope scope, IDisposable? tenantContext) : IJob, IJobWrapper, IDisposable
+    private sealed class TenantLookupFailedJob(Exception exception, IServiceProvider serviceProvider, ILogger logger) : IJob
     {
-        public IJob Target => innerJob;
-
-        public Task Execute(IJobExecutionContext context) => innerJob.Execute(context);
-
-        public void Dispose()
+        public async Task Execute(IJobExecutionContext context)
         {
-            tenantContext?.Dispose();
-            (innerJob as IDisposable)?.Dispose();
-            scope.Dispose();
+            var retryScheduler = serviceProvider.GetService<IQuartzJobRetryScheduler>();
+            if (retryScheduler is not null)
+            {
+                if (retryScheduler.IsRetryable(exception) && await retryScheduler.ScheduleRetryAsync(context, exception, context.CancellationToken))
+                    return;
+
+                logger.LogError(exception, "No retry was scheduled for job {JobKey} after a tenant lookup failure.", context.JobDetail.Key);
+                return;
+            }
+
+            throw exception;
         }
     }
 }

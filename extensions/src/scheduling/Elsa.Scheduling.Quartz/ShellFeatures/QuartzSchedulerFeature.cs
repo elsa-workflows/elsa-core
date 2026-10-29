@@ -39,6 +39,6 @@ public class QuartzSchedulerFeature : IShellFeature
             .AddStartupTask<RegisterJobsTask>()
             .AddScoped<IWorkflowScheduler, QuartzWorkflowScheduler>()
             .AddSingleton<ICronParser, QuartzCronParser>()
-            .AddQuartz(quartz => quartz.UseJobFactory<TenantAwareJobFactory>());
+            .AddQuartz();
     }
 }

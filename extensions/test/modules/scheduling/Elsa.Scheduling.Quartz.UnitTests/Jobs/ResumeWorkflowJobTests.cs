@@ -1,4 +1,5 @@
 using Elsa.Common;
+using Elsa.Common.Multitenancy;
 using Elsa.Scheduling.Quartz.Contracts;
 using Elsa.Scheduling.Quartz.Jobs;
 using Elsa.Scheduling.Quartz.UnitTests.Helpers;
@@ -26,6 +27,8 @@ public class ResumeWorkflowJobTests
         _job = new(
             _workflowRuntime.Object,
             _jsonSerializer.Object,
+            Mock.Of<ITenantFinder>(),
+            Mock.Of<ITenantAccessor>(),
             _retryScheduler.Object,
             _logger.Object);
     }

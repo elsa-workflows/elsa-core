@@ -1,3 +1,4 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Scheduling.Quartz.Contracts;
 using Elsa.Scheduling.Quartz.Jobs;
 using Elsa.Scheduling.Quartz.UnitTests.Helpers;
@@ -21,6 +22,8 @@ public class RunWorkflowJobTests
     public RunWorkflowJobTests()
     {
         _job = new(
+            Mock.Of<ITenantAccessor>(),
+            Mock.Of<ITenantFinder>(),
             _workflowStarter.Object,
             _retryScheduler.Object,
             _logger.Object);

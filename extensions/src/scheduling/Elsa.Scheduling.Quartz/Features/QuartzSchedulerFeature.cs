@@ -60,7 +60,7 @@ public class QuartzSchedulerFeature(IModule module) : FeatureBase(module)
             .AddSingleton<IQuartzRetryDelayCalculator, QuartzRetryDelayCalculator>()
             .AddSingleton<IQuartzJobRetryScheduler, QuartzJobRetryScheduler>()
             .AddStartupTask<RegisterJobsTask>()
-            .AddQuartz(quartz => quartz.UseJobFactory<TenantAwareJobFactory>());
+            .AddQuartz();
 
         Services.Configure(_configureQuartzJobOptions);
     }

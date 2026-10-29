@@ -1,3 +1,4 @@
+using Elsa.Common.Multitenancy;
 using Elsa.Scheduling.Quartz.Jobs;
 using Elsa.Scheduling.Quartz.UnitTests.Helpers;
 using Elsa.Workflows.Runtime;
@@ -15,7 +16,7 @@ public class ExecuteBackgroundActivityJobTests
 
     public ExecuteBackgroundActivityJobTests()
     {
-        _job = new(_invoker.Object, _logger.Object);
+        _job = new(_invoker.Object, Mock.Of<ITenantFinder>(), Mock.Of<ITenantAccessor>(), _logger.Object);
     }
 
     [Fact]
