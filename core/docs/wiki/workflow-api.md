@@ -84,7 +84,7 @@ Identity and API key setup are supplied by `Elsa.Identity`; see [Identity, Tenan
 
 ## API Client
 
-The generated or hand-maintained client project is [src/clients/Elsa.Api.Client](../../src/clients/Elsa.Api.Client). When endpoint contracts or enums change, check whether the client has mirrored models that need updating. The graceful shutdown plan explicitly called out mirroring `WorkflowSubStatus.Interrupted` in the API client.
+The generated or hand-maintained client project is [src/clients/Elsa.Api.Client](../../src/clients/Elsa.Api.Client). When endpoint contracts or enums change, check whether the client has mirrored models that need updating. The graceful shutdown plan explicitly called out mirroring `WorkflowSubStatus.Interrupted` in the API client; `WorkflowSubStatus.Cancelling` was subsequently added and should also be kept in sync — see [Workflow Runtime](workflow-runtime.md#cancellation-and-the-cancelling-sub-status).
 
 ## JSON Serialization Errors
 

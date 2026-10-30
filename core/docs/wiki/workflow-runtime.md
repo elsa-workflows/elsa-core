@@ -191,6 +191,29 @@ Workflow and activity execution logs flow through sinks and stores:
 
 API endpoints under `WorkflowInstances/Journal`, `ActivityExecutions`, and `ActivityExecutionSummaries` expose this data.
 
+## Cancellation And The Cancelling Sub-Status
+
+When a cancellation request arrives, [WorkflowCancellationService](../../src/modules/Elsa.Workflows.Runtime/Services/WorkflowCancellationService.cs) may persist `WorkflowSubStatus.Cancelling` (main status stays `WorkflowStatus.Running`) before dispatching the cancellation. Only a Running instance whose sub-status is `Suspended`, that is not currently executing, and that is unowned when an execution guard is registered, gets that mark. Executing instances keep their sub-status. `Pending` and `Interrupted` are cancelled without the interim mark, so the pending run path and the interrupted-workflow scan still own them.
+
+```
+Running / Suspended  →  Running / Cancelling  →  Finished / Cancelled
+```
+
+The mark is best effort: if the compare-and-swap throws or declines, cancellation is still dispatched without the interim sub-status.
+
+There is no recovery scanner for a stale `Cancelling` mark. A crash after persist and before enqueue can leave a suspended instance in `Cancelling`. That gap is tracked in #9130.
+
+The previous sub-status is restored only when dispatch fails (`RestoreAfterDispatchFailureAsync`) or the cancel command fails (`RestoreIfMarkedAsync`). Restore is a compare-and-swap on the `Cancelling` mark and its `CancellingAt` stamp (the `UpdatedAt` value written with the mark), and it only returns the instance to `Suspended`. If the mark is no longer current — for example because `Cancelled` already committed — nothing is restored.
+
+This explicit `Cancelling` mark distinguishes "cancellation in flight" from:
+- `Cancelled` — cancellation committed successfully.
+- `Interrupted` — force-cancelled during a graceful drain (resumable).
+- `Executing` with a stale liveness timestamp — crash recovery path.
+
+Key files: [WorkflowCancellationService](../../src/modules/Elsa.Workflows.Runtime/Services/WorkflowCancellationService.cs) and [CancelWorkflowsCommandHandler](../../src/modules/Elsa.Workflows.Runtime/Handlers/CancelWorkflowsCommandHandler.cs).
+
+The `Cancelling` sub-status is surfaced through the same `WorkflowSubStatus` enum that the API and API client mirror. When updating that enum keep all values in sync — see [Workflow API](workflow-api.md#api-client).
+
 ## Background Work
 
 Runtime has several background paths:
