@@ -1,6 +1,7 @@
 """Synthetic complete inventory and real loopback HTTP; never publish externally."""
 import copy
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import hashlib
 import io
 import json
 import os
@@ -574,8 +575,18 @@ class AdmissionTests(unittest.TestCase):
         with patch.object(executor, "REVIEWED_OPERATIONAL_POLICY", self.policy), patch.dict(os.environ, self.context, clear=True):
             return executor.check_admission(publish=publish, api=self.api)
 
+    def test_pinned_policy_passes_shape_validation_and_matches_packet(self):
+        packet = Path(executor.__file__).resolve().parents[2]/"docs/integration-program/feedz-publish-operational-packet.md"
+        policy = executor.REVIEWED_OPERATIONAL_POLICY
+        self.assertEqual(hashlib.sha256(packet.read_bytes()).hexdigest(), policy["operational_packet_sha256"])
+        with patch.dict(os.environ, {}, clear=True):
+            with self.assertRaisesRegex(executor.ExecutorError, "runtime_not_admitted"):
+                executor.check_admission(api=self.api)
+        self.assertEqual(self.api.calls, [])
+
     def test_no_boolean_environment_or_receipt_can_override_missing_policy(self):
-        with patch.dict(os.environ, {**self.context, "APPROVED": "true", "REVIEWED_OPERATIONAL_POLICY": json.dumps(self.policy)}):
+        with patch.object(executor, "REVIEWED_OPERATIONAL_POLICY", None), \
+                patch.dict(os.environ, {**self.context, "APPROVED": "true", "REVIEWED_OPERATIONAL_POLICY": json.dumps(self.policy)}):
             with self.assertRaisesRegex(executor.ExecutorError, "operational_policy_unconfigured"):
                 executor.check_admission(api=self.api)
         self.assertEqual(self.api.calls, [])
@@ -956,7 +967,8 @@ class CliTests(unittest.TestCase):
     def test_admit_default_retains_secure_blocked_receipt(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory).resolve()/"admission.json"
-            self.assertEqual(executor.main(["admit", "--output", str(output)]), 1)
+            with patch.object(executor, "REVIEWED_OPERATIONAL_POLICY", None):
+                self.assertEqual(executor.main(["admit", "--output", str(output)]), 1)
             receipt = json.loads(output.read_text())
             self.assertEqual(receipt["failure_category"], "operational_policy_unconfigured")
             self.assertFalse(receipt["publication_performed"])
