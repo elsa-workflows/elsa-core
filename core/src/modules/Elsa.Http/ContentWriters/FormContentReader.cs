@@ -27,6 +27,14 @@ internal static class FormContentReader
 
         switch (content)
         {
+            // JavaScript expressions evaluate to ExpandoObject, which implements
+            // IDictionary<string, object?> and not the non-generic IDictionary.
+            // Copy the pairs unchanged so byte arrays and files stay file parts.
+            case IDictionary<string, object?> objectDictionary:
+                foreach (var (name, value) in objectDictionary)
+                    fields.Add(new(name, value));
+
+                return fields;
             case IDictionary dictionary:
                 foreach (DictionaryEntry entry in dictionary)
                 {

@@ -1,3 +1,4 @@
+using System.Dynamic;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -95,6 +96,21 @@ public class FormContentFactoryTests
         {
             CultureInfo.CurrentCulture = originalCulture;
         }
+    }
+
+    [Fact]
+    public async Task FormUrlEncoded_ExpandoObject_WritesFields()
+    {
+        var content = new ExpandoObject();
+        var fields = (IDictionary<string, object?>)content;
+        fields["name"] = "Ada";
+        fields["age"] = 36;
+        var factory = new FormUrlEncodedHttpContentFactory();
+
+        var body = await factory.CreateHttpContent(content, "application/x-www-form-urlencoded").ReadAsStringAsync();
+
+        AssertFormField(body, "name", "Ada");
+        AssertFormField(body, "age", "36");
     }
 
     [Fact]
@@ -197,6 +213,28 @@ public class FormContentFactoryTests
         Assert.Equal("a.txt", parts["a"].FileName);
         Assert.Equal("two-two", parts["b"].Body);
         Assert.Equal("b.txt", parts["b"].FileName);
+    }
+
+    [Fact]
+    public async Task Multipart_ExpandoObject_WritesFileParts()
+    {
+        var content = new ExpandoObject();
+        var fields = (IDictionary<string, object?>)content;
+        fields["title"] = "Report";
+        fields["blob"] = "hello"u8.ToArray();
+        fields["upload"] = new HttpFile(new MemoryStream("file-body"u8.ToArray()), "notes.txt", "text/plain");
+        var factory = new MultipartFormDataHttpContentFactory();
+
+        var httpContent = factory.CreateHttpContent(content, "multipart/form-data");
+        var parts = await ReadPartsAsync(httpContent);
+
+        Assert.Equal("Report", parts["title"].Body);
+        Assert.Null(parts["title"].FileName);
+        Assert.Equal("hello", parts["blob"].Body);
+        Assert.Equal("blob", parts["blob"].FileName);
+        Assert.Equal("file-body", parts["upload"].Body);
+        Assert.Equal("notes.txt", parts["upload"].FileName);
+        Assert.Equal("text/plain", parts["upload"].MediaType);
     }
 
     private static void AssertFormField(string body, string name, string expected)
