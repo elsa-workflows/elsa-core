@@ -315,7 +315,7 @@ Stop the loop if **any** of these are true:
 
 - Confidence score is **5/5** AND there are **zero unresolved comments** (the optional target; not a merge requirement)
 - Max iterations reached (report current state)
-- The remaining Greptile comments have each been fixed or answered, and you choose to stop short of 5/5. Greptile is advisory only; see .github/reviewers.md.
+- The remaining Greptile comments have each been fixed or answered and resolved, and you choose to stop short of 5/5. Greptile is advisory only; see .github/reviewers.md.
 
 #### D. Fix actionable comments
 
