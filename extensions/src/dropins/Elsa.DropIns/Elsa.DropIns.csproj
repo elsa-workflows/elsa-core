@@ -13,11 +13,9 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
         <PackageReference Include="NuGet.Packaging" />
         <PackageReference Include="NuGet.Protocol" />
-        <PackageReference Include="System.Security.Cryptography.Pkcs" Condition="'$(TargetFramework)' != 'net8.0'" />
-        <PackageReference Include="System.Security.Cryptography.Pkcs" Condition="'$(TargetFramework)' == 'net8.0'" VersionOverride="9.0.21" />
+        <PackageReference Include="System.Security.Cryptography.Pkcs" />
         <PackageReference Include="ThrottleDebounce" />
-        <PackageReference Include="System.Formats.Asn1" Condition="'$(TargetFramework)' != 'net8.0'" />
-        <PackageReference Include="System.Formats.Asn1" Condition="'$(TargetFramework)' == 'net8.0'" VersionOverride="9.0.21" />
+        <PackageReference Include="System.Formats.Asn1" />
     </ItemGroup>
 
     <ItemGroup>
