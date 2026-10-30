@@ -74,6 +74,7 @@
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="$(WebAssemblyServerPatchedVersion)"/>
         <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.13"/>
         <PackageVersion Include="Microsoft.AspNetCore.SignalR.Common" Version="10.0.13"/>
+        <PackageVersion Include="MySqlConnector" Version="2.6.2"/>
         <PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.14"/>
         <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.1.0"/>
         <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13"/>
