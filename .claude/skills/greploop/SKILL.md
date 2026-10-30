@@ -16,7 +16,7 @@ allowed-tools: Bash(gh:*) Bash(glab:*) Bash(git:*) Bash(p4:*)
 
 # Greploop
 
-> **Greptile is advisory only; it is not a merge gate. See .github/reviewers.md.** In this repository a Greptile 5/5 score is an optional target for this loop, not a merge requirement. The only merge gate is the Elsa 3 Code Review (plus green CI) described in `.github/reviewers.md`.
+> **Greptile is advisory only; it is not a merge gate. See .github/reviewers.md.** In this repository a Greptile 5/5 score is an optional target for this loop, not a merge requirement. The only merge gate is the Elsa 3 Code Review (plus green CI) described in `.github/reviewers.md`, except as Standing self-merge there allows: for those PRs the Code Review is optional, and green CI is still required.
 
 Iteratively fix a PR/MR/CL, optionally aiming for a clean Greptile review: 5/5 confidence, zero unresolved comments. Reaching 5/5 is not required to merge.
 
