@@ -9,7 +9,6 @@
 
     <ItemGroup Condition="'$(TargetFramework)' == 'net8.0' OR '$(TargetFramework)' == 'net9.0'">
         <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" />
-        <PackageReference Include="MySqlConnector" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
     </ItemGroup>
 

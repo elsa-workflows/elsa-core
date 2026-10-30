@@ -3,7 +3,6 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
         <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" />
-        <PackageReference Include="MySqlConnector" />
         <ProjectReference Include="..\Elsa.Persistence.EFCore.MySql\Elsa.Persistence.EFCore.MySql.csproj" />
         <ProjectReference Include="..\Elsa.UserTasks.Persistence.EFCore\Elsa.UserTasks.Persistence.EFCore.csproj" />
     </ItemGroup>
