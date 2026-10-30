@@ -1,6 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Nodes;
-using Elsa.Api.Client.Resources.Scripting.Models;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Enums;
 using Elsa.Api.Client.Serialization;
 using Elsa.Api.Client.Shared.Enums;
@@ -9,100 +7,82 @@ using Elsa.Api.Client.Shared.Models;
 namespace Elsa.Studio.Workflows.Components.WorkflowInstanceViewer.Components;
 
 /// <summary>
-/// Reads the workflow-level log persistence mode stored on a workflow definition.
+/// Workflow-level log persistence as shown in the instance viewer.
+/// Expression source stays untranslated; only named modes are localized.
+/// </summary>
+internal readonly record struct LogPersistenceDisplay(bool IsExpression, string Text);
+
+/// <summary>
+/// Reads the workflow-level log persistence value stored on a workflow definition.
+/// Definition custom properties are <see cref="JsonElement"/> values.
 /// </summary>
 internal static class WorkflowLogPersistenceDisplay
 {
     /// <summary>
-    /// Returns the mode name (<c>Include</c>, <c>Exclude</c>, <c>Inherit</c>, a custom strategy name)
-    /// or the expression that selects the mode. An unset workflow inherits its parent configuration.
+    /// Returns the configured mode or expression. An unset workflow inherits.
+    /// A blank expression is <see cref="LogPersistenceMode.Inherit"/>; expression mode does not read <c>strategyType</c>.
     /// </summary>
-    public static string Format(IDictionary<string, object>? customProperties)
+    public static LogPersistenceDisplay Format(IDictionary<string, object>? customProperties)
     {
-        if (customProperties != null &&
-            TryRead(customProperties, "logPersistenceConfig", out var config) &&
-            TryRead(config, "default", out var defaultConfig))
-            return FormatConfiguration(defaultConfig) ?? nameof(LogPersistenceMode.Inherit);
+        if (TryReadDefault(customProperties, "logPersistenceConfig", out var configured))
+            return ReadConfiguration(configured);
 
-        if (customProperties != null &&
-            TryRead(customProperties, "logPersistenceMode", out var legacy) &&
-            TryRead(legacy, "default", out var legacyDefault))
-        {
-            var mode = FormatLegacy(legacyDefault);
-            if (!string.IsNullOrWhiteSpace(mode))
-                return mode;
-        }
+        if (TryReadDefault(customProperties, "logPersistenceMode", out var legacy) && ReadLegacy(legacy) is { } mode)
+            return Mode(mode);
 
-        return nameof(LogPersistenceMode.Inherit);
+        return Mode(nameof(LogPersistenceMode.Inherit));
     }
 
-    private static string? FormatConfiguration(object value)
+    private static LogPersistenceDisplay Mode(string text) => new(false, text);
+
+    private static LogPersistenceDisplay Expression(string text) => new(true, text);
+
+    private static LogPersistenceDisplay ReadConfiguration(JsonElement value)
     {
+        if (value.ValueKind != JsonValueKind.Object)
+            return Mode(nameof(LogPersistenceMode.Inherit));
+
         try
         {
-            var json = ToJson(value);
-            if (string.IsNullOrWhiteSpace(json))
-                return null;
-
-            var config = JsonSerializer.Deserialize<LogPersistenceConfiguration>(json, SerializerOptions.LogPersistenceConfigSerializerOptions);
+            var config = JsonSerializer.Deserialize<LogPersistenceConfiguration>(value.GetRawText(), SerializerOptions.LogPersistenceConfigSerializerOptions);
             if (config == null)
-                return null;
+                return Mode(nameof(LogPersistenceMode.Inherit));
 
             if (config.EvaluationMode == LogPersistenceEvaluationMode.Expression)
             {
-                var expression = ReadExpression(config.Expression);
-                if (!string.IsNullOrWhiteSpace(expression))
-                    return expression.Trim();
+                var expression = ExpressionText(config.Expression?.Value);
+                return string.IsNullOrWhiteSpace(expression)
+                    ? Mode(nameof(LogPersistenceMode.Inherit))
+                    : Expression(expression.Trim());
             }
 
-            return ShortName(config.StrategyType) ?? nameof(LogPersistenceMode.Inherit);
+            return Mode(ShortName(config.StrategyType) ?? nameof(LogPersistenceMode.Inherit));
         }
         catch (Exception ex) when (ex is JsonException or NotSupportedException or InvalidOperationException)
         {
             // A definition with an unexpected payload must still open in the instance viewer.
-            return null;
+            return Mode(nameof(LogPersistenceMode.Inherit));
         }
     }
 
-    private static string? FormatLegacy(object value)
+    private static string? ReadLegacy(JsonElement value)
     {
-        switch (value)
-        {
-            case JsonElement { ValueKind: JsonValueKind.String } element:
-                return NormalizeMode(element.GetString());
-            case JsonElement { ValueKind: JsonValueKind.Number } element when element.TryGetInt32(out var number):
-                return ModeFromNumber(number);
-            case JsonValue jsonValue when jsonValue.TryGetValue<string>(out var text):
-                return NormalizeMode(text);
-            case JsonValue jsonValue when jsonValue.TryGetValue<int>(out var number):
-                return ModeFromNumber(number);
-            case string text:
-                return NormalizeMode(text);
-            case LogPersistenceMode mode:
-                return mode.ToString();
-            case int number:
-                return ModeFromNumber(number);
-            case long number when number is >= int.MinValue and <= int.MaxValue:
-                return ModeFromNumber((int)number);
-            default:
-                return null;
-        }
+        if (value.ValueKind == JsonValueKind.String)
+            return NormalizeMode(value.GetString());
+
+        if (value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out var number))
+            return ModeFromNumber(number);
+
+        return null;
     }
 
-    private static string? ReadExpression(Expression? expression)
+    private static string? ExpressionText(object? value) => value switch
     {
-        if (expression?.Value == null)
-            return null;
-
-        return expression.Value switch
-        {
-            string text => text,
-            JsonElement { ValueKind: JsonValueKind.String } element => element.GetString(),
-            JsonElement element => element.GetRawText(),
-            JsonValue jsonValue when jsonValue.TryGetValue<string>(out var text) => text,
-            _ => expression.Value.ToString()
-        };
-    }
+        string text => text,
+        JsonElement { ValueKind: JsonValueKind.String } element => element.GetString(),
+        JsonElement element => element.GetRawText(),
+        _ => null
+    };
 
     private static string? NormalizeMode(string? value)
     {
@@ -115,9 +95,9 @@ internal static class WorkflowLogPersistenceDisplay
 
     private static string? ModeFromNumber(int number) => number switch
     {
-        0 => nameof(LogPersistenceMode.Inherit),
-        1 => nameof(LogPersistenceMode.Include),
-        2 => nameof(LogPersistenceMode.Exclude),
+        (int)LogPersistenceMode.Inherit => nameof(LogPersistenceMode.Inherit),
+        (int)LogPersistenceMode.Include => nameof(LogPersistenceMode.Include),
+        (int)LogPersistenceMode.Exclude => nameof(LogPersistenceMode.Exclude),
         _ => null
     };
 
@@ -131,41 +111,23 @@ internal static class WorkflowLogPersistenceDisplay
         return name.Length == 0 ? null : name[^1];
     }
 
-    private static bool TryRead(object? source, string name, out object value)
+    /// <summary>
+    /// Reads <c>properties[key].default</c> when that value is present.
+    /// A null or missing default falls through to the next source.
+    /// </summary>
+    private static bool TryReadDefault(IDictionary<string, object>? properties, string key, out JsonElement value)
     {
-        value = null!;
-        switch (source)
+        value = default;
+        if (properties == null ||
+            !properties.TryGetValue(key, out var entry) ||
+            entry is not JsonElement { ValueKind: JsonValueKind.Object } element ||
+            !element.TryGetProperty("default", out var property) ||
+            property.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined)
         {
-            case JsonElement element when element.ValueKind == JsonValueKind.Object &&
-                                           element.TryGetProperty(name, out var property) &&
-                                           property.ValueKind is not JsonValueKind.Null and not JsonValueKind.Undefined:
-                value = property;
-                return true;
-            case JsonObject obj when obj.TryGetPropertyValue(name, out var node) && node != null:
-                value = node;
-                return true;
-            case IDictionary<string, object> dictionary when dictionary.TryGetValue(name, out var entry) && IsPresent(entry):
-                value = entry!;
-                return true;
-            case IDictionary<string, object?> nullableDictionary when nullableDictionary.TryGetValue(name, out var entry) && IsPresent(entry):
-                value = entry!;
-                return true;
-            default:
-                return false;
+            return false;
         }
+
+        value = property;
+        return true;
     }
-
-    private static bool IsPresent(object? value) => value switch
-    {
-        null => false,
-        JsonElement element => element.ValueKind is not JsonValueKind.Null and not JsonValueKind.Undefined,
-        _ => true
-    };
-
-    private static string? ToJson(object value) => value switch
-    {
-        JsonElement element => element.GetRawText(),
-        JsonNode node => node.ToJsonString(),
-        _ => JsonSerializer.Serialize(value)
-    };
 }

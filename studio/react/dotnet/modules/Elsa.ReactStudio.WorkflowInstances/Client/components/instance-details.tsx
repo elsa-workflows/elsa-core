@@ -10,7 +10,7 @@ import { CopyButton } from "@elsa-workflows/react-studio-ui/common/copy-button";
 import type { WorkflowInstance } from "@elsa-workflows/react-studio-api-client/types/workflow-instances";
 import { href } from "@elsa-workflows/react-studio-sdk/routing";
 import { WorkflowDefinitionRoutes } from "@elsa-workflows/react-studio-sdk/routes";
-import { workflowLogPersistenceMode } from "./log-persistence";
+import { workflowLogPersistenceMode, type LogPersistenceDisplay } from "./log-persistence";
 import { WorkflowInstanceRoutes } from "../routes";
 
 function Mono({ value }: { value: string | undefined }) {
@@ -26,7 +26,8 @@ function Mono({ value }: { value: string | undefined }) {
 
 export function InstanceDetails({ instance, definitionName, customProperties }: { instance: WorkflowInstance; definitionName?: string; customProperties?: Record<string, unknown> }) {
   const _t = useTranslation();
-  const logPersistenceMode = localizedLogPersistenceMode(workflowLogPersistenceMode(customProperties), _t);
+  const logPersistence = workflowLogPersistenceMode(customProperties);
+  const logPersistenceText = localizedLogPersistence(logPersistence, _t);
   return (
     <KeyValueTable
       className="p-3"
@@ -54,7 +55,7 @@ export function InstanceDetails({ instance, definitionName, customProperties }: 
           ),
         },
         { label: _t("Incidents"), value: <span className="tabular-nums">{instance.incidentCount}</span> },
-        { label: _t("Log persistence strategy"), value: logPersistenceMode },
+        { label: _t("Log persistence strategy"), value: <span className={logPersistence.kind === "expression" ? "whitespace-pre-wrap" : undefined}>{logPersistenceText}</span> },
         { label: _t("Created"), value: <Timestamp value={instance.createdAt} /> },
         { label: _t("Updated"), value: <Timestamp value={instance.updatedAt} /> },
         { label: _t("Finished"), value: <Timestamp value={instance.finishedAt} /> },
@@ -71,9 +72,8 @@ export function InstanceDetails({ instance, definitionName, customProperties }: 
   );
 }
 
-function localizedLogPersistenceMode(mode: string, translate: (key: string) => string) {
-  if (mode === "Inherit") return translate("Inherit");
-  if (mode === "Include") return translate("Include");
-  if (mode === "Exclude") return translate("Exclude");
-  return mode;
+function localizedLogPersistence(display: LogPersistenceDisplay, translate: (key: string) => string) {
+  if (display.kind === "expression") return display.text;
+  if (display.text === "Inherit" || display.text === "Include" || display.text === "Exclude") return translate(display.text);
+  return display.text;
 }

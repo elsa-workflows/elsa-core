@@ -25,29 +25,30 @@ namespace Elsa.Studio.Workflows.Tests;
 public sealed class WorkflowInstanceLogPersistenceTests
 {
     [Theory]
-    [InlineData("""{"logPersistenceConfig":{"default":{"evaluationMode":"Strategy","strategyType":"Elsa.Workflows.LogPersistence.Strategies.Exclude, Elsa.Workflows.Core"}}}""", "Exclude")]
-    [InlineData("""{"logPersistenceConfig":{"default":{"evaluationMode":"Strategy","strategyType":"Elsa.Workflows.LogPersistence.Strategies.Inherit, Elsa.Workflows.Core"},"internalState":{"evaluationMode":"Strategy","strategyType":"Elsa.Workflows.LogPersistence.Strategies.Include, Elsa.Workflows.Core"}}}""", "Inherit")]
-    [InlineData("""{"logPersistenceMode":{"default":"Include"}}""", "Include")]
-    [InlineData("""{"logPersistenceMode":{"default":2}}""", "Exclude")]
-    [InlineData("""{"logPersistenceMode":{"default":0}}""", "Inherit")]
-    [InlineData("""{"logPersistenceConfig":{"default":{"evaluationMode":"Strategy","strategyType":"Elsa.Workflows.LogPersistence.Strategies.Include, Elsa.Workflows.Core"}},"logPersistenceMode":{"default":"Exclude"}}""", "Include")]
-    [InlineData("""{"logPersistenceConfig":{"default":null},"logPersistenceMode":{"default":"Exclude"}}""", "Exclude")]
-    [InlineData("""{"logPersistenceConfig":{"inputs":{"message":{"evaluationMode":"Strategy","strategyType":"Elsa.Workflows.LogPersistence.Strategies.Exclude, Elsa.Workflows.Core"}}},"logPersistenceMode":{"default":"Include"}}""", "Include")]
-    [InlineData("""{"logPersistenceConfig":{"default":{"evaluationMode":"Expression","expression":{"type":"JavaScript","value":"LogPersistenceMode.Exclude"}}}}""", "LogPersistenceMode.Exclude")]
-    [InlineData("""{"logPersistenceConfig":{"default":{"evaluationMode":"Expression","strategyType":"Elsa.Workflows.LogPersistence.Strategies.Include, Elsa.Workflows.Core","expression":{"type":"JavaScript","value":"  "}}}}""", "Include")]
-    [InlineData("""{"logPersistenceConfig":{"default":"not-an-object"},"logPersistenceMode":{"default":"Exclude"}}""", "Inherit")]
-    [InlineData("{}", "Inherit")]
-    public void Format_ReadsTheWorkflowModeWithoutThrowing(string json, string expected)
+    [InlineData("""{"logPersistenceConfig":{"default":{"evaluationMode":"Strategy","strategyType":"Elsa.Workflows.LogPersistence.Strategies.Exclude, Elsa.Workflows.Core"}}}""", "Exclude", false)]
+    [InlineData("""{"logPersistenceConfig":{"default":{"evaluationMode":"Strategy","strategyType":"Elsa.Workflows.LogPersistence.Strategies.Inherit, Elsa.Workflows.Core"},"internalState":{"evaluationMode":"Strategy","strategyType":"Elsa.Workflows.LogPersistence.Strategies.Include, Elsa.Workflows.Core"}}}""", "Inherit", false)]
+    [InlineData("""{"logPersistenceMode":{"default":"Include"}}""", "Include", false)]
+    [InlineData("""{"logPersistenceMode":{"default":2}}""", "Exclude", false)]
+    [InlineData("""{"logPersistenceMode":{"default":0}}""", "Inherit", false)]
+    [InlineData("""{"logPersistenceConfig":{"default":{"evaluationMode":"Strategy","strategyType":"Elsa.Workflows.LogPersistence.Strategies.Include, Elsa.Workflows.Core"}},"logPersistenceMode":{"default":"Exclude"}}""", "Include", false)]
+    [InlineData("""{"logPersistenceConfig":{"default":null},"logPersistenceMode":{"default":"Exclude"}}""", "Exclude", false)]
+    [InlineData("""{"logPersistenceConfig":{"inputs":{"message":{"evaluationMode":"Strategy","strategyType":"Elsa.Workflows.LogPersistence.Strategies.Exclude, Elsa.Workflows.Core"}}},"logPersistenceMode":{"default":"Include"}}""", "Include", false)]
+    [InlineData("""{"logPersistenceConfig":{"default":{"evaluationMode":"Expression","expression":{"type":"JavaScript","value":"LogPersistenceMode.Exclude"}}}}""", "LogPersistenceMode.Exclude", true)]
+    [InlineData("""{"logPersistenceConfig":{"default":{"evaluationMode":"Expression","expression":{"type":"JavaScript","value":"Include"}}}}""", "Include", true)]
+    [InlineData("""{"logPersistenceConfig":{"default":{"evaluationMode":"Expression","strategyType":"Elsa.Workflows.LogPersistence.Strategies.Include, Elsa.Workflows.Core","expression":{"type":"JavaScript","value":"  "}}}}""", "Inherit", false)]
+    [InlineData("""{"logPersistenceConfig":{"default":"not-an-object"},"logPersistenceMode":{"default":"Exclude"}}""", "Inherit", false)]
+    [InlineData("{}", "Inherit", false)]
+    public void Format_ReadsTheWorkflowModeWithoutThrowing(string json, string expected, bool isExpression)
     {
         var properties = JsonSerializer.Deserialize<Dictionary<string, object>>(json);
 
-        Assert.Equal(expected, WorkflowLogPersistenceDisplay.Format(properties));
+        Assert.Equal(new LogPersistenceDisplay(isExpression, expected), WorkflowLogPersistenceDisplay.Format(properties));
     }
 
     [Fact]
     public void Format_UnsetDefinitionInherits()
     {
-        Assert.Equal("Inherit", WorkflowLogPersistenceDisplay.Format(null));
+        Assert.Equal(new LogPersistenceDisplay(false, "Inherit"), WorkflowLogPersistenceDisplay.Format(null));
     }
 }
 
