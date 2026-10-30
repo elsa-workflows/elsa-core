@@ -201,6 +201,56 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
         return updated > 0;
     }
 
+    /// <inheritdoc />
+    public async ValueTask<bool> TryTransitionSubStatusAsync(
+        string workflowInstanceId,
+        WorkflowSubStatus expected,
+        DateTimeOffset? expectedUpdatedAt,
+        WorkflowSubStatus next,
+        DateTimeOffset stampedAt,
+        CancellationToken cancellationToken = default)
+    {
+        if (!expected.IsPermittedSubStatusTransition(next))
+            return false;
+
+        var record = new WorkflowInstanceRecord
+        {
+            Id = workflowInstanceId,
+            SubStatus = next.ToString(),
+            UpdatedAt = stampedAt
+        };
+
+        var updated = await store.UpdateAsync(
+            record,
+            [x => x.SubStatus, x => x.UpdatedAt],
+            q =>
+            {
+                q.Is(nameof(WorkflowInstanceRecord.Id), workflowInstanceId);
+                q.Is(nameof(WorkflowInstanceRecord.Status), WorkflowStatus.Running.ToString());
+                // SET already binds @SubStatus and @UpdatedAt. Keep the predicate parameters distinct.
+                q.Parameters.Add("@ExpectedSubStatus", expected.ToString());
+                var subStatus = q.Dialect.QuoteIdentifier(nameof(WorkflowInstanceRecord.SubStatus));
+                q.Sql.AppendLine($"and {subStatus} = @ExpectedSubStatus");
+
+                if (expectedUpdatedAt is { } expectedStamp)
+                {
+                    q.Parameters.Add("@ExpectedUpdatedAt", expectedStamp);
+                    var updatedAt = q.Dialect.QuoteIdentifier(nameof(WorkflowInstanceRecord.UpdatedAt));
+                    q.Sql.AppendLine($"and {updatedAt} = @ExpectedUpdatedAt");
+                }
+
+                if (next == WorkflowSubStatus.Cancelling)
+                {
+                    q.Is(nameof(WorkflowInstanceRecord.IsExecuting), false);
+                    q.Parameters.Add("@ExecutingSubStatus", WorkflowSubStatus.Executing.ToString());
+                    q.Sql.AppendLine($"and not {subStatus} = @ExecutingSubStatus");
+                }
+            },
+            cancellationToken);
+
+        return updated > 0;
+    }
+
     private void ApplyFilter(ParameterizedQuery query, WorkflowInstanceFilter filter)
     {
         query

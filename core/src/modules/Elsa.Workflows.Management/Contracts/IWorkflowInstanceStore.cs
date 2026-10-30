@@ -199,4 +199,33 @@ public interface IWorkflowInstanceStore
     /// Implementations must not overwrite a concurrent naturally completed commit.
     /// </returns>
     ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default, bool allowFinishedCancelled = false);
+
+    /// <summary>
+    /// Sets <see cref="WorkflowInstance.SubStatus"/> to <paramref name="next"/> and
+    /// <see cref="WorkflowInstance.UpdatedAt"/> to <paramref name="stampedAt"/> when the stored instance is still
+    /// <see cref="WorkflowStatus.Running"/> and still <paramref name="expected"/>.
+    /// </summary>
+    /// <remarks>
+    /// When <paramref name="expectedUpdatedAt"/> has a value, <see cref="WorkflowInstance.UpdatedAt"/> must equal it.
+    /// A transition to <see cref="WorkflowSubStatus.Cancelling"/> also requires the row not to be executing and
+    /// <paramref name="expected"/> to be <see cref="WorkflowSubStatus.Suspended"/>.
+    /// A transition out of <see cref="WorkflowSubStatus.Cancelling"/> may only return to <see cref="WorkflowSubStatus.Suspended"/>.
+    /// Only those two columns are written. <see cref="WorkflowInstance.WorkflowState"/>, bookmarks and execution progress stay as they are.
+    /// The default returns <c>false</c> so a provider that cannot do this conditional write fails closed.
+    /// Callers must not fall back to <see cref="SaveAsync"/>, <see cref="SaveManyAsync"/> or <see cref="UpdateAsync"/>.
+    /// </remarks>
+    /// <param name="workflowInstanceId">The workflow instance to update.</param>
+    /// <param name="expected">The sub-status the row must still have.</param>
+    /// <param name="expectedUpdatedAt">The <see cref="WorkflowInstance.UpdatedAt"/> the row must still have, or <c>null</c> to skip that compare.</param>
+    /// <param name="next">The sub-status to write.</param>
+    /// <param name="stampedAt">The stamp written to <see cref="WorkflowInstance.UpdatedAt"/>.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns><c>true</c> when the row was updated; otherwise <c>false</c> and the row is unchanged.</returns>
+    ValueTask<bool> TryTransitionSubStatusAsync(
+        string workflowInstanceId,
+        WorkflowSubStatus expected,
+        DateTimeOffset? expectedUpdatedAt,
+        WorkflowSubStatus next,
+        DateTimeOffset stampedAt,
+        CancellationToken cancellationToken = default) => ValueTask.FromResult(false);
 }

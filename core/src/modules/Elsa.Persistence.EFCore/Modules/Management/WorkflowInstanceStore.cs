@@ -217,6 +217,40 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
+    public async ValueTask<bool> TryTransitionSubStatusAsync(
+        string workflowInstanceId,
+        WorkflowSubStatus expected,
+        DateTimeOffset? expectedUpdatedAt,
+        WorkflowSubStatus next,
+        DateTimeOffset stampedAt,
+        CancellationToken cancellationToken = default)
+    {
+        if (!expected.IsPermittedSubStatusTransition(next))
+            return false;
+
+        await using var dbContext = await _store.CreateDbContextAsync(cancellationToken);
+        // The tenant query filter applies to ExecuteUpdateAsync. Do not ignore it.
+        var query = dbContext.WorkflowInstances.Where(x =>
+            x.Id == workflowInstanceId
+            && x.Status == WorkflowStatus.Running
+            && x.SubStatus == expected);
+
+        if (expectedUpdatedAt is { } expectedStamp)
+            query = query.Where(x => x.UpdatedAt == expectedStamp);
+
+        if (next == WorkflowSubStatus.Cancelling)
+            query = query.Where(x => !x.IsExecuting && x.SubStatus != WorkflowSubStatus.Executing);
+
+        var updated = await query.ExecuteUpdateAsync(
+            setters => setters
+                .SetProperty(x => x.SubStatus, next)
+                .SetProperty(x => x.UpdatedAt, stampedAt),
+            cancellationToken);
+
+        return updated > 0;
+    }
+
+    /// <inheritdoc />
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.SerializeAsync(WorkflowState, CancellationToken)")]
     public async ValueTask SaveAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {

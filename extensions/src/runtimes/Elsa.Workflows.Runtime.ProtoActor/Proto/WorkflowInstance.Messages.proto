@@ -27,6 +27,8 @@ enum WorkflowSubStatus {
   WorkflowSubStatusFinished = 3;
   WorkflowSubStatusCancelled = 4;
   WorkflowSubStatusFaulted = 5;
+  WorkflowSubStatusInterrupted = 6;
+  WorkflowSubStatusCancelling = 7;
 }
 
 message ActivityHandle {

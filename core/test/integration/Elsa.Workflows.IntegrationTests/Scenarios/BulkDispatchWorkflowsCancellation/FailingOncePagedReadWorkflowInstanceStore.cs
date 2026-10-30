@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.Workflows;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
@@ -101,4 +102,13 @@ public class FailingOncePagedReadWorkflowInstanceStore(
 
     public ValueTask<bool> TryMarkInterruptedAsync(string workflowInstanceId, CancellationToken cancellationToken = default, bool allowFinishedCancelled = false) =>
         inner.TryMarkInterruptedAsync(workflowInstanceId, cancellationToken, allowFinishedCancelled);
+
+    public ValueTask<bool> TryTransitionSubStatusAsync(
+        string workflowInstanceId,
+        WorkflowSubStatus expected,
+        DateTimeOffset? expectedUpdatedAt,
+        WorkflowSubStatus next,
+        DateTimeOffset stampedAt,
+        CancellationToken cancellationToken = default) =>
+        inner.TryTransitionSubStatusAsync(workflowInstanceId, expected, expectedUpdatedAt, next, stampedAt, cancellationToken);
 }

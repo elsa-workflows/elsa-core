@@ -212,6 +212,35 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
         }
     }
 
+    /// <inheritdoc />
+    public ValueTask<bool> TryTransitionSubStatusAsync(
+        string workflowInstanceId,
+        WorkflowSubStatus expected,
+        DateTimeOffset? expectedUpdatedAt,
+        WorkflowSubStatus next,
+        DateTimeOffset stampedAt,
+        CancellationToken cancellationToken = default)
+    {
+        if (!expected.IsPermittedSubStatusTransition(next))
+            return ValueTask.FromResult(false);
+
+        // Same lock as Save/Update so a runner's commit cannot land between the predicate and the column writes.
+        lock (_sync)
+        {
+            var instance = _store.Find(x => x.Id == workflowInstanceId && TenantVisibility.IsVisible(x.TenantId, CurrentTenantId));
+            if (instance is null
+                || instance.Status != WorkflowStatus.Running
+                || instance.SubStatus != expected
+                || (expectedUpdatedAt is { } expectedStamp && instance.UpdatedAt != expectedStamp)
+                || (next == WorkflowSubStatus.Cancelling && (instance.IsExecuting || instance.SubStatus == WorkflowSubStatus.Executing)))
+                return ValueTask.FromResult(false);
+
+            instance.SubStatus = next;
+            instance.UpdatedAt = stampedAt;
+            return ValueTask.FromResult(true);
+        }
+    }
+
     private static string GetId(WorkflowInstance workflowInstance) => workflowInstance.Id;
 
     private static WorkflowInstance Clone(WorkflowInstance instance) =>
