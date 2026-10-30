@@ -61,7 +61,7 @@
     "@elsa-workflows/react-studio-auth": "workspace:*",
     "@elsa-workflows/react-studio-ui": "workspace:*",
     "i18next": "^26.5.3",
-    "react-i18next": "^17.1.0"
+    "react-i18next": "^17.1.9"
   },
   "devDependencies": {
     "@playwright/test": "1.56.1",
