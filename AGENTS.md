@@ -2,6 +2,10 @@
 
 Guidance for AI coding agents working in this repository.
 
+## Agent collaboration protocol
+
+The org-wide protocol for AI agents (claims, branches, PRs, review and merge rules, handoff, stop conditions, identities, `vw-` mentions, conduct) lives at **https://github.com/elsa-workflows/.github/blob/main/AGENTS.md**. Read it first. This file keeps only notes specific to this repository; where they are stricter or name an owner exception, they apply here.
+
 ## Project Overview
 
 - Elsa Core is a .NET solution centered on `Elsa.sln`.
