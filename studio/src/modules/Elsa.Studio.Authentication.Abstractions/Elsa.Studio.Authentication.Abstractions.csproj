@@ -7,7 +7,6 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
-        <PackageReference Include="Microsoft.AspNetCore.SignalR.Common" />
     </ItemGroup>
 
     <ItemGroup>

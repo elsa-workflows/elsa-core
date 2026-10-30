@@ -55,7 +55,6 @@
     <!-- WebAssembly.Server is pinned to the first patched version of this line. -->
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.32" />
     <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.32" />
-    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Common" Version="8.0.32" />
     <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="8.0.24" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
     <PackageVersion Include="Microsoft.JSInterop" Version="8.0.24" />
@@ -76,7 +75,6 @@
     <!-- WebAssembly.Server is pinned to the first patched version of this line. -->
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.21" />
     <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.21" />
-    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Common" Version="9.0.21" />
     <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="9.0.13" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.18" />
     <PackageVersion Include="Microsoft.JSInterop" Version="9.0.13" />
@@ -97,7 +95,6 @@
     <!-- WebAssembly.Server is pinned to the first patched version of this line. -->
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.13" />
     <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.13" />
-    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Common" Version="10.0.13" />
     <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="10.0.3" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
     <PackageVersion Include="Microsoft.JSInterop" Version="10.0.3" />
