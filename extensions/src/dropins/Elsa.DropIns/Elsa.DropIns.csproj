@@ -13,9 +13,10 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
         <PackageReference Include="NuGet.Packaging" />
         <PackageReference Include="NuGet.Protocol" />
+        <PackageReference Include="System.Security.Cryptography.Pkcs" />
         <PackageReference Include="ThrottleDebounce" />
-		<PackageReference Include="System.Formats.Asn1" />
-	</ItemGroup>
+        <PackageReference Include="System.Formats.Asn1" />
+    </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="../Elsa.DropIns.Core/Elsa.DropIns.Core.csproj" />

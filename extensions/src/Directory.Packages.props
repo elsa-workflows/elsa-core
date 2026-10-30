@@ -2,6 +2,8 @@
     <PropertyGroup>
         <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
         <CentralPackageTransitivePinningEnabled>false</CentralPackageTransitivePinningEnabled>
+        <!-- NuGet.Packaging 7.0.3 needs System.Security.Cryptography.Pkcs >= 9.0.6 on net8. -->
+        <Net9CryptographyPkcsVersion>9.0.21</Net9CryptographyPkcsVersion>
     </PropertyGroup>
     <ItemGroup Label="Elsa">
         <PackageVersion Include="Elsa" Version="$(ElsaVersion)"/>
@@ -57,7 +59,8 @@
         <PackageVersion Include="Microsoft.AspNetCore.Components" Version="9.0.17"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.17"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.17" PrivateAssets="all"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.17"/>
+        <!-- WebAssembly.Server is pinned to the first patched version of this line. -->
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.21"/>
         <PackageVersion Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="9.0.17"/>
         <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.17" Condition="'$(TargetFramework)' == 'net9.0'"/>
         <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.17" Condition="'$(TargetFramework)' == 'net8.0'"/>
@@ -87,13 +90,17 @@
         <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4"/>
         <PackageVersion Include="Oracle.EntityFrameworkCore" Version="9.23.26200"/>
         <PackageVersion Include="System.DirectoryServices.Protocols" Version="9.0.13"/>
-        <PackageVersion Include="System.Formats.Asn1" Version="9.0.17"/>
+        <PackageVersion Include="System.Formats.Asn1" Version="$(Net9CryptographyPkcsVersion)" Condition="'$(MSBuildProjectName)' == 'Elsa.DropIns' AND '$(TargetFramework)' == 'net8.0'"/>
+        <PackageVersion Include="System.Formats.Asn1" Version="9.0.17" Condition="'$(MSBuildProjectName)' != 'Elsa.DropIns' OR '$(TargetFramework)' != 'net8.0'"/>
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="$(Net9CryptographyPkcsVersion)" Condition="'$(MSBuildProjectName)' == 'Elsa.DropIns' OR '$(TargetFramework)' == 'net9.0'"/>
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="8.0.2" Condition="'$(MSBuildProjectName)' != 'Elsa.DropIns' AND '$(TargetFramework)' == 'net8.0'"/>
     </ItemGroup>
     <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
         <PackageVersion Include="Microsoft.AspNetCore.Components" Version="10.0.9"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.9"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.9" PrivateAssets="all"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.9"/>
+        <!-- WebAssembly.Server is pinned to the first patched version of this line. -->
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.13"/>
         <PackageVersion Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="10.0.9"/>
         <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.9"/>
         <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.9"/>
@@ -123,6 +130,7 @@
         <PackageVersion Include="Oracle.EntityFrameworkCore" Version="10.23.26200"/>
         <PackageVersion Include="System.DirectoryServices.Protocols" Version="10.0.3"/>
         <PackageVersion Include="System.Formats.Asn1" Version="10.0.9"/>
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13"/>
     </ItemGroup>
     <ItemGroup>
         <PackageVersion Include="AppAny.Quartz.EntityFrameworkCore.Migrations" Version="0.5.1"/>
@@ -208,6 +216,7 @@
         <PackageVersion Include="Moq" Version="4.20.72" />
         <PackageVersion Include="MQTTnet" Version="5.1.0.1559" />
         <PackageVersion Include="MySql.Data" Version="9.5.0"/>
+        <PackageVersion Include="MySqlConnector" Version="2.6.2"/>
         <PackageVersion Include="NSubstitute" Version="5.3.0"/>
         <PackageVersion Include="NuGet.Packaging" Version="7.0.3"/>
         <PackageVersion Include="NuGet.Protocol" Version="7.0.3"/>
@@ -241,8 +250,10 @@
         <PackageVersion Include="System.Data.SqlClient" Version="4.9.0"/>
         <PackageVersion Include="System.Linq.Async" Version="7.0.1"/>
         <PackageVersion Include="System.Memory.Data" Version="10.0.3"/>
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="8.0.2" Condition="$(TargetFramework.StartsWith('netstandard'))"/>
         <PackageVersion Include="System.Text.Json" Version="10.0.9"/>
         <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3"/>
+        <PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.14"/>
         <PackageVersion Include="SSH.NET" Version="2026.0.0"/>
         <PackageVersion Include="Testcontainers" Version="4.9.0"/>
         <PackageVersion Include="Testcontainers.MongoDb" Version="4.9.0"/>
