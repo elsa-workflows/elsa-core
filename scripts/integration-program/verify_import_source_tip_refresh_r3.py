@@ -13,7 +13,7 @@ from verify_import_source_tip_refresh_r2 import LANDED_IMPORT
 
 
 ROOT = Path(__file__).resolve().parents[2]
-RECEIPT = ROOT / "doc/integration-program/consolidation/source-tip-refresh-2026-09-25-r3.json"
+RECEIPT = ROOT / "docs/integration-program/consolidation/source-tip-refresh-2026-09-25-r3.json"
 EXPECTED_SOURCE_PATHS = {
     "samples/react/workflow-definition-editor-sample/workflow-definition-editor-app/src/App.js":
         "samples/studio/react/workflow-definition-editor-sample/workflow-definition-editor-app/src/App.js",

@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!--
+        The Elsa import equivalence check of the BPMN designer contract suite. It imports each original document and the
+        copy a designer saved through Elsa's own BPMN import, and fails when Elsa builds something different from a copy
+        whose load reported no dropped content. Run it on the output of the suite's preservation tests.
+    -->
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFrameworks>net10.0</TargetFrameworks>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="../../../../../core/src/common/Elsa.Testing.Shared.Integration/Elsa.Testing.Shared.Integration.csproj" />
+        <ProjectReference Include="../../../../../core/src/modules/Elsa.Bpmn.Interchange/Elsa.Bpmn.Interchange.csproj" />
+    </ItemGroup>
+
+</Project>

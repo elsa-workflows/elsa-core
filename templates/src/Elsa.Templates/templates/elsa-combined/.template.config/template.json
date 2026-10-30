@@ -1,0 +1,171 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Elsa Workflows",
+  "classifications": [
+    "Web",
+    "Elsa",
+    "Workflow",
+    "Blazor"
+  ],
+  "identity": "Elsa.Templates.Combined",
+  "name": "Elsa Combined",
+  "shortName": "elsa-combined",
+  "sourceName": "Company.ElsaCombined",
+  "preferNameDirectory": true,
+  "tags": {
+    "language": "C#",
+    "type": "solution"
+  },
+  "symbols": {
+    "feature-model": {
+      "type": "parameter",
+      "datatype": "choice",
+      "defaultValue": "static",
+      "description": "The Elsa Server feature registration model to use.",
+      "choices": [
+        {
+          "choice": "static",
+          "description": "Use static feature registration with AddElsa."
+        },
+        {
+          "choice": "shell",
+          "description": "Use CShells-based shell feature registration."
+        }
+      ]
+    },
+    "studio-hosting": {
+      "type": "parameter",
+      "datatype": "choice",
+      "defaultValue": "server",
+      "description": "The Elsa Studio hosting model to use.",
+      "choices": [
+        {
+          "choice": "server",
+          "description": "Host Elsa Studio with Blazor Server in the combined host."
+        },
+        {
+          "choice": "wasm",
+          "description": "Serve an Elsa Studio Blazor WebAssembly client from the combined host."
+        },
+        {
+          "choice": "hybrid",
+          "description": "Generate server and WASM Studio support with runtime hosting selection."
+        }
+      ]
+    },
+    "persistence": {
+      "type": "parameter",
+      "datatype": "choice",
+      "defaultValue": "sqlite",
+      "description": "The EF Core persistence provider to use for workflow storage.",
+      "choices": [
+        {
+          "choice": "sqlite",
+          "description": "Use SQLite persistence."
+        },
+        {
+          "choice": "sqlserver",
+          "description": "Use SQL Server persistence."
+        },
+        {
+          "choice": "postgresql",
+          "description": "Use PostgreSQL persistence."
+        },
+        {
+          "choice": "oracle",
+          "description": "Use Oracle persistence."
+        }
+      ]
+    },
+    "auth-provider": {
+      "type": "parameter",
+      "datatype": "choice",
+      "defaultValue": "elsa-identity",
+      "description": "The Studio authentication provider to configure.",
+      "choices": [
+        {
+          "choice": "elsa-identity",
+          "description": "Use Elsa Identity username/password authentication."
+        },
+        {
+          "choice": "open-id-connect",
+          "description": "Use OpenID Connect authentication."
+        },
+        {
+          "choice": "elsa-login",
+          "description": "Use the legacy Elsa Login module."
+        }
+      ]
+    },
+    "with-labels": {
+      "type": "parameter",
+      "datatype": "bool",
+      "defaultValue": "false",
+      "description": "Include the Studio Labels module."
+    },
+    "useStaticFeatures": {
+      "type": "computed",
+      "value": "(feature-model == \"static\")"
+    },
+    "useShellFeatures": {
+      "type": "computed",
+      "value": "(feature-model == \"shell\")"
+    },
+    "useStudioServer": {
+      "type": "computed",
+      "value": "(studio-hosting == \"server\")"
+    },
+    "useStudioWasm": {
+      "type": "computed",
+      "value": "(studio-hosting == \"wasm\")"
+    },
+    "useStudioHybrid": {
+      "type": "computed",
+      "value": "(studio-hosting == \"hybrid\")"
+    },
+    "useSqlitePersistence": {
+      "type": "computed",
+      "value": "(persistence == \"sqlite\")"
+    },
+    "useSqlServerPersistence": {
+      "type": "computed",
+      "value": "(persistence == \"sqlserver\")"
+    },
+    "usePostgreSqlPersistence": {
+      "type": "computed",
+      "value": "(persistence == \"postgresql\")"
+    },
+    "useOraclePersistence": {
+      "type": "computed",
+      "value": "(persistence == \"oracle\")"
+    },
+    "useElsaIdentityAuth": {
+      "type": "computed",
+      "value": "(auth-provider == \"elsa-identity\")"
+    },
+    "useOpenIdConnectAuth": {
+      "type": "computed",
+      "value": "(auth-provider == \"open-id-connect\")"
+    },
+    "useElsaLoginAuth": {
+      "type": "computed",
+      "value": "(auth-provider == \"elsa-login\")"
+    },
+    "withLabels": {
+      "type": "computed",
+      "value": "(with-labels)"
+    }
+  },
+  "sources": [
+    {
+      "modifiers": [
+        {
+          "condition": "(!useStudioWasm && !useStudioHybrid)",
+          "exclude": [
+            "src/Company.ElsaCombined.Wasm/**"
+          ]
+        }
+      ]
+    }
+  ]
+}

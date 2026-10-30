@@ -26,10 +26,22 @@ class SolutionGroupsTests(unittest.TestCase):
         in_solution = {project.path for project in self.projects}
         for path in sorted(sg.ROOT.glob("Elsa.*.slnf")):
             with self.subTest(filter=path.name):
-                selected = json.loads(path.read_text(encoding="utf-8-sig"))["solution"]["projects"]
+                filtered = json.loads(path.read_text(encoding="utf-8-sig"))["solution"]
+                selected = filtered["projects"]
                 self.assertEqual(len(selected), len(set(selected)))
-                self.assertLessEqual(set(selected), in_solution)
-                self.assertTrue(all((sg.ROOT / path).is_file() for path in selected))
+                if filtered["path"] == "Elsa.sln":
+                    self.assertLessEqual(set(selected), in_solution)
+                    self.assertTrue(all((sg.ROOT / project).is_file() for project in selected))
+                else:
+                    registered = {item["filter"]: item for item in self.manifest["independentProducts"].values()}
+                    self.assertIn(path.name, registered)
+                    configuration = registered[path.name]
+                    self.assertEqual(configuration["solution"], filtered["path"])
+                    parent = (sg.ROOT / filtered["path"]).parent
+                    resolved = {(parent / project).relative_to(sg.ROOT).as_posix() for project in selected}
+                    self.assertEqual(set(configuration["projects"]), resolved)
+                    self.assertFalse(resolved & in_solution)
+                    self.assertTrue(all((parent / project).is_file() for project in selected))
 
     def test_foundation_filter_holds_no_optional_source_project_outside_test_closures(self) -> None:
         groups = sg.classify(self.projects, self.manifest)
@@ -39,9 +51,24 @@ class SolutionGroupsTests(unittest.TestCase):
         self.assertLessEqual(foundation_sources, selected)
 
     def test_unclassified_project_is_rejected(self) -> None:
-        stray = sg.SolutionProject("Elsa.Unlisted", "src/elsewhere/Elsa.Unlisted/Elsa.Unlisted.csproj", "0" * 32)
+        stray = sg.SolutionProject("Elsa.Unlisted", 'core/src/elsewhere/Elsa.Unlisted/Elsa.Unlisted.csproj', "0" * 32)
         with self.assertRaisesRegex(ValueError, "missing from scripts/solution/solution-groups.json"):
             sg.classify([*self.projects, stray], self.manifest)
+
+    def test_react_studio_filter_contains_all_production_features_without_spike_projects(self) -> None:
+        groups = sg.classify(self.projects, self.manifest)
+        selected = sg.filters(groups, self.projects, list(self.manifest["domains"]))["Elsa.ReactStudio.slnf"]
+        production = sorted(project.path for project in self.projects if project.path.startswith("studio/react/dotnet/"))
+        self.assertEqual(20, len(production))
+        self.assertEqual(production, selected)
+        self.assertTrue(all(groups[project] == sg.REACT_STUDIO for project in self.projects if project.path in selected))
+
+    def test_apps_filter_preserves_released_package_consumer_boundary(self) -> None:
+        projects = [sg.SolutionProject("Elsa.Server", "apps/src/Elsa.Server/Elsa.Server.csproj", "1" * 32),
+                    sg.SolutionProject("Elsa.Server.Web", "core/src/apps/Elsa.Server.Web/Elsa.Server.Web.csproj", "2" * 32)]
+        groups = sg.classify(projects, self.manifest)
+        self.assertEqual(sg.APPS, groups[projects[0]])
+        self.assertEqual([projects[0].path], sg.filters(groups, projects, [])["Elsa.Apps.slnf"])
 
     def test_foundation_may_not_depend_on_an_optional_project(self) -> None:
         manifest = json.loads(json.dumps(self.manifest))

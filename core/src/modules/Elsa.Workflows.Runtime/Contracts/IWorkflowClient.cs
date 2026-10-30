@@ -1,0 +1,70 @@
+using Elsa.Workflows;
+using Elsa.Workflows.Runtime.Messages;
+using Elsa.Workflows.State;
+
+namespace Elsa.Workflows.Runtime;
+
+/// <summary>
+/// Represents a client that can interact with a workflow instance.
+/// </summary>
+public interface IWorkflowClient
+{
+    /// <summary>
+    /// Gets the ID of the workflow instance.
+    /// </summary>
+    string WorkflowInstanceId { get; }
+    
+    /// <summary>
+    /// Creates a new workflow instance for the specified workflow definition version.
+    /// Returns <c>CannotStart</c> when the workflow's activation strategy refuses a new instance.
+    /// </summary>
+    Task<CreateWorkflowInstanceResponse> CreateInstanceAsync(CreateWorkflowInstanceRequest request, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Executes the workflow instance and waits for it to complete or reach a suspend point.
+    /// </summary>
+    Task<RunWorkflowInstanceResponse> RunInstanceAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Runs the instance only while it is still pending.
+    /// The default implementation exports the state and then runs, which is best-effort: another caller can change the
+    /// sub-status between the two calls. Implementations that can read and run under the same instance lock override
+    /// this method to make the guard atomic.
+    /// Returns <c>null</c> without running when the instance has already left the pending sub-status.
+    /// </summary>
+    async Task<RunWorkflowInstanceResponse?> RunInstanceIfPendingAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
+    {
+        var state = await ExportStateAsync(cancellationToken);
+        return state.SubStatus == WorkflowSubStatus.Pending
+            ? await RunInstanceAsync(request, cancellationToken)
+            : null;
+    }
+    
+    /// <summary>
+    /// Creates a new workflow instance and executes it.
+    /// Returns <c>CannotStart</c> when the workflow's activation strategy refuses a new instance.
+    /// </summary>
+    Task<RunWorkflowInstanceResponse> CreateAndRunInstanceAsync(CreateAndRunWorkflowInstanceRequest request, CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Cancels the execution of a workflow instance.
+    /// </summary>
+    Task CancelAsync(CancellationToken cancellationToken = default);
+    
+    /// <summary>
+    /// Exports the <see cref="WorkflowState"/> of the specified workflow instance.
+    /// </summary>
+    Task<WorkflowState> ExportStateAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Imports the specified <see cref="WorkflowState"/>.
+    /// </summary>
+    Task ImportStateAsync(WorkflowState workflowState, CancellationToken cancellationToken = default);
+
+    Task<bool> InstanceExistsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Deletes the workflow instance. This method ensures that the instance is properly stopped before deletion.
+    /// </summary>
+    Task<bool> DeleteAsync(CancellationToken cancellationToken = default);
+}

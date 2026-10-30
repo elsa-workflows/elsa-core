@@ -5,4 +5,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+  <!-- Use the same NuGet signed-content hashing primitive as the selected SDK. -->
+  <ItemGroup>
+    <Reference Include="NuGet.Packaging" HintPath="$(MSBuildBinPath)/NuGet.Packaging.dll" />
+    <Reference Include="NuGet.Common" HintPath="$(MSBuildBinPath)/NuGet.Common.dll" />
+    <Reference Include="NuGet.Versioning" HintPath="$(MSBuildBinPath)/NuGet.Versioning.dll" />
+    <Reference Include="NuGet.Frameworks" HintPath="$(MSBuildBinPath)/NuGet.Frameworks.dll" />
+    <Reference Include="NuGet.Configuration" HintPath="$(MSBuildBinPath)/NuGet.Configuration.dll" />
+    <Reference Include="System.Security.Cryptography.Pkcs" HintPath="$(MSBuildBinPath)/System.Security.Cryptography.Pkcs.dll" />
+  </ItemGroup>
 </Project>

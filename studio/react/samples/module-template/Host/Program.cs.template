@@ -1,0 +1,10 @@
+using __PACKAGE_ID__;
+using Elsa.ReactStudio;
+
+var builder = WebApplication.CreateBuilder(args);
+Type[] modules = builder.Configuration.GetValue("__NAME__:Enabled", true) ? [typeof(__NAME__Feature)] : [];
+builder.AddReactStudioPreview(modules);
+var app = builder.Build();
+app.UseRouting();
+app.MapReactStudioPreview();
+app.Run();

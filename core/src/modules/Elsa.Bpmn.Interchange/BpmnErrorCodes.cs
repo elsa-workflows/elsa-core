@@ -1,0 +1,117 @@
+namespace Elsa.Bpmn.Interchange;
+
+/// <summary>
+/// Stable, machine-readable codes carried alongside the human-readable message of every BPMN-specific refusal
+/// <c>bpmn/import</c>, <c>bpmn/definitions/{id}/export</c> and the <c>bpmn/definitions/{id}/document</c> and <c>.../xml</c> GET/PUT
+/// endpoints send, in the additive error envelope <see cref="Endpoints.Bpmn.BpmnErrorResponse"/> describes.
+/// </summary>
+/// <remarks>
+/// Studio (and any other caller) matches on these codes rather than on the message text, so a rewording of a
+/// message never breaks a caller that only reads the code. Treat every value here as a compatibility surface: once
+/// published, a code must not be renamed or reused for a different refusal. See doc/wiki/bpmn-workflows.md's REST
+/// endpoints section for the endpoint(s) each code is sent from and what "data" (if any) it carries.
+/// </remarks>
+public static class BpmnErrorCodes
+{
+    /// <summary>
+    /// <c>bpmn/import</c> and the document and XML <c>PUT</c> refuse a document that needs a BPMN host capability this
+    /// deployment does not declare. Carries <c>data.capabilities</c> (the missing capability names) and
+    /// <c>data.elementIds</c> (the offending element ids, combined across every missing capability).
+    /// </summary>
+    public const string ImportCapabilityUnsupported = "bpmn.import.capability-unsupported";
+
+    /// <summary>
+    /// <c>bpmn/import</c> and the document and XML <c>PUT</c> refuse a document whose work binding — an
+    /// <c>elsa:activityBinding</c>, a timer duration, a call activity — cannot be turned into a runnable Elsa
+    /// activity. A task that declares no binding at all is not refused: it is bound to a placeholder, which publishing
+    /// refuses.
+    /// </summary>
+    public const string ImportBindingInvalid = "bpmn.import.binding-invalid";
+
+    /// <summary>
+    /// <c>bpmn/import</c> and the document and XML <c>PUT</c> refuse a document that declares the same element id more than
+    /// once — most often a subprocess nested inside another subprocess that reuses its parent's id. Refused before
+    /// any recursion into nested processes runs, since a repeated id would otherwise make that recursion — in this
+    /// type's own capability walk, in <c>BpmnWorkBinder.BindScope</c>, and in <c>Bpmn.Interchange</c>'s own
+    /// <c>BpmnXmlWriter</c> — loop without ever terminating and crash the process outright. <c>bpmn/analyze</c> refuses
+    /// with it too when two flow nodes in one process or subprocess body share an id, which the reader cannot read.
+    /// Carries <c>data.elementIds</c> (the duplicated ids).
+    /// </summary>
+    public const string ImportDuplicateElementId = "bpmn.import.duplicate-element-id";
+
+    /// <summary>
+    /// <c>bpmn/import</c> and the document and XML <c>PUT</c> refuse a document whose process, or a subprocess body it can reach
+    /// at any depth, cannot run: building its graph refuses it, for example for a cycle on which nothing can wait, or an
+    /// event subprocess body without exactly one start event. The message is <c>Bpmn.Semantics</c>' own and names the
+    /// elements. No opt-in overrides this refusal.
+    /// </summary>
+    public const string ImportProcessInvalid = "bpmn.import.process-invalid";
+
+    /// <summary>
+    /// No longer sent. Before Elsa evaluated condition expressions, <c>bpmn/import</c> and the document <c>PUT</c>
+    /// refused a document whose sequence flows carried a standard BPMN <c>conditionExpression</c> with this code.
+    /// </summary>
+    [Obsolete("Elsa evaluates condition expressions; import no longer refuses them, so nothing sends this code. See ImportConditionConflict and ImportConditionLanguageUnsupported.")]
+    public const string ImportConditionUnsupported = "bpmn.import.condition-unsupported";
+
+    /// <summary>
+    /// <c>bpmn/import</c> and the document and XML <c>PUT</c> refuse a document with a sequence flow — anywhere in it,
+    /// subprocess bodies included — that carries both a <c>conditionOutcome</c> and an author-written
+    /// <c>conditionExpression</c>, because either precedence rule would route some documents differently from what their
+    /// author meant. The <c>outcome == '...'</c> predicate the library writes for an outcome flow is the outcome restated
+    /// and does not count. No opt-in overrides this refusal. Carries <c>data.elementIds</c> (the offending sequence flow
+    /// ids, sorted and distinct).
+    /// </summary>
+    public const string ImportConditionConflict = "bpmn.import.condition-conflict";
+
+    /// <summary>
+    /// <c>bpmn/import</c> and the document and XML <c>PUT</c> refuse a document with a condition expression — anywhere in it,
+    /// subprocess bodies included — written in a language Elsa does not evaluate. The language is the expression's own,
+    /// else the document's <c>expressionLanguage</c>; Elsa evaluates <c>javascript</c> (the default when neither names
+    /// one), <c>csharp</c> and <c>liquid</c>, and never maps another language onto these. No opt-in overrides this
+    /// refusal. Carries <c>data.elementIds</c> (the offending sequence flow ids, sorted and distinct).
+    /// </summary>
+    public const string ImportConditionLanguageUnsupported = "bpmn.import.condition-language-unsupported";
+
+    /// <summary>
+    /// <c>bpmn/definitions/{id}/export</c> and the document and XML <c>GET</c> refuse a workflow definition that does not
+    /// currently carry BPMN source — either it was never imported from BPMN, or a later save replaced its custom
+    /// properties wholesale.
+    /// </summary>
+    public const string ExportNotImported = "bpmn.export.not-imported";
+
+    /// <summary>
+    /// <c>bpmn/definitions/{id}/export</c> and the document and XML <c>GET</c> refuse a workflow definition whose stored
+    /// BPMN source no longer corresponds to it — its version, or (for an unpublished draft saved in place) its
+    /// activity graph, has moved on since the source was recorded.
+    /// </summary>
+    public const string ExportSourceStale = "bpmn.export.source-stale";
+
+    /// <summary>
+    /// <c>bpmn/definitions/{id}/export</c> and the document and XML <c>GET</c> refuse a workflow definition that carries
+    /// BPMN source but not the definition version it was recorded against, so whether that source is still current
+    /// cannot be verified. Distinct from <see cref="ExportNotImported"/> (the source text is present) and
+    /// <see cref="ExportSourceStale"/> (there is no version to compare against yet); not reachable through
+    /// <c>Import</c> itself, only through custom properties edited or migrated some other way.
+    /// </summary>
+    public const string ExportSourceVersionUnknown = "bpmn.export.source-version-unknown";
+
+    /// <summary>
+    /// The document and XML <c>PUT</c> refuse to edit a workflow definition that no longer exists — e.g. it was deleted
+    /// between the endpoint's own existence/ETag check and the import that follows it.
+    /// </summary>
+    public const string DocumentNotFound = "bpmn.document.not-found";
+
+    /// <summary>
+    /// The document and XML <c>PUT</c> require an <c>If-Match</c> request header carrying the ETag a prior <c>GET</c>
+    /// returned, and refuses a request that omits it or sends the wildcard <c>*</c>.
+    /// </summary>
+    public const string DocumentPreconditionRequired = "bpmn.document.precondition-required";
+
+    /// <summary>
+    /// The document and XML <c>PUT</c> refuse an <c>If-Match</c> header that does not match the workflow definition's
+    /// current ETag — including when the header matched on arrival but another writer saved before this PUT's
+    /// compare-and-swap completed: the definition was written since the caller last read it.
+    /// </summary>
+    public const string DocumentPreconditionFailed = "bpmn.document.precondition-failed";
+}

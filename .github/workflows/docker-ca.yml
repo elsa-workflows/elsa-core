@@ -9,7 +9,11 @@ on:
       - 'docker/**'
       - '.dockerignore'
       - 'scripts/test-ca-trust.sh'
-      - 'test/TlsSmoke/**'
+      - 'scripts/integration-program/build_studio_clientlibs.sh'
+      - 'scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/**'
+      - 'studio/src/**/ClientLib/**'
+      - 'studio/src/hosts/Elsa.Studio.Host.Server/**'
+      - 'core/test/TlsSmoke/**'
       - '.github/workflows/docker-ca.yml'
   push:
     branches:
@@ -18,7 +22,11 @@ on:
       - 'docker/**'
       - '.dockerignore'
       - 'scripts/test-ca-trust.sh'
-      - 'test/TlsSmoke/**'
+      - 'scripts/integration-program/build_studio_clientlibs.sh'
+      - 'scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/**'
+      - 'studio/src/**/ClientLib/**'
+      - 'studio/src/hosts/Elsa.Studio.Host.Server/**'
+      - 'core/test/TlsSmoke/**'
       - '.github/workflows/docker-ca.yml'
 
 jobs:
@@ -54,13 +62,50 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Publish TLS smoke test app
-        run: dotnet publish test/TlsSmoke/TlsSmoke.csproj -c Release -o artifacts/tls-smoke
+        run: dotnet publish core/test/TlsSmoke/TlsSmoke.csproj -c Release -o artifacts/tls-smoke
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Build ${{ matrix.name }} image
         run: docker build -f ${{ matrix.dockerfile }} -t ${{ matrix.image }} .
+
+      - name: Require the Studio image command to be the Studio host
+        if: matrix.name == 'elsa-studio'
+        run: |
+          set -euo pipefail
+          cmd="$(docker inspect -f '{{json .Config.Cmd}}' "${{ matrix.image }}")"
+          echo "$cmd"
+          test "$cmd" = '["dotnet","Elsa.Studio.Host.Server.dll"]'
+
+      - name: Require the Studio image to serve ClientLib assets
+        if: matrix.name == 'elsa-studio'
+        run: |
+          set -euo pipefail
+          cid="$(docker run -d --rm \
+            -e ASPNETCORE_ENVIRONMENT=Development \
+            -e HTTP_PORTS=8080 \
+            -e Backend__Url=http://elsa-server:8080/elsa/api \
+            -p 18080:8080 \
+            "${{ matrix.image }}")"
+          # On failure, print the container log before removing the container.
+          trap 'status=$?; if [ "$status" -ne 0 ]; then docker logs "$cid" || true; fi; docker rm -f "$cid" >/dev/null 2>&1 || true' EXIT
+          ok=0
+          for _ in $(seq 1 30); do
+            if curl -fsS "http://127.0.0.1:18080/_content/Elsa.Studio.Workflows.Designer/designer.css" -o /tmp/studio-designer.css; then
+              ok=1
+              break
+            fi
+            sleep 2
+          done
+          test "$ok" = 1
+          test -s /tmp/studio-designer.css
+          curl -fsS "http://127.0.0.1:18080/_content/Elsa.Studio.Workflows.Designer/designer.entry.js" -o /tmp/studio-designer.entry.js
+          test -s /tmp/studio-designer.entry.js
+          curl -fsS "http://127.0.0.1:18080/_content/Elsa.Studio.DomInterop/dom.entry.js" -o /tmp/studio-dom.entry.js
+          test -s /tmp/studio-dom.entry.js
+          curl -fsS "http://127.0.0.1:18080/" -o /tmp/studio-index.html
+          grep -F -q '_content/Elsa.Studio.Workflows.Designer/designer.css' /tmp/studio-index.html
 
       - name: Run TLS smoke tests
         env:

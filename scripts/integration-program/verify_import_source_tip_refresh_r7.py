@@ -16,6 +16,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from product_layout import current_path
 import verify_import_source_tip_refresh_r3 as r3
 import verify_import_source_tip_refresh_r4 as r4
 import verify_import_source_tip_refresh_r6 as r6
@@ -23,7 +24,7 @@ from verify_import_source_tip_refresh_r2 import LANDED_IMPORT, blob_and_mode, gi
 
 
 ROOT = Path(__file__).resolve().parents[2]
-RECEIPT = ROOT / "doc/integration-program/consolidation/source-tip-refresh-2026-09-27-r7.json"
+RECEIPT = ROOT / "docs/integration-program/consolidation/source-tip-refresh-2026-09-27-r7.json"
 BASE_IMPORT_HEAD = "ecd2a77613405efe98a4adb9f9587a8d668c31e7"
 MERGED_MAIN_COMMIT = "d0ea5b039c2525774b14592d3322078a645b993c"
 REVIEWED_GATE_COMMIT = "79d6c41e09069927abb7825f16b5ba0a168cea38"
@@ -33,9 +34,9 @@ PUBLISHERS = (".github/workflows/packages.yml", ".github/workflows/update-wiki.y
 GATE_VALIDATOR = "scripts/validate_packages_workflow_gates.py"
 # Prior receipt -> the module whose own (now HEAD-deferring) publisher check it owns.
 SUPERSEDED_RECEIPTS = {
-    str(r3.RECEIPT.relative_to(ROOT)): r3,
-    str(r4.RECEIPT.relative_to(ROOT)): r4,
-    str(r6.RECEIPT.relative_to(ROOT)): r6,
+    "doc/integration-program/consolidation/" + r3.RECEIPT.name: r3,
+    "doc/integration-program/consolidation/" + r4.RECEIPT.name: r4,
+    "doc/integration-program/consolidation/" + r6.RECEIPT.name: r6,
 }
 
 
@@ -68,7 +69,7 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
     if not isinstance(superseded, list) or {item["path"] for item in superseded} != set(SUPERSEDED_RECEIPTS):
         raise ValueError("Superseded publisher receipts changed")
     for item in superseded:
-        content = (root / item["path"]).read_bytes()
+        content = current_path(root, item["path"]).read_bytes()
         if r6.sha256(content) != item["sha256"]:
             raise ValueError(f"Superseded publisher receipt changed: {item['path']}")
         # Each superseded verifier still checks its own reviewed/integration commit; this receipt owns HEAD.

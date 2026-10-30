@@ -1,7 +1,7 @@
 # Copilot Playbook: Elsa Release-Unit Notes (GitHub Release + PR/commit links)
 
 ## Goal
-Draft developer-facing notes for one named Elsa release unit between two reviewed refs. The source may live in `elsa-core` or, before an approved publisher cutover, in the still-active Extensions or Studio repository. Source co-location does not make unrelated packages part of the same release. Include:
+Draft developer-facing notes for one named Elsa release unit between two reviewed refs. The source lives in `elsa-core`; Studio and Extensions are folded into it, and their earlier history is imported here (see the [integration program](../docs/integration-program/README.md)), so do not read from or write to the old Studio, Extensions or Apps repositories. Source co-location does not make unrelated packages part of the same release. Include:
 - a short **Highlights** section up top
 - standard grouped sections (Breaking/Features/Improvements/Fixes/Tests/CI)
 - **GitHub-style** PR/commit references at the end of bullets: `(#1234)` or `(abcd123)`
@@ -26,7 +26,7 @@ If the range crosses the history import, identify the old repository/tag and the
 corresponding imported ancestor explicitly. Do not infer the previous release
 from the nearest repository-wide semver tag. Filter changes to the release unit's
 projects, plus shared dependency/API changes that actually affect it. Cite the
-[release-unit manifest](../doc/integration-program/release-units.json) when it
+[release-unit manifest](../docs/integration-program/release-units.json) when it
 contains this unit; otherwise verify the package boundary and current owner
 from its reviewed release evidence. Verify the live source and feed before
 calling a version published. Drafting notes does not authorize a GitHub Release,
@@ -116,7 +116,7 @@ If none are provided, omit the section entirely.
 - Every bullet has suffix `(#NNNN)` or `(sha)` where available
 - No PR numbers are guessed
 - Full changelog includes all relevant release-unit changes from the range and states the path/package filter used
-- A single-package draft uses `doc/changelogs/<package-id>/<version>.md`; a Core-wide multi-package draft keeps `doc/changelogs/<version>.md`; another multi-package unit uses a reviewed unit ID in `doc/changelogs/<unit-id>/<version>.md`
+- A single-package draft uses `core/docs/changelogs/<package-id>/<version>.md`; a Core-wide multi-package draft keeps `core/docs/changelogs/<version>.md`; another multi-package unit uses a reviewed unit ID in `core/docs/changelogs/<unit-id>/<version>.md`
 - Optional sections (Developer-facing / Tests / CI / Known issues) are omitted if empty
 
 ## Example prompt for a new session

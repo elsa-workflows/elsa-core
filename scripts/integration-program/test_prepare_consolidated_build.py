@@ -165,7 +165,7 @@ new file mode 100644
             '95a658b96107ad4dbb280a13972479af74bc6a30',
         )
         self.assertEqual(build.SUPPORTED_CORE_PROFILE_COMMITS, expected_core_profiles)
-        ledger_path = build.HERE.parent.parent / 'doc/integration-program/consolidation/canonical-source-profile-ledger.json'
+        ledger_path = build.HERE.parent.parent / 'docs/integration-program/consolidation/canonical-source-profile-ledger.json'
         ledger = json.loads(ledger_path.read_text())
         self.assertEqual([row['sourceCommits']['core'] for row in ledger['supportedRehearsalProfiles']], [
             '8e893e02c4ac089d526b0a0d294a8546f021d072', *expected_core_profiles,
@@ -459,7 +459,7 @@ new file mode 100644
             build.evaluate_packability(root, ['src/extensions/Example/Example.csproj'], evaluator=evaluator)
 
     def test_retained_packability_evidence_is_pinned_and_property_only(self):
-        path = build.HERE.parent.parent / 'doc/integration-program/consolidation/canonical-packability-076-evidence.json.gz'
+        path = build.HERE.parent.parent / 'docs/integration-program/consolidation/canonical-packability-076-evidence.json.gz'
         compressed = path.read_bytes()
         self.assertEqual(hashlib.sha256(compressed).hexdigest(), '640afa1a61b472fb2f054312168a11c6ba85595a312441976785dd04ac7537a7')
         evidence = json.loads(gzip.decompress(compressed))

@@ -1,0 +1,592 @@
+using System.Data.Common;
+using Elsa.Workflows;
+using Elsa.Workflows.Admission;
+using Elsa.Workflows.Admission.WorkerProcess;
+using Elsa.Workflows.Management;
+using Elsa.Workflows.Pipelines.ActivityExecution;
+using Elsa.Workflows.Pipelines.WorkflowExecution;
+using Elsa.Workflows.Runtime;
+using Elsa.Workflows.Runtime.Messages;
+using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Filters;
+using Elsa.Workflows.State;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Elsa.Connections.Credentials.Persistence.PostgreSql.IntegrationTests;
+
+[Collection("Connections PostgreSQL")]
+public sealed class AdmissionRuntimeExecutionTests(PostgreSqlConnectionsFixture fixture)
+{
+    private readonly AdmissionRuntimeTestFixture _runtime = new(fixture);
+
+    [Theory]
+    [InlineData("runtime-completed", "completed", WorkflowSubStatus.Finished)]
+    [InlineData("runtime-suspended", "suspended", WorkflowSubStatus.Suspended)]
+    [InlineData("runtime-faulted", "faulted", WorkflowSubStatus.Faulted)]
+    public async Task RealDefaultPipelineRecordsActualOutcomeAfterFinalWrite(string caseId, string outcome, WorkflowSubStatus expected)
+    {
+        await _runtime.RunAsync(async host =>
+        {
+            host.Probe.Outcome = outcome;
+            var response = await host.Execution.ExecuteAsync(host.AdmissionId);
+            Assert.Equal(expected, response!.SubStatus);
+            var record = (await host.Store.FindAsync(host.AdmissionId))!;
+            Assert.Equal(expected == WorkflowSubStatus.Suspended ? AdmissionState.ExecutionObserved : AdmissionState.Terminal, record.State);
+            Assert.False(record.AuthorityOutstanding);
+            Assert.NotNull(record.CheckpointFingerprint);
+            Assert.Equal(1, host.Probe.Count("activityEffects"));
+            Assert.Equal(1, host.Probe.Count("workflowExecuting"));
+            Assert.Equal(1, host.Probe.Count("workflowStarted"));
+            Assert.Equal(1, host.Probe.Count("TrailingWriteCompleted"));
+            Assert.Equal(1, host.Probe.Count("OwnershipUnwound"));
+            Assert.Equal(1, host.Probe.Count("CheckpointRecorded"));
+            await ObserveAsync(caseId, nameof(RealDefaultPipelineRecordsActualOutcomeAfterFinalWrite), caseId,
+                new() { ["activityEffects"] = 1, ["checkpointRecorded"] = true, ["subStatus"] = expected.ToString() });
+        });
+    }
+
+    [Fact]
+    public async Task CreationClaimCommitCannotRaceOperatorResolutionBeforeInsert()
+    {
+        var barrier = new CreationCommitGate();
+        await _runtime.RunAsync(async host =>
+        {
+            barrier.Armed = true;
+            var execution = host.Execution.ExecuteAsync(host.AdmissionId);
+            try
+            {
+                await barrier.Reached.Task.WaitAsync(TimeSpan.FromSeconds(30));
+                var record = (await host.Store.FindAsync(host.AdmissionId))!;
+                Assert.Equal(AdmissionState.Creating, record.State);
+                Assert.Equal(0, host.Probe.Count("instanceInsertAttempts"));
+                await Assert.ThrowsAsync<InvalidOperationException>(() => host.Execution.ResolveAsync(record.Id, record.Revision,
+                    AdmissionTerminalDisposition.Resolved, "fixture-owner-resolution", true, true));
+                Assert.Equal(AdmissionState.Creating, (await host.Store.FindAsync(record.Id))!.State);
+            }
+            finally
+            {
+                barrier.Release.TrySetResult();
+                await execution;
+            }
+            Assert.Equal(1, host.Probe.Count("instanceInsertAttempts"));
+            Assert.Equal(1, host.Probe.Count("activityEffects"));
+            await ObserveAsync("runtime-creation-owner-race", nameof(CreationClaimCommitCannotRaceOperatorResolutionBeforeInsert), "default",
+                new() { ["resolutionDenied"] = true, ["instanceInsertAttempts"] = 1, ["activityEffects"] = 1 });
+        }, barrier);
+    }
+
+    [Theory]
+    [InlineData("runtime-graph-parent", "parent")]
+    [InlineData("runtime-graph-child", "child")]
+    public async Task PreparedGraphRelationshipMutationDeniesBeforeExecution(string caseId, string scenario)
+    {
+        await _runtime.RunAsync(async host =>
+        {
+            host.Probe.Boundary = boundary =>
+            {
+                if (boundary == nameof(AdmissionExecutionBoundary.StartAuthorized))
+                {
+                    var nodes = host.Probe.PreparedContext!.WorkflowGraph.Nodes.ToArray();
+                    Assert.True(nodes.Length >= 2);
+                    if (scenario == "parent")
+                    {
+                        nodes[^1].AddParent(nodes[0]);
+                    }
+                    else
+                    {
+                        nodes[0].AddChild(nodes[^1]);
+                    }
+                }
+                return Task.CompletedTask;
+            };
+            await Assert.ThrowsAsync<InvalidOperationException>(() => host.Execution.ExecuteAsync(host.AdmissionId));
+            Assert.Equal(0, host.Probe.Count("workflowExecuting"));
+            Assert.Equal(0, host.Probe.Count("workflowStarted"));
+            Assert.Equal(0, host.Probe.Count("activityEffects"));
+            Assert.Equal(AdmissionState.RecoveryRequired, (await host.Store.FindAsync(host.AdmissionId))!.State);
+            await ObserveAsync(caseId, nameof(PreparedGraphRelationshipMutationDeniesBeforeExecution), caseId,
+                new() { ["workflowExecuting"] = 0, ["activityEffects"] = 0, ["recoveryRequired"] = true });
+        });
+    }
+
+    [Fact]
+    public async Task SameMethodNameDifferentCompletionTargetCannotEscapeRevalidation()
+    {
+        await _runtime.RunAsync(async host =>
+        {
+            host.Probe.Outcome = "suspended";
+            var initial = (await host.Execution.ExecuteAsync(host.AdmissionId))!;
+            var bookmark = Assert.Single(initial.Bookmarks);
+            var replaced = false;
+            var first = new CompletionTarget();
+            var second = new CompletionTarget();
+            ActivityCompletionCallback firstCallback = first.Complete;
+            ActivityCompletionCallback secondCallback = second.Complete;
+            Assert.Equal(firstCallback.Method.Name, secondCallback.Method.Name);
+            host.Probe.OnRestored = context =>
+            {
+                var entry = Assert.Single(context.CompletionCallbacks);
+                context.RemoveCompletionCallback(entry);
+                context.AddCompletionCallback(entry.Owner, entry.Child, firstCallback, entry.Tag);
+                return Task.CompletedTask;
+            };
+            host.Probe.Boundary = boundary =>
+            {
+                if (boundary == nameof(AdmissionExecutionBoundary.StartAuthorized))
+                {
+                    var context = host.Probe.PreparedContext!;
+                    var entry = Assert.Single(context.CompletionCallbacks);
+                    Assert.Same(firstCallback, entry.CompletionCallback);
+                    // Same serialized method name, owner, child and tag, but a different target.
+                    context.RemoveCompletionCallback(entry);
+                    context.AddCompletionCallback(entry.Owner, entry.Child, secondCallback, entry.Tag);
+                    replaced = true;
+                }
+                return Task.CompletedTask;
+            };
+            var client = await host.Services.GetRequiredService<IWorkflowRuntime>().CreateClientAsync(initial.WorkflowInstanceId);
+            await Assert.ThrowsAsync<InvalidOperationException>(() => client.RunInstanceAsync(new RunWorkflowInstanceRequest { BookmarkId = bookmark.Id }));
+            Assert.True(replaced);
+            Assert.Equal(1, host.Probe.Count("workflowExecuting"));
+            Assert.Equal(0, host.Probe.Count("activityResumes"));
+            Assert.Equal(AdmissionState.RecoveryRequired, (await host.Store.FindAsync(host.AdmissionId))!.State);
+            await ObserveAsync("runtime-completion-target", nameof(SameMethodNameDifferentCompletionTargetCannotEscapeRevalidation), "default",
+                new() { ["callbackReplaced"] = true, ["activityResumes"] = 0, ["recoveryRequired"] = true });
+        });
+    }
+
+    [Fact]
+    public async Task FrozenCompositionsRejectSetupFromAuthorizationAndExecutingCallbacks()
+    {
+        await _runtime.RunAsync(async host =>
+        {
+            var setupCallbacks = 0;
+            var setupAttempts = 0;
+            var workflow = (WorkflowExecutionPipeline)host.Services.GetRequiredService<IWorkflowExecutionPipeline>();
+            var activity = (ActivityExecutionPipeline)host.Services.GetRequiredService<IActivityExecutionPipeline>();
+            void AttemptSetup()
+            {
+                setupAttempts++;
+                Assert.Throws<InvalidOperationException>(() => workflow.Setup(builder => { setupCallbacks++; builder.Reset(); }));
+                Assert.Throws<InvalidOperationException>(() => activity.Setup(builder => { setupCallbacks++; builder.Reset(); }));
+            }
+            host.Probe.Boundary = boundary =>
+            {
+                if (boundary is nameof(AdmissionExecutionBoundary.StartAuthorized) or nameof(AdmissionExecutionBoundary.AuthorityConsumed) or nameof(AdmissionExecutionBoundary.BeforeRunnerEntry))
+                {
+                    AttemptSetup();
+                }
+                return Task.CompletedTask;
+            };
+            host.Probe.OnExecuting = _ => { AttemptSetup(); return Task.CompletedTask; };
+            Assert.Equal(WorkflowSubStatus.Finished, (await host.Execution.ExecuteAsync(host.AdmissionId))!.SubStatus);
+            Assert.Equal(0, setupCallbacks);
+            Assert.Equal(4, setupAttempts);
+            Assert.Equal(1, host.Probe.Count("activityEffects"));
+            await ObserveAsync("runtime-frozen-compositions", nameof(FrozenCompositionsRejectSetupFromAuthorizationAndExecutingCallbacks), "default",
+                new() { ["setupCallbacks"] = 0, ["setupAttempts"] = 4, ["activityEffects"] = 1 });
+        });
+    }
+
+    [Fact]
+    public async Task PublicActivityEntriesRemainDeniedDuringAuthorizedRunAndAfterUnwind()
+    {
+        await _runtime.RunAsync(async host =>
+        {
+            var reached = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            host.Probe.Boundary = async boundary =>
+            {
+                if (boundary == "ActivityEffect")
+                {
+                    reached.TrySetResult();
+                    await release.Task.WaitAsync(TimeSpan.FromSeconds(30));
+                }
+            };
+            var run = host.Execution.ExecuteAsync(host.AdmissionId);
+            ActivityExecutionContext? retained = null;
+            Func<Task>? cached = null;
+            try
+            {
+                await reached.Task.WaitAsync(TimeSpan.FromSeconds(30));
+                var context = host.Probe.PreparedContext!;
+                retained = context.ActivityExecutionContexts.Single(x => x.Activity is AdmissionRuntimeActivity);
+                var pipeline = host.Services.GetRequiredService<IActivityExecutionPipeline>();
+                var invoker = host.Services.GetRequiredService<IActivityInvoker>();
+                var builder = new ActivityExecutionPipelinePipelineBuilder(host.Services);
+                var built = builder.Use(next => next).Build();
+                cached = () => built(retained).AsTask();
+                await Assert.ThrowsAsync<InvalidOperationException>(() => pipeline.ExecuteAsync(retained));
+                await Assert.ThrowsAsync<InvalidOperationException>(() => pipeline.Pipeline(retained).AsTask());
+                await Assert.ThrowsAsync<InvalidOperationException>(cached);
+                await Assert.ThrowsAsync<InvalidOperationException>(() => invoker.InvokeAsync(retained));
+                await Assert.ThrowsAsync<InvalidOperationException>(async () => { await invoker.InvokeAsync(context, new AdmissionRuntimeActivity()); });
+                await Assert.ThrowsAsync<InvalidOperationException>(() => host.Services.GetRequiredService<IWorkflowRunner>().RunAsync(context));
+                Assert.Equal(1, host.Probe.Count("workflowExecuting"));
+                Assert.Equal(1, host.Probe.Count("activityEffects"));
+            }
+            finally
+            {
+                release.TrySetResult();
+                await run;
+            }
+            await Assert.ThrowsAsync<InvalidOperationException>(cached!);
+            await Assert.ThrowsAsync<InvalidOperationException>(() => host.Services.GetRequiredService<IActivityInvoker>().InvokeAsync(retained!));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => host.Services.GetRequiredService<IWorkflowRunner>().RunAsync(retained!.WorkflowExecutionContext));
+            Assert.Equal(1, host.Probe.Count("workflowExecuting"));
+            Assert.Equal(1, host.Probe.Count("activityEffects"));
+            await ObserveAsync("runtime-public-activity-denial", nameof(PublicActivityEntriesRemainDeniedDuringAuthorizedRunAndAfterUnwind), "default",
+                new() { ["activityEffects"] = 1, ["duringExecutionDenied"] = true, ["afterUnwindDenied"] = true, ["publicRunnerReuseDenied"] = true });
+        });
+    }
+
+    [Fact]
+    public async Task LegacyBookmarkUpsertCannotReplaceOwnedRowWithForgedUnownedIdentity()
+    {
+        await _runtime.RunAsync(async host =>
+        {
+            host.Probe.Outcome = "suspended";
+            var initial = (await host.Execution.ExecuteAsync(host.AdmissionId))!;
+            var bookmark = Assert.Single(initial.Bookmarks);
+            var store = host.Services.GetRequiredService<IBookmarkStore>();
+            var serializer = host.Services.GetRequiredService<IPayloadSerializer>();
+            var original = (await store.FindAsync(new BookmarkFilter { BookmarkId = bookmark.Id }))!;
+            var before = serializer.Serialize(original);
+            var saves = host.Probe.Count("bookmarkSaveCalls");
+            var forged = new StoredBookmark
+            {
+                Id = original.Id, TenantId = "foreign-forged-tenant", WorkflowInstanceId = "definitively-unowned-instance",
+                ActivityInstanceId = original.ActivityInstanceId, Name = "forged-bookmark", Hash = "forged-hash", CreatedAt = original.CreatedAt
+            };
+            var runtime = host.Services.GetRequiredService<IWorkflowRuntime>();
+#pragma warning disable CS0618 // Exercise the supported legacy facade's actual write boundary.
+            await Assert.ThrowsAsync<InvalidOperationException>(() => runtime.UpdateBookmarkAsync(forged));
+#pragma warning restore CS0618
+            Assert.Equal(saves, host.Probe.Count("bookmarkSaveCalls"));
+            Assert.Equal(before, serializer.Serialize((await store.FindAsync(new BookmarkFilter { BookmarkId = bookmark.Id }))!));
+            await ObserveAsync("runtime-bookmark-owner-upsert", nameof(LegacyBookmarkUpsertCannotReplaceOwnedRowWithForgedUnownedIdentity), "default",
+                new() { ["bookmarkSaveDelta"] = 0, ["originalUnchanged"] = true });
+        });
+    }
+
+    [Fact]
+    public async Task MutablePreparedContextIdentityCannotEmitCancellationNotification()
+    {
+        await _runtime.RunAsync(async host =>
+        {
+            var denied = false;
+            host.Probe.Boundary = async boundary =>
+            {
+                if (boundary == nameof(AdmissionExecutionBoundary.BeforeRunnerEntry))
+                {
+                    var context = host.Probe.PreparedContext!;
+                    var original = context.Id;
+                    try
+                    {
+                        context.Id = "definitively-unowned-instance";
+                        await Assert.ThrowsAsync<InvalidOperationException>(() => host.Services.GetRequiredService<IWorkflowCanceler>().CancelWorkflowAsync(context));
+                        denied = true;
+                    }
+                    finally
+                    {
+                        context.Id = original;
+                    }
+                }
+            };
+            await host.Execution.ExecuteAsync(host.AdmissionId);
+            Assert.True(denied);
+            Assert.Equal(0, host.Probe.Count("workflowCancelling"));
+            Assert.Equal(1, host.Probe.Count("activityEffects"));
+            await ObserveAsync("runtime-cancel-context-identity", nameof(MutablePreparedContextIdentityCannotEmitCancellationNotification), "default",
+                new() { ["workflowCancelling"] = 0, ["activityEffects"] = 1 });
+        });
+    }
+
+    [Theory]
+    [InlineData("runtime-output-included", "included", true)]
+    [InlineData("runtime-output-omitted", "omitted", false)]
+    public async Task LegitimateLocalClientContinuationReturnsRequestedDetachedPersistedOutput(string caseId, string scenario, bool includeOutput)
+    {
+        await _runtime.RunAsync(async host =>
+        {
+            host.Probe.Outcome = "suspended";
+            var initial = (await host.Execution.ExecuteAsync(host.AdmissionId))!;
+            var client = await host.Services.GetRequiredService<IWorkflowRuntime>().CreateClientAsync(initial.WorkflowInstanceId);
+            var response = await client.RunInstanceAsync(new RunWorkflowInstanceRequest
+            {
+                BookmarkId = Assert.Single(initial.Bookmarks).Id, IncludeWorkflowOutput = includeOutput
+            });
+            Assert.Equal(WorkflowSubStatus.Finished, response.SubStatus);
+            var instances = host.Services.GetRequiredService<IWorkflowInstanceManager>();
+            var actual = (await instances.FindByIdAsync(initial.WorkflowInstanceId))!;
+            Assert.Equal("persisted-resume-output", actual.WorkflowState.Output["Proof"]);
+            if (includeOutput)
+            {
+                Assert.Equal("persisted-resume-output", response.Output!["Proof"]);
+                response.Output["Proof"] = "caller-mutated-output";
+                var persisted = (await instances.FindByIdAsync(initial.WorkflowInstanceId))!;
+                Assert.Equal("persisted-resume-output", persisted.WorkflowState.Output["Proof"]);
+            }
+            else
+            {
+                Assert.Null(response.Output);
+            }
+            Assert.Equal(1, host.Probe.Count("activityEffects"));
+            Assert.Equal(1, host.Probe.Count("activityResumes"));
+            await ObserveAsync(caseId, nameof(LegitimateLocalClientContinuationReturnsRequestedDetachedPersistedOutput), caseId,
+                new() { ["activityEffects"] = 1, ["activityResumes"] = 1, ["outputIncluded"] = includeOutput, ["persistedOutputUnchanged"] = true });
+        });
+    }
+
+    [Theory]
+    [InlineData("runtime-input-order", "order")]
+    [InlineData("runtime-input-comparer", "comparer")]
+    public async Task PreparedRuntimeDictionarySemanticsCannotChangeBeforeConsumption(string caseId, string scenario)
+    {
+        await _runtime.RunAsync(async host =>
+        {
+            host.Probe.Boundary = boundary =>
+            {
+                if (boundary == nameof(AdmissionExecutionBoundary.StartAuthorized))
+                {
+                    var context = host.Probe.PreparedContext!;
+                    var original = Assert.IsType<Dictionary<string, object>>(context.Input);
+                    Assert.True(original.Count >= 2);
+                    context.Input = scenario == "order"
+                        ? new Dictionary<string, object>(original.Reverse(), original.Comparer)
+                        : new Dictionary<string, object>(original, StringComparer.Ordinal);
+                }
+                return Task.CompletedTask;
+            };
+            await Assert.ThrowsAsync<InvalidOperationException>(() => host.Execution.ExecuteAsync(host.AdmissionId));
+            Assert.Equal(0, host.Probe.Count("workflowExecuting"));
+            Assert.Equal(0, host.Probe.Count("activityEffects"));
+            Assert.Equal(AdmissionState.RecoveryRequired, (await host.Store.FindAsync(host.AdmissionId))!.State);
+            await ObserveAsync(caseId, nameof(PreparedRuntimeDictionarySemanticsCannotChangeBeforeConsumption), caseId,
+                new() { ["workflowExecuting"] = 0, ["activityEffects"] = 0, ["recoveryRequired"] = true });
+        });
+    }
+
+    [Theory]
+    [InlineData("runtime-classic-feature-host", "classic")]
+    [InlineData("runtime-shell-feature-host", "shell")]
+    public async Task ActualSelectedFeatureHostBootstrapsAndResumesRealPersistedWorkflow(string caseId, string scenario)
+    {
+        await _runtime.RunAsync(async host =>
+        {
+            host.Probe.Outcome = "suspended";
+            var initial = (await host.Execution.ExecuteAsync(host.AdmissionId))!;
+            var client = await host.Services.GetRequiredService<IWorkflowRuntime>().CreateClientAsync(initial.WorkflowInstanceId);
+            var resumed = await client.RunInstanceAsync(new RunWorkflowInstanceRequest { BookmarkId = Assert.Single(initial.Bookmarks).Id });
+            Assert.Equal(WorkflowSubStatus.Finished, resumed.SubStatus);
+            Assert.Equal(1, host.Probe.Count("activityEffects"));
+            Assert.Equal(1, host.Probe.Count("activityResumes"));
+            Assert.Equal(2, host.Probe.Count("CheckpointRecorded"));
+            Assert.Equal(AdmissionState.Terminal, (await host.Store.FindAsync(host.AdmissionId))!.State);
+            await ObserveAsync(caseId, nameof(ActualSelectedFeatureHostBootstrapsAndResumesRealPersistedWorkflow), caseId,
+                new() { ["activityEffects"] = 1, ["activityResumes"] = 1, ["checkpointCount"] = 2, ["terminal"] = true });
+        }, shell: scenario == "shell");
+    }
+
+    [Theory]
+    [InlineData("runtime-variable-classic", "classic")]
+    [InlineData("runtime-variable-shell", "shell")]
+    public async Task FrozenHostSavesAndReloadsActualExternalVariables(string caseId, string scenario)
+    {
+        await _runtime.RunAsync(async host =>
+        {
+            host.Probe.Outcome = "suspended";
+            host.Probe.EnableVariable = true;
+            var initial = (await host.Execution.ExecuteAsync(host.AdmissionId))!;
+            var variable = Assert.Single(host.Probe.PreparedContext!.ActivityExecutionContexts
+                .SelectMany(context => context.Variables).Where(value => value.Name == "DurableProof"));
+            var driver = Assert.Single(host.Services.GetServices<IStorageDriver>().OfType<AdmissionProofStorageDriver>());
+            var persisted = (await host.Services.GetRequiredService<IWorkflowInstanceManager>().FindByIdAsync(initial.WorkflowInstanceId))!.WorkflowState;
+            var persistedVariable = Assert.Single(persisted.ActivityExecutionContexts.SelectMany(context => context.DynamicVariables)
+                .Where(value => value.Name == "DurableProof"));
+            Assert.Equal(variable.Id, persistedVariable.Id);
+            Assert.Equal(typeof(AdmissionProofStorageDriver), persistedVariable.StorageDriverType);
+            Assert.True(host.Probe.Count("variableWrites") > 0);
+            Assert.Equal("saved-variable", await driver.ReadPersistedAsync(initial.WorkflowInstanceId, variable.Id));
+            // Changing only external persisted storage discriminates LOAD from state restoration:
+            // the retained workflow snapshot still contains the original in-memory value.
+            await driver.ReplacePersistedAsync(initial.WorkflowInstanceId, variable.Id, "reloaded-variable");
+            var client = await host.Services.GetRequiredService<IWorkflowRuntime>().CreateClientAsync(initial.WorkflowInstanceId);
+            var resumed = await client.RunInstanceAsync(new RunWorkflowInstanceRequest { BookmarkId = Assert.Single(initial.Bookmarks).Id });
+            Assert.Equal(WorkflowSubStatus.Finished, resumed.SubStatus);
+            Assert.True(host.Probe.Count("variableReads") > 0);
+            Assert.Equal(1, host.Probe.Count("variableLoadedCorrectly"));
+            Assert.Equal(2, host.Probe.Count("CheckpointRecorded"));
+            await ObserveAsync(caseId, nameof(FrozenHostSavesAndReloadsActualExternalVariables), caseId,
+                new() { ["variableWritten"] = true, ["variableRead"] = true, ["variableLoadedCorrectly"] = 1, ["checkpointCount"] = 2 });
+        }, shell: scenario == "shell");
+    }
+
+    [Theory]
+    [InlineData("runtime-cycle-trailing-success", false)]
+    [InlineData("runtime-cycle-trailing-failure", true)]
+    public async Task SameExecutionCycleSurvivesFinalCommitAndTrailingWriteUntilCompleteUnwind(string caseId, bool failTrailingWrite)
+    {
+        await _runtime.RunAsync(async host =>
+        {
+            host.Probe.Outcome = "suspended";
+            var gates = new ExecutionWriteGates(failTrailingWrite);
+            host.Probe.Boundary = gates.ReachAsync;
+            var registry = host.Services.GetRequiredService<IExecutionCycleRegistry>();
+            var execution = host.Execution.ExecuteAsync(host.AdmissionId);
+            ExecutionCycleHandle? handle = null;
+            try
+            {
+                await gates.CommitReached.Task.WaitAsync(TimeSpan.FromSeconds(30));
+                handle = Assert.Single(registry.ListActiveCycles());
+                Assert.Equal(1, registry.ActiveCount);
+                Assert.False(handle.Disposed.IsCompleted);
+                Assert.Equal(0, host.Probe.Count("CheckpointRecorded"));
+                var record = (await host.Store.FindAsync(host.AdmissionId))!;
+                Assert.True(record.AuthorityOutstanding);
+                gates.CommitRelease.TrySetResult();
+                await gates.WriteReached.Task.WaitAsync(TimeSpan.FromSeconds(30));
+                Assert.Same(handle, Assert.Single(registry.ListActiveCycles()));
+                Assert.False(handle.Disposed.IsCompleted);
+                Assert.Equal(1, registry.ActiveCount);
+                record = (await host.Store.FindAsync(host.AdmissionId))!;
+                await Assert.ThrowsAsync<InvalidOperationException>(() => host.Execution.ResolveAsync(record.Id, record.Revision,
+                    AdmissionTerminalDisposition.Resolved, "fixture-held-cycle", true, true));
+                gates.WriteRelease.TrySetResult();
+                if (failTrailingWrite)
+                {
+                    await Assert.ThrowsAsync<IOException>(() => execution);
+                }
+                else
+                {
+                    Assert.Equal(WorkflowSubStatus.Suspended, (await execution)!.SubStatus);
+                }
+            }
+            finally
+            {
+                gates.CommitRelease.TrySetResult();
+                gates.WriteRelease.TrySetResult();
+                try
+                {
+                    await execution;
+                }
+                catch (IOException) when (failTrailingWrite)
+                {
+                    // The expected trailing-write failure must still unwind its real owner.
+                }
+            }
+            await handle!.Disposed.WaitAsync(TimeSpan.FromSeconds(30));
+            Assert.Equal(0, registry.ActiveCount);
+            Assert.Equal(failTrailingWrite ? 0 : 1, host.Probe.Count("CheckpointRecorded"));
+            Assert.Equal(failTrailingWrite ? AdmissionState.RecoveryRequired : AdmissionState.ExecutionObserved,
+                (await host.Store.FindAsync(host.AdmissionId))!.State);
+            await ObserveAsync(caseId, nameof(SameExecutionCycleSurvivesFinalCommitAndTrailingWriteUntilCompleteUnwind), caseId,
+                new() { ["sameHandleThroughTrailingWrite"] = true, ["resolutionDeniedWhileHeld"] = true,
+                    ["activeCyclesAfterUnwind"] = 0, ["checkpointCount"] = failTrailingWrite ? 0 : 1, ["recoveryRequired"] = failTrailingWrite });
+        });
+    }
+
+    private sealed class ExecutionWriteGates(bool failTrailingWrite)
+    {
+        public TaskCompletionSource CommitReached { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource CommitRelease { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource WriteReached { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource WriteRelease { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public async Task ReachAsync(string boundary)
+        {
+            if (boundary == "FinalCommitCompleted")
+            {
+                CommitReached.TrySetResult();
+                await CommitRelease.Task.WaitAsync(TimeSpan.FromSeconds(30));
+            }
+            if (boundary == "TrailingWrite")
+            {
+                WriteReached.TrySetResult();
+                await WriteRelease.Task.WaitAsync(TimeSpan.FromSeconds(30));
+                if (failTrailingWrite)
+                {
+                    throw new IOException("fixture_trailing_write_failure");
+                }
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData("runtime-owned-variable-id", "id")]
+    [InlineData("runtime-owned-variable-context", "context")]
+    public async Task PublicVariableManagementDeniesOwnedWritesBeforeStorageAndPreservesUnownedWrites(string caseId, string scenario)
+    {
+        await _runtime.RunAsync(async host =>
+        {
+            host.Probe.Outcome = "suspended";
+            host.Probe.EnableVariable = true;
+            var initial = (await host.Execution.ExecuteAsync(host.AdmissionId))!;
+            var ownedContext = host.Probe.PreparedContext!;
+            var variables = host.Services.GetRequiredService<IWorkflowInstanceVariableManager>();
+            var serializer = host.Services.GetRequiredService<IWorkflowStateSerializer>();
+            var instances = host.Services.GetRequiredService<IWorkflowInstanceManager>();
+            var original = serializer.Serialize((await instances.FindByIdAsync(initial.WorkflowInstanceId))!.WorkflowState);
+            var reads = host.Probe.Count("variableReads");
+            var writes = host.Probe.Count("variableWrites");
+            var saves = host.Probe.Count("instanceWriteAttempts");
+            await Assert.ThrowsAsync<InvalidOperationException>(() => scenario == "id"
+                ? variables.SetVariablesAsync(initial.WorkflowInstanceId, [])
+                : variables.SetVariablesAsync(ownedContext, []));
+            Assert.Equal(reads, host.Probe.Count("variableReads"));
+            Assert.Equal(writes, host.Probe.Count("variableWrites"));
+            Assert.Equal(saves, host.Probe.Count("instanceWriteAttempts"));
+            Assert.Equal(original, serializer.Serialize((await instances.FindByIdAsync(initial.WorkflowInstanceId))!.WorkflowState));
+
+            // A real unowned Local client still executes the normal pinned workflow, including
+            // its externally persisted variable, through the same fixed/audited host services.
+            var client = await host.Services.GetRequiredService<IWorkflowRuntime>().CreateClientAsync("fixture-unowned-variable");
+            await client.CreateInstanceAsync(new CreateWorkflowInstanceRequest
+            {
+                WorkflowDefinitionHandle = Elsa.Workflows.Models.WorkflowDefinitionHandle.ByDefinitionVersionId(AdmissionRuntimeHost.Artifact().Id)
+            });
+            await client.RunInstanceAsync(new RunWorkflowInstanceRequest());
+            var unownedContext = host.Probe.PreparedContext!;
+            Assert.Equal("fixture-unowned-variable", unownedContext.Id);
+            reads = host.Probe.Count("variableReads");
+            writes = host.Probe.Count("variableWrites");
+            if (scenario == "id")
+            {
+                await variables.SetVariablesAsync(unownedContext.Id, []);
+            }
+            else
+            {
+                await variables.SetVariablesAsync(unownedContext, []);
+            }
+            Assert.True(host.Probe.Count("variableReads") > reads);
+            Assert.True(host.Probe.Count("variableWrites") > writes);
+            await ObserveAsync(caseId, nameof(PublicVariableManagementDeniesOwnedWritesBeforeStorageAndPreservesUnownedWrites), caseId,
+                new() { ["ownedStorageReads"] = 0, ["ownedStorageWrites"] = 0, ["ownedInstanceWrites"] = 0,
+                    ["ownedStateUnchanged"] = true, ["unownedStorageRead"] = true, ["unownedStorageWrite"] = true });
+        });
+    }
+
+    private Task ObserveAsync(string caseId, string method, string parameterId, Dictionary<string, object> facts) =>
+        AdmissionProofObservation.WriteAsync(fixture, caseId, $"{typeof(AdmissionRuntimeExecutionTests).FullName}.{method}", parameterId, [],
+            new Dictionary<string, bool> { ["behaviorAssertionsPassed"] = true }, facts);
+
+    private sealed class CompletionTarget
+    {
+        public ValueTask Complete(ActivityCompletedContext context) => ValueTask.CompletedTask;
+    }
+    private sealed class CreationCommitGate : DbTransactionInterceptor
+    {
+        public bool Armed { get; set; }
+        public TaskCompletionSource Reached { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public override async Task TransactionCommittedAsync(DbTransaction transaction, TransactionEndEventData eventData, CancellationToken cancellationToken = default)
+        {
+            if (Armed)
+            {
+                Armed = false;
+                Reached.TrySetResult();
+                await Release.Task.WaitAsync(TimeSpan.FromSeconds(30), cancellationToken);
+            }
+        }
+    }
+}

@@ -3,52 +3,109 @@ name: Studio ClientLib build
 on:
   pull_request:
     paths:
-      - 'src/studio/**/ClientLib/**'
-      - 'src/studio/Directory.Packages.props'
-      - 'src/studio/Directory.Build.props'
-      - 'src/Directory.Build.props'
+      - 'studio/src/**/ClientLib/**'
+      - 'studio/src/Directory.Packages.props'
+      # Core's Bpmn.Model pin: `npm run check:generated` fails when Studio's pin drifts from it.
+      - 'Directory.Packages.props'
+      - 'studio/src/Directory.Build.props'
+      - 'core/src/Directory.Build.props'
       - 'scripts/integration-program/build_studio_clientlibs.sh'
       - 'scripts/integration-program/consolidated-build/studio-bpmn-generator-layout.patch'
       - 'scripts/integration-program/consolidated-build/studio-clientlib-lockfiles/**'
+      - 'studio/test/browser/DesignerHover/**'
+      - 'studio/test/browser/BpmnDesigner/**'
+      # host.spec.ts runs the Blazor host's designer shim, which is hand-written rather than built from a ClientLib.
+      - 'studio/src/modules/Elsa.Studio.Bpmn/wwwroot/**'
+      # The designer suite checks that Elsa imports a designer's saved copy of each test asset as it imports the original.
+      - 'core/src/modules/Elsa.Bpmn/**'
+      - 'core/src/modules/Elsa.Bpmn.Interchange/**'
+      - 'core/test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Assets/**'
       - '.github/workflows/studio-clientlib-build.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: studio-clientlib-build-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   studio-clientlibs:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      EXPECTED_HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
+          repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
+      - name: Verify exact candidate checkout
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          git diff --exit-code HEAD --
       - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
           dotnet-version: '10.0.300'
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22'
-      - name: Detect imported Studio source
-        id: source
+      - name: Require the Studio ClientLib source
         run: |
-          if test -f src/studio/modules/Elsa.Studio.Workflows.Designer/ClientLib/package.json; then
-            echo 'mapped=true' >> "$GITHUB_OUTPUT"
-          else
-            echo 'mapped=false' >> "$GITHUB_OUTPUT"
+          if ! test -f studio/src/modules/Elsa.Studio.Workflows.Designer/ClientLib/package.json; then
+            echo 'Studio is missing the required Designer ClientLib manifest.' >&2
+            exit 1
           fi
-      - name: Checkout the pinned standalone Studio source before import
-        if: steps.source.outputs.mapped == 'false'
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          repository: elsa-workflows/elsa-studio
-          ref: 9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822
-          path: pinned-studio
-          persist-credentials: false
-      - name: Build pinned Studio ClientLibs on Linux before import
-        if: steps.source.outputs.mapped == 'false'
+      - name: Verify browser proof source-binding guards
+        working-directory: studio/test/browser/DesignerHover
         run: |
-          scripts/integration-program/build_studio_clientlibs.sh pinned-studio
-      - name: Build consolidated Studio ClientLibs after import
-        if: steps.source.outputs.mapped == 'true'
+          npm ci
+          npm test
+      - name: Build Studio ClientLibs
         run: scripts/integration-program/build_studio_clientlibs.sh .
+      - name: Verify the bpmn-js designer against the BPMN designer contract
+        working-directory: studio/test/browser/BpmnDesigner
+        env:
+          BPMN_DESIGNER_OUTPUT: ${{ runner.temp }}/bpmn-designer-round-trips
+        run: |
+          npm ci
+          npx --no-install playwright install --with-deps chromium
+          npm test
+      - name: Verify Elsa imports the bpmn-js designer's saved documents as it imports the originals
+        run: >-
+          dotnet run -c Release
+          --project studio/test/browser/BpmnDesigner/ImportEquivalence/BpmnImportEquivalence.csproj
+          -- "$RUNNER_TEMP/bpmn-designer-round-trips" .
+      - name: Verify the X6 designer against the BPMN designer contract
+        working-directory: studio/test/browser/BpmnDesigner
+        env:
+          BPMN_DESIGNER_DIRECTORY: ${{ github.workspace }}/studio/src/modules/Elsa.Studio.Bpmn.X6/wwwroot
+          BPMN_DESIGNER_MODULE: x6-designer.js
+          BPMN_DESIGNER_STYLESHEET: x6-designer.css
+          BPMN_DESIGNER_OUTPUT: ${{ runner.temp }}/bpmn-x6-designer-round-trips
+        run: npm test
+      - name: Verify Elsa imports the X6 designer's saved documents as it imports the originals
+        run: >-
+          dotnet run -c Release
+          --project studio/test/browser/BpmnDesigner/ImportEquivalence/BpmnImportEquivalence.csproj
+          -- "$RUNNER_TEMP/bpmn-x6-designer-round-trips" .
+      - name: Verify real X6 edge-hover behavior
+        working-directory: studio/test/browser/DesignerHover
+        run: |
+          npx --no-install playwright install --with-deps chromium
+          node run.mjs --expected-head "$EXPECTED_HEAD" --output "$RUNNER_TEMP/designer-hover-browser.json"
+      - name: Verify source remained unchanged
+        if: always()
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          git diff --exit-code HEAD --
+      - name: Retain sanitized hover evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: designer-hover-browser-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/designer-hover-browser.json
+          if-no-files-found: error
+          retention-days: 14

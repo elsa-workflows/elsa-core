@@ -372,7 +372,7 @@ def build_plan(
             "packages_to_pack": packages,
         },
         "release_unit_manifest": {
-            "path": "doc/integration-program/release-units.json"
+            "path": 'docs/integration-program/release-units.json'
             if release_manifest_path.resolve() == MANIFEST_PATH.resolve()
             else release_manifest_path.name,
             "sha256": hashlib.sha256(release_manifest_path.read_bytes()).hexdigest(),

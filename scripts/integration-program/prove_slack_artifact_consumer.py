@@ -27,7 +27,7 @@ def main() -> None:
     parser.add_argument("--slacknet-version", required=True)
     args = parser.parse_args()
 
-    manifest = json.loads((Path(__file__).resolve().parents[2] / "doc/integration-program/release-units.json")
+    manifest = json.loads((Path(__file__).resolve().parents[2] / 'docs/integration-program/release-units.json')
                           .read_text(encoding="utf-8"))
     units = [unit for unit in manifest["release_units"] if unit["package_id"] == "Elsa.Slack"]
     if len(units) != 1:

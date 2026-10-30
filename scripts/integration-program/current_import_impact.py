@@ -12,13 +12,16 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from apps_consumer_inventory import current_apps_projects, git_environment
+from templates_product_inventory import current_templates_projects, reject_templates_source_graph
 import refresh_canonical_dependency_graph as graph_reader
 from release_unit_manifest import DEFAULT_UNIT_ID, get_unit, load_manifest
+from product_layout import map_path
 
 
 ROOT = Path(__file__).resolve().parents[2]
-MANIFEST = ROOT / "doc/integration-program/release-units.json"
-CORE_PROJECT = "src/modules/Elsa/Elsa.csproj"
+MANIFEST = ROOT / 'docs/integration-program/release-units.json'
+CORE_PROJECT = 'core/src/modules/Elsa/Elsa.csproj'
 KNOWN_EXTERNAL_ELSA_PACKAGES = {"elsa.platform.packagemanifest.generator"}
 
 
@@ -28,11 +31,36 @@ def sha256(path: Path) -> str:
 
 def git_output(root: Path, *arguments: str) -> str:
     result = subprocess.run(
-        ["git", "-C", str(root), *arguments], text=True, capture_output=True, check=False
+        ["git", "-C", str(root), *arguments], env=git_environment(), text=True, capture_output=True, check=False
     )
     if result.returncode:
         raise ValueError(f"Cannot inspect source Git state: {result.stderr.strip()}")
     return result.stdout.strip()
+
+
+def partition_source_graph(
+    root: Path, project_names: dict[str, str], asset_documents: dict[str, dict[str, Any]],
+    solution_project_paths: set[str],
+) -> tuple[dict[str, str], dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
+    """Keep registered image consumers outside source-reference impact accounting."""
+    reject_templates_source_graph(set(project_names) | set(asset_documents) | solution_project_paths)
+    independent = {project.relative_to(root).as_posix() for project in current_apps_projects(root)}
+    if ({path for path in solution_project_paths if path.startswith("apps/")} != independent
+            or {path for path in project_names if path.startswith("apps/")} != independent
+            or not independent.issubset(asset_documents)):
+        raise ValueError("Independent Apps inventory must match current tracked/filter/solution projects")
+    for source, document in asset_documents.items():
+        for framework in document["project"]["restore"]["frameworks"].values():
+            for reference_path, reference in framework.get("projectReferences", {}).items():
+                target = graph_reader._relative_path(root, reference.get("projectPath", reference_path))
+                reject_templates_source_graph({target})
+                if (source in independent) != (target in independent):
+                    raise ValueError(f"Source-reference edge crosses independent Apps boundary: {source} -> {target}")
+    return (
+        {path: name for path, name in project_names.items() if path not in independent},
+        {path: document for path, document in asset_documents.items() if path not in independent},
+        {path: asset_documents[path] for path in sorted(independent)},
+    )
 
 
 def reject_unmapped_elsa_packages(asset_documents: dict[str, dict[str, Any]]) -> None:
@@ -120,10 +148,11 @@ def select_scenarios(
 ) -> dict[str, Any]:
     if unit["package_id"] != "Elsa.Slack" or unit["mapped"]["repository"] != "elsa-core":
         raise ValueError("This bounded selector accepts only the mapped Elsa.Slack release unit")
-    slack_project = unit["mapped"]["project_path"]
+    slack_project = map_path(unit["mapped"]["project_path"])
     slack = selected_tests(graph, asset_documents, slack_project)
     shared = selected_tests(graph, asset_documents, CORE_PROJECT)
-    mapped_tests = unit["mapped"]["test_projects"]
+    mapped_tests = [{**row, "project_path": map_path(row["project_path"])}
+                    for row in unit["mapped"]["test_projects"]]
     source_test_rows = unit["source"]["test_projects"]
     source_paths = [row["project_path"] for row in source_test_rows]
     mapped_source_paths = [row["source_project_path"] for row in mapped_tests]
@@ -169,6 +198,7 @@ def receipt(root: Path, manifest_path: Path, expected_head: str | None) -> dict[
     if expected_head and head != expected_head:
         raise ValueError(f"Expected source commit {expected_head}, checked out {head}")
     initial_status = git_output(root, "status", "--porcelain", "--untracked-files=normal")
+    templates_projects = current_templates_projects(root)
     restore = subprocess.run(
         ["dotnet", "restore", str(root / "Elsa.sln"), "-p:UseProjectReferences=true"],
         cwd=root, text=True, capture_output=True, check=False, timeout=1200,
@@ -194,6 +224,7 @@ def receipt(root: Path, manifest_path: Path, expected_head: str | None) -> dict[
     project_names = {path: name for name, path in entries}
     assets = {path: graph_reader._assets_for_project(root, path)[1] for path in project_names}
     graph_reader._include_restored_project_references(root, project_names, assets)
+    project_names, assets, independent_assets = partition_source_graph(root, project_names, assets, {path for _, path in entries})
     reject_unmapped_elsa_packages(assets)
     tests = restored_test_projects(root, assets)
     graph, _, _ = graph_reader._framework_graph(root, project_names, assets, tests)
@@ -218,6 +249,23 @@ def receipt(root: Path, manifest_path: Path, expected_head: str | None) -> dict[
         "manifestSha256": sha256(manifest_path),
         "solutionProjectCount": len(entries),
         "restoredProjectCount": len(assets),
+        "independentPackageConsumers": {
+            "disposition": "Registered Apps image consumers use released packages; excluded from source-reference impact, not claimed as affected-test coverage",
+            "validationOwner": ".github/workflows/apps-source-validation.yml",
+            "inventoryFilterSha256": sha256(root / "Elsa.Apps.slnf"),
+            "buildConfigSha256": {path: sha256(root / path)
+                                  for path in graph_reader.ancestor_build_configs(root, set(independent_assets))},
+            "projectFileSha256": {path: sha256(root / path) for path in independent_assets},
+            "projectAssetsSha256": {path: sha256((root / path).parent / "obj/project.assets.json")
+                                    for path in independent_assets},
+        },
+        "independentTemplatesProduct": {
+            "disposition": "Separate product solution; independent template pack and test, starter/legacy manifests are build data. No Templates restore or smoke coverage claimed by this source graph.",
+            "validationOwner": ".github/workflows/templates-source-validation.yml",
+            "inventorySha256": sha256(root / "scripts/solution/solution-groups.json"),
+            "filterSha256": sha256(root / "Elsa.Templates.slnf"),
+            "buildProjects": [project.relative_to(root).as_posix() for project in templates_projects],
+        },
         "restoredTestProjectCount": len(tests),
         "restore": {
             "performed": True,
@@ -230,7 +278,7 @@ def receipt(root: Path, manifest_path: Path, expected_head: str | None) -> dict[
         "scenarios": scenarios,
         "limitations": [
             "Project-reference impact is evaluated from this checkout's restored assets; runtime service effects are not inferred.",
-            "Package-type Elsa dependencies other than the known package-manifest generator are rejected because package-to-source project edges are not inferred.",
+            "Package-type Elsa dependencies in the source-reference graph other than the known package-manifest generator are rejected; the current registered Apps released-package consumers are separately accounted for and package-to-source edges are not inferred.",
             "Restored Test SDK projects are selected only when MSBuild evaluates IsTestProject=true for every restored framework.",
             "This receipt selects tests but does not execute them or publish packages.",
             "The release-unit manifest selects one Slack package; it is not a Core release package plan.",

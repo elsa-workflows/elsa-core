@@ -85,7 +85,7 @@ specify extension enable git
 ## Graceful Degradation
 
 When Git is not installed or the directory is not a Git repository:
-- Spec directories are still created under `specs/`
+- Spec directories are still created under `core/docs/specs/`
 - Branch creation is skipped with a warning
 - Branch validation is skipped with a warning
 - Remote detection returns empty results

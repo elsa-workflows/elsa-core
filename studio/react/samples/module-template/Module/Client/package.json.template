@@ -1,0 +1,21 @@
+{
+  "name": "__NPM_NAME__",
+  "version": "1.0.0-preview.1",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "tsc --noEmit && vite build" },
+  "dependencies": {
+    "@elsa-workflows/react-studio-sdk": "__NPM_VERSION__",
+    "@elsa-workflows/react-studio-ui": "__NPM_VERSION__",
+    "@elsa-workflows/react-studio-api-client": "__NPM_VERSION__",
+    "@elsa-workflows/react-studio-auth": "__NPM_VERSION__",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "@types/react": "19.3.0",
+    "typescript": "5.9.3",
+    "vite": "7.3.7"
+  }
+}

@@ -14,7 +14,7 @@ import verify_import_source_tip_refresh_r7 as publisher_receipt
 
 
 ROOT = Path(__file__).resolve().parents[2]
-RECEIPT = ROOT / "doc/integration-program/consolidation/source-tip-refresh-2026-09-28-r9.json"
+RECEIPT = ROOT / "docs/integration-program/consolidation/source-tip-refresh-2026-09-28-r9.json"
 REVIEWED_COMMITS = (
     "ab109c6286999ddb56f8f24172191c69d0f6fcc0",
     "1043d3d9a6be3f4670016d82eab21ad4c2fbed94",

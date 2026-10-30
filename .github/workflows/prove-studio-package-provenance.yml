@@ -4,11 +4,11 @@ on:
   pull_request:
     paths:
       - '.github/workflows/prove-studio-package-provenance.yml'
-      - 'src/studio/Directory.Build.props'
-      - 'src/studio/Directory.Build.targets'
-      - 'src/studio/Directory.Packages.props'
-      - 'src/clients/Elsa.Api.Client/**'
-      - 'src/studio/framework/Elsa.Studio.Core/**'
+      - 'studio/src/Directory.Build.props'
+      - 'studio/src/Directory.Build.targets'
+      - 'studio/src/Directory.Packages.props'
+      - 'core/src/clients/Elsa.Api.Client/**'
+      - 'studio/src/framework/Elsa.Studio.Core/**'
       - 'scripts/integration-program/verify_studio_package_provenance.py'
       - 'Directory.Build.props'
       - 'Directory.Packages.props'
@@ -38,7 +38,7 @@ jobs:
         run: |
           set -euo pipefail
           version="0.0.0-proof.${{ github.run_id }}.${{ github.run_attempt }}"
-          dotnet pack src/studio/framework/Elsa.Studio.Core/Elsa.Studio.Core.csproj \
+          dotnet pack studio/src/framework/Elsa.Studio.Core/Elsa.Studio.Core.csproj \
             --configuration Release \
             --output "$RUNNER_TEMP/studio-core-package" \
             -p:IsPackable=true \

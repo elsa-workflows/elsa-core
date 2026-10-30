@@ -1,12 +1,12 @@
 # Elsa 3 coding instructions
 
-Follow the repository [AGENTS.md](../AGENTS.md) for scope, code style, tests, package versions, and ADR rules. Check the current issue and source before changing behavior. This file is a short map for the consolidated source in the draft integration branch; it does not authorize merging the import or publishing packages.
+Follow the repository [AGENTS.md](../AGENTS.md) for scope, code style, tests, package versions, and ADR rules. Check the current issue and source before changing behavior. This file is a short map for the consolidated product layout; it does not authorize publishing packages or archiving source repositories.
 
 ## Source and development workflow
 
-- `src/modules/`, `src/common/`, `src/clients/`, and `src/apps/` contain the Core backend and hosts.
-- `src/extensions/` contains imported Extensions modules and connectors. Keep public package IDs and activity identities stable during consolidation.
-- `src/studio/` contains Blazor Studio framework, modules, hosts, browser bundles, and tests. Use the [Studio development guide](../doc/studio/README.md) for current paths, local backend binding, and paired debugging. The former standalone Studio instructions remain only as [import provenance](../doc/integration-program/legacy/studio/.github/copilot-instructions.md.source).
+- `core/src/modules/`, `core/src/common/`, `core/src/clients/`, and `core/src/apps/` contain the Core backend and hosts.
+- `extensions/src/` contains imported Extensions modules and connectors. Keep public package IDs and activity identities stable during consolidation.
+- `studio/src/` contains Blazor Studio framework, modules, hosts, browser bundles, and tests. Use the [Studio development guide](../studio/docs/README.md) for current paths, local backend binding, and paired debugging. The former standalone Studio instructions remain only as [import provenance](../docs/integration-program/legacy/studio/.github/copilot-instructions.md.source).
 - Open the canonical [`Elsa.sln`](../Elsa.sln) for backend and Studio changes together. Use the targeted project or test when iterating; run broader checks when a shared dependency or build integration changes.
 
 The Studio Designer and DomInterop ClientLib projects require Node 22. From the repository root, build their browser assets with:
@@ -21,8 +21,8 @@ For a local backend/Blazor session, follow the Studio guide's separate backend a
 
 ## Build, compatibility, and releases
 
-Central package versions live in `Directory.Packages.props`; framework defaults live in `src/Directory.Build.props`. Prefer the repository's existing build and test commands in `AGENTS.md`. Investigate restore or build failures rather than changing package versions to a guessed "nearest" version or masking a required source failure.
+Central package versions live in `Directory.Packages.props`; framework defaults live in each product’s `src/Directory.Build.props`. Prefer the repository's existing build and test commands in `AGENTS.md`. Investigate restore or build failures rather than changing package versions to a guessed "nearest" version or masking a required source failure.
 
-The [integration program](../doc/integration-program/README.md) records import evidence, package boundaries, and pending gates. Imported Extensions/Studio publishers are retained as inert provenance. Source co-location does not make every package share one version or release train. The [release-unit manifest](../doc/integration-program/release-units.json) and [publisher handoff](../doc/integration-program/publisher-handoff.md) define the bounded package proof and current publishing ownership. Do not enable a publisher, push a package to a feed, or treat a local proof version as a release allocation without the program's explicit cutover approval.
+The [integration program](../docs/integration-program/README.md) records import evidence, package boundaries, and pending gates. Imported Extensions/Studio publishers are retained as inert provenance. The [first consolidated release policy](../docs/adr/2026-09-28-lockstep-consolidated-release-and-publisher-cutover.md) governs lockstep 3.10 and the single Core publisher. The earlier [release-unit manifest](../docs/integration-program/release-units.json) and [publisher handoff](../docs/integration-program/publisher-handoff.md) retain their bounded proof scope; they do not establish live publisher cutover. Do not enable a publisher, push a package to a feed, or treat a local proof version as a release allocation without the program's explicit cutover approval.
 
-The history-bearing import is [draft PR #8409](https://github.com/elsa-workflows/elsa-core/pull/8409). Check its current head, open child PRs, source pins, and CI before claiming consolidated behavior on `main`. Preserve the upstream history merge commit and avoid silently replacing imported source with a local checkout.
+The history-bearing import landed through [PR #8409](https://github.com/elsa-workflows/elsa-core/pull/8409), with later source/release catch-up through [PR #8624](https://github.com/elsa-workflows/elsa-core/pull/8624). Preserve that history and check current source pins and exact-head CI before claiming acceptance of a relocated tree. Do not replace imported source with a local checkout.

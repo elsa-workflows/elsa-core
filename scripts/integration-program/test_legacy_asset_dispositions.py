@@ -76,7 +76,7 @@ class LegacyAssetDispositionTests(unittest.TestCase):
             ("source", "/tmp/asset.txt"),
             ("source", "../escape.md"),
             ("destination", "/tmp/asset.source"),
-            ("destination", "doc/integration-program/legacy/extensions/../escape.source"),
+            ("destination", 'docs/integration-program/legacy/extensions/../escape.source'),
             ("mode", "000000"),
             ("mode", "777777"),
             ("mode", "120000"),
@@ -105,7 +105,7 @@ class LegacyAssetDispositionTests(unittest.TestCase):
         represented = next(index for index, row in enumerate(self.ledger["assets"])
                            if row["original_path"] == ".interface-design/system.md")
         for field, value, message in (
-            ("decision_path", "doc/missing.md", "invalid decision path"),
+            ("decision_path", 'core/docs/missing.md', "invalid decision path"),
             ("decision_path", "doc/integration-program/consolidation/missing.md", "decision file is missing"),
             ("pr_url", "https://example.com/pull/8427", "invalid PR evidence"),
             ("merge_commit", "not-a-commit", "invalid merge commit"),
@@ -167,7 +167,7 @@ class LegacyAssetDispositionTests(unittest.TestCase):
             ("original_path", "/tmp/outside"),
             ("original_path", "../outside"),
             ("mapped_path", "/tmp/outside.source"),
-            ("mapped_path", "doc/integration-program/legacy/extensions/../outside.source"),
+            ("mapped_path", 'docs/integration-program/legacy/extensions/../outside.source'),
         ):
             with self.subTest(field=field):
                 changed = copy.deepcopy(self.ledger)

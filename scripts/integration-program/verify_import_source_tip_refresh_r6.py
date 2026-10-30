@@ -13,11 +13,12 @@ from typing import Any
 
 import verify_import_source_tip_refresh as r1
 import verify_import_source_tip_refresh_r5 as r5
+from product_layout import current_path
 from verify_import_source_tip_refresh_r2 import LANDED_IMPORT, RECEIPT as R2_RECEIPT, blob_and_mode, git, git_bytes
 
 
 ROOT = Path(__file__).resolve().parents[2]
-RECEIPT = ROOT / "doc/integration-program/consolidation/source-tip-refresh-2026-09-27-r6.json"
+RECEIPT = ROOT / "docs/integration-program/consolidation/source-tip-refresh-2026-09-27-r6.json"
 BASE_IMPORT_HEAD = "1976dd2d4781bad44f13384881e3f00605ba44f9"
 DELTA_COMMIT = "2d5d7d1e08773f20edb89c6ccad25b8c81a2e743"
 REVIEWED_EXTENSIONS_BASE = "33fa0bfd28c7585240e3d4f665058c067b17e287"
@@ -42,9 +43,9 @@ TRANSFORMS = {
     UPSTREAM_TESTS: "store-constructor-arguments",
     REVIEWED_TESTS: "reviewed-patch-with-superseded-version-case",
 }
-R1_PATH = str(r1.RECEIPT.relative_to(r1.ROOT))
-R2_PATH = str(R2_RECEIPT.relative_to(ROOT))
-R5_PATH = str(r5.RECEIPT.relative_to(ROOT))
+R1_PATH = "doc/integration-program/consolidation/" + r1.RECEIPT.name
+R2_PATH = "doc/integration-program/consolidation/" + R2_RECEIPT.name
+R5_PATH = "doc/integration-program/consolidation/" + r5.RECEIPT.name
 # Prior receipt -> (mapped paths whose current bytes this receipt now owns, field that pinned them there).
 SUPERSEDED = {
     R1_PATH: (frozenset({UPSTREAM_TESTS}), "new"),
@@ -147,7 +148,7 @@ def apply_patch(patch: bytes, files: dict[str, bytes], paths: tuple[str, ...]) -
 
 
 def reviewed_result(patch: bytes, root: Path) -> dict[str, bytes]:
-    evidence = json.loads((root / REVIEWED_PATCH["evidence"]).read_text(encoding="utf-8"))
+    evidence = json.loads(current_path(root, REVIEWED_PATCH["evidence"]).read_text(encoding="utf-8"))
     if evidence.get("patchSha256") != REVIEWED_PATCH["sha256"] or evidence["sourceCommits"]["extensions"] != REVIEWED_EXTENSIONS_BASE:
         raise ValueError("Reviewed Dapper patch no longer matches its recorded evidence")
     recorded = {item["path"]: item["sha256"] for item in evidence["files"]}
@@ -208,7 +209,7 @@ def verify(receipt: dict[str, Any], root: Path = ROOT) -> None:
         raise ValueError("Older verifier deferral differs from the sixth receipt")
     prior_receipts = {}
     for prior in priors:
-        content = (root / prior["path"]).read_bytes()
+        content = current_path(root, prior["path"]).read_bytes()
         if sha256(content) != prior["sha256"]:
             raise ValueError(f"Prior reviewed source-tip receipt changed: {prior['path']}")
         prior_receipts[prior["path"]] = json.loads(content)

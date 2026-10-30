@@ -1,17 +1,17 @@
 ---
 name: elsa-roadmap-refresh
-description: Refresh the Elsa roadmap from current evidence. Use when Codex needs to update ROADMAP.md or the public roadmap issue by researching elsa-core, elsa-studio, and elsa-extensions source code, specs, releases, commits, issues, pull requests, and discussions; classify shipped foundations, partial/productization work, roadmap candidates, stale items, and recommendations; then update the roadmap checklist and GitHub issue coherently.
+description: Refresh the Elsa roadmap from current evidence. Use when Codex needs to update ROADMAP.md or the public roadmap issue by researching elsa-core (which now contains the Studio and Extensions source) source code, specs, releases, commits, issues, pull requests, and discussions; classify shipped foundations, partial/productization work, roadmap candidates, stale items, and recommendations; then update the roadmap checklist and GitHub issue coherently.
 ---
 
 # Elsa Roadmap Refresh
 
 ## Purpose
 
-Use this skill to refresh Elsa's roadmap from evidence across the Elsa product surface:
+Use this skill to refresh Elsa's roadmap from evidence across the Elsa product surface. Studio, Extensions and Apps are folded into one repository, so all evidence comes from:
 
 - `elsa-workflows/elsa-core`
-- `elsa-workflows/elsa-studio`
-- `elsa-workflows/elsa-extensions`
+
+Do not query, clone, open issues or PRs in, or otherwise use `elsa-workflows/elsa-studio`, `elsa-workflows/elsa-extensions` or `elsa-workflows/elsa-apps`. Links to their old issues and releases that already appear in `ROADMAP.md` are history and stay as written. Cover Studio and Extensions topics from `studio/` and `extensions/` in elsa-core, and from elsa-core issues and PRs.
 
 The output should be a coherent product roadmap, not a raw issue digest. Ground every substantial change in source code, specs, releases, issues, pull requests, or discussions.
 
@@ -32,24 +32,24 @@ The output should be a coherent product roadmap, not a raw issue digest. Ground 
    - GitHub issue `elsa-workflows/elsa-core#3232`
 
 2. Inspect `elsa-core`.
-   - Source modules under `src/modules`
-   - App hosts under `src/apps`
-   - Specs under `specs`
-   - Docs under `doc` and `design`
+   - Source modules under `core/src/modules`
+   - App hosts under `core/src/apps`
+   - Specs under `core/docs/specs`
+   - Docs under `core/docs`, shared `docs` and `design`
    - Recent releases, commits, open issues, discussions, and open PRs
 
-3. Inspect `elsa-studio`.
-   - Source layout and feature modules
+3. Inspect Studio, under `studio/` in `elsa-core`.
+   - Source layout and feature modules under `studio/src`
    - Designer, diagnostics, auth, localization, embedding, workflow authoring, and instance UX
-   - Recent releases, commits, open issues, discussions, and open PRs
+   - Recent releases, commits, open issues, discussions, and open PRs in `elsa-core` that touch `studio/`
 
-4. Inspect `elsa-extensions`.
-   - Module families and integration foundations
+4. Inspect Extensions, under `extensions/` in `elsa-core`.
+   - Module families and integration foundations under `extensions/src`
    - Connections, Secrets, Agents, OpenAPI, schedulers, messaging, persistence, data tooling, and package manifests
-   - Recent releases, commits, open issues, and open PRs
+   - Recent releases, commits, open issues, and open PRs in `elsa-core` that touch `extensions/`
    - Discussions if enabled; otherwise state that issue/PR signal is the available source
 
-Use `gh` for GitHub data when available. Prefer local clones when present; otherwise use temporary clones or `gh repo clone` into `/tmp`.
+Use `gh` for GitHub data when available. Prefer the local `elsa-core` clone when present; otherwise use a temporary clone or `gh repo clone elsa-workflows/elsa-core` into `/tmp`.
 
 ## Classification Rules
 
@@ -99,14 +99,8 @@ Be explicit when a conclusion is an inference from evidence rather than a direct
 ```bash
 gh issue view 3232 --repo elsa-workflows/elsa-core --json title,body,updatedAt,url
 gh issue list --repo elsa-workflows/elsa-core --state open --limit 200 --json number,title,labels,updatedAt,url
-gh issue list --repo elsa-workflows/elsa-studio --state open --limit 200 --json number,title,labels,updatedAt,url
-gh issue list --repo elsa-workflows/elsa-extensions --state open --limit 200 --json number,title,labels,updatedAt,url
 gh pr list --repo elsa-workflows/elsa-core --state open --limit 100 --json number,title,updatedAt,url
-gh pr list --repo elsa-workflows/elsa-studio --state open --limit 100 --json number,title,updatedAt,url
-gh pr list --repo elsa-workflows/elsa-extensions --state open --limit 100 --json number,title,updatedAt,url
 gh release list --repo elsa-workflows/elsa-core --limit 10
-gh release list --repo elsa-workflows/elsa-studio --limit 10
-gh release list --repo elsa-workflows/elsa-extensions --limit 10
 ```
 
 ## Publishing

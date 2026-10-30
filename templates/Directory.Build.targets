@@ -1,0 +1,7 @@
+<Project>
+    <!-- Templates is an independent released-package consumer, outside Core source/proof packing. -->
+    <PropertyGroup>
+        <UseProjectReferences>false</UseProjectReferences>
+        <RestoreConfigFile>$(MSBuildThisFileDirectory)NuGet.Config</RestoreConfigFile>
+    </PropertyGroup>
+</Project>

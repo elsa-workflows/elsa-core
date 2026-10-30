@@ -18,14 +18,14 @@ on:
       - 'scripts/integration-program/VerifyEmbeddedSources/**'
       - 'scripts/integration-program/test_*.py'
       - 'scripts/integration-program/consolidated-build/source-integration.patch'
-      - 'doc/integration-program/inventory/inventory.json'
-      - 'doc/integration-program/release-units.json'
-      - 'doc/integration-program/publisher-handoff.md'
-      - 'doc/integration-program/package-closure.md'
-      - 'doc/integration-program/consolidation/canonical-95a-impact-closure.json'
-      - 'doc/integration-program/slack-package-proof.md'
-      - 'doc/integration-program/consolidation/build-preparation.md'
-      - 'doc/integration-program/consolidation/mapped-slack-package-proof.md'
+      - 'docs/integration-program/inventory/inventory.json'
+      - 'docs/integration-program/release-units.json'
+      - 'docs/integration-program/publisher-handoff.md'
+      - 'docs/integration-program/package-closure.md'
+      - 'docs/integration-program/consolidation/canonical-95a-impact-closure.json'
+      - 'docs/integration-program/slack-package-proof.md'
+      - 'docs/integration-program/consolidation/build-preparation.md'
+      - 'docs/integration-program/consolidation/mapped-slack-package-proof.md'
       - '.github/workflows/package-impact-closure.yml'
   workflow_dispatch:
     inputs:
@@ -79,11 +79,11 @@ jobs:
       - name: Validate current publisher ownership without cutover
         run: |
           python scripts/integration-program/check_publisher_handoff.py \
-            --manifest doc/integration-program/release-units.json
+            --manifest docs/integration-program/release-units.json
       - name: Rehearse the Core-to-Slack dependency selection
         run: >-
           python scripts/integration-program/package_closure.py
-          --inventory doc/integration-program/inventory/inventory.json
+          --inventory docs/integration-program/inventory/inventory.json
           --output "${RUNNER_TEMP}/package-closure-plan.json"
       - name: Require the paired release-unit and shared-Core selectors
         run: |
@@ -129,7 +129,7 @@ jobs:
         id: pins
         run: >-
           python scripts/integration-program/package_closure.py
-          --inventory doc/integration-program/inventory/inventory.json
+          --inventory docs/integration-program/inventory/inventory.json
           --github-output "$GITHUB_OUTPUT"
           --output "${RUNNER_TEMP}/source-pins-plan.json"
       - name: Checkout pinned Core source
@@ -152,7 +152,7 @@ jobs:
       - name: Execute the pinned dependency closure
         run: |
           python scripts/integration-program/source_bindings.py \
-            --inventory doc/integration-program/inventory/inventory.json \
+            --inventory docs/integration-program/inventory/inventory.json \
             --core sources/elsa-core \
             --extensions sources/elsa-extensions \
             --overlay sources/source-bound-extensions \
@@ -162,7 +162,7 @@ jobs:
             args+=(--include-docker)
           fi
           python scripts/integration-program/package_closure.py \
-            --inventory doc/integration-program/inventory/inventory.json \
+            --inventory docs/integration-program/inventory/inventory.json \
             --source elsa-core=sources/elsa-core \
             --source elsa-extensions=sources/source-bound-extensions \
             --source-binding-receipt "${RUNNER_TEMP}/source-binding.json" \

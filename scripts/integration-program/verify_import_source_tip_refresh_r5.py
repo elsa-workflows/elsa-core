@@ -23,7 +23,7 @@ from verify_import_source_tip_refresh_r2 import (
 
 
 ROOT = Path(__file__).resolve().parents[2]
-RECEIPT = ROOT / "doc/integration-program/consolidation/source-tip-refresh-2026-09-26-r5.json"
+RECEIPT = ROOT / "docs/integration-program/consolidation/source-tip-refresh-2026-09-26-r5.json"
 DECISION_PATH = "doc/integration-program/consolidation/extensions-807-source-tip.md"
 SOURCE_PATHS = {
     "src/modules/persistence/Elsa.Persistence.Dapper/Abstractions/SqlDialectBase.cs",

@@ -10,7 +10,7 @@ You are a GitHub Copilot custom agent specializing in writing **developer-facing
 Audience: developers consuming Elsa packages in their applications.
 
 ## Primary workflow (release-unit based)
-Draft notes for a named release unit and package ID at a reviewed version and source ref. A `v`-prefixed Core tag and an unprefixed historical Extensions tag are both possible; neither spelling identifies another package's previous release. Check the [release-unit manifest](../../doc/integration-program/release-units.json) when it contains this unit; otherwise verify its package boundary and current publishing owner from reviewed release evidence before selecting source history.
+Draft notes for a named release unit and package ID at a reviewed version and source ref. A `v`-prefixed Core tag and an unprefixed historical Extensions tag are both possible; neither spelling identifies another package's previous release. Check the [release-unit manifest](../../docs/integration-program/release-units.json) when it contains this unit; otherwise verify its package boundary and current publishing owner from reviewed release evidence before selecting source history.
 
 ## Ask only when needed (max 2–3 questions)
 If missing:
@@ -112,11 +112,11 @@ Compare: `<FROM>...<TO>` (repository and release-unit filter stated)
 
 ## Output location
 
-Save the draft Markdown file in `doc/changelogs/`:
+Save the draft Markdown file in `core/docs/changelogs/`:
 
-- One-package unit: `doc/changelogs/<package-id>/<version>.md`
-- Core-wide multi-package unit: `doc/changelogs/<version>.md`
-- Other multi-package unit: `doc/changelogs/<release-unit-id>/<version>.md`
+- One-package unit: `core/docs/changelogs/<package-id>/<version>.md`
+- Core-wide multi-package unit: `core/docs/changelogs/<version>.md`
+- Other multi-package unit: `core/docs/changelogs/<release-unit-id>/<version>.md`
 
 Use the public package ID for a single-package unit and the allocated semantic version without a leading `v`. A new Core-wide multi-package draft uses the existing root changelog convention. For another multi-package unit, use its reviewed unit identifier; if it has none, ask the release owner before choosing a path. These paths prevent independent units at the same version from overwriting each other's notes. Do not move historical files as part of a connector draft.
 

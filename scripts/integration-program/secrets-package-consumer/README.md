@@ -1,6 +1,6 @@
 # Secrets public-package consumer compatibility proof
 
-This compile-only fixture uses the public NuGet packages `Elsa.Secrets.Persistence.EFCore` and `Elsa.Secrets.Persistence.EFCore.Sqlite`. The 3.8.1 artifacts are the Extensions implementation; the 3.8.4 artifacts are the Core implementation, as recorded in [the package lineage ledger](../../../doc/integration-program/secrets-collision-compatibility.md).
+This compile-only fixture uses the public NuGet packages `Elsa.Secrets.Persistence.EFCore` and `Elsa.Secrets.Persistence.EFCore.Sqlite`. The 3.8.1 artifacts are the Extensions implementation; the 3.8.4 artifacts are the Core implementation, as recorded in [the package lineage ledger](../../../docs/integration-program/secrets-collision-compatibility.md).
 
 The fixture restores each package graph from NuGet.org using checked-in lock files and compiles three consumer cases on net8.0, net9.0 and net10.0:
 

@@ -20,7 +20,7 @@ from release_unit_manifest import (
 
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
-INVENTORY_PATH = REPOSITORY_ROOT / "doc/integration-program/inventory/inventory.json"
+INVENTORY_PATH = REPOSITORY_ROOT / 'docs/integration-program/inventory/inventory.json'
 
 
 class ReleaseUnitManifestTests(unittest.TestCase):

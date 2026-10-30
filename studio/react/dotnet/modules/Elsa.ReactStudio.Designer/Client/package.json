@@ -1,0 +1,18 @@
+{
+  "name": "@elsa-workflows/react-studio-designer",
+  "version": "3.11.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@elsa-workflows/react-studio-sdk": "workspace:*",
+    "@elsa-workflows/react-studio-ui": "workspace:*",
+    "@elsa-workflows/react-studio-api-client": "workspace:*",
+    "@elsa-workflows/react-studio-auth": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "19.3.0",
+    "@xyflow/react": "^12.12.0",
+    "lucide-react": "^1.55.0",
+    "react-dom": "19.3.0"
+  }
+}
