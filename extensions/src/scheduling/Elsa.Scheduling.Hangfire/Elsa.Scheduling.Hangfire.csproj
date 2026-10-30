@@ -11,6 +11,7 @@
         <PackageReference Include="Hangfire"/>
         <PackageReference Include="Hangfire.MemoryStorage"/>
         <PackageReference Include="Hangfire.Storage.SQLite"/>
+        <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3"/>
     </ItemGroup>
 
     <ItemGroup Label="Elsa" Condition="'$(UseProjectReferences)' != 'true'">
