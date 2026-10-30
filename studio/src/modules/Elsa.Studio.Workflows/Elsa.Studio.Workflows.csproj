@@ -11,6 +11,7 @@
 	
 	<ItemGroup>
 		<PackageReference Include="Microsoft.AspNetCore.SignalR.Client" />
+		<PackageReference Include="Microsoft.AspNetCore.SignalR.Common" />
 		<PackageReference Include="Microsoft.AspNetCore.WebUtilities" />
 	</ItemGroup>
 
