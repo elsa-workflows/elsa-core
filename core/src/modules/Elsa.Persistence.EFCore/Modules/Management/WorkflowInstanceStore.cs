@@ -85,7 +85,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Contracts.IWorkflowStateSerializer.SerializeAsync(WorkflowState, CancellationToken)")]
     public async ValueTask<long> CountAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _store.CountAsync(filter.Apply, cancellationToken);
+        return await _store.CountAsync(query => Filter(query, filter), cancellationToken);
     }
 
     /// <inheritdoc />
@@ -152,7 +152,7 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public async ValueTask<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        return await _store.DeleteWhereAsync(query => Filter(query, filter), cancellationToken);
+        return await _store.DeleteWhereAsync(filter.Apply, cancellationToken);
     }
 
     public async Task UpdateUpdatedTimestampAsync(string workflowInstanceId, DateTimeOffset value, CancellationToken cancellationToken = default)
@@ -315,6 +315,6 @@ public class EFCoreWorkflowInstanceStore : IWorkflowInstanceStore
 
     private static IQueryable<WorkflowInstance> Filter(IQueryable<WorkflowInstance> query, WorkflowInstanceFilter filter)
     {
-        return filter.Apply(query);
+        return filter.Apply(filter.TenantAgnostic ? query.IgnoreQueryFilters() : query);
     }
 }

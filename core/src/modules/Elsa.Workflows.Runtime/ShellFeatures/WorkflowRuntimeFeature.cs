@@ -241,7 +241,7 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddScoped<IWorkflowRuntimeAdminService, WorkflowRuntimeAdminService>()
             .AddTransient<CShells.Lifecycle.IDrainHandler, Lifecycle.ElsaShellDrainHandler>()
             .AddScoped<IInterruptedRecoveryScanner, InterruptedRecoveryScanner>()
-            .AddStartupTask<StartupTasks.RecoverInterruptedWorkflowsStartupTask>()
+            .AddSingleton<IAllTenantsActivatedEvent, Handlers.RecoverInterruptedWorkflowsOnAllTenantsActivated>()
             .AddSingleton<IIngressSource, IngressSources.InternalBookmarkQueueIngressSource>()
             .AddTransient<CShells.Lifecycle.IShellInitializer, Lifecycle.InitializePauseStateShellInitializer>()
             

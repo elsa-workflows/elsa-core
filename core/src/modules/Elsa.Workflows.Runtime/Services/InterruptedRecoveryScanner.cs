@@ -1,4 +1,3 @@
-using Elsa.Common;
 using Elsa.Common.Multitenancy;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
@@ -43,38 +42,14 @@ public sealed class InterruptedRecoveryScanner : IInterruptedRecoveryScanner
         {
             WorkflowSubStatus = WorkflowSubStatus.Interrupted,
             WorkflowStatus = WorkflowStatus.Running,
+            TenantAgnostic = true,
         };
         var batchSize = _runtimeOptions.Value.RestartInterruptedWorkflowsBatchSize;
         var instances = _instanceStore.EnumerateSummariesAsync(filter, batchSize, cancellationToken);
-        var requeued = 0;
 
         _logger.LogInformation("Scanning for workflows interrupted by graceful drain.");
 
-        await foreach (var summary in instances.WithCancellation(cancellationToken))
-        {
-            try
-            {
-                var tenantId = summary.TenantId ?? string.Empty;
-
-                if (_tenantService is not null && _tenantAccessor is not null && !string.IsNullOrWhiteSpace(tenantId) && tenantId != Tenant.AgnosticTenantId)
-                {
-                    var tenant = await _tenantService.FindAsync(tenantId, cancellationToken) ?? new Tenant { Id = tenantId, Name = tenantId };
-
-                    using (_tenantAccessor.PushContext(tenant))
-                        await _restarter.RestartWorkflowAsync(summary.Id, cancellationToken);
-                }
-                else
-                {
-                    await _restarter.RestartWorkflowAsync(summary.Id, cancellationToken);
-                }
-
-                requeued++;
-            }
-            catch (Exception ex) when (!ex.IsFatal())
-            {
-                _logger.LogError(ex, "Failed to requeue interrupted workflow {WorkflowInstanceId}; will be retried by the timeout-based recovery task.", summary.Id);
-            }
-        }
+        var requeued = await InterruptedWorkflowRequeuer.RequeueAsync(instances, _restarter, _tenantService, _tenantAccessor, _logger, cancellationToken);
 
         _logger.LogInformation("Interrupted-workflow scan complete; requeued {Count} instance(s).", requeued);
         return requeued;

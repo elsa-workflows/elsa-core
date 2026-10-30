@@ -101,7 +101,7 @@ public class WorkflowInstanceManager(
     /// <inheritdoc />
     public async Task<bool> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        var instance = await store.FindAsync(filter, cancellationToken);
+        var instance = await store.FindAsync(filter.AsTenantScoped(), cancellationToken);
 
         if (instance == null)
             return false;
@@ -119,7 +119,7 @@ public class WorkflowInstanceManager(
     /// <inheritdoc />
     public async Task<long> BulkDeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        var summaries = (await store.SummarizeManyAsync(filter, cancellationToken)).ToList();
+        var summaries = (await store.SummarizeManyAsync(filter.AsTenantScoped(), cancellationToken)).ToList();
         var ids = summaries.Select(x => x.Id).ToList();
         await notificationSender.SendAsync(new WorkflowInstancesDeleting(ids), cancellationToken);
         var count = await store.DeleteAsync(filter, cancellationToken);

@@ -4,13 +4,22 @@ using Elsa.Common.RecurringTasks;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.Services;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Elsa.Workflows.Runtime.Tasks;
 
-[SingleNodeTask]
+/// <summary>
+/// Restarts running workflow instances that have not been updated within the inactivity threshold.
+/// </summary>
+/// <remarks>
+/// Runs once per cycle for all tenants; instances with an empty, null or "*" tenant id restart under the default tenant.
+/// Tenants with their own databases are not covered.
+/// </remarks>
+[RunOnceForAllTenants]
+[SingleNodeTask(SingleNodeTaskScope.Host)]
 [UsedImplicitly]
 public class RestartInterruptedWorkflowsTask(
     IWorkflowRestarter workflowRestarter, 
@@ -29,30 +38,8 @@ public class RestartInterruptedWorkflowsTask(
         var workflowInstances = workflowInstanceStore.EnumerateSummariesAsync(workflowInstanceFilter, batchSize, cancellationToken);
 
         logger.LogInformation("Restarting interrupted workflows.");
-        await foreach (var workflowInstance in workflowInstances)
-        {
-            try
-            {
-                var tenantId = workflowInstance.TenantId ?? string.Empty;
-
-                if (tenantService != null && tenantAccessor != null && !string.IsNullOrWhiteSpace(tenantId) && tenantId != Tenant.AgnosticTenantId)
-                {
-                    var tenant = await tenantService.FindAsync(tenantId, cancellationToken) ?? new Tenant { Id = tenantId, Name = tenantId };
-
-                    using (tenantAccessor.PushContext(tenant))
-                        await workflowRestarter.RestartWorkflowAsync(workflowInstance.Id, cancellationToken: cancellationToken);
-
-                    continue;
-                }
-
-                await workflowRestarter.RestartWorkflowAsync(workflowInstance.Id, cancellationToken: cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Failed to restart interrupted workflow {WorkflowInstanceId}", workflowInstance.Id);
-            }
-        }
-        logger.LogInformation("Finished restarting interrupted workflows.");
+        var restarted = await InterruptedWorkflowRequeuer.RequeueAsync(workflowInstances, workflowRestarter, tenantService, tenantAccessor, logger, cancellationToken);
+        logger.LogInformation("Finished restarting interrupted workflows; restarted {Count} instance(s).", restarted);
     }
 
     private WorkflowInstanceFilter CreateWorkflowInstanceFilter()
@@ -65,6 +52,7 @@ public class RestartInterruptedWorkflowsTask(
             IsExecuting = true,
             BeforeLastUpdated = cutoffTimestamp,
             WorkflowStatus = WorkflowStatus.Running,
+            TenantAgnostic = true,
         };
     }
 }

@@ -10,7 +10,6 @@ namespace Elsa.Workflows.Runtime.Tasks;
 /// <summary>
 /// Periodically processes pending workflow dispatch outbox items.
 /// </summary>
-[SingleNodeTask]
 [UsedImplicitly]
 public class ProcessWorkflowDispatchOutboxRecurringTask(IServiceProvider serviceProvider, IOptions<WorkflowDispatcherOptions> options) : RecurringTask
 {
