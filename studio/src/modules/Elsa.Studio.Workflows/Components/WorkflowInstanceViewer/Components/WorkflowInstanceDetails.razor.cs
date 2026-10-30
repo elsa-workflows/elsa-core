@@ -64,6 +64,8 @@ public partial class WorkflowInstanceDetails
             if (_workflowInstance == null)
                 return new();
 
+            var logPersistence = WorkflowLogPersistenceDisplay.Format(WorkflowDefinition?.CustomProperties);
+
             return new()
             {
                 new DataPanelItem("ID", _workflowInstance.Id),
@@ -74,7 +76,7 @@ public partial class WorkflowInstanceDetails
                 new DataPanelItem(Localizer["Correlation ID"], _workflowInstance.CorrelationId),
                 new DataPanelItem(Localizer["Structured Logs"], Localizer["Open filtered logs"], $"/diagnostics/structured-logs?workflowInstanceId={Uri.EscapeDataString(_workflowInstance.Id)}"),
                 new DataPanelItem(Localizer["Incident Strategy"], GetIncidentStrategyDisplayName(WorkflowDefinition?.Options.IncidentStrategyType)),
-                new DataPanelItem(Localizer["Log Persistence Strategy"], LocalizeLogPersistenceMode(WorkflowLogPersistenceDisplay.Format(WorkflowDefinition?.CustomProperties))),
+                new DataPanelItem(Localizer["Log Persistence Strategy"], LocalizeLogPersistenceMode(logPersistence), Format: logPersistence.IsExpression ? DataPanelItemFormat.Code : DataPanelItemFormat.Auto),
                 new DataPanelItem(Localizer["Status"], _workflowInstance.Status.ToString()),
                 new DataPanelItem(Localizer["Sub status"], _workflowInstance.SubStatus.ToString()),
                 new DataPanelItem(Localizer["Incidents"], _workflowInstance.IncidentCount.ToString()),
@@ -86,8 +88,10 @@ public partial class WorkflowInstanceDetails
         }
     }
 
-    private string LocalizeLogPersistenceMode(string mode) =>
-        mode is "Inherit" or "Include" or "Exclude" ? Localizer[mode].Value : mode;
+    private string LocalizeLogPersistenceMode(LogPersistenceDisplay display) =>
+        display.IsExpression || display.Text is not ("Inherit" or "Include" or "Exclude")
+            ? display.Text
+            : Localizer[display.Text].Value;
 
     private DataPanelModel WorkflowVariableData
     {
