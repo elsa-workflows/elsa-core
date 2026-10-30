@@ -11,6 +11,7 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all"/>
         <PackageReference Include="Pomelo.EntityFrameworkCore.MySql"/>
+        <PackageReference Include="MySqlConnector"/>
     </ItemGroup>
 
     <ItemGroup>

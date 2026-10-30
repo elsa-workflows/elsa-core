@@ -213,6 +213,7 @@
         <PackageVersion Include="Moq" Version="4.20.72" />
         <PackageVersion Include="MQTTnet" Version="5.1.0.1559" />
         <PackageVersion Include="MySql.Data" Version="9.5.0"/>
+        <PackageVersion Include="MySqlConnector" Version="2.6.2"/>
         <PackageVersion Include="NSubstitute" Version="5.3.0"/>
         <PackageVersion Include="NuGet.Packaging" Version="7.0.3"/>
         <PackageVersion Include="NuGet.Protocol" Version="7.0.3"/>
@@ -249,6 +250,7 @@
         <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="8.0.2" Condition="$(TargetFramework.StartsWith('netstandard'))"/>
         <PackageVersion Include="System.Text.Json" Version="10.0.9"/>
         <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3"/>
+        <PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.14"/>
         <PackageVersion Include="SSH.NET" Version="2026.0.0"/>
         <PackageVersion Include="Testcontainers" Version="4.9.0"/>
         <PackageVersion Include="Testcontainers.MongoDb" Version="4.9.0"/>
