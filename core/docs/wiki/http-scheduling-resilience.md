@@ -56,7 +56,19 @@ Outbound HTTP activities:
 - [FlowSendHttpRequest](../../src/modules/Elsa.Http/Activities/FlowSendHttpRequest.cs)
 - [DownloadHttpFile](../../src/modules/Elsa.Http/Activities/DownloadHttpFile.cs)
 
-Supporting services include `HttpClientFileDownloader`, content factories, content parsers, and downloadable content handlers.
+Supporting services include `HttpClientFileDownloader`, content parsers, and downloadable content handlers.
+
+Built-in HTTP content factories (registered by `HttpFeature`):
+
+| Factory | Content-Type |
+| --- | --- |
+| [TextContentFactory](../../src/modules/Elsa.Http/ContentWriters/TextContentFactory.cs) | `text/plain` |
+| [JsonContentFactory](../../src/modules/Elsa.Http/ContentWriters/JsonContentFactory.cs) | `application/json` |
+| [XmlContentFactory](../../src/modules/Elsa.Http/ContentWriters/XmlContentFactory.cs) | `application/xml` / `text/xml` |
+| [FormUrlEncodedHttpContentFactory](../../src/modules/Elsa.Http/ContentWriters/FormUrlEncodedHttpContentFactory.cs) | `application/x-www-form-urlencoded` |
+| [MultipartFormDataHttpContentFactory](../../src/modules/Elsa.Http/ContentWriters/MultipartFormDataHttpContentFactory.cs) | `multipart/form-data` — supports text fields, file parts, and `ExpandoObject` values from JavaScript expressions |
+
+Factories implement [IHttpContentFactory](../../src/modules/Elsa.Http/ContentWriters/IHttpContentFactory.cs). Form content types share field-reading logic through [FormContentReader](../../src/modules/Elsa.Http/ContentWriters/FormContentReader.cs). Register a custom factory with `services.AddScoped<IHttpContentFactory, MyFactory>()`.
 
 ## HTTP Security And Faults
 
