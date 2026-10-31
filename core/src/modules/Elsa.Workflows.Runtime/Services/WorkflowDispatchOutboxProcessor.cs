@@ -456,7 +456,7 @@ public class WorkflowDispatchOutboxProcessor(
                 return DispatchWorkflowResponse.UnknownChannel();
             }
 
-            await commandSender.SendAsync(command, CommandStrategy.Background, TenantHeaders.CreateHeaders(tenantAccessor?.Tenant?.Id), cancellationToken);
+            await commandSender.SendAsync(command, CommandStrategy.Background, TenantHeaders.CreateHeaders(tenantAccessor?.TenantId), cancellationToken);
             return DispatchWorkflowResponse.Success();
         }
     }
