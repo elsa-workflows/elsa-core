@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <PackageReference Include="Elsa.Agents.Persistence.EFCore.Sqlite" />
+        <PackageReference Include="Elsa.Agents.Persistence.EFCore.SqlServer" />
+        <PackageReference Include="Elsa.Agents.Persistence.EFCore.MySql" />
+        <PackageReference Include="Elsa.Agents.Persistence.EFCore.PostgreSql" />
+        <PackageReference Include="Elsa.Persistence.EFCore"/>
+        <PackageReference Include="Elsa.Persistence.EFCore.MySql"/>
+        <PackageReference Include="Elsa.Persistence.EFCore.Oracle"/>
+        <PackageReference Include="Elsa.Persistence.EFCore.PostgreSql"/>
+        <PackageReference Include="Elsa.Persistence.EFCore.Sqlite"/>
+        <PackageReference Include="Elsa.Persistence.EFCore.SqlServer"/>
+    </ItemGroup>
+
+</Project>

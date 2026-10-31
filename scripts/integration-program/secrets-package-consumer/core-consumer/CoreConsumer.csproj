@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Elsa.Secrets.Persistence.EFCore" Version="[3.8.4]" />
+    <PackageReference Include="Elsa.Secrets.Persistence.EFCore.Sqlite" Version="[3.8.4]" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(IncludeLegacyConsumer)' == 'true'">
+    <Compile Include="../shared/LegacySecretsConsumer.cs" Link="LegacySecretsConsumer.cs" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,24 @@
+using CShells.Features;
+using Elsa.Workflows.Management.ShellFeatures;
+using Elsa.Workflows.Runtime.ShellFeatures;
+using Elsa.Platform.PackageManifest.Generator.Hints;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Elsa.ShellFeatures;
+
+[ManifestFeatureCategory("Workflows")]
+[ShellFeature(
+    DisplayName = "Elsa Core",
+    Description = "Core Elsa workflow system functionality",
+    DependsOn = [
+    typeof(WorkflowManagementFeature),
+    typeof(WorkflowRuntimeFeature)
+])]
+public class ElsaFeature : IShellFeature
+{
+    public void ConfigureServices(IServiceCollection services)
+    {
+        // Register the shell-based feature provider to bridge shell features to the Elsa feature API
+        services.AddSingleton<Features.Contracts.IInstalledFeatureProvider, Features.Services.ShellInstalledFeatureProvider>();
+    }
+}

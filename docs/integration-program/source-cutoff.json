@@ -1,0 +1,3767 @@
+{
+  "schemaVersion": 1,
+  "status": "prepared-evidence-record",
+  "preparedAtUtc": "2026-10-12T01:36:32.114594+00:00",
+  "task": "https://github.com/elsa-workflows/elsa-core/issues/8749",
+  "sourceProgram": "https://github.com/elsa-workflows/elsa-core/issues/8740",
+  "activation": {
+    "actualMainBaseline": "c46850de361cb84f267845ba66394c87262e2aab",
+    "acceptedSharedHead": "5403eda00557c20e39306863d53213afb7308e55",
+    "historyRetentionCommit": "d3ed761296f1801d502b772fccaf30cc2db33166",
+    "historyRetentionParents": [
+      "5403eda00557c20e39306863d53213afb7308e55",
+      "d57fc46fd3605b7b2ee839306c7420a170c17ddd",
+      "2611ee6d9b6fb5e50f4c0b3fbc9cc15b355b4751"
+    ],
+    "unchangedAcceptedTree": "d7d2d2e89c905f1ed9374fd163897778bfdcbce6",
+    "actualMainMerge": null,
+    "postmergeReceipt": null,
+    "condition": "A reviewed normal shared-to-main merge, final source freshness reconciliation, applicable exact-head gates and lead actual-main parent/tree/history readback recorded on Task8749 activate the cutoff. The later receipt supplies merge/PR identities; this preparatory document does not contain its own commit SHA.",
+    "statusSource": {
+      "task": "https://github.com/elsa-workflows/elsa-core/issues/8749",
+      "record": "lead actual-main acceptance and postmerge receipt"
+    },
+    "externalReceiptFields": "actualMainMerge and postmergeReceipt are intentionally null in this immutable premerge evidence record. Their values and activation status are supplied by the external statusSource receipt, not maintained here."
+  },
+  "readInterval": {
+    "from": "2026-10-12T01:17:52.672815+00:00",
+    "through": "2026-10-12T01:18:08.288878+00:00",
+    "atomic": false
+  },
+  "counts": {
+    "advertisedRows": 223,
+    "namedHeadTagRefs": 213,
+    "peeledTargetRows": 10,
+    "issues": 207,
+    "pullRequests": 33
+  },
+  "acceptedRegisters": [
+    {
+      "path": "source-handoff-register.json",
+      "sha256": "73eb0dcdc21c2178ffba06663c831f30d7d039e08c4eb49089b7d4f392dcf3f1"
+    },
+    {
+      "path": "apps-source-import.json",
+      "sha256": "67914ad52db8a1c74f64683cb8eb68a636a257d05e46b3b40bfe896b436a3b0f"
+    },
+    {
+      "path": "templates-source-import.json",
+      "sha256": "9622de403001204565bd7b7e7eff572f836748e0079d5d0dc890a0b68c318934"
+    }
+  ],
+  "repositories": [
+    {
+      "repository": "elsa-workflows/elsa-studio",
+      "readInterval": {
+        "from": "2026-10-12T01:17:54.320418+00:00",
+        "through": "2026-10-12T01:18:08.288878+00:00"
+      },
+      "snapshotEvidence": {
+        "name": "elsa-studio-inventory.json",
+        "sha256": "6388fdeb7b5487d918d3e6405d3e084d3e5074b0ddadbcd2877da770ff19b1dd",
+        "availability": "unpublished-read-only-audit; normalized observed data retained here"
+      },
+      "pagination": {
+        "pullRequestPages": 1,
+        "issuePages": 2,
+        "endReached": true
+      },
+      "refs": [
+        {
+          "sha": "5971efb01a293b34156230d2320934aa257f7f22",
+          "ref": "refs/heads/agent/clean-agent-instructions"
+        },
+        {
+          "sha": "f0a4c5e99fd713cceff18eda270ee46a1430c3c3",
+          "ref": "refs/heads/blueberry"
+        },
+        {
+          "sha": "9fad6470a4fb105dcb0c9b1c31d6a29f21ef0a22",
+          "ref": "refs/heads/bug/custom-element-tests"
+        },
+        {
+          "sha": "3976c2e034384d446c232d2a8671e91bd7f052d3",
+          "ref": "refs/heads/ci/block-3.10-public-release-publish"
+        },
+        {
+          "sha": "0c268286736472c29538bf0bee0b1f4ed13af601",
+          "ref": "refs/heads/codex/auth-refinements"
+        },
+        {
+          "sha": "f8eb05bc9881914d47b38c936d73214406c1da76",
+          "ref": "refs/heads/codex/operational-dashboard-prd"
+        },
+        {
+          "sha": "7efc2faabb4787f17dde71cd75690ceb58cfda78",
+          "ref": "refs/heads/codex/resolve-warnings-20260615"
+        },
+        {
+          "sha": "ee21aae4b15d4d73401b7f4df3c10b577fc9efbb",
+          "ref": "refs/heads/codex/resolve-warnings-20260622"
+        },
+        {
+          "sha": "d5d7d1dabfea1a7bbbb698586b6528bb1ebdea5f",
+          "ref": "refs/heads/codex/role-management-mobile-qa-fixes"
+        },
+        {
+          "sha": "e22c5cb3182ffa85192e6df202b3a90f1e9dc2b6",
+          "ref": "refs/heads/copilot/audit-mudblazor-usage"
+        },
+        {
+          "sha": "c642f03bfb9df0b78a6fb63d223b4669d117f972",
+          "ref": "refs/heads/copilot/fix-280"
+        },
+        {
+          "sha": "42a77a121f170a5faa6d66ec12af497340bab924",
+          "ref": "refs/heads/copilot/fix-522"
+        },
+        {
+          "sha": "c1e866a8248edcdba717007c460aabcf3bc53d85",
+          "ref": "refs/heads/copilot/fix-524"
+        },
+        {
+          "sha": "1a8a56f866bcc6e0521b859314cd2e9858313124",
+          "ref": "refs/heads/copilot/fix-550"
+        },
+        {
+          "sha": "ec54417bf92c01d70e48bcef0f910003f5118930",
+          "ref": "refs/heads/copilot/fix-authentication-service-init"
+        },
+        {
+          "sha": "33d8c964231ca8b30cd9a23037f824cb2bea2a10",
+          "ref": "refs/heads/copilot/fix-blazored-fluentvalidation-dependency"
+        },
+        {
+          "sha": "c6cad33681839873a9177b77ce9c10cd2eaa8486",
+          "ref": "refs/heads/copilot/fix-elasticsearch-crash-issue"
+        },
+        {
+          "sha": "a5b56aa8eb42b3e55f150596d23ff75815962a80",
+          "ref": "refs/heads/copilot/sub-pr-742"
+        },
+        {
+          "sha": "ef240387dc93e56ff48718cd86e00e59571a49e8",
+          "ref": "refs/heads/copilot/update-release-notes-3-6-0-rc3"
+        },
+        {
+          "sha": "17b3bdd1fa18ee5794ce440e43d2def1831a5998",
+          "ref": "refs/heads/copilot/update-release-notes-370-rc1"
+        },
+        {
+          "sha": "55e75c8f11a438b97ad9d419a3dbcf439bd8804f",
+          "ref": "refs/heads/dependabot/npm_and_yarn/src/modules/Elsa.Studio.Workflows.Designer/ClientLib/npm_and_yarn-998b9f9285"
+        },
+        {
+          "sha": "21bba822b90bd540c2f6d2b03cc2dd21f1554cdd",
+          "ref": "refs/heads/dependabot/npm_and_yarn/src/wrappers/npm_and_yarn-1ad9977b7d"
+        },
+        {
+          "sha": "74f8f1db182712663a7d4deaf3d94f40a0a3e4c8",
+          "ref": "refs/heads/dependabot/npm_and_yarn/src/wrappers/npm_and_yarn-cfeaca08f7"
+        },
+        {
+          "sha": "7d865818de0fa7ed72b7a1af4ff956da1d77592b",
+          "ref": "refs/heads/dependabot/nuget/main/Elsa.Api.Client-3.8.0-preview.5410"
+        },
+        {
+          "sha": "fd5a709557609bdbfcdfcb1ce2f35179b74b7b8e",
+          "ref": "refs/heads/develop/3.5.0"
+        },
+        {
+          "sha": "f5dc1be3ef04b37feaf76a3b2ed0fe36f94bfe21",
+          "ref": "refs/heads/enh/472"
+        },
+        {
+          "sha": "70e7185d48ddb8145a5ef62a25ec49e518753160",
+          "ref": "refs/heads/enh/webhooks"
+        },
+        {
+          "sha": "5e375114cf70f0d8950a9652c1968c60acfe4910",
+          "ref": "refs/heads/feat/5491"
+        },
+        {
+          "sha": "a6fd782f317ad5bbdf19ea700ee072ad73968736",
+          "ref": "refs/heads/feat/export-workflow-x6"
+        },
+        {
+          "sha": "9c3a368589a71e00814f0ae90855b730dc5fcda9",
+          "ref": "refs/heads/feat/export-x6-content"
+        },
+        {
+          "sha": "10e093ce317451d4f2cc921606b640d502b8da18",
+          "ref": "refs/heads/feature/orchard"
+        },
+        {
+          "sha": "bc5cb5f70338c6de84ecd7083e68133dc735003a",
+          "ref": "refs/heads/feature/remove-rendering-before--login"
+        },
+        {
+          "sha": "ed8293a02aba9ddca66177c80b8e188f20fbd73a",
+          "ref": "refs/heads/feature/workflow-definition-filter"
+        },
+        {
+          "sha": "6be20c1e1f55461354d7973e9d034cde16160488",
+          "ref": "refs/heads/fix/34556"
+        },
+        {
+          "sha": "d57fc46fd3605b7b2ee839306c7420a170c17ddd",
+          "ref": "refs/heads/main"
+        },
+        {
+          "sha": "07fbfa36e73849ecaedf5f9c4e09a67cd71d3005",
+          "ref": "refs/heads/nexxbiz-hotfix"
+        },
+        {
+          "sha": "8cc1362970112945b043eaa3dd7adf7eff2d7cca",
+          "ref": "refs/heads/patch/3.2.x"
+        },
+        {
+          "sha": "a7b3c480daf372368797dcf5d7845a9299b5f7e4",
+          "ref": "refs/heads/patch/3.3.2"
+        },
+        {
+          "sha": "e9b0d3922c3c61b13c01a1c68281d5f3f2f52c7d",
+          "ref": "refs/heads/patch/3.3.4"
+        },
+        {
+          "sha": "e9b0d3922c3c61b13c01a1c68281d5f3f2f52c7d",
+          "ref": "refs/heads/patch/3.3.4.1"
+        },
+        {
+          "sha": "99e3ecebe266d4390f1ee7614cb9fe02e943c549",
+          "ref": "refs/heads/patch/3.3.5"
+        },
+        {
+          "sha": "b388f2cec6ba6e7027a85f148081b009c01405cb",
+          "ref": "refs/heads/patch/3.3.6"
+        },
+        {
+          "sha": "4b81a3c33487f28dd89502e00447e45d329153d8",
+          "ref": "refs/heads/patch/3.4.1"
+        },
+        {
+          "sha": "a948a9ee465cf82a5e90f9f5ece7ca83de4fe999",
+          "ref": "refs/heads/patch/3.5.2"
+        },
+        {
+          "sha": "6538dc3462ab93bcf5ef49d3baeb1539bfb09810",
+          "ref": "refs/heads/patch/3.5.3"
+        },
+        {
+          "sha": "2d910ebb6d7c61919d74a73feb35f1b59ea1e49f",
+          "ref": "refs/heads/patch/3.6.3"
+        },
+        {
+          "sha": "af592e75ce594efff31b2926b756e98f90053fd0",
+          "ref": "refs/heads/poc/persistent-components"
+        },
+        {
+          "sha": "9f11d7be4054b2b6b40f00c753dc479abf58daf9",
+          "ref": "refs/heads/preview-3.5.1-1211-hotfix1"
+        },
+        {
+          "sha": "80e759c223e86e9bfdb34c31d7c064279fbeb0fd",
+          "ref": "refs/heads/raspberry"
+        },
+        {
+          "sha": "37b2287fd47528965fb3ebfe6069089cf60a00b0",
+          "ref": "refs/heads/rc/3.4.0"
+        },
+        {
+          "sha": "0df23767e7b83ffe9e6e3343dcca5d81e09188b7",
+          "ref": "refs/heads/release/3.6.0"
+        },
+        {
+          "sha": "906080537f31692f6ad82421a443bed5185771ae",
+          "ref": "refs/heads/release/3.6.1"
+        },
+        {
+          "sha": "2d910ebb6d7c61919d74a73feb35f1b59ea1e49f",
+          "ref": "refs/heads/release/3.6.3"
+        },
+        {
+          "sha": "abcf9b76a0c43c5140b21fb5fdeff8b5915aadb3",
+          "ref": "refs/heads/release/3.7.1"
+        },
+        {
+          "sha": "99de962e49f7793011196667659ac0cdb8df3fb7",
+          "ref": "refs/heads/release/3.8.1"
+        },
+        {
+          "sha": "1c72dc02c837919059b60efe5df2ed57ff2db2d9",
+          "ref": "refs/heads/release/3.8.2"
+        },
+        {
+          "sha": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+          "ref": "refs/heads/release/3.8.4"
+        },
+        {
+          "sha": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+          "ref": "refs/heads/release/3.9.0"
+        },
+        {
+          "sha": "50bbfd27d549060be3e9cdd1c05e352bc03bfdf4",
+          "ref": "refs/heads/update-mud-blazor-7"
+        },
+        {
+          "sha": "0c2ef809517c2b3e8a524103cf443efc7e0dd743",
+          "ref": "refs/tags/3.0.0"
+        },
+        {
+          "sha": "b02814294dbd1b1108a140e6e76e2e1efda3fe30",
+          "ref": "refs/tags/3.0.0-preview.4"
+        },
+        {
+          "sha": "1d5dfd47b1c89532fbabd1d9b3fbd2dab7bfa7d3",
+          "ref": "refs/tags/3.0.1"
+        },
+        {
+          "sha": "d0c3bfc85255970cd243fb41a3d0cdf9c6805c43",
+          "ref": "refs/tags/3.0.2"
+        },
+        {
+          "sha": "64b571825d322ceeb91f896a449a0c9250c7dbd0",
+          "ref": "refs/tags/3.0.3"
+        },
+        {
+          "sha": "8e1fab68bc412c488b87a492d992446f405e92cc",
+          "ref": "refs/tags/3.0.4"
+        },
+        {
+          "sha": "aacfd6e030d56259b374484678a195ae80ecdbf4",
+          "ref": "refs/tags/3.0.5"
+        },
+        {
+          "sha": "cfcc573c5ea4dfe9ee6489da31726af2aaf74ac5",
+          "ref": "refs/tags/3.1.0"
+        },
+        {
+          "sha": "71a31a9865add1ec22afb8a990ca0100fb4bb586",
+          "ref": "refs/tags/3.2.0"
+        },
+        {
+          "sha": "b04f9d670e2c908d876c567b33cffa2157c06372",
+          "ref": "refs/tags/3.2.0-rc1"
+        },
+        {
+          "sha": "8699aab65140c72f535aad1d7f78177dfb15a1da",
+          "ref": "refs/tags/3.2.0-rc2"
+        },
+        {
+          "sha": "8497013698d42566bbe50697321395ce9f7d9fc0",
+          "ref": "refs/tags/3.2.0-rc3"
+        },
+        {
+          "sha": "1b25ecdd1e30a8961aedf61a110750e26a0a2cab",
+          "ref": "refs/tags/3.2.0-rc4"
+        },
+        {
+          "sha": "eb72bc9a80867d14c711099711653d3a32e993b7",
+          "ref": "refs/tags/3.2.0-rc5"
+        },
+        {
+          "sha": "078b9a13a3b48cb1c9ea116099569ebc4c469c1f",
+          "ref": "refs/tags/3.2.0-rc6"
+        },
+        {
+          "sha": "a612ad153ebd506b6c1cedd476eae46a53c166e3",
+          "ref": "refs/tags/3.2.1"
+        },
+        {
+          "sha": "8cc1362970112945b043eaa3dd7adf7eff2d7cca",
+          "ref": "refs/tags/3.2.2"
+        },
+        {
+          "sha": "e3188ae70b58e3a75fff6797511bb347cb3a9dec",
+          "ref": "refs/tags/3.3.0"
+        },
+        {
+          "sha": "5dca8026354a5632a8fb0c6f2ea4b69fabc1167a",
+          "ref": "refs/tags/3.3.0-rc1"
+        },
+        {
+          "sha": "cf58eb215f69250598f1fae1b2bc2e59b7347604",
+          "ref": "refs/tags/3.3.0-rc2"
+        },
+        {
+          "sha": "0de8e77870457d6d20a49101fa8c5725b0191223",
+          "ref": "refs/tags/3.3.0-rc3"
+        },
+        {
+          "sha": "1b43c38c21d65711b3b9fce2d11e246c3f0416f1",
+          "ref": "refs/tags/3.3.0-rc4"
+        },
+        {
+          "sha": "91726ebc64fe99b85ba1af324c5f4733210ad5bd",
+          "ref": "refs/tags/3.3.0-rc5"
+        },
+        {
+          "sha": "01cd75619efc8ae3ce0fc7a8e85b415d80e63cb2",
+          "ref": "refs/tags/3.3.0-rc6"
+        },
+        {
+          "sha": "7553fe874c4045f5d81910c626407fff103e79a5",
+          "ref": "refs/tags/3.3.0-rc7"
+        },
+        {
+          "sha": "734f99ee4212f2f2579aa0b9e9f1dfa0c230d574",
+          "ref": "refs/tags/3.3.0-rc8"
+        },
+        {
+          "sha": "004d59ecb17610a7426a993fc850425f5a0e9f91",
+          "ref": "refs/tags/3.3.1"
+        },
+        {
+          "sha": "a7b3c480daf372368797dcf5d7845a9299b5f7e4",
+          "ref": "refs/tags/3.3.2"
+        },
+        {
+          "sha": "09b1b1208104701137160c9fe61d499e87fa4ae9",
+          "ref": "refs/tags/3.3.2-rc2"
+        },
+        {
+          "sha": "cdbcbf285f3cb4c64d9dce46ec7049e96a533b11",
+          "ref": "refs/tags/3.3.2-rc3"
+        },
+        {
+          "sha": "e9b0d3922c3c61b13c01a1c68281d5f3f2f52c7d",
+          "ref": "refs/tags/3.3.4"
+        },
+        {
+          "sha": "99e3ecebe266d4390f1ee7614cb9fe02e943c549",
+          "ref": "refs/tags/3.3.5"
+        },
+        {
+          "sha": "37b2287fd47528965fb3ebfe6069089cf60a00b0",
+          "ref": "refs/tags/3.4.0"
+        },
+        {
+          "sha": "6def49b5a8d2048162086949c800e9b4f8a52856",
+          "ref": "refs/tags/3.4.0-rc1"
+        },
+        {
+          "sha": "42f49c0988379e201c8fbe0e4239bf74c59a8c94",
+          "ref": "refs/tags/3.4.0-rc2"
+        },
+        {
+          "sha": "fd5a709557609bdbfcdfcb1ce2f35179b74b7b8e",
+          "ref": "refs/tags/3.5.0"
+        },
+        {
+          "sha": "f1ef1dd2182645f2c672894159d5fcfb698e321c",
+          "ref": "refs/tags/3.5.0-rc1"
+        },
+        {
+          "sha": "d8a1e3a3513938bae3f0e721646d0b07811634e4",
+          "ref": "refs/tags/3.5.0-rc2"
+        },
+        {
+          "sha": "f935d062f747e75a92f451d0cf448c4570a2047c",
+          "ref": "refs/tags/3.5.0-rc3"
+        },
+        {
+          "sha": "2c01933ef5a308ee9687c642d30cfd030e1d211b",
+          "ref": "refs/tags/3.5.0-rc4"
+        },
+        {
+          "sha": "853ebda72e27695034e1910c26c338dc826c8a48",
+          "ref": "refs/tags/3.5.1"
+        },
+        {
+          "sha": "a948a9ee465cf82a5e90f9f5ece7ca83de4fe999",
+          "ref": "refs/tags/3.5.2"
+        },
+        {
+          "sha": "6538dc3462ab93bcf5ef49d3baeb1539bfb09810",
+          "ref": "refs/tags/3.5.3"
+        },
+        {
+          "sha": "1e293c5bfc13e7a11f4f811be8cc06ea5c40915a",
+          "ref": "refs/tags/3.6.0"
+        },
+        {
+          "sha": "89f0e11110a0c21600d334cdb0d4897d646e95c0",
+          "ref": "refs/tags/3.6.0-rc1"
+        },
+        {
+          "sha": "d146ffce256df77c057d90eace98fafb848cdca6",
+          "ref": "refs/tags/3.6.0-rc2"
+        },
+        {
+          "sha": "77f1ce9e258e54b8e5358a3bdf80f0fa64d8ce76",
+          "ref": "refs/tags/3.6.0-rc3"
+        },
+        {
+          "sha": "8e5dac8dff6981e6f8a4a46c33bfba2ce8b7f01f",
+          "ref": "refs/tags/3.6.0-rc5"
+        },
+        {
+          "sha": "906080537f31692f6ad82421a443bed5185771ae",
+          "ref": "refs/tags/3.6.1"
+        },
+        {
+          "sha": "c9ebaa2ec92494b5df029db5b98895bcfc5522bc",
+          "ref": "refs/tags/3.6.3"
+        },
+        {
+          "sha": "2d910ebb6d7c61919d74a73feb35f1b59ea1e49f",
+          "ref": "refs/tags/3.6.3^{}"
+        },
+        {
+          "sha": "bf40e18989cb83236516e55089fc281d8878a518",
+          "ref": "refs/tags/3.7.0"
+        },
+        {
+          "sha": "797449faf1a4455f793909fcb9173a4b69f7eb90",
+          "ref": "refs/tags/3.7.0^{}"
+        },
+        {
+          "sha": "797449faf1a4455f793909fcb9173a4b69f7eb90",
+          "ref": "refs/tags/3.7.0-rc1"
+        },
+        {
+          "sha": "e43a2ae49c513337749eed868c273f6aaae065a7",
+          "ref": "refs/tags/3.7.1"
+        },
+        {
+          "sha": "abcf9b76a0c43c5140b21fb5fdeff8b5915aadb3",
+          "ref": "refs/tags/3.7.1^{}"
+        },
+        {
+          "sha": "88a4ec2d4fce546b132fb986fe10414771fa2314",
+          "ref": "refs/tags/3.8.0"
+        },
+        {
+          "sha": "85395246140c6b192a2457992da8704b0cdec3d0",
+          "ref": "refs/tags/3.8.0^{}"
+        },
+        {
+          "sha": "8145e7e3de208abbf33eaa80de7f106cf0ed137a",
+          "ref": "refs/tags/3.8.0-preview1"
+        },
+        {
+          "sha": "daaa232a758814d070774139c90dd48298baf670",
+          "ref": "refs/tags/3.8.0-rc1"
+        },
+        {
+          "sha": "61ebe170f478a356a92dc66ef5258616f542acef",
+          "ref": "refs/tags/3.8.0-rc2"
+        },
+        {
+          "sha": "99de962e49f7793011196667659ac0cdb8df3fb7",
+          "ref": "refs/tags/3.8.1"
+        },
+        {
+          "sha": "1c72dc02c837919059b60efe5df2ed57ff2db2d9",
+          "ref": "refs/tags/3.8.2"
+        },
+        {
+          "sha": "f6ad44a50a303695d65fcc6a1fccac5ba6d0f48d",
+          "ref": "refs/tags/3.8.3"
+        },
+        {
+          "sha": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+          "ref": "refs/tags/3.8.4"
+        },
+        {
+          "sha": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+          "ref": "refs/tags/3.9.0"
+        },
+        {
+          "sha": "d66eb7293016e41d083329f83ae5ca7a26237bd9",
+          "ref": "refs/tags/preview-3.5.1-1211-hotfix2"
+        }
+      ],
+      "issues": [
+        {
+          "number": 1127,
+          "title": "Workflow definitions list overflows the page at 390×844",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/1127",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/204",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 1123,
+          "title": "Docs: npm packages are scoped (@elsa-workflows/elsa-studio-wasm[-react]); unscoped elsa-studio-wasm returns 404",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/1123",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/203",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 1122,
+          "title": "Designer shows \"no designer is registered\" warning for a WriteLine workflow definition",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/1122",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/202",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 1118,
+          "title": "Roles editor follow-ups: selected count units, wildcard Select all, Deselect test, Playwright spec, unused CSS",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/1118",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/201",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 1113,
+          "title": "3.9 identity/access maintainability follow-ups (Dashboard state machine, landing redirect, async void handlers)",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/1113",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/200",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 1112,
+          "title": "Sign-out uses root-relative URLs and breaks Studio hosted under a sub-path",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/1112",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/199",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 1110,
+          "title": "Permission gating is bypassed for components rendered outside PermissionPageGuard (custom elements)",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/1110",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/198",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 1109,
+          "title": "Elsa Identity refresh: non-401 errors throw or clear the session instead of being treated as transient",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/1109",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/197",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 1108,
+          "title": "Elsa Identity stores access and refresh tokens in localStorage (XSS exposure)",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/1108",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/196",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 1074,
+          "title": "WorkflowDefinitionWorkspace: \"Code View\" tab throws NullReferenceException for a read-only workflow definition",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/1074",
+          "author": "RemoOser",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/195",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 1070,
+          "title": "EnvironmentAwareFeatureService: retry environments load after a failure during layout init",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/1070",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/194",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 1068,
+          "title": "Creating a duplicate of a workflow definition creates a workflow definition with `\"ToolVersion\": null`",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/1068",
+          "author": "mhichb",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/193",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 1066,
+          "title": "Nav menu keeps feature links from the fallback backend after switching environment",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/1066",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/192",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 1065,
+          "title": "Features never initialize when DisableAuthorization is true (MainLayout skips InitializeFeaturesAsync)",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/1065",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/191",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 1053,
+          "title": "Remove deprecated Elsa.Studio.Login dual stack (ElsaLogin vs Authentication.ElsaIdentity/OpenIdConnect)",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/1053",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/190",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 1045,
+          "title": "Clear buffered structured logs after 401/403 authorization failures",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/1045",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/189",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 1044,
+          "title": "X6 designer intermittently gets stuck in drag/selection mode and stops panning until page reload",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/1044",
+          "author": "NeluQi",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/188",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 1004,
+          "title": "BPMN W14: visual editing of BPMN diagrams (v2)",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/1004",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/187",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 1003,
+          "title": "BPMN W9b: the React Flow adapter (gated on React Flow stabilising)",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/1003",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/186",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 919,
+          "title": "Improve ELSA Studio Support for Playwright Automation Testing/ELSA Studio – Playwright Automation Testing Challenges",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/919",
+          "author": "Raghuwk",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/184",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 918,
+          "title": "Feature: Support Output Converter Selection in Activity Output Bindings",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/918",
+          "author": "veraw",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/183",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 914,
+          "title": "Could not find 'AuthenticationService.init' ('AuthenticationService' was undefined).",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/914",
+          "author": "trabajoatorres-rgb",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/182",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 906,
+          "title": "Cron Activity with wrong expression crashed the Elsa Studio",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/906",
+          "author": "msharjeel-iu",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/181",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 905,
+          "title": "Expired token does not redirect to login (OIDC)",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/905",
+          "author": "berghmg",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/180",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 903,
+          "title": "Frequent JSExceptions introduced in 3.7.0",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/903",
+          "author": "AnKa0",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/179",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 811,
+          "title": "Switch Elsa Studio workflow execution from /execute to async /dispatch",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/811",
+          "author": "kubakorecek",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/178",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 802,
+          "title": "Enable copying cell values (e.g., Workflow Instance ID) directly from row without opening details",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/802",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/177",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 801,
+          "title": "Allow rows per page size selection to include 500 and 1000 (or configurable)",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/801",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/176",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 797,
+          "title": "Mudblazor upgraded to 9.0",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/797",
+          "author": "wuxfly6",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/175",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 795,
+          "title": "JSException when switching activities quickly (C# input selected, Blazor Server)",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/795",
+          "author": "TahaSoydan",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/174",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 788,
+          "title": "Workflow Instances page: filter select labels/icons overlap",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/788",
+          "author": "MaximeDan",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/172",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 787,
+          "title": "Activities not visible in editor",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/787",
+          "author": "wouterroos",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/171",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 786,
+          "title": "Feature Request: Improve Copy Button Position & Usability in Elsa 3.6",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/786",
+          "author": "carsvanwilligen",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/170",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 791,
+          "title": "After upgrading to ELSA 3.6.0 ould not find expression descriptor for expression type 'CSharp'",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/791",
+          "author": "JoPetra",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/173",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 781,
+          "title": "Activity Input Type is not properly populated",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/781",
+          "author": "kmataru",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/169",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 987,
+          "title": "Custom activities not remembering input type selected v3.6",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/987",
+          "author": "TechnoDeziPtyLtd",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/185",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 777,
+          "title": "UI framework",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/777",
+          "author": "akeilox",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/168",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 730,
+          "title": "Sort workflow definitions by last modified date",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/730",
+          "author": "ShemJM",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/167",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 718,
+          "title": "Validate, QA, and Polish Radzen-based UI Post-Migration",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/718",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/166",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 717,
+          "title": "Incrementally Migrate Layout, Theming, and Modules from MudBlazor to Radzen",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/717",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/165",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 716,
+          "title": "Map MudBlazor Features/Components to Radzen Equivalents and Migration Guidance",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/716",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/164",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 715,
+          "title": "Audit and Inventory All MudBlazor Usage in Codebase",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/715",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/163",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 714,
+          "title": "[Epic] Transition Elsa Studio UI from MudBlazor to Radzen Blazor",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/714",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/162",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 710,
+          "title": "Feature: Reset User Preferences/Layout/Settings (Global & Per-Area)",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/710",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/161",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 709,
+          "title": "Feature: Persist Workflow Table/Grid State",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/709",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/160",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 708,
+          "title": "Feature: Persist Workflow Studio Shell Layout (splitters, panels, toggles)",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/708",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/159",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 707,
+          "title": "Feature: Persist/Restore Theme (dark/light/system)",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/707",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/158",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 706,
+          "title": "API: usePersistedSetting Hook/Composable for Blazor",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/706",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/157",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 705,
+          "title": "Core: Persistence Service Abstraction (`IStudioSettings`)",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/705",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/156",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 704,
+          "title": "Design: Settings Definition API & Conventions",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/704",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/155",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 703,
+          "title": "[Epic] Unified User Preference & UI State Persistence Framework for Elsa Studio",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/703",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/154",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 689,
+          "title": "Workflow Instance show HTTP Error 500 when suspended",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/689",
+          "author": "maximecharriere",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/152",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 687,
+          "title": "Fix colors in Journal and Executions tab for consistency",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/687",
+          "author": "maximecharriere",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/151",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 684,
+          "title": "Select Activity",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/684",
+          "author": "aboerzel",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/150",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 681,
+          "title": "Loss of the current state when saving or publishing a workflow",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/681",
+          "author": "aboerzel",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/149",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 679,
+          "title": "Manually created layouts are completely destroyed when switching views or reloading the page.",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/679",
+          "author": "aboerzel",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/148",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 672,
+          "title": "Degradate UI after switch Dark Theme",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/672",
+          "author": "AcellaEDU",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/147",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 668,
+          "title": "Elsa.Studio.Workflows package v3.5.1 doesn't contain the interface ICreateWorkflowDialogComponentProvider",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/668",
+          "author": "JoPetra",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/146",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 656,
+          "title": "The WorkflowDefinitionEditor.razor component doesn't render the Workflow Editor",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/656",
+          "author": "Steven23456",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/142",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 655,
+          "title": "app.UseElsaLocalization() block app loading",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/655",
+          "author": "maximecharriere",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/141",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 634,
+          "title": "Request race when auto-save mode is enabled",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/634",
+          "author": "lanseth",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/130",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 602,
+          "title": "Dark mode gone after reload",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/602",
+          "author": "mhichb",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/127",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 597,
+          "title": "Firefox Workspace Zoom Bug",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/597",
+          "author": "Daxton47",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/126",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 586,
+          "title": "Alignment and resizing of activities in Workflow Studio",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/586",
+          "author": "battalarif",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/124",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 587,
+          "title": "Workflow Studio – Copy activities between workflows",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/587",
+          "author": "battalarif",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/125",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 584,
+          "title": "Tenant-based visibility control for Activities in Workflow Studio",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/584",
+          "author": "battalarif",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/123",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 583,
+          "title": "Allow customization of the Workflow Studio top bar",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/583",
+          "author": "battalarif",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/122",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 582,
+          "title": "Persist user layout preferences in Workflow Studio (panels resizing/collapsing)",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/582",
+          "author": "battalarif",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/121",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 570,
+          "title": "Find Workflow Instance Parent in \"Instances\" page",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/570",
+          "author": "zesmaili",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/120",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 564,
+          "title": "\"the server responded with a status of 404\" when a cron job \"hits\"",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/564",
+          "author": "sturlath",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/119",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 554,
+          "title": "Getting erros while opening Elsa studio",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/554",
+          "author": "Amitavpanda",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/118",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 553,
+          "title": "Add AI chatbot to assist with workflow design",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/553",
+          "author": "amirhaghajani",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/117",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 550,
+          "title": "Add Shadow DOM support to Elsa Studio",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/550",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/116",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 515,
+          "title": "\"Usable As Activity\" Not Functioning as Expected",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/515",
+          "author": "sagargolu",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/114",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 500,
+          "title": "Make it possible to host the WorkflowInstance list separate from the editor",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/500",
+          "author": "LlamaNL",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/113",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 615,
+          "title": "Login/Logout in ElsaStudio",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/615",
+          "author": "krivovs",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/128",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 522,
+          "title": "Elsa 3.x: Dragging a JavaScript activity onto the grid generates console errors",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/522",
+          "author": "pablocesa",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/115",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 436,
+          "title": "Workflow Variables Storage options display issue in the workflow designer",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/436",
+          "author": "jayachandra21",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/112",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 647,
+          "title": "Add option to define different collection types",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/647",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/137",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 377,
+          "title": "Enhance Agents to support different AI Providers",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/377",
+          "author": "adanbrownpaca",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/111",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 357,
+          "title": "[ENH] Add Ability to Drill Down into a Correlation ID",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/357",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/110",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 356,
+          "title": "[ENH] Add Ability to Dynamically Specify Input Values for Activities",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/356",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/109",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 350,
+          "title": "[ENG] Add exception component overriding",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/350",
+          "author": "lanseth",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/108",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 340,
+          "title": "[FEAT] Make the IActivityDisplaySettingsProvider async to get settings from the API",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/340",
+          "author": "jeanbaptistedalle",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/107",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 315,
+          "title": "[Bug] Console errors appear when dragging activities on the grid 'there is no tracked object with id'",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/315",
+          "author": "MariusVuscanNx",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/106",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 306,
+          "title": "Missing input validation in Elsa Workflow Editor for inherited CodeActivity<T> classes.",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/306",
+          "author": "anupam-mangal",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/105",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 305,
+          "title": "Complex Nested Workflows throws \"CurrentDepth (32) is equal to or larger than the maximum allowed depth of 32\" Error",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/305",
+          "author": "amosgnanaraj",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/104",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 296,
+          "title": "[bug] Absolute URLs",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/296",
+          "author": "lanseth",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/103",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 293,
+          "title": "[ENH] Allow activities inputs and outcomes to be connected from any direction",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/293",
+          "author": "ghazisarhan",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/102",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 291,
+          "title": "How to catch exceptions thrown by Elsa 3.2.0 ?",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/291",
+          "author": "anupam-mangal",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/101",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 287,
+          "title": "'Object', but the target element has type 'Null'.",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/287",
+          "author": "MariusVuscanNx",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/100",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 648,
+          "title": "[FEAT] Database Table Creation and Modification Module from UI",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/648",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/138",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 284,
+          "title": "[FEAT] Activities' Versioning",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/284",
+          "author": "RenatoCapelo",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/99",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 280,
+          "title": "[UI Bug] Switch Activity Input UI Fails to Change to Code Editor",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/280",
+          "author": "DogeCnx",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/98",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 658,
+          "title": "[ENH] Handling HttpRequest Serialization in HTTP Endpoint Activity",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/658",
+          "author": "pvdbk",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/143",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 645,
+          "title": "[BUG] Input in context not updated when user doesn't leave input and directly clicks run.",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/645",
+          "author": "LukasBenner",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/136",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 649,
+          "title": "[BUG]",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/649",
+          "author": "jayachandra21",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/139",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 216,
+          "title": "Persist settings for workflow table and add \"last modified\" field. ",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/216",
+          "author": "ShemJM",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/97",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 210,
+          "title": "[BUG] metadata.[showDescription] not working programatically",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/210",
+          "author": "Muhammad-1990",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/96",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 208,
+          "title": "[BUG] MainLayout will still be shown even user was not login",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/208",
+          "author": "zergmk2",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/95",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 197,
+          "title": "Sub-Workflow variables should be shown when in a sub workflow",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/197",
+          "author": "douglasg14b",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/94",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 191,
+          "title": "When running a workflow via the editor, could we possibly add the ability to pass in a redirect url as a parameter (and fall back to the hard-coded value when not set)?",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/191",
+          "author": "cr0fters",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/93",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 189,
+          "title": "No output when an event is triggered from the API (Elsa v3)",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/189",
+          "author": "berkaycoskunset",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/92",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 187,
+          "title": "Enhancement Proposal: Workflow Execution Statistics",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/187",
+          "author": "af-git-64",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/91",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 186,
+          "title": "Enhancement Proposal: Conditional Inputs in Elsa 3",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/186",
+          "author": "af-git-64",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/90",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 181,
+          "title": "Feature Initialization requires authenticated user with an \"exp\" claim.",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/181",
+          "author": "rboylesDev",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/89",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 624,
+          "title": "RunTask Payload input in ElsaStudio Designer",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/624",
+          "author": "briannoyes",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/129",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 167,
+          "title": "Make workflow-definitions loaded via UseFluentStorageProvider readonly in the Studio",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/167",
+          "author": "RainerAtSpirit",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/88",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 156,
+          "title": "Prevent Manual Specification of \"Default\" Case in FlowSwitch and Switch Activities",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/156",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/87",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 152,
+          "title": "Add Feature to View Child and Descendant Workflow Instances in Elsa Studio",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/152",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/86",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 142,
+          "title": "Authorization Issue",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/142",
+          "author": "arunr1503",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/85",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 141,
+          "title": "Enhance User Confirmation on Workflow Definition Deletion with Affected Entities List",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/141",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/84",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 137,
+          "title": "Make Elsa Studio components useable in existing Blazor projects",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/137",
+          "author": "schlechtOptimiziert",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/83",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 121,
+          "title": "Hide child workflows in instance viewer. Allow drill down on parent detail view",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/121",
+          "author": "RainerAtSpirit",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/82",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 81,
+          "title": "Activity Context Menu",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/81",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/81",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 75,
+          "title": "Add Workflow Context Provider picker component",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/75",
+          "author": "b0rv3g4r4",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/80",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 643,
+          "title": "Enhanced Input Expression Evaluation Control in Elsa Studio",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/643",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/135",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 642,
+          "title": "Dropdown Options Ordering",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/642",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/134",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 67,
+          "title": "Cascading Dropdown Lists",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/67",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/79",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 65,
+          "title": "Scrollable Canvas",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/65",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/78",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 64,
+          "title": "MiniMap",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/64",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/77",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 60,
+          "title": "Give the ability to expose dynamic outcome for all the activity (like in Http Endpoint)",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/60",
+          "author": "jdevillard",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/76",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 667,
+          "title": "Execute button and Command Line Interface",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/667",
+          "author": "michelevioglio97",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/145",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 666,
+          "title": "Search words from Activities",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/666",
+          "author": "michelevioglio97",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/144",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 51,
+          "title": "Runtime Options Provider",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/51",
+          "author": "jdevillard",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/75",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 50,
+          "title": "Feature : bind BlazorNavigationManager to event for Web Framework Integration",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/50",
+          "author": "jdevillard",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/74",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 37,
+          "title": "Feature: Flow Switch Case List need JavaScript support",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/37",
+          "author": "Nokecy",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/73",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 33,
+          "title": "Feature: Sequence Designer",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/33",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/72",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 30,
+          "title": "Feature: Raw JSON Data Viewer & Downloader",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/30",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/71",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 20,
+          "title": "Feature: Enhance Workflow Instance Viewer to Display Activity State by Scope",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/20",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/70",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 15,
+          "title": "Feature: Activity Input Validation",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/15",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/69",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 7,
+          "title": "Feature: Flow Node should have option to provide possible outcomes",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/7",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/68",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 641,
+          "title": "Timezone support",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/641",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/133",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 640,
+          "title": "Elsa 3 - Variable name validation",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/640",
+          "author": "MariusVuscanNx",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/132",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 694,
+          "title": "Annotations",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/694",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/153",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 636,
+          "title": "Hide tabs and properties",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/636",
+          "author": "StefanoBerni",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/131",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 651,
+          "title": "Visual Expression Builder for Boolean Expressions",
+          "url": "https://github.com/elsa-workflows/elsa-studio/issues/651",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/140",
+          "disposition": "retained-source-history"
+        }
+      ],
+      "pullRequests": [
+        {
+          "number": 1126,
+          "title": "fix(designer): stop edge remove buttons from stacking and sticking",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/1126",
+          "head": "5379ea79fec28705ae888b75cf5f03993ad666f0",
+          "base": "3d028a4e9a3267b291f3d43d8064b5c81a6f2759",
+          "baseRef": "main",
+          "author": "Abyssalisk",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/30",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "adopted-original-bug-source-disposition-pending"
+        },
+        {
+          "number": 999,
+          "title": "Improve role administration and permission-aware Studio UX",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/999",
+          "head": "d5d7d1dabfea1a7bbbb698586b6528bb1ebdea5f",
+          "base": "9723f6d2d69b55c14b8e525124c2793ca10ab7c1",
+          "baseRef": "main",
+          "author": "sfmskywalker",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/29",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "mixed-competing-permission-design"
+        },
+        {
+          "number": 994,
+          "title": "fix(workflows): keep the version history tab alive without a cascading workspace",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/994",
+          "head": "e935ca2646f14c48d8b70e5dfb857713221ddd6c",
+          "base": "c726eb5baca9b93d9931b855250db3c6b8f2995f",
+          "baseRef": "main",
+          "author": "RalfvandenBurg",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/28",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "unrepresented-null-guard-fix"
+        },
+        {
+          "number": 935,
+          "title": "Replace archived Blazored.FluentValidation with Blazilla",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/935",
+          "head": "33d8c964231ca8b30cd9a23037f824cb2bea2a10",
+          "base": "272b1eddb93a35b79120d62bcd64c5b78d1e1c7f",
+          "baseRef": "main",
+          "author": "Copilot",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/27",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "partly-represented-mixed"
+        },
+        {
+          "number": 932,
+          "title": "deps: Bump Elsa.Api.Client from 3.8.0-preview.5397 to 3.8.0-preview.5410",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/932",
+          "head": "7d865818de0fa7ed72b7a1af4ff956da1d77592b",
+          "base": "af53151591fa87b0ad31abac4ce59492723d7627",
+          "baseRef": "main",
+          "author": "dependabot[bot]",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/26",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "superseded-source-selection"
+        },
+        {
+          "number": 916,
+          "title": "Bump the npm_and_yarn group across 1 directory with 8 updates",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/916",
+          "head": "74f8f1db182712663a7d4deaf3d94f40a0a3e4c8",
+          "base": "0606de145de078ef11000e8fb0a14fcf685e2803",
+          "baseRef": "main",
+          "author": "dependabot[bot]",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/25",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "mixed-lock-update"
+        },
+        {
+          "number": 907,
+          "title": "Resolve focused Studio warnings",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/907",
+          "head": "ee21aae4b15d4d73401b7f4df3c10b577fc9efbb",
+          "base": "fb5e371febe37146a84679f7cc11b5461851f11a",
+          "baseRef": "main",
+          "author": "sfmskywalker",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/24",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "partly-represented-warning-fixes"
+        },
+        {
+          "number": 901,
+          "title": "Resolve focused build warnings",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/901",
+          "head": "7efc2faabb4787f17dde71cd75690ceb58cfda78",
+          "base": "fb5e371febe37146a84679f7cc11b5461851f11a",
+          "baseRef": "main",
+          "author": "sfmskywalker",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/23",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "partly-represented-warning-fixes"
+        },
+        {
+          "number": 809,
+          "title": "feat: add RedirectUriPrefix support to OpenIdConnectConfiguration for sub-path deployments",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/809",
+          "head": "dc02d1d321c97b655a90c1e42dd3ee2db3c3a7b6",
+          "base": "efde64ef2b1a11ee8e6db9c4b13f2d313ffbe898",
+          "baseRef": "main",
+          "author": "IbrahimNadaa",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/22",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "unresolved-proposal"
+        },
+        {
+          "number": 806,
+          "title": "Bump the npm_and_yarn group across 3 directories with 6 updates",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/806",
+          "head": "55e75c8f11a438b97ad9d419a3dbcf439bd8804f",
+          "base": "010d8ca720e9cb2b3960a4cfc4d304ba048bb9e4",
+          "baseRef": "main",
+          "author": "dependabot[bot]",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/21",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "partly-represented-mixed"
+        },
+        {
+          "number": 742,
+          "title": "update login and logout ",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/742",
+          "head": "bc5cb5f70338c6de84ecd7083e68133dc735003a",
+          "base": "c5656de073845fb9aea1c0072c786bd8f30fb78f",
+          "baseRef": "main",
+          "author": "FransVanEk",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/20",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "bounded-unresolved-authentication-proposal"
+        },
+        {
+          "number": 598,
+          "title": "Bump the npm_and_yarn group across 1 directory with 5 updates",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/598",
+          "head": "21bba822b90bd540c2f6d2b03cc2dd21f1554cdd",
+          "base": "0e5466881fda90a51b79e386e534fdbd5e5dd881",
+          "baseRef": "main",
+          "author": "dependabot[bot]",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/19",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "superseded-old-lock-selection"
+        },
+        {
+          "number": 516,
+          "title": "Movable Activities on read only",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/516",
+          "head": "74e6fdb589851b4f5643bbb893c97a1371d59193",
+          "base": "771956d9a3bfb4ceedc5a52488a2c97cea1824a4",
+          "baseRef": "main",
+          "author": "MaxBrooks114",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/18",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "mixed-preview-movement-proposal"
+        },
+        {
+          "number": 514,
+          "title": "Designer embedded activity select fix",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/514",
+          "head": "fa7a4021370bd85bd68195e160e9a33bc124e485",
+          "base": "771956d9a3bfb4ceedc5a52488a2c97cea1824a4",
+          "baseRef": "main",
+          "author": "MaxBrooks114",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/17",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "partly-represented-mixed"
+        },
+        {
+          "number": 188,
+          "title": "Conditional inputs Elsa 3",
+          "url": "https://github.com/elsa-workflows/elsa-studio/pull/188",
+          "head": "f457ed8a7c44e55785668c454fb9785e24e803eb",
+          "base": "0e5466881fda90a51b79e386e534fdbd5e5dd881",
+          "baseRef": "main",
+          "author": "af-git-64",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/16",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "unresolved-unsafe-as-is-proposal"
+        }
+      ],
+      "counts": {
+        "advertisedRows": 126,
+        "namedHeadTagRefs": 122,
+        "peeledTargetRows": 4,
+        "issues": 137,
+        "pullRequests": 15
+      },
+      "comparison": {
+        "contributionIdentityAdditions": [],
+        "contributionIdentityRemovals": [],
+        "observedContributionFieldChanges": [],
+        "scope": "issue number/URL/title/author and PR number/URL/title/author/head/base/baseRef/draft compared with accepted register; body/label/assignee equality not audited"
+      }
+    },
+    {
+      "repository": "elsa-workflows/elsa-extensions",
+      "readInterval": {
+        "from": "2026-10-12T01:17:52.692503+00:00",
+        "through": "2026-10-12T01:18:07.153051+00:00"
+      },
+      "snapshotEvidence": {
+        "name": "elsa-extensions-inventory.json",
+        "sha256": "61f8086b6961755c034648be9885e61a4ca3260854d6540c134d5948d9c2f49a",
+        "availability": "unpublished-read-only-audit; normalized observed data retained here"
+      },
+      "pagination": {
+        "pullRequestPages": 1,
+        "issuePages": 1,
+        "endReached": true
+      },
+      "refs": [
+        {
+          "sha": "f36c99c0804dd858e08d52dbb94db0aca658603f",
+          "ref": "refs/heads/001-umbrella-spec"
+        },
+        {
+          "sha": "f36c99c0804dd858e08d52dbb94db0aca658603f",
+          "ref": "refs/heads/002-webhooks-sink-persistence"
+        },
+        {
+          "sha": "f36c99c0804dd858e08d52dbb94db0aca658603f",
+          "ref": "refs/heads/003-studio-webhook-sinks"
+        },
+        {
+          "sha": "d2e1fdc6f1422ea918c5a0f96d8339742ae36328",
+          "ref": "refs/heads/audit/8194-slack-publisher-exclusion"
+        },
+        {
+          "sha": "3b4706b65167a68541b7821b42e6eea4f8b35b08",
+          "ref": "refs/heads/chore/merge-3.6.0"
+        },
+        {
+          "sha": "c4b18a97a8a0f9237d04f34b01aff3e8966fb0da",
+          "ref": "refs/heads/ci/block-3.10-public-release-publish"
+        },
+        {
+          "sha": "ffe8caf891d9c0715305015be5ad1e758a0c0765",
+          "ref": "refs/heads/codex/add-get-/ai/service-providers-endpoint"
+        },
+        {
+          "sha": "0ac2ea4658159944701d042b27d4278b23047d5a",
+          "ref": "refs/heads/codex/implement-elsa.docker-module"
+        },
+        {
+          "sha": "1acc75208a8c467a147e68764c9b439b37ecea91",
+          "ref": "refs/heads/codex/integrate-discord-bot-with-elsa"
+        },
+        {
+          "sha": "6cc981713ac3772b4d2df72387ad97cbb7fb031c",
+          "ref": "refs/heads/copilot/fix-10"
+        },
+        {
+          "sha": "43c84ff81f7d2d19d63231836fcf0c8f1bcb54f4",
+          "ref": "refs/heads/copilot/fix-24"
+        },
+        {
+          "sha": "843e65f4f3361e5b18c58e94fec503b876766a6d",
+          "ref": "refs/heads/copilot/fix-27"
+        },
+        {
+          "sha": "0b76745c801b3e35883c40d1c5f1b6289f95b8cd",
+          "ref": "refs/heads/copilot/fix-49"
+        },
+        {
+          "sha": "380047e63b91902543fc973512d43e9c1622bafa",
+          "ref": "refs/heads/copilot/fix-53"
+        },
+        {
+          "sha": "f69a37db579c566a483aa482d13d97951d76be66",
+          "ref": "refs/heads/copilot/fix-tenant-agnostic-workflow-issue"
+        },
+        {
+          "sha": "26b7fa47ccff0bc997cd8ad22fa2744112c55483",
+          "ref": "refs/heads/copilot/harden-quartz-net-clustering"
+        },
+        {
+          "sha": "1d3101f1b60566dca6bdba777fc372b15388a93d",
+          "ref": "refs/heads/copilot/update-to-360-rc3"
+        },
+        {
+          "sha": "395b94ded5f26e4c554a4761ae35e375a602769b",
+          "ref": "refs/heads/cursor/fix-identity-tenant-safe-role-stores-869d"
+        },
+        {
+          "sha": "f9c6147fb90d7e33b2cf710b4b3a3878618b1111",
+          "ref": "refs/heads/cursor/fix-quartz-retry-recurring-triggers-89c2"
+        },
+        {
+          "sha": "5f24deb95a85cb27e30a1bdfbd46ebf4ea962ec0",
+          "ref": "refs/heads/cursor/packages-base-version-3-9-0-27a3"
+        },
+        {
+          "sha": "db6da257b9272eebbe045711d9bcc8fd3e45df66",
+          "ref": "refs/heads/dependabot/nuget/build/nuget-a690243288"
+        },
+        {
+          "sha": "ff4661613ccea088f5fe68033ff154a7023dd590",
+          "ref": "refs/heads/dependabot/nuget/nuget-0c428dbeb2"
+        },
+        {
+          "sha": "702ae372e8aafbe0061d6791a04c6234b3c851fa",
+          "ref": "refs/heads/dependabot/nuget/nuget-335537b6a2"
+        },
+        {
+          "sha": "8aca91af390ba9ace1d3de558a237d75665f0b67",
+          "ref": "refs/heads/dependabot/nuget/nuget-94b6bde6d6"
+        },
+        {
+          "sha": "0e4af88916ced7c350782a50cc91bcb71de51338",
+          "ref": "refs/heads/dependabot/nuget/nuget-aa8aee0467"
+        },
+        {
+          "sha": "6e199fde2f7e923030b16734da5f56a676a6355d",
+          "ref": "refs/heads/dependabot/nuget/nuget-bbc7aa4865"
+        },
+        {
+          "sha": "84395fe2b9690d3b16db1453c3d70ba58fe7bd5e",
+          "ref": "refs/heads/develop/3.5.0"
+        },
+        {
+          "sha": "f36c99c0804dd858e08d52dbb94db0aca658603f",
+          "ref": "refs/heads/enh/webhooks"
+        },
+        {
+          "sha": "93f0e09d71e57f5daff1e2d593f0a51faaa80417",
+          "ref": "refs/heads/feat/ai"
+        },
+        {
+          "sha": "4997f70717ba5f430168673c2603a65c2a80f14f",
+          "ref": "refs/heads/feat/task-activity-attribute"
+        },
+        {
+          "sha": "6d7fc616e1662ea06865b923f63af94d2265c016",
+          "ref": "refs/heads/feat/test-run-activity"
+        },
+        {
+          "sha": "6895eedf479d292506ffd9947e1cc9fe47d979c2",
+          "ref": "refs/heads/feat/workflow-testing-framework"
+        },
+        {
+          "sha": "889c8f38f157d127378f34b78f28d8daff1cec07",
+          "ref": "refs/heads/feature/http-openapi"
+        },
+        {
+          "sha": "2611ee6d9b6fb5e50f4c0b3fbc9cc15b355b4751",
+          "ref": "refs/heads/main"
+        },
+        {
+          "sha": "982b746c640b54c7d1f17a053723bec7065eec32",
+          "ref": "refs/heads/patch/3.5.1"
+        },
+        {
+          "sha": "03f07db4e5494c55d41ce49f3512a09d6fdfc932",
+          "ref": "refs/heads/patch/3.5.2"
+        },
+        {
+          "sha": "85f8820cc6b6214c642cd26f58fb8e04b8d1faf5",
+          "ref": "refs/heads/patch/3.5.3"
+        },
+        {
+          "sha": "09c3aa82d77721e18f6ccf2dd76cbedebceb6660",
+          "ref": "refs/heads/patch/3.6.3"
+        },
+        {
+          "sha": "5b437bdef56a2392b97821417e8b7845d36b5f90",
+          "ref": "refs/heads/rc/3.4.0"
+        },
+        {
+          "sha": "4db603206234f8ea31a40357adbd70668d53bf86",
+          "ref": "refs/heads/release/3.6.0"
+        },
+        {
+          "sha": "e4cefbbaec67304226f577d86e5f0032b62af730",
+          "ref": "refs/heads/release/3.6.1"
+        },
+        {
+          "sha": "09c3aa82d77721e18f6ccf2dd76cbedebceb6660",
+          "ref": "refs/heads/release/3.6.3"
+        },
+        {
+          "sha": "8ebaede7decfc6b2656291477bb9cac3c894151c",
+          "ref": "refs/heads/release/3.7.0"
+        },
+        {
+          "sha": "4e1658d4a7328bb487748258fffeeed7ca65450c",
+          "ref": "refs/heads/release/3.7.1"
+        },
+        {
+          "sha": "0619be93b67dbfd933e148663eeffb657e52f69c",
+          "ref": "refs/heads/release/3.8.1"
+        },
+        {
+          "sha": "e7d05ef930dfde2aa85bf9dcaf841e5a6ede0a1e",
+          "ref": "refs/heads/release/3.8.2"
+        },
+        {
+          "sha": "154ba15fb4da85b4bebecfbe43639579cbda1d0d",
+          "ref": "refs/heads/release/3.8.4"
+        },
+        {
+          "sha": "89d4eb9b739ae135604aac2a1de18653a289bdb0",
+          "ref": "refs/heads/release/3.9.0"
+        },
+        {
+          "sha": "87ffdf1f87b922198fe950203521b705575db667",
+          "ref": "refs/heads/sfmskywalker-patch-1"
+        },
+        {
+          "sha": "c790230a99939b9a92d6788d021b8080a45c5c57",
+          "ref": "refs/heads/sfmskywalker-patch-2"
+        },
+        {
+          "sha": "5a8d4adc3f1e9b170a6704a5025cd62082ccbb5d",
+          "ref": "refs/heads/sfmskywalker-patch-3"
+        },
+        {
+          "sha": "d777342c9c47af0335a5bfe798b7daaad2f34d24",
+          "ref": "refs/heads/sfmskywalker-patch-4"
+        },
+        {
+          "sha": "5b437bdef56a2392b97821417e8b7845d36b5f90",
+          "ref": "refs/tags/3.4.0"
+        },
+        {
+          "sha": "87e002def0b27522c900d1ba240213f5b42d84b4",
+          "ref": "refs/tags/3.4.0-rc1"
+        },
+        {
+          "sha": "6c7aa438cda440869c355aaa2e74c3ac218b9a4a",
+          "ref": "refs/tags/3.4.0-rc2"
+        },
+        {
+          "sha": "84395fe2b9690d3b16db1453c3d70ba58fe7bd5e",
+          "ref": "refs/tags/3.5.0"
+        },
+        {
+          "sha": "ed20059119fa50637d76c17da4bb9bdd838ff0e0",
+          "ref": "refs/tags/3.5.0-rc1"
+        },
+        {
+          "sha": "7c1e03277c906cf33fe1326d05ca08bc2e24a5d2",
+          "ref": "refs/tags/3.5.0-rc2"
+        },
+        {
+          "sha": "982b746c640b54c7d1f17a053723bec7065eec32",
+          "ref": "refs/tags/3.5.1"
+        },
+        {
+          "sha": "03f07db4e5494c55d41ce49f3512a09d6fdfc932",
+          "ref": "refs/tags/3.5.2"
+        },
+        {
+          "sha": "85f8820cc6b6214c642cd26f58fb8e04b8d1faf5",
+          "ref": "refs/tags/3.5.3"
+        },
+        {
+          "sha": "e626ace4ec43ce74cefede02ddae60d9fbda30b4",
+          "ref": "refs/tags/3.6.0"
+        },
+        {
+          "sha": "e46278ab1ef8ed9aebb295769c9b6e5df528fb97",
+          "ref": "refs/tags/3.6.0-rc1"
+        },
+        {
+          "sha": "1ff45c3bdedae9299d49da379784fd2340f9a241",
+          "ref": "refs/tags/3.6.0-rc2"
+        },
+        {
+          "sha": "caee086dcd816c4551d03eddd69c844f3c0c2c4e",
+          "ref": "refs/tags/3.6.0-rc3"
+        },
+        {
+          "sha": "fe1bcfa27354ee7a9f761e20168c56aed5996c3d",
+          "ref": "refs/tags/3.6.0-rc5"
+        },
+        {
+          "sha": "e4cefbbaec67304226f577d86e5f0032b62af730",
+          "ref": "refs/tags/3.6.1"
+        },
+        {
+          "sha": "e3b5915c94c5710d9c0e4d7018ab508ce8739959",
+          "ref": "refs/tags/3.6.3"
+        },
+        {
+          "sha": "09c3aa82d77721e18f6ccf2dd76cbedebceb6660",
+          "ref": "refs/tags/3.6.3^{}"
+        },
+        {
+          "sha": "45b62d754d5fa3c57ec722682374b2b4a7e2684c",
+          "ref": "refs/tags/3.7.0"
+        },
+        {
+          "sha": "463a199fbcb3bc171339a6c058e65aff01c8a321",
+          "ref": "refs/tags/3.7.0^{}"
+        },
+        {
+          "sha": "7a22442352625f1b08c423d900ebffbf4839ebc4",
+          "ref": "refs/tags/3.7.1"
+        },
+        {
+          "sha": "4e1658d4a7328bb487748258fffeeed7ca65450c",
+          "ref": "refs/tags/3.7.1^{}"
+        },
+        {
+          "sha": "9148415845706f97e6484b6f5c9cb53bb7f4bf3e",
+          "ref": "refs/tags/3.8.0"
+        },
+        {
+          "sha": "66861ae0828e2c15459e8d9981f5ce1080bd3269",
+          "ref": "refs/tags/3.8.0^{}"
+        },
+        {
+          "sha": "862a077b323efb6529f71842b300d896e3b8ea57",
+          "ref": "refs/tags/3.8.0-rc2"
+        },
+        {
+          "sha": "a44e2b09af1202ff4936f493756e114c357eff81",
+          "ref": "refs/tags/3.8.0-rc2^{}"
+        },
+        {
+          "sha": "0619be93b67dbfd933e148663eeffb657e52f69c",
+          "ref": "refs/tags/3.8.1"
+        },
+        {
+          "sha": "e7d05ef930dfde2aa85bf9dcaf841e5a6ede0a1e",
+          "ref": "refs/tags/3.8.2"
+        },
+        {
+          "sha": "154ba15fb4da85b4bebecfbe43639579cbda1d0d",
+          "ref": "refs/tags/3.8.4"
+        },
+        {
+          "sha": "89d4eb9b739ae135604aac2a1de18653a289bdb0",
+          "ref": "refs/tags/3.9.0"
+        }
+      ],
+      "issues": [
+        {
+          "number": 279,
+          "title": "Packages workflow packs 5 package IDs owned by elsa-core/elsa-studio (Secrets EF persistence, Studio.Secrets)",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/279",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/67",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 270,
+          "title": "Dapper: DapperKeyValueStore ignores KeyValueFilter.Take and OrderByKey, so every outbox poll reads the whole outbox and builds an unbounded IN list (SQL Server stalls at about 2,100 pending items)",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/270",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/66",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 269,
+          "title": "Dapper: paged Store<T>.DeleteAsync(filter, pageArgs, orderFields) drops the inner query's parameters and fails on every provider",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/269",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/65",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 268,
+          "title": "Dapper: WorkflowDefinitionStore.CountDistinctAsync emits two SELECT statements (syntax error on SQLite/PostgreSQL, counts versions on SQL Server)",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/268",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/64",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 265,
+          "title": "Dapper: provider conformance suite that runs every Dapper store against fresh, migration-built SQLite, SQL Server and PostgreSQL databases in CI",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/265",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/63",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 254,
+          "title": "V3_7 rollback can leave AggregateFaultCount behind for databases that applied V3_7 without V3_5",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/254",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/62",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 245,
+          "title": "Dapper Store: SetTenantId overwrites every TenantId (incl. \"*\"), key-only upserts allow cross-tenant overwrite, and reads have no \"*\" visibility",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/245",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/61",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 243,
+          "title": "MongoDB AlterationPlanStore is not tenant-aware (AlterationPlanDocument is not an Entity; TenantId dropped)",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/243",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/60",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 241,
+          "title": "MongoDB WorkflowInstanceStore.UpdateUpdatedTimestampAsync updates by Id without tenant filter",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/241",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/59",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 234,
+          "title": "Forward-port #186 to main",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/234",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/58",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 233,
+          "title": "Forward-port #185 to main",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/233",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/57",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 232,
+          "title": "[blocker] Forward-port #183 Dapper BeforeLastUpdated fix (#189) to main",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/232",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/56",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 229,
+          "title": "Elasticsearch persistence: no multitenancy support (tenant stamping/filtering across stores)",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/229",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/55",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 214,
+          "title": "Remove orphan MassTransitStimulusDispatcher path after elsa-core #8177 (companion to #8187)",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/214",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/54",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 213,
+          "title": "Post-#8177: MassTransit async events leave StimulusSender path; Trigger runs sync on publisher; stimulus bus stack orphaned",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/213",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/53",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 210,
+          "title": "Add Model Context Protocol (MCP) server integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/210",
+          "author": "RalfvandenBurg",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/52",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 195,
+          "title": "Implement IWorkflowDefinitionStore.TryUpdateLatestAsync (CAS) for Mongo/Dapper/Elasticsearch",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/195",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/51",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 164,
+          "title": "Feature: Output Converter Extension Module",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/164",
+          "author": "veraw",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/50",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 153,
+          "title": "SqlQuery enhance Result Type output",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/153",
+          "author": "veraw",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/49",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 133,
+          "title": "Useless fields defined in Elsa.Persistence.Dapper.Migrations",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/133",
+          "author": "heku",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/47",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 134,
+          "title": "Allow sub classing of Elsa.Kafka MessageReceived",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/134",
+          "author": "berghmg",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/48",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 131,
+          "title": "Split the Elsa.Persistence.Dapper project into multiple projects",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/131",
+          "author": "heku",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/46",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 126,
+          "title": "MongoDB-Based Persistence for Secrets",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/126",
+          "author": "unami82",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/45",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 124,
+          "title": "Add Azure DevOps integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/124",
+          "author": "RalfvandenBurg",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/44",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 121,
+          "title": "Scheduled HangFire Jobs duplicate on server restart",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/121",
+          "author": "Suchiman",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/43",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 118,
+          "title": "Elsa 3.6-rc 2 Agent Persestnent Error",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/118",
+          "author": "fshahin90",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/42",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 117,
+          "title": "Elsa 3.5 Agents Activities not redirecting agent result to output",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/117",
+          "author": "fshahin90",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/41",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 115,
+          "title": "Client-side exception when drag-and-dropping Run C# or Run JavaScript activities",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/115",
+          "author": "ilcorvo",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/40",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 111,
+          "title": "Usage of ServerCertificateValidationCallback question.",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/111",
+          "author": "Jesus2312",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/39",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 93,
+          "title": "Support targeting .NET 10 (LTS)",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/93",
+          "author": "KnibbsyMan",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/38",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 82,
+          "title": "Telnyx Transcription",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/82",
+          "author": "Daxton47",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/35",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 79,
+          "title": "Unhandled exception using SQL activities",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/79",
+          "author": "ilcorvo",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/34",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 72,
+          "title": "Mismatch between PublishMessage and Stimulus message",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/72",
+          "author": "muharemkapo",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/33",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 62,
+          "title": "EFCore SQL Server provider maps a SerializedMetadata column that doesn’t exist",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/62",
+          "author": "MaxBrooks114",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/32",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 58,
+          "title": "Extend Agents Support",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/58",
+          "author": "mohdali",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/31",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 53,
+          "title": "EFCoreActivityExecutionStore.SaveManyAsync missed handlers of IEntitySavingHandler",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/53",
+          "author": "codsay",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/30",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 39,
+          "title": "Azure Functions Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/39",
+          "author": "BatterySmooth",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/28",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 36,
+          "title": "Add Command Line Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/36",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/27",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 29,
+          "title": "Add WordPress Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/29",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/26",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 28,
+          "title": "Add YouTube Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/28",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/25",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 27,
+          "title": "Add OneDrive Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/27",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/24",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 25,
+          "title": "Add OpenAI Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/25",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/23",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 24,
+          "title": "Add Claude AI Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/24",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/22",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 23,
+          "title": "Add Facebook Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/23",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/21",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 22,
+          "title": "Add Facebook Pages Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/22",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/20",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 21,
+          "title": "Add X (formerly Twitter) Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/21",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/19",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 20,
+          "title": "Add Instagram Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/20",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/18",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 19,
+          "title": "Add WaveApps Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/19",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/17",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 18,
+          "title": "Add LinkedIn Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/18",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/16",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 17,
+          "title": "Add Google Sheets Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/17",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/15",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 16,
+          "title": "Add Google Docs Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/16",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/14",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 15,
+          "title": "Add HubSpot Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/15",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/13",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 14,
+          "title": "Add WooCommerce Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/14",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/12",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 13,
+          "title": "Add SharePoint Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/13",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/11",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 12,
+          "title": "Add AWS S3 Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/12",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/10",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 11,
+          "title": "Add Typeform Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/11",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/9",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 10,
+          "title": "Add Mailchimp Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/10",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/8",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 9,
+          "title": "Add Quickbooks Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/9",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/7",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 8,
+          "title": "Add Stripe Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/8",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/6",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 7,
+          "title": "Add Shopify Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/7",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/5",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 5,
+          "title": "Add Twilio Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/5",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/4",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 4,
+          "title": "Add Salesforce Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/4",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/3",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 3,
+          "title": "Add Discord Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/3",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/2",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 2,
+          "title": "Add Teams Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/2",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/1",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 48,
+          "title": "[FEAT] Add ExecuteMethod Activity",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/48",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/29",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 1,
+          "title": "Azure Storage Integration",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/1",
+          "author": "sfmskywalker",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/0",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 90,
+          "title": "[FEAT] Add WatchFileSystem Activity",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/90",
+          "author": "adamfisher",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/37",
+          "disposition": "retained-source-history"
+        },
+        {
+          "number": 88,
+          "title": "SQL Intellisense",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/issues/88",
+          "author": "michelevioglio97",
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/issues/36",
+          "disposition": "retained-source-history"
+        }
+      ],
+      "pullRequests": [
+        {
+          "number": 209,
+          "title": "feat(mcp): expose Elsa workflows as MCP tools",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/209",
+          "head": "3121af8f04e6d08afddfb21a8e1844a7cc745497",
+          "base": "2b6fc2daab0227412a8f2fe9aa15855af460ad12",
+          "baseRef": "main",
+          "author": "RalfvandenBurg",
+          "draft": true,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/15",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "unrepresented-new-module-proposal"
+        },
+        {
+          "number": 199,
+          "title": "feat(devops): add the Elsa.DevOps.AzureDevOps module",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/199",
+          "head": "c07d62ad77376a9aed2b07a64decb7fcfa778821",
+          "base": "8ce49f047330e36a87fec79a7a55fb4da88ae3b0",
+          "baseRef": "main",
+          "author": "RalfvandenBurg",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/14",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "unrepresented-new-module-proposal"
+        },
+        {
+          "number": 175,
+          "title": "build: bump NuGet.Packaging to 7.9.0 to unbreak the NUKE build on SDK 10.0.400",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/175",
+          "head": "c16e92bc36821ad76438687bf260ab5f88224519",
+          "base": "4b672e3b78a7f063f87e7def77fa1947126c36bc",
+          "baseRef": "main",
+          "author": "DenDeline",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/13",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "represented-sole-build-dependency-change"
+        },
+        {
+          "number": 166,
+          "title": "Bump the nuget group with 1 update",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/166",
+          "head": "db6da257b9272eebbe045711d9bcc8fd3e45df66",
+          "base": "4b672e3b78a7f063f87e7def77fa1947126c36bc",
+          "baseRef": "main",
+          "author": "dependabot[bot]",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/12",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "represented-exact-build-version-item"
+        },
+        {
+          "number": 165,
+          "title": "Bump the nuget group with 2 updates",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/165",
+          "head": "8aca91af390ba9ace1d3de558a237d75665f0b67",
+          "base": "4b672e3b78a7f063f87e7def77fa1947126c36bc",
+          "baseRef": "main",
+          "author": "dependabot[bot]",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/11",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "unresolved-direct-dependency-intent"
+        },
+        {
+          "number": 163,
+          "title": "Remove obsolete methods to fix security vulnerability",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/163",
+          "head": "4841e29e70acc4a8b29203c085b96e99c533fe79",
+          "base": "d797ff2bb4eb3b11f7daf0c97870439758406f1d",
+          "baseRef": "main",
+          "author": "Suchiman",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/10",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "unresolved-removal-and-security-intent"
+        },
+        {
+          "number": 154,
+          "title": "Feature: Sql Query Results Handling #153",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/154",
+          "head": "29e350e94256b97ee453dcb19effbe5fe170b15d",
+          "base": "4c621f598f37ac68dbcfadaef88d9cddad1c7e9c",
+          "baseRef": "main",
+          "author": "veraw",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/9",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "unrepresented-result-format-proposal"
+        },
+        {
+          "number": 150,
+          "title": "Fix: consistently use the TenantId property to make sure to properly apply the new default TenantId (empty string instead of null)",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/150",
+          "head": "73e9efd1a9a3491e04e2d43b784632ee2b2e28f8",
+          "base": "4c621f598f37ac68dbcfadaef88d9cddad1c7e9c",
+          "baseRef": "main",
+          "author": "jwdb",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/8",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "mixed-tenant-propagation"
+        },
+        {
+          "number": 140,
+          "title": "feature: Add option to configure custom azure servicebus processor options",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/140",
+          "head": "a7166e0b2d5bed1f8c8f48ef80e51b68b3fd0e23",
+          "base": "881a66a016da6a40e7f3ec6a91cb96dcee1cfe6b",
+          "baseRef": "main",
+          "author": "jwdb",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/7",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "unrepresented-processor-options-seam"
+        },
+        {
+          "number": 138,
+          "title": "Bump the nuget group with 1 update",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/138",
+          "head": "ff4661613ccea088f5fe68033ff154a7023dd590",
+          "base": "9a0891618cd136842f5302efe09bdc61a129e84d",
+          "baseRef": "main",
+          "author": "dependabot[bot]",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/6",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "represented-exact-version-item"
+        },
+        {
+          "number": 132,
+          "title": "Split Elsa.Persistence.Dapper project #131",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/132",
+          "head": "6ef525d00f2df16b05ce4dd79cbea50f174f6b1e",
+          "base": "9a0891618cd136842f5302efe09bdc61a129e84d",
+          "baseRef": "main",
+          "author": "heku",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/5",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "unresolved-package-refactor"
+        },
+        {
+          "number": 129,
+          "title": "Feature: add fake data module",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/129",
+          "head": "cf5ff51dab4e8c01ba7aa73fc44877b4ff3346e8",
+          "base": "a5dc28bda2e67186e9615ef19e0b2cb433e02ec4",
+          "baseRef": "main",
+          "author": "Namoshek",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/4",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "unrepresented-new-module-proposal"
+        },
+        {
+          "number": 128,
+          "title": "Bump the nuget group with 1 update",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/128",
+          "head": "702ae372e8aafbe0061d6791a04c6234b3c851fa",
+          "base": "dbc8d86ad232f3d484cab20b6f4ff0e49d812365",
+          "baseRef": "main",
+          "author": "dependabot[bot]",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/3",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "unresolved-direct-dependency-intent"
+        },
+        {
+          "number": 123,
+          "title": "Add defensive check to `GetRecurringJobIds` to prevent null reference exception",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/123",
+          "head": "15bb3559d3c2a61c17d249edcca73dc1ed14e179",
+          "base": "ebda5c8fdac5e250d0d3d2ccc501e418c16ea142",
+          "baseRef": "main",
+          "author": "jshin-relativity",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/2",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "unrepresented-defensive-fix"
+        },
+        {
+          "number": 122,
+          "title": "Bump the nuget group with 1 update",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/122",
+          "head": "6e199fde2f7e923030b16734da5f56a676a6355d",
+          "base": "ebda5c8fdac5e250d0d3d2ccc501e418c16ea142",
+          "baseRef": "main",
+          "author": "dependabot[bot]",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/1",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "unresolved-direct-dependency-intent"
+        },
+        {
+          "number": 54,
+          "title": "Fix EFCoreActivityExecutionStore.SaveManyAsync to call IEntitySavingHandler instances",
+          "url": "https://github.com/elsa-workflows/elsa-extensions/pull/54",
+          "head": "380047e63b91902543fc973512d43e9c1622bafa",
+          "base": "5722b066a8a0588a17e02c3bbf677adc2d5043ea",
+          "baseRef": "main",
+          "author": "Copilot",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "source-handoff-register.json#/pullRequests/0",
+          "disposition": "preserve-original-proposal-with-technical-disposition",
+          "technicalDisposition": "unresolved-handler-behavior"
+        }
+      ],
+      "counts": {
+        "advertisedRows": 81,
+        "namedHeadTagRefs": 76,
+        "peeledTargetRows": 5,
+        "issues": 68,
+        "pullRequests": 16
+      },
+      "comparison": {
+        "contributionIdentityAdditions": [],
+        "contributionIdentityRemovals": [],
+        "observedContributionFieldChanges": [],
+        "scope": "issue number/URL/title/author and PR number/URL/title/author/head/base/baseRef/draft compared with accepted register; body/label/assignee equality not audited"
+      }
+    },
+    {
+      "repository": "elsa-workflows/elsa-apps",
+      "readInterval": {
+        "from": "2026-10-12T01:17:52.672815+00:00",
+        "through": "2026-10-12T01:18:06.678558+00:00"
+      },
+      "snapshotEvidence": {
+        "name": "elsa-apps-inventory.json",
+        "sha256": "c032148d033aa5653f7986890ee83a5619b8d014b715c754c11e6dd4e0bcaa98",
+        "availability": "unpublished-read-only-audit; normalized observed data retained here"
+      },
+      "pagination": {
+        "pullRequestPages": 1,
+        "issuePages": 1,
+        "endReached": true
+      },
+      "refs": [
+        {
+          "sha": "8ced57803de480aa4b5c5e71f71267518c4bc0b6",
+          "ref": "refs/heads/codex/container-api-smoke-compatibility"
+        },
+        {
+          "sha": "b3cfeb5fc4dffe071289dd5bfe2c00f26a43e47b",
+          "ref": "refs/heads/codex/dashboard-api-css-fix"
+        },
+        {
+          "sha": "ec5590fc8e113e2dd8d3a5386dcdd2164a84ad96",
+          "ref": "refs/heads/codex/dependabot-feedz-preview"
+        },
+        {
+          "sha": "f94ffadd299a98a51237c79b6600fe74b9b09780",
+          "ref": "refs/heads/codex/release-container-images"
+        },
+        {
+          "sha": "10841d6ed80764f7566a65bd7304afbe4d53f62f",
+          "ref": "refs/heads/codex/remove-unused-prior-ref"
+        },
+        {
+          "sha": "4e01d77d00be3ac824a9b3593dba4ad74d6d90ec",
+          "ref": "refs/heads/copilot/fix-1"
+        },
+        {
+          "sha": "b69bc853d609c1a1ec94c2d55fb0562ace4850f5",
+          "ref": "refs/heads/dependabot/nuget/main/elsa-preview-6bb50e99a4"
+        },
+        {
+          "sha": "24f0639bb8605aceb34d19e11a224487a2cacf23",
+          "ref": "refs/heads/develop/3.6.1"
+        },
+        {
+          "sha": "f1b0d4b07f04265806b1ec7a6b9df85aafcc85a9",
+          "ref": "refs/heads/main"
+        },
+        {
+          "sha": "a452d4c70e6f5659f99872c1dd69f6da888e3d6d",
+          "ref": "refs/heads/release/3.6.0"
+        }
+      ],
+      "issues": [
+        {
+          "number": 3,
+          "title": "OIDC implementation",
+          "url": "https://github.com/elsa-workflows/elsa-apps/issues/3",
+          "author": "jwillmer",
+          "state": "open",
+          "acceptedRegister": "apps-source-import.json#/sourceContributions/issues/0",
+          "disposition": "retained-source-report"
+        }
+      ],
+      "pullRequests": [
+        {
+          "number": 9,
+          "title": "deps: Bump the elsa-preview group with 2 updates",
+          "url": "https://github.com/elsa-workflows/elsa-apps/pull/9",
+          "head": "b69bc853d609c1a1ec94c2d55fb0562ace4850f5",
+          "base": "8febced463fe682c8c9a1e5f8369b5e33be2b1a1",
+          "baseRef": "main",
+          "author": "dependabot[bot]",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "apps-source-import.json#/sourceContributions/pullRequests/0",
+          "disposition": "ancestry-only-superseded-version-proposal"
+        }
+      ],
+      "counts": {
+        "advertisedRows": 10,
+        "namedHeadTagRefs": 10,
+        "peeledTargetRows": 0,
+        "issues": 1,
+        "pullRequests": 1
+      },
+      "comparison": {
+        "contributionIdentityAdditions": [],
+        "contributionIdentityRemovals": [],
+        "observedContributionFieldChanges": [],
+        "scope": "issue number/URL/title/author and PR number/URL/author/head compared with accepted import register; current PR title/base/baseRef/draft are observations, not fields retained by that register"
+      }
+    },
+    {
+      "repository": "elsa-workflows/elsa-templates",
+      "readInterval": {
+        "from": "2026-10-12T01:17:53.065868+00:00",
+        "through": "2026-10-12T01:18:06.501611+00:00"
+      },
+      "snapshotEvidence": {
+        "name": "elsa-templates-inventory.json",
+        "sha256": "2c2d9a79ea2e31508d27453150e26d0807cae7a4bd1f0c6790e70b13cb809dbb",
+        "availability": "unpublished-read-only-audit; normalized observed data retained here"
+      },
+      "pagination": {
+        "pullRequestPages": 1,
+        "issuePages": 1,
+        "endReached": true
+      },
+      "refs": [
+        {
+          "sha": "891759727db053a37911b616ace4a5599e1005d0",
+          "ref": "refs/heads/main"
+        },
+        {
+          "sha": "9e394a40fa863fd92f32c31e35d37a5f8da96ef0",
+          "ref": "refs/tags/3.7.0"
+        },
+        {
+          "sha": "bd7784ae287e0184cd201a29dccbfedccc2542ec",
+          "ref": "refs/tags/3.7.1"
+        },
+        {
+          "sha": "bdd9c24405d3a133cc7d7ca45b9ff24d4070389d",
+          "ref": "refs/tags/3.8.0"
+        },
+        {
+          "sha": "c44079008d06f4580374d7c8abbeff2faf748df0",
+          "ref": "refs/tags/3.8.0^{}"
+        },
+        {
+          "sha": "89f7747cba408a75a041cc3328b007c0c483acd1",
+          "ref": "refs/tags/3.9.0"
+        }
+      ],
+      "issues": [
+        {
+          "number": 3,
+          "title": "elsa-combined template: AmbiguousMatchException",
+          "url": "https://github.com/elsa-workflows/elsa-templates/issues/3",
+          "author": "agriffard",
+          "state": "open",
+          "acceptedRegister": "templates-source-import.json#/pendingIssues/0",
+          "disposition": "unresolved-attributed-report"
+        }
+      ],
+      "pullRequests": [
+        {
+          "number": 9,
+          "title": "added missing RegisterCustomElsaStudioElements when using server mode",
+          "url": "https://github.com/elsa-workflows/elsa-templates/pull/9",
+          "head": "5dc2c5cf4eb6ed17b2228912f712993e48adb56b",
+          "base": "b8918dc1a4fd1ded27d73ae57d0cc1b4e516a45a",
+          "baseRef": "main",
+          "author": "gpanayotov",
+          "draft": false,
+          "state": "open",
+          "acceptedRegister": "templates-source-import.json#/appliedContribution",
+          "disposition": "attributed-application-after-original-main; donor-PR-remains-open"
+        }
+      ],
+      "counts": {
+        "advertisedRows": 6,
+        "namedHeadTagRefs": 5,
+        "peeledTargetRows": 1,
+        "issues": 1,
+        "pullRequests": 1
+      },
+      "comparison": {
+        "contributionIdentityAdditions": [],
+        "contributionIdentityRemovals": [],
+        "observedContributionFieldChanges": [],
+        "scope": "issue number/author login and PR number/author login/head compared with accepted import register; current titles/URLs/base/baseRef/draft are observations, not fields retained by that register"
+      }
+    }
+  ],
+  "releaseCoverage": {
+    "scope": "relevant advertised 3.8.x and 3.9.0 release branches/tags; raw annotated tag IDs retained, peeled rows remain in full donor refs",
+    "censusEvidence": {
+      "name": "release-ref-coverage-census.json",
+      "sha256": "1183697786d420780d0736e68a8f87642a3803d9b723a85372f184a54f253892"
+    },
+    "comparisonEvidence": {
+      "name": "release-coverage-comparison.json",
+      "sha256": "d2f2e10f09f120d76df4911a8824ebbd744e2da2f18fe01e513f797b5b3a009f"
+    },
+    "repositories": [
+      {
+        "repository": "elsa-core",
+        "relevantReleaseRefs": [
+          {
+            "ref": "refs/heads/release/3.8.1",
+            "sha": "249d0f077f8a0b5e6cb1a42b02b49f2f636b5ab5"
+          },
+          {
+            "ref": "refs/heads/release/3.8.2",
+            "sha": "33181ae3048f628f591a0155b5665a8e4d1bcea2"
+          },
+          {
+            "ref": "refs/heads/release/3.8.4",
+            "sha": "33181ae3048f628f591a0155b5665a8e4d1bcea2"
+          },
+          {
+            "ref": "refs/heads/release/3.9.0",
+            "sha": "5d3582b6309a2fd8ea33ebdb8c39fb040bfdc514"
+          },
+          {
+            "ref": "refs/tags/3.8.0",
+            "sha": "8120eb3ac112e2625067773ae01167d8d2c0cdc8"
+          },
+          {
+            "ref": "refs/tags/3.8.0-preview1",
+            "sha": "87ee19f5b3f116b419468855819065e2b6d87135"
+          },
+          {
+            "ref": "refs/tags/3.8.0-rc1",
+            "sha": "f6c35cf1eb5558348a61352fc4eba5925731118d"
+          },
+          {
+            "ref": "refs/tags/3.8.0-rc2",
+            "sha": "dff7d9f987394c3c2ba8003e6f9c803e97194fbc"
+          },
+          {
+            "ref": "refs/tags/3.8.1",
+            "sha": "33181ae3048f628f591a0155b5665a8e4d1bcea2"
+          },
+          {
+            "ref": "refs/tags/3.8.2",
+            "sha": "33181ae3048f628f591a0155b5665a8e4d1bcea2"
+          },
+          {
+            "ref": "refs/tags/3.8.4",
+            "sha": "33181ae3048f628f591a0155b5665a8e4d1bcea2"
+          },
+          {
+            "ref": "refs/tags/3.9.0",
+            "sha": "6436609a1a3874d3fea7ccf690897792f5a1f702"
+          }
+        ],
+        "newUnregisteredReleaseRefs": [],
+        "disposition": "accepted8624 matched"
+      },
+      {
+        "repository": "elsa-studio",
+        "relevantReleaseRefs": [
+          {
+            "sha": "99de962e49f7793011196667659ac0cdb8df3fb7",
+            "ref": "refs/heads/release/3.8.1"
+          },
+          {
+            "sha": "1c72dc02c837919059b60efe5df2ed57ff2db2d9",
+            "ref": "refs/heads/release/3.8.2"
+          },
+          {
+            "sha": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+            "ref": "refs/heads/release/3.8.4"
+          },
+          {
+            "sha": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+            "ref": "refs/heads/release/3.9.0"
+          },
+          {
+            "sha": "88a4ec2d4fce546b132fb986fe10414771fa2314",
+            "ref": "refs/tags/3.8.0"
+          },
+          {
+            "sha": "8145e7e3de208abbf33eaa80de7f106cf0ed137a",
+            "ref": "refs/tags/3.8.0-preview1"
+          },
+          {
+            "sha": "daaa232a758814d070774139c90dd48298baf670",
+            "ref": "refs/tags/3.8.0-rc1"
+          },
+          {
+            "sha": "61ebe170f478a356a92dc66ef5258616f542acef",
+            "ref": "refs/tags/3.8.0-rc2"
+          },
+          {
+            "sha": "99de962e49f7793011196667659ac0cdb8df3fb7",
+            "ref": "refs/tags/3.8.1"
+          },
+          {
+            "sha": "1c72dc02c837919059b60efe5df2ed57ff2db2d9",
+            "ref": "refs/tags/3.8.2"
+          },
+          {
+            "sha": "f6ad44a50a303695d65fcc6a1fccac5ba6d0f48d",
+            "ref": "refs/tags/3.8.3"
+          },
+          {
+            "sha": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+            "ref": "refs/tags/3.8.4"
+          },
+          {
+            "sha": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+            "ref": "refs/tags/3.9.0"
+          }
+        ],
+        "newUnregisteredReleaseRefs": [],
+        "disposition": "accepted8624 matched"
+      },
+      {
+        "repository": "elsa-extensions",
+        "relevantReleaseRefs": [
+          {
+            "sha": "0619be93b67dbfd933e148663eeffb657e52f69c",
+            "ref": "refs/heads/release/3.8.1"
+          },
+          {
+            "sha": "e7d05ef930dfde2aa85bf9dcaf841e5a6ede0a1e",
+            "ref": "refs/heads/release/3.8.2"
+          },
+          {
+            "sha": "154ba15fb4da85b4bebecfbe43639579cbda1d0d",
+            "ref": "refs/heads/release/3.8.4"
+          },
+          {
+            "sha": "89d4eb9b739ae135604aac2a1de18653a289bdb0",
+            "ref": "refs/heads/release/3.9.0"
+          },
+          {
+            "sha": "9148415845706f97e6484b6f5c9cb53bb7f4bf3e",
+            "ref": "refs/tags/3.8.0"
+          },
+          {
+            "sha": "862a077b323efb6529f71842b300d896e3b8ea57",
+            "ref": "refs/tags/3.8.0-rc2"
+          },
+          {
+            "sha": "0619be93b67dbfd933e148663eeffb657e52f69c",
+            "ref": "refs/tags/3.8.1"
+          },
+          {
+            "sha": "e7d05ef930dfde2aa85bf9dcaf841e5a6ede0a1e",
+            "ref": "refs/tags/3.8.2"
+          },
+          {
+            "sha": "154ba15fb4da85b4bebecfbe43639579cbda1d0d",
+            "ref": "refs/tags/3.8.4"
+          },
+          {
+            "sha": "89d4eb9b739ae135604aac2a1de18653a289bdb0",
+            "ref": "refs/tags/3.9.0"
+          }
+        ],
+        "newUnregisteredReleaseRefs": [],
+        "disposition": "accepted8624 matched"
+      },
+      {
+        "repository": "elsa-apps",
+        "relevantReleaseRefs": [],
+        "newUnregisteredReleaseRefs": [],
+        "disposition": "no advertised release refs; main source3.9.0 tracked independently"
+      },
+      {
+        "repository": "elsa-templates",
+        "relevantReleaseRefs": [
+          {
+            "sha": "bdd9c24405d3a133cc7d7ca45b9ff24d4070389d",
+            "ref": "refs/tags/3.8.0"
+          },
+          {
+            "sha": "89f7747cba408a75a041cc3328b007c0c483acd1",
+            "ref": "refs/tags/3.9.0"
+          }
+        ],
+        "newUnregisteredReleaseRefs": [],
+        "disposition": "3.8.0 and3.9.0 original release refs preserved by active8748"
+      }
+    ],
+    "comparison": [
+      {
+        "repository": "elsa-core",
+        "count": 12,
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      {
+        "repository": "elsa-studio",
+        "count": 13,
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      {
+        "repository": "elsa-extensions",
+        "count": 10,
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      {
+        "repository": "elsa-apps",
+        "count": 0,
+        "added": [],
+        "removed": [],
+        "changed": []
+      },
+      {
+        "repository": "elsa-templates",
+        "count": 2,
+        "added": [],
+        "removed": [],
+        "changed": []
+      }
+    ],
+    "availability": "unpublished read-only audit inputs; complete relevant rows retained here"
+  },
+  "releaseCatalog": {
+    "checkedAt": "2026-10-12T01:33:22.132591+00:00",
+    "evidence": {
+      "name": "source-audit-release-catalog-readback.json",
+      "sha256": "b8676b4cdd0a5060cebfec600a891cd84330b279decd543250bd05bcb578e6c9"
+    },
+    "latest": {
+      "elsa-core": [
+        {
+          "isDraft": false,
+          "isLatest": true,
+          "isPrerelease": false,
+          "publishedAt": "2026-10-04T01:58:27Z",
+          "tagName": "3.9.0"
+        }
+      ],
+      "elsa-studio": [
+        {
+          "isDraft": false,
+          "isLatest": true,
+          "isPrerelease": false,
+          "publishedAt": "2026-10-04T02:59:20Z",
+          "tagName": "3.9.0"
+        }
+      ],
+      "elsa-extensions": [
+        {
+          "isDraft": false,
+          "isLatest": true,
+          "isPrerelease": false,
+          "publishedAt": "2026-10-04T03:43:50Z",
+          "tagName": "3.9.0"
+        }
+      ],
+      "elsa-apps": [],
+      "elsa-templates": [
+        {
+          "isDraft": false,
+          "isLatest": true,
+          "isPrerelease": false,
+          "publishedAt": "2026-10-04T21:23:16Z",
+          "tagName": "3.9.0"
+        }
+      ]
+    },
+    "relevantReleaseRecordCounts": {
+      "elsa-core": 8,
+      "elsa-studio": 9,
+      "elsa-extensions": 6,
+      "elsa-apps": 0,
+      "elsa-templates": 2
+    },
+    "scope": "GitHub release metadata only; no package compatibility or support-policy inference"
+  },
+  "acceptedNativeCheckpoints": [
+    {
+      "productCheckpoint": "Apps",
+      "head": "dc27edc05f83ecd8feb18d894a501e0694774d98",
+      "pullRequest": 8747,
+      "sharedMerge": "1d5bc1e1deaba8f2d90920109061a3504a945106",
+      "run": 38179158250,
+      "artifactId": 11717839407,
+      "artifactArchiveSha256": "7671f492594cafb76689811e6533e4a084984ecd53c44855f04d48345cb86ea7",
+      "packageCount": 232,
+      "exclusionCount": 132,
+      "appsNonpackableExclusions": 9,
+      "published": false,
+      "measuredEvidence": "https://github.com/elsa-workflows/elsa-core/issues/8741#issuecomment-6114938822",
+      "closeout": "https://github.com/elsa-workflows/elsa-core/issues/8746#issuecomment-6114943633"
+    },
+    {
+      "productCheckpoint": "Templates",
+      "head": "c8d670e1681661f9c8a8873b1c2e8819e4ec1edb",
+      "pullRequest": 8750,
+      "sharedMerge": "5403eda00557c20e39306863d53213afb7308e55",
+      "run": 38187936003,
+      "artifactId": 11721623179,
+      "artifactArchiveSha256": "8eeeecf86ceac7a9228265982c9bb28c1aff4d11609047f625da89f76f448e11",
+      "packageCount": 232,
+      "exclusionCount": 132,
+      "appsNonpackableExclusions": 9,
+      "packageHashes": 464,
+      "sdk": "10.0.401",
+      "node": "22.23.3",
+      "cleanConsumerTargetFrameworks": 3,
+      "admissionCells": 6,
+      "published": false,
+      "measuredEvidence": "https://github.com/elsa-workflows/elsa-core/pull/8750#issuecomment-6116066488",
+      "closeout": "https://github.com/elsa-workflows/elsa-core/issues/8748#issuecomment-6116081254"
+    }
+  ],
+  "candidateBoundary": {
+    "historicalPackageCount": 225,
+    "historicalExclusionCount": 124,
+    "historicalArtifactsAndValidatorsChanged": false,
+    "currentInventory": "evaluated dynamically; measured checkpoint counts above are not a replacement candidate baseline",
+    "owner": "https://github.com/elsa-workflows/elsa-core/issues/8220"
+  },
+  "operationalHandoff": {
+    "program": "https://github.com/elsa-workflows/elsa-core/issues/8741",
+    "owners": [
+      8216,
+      8219,
+      8220,
+      8636,
+      8643
+    ],
+    "publisherVerification": 8725,
+    "templatesRuntimeLimits": [
+      "https://github.com/elsa-workflows/elsa-core/issues/8741#issuecomment-6115369407",
+      "https://github.com/elsa-workflows/elsa-core/issues/8741#issuecomment-6115738624"
+    ]
+  },
+  "limits": [
+    "Four donors plus target Core, not five donors.",
+    "All donor head/tag advertisements are retained here; refs/pull historical heads and annotated object payloads remain in the accepted immutable ledgers.",
+    "Observed open identities match accepted registers; full issue/PR body, label, assignee and update-time equality was not audited.",
+    "A raw ref identity records an observation, not adoption of that branch content or activation of a maintenance/publisher ref.",
+    "Final donor freshness comparison, actual-main acceptance and board/issue-state readback remain lead-owned.",
+    "No source freeze, repository retirement, issue/PR transfer/closure, publication, deployment or credential/trust cutover is performed by this record."
+  ]
+}

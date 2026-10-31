@@ -1,0 +1,89 @@
+# Task #8748 source acceptance. Publisher/trust ownership remains #8741/#8725.
+# Retain this product gate after import; templates/.github workflows are inert metadata.
+name: Templates source validation
+
+on:
+  pull_request:
+    paths:
+      - 'templates/**'
+      - 'Elsa.sln'
+      - 'global.json'
+      - 'Elsa.Templates.slnf'
+      - 'scripts/solution/**'
+      - 'scripts/integration-program/verify_templates_source_import.py'
+      - 'scripts/integration-program/templates_product_inventory.py'
+      - 'scripts/integration-program/test_verify_templates_source_import.py'
+      - 'scripts/integration-program/apps_consumer_inventory.py'
+      - 'docs/integration-program/templates-source-import.json'
+      - '.github/workflows/templates-source-validation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: templates-source-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+
+jobs:
+  templates:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify candidate identity
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: '10.0.300'
+      - name: Verify original source and independent project boundaries
+        run: |
+          dotnet msbuild Elsa.Templates.slnf -t:GenerateRestoreGraphFile \
+            -p:RestoreGraphOutputPath="$RUNNER_TEMP/templates-restore-graph.json" -nologo -v:quiet
+          python3 scripts/integration-program/verify_templates_source_import.py --evaluate \
+            --restore-graph "$RUNNER_TEMP/templates-restore-graph.json"
+      - name: Verify retained publisher metadata guards without publishing
+        run: python3 -m unittest discover -s templates/test -p 'validate_packages_workflow.py' -v
+      - name: Restore and build the independent product and root filter
+        run: |
+          dotnet restore Elsa.Templates.slnf --force-evaluate
+          dotnet restore templates/Elsa.Templates.slnx
+          dotnet build templates/Elsa.Templates.slnx -c Release --no-restore
+          dotnet build Elsa.Templates.slnf -c Release --no-restore
+      - name: Pack, install and build the 20 supported starter cases
+        run: |
+          dotnet test templates/test/Elsa.Templates.Tests/Elsa.Templates.Tests.csproj \
+            -c Release --no-build --logger trx --results-directory "$RUNNER_TEMP/templates-results"
+      - name: Verify all existing smoke cases ran and passed
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          results = list((Path(os.environ['RUNNER_TEMP']) / 'templates-results').glob('*.trx'))
+          if len(results) != 1:
+              raise SystemExit('Expected one Templates smoke-test receipt')
+          counters = ET.parse(results[0]).find('.//{*}Counters')
+          if counters is None or any(counters.get(key) != '20' for key in ('total', 'executed', 'passed')) or counters.get('failed') != '0':
+              raise SystemExit('All 20 supported template smoke cases must execute and pass')
+          PY
+      - name: Verify tracked source remained unchanged
+        run: git diff --exit-code HEAD --
+      - name: Retain nonpublishing test evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: templates-source-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/templates-results/*.trx
+            ${{ runner.temp }}/templates-restore-graph.json
+          if-no-files-found: warn
+          retention-days: 14

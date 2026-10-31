@@ -1,0 +1,394 @@
+namespace Elsa.Secrets.Services;
+
+public class DefaultSecretManager(ISecretNameValidator nameValidator, ISecretStoreRegistry storeRegistry, ISecretTypeRegistry typeRegistry, ISecretRepository repository) : ISecretManager, IManagedSecretManager
+{
+    public async Task<Secret> CreateAsync(CreateSecretRequest request, CancellationToken cancellationToken = default)
+    {
+        ValidateName(request.Name);
+        var secret = await CreateSecretAsync(request, cancellationToken);
+        if (!await repository.TryAddOrReplaceDeletedAsync(secret, cancellationToken))
+            throw new InvalidOperationException($"A secret named '{request.Name}' already exists.");
+
+        return secret;
+    }
+
+    public async Task<Secret?> GetAsync(string name, CancellationToken cancellationToken = default)
+    {
+        var secret = await repository.GetAsync(nameValidator.Normalize(name), cancellationToken);
+        return secret is { Status: SecretStatus.Deleted } ? null : secret;
+    }
+
+    public async Task<IReadOnlyCollection<Secret>> ListAsync(ListSecretsRequest request, CancellationToken cancellationToken = default)
+    {
+        return (await ListPageAsync(request, cancellationToken)).Items;
+    }
+
+    public async Task<ListSecretsResult> ListPageAsync(ListSecretsRequest request, CancellationToken cancellationToken = default)
+    {
+        var secrets = await repository.ListAsync(cancellationToken);
+        var query = ApplyFilters(secrets, request);
+        var totalCount = query.LongCount();
+
+        var pageSize = request.PageSize is > 0 ? Math.Min(request.PageSize.Value, 200) : 100;
+        var page = request.Page is > 0 ? request.Page.Value : 0;
+
+        var items = query
+            .OrderBy(x => x.Name)
+            .Skip(page * pageSize)
+            .Take(pageSize)
+            .ToList();
+
+        return new ListSecretsResult { Items = items, TotalCount = totalCount };
+    }
+
+    public async Task<long> CountAsync(ListSecretsRequest request, CancellationToken cancellationToken = default)
+    {
+        var secrets = await repository.ListAsync(cancellationToken);
+        return ApplyFilters(secrets, request).LongCount();
+    }
+
+    public async Task<Secret> UpdateAsync(string name, UpdateSecretRequest request, CancellationToken cancellationToken = default)
+    {
+        var secret = await GetExistingGenericAsync(name, cancellationToken);
+
+        secret.DisplayName = string.IsNullOrWhiteSpace(request.DisplayName) ? secret.Name : request.DisplayName.Trim();
+        secret.Description = string.IsNullOrWhiteSpace(request.Description) ? null : request.Description.Trim();
+        secret.UpdatedAt = DateTimeOffset.UtcNow;
+
+        await repository.SaveAsync(secret, cancellationToken);
+        return secret;
+    }
+
+    public async Task<Secret> RotateAsync(string name, RotateSecretRequest request, CancellationToken cancellationToken = default)
+    {
+        var secret = await GetExistingGenericAsync(name, cancellationToken);
+        if (secret.Status == SecretStatus.Revoked)
+            throw new InvalidOperationException($"Secret '{secret.Name}' is revoked and cannot be rotated.");
+
+        var provider = typeRegistry.Get(secret.TypeName);
+        if (!provider.ValidateRotation(request, secret.StoreName, out var error))
+            throw new InvalidOperationException(error);
+
+        var store = storeRegistry.Get(secret.StoreName);
+        EnsureCanWrite(store);
+        var nextVersion = secret.Versions.Count == 0 ? 1 : secret.Versions.Max(x => x.Version) + 1;
+        var version = new SecretVersion { Version = nextVersion, ExpiresAt = request.ExpiresAt };
+        version.Payload = await store.WriteAsync(secret, version, CreatePayload(request), cancellationToken);
+
+        foreach (var activeVersion in secret.Versions.Where(x => x.Status == SecretStatus.Active))
+            activeVersion.Status = SecretStatus.Retired;
+
+        secret.Versions.Add(version);
+        secret.Status = SecretStatus.Active;
+        secret.UpdatedAt = DateTimeOffset.UtcNow;
+        await repository.SaveAsync(secret, cancellationToken);
+
+        return secret;
+    }
+
+    public async Task<Secret?> RevokeAsync(string name, CancellationToken cancellationToken = default)
+    {
+        var secret = await GetGenericAsync(name, cancellationToken);
+        if (secret == null)
+            return null;
+
+        secret.Status = SecretStatus.Revoked;
+        secret.UpdatedAt = DateTimeOffset.UtcNow;
+        foreach (var version in secret.Versions.Where(x => x.Status == SecretStatus.Active))
+            version.Status = SecretStatus.Revoked;
+
+        await repository.SaveAsync(secret, cancellationToken);
+        return secret;
+    }
+
+    public async Task<bool> DeleteAsync(string name, CancellationToken cancellationToken = default)
+    {
+        var secret = await GetGenericAsync(name, cancellationToken);
+        if (secret == null)
+            return false;
+
+        await storeRegistry.Get(secret.StoreName).DeleteAsync(secret, cancellationToken);
+        secret.Status = SecretStatus.Deleted;
+        secret.UpdatedAt = DateTimeOffset.UtcNow;
+        await repository.SaveAsync(secret, cancellationToken);
+        return true;
+    }
+
+    public async Task<SecretTestResponse> TestAsync(string name, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var secret = await GetExistingGenericAsync(name, cancellationToken);
+            var version = GetLatestActiveVersion(secret);
+            var succeeded = await storeRegistry.Get(secret.StoreName).TestAsync(secret, version, cancellationToken);
+            return new SecretTestResponse { Succeeded = succeeded, Error = succeeded ? null : "Secret value is unavailable." };
+        }
+        catch (InvalidOperationException e)
+        {
+            return new SecretTestResponse { Succeeded = false, Error = e.Message };
+        }
+        catch (KeyNotFoundException e)
+        {
+            return new SecretTestResponse { Succeeded = false, Error = e.Message };
+        }
+        catch (ArgumentException e)
+        {
+            return new SecretTestResponse { Succeeded = false, Error = e.Message };
+        }
+        catch (System.Security.Cryptography.CryptographicException e)
+        {
+            return new SecretTestResponse { Succeeded = false, Error = e.Message };
+        }
+        catch (FormatException e)
+        {
+            return new SecretTestResponse { Succeeded = false, Error = e.Message };
+        }
+    }
+
+    public async Task<SecretPayload> ResolvePayloadAsync(string name, CancellationToken cancellationToken = default)
+    {
+        var secret = await GetExistingAsync(name, cancellationToken);
+        return await ResolvePayloadAsync(secret, cancellationToken);
+    }
+
+    public async Task<SecretPayload> ResolvePayloadAsync(Secret secret, CancellationToken cancellationToken = default)
+    {
+        var persisted = await GetExistingAsync(secret.Name, cancellationToken);
+        if (!string.Equals(secret.Id, persisted.Id, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException($"Secret '{secret.Name}' was not found.");
+        }
+
+        EnsureNotLifecycleManaged(persisted);
+        return await ReadPayloadCoreAsync(persisted, cancellationToken);
+    }
+
+    public async Task<Secret> CreateGenerationAsync(string ownerId, string generationId, string value, CancellationToken cancellationToken = default)
+    {
+        ValidateManagedIdentity(ownerId, generationId);
+        var name = ManagedSecretNames.ForGeneration(ownerId, generationId);
+        if (await repository.GetAsync(nameValidator.Normalize(name), cancellationToken) != null)
+        {
+            throw new InvalidOperationException($"A secret named '{name}' already exists.");
+        }
+
+        var request = new CreateSecretRequest
+        {
+            Name = name,
+            TypeName = SecretTypeNames.Text,
+            StoreName = SecretStoreNames.Encrypted,
+            Value = value
+        };
+
+        var secret = await CreateSecretAsync(request, cancellationToken);
+        secret.ManagedOwnerId = ownerId;
+        secret.ManagedGenerationId = generationId;
+        await repository.AddAsync(secret, cancellationToken);
+        return secret;
+    }
+
+    public async Task<SecretPayload> ResolveGenerationAsync(string name, string ownerId, string generationId, CancellationToken cancellationToken = default)
+    {
+        ValidateManagedIdentity(ownerId, generationId);
+        var secret = await GetExistingAsync(name, cancellationToken);
+        EnsureManagedOwner(secret, ownerId, generationId);
+        return await ReadPayloadCoreAsync(secret, cancellationToken);
+    }
+
+    public async Task<bool> DeleteGenerationAsync(string name, string ownerId, string generationId, CancellationToken cancellationToken = default)
+    {
+        ValidateManagedIdentity(ownerId, generationId);
+        // Read the repository directly so a retry after process loss can recognize its own tombstone. The
+        // public GetAsync intentionally hides deleted secrets, while immutable managed-generation identities
+        // must remain unavailable for recreation after cleanup.
+        var secret = await repository.GetAsync(nameValidator.Normalize(name), cancellationToken);
+        if (secret == null || !HasManagedOwner(secret, ownerId, generationId))
+        {
+            return false;
+        }
+
+        if (secret.Status == SecretStatus.Deleted)
+        {
+            return true;
+        }
+
+        await DeleteGenerationAsync(secret, cancellationToken);
+        return true;
+    }
+
+    private async Task<SecretPayload> ReadPayloadCoreAsync(Secret secret, CancellationToken cancellationToken)
+    {
+        var version = GetLatestActiveVersion(secret);
+        var store = storeRegistry.Get(secret.StoreName);
+        var payload = await store.ReadAsync(secret, version, cancellationToken);
+
+        if (payload?.Value == null)
+            throw new InvalidOperationException($"Secret '{secret.Name}' could not be resolved.");
+
+        return payload;
+    }
+
+    private async Task DeleteGenerationAsync(Secret secret, CancellationToken cancellationToken)
+    {
+        await storeRegistry.Get(secret.StoreName).DeleteAsync(secret, cancellationToken);
+        secret.Status = SecretStatus.Deleted;
+        secret.UpdatedAt = DateTimeOffset.UtcNow;
+        await repository.SaveAsync(secret, cancellationToken);
+    }
+
+    private async Task<Secret> CreateSecretAsync(CreateSecretRequest request, CancellationToken cancellationToken)
+    {
+        var typeProvider = typeRegistry.Get(request.TypeName);
+        var store = storeRegistry.Get(request.StoreName);
+        EnsureCanWrite(store);
+
+        if (!typeProvider.Descriptor.SupportedStoreNames.Contains(store.Name, StringComparer.OrdinalIgnoreCase))
+            throw new InvalidOperationException($"Secret type '{request.TypeName}' does not support store '{request.StoreName}'.");
+
+        if (!typeProvider.Validate(request, out var error))
+            throw new InvalidOperationException(error);
+
+        var secret = new Secret
+        {
+            Name = nameValidator.Normalize(request.Name),
+            DisplayName = string.IsNullOrWhiteSpace(request.DisplayName) ? request.Name.Trim() : request.DisplayName.Trim(),
+            Description = request.Description,
+            TypeName = typeProvider.Descriptor.Name,
+            StoreName = store.Name,
+            Scope = request.Scope,
+            Tags = request.Tags.ToHashSet(StringComparer.OrdinalIgnoreCase)
+        };
+
+        var version = new SecretVersion { Version = 1, ExpiresAt = request.ExpiresAt };
+        version.Payload = await store.WriteAsync(secret, version, CreatePayload(request), cancellationToken);
+        secret.Versions.Add(version);
+
+        return secret;
+    }
+
+    private async Task<Secret> GetExistingAsync(string name, CancellationToken cancellationToken) =>
+        await GetAsync(name, cancellationToken) ?? throw SecretNotFound(name);
+
+    /// <summary>
+    /// Looks up a secret for the generic name-addressed operations, which treat lifecycle-managed generations as
+    /// absent -- the same rule <see cref="ListPageAsync"/> applies -- so they neither mutate nor confirm them.
+    /// </summary>
+    private async Task<Secret?> GetGenericAsync(string name, CancellationToken cancellationToken)
+    {
+        var secret = await GetAsync(name, cancellationToken);
+        return secret is { IsLifecycleManaged: true } ? null : secret;
+    }
+
+    private async Task<Secret> GetExistingGenericAsync(string name, CancellationToken cancellationToken) =>
+        await GetGenericAsync(name, cancellationToken) ?? throw SecretNotFound(name);
+
+    private static KeyNotFoundException SecretNotFound(string name) => new($"Secret '{name}' was not found.");
+
+    private static SecretVersion GetLatestActiveVersion(Secret secret)
+    {
+        if (secret.Status != SecretStatus.Active)
+            throw new InvalidOperationException($"Secret '{secret.Name}' is not active.");
+
+        return secret.LatestActiveVersion ?? throw new InvalidOperationException($"Secret '{secret.Name}' has no active version.");
+    }
+
+    private void ValidateName(string name)
+    {
+        if (!nameValidator.IsValid(name, out var error))
+            throw new InvalidOperationException(error);
+    }
+
+    private static void EnsureCanWrite(ISecretStore store)
+    {
+        if (!store.Descriptor.Capabilities.HasFlag(SecretStoreCapabilities.Write))
+            throw new InvalidOperationException($"Secret store '{store.Name}' does not support writing secrets.");
+    }
+
+    private static void EnsureNotLifecycleManaged(Secret secret)
+    {
+        if (secret.IsLifecycleManaged)
+        {
+            throw new InvalidOperationException("Lifecycle-managed secret generations can only be accessed through their owner.");
+        }
+    }
+
+    private static void EnsureManagedOwner(Secret secret, string ownerId, string generationId)
+    {
+        if (!HasManagedOwner(secret, ownerId, generationId))
+        {
+            throw new InvalidOperationException("Managed credential generation is unavailable.");
+        }
+    }
+
+    private static bool HasManagedOwner(Secret secret, string ownerId, string generationId)
+    {
+        return string.Equals(secret.ManagedOwnerId, ownerId, StringComparison.Ordinal) &&
+               string.Equals(secret.ManagedGenerationId, generationId, StringComparison.Ordinal);
+    }
+
+    private static void ValidateManagedIdentity(string ownerId, string generationId)
+    {
+        if (string.IsNullOrWhiteSpace(ownerId) || ownerId.Length > 200 || string.IsNullOrWhiteSpace(generationId) || generationId.Length > 200)
+        {
+            throw new ArgumentException("A valid owner and generation identifier are required.");
+        }
+    }
+
+    private static IEnumerable<Secret> ApplyFilters(IEnumerable<Secret> secrets, ListSecretsRequest request)
+    {
+        var query = secrets.Where(x => x.Status != SecretStatus.Deleted && !x.IsLifecycleManaged);
+
+        if (!string.IsNullOrWhiteSpace(request.Search))
+        {
+            var search = request.Search.Trim();
+            query = query.Where(x =>
+                x.Name.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                x.DisplayName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                (x.Description?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false));
+        }
+
+        var typeNames = GetFilterValues(request.TypeName, request.TypeNames);
+        if (typeNames.Count > 0)
+            query = query.Where(x => typeNames.Contains(x.TypeName));
+
+        var storeNames = GetFilterValues(request.StoreName, request.StoreNames);
+        if (storeNames.Count > 0)
+            query = query.Where(x => storeNames.Contains(x.StoreName));
+
+        if (!string.IsNullOrWhiteSpace(request.Scope))
+            query = query.Where(x => string.Equals(x.Scope, request.Scope, StringComparison.OrdinalIgnoreCase));
+
+        if (request.Status != null)
+            query = query.Where(x => x.Status == request.Status);
+
+        return query;
+    }
+
+    private static HashSet<string> GetFilterValues(string? value, IEnumerable<string> values)
+    {
+        var result = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (!string.IsNullOrWhiteSpace(value))
+            result.Add(value.Trim());
+
+        foreach (var item in values.Where(x => !string.IsNullOrWhiteSpace(x)))
+            result.Add(item.Trim());
+
+        return result;
+    }
+
+    private static SecretPayload CreatePayload(CreateSecretRequest request)
+    {
+        var payload = new SecretPayload { Value = request.Value, Metadata = new Dictionary<string, string>(request.Metadata, StringComparer.OrdinalIgnoreCase) };
+        if (!string.IsNullOrWhiteSpace(request.ConfigurationKey))
+            payload.Metadata["configurationKey"] = request.ConfigurationKey.Trim();
+        return payload;
+    }
+
+    private static SecretPayload CreatePayload(RotateSecretRequest request)
+    {
+        var payload = new SecretPayload { Value = request.Value, Metadata = new Dictionary<string, string>(request.Metadata, StringComparer.OrdinalIgnoreCase) };
+        if (!string.IsNullOrWhiteSpace(request.ConfigurationKey))
+            payload.Metadata["configurationKey"] = request.ConfigurationKey.Trim();
+        return payload;
+    }
+}

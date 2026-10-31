@@ -1,0 +1,544 @@
+{
+  "process": {
+    "processId": "gateway-routing",
+    "name": "Gateway Routing",
+    "isExecutable": true,
+    "isTransaction": false,
+    "elements": [
+      {
+        "elementId": "Start_1",
+        "elementType": "startEvent",
+        "name": "Started",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "Fork",
+        "elementType": "parallelGateway",
+        "name": "Fork",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "Decide",
+        "elementType": "exclusiveGateway",
+        "name": "Approved?",
+        "defaultFlowId": "Flow_Decide_Reject",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "Approve",
+        "elementType": "serviceTask",
+        "name": "Approve",
+        "bindingRef": "node-Approve",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [
+            {
+              "name": {
+                "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                "localName": "activityBinding"
+              },
+              "attributes": [
+                {
+                  "name": {
+                    "localName": "activityType"
+                  },
+                  "value": "Elsa.WriteLine"
+                }
+              ],
+              "children": [
+                {
+                  "name": {
+                    "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                    "localName": "input"
+                  },
+                  "value": "{\u0022typeName\u0022:\u0022String\u0022,\u0022expression\u0022:{\u0022type\u0022:\u0022Literal\u0022,\u0022value\u0022:\u0022Approved\u0022}}",
+                  "attributes": [
+                    {
+                      "name": {
+                        "localName": "name"
+                      },
+                      "value": "text"
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "Reject",
+        "elementType": "serviceTask",
+        "name": "Reject",
+        "bindingRef": "node-Reject",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [
+            {
+              "name": {
+                "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                "localName": "activityBinding"
+              },
+              "attributes": [
+                {
+                  "name": {
+                    "localName": "activityType"
+                  },
+                  "value": "Elsa.WriteLine"
+                }
+              ],
+              "children": [
+                {
+                  "name": {
+                    "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                    "localName": "input"
+                  },
+                  "value": "{\u0022typeName\u0022:\u0022String\u0022,\u0022expression\u0022:{\u0022type\u0022:\u0022Literal\u0022,\u0022value\u0022:\u0022Rejected\u0022}}",
+                  "attributes": [
+                    {
+                      "name": {
+                        "localName": "name"
+                      },
+                      "value": "text"
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "InclusiveSplit",
+        "elementType": "inclusiveGateway",
+        "name": "Notify who?",
+        "defaultFlowId": "Flow_Inclusive_Race",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "Race",
+        "elementType": "eventBasedGateway",
+        "name": "Race",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "Timeout",
+        "elementType": "intermediateCatchEvent",
+        "name": "After 10 minutes",
+        "bindingRef": "node-Timeout",
+        "eventDefinitions": [
+          {
+            "type": "timer",
+            "properties": {
+              "interval": "PT10M"
+            }
+          }
+        ],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "ApprovalMessage",
+        "elementType": "intermediateCatchEvent",
+        "name": "Approval received",
+        "bindingRef": "node-ApprovalMessage",
+        "eventDefinitions": [
+          {
+            "type": "message",
+            "properties": {
+              "name": "ApprovalReceived"
+            }
+          }
+        ],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "Join",
+        "elementType": "parallelGateway",
+        "name": "Join",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "End_1",
+        "elementType": "endEvent",
+        "name": "Done",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      }
+    ],
+    "sequenceFlows": [
+      {
+        "flowId": "Flow_Start_Fork",
+        "sourceRef": "Start_1",
+        "targetRef": "Fork",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_Fork_Exclusive",
+        "sourceRef": "Fork",
+        "targetRef": "Decide",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_Fork_Inclusive",
+        "sourceRef": "Fork",
+        "targetRef": "InclusiveSplit",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_Decide_Approve",
+        "sourceRef": "Decide",
+        "targetRef": "Approve",
+        "name": "yes",
+        "conditionOutcome": "Approved",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_Decide_Reject",
+        "sourceRef": "Decide",
+        "targetRef": "Reject",
+        "name": "otherwise",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_Inclusive_Race",
+        "sourceRef": "InclusiveSplit",
+        "targetRef": "Race",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_Race_Timeout",
+        "sourceRef": "Race",
+        "targetRef": "Timeout",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_Race_Approval",
+        "sourceRef": "Race",
+        "targetRef": "ApprovalMessage",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_Approve_Join",
+        "sourceRef": "Approve",
+        "targetRef": "Join",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_Reject_Join",
+        "sourceRef": "Reject",
+        "targetRef": "Join",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_Timeout_Join",
+        "sourceRef": "Timeout",
+        "targetRef": "Join",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_Approval_Join",
+        "sourceRef": "ApprovalMessage",
+        "targetRef": "Join",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_Join_End",
+        "sourceRef": "Join",
+        "targetRef": "End_1",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      }
+    ],
+    "lanes": [],
+    "variables": [],
+    "extensions": {
+      "documentation": [],
+      "extensionElements": [],
+      "foreignAttributes": [],
+      "foreignChildren": []
+    }
+  },
+  "workBindings": {
+    "node-Approve": "gateway-routing:node-Approve",
+    "node-Reject": "gateway-routing:node-Reject",
+    "node-Timeout": "gateway-routing:node-Timeout",
+    "node-ApprovalMessage": "gateway-routing:node-ApprovalMessage"
+  },
+  "activities": [
+    {
+      "text": {
+        "typeName": "String",
+        "expression": {
+          "type": "Literal",
+          "value": "Approved"
+        }
+      },
+      "id": "gateway-routing:node-Approve",
+      "nodeId": null,
+      "name": null,
+      "type": "Elsa.WriteLine",
+      "version": 1,
+      "customProperties": {
+        "canStartWorkflow": false,
+        "runAsynchronously": false
+      },
+      "metadata": {}
+    },
+    {
+      "text": {
+        "typeName": "String",
+        "expression": {
+          "type": "Literal",
+          "value": "Rejected"
+        }
+      },
+      "id": "gateway-routing:node-Reject",
+      "nodeId": null,
+      "name": null,
+      "type": "Elsa.WriteLine",
+      "version": 1,
+      "customProperties": {
+        "canStartWorkflow": false,
+        "runAsynchronously": false
+      },
+      "metadata": {}
+    },
+    {
+      "timeSpan": {
+        "typeName": "TimeSpan",
+        "expression": {
+          "type": "Literal",
+          "value": "00:10:00"
+        }
+      },
+      "id": "gateway-routing:node-Timeout",
+      "nodeId": null,
+      "name": null,
+      "type": "Elsa.Delay",
+      "version": 1,
+      "customProperties": {
+        "source": "BpmnWorkBinder.cs:119"
+      },
+      "metadata": {}
+    },
+    {
+      "eventName": {
+        "typeName": "String",
+        "expression": {
+          "type": "Literal",
+          "value": "ApprovalReceived"
+        }
+      },
+      "result": null,
+      "id": "gateway-routing:node-ApprovalMessage",
+      "nodeId": null,
+      "name": null,
+      "type": "Elsa.Event",
+      "version": 1,
+      "customProperties": {
+        "source": "BpmnWorkBinder.cs:120"
+      },
+      "metadata": {}
+    }
+  ],
+  "variables": [],
+  "id": "gateway-routing",
+  "type": "Elsa.BpmnProcess",
+  "version": 1,
+  "customProperties": {
+    "source": "BpmnWorkBinder.cs:80",
+    "canStartWorkflow": true
+  },
+  "metadata": {}
+}

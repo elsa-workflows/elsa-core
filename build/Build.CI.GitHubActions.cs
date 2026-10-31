@@ -8,8 +8,9 @@ using Nuke.Components;
 [CustomGitHubActions(
         "pr",
         GitHubActionsImage.UbuntuLatest,
-        OnPullRequestBranches = ["main", "patch/*", "develop/*"],
+        OnPullRequestBranches = ["main", "patch/*", "develop/*", "release/*", "codex/elsa-integration-program"],
         OnPullRequestIncludePaths = ["**/*"],
+        OnPullRequestExcludePaths = ["docs/**", "**/*.md", ".agents/**", ".claude/**", ".specify/**"],
         PublishArtifacts = false,
         InvokedTargets = [nameof(ICompile.Compile), nameof(ITest.Test)],
         CacheKeyFiles = [],
@@ -28,9 +29,36 @@ class CustomGitHubActionsAttribute(string name, GitHubActionsImage image, params
 
         // only need to list the ones that are missing from default image
         newSteps.Insert(0, new GitHubActionsSetupDotNetStep(["10.x"]));
+        newSteps.Add(new GitHubActionsUploadTestResultsStep());
 
         job.Steps = newSteps.ToArray();
         return job;
+    }
+}
+
+class GitHubActionsUploadTestResultsStep : GitHubActionsStep
+{
+    public override void Write(CustomFileWriter writer)
+    {
+        writer.WriteLine("- name: Upload test results and hang dumps");
+        using (writer.Indent())
+        {
+            writer.WriteLine("if: failure()");
+            writer.WriteLine("uses: actions/upload-artifact@v4");
+            writer.WriteLine("with:");
+            using (writer.Indent())
+            {
+                writer.WriteLine("name: test-results-and-hang-dumps");
+                writer.WriteLine("if-no-files-found: ignore");
+                writer.WriteLine("path: |");
+                using (writer.Indent())
+                {
+                    writer.WriteLine("testresults/");
+                    writer.WriteLine("**/*.dmp");
+                    writer.WriteLine("**/*Sequence*.xml");
+                }
+            }
+        }
     }
 }
 

@@ -1,0 +1,14 @@
+{
+  "name": "elsa-bpmn-designer-conformance",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsc --noEmit && playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1",
+    "@types/node": "22.15.21",
+    "typescript": "5.8.3"
+  }
+}

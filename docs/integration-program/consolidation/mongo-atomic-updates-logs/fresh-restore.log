@@ -1,0 +1,26 @@
+[dotnet-build-slots] waiting for a build slot (2 in use, waited 0s). Held by: pid 49872 since 23:10:29 in /Users/sipke/.codex/worktrees/audit-8271-workflow-binding: dotnet test test/unit/Elsa.Connections.UnitTests/Elsa.Connections.UnitTests.csproj --no-restore -f net10.0 -m:1; pid 52572 since 23:11:53 in /Users/sipke/.codex/worktrees/runtime-composition-1965/elsa-foundation-main: dotnet test tests/essentials/Persistence/EntityFrameworkCore/Migrations/Tests/Elsa.Persistence.EntityFrameworkCore.Migrations.Tests.csproj --no-restore --filter FullyQualifiedName~EfPersistenceResourceEnroll
+[dotnet-build-slots] waiting for a build slot (2 in use, waited 60s). Held by: pid 49872 since 23:10:29 in /Users/sipke/.codex/worktrees/audit-8271-workflow-binding: dotnet test test/unit/Elsa.Connections.UnitTests/Elsa.Connections.UnitTests.csproj --no-restore -f net10.0 -m:1; pid 52572 since 23:11:53 in /Users/sipke/.codex/worktrees/runtime-composition-1965/elsa-foundation-main: dotnet test tests/essentials/Persistence/EntityFrameworkCore/Migrations/Tests/Elsa.Persistence.EntityFrameworkCore.Migrations.Tests.csproj --no-restore --filter FullyQualifiedName~EfPersistenceResourceEnroll
+[dotnet-build-slots] got slot 1 after 80s
+  Determining projects to restore...
+  Restored /private/tmp/elsa-8294-mongo-replay/src/modules/Elsa.Common/Elsa.Common.csproj (in 11,99 sec).
+  Restored /private/tmp/elsa-8294-mongo-replay/src/modules/Elsa.Caching/Elsa.Caching.csproj (in 12 sec).
+  Restored /private/tmp/elsa-8294-mongo-replay/src/common/Elsa.Mediator/Elsa.Mediator.csproj (in 11,93 sec).
+  Restored /private/tmp/elsa-8294-mongo-replay/src/modules/Elsa.Expressions/Elsa.Expressions.csproj (in 12 sec).
+/private/tmp/elsa-8294-mongo-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj : warning NU1902: Package 'Microsoft.Build.Tasks.Git' 8.0.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-23fw-v26w-5fgq [/private/tmp/elsa-8294-mongo-replay/test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj]
+/private/tmp/elsa-8294-mongo-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj : warning NU1902: Package 'SharpCompress' 0.30.1 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-6c8g-7p36-r338 [/private/tmp/elsa-8294-mongo-replay/test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj]
+  Restored /private/tmp/elsa-8294-mongo-replay/src/modules/Elsa.KeyValues/Elsa.KeyValues.csproj (in 79 ms).
+  Restored /private/tmp/elsa-8294-mongo-replay/src/common/Elsa.Features/Elsa.Features.csproj (in 140 ms).
+  Restored /private/tmp/elsa-8294-mongo-replay/src/modules/Elsa.Identity/Elsa.Identity.csproj (in 12,55 sec).
+  Restored /private/tmp/elsa-8294-mongo-replay/src/modules/Elsa.Alterations/Elsa.Alterations.csproj (in 12,48 sec).
+  Restored /private/tmp/elsa-8294-mongo-replay/src/common/Elsa.Api.Common/Elsa.Api.Common.csproj (in 12,5 sec).
+  Restored /private/tmp/elsa-8294-mongo-replay/src/modules/Elsa.Labels/Elsa.Labels.csproj (in 722 ms).
+  Restored /private/tmp/elsa-8294-mongo-replay/src/extensions/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj (in 12,47 sec).
+  Restored /private/tmp/elsa-8294-mongo-replay/src/modules/Elsa.Alterations.Core/Elsa.Alterations.Core.csproj (in 1,21 sec).
+  Restored /private/tmp/elsa-8294-mongo-replay/src/modules/Elsa.Workflows.Core/Elsa.Workflows.Core.csproj (in 932 ms).
+  Restored /private/tmp/elsa-8294-mongo-replay/src/modules/Elsa.Workflows.Management/Elsa.Workflows.Management.csproj (in 1,06 sec).
+  Restored /private/tmp/elsa-8294-mongo-replay/src/modules/Elsa.Tenants/Elsa.Tenants.csproj (in 1,2 sec).
+  Restored /private/tmp/elsa-8294-mongo-replay/src/modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj (in 1,58 sec).
+/private/tmp/elsa-8294-mongo-replay/test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj : warning NU1902: Package 'SharpCompress' 0.30.1 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-6c8g-7p36-r338
+/private/tmp/elsa-8294-mongo-replay/test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-mggc-4xg6-vcxf
+/private/tmp/elsa-8294-mongo-replay/test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj : warning NU1903: Package 'SSH.NET' 2025.1.0 has a known high severity vulnerability, https://github.com/advisories/GHSA-q939-rpr3-3284
+  Restored /private/tmp/elsa-8294-mongo-replay/test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj (in 7,79 sec).

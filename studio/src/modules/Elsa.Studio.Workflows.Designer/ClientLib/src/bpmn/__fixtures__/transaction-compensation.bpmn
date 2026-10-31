@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+                  xmlns:elsa="https://elsaworkflows.io/schemas/bpmn/v1"
+                  id="Definitions_transaction-compensation"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="transaction-compensation" name="Transaction And Compensation" isExecutable="true">
+    <bpmn:startEvent id="Start_1" name="Start">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:transaction id="BookTrip" name="Book Trip">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+      <bpmn:startEvent id="Tx_Start">
+        <bpmn:outgoing>Tx_Flow_1</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:serviceTask id="ChargeCard" name="Charge Card">
+        <bpmn:extensionElements>
+          <elsa:activityBinding activityType="Elsa.WriteLine">
+            <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"charge"}}</elsa:input>
+          </elsa:activityBinding>
+        </bpmn:extensionElements>
+        <bpmn:incoming>Tx_Flow_1</bpmn:incoming>
+        <bpmn:outgoing>Tx_Flow_2</bpmn:outgoing>
+      </bpmn:serviceTask>
+      <bpmn:boundaryEvent id="ChargeCardCompensation" attachedToRef="ChargeCard" cancelActivity="false">
+        <bpmn:compensateEventDefinition id="Compensate_Boundary" />
+      </bpmn:boundaryEvent>
+      <bpmn:serviceTask id="RefundCard" name="Refund Card" isForCompensation="true">
+        <bpmn:extensionElements>
+          <elsa:activityBinding activityType="Elsa.WriteLine">
+            <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"refund"}}</elsa:input>
+          </elsa:activityBinding>
+        </bpmn:extensionElements>
+      </bpmn:serviceTask>
+      <bpmn:association id="Compensation_Association" associationDirection="One" sourceRef="ChargeCardCompensation" targetRef="RefundCard" />
+      <bpmn:endEvent id="Tx_Cancel_End" name="Cancelled">
+        <bpmn:incoming>Tx_Flow_3</bpmn:incoming>
+        <bpmn:cancelEventDefinition id="Cancel_End" />
+      </bpmn:endEvent>
+      <bpmn:exclusiveGateway id="Tx_Decide" name="Confirmed?" default="Tx_Flow_2">
+        <bpmn:incoming>Tx_Flow_2</bpmn:incoming>
+        <bpmn:outgoing>Tx_Flow_3</bpmn:outgoing>
+        <bpmn:outgoing>Tx_Flow_4</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      <bpmn:endEvent id="Tx_End" name="Booked">
+        <bpmn:incoming>Tx_Flow_4</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="Tx_Flow_1" sourceRef="Tx_Start" targetRef="ChargeCard" />
+      <bpmn:sequenceFlow id="Tx_Flow_2" sourceRef="ChargeCard" targetRef="Tx_Decide" />
+      <bpmn:sequenceFlow id="Tx_Flow_3" sourceRef="Tx_Decide" targetRef="Tx_Cancel_End" />
+      <bpmn:sequenceFlow id="Tx_Flow_4" sourceRef="Tx_Decide" targetRef="Tx_End" />
+    </bpmn:transaction>
+
+    <bpmn:boundaryEvent id="BookTripCancelled" name="Cancelled" attachedToRef="BookTrip" cancelActivity="true">
+      <bpmn:outgoing>Flow_Cancelled</bpmn:outgoing>
+      <bpmn:cancelEventDefinition id="Cancel_Boundary" />
+    </bpmn:boundaryEvent>
+
+    <bpmn:serviceTask id="NotifyTraveller" name="Notify Traveller">
+      <bpmn:extensionElements>
+        <elsa:activityBinding activityType="Elsa.WriteLine">
+          <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"notify"}}</elsa:input>
+        </elsa:activityBinding>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Cancelled</bpmn:incoming>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="End_Cancelled" name="Trip Cancelled">
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:endEvent id="End_1" name="Trip Booked">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="BookTrip" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="BookTrip" targetRef="End_1" />
+    <bpmn:sequenceFlow id="Flow_Cancelled" sourceRef="BookTripCancelled" targetRef="NotifyTraveller" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="NotifyTraveller" targetRef="End_Cancelled" />
+  </bpmn:process>
+
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="transaction-compensation">
+      <bpmndi:BPMNShape id="Start_1_di" bpmnElement="Start_1">
+        <dc:Bounds x="150" y="202" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BookTrip_di" bpmnElement="BookTrip" isExpanded="true">
+        <dc:Bounds x="250" y="100" width="560" height="240" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Tx_Start_di" bpmnElement="Tx_Start">
+        <dc:Bounds x="280" y="182" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ChargeCard_di" bpmnElement="ChargeCard">
+        <dc:Bounds x="360" y="160" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ChargeCardCompensation_di" bpmnElement="ChargeCardCompensation">
+        <dc:Bounds x="392" y="222" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="RefundCard_di" bpmnElement="RefundCard">
+        <dc:Bounds x="360" y="280" width="100" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Tx_Decide_di" bpmnElement="Tx_Decide" isMarkerVisible="true">
+        <dc:Bounds x="520" y="175" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Tx_Cancel_End_di" bpmnElement="Tx_Cancel_End">
+        <dc:Bounds x="640" y="120" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Tx_End_di" bpmnElement="Tx_End">
+        <dc:Bounds x="640" y="240" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BookTripCancelled_di" bpmnElement="BookTripCancelled">
+        <dc:Bounds x="512" y="322" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="NotifyTraveller_di" bpmnElement="NotifyTraveller">
+        <dc:Bounds x="640" y="400" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_Cancelled_di" bpmnElement="End_Cancelled">
+        <dc:Bounds x="800" y="422" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_1_di" bpmnElement="End_1">
+        <dc:Bounds x="890" y="202" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+        <di:waypoint x="186" y="220" />
+        <di:waypoint x="250" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+        <di:waypoint x="810" y="220" />
+        <di:waypoint x="890" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Cancelled_di" bpmnElement="Flow_Cancelled">
+        <di:waypoint x="530" y="358" />
+        <di:waypoint x="530" y="440" />
+        <di:waypoint x="640" y="440" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3">
+        <di:waypoint x="740" y="440" />
+        <di:waypoint x="800" y="440" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Tx_Flow_1_di" bpmnElement="Tx_Flow_1">
+        <di:waypoint x="316" y="200" />
+        <di:waypoint x="360" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Tx_Flow_2_di" bpmnElement="Tx_Flow_2">
+        <di:waypoint x="460" y="200" />
+        <di:waypoint x="520" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Tx_Flow_3_di" bpmnElement="Tx_Flow_3">
+        <di:waypoint x="545" y="175" />
+        <di:waypoint x="545" y="138" />
+        <di:waypoint x="640" y="138" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Tx_Flow_4_di" bpmnElement="Tx_Flow_4">
+        <di:waypoint x="545" y="225" />
+        <di:waypoint x="545" y="258" />
+        <di:waypoint x="640" y="258" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Compensation_Association_di" bpmnElement="Compensation_Association">
+        <di:waypoint x="410" y="258" />
+        <di:waypoint x="410" y="280" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <Description>Provides OpenID Connect authentication for Elsa Studio with Blazor Server.</Description>
+        <PackageTags>elsa studio authentication oidc blazor server</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <SupportedPlatform Include="browser" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />
+        <PackageReference Include="Microsoft.Extensions.Http.Polly" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="../Elsa.Studio.Authentication.OpenIdConnect/Elsa.Studio.Authentication.OpenIdConnect.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Authentication.Abstractions/Elsa.Studio.Authentication.Abstractions.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Authentication.UI/Elsa.Studio.Authentication.UI.csproj" />
+        <ProjectReference Include="../../framework/Elsa.Studio.Core/Elsa.Studio.Core.csproj" />
+    </ItemGroup>
+
+</Project>

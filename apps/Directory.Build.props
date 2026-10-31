@@ -1,0 +1,22 @@
+<Project>
+    <PropertyGroup>
+        <Authors>Elsa Workflows Community</Authors>
+        <Copyright>2025</Copyright>
+        <PackageProjectUrl>https://github.com/elsa-workflows/elsa-apps</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/elsa-workflows/elsa-apps</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <TargetFramework>net10.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <AnalysisModeDocumentation>Default</AnalysisModeDocumentation>
+        <AnalysisLevelDocumentation>latest</AnalysisLevelDocumentation>
+        <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+        <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    </PropertyGroup>
+    <PropertyGroup>
+        <NoWarn>$(NoWarn);CS0162;CS1591</NoWarn>
+        <!-- IL trimming warnings -->
+        <NoWarn>$(NoWarn);IL2026;IL2046;IL2057;IL2067;IL2070;IL2072;IL2075;IL2087;IL2091</NoWarn>
+    </PropertyGroup>
+</Project>

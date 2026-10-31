@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  An exclusive gateway whose only conditional flow's expression throws when evaluated, and that has no default flow.
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  id="Definitions_failing-condition"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="failing-condition" isExecutable="true">
+    <bpmn:startEvent id="Start">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:exclusiveGateway id="Decide">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_Broken</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Never</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="End_Broken">
+      <bpmn:incoming>Flow_Broken</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="End_Never">
+      <bpmn:incoming>Flow_Never</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start" targetRef="Decide" />
+    <bpmn:sequenceFlow id="Flow_Broken" sourceRef="Decide" targetRef="End_Broken">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">noSuchFunction()</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Never" sourceRef="Decide" targetRef="End_Never">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">false</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+  </bpmn:process>
+</bpmn:definitions>

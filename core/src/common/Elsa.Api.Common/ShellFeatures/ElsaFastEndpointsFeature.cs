@@ -1,0 +1,26 @@
+using CShells.FastEndpoints.Contracts;
+using CShells.FastEndpoints.Features;
+using CShells.Features;
+using Elsa.Extensions;
+using Elsa.FastEndpointConfigurators;
+using JetBrains.Annotations;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Elsa.ShellFeatures;
+
+/// <summary>
+/// Registers the Elsa-specific FastEndpoints configurator and the permission model.
+/// This feature should be enabled alongside the CShells FastEndpointsFeature to apply Elsa's serialization settings.
+/// </summary>
+[ShellFeature(DependsOn = [typeof(FastEndpointsFeature)])]
+[UsedImplicitly]
+public class ElsaFastEndpointsFeature : IShellFeature
+{
+    /// <inheritdoc />
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.AddSingleton<IFastEndpointsConfigurator, ElsaFastEndpointsConfigurator>();
+        services.AddElsaAuthorization();
+        services.AddPermissionDescriptorsFromLoadedAssemblies();
+    }
+}

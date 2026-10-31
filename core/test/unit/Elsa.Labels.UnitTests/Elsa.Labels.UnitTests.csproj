@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Include>[Elsa.Labels]*</Include>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Labels\Elsa.Labels.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\Shared\FastEndpoints\*.cs" LinkBase="Shared\FastEndpoints" />
+    </ItemGroup>
+
+</Project>

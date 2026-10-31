@@ -1,0 +1,181 @@
+.elsa-flowchart-diagram-designer-v2 {
+    --elsa-designer-canvas: var(--mud-palette-surface);
+    --elsa-designer-grid: var(--mud-palette-lines-default);
+    --elsa-designer-node-surface: var(--mud-palette-surface);
+    --elsa-designer-node-border: var(--mud-palette-lines-default);
+    --elsa-designer-node-text: var(--mud-palette-text-primary);
+    --elsa-designer-node-muted: var(--mud-palette-text-secondary);
+    --elsa-designer-node-accent: var(--mud-palette-primary);
+    --elsa-designer-node-initial: var(--mud-palette-info);
+    --elsa-designer-node-current: var(--mud-palette-success);
+    --elsa-designer-accent-foreground: var(--mud-palette-primary-text);
+    --elsa-designer-edge: var(--mud-palette-lines-default);
+    --elsa-designer-edge-label-surface: var(--mud-palette-surface);
+    --elsa-designer-edge-label-border: var(--mud-palette-lines-default);
+    --elsa-designer-edge-label-text: var(--mud-palette-text-secondary);
+    --elsa-designer-selection: var(--mud-palette-primary);
+    --elsa-designer-port-surface: var(--mud-palette-surface);
+    --elsa-designer-port-stroke: var(--mud-palette-primary);
+    --elsa-designer-port-text: var(--mud-palette-text-secondary);
+    --elsa-designer-connection-highlight: var(--mud-palette-secondary);
+    --elsa-designer-embedding-highlight: var(--mud-palette-success);
+}
+
+.elsa-flowchart-diagram-designer-v2 .x6-graph-background {
+    background-color: var(--elsa-designer-canvas);
+}
+
+.elsa-flowchart-diagram-designer-v2 .x6-widget-selection-box {
+    border: solid 2px var(--elsa-designer-selection);
+    border-radius: 4px;
+    box-shadow: none;
+}
+
+.elsa-flowchart-diagram-designer-v2 .x6-widget-selection-inner {
+    border: dashed 1px var(--elsa-designer-selection);
+    box-shadow: none;
+}
+
+.elsa-flowchart-diagram-designer-v2 .x6-widget-transform {
+    border: none;
+}
+
+.elsa-flowchart-diagram-designer-v2 .x6-widget-transform-resize {
+    width: 8px;
+    height: 8px;
+    background-color: var(--elsa-designer-node-surface);
+    border: 2px solid var(--elsa-designer-selection);
+    border-radius: 50%;
+}
+
+.elsa-flowchart-diagram-designer-v2 .elsa-snapline .x6-widget-snapline-horizontal,
+.elsa-flowchart-diagram-designer-v2 .elsa-snapline .x6-widget-snapline-vertical {
+    stroke: var(--elsa-designer-connection-highlight);
+}
+
+.elsa-flowchart-diagram-designer-v2 .elsa-activity-wrapper-badge.has-retries .mud-badge-wrapper .mud-badge {
+    color: var(--mud-palette-warning-text) !important;
+    background-color: var(--mud-palette-warning) !important;
+}
+
+.elsa-flowchart-diagram-designer-v2 .elsa-activity {
+    height: 100%;
+    box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
+    color: var(--elsa-designer-node-text);
+    background-color: var(--elsa-designer-node-surface);
+    border-color: var(--elsa-designer-node-border);
+    border-radius: 4px;
+}
+
+.elsa-flowchart-diagram-designer-v2 .elsa-activity.is-starting-point {
+    background-color: var(--elsa-designer-node-surface);
+    background-color: color-mix(
+        in srgb,
+        var(--elsa-activity-accent, var(--mud-palette-primary)) 8%,
+        var(--elsa-designer-node-surface)
+    );
+    border-color: var(--elsa-activity-accent, var(--mud-palette-primary));
+    box-shadow: inset 0 0 0 1px color-mix(
+        in srgb,
+        var(--elsa-activity-accent, var(--mud-palette-primary)) 56%,
+        transparent
+    );
+}
+
+.elsa-flowchart-diagram-designer-v2 .activity-icon {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--elsa-designer-accent-foreground);
+    background-color: var(--elsa-activity-accent, var(--mud-palette-primary));
+    border-radius: 4px;
+}
+
+.elsa-flowchart-diagram-designer-v2 .activity-icon .mud-icon-root {
+    color: inherit;
+}
+
+.elsa-flowchart-diagram-designer-v2 .activity-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+}
+
+.elsa-flowchart-diagram-designer-v2 .activity-label {
+    color: var(--elsa-designer-node-text);
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.elsa-flowchart-diagram-designer-v2 .activity-type {
+    color: var(--elsa-designer-node-muted);
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.elsa-flowchart-diagram-designer-v2 .activity-ports {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.elsa-flowchart-diagram-designer-v2 .activity-ports .mud-input.mud-input-outlined .mud-input-outlined-border  {
+    border-style: dashed !important;
+}
+
+.elsa-flowchart-diagram-designer-v2 .activity-ports .mud-input,
+.elsa-flowchart-diagram-designer-v2 .embedded-port {
+    color: var(--elsa-designer-node-text);
+    background-color: var(--elsa-designer-node-surface) !important;
+}
+
+.elsa-flowchart-diagram-designer-v2 .activity-description {
+    margin-top: 4px;
+    font-size: 0.75rem;
+    color: var(--elsa-designer-node-muted);
+}
+
+.elsa-flowchart-diagram-designer-v2 .activity-menu {
+    align-self: center;
+    color: var(--elsa-designer-node-text);
+}
+
+.elsa-flowchart-diagram-designer-v2 .x6-port-label {
+    fill: var(--elsa-designer-port-text);
+}
+
+.elsa-flowchart-diagram-designer-v2 .elsa-designer-port-circle {
+    transition:
+        r 120ms ease-out,
+        fill 120ms ease-out,
+        stroke 120ms ease-out;
+}
+
+.elsa-flowchart-diagram-designer-v2 .x6-port:hover .elsa-designer-port-circle {
+    r: 8px;
+}
+
+.elsa-sequence-diagram-designer .x6-port {
+    display: none;
+}
+
+.elsa-sequence-diagram-designer .x6-edge {
+    pointer-events: none;
+}

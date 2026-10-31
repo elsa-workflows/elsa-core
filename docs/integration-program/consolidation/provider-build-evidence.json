@@ -1,0 +1,788 @@
+{
+  "preparedBaseline": "926c91327efaecce286d50b31f19db376239f05e",
+  "coreSourceCommit": "8e893e02c4ac089d526b0a0d294a8546f021d072",
+  "extensionsSourceCommit": "33fa0bfd28c7585240e3d4f665058c067b17e287",
+  "studioSourceCommit": "9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822",
+  "dapperArtifactMergedPr": 8297,
+  "mongoArtifactPr": 8304,
+  "mongoArtifactCommit": "1327e8a97b6f17b0313c1c56de11395d86d6b82f",
+  "command": "dotnet build Consolidated.sln -p:UseProjectReferences=true -p:IsPackable=false -p:GeneratePackageOnBuild=false -m:1",
+  "diagnostic": {
+    "exitCode": 1,
+    "errors": 4,
+    "warnings": 1915,
+    "elapsed": "00:15:02.58",
+    "inputs": {
+      "checkedAt": "2026-09-23T21:25:15.583695+00:00",
+      "preparedBaseline": "926c91327efaecce286d50b31f19db376239f05e",
+      "dapperArtifactMergedPr": 8297,
+      "mongoDiagnosticCommit": "85477c0f0",
+      "scope": "Diagnostic combined build only; Mongo review corrections remain pending. No final-source or release acceptance.",
+      "command": "dotnet build Consolidated.sln -p:UseProjectReferences=true -p:IsPackable=false -p:GeneratePackageOnBuild=false -m:1",
+      "changedSources": {
+        "src/extensions/persistence/Elsa.Persistence.Dapper/Dialects/PostgreSqlDialect.cs": "b10f954c6f8337efedd6cf3ac9bcc81e71bb55a4009e843f83988e96d8166731",
+        "src/extensions/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryBuilderExtensions.cs": "1cc4b3ac7512e4c7b4f1998c0b140da9e8240148a4f924d731eb722f8126749b",
+        "src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs": "e1ad5ba2eaa7f39f0a7b517e667319fac80f647ecd35f908ef2b4bb3b19037f4",
+        "src/extensions/persistence/Elsa.Persistence.MongoDb/Common/MongoDbStore.cs": "8786cb5249a66c4740e50eb5f79a7c0c3f7ec9a086b66a34e3d42d7f1e92b1ba",
+        "src/extensions/persistence/Elsa.Persistence.MongoDb/Modules/Management/WorkflowDefinitionStore.cs": "1a6d895e1aa366e286ddfc8880539d4e6bb03ab3de54a3d2e2b821cf7c649bdb",
+        "test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/MongoWorkflowDefinitionStoreCompareAndSwapTests.cs": "7842f3ca0cafe4796d798e2be7e249d5c9a04f029212470e5d0e24cb1dcc02c3",
+        "test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs": "0ce453700a5ad62ef79497e3786b225377270a85e7182a7ba37032829f56aed0"
+      },
+      "publicationAuthorized": false
+    }
+  },
+  "canonicalSample": {
+    "exitCode": 0,
+    "errors": 0,
+    "warnings": 236,
+    "elapsed": "00:00:24.12"
+  },
+  "completeBuild": {
+    "exitCode": 0,
+    "errors": 0,
+    "warnings": 1561,
+    "elapsed": "00:01:46.70",
+    "incremental": true
+  },
+  "sourceFiles": {
+    "samples/extensions/workbench/Elsa.Server.Web/Elsa.Server.Web.csproj": "1e4a24ff75a65fc4c99c8b6c4ee07f41b6f4d41f58f50bb337c0e5d42892ac78",
+    "samples/extensions/workbench/Elsa.Server.Web/Program.cs": "8af6c57ab64bcd69411fcdfe092315c4839880bb4de0a288600ed0f55f9b821c",
+    "src/extensions/persistence/Elsa.Persistence.Dapper/Dialects/PostgreSqlDialect.cs": "b10f954c6f8337efedd6cf3ac9bcc81e71bb55a4009e843f83988e96d8166731",
+    "src/extensions/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryBuilderExtensions.cs": "1cc4b3ac7512e4c7b4f1998c0b140da9e8240148a4f924d731eb722f8126749b",
+    "src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs": "e1ad5ba2eaa7f39f0a7b517e667319fac80f647ecd35f908ef2b4bb3b19037f4",
+    "src/extensions/persistence/Elsa.Persistence.MongoDb/Common/MongoDbStore.cs": "8786cb5249a66c4740e50eb5f79a7c0c3f7ec9a086b66a34e3d42d7f1e92b1ba",
+    "src/extensions/persistence/Elsa.Persistence.MongoDb/Modules/Management/WorkflowDefinitionStore.cs": "f03ad03d09f4341e2afb402c6b4ed334a08b2704382b7c6da035b7a3434019f7",
+    "test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/MongoWorkflowDefinitionStoreCompareAndSwapTests.cs": "29d60b20c9b9bccc1952a6d384b92daba4dde1fa98e494df3aff362040ceda4a",
+    "test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs": "0ce453700a5ad62ef79497e3786b225377270a85e7182a7ba37032829f56aed0"
+  },
+  "logs": {
+    "diagnostic": {
+      "path": "doc/integration-program/consolidation/provider-build-logs/consolidated-provider-build.log.gz",
+      "uncompressedSha256": "39fca7c25ba6bcd982f21460433872f2a7e9881453d11ce27f9f2d75bfb400dc",
+      "compressedSha256": "4ea092501dc484a3f409ba0c1df04431f565528940a6bc5c93cd12d4c1288ee1"
+    },
+    "canonicalSample": {
+      "path": "doc/integration-program/consolidation/provider-build-logs/consolidated-canonical-secrets-host.log.gz",
+      "uncompressedSha256": "cd675c0c5a9a67f5416e3ca5e54105a4c391be03b22a32f48fc8385ad5773869",
+      "compressedSha256": "1de85d8743dac3266e2794922dd6b0f05e6e0b17bedb8b7785e2e34183d10ffb"
+    },
+    "completeBuild": {
+      "path": "doc/integration-program/consolidation/provider-build-logs/consolidated-provider-final-build.log.gz",
+      "uncompressedSha256": "682c40512bd7aa7b2a19fae09349c3e800c9c969feccc9cbde0da87c2554f6c0",
+      "compressedSha256": "cdc7ba82b8e24b83dbea9495ca8063340d5b8c0616e96498e41757b0968411ca"
+    }
+  },
+  "finalImportVerified": false,
+  "fullTestClosureVerified": false,
+  "packagePublicationAuthorized": false,
+  "previousRestoreFailureFollowup": {
+    "mode": "Existing full-build outputs; no-build and no-restore; not fresh CI or full closure acceptance",
+    "passed": 107,
+    "skipped": 1,
+    "failed": 0,
+    "projects": [
+      {
+        "project": "test/extensions/modules/diagnostics/Elsa.Logging.Core.IntegrationTests/Elsa.Logging.Core.IntegrationTests.csproj",
+        "command": [
+          "dotnet",
+          "test",
+          "test/extensions/modules/diagnostics/Elsa.Logging.Core.IntegrationTests/Elsa.Logging.Core.IntegrationTests.csproj",
+          "--no-build",
+          "--no-restore",
+          "-f",
+          "net10.0",
+          "-p:UseProjectReferences=true",
+          "-p:IsPackable=false",
+          "-p:GeneratePackageOnBuild=false",
+          "-m:1",
+          "--logger",
+          "trx",
+          "--results-directory",
+          "/tmp/elsa-8194/consolidated-test-results/Elsa.Logging.Core.IntegrationTests"
+        ],
+        "exitCode": 0,
+        "counters": {
+          "total": "2",
+          "executed": "2",
+          "passed": "2",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "results": [
+          {
+            "name": "Elsa.Logging.Core.IntegrationTests.LogSinkRouterTests.LogEntryInstruction_ShouldFlowThroughQueueAndRouterToSink",
+            "outcome": "Passed"
+          },
+          {
+            "name": "The Log activity logs the expected message",
+            "outcome": "Passed"
+          }
+        ],
+        "log": {
+          "path": "doc/integration-program/consolidation/provider-build-logs/Elsa.Logging.Core.IntegrationTests-tests.log.gz",
+          "uncompressedSha256": "c4d0926e1f389d8d99b9746645fe8f7ae8d900f7dff33349914ee7bdb3e17b28",
+          "compressedSha256": "f7dd1843a7e4e3ca8a03f1e85bc102af7a42d544f203103bae1205c16362a2c8"
+        }
+      },
+      {
+        "project": "test/extensions/modules/ldap/Elsa.Ldap.UnitTests/Elsa.Ldap.UnitTests.csproj",
+        "command": [
+          "dotnet",
+          "test",
+          "test/extensions/modules/ldap/Elsa.Ldap.UnitTests/Elsa.Ldap.UnitTests.csproj",
+          "--no-build",
+          "--no-restore",
+          "-f",
+          "net10.0",
+          "-p:UseProjectReferences=true",
+          "-p:IsPackable=false",
+          "-p:GeneratePackageOnBuild=false",
+          "-m:1",
+          "--logger",
+          "trx",
+          "--results-directory",
+          "/tmp/elsa-8194/consolidated-test-results/Elsa.Ldap.UnitTests"
+        ],
+        "exitCode": 0,
+        "counters": {
+          "total": "41",
+          "executed": "41",
+          "passed": "41",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "results": [
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.SearchLdapEntriesTests.SearchLdapEntries_WhenOneEntryFound_ReturnsOneEntryFoundOutcome",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.AddLdapEntryTests.AddLdapEntry_CreatesEntry_ReturnsSuccessWhenServerRespondsWithSuccess",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.MoveLdapEntryTests.MoveLdapEntry_ReturnsErrorWhenServerRespondsWithNonSuccess(resultCode: InvalidAttributeSyntax)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.MoveLdapEntryTests.MoveLdapEntry_ReturnsErrorWhenServerRespondsWithNonSuccess(resultCode: InsufficientAccessRights)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.MoveLdapEntryTests.MoveLdapEntry_ReturnsErrorWhenServerRespondsWithNonSuccess(resultCode: EntryAlreadyExists)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.DeleteLdapEntryTests.DeleteLdapEntry_ReturnsErrorWhenServerRespondsWithNonSuccess(resultCode: InvalidAttributeSyntax)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.CompareLdapEntryTests.CompareLdapEntry_ComparesAttributesAndReturnsSuccessIfMatched",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.ModifyLdapEntryTests.ModifyLdapEntry_ReturnsErrorWhenServerRespondsWithNonSuccess(resultCode: InsufficientAccessRights)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.ModifyLdapEntryTests.ModifyLdapEntry_ReturnsErrorWhenServerRespondsWithNonSuccess(resultCode: InvalidAttributeSyntax)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Services.LdapConnectionFactoryTests.CreateConnection_ReturnsConnectionProxy",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.DeleteLdapEntryTests.DeleteLdapEntry_DeletesEntry_ReturnsSuccessWhenServerRespondsWithSuccess",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.ModifyLdapEntryTests.ModifyLdapEntry_ReturnsErrorWhenServerRespondsWithNonSuccess(resultCode: EntryAlreadyExists)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Services.LdapConnectionFactoryTests.ResolveConnection_ReturnsNamedConnection_WhenNameIsProvided",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.SearchLdapEntryTests.SearchLdapEntry_WhenEntryDoesNotExists_ReturnsNoResult",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.AddLdapEntryTests.AddLdapEntry_ReturnsErrorWhenServerRespondsWithNonSuccess(resultCode: Other)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.SearchLdapEntriesTests.SearchLdapEntries_WhenNoEntriesFound_ReturnsNoEntriesFoundOutcome",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.DeleteLdapEntryTests.DeleteLdapEntry_ReturnsErrorWhenServerRespondsWithNonSuccess(resultCode: NamingViolation)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.MoveLdapEntryTests.MoveLdapEntry_ReturnsErrorWhenServerRespondsWithNonSuccess(resultCode: Other)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.ModifyLdapEntryTests.ModifyLdapEntry_ReturnsErrorWhenServerRespondsWithNonSuccess(resultCode: NamingViolation)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.SearchLdapEntryTests.SearchLdapEntry_WhenEntryExists_FindsAndReturnsEntry",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.AddLdapEntryTests.AddLdapEntry_ReturnsErrorWhenServerRespondsWithNonSuccess(resultCode: InvalidAttributeSyntax)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.CompareLdapEntryTests.CompareLdapEntry_ReturnsErrorWhenServerRespondsWithNonSuccess(resultCode: InsufficientAccessRights)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Services.LdapConnectionFactoryTests.ResolveConnection_ReturnsDefaultConnection_WhenNameIsNull",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.DeleteLdapEntryTests.DeleteLdapEntry_ReturnsErrorWhenServerRespondsWithNonSuccess(resultCode: Other)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Extensions.SearchResultEntryExtensionsTests.MapToAttributesDictionary_ShouldReturnEmptyDictionary_WhenNoAttributes",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Extensions.SearchResultEntryExtensionsTests.MapToAttributesDictionary_ShouldMapAttributesCorrectly",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.CompareLdapEntryTests.CompareLdapEntry_ReturnsErrorWhenServerRespondsWithNonSuccess(resultCode: Other)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.CompareLdapEntryTests.CompareLdapEntry_ReturnsErrorWhenServerRespondsWithNonSuccess(resultCode: NamingViolation)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.SearchLdapEntriesTests.SearchLdapEntries_WhenMultipleEntriesFound_ReturnsMultipleEntriesFoundOutcome",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.CompareLdapEntryTests.CompareLdapEntry_ReturnsErrorWhenServerRespondsWithNonSuccess(resultCode: InvalidAttributeSyntax)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.AddLdapEntryTests.AddLdapEntry_ReturnsErrorWhenServerRespondsWithNonSuccess(resultCode: EntryAlreadyExists)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.ModifyLdapEntryTests.ModifyLdapEntry_UpdatesEntry_ReturnsSuccessWhenServerRespondsWithSuccess",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.AddLdapEntryTests.AddLdapEntry_ReturnsErrorWhenServerRespondsWithNonSuccess(resultCode: InsufficientAccessRights)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.CompareLdapEntryTests.CompareLdapEntry_ReturnsErrorWhenServerRespondsWithNonSuccess(resultCode: EntryAlreadyExists)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.MoveLdapEntryTests.MoveLdapEntry_ReturnsErrorWhenServerRespondsWithNonSuccess(resultCode: NamingViolation)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.AddLdapEntryTests.AddLdapEntry_ReturnsErrorWhenServerRespondsWithNonSuccess(resultCode: NamingViolation)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.MoveLdapEntryTests.MoveLdapEntry_UpdatesEntry_ReturnsSuccessWhenServerRespondsWithSuccess",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.DeleteLdapEntryTests.DeleteLdapEntry_ReturnsErrorWhenServerRespondsWithNonSuccess(resultCode: InsufficientAccessRights)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.ModifyLdapEntryTests.ModifyLdapEntry_ReturnsErrorWhenServerRespondsWithNonSuccess(resultCode: Other)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Activities.DeleteLdapEntryTests.DeleteLdapEntry_ReturnsErrorWhenServerRespondsWithNonSuccess(resultCode: EntryAlreadyExists)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Ldap.UnitTests.Services.LdapConnectionFactoryTests.ResolveConnection_ThrowsInvalidOperationException_WhenConnectionNotFound",
+            "outcome": "Passed"
+          }
+        ],
+        "log": {
+          "path": "doc/integration-program/consolidation/provider-build-logs/Elsa.Ldap.UnitTests-tests.log.gz",
+          "uncompressedSha256": "acc5f15aea3de74f2d8415fc22926ca7502ec5b0b123c53cbffdc570bda7edb1",
+          "compressedSha256": "8d837d399a11dacd338b3e822f0adb4aaa61484c832bf691ac1ec176674ecfeb"
+        }
+      },
+      {
+        "project": "test/extensions/modules/mqtt/Elsa.Mqtt.UnitTests/Elsa.Mqtt.UnitTests.csproj",
+        "command": [
+          "dotnet",
+          "test",
+          "test/extensions/modules/mqtt/Elsa.Mqtt.UnitTests/Elsa.Mqtt.UnitTests.csproj",
+          "--no-build",
+          "--no-restore",
+          "-f",
+          "net10.0",
+          "-p:UseProjectReferences=true",
+          "-p:IsPackable=false",
+          "-p:GeneratePackageOnBuild=false",
+          "-m:1",
+          "--logger",
+          "trx",
+          "--results-directory",
+          "/tmp/elsa-8194/consolidated-test-results/Elsa.Mqtt.UnitTests"
+        ],
+        "exitCode": 0,
+        "counters": {
+          "total": "57",
+          "executed": "57",
+          "passed": "57",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "results": [
+          {
+            "name": "Elsa.Mqtt.UnitTests.Utilities.MqttTopicMatcherTests.IsMatch_ReturnsExpectedResult(filter: \"sensors/+/status\", topic: \"sensors/a/b/status\", expected: False)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Options.MqttConnectionOptionsTests.GenerateMqttClientOptions_SetsCredentials_WhenUsernameAndPasswordProvided",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Activities.PublishMqttMessageTests.ExecuteAsync_CompletesWithFailureOutcome_WhenBrokerRespondsWithError",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Utilities.MqttTopicMatcherTests.IsMatch_ReturnsExpectedResult(filter: \"sensors/+/status\", topic: \"sensors/device1/status\", expected: True)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Utilities.MqttTopicMatcherTests.IsMatch_ReturnsExpectedResult(filter: \"a/b\", topic: \"a/b/c\", expected: False)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Services.MqttSubscriberTests.UnbindBookmarksAsync_UnsubscribesTopicNoLongerNeeded",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Handlers.TriggerMqttWorkflowsTests.HandleAsync_TriggerInput_ContainsTransportMessage",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Utilities.MqttTopicMatcherTests.IsMatch_ReturnsExpectedResult(filter: \"sensors/temp\", topic: \"sensors/temp\", expected: True)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Options.MqttConnectionOptionsTests.GenerateMqttClientOptions_AutoGeneratesClientId_WhenClientIdIsNull",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Handlers.TriggerMqttWorkflowsTests.HandleAsync_InvokesTrigger_WhenTopicMatchesExactly",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Handlers.TriggerMqttWorkflowsTests.HandleAsync_InvokesTrigger_WhenTopicMatchesSingleLevelWildcard",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Activities.PublishMqttMessageTests.ExecuteAsync_CompletesWithSuccessOutcome_WhenBrokerRespondsWithSuccess",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Utilities.MqttTopicMatcherTests.IsMatch_ReturnsExpectedResult(filter: \"sensors/#\", topic: \"sensors/a/b/c\", expected: True)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Utilities.MqttTopicMatcherTests.IsMatch_MultiLevelWildcard_MatchesAllRemainingLevels",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Services.MqttSubscriberTests.UnbindTriggersAsync_RemovesTriggerBinding",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Services.MqttClientFactoryTests.ResolveConnection_ErrorMessage_ContainsConnectionName",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Services.MqttSubscriberTests.BindTriggerAsync_SubscribesToTopicOnBroker",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Services.MqttSubscriberTests.BindTriggerAsync_SubscribesEachNewTopic",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Utilities.MqttTopicMatcherTests.IsMatch_ReturnsExpectedResult(filter: \"sensors/temp\", topic: \"sensors/humidity\", expected: False)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Handlers.TriggerMqttWorkflowsTests.HandleAsync_EnqueuesBookmark_WhenTopicMatchesExactly",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Handlers.TriggerMqttWorkflowsTests.HandleAsync_DoesNotEnqueueBookmark_WhenTopicDoesNotMatch",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Handlers.TriggerMqttWorkflowsTests.HandleAsync_InvokesTrigger_WhenTopicMatchesMultiLevelWildcard",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Utilities.MqttTopicMatcherTests.IsMatch_ReturnsExpectedResult(filter: \"a/b/c\", topic: \"a/b\", expected: False)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Utilities.MqttTopicMatcherTests.IsMatch_ReturnsExpectedResult(filter: \"sensors/+/status\", topic: \"sensors/device1/data\", expected: False)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Options.MqttConnectionOptionsTests.GenerateMqttClientOptions_BuildsSuccessfully_WhenAllowUntrustedCertificatesIsTrue",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Activities.PublishMqttMessageTests.ExecuteAsync_PublishesToCorrectTopic",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Utilities.MqttTopicMatcherTests.IsMatch_ReturnsExpectedResult(filter: \"#\", topic: \"any/topic/at/all\", expected: True)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Handlers.TriggerMqttWorkflowsTests.HandleAsync_DoesNotInvokeTrigger_WhenTopicDoesNotMatch",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Options.MqttConnectionOptionsTests.GenerateMqttClientOptions_SetsCredentials_WhenOnlyUsernameProvided",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Services.MqttSubscriberTests.UnbindBookmarksAsync_RemovesBookmarkBinding",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Options.MqttConnectionOptionsTests.GenerateMqttClientOptions_DoesNotSetCredentials_WhenUsernameAndPasswordAreAbsent",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Options.MqttConnectionOptionsTests.GenerateMqttClientOptions_BuildsSuccessfully_WhenUseTlsIsFalse",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Utilities.MqttTopicMatcherTests.IsMatch_SingleLevelWildcard_MatchesExactlyOneLevel",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Services.MqttSubscriberTests.UnbindTriggersAsync_UnsubscribesTopicNoLongerNeeded",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Services.MqttSubscriberTests.BindTriggerAsync_StoresTriggerBinding",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Handlers.TriggerMqttWorkflowsTests.HandleAsync_InvokesOnlyMatchingTriggers_WhenMultipleTriggersAreRegistered",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Options.MqttConnectionOptionsTests.GenerateMqttClientOptions_Throws_WhenClientCertificatePathDoesNotExist",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Activities.PublishMqttMessageTests.ExecuteAsync_CompletesWithFailureOutcome_WhenTopicIsWhitespace",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Services.MqttSubscriberTests.BindTriggerAsync_DoesNotResubscribeAlreadySubscribedTopic",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Services.MqttSubscriberTests.UnbindTriggersAsync_KeepsTopicSubscribedWhenOtherBindingsStillUseIt",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Services.MqttSubscriberTests.BindBookmarkAsync_SubscribesToTopicWhenNoTriggerExists",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Options.MqttConnectionOptionsTests.GenerateMqttClientOptions_AutoGeneratedClientIds_AreUnique",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Handlers.TriggerMqttWorkflowsTests.HandleAsync_EnqueuesBookmark_WithCorrectWorkflowInstanceId",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Services.MqttClientFactoryTests.ResolveConnection_ThrowsInvalidOperationException_WhenConnectionNotFound",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Handlers.TriggerMqttWorkflowsTests.HandleAsync_TriggerInputAndProperties_AreIndependentDictionaries",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Activities.PublishMqttMessageTests.ExecuteAsync_CompletesWithFailureOutcome_WhenTopicIsEmpty",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Services.MqttClientFactoryTests.ResolveConnection_UsesDefaultConnectionName_WhenNameIsNull",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Services.MqttSubscriberTests.BindBookmarkAsync_DoesNotResubscribeTopicAlreadyCoveredByTrigger",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Options.MqttConnectionOptionsTests.GenerateMqttClientOptions_BuildsSuccessfully_WhenUseTlsIsTrue",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Utilities.MqttTopicMatcherTests.IsMatch_ReturnsExpectedResult(filter: \"sensors/#\", topic: \"sensors/temp\", expected: True)",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Options.MqttConnectionOptionsTests.GenerateMqttClientOptions_ReturnsNonNullOptions",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Services.MqttClientFactoryTests.ResolveConnection_IsCaseInsensitive",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Utilities.MqttTopicMatcherTests.IsMatch_ExactTopic_ReturnsTrue",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Options.MqttConnectionOptionsTests.GenerateMqttClientOptions_UsesProvidedClientId",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Services.MqttClientFactoryTests.ResolveConnection_ReturnsOptions_ForNamedConnection",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Options.MqttConnectionOptionsTests.GenerateMqttClientOptions_DoesNotSetCredentials_WhenOnlyPasswordProvided",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Mqtt.UnitTests.Services.MqttSubscriberTests.UnbindBookmarksAsync_KeepsTopicSubscribedWhenTriggerStillUsesIt",
+            "outcome": "Passed"
+          }
+        ],
+        "log": {
+          "path": "doc/integration-program/consolidation/provider-build-logs/Elsa.Mqtt.UnitTests-tests.log.gz",
+          "uncompressedSha256": "d5bea052f7cbfacef0c50874556f342baf40db989a6e0309e1ec6453d379c58f",
+          "compressedSha256": "90ce155537fa273ceaf8dd7e949ee9002c24f7bac9830407871b1d3dc42311f2"
+        }
+      },
+      {
+        "project": "test/extensions/modules/scheduling/Elsa.Scheduling.Quartz.ComponentTests/Elsa.Scheduling.Quartz.ComponentTests.csproj",
+        "command": [
+          "dotnet",
+          "test",
+          "test/extensions/modules/scheduling/Elsa.Scheduling.Quartz.ComponentTests/Elsa.Scheduling.Quartz.ComponentTests.csproj",
+          "--no-build",
+          "--no-restore",
+          "-f",
+          "net10.0",
+          "-p:UseProjectReferences=true",
+          "-p:IsPackable=false",
+          "-p:GeneratePackageOnBuild=false",
+          "-m:1",
+          "--logger",
+          "trx",
+          "--results-directory",
+          "/tmp/elsa-8194/consolidated-test-results/Elsa.Scheduling.Quartz.ComponentTests"
+        ],
+        "exitCode": 0,
+        "counters": {
+          "total": "7",
+          "executed": "7",
+          "passed": "7",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "results": [
+          {
+            "name": "Elsa.Scheduling.Quartz.ComponentTests.QuartzJobTransientRetryTests.RunWorkflowJob_TransientException_StopsAfterMaxRetryAttempts",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Scheduling.Quartz.ComponentTests.QuartzJobTransientRetryTests.RunWorkflowJob_OriginalTriggerFiresWhileRetryPending_LeavesThePendingRetryInPlace",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Scheduling.Quartz.ComponentTests.QuartzJobTransientRetryTests.RunWorkflowJob_NonTransientException_DoesNotRetry",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Scheduling.Quartz.ComponentTests.QuartzJobTransientRetryTests.RunWorkflowJob_TransientException_RetriesAndEventuallySucceeds(failuresBeforeSuccess: 2, exceptionType: typeof(System.TimeoutException), exceptionMessage: \"Simulated transient timeout\")",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Scheduling.Quartz.ComponentTests.QuartzJobTransientRetryTests.RunWorkflowJob_CronTrigger_TransientFailure_KeepsTheCronSchedule",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Scheduling.Quartz.ComponentTests.QuartzJobTransientRetryTests.RunWorkflowJob_RetriesDisabled_DoesNotReschedule",
+            "outcome": "Passed"
+          },
+          {
+            "name": "Elsa.Scheduling.Quartz.ComponentTests.QuartzJobTransientRetryTests.RunWorkflowJob_TransientException_RetriesAndEventuallySucceeds(failuresBeforeSuccess: 1, exceptionType: typeof(System.Net.Http.HttpRequestException), exceptionMessage: \"Simulated network error\")",
+            "outcome": "Passed"
+          }
+        ],
+        "log": {
+          "path": "doc/integration-program/consolidation/provider-build-logs/Elsa.Scheduling.Quartz.ComponentTests-tests.log.gz",
+          "uncompressedSha256": "f6491b7baf4ba5a823af5dbffeabc8fe4fa08c48f93082a11b5af9ed97325e9a",
+          "compressedSha256": "2695eb4e395fdf5f415ddee7eebc32e41b3202f9f0a3ac0e7830be8b62883c09"
+        }
+      },
+      {
+        "project": "test/extensions/modules/servicebus/Elsa.ServiceBus.AzureServiceBus.ComponentTests/Elsa.ServiceBus.AzureServiceBus.ComponentTests.csproj",
+        "command": [
+          "dotnet",
+          "test",
+          "test/extensions/modules/servicebus/Elsa.ServiceBus.AzureServiceBus.ComponentTests/Elsa.ServiceBus.AzureServiceBus.ComponentTests.csproj",
+          "--no-build",
+          "--no-restore",
+          "-f",
+          "net10.0",
+          "-p:UseProjectReferences=true",
+          "-p:IsPackable=false",
+          "-p:GeneratePackageOnBuild=false",
+          "-m:1",
+          "--logger",
+          "trx",
+          "--results-directory",
+          "/tmp/elsa-8194/consolidated-test-results/Elsa.ServiceBus.AzureServiceBus.ComponentTests"
+        ],
+        "exitCode": 0,
+        "counters": {
+          "total": "1",
+          "executed": "0",
+          "passed": "0",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "results": [
+          {
+            "name": "Elsa.ServiceBus.AzureServiceBus.ComponentTests.AzureServiceBusTests.WorkflowReceivesMessage_WhenSendingMessageToTopic",
+            "outcome": "NotExecuted"
+          }
+        ],
+        "log": {
+          "path": "doc/integration-program/consolidation/provider-build-logs/Elsa.ServiceBus.AzureServiceBus.ComponentTests-tests.log.gz",
+          "uncompressedSha256": "ba910a7847ff0646a7456b6097cb6fe07bc1f81ced29e00b537ad2a168756608",
+          "compressedSha256": "5155107407266f9fca02b1468e480b7ba38ff4792b07804f469c92cfcab974e0"
+        }
+      }
+    ]
+  },
+  "reviewedMongoFollowup": {
+    "mongoArtifactCommit": "4a24f416b8f082922ad78538594700674f02cf04",
+    "completeBuild": {
+      "exitCode": 0,
+      "errors": 0,
+      "warnings": 1556,
+      "elapsed": "00:02:46.92",
+      "incremental": true
+    },
+    "mongoTests": {
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0,
+      "framework": "net10.0",
+      "scope": "Real MongoDB replica set; classifier checks do not simulate a primary stepdown"
+    },
+    "sourceFiles": {
+      "samples/extensions/workbench/Elsa.Server.Web/Elsa.Server.Web.csproj": "1e4a24ff75a65fc4c99c8b6c4ee07f41b6f4d41f58f50bb337c0e5d42892ac78",
+      "samples/extensions/workbench/Elsa.Server.Web/Program.cs": "8af6c57ab64bcd69411fcdfe092315c4839880bb4de0a288600ed0f55f9b821c",
+      "src/extensions/persistence/Elsa.Persistence.Dapper/Dialects/PostgreSqlDialect.cs": "b10f954c6f8337efedd6cf3ac9bcc81e71bb55a4009e843f83988e96d8166731",
+      "src/extensions/persistence/Elsa.Persistence.Dapper/Extensions/ParameterizedQueryBuilderExtensions.cs": "1cc4b3ac7512e4c7b4f1998c0b140da9e8240148a4f924d731eb722f8126749b",
+      "src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs": "e1ad5ba2eaa7f39f0a7b517e667319fac80f647ecd35f908ef2b4bb3b19037f4",
+      "src/extensions/persistence/Elsa.Persistence.MongoDb/Common/MongoDbStore.cs": "8786cb5249a66c4740e50eb5f79a7c0c3f7ec9a086b66a34e3d42d7f1e92b1ba",
+      "src/extensions/persistence/Elsa.Persistence.MongoDb/Modules/Management/WorkflowDefinitionStore.cs": "887db58106d29696d18c9f33c8917b4ce2505f6c9d9e3ab7c82c40554d407993",
+      "test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/MongoWorkflowDefinitionStoreCompareAndSwapTests.cs": "b4313c678ee906cf6f1b9f97a046620ad3eba2e66c78d29918dfc732fa5e66e0",
+      "test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs": "0ce453700a5ad62ef79497e3786b225377270a85e7182a7ba37032829f56aed0"
+    },
+    "logs": {
+      "build": {
+        "path": "doc/integration-program/consolidation/provider-build-logs/consolidated-provider-reviewed-build.log.gz",
+        "uncompressedSha256": "dfa7166eece5c4c3ce6bdc93c5e0c491901af1975bfceec705dd4a6513ae0892",
+        "compressedSha256": "eae5c7c765dd5d44cab5dc9aba819b4b92f4ab38024259ca3d9cebb7014e5537"
+      },
+      "mongoTests": {
+        "path": "doc/integration-program/consolidation/provider-build-logs/mongo-root-final-tests.log.gz",
+        "uncompressedSha256": "edcefbe53334614b2a6111196d42ede2c8923bf52b4c38b12861bfcfed891d0d",
+        "compressedSha256": "eef47d50ef2395c46d631466d21018b9ebe06a95844ebf9b693e7fa782f4dcc4"
+      }
+    }
+  }
+}

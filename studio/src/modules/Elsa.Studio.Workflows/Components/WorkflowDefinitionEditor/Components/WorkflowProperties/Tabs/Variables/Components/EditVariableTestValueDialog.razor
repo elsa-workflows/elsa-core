@@ -1,0 +1,23 @@
+@using Variant = MudBlazor.Variant
+@inject ILocalizer Localizer
+@inherits StudioComponentBase
+
+<MudDialog>
+    <DialogContent>
+        <MudStack>
+            <DataPanel Data="_variableData"/>
+            <EditForm EditContext="_editContext" OnValidSubmit="OnSubmit">
+                <MudTextField Label="@Localizer["Test Value"]" @bind-Value="_model.TestValue" For="@(() => _model.TestValue)" HelperText="@Localizer["The test value of the variable."]" Variant="Variant.Outlined" Margin="Margin.Dense" Lines="5"/>
+            </EditForm>
+            <div>
+                <MudTooltip Text="@Localizer["Clears the test value of the variable."]">
+                    <MudButton Color="Color.Tertiary" Variant="Variant.Outlined" OnClick="OnClearTestValueClick">@Localizer["Clear Test Value"]</MudButton>
+                </MudTooltip>
+            </div>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" OnClick="OnCancelClicked">@Localizer["Cancel"]</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="OnSubmit">@Localizer["Ok"]</MudButton>
+    </DialogActions>
+</MudDialog>
