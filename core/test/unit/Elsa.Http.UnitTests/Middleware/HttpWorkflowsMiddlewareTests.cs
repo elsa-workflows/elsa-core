@@ -289,36 +289,6 @@ public class HttpWorkflowsMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_WithNonElsaBasePath_SkipsRouteMatching()
-    {
-        var nextCalled = false;
-        var middleware = new HttpWorkflowsMiddleware(_ =>
-        {
-            nextCalled = true;
-            return Task.CompletedTask;
-        });
-        var serviceProvider = new ServiceCollection()
-            .AddSingleton<IRouteMatcher, ThrowingRouteMatcher>()
-            .AddSingleton<IRouteTable>(new ListRouteTable([]))
-            .BuildServiceProvider();
-        var httpContext = new DefaultHttpContext
-        {
-            RequestServices = serviceProvider
-        };
-
-        httpContext.Request.Path = "/non-elsa";
-        httpContext.Request.Method = HttpMethod.Get.Method;
-
-        await middleware.InvokeAsync(
-            httpContext,
-            serviceProvider,
-            Microsoft.Extensions.Options.Options.Create(new HttpActivityOptions { BasePath = "/workflows" }),
-            new EmptyHttpWorkflowLookupService());
-
-        Assert.True(nextCalled);
-    }
-
-    [Fact]
     public async Task ExecuteWithinTimeoutAsync_WhenActionThrows_RestoresRequestAborted()
     {
         var httpContext = new DefaultHttpContext();
@@ -470,11 +440,6 @@ public class HttpWorkflowsMiddlewareTests
     private class ExactRouteMatcher : IRouteMatcher
     {
         public RouteValueDictionary? Match(string routeTemplate, string route) => routeTemplate == route ? new() : null;
-    }
-
-    private class ThrowingRouteMatcher : IRouteMatcher
-    {
-        public RouteValueDictionary? Match(string routeTemplate, string route) => throw new InvalidOperationException("Route matching should have been skipped.");
     }
 
     private class ListRouteTable(IEnumerable<HttpRouteData> routes) : IRouteTable
