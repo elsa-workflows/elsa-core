@@ -12,7 +12,6 @@ namespace Elsa.Scheduling.ScheduledTasks;
 /// </summary>
 public class ScheduledCronTask : IScheduledTask, IDisposable
 {
-    private static readonly TimeSpan MaxTimerInterval = TimeSpan.FromMilliseconds(int.MaxValue);
     private readonly ISystemClock _systemClock;
     private readonly ILogger _logger;
     private Timer? _timer;
@@ -101,9 +100,7 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
 
     private void SetupTimer(TimeSpan delay)
     {
-        var timerDelay = delay > MaxTimerInterval ? MaxTimerInterval : delay;
-
-        _timer = new(timerDelay.TotalMilliseconds)
+        _timer = new(TimerInterval.Clamp(delay).TotalMilliseconds)
         {
             Enabled = true
         };
@@ -121,7 +118,10 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
             // For later cron occurrences, keep scheduling capped intervals until the next occurrence arrives.
             if (_nextOccurrence > _systemClock.UtcNow)
             {
-                Schedule();
+                if (_disposed || _cancellationTokenSource.IsCancellationRequested)
+                    return;
+
+                TrySetupTimer(_nextOccurrence - _systemClock.UtcNow);
                 return;
             }
 

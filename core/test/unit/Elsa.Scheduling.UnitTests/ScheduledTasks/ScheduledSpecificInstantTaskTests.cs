@@ -18,6 +18,7 @@ public class ScheduledSpecificInstantTaskTests : IDisposable
     private static readonly DateTimeOffset DefaultNow = new(2025, 11, 06, 22, 50, 00, 0, TimeSpan.Zero);
 
     private readonly ServiceProvider _serviceProvider;
+    private readonly ICommandSender _commandSender;
     private readonly ISystemClock _systemClock;
     private readonly ILogger<ScheduledSpecificInstantTask> _logger;
     private readonly PastDueScheduleStaggerer _pastDueScheduleStaggerer = new(OptionsFactory.Create(new SchedulingOptions
@@ -34,7 +35,8 @@ public class ScheduledSpecificInstantTaskTests : IDisposable
         _systemClock = Substitute.For<ISystemClock>();
         _logger = Substitute.For<ILogger<ScheduledSpecificInstantTask>>();
 
-        services.AddSingleton(Substitute.For<ICommandSender>());
+        _commandSender = Substitute.For<ICommandSender>();
+        services.AddSingleton(_commandSender);
         _serviceProvider = services.BuildServiceProvider();
     }
 
@@ -109,6 +111,24 @@ public class ScheduledSpecificInstantTaskTests : IDisposable
     }
 
     [Fact]
+    public async Task EarlyTimerFire_BeforeTarget_DoesNotRunAndRearmsTowardSameTarget()
+    {
+        SetupSystemClock(DefaultNow);
+        var startAt = DefaultNow.AddMilliseconds(40);
+
+        CreateScheduledTask(startAt: startAt);
+
+        await Task.Delay(150);
+
+        await _commandSender.DidNotReceive().SendAsync(Arg.Any<ICommand>(), Arg.Any<CancellationToken>());
+
+        _systemClock.UtcNow.Returns(startAt);
+        await WaitForCommandAsync();
+
+        await _commandSender.Received().SendAsync(Arg.Any<ICommand>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
     public void Schedule_WithZeroDelay_ShouldUseCatchUpDelay()
     {
         // Arrange - simulate a case where startAt is exactly now
@@ -177,6 +197,18 @@ public class ScheduledSpecificInstantTaskTests : IDisposable
         Thread.Sleep(10); // Give any in-flight callbacks time to complete
 
         // Assert - Should not crash (implicit - test passes if no exception thrown)
+    }
+
+    private async Task WaitForCommandAsync()
+    {
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(2);
+        while (DateTime.UtcNow < deadline)
+        {
+            if (_commandSender.ReceivedCalls().Any(call => call.GetMethodInfo().Name == nameof(ICommandSender.SendAsync)))
+                return;
+
+            await Task.Delay(10);
+        }
     }
 
     public void Dispose()

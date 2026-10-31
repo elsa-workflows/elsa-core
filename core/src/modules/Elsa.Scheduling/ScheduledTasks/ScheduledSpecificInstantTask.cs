@@ -15,7 +15,6 @@ namespace Elsa.Scheduling.ScheduledTasks;
 /// </summary>
 public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
 {
-    private static readonly TimeSpan MaxTimerInterval = TimeSpan.FromMilliseconds(int.MaxValue);
     private static readonly PastDueScheduleStaggerer DefaultPastDueScheduleStaggerer = new(OptionsFactory.Create(new SchedulingOptions()));
     private readonly ITask _task;
     private readonly ISystemClock _systemClock;
@@ -91,9 +90,7 @@ public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
             _logger.LogDebug("Calculated delay is {Delay} which is not positive. Using catch-up delay of {CatchUpDelay}", delay, adjustedDelay);
         }
 
-        var timerDelay = adjustedDelay > MaxTimerInterval ? MaxTimerInterval : adjustedDelay;
-
-        _timer = new(timerDelay.TotalMilliseconds)
+        _timer = new(TimerInterval.Clamp(adjustedDelay).TotalMilliseconds)
         {
             Enabled = true
         };
@@ -110,6 +107,9 @@ public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
             // For longer delays, keep scheduling capped intervals until the target instant arrives.
             if (_startAt > _systemClock.UtcNow)
             {
+                if (_disposed || _cancellationTokenSource.IsCancellationRequested)
+                    return;
+
                 Schedule();
                 return;
             }
