@@ -66,7 +66,9 @@ public class SecretMigrationCustomSchemaTests
         AssertUsesConfiguredSchema(MigrationScriptGenerator.CreateMigration(configure, provider.LastMigration).UpOperations);
 
         if (provider.LastReversibleMigration is null)
+        {
             return;
+        }
 
         var downScript = MigrationScriptGenerator.Generate(
             configure,
@@ -83,7 +85,9 @@ public class SecretMigrationCustomSchemaTests
         Assert.False(string.IsNullOrWhiteSpace(script));
         Assert.DoesNotContain("Elsa", script, StringComparison.OrdinalIgnoreCase);
         if (requireCustomSchema)
+        {
             Assert.Contains(CustomSchema, script, StringComparison.Ordinal);
+        }
     }
 
     private static void AssertUsesConfiguredSchema(IEnumerable<MigrationOperation> operations)
@@ -103,7 +107,9 @@ public class SecretMigrationCustomSchemaTests
     private static string? GetSchema(MigrationOperation operation)
     {
         if (operation is EnsureSchemaOperation ensureSchema)
+        {
             return ensureSchema.Name;
+        }
 
         return operation.GetType().GetProperty("Schema")?.GetValue(operation) as string;
     }
