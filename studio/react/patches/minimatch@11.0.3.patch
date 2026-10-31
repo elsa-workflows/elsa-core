@@ -1,0 +1,36 @@
+diff --git a/dist/commonjs/index.js b/dist/commonjs/index.js
+index eb1c915f43b2debf5faa7ac3a73c262a161c7a4f..b3f236f357a2a995f7c57b1060a78386db015455 100644
+--- a/dist/commonjs/index.js
++++ b/dist/commonjs/index.js
+@@ -1547,4 +1547,14 @@ Object.defineProperty(exports, "unescape", { enumerable: true, get: function ()
+ exports.minimatch.Minimatch = Minimatch;
+ exports.minimatch.escape = escape_js_1.escape;
+ exports.minimatch.unescape = unescape_js_1.unescape;
++// typedoc 0.28 walks partial paths with Minimatch#matchOne(parts, row, partial).
++Minimatch.prototype.matchOne = function (file, _pattern, partial = false) {
++    const path = Array.isArray(file) ? file.join("/") : String(file ?? "");
++    return this.match(path, partial);
++};
++// eslint-plugin-react calls require("minimatch") as a function, as minimatch 3 did.
++const minimatchFn = exports.minimatch;
++Object.assign(minimatchFn, exports);
++minimatchFn.minimatch = minimatchFn;
++module.exports = minimatchFn;
+ //# sourceMappingURL=index.js.map
+\ No newline at end of file
+diff --git a/dist/esm/index.js b/dist/esm/index.js
+index 1dc27e67064fcbf1f3dce34aa3ea1a134b7be168..778133c18b52beb339eb3a2ef5fe4ec0648e8215 100644
+--- a/dist/esm/index.js
++++ b/dist/esm/index.js
+@@ -1529,6 +1529,11 @@ export class Minimatch {
+         return minimatch.defaults(def).Minimatch;
+     }
+ }
++// typedoc 0.28 walks partial paths with Minimatch#matchOne(parts, row, partial).
++Minimatch.prototype.matchOne = function (file, _pattern, partial = false) {
++    const path = Array.isArray(file) ? file.join("/") : String(file ?? "");
++    return this.match(path, partial);
++};
+ /* c8 ignore start */
+ export { escape } from './escape.js';
+ export { unescape } from './unescape.js';

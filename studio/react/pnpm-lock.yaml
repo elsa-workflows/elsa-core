@@ -5,12 +5,17 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  minimatch@<11.0.1: 11.0.3
+  eslint>minimatch: 11.0.3
+  '@eslint/config-array>minimatch': 11.0.3
+  '@eslint/eslintrc>minimatch': 11.0.3
+  eslint-plugin-react>minimatch: 11.0.3
+  '@typescript-eslint/typescript-estree>minimatch': 11.0.3
+  typedoc>minimatch: 11.0.3
 
 patchedDependencies:
-  typedoc@0.28.20:
-    hash: 723021e6bc849f44eb0c6da42ac6c88e120c54ba9bd594b2029832b68e14865e
-    path: patches/typedoc@0.28.20.patch
+  minimatch@11.0.3:
+    hash: 90f706b568f6e2f68049c3b5d2c75219d0973efb827c3b49c8927aa2b3451cd2
+    path: patches/minimatch@11.0.3.patch
 
 importers:
 
@@ -169,7 +174,7 @@ importers:
         version: 4.3.3
       typedoc:
         specifier: ^0.28.20
-        version: 0.28.20(patch_hash=723021e6bc849f44eb0c6da42ac6c88e120c54ba9bd594b2029832b68e14865e)(typescript@5.9.3)
+        version: 0.28.20(typescript@5.9.3)
       typescript:
         specifier: ^5
         version: 5.9.3
@@ -3898,7 +3903,7 @@ snapshots:
     dependencies:
       '@eslint/object-schema': 2.1.7
       debug: 4.4.3
-      minimatch: 11.0.3
+      minimatch: 11.0.3(patch_hash=90f706b568f6e2f68049c3b5d2c75219d0973efb827c3b49c8927aa2b3451cd2)
     transitivePeerDependencies:
       - supports-color
 
@@ -3919,7 +3924,7 @@ snapshots:
       ignore: 5.3.2
       import-fresh: 3.3.1
       js-yaml: 4.3.2
-      minimatch: 11.0.3
+      minimatch: 11.0.3(patch_hash=90f706b568f6e2f68049c3b5d2c75219d0973efb827c3b49c8927aa2b3451cd2)
       strip-json-comments: 3.1.1
     transitivePeerDependencies:
       - supports-color
@@ -4466,7 +4471,7 @@ snapshots:
       '@typescript-eslint/types': 8.71.1
       '@typescript-eslint/visitor-keys': 8.71.1
       debug: 4.4.3
-      minimatch: 11.0.3
+      minimatch: 11.0.3(patch_hash=90f706b568f6e2f68049c3b5d2c75219d0973efb827c3b49c8927aa2b3451cd2)
       semver: 7.8.5
       tinyglobby: 0.2.17
       ts-api-utils: 2.5.0(typescript@5.9.3)
@@ -5036,7 +5041,7 @@ snapshots:
       estraverse: 5.3.0
       hasown: 2.0.4
       jsx-ast-utils: 3.3.5
-      minimatch: 11.0.3
+      minimatch: 11.0.3(patch_hash=90f706b568f6e2f68049c3b5d2c75219d0973efb827c3b49c8927aa2b3451cd2)
       object.entries: 1.1.9
       object.fromentries: 2.0.8
       object.values: 1.2.1
@@ -5090,7 +5095,7 @@ snapshots:
       is-glob: 4.0.3
       json-stable-stringify-without-jsonify: 1.0.1
       lodash.merge: 4.6.2
-      minimatch: 11.0.3
+      minimatch: 11.0.3(patch_hash=90f706b568f6e2f68049c3b5d2c75219d0973efb827c3b49c8927aa2b3451cd2)
       natural-compare: 1.4.0
       optionator: 0.9.4
     optionalDependencies:
@@ -5612,7 +5617,7 @@ snapshots:
 
   mdurl@2.1.0: {}
 
-  minimatch@11.0.3:
+  minimatch@11.0.3(patch_hash=90f706b568f6e2f68049c3b5d2c75219d0973efb827c3b49c8927aa2b3451cd2):
     dependencies:
       '@isaacs/nonrecursive-glob-match': 1.0.3
       brace-expansion: 5.0.12
@@ -6108,12 +6113,12 @@ snapshots:
       possible-typed-array-names: 1.1.0
       reflect.getprototypeof: 1.0.10
 
-  typedoc@0.28.20(patch_hash=723021e6bc849f44eb0c6da42ac6c88e120c54ba9bd594b2029832b68e14865e)(typescript@5.9.3):
+  typedoc@0.28.20(typescript@5.9.3):
     dependencies:
       '@gerrit0/mini-shiki': 3.23.0
       lunr: 2.3.9
       markdown-it: 14.3.3
-      minimatch: 11.0.3
+      minimatch: 11.0.3(patch_hash=90f706b568f6e2f68049c3b5d2c75219d0973efb827c3b49c8927aa2b3451cd2)
       typescript: 5.9.3
       yaml: 2.9.1
 

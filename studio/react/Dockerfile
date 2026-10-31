@@ -5,6 +5,7 @@ RUN --mount=type=secret,id=build-ca \
     if [ -f /run/secrets/build-ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/build-ca; fi; \
     npm install --global pnpm@10.33.0
 COPY studio/react/package.json studio/react/pnpm-lock.yaml studio/react/pnpm-workspace.yaml ./
+COPY studio/react/patches ./patches/
 COPY studio/react/packages ./packages/
 COPY studio/react/dotnet/modules ./dotnet/modules/
 RUN --mount=type=secret,id=build-ca \

@@ -93,10 +93,15 @@
   "type": "module",
   "pnpm": {
     "overrides": {
-      "minimatch@<11.0.1": "11.0.3"
+      "eslint>minimatch": "11.0.3",
+      "@eslint/config-array>minimatch": "11.0.3",
+      "@eslint/eslintrc>minimatch": "11.0.3",
+      "eslint-plugin-react>minimatch": "11.0.3",
+      "@typescript-eslint/typescript-estree>minimatch": "11.0.3",
+      "typedoc>minimatch": "11.0.3"
     },
     "patchedDependencies": {
-      "typedoc@0.28.20": "patches/typedoc@0.28.20.patch"
+      "minimatch@11.0.3": "patches/minimatch@11.0.3.patch"
     }
   }
 }
