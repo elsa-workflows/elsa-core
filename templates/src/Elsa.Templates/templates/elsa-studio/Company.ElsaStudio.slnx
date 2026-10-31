@@ -1,0 +1,11 @@
+<Solution>
+  <!--#if (useServerHosting)-->
+  <Project Path="src/Company.ElsaStudio.Server/Company.ElsaStudio.Server.csproj" />
+  <!--#endif-->
+  <!--#if (useWasmHosting)-->
+  <Project Path="src/Company.ElsaStudio.Wasm/Company.ElsaStudio.Wasm.csproj" />
+  <!--#endif-->
+  <!--#if (useHybridHosting)-->
+  <Project Path="src/Company.ElsaStudio.Host/Company.ElsaStudio.Host.csproj" />
+  <!--#endif-->
+</Solution>

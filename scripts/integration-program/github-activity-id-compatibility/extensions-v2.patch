@@ -1,0 +1,633 @@
+diff --git a/src/modules/devops/Elsa.DevOps.GitHub/Activities/Comments/DeleteCommentV2.cs b/src/modules/devops/Elsa.DevOps.GitHub/Activities/Comments/DeleteCommentV2.cs
+new file mode 100644
+index 0000000..eaf1e5f
+--- /dev/null
++++ b/src/modules/devops/Elsa.DevOps.GitHub/Activities/Comments/DeleteCommentV2.cs
+@@ -0,0 +1,57 @@
++using Elsa.DevOps.GitHub.Activities;
++using Elsa.Workflows;
++using Elsa.Workflows.Attributes;
++using Elsa.Workflows.Models;
++using JetBrains.Annotations;
++
++namespace Elsa.DevOps.GitHub.Activities.Comments;
++
++/// <summary>
++/// Deletes a comment from a GitHub repository without colliding with the workflow activity ID.
++/// </summary>
++[Activity(
++    "Elsa.GitHub.Comments",
++    "DeleteComment",
++    2,
++    "Deletes a comment from a GitHub repository.",
++    "GitHub Comments",
++    DisplayName = "Delete Comment")]
++[UsedImplicitly]
++public class DeleteCommentV2 : GitHubActivity
++{
++    public DeleteCommentV2()
++    {
++        Version = 2;
++    }
++
++    /// <summary>
++    /// The owner of the repository.
++    /// </summary>
++    [Input(Description = "The owner of the repository.")]
++    public Input<string> Owner { get; set; } = null!;
++
++    /// <summary>
++    /// The name of the repository.
++    /// </summary>
++    [Input(Description = "The name of the repository.")]
++    public Input<string> Repository { get; set; } = null!;
++
++    /// <summary>
++    /// The provider comment ID.
++    /// </summary>
++    [Input(Description = "The comment ID.")]
++    public Input<int> CommentId { get; set; } = null!;
++
++    /// <summary>
++    /// Executes the activity.
++    /// </summary>
++    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
++    {
++        var owner = context.Get(Owner)!;
++        var repository = context.Get(Repository)!;
++        var commentId = context.Get(CommentId);
++
++        var client = GetClient(context);
++        await client.Issue.Comment.Delete(owner, repository, commentId);
++    }
++}
+diff --git a/src/modules/devops/Elsa.DevOps.GitHub/Activities/Comments/GetCommentV2.cs b/src/modules/devops/Elsa.DevOps.GitHub/Activities/Comments/GetCommentV2.cs
+new file mode 100644
+index 0000000..2744de4
+--- /dev/null
++++ b/src/modules/devops/Elsa.DevOps.GitHub/Activities/Comments/GetCommentV2.cs
+@@ -0,0 +1,66 @@
++using Elsa.DevOps.GitHub.Activities;
++using Elsa.Workflows;
++using Elsa.Workflows.Attributes;
++using Elsa.Workflows.Models;
++using JetBrains.Annotations;
++using Octokit;
++
++namespace Elsa.DevOps.GitHub.Activities.Comments;
++
++/// <summary>
++/// Retrieves a specific comment from a GitHub repository without colliding with the workflow activity ID.
++/// </summary>
++[Activity(
++    "Elsa.GitHub.Comments",
++    "GetComment",
++    2,
++    "Retrieves a specific comment from a GitHub repository.",
++    "GitHub Comments",
++    DisplayName = "Get Comment")]
++[UsedImplicitly]
++public class GetCommentV2 : GitHubActivity
++{
++    public GetCommentV2()
++    {
++        Version = 2;
++    }
++
++    /// <summary>
++    /// The owner of the repository.
++    /// </summary>
++    [Input(Description = "The owner of the repository.")]
++    public Input<string> Owner { get; set; } = null!;
++
++    /// <summary>
++    /// The name of the repository.
++    /// </summary>
++    [Input(Description = "The name of the repository.")]
++    public Input<string> Repository { get; set; } = null!;
++
++    /// <summary>
++    /// The provider comment ID.
++    /// </summary>
++    [Input(Description = "The comment ID.")]
++    public Input<int> CommentId { get; set; } = null!;
++
++    /// <summary>
++    /// The retrieved comment.
++    /// </summary>
++    [Output(Description = "The retrieved comment.")]
++    public Output<IssueComment> RetrievedComment { get; set; } = null!;
++
++    /// <summary>
++    /// Executes the activity.
++    /// </summary>
++    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
++    {
++        var owner = context.Get(Owner)!;
++        var repository = context.Get(Repository)!;
++        var commentId = context.Get(CommentId);
++
++        var client = GetClient(context);
++        var comment = await client.Issue.Comment.Get(owner, repository, commentId);
++
++        context.Set(RetrievedComment, comment);
++    }
++}
+diff --git a/src/modules/devops/Elsa.DevOps.GitHub/Activities/Comments/UpdateCommentV2.cs b/src/modules/devops/Elsa.DevOps.GitHub/Activities/Comments/UpdateCommentV2.cs
+new file mode 100644
+index 0000000..666e5af
+--- /dev/null
++++ b/src/modules/devops/Elsa.DevOps.GitHub/Activities/Comments/UpdateCommentV2.cs
+@@ -0,0 +1,73 @@
++using Elsa.DevOps.GitHub.Activities;
++using Elsa.Workflows;
++using Elsa.Workflows.Attributes;
++using Elsa.Workflows.Models;
++using JetBrains.Annotations;
++using Octokit;
++
++namespace Elsa.DevOps.GitHub.Activities.Comments;
++
++/// <summary>
++/// Updates a GitHub comment without colliding with the workflow activity ID.
++/// </summary>
++[Activity(
++    "Elsa.GitHub.Comments",
++    "UpdateComment",
++    2,
++    "Updates an existing comment in a GitHub repository.",
++    "GitHub Comments",
++    DisplayName = "Update Comment")]
++[UsedImplicitly]
++public class UpdateCommentV2 : GitHubActivity
++{
++    public UpdateCommentV2()
++    {
++        Version = 2;
++    }
++
++    /// <summary>
++    /// The owner of the repository.
++    /// </summary>
++    [Input(Description = "The owner of the repository.")]
++    public Input<string> Owner { get; set; } = null!;
++
++    /// <summary>
++    /// The name of the repository.
++    /// </summary>
++    [Input(Description = "The name of the repository.")]
++    public Input<string> Repository { get; set; } = null!;
++
++    /// <summary>
++    /// The provider comment ID.
++    /// </summary>
++    [Input(Description = "The comment ID.")]
++    public Input<int> CommentId { get; set; } = null!;
++
++    /// <summary>
++    /// The updated comment body text.
++    /// </summary>
++    [Input(Description = "The updated comment body text.")]
++    public Input<string> Body { get; set; } = null!;
++
++    /// <summary>
++    /// The updated comment.
++    /// </summary>
++    [Output(Description = "The updated comment.")]
++    public Output<IssueComment> UpdatedComment { get; set; } = null!;
++
++    /// <summary>
++    /// Executes the activity.
++    /// </summary>
++    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
++    {
++        var owner = context.Get(Owner)!;
++        var repository = context.Get(Repository)!;
++        var commentId = context.Get(CommentId);
++        var body = context.Get(Body)!;
++
++        var client = GetClient(context);
++        var comment = await client.Issue.Comment.Update(owner, repository, commentId, body);
++
++        context.Set(UpdatedComment, comment);
++    }
++}
+diff --git a/src/modules/devops/Elsa.DevOps.GitHub/Activities/Gists/GetGistV2.cs b/src/modules/devops/Elsa.DevOps.GitHub/Activities/Gists/GetGistV2.cs
+new file mode 100644
+index 0000000..a3f26dd
+--- /dev/null
++++ b/src/modules/devops/Elsa.DevOps.GitHub/Activities/Gists/GetGistV2.cs
+@@ -0,0 +1,51 @@
++using Elsa.DevOps.GitHub.Activities;
++using Elsa.Workflows;
++using Elsa.Workflows.Attributes;
++using Elsa.Workflows.Models;
++using JetBrains.Annotations;
++using Octokit;
++
++namespace Elsa.DevOps.GitHub.Activities.Gists;
++
++/// <summary>
++/// Retrieves a GitHub Gist without colliding with the workflow activity ID.
++/// </summary>
++[Activity(
++    "Elsa.GitHub.Gists",
++    "GetGist",
++    2,
++    "Retrieves a GitHub Gist by its ID.",
++    "GitHub Gists",
++    DisplayName = "Get Gist")]
++[UsedImplicitly]
++public class GetGistV2 : GitHubActivity
++{
++    public GetGistV2()
++    {
++        Version = 2;
++    }
++
++    /// <summary>
++    /// The provider ID of the Gist to retrieve.
++    /// </summary>
++    [Input(Description = "The ID of the Gist to retrieve.")]
++    public Input<string> GistId { get; set; } = null!;
++
++    /// <summary>
++    /// The retrieved Gist.
++    /// </summary>
++    [Output(Description = "The retrieved Gist.")]
++    public Output<Gist> RetrievedGist { get; set; } = null!;
++
++    /// <summary>
++    /// Executes the activity.
++    /// </summary>
++    protected override async ValueTask ExecuteAsync(ActivityExecutionContext context)
++    {
++        var gistId = context.Get(GistId)!;
++        var client = GetClient(context);
++        var gist = await client.Gist.Get(gistId);
++
++        context.Set(RetrievedGist, gist);
++    }
++}
+diff --git a/test/modules/devops/Elsa.DevOps.GitHub.UnitTests/Elsa.DevOps.GitHub.UnitTests.csproj b/test/modules/devops/Elsa.DevOps.GitHub.UnitTests/Elsa.DevOps.GitHub.UnitTests.csproj
+new file mode 100644
+index 0000000..917cddf
+--- /dev/null
++++ b/test/modules/devops/Elsa.DevOps.GitHub.UnitTests/Elsa.DevOps.GitHub.UnitTests.csproj
+@@ -0,0 +1,7 @@
++<Project Sdk="Microsoft.NET.Sdk">
++
++    <ItemGroup>
++        <ProjectReference Include="../../../../src/modules/devops/Elsa.DevOps.GitHub/Elsa.DevOps.GitHub.csproj" />
++    </ItemGroup>
++
++</Project>
+diff --git a/test/modules/devops/Elsa.DevOps.GitHub.UnitTests/GitHubActivityIdentityTests.cs b/test/modules/devops/Elsa.DevOps.GitHub.UnitTests/GitHubActivityIdentityTests.cs
+new file mode 100644
+index 0000000..da08d00
+--- /dev/null
++++ b/test/modules/devops/Elsa.DevOps.GitHub.UnitTests/GitHubActivityIdentityTests.cs
+@@ -0,0 +1,343 @@
++using System.Text.Json;
++using System.Text.Json.Nodes;
++using Elsa.DevOps.GitHub.Activities.Comments;
++using Elsa.DevOps.GitHub.Activities.Gists;
++using Elsa.Extensions;
++using Elsa.Workflows;
++using Elsa.Workflows.Activities;
++using Elsa.Workflows.Helpers;
++using Elsa.Workflows.Management;
++using Elsa.Workflows.Management.Extensions;
++using Elsa.Workflows.Management.Models;
++using Elsa.Workflows.Models;
++using Microsoft.Extensions.DependencyInjection;
++
++namespace Elsa.DevOps.GitHub.UnitTests;
++
++public sealed class GitHubActivityIdentityTests
++{
++    private const string WorkflowKey = "github-activity-identity-contract";
++
++    [Fact]
++    public async Task V2ActivitiesKeepTheirLogicalNameAndVersionForDirectAndDescriptorConstruction()
++    {
++        using var services = await CreateServiceProviderAsync();
++        var registry = services.GetRequiredService<IActivityRegistry>();
++
++        AssertVersionPair<GetComment, GetCommentV2>(registry, "Elsa.GitHub.Comments.GetComment");
++        AssertVersionPair<DeleteComment, DeleteCommentV2>(registry, "Elsa.GitHub.Comments.DeleteComment");
++        AssertVersionPair<UpdateComment, UpdateCommentV2>(registry, "Elsa.GitHub.Comments.UpdateComment");
++        AssertVersionPair<GetGist, GetGistV2>(registry, "Elsa.GitHub.Gists.GetGist");
++    }
++
++    [Fact]
++    public async Task BothActivitySerializerEntryPointsRoundTripFourRootActivitiesWithoutIdCollisions()
++    {
++        using var services = await CreateServiceProviderAsync();
++        var serializer = services.GetRequiredService<IActivitySerializer>();
++
++        foreach (var (activity, providerInput, providerValue) in CreateV2Activities())
++        {
++            var interfaceJson = serializer.Serialize(activity);
++            var objectJson = serializer.Serialize((object)activity);
++
++            AssertActivityRoundTrip(serializer, activity, providerInput, providerValue, interfaceJson);
++            AssertActivityRoundTrip(serializer, activity, providerInput, providerValue, objectJson);
++        }
++    }
++
++    [Fact]
++    public async Task BothActivitySerializerEntryPointsRoundTripActivitiesNestedInSequence()
++    {
++        using var services = await CreateServiceProviderAsync();
++        var serializer = services.GetRequiredService<IActivitySerializer>();
++        var nested = CreateV2Activities().Select(item => item.Activity).ToList();
++        nested[0].Id = "nested-get-comment-id";
++        var sequence = new Sequence
++        {
++            Id = "parent-sequence-id",
++            Activities = nested
++        };
++
++        var interfaceJson = serializer.Serialize((IActivity)sequence);
++        var objectJson = serializer.Serialize((object)sequence);
++
++        AssertSequenceRoundTrip(serializer, interfaceJson);
++        AssertSequenceRoundTrip(serializer, objectJson);
++    }
++
++    [Fact]
++    public async Task WorkflowDefinitionModelUsesRootActivityShapeAndCanEmitMigrationFixture()
++    {
++        using var services = await CreateServiceProviderAsync();
++        var serializer = services.GetRequiredService<IActivitySerializer>();
++        var root = new Sequence
++        {
++            Id = "preexisting-sequence-id",
++            Activities = CreateV2Activities().Select(item => item.Activity).ToList()
++        };
++        root.CustomProperties.Clear();
++        var workflow = new WorkflowDefinitionModel
++        {
++            Id = "workflow-8325-fixture",
++            DefinitionId = "github-id-migration-fixture",
++            Name = "GitHub activity ID compatibility fixture",
++            CreatedAt = DateTimeOffset.Parse("2026-09-24T00:00:00Z"),
++            Version = 1,
++            IsLatest = true,
++            Root = root,
++            CustomProperties = new Dictionary<string, object>
++            {
++                ["unrelated"] = new Dictionary<string, object>
++                {
++                    ["id"] = new Dictionary<string, object>
++                    {
++                        ["typeName"] = "Object",
++                        ["expression"] = new Dictionary<string, object>
++                        {
++                            ["type"] = "Literal",
++                            ["value"] = 42
++                        }
++                    }
++                }
++            }
++        };
++
++        var json = serializer.Serialize((object)workflow);
++        using var document = JsonDocument.Parse(json);
++        var exportedRoot = document.RootElement.GetProperty("root");
++        Assert.Equal("Elsa.Sequence", exportedRoot.GetProperty("type").GetString());
++        Assert.Equal(4, exportedRoot.GetProperty("activities").GetArrayLength());
++        Assert.All(exportedRoot.GetProperty("activities").EnumerateArray(), activity =>
++        {
++            Assert.Equal(2, activity.GetProperty("version").GetInt32());
++            Assert.Contains(activity.GetProperty("type").GetString(), new[]
++            {
++                "Elsa.GitHub.Comments.GetComment",
++                "Elsa.GitHub.Comments.DeleteComment",
++                "Elsa.GitHub.Comments.UpdateComment",
++                "Elsa.GitHub.Gists.GetGist"
++            });
++        });
++
++        var fixtureOutput = Environment.GetEnvironmentVariable("ELSA_GITHUB_ACTIVITY_MIGRATION_FIXTURE_OUT");
++        if (!string.IsNullOrWhiteSpace(fixtureOutput))
++        {
++            await File.WriteAllTextAsync(fixtureOutput, json);
++        }
++    }
++
++    [Fact]
++    public async Task FourReleasedV1ShapesRetainTheirProviderInputsAndVersionlessPayloadIsRejectedByLatestV2Dispatch()
++    {
++        using var services = await CreateServiceProviderAsync();
++        var serializer = services.GetRequiredService<IActivitySerializer>();
++        string? getCommentJson = null;
++
++        foreach (var (json, expectedType, expectedValue) in CreateV1Payloads())
++        {
++            var legacy = serializer.Deserialize(json);
++            Assert.Equal(expectedType, legacy.Type);
++            Assert.Equal(1, legacy.Version);
++
++            using var legacyRoundTrip = JsonDocument.Parse(serializer.Serialize(legacy));
++            var providerValue = legacyRoundTrip.RootElement.GetProperty("id").GetProperty("expression").GetProperty("value");
++            Assert.Equal(expectedValue, providerValue.ToString());
++
++            if (expectedType == "Elsa.GitHub.Comments.GetComment")
++            {
++                getCommentJson = json;
++            }
++        }
++
++        var versionless = JsonNode.Parse(getCommentJson!)!.AsObject();
++        versionless.Remove("version");
++        Assert.Throws<JsonException>(() => serializer.Deserialize(versionless.ToJsonString()));
++    }
++
++    [Fact]
++    public async Task UnaffectedNeighboringGitHubActivitiesKeepTheirExistingContracts()
++    {
++        using var services = await CreateServiceProviderAsync();
++        var registry = services.GetRequiredService<IActivityRegistry>();
++        var createComment = registry.Find(ActivityTypeNameHelper.GenerateTypeName<CreateComment>(), 1);
++        var searchGists = registry.Find(ActivityTypeNameHelper.GenerateTypeName<SearchGists>(), 1);
++
++        Assert.NotNull(createComment);
++        Assert.NotNull(searchGists);
++        Assert.Contains(createComment.Inputs, input => input.Name == "Number");
++        Assert.Contains(createComment.Inputs, input => input.Name == "Body");
++        Assert.Contains(searchGists.Inputs, input => input.Name == "Username");
++        Assert.Equal(1, createComment.Version);
++        Assert.Equal(1, searchGists.Version);
++    }
++
++    private static async Task<ServiceProvider> CreateServiceProviderAsync()
++    {
++        var services = new ServiceCollection();
++        services.AddElsa();
++        services.AddActivitiesFrom(typeof(GetCommentV2).Assembly);
++        services.AddActivity<Sequence>();
++        var provider = services.BuildServiceProvider();
++        await provider.GetRequiredService<IActivityRegistryPopulator>().PopulateRegistryAsync(CancellationToken.None);
++        return provider;
++    }
++
++    private static void AssertVersionPair<TV1, TV2>(IActivityRegistry registry, string typeName)
++        where TV1 : IActivity, new()
++        where TV2 : IActivity, new()
++    {
++        var oldDescriptor = registry.Find(typeName, 1);
++        var newDescriptor = registry.Find(typeName, 2);
++
++        Assert.NotNull(oldDescriptor);
++        Assert.NotNull(newDescriptor);
++        Assert.Equal(typeof(TV1), oldDescriptor.ClrType);
++        Assert.Equal(typeof(TV2), newDescriptor.ClrType);
++        Assert.Equal(typeName, new TV2().Type);
++        Assert.Equal(2, new TV2().Version);
++
++        var context = new ActivityConstructorContext(
++            newDescriptor,
++            activityType => new ActivityConstructionResult((IActivity)Activator.CreateInstance(activityType)!));
++        var constructed = newDescriptor.Constructor(context).Activity;
++
++        Assert.IsType<TV2>(constructed);
++        Assert.Equal(typeName, constructed.Type);
++        Assert.Equal(2, constructed.Version);
++    }
++
++    private static IEnumerable<(IActivity Activity, string ProviderInput, object ProviderValue)> CreateV2Activities()
++    {
++        yield return (
++            new GetCommentV2
++            {
++                Id = "activity-get-comment",
++                Owner = new("owner"),
++                Repository = new("repository"),
++                CommentId = new(42)
++            },
++            "commentId",
++            42);
++        yield return (
++            new DeleteCommentV2
++            {
++                Id = "activity-delete-comment",
++                Owner = new("owner"),
++                Repository = new("repository"),
++                CommentId = new(43)
++            },
++            "commentId",
++            43);
++        yield return (
++            new UpdateCommentV2
++            {
++                Id = "activity-update-comment",
++                Owner = new("owner"),
++                Repository = new("repository"),
++                CommentId = new(44),
++                Body = new("updated body")
++            },
++            "commentId",
++            44);
++        yield return (
++            new GetGistV2
++            {
++                Id = "activity-get-gist",
++                GistId = new("gist-45")
++            },
++            "gistId",
++            "gist-45");
++    }
++
++    private static IEnumerable<(string Json, string ExpectedType, string ExpectedValue)> CreateV1Payloads()
++    {
++        var comments = new[]
++        {
++            "Elsa.GitHub.Comments.GetComment",
++            "Elsa.GitHub.Comments.DeleteComment",
++            "Elsa.GitHub.Comments.UpdateComment"
++        };
++
++        foreach (var typeName in comments)
++        {
++            var payload = new Dictionary<string, object?>
++            {
++                ["owner"] = LiteralInput("String", "compatibility-probe"),
++                ["repository"] = LiteralInput("String", "compatibility-probe"),
++                ["id"] = LiteralInput("Int32", 42),
++                ["token"] = LiteralInput("String", "compatibility-probe"),
++                ["type"] = typeName,
++                ["version"] = 1,
++                ["customProperties"] = new Dictionary<string, object>(),
++                ["metadata"] = new Dictionary<string, object>()
++            };
++            if (typeName == "Elsa.GitHub.Comments.UpdateComment")
++            {
++                payload["body"] = LiteralInput("String", "compatibility-probe");
++            }
++
++            yield return (JsonSerializer.Serialize(payload), typeName, "42");
++        }
++
++        var gistType = "Elsa.GitHub.Gists.GetGist";
++        var gistPayload = new Dictionary<string, object?>
++        {
++            ["id"] = LiteralInput("String", "compatibility-probe"),
++            ["token"] = LiteralInput("String", "compatibility-probe"),
++            ["type"] = gistType,
++            ["version"] = 1,
++            ["customProperties"] = new Dictionary<string, object>(),
++            ["metadata"] = new Dictionary<string, object>()
++        };
++        yield return (JsonSerializer.Serialize(gistPayload), gistType, "compatibility-probe");
++    }
++
++    private static Dictionary<string, object?> LiteralInput(string typeName, object value) => new()
++    {
++        ["typeName"] = typeName,
++        ["expression"] = new Dictionary<string, object?>
++        {
++            ["type"] = "Literal",
++            ["value"] = value
++        }
++    };
++
++    private static void AssertActivityRoundTrip(
++        IActivitySerializer serializer,
++        IActivity original,
++        string providerInput,
++        object providerValue,
++        string json)
++    {
++        using var document = JsonDocument.Parse(json);
++        var root = document.RootElement;
++        Assert.Equal(original.Id, root.GetProperty("id").GetString());
++        Assert.Equal(original.Type, root.GetProperty("type").GetString());
++        Assert.Equal(2, root.GetProperty("version").GetInt32());
++        Assert.Equal(providerValue.ToString(), root.GetProperty(providerInput).GetProperty("expression").GetProperty("value").ToString());
++
++        var restored = serializer.Deserialize(json);
++        Assert.Equal(original.GetType(), restored.GetType());
++        Assert.Equal(original.Id, restored.Id);
++        Assert.Equal(original.Type, restored.Type);
++        Assert.Equal(2, restored.Version);
++    }
++
++    private static void AssertSequenceRoundTrip(IActivitySerializer serializer, string json)
++    {
++        var restored = Assert.IsType<Sequence>(serializer.Deserialize(json));
++        Assert.Equal("parent-sequence-id", restored.Id);
++        var activities = restored.Activities.ToArray();
++        Assert.Equal(4, activities.Length);
++        foreach (var (activity, original, providerInput, providerValue) in
++                 activities.Zip(CreateV2Activities(), (activity, item) => (activity, item.Activity, item.ProviderInput, item.ProviderValue)))
++        {
++            Assert.Equal(original.GetType(), activity.GetType());
++            Assert.Equal(original.Type, activity.Type);
++            Assert.Equal(2, activity.Version);
++            using var document = JsonDocument.Parse(serializer.Serialize(activity));
++            Assert.Equal(providerValue.ToString(), document.RootElement.GetProperty(providerInput).GetProperty("expression").GetProperty("value").ToString());
++        }
++    }
++}

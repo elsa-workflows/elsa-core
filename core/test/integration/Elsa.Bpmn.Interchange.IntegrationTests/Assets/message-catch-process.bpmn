@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:elsa="https://elsaworkflows.io/schemas/bpmn/v1"
+                  xmlns:vw="https://bpmn.valenceworks.io/schema/bpmn"
+                  id="Definitions_await-payment"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:message id="Message_PaymentReceived" name="PaymentReceived" />
+  <bpmn:process id="await-payment" isExecutable="true">
+    <bpmn:startEvent id="Start">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:intermediateCatchEvent id="AwaitPayment" name="Payment received">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="AwaitPayment_Message" messageRef="Message_PaymentReceived" />
+    </bpmn:intermediateCatchEvent>
+    <bpmn:serviceTask id="RecordPayment" name="Record payment">
+      <bpmn:extensionElements>
+        <elsa:activityBinding activityType="Elsa.WriteLine">
+          <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"Payment recorded"}}</elsa:input>
+        </elsa:activityBinding>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="End">
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start" targetRef="AwaitPayment" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="AwaitPayment" targetRef="RecordPayment" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="RecordPayment" targetRef="End" />
+  </bpmn:process>
+</bpmn:definitions>

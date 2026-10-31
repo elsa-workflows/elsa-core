@@ -1,0 +1,528 @@
+/* ----- Activity host (the inner box that holds the Blazor element) ----- */
+
+.elsa-react-activity-host {
+    box-sizing: border-box;
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.elsa-react-activity-host {
+    display: inline-block;
+}
+
+.elsa-react-activity-host > elsa-activity-wrapper {
+    display: block;
+}
+
+/* ----- Node container (React Flow's wrapper around our custom node) ----- */
+/* Note: keep dimensions untouched — they come from C# (X6Size). Only style
+   shadows, transitions and selection. */
+
+.elsa-react-flowchart-designer .react-flow__node {
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: 6px;
+    transition: transform 0.15s ease, filter 0.15s ease;
+    filter: drop-shadow(0 1px 3px rgba(15, 23, 42, 0.06));
+}
+
+.elsa-react-flowchart-designer .react-flow__node:hover {
+    filter: drop-shadow(0 4px 10px rgba(15, 23, 42, 0.12));
+}
+
+.elsa-react-flowchart-designer .react-flow__node.selected {
+    outline: 2px solid #0ea5e9;
+    outline-offset: 3px;
+    border-radius: 8px;
+    /* Two stacked drop-shadows: a tight halo right at the edge, plus a softer
+       lift below. Together they make the selected node clearly "rise" above
+       the canvas without obscuring its colours. */
+    filter:
+        drop-shadow(0 0 10px rgba(14, 165, 233, 0.55))
+        drop-shadow(0 8px 20px rgba(14, 165, 233, 0.30));
+    z-index: 2;
+}
+
+/* React Flow's default selection halo can cover the activity body — hide it,
+   we replace it with the outline above. */
+.elsa-react-flowchart-designer .react-flow__node-default.selected,
+.elsa-react-flowchart-designer .react-flow__nodesselection-rect {
+    background: transparent;
+}
+
+/* ----- Handles (ports) ----- */
+
+.elsa-react-flowchart-designer .react-flow__handle {
+    width: 10px;
+    height: 10px;
+    background: #ffffff;
+    border: 2px solid #94a3b8;
+    transition: background 0.15s ease, border-color 0.15s ease,
+                box-shadow 0.15s ease, width 0.15s ease, height 0.15s ease;
+}
+
+.elsa-react-flowchart-designer .react-flow__handle:hover {
+    width: 12px;
+    height: 12px;
+    background: #0ea5e9;
+    border-color: #ffffff;
+    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.18);
+}
+
+/* Left = input, right = output: visually distinguish them. */
+.elsa-react-flowchart-designer .react-flow__handle-left {
+    background: #ffffff;
+    border-color: #38bdf8;
+}
+
+.elsa-react-flowchart-designer .react-flow__handle-right {
+    background: #38bdf8;
+    border-color: #ffffff;
+    box-shadow: 0 0 0 1px #38bdf8;
+}
+
+.elsa-react-flowchart-designer .react-flow__handle-connecting {
+    background: #f59e0b;
+    border-color: #ffffff;
+}
+
+.elsa-react-flowchart-designer .react-flow__handle-valid {
+    background: #10b981;
+    border-color: #ffffff;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.22);
+}
+
+/* Port labels rendered next to handles. Outputs sit just outside the right
+   edge, inputs just outside the left edge. Pointer events disabled so they
+   never block clicks on the underlying handle. */
+.elsa-react-flow-port-label {
+    position: absolute;
+    font-size: 11px;
+    line-height: 1;
+    color: #64748b;
+    background: var(--mud-palette-surface, #ffffff);
+    padding: 1px 4px;
+    border-radius: 3px;
+    pointer-events: none;
+    white-space: nowrap;
+    transform: translateY(-50%);
+    z-index: 1;
+}
+
+.elsa-react-flow-port-label-out {
+    right: 0;
+    transform: translate(calc(100% + 10px), -50%);
+}
+
+.elsa-react-flow-port-label-in {
+    left: 0;
+    transform: translate(calc(-100% - 10px), -50%);
+}
+
+/* ----- Edges ----- */
+
+.elsa-react-flowchart-designer .react-flow__edge-path {
+    stroke: #94a3b8;
+    stroke-width: 2;
+    transition: stroke 0.15s ease, stroke-width 0.15s ease;
+}
+
+.elsa-react-flowchart-designer .react-flow__edge:hover .react-flow__edge-path {
+    stroke: #0ea5e9;
+    stroke-width: 2.5;
+}
+
+.elsa-react-flowchart-designer .react-flow__edge.selected .react-flow__edge-path {
+    stroke: #0ea5e9;
+    stroke-width: 2.5;
+}
+
+/* Edges render as solid lines (no marching dashes — they competed with the
+   click target for visual focus). The "alive" cue moved to a small pulse
+   circle anchored at the target end (see .elsa-react-flow-edge-pulse). */
+.elsa-react-flowchart-designer .react-flow__edge.animated .react-flow__edge-path {
+    stroke-dasharray: none;
+    animation: none;
+}
+
+/* Breathing dot at the target endpoint of every edge. Renders behind the
+   path so the arrowhead sits cleanly on top of it; the pulse halos the tip
+   without obscuring it. */
+.elsa-react-flow-edge-pulse {
+    fill: #94a3b8;
+    pointer-events: none;
+    animation: elsa-rf-edge-pulse 2.6s ease-in-out infinite;
+}
+
+.elsa-react-flowchart-designer .react-flow__edge:hover .elsa-react-flow-edge-pulse,
+.elsa-react-flowchart-designer .react-flow__edge.selected .elsa-react-flow-edge-pulse {
+    fill: #0ea5e9;
+    animation-duration: 1.8s;
+}
+
+@keyframes elsa-rf-edge-pulse {
+    0%, 100% { r: 3.5; opacity: 0.30; }
+    50%      { r: 6;   opacity: 0.75; }
+}
+
+/* Animated dashed line shown while dragging a new connection. */
+.elsa-react-flowchart-designer .react-flow__connectionline path {
+    stroke: #0ea5e9;
+    stroke-width: 2;
+    stroke-dasharray: 6 4;
+    animation: elsa-rf-dash 0.6s linear infinite;
+}
+
+@keyframes elsa-rf-dash {
+    to { stroke-dashoffset: -10; }
+}
+
+/* ----- Background dots ----- */
+
+.elsa-react-flowchart-designer .react-flow__background {
+    color: #cbd5e1;
+}
+
+/* ----- MiniMap & Controls polish ----- */
+
+.elsa-react-flowchart-designer .react-flow__minimap,
+.elsa-react-flowchart-designer .react-flow__controls {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.10);
+    border: 1px solid rgba(15, 23, 42, 0.06);
+    backdrop-filter: blur(4px);
+    background: rgba(255, 255, 255, 0.85);
+}
+
+.elsa-react-flowchart-designer .react-flow__controls-button {
+    border: none;
+    background: transparent;
+    transition: background 0.15s ease;
+}
+
+.elsa-react-flowchart-designer .react-flow__controls-button:hover {
+    background: rgba(14, 165, 233, 0.10);
+}
+
+.elsa-react-flowchart-designer .react-flow__minimap-mask {
+    fill: rgba(15, 23, 42, 0.05);
+}
+
+/* ----- Custom edge: hover-delete + vertex handles ----- */
+
+.elsa-react-flowchart-designer .elsa-react-flow-edge-hit {
+    cursor: crosshair;
+    pointer-events: stroke;
+}
+
+.elsa-react-flowchart-designer .elsa-react-flow-edge-vertex {
+    fill: #ffffff;
+    stroke: #0ea5e9;
+    stroke-width: 2;
+    cursor: grab;
+    transition: r 0.15s ease, fill 0.15s ease;
+}
+
+.elsa-react-flowchart-designer .elsa-react-flow-edge-vertex:hover {
+    fill: #0ea5e9;
+    r: 6;
+}
+
+.elsa-react-flowchart-designer .elsa-react-flow-edge-vertex:active {
+    cursor: grabbing;
+}
+
+.elsa-react-flow-edge-remove {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: all;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+    padding: 0;
+}
+
+.elsa-react-flow-edge-remove:hover {
+    background: #ef4444;
+    color: #ffffff;
+    border-color: #ef4444;
+    transform: scale(1.1);
+}
+
+/* ----- Empty-state CTA (no activities yet) ----- */
+
+.elsa-react-flow-empty-state {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.elsa-react-flow-empty-btn {
+    pointer-events: all;
+    background: var(--mud-palette-surface, #ffffff);
+    border: 1px dashed rgba(14, 165, 233, 0.6);
+    color: #0ea5e9;
+    border-radius: 12px;
+    padding: 18px 28px;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.10);
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.elsa-react-flow-empty-btn:hover {
+    background: #0ea5e9;
+    color: #ffffff;
+    border-color: #0ea5e9;
+    border-style: solid;
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 10px 24px rgba(14, 165, 233, 0.30);
+}
+
+/* ----- Top-right canvas toolbar (Arrange button etc.) ----- */
+
+.elsa-react-flow-toolbar {
+    display: flex;
+    gap: 6px;
+}
+
+.elsa-react-flow-toolbar-btn {
+    background: var(--mud-palette-surface, #ffffff);
+    border: 1px solid rgba(15, 23, 42, 0.10);
+    color: #0ea5e9;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+}
+
+.elsa-react-flow-toolbar-btn:hover {
+    background: #0ea5e9;
+    color: #ffffff;
+    border-color: #0ea5e9;
+    transform: translateY(-1px);
+}
+
+.elsa-react-flow-toolbar-btn.active {
+    background: #0ea5e9;
+    color: #ffffff;
+    border-color: #0ea5e9;
+}
+
+.elsa-react-flow-toolbar-btn:active {
+    transform: translateY(0);
+}
+
+/* ----- Snap / alignment guides ----- */
+
+.elsa-react-flow-snap-lines line {
+    stroke: #f97316;
+    stroke-width: 1;
+    stroke-dasharray: 4 3;
+    shape-rendering: crispEdges;
+}
+
+/* ----- Delete button on selected activity ----- */
+
+.elsa-react-flow-node-delete {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #ef4444;
+    color: #ffffff;
+    border: 2px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.45);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    padding: 0;
+    z-index: 3;
+    transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.elsa-react-flow-node-delete:hover {
+    background: #dc2626;
+    transform: scale(1.1);
+}
+
+/* ----- Insert-activity (+) button on edges ----- */
+
+.elsa-react-flow-edge-insert {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    color: #0ea5e9;
+    font-size: 18px;
+    line-height: 1;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: all;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+    padding: 0;
+    transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.elsa-react-flow-edge-insert:hover {
+    background: #0ea5e9;
+    color: #ffffff;
+    border-color: #0ea5e9;
+    transform: scale(1.1);
+}
+
+/* ----- Edge-drop target (drag activity over an edge to splice it) ----- */
+
+/* While a drag is in progress, every edge's wide invisible hit zone becomes
+   a clearly-visible drop track. We bump both the width and opacity so the
+   user gets an obvious "land here" affordance instead of having to aim at
+   the 2px line. */
+.elsa-is-dragging-activity .elsa-react-flow-edge-hit {
+    stroke: rgba(14, 165, 233, 0.22);
+    stroke-width: 28;
+    stroke-linecap: round;
+    transition: stroke 0.1s ease, stroke-width 0.15s ease;
+}
+
+/* Hide the breathing target-end pulse during drag — anything moving on the
+   canvas competes with the user's targeting and made the drop "feel" flimsy
+   even though the hit zone is wide enough. */
+.elsa-is-dragging-activity .elsa-react-flow-edge-pulse {
+    display: none;
+}
+
+/* The edge currently under the cursor gets a stronger amber wash plus the
+   crisp orange highlight on the visible path beneath. */
+.elsa-is-dragging-activity .react-flow__edge.elsa-react-flow-edge-split-target .elsa-react-flow-edge-hit {
+    stroke: rgba(249, 115, 22, 0.45);
+    stroke-width: 32;
+}
+
+.elsa-react-flowchart-designer .react-flow__edge.elsa-react-flow-edge-split-target .react-flow__edge-path {
+    stroke: #f97316;
+    stroke-width: 3;
+    /* Override the gentle pulse so the highlight reads as decisive. */
+    animation: none;
+    stroke-dasharray: none;
+}
+
+/* ----- Inline activity picker (drag from port → drop on empty canvas) ----- */
+
+.elsa-react-flow-connect-menu {
+    width: 280px;
+    max-height: 360px;
+    background: var(--mud-palette-surface, #ffffff);
+    border: 1px solid rgba(15, 23, 42, 0.10);
+    border-radius: 8px;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.18);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: inherit;
+}
+
+.elsa-react-flow-connect-menu-search {
+    width: 100%;
+    box-sizing: border-box;
+    border: none;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    padding: 8px 12px;
+    font-size: 13px;
+    outline: none;
+    background: transparent;
+    color: inherit;
+}
+
+.elsa-react-flow-connect-menu-list {
+    list-style: none;
+    margin: 0;
+    padding: 4px 0;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.elsa-react-flow-connect-menu-empty {
+    padding: 10px 12px;
+    color: #94a3b8;
+    font-size: 12px;
+    text-align: center;
+}
+
+.elsa-react-flow-connect-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 12px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.1s ease;
+}
+
+.elsa-react-flow-connect-menu-item.is-active,
+.elsa-react-flow-connect-menu-item:hover {
+    background: rgba(14, 165, 233, 0.10);
+}
+
+.elsa-react-flow-connect-menu-swatch {
+    flex: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+
+.elsa-react-flow-connect-menu-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.elsa-react-flow-connect-menu-name {
+    font-size: 13px;
+    color: inherit;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.elsa-react-flow-connect-menu-cat {
+    font-size: 11px;
+    color: #94a3b8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

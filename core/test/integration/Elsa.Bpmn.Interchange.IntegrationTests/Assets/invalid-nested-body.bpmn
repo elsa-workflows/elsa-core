@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  A process whose embedded subprocess body cannot run: the body's gateway names its incoming flow as its default flow,
+  which Bpmn.Semantics refuses when it builds the body's graph. Import builds every body it can reach, so it refuses
+  the document rather than persisting a process that would fault when a token first reached the subprocess.
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  id="Definitions_invalid-nested-body"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="invalid-nested-body" isExecutable="true">
+    <bpmn:startEvent id="Start">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:subProcess id="Outer">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+      <bpmn:startEvent id="Inner_Start">
+        <bpmn:outgoing>Inner_Flow_1</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:exclusiveGateway id="Inner_Decide" default="Inner_Flow_1">
+        <bpmn:incoming>Inner_Flow_1</bpmn:incoming>
+        <bpmn:outgoing>Inner_Flow_2</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      <bpmn:endEvent id="Inner_End">
+        <bpmn:incoming>Inner_Flow_2</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="Inner_Flow_1" sourceRef="Inner_Start" targetRef="Inner_Decide" />
+      <bpmn:sequenceFlow id="Inner_Flow_2" sourceRef="Inner_Decide" targetRef="Inner_End" />
+    </bpmn:subProcess>
+    <bpmn:endEvent id="End">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start" targetRef="Outer" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Outer" targetRef="End" />
+  </bpmn:process>
+</bpmn:definitions>

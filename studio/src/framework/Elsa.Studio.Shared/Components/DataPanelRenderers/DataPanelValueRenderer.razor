@@ -1,0 +1,74 @@
+@using Elsa.Studio.Localization
+@using Elsa.Studio.Models
+
+<MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+    @if (!string.IsNullOrWhiteSpace(DisplayText))
+    {
+        <MudTooltip Text="@Localizer["View"]" Delay="500">
+            <MudIconButton Icon="@Icons.Material.Outlined.ManageSearch"
+                           Size="Size.Small"
+                           OnClick="@OnViewClicked"
+                           Disabled="@(string.IsNullOrWhiteSpace(DisplayText))"
+                           Class="icon-on-hover" />
+        </MudTooltip>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Item.Link))
+    {
+        <MudLink Typo="Typo.body2" Href="@Item.Link">
+            @RenderFormattedContent()
+        </MudLink>
+    }
+    else if (Item.OnClick != null)
+    {
+        <MudLink Typo="Typo.body2" OnClick="@Item.OnClick">
+            @RenderFormattedContent()
+        </MudLink>
+    }
+    else
+    {
+        @RenderFormattedContent()
+    }
+</MudStack>
+
+@code {
+    /// <summary>
+    /// The data panel item to render.
+    /// </summary>
+    [Parameter] public DataPanelItem Item { get; set; } = null!;
+
+    /// <summary>
+    /// The formatted display text.
+    /// </summary>
+    [Parameter] public string? DisplayText { get; set; }
+
+    /// <summary>
+    /// The maximum length before truncation.
+    /// </summary>
+    [Parameter] public int TruncationLength { get; set; } = DataPanel.DefaultTruncationLength;
+
+    /// <summary>
+    /// Callback invoked when the view button is clicked.
+    /// </summary>
+    [Parameter] public EventCallback OnViewClicked { get; set; }
+
+    [Inject] private ILocalizer Localizer { get; set; } = null!;
+
+    private RenderFragment RenderFormattedContent() => __builder =>
+    {
+        @if (Item is { Format: DataPanelItemFormat.Timestamp, Value: DateTime or DateTimeOffset })
+        {
+            <DataPanelTimestampValue Value="@DataPanel.GetTimestampValue(Item.Value)" Format="@(string.IsNullOrWhiteSpace(Item.FormatString) ? "G" : Item.FormatString)" />
+        }
+        else if (Item.Format == DataPanelItemFormat.Code)
+        {
+            <DataPanelCodeValue Code="@DisplayText" />
+        }
+        else
+        {
+            <DataPanelTextValue DisplayText="@DisplayText"
+                                TruncationLength="@TruncationLength"
+                                OnViewClicked="@OnViewClicked" />
+        }
+    };
+}

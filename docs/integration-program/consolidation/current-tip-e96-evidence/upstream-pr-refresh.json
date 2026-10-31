@@ -1,0 +1,32 @@
+{
+  "checkedAtUtc": "2026-09-25T05:51:37.344397+00:00",
+  "scope": "Read-only source-tip and open PR head refresh; repeat before a history-bearing import",
+  "priorLedger": "../current-tip-c4b3-evidence/upstream-pr-refresh.json",
+  "repositories": {
+    "elsa-core": {
+      "selectedPin": "e96fd36f4f9a838c6289fd48cf07669ea3229a5e",
+      "currentMain": "e96fd36f4f9a838c6289fd48cf07669ea3229a5e",
+      "selectedPinIsCurrentMain": true
+    },
+    "elsa-extensions": {
+      "selectedPin": "ba8b71d91c15ffe5be4b2c539cf9f712e74af775",
+      "currentMain": "ba8b71d91c15ffe5be4b2c539cf9f712e74af775",
+      "selectedPinIsCurrentMain": true,
+      "openPullRequestCount": 18,
+      "addedNumbers": [],
+      "removedNumbers": [],
+      "changedHeads": [],
+      "unchangedHeadCount": 18
+    },
+    "elsa-studio": {
+      "selectedPin": "20ceaeeed7e671f0c9662003e82063026f2216de",
+      "currentMain": "20ceaeeed7e671f0c9662003e82063026f2216de",
+      "selectedPinIsCurrentMain": true,
+      "openPullRequestCount": 15,
+      "addedNumbers": [],
+      "removedNumbers": [],
+      "changedHeads": [],
+      "unchangedHeadCount": 15
+    }
+  }
+}

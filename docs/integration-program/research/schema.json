@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/elsa-workflows/elsa-core/blob/main/doc/integration-program/research/schema.json",
+  "title": "Elsa Integration Research Catalog",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["program", "metadata", "sources", "rubric", "hardGates", "providers", "workflowHypotheses", "rankedRecommendation"],
+  "$defs": {
+    "assessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "value", "sourceIds", "checkedDate", "confidence", "note"],
+      "properties": {
+        "status": {"enum": ["verified", "inferred", "unknown", "not_applicable", "mixed"]},
+        "value": {},
+        "sourceIds": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+        "checkedDate": {"type": ["string", "null"], "format": "date"},
+        "confidence": {"enum": ["high", "medium", "low", "not_applicable"]},
+        "note": {"type": "string", "minLength": 1}
+      },
+      "allOf": [
+        {"if": {"properties": {"status": {"enum": ["verified", "inferred", "mixed"]}}}, "then": {"properties": {"sourceIds": {"minItems": 1}, "checkedDate": {"type": "string", "format": "date"}}}}
+      ]
+    },
+    "operation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type", "name", "intent", "evidenceStatus", "authScope", "sourceIds", "notes"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9.-]*$"},
+        "type": {"enum": ["action", "search", "trigger"]},
+        "name": {"type": "string", "minLength": 1},
+        "intent": {"type": "string", "minLength": 1},
+        "evidenceStatus": {"enum": ["verified_official_docs", "verified_existing_source", "hypothesis"]},
+        "authScope": {"$ref": "#/$defs/assessment"},
+        "sourceIds": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
+        "notes": {"type": "string", "minLength": 1}
+      }
+    },
+    "workflow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "personas", "goal", "stages", "failureControls", "assumptions", "demandEvidenceStatus"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^WF-[0-9]{2}$"},
+        "title": {"type": "string", "minLength": 1},
+        "personas": {"type": "array", "minItems": 1, "items": {"enum": ["microsoft-centric", "saas-business-operations", "developer", "self-hosted-enterprise"]}},
+        "goal": {"type": "string", "minLength": 1},
+        "stages": {"type": "array", "minItems": 3, "items": {"type": "object", "additionalProperties": false, "required": ["step", "providerId", "operationId", "description"], "properties": {"step": {"type": "integer", "minimum": 1}, "providerId": {"type": "string"}, "operationId": {"type": "string"}, "description": {"type": "string"}}}},
+        "failureControls": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "assumptions": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "demandEvidenceStatus": {"enum": ["none_verified", "program_hypothesis_only", "public_request_verified"]}
+      }
+    },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stableId", "provider", "assessmentLevel", "categories", "targetPersonas", "concreteWorkflows", "existingElsaStatus", "proposedOperations", "authenticationTypesAndScopes", "oauthAppVerification", "apiDocumentation", "webhookDocumentation", "pollingRenewalRequirements", "paginationAndRateLimits", "fileSizeConstraints", "paidTierApiRestrictions", "sandboxTestAvailability", "sdkLicenseConsiderations", "dataResidency", "maintenanceBurden", "ownershipSponsorship", "sharedCloudEligibility", "elsaCompatibility", "evidence", "checkedDate", "confidence", "demandEvidence", "demandScore", "scores", "recommendation", "unknowns"],
+      "properties": {
+        "stableId": {"type": "string", "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*$"},
+        "provider": {"type": "string", "minLength": 1},
+        "assessmentLevel": {"enum": ["deep", "discovery"]},
+        "categories": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string"}},
+        "targetPersonas": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"enum": ["microsoft-centric", "saas-business-operations", "developer", "self-hosted-enterprise"]}},
+        "concreteWorkflows": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["description", "evidenceStatus"], "properties": {"description": {"type": "string"}, "evidenceStatus": {"enum": ["hypothesis", "supported_by_public_request"]}}}},
+        "existingElsaStatus": {"$ref": "#/$defs/assessment"},
+        "proposedOperations": {"type": "array", "items": {"$ref": "#/$defs/operation"}},
+        "authenticationTypesAndScopes": {"$ref": "#/$defs/assessment"},
+        "oauthAppVerification": {"$ref": "#/$defs/assessment"},
+        "apiDocumentation": {"$ref": "#/$defs/assessment"},
+        "webhookDocumentation": {"$ref": "#/$defs/assessment"},
+        "pollingRenewalRequirements": {"$ref": "#/$defs/assessment"},
+        "paginationAndRateLimits": {"$ref": "#/$defs/assessment"},
+        "fileSizeConstraints": {"$ref": "#/$defs/assessment"},
+        "paidTierApiRestrictions": {"$ref": "#/$defs/assessment"},
+        "sandboxTestAvailability": {"$ref": "#/$defs/assessment"},
+        "sdkLicenseConsiderations": {"$ref": "#/$defs/assessment"},
+        "dataResidency": {"$ref": "#/$defs/assessment"},
+        "maintenanceBurden": {"$ref": "#/$defs/assessment"},
+        "ownershipSponsorship": {"$ref": "#/$defs/assessment"},
+        "sharedCloudEligibility": {"$ref": "#/$defs/assessment"},
+        "elsaCompatibility": {"$ref": "#/$defs/assessment"},
+        "evidence": {"type": "array", "minItems": 1, "items": {"type": "string"}, "uniqueItems": true},
+        "checkedDate": {"type": "string", "format": "date"},
+        "confidence": {"enum": ["high", "medium", "low"]},
+        "demandEvidence": {"type": "array", "items": {"type": "string"}},
+        "demandScore": {"type": ["number", "null"], "minimum": 0, "maximum": 5},
+        "scores": {"type": ["object", "null"], "additionalProperties": false, "required": ["workflowCoverage", "feasibility", "infrastructureReuse", "sustainability", "demandSensitivity"], "properties": {"workflowCoverage": {"type": "number", "minimum": 0, "maximum": 5}, "feasibility": {"type": "number", "minimum": 0, "maximum": 5}, "infrastructureReuse": {"type": "number", "minimum": 0, "maximum": 5}, "sustainability": {"type": "number", "minimum": 0, "maximum": 5}, "demandSensitivity": {"type": "object", "required": ["demand0", "demand2_5", "demand5", "weightedRange"], "properties": {"demand0": {"type": "number"}, "demand2_5": {"type": "number"}, "demand5": {"type": "number"}, "weightedRange": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "number"}}}}}},
+        "recommendation": {"type": "object", "additionalProperties": false, "required": ["disposition", "rationale", "gateStatus", "effortRange", "owner"], "properties": {"disposition": {"enum": ["pilot_candidate", "next_cohort", "defer", "exclude_pending_gate", "discovery_only"]}, "rationale": {"type": "string"}, "gateStatus": {"enum": ["pass_for_design_only", "conditional", "blocked", "unknown"]}, "effortRange": {"type": "string"}, "owner": {"type": "string"}}},
+        "unknowns": {"type": "array", "minItems": 1, "items": {"type": "string"}}
+      }
+    }
+  },
+  "properties": {
+    "program": {"type": "object", "required": ["issue", "epic", "tasks", "inspectedCoreCommit", "inspectedExtensionsCommit"], "properties": {"issue": {"const": 8194}, "epic": {"const": 8196}, "tasks": {"type": "array", "items": {"type": "integer"}}, "inspectedCoreCommit": {"type": "string"}, "inspectedExtensionsCommit": {"type": "string"}}},
+    "metadata": {"type": "object", "required": ["catalogVersion", "checkedDate", "candidateCount", "deepCount", "demandCaveat", "discoveryMethod"], "properties": {"catalogVersion": {"type": "string"}, "checkedDate": {"type": "string", "format": "date"}, "candidateCount": {"type": "integer", "minimum": 50, "maximum": 100}, "deepCount": {"type": "integer", "minimum": 15, "maximum": 20}, "demandCaveat": {"type": "string"}, "discoveryMethod": {"type": "string"}}},
+    "sources": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false, "required": ["id", "url", "title", "kind", "checkedDate", "limitations"], "properties": {"id": {"type": "string"}, "url": {"type": "string", "format": "uri"}, "title": {"type": "string"}, "kind": {"enum": ["official_provider_docs", "official_discovery_catalog", "repository_source", "public_issue_search", "program_charter"]}, "checkedDate": {"type": "string", "format": "date"}, "lastModified": {"type": ["string", "null"]}, "limitations": {"type": "string"}}}},
+    "rubric": {"type": "array", "minItems": 5, "maxItems": 5, "items": {"type": "object", "additionalProperties": false, "required": ["dimension", "weight", "definition"], "properties": {"dimension": {"type": "string"}, "weight": {"type": "number", "minimum": 0, "maximum": 1}, "definition": {"type": "string"}}}},
+    "hardGates": {"type": "array", "minItems": 2, "items": {"type": "object", "additionalProperties": false, "required": ["gate", "rule", "status", "reason"], "properties": {"gate": {"type": "string"}, "rule": {"type": "string"}, "status": {"enum": ["pass_for_design_only", "conditional", "blocked", "unknown"]}, "reason": {"type": "string"}}}},
+    "providers": {"type": "array", "minItems": 50, "maxItems": 100, "items": {"$ref": "#/$defs/provider"}},
+    "workflowHypotheses": {"type": "array", "minItems": 5, "items": {"$ref": "#/$defs/workflow"}},
+    "rankedRecommendation": {"type": "object", "required": ["cohorts", "sensitivity", "effortAssumptions", "maintainerDecisions", "exclusions"], "properties": {"cohorts": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["rank", "providerIds", "rationale", "readinessGate"], "properties": {"rank": {"type": "integer", "minimum": 1}, "providerIds": {"type": "array", "items": {"type": "string"}}, "rationale": {"type": "string"}, "readinessGate": {"type": "string"}}}}, "sensitivity": {"type": "string"}, "effortAssumptions": {"type": "string"}, "maintainerDecisions": {"type": "array", "items": {"type": "string"}}, "exclusions": {"type": "array", "items": {"type": "string"}}}}
+  }
+}

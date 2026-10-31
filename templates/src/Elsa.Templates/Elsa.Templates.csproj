@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <PackageId>Elsa.Templates</PackageId>
+        <Version>3.9.0</Version>
+        <Title>Elsa Templates</Title>
+        <Description>.NET templates for creating Elsa Server and Elsa Studio solutions.</Description>
+        <Authors>Elsa Workflows</Authors>
+        <Company>Elsa Workflows</Company>
+        <PackageProjectUrl>https://github.com/elsa-workflows/elsa-core</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/elsa-workflows/elsa-core</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryCommit Condition="'$(RepositoryCommit)' == '' and '$(SourceRevisionId)' != ''">$(SourceRevisionId)</RepositoryCommit>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageTags>elsa;workflow;templates;dotnet-new</PackageTags>
+        <PackageOutputPath>$(ArtifactsPath)package/$(Configuration.ToLowerInvariant())</PackageOutputPath>
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <NoDefaultExcludes>true</NoDefaultExcludes>
+        <NoWarn>$(NoWarn);NU5128</NoWarn>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Remove="templates/**" />
+        <None Include="../../README.md" Pack="true" PackagePath="/" />
+        <Content Include="templates/**" Pack="true" PackagePath="content/" />
+    </ItemGroup>
+</Project>

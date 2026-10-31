@@ -1,0 +1,453 @@
+using AngleSharp.Dom;
+using Bunit;
+using Elsa.Studio.Authentication.Abstractions.Contracts;
+using Elsa.Studio.Authentication.Abstractions.Models;
+using Elsa.Studio.Authentication.UI.Components;
+using Elsa.Studio.Authentication.UI.Extensions;
+using Elsa.Studio.Authentication.UI.Services;
+using Elsa.Studio.Branding;
+using Elsa.Studio.Contracts;
+using Elsa.Studio.ExternalAuthentication.Models;
+using Elsa.Studio.ExternalAuthentication.Services;
+using Elsa.Studio.Localization;
+using Elsa.Studio.Services;
+using Elsa.Studio.Testing;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.Extensions.DependencyInjection;
+using MudBlazor;
+using MudBlazor.Services;
+using Xunit;
+using LoginPage = Elsa.Studio.Authentication.UI.Pages.Login;
+
+namespace Elsa.Studio.ExternalAuthentication.Tests.Login;
+
+public sealed class LoginChooserTests : BunitContext, IAsyncLifetime
+{
+    public LoginChooserTests()
+    {
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        Services.AddMudServices();
+        Services.AddAuthenticationUI();
+        Services.AddSingleton<IBrandingProvider, DefaultBrandingProvider>();
+        Services.AddSingleton<IClientInformationProvider, StaticClientInformationProvider>();
+        Services.AddSingleton<ILocalizer, TestLocalizer>();
+        JSInterop.SetupVoid("mudKeyInterceptor.connect", _ => true).SetVoidResult();
+    }
+
+    Task IAsyncLifetime.InitializeAsync() => Task.CompletedTask;
+    async Task IAsyncLifetime.DisposeAsync() => await base.DisposeAsync();
+
+    [Fact]
+    public void Ordering_IsStableAcrossLocalAndExternalMethods()
+    {
+        var methods = LoginMethodChooserState.Order(
+        [
+            Method("z", "Zulu", "external", 10),
+            Method("local", "Elsa account", "local", 0),
+            Method("a", "Alpha", "external", 10)
+        ]);
+
+        Assert.Equal(["local", "a", "z"], methods.Select(method => method.Key));
+    }
+
+    [Fact]
+    public void PreferredMethod_IsVisualOnlyAndNeverStartsAutomatically()
+    {
+        var coordinator = Register(new(
+            [Method("contoso", "Contoso", "external", 0, isDefault: true)],
+            "contoso"));
+
+        var cut = RenderLoginPage();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("Preferred", cut.Markup);
+            Assert.Contains("Sign in with Contoso", cut.Markup);
+        });
+        Assert.Equal(0, coordinator.ExternalBegins);
+    }
+
+    [Fact]
+    public void ExternalMethods_RenderAsAThemeableProviderList()
+    {
+        Register(new(
+        [
+            Method("general", "General", "external", 0, isDefault: true, iconId: "building"),
+            Method("workforce", "Workforce", "external", 1, iconId: "microsoft")
+        ], "general"));
+
+        var cut = RenderLoginPage();
+
+        cut.WaitForAssertion(() =>
+        {
+            var list = cut.Find(".elsa-login-panel__external-methods");
+            var rows = list.QuerySelectorAll(".elsa-login-panel__method--external");
+
+            Assert.Equal(2, rows.Length);
+            Assert.All(rows, row => Assert.NotNull(row.QuerySelector("button.elsa-login-method-button")));
+            Assert.Contains("Preferred", rows[0].TextContent);
+            Assert.Equal(
+                "Sign in with General",
+                rows[0].QuerySelector("button")?.GetAttribute("aria-label"));
+            Assert.Equal(
+                "Sign in with Workforce",
+                rows[1].QuerySelector("button")?.GetAttribute("aria-label"));
+        });
+    }
+
+    [Fact]
+    public void TrustedIconRegistry_UsesOnlyRegistrationsAndFallsBackSafely()
+    {
+        var registry = new LoginMethodIconRegistry([new BuiltInLoginMethodIconProvider()]);
+
+        Assert.Equal("GitHub", registry.Resolve("github").AccessibleName);
+        Assert.Equal("Identity provider", registry.Resolve("https://untrusted.example/icon.svg").AccessibleName);
+    }
+
+    [Theory]
+    [MemberData(nameof(LocalReturnPathCorpus.Cases), MemberType = typeof(LocalReturnPathCorpus))]
+    public void InvalidReturnPaths_AreNeverForwarded(string? candidate, string expected) =>
+        Assert.Equal(expected, LocalReturnPath.Normalize(candidate));
+
+    [Fact]
+    public void Chooser_RendersTextFirstLocalAndExternalMethods()
+    {
+        Register(new(
+            [Method("local", "Elsa account", "local", 0), Method("github", "GitHub", "external", 1)],
+            null));
+
+        var cut = RenderLoginPage();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("Elsa account", cut.Markup);
+            Assert.Contains("Sign in with GitHub", cut.Markup);
+            Assert.Contains("aria-label=\"Sign in with GitHub\"", cut.Markup);
+        });
+    }
+
+    [Fact]
+    public void ServerLocalMethod_UsesStyledFieldsWithoutChangingThePostContract()
+    {
+        Services.AddSingleton<IExternalAuthenticationAntiforgeryTokenProvider>(
+            new FakeAntiforgeryTokenProvider(new("__RequestVerificationToken", "antiforgery-token")));
+        Register(
+            new([Method("local", "Elsa account", "local", 0)], null),
+            localLoginAction: "/authentication/external/local-login");
+
+        var cut = RenderLoginPage();
+
+        cut.WaitForAssertion(() =>
+        {
+            var form = cut.Find("form[action='/authentication/external/local-login']");
+            Assert.Equal("post", form.GetAttribute("method"));
+            Assert.NotNull(form.QuerySelector("input[name='__RequestVerificationToken'][value='antiforgery-token']"));
+            Assert.NotNull(form.QuerySelector("input[name='returnPath'][value='/']"));
+            Assert.Equal(2, form.QuerySelectorAll(".mud-input-control").Length);
+            Assert.NotNull(form.QuerySelector("input[name='username'][autocomplete='username']"));
+            Assert.NotNull(form.QuerySelector("input[name='password'][type='password'][autocomplete='current-password']"));
+            Assert.All(cut.FindComponents<MudTextField<string>>(), field =>
+            {
+                Assert.Equal(Variant.Outlined, field.Instance.Variant);
+                Assert.Equal(Margin.Dense, field.Instance.Margin);
+            });
+        });
+    }
+
+    [Fact]
+    public void MethodFailure_ReturnsToChooserWithSafeError()
+    {
+        Register(
+            new([Method("contoso", "Contoso", "external", 0)], null),
+            throwExternal: true);
+
+        var cut = RenderLoginPage();
+        cut.WaitForAssertion(() => Assert.Contains("Sign in with Contoso", cut.Markup));
+        cut.Find("button[aria-label='Sign in with Contoso']").Click();
+
+        cut.WaitForAssertion(() =>
+            Assert.Contains("selected sign-in method is unavailable", cut.Markup, StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void ExternalMethod_ShowsBusyStateWhileSignInStartsAndRecoversAfterFailure()
+    {
+        var coordinator = Register(new([Method("contoso", "Contoso", "external", 0)], null));
+        var signIn = coordinator.HoldSignIn();
+
+        var cut = RenderLoginPage();
+        cut.WaitForAssertion(() => Assert.Contains("Sign in with Contoso", cut.Markup));
+        cut.Find(ContosoButton).Click();
+
+        cut.WaitForAssertion(() => AssertBusy(cut.Find(ContosoButton), "Signing in with Contoso…"));
+        Assert.Equal(1, coordinator.ExternalBegins);
+
+        signIn.SetException(new InvalidOperationException());
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("selected sign-in method is unavailable", cut.Find("[role='alert']").TextContent, StringComparison.OrdinalIgnoreCase);
+            AssertIdle(cut.Find(ContosoButton), "Contoso");
+        });
+    }
+
+    [Fact]
+    public void BrowserLocalMethod_DisablesTheFormWhileSigningInAndRecoversAfterFailure()
+    {
+        var coordinator = Register(new([Method("local", "Elsa account", "local", 0)], null));
+        var signIn = coordinator.HoldSignIn();
+
+        var cut = RenderLoginPage();
+        FillCredentials(cut);
+        cut.Find(LocalSignInButton).Click();
+
+        cut.WaitForAssertion(() =>
+        {
+            AssertBusy(cut.Find(LocalSignInButton), "Signing in…");
+            Assert.All(cut.FindAll("input"), input => Assert.True(input.HasAttribute("disabled")));
+        });
+        Assert.Equal(1, coordinator.LocalBegins);
+
+        signIn.SetException(new InvalidOperationException());
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("Sign-in failed", cut.Find("[role='alert']").TextContent, StringComparison.OrdinalIgnoreCase);
+            AssertIdle(cut.Find(LocalSignInButton), "Sign in");
+            Assert.All(cut.FindAll("input"), input => Assert.False(input.HasAttribute("disabled")));
+        });
+    }
+
+    [Theory]
+    [InlineData(UserNameField)]
+    [InlineData(PasswordField)]
+    public void BrowserLocalMethod_StartsSignInWhenEnterIsPressedInEitherField(int field)
+    {
+        var coordinator = Register(new([Method("local", "Elsa account", "local", 0)], null));
+        coordinator.HoldSignIn();
+
+        var cut = RenderLoginPage();
+        FillCredentials(cut);
+        cut.FindAll("input")[field].KeyDown(Key.Enter);
+
+        cut.WaitForAssertion(() => AssertBusy(cut.Find(LocalSignInButton), "Signing in…"));
+        Assert.Equal(1, coordinator.LocalBegins);
+    }
+
+    [Fact]
+    public void BrowserLocalMethod_IgnoresEnterWhileSigningIn()
+    {
+        var coordinator = Register(new([Method("local", "Elsa account", "local", 0)], null));
+        var signIn = coordinator.HoldSignIn();
+
+        var cut = RenderLoginPage();
+        FillCredentials(cut);
+        cut.Find(LocalSignInButton).Click();
+        cut.WaitForAssertion(() => AssertBusy(cut.Find(LocalSignInButton), "Signing in…"));
+
+        cut.FindAll("input")[PasswordField].KeyDown(Key.Enter);
+
+        // A second request would reach the coordinator after the form validates, so let the first one finish before counting.
+        signIn.SetException(new InvalidOperationException());
+        cut.WaitForAssertion(() => AssertIdle(cut.Find(LocalSignInButton), "Sign in"));
+        Assert.Equal(1, coordinator.LocalBegins);
+    }
+
+    [Fact]
+    public void LocalSignInFailureFromTheServer_IsPresentedWhileKeepingMethodsAvailableForRetry()
+    {
+        Register(new(
+        [
+            Method("local", "Elsa account", "local", 0),
+            Method("contoso", "Contoso", "external", 1)
+        ], null));
+        Services.GetRequiredService<NavigationManager>().NavigateTo("/login?choose=true&error=sign_in_failed");
+
+        var cut = RenderLoginPage();
+
+        cut.WaitForAssertion(() =>
+        {
+            var error = cut.Find("[role='alert']");
+            Assert.Contains("Sign-in failed", error.TextContent, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("Elsa account", cut.Markup);
+            Assert.NotNull(cut.Find("button[aria-label='Sign in with Contoso']"));
+        });
+    }
+
+    [Fact]
+    public void ExternalSignInFailureFromTheServer_IsPresentedWhileKeepingOtherMethodsAvailable()
+    {
+        Register(new(
+        [
+            Method("contoso", "Contoso", "external", 0),
+            Method("github", "GitHub", "external", 1)
+        ], null));
+        Services.GetRequiredService<NavigationManager>().NavigateTo("/login?choose=true&error=external_sign_in_failed");
+
+        var cut = RenderLoginPage();
+
+        cut.WaitForAssertion(() =>
+        {
+            var error = cut.Find("[role='alert']");
+            Assert.Contains("External sign-in failed", error.TextContent, StringComparison.OrdinalIgnoreCase);
+            Assert.NotNull(cut.Find("button[aria-label='Sign in with GitHub']"));
+        });
+    }
+
+    [Fact]
+    public void NoMethods_ShowsSafeUnavailableState()
+    {
+        Register(new([], null));
+
+        var cut = RenderLoginPage();
+
+        cut.WaitForAssertion(() => Assert.Contains("No sign-in methods are currently available", cut.Markup));
+    }
+
+    [Fact]
+    public void SecurityWarning_IsVisibleWhenConfigured()
+    {
+        Register(
+            new([Method("contoso", "Contoso", "external", 0)], null),
+            securityWarning: "Credentials are stored in this browser.");
+
+        var cut = RenderLoginPage();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Contains("Credentials are stored in this browser.", cut.Markup);
+            Assert.Contains("role=\"status\"", cut.Markup);
+        });
+    }
+
+    [Fact]
+    public void Chooser_UsesNamedLandmarkAndTrustedFallback()
+    {
+        Register(new(
+        [
+            Method("contoso", "Contoso", "external", 2, iconId: "https://untrusted.example/icon.svg")
+        ], null));
+
+        var cut = RenderLoginPage();
+
+        cut.WaitForAssertion(() =>
+        {
+            Assert.Equal("elsa-login-heading", cut.Find("main").GetAttribute("aria-labelledby"));
+            Assert.Contains("Sign in with Contoso", cut.Markup);
+            Assert.DoesNotContain("https://untrusted.example", cut.Markup, StringComparison.Ordinal);
+        });
+    }
+
+    private FakeCoordinator Register(
+        LoginMethodsResponse response,
+        bool throwExternal = false,
+        string? securityWarning = null,
+        string? localLoginAction = null)
+    {
+        var coordinator = new FakeCoordinator(response, throwExternal, securityWarning, localLoginAction);
+        Services.AddSingleton<IExternalAuthenticationLoginCoordinator>(coordinator);
+        Services.AddScoped<ILoginMethodCatalog, ExternalAuthenticationLoginMethodCatalog>();
+        Services.AddSingleton<ILoginMethodComponentRegistry>(
+            new LoginMethodComponentRegistry(
+            [
+                new ExternalLoginMethodComponentProvider(),
+                new BrokerLocalLoginMethodComponentProvider()
+            ]));
+        Services.AddSingleton<ILoginMethodIconRegistry>(
+            new LoginMethodIconRegistry([new BuiltInLoginMethodIconProvider()]));
+        return coordinator;
+    }
+
+    private const string ContosoButton = "button[aria-label='Sign in with Contoso']";
+    private const string LocalSignInButton = "button.mud-button-filled";
+    private const int UserNameField = 0;
+    private const int PasswordField = 1;
+
+    private static void FillCredentials(IRenderedComponent<LoginPage> cut)
+    {
+        cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll("input").Count));
+        cut.FindAll("input")[UserNameField].Input("alice");
+        cut.FindAll("input")[PasswordField].Input("secret");
+    }
+
+    private static void AssertBusy(IElement button, string busyText)
+    {
+        Assert.True(button.HasAttribute("disabled"));
+        Assert.Equal("true", button.GetAttribute("aria-busy"));
+        Assert.Contains(busyText, button.TextContent);
+        Assert.NotNull(button.QuerySelector(".mud-progress-circular"));
+    }
+
+    private static void AssertIdle(IElement button, string label)
+    {
+        Assert.False(button.HasAttribute("disabled"));
+        Assert.Equal("false", button.GetAttribute("aria-busy"));
+        Assert.Equal(label, button.TextContent.Trim());
+        Assert.Null(button.QuerySelector(".mud-progress-circular"));
+    }
+
+    private IRenderedComponent<LoginPage> RenderLoginPage()
+    {
+        Render<MudPopoverProvider>();
+        var page = Render<LoginPage>();
+        page.FindComponent<LoginThemeHost>().WaitForElement("main");
+        return page;
+    }
+
+    private static LoginMethodDescriptor Method(
+        string key,
+        string name,
+        string kind,
+        int order,
+        bool isDefault = false,
+        string iconId = "github") =>
+        new(key, key, kind, name, iconId, order, isDefault, $"/external-authentication/authorize/{key}");
+
+    private sealed class FakeCoordinator(
+        LoginMethodsResponse response,
+        bool throwExternal = false,
+        string? securityWarning = null,
+        string? localLoginAction = null) : IExternalAuthenticationLoginCoordinator
+    {
+        public int ExternalBegins { get; private set; }
+        public int LocalBegins { get; private set; }
+        private TaskCompletionSource? _pendingSignIn;
+        public string? SecurityWarning => securityWarning;
+        public string? LocalLoginAction => localLoginAction;
+
+        public ValueTask<LoginMethodsResponse> DiscoverAsync(CancellationToken cancellationToken = default) =>
+            ValueTask.FromResult(response);
+
+        /// <summary>Keeps every subsequent sign-in outstanding until the returned source is completed.</summary>
+        public TaskCompletionSource HoldSignIn() =>
+            _pendingSignIn = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task BeginExternalAsync(
+            LoginMethodDescriptor method,
+            string returnPath,
+            CancellationToken cancellationToken = default)
+        {
+            ExternalBegins++;
+            if (_pendingSignIn is not null)
+                return _pendingSignIn.Task;
+            return throwExternal ? Task.FromException(new InvalidOperationException()) : Task.CompletedTask;
+        }
+
+        public Task BeginLocalAsync(
+            string username,
+            string password,
+            string returnPath,
+            CancellationToken cancellationToken = default)
+        {
+            LocalBegins++;
+            return _pendingSignIn?.Task ?? Task.CompletedTask;
+        }
+    }
+
+    private sealed class FakeAntiforgeryTokenProvider(ExternalAuthenticationAntiforgeryToken token) : IExternalAuthenticationAntiforgeryTokenProvider
+    {
+        public ExternalAuthenticationAntiforgeryToken GetToken() => token;
+    }
+
+}

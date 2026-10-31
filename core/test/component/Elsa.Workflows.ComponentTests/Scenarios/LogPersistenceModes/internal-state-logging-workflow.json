@@ -1,0 +1,122 @@
+{
+  "id": "d2b9f7e15a8c3b04",
+  "definitionId": "internal-state-logging-workflow",
+  "name": "Internal State Logging Workflow",
+  "createdAt": "2026-09-13T20:00:00+00:00",
+  "version": 1,
+  "toolVersion": "3.9.0.0",
+  "variables": [],
+  "inputs": [],
+  "outputs": [],
+  "outcomes": [],
+  "customProperties": {
+    "Elsa:WorkflowContextProviderTypes": [],
+    "logPersistenceConfig": {
+      "default": {
+        "evaluationMode": "Strategy",
+        "strategyType": "Elsa.Workflows.LogPersistence.Strategies.Exclude, Elsa.Workflows.Core",
+        "expression": null
+      },
+      "internalState": {
+        "evaluationMode": "Strategy",
+        "strategyType": "Elsa.Workflows.LogPersistence.Strategies.Include, Elsa.Workflows.Core",
+        "expression": null
+      }
+    }
+  },
+  "isReadonly": false,
+  "isSystem": false,
+  "isLatest": true,
+  "isPublished": true,
+  "options": {
+    "autoUpdateConsumingWorkflows": false
+  },
+  "root": {
+    "type": "Elsa.Flowchart",
+    "version": 1,
+    "id": "e5c32d9f0b7e4168",
+    "nodeId": "Workflow1:e5c32d9f0b7e4168",
+    "metadata": {},
+    "customProperties": {
+      "source": "FlowchartJsonConverter.cs:45",
+      "notFoundConnections": [],
+      "canStartWorkflow": false,
+      "runAsynchronously": false
+    },
+    "activities": [
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Inherits workflow internal state include"
+          }
+        },
+        "id": "c13e5a9d7f426b30",
+        "nodeId": "Workflow1:e5c32d9f0b7e4168:c13e5a9d7f426b30",
+        "name": "WriteLine1",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 0,
+              "y": 0
+            }
+          }
+        }
+      },
+      {
+        "text": {
+          "typeName": "String",
+          "expression": {
+            "type": "Literal",
+            "value": "Overrides workflow internal state to exclude"
+          }
+        },
+        "id": "d24f6b0e8a537c41",
+        "nodeId": "Workflow1:e5c32d9f0b7e4168:d24f6b0e8a537c41",
+        "name": "WriteLine2",
+        "type": "Elsa.WriteLine",
+        "version": 1,
+        "customProperties": {
+          "logPersistenceConfig": {
+            "internalState": {
+              "evaluationMode": "Strategy",
+              "strategyType": "Elsa.Workflows.LogPersistence.Strategies.Exclude, Elsa.Workflows.Core",
+              "expression": null
+            },
+            "inputs": {},
+            "outputs": {}
+          },
+          "canStartWorkflow": false,
+          "runAsynchronously": false
+        },
+        "metadata": {
+          "designer": {
+            "position": {
+              "x": 220,
+              "y": 0
+            }
+          }
+        }
+      }
+    ],
+    "connections": [
+      {
+        "source": {
+          "activity": "c13e5a9d7f426b30",
+          "port": "Done"
+        },
+        "target": {
+          "activity": "d24f6b0e8a537c41",
+          "port": "In"
+        }
+      }
+    ]
+  }
+}

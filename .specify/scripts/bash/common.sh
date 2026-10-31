@@ -61,7 +61,7 @@ get_current_branch() {
     fi
 
     # For non-git repos, try to find the latest feature directory
-    local specs_dir="$repo_root/specs"
+    local specs_dir="$repo_root/core/docs/specs"
 
     if [[ -d "$specs_dir" ]]; then
         local latest_feature=""
@@ -212,7 +212,7 @@ find_feature_dir_by_prefix() {
     local repo_root="$1"
     local branch_name
     branch_name=$(spec_kit_effective_branch_name "$2")
-    local specs_dir="$repo_root/specs"
+    local specs_dir="$repo_root/core/docs/specs"
 
     # Extract prefix from branch (e.g., "004" from "004-whatever" or "20260319-143022" from timestamp branches)
     local prefix=""

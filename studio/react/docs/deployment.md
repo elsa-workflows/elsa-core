@@ -1,0 +1,108 @@
+# Deploy the React Studio Preview
+
+The Vite SPA is served by ASP.NET Core and calls the Elsa API from the browser.
+This opt-in frontend targets 3.11.0 Preview; the Blazor Studio remains the default.
+
+## Standalone host
+
+From `studio/react/`:
+
+```sh
+pnpm install --frozen-lockfile
+pnpm build
+dotnet publish dotnet/Elsa.ReactStudio.Server -c Release -o artifacts/server
+dotnet artifacts/server/Elsa.ReactStudio.Server.dll --urls http://0.0.0.0:8080
+```
+
+For local production preview, run `pnpm build && pnpm preview` and open
+`http://127.0.0.1:4173/studio-preview/`. The preview command builds/runs the ASP.NET
+host so that the production import map, feature manifest and module assets are
+served together. It requires .NET SDK 10 as well as Node/pnpm.
+
+The default mount is `/studio-preview`. Set `ReactStudio:Path` in host configuration
+or pass `--ReactStudio:Path=/` for a dedicated site. The host writes the HTML base
+per request, so the same frontend build supports either mount and deep-link reloads.
+The published configuration file is loaded on every configuration request. Set
+`STUDIO_CONFIG_PATH` to an external file to replace it without publishing again.
+
+## Docker
+
+Build from the repository root:
+
+```sh
+docker build -f studio/react/Dockerfile -t elsa-react-studio:preview .
+docker run --rm -p 8080:8080 \
+  -e STUDIO_SERVER_URL=https://elsa.example.com/elsa/api \
+  -e STUDIO_FEATURES=labels,secrets,security,user-tasks \
+  elsa-react-studio:preview
+```
+
+The image builds the frontend with a frozen lockfile, embeds its assets in the host,
+and runs the ASP.NET runtime on port 8080 as its supplied non-root app user. Node.js
+is needed only in the build stage.
+
+When a build network uses a private certificate authority, pass its trusted CA bundle
+with `docker build --secret id=build-ca,src=/path/to/ca-bundle.crt` along with the
+build arguments above. The optional secret is used only during dependency installation
+and compilation; it is not copied into the image. TLS verification remains enabled.
+
+To supply a complete runtime configuration:
+
+```sh
+docker run --rm -p 8080:8080 \
+  -v "$PWD/studio.config.json:/app/studio.config.json:ro" \
+  elsa-react-studio:preview
+```
+
+`STUDIO_CONFIG` and the existing `STUDIO_*` overrides are also supported. Every
+configuration value is browser-visible. See [Configuration](configuration.md).
+
+## Paired development containers
+
+From the repository root:
+
+```sh
+docker compose -f studio/react/compose.yaml up --build -d
+```
+
+Open `http://localhost:5201/studio-preview/`. The reference backend is at
+`http://localhost:5001/elsa/api`; use its existing Development account
+`admin` / `password`. Both ports bind only to loopback. This example deliberately
+uses the reference host's development identity and permissive CORS policy; use
+your own authentication, signing keys and CORS policy for a deployed service.
+SQLite data persists in the `server-data` volume across restarts.
+
+Set `ELSA_REACT_STUDIO_VERSION` to pass a preview/release version to the Studio
+image build (default `3.11.0`). Set `ELSA_SERVER_PORT` or `ELSA_STUDIO_PORT` before starting to change the ports.
+The API URL uses the published host port because requests come from the browser.
+The Studio starts independently of API readiness; wait for the server's startup
+log if the first sign-in request arrives while migrations are running.
+
+To use prebuilt images, set `ELSA_SERVER_IMAGE` and `ELSA_REACT_STUDIO_IMAGE` to
+matching approved version tags, then run `docker compose -f studio/react/compose.yaml
+up --no-build -d`. The local image names are the defaults until publication; the
+[release guide](release.md) describes the intended registry and approval gates.
+Use `docker compose -f studio/react/compose.yaml down` to stop the pair; add `-v`
+only when you intend to discard the sample database.
+
+## Backend and reverse proxy requirements
+
+The configured API URL must be reachable from the user's browser. For separate
+origins, allow the Studio origin, required methods, `Authorization`, `Content-Type`
+and `X-Tenant-Id` in the backend's CORS policy. Use HTTPS for the API when the Studio
+uses HTTPS. Match the Studio authentication provider to the backend.
+
+For OIDC and Elsa External Authentication, default callback and logout URLs include
+the Studio mount. Explicit configured redirect URIs take precedence. Register the
+complete callback URI with the identity provider.
+
+Forward the entire mount to ASP.NET, including deep links and `studio-config`, and
+forward `/_content/Elsa.ReactStudio.*/` for versioned host and feature JS/CSS. A proxy that preserves
+a site prefix must configure ASP.NET's `PathBase` before mapping the endpoints.
+Do not cache HTML or runtime configuration; versioned assets are immutable.
+
+For same-origin Core hosting and server-side module selection, see
+[feature packages and hosting](feature-packages.md).
+
+Workflow data lives in the Elsa server; browser preferences live in local storage.
+Optional module visibility still depends on configuration and backend capabilities.

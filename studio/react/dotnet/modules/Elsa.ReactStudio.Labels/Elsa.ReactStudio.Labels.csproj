@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <PropertyGroup>
+    <PackageId>Elsa.ReactStudio.Labels</PackageId>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../Elsa.ReactStudio.Host/Elsa.ReactStudio.Host.csproj" />
+    <EmbeddedResource Include="wwwroot/**/*" LogicalName="ReactStudio.Module/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+  <Target Name="RequireModuleAssets" BeforeTargets="GenerateNuspec">
+    <Error Condition="!Exists('wwwroot/entry.js') Or !Exists('wwwroot/module.css')" Text="Build the React Studio workspace first: cd studio/react and run pnpm build." />
+  </Target>
+</Project>

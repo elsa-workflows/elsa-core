@@ -1,0 +1,89 @@
+{
+  "fixtureOnlyProjectReference": {
+    "mapping": "Sibling Core reference rewritten only in disposable test source to the supplied pinned Core project",
+    "sourceProjectSha256": "7821f2624f0a457539d67a055b528dae90714c3005ecefff33eaaef4b213639e"
+  },
+  "limitations": [
+    "This is a focused net10.0 mapped-source compatibility proof, not the actual history-preserving import.",
+    "It does not establish full solution or net8.0/net9.0 test results, SourceLink identity, release packaging, or publisher behavior.",
+    "The disposable Extensions copy receives one fixture-only absolute Core ProjectReference mapping; upstream source and patch do not contain it."
+  ],
+  "patch": {
+    "bytes": 23680,
+    "path": "scripts/integration-program/github-activity-id-compatibility/extensions-v2.patch",
+    "sha256": "cc75ee242495cb9714840059b7eb62b0be7646fa99466b453451cc55d932640f"
+  },
+  "pins": {
+    "core": "6f493809eae0e1652ca185b901a982984f4ef799",
+    "extensions": "33fa0bfd28c7585240e3d4f665058c067b17e287"
+  },
+  "schemaVersion": 1,
+  "scope": "Mapped Extensions source patch and focused local activity identity tests; no package publication",
+  "status": "passed",
+  "test": {
+    "cacheIsolation": {
+      "dotnetCliHome": "dotnet-home",
+      "nugetHttpCache": "nuget-http-cache",
+      "nugetPackages": "nuget-packages"
+    },
+    "command": [
+      "$DOTNET",
+      "test",
+      "<patched-extension>/test/modules/devops/Elsa.DevOps.GitHub.UnitTests/Elsa.DevOps.GitHub.UnitTests.csproj",
+      "--framework",
+      "net10.0",
+      "-p:UseProjectReferences=true",
+      "--logger",
+      "trx;LogFileName=github-activity-id.trx"
+    ],
+    "counters": {
+      "aborted": 0,
+      "completed": 0,
+      "disconnected": 0,
+      "error": 0,
+      "executed": 6,
+      "failed": 0,
+      "inProgress": 0,
+      "inconclusive": 0,
+      "notExecuted": 0,
+      "notRunnable": 0,
+      "passed": 6,
+      "passedButRunAborted": 0,
+      "pending": 0,
+      "timeout": 0,
+      "total": 6,
+      "warning": 0
+    },
+    "dotnetResolved": true,
+    "exitCode": 0,
+    "expectedCount": 6,
+    "framework": "net10.0",
+    "logPath": "net10-dotnet-test.log",
+    "logSha256": "9d3392c5e3aba1bd6019a4cf06367a50e5704017c4ad9e69d51e494f10c4ae84",
+    "outcomes": [
+      "Passed",
+      "Passed",
+      "Passed",
+      "Passed",
+      "Passed",
+      "Passed"
+    ],
+    "passed": true,
+    "seededPackage": {
+      "id": "elsa.platform.packagemanifest.generator",
+      "nupkgSha256": "56310f3c6606c793bce875f0dee5746dc5f42721d0cbbfde5fa3c4b61e6f15aa",
+      "source": "Explicit local artifact; NuGet feed provenance is not independently verified by this replay",
+      "version": "0.0.1-preview.50"
+    },
+    "testNames": [
+      "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.BothActivitySerializerEntryPointsRoundTripFourRootActivitiesWithoutIdCollisions",
+      "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.FourReleasedV1ShapesRetainTheirProviderInputsAndVersionlessPayloadIsRejectedByLatestV2Dispatch",
+      "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.WorkflowDefinitionModelUsesRootActivityShapeAndCanEmitMigrationFixture",
+      "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.V2ActivitiesKeepTheirLogicalNameAndVersionForDirectAndDescriptorConstruction",
+      "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.UnaffectedNeighboringGitHubActivitiesKeepTheirExistingContracts",
+      "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.BothActivitySerializerEntryPointsRoundTripActivitiesNestedInSequence"
+    ],
+    "trxPath": "net10-results/github-activity-id.trx",
+    "trxSha256": "2d8b08c586a7f2cb4883e78d8d1036bd66283e3840c6b4e7658678bba519a44e"
+  }
+}

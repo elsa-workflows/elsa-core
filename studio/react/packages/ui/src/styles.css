@@ -1,0 +1,6 @@
+@import "tailwindcss" source(none);
+@import "tw-animate-css";
+@import "./shadcn.css";
+@import "./tokens.css";
+@source "./**/*.{ts,tsx}";
+@source "../dist/**/*.js";

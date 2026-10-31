@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Adapts the GitHub Copilot SDK and headless CLI to Elsa AI provider contracts.
+        </Description>
+        <PackageTags>elsa module ai copilot</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="GitHub.Copilot.SDK" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" VersionOverride="10.0.9" />
+        <PackageReference Include="Microsoft.Extensions.Options" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.AI.Abstractions\Elsa.AI.Abstractions.csproj" />
+        <ProjectReference Include="..\Elsa.AI.Host\Elsa.AI.Host.csproj" />
+    </ItemGroup>
+
+</Project>

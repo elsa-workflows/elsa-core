@@ -1,0 +1,71 @@
+@using Variant = MudBlazor.Variant
+@using Elsa.Studio.Workflows.Models
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+<style>
+    /* Required to resolve an issue where double clicking a parent tree node causes all childeren to be selected during drag and drop. */
+    .mud-treeview, .mud-treeview * {
+        -webkit-touch-callout: none !important;
+        -webkit-user-select: none !important;
+        -khtml-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+    }
+</style>
+
+<MudTabs Elevation="0" ApplyEffectsToContainer="true">
+    <MudTabPanel Text="@Localizer["Activities"]">
+        <Well>
+            <MudStack>
+                <MudStack Row="true" AlignItems="MudBlazor.AlignItems.Center">
+                    <MudTextField T="string"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Adornment="Adornment.End"
+                                  Label="@Localizer["Search"]"
+                                  AdornmentIcon="@Icons.Material.Filled.Search"
+                                  TextChanged="OnTextChanged"
+                                  Immediate="true"
+                                  Clearable="true" >
+                        
+                    </MudTextField>
+                    <MudTooltip Text="@(_expanded ? "Collapse All" : "Expand All")">
+                        <MudIconButton Icon="@(_expanded? Icons.Material.Filled.KeyboardArrowUp : Icons.Material.Filled.KeyboardArrowDown)"
+                                       onclick="OnExpandClicked"
+                                       Size="Size.Medium" />
+                    </MudTooltip>
+                </MudStack>
+                <div style="@($"overflow-y: scroll; max-height: calc(100vh - var(--mud-appbar-height) - 150px);")">
+                    <MudTreeView @ref="_treeView"
+                                 Items="@_treeItemData"
+                                 FilterFunc="@(x => MatchesName((ActivityTreeItem)x))"
+                                 SelectionMode="SelectionMode.SingleSelection"
+                                 ExpandOnClick="true"
+                                 Dense="true">
+                        <ItemTemplate>
+                            @{
+                                var item = (ActivityTreeItem)context;
+                            }
+                            <MudTreeViewItem Text="@(Localizer[item.Text ?? string.Empty])"
+                                             Icon="@(item.IconWithColor)"
+                                             Visible="@item.Visible"
+                                             Items="@item.Children"
+                                             title="@(item.ActivityDescriptor?.Description is { } description ? Localizer[description] : "")"
+                                             @bind-Expanded="@item.Expanded"
+                                             draggable="@(item.ActivityDescriptor is not null ? "true" : "false")"
+                                             @ondragstart="@(() => {
+                                                 if (item.ActivityDescriptor is not null)
+                                                 {
+                                                     OnDragStart(item.ActivityDescriptor);
+                                                 }
+                                             })">
+                            </MudTreeViewItem>
+                        </ItemTemplate>
+                    </MudTreeView>
+                </div>
+            </MudStack>
+        </Well>
+    </MudTabPanel>
+</MudTabs>

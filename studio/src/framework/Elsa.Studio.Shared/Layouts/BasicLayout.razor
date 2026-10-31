@@ -1,0 +1,15 @@
+﻿@inherits LayoutComponentBase
+@using Radzen.Blazor
+
+<MudThemeProvider/>
+<MudSnackbarProvider />
+<MudPopoverProvider />
+<MudDialogProvider/>
+
+<RadzenTheme Theme="material" />
+
+<RadzenLayout>
+    <RadzenBody Style="padding: 0px">
+        @Body
+    </RadzenBody>
+</RadzenLayout>

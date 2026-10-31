@@ -1,0 +1,51 @@
+{
+  "sourceCommits": {
+    "core": "22f479d423975cf5d35f12fa5204b6597764d06b",
+    "extensions": "33fa0bfd28c7585240e3d4f665058c067b17e287",
+    "studio": "9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822"
+  },
+  "targetFramework": "net10.0",
+  "sourcePatch": {
+    "path": "src/modules/workflows/Elsa.Studio.WorkflowContexts/_Imports.razor",
+    "removedLine": "@using Blazored.FluentValidation",
+    "beforeSha256": "e4cf8edf64845dfca36a1f4ce3def9b4d8a6bb1b5d820eb3f513881bc0f1ee5a",
+    "afterSha256": "bd0212b18c9950a518d1de5fc89aeb81c2757823f4a6edb2cb89904f2f576869"
+  },
+  "result": {
+    "expected": "Elsa.WorkflowContexts",
+    "features": [
+      "Elsa.Mediator",
+      "Elsa.SystemClock",
+      "Elsa.Expressions",
+      "Elsa.DefaultFormatters",
+      "Elsa.Multitenancy",
+      "Elsa.CommitStrategies",
+      "Elsa.Workflows",
+      "Elsa.Flowchart",
+      "Elsa.WorkflowRuntime",
+      "Elsa.DefaultWorkflowRuntime",
+      "Elsa.StringCompression",
+      "Elsa.MemoryCache",
+      "Elsa.WorkflowDefinitions",
+      "Elsa.WorkflowInstances",
+      "Elsa.WorkflowManagement",
+      "Elsa.Elsa",
+      "Elsa.App",
+      "Elsa.WorkflowContexts"
+    ],
+    "featureMatches": true,
+    "httpRoundtrip": true,
+    "descriptorCount": 1,
+    "descriptorName": "Synthetic",
+    "descriptorType": "SyntheticWorkflowContextProvider, ContractProbe",
+    "providerTypeResolves": true,
+    "interactiveDebuggingVerified": false
+  },
+  "publicationPerformed": false,
+  "limitations": [
+    "Synthetic loopback identity only; production authorization not proved.",
+    "Studio provider service executes without interactive Blazor UI or debugger.",
+    "Pinned pre-consolidation sibling source layout; not a completed root solution migration."
+  ],
+  "checkedDate": "2026-09-23"
+}

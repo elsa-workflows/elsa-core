@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Expression conditions only inside subprocess bodies — one in "Outer", one in "Inner" nested inside it — and none at
+  the top level, so a refusal that only looked at the top-level process would miss both (elsa-core#8903).
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  id="Definitions_expression-condition-in-nested-subprocess"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="expression-condition-in-nested-subprocess" name="Nested Expression Condition" isExecutable="true">
+    <bpmn:startEvent id="Start_1">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:subProcess id="Outer" name="Outer">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+      <bpmn:startEvent id="Outer_Start">
+        <bpmn:outgoing>Outer_Flow_1</bpmn:outgoing>
+      </bpmn:startEvent>
+
+      <bpmn:exclusiveGateway id="Outer_Decide" default="Outer_Flow_Default">
+        <bpmn:incoming>Outer_Flow_1</bpmn:incoming>
+        <bpmn:outgoing>Outer_Flow_Cond</bpmn:outgoing>
+        <bpmn:outgoing>Outer_Flow_Default</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+
+      <bpmn:subProcess id="Inner" name="Inner">
+        <bpmn:incoming>Outer_Flow_Cond</bpmn:incoming>
+        <bpmn:outgoing>Outer_Flow_2</bpmn:outgoing>
+        <bpmn:startEvent id="Inner_Start">
+          <bpmn:outgoing>Inner_Flow_1</bpmn:outgoing>
+        </bpmn:startEvent>
+        <bpmn:exclusiveGateway id="Inner_Decide" default="Inner_Flow_Default">
+          <bpmn:incoming>Inner_Flow_1</bpmn:incoming>
+          <bpmn:outgoing>Inner_Flow_Cond</bpmn:outgoing>
+          <bpmn:outgoing>Inner_Flow_Default</bpmn:outgoing>
+        </bpmn:exclusiveGateway>
+        <bpmn:endEvent id="Inner_End_Cond">
+          <bpmn:incoming>Inner_Flow_Cond</bpmn:incoming>
+        </bpmn:endEvent>
+        <bpmn:endEvent id="Inner_End_Default">
+          <bpmn:incoming>Inner_Flow_Default</bpmn:incoming>
+        </bpmn:endEvent>
+        <bpmn:sequenceFlow id="Inner_Flow_1" sourceRef="Inner_Start" targetRef="Inner_Decide" />
+        <bpmn:sequenceFlow id="Inner_Flow_Cond" sourceRef="Inner_Decide" targetRef="Inner_End_Cond">
+          <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${approved}</bpmn:conditionExpression>
+        </bpmn:sequenceFlow>
+        <bpmn:sequenceFlow id="Inner_Flow_Default" sourceRef="Inner_Decide" targetRef="Inner_End_Default" />
+      </bpmn:subProcess>
+
+      <bpmn:endEvent id="Outer_End">
+        <bpmn:incoming>Outer_Flow_2</bpmn:incoming>
+        <bpmn:incoming>Outer_Flow_Default</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="Outer_Flow_1" sourceRef="Outer_Start" targetRef="Outer_Decide" />
+      <bpmn:sequenceFlow id="Outer_Flow_Cond" sourceRef="Outer_Decide" targetRef="Inner">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${x &gt; 1}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="Outer_Flow_Default" sourceRef="Outer_Decide" targetRef="Outer_End" />
+      <bpmn:sequenceFlow id="Outer_Flow_2" sourceRef="Inner" targetRef="Outer_End" />
+    </bpmn:subProcess>
+
+    <bpmn:endEvent id="End_1">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Outer" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Outer" targetRef="End_1" />
+  </bpmn:process>
+</bpmn:definitions>

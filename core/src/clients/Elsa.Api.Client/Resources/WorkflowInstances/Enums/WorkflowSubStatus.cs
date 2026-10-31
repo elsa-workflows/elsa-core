@@ -1,0 +1,48 @@
+namespace Elsa.Api.Client.Resources.WorkflowInstances.Enums;
+
+/// <summary>
+/// Represents the workflow sub-status.
+/// </summary>
+public enum WorkflowSubStatus
+{
+    /// <summary>
+    /// The workflow is pending execution.
+    /// </summary>
+    Pending,
+    
+    /// <summary>
+    /// The workflow is currently executing.   
+    /// </summary>
+    Executing,
+    
+    /// <summary>
+    /// The workflow is currently suspended and waiting for external stimuli to resume.   
+    /// </summary>
+    Suspended,
+    
+    /// <summary>
+    /// The workflow completed successfully.
+    /// </summary>
+    Finished,
+    
+    /// <summary>
+    /// The workflow was cancelled.
+    /// </summary>
+    Cancelled,
+    
+    /// <summary>
+    /// The workflow has faulted.
+    /// </summary>
+    Faulted,
+
+    /// <summary>
+    /// The workflow's last execution cycle was force-cancelled by the runtime during a graceful drain.
+    /// The instance is resumable and will be picked up by the runtime's shell-activation recovery scan.
+    /// </summary>
+    Interrupted,
+
+    /// <summary>
+    /// A cancellation request has been accepted and the instance is waiting for cancellation to finish.
+    /// </summary>
+    Cancelling,
+}

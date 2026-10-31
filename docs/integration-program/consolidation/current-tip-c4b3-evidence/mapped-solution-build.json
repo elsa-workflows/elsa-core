@@ -1,0 +1,117 @@
+{
+  "checkedAtUtc": "2026-09-25T01:02:49.539953+00:00",
+  "sourcePins": {
+    "core": "c4b3ce150160e3c9062b57f7b158fd6b968e1631",
+    "extensions": "ba8b71d91c15ffe5be4b2c539cf9f712e74af775",
+    "studio": "20ceaeeed7e671f0c9662003e82063026f2216de"
+  },
+  "syntheticRehearsalCommit": "cfa5e7d6d6ccc5f849163b3f6e0db651b6062b38",
+  "sdkVersion": "10.0.300",
+  "solutionProjectCount": 343,
+  "solutionSha256": "84663f74a91d7ac7f7f1ded59c4a51023c91c69c4dec2d709ed13d68fecbb6a0",
+  "builds": {
+    "baseline": {
+      "command": "dotnet build Elsa.sln -p:UseProjectReferences=true -p:IsPackable=false -p:GeneratePackageOnBuild=false -m:1",
+      "exitCode": 1,
+      "warningCount": 1919,
+      "errorCount": 4,
+      "elapsed": "00:05:11.08",
+      "rawPrivateLogSha256": "a6f8a745be1c8a58b9f443b431886bdee6ff10c7a047410cb097a9cdbe8f3406",
+      "errorScope": "Four Workbench Secrets Program.cs compiler errors only: one ambiguous UseSecrets and three missing UseEntityFrameworkCore overloads."
+    },
+    "overlaid": {
+      "command": "dotnet build Elsa.sln -p:UseProjectReferences=true -p:IsPackable=false -p:GeneratePackageOnBuild=false -m:1",
+      "exitCode": 0,
+      "warningCount": 1556,
+      "errorCount": 0,
+      "elapsed": "00:01:50.12",
+      "rawPrivateLogSha256": "9b8d8765028edb670b0f0f194f477e20eec7b7af5dea371ae7a8446a00553409",
+      "appliedOverlays": [
+        {
+          "name": "workbench-canonical-secrets.patch",
+          "sha256": "eb792ede2d40eaae72f8b6174ba920c8e1ee02e71e2506c4905737245d1c313c"
+        },
+        {
+          "name": "studio-secrets-menu.patch",
+          "sha256": "4338530b8e05aadf9479f78fd11f3c0627fcb6b54614dcba75569fcb80bea3d4"
+        },
+        {
+          "name": "studio-bpmn-generator-layout.patch",
+          "sha256": "5885fb95cd2e1ec5524f0092fdc0c0ad3ad080d1ea5cd6bec96acc25bd90522b"
+        },
+        {
+          "name": "workbench-two-tenant-multitenancy.patch",
+          "sha256": "23e4780296966fa3b80d2f3e7f3aebdd76c1c5a47bad98044ae39cb1bbae7adf"
+        },
+        {
+          "name": "workbench-secrets-route-probe.patch",
+          "sha256": "956992c32399efb9e8a0e122a54100ba54b2037843bb2b62d6e60df84778a0f7"
+        }
+      ]
+    }
+  },
+  "targetedTests": [
+    {
+      "name": "management",
+      "project": "test/unit/Elsa.Workflows.Management.UnitTests/Elsa.Workflows.Management.UnitTests.csproj",
+      "framework": "net10.0",
+      "noBuild": true,
+      "passed": 127,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0,
+      "rawPrivateLogSha256": "b12c3db9096bc4d0a43ffff9441d10dc19e523f4877356c95fbb1902535db358"
+    },
+    {
+      "name": "core-secrets",
+      "project": "test/unit/Elsa.Secrets.UnitTests/Elsa.Secrets.UnitTests.csproj",
+      "framework": "net10.0",
+      "noBuild": true,
+      "passed": 141,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0,
+      "rawPrivateLogSha256": "aa33f10d8f9c5cc86ce771f5b210cc9a96705013c0d7c4bcaf878df46e4dfa21"
+    },
+    {
+      "name": "studio-designer",
+      "project": "src/studio/modules/Elsa.Studio.Workflows.Designer.Tests/Elsa.Studio.Workflows.Designer.Tests.csproj",
+      "framework": "net10.0",
+      "noBuild": true,
+      "passed": 83,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0,
+      "rawPrivateLogSha256": "a922fa90afe09062c1a1cd064f1395646ce43a544902b16c5277ab0503ce3e60"
+    },
+    {
+      "name": "studio-secrets",
+      "project": "src/studio/modules/Elsa.Studio.Secrets.Tests/Elsa.Studio.Secrets.Tests.csproj",
+      "framework": "net10.0",
+      "noBuild": false,
+      "passed": 11,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0,
+      "rawPrivateLogSha256": "3c42cd4f6b271f0692467dd39831d2a5ce00a0d549e9840e564ed3a1836187ac"
+    },
+    {
+      "name": "studio-agents",
+      "project": "test/extensions/modules/agents/Elsa.Studio.Agents.Tests/Elsa.Studio.Agents.Tests.csproj",
+      "framework": "net10.0",
+      "noBuild": true,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "exitCode": 0,
+      "rawPrivateLogSha256": "02f75dca0f59f10823ad10959175ff55ddb889693b314ef8fa9f7efc4642062f"
+    }
+  ],
+  "studioSecretsNoBuildAttempt": "Failed because the reviewed overlay adds its test project after canonical solution preparation; a normal targeted build/test then passed 11/11. No full-solution inclusion is claimed.",
+  "mappedSolutionBuildVerifiedWithOverlays": true,
+  "canonicalImportBuilt": false,
+  "fullCombinedTestSuiteVerified": false,
+  "frontendBrowserVerified": false,
+  "releaseSourceLinkVerified": false,
+  "packagePublicationAuthorized": false
+}

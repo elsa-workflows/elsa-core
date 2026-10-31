@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <Description>Adds workflow designer Blazor components powered by JS interop with X6 and React Flow.</Description>
+        <PackageTags>elsa studio module x6 react-flow</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <SupportedPlatform Include="browser"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="wwwroot\"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="../../framework/Elsa.Studio.Core/Elsa.Studio.Core.csproj"/>
+        <ProjectReference Include="../Elsa.Studio.Workflows.Core/Elsa.Studio.Workflows.Core.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!--
+            Bpmn.Model is not referenced by any C# code here: this project never deserializes a BPMN document.
+            It is downloaded (not referenced) purely so its schema/bpmn-payload.schema.json is available on disk,
+            at a version pinned centrally like every other dependency, for ClientLib/scripts/generate-bpmn-types.js
+            to read when it regenerates src/bpmn/types.generated.ts. See that script for how the path is resolved.
+        -->
+        <PackageDownload Include="Bpmn.Model" Version="[$(BpmnModelVersion)]"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Prevents build error on GH Actions -->
+        <Content Remove="ClientLib\package-lock.json;ClientLib\package.json;ClientLib\tsconfig.json"/>
+        <!--                <None Include="ClientLib\package-lock.json;ClientLib\package.json;ClientLib\tsconfig.json">-->
+        <!--                    <CopyToOutputDirectory>Never</CopyToOutputDirectory>-->
+        <!--                    <CopyToPublishDirectory>Never</CopyToPublishDirectory>-->
+        <!--                </None>-->
+    </ItemGroup>
+
+</Project>

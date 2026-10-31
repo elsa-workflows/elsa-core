@@ -1,0 +1,565 @@
+{
+  "process": {
+    "processId": "transaction-compensation",
+    "name": "Transaction And Compensation",
+    "isExecutable": true,
+    "isTransaction": false,
+    "elements": [
+      {
+        "elementId": "Start_1",
+        "elementType": "startEvent",
+        "name": "Start",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "BookTrip",
+        "elementType": "subProcess",
+        "name": "Book Trip",
+        "bindingRef": "node-BookTrip",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": true,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "NotifyTraveller",
+        "elementType": "serviceTask",
+        "name": "Notify Traveller",
+        "bindingRef": "node-NotifyTraveller",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [
+            {
+              "name": {
+                "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                "localName": "activityBinding"
+              },
+              "attributes": [
+                {
+                  "name": {
+                    "localName": "activityType"
+                  },
+                  "value": "Elsa.WriteLine"
+                }
+              ],
+              "children": [
+                {
+                  "name": {
+                    "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                    "localName": "input"
+                  },
+                  "value": "{\u0022typeName\u0022:\u0022String\u0022,\u0022expression\u0022:{\u0022type\u0022:\u0022Literal\u0022,\u0022value\u0022:\u0022notify\u0022}}",
+                  "attributes": [
+                    {
+                      "name": {
+                        "localName": "name"
+                      },
+                      "value": "text"
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "End_Cancelled",
+        "elementType": "endEvent",
+        "name": "Trip Cancelled",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "End_1",
+        "elementType": "endEvent",
+        "name": "Trip Booked",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "BookTripCancelled",
+        "elementType": "boundaryEvent",
+        "name": "Cancelled",
+        "eventDefinitions": [
+          {
+            "type": "cancel",
+            "properties": {}
+          }
+        ],
+        "properties": {},
+        "attachedToRef": "BookTrip",
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      }
+    ],
+    "sequenceFlows": [
+      {
+        "flowId": "Flow_1",
+        "sourceRef": "Start_1",
+        "targetRef": "BookTrip",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_2",
+        "sourceRef": "BookTrip",
+        "targetRef": "End_1",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_Cancelled",
+        "sourceRef": "BookTripCancelled",
+        "targetRef": "NotifyTraveller",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_3",
+        "sourceRef": "NotifyTraveller",
+        "targetRef": "End_Cancelled",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      }
+    ],
+    "lanes": [],
+    "variables": [],
+    "extensions": {
+      "documentation": [],
+      "extensionElements": [],
+      "foreignAttributes": [],
+      "foreignChildren": []
+    }
+  },
+  "workBindings": {
+    "node-BookTrip": "transaction-compensation:node-BookTrip",
+    "node-NotifyTraveller": "transaction-compensation:node-NotifyTraveller"
+  },
+  "activities": [
+    {
+      "process": {
+        "processId": "BookTrip",
+        "name": "Book Trip",
+        "isExecutable": true,
+        "isTransaction": true,
+        "elements": [
+          {
+            "elementId": "Tx_Start",
+            "elementType": "startEvent",
+            "eventDefinitions": [],
+            "properties": {},
+            "cancelActivity": true,
+            "isForCompensation": false,
+            "isTransaction": false,
+            "triggeredByEvent": false,
+            "extensions": {
+              "documentation": [],
+              "extensionElements": [],
+              "foreignAttributes": [],
+              "foreignChildren": []
+            }
+          },
+          {
+            "elementId": "ChargeCard",
+            "elementType": "serviceTask",
+            "name": "Charge Card",
+            "bindingRef": "node-ChargeCard",
+            "eventDefinitions": [],
+            "properties": {},
+            "cancelActivity": true,
+            "isForCompensation": false,
+            "isTransaction": false,
+            "triggeredByEvent": false,
+            "extensions": {
+              "documentation": [],
+              "extensionElements": [
+                {
+                  "name": {
+                    "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                    "localName": "activityBinding"
+                  },
+                  "attributes": [
+                    {
+                      "name": {
+                        "localName": "activityType"
+                      },
+                      "value": "Elsa.WriteLine"
+                    }
+                  ],
+                  "children": [
+                    {
+                      "name": {
+                        "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                        "localName": "input"
+                      },
+                      "value": "{\u0022typeName\u0022:\u0022String\u0022,\u0022expression\u0022:{\u0022type\u0022:\u0022Literal\u0022,\u0022value\u0022:\u0022charge\u0022}}",
+                      "attributes": [
+                        {
+                          "name": {
+                            "localName": "name"
+                          },
+                          "value": "text"
+                        }
+                      ],
+                      "children": []
+                    }
+                  ]
+                }
+              ],
+              "foreignAttributes": [],
+              "foreignChildren": []
+            }
+          },
+          {
+            "elementId": "RefundCard",
+            "elementType": "serviceTask",
+            "name": "Refund Card",
+            "bindingRef": "node-RefundCard",
+            "eventDefinitions": [],
+            "properties": {},
+            "cancelActivity": true,
+            "isForCompensation": true,
+            "isTransaction": false,
+            "triggeredByEvent": false,
+            "extensions": {
+              "documentation": [],
+              "extensionElements": [
+                {
+                  "name": {
+                    "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                    "localName": "activityBinding"
+                  },
+                  "attributes": [
+                    {
+                      "name": {
+                        "localName": "activityType"
+                      },
+                      "value": "Elsa.WriteLine"
+                    }
+                  ],
+                  "children": [
+                    {
+                      "name": {
+                        "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                        "localName": "input"
+                      },
+                      "value": "{\u0022typeName\u0022:\u0022String\u0022,\u0022expression\u0022:{\u0022type\u0022:\u0022Literal\u0022,\u0022value\u0022:\u0022refund\u0022}}",
+                      "attributes": [
+                        {
+                          "name": {
+                            "localName": "name"
+                          },
+                          "value": "text"
+                        }
+                      ],
+                      "children": []
+                    }
+                  ]
+                }
+              ],
+              "foreignAttributes": [],
+              "foreignChildren": []
+            }
+          },
+          {
+            "elementId": "Tx_Cancel_End",
+            "elementType": "endEvent",
+            "name": "Cancelled",
+            "eventDefinitions": [
+              {
+                "type": "cancel",
+                "properties": {}
+              }
+            ],
+            "properties": {},
+            "cancelActivity": true,
+            "isForCompensation": false,
+            "isTransaction": false,
+            "triggeredByEvent": false,
+            "extensions": {
+              "documentation": [],
+              "extensionElements": [],
+              "foreignAttributes": [],
+              "foreignChildren": []
+            }
+          },
+          {
+            "elementId": "Tx_Decide",
+            "elementType": "exclusiveGateway",
+            "name": "Confirmed?",
+            "defaultFlowId": "Tx_Flow_2",
+            "eventDefinitions": [],
+            "properties": {},
+            "cancelActivity": true,
+            "isForCompensation": false,
+            "isTransaction": false,
+            "triggeredByEvent": false,
+            "extensions": {
+              "documentation": [],
+              "extensionElements": [],
+              "foreignAttributes": [],
+              "foreignChildren": []
+            }
+          },
+          {
+            "elementId": "Tx_End",
+            "elementType": "endEvent",
+            "name": "Booked",
+            "eventDefinitions": [],
+            "properties": {},
+            "cancelActivity": true,
+            "isForCompensation": false,
+            "isTransaction": false,
+            "triggeredByEvent": false,
+            "extensions": {
+              "documentation": [],
+              "extensionElements": [],
+              "foreignAttributes": [],
+              "foreignChildren": []
+            }
+          },
+          {
+            "elementId": "ChargeCardCompensation",
+            "elementType": "boundaryEvent",
+            "eventDefinitions": [
+              {
+                "type": "compensation",
+                "properties": {}
+              }
+            ],
+            "properties": {},
+            "attachedToRef": "ChargeCard",
+            "cancelActivity": false,
+            "isForCompensation": false,
+            "compensationHandlerElementId": "RefundCard",
+            "isTransaction": false,
+            "triggeredByEvent": false,
+            "extensions": {
+              "documentation": [],
+              "extensionElements": [],
+              "foreignAttributes": [],
+              "foreignChildren": []
+            }
+          }
+        ],
+        "sequenceFlows": [
+          {
+            "flowId": "Tx_Flow_1",
+            "sourceRef": "Tx_Start",
+            "targetRef": "ChargeCard",
+            "isDefault": false,
+            "extensions": {
+              "documentation": [],
+              "extensionElements": [],
+              "foreignAttributes": [],
+              "foreignChildren": []
+            }
+          },
+          {
+            "flowId": "Tx_Flow_2",
+            "sourceRef": "ChargeCard",
+            "targetRef": "Tx_Decide",
+            "isDefault": false,
+            "extensions": {
+              "documentation": [],
+              "extensionElements": [],
+              "foreignAttributes": [],
+              "foreignChildren": []
+            }
+          },
+          {
+            "flowId": "Tx_Flow_3",
+            "sourceRef": "Tx_Decide",
+            "targetRef": "Tx_Cancel_End",
+            "isDefault": false,
+            "extensions": {
+              "documentation": [],
+              "extensionElements": [],
+              "foreignAttributes": [],
+              "foreignChildren": []
+            }
+          },
+          {
+            "flowId": "Tx_Flow_4",
+            "sourceRef": "Tx_Decide",
+            "targetRef": "Tx_End",
+            "isDefault": false,
+            "extensions": {
+              "documentation": [],
+              "extensionElements": [],
+              "foreignAttributes": [],
+              "foreignChildren": []
+            }
+          }
+        ],
+        "lanes": [],
+        "variables": [],
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      "workBindings": {
+        "node-ChargeCard": "BookTrip:node-ChargeCard",
+        "node-RefundCard": "BookTrip:node-RefundCard"
+      },
+      "activities": [
+        {
+          "text": {
+            "typeName": "String",
+            "expression": {
+              "type": "Literal",
+              "value": "charge"
+            }
+          },
+          "id": "BookTrip:node-ChargeCard",
+          "nodeId": null,
+          "name": null,
+          "type": "Elsa.WriteLine",
+          "version": 1,
+          "customProperties": {
+            "canStartWorkflow": false,
+            "runAsynchronously": false
+          },
+          "metadata": {}
+        },
+        {
+          "text": {
+            "typeName": "String",
+            "expression": {
+              "type": "Literal",
+              "value": "refund"
+            }
+          },
+          "id": "BookTrip:node-RefundCard",
+          "nodeId": null,
+          "name": null,
+          "type": "Elsa.WriteLine",
+          "version": 1,
+          "customProperties": {
+            "canStartWorkflow": false,
+            "runAsynchronously": false
+          },
+          "metadata": {}
+        }
+      ],
+      "variables": [],
+      "id": "transaction-compensation:node-BookTrip",
+      "nodeId": null,
+      "name": null,
+      "type": "Elsa.BpmnProcess",
+      "version": 1,
+      "customProperties": {
+        "source": "BpmnWorkBinder.cs:80"
+      },
+      "metadata": {}
+    },
+    {
+      "text": {
+        "typeName": "String",
+        "expression": {
+          "type": "Literal",
+          "value": "notify"
+        }
+      },
+      "id": "transaction-compensation:node-NotifyTraveller",
+      "nodeId": null,
+      "name": null,
+      "type": "Elsa.WriteLine",
+      "version": 1,
+      "customProperties": {
+        "canStartWorkflow": false,
+        "runAsynchronously": false
+      },
+      "metadata": {}
+    }
+  ],
+  "variables": [],
+  "id": "transaction-compensation",
+  "type": "Elsa.BpmnProcess",
+  "version": 1,
+  "customProperties": {
+    "source": "BpmnWorkBinder.cs:80",
+    "canStartWorkflow": true
+  },
+  "metadata": {}
+}

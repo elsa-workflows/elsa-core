@@ -1,0 +1,238 @@
+{
+  "process": {
+    "processId": "order-process",
+    "name": "Order Process",
+    "isExecutable": true,
+    "isTransaction": false,
+    "elements": [
+      {
+        "elementId": "StartEvent_1",
+        "elementType": "startEvent",
+        "name": "Order Received",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "NotifyWarehouse",
+        "elementType": "serviceTask",
+        "name": "Notify Warehouse",
+        "bindingRef": "node-NotifyWarehouse",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [
+            {
+              "text": "Tells the warehouse an order needs picking."
+            }
+          ],
+          "extensionElements": [
+            {
+              "name": {
+                "ns": "http://camunda.org/schema/1.0/bpmn",
+                "localName": "inputOutput"
+              },
+              "attributes": [],
+              "children": [
+                {
+                  "name": {
+                    "ns": "http://camunda.org/schema/1.0/bpmn",
+                    "localName": "inputParameter"
+                  },
+                  "value": "${orderId}",
+                  "attributes": [
+                    {
+                      "name": {
+                        "localName": "name"
+                      },
+                      "value": "orderId"
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            },
+            {
+              "name": {
+                "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                "localName": "activityBinding"
+              },
+              "attributes": [
+                {
+                  "name": {
+                    "localName": "activityType"
+                  },
+                  "value": "Elsa.WriteLine"
+                }
+              ],
+              "children": [
+                {
+                  "name": {
+                    "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                    "localName": "input"
+                  },
+                  "value": "{\u0022typeName\u0022:\u0022String\u0022,\u0022expression\u0022:{\u0022type\u0022:\u0022Literal\u0022,\u0022value\u0022:\u0022Notifying the warehouse\u0022}}",
+                  "attributes": [
+                    {
+                      "name": {
+                        "localName": "name"
+                      },
+                      "value": "text"
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ],
+          "foreignAttributes": [
+            {
+              "name": {
+                "ns": "http://camunda.org/schema/1.0/bpmn",
+                "localName": "asyncBefore"
+              },
+              "value": "true"
+            }
+          ],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "EndEvent_1",
+        "elementType": "endEvent",
+        "name": "Order Handled",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      }
+    ],
+    "sequenceFlows": [
+      {
+        "flowId": "Flow_1",
+        "sourceRef": "StartEvent_1",
+        "targetRef": "NotifyWarehouse",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_2",
+        "sourceRef": "NotifyWarehouse",
+        "targetRef": "EndEvent_1",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      }
+    ],
+    "lanes": [],
+    "variables": [],
+    "extensions": {
+      "documentation": [],
+      "extensionElements": [
+        {
+          "name": {
+            "ns": "http://camunda.org/schema/1.0/bpmn",
+            "localName": "properties"
+          },
+          "attributes": [],
+          "children": [
+            {
+              "name": {
+                "ns": "http://camunda.org/schema/1.0/bpmn",
+                "localName": "property"
+              },
+              "attributes": [
+                {
+                  "name": {
+                    "localName": "name"
+                  },
+                  "value": "owner"
+                },
+                {
+                  "name": {
+                    "localName": "value"
+                  },
+                  "value": "fulfillment-team"
+                }
+              ],
+              "children": []
+            }
+          ]
+        }
+      ],
+      "foreignAttributes": [
+        {
+          "name": {
+            "ns": "http://camunda.org/schema/1.0/bpmn",
+            "localName": "versionTag"
+          },
+          "value": "1.0"
+        }
+      ],
+      "foreignChildren": []
+    }
+  },
+  "workBindings": {
+    "node-NotifyWarehouse": "order-process:node-NotifyWarehouse"
+  },
+  "activities": [
+    {
+      "text": {
+        "typeName": "String",
+        "expression": {
+          "type": "Literal",
+          "value": "Notifying the warehouse"
+        }
+      },
+      "id": "order-process:node-NotifyWarehouse",
+      "nodeId": null,
+      "name": null,
+      "type": "Elsa.WriteLine",
+      "version": 1,
+      "customProperties": {
+        "canStartWorkflow": false,
+        "runAsynchronously": false
+      },
+      "metadata": {}
+    }
+  ],
+  "variables": [],
+  "id": "order-process",
+  "type": "Elsa.BpmnProcess",
+  "version": 1,
+  "customProperties": {
+    "source": "BpmnWorkBinder.cs:80",
+    "canStartWorkflow": true
+  },
+  "metadata": {}
+}

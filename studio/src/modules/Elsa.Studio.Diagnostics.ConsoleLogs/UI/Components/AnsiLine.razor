@@ -1,0 +1,64 @@
+@using Elsa.Studio.Diagnostics.Rendering
+
+@foreach (var segment in Segments ?? AnsiSgrParser.Parse(Text ?? string.Empty))
+{
+    if (segment.Style == AnsiStyle.Default)
+    {
+        @segment.Text
+    }
+    else
+    {
+        <span class="@CssFor(segment.Style)">@segment.Text</span>
+    }
+}
+
+@code {
+    [Parameter] public string? Text { get; set; }
+    [Parameter] public IReadOnlyList<AnsiSegment>? Segments { get; set; }
+
+    private static string CssFor(AnsiStyle style)
+    {
+        var parts = new List<string>(6);
+
+        if (style.Foreground != AnsiColor.Default)
+            parts.Add($"ansi-fg-{ColorName(style.Foreground)}");
+
+        if (style.Background != AnsiColor.Default)
+            parts.Add($"ansi-bg-{ColorName(style.Background)}");
+
+        if (style.Bold)
+            parts.Add("ansi-bold");
+
+        if (style.Italic)
+            parts.Add("ansi-italic");
+
+        if (style.Underline)
+            parts.Add("ansi-underline");
+
+        if (style.Inverse)
+            parts.Add("ansi-inverse");
+
+        return string.Join(' ', parts);
+    }
+
+    private static string ColorName(AnsiColor color) => color switch
+    {
+        AnsiColor.Black => "black",
+        AnsiColor.Red => "red",
+        AnsiColor.Green => "green",
+        AnsiColor.Yellow => "yellow",
+        AnsiColor.Blue => "blue",
+        AnsiColor.Magenta => "magenta",
+        AnsiColor.Cyan => "cyan",
+        AnsiColor.White => "white",
+        AnsiColor.BrightBlack => "bright-black",
+        AnsiColor.BrightRed => "bright-red",
+        AnsiColor.BrightGreen => "bright-green",
+        AnsiColor.BrightYellow => "bright-yellow",
+        AnsiColor.BrightBlue => "bright-blue",
+        AnsiColor.BrightMagenta => "bright-magenta",
+        AnsiColor.BrightCyan => "bright-cyan",
+        AnsiColor.BrightWhite => "bright-white",
+        _ => "default"
+    };
+}

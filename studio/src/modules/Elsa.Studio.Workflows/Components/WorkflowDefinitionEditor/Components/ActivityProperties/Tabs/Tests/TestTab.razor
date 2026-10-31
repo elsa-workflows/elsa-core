@@ -1,0 +1,24 @@
+@using Variant = MudBlazor.Variant
+@inject ILocalizer Localizer
+
+<MudStack>
+    <div>
+        <MudButton StartIcon="@Icons.Material.Filled.PlayArrow" Variant="Variant.Filled" Color="Color.Success" OnClick="@OnTestRunClick">@Localizer["Start"]</MudButton>
+    </div>
+    <MudProgressLinear Color="@(IsRunning ? Color.Success : Color.Transparent)" Indeterminate="true"/>
+    @if (!HasRun)
+    {
+        <MudAlert Icon="@Icons.Material.Outlined.Info">@Localizer["Select the Start button to run the activity."]</MudAlert>
+    }
+    else if (!IsRunning)
+    {
+        <DataPanel Title="@Localizer["Status"]" Data="Status" ShowNoDataAlert="true" NoDataMessage="@Localizer["No status was recorded."]"/>
+        @if (Fault is not null)
+        {
+            <DataPanel Title="@Localizer["Fault"]" Data="Fault" />
+        }
+        <DataPanel Title="@Localizer["State"]" Data="ActivityState" ShowNoDataAlert="true" NoDataMessage="@Localizer["No state was recorded."]"/>
+        <DataPanel Title="@Localizer["Outcomes"]" Data="Outcomes" ShowNoDataAlert="true" NoDataMessage="@Localizer["No outcomes were recorded."]"/>
+        <DataPanel Title="@Localizer["Output"]" Data="Output" ShowNoDataAlert="true" NoDataMessage="@Localizer["No output was recorded."]"/>
+    }
+</MudStack>

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Include>[Elsa.Hosting.Management]*</Include>
+        <Threshold>0</Threshold>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\src\common\Elsa.Testing.Shared\Elsa.Testing.Shared.csproj" />
+      <ProjectReference Include="..\..\..\src\modules\Elsa.Hosting.Management\Elsa.Hosting.Management.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,1576 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" id="root">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Close" xml:space="preserve">
+    <value>Kapat</value>
+  </data>
+  <data name="CreatedAt" xml:space="preserve">
+    <value>Oluşturma Zamanı</value>
+  </data>
+  <data name="Click to open a new workflow tab" xml:space="preserve">
+    <value>Yeni iş akışı sekmesini açmak için tıklayın</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>İptal</value>
+  </data>
+  <data name="Created" xml:space="preserve">
+    <value>Oluşturuldu</value>
+  </data>
+  <data name="API Keys" xml:space="preserve">
+    <value>API Anahtarları</value>
+  </data>
+  <data name="API Key" xml:space="preserve">
+    <value>API Anahtarı</value>
+  </data>
+  <data name="A brief description of the secret." xml:space="preserve">
+    <value>Gizli anahtar dizinin kısa bir açıklaması.</value>
+  </data>
+  <data name="A default value." xml:space="preserve">
+    <value>Varsayılan değer.</value>
+  </data>
+  <data name="Apply" xml:space="preserve">
+    <value>Uygula</value>
+  </data>
+  <data name="14 days" xml:space="preserve">
+    <value>14 gün</value>
+  </data>
+  <data name="180 days" xml:space="preserve">
+    <value>180 gün</value>
+  </data>
+  <data name="30 days" xml:space="preserve">
+    <value>30 gün</value>
+  </data>
+  <data name="7 days" xml:space="preserve">
+    <value>7 gün</value>
+  </data>
+  <data name="90 days" xml:space="preserve">
+    <value>90 gün</value>
+  </data>
+  <data name="A brief description of the workflow." xml:space="preserve">
+    <value>İş akışının kısa bir açıklaması.</value>
+  </data>
+  <data name="Add variable" xml:space="preserve">
+    <value>Değişken ekle</value>
+  </data>
+  <data name="Activation strategy" xml:space="preserve">
+    <value>Etkinleştirme Stratejisi</value>
+  </data>
+  <data name="Agent" xml:space="preserve">
+    <value>Ajan</value>
+  </data>
+  <data name="Agents" xml:space="preserve">
+    <value>Ajanlar</value>
+  </data>
+  <data name="Add input" xml:space="preserve">
+    <value>Girdi Ekle</value>
+  </data>
+  <data name="Add output" xml:space="preserve">
+    <value>Çıktı Ekle</value>
+  </data>
+  <data name="Auto-update consuming workflows" xml:space="preserve">
+    <value>Tüketilen iş akışlarını otomatik olarak güncelle</value>
+  </data>
+  <data name="Auto-save" xml:space="preserve">
+    <value>Otomatik Kaydet</value>
+  </data>
+  <data name="Branching" xml:space="preserve">
+    <value>Dallanma</value>
+  </data>
+  <data name="Break" xml:space="preserve">
+    <value>Döngüyü sonlandır</value>
+  </data>
+  <data name="Bulk Dispatch Workflows" xml:space="preserve">
+    <value>İş Akışlarını topluca gönder</value>
+  </data>
+  <data name="Category" xml:space="preserve">
+    <value>Kategori</value>
+  </data>
+  <data name="Clear" xml:space="preserve">
+    <value>Temizle</value>
+  </data>
+  <data name="Check this option if the variable holds an array of the selected type." xml:space="preserve">
+    <value>Değişken seçilen türe ait bir dizi içeriyorsa bu seçeneği işaretleyin.</value>
+  </data>
+  <data name="Common" xml:space="preserve">
+    <value>Genel</value>
+  </data>
+  <data name="Complete" xml:space="preserve">
+    <value>Tamamla</value>
+  </data>
+  <data name="Completed" xml:space="preserve">
+    <value>Tamamlandı</value>
+  </data>
+  <data name="Composition" xml:space="preserve">
+    <value>Bileşim</value>
+  </data>
+  <data name="Connection Strings" xml:space="preserve">
+    <value>Bağlantı Dizeleri</value>
+  </data>
+  <data name="Console" xml:space="preserve">
+    <value>Konsol</value>
+  </data>
+  <data name="Correlate" xml:space="preserve">
+    <value>Korelasyon kur</value>
+  </data>
+  <data name="Correlation ID" xml:space="preserve">
+    <value>Korelasyon ID'si</value>
+  </data>
+  <data name="Create Service" xml:space="preserve">
+    <value>Servis Oluştur</value>
+  </data>
+  <data name="Container" xml:space="preserve">
+    <value>Konteyner</value>
+  </data>
+  <data name="Create workflow" xml:space="preserve">
+    <value>Yeni İş Akışı Oluştur</value>
+  </data>
+  <data name="Dashboard" xml:space="preserve">
+    <value>Gösterge Paneli</value>
+  </data>
+  <data name="Date" xml:space="preserve">
+    <value>Tarih</value>
+  </data>
+  <data name="Date Filters" xml:space="preserve">
+    <value>Tarih Filtresi</value>
+  </data>
+  <data name="Default configuration" xml:space="preserve">
+    <value>Varsayılan yapılandırma</value>
+  </data>
+  <data name="Default value" xml:space="preserve">
+    <value>Varsayılan değer</value>
+  </data>
+  <data name="Decision" xml:space="preserve">
+    <value>Karar</value>
+  </data>
+  <data name="Delay" xml:space="preserve">
+    <value>Gecikme</value>
+  </data>
+  <data name="Details" xml:space="preserve">
+    <value>Detaylar</value>
+  </data>
+  <data name="Download File" xml:space="preserve">
+    <value>Dökümanı İndir</value>
+  </data>
+  <data name="Edit" xml:space="preserve">
+    <value>Düzenle</value>
+  </data>
+  <data name="Dispatch Workflow" xml:space="preserve">
+    <value>İş Akışını Gönder</value>
+  </data>
+  <data name="Display name" xml:space="preserve">
+    <value>Görünen Ad</value>
+  </data>
+  <data name="Display text" xml:space="preserve">
+    <value>Görünen metin</value>
+  </data>
+  <data name="Expires" xml:space="preserve">
+    <value>Geçerlilik süresi</value>
+  </data>
+  <data name="Expires In" xml:space="preserve">
+    <value>İçinde süresi dolacak</value>
+  </data>
+  <data name="Export" xml:space="preserve">
+    <value>Dışa aktar</value>
+  </data>
+  <data name="FinishedAt" xml:space="preserve">
+    <value>Tamamlanma Tarihi</value>
+  </data>
+  <data name="Export the current workflow as a JSON file" xml:space="preserve">
+    <value>Mevcut iş akışını JSON dosyası olarak dışa aktar.</value>
+  </data>
+  <data name="Export this version as a JSON file." xml:space="preserve">
+    <value>Bu sürümü JSON dosyası olarak dışa aktar.</value>
+  </data>
+  <data name="HTTP File Response" xml:space="preserve">
+    <value>HTTP Dosya Yanıtı</value>
+  </data>
+  <data name="Function" xml:space="preserve">
+    <value>Fonksiyon</value>
+  </data>
+  <data name="Function Name" xml:space="preserve">
+    <value>Fonksiyon Adı</value>
+  </data>
+  <data name="Has Incidents" xml:space="preserve">
+    <value>Olay Mevcut</value>
+  </data>
+  <data name="Incidents" xml:space="preserve">
+    <value>Olaylar</value>
+  </data>
+  <data name="Input" xml:space="preserve">
+    <value>Girdi</value>
+  </data>
+  <data name="Input Properties" xml:space="preserve">
+    <value>Girdi Özellikleri</value>
+  </data>
+  <data name="Instances" xml:space="preserve">
+    <value>Örnekler</value>
+  </data>
+  <data name="Latest version" xml:space="preserve">
+    <value>Son versiyon</value>
+  </data>
+  <data name="Log Persistence Strategy" xml:space="preserve">
+    <value>Günlük Saklama Stratejisi</value>
+  </data>
+  <data name="No" xml:space="preserve">
+    <value>Hayır</value>
+  </data>
+  <data name="No inputs" xml:space="preserve">
+    <value>Girdi yok</value>
+  </data>
+  <data name="No outputs" xml:space="preserve">
+    <value>Çıktı yok</value>
+  </data>
+  <data name="Scheduling" xml:space="preserve">
+    <value>Zamanlama</value>
+  </data>
+  <data name="Scope" xml:space="preserve">
+    <value>Kapsam</value>
+  </data>
+  <data name="Search" xml:space="preserve">
+    <value>Ara...</value>
+  </data>
+  <data name="Start" xml:space="preserve">
+    <value>Başlat</value>
+  </data>
+  <data name="Start of workflow" xml:space="preserve">
+    <value>İş akışının başlangıcı</value>
+  </data>
+  <data name="Started" xml:space="preserve">
+    <value>Başlatıldı</value>
+  </data>
+  <data name="Status" xml:space="preserve">
+    <value>Statü</value>
+  </data>
+  <data name="The description of the output variable." xml:space="preserve">
+    <value>Çıktı değişkeninin açıklaması.</value>
+  </data>
+  <data name="Timer" xml:space="preserve">
+    <value>Zamanlayıcı</value>
+  </data>
+  <data name="Type" xml:space="preserve">
+    <value>Tür</value>
+  </data>
+  <data name="Updated" xml:space="preserve">
+    <value>Güncellendi</value>
+  </data>
+  <data name="Version history" xml:space="preserve">
+    <value>Versiyon geçmişi</value>
+  </data>
+  <data name="Yes" xml:space="preserve">
+    <value>Evet</value>
+  </data>
+  <data name="Code editor" xml:space="preserve">
+    <value>Kod editörü</value>
+  </data>
+  <data name="Variable picker" xml:space="preserve">
+    <value>Değişken seçici</value>
+  </data>
+  <data name="Center" xml:space="preserve">
+    <value>Orta</value>
+  </data>
+  <data name="Result" xml:space="preserve">
+    <value>Sonuç</value>
+  </data>
+  <data name="Running" xml:space="preserve">
+    <value>Çalışıyor</value>
+  </data>
+  <data name="Supported Methods" xml:space="preserve">
+    <value>Desteklenen Metodlar</value>
+  </data>
+  <data name="The URL to download the file from." xml:space="preserve">
+    <value>Dosyanın indirileceği URL.</value>
+  </data>
+  <data name="Label" xml:space="preserve">
+    <value>Etiket</value>
+  </data>
+  <data name="Payload" xml:space="preserve">
+    <value>Veri yükü</value>
+  </data>
+  <data name="The end step." xml:space="preserve">
+    <value>Son adım.</value>
+  </data>
+  <data name="The start step." xml:space="preserve">
+    <value>Başlangıç adımı.</value>
+  </data>
+  <data name="Configuration" xml:space="preserve">
+    <value>Yapılandırma</value>
+  </data>
+  <data name="Exclude" xml:space="preserve">
+    <value>Hariç tut</value>
+  </data>
+  <data name="Include" xml:space="preserve">
+    <value>Dahil et</value>
+  </data>
+  <data name="Load" xml:space="preserve">
+    <value>Yükle</value>
+  </data>
+  <data name="Provider Type" xml:space="preserve">
+    <value>Sağlayıcı Türü</value>
+  </data>
+  <data name="A brief description of this input." xml:space="preserve">
+    <value>Bu veri girişinin kısa bir tanımı.</value>
+  </data>
+  <data name="Bulk actions" xml:space="preserve">
+    <value>Toplu işlemler</value>
+  </data>
+  <data name="A brief description of this output." xml:space="preserve">
+    <value>Bu veri çıkışının kısa bir tanımı.</value>
+  </data>
+  <data name="Close workflow" xml:space="preserve">
+    <value>İş Akışını Kapat</value>
+  </data>
+  <data name="Temperature" xml:space="preserve">
+    <value>Sıcaklık</value>
+  </data>
+  <data name="HTTP Request" xml:space="preserve">
+    <value>HTTP İsteği</value>
+  </data>
+  <data name="URL" xml:space="preserve">
+    <value>URL</value>
+  </data>
+  <data name="Method" xml:space="preserve">
+    <value>Metod</value>
+  </data>
+  <data name="Fault" xml:space="preserve">
+    <value>Hata</value>
+  </data>
+  <data name="Description" xml:space="preserve">
+    <value>Açıklama</value>
+  </data>
+  <data name="Data" xml:space="preserve">
+    <value>Veri</value>
+  </data>
+  <data name="The type of the service." xml:space="preserve">
+    <value>Servisin türü.</value>
+  </data>
+  <data name="Email" xml:space="preserve">
+    <value>E-Posta</value>
+  </data>
+  <data name="Code" xml:space="preserve">
+    <value>Kod</value>
+  </data>
+  <data name="Finish" xml:space="preserve">
+    <value>Tamamla</value>
+  </data>
+  <data name="String7" xml:space="preserve">
+    <value>Sonuç</value>
+  </data>
+  <data name="HTTP" xml:space="preserve">
+    <value>HTTP</value>
+  </data>
+  <data name="HTTP Response" xml:space="preserve">
+    <value>HTTP Yanıtı</value>
+  </data>
+  <data name="The .NET type of the input variable." xml:space="preserve">
+    <value>Girdi değişkeninin .NET türü.</value>
+  </data>
+  <data name="Validation Result" xml:space="preserve">
+    <value>Doğrulama Sonucu</value>
+  </data>
+  <data name="Step" xml:space="preserve">
+    <value>Adım</value>
+  </data>
+  <data name="Add" xml:space="preserve">
+    <value>Ekle</value>
+  </data>
+  <data name="Version" xml:space="preserve">
+    <value>Versiyon</value>
+  </data>
+  <data name="The .NET type of the output variable." xml:space="preserve">
+    <value>Çıktı değişkeninin .NET türü.</value>
+  </data>
+  <data name="UpdatedAt" xml:space="preserve">
+    <value>Güncelleme Tarihi</value>
+  </data>
+  <data name="View" xml:space="preserve">
+    <value>Görüntüle</value>
+  </data>
+  <data name="Auto layout" xml:space="preserve">
+    <value>Otomatik yerleşim</value>
+  </data>
+  <data name="Use this version" xml:space="preserve">
+    <value>Bu versiyonu kullan</value>
+  </data>
+  <data name="Read Data from Configuration / Runtime" xml:space="preserve">
+    <value>Yapılandırma / Çalışma Zamanından Veri Okuma</value>
+  </data>
+  <data name="The HTTP methods to accept." xml:space="preserve">
+    <value>Kabul edilecek HTTP yöntemleri.</value>
+  </data>
+  <data name="Name" xml:space="preserve">
+    <value>Ad</value>
+  </data>
+  <data name="No services found" xml:space="preserve">
+    <value>Hiç servis bulunamadı</value>
+  </data>
+  <data name="Run workflow" xml:space="preserve">
+    <value>İş Akışı Çalıştır</value>
+  </data>
+  <data name="Allow this workflow to be used as an activity." xml:space="preserve">
+    <value>Bu iş akışının bir etkinlik olarak kullanılmasına izin ver.</value>
+  </data>
+  <data name="Run JavaScript" xml:space="preserve">
+    <value>Javascript Çalıştır</value>
+  </data>
+  <data name="Run" xml:space="preserve">
+    <value>Çalıştır</value>
+  </data>
+  <data name="State" xml:space="preserve">
+    <value>Durum</value>
+  </data>
+  <data name="Run Python" xml:space="preserve">
+    <value>Python Çalıştır</value>
+  </data>
+  <data name="Save" xml:space="preserve">
+    <value>Kaydet</value>
+  </data>
+  <data name="Storage" xml:space="preserve">
+    <value>Depolama</value>
+  </data>
+  <data name="Info" xml:space="preserve">
+    <value>Bilgi</value>
+  </data>
+  <data name="Run Asynchronously" xml:space="preserve">
+    <value>Asenkron Çalıştır</value>
+  </data>
+  <data name="Services" xml:space="preserve">
+    <value>Servisler</value>
+  </data>
+  <data name="Open File" xml:space="preserve">
+    <value>Dosya Aç</value>
+  </data>
+  <data name="Send Email" xml:space="preserve">
+    <value>E-posta Gönder</value>
+  </data>
+  <data name="Assign the current value to the specified variable." xml:space="preserve">
+    <value>Geçerli değeri belirtilen değişkene ata.</value>
+  </data>
+  <data name="The path to associate with the workflow." xml:space="preserve">
+    <value>İş akışıyla ilişkilendirilecek yol.</value>
+  </data>
+  <data name="Run Task" xml:space="preserve">
+    <value>Görev Çalıştır</value>
+  </data>
+  <data name="Delete" xml:space="preserve">
+    <value>Sil</value>
+  </data>
+  <data name="HTTP Endpoint" xml:space="preserve">
+    <value>HTTP Uç Noktası</value>
+  </data>
+  <data name="Inputs" xml:space="preserve">
+    <value>Girdiler</value>
+  </data>
+  <data name="Variables" xml:space="preserve">
+    <value>Değişkenler</value>
+  </data>
+  <data name="Variable" xml:space="preserve">
+    <value>Değişken</value>
+  </data>
+  <data name="Finished" xml:space="preserve">
+    <value>Tamamlandı</value>
+  </data>
+  <data name="Execution Settings" xml:space="preserve">
+    <value>Yürütme Ayarları</value>
+  </data>
+  <data name="General" xml:space="preserve">
+    <value>Genel</value>
+  </data>
+  <data name="Input/output" xml:space="preserve">
+    <value>Girdi/çıktı</value>
+  </data>
+  <data name="Loading" xml:space="preserve">
+    <value>Yükleniyor</value>
+  </data>
+  <data name="Save File" xml:space="preserve">
+    <value>Dosyaya Kaydet</value>
+  </data>
+  <data name="Properties" xml:space="preserve">
+    <value>Özellikler</value>
+  </data>
+  <data name="Published" xml:space="preserve">
+    <value>Yayınlandı</value>
+  </data>
+  <data name="Published version" xml:space="preserve">
+    <value>Yayınlanmış versiyon</value>
+  </data>
+  <data name="Publish the current workflow" xml:space="preserve">
+    <value>Mevcut iş akışını yayınla</value>
+  </data>
+  <data name="Read Data from Database" xml:space="preserve">
+    <value>Veritabanından veriyi oku</value>
+  </data>
+  <data name="Workflow Contexts" xml:space="preserve">
+    <value>İş Akışı Bağlamları</value>
+  </data>
+  <data name="A variable picker" xml:space="preserve">
+    <value>Değişken seçici</value>
+  </data>
+  <data name="Are you sure you want to delete the selected workflows?" xml:space="preserve">
+    <value>Seçili iş akışlarını silmek istediğinizden emin misiniz?</value>
+  </data>
+  <data name="Are you sure you want to delete this version?" xml:space="preserve">
+    <value>Bu sürümü silmek istediğinizden emin misiniz?</value>
+  </data>
+  <data name="Are you sure you want to delete this workflow?" xml:space="preserve">
+    <value>Bu iş akışını silmek istediğinizden emin misiniz?</value>
+  </data>
+  <data name="Are you sure you want to publish the selected workflows?" xml:space="preserve">
+    <value>Seçili iş akışlarını yayınlamak istediğinizden emin misiniz?</value>
+  </data>
+  <data name="Cancel selected workflow instances?" xml:space="preserve">
+    <value>Seçili iş akışı örnekleri iptal edilsin mi?</value>
+  </data>
+  <data name="Delete version" xml:space="preserve">
+    <value>Sürümü sil</value>
+  </data>
+  <data name="Delete workflow?" xml:space="preserve">
+    <value>İş akışı silinsin mi?</value>
+  </data>
+  <data name="Edit output" xml:space="preserve">
+    <value>Çıktıyı düzenle</value>
+  </data>
+  <data name="Edit Workflow Definition" xml:space="preserve">
+    <value>İş Akışı Tanımını Düzenle</value>
+  </data>
+  <data name="imported successfully." xml:space="preserve">
+    <value>başarıyla içe aktarıldı.</value>
+  </data>
+  <data name="Message" xml:space="preserve">
+    <value>Mesaj</value>
+  </data>
+  <data name="No workflows found to import." xml:space="preserve">
+    <value>İçe aktarılacak iş akışı bulunamadı.</value>
+  </data>
+  <data name="One workflow is already published" xml:space="preserve">
+    <value>Bir iş akışı zaten yayınlandı</value>
+  </data>
+  <data name="Please enter a name for the input." xml:space="preserve">
+    <value>Lütfen girdi için bir ad girin.</value>
+  </data>
+  <data name="Please enter a name for the output." xml:space="preserve">
+    <value>Lütfen çıktı için bir ad girin.</value>
+  </data>
+  <data name="Please enter a name for the variable." xml:space="preserve">
+    <value>Lütfen değişken için bir isim girin.</value>
+  </data>
+  <data name="Please enter a name for the workflow." xml:space="preserve">
+    <value>Lütfen iş akışı için bir ad girin.</value>
+  </data>
+  <data name="Publish selected workflows?" xml:space="preserve">
+    <value>Seçili iş akışları yayınlansın mı?</value>
+  </data>
+  <data name="Readonly" xml:space="preserve">
+    <value>Salt okunur</value>
+  </data>
+  <data name="Show description" xml:space="preserve">
+    <value>Açıklamayı göster</value>
+  </data>
+  <data name="{0} {1} imported successfully." xml:space="preserve">
+    <value>{0} {1} başarıyla içe aktarıldı.</value>
+  </data>
+  <data name="Rows Per Page" xml:space="preserve">
+    <value>Sayfa başına satır sayısı</value>
+  </data>
+  <data name="Publish" xml:space="preserve">
+    <value>Yayınla</value>
+  </data>
+  <data name="Workflow Context Settings" xml:space="preserve">
+    <value>İş akışı bağlam ayarları</value>
+  </data>
+  <data name="Rollback to this version" xml:space="preserve">
+    <value>Bu sürüme geri dön</value>
+  </data>
+  <data name="Workflow definitions Editor" xml:space="preserve">
+    <value>İş Akışı tanımları Editörü</value>
+  </data>
+  <data name="The name of the workflow." xml:space="preserve">
+    <value>İş Akışı adı</value>
+  </data>
+  <data name="You can find documentation and examples here" xml:space="preserve">
+    <value>Burada dokümantasyon ve örnekler bulabilirsiniz</value>
+  </data>
+  <data name="Are you sure you want to delete this workflow instance?" xml:space="preserve">
+    <value>Bu iş akışı örneğini silmek istediğinizden emin misiniz?</value>
+  </data>
+  <data name="Edit variable" xml:space="preserve">
+    <value>Değişkeni düzenle</value>
+  </data>
+  <data name="Multi line" xml:space="preserve">
+    <value>Çoklu satır</value>
+  </data>
+  <data name="Default Strategy" xml:space="preserve">
+    <value>Varsayılan Strateji</value>
+  </data>
+  <data name="Delete selected variable?" xml:space="preserve">
+    <value>Seçilen değişken silinsin mi?</value>
+  </data>
+  <data name="Delete selected workflows?" xml:space="preserve">
+    <value>Seçili iş akışları silinsin mi?</value>
+  </data>
+  <data name="You are running in read-only mode. Workflow operations are disabled" xml:space="preserve">
+    <value>Salt okunur modunda çalışıyorsunuz. İş akışı işlemleri devre dışı bırakıldı</value>
+  </data>
+  <data name="Are you sure you want to unpublish the selected workflows?" xml:space="preserve">
+    <value>Seçili iş akışlarını yayından kaldırmak istediğinizden emin misiniz?</value>
+  </data>
+  <data name="Default" xml:space="preserve">
+    <value>Varsayılan</value>
+  </data>
+  <data name="Delete selected versions" xml:space="preserve">
+    <value>Seçilen sürümleri sil</value>
+  </data>
+  <data name="Inherit" xml:space="preserve">
+    <value>Kalıtım</value>
+  </data>
+  <data name="New workflow" xml:space="preserve">
+    <value>Yeni iş akışı</value>
+  </data>
+  <data name="Failed to import {0} workflow definitions. Errors: {1}" xml:space="preserve">
+    <value>{0} iş akışı tanımı içe aktarılamadı. Hatalar: {1}</value>
+  </data>
+  <data name="No workflows were imported." xml:space="preserve">
+    <value>Hiçbir iş akışı içe aktarılmadı.</value>
+  </data>
+  <data name="Failed to import {0} {1}." xml:space="preserve">
+    <value>{0} {1} içe aktarılamadı.</value>
+  </data>
+  <data name="A brief description of the agent." xml:space="preserve">
+    <value>Ajan hakkında kısa açıklama.</value>
+  </data>
+  <data name="A custom category by which to group this input." xml:space="preserve">
+    <value>Bu veri için özel bir gruplama kategorisi.</value>
+  </data>
+  <data name="A custom activity category to assign this workflow-as-an-activity to." xml:space="preserve">
+    <value>Bu iş akışını bir aktivite olarak atamak için özel bir aktivite kategorisi.</value>
+  </data>
+  <data name="A custom category by which to group this output." xml:space="preserve">
+    <value>Bu veri çıktısı için özel bir gruplama kategorisi.</value>
+  </data>
+  <data name="A description about the role and purpose of this agent." xml:space="preserve">
+    <value>Bu ajanın rolü ve amacı hakkında açıklama.</value>
+  </data>
+  <data name="A technical name for the function" xml:space="preserve">
+    <value>Bu ajanın gerçekleştirdiği fonksiyonun teknik adı. Örneğin: WriteCode</value>
+  </data>
+  <data name="Acknowledge Datasource Event" xml:space="preserve">
+    <value>Veri Kaynağı Olayını Onayla</value>
+  </data>
+  <data name="Activity Instance ID" xml:space="preserve">
+    <value>Aktivite Örneği ID'si</value>
+  </data>
+  <data name="A description about the secret." xml:space="preserve">
+    <value>Gizli anahtar hakkında açıklama.</value>
+  </data>
+  <data name="Create Agent" xml:space="preserve">
+    <value>Yeni Ajan Oluştur</value>
+  </data>
+  <data name="Create API Key" xml:space="preserve">
+    <value>API Anahtarı Oluştur</value>
+  </data>
+  <data name="Create Secret" xml:space="preserve">
+    <value>Gizli Anahtar Oluştur</value>
+  </data>
+  <data name="Cron" xml:space="preserve">
+    <value>Cron</value>
+  </data>
+  <data name="Definition ID" xml:space="preserve">
+    <value>Tanım ID’si</value>
+  </data>
+  <data name="Definition version" xml:space="preserve">
+    <value>Tanım versiyonu</value>
+  </data>
+  <data name="Definition version ID" xml:space="preserve">
+    <value>Tanım versiyonu ID'si</value>
+  </data>
+  <data name="Definitions" xml:space="preserve">
+    <value>Tanımlar</value>
+  </data>
+  <data name="Duration" xml:space="preserve">
+    <value>Zaman aralığı</value>
+  </data>
+  <data name="End" xml:space="preserve">
+    <value>Son</value>
+  </data>
+  <data name="Enter a list of possible outcomes for this workflow." xml:space="preserve">
+    <value>Bu iş akışı için olası sonuçların bir listesini girin.</value>
+  </data>
+  <data name="Event" xml:space="preserve">
+    <value>Olay</value>
+  </data>
+  <data name="Events" xml:space="preserve">
+    <value>Olaylar</value>
+  </data>
+  <data name="Excel Parser" xml:space="preserve">
+    <value>Excel Ayrıştırıcısı</value>
+  </data>
+  <data name="Executions" xml:space="preserve">
+    <value>Yürütmeler</value>
+  </data>
+  <data name="Flow" xml:space="preserve">
+    <value>Akış</value>
+  </data>
+  <data name="For" xml:space="preserve">
+    <value>For</value>
+  </data>
+  <data name="Frequency Penalty" xml:space="preserve">
+    <value>Frekans Cezası</value>
+  </data>
+  <data name="ID" xml:space="preserve">
+    <value>ID</value>
+  </data>
+  <data name="The ID of the activity." xml:space="preserve">
+    <value>Aktivite ID’si.</value>
+  </data>
+  <data name="If" xml:space="preserve">
+    <value>If</value>
+  </data>
+  <data name="Import" xml:space="preserve">
+    <value>İçeri Aktar</value>
+  </data>
+  <data name="Import a JSON file containing workflow data to override the current workflow's contents." xml:space="preserve">
+    <value>Mevcut iş akışının içeriğini değiştirmek için iş akışı verilerini içeren bir JSON dosyası içe aktarın.</value>
+  </data>
+  <data name="Incident Strategy" xml:space="preserve">
+    <value>Olay Müdahale Stratejisi</value>
+  </data>
+  <data name="IncidentCount" xml:space="preserve">
+    <value>Olay Sayısı</value>
+  </data>
+  <data name="Information" xml:space="preserve">
+    <value>Bilgi</value>
+  </data>
+  <data name="int" xml:space="preserve">
+    <value>int</value>
+  </data>
+  <data name="Is" xml:space="preserve">
+    <value>Is</value>
+  </data>
+  <data name="Journal" xml:space="preserve">
+    <value>Kayıt Defteri</value>
+  </data>
+  <data name="The name of the activity. Named activities can be referenced by other activities." xml:space="preserve">
+    <value>Aktivitenin adı. Adlandırılmış aktiviteler diğer aktiviteler tarafından referans alınabilir.</value>
+  </data>
+  <data name="No outcomes associated with this execution." xml:space="preserve">
+    <value>Bu yürütme ile ilişkili çıktı bulunmamaktadır.</value>
+  </data>
+  <data name="No output associated with this execution." xml:space="preserve">
+    <value>Bu yürütmeye bağlı çıktı bulunmamaktadır.</value>
+  </data>
+  <data name="No agents found" xml:space="preserve">
+    <value>Ajan bulunamadı</value>
+  </data>
+  <data name="No workflow definitions found" xml:space="preserve">
+    <value>İş akışı tanımı bulunamadı</value>
+  </data>
+  <data name="Ok" xml:space="preserve">
+    <value>Tamam</value>
+  </data>
+  <data name="Log Persistence" xml:space="preserve">
+    <value>Günlük Verisi Saklama</value>
+  </data>
+  <data name="Plugins" xml:space="preserve">
+    <value>Eklentiler</value>
+  </data>
+  <data name="Prompt Template" xml:space="preserve">
+    <value>İstem Şablonu</value>
+  </data>
+  <data name="Publish Event" xml:space="preserve">
+    <value>Olay Yayınla</value>
+  </data>
+  <data name="Scripting" xml:space="preserve">
+    <value>Betik yazımı</value>
+  </data>
+  <data name="Search on name, id, definition id, definition version id, correlation id" xml:space="preserve">
+    <value>İsim, kimlik, tanım kimliği, tanım sürüm kimliği ve korelasyon kimliğinde arama yapın</value>
+  </data>
+  <data name="Secret" xml:space="preserve">
+    <value>Gizli anahtar</value>
+  </data>
+  <data name="Set Name" xml:space="preserve">
+    <value>Ad Belirle</value>
+  </data>
+  <data name="Set Variable" xml:space="preserve">
+    <value>Değişken Ata</value>
+  </data>
+  <data name="Set Workflow Context Parameter" xml:space="preserve">
+    <value>İş Akışı Kapsamı Parametresini Ayarla</value>
+  </data>
+  <data name="Sub-Workflow Outputs" xml:space="preserve">
+    <value>Alt İş Akışı Çıktıları</value>
+  </data>
+  <data name="SubStatus" xml:space="preserve">
+    <value>Alt Statü</value>
+  </data>
+  <data name="Task" xml:space="preserve">
+    <value>Görev</value>
+  </data>
+  <data name="The name of the agent." xml:space="preserve">
+    <value>Ajanın adı.</value>
+  </data>
+  <data name="The name of the function that the agent will execute." xml:space="preserve">
+    <value>Ajanın çalıştıracağı fonksiyonun adı.</value>
+  </data>
+  <data name="The name of the new agent." xml:space="preserve">
+    <value>Yeni ajanın adı.</value>
+  </data>
+  <data name="The services that the agent requires." xml:space="preserve">
+    <value>Ajanın ihtiyaç duyduğu servisler.</value>
+  </data>
+  <data name="The system prompt template that the agent will use." xml:space="preserve">
+    <value>Ajanın kullanacağı sistem istemi şablonu.</value>
+  </data>
+  <data name="The temperature of the model" xml:space="preserve">
+    <value>Modelin sıcaklığı. Daha yüksek değerler modelin daha fazla risk alacağı anlamına gelir. Modelin eğitildiği verilere çok yakın sonuçlar için 0.1 değerini deneyin. Çok yaratıcı sonuçlar için ise 0.9 değerini deneyebilirsiniz.</value>
+  </data>
+  <data name="The user-friendly name of this input." xml:space="preserve">
+    <value>Bu girdinin kullanıcı dostu adı.</value>
+  </data>
+  <data name="The user-friendly name of this output." xml:space="preserve">
+    <value>Bu çıktının kullanıcı dostu adı.</value>
+  </data>
+  <data name="Used to define the initial instructions" xml:space="preserve">
+    <value>Semantic Kernel ajanının yanıt üretmek için kullanacağı başlangıç talimatlarını veya bağlamı tanımlamak için kullanılır. Bu şablon, ajanın davranışını yönlendirir ve hangi rolü üstlenmesi veya hangi görevleri yerine getirmesi gerektiğini anlamasına yardımcı olur.</value>
+  </data>
+  <data name="When checked, the workflow will be executed asynchronously." xml:space="preserve">
+    <value>İşaretlendiğinde, iş akışı eşzamansız olarak çalıştırılacaktır.</value>
+  </data>
+  <data name="When you publish" xml:space="preserve">
+    <value>Yeni bir sürüm yayınladığınızda, bu iş akışını kullanan tüm iş akışları yeni sürüme güncellenecektir.</value>
+  </data>
+  <data name="Whether to show the description in the designer." xml:space="preserve">
+    <value>Açıklamanın tasarım editöründe gösterilip gösterilmeyeceği.</value>
+  </data>
+  <data name="Workflow Context" xml:space="preserve">
+    <value>İş Akışı Kapsamı</value>
+  </data>
+  <data name="Workflow instances" xml:space="preserve">
+    <value>İş Akışı Örnekleri</value>
+  </data>
+  <data name="Workflows" xml:space="preserve">
+    <value>İş Akışları</value>
+  </data>
+  <data name="No state associated with this execution." xml:space="preserve">
+    <value>Bu yürütmeyle ilişkili durum bulunmamaktadır.</value>
+  </data>
+  <data name="Settings" xml:space="preserve">
+    <value>Ayarlar</value>
+  </data>
+  <data name="The plugins that the agent can use." xml:space="preserve">
+    <value>Ajanın kullanabileceği eklentiler.</value>
+  </data>
+  <data name="No variables" xml:space="preserve">
+    <value>Hiç değişken bulunmamaktadır</value>
+  </data>
+  <data name="No workflow instances found" xml:space="preserve">
+    <value>İş akışı örneği bulunamadı</value>
+  </data>
+  <data name="Sub-Workflow" xml:space="preserve">
+    <value>Alt İş Akışı</value>
+  </data>
+  <data name="Search on name, description, id, definition id" xml:space="preserve">
+    <value>İsim, açıklama, kimlik ve tanım kimliğinde arama yapın</value>
+  </data>
+  <data name="Sub-Workflow Inputs" xml:space="preserve">
+    <value>Alt İş Akışı Girdileri</value>
+  </data>
+  <data name="Secrets" xml:space="preserve">
+    <value>Gizli anahtarlar</value>
+  </data>
+  <data name="Show accumulated time" xml:space="preserve">
+    <value>Kümülatif zamanı göster</value>
+  </data>
+  <data name="Show events scoped to current container" xml:space="preserve">
+    <value>Mevcut konteynere ait olayları göster</value>
+  </data>
+  <data name="A description about the role and purpose of this input variable." xml:space="preserve">
+    <value>Bu giriş değişkeninin rolü ve amacı hakkında bir açıklama.</value>
+  </data>
+  <data name="A description of this activity to be displayed in the designer." xml:space="preserve">
+    <value>Tasarımcıda gösterilen bu aktivitenin bir açıklaması.</value>
+  </data>
+  <data name="Activities" xml:space="preserve">
+    <value>Aktiviteler</value>
+  </data>
+  <data name="Activity" xml:space="preserve">
+    <value>Aktivite</value>
+  </data>
+  <data name="Time" xml:space="preserve">
+    <value>Zaman</value>
+  </data>
+  <data name="Unpublish" xml:space="preserve">
+    <value>Yayından kaldır</value>
+  </data>
+  <data name="Value" xml:space="preserve">
+    <value>Değer</value>
+  </data>
+  <data name="An input with this name already exists." xml:space="preserve">
+    <value>Bu isimde bir girdi zaten var.</value>
+  </data>
+  <data name="Create variable" xml:space="preserve">
+    <value>Değişken oluştur</value>
+  </data>
+  <data name="None" xml:space="preserve">
+    <value>Hiçbiri</value>
+  </data>
+  <data name="Create output" xml:space="preserve">
+    <value>Çıktı oluştur</value>
+  </data>
+  <data name="Are you sure you want to delete the selected variable?" xml:space="preserve">
+    <value>Seçili değişkeni silmek istediğinizden emin misiniz?</value>
+  </data>
+  <data name="The technical name of the input." xml:space="preserve">
+    <value>Girdinin teknik adı.</value>
+  </data>
+  <data name="This output is an array" xml:space="preserve">
+    <value>Bu çıktı bir dizidir</value>
+  </data>
+  <data name="Zoom to fit the screen" xml:space="preserve">
+    <value>Ekrana sığacak şekilde yakınlaştır</value>
+  </data>
+  <data name="Are you sure you want to delete the selected output?" xml:space="preserve">
+    <value>Seçili çıktıyı silmek istediğinizden emin misiniz?</value>
+  </data>
+  <data name="Successfully imported {0} workflow definitions." xml:space="preserve">
+    <value>{0} iş akışı tanımları başarıyla içe aktarıldı.</value>
+  </data>
+  <data name="This variable is an array" xml:space="preserve">
+    <value>Bu değişken bir dizidir</value>
+  </data>
+  <data name="This input is an array" xml:space="preserve">
+    <value>Bu girdi bir dizidir</value>
+  </data>
+  <data name="Unable to make changes as the workflow or application is currently in read-only mode" xml:space="preserve">
+    <value>İş akışı veya uygulama şu anda salt okunur modunda olduğundan değişiklik yapılamıyor</value>
+  </data>
+  <data name="Aggregation" xml:space="preserve">
+    <value>Agregasyon</value>
+  </data>
+  <data name="Fork (flow)" xml:space="preserve">
+    <value>Çatal (akış)</value>
+  </data>
+  <data name="HTTP Request (flow)" xml:space="preserve">
+    <value>HTTP İsteği (akış)</value>
+  </data>
+  <data name="Is array" xml:space="preserve">
+    <value>Bir dizi mi</value>
+  </data>
+  <data name="Is Before" xml:space="preserve">
+    <value>Öncesindeyse</value>
+  </data>
+  <data name="Is After" xml:space="preserve">
+    <value>Sonrasındaysa</value>
+  </data>
+  <data name="Is Not" xml:space="preserve">
+    <value>Değilse</value>
+  </data>
+  <data name="Unpublish the current workflow" xml:space="preserve">
+    <value>Mevcut iş akışını yayından kaldır.</value>
+  </data>
+  <data name="Usable as activity" xml:space="preserve">
+    <value>İş Akışı olarak kullanılabilir</value>
+  </data>
+  <data name="Use JSON Response" xml:space="preserve">
+    <value>JSON biçiminde yanıt kullan</value>
+  </data>
+  <data name="Used" xml:space="preserve">
+    <value>Kullanıldı</value>
+  </data>
+  <data name="Webhooks" xml:space="preserve">
+    <value>Webhooks</value>
+  </data>
+  <data name="Incident handling strategy" xml:space="preserve">
+    <value>Olay yönetim stratejisi</value>
+  </data>
+  <data name="A checkbox" xml:space="preserve">
+    <value>Onay kutusu</value>
+  </data>
+  <data name="A code editor" xml:space="preserve">
+    <value>Kod Editörü</value>
+  </data>
+  <data name="A dropdown list" xml:space="preserve">
+    <value>Açılır kutu</value>
+  </data>
+  <data name="A JSON editor" xml:space="preserve">
+    <value>JSON editörü</value>
+  </data>
+  <data name="Are you sure you want to cancel all running workflow instances of this workflow definition?" xml:space="preserve">
+    <value>Bu iş akışına ait tüm aktif örnekleri iptal etmek istediğinizden emin misiniz?</value>
+  </data>
+  <data name="Are you sure you want to delete the selected versions?" xml:space="preserve">
+    <value>Seçili sürümleri silmek istediğinizden emin misiniz?</value>
+  </data>
+  <data name="Cancel running workflow instances?" xml:space="preserve">
+    <value>Çalışan iş akışı örneklerini iptal et?</value>
+  </data>
+  <data name="Cancel workflow instance?" xml:space="preserve">
+    <value>İş akışı örneğini iptal et?</value>
+  </data>
+  <data name="{0} consuming workflow(s) updated" xml:space="preserve">
+    <value>{0} tüketici iş akışı(ları) güncellendi</value>
+  </data>
+  <data name="Create input" xml:space="preserve">
+    <value>Girdi oluştur</value>
+  </data>
+  <data name="Delete selected input?" xml:space="preserve">
+    <value>Seçili girdiyi sil?</value>
+  </data>
+  <data name="Delete selected output?" xml:space="preserve">
+    <value>Seçili çıktıyı sil?</value>
+  </data>
+  <data name="Delete selected workflow instances?" xml:space="preserve">
+    <value>Seçili iş akışı örneklerini sil?</value>
+  </data>
+  <data name="Delete workflow instance?" xml:space="preserve">
+    <value>İş akışı örneğini sil?</value>
+  </data>
+  <data name="JSON editor" xml:space="preserve">
+    <value>JSON editörü</value>
+  </data>
+  <data name="Not executed" xml:space="preserve">
+    <value>Yürütülmedi</value>
+  </data>
+  <data name="Not usable as activity." xml:space="preserve">
+    <value>Aktivite olarak kullanılamaz.</value>
+  </data>
+  <data name="One workflow is already unpublished" xml:space="preserve">
+    <value>Bir iş akışı zaten yayından kaldırıldı</value>
+  </data>
+  <data name="One workflow is not found" xml:space="preserve">
+    <value>Bir iş akışı bulunamadı</value>
+  </data>
+  <data name="One workflow is published" xml:space="preserve">
+    <value>Bir iş akışı yayınlandı</value>
+  </data>
+  <data name="One workflow is unpublished" xml:space="preserve">
+    <value>Bir iş akışı yayından kaldırıldı</value>
+  </data>
+  <data name="Successfully imported" xml:space="preserve">
+    <value>Başarıyla içe aktarıldı</value>
+  </data>
+  <data name="Successfully imported 1 workflow definition." xml:space="preserve">
+    <value>1 iş akışı tanımı başarıyla içe aktarıldı</value>
+  </data>
+  <data name="Successfully imported one instance" xml:space="preserve">
+    <value>Bir örnek başarıyla içe aktarıldı</value>
+  </data>
+  <data name="Successfully started workflow" xml:space="preserve">
+    <value>İş akışı başarıyla başlatıldı</value>
+  </data>
+  <data name="The ID of the variable." xml:space="preserve">
+    <value>Değişkenin ID'si.</value>
+  </data>
+  <data name="The read-only workflows will not be affected." xml:space="preserve">
+    <value>Salt okunur iş akışları etkilenmeyecektir.</value>
+  </data>
+  <data name="The text to display in the designer." xml:space="preserve">
+    <value>Tasarımcıda gösterilecek metin.</value>
+  </data>
+  <data name="Timestamp" xml:space="preserve">
+    <value>Zaman damgası</value>
+  </data>
+  <data name="Unpublish selected workflows?" xml:space="preserve">
+    <value>Seçili iş akışlarının yayından kaldır?</value>
+  </data>
+  <data name="workflow definitions." xml:space="preserve">
+    <value>iş akışı tanımları.</value>
+  </data>
+  <data name="Workflow published" xml:space="preserve">
+    <value>İş akışı yayınlandı</value>
+  </data>
+  <data name="Workflow saved" xml:space="preserve">
+    <value>İş akışı kaydedildi</value>
+  </data>
+  <data name="Workflow unpublished" xml:space="preserve">
+    <value>İş akışı yayından kaldırıldı</value>
+  </data>
+  <data name="Workflow was already published" xml:space="preserve">
+    <value>İş akışı önceden yayınlanmış</value>
+  </data>
+  <data name="workflows are already published" xml:space="preserve">
+    <value>iş akışları önceden yayınlanmış</value>
+  </data>
+  <data name="workflows are already unpublished" xml:space="preserve">
+    <value>iş akışları önceden yayından kaldırılmış</value>
+  </data>
+  <data name="workflows are unpublished" xml:space="preserve">
+    <value>iş akışları yayından kaldırıldı</value>
+  </data>
+  <data name="Delete version {0}" xml:space="preserve">
+    <value>Versiyon {0} sil</value>
+  </data>
+  <data name="Successfully imported {0} instances" xml:space="preserve">
+    <value>Başarıyla {0} örnek içe aktarıldı</value>
+  </data>
+  <data name="{0} workflows are already unpublished" xml:space="preserve">
+    <value>{0} iş akışı önceden yayından kaldırılmış</value>
+  </data>
+  <data name="{0} workflows are not found" xml:space="preserve">
+    <value>{0} iş akışı bulunamadı</value>
+  </data>
+  <data name="{0} workflows are published" xml:space="preserve">
+    <value>{0} iş akışları yayınlandı</value>
+  </data>
+  <data name="{0} workflows are unpublished" xml:space="preserve">
+    <value>{0} iş akışları yayından kaldırıldı</value>
+  </data>
+  <data name="{0} workflows consuming published workflows have been updated" xml:space="preserve">
+    <value>{0} yayınlanmış iş akışını kullanan iş akışları güncellendi</value>
+  </data>
+  <data name="The commit strategy to use that controls when the workflow state should be committed." xml:space="preserve">
+    <value>İş akışı durumunun ne zaman kaydedileceğini kontrol eden kullanılacak kaydetme stratejisi.</value>
+  </data>
+  <data name="Workflow definition picker" xml:space="preserve">
+    <value>İş akışı tanımı seçim aracı</value>
+  </data>
+  <data name="Are you sure you want to cancel this workflow instance?" xml:space="preserve">
+    <value>Bu iş akışı örneğini iptal etmek istediğinizden emin misiniz?</value>
+  </data>
+  <data name="Are you sure you want to delete the selected input?" xml:space="preserve">
+    <value>Seçili girdiyi silmek istediğinizden emin misiniz?</value>
+  </data>
+  <data name="Upload JSON and/or ZIP files containing workflow data to import." xml:space="preserve">
+    <value>İçe aktarmak için iş akışı verilerini içeren JSON ve/veya ZIP dosyalarını yükleyin.</value>
+  </data>
+  <data name="Workflow published with Not Found activities" xml:space="preserve">
+    <value>Bulunamayan etkinliklerle birlikte iş akışı yayınlandı</value>
+  </data>
+  <data name="One workflow consuming a published workflow has been updated" xml:space="preserve">
+    <value>Yayınlanmış bir iş akışını kullanan bir iş akışı güncellendi</value>
+  </data>
+  <data name="workflows are published" xml:space="preserve">
+    <value>iş akışları yayınlandı</value>
+  </data>
+  <data name="The workflow cannot be started" xml:space="preserve">
+    <value>İş akışı başlatılamıyor</value>
+  </data>
+  <data name="When checked, this activity is the start of this workflow." xml:space="preserve">
+    <value>İşaretlendiğinde, bu etkinlik bu iş akışının başlangıcı olur.</value>
+  </data>
+  <data name="Workflow retracted" xml:space="preserve">
+    <value>İş akışı geri çekildi</value>
+  </data>
+  <data name="Are you sure you want to cancel the selected workflow instances?" xml:space="preserve">
+    <value>Seçili iş akışı örneklerini iptal etmek istediğinizden emin misiniz?</value>
+  </data>
+  <data name="Enter the expression that will be used to determine the log persistence strategy for this property." xml:space="preserve">
+    <value>Bu özellik için günlük (log) kalıcılık stratejisini belirlemek amacıyla kullanılacak ifadeyi girin.</value>
+  </data>
+  <data name="Are you sure you want to delete the selected workflow instances?" xml:space="preserve">
+    <value>Seçili iş akışı örneklerini silmek istediğinizden emin misiniz?</value>
+  </data>
+  <data name="When checked, this activity can trigger this workflow." xml:space="preserve">
+    <value>Seçildiğinde, bu aktivite bu iş akışını başlatabilir.</value>
+  </data>
+  <data name="workflows are not found" xml:space="preserve">
+    <value>iş akışları bulunamadı</value>
+  </data>
+  <data name="workflows consuming published workflows have been updated" xml:space="preserve">
+    <value>yayınlanmış iş akışlarını kullanan iş akışları güncellendi</value>
+  </data>
+  <data name="{0} workflows are already published" xml:space="preserve">
+    <value>{0} iş akışı önceden yayınlanmış</value>
+  </data>
+  <data name="Metadata" xml:space="preserve">
+    <value>Üstveri</value>
+  </data>
+  <data name="Never" xml:space="preserve">
+    <value>Asla</value>
+  </data>
+  <data name="OpenAITextToImage" xml:space="preserve">
+    <value>OpenAI Metinden Görüntüye</value>
+  </data>
+  <data name="Outcomes" xml:space="preserve">
+    <value>Sonuçlar</value>
+  </data>
+  <data name="Output" xml:space="preserve">
+    <value>Çıktı</value>
+  </data>
+  <data name="Presence Penalty" xml:space="preserve">
+    <value>Varlık Cezası</value>
+  </data>
+  <data name="Set Output" xml:space="preserve">
+    <value>Çıktı Ayarla</value>
+  </data>
+  <data name="Show incidents" xml:space="preserve">
+    <value>Olayları göster</value>
+  </data>
+  <data name="Show relative time" xml:space="preserve">
+    <value>Göreceli zamanı göster</value>
+  </data>
+  <data name="Showing all events" xml:space="preserve">
+    <value>Tüm etkinlikler gösteriliyor</value>
+  </data>
+  <data name="Start at" xml:space="preserve">
+    <value>Başlangıç zamanı</value>
+  </data>
+  <data name="Sub status" xml:space="preserve">
+    <value>Alt durum</value>
+  </data>
+  <data name="The maximum number" xml:space="preserve">
+    <value>Üretilecek maksimum jeton sayısı. Maksimum için boş bırakın.</value>
+  </data>
+  <data name="The name of the new workflow." xml:space="preserve">
+    <value>Yeni iş akışının adı.</value>
+  </data>
+  <data name="The name of the variable." xml:space="preserve">
+    <value>Değişkenin adı.</value>
+  </data>
+  <data name="The settings of the service in JSON format." xml:space="preserve">
+    <value>Servisin JSON formatındaki ayarları.</value>
+  </data>
+  <data name="The technical name of the service." xml:space="preserve">
+    <value>Servisin teknik adı.</value>
+  </data>
+  <data name="There are currently no inputs defined." xml:space="preserve">
+    <value>Şu anda tanımlanmış herhangi bir girdi yok.</value>
+  </data>
+  <data name="There are currently no outputs defined." xml:space="preserve">
+    <value>Şu anda tanımlanmış herhangi bir çıktı yok.</value>
+  </data>
+  <data name="There are currently no variables defined." xml:space="preserve">
+    <value>Şu anda tanımlanmış herhangi bir değişken yok.</value>
+  </data>
+  <data name="This activity does not have any common properties." xml:space="preserve">
+    <value>Bu etkinliğin hiçbir ortak özelliği bulunmamaktadır.</value>
+  </data>
+  <data name="This activity does not have any input properties." xml:space="preserve">
+    <value>Bu etkinliğin herhangi bir giriş özelliği yok.</value>
+  </data>
+  <data name="Parser" xml:space="preserve">
+    <value>Ayrıştırıcı</value>
+  </data>
+  <data name="Output Properties" xml:space="preserve">
+    <value>Çıktı Özellikleri</value>
+  </data>
+  <data name="Outputs" xml:space="preserve">
+    <value>Çıktılar</value>
+  </data>
+  <data name="Showing incidents" xml:space="preserve">
+    <value>Olaylar gösteriliyor</value>
+  </data>
+  <data name="Content Type" xml:space="preserve">
+    <value>İçerik Türü</value>
+  </data>
+  <data name="Correlation ID Function" xml:space="preserve">
+    <value>Korelasyon ID Fonksiyonu</value>
+  </data>
+  <data name="Executing" xml:space="preserve">
+    <value>Çalıştırılıyor</value>
+  </data>
+  <data name="Expected Status Codes" xml:space="preserve">
+    <value>Beklenen Durum Kodları</value>
+  </data>
+  <data name="A function to compute the correlation ID to associate a dispatched workflow with." xml:space="preserve">
+    <value>Gönderilen bir iş akışını ilişkilendirmek için kullanılacak korelasyon ID’sini hesaplayan bir fonksiyon.</value>
+  </data>
+  <data name="Pending" xml:space="preserve">
+    <value>Beklemede</value>
+  </data>
+  <data name="OpenAIChatCompletion" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="A workflow output definition picker" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="A workflow definition picker" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="An outcome picker" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="The HTTP method to use when sending the request." xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Trigger workflow" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="The content type to use when sending the request." xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Switch" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Interval" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Multiple lines of text input" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="The definition ID of the workflows to dispatch." xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="The join mode determines whether this activity should continue as soon as one inbound path comes in (Wait Any), or once all inbound paths have executed (Wait All)." xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="The items to iterate through." xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Add case" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Always allow the creation" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="The secret value." xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="A list of radio buttons" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="This activity does not have any output properties." xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="The lifetime of this secret" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Max Tokens" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Dropdown" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="The scope of the secret helps the UI to filter available options from dropdown lists." xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Request Content." xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Output picker" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="The technical name of the input variable" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="No secrets found" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Break out of a loop." xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Time Duration" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="An input for multiple words, like a tagging input" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Current Value" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="The step size. To count down, enter a negative number." xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Condition" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Trigger execution at a specific time in the future." xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Top Probability determines" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Branches" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Zoom to fit" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="TopP" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="object" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Always allow the creation of a new workflow instance." xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="A variable with this name already exists in the current scope." xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="UI Hint" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="A workflow with this name already exists." xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="The switch mode determines whether the first match should be scheduled, or all matches." xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Multi text" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="A list of expected status codes to handle." xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Disable Authorization Header Validation" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Write Line" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Outcome picker" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="string" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="The penalty for repeating any one token" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Primitives" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="The data source to use for dispatching the workflows." xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Outer Bound Inclusive" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="The penalty for repeating" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Manage all the things" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Single line" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Checklist" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="The name of the new secret." xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Is on or After" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Switch (flow)" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Looping" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Join" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="A list of expected outcomes to handle." xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="The Authorization header value to send with the request. For example: Bearer {some-access-token}" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Executes javaScript code" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="No API keys found" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="The content to send with the request. Can be a string, an object, a byte array or a stream." xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Mode" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Controls whether the end step is upper/lowerbound inclusive or exclusive. True (inclusive) by default." xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Workflow Definition" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Is on or Before" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Cancelled" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="A single line of text input" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Checkbox" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="The default key to use for the input name when sending the current item to the dispatched workflow. Will not be used if the Items field contain a list of dictionaries" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="The value of the API key." xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Default Item Input Key" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="Radio list" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="A list of checkboxes" xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="The set of values to iterate." xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="The outcome or set of outcomes to complete this activity with." xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="A value that allows to add the Authorization header without validation." xml:space="preserve">
+    <value></value>
+  </data>
+  <data name="The technical name of the API key." xml:space="preserve">
+    <value></value>
+  </data>
+</root>

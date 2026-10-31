@@ -1,0 +1,16 @@
+@page "/workflows/definitions/{definitionId}/edit"
+@attribute [RequirePermission(WorkflowPermissions.Definitions, PermissionVerbs.View)]
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+<PageTitle>@Localizer["Workflow definitions Editor"]</PageTitle>
+<WorkflowDefinitionEditor DefinitionId="@DefinitionId"/>
+
+@code
+{
+    /// <summary>
+    /// The ID of the workflow definition to edit.
+    /// </summary>
+    [Parameter]
+    public string DefinitionId { get; set; } = null!;
+}

@@ -10,6 +10,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+from release_support import parse_version
+
 
 @dataclass(frozen=True)
 class Commit:
@@ -43,6 +45,7 @@ SECTIONS: tuple[tuple[str, str], ...] = (
 
 def main() -> int:
     args = parse_args()
+    parse_version(args.version)
     repo_path = Path(args.repo_path).expanduser().resolve()
     commits = get_commits(repo_path, args.from_ref, args.to_ref)
     notes = render_notes(args.version, args.from_ref, args.to_ref, commits)
@@ -51,6 +54,9 @@ def main() -> int:
         output = Path(args.output).expanduser()
         if not output.is_absolute():
             output = repo_path / output
+        if output.exists() and not args.overwrite:
+            print("error: notes already exist; use --overwrite only to intentionally replace them", file=sys.stderr)
+            return 1
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(notes, encoding="utf-8")
         print(output)
@@ -67,6 +73,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--to-ref", required=True, help="Release tag/ref for the compare range.")
     parser.add_argument("--version", required=True, help="Release version for the title.")
     parser.add_argument("--output", help="Optional Markdown output path.")
+    parser.add_argument("--overwrite", action="store_true", help="Intentionally replace an existing notes file")
     return parser.parse_args()
 
 
@@ -95,7 +102,7 @@ def render_notes(version: str, from_ref: str, to_ref: str, commits: list[Commit]
     for commit in commits:
         categorized[categorize(commit.subject)].append(commit)
 
-    lines: list[str] = [f"Compare: `{from_ref}...{to_ref}`", "", "---", "", "## 🌟 Highlights", ""]
+    lines: list[str] = [f"Compare: `{from_ref}...{to_ref}`", f"<!-- elsa-release-version: {version} -->", "", "---", "", "## 🌟 Highlights", ""]
 
     for commit in select_highlights(commits):
         lines.append(f"- {format_subject(commit.subject)} {commit.reference}")

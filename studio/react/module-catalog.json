@@ -1,0 +1,170 @@
+[
+  {
+    "id": "shell",
+    "packageId": "Elsa.ReactStudio.Shell",
+    "name": "Shell",
+    "core": true,
+    "dependsOn": [],
+    "client": "dotnet/modules/Elsa.ReactStudio.Shell/Client",
+    "requiresServerFeatures": []
+  },
+  {
+    "id": "dashboard",
+    "packageId": "Elsa.ReactStudio.Dashboard",
+    "name": "Dashboard",
+    "core": true,
+    "dependsOn": [],
+    "client": "dotnet/modules/Elsa.ReactStudio.Dashboard/Client",
+    "requiresServerFeatures": []
+  },
+  {
+    "id": "workflow-definitions",
+    "packageId": "Elsa.ReactStudio.WorkflowDefinitions",
+    "name": "WorkflowDefinitions",
+    "core": true,
+    "dependsOn": [
+      "designer",
+      "activity-editors"
+    ],
+    "client": "dotnet/modules/Elsa.ReactStudio.WorkflowDefinitions/Client",
+    "requiresServerFeatures": []
+  },
+  {
+    "id": "designer",
+    "packageId": "Elsa.ReactStudio.Designer",
+    "name": "Designer",
+    "core": true,
+    "dependsOn": [
+      "activity-editors"
+    ],
+    "client": "dotnet/modules/Elsa.ReactStudio.Designer/Client",
+    "requiresServerFeatures": []
+  },
+  {
+    "id": "activity-editors",
+    "packageId": "Elsa.ReactStudio.ActivityEditors",
+    "name": "ActivityEditors",
+    "core": true,
+    "dependsOn": [],
+    "client": "dotnet/modules/Elsa.ReactStudio.ActivityEditors/Client",
+    "requiresServerFeatures": []
+  },
+  {
+    "id": "workflow-instances",
+    "packageId": "Elsa.ReactStudio.WorkflowInstances",
+    "name": "WorkflowInstances",
+    "core": true,
+    "dependsOn": [
+      "designer",
+      "workflow-definitions"
+    ],
+    "client": "dotnet/modules/Elsa.ReactStudio.WorkflowInstances/Client",
+    "requiresServerFeatures": []
+  },
+  {
+    "id": "alterations",
+    "packageId": "Elsa.ReactStudio.Alterations",
+    "name": "Alterations",
+    "core": false,
+    "dependsOn": [],
+    "client": "dotnet/modules/Elsa.ReactStudio.Alterations/Client",
+    "requiresServerFeatures": [
+      "Elsa.Alterations"
+    ]
+  },
+  {
+    "id": "labels",
+    "packageId": "Elsa.ReactStudio.Labels",
+    "name": "Labels",
+    "core": false,
+    "dependsOn": [],
+    "client": "dotnet/modules/Elsa.ReactStudio.Labels/Client",
+    "requiresServerFeatures": [
+      "Elsa.Labels"
+    ]
+  },
+  {
+    "id": "security",
+    "packageId": "Elsa.ReactStudio.Security",
+    "name": "Security",
+    "core": false,
+    "dependsOn": [],
+    "client": "dotnet/modules/Elsa.ReactStudio.Security/Client",
+    "requiresServerFeatures": [
+      "Elsa.Identity"
+    ]
+  },
+  {
+    "id": "secrets",
+    "packageId": "Elsa.ReactStudio.Secrets",
+    "name": "Secrets",
+    "core": false,
+    "dependsOn": [],
+    "client": "dotnet/modules/Elsa.ReactStudio.Secrets/Client",
+    "requiresServerFeatures": [
+      "Elsa.Secrets"
+    ]
+  },
+  {
+    "id": "user-tasks",
+    "packageId": "Elsa.ReactStudio.UserTasks",
+    "name": "UserTasks",
+    "core": false,
+    "dependsOn": [],
+    "client": "dotnet/modules/Elsa.ReactStudio.UserTasks/Client",
+    "requiresServerFeatures": [
+      "Elsa.UserTasks"
+    ]
+  },
+  {
+    "id": "environments",
+    "packageId": "Elsa.ReactStudio.Environments",
+    "name": "Environments",
+    "core": false,
+    "dependsOn": [],
+    "client": "dotnet/modules/Elsa.ReactStudio.Environments/Client",
+    "requiresServerFeatures": []
+  },
+  {
+    "id": "settings",
+    "packageId": "Elsa.ReactStudio.Settings",
+    "name": "Settings",
+    "core": false,
+    "dependsOn": [],
+    "client": "dotnet/modules/Elsa.ReactStudio.Settings/Client",
+    "requiresServerFeatures": []
+  },
+  {
+    "id": "appearance",
+    "packageId": "Elsa.ReactStudio.Appearance",
+    "name": "Appearance",
+    "core": false,
+    "dependsOn": [
+      "settings"
+    ],
+    "client": "dotnet/modules/Elsa.ReactStudio.Appearance/Client",
+    "requiresServerFeatures": []
+  },
+  {
+    "id": "diagnostics-console-logs",
+    "packageId": "Elsa.ReactStudio.Diagnostics.ConsoleLogs",
+    "name": "Diagnostics.ConsoleLogs",
+    "core": false,
+    "dependsOn": [],
+    "client": "dotnet/modules/Elsa.ReactStudio.Diagnostics.ConsoleLogs/Client",
+    "requiresServerFeatures": [
+      "Elsa.Diagnostics.ConsoleLogs.ShellFeatures.ConsoleLogs"
+    ]
+  },
+  {
+    "id": "diagnostics-structured-logs",
+    "packageId": "Elsa.ReactStudio.Diagnostics.StructuredLogs",
+    "name": "Diagnostics.StructuredLogs",
+    "core": false,
+    "dependsOn": [],
+    "client": "dotnet/modules/Elsa.ReactStudio.Diagnostics.StructuredLogs/Client",
+    "requiresServerFeatures": [
+      "Elsa.Diagnostics.StructuredLogs.ShellFeatures.StructuredLogs"
+    ]
+  }
+]

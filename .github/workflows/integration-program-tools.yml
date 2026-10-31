@@ -1,0 +1,167 @@
+name: Integration program tools
+
+on:
+  pull_request:
+    paths:
+      - '**/*.sln'
+      - '**/*.slnx'
+      - 'Elsa.Extensions.slnf'
+      - 'Elsa.Studio.slnf'
+      - '.github/dependabot.yml'
+      - '.config/dotnet-tools.json'
+      - '**/*.csproj'
+      - '**/*.proj'
+      - '**/*.fsproj'
+      - '**/*.vbproj'
+      # MSBuild imports can use custom and lower-case names.
+      - '**/*.props'
+      - '**/*.targets'
+      - '**/[Nn]u[Gg]et.[Cc]onfig'
+      - '**/global.json'
+      - 'docs/integration-program/consolidation/dependabot-recursive-discovery.md'
+      - 'scripts/integration-program/**'
+      - 'Elsa.Apps.slnf'
+      - 'Elsa.Templates.slnf'
+      - 'scripts/solution/solution-groups.json'
+      - 'extensions/src/Elsa.Testing.Extensions/**'
+      - 'extensions/samples/workbench/**'
+      - 'docs/integration-program/verify-hierarchy.py'
+      - 'docs/integration-program/hierarchy.json'
+      - '.github/workflows/integration-program-tools.yml'
+      - '.github/workflows/publish-studio-original-pair.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  retained-testing-helper:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: '10.0.300'
+      - name: Restore and build the retained helper on every supported framework
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          import subprocess
+
+          project = Path('extensions/src/Elsa.Testing.Extensions/Elsa.Testing.Extensions.csproj')
+          package = 'Microsoft.AspNetCore.Mvc.Testing'
+          for framework in ('net8.0', 'net9.0', 'net10.0'):
+              subprocess.run([
+                  'dotnet', 'build', str(project), '--configuration', 'Release',
+                  '--framework', framework, '--nologo', '-m:1',
+              ], check=True)
+              evaluation = json.loads(subprocess.check_output([
+                  'dotnet', 'msbuild', str(project), '-nologo',
+                  f'-p:TargetFramework={framework}',
+                  '-getProperty:ManagePackageVersionsCentrally',
+                  '-getItem:PackageVersion,PackageReference',
+              ], text=True))
+              references = [item for item in evaluation['Items']['PackageReference']
+                            if item['Identity'] == package]
+              if (evaluation['Properties']['ManagePackageVersionsCentrally'].lower() != 'true'
+                      or len(references) != 1 or references[0].get('Version')
+                      or references[0].get('VersionOverride')):
+                  raise SystemExit(f'{framework}: MVC.Testing must use central package management')
+              versions = [item['Version'] for item in evaluation['Items']['PackageVersion']
+                          if item['Identity'] == package]
+              assets = json.loads((project.parent / 'obj/project.assets.json').read_text())
+              resolved = [identity for identity in assets['targets'][framework]
+                          if identity.startswith(f'{package}/')]
+              if len(versions) != 1 or resolved != [f'{package}/{versions[0]}']:
+                  raise SystemExit(f'{framework}: resolved MVC.Testing differs from central policy')
+              print(f'{framework}: built with MVC.Testing {versions[0]}', flush=True)
+          PY
+
+  import-rehearsal-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          # The bridge verifies an older pinned Core commit with git cat-file and git diff.
+          fetch-depth: 0
+      - name: Verify Dependabot project discovery coverage
+        # Ubuntu's Ruby includes Minitest as a bundled gem; retain a pinned fallback.
+        run: |
+          ruby -e 'require "minitest"' || gem install --user-install --no-document minitest --version 5.16.3
+          ruby scripts/integration-program/test_dependabot_discovery.rb
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          # Symbol-pair tests and the pinned Secrets lockfiles use this SDK.
+          dotnet-version: '10.0.300'
+      - name: Install the pinned workflow parser
+        # The r7 source-tip receipt test shells out to scripts/validate_packages_workflow_gates.py, which needs this.
+        # PyYAML 6.0.3, CPython 3.12 manylinux x86_64 wheel.
+        run: |
+          echo 'PyYAML==6.0.3 --hash=sha256:ba1cc08a7ccde2d2ec775841541641e4548226580ab850948cbfda66a1befcdc' > "$RUNNER_TEMP/gate-requirements.txt"
+          python3 -m pip install --only-binary :all: --require-hashes -r "$RUNNER_TEMP/gate-requirements.txt"
+      - name: Verify the real symbol inspector against compiler-produced DLL and PDB fixtures
+        env:
+          ELSA_SYMBOL_INSPECTOR_DLL: ${{ runner.temp }}/symbol-inspector-fixture/VerifyPackageSymbolPair.dll
+        run: |
+          dotnet build scripts/integration-program/VerifyPackageSymbolPair/VerifyPackageSymbolPair.csproj \
+            --configuration Release --output "$RUNNER_TEMP/symbol-inspector-fixture"
+          python -m unittest discover -s scripts/integration-program -p test_verify_package_symbol_pair.py
+          python -O -m unittest discover -s scripts/integration-program -p test_verify_package_symbol_pair.py
+      - name: Verify program graph, import safety and history preservation
+        run: |
+          python docs/integration-program/verify-hierarchy.py
+          python -m unittest discover -s scripts/integration-program -p 'test_*.py'
+          python -O -m unittest discover -s scripts/integration-program -p 'test_*.py'
+      - name: Preserve maintenance package verification and recovery contracts
+        working-directory: .agents/skills/elsa-release/tests
+        run: |
+          python -m unittest test_verify_packages test_release_train
+          python -O -m unittest test_verify_packages test_release_train
+      - name: Verify activity contract comparison guards
+        run: |
+          python -m unittest discover -s scripts/integration-program/activity-compatibility -p 'test_*.py'
+          python -O -m unittest discover -s scripts/integration-program/activity-compatibility -p 'test_*.py'
+      - name: Verify synthetic Secrets SQLite bridge against current Core
+        run: |
+          python scripts/integration-program/run_secrets_sqlite_bridge_contract.py \
+            --report-out "$RUNNER_TEMP/secrets-sqlite-bridge-report.json"
+      - name: Characterize published Secrets PostgreSQL upgrade and rollback
+        run: |
+          python scripts/integration-program/run_secrets_postgresql_upgrade_fixture.py \
+            --report-out "$RUNNER_TEMP/secrets-postgresql-upgrade-report.json"
+          diff -u scripts/integration-program/secrets-postgresql-upgrade/observed-result.json \
+            "$RUNNER_TEMP/secrets-postgresql-upgrade-report.json"
+      - name: Prove synthetic PostgreSQL Secrets fresh-destination bridge
+        run: |
+          python scripts/integration-program/run_secrets_postgresql_bridge.py \
+            --report-out "$RUNNER_TEMP/secrets-postgresql-bridge-report.json"
+      - name: Retain redacted PostgreSQL bridge report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: secrets-postgresql-bridge-report
+          path: ${{ runner.temp }}/secrets-postgresql-bridge-report.json
+          if-no-files-found: error
+          retention-days: 30
+      - name: Characterize published Secrets SQL Server upgrade failure
+        run: |
+          python scripts/integration-program/run_secrets_sqlserver_upgrade_fixture.py \
+            --report-out "$RUNNER_TEMP/secrets-sqlserver-upgrade-report.json"
+          diff -u scripts/integration-program/secrets-sqlserver-upgrade/observed-result.json \
+            "$RUNNER_TEMP/secrets-sqlserver-upgrade-report.json"
+      - name: Verify synthetic Secrets SQL Server fresh-destination bridge
+        run: |
+          python scripts/integration-program/run_secrets_sqlserver_bridge.py \
+            --report-out "$RUNNER_TEMP/secrets-sqlserver-bridge-report.json"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: secrets-sqlserver-bridge-report
+          path: ${{ runner.temp }}/secrets-sqlserver-bridge-report.json
+          if-no-files-found: error
+          retention-days: 30
