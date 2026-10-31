@@ -25,7 +25,14 @@ public class FlowHttpRequestPortProvider : ActivityPortProviderBase
     /// <inheritdoc />
     public override bool GetSupportsActivityType(PortProviderContext context)
     {
-        return context.ActivityDescriptor.TypeName is "Elsa.FlowSendHttpRequest" or "Elsa.DownloadHttpFile";
+        if (context.ActivityDescriptor.TypeName is "Elsa.FlowSendHttpRequest" or "Elsa.DownloadHttpFile")
+            return true;
+
+        // Subclasses register under their own type name. The server descriptor already
+        // carries the inherited wrapped ExpectedStatusCodes input, which SendHttpRequest
+        // does not (its status-code cases are unwrapped embedded ports).
+        return context.ActivityDescriptor.Inputs.Any(input =>
+            input.Name == "ExpectedStatusCodes" && input.IsWrapped);
     }
 
     /// <inheritdoc />
