@@ -1,0 +1,17 @@
+@page "/workflows/instances"
+@attribute [RequirePermission(WorkflowPermissions.Instances, PermissionVerbs.View)]
+@inherits StudioComponentBase
+
+<PageTitle>Workflow instances</PageTitle>
+<WorkflowInstanceList ViewWorkflowInstance="@OnViewWorkflowInstance"/>
+
+@code {
+
+    [Inject] NavigationManager NavigationManager { get; set; } = default!;
+
+    private void OnViewWorkflowInstance(string instanceId)
+    {
+        NavigationManager.NavigateTo($"workflows/instances/{instanceId}/view");
+    }
+
+}

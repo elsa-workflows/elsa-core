@@ -1,0 +1,166 @@
+{
+  "contract": "Synthetic, review-only mapping candidate; not a production converter",
+  "sourceArtifacts": {
+    "extensions": {
+      "packageId": "Elsa.Secrets.Management",
+      "version": "3.8.1",
+      "sourceCommit": "01bf9ad70d0399afadae9609fe820703d3de290d",
+      "secretEntity": "https://github.com/elsa-workflows/elsa-extensions/blob/01bf9ad70d0399afadae9609fe820703d3de290d/src/modules/secrets/Elsa.Secrets.Management/Entities/Secret.cs",
+      "sqliteMigration": "https://github.com/elsa-workflows/elsa-extensions/blob/01bf9ad70d0399afadae9609fe820703d3de290d/src/modules/secrets/Elsa.Secrets.Persistence.EFCore.Sqlite/Migrations/20240915164114_V3_3.cs",
+      "secretStatus": "https://github.com/elsa-workflows/elsa-extensions/blob/01bf9ad70d0399afadae9609fe820703d3de290d/src/modules/secrets/Elsa.Secrets.Models/SecretStatus.cs",
+      "secretManager": "https://github.com/elsa-workflows/elsa-extensions/blob/01bf9ad70d0399afadae9609fe820703d3de290d/src/modules/secrets/Elsa.Secrets.Management/Services/DefaultSecretManager.cs",
+      "secretUpdater": "https://github.com/elsa-workflows/elsa-extensions/blob/01bf9ad70d0399afadae9609fe820703d3de290d/src/modules/secrets/Elsa.Secrets.Management/Services/DefaultSecretUpdater.cs",
+      "dataProtectionEncryptor": "https://github.com/elsa-workflows/elsa-extensions/blob/01bf9ad70d0399afadae9609fe820703d3de290d/src/modules/secrets/Elsa.Secrets.Management/Services/DataProtectionEncryptor.cs"
+    },
+    "core": {
+      "packageId": "Elsa.Secrets",
+      "version": "3.8.4",
+      "sourceCommit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+      "secretModel": "https://github.com/elsa-workflows/elsa-core/blob/33181ae3048f628f591a0155b5665a8e4d1bcea2/src/modules/Elsa.Secrets/Models/Secret.cs",
+      "secretVersion": "https://github.com/elsa-workflows/elsa-core/blob/33181ae3048f628f591a0155b5665a8e4d1bcea2/src/modules/Elsa.Secrets/Models/SecretVersion.cs",
+      "secretPayload": "https://github.com/elsa-workflows/elsa-core/blob/33181ae3048f628f591a0155b5665a8e4d1bcea2/src/modules/Elsa.Secrets/Models/SecretPayload.cs",
+      "secretStatus": "https://github.com/elsa-workflows/elsa-core/blob/33181ae3048f628f591a0155b5665a8e4d1bcea2/src/modules/Elsa.Secrets/Models/SecretStatus.cs",
+      "nameValidator": "https://github.com/elsa-workflows/elsa-core/blob/33181ae3048f628f591a0155b5665a8e4d1bcea2/src/modules/Elsa.Secrets/Services/DefaultSecretNameValidator.cs",
+      "encryptedStore": "https://github.com/elsa-workflows/elsa-core/blob/33181ae3048f628f591a0155b5665a8e4d1bcea2/src/modules/Elsa.Secrets/Stores/EncryptedSecretStore.cs",
+      "valueProtector": "https://github.com/elsa-workflows/elsa-core/blob/33181ae3048f628f591a0155b5665a8e4d1bcea2/src/modules/Elsa.Secrets/Services/DefaultSecretValueProtector.cs"
+    }
+  },
+  "legacySqliteSchema": {
+    "tables": ["Secrets", "__EFMigrationsHistory", "__EFMigrationsLock"],
+    "migrationHistory": [
+      {
+        "migrationId": "20240915164114_V3_3",
+        "productVersion": "10.0.9"
+      }
+    ],
+    "columns": [
+      {
+        "name": "Id",
+        "sqlite": "TEXT NOT NULL PRIMARY KEY",
+        "coreCandidate": "SecretVersion.Payload.Metadata['legacy.rowId']",
+        "policy": "Retain as per-version provenance. Core 3.8.4 has no native version ID; old ID-based lookup/update semantics need a compatibility design before production migration."
+      },
+      {
+        "name": "SecretId",
+        "sqlite": "TEXT NOT NULL",
+        "coreCandidate": "Secret.Id and SecretVersion.Payload.Metadata['legacy.secretId']",
+        "policy": "One old logical SecretId becomes one Core aggregate. Preserve it as the aggregate ID and repeat it in version metadata for traceability. Verify external callers that depend on legacy SecretId semantics."
+      },
+      {
+        "name": "Name",
+        "sqlite": "TEXT NOT NULL",
+        "coreCandidate": "Secret.Name and Secret.DisplayName from highest IsLatest row; prior per-version values in Payload.Metadata['legacy.name']; normalized value supplied to Core persistence uniqueness index",
+        "policy": "Trim/lowercase normalization follows the pinned Core name validator. Reject a Core-invalid name or duplicate normalized name across logical secrets. Exact legacy name lookup and route behavior require API compatibility work."
+      },
+      {
+        "name": "Scope",
+        "sqlite": "TEXT NULL",
+        "coreCandidate": "Secret.Scope from highest IsLatest row; prior per-version values in Payload.Metadata['legacy.scope']",
+        "policy": "Preserve historical differences in metadata. The aggregate exposes only the latest value."
+      },
+      {
+        "name": "EncryptedValue",
+        "sqlite": "TEXT NOT NULL",
+        "coreCandidate": "Decrypt through the old IDataProtectionProvider purpose, then Core EncryptedSecretStore writes a new AES-GCM value in Payload.Metadata['protectedValue']",
+        "policy": "Never copy ciphertext. Requires the source application's matching Data Protection key ring/application name and a configured Core SecretsOptions.EncryptionKey (16, 24, or 32 bytes). Missing/wrong keys fail closed. Synthetic proof does not establish customer key availability."
+      },
+      {
+        "name": "Description",
+        "sqlite": "TEXT NOT NULL",
+        "coreCandidate": "Secret.Description from highest IsLatest row; prior per-version values in Payload.Metadata['legacy.description']",
+        "policy": "Copy the current value to the aggregate and retain history as strings in version metadata."
+      },
+      {
+        "name": "Version",
+        "sqlite": "INTEGER NOT NULL",
+        "coreCandidate": "SecretVersion.Version",
+        "policy": "Preserve positive, unique version numbers and sort ascending. Gaps are retained. Duplicates or non-positive values fail closed."
+      },
+      {
+        "name": "IsLatest",
+        "sqlite": "INTEGER NOT NULL",
+        "coreCandidate": "No Core field; require exactly one true value on the highest Version; preserve the source marker in Payload.Metadata['legacy.isLatest']",
+        "policy": "A missing, multiple, non-binary, or non-highest marker fails closed."
+      },
+      {
+        "name": "Status",
+        "sqlite": "INTEGER NOT NULL",
+        "coreCandidate": "SecretVersion.Status; aggregate Secret.Status copies the highest IsLatest row; preserve numeric code in Payload.Metadata['legacy.statusValue']",
+        "policy": "Map 0 Active, 1 Retired, 2 Expired, 3 Revoked by the pinned enum order. Reject all other values; never conflate Core's additional Deleted status."
+      },
+      {
+        "name": "ExpiresIn",
+        "sqlite": "TEXT NULL (SQLite TimeSpan representation)",
+        "coreCandidate": "Payload.Metadata['legacy.expiresIn']",
+        "policy": "Core has no duration field. Preserve the original text, but it does not retain legacy duration-based create/update behavior by itself; consumers need an explicit compatibility decision."
+      },
+      {
+        "name": "ExpiresAt",
+        "sqlite": "TEXT NULL (DateTimeOffset)",
+        "coreCandidate": "SecretVersion.ExpiresAt",
+        "policy": "Copy the exact timestamp with offset; reject malformed values and timestamps without an explicit offset."
+      },
+      {
+        "name": "LastAccessedAt",
+        "sqlite": "TEXT NULL (DateTimeOffset)",
+        "coreCandidate": "Payload.Metadata['legacy.lastAccessedAt']",
+        "policy": "Retain for audit only. Core 3.8.4 SecretVersion has no native last-access field or equivalent runtime behavior."
+      },
+      {
+        "name": "TenantId",
+        "sqlite": "TEXT NULL",
+        "coreCandidate": null,
+        "policy": "Core 3.8.4 Secret has no TenantId field. Any non-empty value is a hard blocker; blank/null rows do not prove tenant isolation compatibility."
+      },
+      {
+        "name": "CreatedAt",
+        "sqlite": "TEXT NOT NULL (DateTimeOffset)",
+        "coreCandidate": "SecretVersion.CreatedAt per row; Secret.CreatedAt is the earliest version timestamp",
+        "policy": "Preserve offset values after validating all timestamps."
+      },
+      {
+        "name": "UpdatedAt",
+        "sqlite": "TEXT NOT NULL (DateTimeOffset)",
+        "coreCandidate": "Secret.UpdatedAt is the latest version timestamp; prior per-version values in Payload.Metadata['legacy.updatedAt']",
+        "policy": "Core SecretVersion has no UpdatedAt. The aggregate timestamp is derived from all source rows."
+      },
+      {
+        "name": "Owner",
+        "sqlite": "TEXT NULL",
+        "coreCandidate": null,
+        "policy": "Core 3.8.4 Secret has no Owner field. Any non-empty value is a hard blocker; never discard the owner."
+      }
+    ],
+    "auxiliaryTables": [
+      {
+        "name": "__EFMigrationsHistory",
+        "policy": "Fingerprint the source history exactly; do not copy the Extensions migration row into Core. Apply Core's own migrations to its destination schema. Unknown history fails closed."
+      },
+      {
+        "name": "__EFMigrationsLock",
+        "policy": "Require no active migration lock during a future snapshot; do not migrate or copy this transient lock row."
+      }
+    ]
+  },
+  "candidateProjection": {
+    "aggregateFields": ["Id", "Name", "DisplayName", "Description", "TypeName", "StoreName", "Scope", "Tags", "Status", "CreatedAt", "UpdatedAt", "Versions"],
+    "storageNormalizedName": "Trim Name, validate against Core 3.8.4 regex, and lowercase invariantly; this is a persistence/index value, not a Secret model property.",
+    "typeName": "text (old secret values are strings; confirm type-dependent API behavior before production use)",
+    "storeName": "encrypted (Core protector and key configured separately)",
+    "tags": "empty (no legacy Tags field)",
+    "versionPayload": "Payload.Metadata retains legacy row ID, logical ID, per-version name/scope/description, UpdatedAt, IsLatest marker, numeric status, ExpiresIn, and LastAccessedAt when present.",
+    "versionExpiry": "Core SecretVersion has ExpiresAt but no IsLatest, ID, UpdatedAt, ExpiresIn, LastAccessedAt, TenantId, or Owner fields."
+  },
+  "goNoGo": {
+    "directInPlaceUpgrade": "NO-GO",
+    "blockers": [
+      "TenantId and Owner have no Core 3.8.4 destination; any non-empty values must stop migration.",
+      "Legacy per-version Id is externally returned and has no Core SecretVersion ID field; retaining it in metadata does not preserve old ID-based API behavior.",
+      "Legacy ExpiresIn, LastAccessedAt, and version-level UpdatedAt have no native Core behavior even though candidate metadata can retain their values.",
+      "Legacy and Core secret routes/contracts must be resolved separately; the data fixture does not prove API/client compatibility.",
+      "A synthetic key-ring/key handoff proves only controlled fixture decryption and re-encryption, not the availability of customer Data Protection keys or safe deployment of the Core encryption key."
+    ],
+    "futureReversibleBridge": "Plausible with a versioned compatibility sidecar and adapter, subject to a separately reviewed implementation and tests.",
+    "nextDecision": "Use the sidecar design in futureBridgeDesign.md to preserve source rows and map legacy IDs to Core versions; enforce tenant/owner access through an adapter before cutover."
+  }
+}

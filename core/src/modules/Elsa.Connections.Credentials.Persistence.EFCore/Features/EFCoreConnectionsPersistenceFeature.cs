@@ -1,0 +1,26 @@
+using Elsa.Connections.Contracts;
+using Elsa.Connections.Features;
+using Elsa.Features.Attributes;
+using Elsa.Features.Services;
+using Elsa.Persistence.EFCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+
+namespace Elsa.Connections.Credentials.Persistence.EFCore.Features;
+
+[DependsOn(typeof(ConnectionsFeature))]
+public sealed class EFCoreConnectionsPersistenceFeature(IModule module)
+    : PersistenceFeatureBase<EFCoreConnectionsPersistenceFeature, ConnectionsElsaDbContext>(module)
+{
+    public override void Apply()
+    {
+        base.Apply();
+        Services.AddScoped<EFCoreConnectionLifecycleStore>();
+        Services.AddScoped<IConnectionLifecycleStore>(sp => sp.GetRequiredService<EFCoreConnectionLifecycleStore>());
+        Services.AddScoped<IConnectionDueCandidateStore>(sp => sp.GetRequiredService<EFCoreConnectionLifecycleStore>());
+        Services.AddScoped<EFCoreConnectionCredentialBindingStore>();
+        Services.AddScoped<IConnectionCredentialBindingStore>(sp => sp.GetRequiredService<EFCoreConnectionCredentialBindingStore>());
+        Services.AddScoped<IConnectionCredentialUseGrantStore, EFCoreConnectionCredentialUseGrantStore>();
+        Services.TryAddSingleton<IConnectionCredentialBindingConflictClassifier, NoConnectionCredentialBindingConflictClassifier>();
+    }
+}

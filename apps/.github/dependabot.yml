@@ -1,0 +1,67 @@
+version: 2
+
+registries:
+  elsa-feedz-preview:
+    type: nuget-feed
+    url: https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json
+    token: ${{secrets.FEEDZ_API_KEY}}
+
+updates:
+  - package-ecosystem: "nuget"
+    directory: "/"
+    target-branch: "main"
+    registries:
+      - elsa-feedz-preview
+    schedule:
+      interval: "daily"
+      time: "06:00"
+      timezone: "Europe/Amsterdam"
+    allow:
+      - dependency-name: "Elsa"
+      - dependency-name: "Elsa.Api.Client"
+      - dependency-name: "Elsa.Expressions.CSharp"
+      - dependency-name: "Elsa.Expressions.JavaScript"
+      - dependency-name: "Elsa.Expressions.Liquid"
+      - dependency-name: "Elsa.Http"
+      - dependency-name: "Elsa.Identity"
+      - dependency-name: "Elsa.Persistence.EFCore"
+      - dependency-name: "Elsa.Persistence.EFCore.MySql"
+      - dependency-name: "Elsa.Persistence.EFCore.Oracle"
+      - dependency-name: "Elsa.Persistence.EFCore.PostgreSql"
+      - dependency-name: "Elsa.Persistence.EFCore.Sqlite"
+      - dependency-name: "Elsa.Persistence.EFCore.SqlServer"
+      - dependency-name: "Elsa.Scheduling"
+      - dependency-name: "Elsa.Workflows.Api"
+      - dependency-name: "Elsa.Workflows.Runtime"
+      - dependency-name: "Elsa.Workflows.Runtime.Distributed"
+      - dependency-name: "Elsa.Studio"
+      - dependency-name: "Elsa.Studio.Core"
+      - dependency-name: "Elsa.Studio.Core.BlazorServer"
+      - dependency-name: "Elsa.Studio.Core.BlazorWasm"
+      - dependency-name: "Elsa.Studio.Localization"
+      - dependency-name: "Elsa.Studio.Localization.BlazorServer"
+      - dependency-name: "Elsa.Studio.Localization.BlazorWasm"
+      - dependency-name: "Elsa.Studio.Login.BlazorServer"
+      - dependency-name: "Elsa.Studio.Login.BlazorWasm"
+      - dependency-name: "Elsa.Agents.Activities"
+      - dependency-name: "Elsa.Agents.Api"
+      - dependency-name: "Elsa.Agents.Core"
+      - dependency-name: "Elsa.Agents.Persistence.EFCore.MySql"
+      - dependency-name: "Elsa.Agents.Persistence.EFCore.PostgreSql"
+      - dependency-name: "Elsa.Agents.Persistence.EFCore.Sqlite"
+      - dependency-name: "Elsa.Agents.Persistence.EFCore.SqlServer"
+      - dependency-name: "Elsa.Logging"
+      - dependency-name: "Elsa.Logging.Console"
+      - dependency-name: "Elsa.Logging.Core"
+      - dependency-name: "Elsa.Logging.Serilog"
+      - dependency-name: "Elsa.Studio.Agents"
+      - dependency-name: "Elsa.Studio.Http.Webhooks"
+      - dependency-name: "Elsa.Studio.WorkflowContexts"
+    open-pull-requests-limit: 1
+    groups:
+      elsa-preview:
+        patterns:
+          - "Elsa*"
+    commit-message:
+      prefix: "deps"
+      include: "scope"

@@ -1,0 +1,19 @@
+﻿@page "/counter"
+
+<PageTitle>Counter</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.False">
+    <PageHeading Text="Counter"></PageHeading>
+    <MudText Class="mb-4">Current count: @_currentCount</MudText>
+    <MudButton Color="Color.Primary" Variant="Variant.Filled" @onclick="IncrementCount">Click me</MudButton>
+</MudContainer>
+
+
+@code {
+    private int _currentCount = 0;
+
+    private void IncrementCount()
+    {
+        _currentCount++;
+    }
+}

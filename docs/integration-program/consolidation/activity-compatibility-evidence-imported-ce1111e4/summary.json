@@ -1,0 +1,1178 @@
+{
+  "checkedDate": "2026-09-27",
+  "status": "incomplete-known-baseline-failures",
+  "executedActivities": 0,
+  "sourcePins": {
+    "importHead": "ce1111e4421b0e2af9852d55d9e2ebde937fcab5",
+    "portCommit": "1774859de4b1fc8444981c0a34b128b60e0277a6",
+    "evidenceSourceHead": "3add8104f72986f44adcb496a880a9c1db656f63",
+    "extensionsParent": "ba8b71d91c15ffe5be4b2c539cf9f712e74af775",
+    "releasedPackages": "NuGet 3.8.4 (Elsa.Ldap and Elsa.Mqtt have no released baseline)",
+    "sdk": "10.0.300"
+  },
+  "frameworks": [
+    {
+      "framework": "net10.0",
+      "releasedDescriptors": 134,
+      "consolidatedDescriptors": 147,
+      "staticDescriptors": {
+        "released": 118,
+        "consolidated": 131
+      },
+      "generatedDescriptorsByProvider": {
+        "released": {
+          "AgentActivityProvider": 1,
+          "MassTransitActivityTypeProvider": 2,
+          "OrchardContentItemsEventActivityProvider": 4,
+          "WebhookEventActivityProvider": 9
+        },
+        "consolidated": {
+          "AgentActivityProvider": 1,
+          "MassTransitActivityTypeProvider": 2,
+          "OrchardContentItemsEventActivityProvider": 4,
+          "WebhookEventActivityProvider": 9
+        }
+      },
+      "abstractExclusions": {
+        "released": 13,
+        "consolidated": 13
+      },
+      "releasedWorkflowActivities": 130,
+      "consolidatedWorkflowActivities": 143,
+      "releasedFailures": [
+        "Elsa.GitHub.Comments.DeleteComment",
+        "Elsa.GitHub.Comments.GetComment",
+        "Elsa.GitHub.Comments.UpdateComment",
+        "Elsa.GitHub.Gists.GetGist",
+        "Elsa.Agents.AgentActivity.Summarize"
+      ],
+      "consolidatedFailures": [
+        "Elsa.GitHub.Comments.DeleteComment",
+        "Elsa.GitHub.Comments.GetComment",
+        "Elsa.GitHub.Comments.UpdateComment",
+        "Elsa.GitHub.Gists.GetGist"
+      ],
+      "allowedSourceOnlyAddedDescriptors": 9,
+      "reviewedReleasedAssemblyAddedDescriptors": [
+        "Elsa.GitHub.Comments.DeleteComment:2",
+        "Elsa.GitHub.Comments.GetComment:2",
+        "Elsa.GitHub.Comments.UpdateComment:2",
+        "Elsa.GitHub.Gists.GetGist:2"
+      ],
+      "unexpectedAddedDescriptors": [],
+      "missingDescriptors": [],
+      "changedDescriptors": [],
+      "firstWriteImportPreserved": true,
+      "canonicalImportPreserved": true,
+      "importedContractsPreserved": true,
+      "sourceHead": "3add8104f72986f44adcb496a880a9c1db656f63",
+      "sourceStatusClean": true,
+      "sourceInputsUnchanged": true,
+      "sourceInputCount": 7854,
+      "hostExitCodes": {
+        "released": {
+          "buildExitCode": 0,
+          "probeExitCode": 1
+        },
+        "consolidated": {
+          "buildExitCode": 0,
+          "probeExitCode": 1
+        }
+      },
+      "negativeProbes": {
+        "unknown-type": true,
+        "changed-id": true,
+        "changed-version": true,
+        "changed-literal": true,
+        "first-write-id": true,
+        "generated-literal": true
+      },
+      "githubProviderIdActivities": {
+        "Elsa.GitHub.Comments.DeleteComment": {
+          "v1SerializedIdenticalToReleasedHost": true,
+          "v1IdentityPreserved": {
+            "released": false,
+            "source": false
+          },
+          "v2IdentityPreserved": true,
+          "v2LiteralValuesPreserved": true,
+          "v2Preserved": true
+        },
+        "Elsa.GitHub.Comments.GetComment": {
+          "v1SerializedIdenticalToReleasedHost": true,
+          "v1IdentityPreserved": {
+            "released": false,
+            "source": false
+          },
+          "v2IdentityPreserved": true,
+          "v2LiteralValuesPreserved": true,
+          "v2Preserved": true
+        },
+        "Elsa.GitHub.Comments.UpdateComment": {
+          "v1SerializedIdenticalToReleasedHost": true,
+          "v1IdentityPreserved": {
+            "released": false,
+            "source": false
+          },
+          "v2IdentityPreserved": true,
+          "v2LiteralValuesPreserved": true,
+          "v2Preserved": true
+        },
+        "Elsa.GitHub.Gists.GetGist": {
+          "v1SerializedIdenticalToReleasedHost": true,
+          "v1IdentityPreserved": {
+            "released": false,
+            "source": false
+          },
+          "v2IdentityPreserved": true,
+          "v2LiteralValuesPreserved": true,
+          "v2Preserved": true
+        }
+      },
+      "generatedAgentRootRoundTripPreserved": {
+        "released": false,
+        "source": true
+      },
+      "buildWarnings": {
+        "released": {
+          "total": 0,
+          "byCode": {}
+        },
+        "consolidated": {
+          "total": 103,
+          "byCode": {
+            "CS0108": 4,
+            "CS0618": 17,
+            "CS1574": 3,
+            "CS8600": 2,
+            "CS8602": 1,
+            "CS8603": 1,
+            "CS8604": 14,
+            "CS8618": 3,
+            "CS8620": 1,
+            "CS8625": 1,
+            "CS8907": 1,
+            "CS8974": 1,
+            "CS9113": 1,
+            "IL2111": 3,
+            "NU1902": 46,
+            "other": 4
+          }
+        }
+      },
+      "runnerExitCode": 1,
+      "verifyProbeExitCode": 0,
+      "harness": [
+        {
+          "path": "GeneratedActivityFixtures.cs",
+          "sha256": "6258c52513d43fa1fe47fcc6ba94313111f9060cacb56c451216db00ded171fa"
+        },
+        {
+          "path": "Program.cs",
+          "sha256": "f2337bf292f981907ac463e37eb0332d7579a25770d9ac29004119524d7da378"
+        },
+        {
+          "path": "matrix.json",
+          "sha256": "a3878ffe23c26abb2f8a11e6a06a78aad5aa322e1a17a8f2ebeb17012c2fdb47"
+        },
+        {
+          "path": "run.py",
+          "sha256": "4c4f36b122089e50d55503b2ca4c0a4f0adc81121fe5b011cdc1d534f64bcccd"
+        }
+      ]
+    },
+    {
+      "framework": "net9.0",
+      "releasedDescriptors": 134,
+      "consolidatedDescriptors": 147,
+      "staticDescriptors": {
+        "released": 118,
+        "consolidated": 131
+      },
+      "generatedDescriptorsByProvider": {
+        "released": {
+          "AgentActivityProvider": 1,
+          "MassTransitActivityTypeProvider": 2,
+          "OrchardContentItemsEventActivityProvider": 4,
+          "WebhookEventActivityProvider": 9
+        },
+        "consolidated": {
+          "AgentActivityProvider": 1,
+          "MassTransitActivityTypeProvider": 2,
+          "OrchardContentItemsEventActivityProvider": 4,
+          "WebhookEventActivityProvider": 9
+        }
+      },
+      "abstractExclusions": {
+        "released": 13,
+        "consolidated": 13
+      },
+      "releasedWorkflowActivities": 130,
+      "consolidatedWorkflowActivities": 143,
+      "releasedFailures": [
+        "Elsa.GitHub.Comments.DeleteComment",
+        "Elsa.GitHub.Comments.GetComment",
+        "Elsa.GitHub.Comments.UpdateComment",
+        "Elsa.GitHub.Gists.GetGist",
+        "Elsa.Agents.AgentActivity.Summarize"
+      ],
+      "consolidatedFailures": [
+        "Elsa.GitHub.Comments.DeleteComment",
+        "Elsa.GitHub.Comments.GetComment",
+        "Elsa.GitHub.Comments.UpdateComment",
+        "Elsa.GitHub.Gists.GetGist"
+      ],
+      "allowedSourceOnlyAddedDescriptors": 9,
+      "reviewedReleasedAssemblyAddedDescriptors": [
+        "Elsa.GitHub.Comments.DeleteComment:2",
+        "Elsa.GitHub.Comments.GetComment:2",
+        "Elsa.GitHub.Comments.UpdateComment:2",
+        "Elsa.GitHub.Gists.GetGist:2"
+      ],
+      "unexpectedAddedDescriptors": [],
+      "missingDescriptors": [],
+      "changedDescriptors": [],
+      "firstWriteImportPreserved": true,
+      "canonicalImportPreserved": true,
+      "importedContractsPreserved": true,
+      "sourceHead": "3add8104f72986f44adcb496a880a9c1db656f63",
+      "sourceStatusClean": true,
+      "sourceInputsUnchanged": true,
+      "sourceInputCount": 7854,
+      "hostExitCodes": {
+        "released": {
+          "buildExitCode": 0,
+          "probeExitCode": 1
+        },
+        "consolidated": {
+          "buildExitCode": 0,
+          "probeExitCode": 1
+        }
+      },
+      "negativeProbes": {
+        "unknown-type": true,
+        "changed-id": true,
+        "changed-version": true,
+        "changed-literal": true,
+        "first-write-id": true,
+        "generated-literal": true
+      },
+      "githubProviderIdActivities": {
+        "Elsa.GitHub.Comments.DeleteComment": {
+          "v1SerializedIdenticalToReleasedHost": true,
+          "v1IdentityPreserved": {
+            "released": false,
+            "source": false
+          },
+          "v2IdentityPreserved": true,
+          "v2LiteralValuesPreserved": true,
+          "v2Preserved": true
+        },
+        "Elsa.GitHub.Comments.GetComment": {
+          "v1SerializedIdenticalToReleasedHost": true,
+          "v1IdentityPreserved": {
+            "released": false,
+            "source": false
+          },
+          "v2IdentityPreserved": true,
+          "v2LiteralValuesPreserved": true,
+          "v2Preserved": true
+        },
+        "Elsa.GitHub.Comments.UpdateComment": {
+          "v1SerializedIdenticalToReleasedHost": true,
+          "v1IdentityPreserved": {
+            "released": false,
+            "source": false
+          },
+          "v2IdentityPreserved": true,
+          "v2LiteralValuesPreserved": true,
+          "v2Preserved": true
+        },
+        "Elsa.GitHub.Gists.GetGist": {
+          "v1SerializedIdenticalToReleasedHost": true,
+          "v1IdentityPreserved": {
+            "released": false,
+            "source": false
+          },
+          "v2IdentityPreserved": true,
+          "v2LiteralValuesPreserved": true,
+          "v2Preserved": true
+        }
+      },
+      "generatedAgentRootRoundTripPreserved": {
+        "released": false,
+        "source": true
+      },
+      "buildWarnings": {
+        "released": {
+          "total": 0,
+          "byCode": {}
+        },
+        "consolidated": {
+          "total": 103,
+          "byCode": {
+            "CS0108": 4,
+            "CS0618": 17,
+            "CS1574": 3,
+            "CS8600": 2,
+            "CS8602": 1,
+            "CS8603": 1,
+            "CS8604": 14,
+            "CS8618": 3,
+            "CS8620": 1,
+            "CS8625": 1,
+            "CS8907": 1,
+            "CS8974": 1,
+            "CS9113": 1,
+            "IL2111": 3,
+            "NU1902": 46,
+            "other": 4
+          }
+        }
+      },
+      "runnerExitCode": 1,
+      "verifyProbeExitCode": 0,
+      "harness": [
+        {
+          "path": "GeneratedActivityFixtures.cs",
+          "sha256": "6258c52513d43fa1fe47fcc6ba94313111f9060cacb56c451216db00ded171fa"
+        },
+        {
+          "path": "Program.cs",
+          "sha256": "f2337bf292f981907ac463e37eb0332d7579a25770d9ac29004119524d7da378"
+        },
+        {
+          "path": "matrix.json",
+          "sha256": "a3878ffe23c26abb2f8a11e6a06a78aad5aa322e1a17a8f2ebeb17012c2fdb47"
+        },
+        {
+          "path": "run.py",
+          "sha256": "4c4f36b122089e50d55503b2ca4c0a4f0adc81121fe5b011cdc1d534f64bcccd"
+        }
+      ]
+    },
+    {
+      "framework": "net8.0",
+      "releasedDescriptors": 134,
+      "consolidatedDescriptors": 147,
+      "staticDescriptors": {
+        "released": 118,
+        "consolidated": 131
+      },
+      "generatedDescriptorsByProvider": {
+        "released": {
+          "AgentActivityProvider": 1,
+          "MassTransitActivityTypeProvider": 2,
+          "OrchardContentItemsEventActivityProvider": 4,
+          "WebhookEventActivityProvider": 9
+        },
+        "consolidated": {
+          "AgentActivityProvider": 1,
+          "MassTransitActivityTypeProvider": 2,
+          "OrchardContentItemsEventActivityProvider": 4,
+          "WebhookEventActivityProvider": 9
+        }
+      },
+      "abstractExclusions": {
+        "released": 13,
+        "consolidated": 13
+      },
+      "releasedWorkflowActivities": 130,
+      "consolidatedWorkflowActivities": 143,
+      "releasedFailures": [
+        "Elsa.GitHub.Comments.DeleteComment",
+        "Elsa.GitHub.Comments.GetComment",
+        "Elsa.GitHub.Comments.UpdateComment",
+        "Elsa.GitHub.Gists.GetGist",
+        "Elsa.Agents.AgentActivity.Summarize"
+      ],
+      "consolidatedFailures": [
+        "Elsa.GitHub.Comments.DeleteComment",
+        "Elsa.GitHub.Comments.GetComment",
+        "Elsa.GitHub.Comments.UpdateComment",
+        "Elsa.GitHub.Gists.GetGist"
+      ],
+      "allowedSourceOnlyAddedDescriptors": 9,
+      "reviewedReleasedAssemblyAddedDescriptors": [
+        "Elsa.GitHub.Comments.DeleteComment:2",
+        "Elsa.GitHub.Comments.GetComment:2",
+        "Elsa.GitHub.Comments.UpdateComment:2",
+        "Elsa.GitHub.Gists.GetGist:2"
+      ],
+      "unexpectedAddedDescriptors": [],
+      "missingDescriptors": [],
+      "changedDescriptors": [],
+      "firstWriteImportPreserved": true,
+      "canonicalImportPreserved": true,
+      "importedContractsPreserved": true,
+      "sourceHead": "3add8104f72986f44adcb496a880a9c1db656f63",
+      "sourceStatusClean": true,
+      "sourceInputsUnchanged": true,
+      "sourceInputCount": 7854,
+      "hostExitCodes": {
+        "released": {
+          "buildExitCode": 0,
+          "probeExitCode": 1
+        },
+        "consolidated": {
+          "buildExitCode": 0,
+          "probeExitCode": 1
+        }
+      },
+      "negativeProbes": {
+        "unknown-type": true,
+        "changed-id": true,
+        "changed-version": true,
+        "changed-literal": true,
+        "first-write-id": true,
+        "generated-literal": true
+      },
+      "githubProviderIdActivities": {
+        "Elsa.GitHub.Comments.DeleteComment": {
+          "v1SerializedIdenticalToReleasedHost": true,
+          "v1IdentityPreserved": {
+            "released": false,
+            "source": false
+          },
+          "v2IdentityPreserved": true,
+          "v2LiteralValuesPreserved": true,
+          "v2Preserved": true
+        },
+        "Elsa.GitHub.Comments.GetComment": {
+          "v1SerializedIdenticalToReleasedHost": true,
+          "v1IdentityPreserved": {
+            "released": false,
+            "source": false
+          },
+          "v2IdentityPreserved": true,
+          "v2LiteralValuesPreserved": true,
+          "v2Preserved": true
+        },
+        "Elsa.GitHub.Comments.UpdateComment": {
+          "v1SerializedIdenticalToReleasedHost": true,
+          "v1IdentityPreserved": {
+            "released": false,
+            "source": false
+          },
+          "v2IdentityPreserved": true,
+          "v2LiteralValuesPreserved": true,
+          "v2Preserved": true
+        },
+        "Elsa.GitHub.Gists.GetGist": {
+          "v1SerializedIdenticalToReleasedHost": true,
+          "v1IdentityPreserved": {
+            "released": false,
+            "source": false
+          },
+          "v2IdentityPreserved": true,
+          "v2LiteralValuesPreserved": true,
+          "v2Preserved": true
+        }
+      },
+      "generatedAgentRootRoundTripPreserved": {
+        "released": false,
+        "source": true
+      },
+      "buildWarnings": {
+        "released": {
+          "total": 0,
+          "byCode": {}
+        },
+        "consolidated": {
+          "total": 103,
+          "byCode": {
+            "CS0108": 4,
+            "CS0618": 17,
+            "CS1574": 3,
+            "CS8600": 2,
+            "CS8602": 1,
+            "CS8603": 1,
+            "CS8604": 14,
+            "CS8618": 3,
+            "CS8620": 1,
+            "CS8625": 1,
+            "CS8907": 1,
+            "CS8974": 1,
+            "CS9113": 1,
+            "IL2111": 3,
+            "NU1902": 46,
+            "other": 4
+          }
+        }
+      },
+      "runnerExitCode": 1,
+      "verifyProbeExitCode": 0,
+      "harness": [
+        {
+          "path": "GeneratedActivityFixtures.cs",
+          "sha256": "6258c52513d43fa1fe47fcc6ba94313111f9060cacb56c451216db00ded171fa"
+        },
+        {
+          "path": "Program.cs",
+          "sha256": "f2337bf292f981907ac463e37eb0332d7579a25770d9ac29004119524d7da378"
+        },
+        {
+          "path": "matrix.json",
+          "sha256": "a3878ffe23c26abb2f8a11e6a06a78aad5aa322e1a17a8f2ebeb17012c2fdb47"
+        },
+        {
+          "path": "run.py",
+          "sha256": "4c4f36b122089e50d55503b2ca4c0a4f0adc81121fe5b011cdc1d534f64bcccd"
+        }
+      ]
+    }
+  ],
+  "githubIdFocusedTests": {
+    "status": "passed",
+    "source": {
+      "cleanAfterTest": true,
+      "cleanBeforeTest": true,
+      "head": "3add8104f72986f44adcb496a880a9c1db656f63"
+    },
+    "test": {
+      "command": [
+        "$DOTNET",
+        "test",
+        "test/extensions/modules/devops/Elsa.DevOps.GitHub.UnitTests/Elsa.DevOps.GitHub.UnitTests.csproj",
+        "--framework",
+        "net10.0",
+        "--logger",
+        "trx;LogFileName=github-activity-id.trx",
+        "--results-directory",
+        "<output>/net10-results"
+      ],
+      "counters": {
+        "aborted": 0,
+        "completed": 0,
+        "disconnected": 0,
+        "error": 0,
+        "executed": 6,
+        "failed": 0,
+        "inProgress": 0,
+        "inconclusive": 0,
+        "notExecuted": 0,
+        "notRunnable": 0,
+        "passed": 6,
+        "passedButRunAborted": 0,
+        "pending": 0,
+        "timeout": 0,
+        "total": 6,
+        "warning": 0
+      },
+      "exitCode": 0,
+      "expectedCount": 6,
+      "framework": "net10.0",
+      "logPath": "net10-dotnet-test.log",
+      "logSha256": "67108f16e131fb9be7672570cdbb9e2a87d83c62f5ca067cf65f310113ff3bfb",
+      "outcomes": [
+        "Passed",
+        "Passed",
+        "Passed",
+        "Passed",
+        "Passed",
+        "Passed"
+      ],
+      "passed": true,
+      "testNames": [
+        "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.BothActivitySerializerEntryPointsRoundTripFourRootActivitiesWithoutIdCollisions",
+        "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.FourReleasedV1ShapesRetainTheirProviderInputsAndVersionlessPayloadIsRejectedByLatestV2Dispatch",
+        "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.UnaffectedNeighboringGitHubActivitiesKeepTheirExistingContracts",
+        "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.V2ActivitiesKeepTheirLogicalNameAndVersionForDirectAndDescriptorConstruction",
+        "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.WorkflowDefinitionModelUsesRootActivityShapeAndCanEmitMigrationFixture",
+        "Elsa.DevOps.GitHub.UnitTests.GitHubActivityIdentityTests.BothActivitySerializerEntryPointsRoundTripActivitiesNestedInSequence"
+      ],
+      "trxPath": "net10-results/github-activity-id.trx",
+      "trxSha256": "d2949128423c6d871120660df81315384ac4d4e447e4a3c02879fd494fb09531"
+    },
+    "port": {
+      "files": [
+        {
+          "bom": true,
+          "matches": true,
+          "path": "src/extensions/devops/Elsa.DevOps.GitHub/Activities/Comments/DeleteCommentV2.cs",
+          "sha256": "e096655adb88c74b87bd99ffda4f211729fe6ccf0e54cda0654000ea5d8e87f3"
+        },
+        {
+          "bom": true,
+          "matches": true,
+          "path": "src/extensions/devops/Elsa.DevOps.GitHub/Activities/Comments/GetCommentV2.cs",
+          "sha256": "cae4c59f9b02cd187d48f9f8b6d6218b73448196eed132083e42cd1b21baceed"
+        },
+        {
+          "bom": true,
+          "matches": true,
+          "path": "src/extensions/devops/Elsa.DevOps.GitHub/Activities/Comments/UpdateCommentV2.cs",
+          "sha256": "721307ad7bdb3b17bf042e669164e604b8e99def76498a23c00aa3b0f534ef43"
+        },
+        {
+          "bom": true,
+          "matches": true,
+          "path": "src/extensions/devops/Elsa.DevOps.GitHub/Activities/Gists/GetGistV2.cs",
+          "sha256": "cebc9ee5e3c60d7204647529265651d1300b72c413daff25739d4f203c07f99e"
+        },
+        {
+          "bom": false,
+          "matches": true,
+          "path": "test/extensions/modules/devops/Elsa.DevOps.GitHub.UnitTests/Elsa.DevOps.GitHub.UnitTests.csproj",
+          "sha256": "d57667151acf065ae7a11f74b9ef17eefa9d4990c7d0961b0ec6bc99cbde9f3c"
+        },
+        {
+          "bom": false,
+          "matches": true,
+          "path": "test/extensions/modules/devops/Elsa.DevOps.GitHub.UnitTests/GitHubActivityIdentityTests.cs",
+          "sha256": "8b16c40c1d40bc14716762d28013a3a624e43d3d555d82660876ff32b715d9ad"
+        }
+      ],
+      "patch": {
+        "path": "scripts/integration-program/github-activity-id-compatibility/extensions-v2.patch",
+        "sha256": "cc75ee242495cb9714840059b7eb62b0be7646fa99466b453451cc55d932640f"
+      },
+      "pathMap": [
+        [
+          "src/modules/devops/",
+          "src/extensions/devops/"
+        ],
+        [
+          "test/modules/devops/",
+          "test/extensions/modules/devops/"
+        ]
+      ],
+      "projectReferenceMap": [
+        "Include=\"../../../../src/modules/devops/Elsa.DevOps.GitHub/Elsa.DevOps.GitHub.csproj\"",
+        "Include=\"../../../../../src/extensions/devops/Elsa.DevOps.GitHub/Elsa.DevOps.GitHub.csproj\""
+      ]
+    },
+    "portFilesMatchReviewedPatch": true
+  },
+  "historicalComparison": [
+    {
+      "framework": "net10",
+      "releasedContractsIdenticalToHistoricalReleasedHost": true,
+      "rehearsalToImportAdded": [
+        "Elsa.GitHub.Comments.DeleteComment:2",
+        "Elsa.GitHub.Comments.GetComment:2",
+        "Elsa.GitHub.Comments.UpdateComment:2",
+        "Elsa.GitHub.Gists.GetGist:2"
+      ],
+      "rehearsalToImportRemoved": [],
+      "rehearsalToImportChanged": []
+    },
+    {
+      "framework": "net9",
+      "releasedContractsIdenticalToHistoricalReleasedHost": true,
+      "rehearsalToImportAdded": [
+        "Elsa.GitHub.Comments.DeleteComment:2",
+        "Elsa.GitHub.Comments.GetComment:2",
+        "Elsa.GitHub.Comments.UpdateComment:2",
+        "Elsa.GitHub.Gists.GetGist:2"
+      ],
+      "rehearsalToImportRemoved": [],
+      "rehearsalToImportChanged": []
+    },
+    {
+      "framework": "net8",
+      "releasedContractsIdenticalToHistoricalReleasedHost": true,
+      "rehearsalToImportAdded": [
+        "Elsa.GitHub.Comments.DeleteComment:2",
+        "Elsa.GitHub.Comments.GetComment:2",
+        "Elsa.GitHub.Comments.UpdateComment:2",
+        "Elsa.GitHub.Gists.GetGist:2"
+      ],
+      "rehearsalToImportRemoved": [],
+      "rehearsalToImportChanged": []
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "net10-receipt.json.gz",
+      "originalSha256": "50b3cf85e4124f67278f3f77da2ea7079a1e67da4eb2b65e00a9fd501a6b6b18",
+      "sanitizedSha256": "50b3cf85e4124f67278f3f77da2ea7079a1e67da4eb2b65e00a9fd501a6b6b18",
+      "gzipSha256": "0ddd7241e7760aecf01895d798f7d99c22f10ae9960f485fca7708416851f52a"
+    },
+    {
+      "path": "net10-released.json.gz",
+      "originalSha256": "6a40310770e677527aa4fa9ed4d14568627e1902f30b44a3ee3a086069d079b6",
+      "sanitizedSha256": "1c22000c124fbe39e074c7a5d945d2c5eb51ea9594edd1823acf669eb02f21a5",
+      "gzipSha256": "ec436d1aa14a8293d73fedded1f23adaa07ddbc207b9910a34af2eaef48b28a1"
+    },
+    {
+      "path": "net10-consolidated.json.gz",
+      "originalSha256": "83f829290fcd29774dc42956a0b4eec161ecf567c1745931084c3a6926049cf6",
+      "sanitizedSha256": "a98f5e8f8c47f1c52173dd609cc12751e27ce267283e5d7072ba2aade9c9b00a",
+      "gzipSha256": "a25f16dc4b185b28c3035f295ea68cc461569f609fbf403078a4ddd3b6639e75"
+    },
+    {
+      "path": "net10-released-build.log.gz",
+      "originalSha256": "f6fe02a291f2f05aef4665f6a836f880cb3ae5e67dd4b9981d1cf22cf5294bf5",
+      "sanitizedSha256": "e8191281a12034c480d39a28fed8ac48fa72ad5c606e7768be89a2066649b7e6",
+      "gzipSha256": "2ad5f55d8cc18b6e60e2ebbc7c1438156b10b7c74761c69429a6ab9aaf432f99"
+    },
+    {
+      "path": "net10-consolidated-build.log.gz",
+      "originalSha256": "ae54a201b96745109cb931484bcd8e6af00dd600779f803aed84302585cbcf5c",
+      "sanitizedSha256": "2f0ede64bcdb7709419bc95c0cad0982459481a93f537dc9cc87551fa4c8cd6a",
+      "gzipSha256": "3c0c0ed3787c8173d9ce79ca813151e44425b3c68e9a2e836527145ba0ec3dfe"
+    },
+    {
+      "path": "net10-released-probe.log.gz",
+      "originalSha256": "2cc8f1ea55fe1146d154edd844e6c87995dcbaa72023364b275605103a001de5",
+      "sanitizedSha256": "2cc8f1ea55fe1146d154edd844e6c87995dcbaa72023364b275605103a001de5",
+      "gzipSha256": "1553f4042329be26e9adcd16db7009bc0e25b7c8d85c2e1d9d10d693b51537e6"
+    },
+    {
+      "path": "net10-consolidated-probe.log.gz",
+      "originalSha256": "103b7bd9988516a6957edbbe9e8ecdbe8a64b80805c8bb40225ba0cfd0b2564b",
+      "sanitizedSha256": "103b7bd9988516a6957edbbe9e8ecdbe8a64b80805c8bb40225ba0cfd0b2564b",
+      "gzipSha256": "0cd9e2c70ab23525e115ad8918706260d0e8fe959f52a58153918d31e14ceaa1"
+    },
+    {
+      "path": "net10-negative-changed-id-input.json.gz",
+      "originalSha256": "fccef4c6b87a2ee9a2e2f100dc4937e227a863c8198810a4a8682030c4e2e597",
+      "sanitizedSha256": "4c51278a6d7ae73b308ac70d12fe5edc8fc196ef31628b30b29c8ae3a3f58bca",
+      "gzipSha256": "40542595b63a58018944e06005d8e4684d0af73a3729c972b91f83821a1b06df"
+    },
+    {
+      "path": "net10-negative-changed-id-result.json.gz",
+      "originalSha256": "0374fd80197ee5fafaa6d1cab30b4d1ff0e0d6367debebcf60d2426e0954f290",
+      "sanitizedSha256": "13ebc14816ea8e8a963603cd3d900b548b31818e40847ef44d07732ec236e37c",
+      "gzipSha256": "cedd277ad7c62c7b4a522b3b96ddcbe86c43733cd1f2837340bdc6de5e5202e5"
+    },
+    {
+      "path": "net10-negative-changed-id.log.gz",
+      "originalSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "sanitizedSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "gzipSha256": "a311e384a6858474ce4f33e195886d421ae5eebb672a1b05e647afd9f25c1dcc"
+    },
+    {
+      "path": "net10-negative-changed-literal-input.json.gz",
+      "originalSha256": "25eb96b53c54eca46f9d11c4b3160ae3123decd2cc0cd6d602cab2f14f59a3bc",
+      "sanitizedSha256": "b855b52fd3aef9bdbeae66095168276be6aca9c19d7f58436f58797edbef7e3a",
+      "gzipSha256": "ab305fd2c54b99b44be4eac9d8818fd1d1135e2b644792f7a59497b570c2d30a"
+    },
+    {
+      "path": "net10-negative-changed-literal-result.json.gz",
+      "originalSha256": "6b28ad80f992d4d9ab1f53d2dd4b60b842458408f92a4d361dda46b95f40bd5b",
+      "sanitizedSha256": "e6ca74de3dc090d03c14eaa039a758ee742311b9cd2b688e069586bee1bd8235",
+      "gzipSha256": "e213cebd00ff5e74a6db8fdce339341a2636f695a54a8be6f2c44adbcb48e9a3"
+    },
+    {
+      "path": "net10-negative-changed-literal.log.gz",
+      "originalSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "sanitizedSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "gzipSha256": "a311e384a6858474ce4f33e195886d421ae5eebb672a1b05e647afd9f25c1dcc"
+    },
+    {
+      "path": "net10-negative-changed-version-input.json.gz",
+      "originalSha256": "cb680f13ccc5c6715114b0571c0e972241298df8bd20200196ae7ed0679d88cb",
+      "sanitizedSha256": "8e7a011fec571faa118b335de8dfa216c6d83bfdb4cbd5283924124405488aa5",
+      "gzipSha256": "2e5dd490f53b688769db9b46832893286b194c18566734a09ab1413e4bb9b959"
+    },
+    {
+      "path": "net10-negative-changed-version-result.json.gz",
+      "originalSha256": "7eefeb9385a91750563197adb42978612677d54cca302663741668230a207213",
+      "sanitizedSha256": "669d44f9b7d8c2861a6bf098d91d0022f47d2f88b1fdfb50f9f504ea8c41141e",
+      "gzipSha256": "a8d5767150cda28156961b1768dcf4cf603b48c8300d45aa0c4d012100b9d993"
+    },
+    {
+      "path": "net10-negative-changed-version.log.gz",
+      "originalSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "sanitizedSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "gzipSha256": "a311e384a6858474ce4f33e195886d421ae5eebb672a1b05e647afd9f25c1dcc"
+    },
+    {
+      "path": "net10-negative-first-write-id-input.json.gz",
+      "originalSha256": "8ea004087e9d2fd90b4308adde69e89c4dfbb4b247d008cbbea90e680cd3cce6",
+      "sanitizedSha256": "978f3e4f946c59903594a780e4118311d09890ecafa5e8727b706ec26ff2e1ea",
+      "gzipSha256": "b26de0a8714d09241e3d7f4eff0c28fea85735e517898335fe84190dd369045f"
+    },
+    {
+      "path": "net10-negative-first-write-id-result.json.gz",
+      "originalSha256": "d742f78e512f7152de559a5cbd2ccb74a11dbec84e6ddcf2016deb5917c949ae",
+      "sanitizedSha256": "68819859fab2cd7ac035f09d0ee843914fc7ca37d60de7257808a5ce37251b34",
+      "gzipSha256": "e54b99289ade05a8f9a8705d661dafd5a7181ea8a175b002a6aac57a76713310"
+    },
+    {
+      "path": "net10-negative-first-write-id.log.gz",
+      "originalSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "sanitizedSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "gzipSha256": "a311e384a6858474ce4f33e195886d421ae5eebb672a1b05e647afd9f25c1dcc"
+    },
+    {
+      "path": "net10-negative-generated-literal-input.json.gz",
+      "originalSha256": "3ee8d07a311393fecaa54f834753580b9ac4315662b8e9a9125a888db64fe9ef",
+      "sanitizedSha256": "f859f7294ad12134bbc92a3ef766e4d410ab81ae128d9ff075b8a53260267953",
+      "gzipSha256": "de420dd81f21b3ee396e997b3584824d09f6c8e68c3fbeaac121dc1807ada0a2"
+    },
+    {
+      "path": "net10-negative-generated-literal-result.json.gz",
+      "originalSha256": "960742ef8ab8c9287a2ef9e57a5f6a96dde83fe4a004eb22ef170d48b7edffa5",
+      "sanitizedSha256": "aaaf2df5703706265aa7b8085e4d52dea00234ff3bee306c3f8768e1dec0f25a",
+      "gzipSha256": "e19f3443fb2a0126be14161c4ea873e2164ce2324252f0056c6b699c351fda59"
+    },
+    {
+      "path": "net10-negative-generated-literal.log.gz",
+      "originalSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "sanitizedSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "gzipSha256": "a311e384a6858474ce4f33e195886d421ae5eebb672a1b05e647afd9f25c1dcc"
+    },
+    {
+      "path": "net10-negative-negative-probes.json.gz",
+      "originalSha256": "4bb636e6d6cac0dd865a810a3540831a02b775648de38be698dbc3315f727ccb",
+      "sanitizedSha256": "4bb636e6d6cac0dd865a810a3540831a02b775648de38be698dbc3315f727ccb",
+      "gzipSha256": "6634b9e7d49880f4e7b8b11bb324aee777ff5b8ea653cd00317b94a0a426754b"
+    },
+    {
+      "path": "net10-negative-unknown-type-input.json.gz",
+      "originalSha256": "541860e1c9abf1c4a003ce81215585e5ff22942e8cd785f156292099286c70f9",
+      "sanitizedSha256": "a57f590abc96ca0cd127f82ff34645b8bf931e4b6049b73f0ce6ae7dbdb2641b",
+      "gzipSha256": "bc5de38296fb8aef562768ee2a80f11b30d86c0206eb4f8ca0ca4ef8a991f3f3"
+    },
+    {
+      "path": "net10-negative-unknown-type-result.json.gz",
+      "originalSha256": "2789b2cd638cb26c21fb2444c03515d536f6d07784355bbede5c78f31a17521a",
+      "sanitizedSha256": "c6c6fbdb93ed02a595c85d8f7f7145f0db6bfb546569f98ee93e7da06dc1d65c",
+      "gzipSha256": "4918c0b59c1c2332e886992c6e2a4a8e3396a816f3215d3fa7c4da670d7e652c"
+    },
+    {
+      "path": "net10-negative-unknown-type.log.gz",
+      "originalSha256": "35641bf8187ad92592a109c2afee2bf077e97c180d77eb98179b387458a71222",
+      "sanitizedSha256": "35641bf8187ad92592a109c2afee2bf077e97c180d77eb98179b387458a71222",
+      "gzipSha256": "d1b06f0a7dc8022fecaa4d915281c77dfe3f4ab948b1ba768d46c62178ad4bbc"
+    },
+    {
+      "path": "net9-receipt.json.gz",
+      "originalSha256": "8697ddba716998e56f807650305e3fcb4deed4cc99868a416bfc9557486dc684",
+      "sanitizedSha256": "8697ddba716998e56f807650305e3fcb4deed4cc99868a416bfc9557486dc684",
+      "gzipSha256": "2cd499080317d31b0be74a2788ba623c90f522092282cbf43e6f93b434e0112d"
+    },
+    {
+      "path": "net9-released.json.gz",
+      "originalSha256": "c8fd9e3eac098a95e592c83b8fb6588aedf66787a7970bcc2f96cd03c2502fa1",
+      "sanitizedSha256": "a4ff779a643c1e5c172b2a52e3e7d0ddb5c067be224cbb67a6cbd63953a976c1",
+      "gzipSha256": "6cc6b1a3cff278dc8ed9651c5cf4d0a9d8f2011a83152ef0e190e804407be1c0"
+    },
+    {
+      "path": "net9-consolidated.json.gz",
+      "originalSha256": "1622a56028b6ab12ec18016a11caebbe377c4b84d468cad51ecb12874b2aaa63",
+      "sanitizedSha256": "a85bba77159148541c477564c566c6d3a43aa80dba9baea7715e33007afac3c6",
+      "gzipSha256": "4faf68f67941932111dcff6a168c237e0c23a656d4ead50f3148a55a9c5e99de"
+    },
+    {
+      "path": "net9-released-build.log.gz",
+      "originalSha256": "4cf80b4c4333131c5e2d9f2f65b13e0f60d5205bdb209aef3f54888189cff5a6",
+      "sanitizedSha256": "cf5212e38e5ebccea627fa3ccd5f7e1cbb251693949e5a96326320189b416240",
+      "gzipSha256": "5274fa991323b390d6c1cd79e45b384968282141fc86c696c669bdca6733e70e"
+    },
+    {
+      "path": "net9-consolidated-build.log.gz",
+      "originalSha256": "6d7f469683fe54c120f606358bb16fa8a2e812bea91a62a31ca39c7ec9b98d6e",
+      "sanitizedSha256": "d23c1e1fa83f30bf3efe22a8973541ba26d8907b9e41420261f1453fb67caafe",
+      "gzipSha256": "5eec9fc71ec3a243e2dcf4c85727a368e9dcb43cdfca57afa1575c2af6abfa42"
+    },
+    {
+      "path": "net9-released-probe.log.gz",
+      "originalSha256": "2cc8f1ea55fe1146d154edd844e6c87995dcbaa72023364b275605103a001de5",
+      "sanitizedSha256": "2cc8f1ea55fe1146d154edd844e6c87995dcbaa72023364b275605103a001de5",
+      "gzipSha256": "1553f4042329be26e9adcd16db7009bc0e25b7c8d85c2e1d9d10d693b51537e6"
+    },
+    {
+      "path": "net9-consolidated-probe.log.gz",
+      "originalSha256": "103b7bd9988516a6957edbbe9e8ecdbe8a64b80805c8bb40225ba0cfd0b2564b",
+      "sanitizedSha256": "103b7bd9988516a6957edbbe9e8ecdbe8a64b80805c8bb40225ba0cfd0b2564b",
+      "gzipSha256": "0cd9e2c70ab23525e115ad8918706260d0e8fe959f52a58153918d31e14ceaa1"
+    },
+    {
+      "path": "net9-negative-changed-id-input.json.gz",
+      "originalSha256": "0f4f4fd51d4b15998a31034999afe5490f7937daed0231d33c21ca50d9067ac0",
+      "sanitizedSha256": "baef3fcd2f46ec0bdb5a3f608121611af45673a83ed9bbded36cb13c06a0fc75",
+      "gzipSha256": "d31e2993d43780c676d8fa27703d53992d66e76d8e29c355242842b5d2e2654d"
+    },
+    {
+      "path": "net9-negative-changed-id-result.json.gz",
+      "originalSha256": "14b91486420cfb18039326306c2b443266294eba9282efc3d308eae2e6b2c25a",
+      "sanitizedSha256": "6e76c3a6b107a3ad9a3d422c3ef4a64918fd22874ab99a63a1edeb54e9db1909",
+      "gzipSha256": "ffc03df58554a0f6efd437d2e85bb5ba5b9c6e4c64a2747eebd0aeea3fd24ce6"
+    },
+    {
+      "path": "net9-negative-changed-id.log.gz",
+      "originalSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "sanitizedSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "gzipSha256": "a311e384a6858474ce4f33e195886d421ae5eebb672a1b05e647afd9f25c1dcc"
+    },
+    {
+      "path": "net9-negative-changed-literal-input.json.gz",
+      "originalSha256": "beee20f59bb139581c245ab560fda9e922d8d73987e85685f372a1c74b39088f",
+      "sanitizedSha256": "9491bc216829bd666440a4b8b8e4cd5af5f03e842836e5a2c6437abffb4f7860",
+      "gzipSha256": "ea5159873aa631e6b2bacda50c0f49dda15822e39a27c2fe4d02535142deb1c6"
+    },
+    {
+      "path": "net9-negative-changed-literal-result.json.gz",
+      "originalSha256": "a0533c351bf9b2ea2fffe3d5a974376704e321ad24c51924691ab8bcc1769bd5",
+      "sanitizedSha256": "1d920f45c407b0b2c2f91dbbb76466ac5eec17442cec107932f483495bf68f6a",
+      "gzipSha256": "0a3f3791bc703cff2cb95f3dcb4f8e6db4b3adb35ba5c6eb6ccefaafa27d658c"
+    },
+    {
+      "path": "net9-negative-changed-literal.log.gz",
+      "originalSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "sanitizedSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "gzipSha256": "a311e384a6858474ce4f33e195886d421ae5eebb672a1b05e647afd9f25c1dcc"
+    },
+    {
+      "path": "net9-negative-changed-version-input.json.gz",
+      "originalSha256": "50c6c7e126c51ce0193117a3cc1829f6c3be3c22982a02fd54eb5f0fc6f845a9",
+      "sanitizedSha256": "83504333b936894c54676928360e95d946492df3a1e1800a6c2354cbb50bd3b9",
+      "gzipSha256": "ec7aa0fbdabe30681ae4b1f96863ae44749664ad92e97106131d687f6492eb5d"
+    },
+    {
+      "path": "net9-negative-changed-version-result.json.gz",
+      "originalSha256": "b60b15957fa4b6b19323ec266e4739a6dbaa375cf2ef0377deed859695eef5ec",
+      "sanitizedSha256": "413f45f3ecc25412c9d218b6b196662d95822a61c9e1487956cf25f25bd33958",
+      "gzipSha256": "df8dbb73f46e509d63471e018d1861cd180fac8a2e8b0ffd29b0cac5181ae03c"
+    },
+    {
+      "path": "net9-negative-changed-version.log.gz",
+      "originalSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "sanitizedSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "gzipSha256": "a311e384a6858474ce4f33e195886d421ae5eebb672a1b05e647afd9f25c1dcc"
+    },
+    {
+      "path": "net9-negative-first-write-id-input.json.gz",
+      "originalSha256": "52af1538356e49b25823f3ba9b13726e417394ed94db2d6d4b5eba400d185374",
+      "sanitizedSha256": "62d5f453ea7e3c1da91774a789d0563e02c595886b95b702114e68df5e652ff5",
+      "gzipSha256": "5831726481498204d596d9346ecdbf597fd8d1d0000435ba776007e4a0f19637"
+    },
+    {
+      "path": "net9-negative-first-write-id-result.json.gz",
+      "originalSha256": "7bcbc593ef2fbaf96f3c69a71ba3823a27547cbc594f8a0232485744c52c426e",
+      "sanitizedSha256": "3d50e1725eadede08855b4202e27e31768dbf1392f34a3144b10e948cf2a7c40",
+      "gzipSha256": "045c76bf2d2666c0f00034b2652959e1457d27e808f4476e801712d38469a7cc"
+    },
+    {
+      "path": "net9-negative-first-write-id.log.gz",
+      "originalSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "sanitizedSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "gzipSha256": "a311e384a6858474ce4f33e195886d421ae5eebb672a1b05e647afd9f25c1dcc"
+    },
+    {
+      "path": "net9-negative-generated-literal-input.json.gz",
+      "originalSha256": "98e2ffeb88da948cc8cce8bdef1aaf363ef172428c2b7e0a961ac90135b279f2",
+      "sanitizedSha256": "61997a794d0cef9830bab9f9fc5b356d2a3bed06269ed0947ff2a8bfbbec56b9",
+      "gzipSha256": "e729a9a2f06aedfabd2c4cbf1e5fb059d4d8f24b1db4b01d75231a93d2377333"
+    },
+    {
+      "path": "net9-negative-generated-literal-result.json.gz",
+      "originalSha256": "6d31c298710637378d35f8134699d85f856fcb1eec60a64ed67080ac2f0953b5",
+      "sanitizedSha256": "f3a31d182fdfae34856a0410512992a15ed57fd2c78c45981dc6f5998181e88c",
+      "gzipSha256": "72e4782585562b91a822aee22877c8c683e9a3460df0fd8b6b15218d7ce9f01b"
+    },
+    {
+      "path": "net9-negative-generated-literal.log.gz",
+      "originalSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "sanitizedSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "gzipSha256": "a311e384a6858474ce4f33e195886d421ae5eebb672a1b05e647afd9f25c1dcc"
+    },
+    {
+      "path": "net9-negative-negative-probes.json.gz",
+      "originalSha256": "4bb636e6d6cac0dd865a810a3540831a02b775648de38be698dbc3315f727ccb",
+      "sanitizedSha256": "4bb636e6d6cac0dd865a810a3540831a02b775648de38be698dbc3315f727ccb",
+      "gzipSha256": "6634b9e7d49880f4e7b8b11bb324aee777ff5b8ea653cd00317b94a0a426754b"
+    },
+    {
+      "path": "net9-negative-unknown-type-input.json.gz",
+      "originalSha256": "4d669d42434b4525f7e9d0dd3c424eb6ef1765944ea6071890c8d00ca6ec42ca",
+      "sanitizedSha256": "8c8c33758760928051884e797f3543a7f6388d886d3237df6a644f6d93aa8c83",
+      "gzipSha256": "b4814ed38a525a5594d609f87be5e6434b75c98849c09b655952048db0f36a72"
+    },
+    {
+      "path": "net9-negative-unknown-type-result.json.gz",
+      "originalSha256": "275976c49ab70216222644e0fd255bb19081c2caee0096dee9a6767288ff2c48",
+      "sanitizedSha256": "bf05e3532afcb45ce700b9653806e227760b07331d4e9480fc1fd987a93bf30f",
+      "gzipSha256": "a3faf4bcfe71633bc7404e909241cc4e7627f60c8fb3313a8195faafac309b0e"
+    },
+    {
+      "path": "net9-negative-unknown-type.log.gz",
+      "originalSha256": "35641bf8187ad92592a109c2afee2bf077e97c180d77eb98179b387458a71222",
+      "sanitizedSha256": "35641bf8187ad92592a109c2afee2bf077e97c180d77eb98179b387458a71222",
+      "gzipSha256": "d1b06f0a7dc8022fecaa4d915281c77dfe3f4ab948b1ba768d46c62178ad4bbc"
+    },
+    {
+      "path": "net8-receipt.json.gz",
+      "originalSha256": "442246bf96634101217950b6455b9000d500229e87c9dcbbae70918af2f0783d",
+      "sanitizedSha256": "442246bf96634101217950b6455b9000d500229e87c9dcbbae70918af2f0783d",
+      "gzipSha256": "2ef7d23f1e70391ea87c19753c4f634eb910d08a39a95dc1cf8b62bf71c83012"
+    },
+    {
+      "path": "net8-released.json.gz",
+      "originalSha256": "8e1f460fb8a228b07775e2980f77bc15b6b6d8f5267a5ddeb51260fe7e475869",
+      "sanitizedSha256": "131a22ff6b5f6d789d322609236dc82f627b30725808d93422242c7cb3a1eacd",
+      "gzipSha256": "65ae10457dace2c25d253b08d13a3a86a7fb5fda74543165609fe9c9c2b83285"
+    },
+    {
+      "path": "net8-consolidated.json.gz",
+      "originalSha256": "d0e0f09ded1a5ae6f3e16fbe51ef4367d529417f4538170b1fab0ab7900b5572",
+      "sanitizedSha256": "0f79eced0e94e690f0d2a444a6f6c384daed2c96e0c87e079ebeb5e207b2f06d",
+      "gzipSha256": "11a6a701b55dc5d1273261eea8a18e31889660a5dba5670f212c571f74bce53d"
+    },
+    {
+      "path": "net8-released-build.log.gz",
+      "originalSha256": "56dd2f728a75de093cdda1c8c6142050dbe8fc7b6c4f00a3b5394ca735d087ae",
+      "sanitizedSha256": "00931b234eb2613df8ed38415f983b5c446710e45ea7cce70620f4cf1b7df6f2",
+      "gzipSha256": "131ff26bc95789d3654fc508349f091b255466fb507c6cda7ac29efa746cd570"
+    },
+    {
+      "path": "net8-consolidated-build.log.gz",
+      "originalSha256": "16de29e423334854dac50e745e540353dc374e6eb63ebcba3643d6b6e08371b5",
+      "sanitizedSha256": "218eacc0189ed97a6e82fb7eca84bd3c16673d93db89186ba9781b92a978c35b",
+      "gzipSha256": "3bcfde54e380db9b52c6a3c364a77455f216112bcb25ed639574ceeab58914bc"
+    },
+    {
+      "path": "net8-released-probe.log.gz",
+      "originalSha256": "2cc8f1ea55fe1146d154edd844e6c87995dcbaa72023364b275605103a001de5",
+      "sanitizedSha256": "2cc8f1ea55fe1146d154edd844e6c87995dcbaa72023364b275605103a001de5",
+      "gzipSha256": "1553f4042329be26e9adcd16db7009bc0e25b7c8d85c2e1d9d10d693b51537e6"
+    },
+    {
+      "path": "net8-consolidated-probe.log.gz",
+      "originalSha256": "103b7bd9988516a6957edbbe9e8ecdbe8a64b80805c8bb40225ba0cfd0b2564b",
+      "sanitizedSha256": "103b7bd9988516a6957edbbe9e8ecdbe8a64b80805c8bb40225ba0cfd0b2564b",
+      "gzipSha256": "0cd9e2c70ab23525e115ad8918706260d0e8fe959f52a58153918d31e14ceaa1"
+    },
+    {
+      "path": "net8-negative-changed-id-input.json.gz",
+      "originalSha256": "4ec35261ca636ef597fad9662d166fd16e00a24cdad131fcb58f7f88420acad4",
+      "sanitizedSha256": "3cf5bcd8b09097db6b3f10c5563f990a2b0a29794e5a18de67bf2fa27f783716",
+      "gzipSha256": "bbb3703b311d35e0f68635655029dbd3741f54a3e2630906c4697f185ade709b"
+    },
+    {
+      "path": "net8-negative-changed-id-result.json.gz",
+      "originalSha256": "09cb3b2d759c5a3e716ddf52489842150deb7617ffd0b5858f6ee4f0b570c372",
+      "sanitizedSha256": "6cfed46f8e81ace282f84ede1be8eef5bb9ad0e407ea5d6678542a53ae53e611",
+      "gzipSha256": "fe426324c3179a589c02bacd930f94e1e9e944e03e47b4bde0abb22c82aa85c3"
+    },
+    {
+      "path": "net8-negative-changed-id.log.gz",
+      "originalSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "sanitizedSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "gzipSha256": "a311e384a6858474ce4f33e195886d421ae5eebb672a1b05e647afd9f25c1dcc"
+    },
+    {
+      "path": "net8-negative-changed-literal-input.json.gz",
+      "originalSha256": "49c0ea369afacc713961b31deea36bb795582790c2323f7cceb1d8177717c996",
+      "sanitizedSha256": "a1aecf1e25023df00f93fdbae4474a7757b1cd2fba244c231bb0e61f95626f89",
+      "gzipSha256": "e51452400ad1a2e365d5a84f1de03b2283bddfe1b8aef41e0e185593ffa7d6bb"
+    },
+    {
+      "path": "net8-negative-changed-literal-result.json.gz",
+      "originalSha256": "58f82b9524fe96c904f056d078f79fab9e4a459c2764fd97f8899b77506a3f99",
+      "sanitizedSha256": "73e0ffe6e7bb414a9397759a5566657a38c23e4f5c93a05efe25c07e964e4fe9",
+      "gzipSha256": "5a6c24cf5a3430f47d1aa19f632b325aa18043662427d1494212dc96e7b5eb53"
+    },
+    {
+      "path": "net8-negative-changed-literal.log.gz",
+      "originalSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "sanitizedSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "gzipSha256": "a311e384a6858474ce4f33e195886d421ae5eebb672a1b05e647afd9f25c1dcc"
+    },
+    {
+      "path": "net8-negative-changed-version-input.json.gz",
+      "originalSha256": "e7a70fa5306a8de9891209f556c693e967a43e6e23adb7e278de6d9bd99d508a",
+      "sanitizedSha256": "20818e1d5f9dfeee4ee72b04ef8a2ba64d66571a9065c7b9bf0b5d7d3f2cea7f",
+      "gzipSha256": "f985c2639bd9cd3d16515620a78c4bbfcfa11f9aa248246bddd763695f405a4b"
+    },
+    {
+      "path": "net8-negative-changed-version-result.json.gz",
+      "originalSha256": "103f76f16ef79dd4754e9f294bf8c2307505fa41dbb06e2126d82ec7b3c260e4",
+      "sanitizedSha256": "d52a14e3a521d67539b1aa71757e433cd75346ce8f8ffc60a3ddda0315705d16",
+      "gzipSha256": "edc0022319f824b26c6914220b81093146ce6469fffbdb75389905e329a81fb5"
+    },
+    {
+      "path": "net8-negative-changed-version.log.gz",
+      "originalSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "sanitizedSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "gzipSha256": "a311e384a6858474ce4f33e195886d421ae5eebb672a1b05e647afd9f25c1dcc"
+    },
+    {
+      "path": "net8-negative-first-write-id-input.json.gz",
+      "originalSha256": "8b88f7fbd6d1adbba7aef3d194b03bb1d5850735e18b8a186f04c7e3c11bcaaf",
+      "sanitizedSha256": "1e54357e250c0dcb38452c9ce8d155af5e039361f795a63ebc1eb013dc4e83a5",
+      "gzipSha256": "60f502ad2cb54ece525dfc2dd19db8ec3d86e81a60bad53f967d6c104157929c"
+    },
+    {
+      "path": "net8-negative-first-write-id-result.json.gz",
+      "originalSha256": "ebbbcb4d4b9a676fc24339e182305a6162c21b6ae485d39001c7ef5749ea3354",
+      "sanitizedSha256": "e81e57fc63582e35d071cc0a4ce8125598a9a381669f7c045486d40b13892dc9",
+      "gzipSha256": "f3e06fffb70ef08fb29c0b71cf2b5d6ae744d7bd599d5cbc03f5f7bd0fb45793"
+    },
+    {
+      "path": "net8-negative-first-write-id.log.gz",
+      "originalSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "sanitizedSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "gzipSha256": "a311e384a6858474ce4f33e195886d421ae5eebb672a1b05e647afd9f25c1dcc"
+    },
+    {
+      "path": "net8-negative-generated-literal-input.json.gz",
+      "originalSha256": "f6bfaf13ed81c1778bad2d76a5350f529cacda2416f790db5d07ea1b1e7f2685",
+      "sanitizedSha256": "3674c10ddd9a0f3e510d6c50f7f38c86bcf3b7ab01aa36b3c9d7fa1e62fda024",
+      "gzipSha256": "9ca064730e97910e26d40554ed9032a77351021fcb12864ca3fe62be3e0ee1f4"
+    },
+    {
+      "path": "net8-negative-generated-literal-result.json.gz",
+      "originalSha256": "8a8e73eed6dfd6396a30aa3b1de4aabb34e357297c962485d79026aec104006f",
+      "sanitizedSha256": "742d8a735d21823ed67321067a3e62f32bc46eb8fbe44116a2c8031bb3edd422",
+      "gzipSha256": "4cf2e75ef5ce3f2f8cbc4ecea8f4591b7b31e247ffeba131544d48ddf13bacf9"
+    },
+    {
+      "path": "net8-negative-generated-literal.log.gz",
+      "originalSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "sanitizedSha256": "a6bf6296ef9417ac71ce7cba9ef17f6bb6281333d05b610143d1cc14d3d22fcf",
+      "gzipSha256": "a311e384a6858474ce4f33e195886d421ae5eebb672a1b05e647afd9f25c1dcc"
+    },
+    {
+      "path": "net8-negative-negative-probes.json.gz",
+      "originalSha256": "4bb636e6d6cac0dd865a810a3540831a02b775648de38be698dbc3315f727ccb",
+      "sanitizedSha256": "4bb636e6d6cac0dd865a810a3540831a02b775648de38be698dbc3315f727ccb",
+      "gzipSha256": "6634b9e7d49880f4e7b8b11bb324aee777ff5b8ea653cd00317b94a0a426754b"
+    },
+    {
+      "path": "net8-negative-unknown-type-input.json.gz",
+      "originalSha256": "6335fa6cfa1822fce83b03a6474131ecc937c959db7c59f6ac01a9a2ee8abda2",
+      "sanitizedSha256": "2fd6dced13a875e4819de42f9a8471c8fe1989b8781f8f0ab956611d920afa6e",
+      "gzipSha256": "42390b0f9dd1dcac4fe5ec28f3eb45654d507f5a0a11264a39f73b34cf9c0424"
+    },
+    {
+      "path": "net8-negative-unknown-type-result.json.gz",
+      "originalSha256": "03517880dbde677ded818b1a96ec06d86f217a74cde98bc0490528f4b80d76e2",
+      "sanitizedSha256": "0f95285837dbfa93cbb29d948a7eb9ccded3c9299e3c89a4380e909bbea0522d",
+      "gzipSha256": "61d6842cd5708c43631b495ddae5edf5b46adb9bfb990f7fad98466d2815f755"
+    },
+    {
+      "path": "net8-negative-unknown-type.log.gz",
+      "originalSha256": "35641bf8187ad92592a109c2afee2bf077e97c180d77eb98179b387458a71222",
+      "sanitizedSha256": "35641bf8187ad92592a109c2afee2bf077e97c180d77eb98179b387458a71222",
+      "gzipSha256": "d1b06f0a7dc8022fecaa4d915281c77dfe3f4ab948b1ba768d46c62178ad4bbc"
+    },
+    {
+      "path": "source-inputs.json.gz",
+      "originalSha256": "557208e0a9ace8f23e4ed7c3bd6172ab5f229b7701238882b3fe3d0cf0558a53",
+      "sanitizedSha256": "557208e0a9ace8f23e4ed7c3bd6172ab5f229b7701238882b3fe3d0cf0558a53",
+      "gzipSha256": "9d9bbabe9919765e3836f71ee1690214edd377549a4a3d0a62043ae8f3695d07"
+    },
+    {
+      "path": "github-id-focused-receipt.json",
+      "originalSha256": "5511409e1047eedb03340614ff68f8387e97e3ad7be8786049c3335b18ae17be",
+      "sanitizedSha256": "5511409e1047eedb03340614ff68f8387e97e3ad7be8786049c3335b18ae17be"
+    },
+    {
+      "path": "github-id-focused-net10-dotnet-test.log.gz",
+      "originalSha256": "67108f16e131fb9be7672570cdbb9e2a87d83c62f5ca067cf65f310113ff3bfb",
+      "sanitizedSha256": "288299b807ee53f2fecf8700358310b48e5f23c4f78c8e9490d204a5d9c93bde",
+      "gzipSha256": "3b8687005e7df6cc8e27f3df010cb0a62b9d465100b2a05642591278e09dee19"
+    },
+    {
+      "path": "github-id-focused-net10-github-activity-id.trx.gz",
+      "originalSha256": "d2949128423c6d871120660df81315384ac4d4e447e4a3c02879fd494fb09531",
+      "sanitizedSha256": "8475f1405067f2d8b371ee5e32f23ffec752864530d399db44813e96ed87bf7f",
+      "gzipSha256": "d0ca8edc43c93807cbca309249d8c1292ec2e96afe6a17121d695602e0c6d929"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <!-- Pomelo / Elsa.Persistence.EFCore.MySql target net8/net9, not net10. -->
+        <TargetFramework>net9.0</TargetFramework>
+        <!-- ubuntu-latest installs only the 10.x SDK/runtime; roll forward so testhost can execute. -->
+        <RollForward>LatestMajor</RollForward>
+        <Include>[Elsa.Persistence.EFCore.MySql]*</Include>
+        <Threshold>0</Threshold>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\src\modules\Elsa.Persistence.EFCore.MySql\Elsa.Persistence.EFCore.MySql.csproj" />
+    </ItemGroup>
+
+</Project>

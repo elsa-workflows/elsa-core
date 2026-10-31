@@ -1,0 +1,42 @@
+using Elsa.Workflows;
+using Elsa.Workflows.Helpers;
+using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Serialization.Helpers;
+
+// ReSharper disable once CheckNamespace
+namespace Elsa.Extensions;
+
+/// <summary>
+/// Adds extensions to <see cref="StoredBookmark"/>.
+/// </summary>
+public static class StoredBookmarkExtensions
+{
+    /// <summary>
+    /// Returns the Data property of the stored bookmark as a strongly-typed object.
+    /// </summary>
+    /// <param name="storedBookmark">The stored bookmark.</param>
+    /// <typeparam name="T">The type of the Data property.</typeparam>
+    /// <returns>The Data property of the stored bookmark as a strongly-typed object.</returns>
+    /// <remarks>
+    /// A payload reloaded from a bookmark store can come back untyped (for example as an ExpandoObject or a JsonElement).
+    /// Such a payload is converted to <typeparamref name="T"/> by <see cref="PayloadConverter"/>.
+    /// </remarks>
+    public static T GetPayload<T>(this StoredBookmark storedBookmark) => PayloadConverter.ConvertTo<T>(storedBookmark.Payload);
+
+    /// <summary>
+    /// Filters the specified set of stored bookmarks by the specified activity type.
+    /// </summary>
+    /// <param name="bookmarks">The set of stored bookmarks to filter.</param>
+    /// <typeparam name="T">The activity type to filter by.</typeparam>
+    /// <returns>The filtered set of stored bookmarks.</returns>
+    public static IEnumerable<StoredBookmark> Filter<T>(this IEnumerable<StoredBookmark> bookmarks) where T : IActivity
+    {
+        var bookmarkName = ActivityTypeNameHelper.GenerateTypeName<T>();
+        return bookmarks.Filter(bookmarkName);
+    }
+    
+    public static IEnumerable<StoredBookmark> Filter(this IEnumerable<StoredBookmark> bookmarks, string name)
+    {
+        return bookmarks.Where(x => x.Name == name);
+    }
+}

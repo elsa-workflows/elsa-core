@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 10,
+  "issue": 8286,
+  "baseImportHead": "1827914bcecee4c11054f61fd02d105b720d4ad6",
+  "mappedDeltaCommit": "6c8f59c3f8666b15bd0760c7e7c2bd0c74b798df",
+  "historyJoinCommit": "e72f4b2df4ecb654b23c3aab77171046c3475f67",
+  "acceptedMergeCommit": "13b946634585ae851016f679e506b2768ae470ba",
+  "oldExtensionsCommit": "c2618de7b92b22ae7b23d872b58a20866219f69b",
+  "newExtensionsCommit": "3cf502955791cbd20375022ef4597f0e195faf8a",
+  "sourcePullRequest": "https://github.com/elsa-workflows/elsa-core/pull/8535",
+  "upstreamPullRequests": [
+    "https://github.com/elsa-workflows/elsa-extensions/pull/252"
+  ],
+  "mappedChanges": [
+    {
+      "status": "M",
+      "source": "src/modules/persistence/Elsa.Persistence.Dapper.Migrations/Runtime/V3_7.cs",
+      "mappedPath": "src/extensions/persistence/Elsa.Persistence.Dapper.Migrations/Runtime/V3_7.cs",
+      "oldSource": {
+        "blob": "1c990c92c7110afe41db9efaf0892c8b9dc1a7a4",
+        "mode": "100644"
+      },
+      "oldMapped": {
+        "blob": "1c990c92c7110afe41db9efaf0892c8b9dc1a7a4",
+        "mode": "100644"
+      },
+      "newSource": {
+        "blob": "d3728b74433e88228a741bcf556b6c050b858138",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "d3728b74433e88228a741bcf556b6c050b858138",
+        "mode": "100644"
+      },
+      "transform": "identical"
+    },
+    {
+      "status": "A",
+      "source": "test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperRuntimeMigrationTests.cs",
+      "mappedPath": "test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperRuntimeMigrationTests.cs",
+      "oldSource": null,
+      "oldMapped": null,
+      "newSource": {
+        "blob": "34bbf45381833196c024b4231e365ce033c567c2",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "34bbf45381833196c024b4231e365ce033c567c2",
+        "mode": "100644"
+      },
+      "transform": "identical"
+    },
+    {
+      "status": "M",
+      "source": "test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj",
+      "mappedPath": "test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj",
+      "oldSource": {
+        "blob": "452c337066f7b3703f42602b38a57a3155b99dfb",
+        "mode": "100644"
+      },
+      "oldMapped": {
+        "blob": "a03ce0f28eda85b4764067584af80eaeb6f433fa",
+        "mode": "100644"
+      },
+      "newSource": {
+        "blob": "e80df5b766fba6f18096aff11c1f2eb20524dd90",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "fab58dc280de6eb5d1d92d208efc3889f9e231f9",
+        "mode": "100644"
+      },
+      "transform": "upstream-line-delta"
+    }
+  ],
+  "publicationPerformed": false
+}

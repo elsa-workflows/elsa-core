@@ -1,0 +1,40 @@
+using Elsa.Authorization;
+using Elsa.Abstractions;
+using Elsa.Secrets.Exceptions;
+using Elsa.Secrets.Permissions;
+using Elsa.Secrets.Services;
+using Microsoft.AspNetCore.Http;
+
+namespace Elsa.Secrets.Endpoints.Secrets.Rotate;
+
+internal class Endpoint(ISecretManager manager) : ElsaEndpoint<RotateSecretRequest, SecretModel>
+{
+    public override void Configure()
+    {
+        Post("/secrets/{name}/rotate");
+        RequirePermission(Elsa.Secrets.Permissions.SecretsResourcePermissions.Secrets, CoreVerbs.Write);
+    }
+
+    public override async Task HandleAsync(RotateSecretRequest request, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var secret = await manager.RotateAsync(Route<string>("name")!, request, cancellationToken);
+            await Send.OkAsync(secret.ToModel(), cancellationToken);
+        }
+        catch (SecretTenantOwnershipException e)
+        {
+            AddError(e.Message);
+            await Send.ErrorsAsync(StatusCodes.Status403Forbidden, cancellationToken);
+        }
+        catch (InvalidOperationException e)
+        {
+            AddError(e.Message);
+            await Send.ErrorsAsync(cancellation: cancellationToken);
+        }
+        catch (KeyNotFoundException)
+        {
+            await Send.NotFoundAsync(cancellationToken);
+        }
+    }
+}

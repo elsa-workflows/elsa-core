@@ -1,0 +1,4 @@
+body { font: 16px system-ui, sans-serif; max-width: 60rem; margin: 2rem auto; padding: 1rem; }
+nav { display: flex; gap: 1rem; margin: 1rem 0; }
+button, input { font: inherit; padding: .4rem; }
+[role="alert"] { color: #9c261e; }

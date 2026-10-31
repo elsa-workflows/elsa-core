@@ -1,0 +1,17 @@
+{
+  "name": "@elsa-workflows/react-studio-environments",
+  "version": "3.11.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@elsa-workflows/react-studio-sdk": "workspace:*",
+    "@elsa-workflows/react-studio-ui": "workspace:*",
+    "@elsa-workflows/react-studio-api-client": "workspace:*",
+    "@elsa-workflows/react-studio-auth": "workspace:*"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.104.1",
+    "react": "19.3.0",
+    "lucide-react": "^1.55.0"
+  }
+}

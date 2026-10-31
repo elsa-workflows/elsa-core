@@ -1,0 +1,77 @@
+@using Elsa.Studio.Workflows.Services
+@using Variant = MudBlazor.Variant
+@using Elsa.Api.Client.Extensions
+@using Elsa.Api.Client.Shared.Models
+@using Elsa.Studio.Localization
+@using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.ActivityProperties.Tabs.Outputs.Models
+@inherits StudioComponentBase
+@implements IDisposable
+@inject ILocalizer Localizer
+
+<MudForm ReadOnly="IsReadOnly">
+    <MudStack>
+        @foreach (var outputDescriptor in OutputDescriptors)
+        {
+            var activity = Activity;
+            var displayName = string.IsNullOrWhiteSpace(outputDescriptor.DisplayName) ? outputDescriptor.Name : outputDescriptor.DisplayName!;
+            var propertyName = outputDescriptor.Name.Camelize();
+            var propertyValue = activity.GetProperty<ActivityOutput>(propertyName);
+            var propertyType = _variableTypes.TryGetValue(outputDescriptor.TypeName, out var type) ? type : default;
+            var propertyTypeName = propertyType?.DisplayName ?? outputDescriptor.TypeName;
+            var selectedValue = _bindingTargetOptions.FirstOrDefault(x => x.Value == propertyValue?.MemoryReference?.Id);
+            var converterState = GetConverterState(outputDescriptor);
+            var converterId = GetConverterId(propertyName);
+            var selectedConverter = converterState.Descriptors.FirstOrDefault(x => x.Id == converterId);
+
+            <MudSelect
+                T="BindingTargetOption"
+                Label="@Localizer[displayName]"
+                HelperText="@(outputDescriptor.Description is { Length: > 0 } outputDescription ? Localizer[outputDescription].Value : null)"
+                Value="@selectedValue"
+                Dense="false"
+                Variant="Variant.Outlined"
+                Margin="Margin.Dense"
+                AdornmentText="@propertyTypeName"
+                Adornment="Adornment.End"
+                ToStringFunc="@(x => x?.Text!)"
+                ValueChanged="@(bindingOption => OnBindingChanged(bindingOption, outputDescriptor))"
+                ReadOnly="IsReadOnly" Disabled="IsReadOnly">
+                <MudSelectItem T="BindingTargetOption?" Value="@null">-</MudSelectItem>
+                @foreach (var bindingTargetGroup in _bindingTargetGroups)
+                {
+                    @* MudSelect doesn't support <optgroup> (yet?), while MudSelectExtended does. However, MudSelectExtended doesn't seem to support AdornmentText (even though the property is exposed, it doesn't display) 
+                    * So we're not currently using MudSelectExtended and not rendering <optgroup> *
+                    *@
+                    @foreach (var bindingTargetOption in bindingTargetGroup.Options)
+                    {
+                        <MudSelectItem T="BindingTargetOption" Value="@bindingTargetOption">@bindingTargetOption.Text</MudSelectItem>
+                    }
+                }
+            </MudSelect>
+
+            @if (selectedValue != null && converterState.IsAvailable)
+            {
+                <MudSelect T="string" Label="@Localizer["Converter"]" HelperText="@(selectedConverter?.Description is { Length: > 0 } description ? Localizer[description].Value : null)" Value="@converterId" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense" ToStringFunc="@(id => GetConverterDisplayName(id, converterState))" ValueChanged="@(id => OnConverterChanged(id, outputDescriptor))" ReadOnly="IsReadOnly" Disabled="IsReadOnly" Class="ml-4">
+                    <MudSelectItem T="string" Value="@string.Empty">@Localizer["None"]</MudSelectItem>
+                    @if (!string.IsNullOrWhiteSpace(converterId) && selectedConverter == null)
+                    {
+                        <MudSelectItem T="string" Value="@converterId">@converterId</MudSelectItem>
+                    }
+                    @foreach (var converter in converterState.Descriptors)
+                    {
+                        <MudSelectItem T="string" Value="@converter.Id">@Localizer[string.IsNullOrWhiteSpace(converter.DisplayName) ? converter.Id : converter.DisplayName]</MudSelectItem>
+                    }
+                </MudSelect>
+
+                @if (!string.IsNullOrWhiteSpace(converterId) && selectedConverter == null)
+                {
+                    <MudAlert Severity="Severity.Warning" Dense="true" Class="ml-4">@Localizer["The configured converter is unavailable."]</MudAlert>
+                }
+                else if (selectedConverter != null)
+                {
+                    <OutputConverterSettingsEditor SettingsSchema="selectedConverter.SettingsSchema" Settings="GetConverterSettings(propertyName)" SettingsChanged="@(settings => OnConverterSettingsChanged(settings, outputDescriptor))" IsReadOnly="IsReadOnly" />
+                }
+            }
+        }
+    </MudStack>
+</MudForm>

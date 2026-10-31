@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <Description>The bpmn-js BPMN designer for Elsa Studio.</Description>
+        <PackageTags>elsa studio module bpmn bpmn-js designer</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <SupportedPlatform Include="browser"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="../Elsa.Studio.Bpmn/Elsa.Studio.Bpmn.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- ClientLib is built by npm into wwwroot, not by MSBuild; keep its manifests and dependencies out of the project. -->
+        <Content Remove="ClientLib\**"/>
+        <None Remove="ClientLib\**"/>
+    </ItemGroup>
+
+</Project>

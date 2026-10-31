@@ -1,0 +1,200 @@
+@using Elsa.Studio.ExternalAuthentication.Services
+
+@if (DescriptorEditorState.IsVisible(Field, Settings))
+{
+    @if (IsFixedPkce)
+    {
+        <MudStack Row="true" Wrap="Wrap.Wrap" Spacing="1" AlignItems="AlignItems.Baseline" Class="connection-editor__fixed-pkce">
+            <MudText Typo="Typo.subtitle2">@Field.DisplayName:</MudText>
+            <MudText Typo="Typo.body2">S256 required</MudText>
+            <MudText Typo="Typo.caption">The authorization-code flow always uses S256 and this value cannot be changed.</MudText>
+        </MudStack>
+    }
+    else if (IsStringArray && Field.AllowedValues.Count > 0)
+    {
+        <MudSelect T="string"
+                   Label="@Field.DisplayName"
+                   HelperText="@HelpText"
+                   MultiSelection="true"
+                   SelectedValues="@GetStringArray()"
+                   SelectedValuesChanged="SetStringArrayAsync"
+                   Disabled="@IsReadOnly"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense">
+            @foreach (var allowedValue in Field.AllowedValues)
+            {
+                <MudSelectItem T="string" Value="@allowedValue">@DescriptorValuePresentation.GetDisplayName(Field, allowedValue)</MudSelectItem>
+            }
+        </MudSelect>
+    }
+    else if (IsTagsField)
+    {
+        <MudStack Spacing="1">
+            <MudStack Row="true" AlignItems="AlignItems.Start">
+                <MudTextField T="string"
+                              Value="@_pendingArrayValue"
+                              ValueChanged="@SetPendingArrayValue"
+                              OnKeyDown="@OnPendingArrayValueKeyDownAsync"
+                              Label="@Field.DisplayName"
+                              HelperText="@TagsHelpText"
+                              ReadOnly="@IsReadOnly"
+                              Immediate="true"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense" />
+                <MudButton Variant="Variant.Outlined"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           Class="mt-1"
+                           Disabled="@(IsReadOnly || string.IsNullOrWhiteSpace(_pendingArrayValue))"
+                           OnClick="AddStringArrayValueAsync">
+                    Add
+                </MudButton>
+            </MudStack>
+            @if (GetStringArray().Count > 0)
+            {
+                <div class="d-flex flex-wrap gap-2">
+                    @foreach (var value in GetStringArray())
+                    {
+                        <MudChip T="string"
+                                 Value="@value"
+                                 Label="true"
+                                 Disabled="@IsReadOnly"
+                                 OnClose="@(_ => RemoveStringArrayValueAsync(value))">
+                            @value
+                        </MudChip>
+                    }
+                </div>
+            }
+        </MudStack>
+    }
+    else if (IsStringArray)
+    {
+        <MudTextField T="string" Value="@DescriptorEditorState.ToDisplayString(GetValue())" ValueChanged="@SetTextAsync" Label="@Field.DisplayName" HelperText="@HelpText" Required="@Field.IsRequired" ReadOnly="@IsReadOnly" Lines="@Lines" Validation="@(new Func<string?, IEnumerable<string>>(ValidateString))" Variant="Variant.Outlined" Margin="Margin.Dense" />
+    }
+    else if (Field.AllowedValues.Count > 0)
+    {
+        <MudSelect T="string" Value="@DescriptorEditorState.ToDisplayString(GetValue())" ValueChanged="@SetAllowedValueAsync" Label="@Field.DisplayName" HelperText="@HelpText" Required="@Field.IsRequired" Disabled="@IsReadOnly" Validation="@(new Func<string?, IEnumerable<string>>(ValidateString))" Variant="Variant.Outlined" Margin="Margin.Dense">
+            @foreach (var allowedValue in Field.AllowedValues)
+            {
+                <MudSelectItem T="string" Value="@allowedValue">@DescriptorValuePresentation.GetDisplayName(Field, allowedValue)</MudSelectItem>
+            }
+        </MudSelect>
+    }
+    else if (string.Equals(Field.ValueType, "bool", StringComparison.OrdinalIgnoreCase) || string.Equals(Field.ValueType, "boolean", StringComparison.OrdinalIgnoreCase))
+    {
+        <MudSwitch T="bool" Value="@DescriptorEditorState.GetBoolean(Settings, Field.Name)" ValueChanged="@SetBooleanAsync" Label="@Field.DisplayName" Disabled="@IsReadOnly" />
+    }
+    else if (string.Equals(Field.ValueType, "integer", StringComparison.OrdinalIgnoreCase) || string.Equals(Field.ValueType, "int", StringComparison.OrdinalIgnoreCase))
+    {
+        <MudNumericField T="int?" Value="@DescriptorEditorState.GetInteger(Settings, Field.Name)" ValueChanged="@SetIntegerAsync" Label="@Field.DisplayName" HelperText="@HelpText" Required="@Field.IsRequired" ReadOnly="@IsReadOnly" Validation="@(new Func<int?, IEnumerable<string>>(ValidateInteger))" Variant="Variant.Outlined" Margin="Margin.Dense" />
+    }
+    else if (string.Equals(Field.ValueType, "number", StringComparison.OrdinalIgnoreCase) || string.Equals(Field.ValueType, "decimal", StringComparison.OrdinalIgnoreCase))
+    {
+        <MudNumericField T="decimal?" Value="@DescriptorEditorState.GetNumber(Settings, Field.Name)" ValueChanged="@SetNumberAsync" Label="@Field.DisplayName" HelperText="@HelpText" Required="@Field.IsRequired" ReadOnly="@IsReadOnly" Validation="@(new Func<decimal?, IEnumerable<string>>(ValidateNumber))" Variant="Variant.Outlined" Margin="Margin.Dense" />
+    }
+    else
+    {
+        <MudTextField T="string" Value="@DescriptorEditorState.ToDisplayString(GetValue())" ValueChanged="@SetTextAsync" Label="@Field.DisplayName" HelperText="@HelpText" Required="@Field.IsRequired" ReadOnly="@IsReadOnly" InputType="@InputType" Lines="@Lines" Validation="@(new Func<string?, IEnumerable<string>>(ValidateString))" Variant="Variant.Outlined" Margin="Margin.Dense" />
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public ConnectionFieldDescriptor Field { get; set; } = default!;
+    [Parameter, EditorRequired] public IDictionary<string, System.Text.Json.JsonElement> Settings { get; set; } = default!;
+    [Parameter] public bool ReadOnly { get; set; }
+    [Parameter] public EventCallback Changed { get; set; }
+
+    private string? HelpText => Field.HelpText ?? Field.Description;
+    private string TagsHelpText => string.IsNullOrWhiteSpace(HelpText) ? "Enter a value, then press Enter or select Add." : $"{HelpText} Enter a value, then press Enter or select Add.";
+    private string? _inputError;
+    private string _pendingArrayValue = string.Empty;
+    private bool IsReadOnly => ReadOnly || Field.IsReadOnly;
+    private bool IsStringArray => string.Equals(Field.ValueType, "string-array", StringComparison.OrdinalIgnoreCase);
+    private bool IsTagsField => IsStringArray && Field.AllowedValues.Count == 0 && string.Equals(Field.UiHint, "tags", StringComparison.OrdinalIgnoreCase);
+    private bool IsFixedPkce =>
+        string.Equals(Field.Name, "providerPkce", StringComparison.OrdinalIgnoreCase) ||
+        (Field.IsReadOnly && Field.Name.Contains("pkce", StringComparison.OrdinalIgnoreCase));
+    private InputType InputType => string.Equals(Field.UiHint, "password", StringComparison.OrdinalIgnoreCase) ? InputType.Password : string.Equals(Field.ValueType, "uri", StringComparison.OrdinalIgnoreCase) || string.Equals(Field.UiHint, "uri", StringComparison.OrdinalIgnoreCase) ? InputType.Url : InputType.Text;
+    private int Lines => string.Equals(Field.ValueType, "json", StringComparison.OrdinalIgnoreCase) || string.Equals(Field.ValueType, "string-array", StringComparison.OrdinalIgnoreCase) || string.Equals(Field.UiHint, "textarea", StringComparison.OrdinalIgnoreCase) || string.Equals(Field.UiHint, "multiline", StringComparison.OrdinalIgnoreCase) ? 4 : 1;
+    private System.Text.Json.JsonElement GetValue() => Settings.TryGetValue(Field.Name, out var value) ? value : default;
+    private IReadOnlyCollection<string> GetStringArray() =>
+        GetValue().ValueKind == System.Text.Json.JsonValueKind.Array
+            ? GetValue().EnumerateArray().Where(x => x.ValueKind == System.Text.Json.JsonValueKind.String).Select(x => x.GetString()!).ToArray()
+            : [];
+    private IEnumerable<string> ValidateString(string? _) => _inputError is null ? DescriptorEditorState.Validate(Field, Settings) : DescriptorEditorState.Validate(Field, Settings).Concat([_inputError]);
+    private IEnumerable<string> ValidateInteger(int? _) => DescriptorEditorState.Validate(Field, Settings);
+    private IEnumerable<string> ValidateNumber(decimal? _) => DescriptorEditorState.Validate(Field, Settings);
+
+    private Task SetStringAsync(string value)
+    {
+        DescriptorEditorState.SetString(Settings, Field.Name, value);
+        return Changed.InvokeAsync();
+    }
+
+    private Task SetAllowedValueAsync(string value)
+    {
+        if (!DescriptorEditorState.TrySetAllowedValue(Settings, Field, value, out var error))
+            _inputError = error;
+        else
+            _inputError = null;
+        return Changed.InvokeAsync();
+    }
+
+    private Task SetTextAsync(string value)
+    {
+        if (string.Equals(Field.ValueType, "json", StringComparison.OrdinalIgnoreCase) || string.Equals(Field.ValueType, "string-array", StringComparison.OrdinalIgnoreCase))
+        {
+            if (!DescriptorEditorState.TrySetStructuredValue(Settings, Field.Name, value, string.Equals(Field.ValueType, "string-array", StringComparison.OrdinalIgnoreCase), out var error))
+                _inputError = error;
+            else
+                _inputError = null;
+        }
+        else
+            DescriptorEditorState.SetString(Settings, Field.Name, value);
+        return Changed.InvokeAsync();
+    }
+
+    private Task SetBooleanAsync(bool value)
+    {
+        DescriptorEditorState.SetBoolean(Settings, Field.Name, value);
+        return Changed.InvokeAsync();
+    }
+
+    private Task SetStringArrayAsync(IEnumerable<string> values)
+    {
+        Settings[Field.Name] = System.Text.Json.JsonSerializer.SerializeToElement(values
+            .Select(x => x.Trim())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray());
+        return Changed.InvokeAsync();
+    }
+
+    private void SetPendingArrayValue(string value) => _pendingArrayValue = value;
+
+    private Task OnPendingArrayValueKeyDownAsync(KeyboardEventArgs args) =>
+        args.Key == "Enter" ? AddStringArrayValueAsync() : Task.CompletedTask;
+
+    private async Task AddStringArrayValueAsync()
+    {
+        if (IsReadOnly || string.IsNullOrWhiteSpace(_pendingArrayValue))
+            return;
+
+        await SetStringArrayAsync(GetStringArray().Append(_pendingArrayValue));
+        _pendingArrayValue = string.Empty;
+    }
+
+    private Task RemoveStringArrayValueAsync(string value) =>
+        IsReadOnly ? Task.CompletedTask : SetStringArrayAsync(GetStringArray().Where(item => !string.Equals(item, value, StringComparison.Ordinal)));
+
+    private Task SetIntegerAsync(int? value)
+    {
+        DescriptorEditorState.SetInteger(Settings, Field.Name, value);
+        return Changed.InvokeAsync();
+    }
+
+    private Task SetNumberAsync(decimal? value)
+    {
+        DescriptorEditorState.SetNumber(Settings, Field.Name, value);
+        return Changed.InvokeAsync();
+    }
+}

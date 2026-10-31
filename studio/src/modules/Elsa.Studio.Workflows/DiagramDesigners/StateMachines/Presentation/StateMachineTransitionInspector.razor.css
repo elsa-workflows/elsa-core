@@ -1,0 +1,395 @@
+.state-machine-transition-inspector {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  color: var(--mud-palette-text-primary);
+}
+
+.state-machine-transition-inspector__header,
+.state-machine-transition-inspector__stage-heading,
+.state-machine-transition-inspector__details summary {
+  display: flex;
+  align-items: center;
+}
+
+.state-machine-transition-inspector__header {
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.state-machine-transition-inspector__header h3,
+.state-machine-transition-inspector__eyebrow,
+.state-machine-transition-inspector__stage-kicker,
+.state-machine-transition-inspector__stage-heading h4,
+.state-machine-transition-inspector__stage-note,
+.state-machine-transition-inspector__slot-warning,
+.state-machine-transition-inspector__condition span,
+.state-machine-transition-inspector__condition p,
+.state-machine-transition-inspector__issues p,
+.state-machine-transition-inspector__details summary,
+.state-machine-transition-inspector__details-route,
+.state-machine-transition-inspector__definition summary {
+  margin: 0;
+}
+
+.state-machine-transition-inspector__header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.state-machine-transition-inspector__eyebrow,
+.state-machine-transition-inspector__stage-kicker,
+.state-machine-transition-inspector__stage-note,
+.state-machine-transition-inspector__details-route {
+  color: var(--mud-palette-text-secondary);
+  font-size: 0.75rem;
+}
+
+.state-machine-transition-inspector__eyebrow,
+.state-machine-transition-inspector__stage-kicker {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.state-machine-transition-inspector__eyebrow {
+  margin-bottom: 0.125rem;
+}
+
+.state-machine-transition-inspector__story {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.state-machine-transition-inspector__stage {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.875rem;
+  border: 1px solid var(--mud-palette-lines-default);
+  border-radius: var(--mud-default-borderradius);
+  background: var(--mud-palette-surface);
+}
+
+.state-machine-transition-inspector__stage--destination {
+  border-color: var(--mud-palette-primary);
+}
+
+.state-machine-transition-inspector__stage-marker {
+  align-self: start;
+  padding-top: 0.125rem;
+  color: var(--mud-palette-primary);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.055em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.state-machine-transition-inspector__stage-content {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.state-machine-transition-inspector__stage-heading {
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.state-machine-transition-inspector__stage-heading h4 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.state-machine-transition-inspector__stage-note {
+  max-width: 50%;
+  text-align: right;
+}
+
+.state-machine-transition-inspector__connector {
+  height: 1rem;
+  color: var(--mud-palette-text-secondary);
+  font-size: 1rem;
+  line-height: 1rem;
+  text-align: center;
+}
+
+.state-machine-transition-inspector__condition {
+  display: grid;
+  gap: 0.625rem;
+  min-width: 0;
+}
+
+.state-machine-transition-inspector__condition span,
+.state-machine-transition-inspector__slot-warning {
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.state-machine-transition-inspector__condition {
+  overflow-wrap: anywhere;
+}
+
+.state-machine-transition-inspector__condition strong {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.state-machine-transition-inspector__condition-expression {
+  display: grid;
+  gap: 0.625rem;
+  min-width: 0;
+  margin: 0;
+}
+
+.state-machine-transition-inspector__condition-expression > div {
+  display: grid;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.state-machine-transition-inspector__condition-expression dt {
+  color: var(--mud-palette-text-secondary);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.state-machine-transition-inspector__condition-expression dd {
+  min-width: 0;
+  margin: 0;
+}
+
+.state-machine-transition-inspector__condition-expression dd[data-condition-language] {
+  color: var(--mud-palette-primary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.state-machine-transition-inspector__condition-expression dd[data-condition-expression] code {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  padding: 0.5rem 0.625rem;
+  border: 1px solid var(--mud-palette-lines-default);
+  border-radius: var(--mud-default-borderradius);
+  background: var(--mud-palette-background-grey);
+  color: var(--mud-palette-text-primary);
+  font-family: monospace;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.state-machine-transition-inspector__button {
+  min-height: 2.25rem;
+  padding: 0.375rem 0.625rem;
+  border: 1px solid transparent;
+  border-radius: var(--mud-default-borderradius);
+  background: transparent;
+  color: var(--mud-palette-primary);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.state-machine-transition-inspector__button:hover {
+  border-color: var(--mud-palette-lines-default);
+  background: var(--mud-palette-action-default-hover);
+}
+
+.state-machine-transition-inspector__button--subtle {
+  color: var(--mud-palette-text-secondary);
+}
+
+.state-machine-transition-inspector__button--danger {
+  color: var(--mud-palette-error);
+}
+
+.state-machine-transition-inspector__button:focus-visible,
+.state-machine-transition-inspector__details summary:focus-visible {
+  outline: 2px solid var(--mud-palette-primary);
+  outline-offset: 2px;
+}
+
+.state-machine-transition-inspector__condition {
+  padding: 0.75rem;
+  border: 1px solid var(--mud-palette-lines-default);
+  border-radius: var(--mud-default-borderradius);
+  background: var(--mud-palette-surface);
+}
+
+.state-machine-transition-inspector__condition--warning {
+  border-color: var(--mud-palette-warning);
+}
+
+.state-machine-transition-inspector__condition--warning strong,
+.state-machine-transition-inspector__slot-warning {
+  color: var(--mud-palette-warning);
+}
+
+.state-machine-transition-inspector__slot-warning {
+  display: block;
+}
+
+.state-machine-transition-inspector__definition {
+  min-width: 0;
+}
+
+.state-machine-transition-inspector__definition summary,
+.state-machine-transition-inspector__details summary {
+  color: var(--mud-palette-primary);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  list-style-position: inside;
+}
+
+.state-machine-transition-inspector__definition pre {
+  max-height: 10rem;
+  margin: 0.5rem 0 0;
+  overflow: auto;
+  padding: 0.625rem;
+  border: 1px solid var(--mud-palette-lines-default);
+  border-radius: var(--mud-default-borderradius);
+  background: var(--mud-palette-background-grey);
+  color: var(--mud-palette-text-secondary);
+  font-family: monospace;
+  font-size: 0.6875rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.state-machine-transition-inspector__details {
+  border-top: 1px solid var(--mud-palette-lines-default);
+  padding-top: 0.75rem;
+}
+
+.state-machine-transition-inspector__details summary {
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 2.25rem;
+}
+
+.state-machine-transition-inspector__details-route {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  justify-content: flex-end;
+  font-family: monospace;
+}
+
+.state-machine-transition-inspector__fields,
+.state-machine-transition-inspector__field {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.state-machine-transition-inspector__fields {
+  gap: 1rem;
+  padding-top: 0.875rem;
+}
+
+.state-machine-transition-inspector__field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.state-machine-transition-inspector__field label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.state-machine-transition-inspector__control {
+  width: 100%;
+  min-height: 2.5rem;
+  box-sizing: border-box;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--mud-palette-lines-inputs);
+  border-radius: var(--mud-default-borderradius);
+  background: var(--mud-palette-surface);
+  color: var(--mud-palette-text-primary);
+  font: inherit;
+}
+
+.state-machine-transition-inspector__control:hover:not(:disabled) {
+  border-color: var(--mud-palette-text-secondary);
+}
+
+.state-machine-transition-inspector__control:focus-visible {
+  outline: 2px solid var(--mud-palette-primary);
+  outline-offset: 2px;
+}
+
+.state-machine-transition-inspector__control:disabled {
+  background: var(--mud-palette-action-disabled-background);
+  color: var(--mud-palette-action-disabled);
+}
+
+.state-machine-transition-inspector__empty,
+.state-machine-transition-inspector__issues {
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px dashed var(--mud-palette-lines-default);
+  border-radius: var(--mud-default-borderradius);
+  color: var(--mud-palette-text-secondary);
+  font-size: 0.8125rem;
+}
+
+.state-machine-transition-inspector__issues {
+  display: grid;
+  gap: 0.375rem;
+  border-style: solid;
+  border-color: var(--mud-palette-error);
+  color: var(--mud-palette-error);
+}
+
+.state-machine-transition-inspector__issues > strong {
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 700px) {
+  .state-machine-transition-inspector__stage {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+
+  .state-machine-transition-inspector__stage-marker {
+    padding-top: 0;
+  }
+
+  .state-machine-transition-inspector__stage-heading {
+    align-items: flex-start;
+  }
+
+  .state-machine-transition-inspector__stage-note {
+    max-width: 45%;
+  }
+
+  .state-machine-transition-inspector__field-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .state-machine-transition-inspector__details summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .state-machine-transition-inspector__details-route {
+    justify-content: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .state-machine-transition-inspector * {
+    scroll-behavior: auto;
+    transition: none;
+  }
+}

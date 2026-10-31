@@ -1,0 +1,25 @@
+@inherits EmbeddedActivityWrapperBase
+@{
+    var colorStyle = IsSelected ? $"color: {Color};" : "";
+}
+<MudPaper
+    Class="elsa-activity-embedded pa-1"
+    Elevation="0"
+    Outlined="false"
+>
+    <MudStack Row="true" AlignItems="AlignItems.Center" Style="height:100%">
+        @if (Icon != null)
+        {
+            <MudIcon Icon="@Icon" Style="@colorStyle"></MudIcon>
+        }
+        <MudStack Style="height:100%" Justify="Justify.Center">
+            <MudText Typo="Typo.body1" Style="@colorStyle">@Label</MudText>
+
+            @if (!string.IsNullOrWhiteSpace(Description) && ShowDescription)
+            {
+                <MudText Typo="Typo.caption" Style="@colorStyle">@Description</MudText>
+            }
+        </MudStack>
+    </MudStack>
+
+</MudPaper>

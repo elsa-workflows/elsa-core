@@ -1,0 +1,18 @@
+@page "/workflows/definitions"
+@attribute [RequirePermission(WorkflowPermissions.Definitions, PermissionVerbs.View)]
+@inherits StudioComponentBase
+@using Elsa.Studio.Workflows.Services
+@inject ILocalizer Localizer
+
+<PageTitle>@Localizer["Workflow definitions Editor"]</PageTitle>
+<WorkflowDefinitionList EditWorkflowDefinition="OnWorkflowDefinitionEdit"/>
+
+@code {
+    
+    [Inject] NavigationManager NavigationManager { get; set; } = default!;
+    
+    private void OnWorkflowDefinitionEdit(string definitionId)
+    {
+        NavigationManager.NavigateTo($"workflows/definitions/{definitionId}/edit");
+    }
+}

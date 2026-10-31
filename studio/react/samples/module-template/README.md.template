@@ -1,0 +1,23 @@
+# __NAME__ React Studio module
+
+Generated sample for Elsa React Studio Preview. The forecast is local demonstration
+state; it does not contact a weather service. Replace Acme/example names, behavior,
+metadata and license with your module's own choices.
+
+From Module/Client, run `pnpm install` and `pnpm build`. Commit the generated lockfile
+and use `pnpm install --frozen-lockfile` for subsequent builds. Then run
+`dotnet pack Module/Module.csproj -o artifacts/packages`. Both Module and Host use
+NuGet package references only. Until the Preview packages are published, use the
+Elsa repository's authoring verification command with its local packed feed.
+
+Make the module package and Elsa packages available in your NuGet sources, then
+`dotnet run --project Host --urls http://127.0.0.1:5204` and open `/studio-preview/`.
+The sample host uses anonymous development authentication. Configure authentication
+and the API origin before using it against a protected server.
+
+`__MODULE_ID__` must be enabled in browser features as well as the server feature.
+JS imports React/public Studio packages from the host; private dependencies may be
+bundled. Scope CSS to `.__MODULE_ID__` and shared theme tokens. Bump the NuGet module
+version whenever shipped JS/CSS changes, because its asset URLs are immutable.
+Host API and SDK API major versions are both 1 for this Preview. Contributions use
+module-local IDs and explicit ordering; use `api.onDispose` for external resources.

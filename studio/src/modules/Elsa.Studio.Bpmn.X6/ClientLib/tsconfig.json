@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "isolatedModules": true
+  },
+  "include": [
+    "./src/**/*",
+    "../../Elsa.Studio.Bpmn/ClientLib/src/**/*"
+  ],
+  "exclude": ["../../Elsa.Studio.Bpmn/ClientLib/src/__tests__/**"]
+}

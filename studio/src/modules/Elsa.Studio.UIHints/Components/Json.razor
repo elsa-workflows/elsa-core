@@ -1,0 +1,21 @@
+@using BlazorMonaco.Editor
+@inject ILocalizer Localizer
+
+@{
+    var inputDescriptor = EditorContext.InputDescriptor;
+    var displayName = inputDescriptor.DisplayName ?? inputDescriptor.Name;
+    var description = inputDescriptor.Description ?? string.Empty;
+}
+
+<ExpressionInput EditorContext="@EditorContext">
+    <ChildContent>
+        <MudField Variant="Variant.Outlined" Label="@Localizer[displayName]" HelperText="@Localizer[description]" Margin="Margin.Dense">
+            <StandaloneCodeEditor
+                @ref="_monacoEditor"
+                Id="@_monacoEditorId"
+                ConstructionOptions="ConfigureMonacoEditor"
+                CssClass="studio-expression-input-monaco-editor studio-monaco-editor-large"
+                OnDidChangeModelContent="OnMonacoContentChanged"/>
+        </MudField>
+    </ChildContent>
+</ExpressionInput>

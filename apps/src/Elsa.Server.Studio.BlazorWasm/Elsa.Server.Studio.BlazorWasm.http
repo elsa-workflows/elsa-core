@@ -1,0 +1,6 @@
+@Elsa.Server.Studio.BlazorWasm_HostAddress = http://localhost:5022
+
+GET {{Elsa.Server.Studio.BlazorWasm_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

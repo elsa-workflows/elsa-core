@@ -1,0 +1,16 @@
+using CShells.Features;
+using Elsa.ReactStudio.Host;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace __PACKAGE_ID__;
+
+/// <summary>Adds the independently packaged __NAME__ module to the enabled Preview shell.</summary>
+[ShellFeature("__COMPANY__.__NAME__", DependsOn = [typeof(ReactStudioPreviewFeature)])]
+public sealed class __NAME__Feature : IShellFeature
+{
+    public void ConfigureServices(IServiceCollection services)
+    {
+        services.AddSingleton(new ReactStudioModule("__MODULE_ID__", "__NAME__", "__PACKAGE_ID__", false,
+            typeof(__NAME__Feature).Assembly, [], HostApiVersion: 1, SdkApiVersion: 1));
+    }
+}

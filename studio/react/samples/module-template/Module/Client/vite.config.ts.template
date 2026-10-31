@@ -1,0 +1,14 @@
+import { resolve } from "node:path";
+import { defineConfig } from "vite";
+
+// Keep React and public Studio packages in the host's shared import map.
+// Private module dependencies can be bundled instead of requiring host changes.
+const shared = /^(?:react(?:-dom)?(?:\/|$)|@elsa-workflows\/react-studio(?:-[a-z-]+)?(?:\/|$))/;
+export default defineConfig({
+  esbuild: { jsx: "automatic" },
+  build: {
+    outDir: resolve(import.meta.dirname, "../wwwroot"), emptyOutDir: true,
+    lib: { entry: resolve(import.meta.dirname, "entry.tsx"), formats: ["es"], fileName: () => "entry.js", cssFileName: "module" },
+    rollupOptions: { external: id => shared.test(id) },
+  },
+});

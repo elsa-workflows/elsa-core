@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <ItemGroup>
+        <PackageReference Include="Elsa"/>
+        <PackageReference Include="Elsa.Dashboard.Api"/>
+        <PackageReference Include="Elsa.Expressions.CSharp"/>
+        <PackageReference Include="Elsa.Http"/>
+        <PackageReference Include="Elsa.Identity"/>
+        <PackageReference Include="Elsa.Expressions.JavaScript"/>
+        <PackageReference Include="Elsa.Expressions.Liquid"/>
+        <PackageReference Include="Elsa.Scheduling"/>
+        <PackageReference Include="Elsa.Workflows.Api"/>
+        <PackageReference Include="Elsa.Workflows.Runtime.Dashboard"/>
+        <PackageReference Include="Elsa.Workflows.Runtime.Distributed"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Elsa.Agents.Activities"/>
+        <PackageReference Include="Elsa.Agents.Api"/>
+        <PackageReference Include="Elsa.Agents.Core"/>
+        <PackageReference Include="Elsa.Agents.Persistence.EFCore.Sqlite"/>
+        <PackageReference Include="Elsa.Agents.Persistence.EFCore.SqlServer"/>
+        <PackageReference Include="Elsa.Logging"/>
+        <PackageReference Include="Elsa.Logging.Console"/>
+        <PackageReference Include="Elsa.Logging.Serilog"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.OpenApi"/>
+        <PackageReference Include="Swashbuckle.AspNetCore"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Elsa.Server.Shared\Elsa.Server.Shared.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" id="Definitions_Legacy" targetNamespace="https://example.com/legacy">
+  <bpmn:process id="Process_Legacy">
+    <bpmn:subProcess id="Sub" name="Collapsed">
+      <bpmn:task id="Inner" name="Inner" />
+    </bpmn:subProcess>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_Legacy">
+    <bpmndi:BPMNPlane id="Plane_Legacy" bpmnElement="Process_Legacy">
+      <bpmndi:BPMNShape id="Sub_di" bpmnElement="Sub" isExpanded="false">
+        <dc:Bounds x="100" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Inner_di" bpmnElement="Inner">
+        <dc:Bounds x="300" y="300" width="100" height="80" />
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
