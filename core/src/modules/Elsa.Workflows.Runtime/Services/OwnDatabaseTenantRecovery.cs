@@ -30,7 +30,7 @@ internal static class OwnDatabaseTenantRecovery
         CancellationToken cancellationToken)
     {
         var ownDatabaseTenants = await TryListOwnDatabaseTenantsAsync(tenantService, tenantScopeFactory, logger, cancellationToken);
-        var seen = new HashSet<string>();
+        var seen = new HashSet<(string TenantKey, string Id)>();
         var requeued = 0;
 
         try
@@ -78,7 +78,7 @@ internal static class OwnDatabaseTenantRecovery
         ITenantAccessor? tenantAccessor,
         ITenantScopeFactory? tenantScopeFactory,
         List<Tenant> ownDatabaseTenants,
-        ISet<string> seen,
+        ISet<(string TenantKey, string Id)> seen,
         ILogger logger,
         CancellationToken cancellationToken)
     {

@@ -95,6 +95,21 @@ public class OwnDatabaseTenantRecoveryTests
         Assert.Single(_restarts);
     }
 
+    [Fact(DisplayName = "The same instance id in two tenant databases is restarted for both tenants")]
+    public async Task SameIdInTwoTenantDatabases_RestartedForBoth()
+    {
+        var first = OwnDatabaseTenant("tenant-1");
+        var second = OwnDatabaseTenant("tenant-2");
+        UseTenants(first, second);
+        AddInstance(first.Id, "x", first.Id);
+        AddInstance(second.Id, "x", second.Id);
+
+        var count = await RequeueAsync();
+
+        Assert.Equal(2, count);
+        Assert.Equal([("x", "tenant-1", "tenant-1"), ("x", "tenant-2", "tenant-2")], _restarts);
+    }
+
     [Fact(DisplayName = "A failing tenant does not stop other tenants or the shared pass")]
     public async Task FailingTenant_OthersStillRecovered()
     {

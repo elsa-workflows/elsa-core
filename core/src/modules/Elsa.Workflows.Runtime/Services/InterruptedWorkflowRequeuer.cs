@@ -12,6 +12,7 @@ internal static class InterruptedWorkflowRequeuer
 {
     /// <summary>
     /// Collects first (restarting shrinks the filtered set, so paging would skip rows), then restarts each instance not yet in <paramref name="seen"/> once under its tenant; returns the count restarted. Share <paramref name="seen"/> across the scans of one run to dedupe them.
+    /// It is keyed by tenant and instance id, because separate tenant databases can hold the same instance id.
     /// </summary>
     public static async Task<int> RequeueAsync(
         IAsyncEnumerable<WorkflowInstanceSummary> instances,
@@ -19,17 +20,17 @@ internal static class InterruptedWorkflowRequeuer
         ITenantService? tenantService,
         ITenantAccessor? tenantAccessor,
         ILogger logger,
-        ISet<string>? seen,
+        ISet<(string TenantKey, string Id)>? seen,
         CancellationToken cancellationToken)
     {
         var collected = new List<(string Id, string? TenantId)>();
-        seen ??= new HashSet<string>();
+        seen ??= new HashSet<(string TenantKey, string Id)>();
         var tenants = new Dictionary<string, Tenant?>();
         var requeued = 0;
 
         await foreach (var summary in instances.WithCancellation(cancellationToken))
         {
-            if (seen.Add(summary.Id))
+            if (seen.Add((GetTenantKey(summary.TenantId), summary.Id)))
                 collected.Add((summary.Id, summary.TenantId));
         }
 
