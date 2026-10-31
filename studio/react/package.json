@@ -81,6 +81,14 @@
     "vitest": "^5.0.4",
     "jsdom": "^29.1.1"
   },
+  "pnpm": {
+    "auditConfig": {
+      "//": "Dev-only (pnpm audit --prod is clean). Chains: eslint@9 (+@eslint/config-array, @eslint/eslintrc, eslint-plugin-react) → minimatch 3.1.5; typedoc@0.28 → 10.2.6; typescript-eslint@8 → 10.2.6. Tracked in #9145. Remove once eslint, typedoc and typescript-eslint ship on minimatch >= 11.0.1.",
+      "ignoreGhsas": [
+        "GHSA-g3hv-75wg-m249"
+      ]
+    }
+  },
   "packageManager": "pnpm@10.33.0",
   "type": "module"
 }
