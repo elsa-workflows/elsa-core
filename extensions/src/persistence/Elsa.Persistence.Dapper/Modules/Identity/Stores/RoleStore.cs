@@ -17,11 +17,9 @@ internal class DapperRoleStore(Store<RoleRecord> store) : IRoleStore
 {
     /// <inheritdoc />
     /// <remarks>
-    /// <see cref="Store{T}.SaveAsync"/> upserts on the ID alone (SQLite <c>INSERT OR REPLACE</c>, SQL Server
-    /// <c>MERGE</c>), which would move another tenant's row into the current tenant when IDs collide, as they did
-    /// while role IDs were derived from the name. So a row is only updated when the current tenant owns it, and the
-    /// update itself is filtered by the current tenant as well as the ID. Otherwise the role is inserted, or refused
-    /// when its ID already belongs to another tenant or to a tenant-agnostic ('*') role.
+    /// <see cref="Store{T}.SaveAsync"/> now scopes the upsert to the current tenant and throws on a
+    /// cross-tenant ID collision. This method still updates only a row the current tenant owns, and
+    /// refuses an ID that already belongs to another tenant or to a tenant-agnostic ('*') role.
     /// </remarks>
     public async Task SaveAsync(Role role, CancellationToken cancellationToken = default)
     {

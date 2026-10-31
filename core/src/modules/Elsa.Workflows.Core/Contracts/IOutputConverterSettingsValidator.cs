@@ -4,12 +4,13 @@ using Elsa.Workflows.Models;
 namespace Elsa.Workflows;
 
 /// <summary>
-/// Validates converter settings against descriptor and converter-owned rules.
+/// Validates converter settings using converter-owned rules.
 /// </summary>
 public interface IOutputConverterSettingsValidator
 {
     /// <summary>
-    /// Validates settings against the descriptor schema and converter-owned validation rules.
+    /// Validates settings. <see cref="IOutputConverter.ValidateSettings"/> is the authoritative check.
+    /// <see cref="OutputConverterDescriptor.SettingsSchema"/> is descriptor metadata and is not evaluated here.
     /// </summary>
     IReadOnlyCollection<string> Validate(
         OutputConverterDescriptor descriptor,

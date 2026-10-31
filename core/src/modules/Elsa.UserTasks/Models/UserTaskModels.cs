@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Elsa.Authorization;
 using Elsa.Mediator.Contracts;
 
@@ -133,7 +134,17 @@ public sealed record UserTaskActor(
 public sealed record UserTaskAction(
     string Key,
     string Label,
-    IReadOnlyDictionary<string, object?>? Metadata = null);
+    IReadOnlyDictionary<string, object?>? Metadata = null)
+{
+    /// <summary>
+    /// Used by the workflow-state serializer. That path writes <c>$id</c> on <see cref="Metadata"/>, which
+    /// System.Text.Json cannot apply to a constructor parameter.
+    /// </summary>
+    [JsonConstructor]
+    public UserTaskAction() : this("", "")
+    {
+    }
+}
 
 /// <summary>
 /// Describes a guest invitation that is materialized with a task. The secret itself is created only
@@ -145,7 +156,17 @@ public sealed record UserTaskInvitationDefinition(
     TimeSpan? Lifetime = null,
     bool BearerOnly = false,
     string? Recipient = null,
-    IReadOnlyDictionary<string, object?>? Configuration = null);
+    IReadOnlyDictionary<string, object?>? Configuration = null)
+{
+    /// <summary>
+    /// Used by the workflow-state serializer. That path writes <c>$id</c> on <see cref="AllowedActions"/>, which
+    /// System.Text.Json cannot apply to a constructor parameter.
+    /// </summary>
+    [JsonConstructor]
+    public UserTaskInvitationDefinition() : this("", [])
+    {
+    }
+}
 
 public sealed record UserTaskFormReference(
     string ProviderName,
@@ -412,7 +433,17 @@ public sealed record UserTaskMaterialization(
     string? TaskId = null,
     string? WorkflowDefinitionName = null,
     int? WorkflowDefinitionVersion = null,
-    string? WorkflowInstanceReference = null);
+    string? WorkflowInstanceReference = null)
+{
+    /// <summary>
+    /// Used by the workflow-state serializer. That path writes <c>$id</c>/<c>$ref</c>, which System.Text.Json
+    /// cannot apply to constructor parameters of a positional record.
+    /// </summary>
+    [JsonConstructor]
+    public UserTaskMaterialization() : this("", "", "", "", "", new(), [], [], default)
+    {
+    }
+}
 
 public sealed record UserTaskStimulus(
     string TenantId,

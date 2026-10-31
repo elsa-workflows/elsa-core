@@ -108,6 +108,45 @@ Operational notes:
 - Dispatch calls outside a workflow execution context, including API-triggered asynchronous events, continue to use the regular background dispatcher.
 - In-workflow `PublishEvent` and asynchronous `IEventPublisher` calls use `IWorkflowDispatcher` (`DispatchTriggerWorkflowsRequest`) so `TransactionalWorkflowDispatcher` applies. They do not go through `IStimulusDispatcher` / `BackgroundStimulusDispatcher`.
 
+### Customizing outbox marker cleanup
+
+After successfully deleting a delivered or abandoned outbox item, the processor calls
+[IWorkflowDispatchOutboxMarkerCleaner](../../src/modules/Elsa.Workflows.Runtime/Contracts/IWorkflowDispatchOutboxMarkerCleaner.cs)
+to remove the item's committed marker from its owner workflow. The default
+[WorkflowDispatchOutboxMarkerCleaner](../../src/modules/Elsa.Workflows.Runtime/Services/WorkflowDispatchOutboxMarkerCleaner.cs)
+acquires `workflow-instance:{OwnerWorkflowInstanceId}` using the configured distributed lock provider,
+reloads the owner, removes only that marker and saves the owner. Missing owners and already-removed markers require no save.
+
+Hosts whose workflow state writes require additional ownership, such as a database session lock acquired
+before loading state, can replace this scoped service without replacing the outbox processor:
+
+```csharp
+using Elsa.Workflows.Runtime;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+
+// ApplicationOutboxMarkerCleaner is the host's IWorkflowDispatchOutboxMarkerCleaner implementation.
+services.Replace(ServiceDescriptor.Scoped<IWorkflowDispatchOutboxMarkerCleaner, ApplicationOutboxMarkerCleaner>());
+```
+
+Both module and shell runtime registration use `TryAddScoped`, so registering a custom cleaner before runtime
+registration also works. Existing processor constructors retain their default cleanup behavior. Code that manually
+constructs a processor can use the overload whose first argument is `IWorkflowDispatchOutboxMarkerCleaner`.
+
+The cleaner receives the full outbox item, including its tenant and owner identifiers. It must use the owner ID,
+which can differ from the dispatched child or resumed workflow ID. The processor retains its processor lock
+while calling the cleaner, but acquires no workflow instance lock on the cleaner's behalf. A custom cleaner can
+therefore establish its own ownership before acquiring that instance lock and reloading state; it can delegate
+to the default cleaner after establishing that ownership.
+
+Cleanup can run from the immediate post-commit processor while the owner is still executing and holds an
+instance lock. A custom cleaner must account for that case rather than wait on a lock held by its caller or
+overwrite an active execution's state. Hosts that defer cleanup must provide their own durable reconciliation:
+the outbox record has already been deleted, so the processor does not automatically retry marker cleanup.
+Cleanup exceptions are logged without recreating the item or counting a new delivery failure; cancellation
+propagates. If outbox deletion fails, the cleaner is not called. This extension changes neither dispatch routing
+and retries nor the outbox's at-least-once delivery guarantee.
+
 ## Triggers And Bookmarks
 
 Triggers start workflows. Bookmarks resume suspended workflow instances. Runtime indexes and queries them through:
@@ -120,6 +159,8 @@ Triggers start workflows. Bookmarks resume suspended workflow instances. Runtime
 - [TriggerBoundWorkflowService](../../src/modules/Elsa.Workflows.Runtime/Services/TriggerBoundWorkflowService.cs)
 
 The indexer stores one trigger per payload an [ITrigger](../../src/modules/Elsa.Workflows.Core/Contracts/ITrigger.cs) activity that can start the workflow returns. A trigger that returns no payloads, or throws while producing them, is stored as a single placeholder row with a `null` payload. [ValidateWorkflowRequestHandler](../../src/modules/Elsa.Workflows.Runtime/Handlers/ValidateWorkflowRequestHandler.cs) reports that row as `Trigger should have a payload`, so publication is refused. A trigger whose decision to register anything depends on its own configuration, and that has nothing to register as configured, sets [TriggerIndexingContext.RegistersNoTriggers](../../src/modules/Elsa.Workflows.Core/Contexts/TriggerIndexingContext.cs) and returns no payloads. The indexer then stores no row for it. The flag is ignored when the trigger returns payloads or throws. `BpmnProcess` uses it for a process with only plain start events (see [BPMN Workflows](bpmn-workflows.md)).
+
+Because one trigger activity can store several triggers, the runtime tells a workflow it starts from a stored trigger which one matched. It writes that trigger's `StoredTrigger.Hash` into the run's workflow properties under [TriggerWorkflowProperties.StimulusHash](../../src/modules/Elsa.Workflows.Runtime/Constants/TriggerWorkflowProperties.cs) (`Elsa:TriggerStimulusHash`), and an activity reads it with `WorkflowExecutionContext.GetTriggerStimulusHash()`. Every runtime path that starts a workflow from a trigger it matched writes it: [StimulusSender](../../src/modules/Elsa.Workflows.Runtime/Services/StimulusSender.cs), which also serves dispatched stimuli, published events and MassTransit stimulus messages; `Elsa.Scheduling`'s [DefaultTriggerScheduler](../../src/modules/Elsa.Scheduling/Services/DefaultTriggerScheduler.cs) for `Timer`, `StartAt` and `Cron` triggers; the HTTP endpoint middleware; and the MassTransit trigger dispatcher. Caller-supplied properties are copied, never modified. The property is persisted with the instance for its whole lifetime, so it describes how the instance started. It is absent when a workflow was run directly with a trigger activity, when a schedule or dispatch was queued before the runtime recorded it, and on the Kafka and MQTT trigger paths and the obsolete `IWorkflowRuntime.ExecuteWorkflowAsync(WorkflowMatch)`, which start workflows from bindings or matches that do not carry the stored trigger's hash.
 
 Bookmark queue processing is handled by:
 
@@ -149,6 +190,29 @@ Workflow and activity execution logs flow through sinks and stores:
 - [DefaultActivityExecutionMapper](../../src/modules/Elsa.Workflows.Runtime/Services/DefaultActivityExecutionMapper.cs)
 
 API endpoints under `WorkflowInstances/Journal`, `ActivityExecutions`, and `ActivityExecutionSummaries` expose this data.
+
+## Cancellation And The Cancelling Sub-Status
+
+When a cancellation request arrives, [WorkflowCancellationService](../../src/modules/Elsa.Workflows.Runtime/Services/WorkflowCancellationService.cs) may persist `WorkflowSubStatus.Cancelling` (main status stays `WorkflowStatus.Running`) before dispatching the cancellation. Only a Running instance whose sub-status is `Suspended`, that is not currently executing, and that is unowned when an execution guard is registered, gets that mark. Executing instances keep their sub-status. `Pending` and `Interrupted` are cancelled without the interim mark, so the pending run path and the interrupted-workflow scan still own them.
+
+```
+Running / Suspended  →  Running / Cancelling  →  Finished / Cancelled
+```
+
+The mark is best effort: if the compare-and-swap throws or declines, cancellation is still dispatched without the interim sub-status.
+
+There is no recovery scanner for a stale `Cancelling` mark. A crash after persist and before enqueue can leave a suspended instance in `Cancelling`. That gap is tracked in #9130.
+
+The previous sub-status is restored only when dispatch fails (`RestoreAfterDispatchFailureAsync`) or the cancel command fails (`RestoreIfMarkedAsync`). Restore is a compare-and-swap on the `Cancelling` mark and its `CancellingAt` stamp (the `UpdatedAt` value written with the mark), and it only returns the instance to `Suspended`. If the mark is no longer current — for example because `Cancelled` already committed — nothing is restored.
+
+This explicit `Cancelling` mark distinguishes "cancellation in flight" from:
+- `Cancelled` — cancellation committed successfully.
+- `Interrupted` — force-cancelled during a graceful drain (resumable).
+- `Executing` with a stale liveness timestamp — crash recovery path.
+
+Key files: [WorkflowCancellationService](../../src/modules/Elsa.Workflows.Runtime/Services/WorkflowCancellationService.cs) and [CancelWorkflowsCommandHandler](../../src/modules/Elsa.Workflows.Runtime/Handlers/CancelWorkflowsCommandHandler.cs).
+
+The `Cancelling` sub-status is surfaced through the same `WorkflowSubStatus` enum that the API and API client mirror. When updating that enum keep all values in sync — see [Workflow API](workflow-api.md#api-client).
 
 ## Background Work
 

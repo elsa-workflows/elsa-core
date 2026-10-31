@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Execute only the original consolidated candidate; operational admission is unset.
+"""Execute only the original consolidated candidate under the pinned reviewed policy.
 
 Verification/rehearsal have no publication authority. Publication requires native
 same-run GitHub environment approval AND fresh exact reviewed policy metadata.
@@ -32,17 +32,28 @@ import prove_consolidated_packages as packages
 
 REPOSITORY = "elsa-workflows/elsa-core"
 WORKFLOW = ".github/workflows/publish-consolidated-original-candidate.yml"
-ENVIRONMENT = "elsa-3-10-feedz"
+ENVIRONMENT = "feedz-publish"
 PUBLISH_SECRET = "ELSA_CONSOLIDATED_FEEDZ_PUBLISH_KEY"
 METADATA_SECRET = "ELSA_CONSOLIDATED_METADATA_READ_TOKEN"
-METADATA_PATH = re.compile(r"repos/elsa-workflows/elsa-core/(?:actions/(?:secrets|organization-secrets)|environments/elsa-3-10-feedz/secrets)\?per_page=100&page=[1-9][0-9]*\Z")
+METADATA_PATH = re.compile(r"repos/elsa-workflows/elsa-core/(?:actions/(?:secrets|organization-secrets)|environments/feedz-publish/secrets)\?per_page=100&page=[1-9][0-9]*\Z")
 PACKAGE_BASE = "https://f.feedz.io/elsa-workflows/elsa-3/nuget/v3/packages"
 PACKAGE_PUBLISH = "https://f.feedz.io/elsa-workflows/elsa-3/nuget"
 SYMBOL_PUBLISH = "https://f.feedz.io/elsa-workflows/elsa-3/symbols"
-EXPIRY = "2026-11-05T12:13:30Z"
-# A later separately approved source change must pin real existing IDs, exact
-# refs and the operational packet. No CLI/environment/artifact override exists.
-REVIEWED_OPERATIONAL_POLICY = None
+EXPIRY = candidate_input.EXPIRES_AT
+# Reviewed policy for the existing feedz-publish environment, read from the GitHub
+# API on 2026-10-30. The packet hash covers the exact bytes of
+# docs/integration-program/feedz-publish-operational-packet.md. Recreating or
+# changing the environment changes these IDs and needs a new reviewed PR.
+# No CLI/environment/artifact override exists.
+REVIEWED_OPERATIONAL_POLICY = {
+    "environment_id": 25739609238,
+    "reviewer_rule_id": 70613239,
+    "branch_rule_id": 70613240,
+    "reviewer_ids": [938393],
+    "branch_policies": [{"id": 64850643, "type": "branch", "name": "main"}],
+    "allowed_ref": "refs/heads/main",
+    "operational_packet_sha256": "416725fcd31207336a3fd9bd0d4eb18d2ff618ddcda9fb137dcc5b1d87f49d17",
+}
 MAX_BYTES = 32 * 1024 * 1024
 MAX_REQUESTS = 5000
 MAX_SECONDS = 1800
@@ -367,8 +378,9 @@ def check_admission(*, publish=False, api=None):
                "credential_isolation": "pending_authenticated_execution_check",
                "candidate": {**candidate_input.PRODUCER, "archive_sha256": candidate_input.ARCHIVE_SHA256,
                              "preupload_manifest_sha256": candidate_input.MANIFEST_SHA256,
-                             "expires_at": EXPIRY, "package_count": 225, "exclusion_count": 124,
-                             "excluded_id_count": 123}}
+                             "expires_at": EXPIRY, "package_count": candidate_input.PIN_PACKAGE_COUNT,
+                             "exclusion_count": candidate_input.PIN_EXCLUSION_COUNT,
+                             "excluded_id_count": candidate_input.PIN_EXCLUSION_ID_COUNT}}
     if publish:
         reviews = api.get(f"{prefix}/actions/runs/{run}/approvals")
         require(isinstance(reviews, list) and len(reviews) < 100, "native_approval_invalid")
@@ -735,7 +747,7 @@ def rehearse(root, provenance, inspector):
             "rehearsal_interruption_failed")
     resumed = run_verified(root, provenance, inspector, mode="publish", transport=feed,
                            authorize=lambda: {"scope": "simulation_only"}, credential=lambda: "synthetic")
-    require(resumed["content_verified"] and len(resumed["associations"]) == 225, "rehearsal_incomplete")
+    require(resumed["content_verified"] and len(resumed["associations"]) == candidate_input.PIN_PACKAGE_COUNT, "rehearsal_incomplete")
     actual = {(row["kind"], row["archive_sha256"]) for row in feed.calls}
     wanted = {(kind, row[kind+"_sha256"]) for row in manifest["packages"] for kind in ("nupkg", "snupkg")
               if kind == "nupkg" or row["assemblies"]}

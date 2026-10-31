@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Elsa.Api.Client.Extensions;
+using Elsa.Studio.Bpmn.Designers;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.DomInterop.Contracts;
 using Elsa.Studio.Localization;
@@ -24,8 +25,21 @@ public class BpmnDiagramDesignerProvider(
     IDialogService dialogService,
     IBpmnInterchangeService bpmnInterchangeService,
     IFiles files,
-    IUserMessageService userMessageService) : IDiagramDesignerProvider
+    IUserMessageService userMessageService,
+    BpmnDesignerResolver? designerResolver) : IDiagramDesignerProvider
 {
+    /// <summary>Creates a provider whose designers do not know which BPMN designer is enabled.</summary>
+    public BpmnDiagramDesignerProvider(
+        ILocalizer localizer,
+        IOptions<DesignerOptions> designerOptions,
+        IDialogService dialogService,
+        IBpmnInterchangeService bpmnInterchangeService,
+        IFiles files,
+        IUserMessageService userMessageService)
+        : this(localizer, designerOptions, dialogService, bpmnInterchangeService, files, userMessageService, null)
+    {
+    }
+
     /// <inheritdoc />
     public double Priority => 10;
 
@@ -33,5 +47,5 @@ public class BpmnDiagramDesignerProvider(
     public bool GetSupportsActivity(JsonObject activity) => activity.GetTypeName() == BpmnProcessConstants.ActivityTypeName;
 
     /// <inheritdoc />
-    public IDiagramDesigner GetEditor() => new BpmnDiagramDesigner(localizer, designerOptions, dialogService, bpmnInterchangeService, files, userMessageService);
+    public IDiagramDesigner GetEditor() => new BpmnDiagramDesigner(localizer, designerOptions, dialogService, bpmnInterchangeService, files, userMessageService, designerResolver);
 }

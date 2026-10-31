@@ -1,6 +1,11 @@
+using System.Collections;
 using Elsa.Testing.Shared;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Options;
+using Elsa.Workflows.State;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
 namespace Elsa.Activities.IntegrationTests.Branching;
@@ -284,5 +289,121 @@ public class SwitchTests(ITestOutputHelper testOutputHelper)
         // Assert
         result.AssertActivitiesCompleted(switchActivity, case2Activity);
         result.AssertActivitiesNotExecuted(case1Activity, case3Activity);
+    }
+
+    [Fact(DisplayName = "Switch completes after a branch suspends and resumes from a restored string list")]
+    public async Task Switch_Completes_AfterBranchSuspendsAndResumesFromPersistedState()
+    {
+        // Arrange
+        var wait1 = new BlockingActivity { Id = "wait-1" };
+        var wait2 = new BlockingActivity { Id = "wait-2" };
+        var (switchActivity, workflow, runner) = await CreateMatchAnySwitchAsync(wait1, wait2);
+
+        // Act
+        var state = RoundTrip(await RunUntilSuspendedAsync(runner, workflow));
+        RestoreScheduledActivityIds(state, ids => ids.ToList());
+        state = RoundTrip((await ResumeAsync(runner, workflow, state, wait1.Id)).WorkflowState);
+        var resumed = await ResumeAsync(runner, workflow, state, wait2.Id);
+
+        // Assert
+        resumed.AssertActivityCompleted(switchActivity);
+        resumed.AssertWorkflowCompleted();
+    }
+
+    [Fact(DisplayName = "Switch in MatchAny mode completes after each branch resumes from a save-and-reload")]
+    public async Task Switch_Completes_AfterAllMatchingBranchesResumeFromPersistedState()
+    {
+        // Arrange
+        var wait1 = new BlockingActivity { Id = "wait-1" };
+        var wait2 = new BlockingActivity { Id = "wait-2" };
+        var (switchActivity, workflow, runner) = await CreateMatchAnySwitchAsync(wait1, wait2);
+
+        // Act
+        var state = RoundTrip(await RunUntilSuspendedAsync(runner, workflow));
+        var afterFirst = await ResumeAsync(runner, workflow, state, wait1.Id);
+
+        Assert.Equal(WorkflowSubStatus.Suspended, afterFirst.WorkflowState.SubStatus);
+        Assert.Single(afterFirst.WorkflowState.Bookmarks);
+
+        var resumed = await ResumeAsync(runner, workflow, RoundTrip(afterFirst.WorkflowState), wait2.Id);
+
+        // Assert
+        resumed.AssertActivityCompleted(switchActivity);
+        resumed.AssertWorkflowCompleted();
+    }
+
+    [Fact(DisplayName = "Switch completes when scheduled IDs are restored as a legacy object list")]
+    public async Task Switch_Completes_WhenScheduledActivityIdsAreRestoredAsObjectList()
+    {
+        // Arrange
+        var wait1 = new BlockingActivity { Id = "wait-1" };
+        var wait2 = new BlockingActivity { Id = "wait-2" };
+        var (switchActivity, workflow, runner) = await CreateMatchAnySwitchAsync(wait1, wait2);
+
+        // Act
+        var state = RoundTrip(await RunUntilSuspendedAsync(runner, workflow));
+        RestoreScheduledActivityIds(state, ids => ids.Cast<object>().ToList());
+        state = RoundTrip((await ResumeAsync(runner, workflow, state, wait1.Id)).WorkflowState);
+        var resumed = await ResumeAsync(runner, workflow, state, wait2.Id);
+
+        // Assert
+        resumed.AssertActivityCompleted(switchActivity);
+        resumed.AssertWorkflowCompleted();
+    }
+
+    private async Task<(Switch Switch, Workflow Workflow, IWorkflowRunner Runner)> CreateMatchAnySwitchAsync(
+        BlockingActivity wait1,
+        BlockingActivity wait2)
+    {
+        var switchActivity = new Switch
+        {
+            Mode = new(SwitchMode.MatchAny),
+            Cases =
+            {
+                new("One", () => true, wait1),
+                new("Two", () => true, wait2)
+            }
+        };
+
+        await _fixture.BuildAsync();
+        return (switchActivity, Workflow.FromActivity(switchActivity), _fixture.Services.GetRequiredService<IWorkflowRunner>());
+    }
+
+    private static async Task<WorkflowState> RunUntilSuspendedAsync(IWorkflowRunner runner, Workflow workflow)
+    {
+        var started = await runner.RunAsync(workflow);
+        Assert.Equal(WorkflowSubStatus.Suspended, started.WorkflowState.SubStatus);
+        Assert.Equal(2, started.WorkflowState.Bookmarks.Count);
+        return started.WorkflowState;
+    }
+
+    private WorkflowState RoundTrip(WorkflowState state)
+    {
+        var serializer = _fixture.Services.GetRequiredService<IWorkflowStateSerializer>();
+        return serializer.Deserialize(serializer.Serialize(state));
+    }
+
+    private static async Task<RunWorkflowResult> ResumeAsync(IWorkflowRunner runner, Workflow workflow, WorkflowState state, string activityId)
+    {
+        var bookmark = Assert.Single(state.Bookmarks, x => x.ActivityId == activityId);
+        return await runner.RunAsync(workflow, state, new RunWorkflowOptions
+        {
+            BookmarkId = bookmark.Id
+        });
+    }
+
+    private static void RestoreScheduledActivityIds(WorkflowState state, Func<IEnumerable<string>, object> restore)
+    {
+        var properties = Assert.Single(state.ActivityExecutionContexts, x => x.Properties.ContainsKey("ScheduledActivityIds")).Properties;
+        var ids = ((IEnumerable)properties["ScheduledActivityIds"]).Cast<object>().Select(x => Convert.ToString(x)!);
+        properties["ScheduledActivityIds"] = restore(ids);
+    }
+
+    /// <summary>
+    /// Suspends by creating a bookmark so the Switch branch can be persisted and resumed.
+    /// </summary>
+    private sealed class BlockingActivity : Activity
+    {
+        protected override void Execute(ActivityExecutionContext context) => context.CreateBookmark();
     }
 }

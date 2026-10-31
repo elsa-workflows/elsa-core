@@ -1,0 +1,211 @@
+# Elsa React Studio Preview (Vite) – architecture and module guide
+
+> Part of the [documentation set](../README.md#documentation): [Getting started](getting-started.md) ·
+> [Configuration](configuration.md) · [Modules](modules.md) · [Designer](designer.md) ·
+> [Deployment](deployment.md) · [Troubleshooting](troubleshooting.md)
+
+A standalone React front end for Elsa Workflows 3.x. Built with Vite, React 19,
+TypeScript, Tailwind v4, shadcn/ui (Base UI primitives) and React Flow for the diagrams. The app
+is a client-rendered SPA that talks straight to the Elsa REST API; the ASP.NET host serves the shell
+and resolves runtime configuration per request.
+
+```
+src/
+  main.tsx                  fetch runtime configuration, then mount the History API router
+  config/                   runtime configuration schema adapter (ASP.NET resolves the document)
+  lib/
+    api/                    host adapter for the shared API provider
+    auth/                   config/server adapter for the shared auth provider
+dotnet/modules/
+  Elsa.ReactStudio.*/Client/ feature-local entry, pages, components and styles
+  Elsa.ReactStudio.*/*.cs    CShells feature and module descriptor
+dotnet/Elsa.ReactStudio/     first-party feature selection and host entrypoints
+packages/
+  sdk/                      registration, config, navigation, designer models/context and host runtime
+  api-client/               HTTP client, endpoint groups, workflow models and React/query context
+  auth/                     shared authentication strategies, React context and permissions
+  ui/                       primitives, common components, module registry and theme styles
+```
+
+## Runtime configuration
+
+`studio.config.json` (or `STUDIO_CONFIG` JSON env, or `STUDIO_*` env overrides) is read on the server
+for every configuration request. The browser validates `react-studio-sdk/config` and provides it with
+`useStudioConfig()`. Nothing in it is secret: it ends up in the browser.
+
+```jsonc
+{
+  "title": "Elsa Studio",
+  "servers": [{ "name": "Local", "url": "https://localhost:5001/elsa/api", "tenantId": null }],
+  "auth": { "provider": "elsa-identity" },           // none | api-key | elsa-identity | oidc | elsa-external
+  "features": { "labels": { "enabled": true, "options": {} } },
+  "ui": { "defaultTheme": "system", "pollIntervalMs": 5000, "defaultPageSize": 25 }
+}
+```
+
+`useFeature("labels")` returns `{ enabled, options }`.
+
+## Modules
+
+The [SDK v1 Preview](../packages/sdk/README.md) exposes `register(api)` with typed
+contribution slots. The host checks manifest host/SDK API versions before importing
+an entry and reports incompatible, failed-load, failed-registration and cleanup
+diagnostics. Registration is transactional and cleanup follows the module lifetime.
+Equal-order slots use stable module and contribution IDs, independent of load order.
+`pnpm docs:api` generates the public API reference; CI retains it as an artifact.
+`pnpm test:packages` compiles and renders an external sample against packed SDK,
+API-client, auth and UI packages, without host aliases.
+
+The imported modules use `defineModule()` from the public SDK. It adapts their
+declarative definitions into `register(api)`. Each RCL exports that entry from
+`Client/entry.tsx`; the host discovers enabled entries through the server manifest.
+Existing routes, navigation,
+dashboard, settings, UI hints, tabs, actions, headers and providers consume that
+adapter. The additional property, expression and designer slot contracts await
+their renderer integration in subsequent Preview parity work.
+
+For example:
+
+```ts
+export const labelsModule = defineModule({
+  id: "labels",                      // feature flag key in config.features
+  name: "Labels",
+  requiresServerFeatures: ["Elsa.Labels"],   // optional: hidden when the backend lacks it
+  routes: [{ path: "/labels", component: LabelsPage, title: "Labels", permissions: [{ resource: "labels", verb: "view" }] }],
+  nav: [{ id: "labels", label: "Labels", href: "/labels", icon: Tag, group: NavGroups.administration.id, order: 200 }],
+  extensions: { workflowPropertiesTabs: [...], instanceRowActions: [...], dashboardWidgets: [...] },
+});
+```
+
+Rules:
+
+- Core modules set `core: true` and ignore the flag; everything else is **off unless enabled** in config.
+- The History API router passes the path to `resolveRoute()`; patterns use `:param` segments.
+  Register module routes instead of adding file-system pages.
+- Each module owns `dotnet/modules/Elsa.ReactStudio.<Feature>/Client/` with `index.tsx` (the `defineModule` export), `api.ts`
+  (endpoint group built from `useElsaClient().http`), `hooks.ts` (TanStack Query hooks, keys prefixed
+  with `useQueryScope()`), `pages/` and `components/`.
+- Register the module descriptor in its CShells feature; see [feature packages](feature-packages.md).
+- Cross-module UI goes through `extensions` and `useExtensions(kind)`; never import another module's
+  pages. Shared code belongs in the four public workspace packages.
+- Permissions: use `usePermission(resource, verb)` / `usePermissions()` and the `Resources`/`Verbs`
+  constants. The set is *unknown* (allow everything) when the token has no `permissions` claim.
+- A module that is enabled in config but needs a server feature the backend lacks (checked against
+  `GET /features/installed`) is hidden entirely: no nav item, no routes. Check that endpoint first when
+  a module "does not show".
+
+### Settings sections
+
+The `settings` module owns the `/settings` landing page but stores nothing itself (same split as the
+Blazor `Elsa.Studio.Settings` module). The "Settings" sidebar item only appears once a module contributes
+a section (`appearance` is the built-in example). A module adds a destination with two entries, using
+the helpers in `src/lib/modules/settings.ts`:
+
+```ts
+const section: SettingsSection = { id: "webhooks", label: "Webhooks", description: "…", href: "/settings/webhooks", icon: Webhook, order: 10, permissions: [...] };
+export const webhooksModule = defineModule({
+  id: "webhooks",
+  routes: [{ path: "/settings/webhooks", component: WebhookSettingsPage }],
+  nav: [settingsSectionNav(section)],            // "Settings > Overview, Webhooks" (parents merge by id)
+  extensions: { settingsSections: [section] },  // card on the /settings landing page
+});
+```
+
+`useSettingsSections()` filters by permission, drops duplicate ids and orders by `order`, label, id.
+
+## Data access
+
+`useElsaClient()` returns the typed client; `client.http` is the raw fetch wrapper for endpoints the
+core doesn't cover. Query keys always start with `useQueryScope()` (the server URL) so switching
+environments never mixes caches. Errors are `ApiError` with a `problem` payload; show them with
+`<ErrorAlert error>` or `toast.error(describeError(e))`.
+
+## Designer
+
+Containers are modelled after elsa-core: `Flowchart`/`Sequence` keep children in `activities[]`,
+`StateMachine` keeps them in `states[i].entry|exit` and `transitions[i].trigger|action`, and any
+other activity holds one child per Embedded port. `model/containers.ts` addresses children with
+*slot paths* (`then`, `states.0.entry`, `transitions.2.action`); the store's `path` is a list of
+`(activityId, slot)` steps and `DesignerSurface` picks the canvas (flowchart, sequence list, state
+machine) for the container at the end of it. State machine selection uses `state:<name>` /
+`transition:<index>` ids next to activity ids.
+
+`dotnet/modules/Elsa.ReactStudio.Designer/Client` renders a Flowchart with React Flow. The shared SDK store
+(`createDesignerStore(root, readOnly)`) is the single source of truth: nodes/edges are derived from
+the current container and every interaction mutates the flowchart JSON (so undo/redo and save are
+trivial). Use `DesignerProvider` + `DesignerCanvas`; pass `stats` (per node id) to colour execution
+state in read-only mode. Activity port rules live in `model/ports.ts`.
+
+Designer models, store and context live under `packages/sdk/src/designer`.
+The Designer and ActivityEditors implementations register typed component slots;
+definition and instance views access those slots through the SDK. All feature
+source files pass `pnpm check:boundaries`, which rejects host aliases and relative
+imports into sibling modules. Each feature builds to a separate ESM entry and CSS,
+and the server manifest publishes only enabled feature assets.
+
+## Activity inputs: syntaxes and encodings
+
+`dotnet/modules/Elsa.ReactStudio.ActivityEditors/Client/expression.ts` is the only place that knows how a wrapped input is
+encoded. Three cases matter, and all three appear in workflows authored by older Elsa versions:
+
+- **Literal / Object / Json** are edited by the UI-hint editor for the input.
+- **Variable / Input** bind to a workflow member rather than to text. The stored value is the
+  `Variable` or `InputDefinition` object itself (resolved by id and by name respectively), so they are
+  edited with `BindingPicker`, never as code. This mirrors the Blazor studio, which swaps in the
+  variable / input picker for those syntaxes.
+- **Everything else** (JavaScript, Liquid, C#, Python) is edited as text in the code editor.
+
+List-valued inputs are stored by Elsa under the `Object` syntax as a JSON *string*
+(`"[\"GET\",\"POST\"]"`), and the server normalises an array back into that string on save. Read
+them with `stringListOf`, which accepts both shapes and falls back to the descriptor default only when
+the input was never set.
+
+## Call context (workflow hierarchy)
+
+The editor's View menu has a **Call context** toggle (`?context=1` in the URL carries it across
+drill-ins). It draws the current workflow inside a grouping box with its transitive callers on the
+left and callees on the right, using only existing endpoints. Code lives in
+`dotnet/modules/Elsa.ReactStudio.WorkflowDefinitions/Client/call-graph/`:
+
+- `edge-extractor.ts` walks one definition's activity tree (iteratively, with a visited set) and
+  returns `(caller -> callee, call type, activity id)` edges for Dispatch/Execute Workflow activities.
+  Expression targets yield an edge without a target ("unresolved"); they cannot be matched as callers.
+- `call-graph-service.ts` builds and caches the session graph per server: paged summaries
+  (`GET workflow-definitions`, published versions), full models in bulk (`GET many-by-id`), one
+  `by-definition-id` fallback per referenced-but-unlisted id. Bounded concurrency, in-flight dedupe,
+  missing nodes, cancellation, and hard limits (requests, nodes, depth, time) that stop with a warning.
+  The editor keeps it current with `setLiveEdges` (unsaved state), `updateDefinition` (save) and
+  `revertLive` (discard).
+- `subgraph.ts` derives the incoming/outgoing subgraph with iterative BFS, per-side visited sets,
+  back edges for cycles, and truncation placeholders. `layout.ts` layers the external nodes by distance.
+- `components/call-context/use-call-context.ts` turns that into canvas **decorations**; the designer
+  (`decorations` prop, `contextBox` / `contextWorkflow` nodes, `contextCall` edges) renders them as
+  view-only elements that are never part of the definition.
+
+Limits and the inspected version are configurable under
+`features["workflow-definitions"].options.callContext` (see `call-graph/config.ts`).
+
+## Shell header override
+
+A page can replace the app header and drop the content padding with `useShellHeader(node, { fullBleed })`
+from `@elsa-workflows/react-studio-ui/shell-chrome` (the workflow editor does this to show a breadcrumb and its
+actions in one row). The node is rendered by the shell, outside the page tree, so wrap it in any context
+providers it needs.
+
+## Theming
+
+Five palettes (`ELSA_THEMES` in `src/lib/theme/elsa-theme.ts`) are expressed as CSS variable sets in
+`packages/ui/src/styles.css`, selected by the `data-elsa-theme` attribute on `<html>` (set by `main.tsx` from runtime
+config and client-side from the persisted store). Light/dark comes from next-themes (`.dark` class).
+Use the semantic tokens (`bg-card`, `text-muted-foreground`, `bg-status-success`, `text-brand`,
+`bg-canvas`) and the helpers `node-card`, `accent-rail` (with `--rail-color`), `eyebrow`,
+`diagram-grid` / `diagram-grid-faint` and `port-dot`. Category hues for activities come from
+`activityAccentColor()` in the designer module.
+
+## UI conventions
+
+- shadcn here is built on Base UI: use the `render={<Link href="…" />}` prop instead of `asChild`.
+- Prefer the shared `SimpleSelect`, `DataTable`, `Field`, `SearchInput`, `useConfirm()` and
+  `useUrlState()` over ad-hoc markup so list pages look and behave alike.
+- Toasts: `import { toast } from "sonner"`.
+- No `any`; keep components small; keep `main.tsx` limited to bootstrap and routing.

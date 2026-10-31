@@ -1,5 +1,6 @@
 using Elsa.Common.Multitenancy;
 using Elsa.Secrets.Contracts;
+using Elsa.Secrets.Exceptions;
 using Elsa.Secrets.Extensions;
 using Elsa.Secrets.Models;
 using Elsa.Secrets.Options;
@@ -224,7 +225,7 @@ public class SecretRepositoryTenantIsolationTests
             using (UseTenant(tenantAccessor, "tenant-a"))
             {
                 Assert.Equal("Shared", (await repository.GetAsync("SHARED:SECRET"))!.DisplayName);
-                await Assert.ThrowsAsync<InvalidOperationException>(() => repository.SaveAsync(new Secret
+                await Assert.ThrowsAsync<SecretTenantOwnershipException>(() => repository.SaveAsync(new Secret
                 {
                     Name = "shared:secret",
                     DisplayName = "Rehomed"

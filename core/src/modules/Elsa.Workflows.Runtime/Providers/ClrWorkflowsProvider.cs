@@ -8,16 +8,22 @@ using Microsoft.Extensions.Options;
 namespace Elsa.Workflows.Runtime.Providers;
 
 /// <summary>
-/// Provides workflows to the system that are registered with <see cref="WorkflowRuntimeFeature"/>
+/// Provides workflows to the system that are registered with <see cref="WorkflowRuntimeFeature"/>.
+/// The workflows may be built once per service container, so they must not depend on tenant-specific services.
 /// </summary>
 [UsedImplicitly]
 public class ClrWorkflowsProvider(
     IOptions<RuntimeOptions> options,
     IWorkflowBuilderFactory workflowBuilderFactory,
-    IServiceProvider serviceProvider) : IWorkflowsProvider
+    IServiceProvider serviceProvider) : ITenantAgnosticWorkflowsProvider
 {
+    /// <summary>
+    /// The provider name stored on CLR workflow definition rows.
+    /// </summary>
+    public const string ProviderName = "CLR";
+
     /// <inheritdoc />
-    public string Name => "CLR";
+    public string Name => ProviderName;
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<MaterializedWorkflow>> GetWorkflowsAsync(CancellationToken cancellationToken = default)

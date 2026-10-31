@@ -40,10 +40,35 @@ docker run -d -p 5000:8080 --name elsa-server \
        -e Http__BaseUrl=http://localhost:5000 \
        -e Identity__AdminUser__UserName=admin \
        -e Identity__AdminUser__Password='use-a-secret-password' \
+       -e Identity__Tokens__SigningKey="$(openssl rand -base64 48)" \
        -e ConnectionStrings__Sqlite='Data Source=/data/elsa.sqlite.db;cache=shared' \
        -v "$PWD/data:/data" \
        elsa-server-app
 ```
+
+## Configuration
+
+### JWT signing key (required)
+
+The images ship without a JWT signing key. Set `Identity__Tokens__SigningKey` (config key `Identity:Tokens:SigningKey`) to a random value of at least 32 printable ASCII characters, for example `openssl rand -base64 48`. Without it, the app fails at startup. Known public sample keys are rejected outside the `Development` and `Demo` environments.
+
+To run locally with `dotnet run`, pass a throwaway key through the environment, so no key is stored in a file that could end up in an image:
+
+```bash
+Identity__Tokens__SigningKey="$(openssl rand -base64 48)" dotnet run --project apps/src/Elsa.Server
+```
+
+Each new key invalidates tokens issued under the previous one, so you sign in again after a restart.
+
+### JavaScript CLR access
+
+`JavaScript:AllowClrAccess` (env `JavaScript__AllowClrAccess`) controls whether JavaScript expressions can reach .NET types and members. It defaults to `false`. Turn it on only when every workflow author is trusted with full access to the server process.
+
+### Upgrading from earlier images
+
+- Earlier images shipped a sample signing key in `appsettings.json`. Containers that relied on it now fail at startup until you set your own `Identity__Tokens__SigningKey`. If you copied that sample value into your own configuration, startup fails outside `Development`/`Demo` as well.
+- Tokens signed with the old key become invalid after you change the key. Users must sign in again, and API clients must obtain new tokens.
+- JavaScript CLR access is now off by default. Workflows that use it need `JavaScript__AllowClrAccess=true`.
 
 ## Using Docker Images from Docker Hub
 
@@ -53,6 +78,7 @@ docker run --rm -p 5000:8080 \
        -e Http__BaseUrl=http://localhost:5000 \
        -e Identity__AdminUser__UserName=admin \
        -e Identity__AdminUser__Password='use-a-secret-password' \
+       -e Identity__Tokens__SigningKey="$(openssl rand -base64 48)" \
        -e ConnectionStrings__Sqlite='Data Source=/data/elsa.sqlite.db;cache=shared' \
        -v "$PWD/data:/data" \
        elsaworkflows/elsa-server-app:3.9.0

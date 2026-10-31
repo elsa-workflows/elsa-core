@@ -40,4 +40,9 @@ public enum WorkflowSubStatus
     /// The instance is resumable and will be picked up by the runtime's shell-activation recovery scan.
     /// </summary>
     Interrupted,
+
+    /// <summary>
+    /// A cancellation request has been accepted and the instance is waiting for cancellation to finish.
+    /// </summary>
+    Cancelling,
 }

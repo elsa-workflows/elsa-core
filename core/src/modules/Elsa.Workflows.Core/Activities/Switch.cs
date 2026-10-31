@@ -62,7 +62,7 @@ public class Switch : Activity
                 : Array.Empty<SwitchCase>() 
             : matchingCases.ToArray();
 
-        var scheduledActivityIds = new HashSet<string>();
+        var scheduledActivityIds = new List<string>();
 
         if (hasAnyMatches)
         {
@@ -83,7 +83,7 @@ public class Switch : Activity
 
         context.SetProperty("ScheduledActivityIds", scheduledActivityIds);
 
-        if (!scheduledActivityIds.Any())
+        if (scheduledActivityIds.Count == 0)
         {
             await context.CompleteActivityAsync();
         }
@@ -112,14 +112,15 @@ public class Switch : Activity
     /// </summary>
     private async ValueTask OnChildActivityCompletedAsync(ActivityCompletedContext context)
     {
-        var scheduledActivityIds = context.TargetContext.GetProperty<HashSet<string>>("ScheduledActivityIds");
+        var scheduledActivityIds = context.TargetContext.GetProperty<ICollection<string>>("ScheduledActivityIds");
 
-        if (scheduledActivityIds != null 
-            && scheduledActivityIds.Remove(context.ChildContext.Activity.Id) 
-            && scheduledActivityIds.Count == 0)
-        {
+        if (scheduledActivityIds == null || !scheduledActivityIds.Remove(context.ChildContext.Activity.Id))
+            return;
+
+        context.TargetContext.SetProperty("ScheduledActivityIds", scheduledActivityIds);
+
+        if (scheduledActivityIds.Count == 0)
             await context.TargetContext.CompleteActivityAsync();
-        }
     }
 }
 

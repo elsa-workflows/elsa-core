@@ -20,8 +20,7 @@ public class EFCoreWorkflowDefinitionRegistryGenerationStore(ManagementElsaDbCon
 
         while (true)
         {
-            var updated = await dbContext.WorkflowDefinitionRegistryGenerations
-                .Where(x => x.TenantId == normalizedTenantId)
+            var updated = await WhereTenant(dbContext.WorkflowDefinitionRegistryGenerations, normalizedTenantId)
                 .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.Generation, x => x.Generation + 1), cancellationToken);
 
             if (updated > 0)
@@ -43,8 +42,8 @@ public class EFCoreWorkflowDefinitionRegistryGenerationStore(ManagementElsaDbCon
             {
                 // Another node may have inserted the first generation concurrently.
                 dbContext.Entry(entity).State = EntityState.Detached;
-                var insertedByAnotherNode = await dbContext.WorkflowDefinitionRegistryGenerations
-                    .AnyAsync(x => x.TenantId == normalizedTenantId, cancellationToken);
+                var insertedByAnotherNode = await WhereTenant(dbContext.WorkflowDefinitionRegistryGenerations, normalizedTenantId)
+                    .AnyAsync(cancellationToken);
                 if (!insertedByAnotherNode)
                     throw;
             }
@@ -55,11 +54,26 @@ public class EFCoreWorkflowDefinitionRegistryGenerationStore(ManagementElsaDbCon
     public async Task<long> GetGenerationAsync(string? tenantId, CancellationToken cancellationToken = default)
     {
         var normalizedTenantId = NormalizeTenantId(tenantId);
-        return await dbContext.WorkflowDefinitionRegistryGenerations
-            .Where(x => x.TenantId == normalizedTenantId)
+        return await WhereTenant(dbContext.WorkflowDefinitionRegistryGenerations, normalizedTenantId)
             .Select(x => x.Generation)
             .SingleOrDefaultAsync(cancellationToken);
     }
 
     private static string NormalizeTenantId(string? tenantId) => tenantId ?? Tenant.DefaultTenantId;
+
+    /// <summary>
+    /// Oracle stores the default tenant as <c>NULL</c>. ExecuteUpdate parameterizes a captured
+    /// <c>""</c>, so <c>TenantId = :p</c> with a null bind matches nothing. A constant
+    /// <c>x.TenantId == null</c> becomes <c>IS NULL</c>. Other providers store the default tenant as
+    /// <c>""</c> on a NOT NULL key, so <c>|| TenantId == ""</c> keeps those lookups working.
+    /// </summary>
+    private static IQueryable<WorkflowDefinitionRegistryGeneration> WhereTenant(
+        IQueryable<WorkflowDefinitionRegistryGeneration> source,
+        string tenantId)
+    {
+        if (tenantId == Tenant.DefaultTenantId)
+            return source.Where(x => x.TenantId == null || x.TenantId == Tenant.DefaultTenantId);
+
+        return source.Where(x => x.TenantId == tenantId);
+    }
 }

@@ -8,6 +8,7 @@ using Elsa.Studio.Workflows.Components.WorkflowDefinitionEditor.Components.Activ
 using Elsa.Studio.Workflows.Designer.Models;
 using Elsa.Studio.Workflows.DiagramDesigners.Bpmn;
 using Elsa.Studio.Workflows.Domain.Models.Bpmn;
+using Elsa.Studio.Workflows.Extensions;
 using Elsa.Studio.Workflows.Tests.Support;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
@@ -240,6 +241,18 @@ public sealed class BpmnPerformedByPanelTests : BunitContext, IAsyncLifetime
     }
 
     [Fact]
+    public void ATaskTheServerBoundToTheUnboundPlaceholder_ReadsAsNotBound()
+    {
+        UseService(new FakeBpmnDocumentService().RefusesGet(BpmnDocumentFailureReason.SourceStale));
+        var root = RootActivity();
+        root.FindActivity(BoundActivityId)!["type"] = BpmnProcessConstants.UnboundTaskActivityTypeName;
+
+        var cut = RenderPanel(TaskSelection, root);
+
+        Assert.Equal("Not bound", cut.Find("[data-testid='bpmn-bound-activity']").TextContent.Trim());
+    }
+
+    [Fact]
     public void AStaleDocument_SaysTheWorkflowNeedsReImporting_AndOffersNothingToEdit()
     {
         UseService(new FakeBpmnDocumentService().RefusesGet(BpmnDocumentFailureReason.SourceStale));
@@ -289,6 +302,23 @@ public sealed class BpmnPerformedByPanelTests : BunitContext, IAsyncLifetime
         var alert = cut.Find("[data-testid='bpmn-document-save-failure']").TextContent;
         Assert.Contains($"'{TaskId}'", alert);
         Assert.Contains(message, alert);
+        Assert.Empty(cut.FindAll("[data-testid='bpmn-reload']"));
+    }
+
+    [Fact]
+    public async Task ASaveRefusedForExpressionConditions_NamesTheFlows_AndOffersNoReload()
+    {
+        _documentService.RefusesPut(new BpmnDocumentFailure(BpmnDocumentFailureReason.ConditionUnsupported, "The server's own words.")
+        {
+            ConditionRefusal = new(["Flow_A", "Flow_B"])
+        });
+        var cut = RenderPanel(TaskSelection);
+
+        await EditAndSaveAsync(cut);
+
+        var alert = cut.Find("[data-testid='bpmn-document-save-failure']").TextContent;
+        Assert.Contains("expression conditions", alert);
+        Assert.Contains("'Flow_A', 'Flow_B'", alert);
         Assert.Empty(cut.FindAll("[data-testid='bpmn-reload']"));
     }
 

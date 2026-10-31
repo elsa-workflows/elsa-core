@@ -1,11 +1,13 @@
 using Bpmn.Interchange;
 using CShells.FastEndpoints.Features;
 using CShells.Features;
+using Elsa.Bpmn.Interchange.Activities;
 using Elsa.Bpmn.Interchange.Binding;
 using Elsa.Bpmn.Interchange.Handlers.Notifications;
 using Elsa.Bpmn.Interchange.Services;
 using Elsa.Bpmn.ShellFeatures;
 using Elsa.Common.ShellFeatures;
+using Elsa.Workflows.Management.Extensions;
 using JetBrains.Annotations;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -29,6 +31,7 @@ public class BpmnInterchangeFeature : IFastEndpointsShellFeature
 {
     public void ConfigureServices(IServiceCollection services)
     {
+        services.AddActivity<BpmnUnboundTask>();
         services.AddSingleton<BpmnActivityBindingFormat>();
         services.AddSingleton<BpmnWorkBinder>();
         services.AddSingleton<BpmnXmlReader>();

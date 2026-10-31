@@ -1,4 +1,5 @@
 using System.Data.Common;
+using Elsa.Common.Multitenancy;
 using Elsa.Persistence.Dapper.Extensions;
 using Elsa.Persistence.Dapper.Models;
 using Elsa.Persistence.Dapper.Modules.Runtime.Records;
@@ -44,6 +45,7 @@ internal class DapperKeyValueStore(Store<KeyValuePairRecord> store) : IKeyValueS
         try
         {
             // Add stamps the ambient tenant, ignoring ownership supplied by the caller.
+            record.TenantId = null;
             await store.AddAsync(record, cancellationToken);
         }
         catch (DbException exception) when (IsDuplicateKey(exception))
@@ -79,6 +81,14 @@ internal class DapperKeyValueStore(Store<KeyValuePairRecord> store) : IKeyValueS
             {
                 return false;
             }
+
+            // Reads include '*' rows. A 0-row tenant-scoped update means this writer does not
+            // own a shared row, so do not retry as if it were ours.
+            if (owned.TenantId == Tenant.AgnosticTenantId)
+            {
+                return owned.Value == record.Value;
+            }
+
             if (owned.Value == record.Value)
             {
                 // Some providers report zero affected rows when the value is unchanged.

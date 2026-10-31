@@ -1,0 +1,6 @@
+{
+  "title": "__NAME__ module preview",
+  "servers": [{ "name": "Development server", "url": "http://127.0.0.1:5001/elsa/api" }],
+  "auth": { "provider": "none" },
+  "features": { "__MODULE_ID__": { "enabled": true } }
+}

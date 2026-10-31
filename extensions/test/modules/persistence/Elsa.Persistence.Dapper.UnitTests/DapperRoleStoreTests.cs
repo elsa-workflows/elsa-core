@@ -1,16 +1,22 @@
 using Dapper;
 using Elsa.Common.Multitenancy;
+using Elsa.Identity.Contracts;
 using Elsa.Identity.Entities;
+using Elsa.Identity.HostedServices;
 using Elsa.Identity.Models;
+using Elsa.Identity.Options;
 using Elsa.Persistence.Dapper.Modules.Identity.Records;
 using Elsa.Persistence.Dapper.Modules.Identity.Stores;
 using Elsa.Persistence.Dapper.Services;
 using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
+using NSubstitute;
 
 namespace Elsa.Persistence.Dapper.UnitTests;
 
 /// <summary>
-/// Tenant-safe Dapper role lookups and saves (elsa-core#8615). Role IDs are no longer derived from the name, so
+/// Tenant-safe Dapper role lookups and saves (elsa-core#8615, #8618). Role IDs are no longer derived from the name, so
 /// <see cref="RoleFilter.Ids"/> must match the Id column, and saving must never move another tenant's row.
 /// </summary>
 public sealed class DapperRoleStoreTests : IDisposable
@@ -36,6 +42,65 @@ public sealed class DapperRoleStoreTests : IDisposable
                            """);
 
         _store = new(new Store<RoleRecord>(new SqliteDbConnectionProvider(_connectionString), _tenantAccessor, "Roles"));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public async Task DefaultTenantCanSeeLegacyRoleWithNullOrEmptyTenant(string? tenantId)
+    {
+        // Arrange: a legacy role whose TenantId is NULL or empty. The default tenant must see it.
+        await using (var connection = new SqliteConnection(_connectionString))
+        {
+            await connection.ExecuteAsync(
+                "insert into Roles (Id, Name, Permissions, TenantId) values ('admin', 'admin', 'perm-star', @tenantId)",
+                new { tenantId });
+        }
+
+        // Act: the default tenant looks the role up the way AdminUserInitializer does.
+        using var defaultTenant = _tenantAccessor.PushContext(Tenant.Default);
+        var byId = await _store.FindAsync(new RoleFilter { Id = "admin" });
+        var byName = (await _store.FindManyAsync(new RoleFilter { Name = "admin" })).ToList();
+
+        // Assert
+        Assert.NotNull(byId);
+        Assert.Equal("admin", byId.Name);
+        Assert.Equal(["admin"], byName.Select(x => x.Id));
+
+        using (_tenantAccessor.PushContext(TenantB()))
+            Assert.Null(await _store.FindAsync(new RoleFilter { Id = "admin" }));
+    }
+
+    [Fact]
+    public async Task AdminSeederReusesALegacyNullTenantAdminRoleInsteadOfCreatingADuplicate()
+    {
+        // Arrange
+        await using (var connection = new SqliteConnection(_connectionString))
+        {
+            await connection.ExecuteAsync(
+                "insert into Roles (Id, Name, Permissions, TenantId) values ('admin', 'admin', 'perm-star', null)");
+        }
+
+        using var defaultTenant = _tenantAccessor.PushContext(Tenant.Default);
+        var roleManager = Substitute.For<IRoleManager>();
+        var initializer = new AdminUserInitializer(
+            Substitute.For<IUserStore>(),
+            _store,
+            Substitute.For<IUserManager>(),
+            roleManager,
+            Options.Create(new DefaultAdminUserOptions
+            {
+                AdminRoleName = "admin",
+                AdminRolePermissions = ["perm-star"]
+            }),
+            NullLogger<AdminUserInitializer>.Instance);
+
+        // Act
+        await initializer.ExecuteAsync(CancellationToken.None);
+
+        // Assert
+        await roleManager.DidNotReceiveWithAnyArgs().CreateRoleAsync(default!);
+        Assert.Equal([("admin", "admin", "perm-star", null)], LoadRoles());
     }
 
     [Fact]

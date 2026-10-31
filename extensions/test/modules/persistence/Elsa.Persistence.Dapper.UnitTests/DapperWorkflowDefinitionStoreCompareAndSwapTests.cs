@@ -55,7 +55,7 @@ public sealed class DapperWorkflowDefinitionStoreCompareAndSwapTests : IDisposab
                           """);
 
         var store = new Store<WorkflowDefinitionRecord>(connectionProvider, _tenantAccessor, "WorkflowDefinitions");
-        _store = new DapperWorkflowDefinitionStore(store, new JsonPayloadSerializer(), connectionProvider, _tenantAccessor);
+        _store = new DapperWorkflowDefinitionStore(store, new JsonPayloadSerializer(), connectionProvider);
     }
 
     [Fact(DisplayName = "A missing definition is NotFound")]

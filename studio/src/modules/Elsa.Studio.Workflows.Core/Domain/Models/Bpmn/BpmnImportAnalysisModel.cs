@@ -21,4 +21,16 @@ public class BpmnImportAnalysisModel
     /// Every finding, in the order the reader produced it.
     /// </summary>
     public IReadOnlyCollection<BpmnImportIssueModel> Issues { get; set; } = [];
+
+    /// <summary>
+    /// Why an import of the document would be refused, or <see langword="null"/> when it would not or when the document
+    /// declares several processes and none was chosen. Only <c>bpmn/analyze</c> reports it.
+    /// </summary>
+    public BpmnImportRefusalModel? Refusal { get; set; }
+
+    /// <summary>
+    /// The id of every task the document binds to no activity. Such a task is accepted with a placeholder that refuses
+    /// to run, so the workflow cannot be published until each one is bound.
+    /// </summary>
+    public IReadOnlyCollection<string> UnboundElementIds { get; set; } = [];
 }

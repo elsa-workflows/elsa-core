@@ -119,14 +119,20 @@ namespace Elsa.Persistence.EFCore.Oracle.Migrations.Management
 
             modelBuilder.Entity("Elsa.Workflows.Management.Entities.WorkflowDefinitionRegistryGeneration", b =>
                 {
-                    b.Property<string>("TenantId")
-                        .HasMaxLength(450)
-                        .HasColumnType("NVARCHAR2(450)");
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("NUMBER(19)");
+
+                    OraclePropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
                     b.Property<long>("Generation")
                         .HasColumnType("NUMBER(19)");
 
-                    b.HasKey("TenantId");
+                    b.Property<string>("TenantId")
+                        .HasMaxLength(450)
+                        .HasColumnType("NVARCHAR2(450)");
+
+                    b.HasKey("Id");
 
                     b.ToTable("WorkflowDefinitionRegistryGenerations", "Elsa");
                 });

@@ -1,6 +1,7 @@
 using System.Text;
 using Elsa.Common.Models;
 using Elsa.Persistence.Dapper.Abstractions;
+using Elsa.Persistence.Dapper.Contracts;
 
 namespace Elsa.Persistence.Dapper.Dialects;
 
@@ -34,8 +35,10 @@ public class SqliteDialect : SqlDialectBase
     {
         getParamName ??= x => x;
         var fieldList = string.Join(", ", fields);
-        var fieldParamNames = fields.Select(x => $"@{getParamName(x)}");
-        var fieldParamList = string.Join(", ", fieldParamNames);
-        return $"INSERT OR REPLACE INTO {table} ({primaryKeyField}, {fieldList}) VALUES (@{getParamName(primaryKeyField)}, {fieldParamList});";
+        var fieldParamList = string.Join(", ", fields.Select(x => $"@{getParamName(x)}"));
+        var updateList = string.Join(", ", fields.Select(x => $"{x} = @{getParamName(x)}"));
+        var tenantWhere = SqlDialectStatements.TenantScopedUpdateWhere(fields, static column => column, getParamName);
+        // INSERT OR REPLACE deletes the existing row first and cannot be scoped by tenant.
+        return $"INSERT INTO {table} ({primaryKeyField}, {fieldList}) VALUES (@{getParamName(primaryKeyField)}, {fieldParamList}) ON CONFLICT({primaryKeyField}) DO UPDATE SET {updateList}{tenantWhere};";
     }
 }

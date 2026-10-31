@@ -45,7 +45,8 @@
               RowStyle="cursor: pointer;"
               MultiSelection="true"
               SelectOnRowClick="false"
-              CurrentPage="InitialPage"
+              @bind-CurrentPage="InitialPage"
+              @bind-RowsPerPage="InitialPageSize"
               Class="definitions-table"
               @bind-SelectedItems="_selectedRows">
         <ToolBarContent>
@@ -96,6 +97,12 @@
                         <MudTooltip Text="@Localizer["Upload a BPMN 2.0 (.bpmn) file to import as a new workflow."]" Inline="false" Delay="1000">
                             <MudMenuItem Icon="@Icons.Material.Filled.FileUpload" OnClick="@OnImportBpmnClicked">@Localizer["Import BPMN"]</MudMenuItem>
                         </MudTooltip>
+                        @if (CanCreateBpmnWorkflow)
+                        {
+                            <MudTooltip Text="@Localizer["Create an empty BPMN process to draw in the BPMN designer."]" Inline="false" Delay="1000">
+                                <MudMenuItem Icon="@Icons.Material.Outlined.AccountTree" OnClick="@OnCreateBpmnWorkflowClicked" data-testid="create-bpmn-workflow">@Localizer["Create BPMN workflow"]</MudMenuItem>
+                            </MudTooltip>
+                        }
                     </MudMenu>
                 </MudButtonGroup>
             }

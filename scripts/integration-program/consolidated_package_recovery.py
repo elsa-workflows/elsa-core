@@ -23,11 +23,13 @@ import urllib.parse
 import urllib.request
 import zipfile
 
+import consolidated_candidate_input as candidate_input
+
 FEED_INDEX = "https://f.feedz.io/elsa-workflows/elsa-3/nuget/index.json"
 FEED_ORIGIN = "https://f.feedz.io"
 VERSION = "3.10.0"
-SOURCE = "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205"
-PACKAGE_COUNT = 225
+SOURCE = candidate_input.SOURCE
+PACKAGE_COUNT = candidate_input.PIN_PACKAGE_COUNT
 MAX_PACKAGE_BYTES = 32 * 1024 * 1024
 MAX_PAYLOAD_BYTES = 256 * 1024 * 1024
 MAX_INDEX_BYTES = 1024 * 1024
@@ -207,12 +209,13 @@ def _provenance(value: dict) -> dict:
         producer = value["candidate_producer"]
         if not isinstance(producer, dict) or any(type(producer.get(key)) is not int for key in ("run_id", "run_attempt", "artifact_id")):
             raise ValueError()
-        if producer != {"version": VERSION, "source_commit": SOURCE, "run_id": 37456860080,
-                        "run_attempt": 1, "artifact_id": 11412848210}:
+        if producer != {"version": VERSION, "source_commit": SOURCE, "run_id": candidate_input.RUN,
+                        "run_attempt": candidate_input.ATTEMPT, "artifact_id": candidate_input.ARTIFACT}:
             raise ValueError()
-        if value["artifact_name"] != f"consolidated-candidate-{SOURCE}-37456860080-1":
+        if value["artifact_name"] != (
+                f"consolidated-candidate-{SOURCE}-{candidate_input.RUN}-{candidate_input.ATTEMPT}"):
             raise ValueError()
-        if type(value["archive_size"]) is not int or value["archive_size"] != 92659861:
+        if type(value["archive_size"]) is not int or value["archive_size"] != candidate_input.ARCHIVE_SIZE:
             raise ValueError()
         for key in keys - {"candidate_producer", "artifact_name", "archive_size", "observed_at", "planner"}:
             if not _valid_sha(value[key]):
@@ -361,7 +364,7 @@ def _local_inventory(root, provenance, verifier):
         local.append(item)
     expected = {f"{row['id']}.{VERSION}.{ext}" for row in local for ext in ("nupkg", "snupkg")}
     actual = {path.name for path in (root / "artifacts").iterdir() if path.suffix in (".nupkg", ".snupkg")}
-    if expected != actual or "elsa.samplepackage" not in seen:
+    if expected != actual:
         raise RecoveryError("local_input_invalid")
     return manifest, local, invalid
 

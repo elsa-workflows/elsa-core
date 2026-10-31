@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Elsa.ReactStudio.Spike.Labels" />
+    <PackageReference Include="Example.ReactStudio.Spike.Weather" />
+    <PackageReference Include="Yarp.ReverseProxy" />
+  </ItemGroup>
+</Project>

@@ -1,26 +1,29 @@
 using Elsa.Studio.Contracts;
+using Elsa.Studio.Extensions;
 using Elsa.Studio.Localization;
 using Elsa.Studio.Models;
 
 namespace Elsa.Studio.Agents;
 
 /// A menu provider for the Agents module.
-public class AgentsMenu(ILocalizer localizer) : IMenuProvider
+public class AgentsMenu(ILocalizer localizer, IRemoteFeatureProvider remoteFeatureProvider) : IMenuProvider
 {
     /// <inheritdoc />
-    public ValueTask<IEnumerable<MenuItem>> GetMenuItemsAsync(CancellationToken cancellationToken = default)
+    public async ValueTask<IEnumerable<MenuItem>> GetMenuItemsAsync(CancellationToken cancellationToken = default)
     {
-        var menuItems = new List<MenuItem>
-        {
-            new()
+        if (!await remoteFeatureProvider.IsEnabledOrDefaultAsync(Feature.RemoteFeatureName, cancellationToken))
+            return [];
+
+        return
+        [
+            new MenuItem
             {
                 Icon = AgentIcons.Robot,
                 Href = "ai/agents",
                 Text = localizer["Agents"],
-                GroupName = MenuItemGroups.General.Name
+                GroupName = MenuItemGroups.General.Name,
+                RequiredPermissions = { new("ai/agents", "read") }
             }
-        };
-
-        return new(menuItems);
+        ];
     }
 }

@@ -26,7 +26,7 @@ env:
     and .admission.ref == "refs/heads/main"
     and .admission.source_commit == $source
     and .admission.run_id == $run and .admission.run_attempt == 1
-    and .admission.environment_name == "elsa-3-10-feedz"
+    and .admission.environment_name == "feedz-publish"
     and (.admission.environment_id | type == "number" and . > 0)
     and (.admission.reviewer_ids | type == "array" and length > 0)
     and all(.admission.reviewer_ids[]; type == "number" and . > 0)
@@ -189,7 +189,7 @@ jobs:
     # environment gate and fresh executor admission must both pass in this run.
     if: github.event_name == 'workflow_dispatch' && inputs.operation == 'publish' && github.repository == 'elsa-workflows/elsa-core' && github.ref == 'refs/heads/main' && needs.admit.outputs.admitted == 'true'
     needs: [retrieve, verify, admit]
-    environment: elsa-3-10-feedz
+    environment: feedz-publish
     permissions:
       contents: read
       actions: none
@@ -215,6 +215,17 @@ jobs:
         run: >-
           dotnet build scripts/integration-program/VerifyPackageSymbolPair/VerifyPackageSymbolPair.csproj
           --configuration Release --output "$RUNNER_TEMP/symbol-inspector"
+      - name: Guard the pinned candidate ID set before Feedz
+        env:
+          REF: refs/tags/3.10.0
+          CANDIDATE_ARCHIVE: ${{ runner.temp }}/executor-input/candidate.zip
+          PACKAGES_DIR: ${{ runner.temp }}/candidate-nupkgs
+          GITHUB_TOKEN: ''
+          ACTIONS_READ_TOKEN: ''
+        run: |
+          set -euo pipefail
+          python3 scripts/stage_consolidated_candidate_nupkgs.py stage
+          python3 scripts/validate_packages_id_set.py
       - name: Recheck protected admission with metadata-only authority before exposing the publisher credential
         env:
           ELSA_CONSOLIDATED_METADATA_READ_TOKEN: ${{ secrets.ELSA_CONSOLIDATED_METADATA_READ_TOKEN }}

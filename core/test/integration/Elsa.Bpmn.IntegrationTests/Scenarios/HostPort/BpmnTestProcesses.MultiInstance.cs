@@ -27,6 +27,26 @@ internal static partial class BpmnTestProcesses
     }
 
     /// <summary>
+    /// A parallel multi-instance task whose instances fail, with an error boundary event on the task. Two instances of
+    /// one binding are live when the first one fails, so only its iteration id or token id says which one it was.
+    /// </summary>
+    public static BpmnProcess ParallelMultiInstanceTaskWithErrorBoundary(BpmnTestLog log)
+    {
+        var definition = new BpmnProcessBuilder("parallel-multi-instance-task-with-error-boundary")
+            .StartEvent("start")
+            .Task(BpmnElementTypes.Task, "each", bindingRef: BindingRef("each"), loopCharacteristics: new BpmnLoopCharacteristics(isSequential: false, cardinality: 2))
+            .EndEvent("end")
+            .BoundaryEvent("eachOops", attachedTo: "each", eventDefinition: new BpmnEventDefinition(BpmnEventDefinitionTypes.Error))
+            .Task("recover", bindingRef: BindingRef("recover"))
+            .EndEvent("recovered")
+            .ConnectSequence("start", "each", "end")
+            .ConnectSequence("eachOops", "recover", "recovered")
+            .Build();
+
+        return Scope("scope", definition, Faulting("each", log), Immediate("recover", log));
+    }
+
+    /// <summary>
     /// A sequential multi-instance task: one instance at a time, each blocking until a test finishes it. Used to
     /// drive many evaluations of one scope so a persisted blob that is not pruned is observable as unbounded growth.
     /// </summary>

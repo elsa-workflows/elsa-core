@@ -372,6 +372,9 @@ CLIENTLIB_ASSETS = {
     "Elsa.Studio.DomInterop": (
         'studio/src/framework/Elsa.Studio.DomInterop',
         ("dom.entry.js", "clipboard.entry.js", "files.entry.js")),
+    "Elsa.Studio.Bpmn.BpmnJs": (
+        'studio/src/modules/Elsa.Studio.Bpmn.BpmnJs',
+        ("bpmn-js-designer.js", "bpmn-js-designer.css")),
 }
 
 

@@ -109,12 +109,13 @@ public abstract class SqlDialectBase : ISqlDialect
         var fieldList = string.Join(", ", fields);
         var fieldParamNames = fields.Select(x => $"@{getParamName(x)}");
         var fieldParamList = string.Join(", ", fieldParamNames);
+        var tenantMatch = SqlDialectStatements.TenantScopedMatchAnd(fields, "Target.TenantId", "Source.TenantId");
         return @$"
                       MERGE INTO {table} WITH (HOLDLOCK) AS Target
                       USING (VALUES (@{getParamName(primaryKeyField)}, {fieldParamList}))
                       AS Source ({primaryKeyField}, {fieldList})
                       ON Target.{primaryKeyField} = Source.{primaryKeyField}
-                      WHEN MATCHED THEN 
+                      WHEN MATCHED{tenantMatch} THEN 
                       UPDATE SET {string.Join(", ", fields.Select(x => $"{x} = Source.{x}"))}
                       WHEN NOT MATCHED THEN
                       INSERT ({primaryKeyField}, {fieldList})

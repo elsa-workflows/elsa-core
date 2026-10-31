@@ -249,6 +249,61 @@ public class MemoryKeyValueStoreTenantIsolationTests
         Assert.Null(remaining);
     }
 
+    [Fact(DisplayName = "TryDeleteAsync does not remove another tenant's key")]
+    public async Task TryDeleteAsync_DoesNotDeleteOtherTenantKey()
+    {
+        var backing = new MemoryStore<SerializedKeyValuePair>();
+        var tenantA = new MemoryKeyValueStore(backing, new TestTenantAccessor("tenant-a"));
+        var tenantB = new MemoryKeyValueStore(backing, new TestTenantAccessor("tenant-b"));
+        await tenantA.SaveAsync(Pair("k", "a", "tenant-a"), CancellationToken.None);
+
+        var deleted = await tenantB.TryDeleteAsync("k");
+        var remaining = await tenantA.FindAsync(new KeyValueFilter { Key = "k" }, CancellationToken.None);
+
+        Assert.False(deleted);
+        Assert.NotNull(remaining);
+        Assert.Equal("tenant-a", remaining.TenantId);
+    }
+
+    [Fact(DisplayName = "Changing a returned row's TenantId does not move the stored row to another tenant")]
+    public async Task FindAsync_WhenReturnedRowIsChanged_LeavesStoredRow()
+    {
+        var backing = new MemoryStore<SerializedKeyValuePair>();
+        var tenantA = new MemoryKeyValueStore(backing, new TestTenantAccessor("tenant-a"));
+        var tenantB = new MemoryKeyValueStore(backing, new TestTenantAccessor("tenant-b"));
+        await tenantA.SaveAsync(Pair("kv-a", "a", "tenant-a"), CancellationToken.None);
+
+        var found = await tenantA.FindAsync(new KeyValueFilter { Key = "kv-a" }, CancellationToken.None);
+        Assert.NotNull(found);
+        found.TenantId = "tenant-b";
+        foreach (var row in await tenantA.FindManyAsync(new KeyValueFilter { Key = "kv-a" }, CancellationToken.None))
+            row.TenantId = "tenant-b";
+
+        var stored = await tenantA.FindAsync(new KeyValueFilter { Key = "kv-a" }, CancellationToken.None);
+        Assert.NotNull(stored);
+        Assert.Equal("tenant-a", stored.TenantId);
+        Assert.Null(await tenantB.FindAsync(new KeyValueFilter { Key = "kv-a" }, CancellationToken.None));
+    }
+
+    [Fact(DisplayName = "Changing an instance after SaveAsync does not change the stored row")]
+    public async Task SaveAsync_WhenSavedInstanceIsChangedAfterwards_LeavesStoredRow()
+    {
+        var backing = new MemoryStore<SerializedKeyValuePair>();
+        var tenantA = new MemoryKeyValueStore(backing, new TestTenantAccessor("tenant-a"));
+        var tenantB = new MemoryKeyValueStore(backing, new TestTenantAccessor("tenant-b"));
+        var pair = Pair("kv-a", "a", "tenant-a");
+        await tenantA.SaveAsync(pair, CancellationToken.None);
+
+        pair.TenantId = "tenant-b";
+        pair.SerializedValue = "changed";
+
+        var stored = await tenantA.FindAsync(new KeyValueFilter { Key = "kv-a" }, CancellationToken.None);
+        Assert.NotNull(stored);
+        Assert.Equal("tenant-a", stored.TenantId);
+        Assert.Equal("a", stored.SerializedValue);
+        Assert.Null(await tenantB.FindAsync(new KeyValueFilter { Key = "kv-a" }, CancellationToken.None));
+    }
+
     private static MemoryKeyValueStore CreateStore(string tenantId) =>
         new(new MemoryStore<SerializedKeyValuePair>(), new TestTenantAccessor(tenantId));
 

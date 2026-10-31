@@ -27,7 +27,7 @@ Claims and terminal actions use optimistic concurrency. Completion and cancellat
 
 ## Forms and actions
 
-Action keys are stable literals; their labels may be expressions. `Timeout` and `Cancelled` are reserved. An optional `IUserTaskFormProvider` resolves and pins a provider-neutral form reference when the task activates, then validates and normalizes the completion payload. An unresolved form creates a blocking manager health issue. Tasks without a form accept an action only.
+Action keys are stable literals; their labels may be expressions. `Timeout` and `Cancelled` are reserved. A completed `UserTask` reports the default outcomes and the action key it was completed with, so a flowchart keeps following its Done connection and any connection that names no port, and a BPMN sequence flow can route on the action. An optional `IUserTaskFormProvider` resolves and pins a provider-neutral form reference when the task activates, then validates and normalizes the completion payload. An unresolved form creates a blocking manager health issue. Tasks without a form accept an action only.
 
 Protected task, form, and completion payloads are limited to 256 KiB by default. Put files in an external object/document provider and submit references rather than file bytes.
 

@@ -38,6 +38,31 @@ public class BpmnInterchangeDocumentServiceDuplicateElementIdTests
         Assert.Contains("dup", exception.Message);
     }
 
+    [Theory(DisplayName = "Two flow nodes sharing an id in one body are refused before the reader runs, naming the id")]
+    [InlineData("""<bpmn:process id="P"><bpmn:startEvent id="A"/><bpmn:endEvent id="A"/></bpmn:process>""")]
+    [InlineData("""<bpmn:process id="P"><bpmn:subProcess id="Sub"><bpmn:task id="A"/><bpmn:exclusiveGateway id="A"/></bpmn:subProcess></bpmn:process>""")]
+    public void EnsureNoFlowNodeIdRepeatsInOneScope_RefusesARepeatInOneBody(string process)
+    {
+        var exception = Assert.Throws<BpmnDuplicateElementIdException>(() =>
+            BpmnInterchangeDocumentService.EnsureNoFlowNodeIdRepeatsInOneScope(Definitions(process)));
+
+        Assert.Equal(["A"], exception.DuplicateElementIds);
+    }
+
+    [Theory(DisplayName = "Repeats the reader tolerates are left to the checks after it, and malformed XML to the reader")]
+    [InlineData("""<bpmn:process id="P"><bpmn:startEvent id="A"/><bpmn:subProcess id="Sub"><bpmn:startEvent id="A"/></bpmn:subProcess></bpmn:process>""")]
+    [InlineData("""<bpmn:process id="P"><bpmn:startEvent id="S"/><bpmn:endEvent id="E"/><bpmn:sequenceFlow id="S" sourceRef="S" targetRef="E"/></bpmn:process>""")]
+    [InlineData("""<bpmn:process id="P"><bpmn:startEvent id="A"/>""")]
+    public void EnsureNoFlowNodeIdRepeatsInOneScope_AcceptsWhatTheReaderCanRead(string process)
+    {
+        // No exception is the assertion: EnsureElementIdsUnique refuses the first case after the read, and the reader
+        // refuses the last one with its own message.
+        BpmnInterchangeDocumentService.EnsureNoFlowNodeIdRepeatsInOneScope(Definitions(process));
+    }
+
+    private static string Definitions(string content) =>
+        $"""<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" id="D" targetNamespace="x">{content}</bpmn:definitions>""";
+
     [Fact(DisplayName = "A subprocess nested inside another subprocess that reuses its parent's id is refused, naming that id")]
     public void EnsureElementIdsUnique_RefusesASubprocessNestedInsideASubprocessThatReusesItsParentsId()
     {

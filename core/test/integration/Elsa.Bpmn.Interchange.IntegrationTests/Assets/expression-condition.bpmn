@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  An exclusive gateway whose outgoing flows carry standard BPMN <conditionExpression>s, the way Camunda Modeler or
+  bpmn.io write them. f3's names no language, so Elsa evaluates it as JavaScript; f2's names JavaScript.
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  id="Definitions_expression-condition"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="expression-condition" name="Expression Condition" isExecutable="true">
+    <bpmn:startEvent id="Start_1">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:exclusiveGateway id="Decide" name="x?" default="Flow_Default">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>f3</bpmn:outgoing>
+      <bpmn:outgoing>f2</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Default</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+
+    <bpmn:endEvent id="End_Large">
+      <bpmn:incoming>f3</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="End_Negative">
+      <bpmn:incoming>f2</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="End_Other">
+      <bpmn:incoming>Flow_Default</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Decide" />
+    <bpmn:sequenceFlow id="f3" sourceRef="Decide" targetRef="End_Large">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${x &gt; 1}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="f2" sourceRef="Decide" targetRef="End_Negative">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" language="javascript">x &lt; 0</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Default" sourceRef="Decide" targetRef="End_Other" />
+  </bpmn:process>
+</bpmn:definitions>

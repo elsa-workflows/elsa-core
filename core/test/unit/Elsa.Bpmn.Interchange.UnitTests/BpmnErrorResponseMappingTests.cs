@@ -71,6 +71,23 @@ public class BpmnErrorResponseMappingTests
         Assert.Equal(new[] { "Outer" }, (IReadOnlyList<string>)data.ElementIds);
     }
 
+    [Theory(DisplayName = "A condition refusal is coded with the rule that refused it, carrying the offending flow ids as data")]
+    [InlineData(BpmnErrorCodes.ImportConditionConflict)]
+    [InlineData(BpmnErrorCodes.ImportConditionLanguageUnsupported)]
+    public void ConditionRefusedResponseFor_CarriesTheCodeAndTheStructuredData(string code)
+    {
+        var exception = new BpmnConditionRefusedException(code, "The document's sequence flows carry conditions Elsa cannot evaluate: f2, f3.", ["f2", "f3"]);
+
+        var response = BpmnImportErrorResponses.ConditionRefusedResponseFor(exception);
+
+        Assert.Equal(code, response.Code);
+        Assert.Equal(StatusCodes.Status422UnprocessableEntity, response.StatusCode);
+        Assert.Equal(exception.Message, Assert.Single(response.Errors["generalErrors"]));
+
+        dynamic data = response.Data!;
+        Assert.Equal(new[] { "f2", "f3" }, (IReadOnlyList<string>)data.ElementIds);
+    }
+
     [Fact(DisplayName = "A definition-not-found refusal is coded bpmn.document.not-found")]
     public void NotFoundResponseFor_CarriesTheCode()
     {

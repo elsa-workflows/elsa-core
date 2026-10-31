@@ -27,6 +27,7 @@
         "Clean",
         "Compile",
         "Pack",
+        "ReactStudioAssets",
         "Restore",
         "Test"
       ]

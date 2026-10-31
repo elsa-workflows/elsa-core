@@ -4,14 +4,23 @@ on:
   pull_request:
     paths:
       - '.github/workflows/packages.yml'
+      - '.github/workflows/publish-consolidated-original-candidate.yml'
       - '.github/workflows/validate-packages-gates.yml'
       - 'scripts/validate_packages_*.py'
+      - 'scripts/validate_packages_id_set.txt'
       - 'scripts/test_validate_packages_*.py'
+      - 'scripts/stage_consolidated_candidate_nupkgs.py'
+      - 'scripts/test_stage_consolidated_candidate_nupkgs.py'
+      - 'scripts/integration-program/consolidated_candidate_input.py'
+      - 'scripts/integration-program/consolidated-pin-inventory-baseline.json'
+      - 'scripts/integration-program/persisted-workflow-upgrade/stable-original-envelope.json'
       - '.github/workflows/prepare-consolidated-release-candidate.yml'
       - 'scripts/integration-program/prepare_consolidated_release_candidate.py'
       - 'scripts/integration-program/test_prepare_consolidated_release_candidate.py'
       - 'scripts/integration-program/consolidated-candidate-inventory-baseline.json'
       - 'scripts/integration-program/prove_consolidated*.py'
+      - 'scripts/integration-program/prove_studio_npm_pair.py'
+      - 'scripts/integration-program/test_prove_studio_npm_pair.py'
       - 'scripts/integration-program/test_prove_consolidated*.py'
       - 'scripts/integration-program/consolidated-package-consumer/**'
       - 'build/Build.cs'
@@ -27,14 +36,23 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/packages.yml'
+      - '.github/workflows/publish-consolidated-original-candidate.yml'
       - '.github/workflows/validate-packages-gates.yml'
       - 'scripts/validate_packages_*.py'
+      - 'scripts/validate_packages_id_set.txt'
       - 'scripts/test_validate_packages_*.py'
+      - 'scripts/stage_consolidated_candidate_nupkgs.py'
+      - 'scripts/test_stage_consolidated_candidate_nupkgs.py'
+      - 'scripts/integration-program/consolidated_candidate_input.py'
+      - 'scripts/integration-program/consolidated-pin-inventory-baseline.json'
+      - 'scripts/integration-program/persisted-workflow-upgrade/stable-original-envelope.json'
       - '.github/workflows/prepare-consolidated-release-candidate.yml'
       - 'scripts/integration-program/prepare_consolidated_release_candidate.py'
       - 'scripts/integration-program/test_prepare_consolidated_release_candidate.py'
       - 'scripts/integration-program/consolidated-candidate-inventory-baseline.json'
       - 'scripts/integration-program/prove_consolidated*.py'
+      - 'scripts/integration-program/prove_studio_npm_pair.py'
+      - 'scripts/integration-program/test_prove_studio_npm_pair.py'
       - 'scripts/integration-program/test_prove_consolidated*.py'
       - 'scripts/integration-program/consolidated-package-consumer/**'
       - 'build/Build.cs'
@@ -68,6 +86,8 @@ jobs:
         run: |
           python3 -B -m unittest discover -s scripts -p 'test_validate_packages_*.py'
           python3 -B -O -m unittest discover -s scripts -p 'test_validate_packages_*.py'
+          python3 -B -m unittest scripts.test_stage_consolidated_candidate_nupkgs
+          python3 -B -O -m unittest scripts.test_stage_consolidated_candidate_nupkgs
       - name: Test isolated candidate preparation and original archive contracts
         run: |
           python3 -B -m unittest discover -s scripts/integration-program -p 'test_prepare_consolidated_release_candidate.py'

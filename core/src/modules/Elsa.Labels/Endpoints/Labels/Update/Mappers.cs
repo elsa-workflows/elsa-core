@@ -16,6 +16,7 @@ internal class LabelMapper : Mapper<Request, Response, Label>
     public override Response FromEntity(Label e) => new Response
     {
         Id = e.Id,
+        Name = e.Name,
         Color = e.Color,
         Description = e.Description,
         NormalizedName = e.NormalizedName

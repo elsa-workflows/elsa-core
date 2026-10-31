@@ -10,6 +10,7 @@
     <ItemGroup>
         <PackageReference Include="CShells" />
         <PackageReference Include="FluentMigrator.Runner" />
+        <PackageReference Include="System.Security.Cryptography.Pkcs" />
         <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
         <PackageReference Include="Microsoft.Extensions.Options" />

@@ -8,15 +8,30 @@ from pathlib import Path
 
 import prepare_consolidated_release_candidate as candidate
 
-SOURCE = "ba5b348aa2414fdf7c19d9d8806e87b7c91a4205"
-RUN = 37456860080
+SOURCE = "5cff67228e550b353b3483eb3b37dfdb73a41c74"
+RUN = 40347931480
 ATTEMPT = 1
-ARTIFACT = 11412848210
-ARCHIVE_SHA256 = "ace85260c3389916fe3dcd7ee9cd5b766e4030dd6cee13c7f89285ada79c944f"
-MANIFEST_SHA256 = "df25b11556bbf21210cfc33ef02f3d0841af6316a20ece69422c7b8143a11820"
-ENVELOPE_SHA256 = "ef5e772020b151089b64b90b819d36ff371ed5e65212f7fdc7b2934d9860ddda"
+ARTIFACT = 12664519771
+ARCHIVE_SHA256 = "2dd253e1f2946ddcb2b8e75ef397596001757ddbcb0a91f717e9505bbf28b4f6"
+MANIFEST_SHA256 = "b6a1750f1f796f68a441bef93f67386b4a862dbca94d498ecf64536b102c2994"
+ENVELOPE_SHA256 = "93fdcbd271fe712ab9c96d0ee868528c608e6bd13517c17d319eecd2c2f0be48"
 ORIGINAL_ENVELOPE = Path(__file__).resolve().parent / "persisted-workflow-upgrade/stable-original-envelope.json"
+# Frozen candidate pin inventory (231 packages). Recovery and the executor
+# use this snapshot so they still accept the real pinned artifact.
+PIN_INVENTORY = Path(__file__).resolve().parent / "consolidated-pin-inventory-baseline.json"
 PRODUCER = {"version": "3.10.0", "source_commit": SOURCE, "run_id": RUN, "run_attempt": ATTEMPT, "artifact_id": ARTIFACT}
+_PIN = json.loads(PIN_INVENTORY.read_text(encoding="utf-8"))
+_ENVELOPE = json.loads(ORIGINAL_ENVELOPE.read_text(encoding="utf-8"))
+PIN_PACKAGE_COUNT = len(_PIN["packages"])
+PIN_EXCLUSION_COUNT = len(_PIN["exclusions"])
+PIN_EXCLUSION_ID_COUNT = len({row["id"] for row in _PIN["exclusions"]})
+ARCHIVE_SIZE = _ENVELOPE["archive_size"]
+EXPIRES_AT = _ENVELOPE["expires_at"]
+if any(_ENVELOPE.get(key) != value for key, value in (
+        ("source_commit", SOURCE), ("run_id", RUN), ("run_attempt", ATTEMPT),
+        ("artifact_id", ARTIFACT), ("archive_sha256", ARCHIVE_SHA256),
+        ("preupload_manifest_sha256", MANIFEST_SHA256))):
+    raise RuntimeError("Pinned envelope identity does not match candidate input constants")
 
 
 def require(condition: bool, message: str) -> None:

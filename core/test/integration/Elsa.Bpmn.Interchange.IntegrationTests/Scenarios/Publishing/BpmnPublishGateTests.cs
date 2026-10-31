@@ -10,9 +10,9 @@ using Xunit.Abstractions;
 namespace Elsa.Bpmn.Interchange.IntegrationTests.Scenarios.Publishing;
 
 /// <summary>
-/// The publish-time second net for <see cref="BpmnWorkBinding.UnboundTask"/> (#7931/W8): <see cref="Binding.BpmnWorkBinder"/>
-/// already refuses one at import, naming the element; these tests are for the definition that got past that first
-/// net and now needs the second one — one that imported clean and was edited afterward.
+/// The publish-time refusal of a <see cref="BpmnWorkBinding.UnboundTask"/> no activity performs (#7931/W8): one that
+/// <see cref="Binding.BpmnWorkBinder"/> accepted at import with a placeholder, and one a definition lost by being edited
+/// after it imported clean.
 /// </summary>
 public class BpmnPublishGateTests(ITestOutputHelper testOutputHelper) : BpmnPublishGateTestBase(testOutputHelper)
 {
@@ -21,10 +21,9 @@ public class BpmnPublishGateTests(ITestOutputHelper testOutputHelper) : BpmnPubl
     [Fact(DisplayName = "A process whose unbound task has no bound activity fails publication, naming the element")]
     public async Task UnboundTaskWithNoBoundActivity_FailsPublication()
     {
-        // Built by hand rather than through BpmnWorkBinder: the binder itself already refuses this shape at bind
-        // time (that is the first net, unchanged by this issue), so the only way to reach a materialized workflow
-        // this second net has to catch is to construct the graph directly - exactly what a post-import edit that
-        // deletes a bound activity, or a hand-authored workflow, would leave behind.
+        // Built by hand rather than through BpmnWorkBinder, which always binds a task to something: a scope with no
+        // activity for the task is what a post-import edit that deletes a bound activity, or a hand-authored
+        // workflow, leaves behind.
         // IsRootScope is left at its default (false): root position only affects trigger registration, which this
         // fixture declares no start event for and which the binding gate under test does not consult.
         var process = new BpmnProcess
@@ -40,6 +39,20 @@ public class BpmnPublishGateTests(ITestOutputHelper testOutputHelper) : BpmnPubl
         // ActivityId names the containing BpmnProcess node - the real node in the materialized graph - not the BPMN
         // element id, which resolves to no node there; the element id still appears in the message text.
         Assert.Contains(result.ValidationErrors, error => error.ActivityId == process.Id && error.Message.Contains("ServiceTask1"));
+    }
+
+    [Fact(DisplayName = "A process whose task the import bound to a placeholder fails publication, naming the element")]
+    public async Task UnboundTaskBoundToAPlaceholder_FailsPublication()
+    {
+        var scope = Binder.Bind(
+            new BpmnProcessDefinition(ProcessId, Elements: [new BpmnElement("ServiceTask1", BpmnElementTypes.ServiceTask, bindingRef: Ref("ServiceTask1"))]),
+            [new BpmnWorkBinding.UnboundTask(ProcessId, "ServiceTask1", Ref("ServiceTask1"), BpmnBindingSlot.Primary, BpmnElementTypes.ServiceTask)]);
+
+        var definitionId = await SaveDraftAsync(scope);
+        var result = await PublishAsync(definitionId);
+
+        Assert.False(result.Succeeded);
+        Assert.Contains(result.ValidationErrors, error => error.ActivityId == scope.Id && error.Message.Contains("ServiceTask1") && error.Message.Contains("is not bound to an Elsa activity"));
     }
 
     [Fact(DisplayName = "A process whose task is bound to a no-longer-installed activity type fails publication, naming the element and the missing type")]

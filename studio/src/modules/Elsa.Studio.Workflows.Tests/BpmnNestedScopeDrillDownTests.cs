@@ -3,6 +3,7 @@ using Bunit;
 using Elsa.Api.Client.Extensions;
 using Elsa.Api.Client.Resources.ActivityDescriptors.Models;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
+using Elsa.Studio.Bpmn.Designers;
 using Elsa.Studio.DomInterop.Contracts;
 using Elsa.Studio.DomInterop.Models;
 using Elsa.Studio.Extensions;
@@ -17,6 +18,7 @@ using Elsa.Studio.Workflows.Extensions;
 using Elsa.Studio.Workflows.Shared.Components;
 using Elsa.Studio.Workflows.Tests.Support;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using MudBlazor;
 using MudBlazor.Services;
 using Xunit;
@@ -59,6 +61,8 @@ public sealed class BpmnNestedScopeDrillDownTests : BunitContext, IAsyncLifetime
         Services.AddCoreInternal();
         Services.AddRemoteBackend();
         Services.AddWorkflowsModule();
+        // Drilling into a nested scope is what the read-only canvas does when no BPMN designer resolves.
+        Services.RemoveAll<DefaultBpmnDesigner>();
         Services.AddSingleton<ILocalizer, TestLocalizer>();
         Services.AddSingleton<IActivityRegistry, TestActivityRegistry>();
         Services.AddSingleton<IWorkflowDefinitionService, ThrowingWorkflowDefinitionService>();

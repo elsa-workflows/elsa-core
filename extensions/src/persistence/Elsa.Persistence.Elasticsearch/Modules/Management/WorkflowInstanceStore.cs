@@ -179,6 +179,54 @@ public class ElasticWorkflowInstanceStore : IWorkflowInstanceStore
         return updated > 0;
     }
 
+    /// <inheritdoc />
+    public async ValueTask<bool> TryTransitionSubStatusAsync(
+        string workflowInstanceId,
+        WorkflowSubStatus expected,
+        DateTimeOffset? expectedUpdatedAt,
+        WorkflowSubStatus next,
+        DateTimeOffset stampedAt,
+        CancellationToken cancellationToken = default)
+    {
+        if (!expected.IsPermittedSubStatusTransition(next))
+            return false;
+
+        // Conditional write: do not SaveAsync a Find snapshot. The script no-ops unless the source still matches,
+        // and a no-op does not increment the updated count. updatedAt is compared as a round-trip string.
+        var updated = await _store.UpdateByQueryAsync(d =>
+        {
+            d.Refresh(true);
+            // Default conflicts=abort throws on a version conflict. Proceed reports the document as not updated,
+            // which is the compare-and-swap result for both the mark and the restore.
+            d.Conflicts(Conflicts.Proceed);
+            d.Query(q => q.Bool(b => b.Must(m => m.Match(mt => mt.Field(f => f.Id).Query(workflowInstanceId)))));
+            d.Script(s => s
+                .Source("""
+                    if (ctx._source.id == params.workflowInstanceId
+                        && ctx._source.status == params.running
+                        && ctx._source.subStatus == params.expected
+                        && (params.checkUpdatedAt == false || ctx._source.updatedAt == params.expectedUpdatedAt)
+                        && (params.requireNotExecuting == false || (ctx._source.isExecuting != true && ctx._source.subStatus != params.executing))) {
+                      ctx._source.subStatus = params.next;
+                      ctx._source.updatedAt = params.stampedAt;
+                    } else {
+                      ctx.op = 'noop';
+                    }
+                    """)
+                .AddParam("workflowInstanceId", workflowInstanceId)
+                .AddParam("running", WorkflowStatus.Running.ToString())
+                .AddParam("expected", expected.ToString())
+                .AddParam("checkUpdatedAt", expectedUpdatedAt.HasValue)
+                .AddParam("expectedUpdatedAt", expectedUpdatedAt?.ToString("O") ?? string.Empty)
+                .AddParam("requireNotExecuting", next == WorkflowSubStatus.Cancelling)
+                .AddParam("executing", WorkflowSubStatus.Executing.ToString())
+                .AddParam("next", next.ToString())
+                .AddParam("stampedAt", stampedAt.ToString("O")));
+        }, cancellationToken);
+
+        return updated > 0;
+    }
+
     private static SearchRequestDescriptor<WorkflowInstance> Sort<TProp>(SearchRequestDescriptor<WorkflowInstance> descriptor, WorkflowInstanceOrder<TProp> order)
     {
         var sortDescriptor = new SortOptionsDescriptor<WorkflowInstance>();

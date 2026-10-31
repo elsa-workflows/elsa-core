@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Elsa.Api.Client.Extensions;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
+using Elsa.Studio.Bpmn.Designers;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.DomInterop.Contracts;
 using Elsa.Studio.Localization;
@@ -13,6 +14,7 @@ using Elsa.Studio.Workflows.Extensions;
 using Elsa.Studio.Workflows.UI.Contexts;
 using Elsa.Studio.Workflows.UI.Contracts;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.Extensions.Options;
 using MudBlazor;
 
@@ -28,8 +30,24 @@ public class BpmnDiagramDesigner(
     IDialogService dialogService,
     IBpmnInterchangeService bpmnInterchangeService,
     IFiles files,
-    IUserMessageService userMessageService) : IDiagramDesignerToolboxProvider, IBpmnElementStatsSink
+    IUserMessageService userMessageService,
+    BpmnDesignerResolver? designerResolver) : IDiagramDesignerToolboxProvider, IBpmnElementStatsSink, INestedScopesDiagramDesigner
 {
+    /// <summary>
+    /// Creates a designer that does not know which BPMN designer is enabled, so it never reports that it shows nested
+    /// scopes.
+    /// </summary>
+    public BpmnDiagramDesigner(
+        ILocalizer localizer,
+        IOptions<DesignerOptions> designerOptions,
+        IDialogService dialogService,
+        IBpmnInterchangeService bpmnInterchangeService,
+        IFiles files,
+        IUserMessageService userMessageService)
+        : this(localizer, designerOptions, dialogService, bpmnInterchangeService, files, userMessageService, null)
+    {
+    }
+
     private readonly Guid _id = Guid.NewGuid();
     private BpmnDesignerWrapper? _designerWrapper;
     private JsonObject _rootActivity = [];
@@ -108,22 +126,31 @@ public class BpmnDiagramDesigner(
     public RenderFragment DisplayDesigner(DisplayContext context)
     {
         var activity = context.Activity;
-        var sequence = 0;
 
         _rootActivity = activity;
         _sourceXml = GetSourceXml(context.WorkflowDefinition);
         _workflowDefinition = context.WorkflowDefinition;
 
+        // Keyed on the editor's modeler session when there is one, so the designer survives this designer being replaced
+        // on every reload of the workflow; otherwise on this designer, so each displayed scope gets a canvas of its own.
         return builder =>
         {
-            builder.OpenComponent<BpmnDesignerWrapper>(sequence++);
-            builder.SetKey(_id);
-            builder.AddAttribute(sequence++, nameof(BpmnDesignerWrapper.Activity), activity);
-            builder.AddAttribute(sequence++, nameof(BpmnDesignerWrapper.SourceXml), _sourceXml);
-            builder.AddAttribute(sequence++, nameof(BpmnDesignerWrapper.ActivityStats), context.ActivityStats);
-            builder.AddAttribute(sequence++, nameof(BpmnDesignerWrapper.ActivitySelected), context.ActivitySelectedCallback);
-            builder.AddAttribute(sequence++, nameof(BpmnDesignerWrapper.ActivityDoubleClick), context.ActivityDoubleClickCallback);
-            builder.AddComponentReferenceCapture(sequence++, @ref =>
+            builder.OpenComponent<BpmnModelerScope>(0);
+            builder.AddAttribute(1, nameof(BpmnModelerScope.ChildContent), (RenderFragment<BpmnModelerSession?>)(session => wrapper => BuildWrapper(wrapper, session)));
+            builder.CloseComponent();
+        };
+
+        void BuildWrapper(RenderTreeBuilder builder, BpmnModelerSession? session)
+        {
+            builder.OpenComponent<BpmnDesignerWrapper>(0);
+            builder.SetKey(session ?? (object)_id);
+            builder.AddAttribute(1, nameof(BpmnDesignerWrapper.Activity), activity);
+            builder.AddAttribute(2, nameof(BpmnDesignerWrapper.SourceXml), _sourceXml);
+            builder.AddAttribute(3, nameof(BpmnDesignerWrapper.ActivityStats), context.ActivityStats);
+            builder.AddAttribute(4, nameof(BpmnDesignerWrapper.ActivitySelected), context.ActivitySelectedCallback);
+            builder.AddAttribute(5, nameof(BpmnDesignerWrapper.ActivityDoubleClick), context.ActivityDoubleClickCallback);
+            builder.AddAttribute(6, nameof(BpmnDesignerWrapper.ModelerSession), session);
+            builder.AddComponentReferenceCapture(7, @ref =>
             {
                 var isFirstMount = _designerWrapper == null;
                 _designerWrapper = (BpmnDesignerWrapper)@ref;
@@ -139,8 +166,16 @@ public class BpmnDiagramDesigner(
             });
 
             builder.CloseComponent();
-        };
+        }
     }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// The enabled BPMN designer shows the whole source document, subprocess bodies included, where the read-only canvas
+    /// shows one scope at a time.
+    /// </remarks>
+    public bool ShowsNestedScopes(JsonObject container, WorkflowDefinition? workflowDefinition) =>
+        !designerOptions.Value.UseReactFlow && designerResolver?.Resolve() != null && GetSourceXml(workflowDefinition) != null;
 
     /// <inheritdoc />
     public IEnumerable<RenderFragment> GetToolboxItems(bool isReadOnly)
@@ -215,10 +250,22 @@ public class BpmnDiagramDesigner(
     /// Reads the imported BPMN document's source XML from the workflow definition's custom
     /// properties, or null when there is none.
     /// </summary>
-    private static string? GetSourceXml(WorkflowDefinition? workflowDefinition)
+    internal static string? GetSourceXml(WorkflowDefinition? workflowDefinition) =>
+        GetStringCustomProperty(workflowDefinition, BpmnProcessConstants.SourceXmlCustomPropertyKey);
+
+    /// <summary>
+    /// Reads the id of the process the imported BPMN document was bound from, or null when the definition does not
+    /// record one.
+    /// </summary>
+    internal static string? GetSourceProcessId(WorkflowDefinition? workflowDefinition) =>
+        GetStringCustomProperty(workflowDefinition, BpmnProcessConstants.SourceProcessIdCustomPropertyKey);
+
+    private static string? GetStringCustomProperty(WorkflowDefinition? workflowDefinition, string key)
     {
-        if (workflowDefinition == null || !workflowDefinition.CustomProperties.TryGetValue(BpmnProcessConstants.SourceXmlCustomPropertyKey, out var value) || value == null!)
+        if (workflowDefinition == null || !workflowDefinition.CustomProperties.TryGetValue(key, out var value) || value == null!)
+        {
             return null;
+        }
 
         return value switch
         {

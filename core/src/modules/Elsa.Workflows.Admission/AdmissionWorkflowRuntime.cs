@@ -50,6 +50,21 @@ public sealed partial class AdmissionWorkflowRuntime : IWorkflowRuntime
             var owned = await store.FindByInstanceAsync(WorkflowInstanceId, cancellationToken);
             return owned == null ? await inner.RunInstanceAsync(request, cancellationToken) : await execution.ResumeAsync(owned, request, cancellationToken);
         }
+        public async Task<RunWorkflowInstanceResponse?> RunInstanceIfPendingAsync(RunWorkflowInstanceRequest request, CancellationToken cancellationToken = default)
+        {
+            var owned = await store.FindByInstanceAsync(WorkflowInstanceId, cancellationToken);
+            if (owned != null)
+            {
+                // The admission execution service serialises resumption of an admitted instance;
+                // keep the same run path, with the pending decision made against the stored state.
+                var state = await inner.ExportStateAsync(cancellationToken);
+                return state.SubStatus == WorkflowSubStatus.Pending
+                    ? await execution.ResumeAsync(owned, request, cancellationToken)
+                    : null;
+            }
+
+            return await inner.RunInstanceIfPendingAsync(request, cancellationToken);
+        }
         public async Task CancelAsync(CancellationToken cancellationToken = default)
         {
             await guard.DemandUnownedAsync(WorkflowInstanceId, cancellationToken);

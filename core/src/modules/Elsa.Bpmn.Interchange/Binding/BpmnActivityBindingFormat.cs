@@ -77,14 +77,18 @@ namespace Elsa.Bpmn.Interchange.Binding;
 /// </code>
 /// <para>Example, an <c>[Input]</c>-attributed plain-typed input carrying its own JSON shape (here, an array):</para>
 /// <code>
-/// &lt;bpmn:exclusiveGateway id="route"&gt;
+/// &lt;bpmn:businessRuleTask id="classify"&gt;
 ///   &lt;bpmn:extensionElements&gt;
 ///     &lt;elsa:activityBinding activityType="Elsa.Switch"&gt;
 ///       &lt;elsa:input name="cases"&gt;[{"label":"case one","condition":{"type":"Literal","value":true}}]&lt;/elsa:input&gt;
 ///     &lt;/elsa:activityBinding&gt;
 ///   &lt;/bpmn:extensionElements&gt;
-/// &lt;/bpmn:exclusiveGateway&gt;
+/// &lt;/bpmn:businessRuleTask&gt;
 /// </code>
+/// <para>
+/// Only an unbound task takes a binding; <see cref="BpmnWorkBinder"/> refuses one on any other element, such as a
+/// gateway or an event.
+/// </para>
 /// <para>
 /// <b>Position is the key.</b> The element it sits inside is the element it binds; nothing records a binding ref.
 /// That is deliberate: a binding ref is derived by the reader from the element id and a configurable prefix
@@ -153,6 +157,15 @@ public sealed class BpmnActivityBindingFormat(IActivitySerializer activitySerial
             ExtensionElements = extensions.ExtensionElements.Where(element => element.Name != BindingQName).Append(binding).ToList()
         };
     }
+
+    /// <summary>
+    /// The binding element declaring an activity of <paramref name="activityType"/> with the given inputs, each given as
+    /// the JSON <see cref="Read"/> expects for it.
+    /// </summary>
+    internal static BpmnExtensionElement Declare(string activityType, params (string Name, string Json)[] inputs) =>
+        new(BindingQName,
+            [Attribute(ActivityTypeAttributeName, activityType)],
+            inputs.Select(input => new BpmnExtensionElement(InputQName, [Attribute(InputNameAttributeName, input.Name)], null, input.Json)).ToList());
 
     /// <summary>
     /// The binding element declaring that <paramref name="activity"/> performs the work, with each of its configured

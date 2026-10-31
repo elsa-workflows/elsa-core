@@ -92,6 +92,22 @@ public class ExecutionConstraintTests(ITestOutputHelper testOutputHelper)
         await AssertAbortedByAsync<RecursionDepthOverflowException>(() => EvaluateAsync(services, "function f() { return f(); } return f();"));
     }
 
+    [Fact(DisplayName = "An unbounded recursive expression fails with a catchable script error")]
+    public async Task StackOverflowGuardAbortsRunawayRecursion()
+    {
+        // Arrange — default constraints only; the stack-overflow guard is on unless a host turns it off.
+        var services = BuildServices(options => options.ExecutionTimeout = FailsafeTimeout);
+
+        // Act — the same unbounded recursion that used to print "Stack overflow." and exit the process.
+        var exception = await Record.ExceptionAsync(() => EvaluateAsync(
+            services,
+            "function f(n) { return f(n + 1) + 1; } return f(0);"));
+
+        // Assert — Jint raises RangeError while there is still room to unwind; the host process survives.
+        var scriptError = Assert.IsType<JavaScriptException>(exception);
+        Assert.Contains("Maximum call stack size exceeded", scriptError.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     [Fact(DisplayName = "A well-behaved expression is unaffected by the default constraints")]
     public async Task DefaultConstraintsDoNotAffectNormalExpressions()
     {

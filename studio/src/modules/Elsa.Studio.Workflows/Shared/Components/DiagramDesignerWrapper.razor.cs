@@ -189,6 +189,14 @@ public partial class DiagramDesignerWrapper
         if (nodeId == null)
             return;
 
+        // A designer that shows the scopes nested in the current one selects their activities on its own canvas, so the
+        // scope is not opened as a segment of its own.
+        if (ShowsNestedScopes(GetCurrentContainerActivityOrRoot()) && _activityGraph.ActivityNodeLookup.TryGetValue(nodeId, out var nestedNode))
+        {
+            await _diagramDesigner!.SelectActivityAsync(nestedNode.Activity.GetId());
+            return;
+        }
+
         // Load the selected node path from the backend.
         var pathSegmentsResponse = await WorkflowDefinitionService.GetPathSegmentsAsync(
             WorkflowDefinitionVersionId,
@@ -554,18 +562,47 @@ public partial class DiagramDesignerWrapper
         if (WorkflowInstanceId != null)
         {
             var currentContainerActivity = GetCurrentContainerActivityOrRoot();
-            var report = await ActivityExecutionService.GetReportAsync(WorkflowInstanceId, currentContainerActivity);
-            _activityStats = report.Stats.ToDictionary(x => x.ActivityNodeId, x => new ActivityStats
+            var activityStats = new Dictionary<string, ActivityStats>();
+
+            // A report covers one scope's own activities, so a designer that shows nested scopes needs one for each.
+            foreach (var scope in GetScopesShownWith(currentContainerActivity))
             {
-                Faulted = x.IsFaulted,
-                Blocked = x.IsBlocked,
-                Completed = x.CompletedCount,
-                Started = x.StartedCount,
-                Uncompleted = x.UncompletedCount,
-                Metadata = x.Metadata
-            });
+                var report = await ActivityExecutionService.GetReportAsync(WorkflowInstanceId, scope);
+
+                foreach (var stats in report.Stats)
+                {
+                    activityStats[stats.ActivityNodeId] = new ActivityStats
+                    {
+                        Faulted = stats.IsFaulted,
+                        Blocked = stats.IsBlocked,
+                        Completed = stats.CompletedCount,
+                        Started = stats.StartedCount,
+                        Uncompleted = stats.UncompletedCount,
+                        Metadata = stats.Metadata
+                    };
+                }
+            }
+
+            _activityStats = activityStats;
 
             await RefreshElementStatsAsync();
+        }
+    }
+
+    private bool ShowsNestedScopes(JsonObject container) =>
+        _diagramDesigner is INestedScopesDiagramDesigner designer && designer.ShowsNestedScopes(container, WorkflowDefinition);
+
+    /// <summary>The scopes whose activities the current designer shows: the container, and the scopes nested in it when it shows those too.</summary>
+    private IEnumerable<JsonObject> GetScopesShownWith(JsonObject container) =>
+        ShowsNestedScopes(container) ? GetScopesWithin(container) : [container];
+
+    private static IEnumerable<JsonObject> GetScopesWithin(JsonObject scope)
+    {
+        yield return scope;
+
+        foreach (var nested in scope.GetActivities().Where(child => child.GetActivities().Any()).SelectMany(GetScopesWithin))
+        {
+            yield return nested;
         }
     }
 

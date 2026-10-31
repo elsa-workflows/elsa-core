@@ -22,7 +22,7 @@ permissions:
 
 env:
   PROJECT: extensions/test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj
-  FILTER: FullyQualifiedName~DapperWorkflowDefinitionStoreTests
+  FILTER: FullyQualifiedName~DapperWorkflowDefinitionStoreTests|FullyQualifiedName~DapperStoreTenantUpsertTests|FullyQualifiedName~DapperSharedWorkflowStartupTests
 
 jobs:
   store-tests:

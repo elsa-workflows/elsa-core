@@ -34,6 +34,17 @@ public class RemoteBpmnInterchangeServiceTests : IDisposable
     public void Dispose() => _api.Dispose();
 
     [Fact]
+    public async Task AnalyzeAsync_SendsTheProcessToCheck()
+    {
+        using var stream = new MemoryStream();
+
+        await _service.AnalyzeAsync(stream, "process.bpmn", "second-process");
+        await _service.AnalyzeAsync(stream, "process.bpmn");
+
+        Assert.Equal(["second-process", null], _api.AnalyzedProcessIds);
+    }
+
+    [Fact]
     public async Task AnalyzeAsync_ReturnsTheServersErrorMessage_WhenTheApiThrows()
     {
         _api.AnalyzeException = await CreateApiExceptionAsync(HttpStatusCode.BadRequest, """
@@ -232,6 +243,7 @@ public class RemoteBpmnInterchangeServiceTests : IDisposable
     [InlineData(HttpStatusCode.PreconditionFailed, BpmnErrorCodes.DocumentPreconditionFailed, BpmnDocumentFailureReason.PreconditionFailed)]
     [InlineData(HttpStatusCode.PreconditionRequired, BpmnErrorCodes.DocumentPreconditionRequired, BpmnDocumentFailureReason.PreconditionRequired)]
     [InlineData(HttpStatusCode.UnprocessableEntity, BpmnErrorCodes.ImportBindingInvalid, BpmnDocumentFailureReason.BindingInvalid)]
+    [InlineData(HttpStatusCode.UnprocessableEntity, BpmnErrorCodes.ImportConditionUnsupported, BpmnDocumentFailureReason.ConditionUnsupported)]
     [InlineData(HttpStatusCode.NotFound, BpmnErrorCodes.DocumentNotFound, BpmnDocumentFailureReason.NotFound)]
     [InlineData(HttpStatusCode.PreconditionFailed, null, BpmnDocumentFailureReason.PreconditionFailed)]
     [InlineData(HttpStatusCode.NotFound, null, BpmnDocumentFailureReason.NotFound)]
@@ -266,6 +278,27 @@ public class RemoteBpmnInterchangeServiceTests : IDisposable
 
         Assert.Equal(BpmnDocumentFailureReason.CapabilityUnsupported, result.Failure!.Reason);
         Assert.Equal(["Gateway_1"], result.Failure.CapabilityRefusal!.ElementIds);
+    }
+
+    [Fact]
+    public async Task PutDocumentAsync_CarriesTheConditionRefusalsFlowIds()
+    {
+        _api.PutDocumentResponse = new(HttpStatusCode.UnprocessableEntity)
+        {
+            Content = new StringContent($$"""
+            {
+              "errors": { "generalErrors": ["The document's sequence flows carry expression conditions: f2, f3."] },
+              "code": "{{BpmnErrorCodes.ImportConditionUnsupported}}",
+              "data": { "elementIds": ["f2", "f3"] }
+            }
+            """)
+        };
+
+        var result = await _service.PutDocumentAsync("wf-1", BpmnDocumentFixtures.Document(), "\"OLD\"");
+
+        Assert.Equal(BpmnDocumentFailureReason.ConditionUnsupported, result.Failure!.Reason);
+        Assert.Equal(["f2", "f3"], result.Failure.ConditionRefusal!.FlowIds);
+        Assert.Null(result.Failure.CapabilityRefusal);
     }
 
     [Fact]
@@ -343,8 +376,17 @@ public class RemoteBpmnInterchangeServiceTests : IDisposable
         public string? PutBody { get; private set; }
         public string? PutContentType { get; private set; }
 
+        /// <summary>The process each analysis was asked to check, in order.</summary>
+        public List<string?> AnalyzedProcessIds { get; } = [];
+
         public Task<BpmnImportAnalysisModel> AnalyzeAsync(StreamPart file, CancellationToken cancellationToken = default) =>
-            AnalyzeException != null ? throw AnalyzeException : Task.FromResult(new BpmnImportAnalysisModel());
+            throw new NotSupportedException("The service analyzes through the overload that names a process.");
+
+        public Task<BpmnImportAnalysisModel> AnalyzeAsync(StreamPart file, string? processId, CancellationToken cancellationToken = default)
+        {
+            AnalyzedProcessIds.Add(processId);
+            return AnalyzeException != null ? throw AnalyzeException : Task.FromResult(new BpmnImportAnalysisModel());
+        }
 
         public Task<BpmnImportResultModel> ImportAsync(StreamPart file, string? definitionId, string? name, string? processId, CancellationToken cancellationToken = default) =>
             ImportException != null ? throw ImportException : Task.FromResult(new BpmnImportResultModel());

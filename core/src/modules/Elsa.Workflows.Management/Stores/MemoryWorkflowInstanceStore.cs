@@ -30,7 +30,7 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public ValueTask<WorkflowInstance?> FindAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        var entity = _store.Query(query => Filter(query, filter)).FirstOrDefault();
+        var entity = _store.Query(query => Filter(query, filter)).Select(Clone).FirstOrDefault();
         return ValueTask.FromResult(entity);
     }
 
@@ -38,7 +38,7 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
     public ValueTask<Page<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
         var count = _store.Query(query => Filter(query, filter)).LongCount();
-        var entities = _store.Query(query => Filter(query, filter).Paginate(pageArgs)).ToList();
+        var entities = _store.Query(query => Filter(query, filter).Paginate(pageArgs)).Select(Clone).ToList();
         var page = Page.Of(entities, count);
         return ValueTask.FromResult(page);
     }
@@ -47,7 +47,7 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
     public ValueTask<Page<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
         var count = _store.Query(query => Filter(query, filter)).LongCount();
-        var entities = _store.Query(query => Filter(query, filter).OrderBy(order).Paginate(pageArgs)).ToList();
+        var entities = _store.Query(query => Filter(query, filter).OrderBy(order).Paginate(pageArgs)).Select(Clone).ToList();
         var page = Page.Of(entities, count);
         return ValueTask.FromResult(page);
     }
@@ -55,14 +55,14 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public ValueTask<IEnumerable<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        var entities = _store.Query(query => Filter(query, filter)).ToList().AsEnumerable();
+        var entities = _store.Query(query => Filter(query, filter)).Select(Clone).ToList().AsEnumerable();
         return ValueTask.FromResult(entities);
     }
 
     /// <inheritdoc />
     public ValueTask<IEnumerable<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        var entities = _store.Query(query => Filter(query, filter).OrderBy(order)).ToList().AsEnumerable();
+        var entities = _store.Query(query => Filter(query, filter).OrderBy(order)).Select(Clone).ToList().AsEnumerable();
         return ValueTask.FromResult(entities);
     }
 
@@ -130,7 +130,7 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
         lock (_sync)
         {
             ApplyCurrentTenant(instance);
-            _store.Save(instance, x => x.Id);
+            _store.Save(Clone(instance), x => x.Id);
         }
         return ValueTask.CompletedTask;
     }
@@ -140,7 +140,7 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
         lock (_sync)
         {
             ApplyCurrentTenant(instance);
-            _store.Add(instance, GetId);
+            _store.Add(Clone(instance), GetId);
         }
         return ValueTask.CompletedTask;
     }
@@ -148,7 +148,7 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
     public ValueTask UpdateAsync(WorkflowInstance instance, CancellationToken cancellationToken = default)
     {
         lock (_sync)
-            _store.Update(instance, GetId);
+            _store.Update(Clone(instance), GetId);
         return ValueTask.CompletedTask;
     }
 
@@ -160,7 +160,7 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
             var instanceList = instances.ToList();
             foreach (var instance in instanceList)
                 ApplyCurrentTenant(instance);
-            _store.SaveMany(instanceList, GetId);
+            _store.SaveMany(instanceList.Select(Clone), GetId);
         }
         return ValueTask.CompletedTask;
     }
@@ -174,17 +174,19 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
     }
 
     /// <inheritdoc />
-    public async Task UpdateUpdatedTimestampAsync(string workflowInstanceId, DateTimeOffset value, CancellationToken cancellationToken = default)
+    public Task UpdateUpdatedTimestampAsync(string workflowInstanceId, DateTimeOffset value, CancellationToken cancellationToken = default)
     {
-        var workflowInstance = await FindAsync(new()
+        lock (_sync)
         {
-            Id = workflowInstanceId
-        }, cancellationToken);
-        
-        if (workflowInstance == null)
-            throw new InvalidOperationException($"Workflow instance with ID '{workflowInstanceId}' does not exist.");
-        
-        workflowInstance.UpdatedAt = value;
+            var workflowInstance = _store.Find(x => x.Id == workflowInstanceId && TenantVisibility.IsVisible(x.TenantId, CurrentTenantId));
+
+            if (workflowInstance == null)
+                throw new InvalidOperationException($"Workflow instance with ID '{workflowInstanceId}' does not exist.");
+
+            workflowInstance.UpdatedAt = value;
+        }
+
+        return Task.CompletedTask;
     }
 
     /// <inheritdoc />
@@ -210,7 +212,58 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
         }
     }
 
+    /// <inheritdoc />
+    public ValueTask<bool> TryTransitionSubStatusAsync(
+        string workflowInstanceId,
+        WorkflowSubStatus expected,
+        DateTimeOffset? expectedUpdatedAt,
+        WorkflowSubStatus next,
+        DateTimeOffset stampedAt,
+        CancellationToken cancellationToken = default)
+    {
+        if (!expected.IsPermittedSubStatusTransition(next))
+            return ValueTask.FromResult(false);
+
+        // Same lock as Save/Update so a runner's commit cannot land between the predicate and the column writes.
+        lock (_sync)
+        {
+            var instance = _store.Find(x => x.Id == workflowInstanceId && TenantVisibility.IsVisible(x.TenantId, CurrentTenantId));
+            if (instance is null
+                || instance.Status != WorkflowStatus.Running
+                || instance.SubStatus != expected
+                || (expectedUpdatedAt is { } expectedStamp && instance.UpdatedAt != expectedStamp)
+                || (next == WorkflowSubStatus.Cancelling && (instance.IsExecuting || instance.SubStatus == WorkflowSubStatus.Executing)))
+                return ValueTask.FromResult(false);
+
+            instance.SubStatus = next;
+            instance.UpdatedAt = stampedAt;
+            return ValueTask.FromResult(true);
+        }
+    }
+
     private static string GetId(WorkflowInstance workflowInstance) => workflowInstance.Id;
+
+    private static WorkflowInstance Clone(WorkflowInstance instance) =>
+        new()
+        {
+            Id = instance.Id,
+            TenantId = instance.TenantId,
+            DefinitionId = instance.DefinitionId,
+            DefinitionVersionId = instance.DefinitionVersionId,
+            Version = instance.Version,
+            ParentWorkflowInstanceId = instance.ParentWorkflowInstanceId,
+            WorkflowState = instance.WorkflowState,
+            Status = instance.Status,
+            SubStatus = instance.SubStatus,
+            IsExecuting = instance.IsExecuting,
+            CorrelationId = instance.CorrelationId,
+            Name = instance.Name,
+            IncidentCount = instance.IncidentCount,
+            IsSystem = instance.IsSystem,
+            CreatedAt = instance.CreatedAt,
+            UpdatedAt = instance.UpdatedAt,
+            FinishedAt = instance.FinishedAt
+        };
 
     private string CurrentTenantId => _tenantAccessor?.TenantId ?? Tenant.DefaultTenantId;
 

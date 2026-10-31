@@ -167,6 +167,9 @@ public class WorkflowRuntimeFeature : IShellFeature
     /// <summary>
     /// Register the specified workflow type.
     /// </summary>
+    /// <remarks>
+    /// The workflow is built once per service container to populate the definition store, so its Build method must not depend on tenant-specific services.
+    /// </remarks>
     public WorkflowRuntimeFeature AddWorkflow<T>() where T : IWorkflow
     {
         return AddWorkflow(typeof(T));
@@ -175,6 +178,9 @@ public class WorkflowRuntimeFeature : IShellFeature
     /// <summary>
     /// Register the specified workflow type.
     /// </summary>
+    /// <remarks>
+    /// The workflow is built once per service container to populate the definition store, so its Build method must not depend on tenant-specific services.
+    /// </remarks>
     public WorkflowRuntimeFeature AddWorkflow(Type workflowType)
     {
         Workflows.Add(workflowType);
@@ -260,7 +266,8 @@ public class WorkflowRuntimeFeature : IShellFeature
             .AddScoped<IActivityExecutionManager, DefaultActivityExecutionManager>()
             .AddScoped<IActivityExecutionStatsService, ActivityExecutionStatsService>()
             .AddScoped<IActivityExecutionMapper, DefaultActivityExecutionMapper>()
-            .AddScoped<IWorkflowDefinitionStorePopulator, DefaultWorkflowDefinitionStorePopulator>()
+            .AddScoped<IWorkflowDefinitionStorePopulator>(DefaultWorkflowDefinitionStorePopulator.Create)
+            .AddSingleton<TenantAgnosticWorkflowsCache>()
             .AddScoped<IRegistriesPopulator, DefaultRegistriesPopulator>()
             .AddScoped<IWorkflowDefinitionsRefresher, WorkflowDefinitionsRefresher>()
             .AddScoped<IWorkflowDefinitionsReloader, WorkflowDefinitionsReloader>()
@@ -379,8 +386,10 @@ public class WorkflowRuntimeFeature : IShellFeature
 
         services.TryAddScoped<IWorkflowDispatchOutbox>(sp => ActivatorUtilities.CreateInstance<WorkflowDispatchOutbox>(sp));
         services.TryAddScoped(WorkflowDispatchOutboxStore);
+        services.TryAddScoped<IWorkflowDispatchOutboxMarkerCleaner, WorkflowDispatchOutboxMarkerCleaner>();
         // Explicit factory: the processor also has an obsolete constructor, which would make container activation ambiguous.
         services.TryAddScoped<IWorkflowDispatchOutboxProcessor>(sp => new WorkflowDispatchOutboxProcessor(
+            sp.GetRequiredService<IWorkflowDispatchOutboxMarkerCleaner>(),
             sp.GetRequiredService<IWorkflowDispatchOutboxStore>(),
             sp.GetRequiredService<IWorkflowInstanceStore>(),
             sp.GetRequiredKeyedService<IWorkflowDispatcher>(WorkflowDispatcherServiceKeys.Inner),

@@ -21,6 +21,20 @@ public interface IBpmnInterchangeService
     Task<Result<BpmnImportAnalysisModel, ValidationErrors>> AnalyzeAsync(Stream content, string fileName, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Reads a <c>.bpmn</c> document and reports the findings a read would produce, and checks it as an import of
+    /// <paramref name="processId"/> would, without persisting anything. A document that declares more than one
+    /// process is checked only when <paramref name="processId"/> names one.
+    /// </summary>
+    /// <param name="content">The BPMN 2.0 XML document.</param>
+    /// <param name="fileName">The uploaded file's name.</param>
+    /// <param name="processId">The process an import would bind, or <see langword="null"/> to leave it to the document.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The analysis on success, or the server's error messages on failure.</returns>
+    /// <remarks>An implementation that does not override this ignores <paramref name="processId"/>.</remarks>
+    Task<Result<BpmnImportAnalysisModel, ValidationErrors>> AnalyzeAsync(Stream content, string fileName, string? processId, CancellationToken cancellationToken = default) =>
+        AnalyzeAsync(content, fileName, cancellationToken);
+
+    /// <summary>
     /// Reads a <c>.bpmn</c> document and persists it as a draft workflow definition.
     /// </summary>
     /// <param name="content">The BPMN 2.0 XML document.</param>

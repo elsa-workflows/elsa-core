@@ -1,10 +1,13 @@
 using System.Text;
 using System.Text.Json.Nodes;
+using System.Xml;
+using System.Xml.Linq;
 using Bpmn.Interchange;
 using Bpmn.Model;
 using Bpmn.Semantics;
 using Elsa.Bpmn.Activities;
 using Elsa.Bpmn.Hosting;
+using Elsa.Bpmn.Interchange.Activities;
 using Elsa.Bpmn.Interchange.Binding;
 using Elsa.Bpmn.Interchange.Endpoints.Bpmn.Document;
 using Elsa.Bpmn.Interchange.Exceptions;
@@ -24,7 +27,8 @@ using Elsa.Workflows.Models;
 namespace Elsa.Bpmn.Interchange.Services;
 
 /// <summary>
-/// The one code path the Analyze, Import, Export and document (<see cref="ReadDocument"/>/<see cref="ImportDocumentAsync"/>)
+/// The one code path the Analyze, Import, Export, create (<see cref="CreateAsync"/>), document
+/// (<see cref="ReadDocument"/>/<see cref="ImportDocumentAsync"/>) and XML (<see cref="ReadSourceXml"/>/<see cref="ImportXmlAsync"/>)
 /// endpoints all sit on top of.
 /// </summary>
 /// <remarks>
@@ -86,10 +90,17 @@ namespace Elsa.Bpmn.Interchange.Services;
 /// is the static half of the same check <c>BpmnGraph.Build</c> performs at first execution: it needs only the
 /// definition, not bound work or a host snapshot. Running it at import means an unrunnable diagram is rejected before
 /// it is ever persisted, naming the missing capability and the elements that need it, rather than surfacing as an
-/// incident the first time the workflow runs. <c>BpmnGraph.Build</c> itself is deliberately not called here: building
-/// the graph also validates structural invariants that belong to the runtime module's own execution path
-/// (<c>Elsa.Bpmn.Hosting.BpmnScopeHost</c>), and re-running that here would duplicate it outside the module that owns
-/// it.
+/// incident the first time the workflow runs. After binding, import also builds the graph of the process and of every
+/// subprocess body it can reach through <see cref="BpmnProcessGraphs"/>, the runtime module's own build, which the scope
+/// host runs when a run starts; a process that could never run is refused with
+/// <see cref="BpmnErrorCodes.ImportProcessInvalid"/> rather than faulting on its first run.
+/// </para>
+/// <para>
+/// <b>Conditions Elsa cannot evaluate as written are refused here too, and nothing opts out of it.</b> Elsa evaluates a
+/// sequence flow's standard <c>conditionExpression</c> with its own expression engine, so import refuses only a flow
+/// that carries both an outcome and an expression, and an expression in a language Elsa does not evaluate (see
+/// <see cref="EnsureConditionsEvaluable"/>). <see cref="Analyze"/> refuses nothing; <see cref="Validate"/> runs these checks
+/// without saving.
 /// </para>
 /// </remarks>
 public sealed class BpmnInterchangeDocumentService(
@@ -177,14 +188,79 @@ public sealed class BpmnInterchangeDocumentService(
         BpmnHostCapabilities.SubtreeCancellation,
         BpmnHostCapabilities.ScopeSignalling,
         BpmnHostCapabilities.IterationScopes,
-        BpmnHostCapabilities.ScopeVariables
+        BpmnHostCapabilities.ScopeVariables,
+        BpmnHostCapabilities.ConditionEvaluation
     ];
 
     /// <summary>
     /// Reports what a document contains and what a read would cost, without persisting anything.
     /// </summary>
     /// <exception cref="BpmnInterchangeException">The document cannot be read at all.</exception>
-    public BpmnImportAnalysis Analyze(string xml) => reader.Analyze(xml, new BpmnImportOptions());
+    /// <exception cref="BpmnDuplicateElementIdException">Two flow nodes in one process or subprocess body share an id, which the reader cannot read.</exception>
+    public BpmnImportAnalysis Analyze(string xml)
+    {
+        EnsureNoFlowNodeIdRepeatsInOneScope(xml);
+        return reader.Analyze(xml, new BpmnImportOptions());
+    }
+
+    /// <summary>
+    /// Runs the checks an import makes before it saves a document, and throws what the import would throw, without
+    /// persisting anything. A document that declares more than one process is checked only when
+    /// <paramref name="processId"/> names the one to check, since an import of it needs that choice too.
+    /// </summary>
+    /// <param name="xml">The BPMN 2.0 XML to check.</param>
+    /// <param name="processId">The process an import would bind, when the document declares more than one.</param>
+    /// <exception cref="BpmnInterchangeException">The document cannot be read, or does not declare <paramref name="processId"/>.</exception>
+    /// <exception cref="BpmnDuplicateElementIdException">The document repeats an element id.</exception>
+    /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
+    /// <exception cref="BpmnConditionRefusedException">A sequence flow carries a condition Elsa cannot evaluate as written.</exception>
+    /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
+    /// <exception cref="BpmnProcessInvalidException">The process, or a subprocess body it can reach, cannot run.</exception>
+    public void Validate(string xml, string? processId = null) => _ = ValidateCore(xml, processId);
+
+    /// <summary>
+    /// Runs the checks <see cref="Validate"/> runs, throwing what it throws, and returns the ids of the tasks an import
+    /// would accept unbound: those it binds to a <see cref="BpmnUnboundTask"/> placeholder, which publishing refuses.
+    /// Empty for a document <see cref="Validate"/> does not check because it does not know which process to check.
+    /// </summary>
+    /// <inheritdoc cref="Validate" path="/param"/>
+    /// <inheritdoc cref="Validate" path="/exception"/>
+    public IReadOnlyList<string> ValidateAndFindUnboundTasks(string xml, string? processId = null) =>
+        ValidateCore(xml, processId) is { } process ? UnboundElementIdsOf(process) : [];
+
+    private BpmnProcess? ValidateCore(string xml, string? processId)
+    {
+        EnsureNoFlowNodeIdRepeatsInOneScope(xml);
+        var result = reader.Read(xml, new BpmnImportOptions { ProcessId = processId });
+
+        // The same steps, in the same order, as ImportCoreAsync takes before it builds the definition it saves.
+        EnsureElementIdsUnique(result.Definitions.Processes, result.Bindings);
+
+        if (string.IsNullOrWhiteSpace(processId) && result.Definitions.Processes.Count != 1)
+        {
+            return null;
+        }
+
+        var rootDefinition = ResolveRootDefinition(result.Definitions, processId);
+
+        EnsureCapabilitiesSatisfied(rootDefinition, result.Bindings);
+        EnsureConditionsEvaluable(result);
+
+        var process = binder.Bind(rootDefinition, result.Bindings);
+        EnsureProcessBuilds(process);
+        return process;
+    }
+
+    /// <summary>The ids of the elements bound to a <see cref="BpmnUnboundTask"/> placeholder in a scope or any scope nested in it.</summary>
+    private static IReadOnlyList<string> UnboundElementIdsOf(BpmnProcess scope) =>
+        scope.Activities
+            .SelectMany(IEnumerable<string> (activity) => activity switch
+            {
+                BpmnUnboundTask unbound => [unbound.ElementId],
+                BpmnProcess nested => UnboundElementIdsOf(nested),
+                _ => []
+            })
+            .ToList();
 
     /// <summary>
     /// Reads a document, refuses it if the host cannot run what it declares, and binds it into the <see cref="BpmnProcess"/>
@@ -199,9 +275,24 @@ public sealed class BpmnInterchangeDocumentService(
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <exception cref="BpmnInterchangeException">The document cannot be read, or declares more than one process and <paramref name="processId"/> does not pick one.</exception>
     /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
+    /// <exception cref="BpmnConditionRefusedException">A sequence flow carries a condition Elsa cannot evaluate as written.</exception>
+    /// <exception cref="BpmnProcessInvalidException">The process, or a subprocess body it can reach, cannot run.</exception>
     /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
     public Task<BpmnDocumentImportResult> ImportAsync(string xml, string? definitionId, string? name, string? processId, CancellationToken cancellationToken) =>
         ImportCoreAsync(xml, definitionId, name, processId, preserveMetadataFrom: null, expectedETag: null, compareAndSwap: false, cancellationToken);
+
+    /// <summary>
+    /// Creates a workflow definition from a new, minimal BPMN process — a plain start event connected to an end event,
+    /// with diagram layout — so a process can be authored in a modeler without uploading a file first. The new
+    /// definition is an unpublished draft, imported through <see cref="ImportAsync"/> like any other document.
+    /// </summary>
+    /// <param name="name">The workflow definition's name, and its process's.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    public Task<BpmnDocumentImportResult> CreateAsync(string name, CancellationToken cancellationToken)
+    {
+        var xml = BpmnStarterDocument.Create($"Process_{identityGenerator.GenerateId()}", name);
+        return ImportAsync(xml, definitionId: null, name, processId: null, cancellationToken);
+    }
 
     /// <summary>
     /// The shared import logic behind both the public <see cref="ImportAsync"/> and <see cref="ImportDocumentAsync"/>:
@@ -234,6 +325,8 @@ public sealed class BpmnInterchangeDocumentService(
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <exception cref="BpmnInterchangeException">The document cannot be read, or declares more than one process and <paramref name="processId"/> does not pick one.</exception>
     /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
+    /// <exception cref="BpmnConditionRefusedException">A sequence flow carries a condition Elsa cannot evaluate as written.</exception>
+    /// <exception cref="BpmnProcessInvalidException">The process, or a subprocess body it can reach, cannot run.</exception>
     /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
     private async Task<BpmnDocumentImportResult> ImportCoreAsync(
         string xml,
@@ -245,6 +338,7 @@ public sealed class BpmnInterchangeDocumentService(
         bool compareAndSwap,
         CancellationToken cancellationToken)
     {
+        EnsureNoFlowNodeIdRepeatsInOneScope(xml);
         var result = reader.Read(xml, new BpmnImportOptions { ProcessId = processId });
 
         // Before anything below walks into a nested process by matching an id, refuse a document that repeats one:
@@ -256,8 +350,10 @@ public sealed class BpmnInterchangeDocumentService(
         var rootDefinition = ResolveRootDefinition(result.Definitions, processId);
 
         EnsureCapabilitiesSatisfied(rootDefinition, result.Bindings);
+        EnsureConditionsEvaluable(result);
 
         var process = binder.Bind(rootDefinition, result.Bindings);
+        EnsureProcessBuilds(process);
 
         // Whoever composes a bound scope into a workflow says explicitly that it is an entry point; an import is
         // exactly that, for the process the caller asked to import.
@@ -307,7 +403,7 @@ public sealed class BpmnInterchangeDocumentService(
             await store.SaveAsync(persisted, cancellationToken);
         }
 
-        return new BpmnDocumentImportResult(importResult, result.Analysis);
+        return new BpmnDocumentImportResult(importResult, result.Analysis) { UnboundElementIds = UnboundElementIdsOf(process) };
     }
 
     /// <summary>
@@ -369,7 +465,7 @@ public sealed class BpmnInterchangeDocumentService(
         }
 
         await mediator.SendAsync(new WorkflowDefinitionDraftSaved(result.Definition!), cancellationToken);
-        return new BpmnDocumentImportResult(new ImportWorkflowResult(true, result.Definition!, []), analysis);
+        return new BpmnDocumentImportResult(new ImportWorkflowResult(true, result.Definition!, []), analysis) { UnboundElementIds = UnboundElementIdsOf(process) };
     }
 
     private WorkflowDefinition CloneForDraftSaving(WorkflowDefinition source)
@@ -519,6 +615,57 @@ public sealed class BpmnInterchangeDocumentService(
     }
 
     /// <summary>
+    /// Resolves the BPMN source a workflow definition was imported from and returns it exactly as stored, refusing a
+    /// missing or stale source as <see cref="Export(WorkflowDefinition)"/> does. Unlike <c>Export</c>, the text is not
+    /// written again through the library's writer: a modeler that saves it back through <see cref="ImportXmlAsync"/>
+    /// edits exactly the text the document <c>ETag</c> covers.
+    /// </summary>
+    /// <param name="definition">The workflow definition to read, as read from the store.</param>
+    /// <exception cref="BpmnExportUnavailableException">
+    /// The definition does not currently carry BPMN source, or it does but the definition has changed since the
+    /// source was recorded.
+    /// </exception>
+    public string ReadSourceXml(WorkflowDefinition definition) => ResolveSourceXml(definition);
+
+    /// <summary>
+    /// Accepts a complete BPMN 2.0 XML document for an existing workflow definition and imports it the way
+    /// <see cref="ImportDocumentAsync"/> imports a <see cref="BpmnDefinitions"/> document: same refusals, and only the
+    /// activity graph and the <c>Bpmn:*</c> custom properties change, saved through the same compare-and-swap.
+    /// </summary>
+    /// <remarks>
+    /// The XML carries every subprocess body itself, so nothing is restored from the stored source. A document that
+    /// declares exactly one process binds that process whatever its id now is, so a modeler may rename it;
+    /// <paramref name="storedProcessId"/> picks the process only when the document declares more than one.
+    /// </remarks>
+    /// <param name="xml">The complete BPMN 2.0 XML document.</param>
+    /// <param name="definitionId">The workflow definition to update.</param>
+    /// <param name="storedProcessId">
+    /// The process the definition was last bound to (<see cref="SourceProcessIdCustomPropertyKey"/>), if recorded.
+    /// </param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <param name="expectedETag">As for <see cref="ImportDocumentAsync"/>.</param>
+    /// <exception cref="Exceptions.BpmnDefinitionNotFoundException">The workflow definition to edit no longer exists.</exception>
+    /// <exception cref="BpmnDocumentPreconditionFailedException"><paramref name="expectedETag"/> no longer matches the stored definition.</exception>
+    /// <exception cref="BpmnInterchangeException">
+    /// The document is not BPMN 2.0 XML, or it declares more than one process and none of them is <paramref name="storedProcessId"/>.
+    /// </exception>
+    /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
+    /// <exception cref="BpmnConditionRefusedException">A sequence flow carries a condition Elsa cannot evaluate as written.</exception>
+    /// <exception cref="BpmnProcessInvalidException">The process, or a subprocess body it can reach, cannot run.</exception>
+    /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
+    public Task<BpmnDocumentImportResult> ImportXmlAsync(
+        string xml,
+        string definitionId,
+        string? storedProcessId,
+        CancellationToken cancellationToken,
+        string? expectedETag = null)
+    {
+        EnsureNoFlowNodeIdRepeatsInOneScope(xml);
+        var processId = reader.Analyze(xml, new BpmnImportOptions()).ProcessIds.Count > 1 ? storedProcessId : null;
+        return ImportCoreAsync(xml, definitionId, name: null, processId, preserveMetadataFrom: null, expectedETag, compareAndSwap: true, cancellationToken);
+    }
+
+    /// <summary>
     /// Accepts the whole <see cref="BpmnDefinitions"/> document — the shape <see cref="ReadDocument"/> returns —
     /// writes it back out as BPMN 2.0 XML with <see cref="BpmnXmlWriter"/>, and imports the result through
     /// <see cref="ImportAsync"/>, the same path <c>Import</c> runs. Analyze-then-commit sharing this one code path
@@ -575,6 +722,8 @@ public sealed class BpmnInterchangeDocumentService(
     /// subprocess element that has a stored body but no bindingRef to write that body back under.
     /// </exception>
     /// <exception cref="BpmnCapabilityException">The document needs a host capability this deployment does not declare.</exception>
+    /// <exception cref="BpmnConditionRefusedException">A sequence flow carries a condition Elsa cannot evaluate as written.</exception>
+    /// <exception cref="BpmnProcessInvalidException">The process, or a subprocess body it can reach, cannot run.</exception>
     /// <exception cref="Exceptions.BpmnBindingException">A work binding cannot be turned into an Elsa activity.</exception>
     public async Task<BpmnDocumentImportResult> ImportDocumentAsync(
         BpmnDefinitions document,
@@ -893,6 +1042,57 @@ public sealed class BpmnInterchangeDocumentService(
             $"The document declares {definitions.Processes.Count} processes ({declared}); specify which one to import.");
     }
 
+    /// <summary>The BPMN 2.0 flow nodes: the events, activities and gateways a process or subprocess body contains.</summary>
+    private static readonly HashSet<string> FlowNodeLocalNames = new(StringComparer.Ordinal)
+    {
+        "startEvent", "endEvent", "intermediateCatchEvent", "intermediateThrowEvent", "boundaryEvent", "implicitThrowEvent",
+        "task", "serviceTask", "userTask", "manualTask", "scriptTask", "businessRuleTask", "sendTask", "receiveTask",
+        "callActivity", "subProcess", "transaction", "adHocSubProcess",
+        "exclusiveGateway", "inclusiveGateway", "parallelGateway", "eventBasedGateway", "complexGateway"
+    };
+
+    /// <summary>
+    /// Refuses, before the reader runs, a document in which two flow nodes in the same process or subprocess body share
+    /// an id: the one repeat <see cref="EnsureElementIdsUnique"/> would refuse too, but too late, because the library's
+    /// reader indexes each body's flow nodes by id and throws an unhandled <see cref="ArgumentException"/> on it.
+    /// A document that is not well-formed XML is left to the reader, which refuses it with its own message.
+    /// </summary>
+    /// <exception cref="BpmnDuplicateElementIdException">Two flow nodes in one body share an id.</exception>
+    internal static void EnsureNoFlowNodeIdRepeatsInOneScope(string xml)
+    {
+        XDocument document;
+
+        try
+        {
+            using var xmlReader = XmlReader.Create(new StringReader(xml), new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null });
+            document = XDocument.Load(xmlReader);
+        }
+        catch (XmlException)
+        {
+            return;
+        }
+
+        var duplicateIds = document.Descendants()
+            .Where(element => element.Name.Namespace == BpmnXmlNames.Model)
+            .SelectMany(container => container.Elements()
+                .Where(child => child.Name.Namespace == BpmnXmlNames.Model && FlowNodeLocalNames.Contains(child.Name.LocalName))
+                .Select(child => (string?)child.Attribute("id"))
+                .OfType<string>()
+                .GroupBy(id => id, StringComparer.Ordinal)
+                .Where(group => group.Count() > 1)
+                .Select(group => group.Key))
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
+        if (duplicateIds.Count == 0)
+            return;
+
+        throw new BpmnDuplicateElementIdException(
+            $"The document declares the same element id more than once, which BPMN requires to be unique: {string.Join(", ", duplicateIds)}. "
+            + "Two flow nodes in the same process or subprocess body share it, so the document cannot be read.",
+            duplicateIds);
+    }
+
     /// <summary>
     /// Refuses a document that declares the same element id more than once, naming the duplicated ids.
     /// </summary>
@@ -971,6 +1171,80 @@ public sealed class BpmnInterchangeDocumentService(
     }
 
     /// <summary>
+    /// Refuses a document with a sequence flow, anywhere in it, whose condition Elsa cannot evaluate as its author meant:
+    /// one that carries both a <c>conditionOutcome</c> and an author-written <c>conditionExpression</c>, or an expression
+    /// in a language <see cref="BpmnConditionLanguages"/> does not resolve. Names the offending flow ids.
+    /// </summary>
+    /// <remarks>
+    /// Per <c>docs/adr/2026-10-20-elsa-evaluates-bpmn-conditions.md</c>, and no opt-in overrides either refusal. The
+    /// <c>outcome == '...'</c> predicate the library writes for an outcome flow is consumed by the reader rather than
+    /// modeled, so it never counts as the second condition. The language is the expression's own, else its process's
+    /// <see cref="BpmnProcessDefinition.ExpressionLanguage"/>, as the interpreter resolves it at run time. The document is
+    /// checked whole, every top-level process and every nested process body, like <see cref="EnsureElementIdsUnique"/>.
+    /// <see cref="Analyze"/> does not call this: a preview refuses nothing.
+    /// </remarks>
+    /// <exception cref="BpmnConditionRefusedException">A sequence flow carries a condition Elsa cannot evaluate as written.</exception>
+    internal static void EnsureConditionsEvaluable(BpmnImportResult result)
+    {
+        var conditionalFlows = result.Definitions.Processes
+            .Concat(result.Bindings.OfType<BpmnWorkBinding.NestedProcess>().Select(nested => nested.Definition))
+            .SelectMany(process => process.SequenceFlows
+                .Where(flow => flow.ConditionExpression is not null)
+                .Select(flow => (Flow: flow, Language: flow.ConditionExpression!.Language ?? process.ExpressionLanguage)))
+            .ToList();
+
+        var conflictingFlowIds = SortedDistinct(conditionalFlows.Where(x => x.Flow.ConditionOutcome is not null).Select(x => x.Flow.FlowId));
+
+        if (conflictingFlowIds.Count > 0)
+        {
+            throw new BpmnConditionRefusedException(
+                BpmnErrorCodes.ImportConditionConflict,
+                $"The document's sequence flows carry both an outcome and a condition expression: {string.Join(", ", conflictingFlowIds)}. "
+                + "Elsa cannot tell which of the two the author meant to decide the route. "
+                + "Remove either the conditionOutcome attribute or the conditionExpression from each of these flows.",
+                conflictingFlowIds);
+        }
+
+        var unsupported = conditionalFlows
+            .Where(x => x.Flow.ConditionOutcome is null && !BpmnConditionLanguages.TryResolveExpressionType(x.Language, out _))
+            .ToList();
+
+        if (unsupported.Count == 0)
+        {
+            return;
+        }
+
+        var unsupportedFlowIds = SortedDistinct(unsupported.Select(x => x.Flow.FlowId));
+        var languages = string.Join(", ", unsupported.Select(x => $"'{x.Language}'").Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal));
+
+        throw new BpmnConditionRefusedException(
+            BpmnErrorCodes.ImportConditionLanguageUnsupported,
+            $"The document's sequence flows carry condition expressions in a language Elsa does not evaluate ({languages}): {string.Join(", ", unsupportedFlowIds)}. "
+            + "Write each of these conditions in JavaScript, C# or Liquid, and set the language to javascript, csharp or liquid, or leave it out for JavaScript.",
+            unsupportedFlowIds);
+
+        static IReadOnlyList<string> SortedDistinct(IEnumerable<string> flowIds) =>
+            flowIds.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
+    }
+
+    /// <summary>
+    /// Refuses a process that could never run: builds its graph and the graph of every subprocess body it can reach, as
+    /// the runtime does when a run starts (see <see cref="BpmnProcessGraphs"/>).
+    /// </summary>
+    /// <exception cref="BpmnProcessInvalidException">The process or a body it can reach cannot run.</exception>
+    internal static void EnsureProcessBuilds(BpmnProcess process)
+    {
+        try
+        {
+            BpmnProcessGraphs.BuildAll(process);
+        }
+        catch (BpmnExecutionException exception)
+        {
+            throw new BpmnProcessInvalidException(exception.Message, exception);
+        }
+    }
+
+    /// <summary>
     /// Refuses the definition, naming the missing capability and the offending element ids, when it or any process
     /// nested inside it needs a host capability <see cref="DeclaredHostCapabilities"/> does not cover.
     /// </summary>
@@ -1006,4 +1280,11 @@ public sealed class BpmnInterchangeDocumentService(
 }
 
 /// <summary>The outcome of <see cref="BpmnInterchangeDocumentService.ImportAsync"/>: the persisted definition, plus what the read cost.</summary>
-public sealed record BpmnDocumentImportResult(ImportWorkflowResult ImportResult, BpmnImportAnalysis Analysis);
+public sealed record BpmnDocumentImportResult(ImportWorkflowResult ImportResult, BpmnImportAnalysis Analysis)
+{
+    /// <summary>
+    /// The ids of the tasks the import accepted without an activity to perform them, each bound to a
+    /// <see cref="BpmnUnboundTask"/> placeholder. Publishing is refused until every one is bound.
+    /// </summary>
+    public IReadOnlyList<string> UnboundElementIds { get; init; } = [];
+}

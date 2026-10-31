@@ -25,6 +25,13 @@ internal sealed class BpmnWorkRecord
     /// <summary>The multi-instance iteration id this unit runs under, or <c>null</c> for ordinary single-run work.</summary>
     public string? IterationId { get; set; }
 
+    /// <summary>
+    /// The token id the interpreter's <c>StartWork</c> carried, echoed on every report about this unit and on its
+    /// live-work entry, so concurrent work sharing one binding is told apart. <c>null</c> for a unit started before
+    /// Elsa recorded it; the interpreter then finds the unit by its binding and iteration, as before.
+    /// </summary>
+    public string? TokenId { get; set; }
+
     /// <summary>The element the work belongs to, for reporting.</summary>
     public string ElementId { get; set; } = null!;
 

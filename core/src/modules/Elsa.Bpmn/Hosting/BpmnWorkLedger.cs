@@ -44,5 +44,5 @@ internal sealed class BpmnWorkLedger
 
     /// <summary>The interpreter's view of this scope's live work.</summary>
     public IReadOnlyCollection<BpmnLiveWork> ToLiveWork() =>
-        Records.Select(x => new BpmnLiveWork(x.BindingRef, x.IterationId, x.Handle)).ToArray();
+        Records.Select(x => new BpmnLiveWork(x.BindingRef, x.IterationId, x.Handle) { WorkTokenId = x.TokenId }).ToArray();
 }

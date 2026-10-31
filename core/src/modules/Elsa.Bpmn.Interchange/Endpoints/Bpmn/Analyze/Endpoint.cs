@@ -1,6 +1,7 @@
 using Elsa.Authorization;
 using Bpmn.Interchange;
 using Elsa.Abstractions;
+using Elsa.Bpmn.Interchange.Exceptions;
 using Elsa.Bpmn.Interchange.Services;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Http;
@@ -9,7 +10,7 @@ namespace Elsa.Bpmn.Interchange.Endpoints.Bpmn.Analyze;
 
 /// <summary>
 /// Reads a <c>.bpmn</c> document and reports the element-scoped Info/Degraded/Dropped findings a read would produce,
-/// without persisting anything.
+/// the refusal an import of it would raise, and the tasks it would accept unbound, without persisting anything.
 /// </summary>
 /// <remarks>
 /// A thin wrapper over <see cref="BpmnInterchangeDocumentService.Analyze"/>, which runs the same code
@@ -42,12 +43,29 @@ internal sealed class Analyze(BpmnInterchangeDocumentService documentService) : 
         try
         {
             var analysis = documentService.Analyze(xml);
-            await Send.OkAsync(BpmnImportAnalysisModel.From(analysis), cancellationToken);
+            var (refusal, unboundElementIds) = Check(xml, Query<string>("processId", isRequired: false));
+            await Send.OkAsync(BpmnImportAnalysisModel.From(analysis, refusal, unboundElementIds), cancellationToken);
         }
         catch (BpmnInterchangeException exception)
         {
             AddError(exception.Message);
             await Send.ErrorsAsync(StatusCodes.Status400BadRequest, cancellationToken);
+        }
+        catch (BpmnDuplicateElementIdException exception)
+        {
+            await BpmnErrorResponse.SendAsync(HttpContext.Response, BpmnImportErrorResponses.DuplicateElementIdResponseFor(exception), cancellationToken);
+        }
+    }
+
+    private (BpmnImportRefusalModel? Refusal, IReadOnlyList<string> UnboundElementIds) Check(string xml, string? processId)
+    {
+        try
+        {
+            return (null, documentService.ValidateAndFindUnboundTasks(xml, processId));
+        }
+        catch (Exception exception) when (BpmnImportRefusalModel.For(exception) is { } refusal)
+        {
+            return (refusal, []);
         }
     }
 }

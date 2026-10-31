@@ -23,5 +23,6 @@ public class QuartzBackgroundActivitySchedulerShellFeature : IShellFeature
         services.AddSingleton<QuartzBackgroundActivityScheduler>();
         services.RemoveAll<IBackgroundActivityScheduler>();
         services.AddSingleton<IBackgroundActivityScheduler>(sp => sp.GetRequiredService<QuartzBackgroundActivityScheduler>());
+        JobFactoryRegistration.TryUseTenantAwareJobFactory(services);
     }
 }

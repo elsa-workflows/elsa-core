@@ -1,4 +1,6 @@
 using Elsa.Studio.ActivityPortProviders.Extensions;
+using Elsa.Studio.Bpmn.BpmnJs;
+using Elsa.Studio.Bpmn.Extensions;
 using Elsa.Studio.Contracts;
 using Elsa.Studio.DomInterop.Extensions;
 using Elsa.Studio.Extensions;
@@ -48,6 +50,7 @@ public static class ServiceCollectionExtensions
             .AddDomInterop()
             .AddClipboardInterop()
             .AddDownloadInterop()
+            .AddDefaultBpmnDesigner(BpmnJsDesigner.Descriptor)
             ;
 
         services
@@ -79,12 +82,13 @@ public static class ServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Adds the workflows module with remote backend BPMN interchange API support.
+    /// Adds the workflows module with remote backend BPMN interchange and BPMN XML API support.
     /// </summary>
     public static IServiceCollection AddWorkflowsModule(this IServiceCollection services, BackendApiConfig backendApiConfig)
     {
         return services
             .AddWorkflowsModule()
-            .AddRemoteApi<IBpmnInterchangeApi>(backendApiConfig);
+            .AddRemoteApi<IBpmnInterchangeApi>(backendApiConfig)
+            .AddRemoteApi<IBpmnXmlApi>(backendApiConfig);
     }
 }

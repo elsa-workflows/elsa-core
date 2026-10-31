@@ -8,7 +8,7 @@ namespace Elsa.Bpmn.Interchange.Endpoints.Bpmn;
 
 /// <summary>
 /// The exception-to-response mapping shared by every endpoint that imports a BPMN document through
-/// <c>BpmnInterchangeDocumentService</c> — <c>Import</c> and the document <c>Put</c> endpoint — plus the identical
+/// <c>BpmnInterchangeDocumentService</c> — <c>Import</c> and the document and XML <c>Put</c> endpoints — plus the identical
 /// handling both give a result whose <c>ImportResult</c> did not succeed.
 /// </summary>
 internal static class BpmnImportErrorResponses
@@ -65,6 +65,16 @@ internal static class BpmnImportErrorResponses
             await BpmnErrorResponse.SendAsync(httpResponse, CapabilityResponseFor(exception), cancellationToken);
             return null;
         }
+        catch (BpmnProcessInvalidException exception)
+        {
+            await BpmnErrorResponse.SendAsync(httpResponse, ProcessInvalidResponseFor(exception), cancellationToken);
+            return null;
+        }
+        catch (BpmnConditionRefusedException exception)
+        {
+            await BpmnErrorResponse.SendAsync(httpResponse, ConditionRefusedResponseFor(exception), cancellationToken);
+            return null;
+        }
 
         if (!result.ImportResult.Succeeded)
         {
@@ -96,9 +106,20 @@ internal static class BpmnImportErrorResponses
     internal static BpmnErrorResponse PreconditionFailedResponseFor(BpmnDocumentPreconditionFailedException exception) =>
         BpmnErrorResponse.Create(exception.Message, BpmnErrorCodes.DocumentPreconditionFailed, StatusCodes.Status412PreconditionFailed);
 
-    /// <summary>The <see cref="BpmnErrorCodes.ImportBindingInvalid"/> response for <paramref name="exception"/>.</summary>
+    /// <summary>The <see cref="BpmnErrorCodes.ImportProcessInvalid"/> response for <paramref name="exception"/>.</summary>
+    internal static BpmnErrorResponse ProcessInvalidResponseFor(BpmnProcessInvalidException exception) =>
+        BpmnErrorResponse.Create(exception.Message, BpmnErrorCodes.ImportProcessInvalid, StatusCodes.Status422UnprocessableEntity);
+
+    /// <summary>
+    /// The <see cref="BpmnErrorCodes.ImportBindingInvalid"/> response for <paramref name="exception"/>, carrying the
+    /// refused element's id as <c>data.elementIds</c> when the refusal is about one element.
+    /// </summary>
     internal static BpmnErrorResponse BindingInvalidResponseFor(BpmnBindingException exception) =>
-        BpmnErrorResponse.Create(exception.Message, BpmnErrorCodes.ImportBindingInvalid, StatusCodes.Status422UnprocessableEntity);
+        BpmnErrorResponse.Create(
+            exception.Message,
+            BpmnErrorCodes.ImportBindingInvalid,
+            StatusCodes.Status422UnprocessableEntity,
+            exception.ElementId is { } elementId ? new { ElementIds = new[] { elementId } } : null);
 
     /// <summary>
     /// The <see cref="BpmnErrorCodes.ImportDuplicateElementId"/> response for <paramref name="exception"/>, carrying
@@ -110,6 +131,17 @@ internal static class BpmnImportErrorResponses
             BpmnErrorCodes.ImportDuplicateElementId,
             StatusCodes.Status422UnprocessableEntity,
             new { ElementIds = exception.DuplicateElementIds });
+
+    /// <summary>
+    /// The response for <paramref name="exception"/>, coded with its <see cref="BpmnConditionRefusedException.Code"/>
+    /// and carrying the offending sequence flow ids as <c>data.elementIds</c>.
+    /// </summary>
+    internal static BpmnErrorResponse ConditionRefusedResponseFor(BpmnConditionRefusedException exception) =>
+        BpmnErrorResponse.Create(
+            exception.Message,
+            exception.Code,
+            StatusCodes.Status422UnprocessableEntity,
+            new { ElementIds = exception.FlowIds });
 
     /// <summary>
     /// The <see cref="BpmnErrorCodes.ImportCapabilityUnsupported"/> response for <paramref name="exception"/>, as its

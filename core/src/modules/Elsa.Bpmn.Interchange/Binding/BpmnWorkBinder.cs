@@ -1,7 +1,9 @@
+using System.Text.Json.Nodes;
 using System.Xml;
 using Bpmn.Interchange;
 using Bpmn.Model;
 using Elsa.Bpmn.Activities;
+using Elsa.Bpmn.Interchange.Activities;
 using Elsa.Bpmn.Interchange.Exceptions;
 using Elsa.Scheduling.Activities;
 using Elsa.Workflows;
@@ -19,7 +21,10 @@ namespace Elsa.Bpmn.Interchange.Binding;
 /// Six of the seven binding kinds bind to an activity this repository already has. Only
 /// <see cref="BpmnWorkBinding.UnboundTask"/> is an authoring decision, which is right: BPMN genuinely does not say
 /// what a <c>serviceTask</c> does. Its answer is read from the <c>elsa:activityBinding</c> extension element inside
-/// the document — see <see cref="BpmnActivityBindingFormat"/>, including what exporting one discloses.
+/// the document — see <see cref="BpmnActivityBindingFormat"/>, including what exporting one discloses. A task that
+/// declares none binds to the activity its type implies, when there is one (a <c>userTask</c> binds to
+/// <c>Elsa.UserTasks</c>' user task), and otherwise to a <see cref="BpmnUnboundTask"/> placeholder, so that a process can
+/// be drawn first and implemented later. Publishing refuses a process while a placeholder remains.
 /// </para>
 /// <para>
 /// <b>Every binding for a scope is bound, whatever its slot.</b> A <see cref="BpmnBindingSlot.ScopeListener"/>
@@ -55,6 +60,9 @@ namespace Elsa.Bpmn.Interchange.Binding;
 /// </remarks>
 public sealed class BpmnWorkBinder(BpmnActivityBindingFormat format)
 {
+    /// <summary>The activity type of <c>Elsa.UserTasks</c>' user task, which a <c>userTask</c> binds to by default.</summary>
+    private const string UserTaskActivityType = "Elsa.UserTask";
+
     /// <summary>
     /// Binds one process definition, and every process nested inside it, into a <see cref="BpmnProcess"/> scope.
     /// </summary>
@@ -132,7 +140,7 @@ public sealed class BpmnWorkBinder(BpmnActivityBindingFormat format)
             BpmnWorkBinding.UnboundTask unbound => ReadDeclaredActivity(definition, unbound, consumed),
             // The binding hierarchy is closed, so this is reachable only from a library version that added a kind this
             // binder has never heard of. Skipping it would produce a scope whose interpreter starts work nothing maps.
-            _ => throw new BpmnBindingException($"The BPMN work binding kind '{binding.GetType().Name}' declared by element '{binding.ElementId}' is not supported by this binder.")
+            _ => throw new BpmnBindingException($"The BPMN work binding kind '{binding.GetType().Name}' declared by element '{binding.ElementId}' is not supported by this binder.", binding.ElementId)
         };
 
     private IActivity ReadDeclaredActivity(BpmnProcessDefinition definition, BpmnWorkBinding.UnboundTask unbound, ISet<string> consumed)
@@ -141,14 +149,53 @@ public sealed class BpmnWorkBinder(BpmnActivityBindingFormat format)
 
         if (BpmnActivityBindingFormat.Find(element?.Extensions) is not { } declaration)
         {
-            throw new BpmnBindingException(
-                $"BPMN element '{unbound.ElementId}' of process '{unbound.ProcessId}' is a '{unbound.TaskType}': the document says what it is for, not how to perform it, and nothing binds it to an Elsa activity. "
-                + $"Declare one with an <{BpmnActivityBindingFormat.NamespacePrefix}:{BpmnActivityBindingFormat.BindingElementName}> element inside the element's <extensionElements>.");
+            return DefaultActivityFor(element, unbound) ?? new BpmnUnboundTask { ElementId = unbound.ElementId, TaskType = unbound.TaskType };
         }
 
         consumed.Add(unbound.ElementId);
 
-        return format.Read(declaration);
+        try
+        {
+            return format.Read(declaration);
+        }
+        catch (BpmnBindingException exception) when (exception.ElementId is null)
+        {
+            // The format reads a declaration without knowing whose it is; the refusal is this element's.
+            throw new BpmnBindingException(exception.Message, unbound.ElementId);
+        }
+    }
+
+    /// <summary>
+    /// The activity a task's type implies when the document declares none, or <c>null</c> when its type implies none or
+    /// the activity it implies is not registered in this application.
+    /// </summary>
+    /// <remarks>
+    /// A <c>userTask</c> is work for a person, which is what <c>Elsa.UserTasks</c>' activity does, titled with the
+    /// element's name. Its activity type is named rather than referenced so that this module does not depend on
+    /// <c>Elsa.UserTasks</c>; without that module the task stays unbound, like any task whose type implies nothing.
+    /// </remarks>
+    private IActivity? DefaultActivityFor(BpmnElement? element, BpmnWorkBinding.UnboundTask unbound)
+    {
+        if (!string.Equals(unbound.TaskType, BpmnElementTypes.UserTask, StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        var title = new JsonObject
+        {
+            ["typeName"] = "String",
+            ["expression"] = new JsonObject { ["type"] = "Literal", ["value"] = element?.Name ?? unbound.ElementId }
+        };
+
+        try
+        {
+            return format.Read(BpmnActivityBindingFormat.Declare(UserTaskActivityType, ("title", title.ToJsonString())));
+        }
+        catch (BpmnBindingException)
+        {
+            // Not registered: Elsa.UserTasks is not enabled here.
+            return null;
+        }
     }
 
     /// <summary>
@@ -165,7 +212,8 @@ public sealed class BpmnWorkBinder(BpmnActivityBindingFormat format)
         {
             throw new BpmnBindingException(
                 $"BPMN element '{element.ElementId}' ({element.ElementType}) of process '{definition.ProcessId}' carries an <{BpmnActivityBindingFormat.NamespacePrefix}:{BpmnActivityBindingFormat.BindingElementName}> element, but its work is not an unbound task, so nothing would ever run it. "
-                + "Only a task the document describes without implementing takes an authored activity binding.");
+                + "Only a task the document describes without implementing takes an authored activity binding.",
+                element.ElementId);
         }
     }
 
@@ -177,12 +225,12 @@ public sealed class BpmnWorkBinder(BpmnActivityBindingFormat format)
         }
         catch (Exception exception) when (exception is FormatException or OverflowException or ArgumentNullException)
         {
-            throw new BpmnBindingException($"BPMN element '{timer.ElementId}' declares the timer duration '{timer.IsoDuration}', which is not an ISO-8601 duration Elsa can wait for.");
+            throw new BpmnBindingException($"BPMN element '{timer.ElementId}' declares the timer duration '{timer.IsoDuration}', which is not an ISO-8601 duration Elsa can wait for.", timer.ElementId);
         }
     }
 
     private static string CalledElementOf(BpmnWorkBinding.CallProcess call) =>
         !string.IsNullOrWhiteSpace(call.CalledElement)
             ? call.CalledElement
-            : throw new BpmnBindingException($"BPMN element '{call.ElementId}' is a call activity that names no calledElement, so there is no workflow definition to dispatch.");
+            : throw new BpmnBindingException($"BPMN element '{call.ElementId}' is a call activity that names no calledElement, so there is no workflow definition to dispatch.", call.ElementId);
 }

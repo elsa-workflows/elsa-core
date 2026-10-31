@@ -15,6 +15,8 @@ using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Management;
+using Elsa.Workflows.Runtime;
+using Elsa.Workflows.Runtime.Providers;
 using Elsa.Workflows.Memory;
 using Elsa.Workflows.Models;
 using Elsa.Workflows;
@@ -30,8 +32,8 @@ namespace Elsa.Persistence.Dapper.Modules.Management.Stores;
 /// Provides a Dapper implementation of <see cref="IWorkflowDefinitionStore"/>.
 /// </summary>
 [UsedImplicitly]
-internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> store, IPayloadSerializer payloadSerializer, IDbConnectionProvider connectionProvider, ITenantAccessor? tenantAccessor = null)
-    : IWorkflowDefinitionStore
+internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> store, IPayloadSerializer payloadSerializer, IDbConnectionProvider connectionProvider)
+    : IWorkflowDefinitionStore, IClrWorkflowDefinitionTenantRestamper
 {
     /// <inheritdoc />
     public async Task<WorkflowDefinition?> FindAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
@@ -119,6 +121,37 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
     {
         var record = Map(definition);
         await store.SaveAsync(record, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<bool> RestampAsync(string definitionId, int version, string declaredTenantId, CancellationToken cancellationToken = default)
+    {
+        var record = await store.FindAsync(query =>
+        {
+            query.Is(nameof(WorkflowDefinitionRecord.DefinitionId), definitionId);
+            query.Is(nameof(WorkflowDefinitionRecord.Version), version);
+            query.Is(nameof(WorkflowDefinitionRecord.ProviderName), ClrWorkflowsProvider.ProviderName);
+        }, tenantAgnostic: true, cancellationToken);
+
+        if (record == null)
+        {
+            return false;
+        }
+
+        var declared = declaredTenantId ?? Tenant.AgnosticTenantId;
+        if (string.Equals(record.TenantId ?? string.Empty, declared, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        record.TenantId = declared;
+        using var connection = connectionProvider.GetConnection();
+        var write = connectionProvider.CreateQuery()
+            .Update(store.TableName, record, [nameof(WorkflowDefinitionRecord.TenantId)])
+            .Is(store.PrimaryKey, record.Id)
+            .Is(nameof(WorkflowDefinitionRecord.ProviderName), ClrWorkflowsProvider.ProviderName);
+        await write.ExecuteAsync(connection);
+        return true;
     }
 
     /// <inheritdoc />
@@ -213,7 +246,7 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
                 }
                 if (!filter.TenantAgnostic)
                 {
-                    query.Is(nameof(WorkflowDefinitionRecord.TenantId), (object?)tenantAccessor?.Tenant?.Id ?? DBNull.Value);
+                    store.ApplyTenantVisibility(query);
                 }
 
                 return connection.QueryFirstOrDefaultAsync<WorkflowDefinitionRecord?>(new CommandDefinition(

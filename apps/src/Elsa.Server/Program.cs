@@ -45,7 +45,7 @@ services.AddElsa(elsa =>
         .UseWorkflowsApi()
         .UseDashboardApi()
         .UseCSharp()
-        .UseJavaScript(options => options.AllowClrAccess = true)
+        .UseJavaScript(options => options.AllowClrAccess = configuration.GetValue("JavaScript:AllowClrAccess", false))
         .UseHttp(options => options.ConfigureHttpOptions = httpOptions => configuration.Bind("Http", httpOptions))
         .UseScheduling()
         .UseLoggingFramework(logging =>

@@ -2,6 +2,10 @@
 
 Guidance for AI coding agents working in this repository.
 
+## Agent collaboration protocol
+
+The org-wide protocol for AI agents (claims, branches, PRs, review and merge rules, handoff, stop conditions, identities, `vw-` mentions, conduct) lives at **https://github.com/elsa-workflows/.github/blob/main/AGENTS.md**. Read it first. This file keeps only notes specific to this repository; where they are stricter or name an owner exception, they apply here.
+
 ## Project Overview
 
 - Elsa Core is a .NET solution centered on `Elsa.sln`.
@@ -18,7 +22,7 @@ Guidance for AI coding agents working in this repository.
 - Update documentation when changing externally visible behavior, configuration, APIs, or developer workflows.
 - Do not delete generated-looking, artifact, or IDE files unless the task explicitly asks for cleanup.
 - If the worktree contains unrelated user changes, leave them untouched.
-- Before opening a PR, read `.github/reviewers.md`: Greptile is required (re-request with `@greptileai` after each push), and request at most one additional advisory reviewer from the list once the PR is open.
+- Before opening a PR, read `.github/reviewers.md`: Greptile is advisory (it reviews automatically; nobody waits for its score), request at most one additional advisory reviewer from the list once the PR is open, and merge only on the gate described there (Elsa 3 Code Review `APPROVE + HIGH @ <head sha>` plus green CI, merge pinned to that SHA), except as Standing self-merge there allows: for those PRs the Code Review is optional, and green CI is still required.
 
 ## Agent Operating Principles
 
@@ -53,6 +57,7 @@ Prefer targeted `dotnet test <project>` commands while iterating, then run a bro
 - `core/src/apps/`, `core/src/clients/`, `core/src/common/`, `core/src/modules/`: Core hosts, clients, shared infrastructure and modules.
 - `core/test/`: Core unit, integration, component and performance tests.
 - `extensions/src/`, `extensions/test/`, `extensions/docs/`, `extensions/samples/`: Extensions-owned code, tests, documentation and samples.
+- `studio/react/`: React Studio Preview frontend and host; read its contributor guidance.
 - `studio/src/`, `studio/test/`, `studio/docs/`, `studio/samples/`: Studio-owned code, tests, documentation and samples. Read [Studio contributor guidance](studio/src/AGENTS.md) for Studio modules, hosts, frameworks and tests.
 - `apps/src/`, `apps/scripts/`, `apps/docs/`: official net10 application/image hosts, container policy tests and source-import guidance. Read [Apps agent guidance](apps/AGENTS.md). Apps consumes released packages and does not add Core NuGet release units.
 - `templates/src/`, `templates/test/`, `templates/docs/`: independent Elsa 3 .NET project-template pack, smoke tests and contributor guidance. Embedded starter project files are data; keep all Templates projects outside root `Elsa.sln` packing.

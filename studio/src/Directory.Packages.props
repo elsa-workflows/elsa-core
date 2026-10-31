@@ -7,8 +7,13 @@
       Elsa.Studio.Workflows.Designer.csproj, which CPM does not manage. Naming the version here,
       once, keeps that PackageDownload's version pin from drifting from this file's PackageVersion
       entry. ClientLib/scripts/generate-bpmn-types.js also reads this property.
+
+      Keep it equal to Core's Bpmn.Model pin in the root Directory.Packages.props: Core's server
+      produces the payloads the generated types describe. `npm run check:generated` fails when the two
+      differ. To diverge deliberately, add <BpmnModelDivergesFromCoreVersion> naming Core's version
+      next to this property, with a comment saying why; the check then fails again on Core's next bump.
     -->
-    <BpmnModelVersion>0.2.0</BpmnModelVersion>
+    <BpmnModelVersion>0.4.0</BpmnModelVersion>
   </PropertyGroup>
   <ItemGroup Label="Elsa">
     <PackageVersion Include="Elsa.Api.Client" Version="3.8.4" />
@@ -47,8 +52,9 @@
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="8.0.24" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="8.0.24" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.24" PrivateAssets="all" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.24" />
-    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.24" />
+    <!-- WebAssembly.Server is pinned to the first patched version of this line. -->
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="8.0.32" />
+    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.32" />
     <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="8.0.24" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
     <PackageVersion Include="Microsoft.JSInterop" Version="8.0.24" />
@@ -66,8 +72,9 @@
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.13" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="9.0.13" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.13" PrivateAssets="all" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.13" />
-    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.13" />
+    <!-- WebAssembly.Server is pinned to the first patched version of this line. -->
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.21" />
+    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="9.0.21" />
     <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="9.0.13" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.18" />
     <PackageVersion Include="Microsoft.JSInterop" Version="9.0.13" />
@@ -85,8 +92,9 @@
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.3" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Authentication" Version="10.0.3" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.3" PrivateAssets="all" />
-    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.3" />
-    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.3" />
+    <!-- WebAssembly.Server is pinned to the first patched version of this line. -->
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.13" />
+    <PackageVersion Include="Microsoft.AspNetCore.SignalR.Client" Version="10.0.13" />
     <PackageVersion Include="Microsoft.AspNetCore.WebUtilities" Version="10.0.3" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
     <PackageVersion Include="Microsoft.JSInterop" Version="10.0.3" />
