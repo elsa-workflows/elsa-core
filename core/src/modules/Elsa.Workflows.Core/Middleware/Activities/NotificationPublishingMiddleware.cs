@@ -34,13 +34,19 @@ public class NotificationPublishingMiddleware : IActivityExecutionMiddleware
         
         // Send notification that activity is executing
         await _notificationSender.SendAsync(new ActivityExecuting(context));
-        
-        // Execute the activity
-        await _next(context);
-        
-        // Send notification that activity has executed
-        await _notificationSender.SendAsync(new ActivityExecuted(context));
-        
+
+        try
+        {
+            await _next(context);
+        }
+        finally
+        {
+            // Publish after both a normal return and a thrown exception so throw and Fault()
+            // produce the same executed notification. ExceptionHandlingMiddleware still
+            // converts the exception into a fault after this middleware returns.
+            await _notificationSender.SendAsync(new ActivityExecuted(context));
+        }
+
         // Send notification that activity has completed if status transitioned from Running to Completed
         if (statusBeforeExecution == ActivityStatus.Running && context.Status == ActivityStatus.Completed)
             await _notificationSender.SendAsync(new Notifications.ActivityCompleted(context));
