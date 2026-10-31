@@ -52,6 +52,32 @@ public sealed class DapperBookmarkQueueStoreTenantAgnosticTests : IDisposable
         Assert.Equal(1, page.TotalCount);
     }
 
+    [Fact(DisplayName = "Paged FindManyAsync with TenantAgnostic returns the requested page of every tenant")]
+    public async Task FindManyAsync_Paged_TenantAgnostic_ReturnsRequestedPage()
+    {
+        var (store, tenantScope) = CreateSeededStoreForTenant1();
+        using var _ = tenantScope;
+        var order = new BookmarkQueueItemOrder<string>(x => x.Id, OrderDirection.Ascending);
+
+        var items = await store.FindManyAsync(new BookmarkQueueFilter { TenantAgnostic = true }, order, PageArgs.FromRange(1, 2));
+
+        Assert.Equal(["q-null", "q-t1"], items.Select(x => x.Id));
+    }
+
+    [Fact(DisplayName = "Paged FindManyAsync without TenantAgnostic applies the ambient tenant and the filter")]
+    public async Task FindManyAsync_Paged_Scoped_ReturnsOnlyAmbientTenantItems()
+    {
+        var (store, tenantScope) = CreateSeededStoreForTenant1();
+        using var _ = tenantScope;
+        var order = new BookmarkQueueItemOrder<string>(x => x.Id, OrderDirection.Ascending);
+
+        var scoped = await store.FindManyAsync(new BookmarkQueueFilter(), order, PageArgs.FromRange(0, 10));
+        var filtered = await store.FindManyAsync(new BookmarkQueueFilter { CreatedAtLessThan = DateTimeOffset.Parse("2026-01-01T12:00:00+00:00") }, order, PageArgs.FromRange(0, 10));
+
+        Assert.Equal(["q-t1"], scoped.Select(x => x.Id));
+        Assert.Empty(filtered);
+    }
+
     [Fact(DisplayName = "FindManyAsync follows TenantAgnostic")]
     public async Task FindManyAsync_FollowsTenantAgnostic()
     {

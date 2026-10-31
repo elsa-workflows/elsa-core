@@ -48,6 +48,13 @@ internal class DapperBookmarkQueueStore(Store<BookmarkQueueItemRecord> store, IP
         return Map(records);
     }
 
+    /// <inheritdoc />
+    public async Task<IEnumerable<BookmarkQueueItem>> FindManyAsync<TOrderBy>(BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        var records = await store.FindPageItemsAsync(q => ApplyFilter(q, filter), pageArgs, orderBy.KeySelector.GetPropertyName(), orderBy.Direction, filter.TenantAgnostic, cancellationToken);
+        return Map(records).ToList();
+    }
+
     public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
         var records = await store.ListAsync(pageArgs, orderBy.KeySelector.GetPropertyName(), orderBy.Direction, cancellationToken);

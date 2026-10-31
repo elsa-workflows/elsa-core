@@ -28,6 +28,7 @@
 - A custom `IBookmarkQueueStore` should override `ListTenantIdsAsync`; the default returns null, and the trigger then wakes every tenant.
 - A custom `IBookmarkQueueStore` must honor `BookmarkQueueFilter.TenantAgnostic` on `PageAsync` and `FindManyAsync` by ignoring the tenant filter. Deletes stay tenant-scoped. Otherwise the purger only sees one tenant's items.
 - A custom `IBookmarkQueueDeadLetterStore` must honor `BookmarkQueueDeadLetterFilter.TenantAgnostic` on `PageAsync`.
+- A custom `IBookmarkQueueStore` or `IBookmarkQueueDeadLetterStore` should override the new `FindManyAsync(filter, orderBy, pageArgs)` to return one page without the total-count query. The default calls `PageAsync` and discards the count, and it must honor `TenantAgnostic` like `PageAsync`.
 - A custom `IBookmarkQueuePurger` is now called once per cycle, under one tenant, and must purge all tenants itself.
 - Subclasses of, or factory registrations for, `TriggerBookmarkQueueRecurringTask` or `DefaultBookmarkQueuePurger` that use the `[Obsolete]` constructors only cover the executing tenant. `[RunOnceForAllTenants]` is inherited, so such a task runs once per cycle for one tenant only. Switch to the new constructors.
 - Tenants with their own database are no longer purged or periodically triggered.

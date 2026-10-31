@@ -44,6 +44,19 @@ public interface IBookmarkQueueStore
     Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Returns one page of bookmark queue items, filtered and ordered by the specified order definition, without counting the total.
+    /// </summary>
+    /// <remarks>
+    /// Must honor <see cref="BookmarkQueueFilter.TenantAgnostic"/> like <see cref="PageAsync{TOrderBy}(PageArgs, BookmarkQueueFilter, BookmarkQueueItemOrder{TOrderBy}, CancellationToken)"/>.
+    /// The default implementation calls <see cref="PageAsync{TOrderBy}(PageArgs, BookmarkQueueFilter, BookmarkQueueItemOrder{TOrderBy}, CancellationToken)"/>; override it to skip the count query.
+    /// </remarks>
+    async Task<IEnumerable<BookmarkQueueItem>> FindManyAsync<TOrderBy>(BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        var page = await PageAsync(pageArgs, filter, orderBy, cancellationToken);
+        return page.Items;
+    }
+
+    /// <summary>
     /// Deletes a set of bookmark queue items matching the specified filter.
     /// </summary>
     /// <returns>The number of deleted records.</returns>

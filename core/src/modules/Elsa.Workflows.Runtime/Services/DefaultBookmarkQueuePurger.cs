@@ -85,8 +85,8 @@ public class DefaultBookmarkQueuePurger(
                 TenantAgnostic = IsMultitenant
             };
             var order = new BookmarkQueueItemOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending);
-            var page = await store.PageAsync(pageArgs, filter, order, cancellationToken);
-            var items = page.Items.Where(x => attemptedIds.Add(x.Id)).ToList();
+            var page = await store.FindManyAsync(filter, order, pageArgs, cancellationToken);
+            var items = page.Where(x => attemptedIds.Add(x.Id)).ToList();
 
             if (items.Count == 0)
                 break;
@@ -145,8 +145,8 @@ public class DefaultBookmarkQueuePurger(
                 TenantAgnostic = IsMultitenant
             };
             var order = new BookmarkQueueDeadLetterItemOrder<DateTimeOffset>(x => x.DeadLetteredAt, OrderDirection.Ascending);
-            var page = await deadLetterStore.PageAsync(pageArgs, filter, order, cancellationToken);
-            var items = page.Items.Where(x => attemptedIds.Add(x.Id)).ToList();
+            var page = await deadLetterStore.FindManyAsync(filter, order, pageArgs, cancellationToken);
+            var items = page.Where(x => attemptedIds.Add(x.Id)).ToList();
 
             if (items.Count == 0)
                 break;

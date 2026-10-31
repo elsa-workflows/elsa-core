@@ -3,6 +3,7 @@ using Elsa.Common.Models;
 using Elsa.Extensions;
 using Elsa.Common;
 using Elsa.Workflows.Runtime.Entities;
+using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Messages;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.OrderDefinitions;
@@ -27,21 +28,21 @@ public class BookmarkQueueProcessor(
         while (!cancellationToken.IsCancellationRequested)
         {
             var pageArgs = PageArgs.FromRange(offset, batchSize);
-            var page = await store.PageAsync(pageArgs, new BookmarkQueueItemOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending), cancellationToken);
-            var retainedCount = await ProcessPageAsync(page, cancellationToken);
+            var items = (await store.FindManyAsync(new BookmarkQueueFilter(), new BookmarkQueueItemOrder<DateTimeOffset>(x => x.CreatedAt, OrderDirection.Ascending), pageArgs, cancellationToken)).ToList();
+            var retainedCount = await ProcessPageAsync(items, cancellationToken);
 
-            if (page.Items.Count < batchSize)
+            if (items.Count < batchSize)
                 break;
 
             offset += retainedCount;
         }
     }
 
-    private async Task<int> ProcessPageAsync(Page<BookmarkQueueItem> page, CancellationToken cancellationToken = default)
+    private async Task<int> ProcessPageAsync(List<BookmarkQueueItem> items, CancellationToken cancellationToken = default)
     {
         var retainedCount = 0;
 
-        foreach (var bookmarkQueueItem in page.Items)
+        foreach (var bookmarkQueueItem in items)
         {
             if (await ProcessItemAsync(bookmarkQueueItem, cancellationToken))
                 retainedCount++;

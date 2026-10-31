@@ -45,6 +45,13 @@ public class MemoryBookmarkQueueStore(MemoryStore<BookmarkQueueItem> store, ITen
         return Task.FromResult(entities);
     }
 
+    /// <inheritdoc />
+    public Task<IEnumerable<BookmarkQueueItem>> FindManyAsync<TOrderBy>(BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        IEnumerable<BookmarkQueueItem> entities = store.Query(query => Filter(query, filter).OrderBy(orderBy).Paginate(pageArgs)).ToList();
+        return Task.FromResult(entities);
+    }
+
     public Task<IEnumerable<BookmarkQueueItem>> FindManyAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default)
     {
         var entities = store.Query(query => Filter(query, filter)).AsEnumerable();

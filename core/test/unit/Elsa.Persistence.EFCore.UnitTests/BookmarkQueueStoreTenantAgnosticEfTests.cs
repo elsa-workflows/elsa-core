@@ -53,6 +53,30 @@ public class BookmarkQueueStoreTenantAgnosticEfTests
         Assert.Equal(expectedIds.Length, deadLetterPage.TotalCount);
     }
 
+    [Theory(DisplayName = "Paged FindManyAsync honors TenantAgnostic, ordering and paging without a total")]
+    [InlineData(true, new[] { "q-t1", "q-t2" })]
+    [InlineData(false, new string[0])]
+    public async Task FindManyPagedFollowsTenantAgnostic(bool tenantAgnostic, string[] expectedIds)
+    {
+        await using var fixture = await Fixture.CreateAsync();
+
+        foreach (var (id, tenantId) in TenantById)
+        {
+            fixture.DbContext.BookmarkQueueItems.Add(new() { Id = id, TenantId = tenantId, CreatedAt = DateTimeOffset.UnixEpoch });
+            fixture.DbContext.BookmarkQueueDeadLetterItems.Add(new() { Id = id, TenantId = tenantId, OriginalQueueItemId = id, Reason = "test" });
+        }
+
+        await fixture.DbContext.SaveChangesAsync();
+
+        using var _ = fixture.PushTenant("t1");
+        var pageArgs = PageArgs.FromRange(1, 2);
+        var items = await fixture.QueueStore.FindManyAsync(new BookmarkQueueFilter { TenantAgnostic = tenantAgnostic }, new BookmarkQueueItemOrder<string>(x => x.Id, OrderDirection.Ascending), pageArgs);
+        var deadLetterItems = await fixture.DeadLetterStore.FindManyAsync(new BookmarkQueueDeadLetterFilter { TenantAgnostic = tenantAgnostic }, new BookmarkQueueDeadLetterItemOrder<string>(x => x.Id, OrderDirection.Ascending), pageArgs);
+
+        Assert.Equal(expectedIds, items.Select(x => x.Id));
+        Assert.Equal(expectedIds, deadLetterItems.Select(x => x.Id));
+    }
+
     [Fact(DisplayName = "ListTenantIdsAsync returns the distinct normalized tenant ids across tenants")]
     public async Task ListTenantIdsAsync_ReturnsDistinctNormalizedTenantIds()
     {
