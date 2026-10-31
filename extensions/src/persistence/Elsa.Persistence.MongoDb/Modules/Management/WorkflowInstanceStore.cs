@@ -24,83 +24,83 @@ public class MongoWorkflowInstanceStore(MongoDbStore<WorkflowInstance> mongoDbSt
     /// <inheritdoc />
     public async ValueTask<WorkflowInstance?> FindAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        return await mongoDbStore.FindManyAsync(query => Filter(query, filter), cancellationToken).FirstOrDefault();
+        return await mongoDbStore.FindManyAsync(query => Filter(query, filter), filter.TenantAgnostic, cancellationToken).FirstOrDefault();
     }
 
     /// <inheritdoc />
     public async ValueTask<Page<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var count = await mongoDbStore.CountAsync(query => Filter(query, filter), cancellationToken);
-        var documents = await mongoDbStore.FindManyAsync(query => Paginate(Filter(query, filter), pageArgs), cancellationToken).ToList();
+        var count = await mongoDbStore.CountAsync(query => Filter(query, filter), filter.TenantAgnostic, cancellationToken);
+        var documents = await mongoDbStore.FindManyAsync(query => Paginate(Filter(query, filter), pageArgs), filter.TenantAgnostic, cancellationToken).ToList();
         return Page.Of(documents, count);
     }
 
     /// <inheritdoc />
     public async ValueTask<Page<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        var count = await mongoDbStore.CountAsync(query => Filter(query, filter), cancellationToken);
-        var documents = await mongoDbStore.FindManyAsync(query => OrderAndPaginate(Filter(query, filter), order, pageArgs), cancellationToken).ToList();
+        var count = await mongoDbStore.CountAsync(query => Filter(query, filter), filter.TenantAgnostic, cancellationToken);
+        var documents = await mongoDbStore.FindManyAsync(query => OrderAndPaginate(Filter(query, filter), order, pageArgs), filter.TenantAgnostic, cancellationToken).ToList();
         return Page.Of(documents, count);
     }
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        return await mongoDbStore.FindManyAsync(query => Filter(query, filter), cancellationToken).ToList().AsEnumerable();
+        return await mongoDbStore.FindManyAsync(query => Filter(query, filter), filter.TenantAgnostic, cancellationToken).ToList().AsEnumerable();
     }
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        return await mongoDbStore.FindManyAsync(query => Order(Filter(query, filter), order), cancellationToken).ToList().AsEnumerable();
+        return await mongoDbStore.FindManyAsync(query => Order(Filter(query, filter), order), filter.TenantAgnostic, cancellationToken).ToList().AsEnumerable();
     }
 
     /// <inheritdoc />
     public async ValueTask<long> CountAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        return await mongoDbStore.CountAsync(queryable => Filter(queryable, filter), cancellationToken);
+        return await mongoDbStore.CountAsync(queryable => Filter(queryable, filter), filter.TenantAgnostic, cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask<Page<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var count = await mongoDbStore.CountAsync(query => Filter(query, filter), cancellationToken);
-        var documents = await mongoDbStore.FindManyAsync<WorkflowInstanceSummary>(query => Paginate(Filter(query, filter), pageArgs), ExpressionHelpers.WorkflowInstanceSummary, cancellationToken).ToList();
+        var count = await mongoDbStore.CountAsync(query => Filter(query, filter), filter.TenantAgnostic, cancellationToken);
+        var documents = await mongoDbStore.FindManyAsync<WorkflowInstanceSummary>(query => Paginate(Filter(query, filter), pageArgs), ExpressionHelpers.WorkflowInstanceSummary, filter.TenantAgnostic, cancellationToken).ToList();
         return Page.Of(documents, count);
     }
 
     /// <inheritdoc />
     public async ValueTask<Page<WorkflowInstanceSummary>> SummarizeManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        var count = await mongoDbStore.CountAsync(query => Filter(query, filter), cancellationToken);
-        var documents = await mongoDbStore.FindManyAsync(query => OrderAndPaginate(Filter(query, filter), order, pageArgs), ExpressionHelpers.WorkflowInstanceSummary, cancellationToken).ToList();
+        var count = await mongoDbStore.CountAsync(query => Filter(query, filter), filter.TenantAgnostic, cancellationToken);
+        var documents = await mongoDbStore.FindManyAsync(query => OrderAndPaginate(Filter(query, filter), order, pageArgs), ExpressionHelpers.WorkflowInstanceSummary, filter.TenantAgnostic, cancellationToken).ToList();
         return Page.Of(documents, count);
     }
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        return await mongoDbStore.FindManyAsync(query => Filter(query, filter), ExpressionHelpers.WorkflowInstanceSummary, cancellationToken).ToList().AsEnumerable();
+        return await mongoDbStore.FindManyAsync(query => Filter(query, filter), ExpressionHelpers.WorkflowInstanceSummary, filter.TenantAgnostic, cancellationToken).ToList().AsEnumerable();
     }
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        return await mongoDbStore.FindManyAsync(query => Order(Filter(query, filter), order), ExpressionHelpers.WorkflowInstanceSummary, cancellationToken).ToList().AsEnumerable();
+        return await mongoDbStore.FindManyAsync(query => Order(Filter(query, filter), order), ExpressionHelpers.WorkflowInstanceSummary, filter.TenantAgnostic, cancellationToken).ToList().AsEnumerable();
     }
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        var documents = await mongoDbStore.FindManyAsync(query => Filter(query, filter), ExpressionHelpers.WorkflowInstanceId, cancellationToken).ToList().AsEnumerable();
+        var documents = await mongoDbStore.FindManyAsync(query => Filter(query, filter), ExpressionHelpers.WorkflowInstanceId, filter.TenantAgnostic, cancellationToken).ToList().AsEnumerable();
         return documents.Select(x => x.Id).ToList();
     }
 
     /// <inheritdoc />
     public async ValueTask<Page<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, PageArgs pageArgs, CancellationToken cancellationToken = default)
     {
-        var count = await mongoDbStore.CountAsync(query => Filter(query, filter), cancellationToken);
-        var documents = await mongoDbStore.FindManyAsync(query => Paginate(Filter(query, filter), pageArgs), ExpressionHelpers.WorkflowInstanceId, cancellationToken).ToList();
+        var count = await mongoDbStore.CountAsync(query => Filter(query, filter), filter.TenantAgnostic, cancellationToken);
+        var documents = await mongoDbStore.FindManyAsync(query => Paginate(Filter(query, filter), pageArgs), ExpressionHelpers.WorkflowInstanceId, filter.TenantAgnostic, cancellationToken).ToList();
         var ids = documents.Select(x => x.Id).ToList();
         return Page.Of(ids, count);
     }
@@ -108,8 +108,8 @@ public class MongoWorkflowInstanceStore(MongoDbStore<WorkflowInstance> mongoDbSt
     /// <inheritdoc />
     public async ValueTask<Page<string>> FindManyIdsAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        var count = await mongoDbStore.CountAsync(query => Filter(query, filter), cancellationToken);
-        var documents = await mongoDbStore.FindManyAsync(query => OrderAndPaginate(Filter(query, filter), order, pageArgs), ExpressionHelpers.WorkflowInstanceId, cancellationToken).ToList();
+        var count = await mongoDbStore.CountAsync(query => Filter(query, filter), filter.TenantAgnostic, cancellationToken);
+        var documents = await mongoDbStore.FindManyAsync(query => OrderAndPaginate(Filter(query, filter), order, pageArgs), ExpressionHelpers.WorkflowInstanceId, filter.TenantAgnostic, cancellationToken).ToList();
         var ids = documents.Select(x => x.Id).ToList();
         return Page.Of(ids, count);
     }

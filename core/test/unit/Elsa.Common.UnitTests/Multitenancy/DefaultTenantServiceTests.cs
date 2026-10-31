@@ -154,11 +154,13 @@ public class DefaultTenantServiceTests
         activatedEvent.TenantActivatedAsync(Arg.Is<TenantActivatedEventArgs>(x => x.Tenant.Id == "b"))
             .Returns(Task.FromException(new InvalidOperationException("Migration failed")));
         var deactivatedEvent = Substitute.For<ITenantDeactivatedEvent>();
-        var (tenantService, serviceProvider) = await CreateTenantServiceAsync([tenantA, tenantB], activatedEvent: activatedEvent, deactivatedEvent: deactivatedEvent);
+        var allTenantsActivatedEvent = Substitute.For<IAllTenantsActivatedEvent>();
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync([tenantA, tenantB], activatedEvent: activatedEvent, deactivatedEvent: deactivatedEvent, allTenantsActivatedEvent: allTenantsActivatedEvent);
 
         try
         {
             await Assert.ThrowsAsync<InvalidOperationException>(() => tenantService.ActivateTenantsAsync());
+            await allTenantsActivatedEvent.DidNotReceive().AllTenantsActivatedAsync(Arg.Any<CancellationToken>());
 
             await deactivatedEvent.Received(1).TenantDeactivatedAsync(Arg.Is<TenantDeactivatedEventArgs>(x => x.Tenant.Id == "a"));
             await deactivatedEvent.DidNotReceive().TenantDeactivatedAsync(Arg.Is<TenantDeactivatedEventArgs>(x => x.Tenant.Id == "b"));
@@ -171,7 +173,73 @@ public class DefaultTenantServiceTests
         }
     }
 
-    private static Task<(ITenantService TenantService, ServiceProvider ServiceProvider)> CreateTenantServiceAsync(IEnumerable<Tenant> tenants, Func<List<Tenant>>? tenantsFactory = null, ITenantActivatedEvent? activatedEvent = null, ITenantDeactivatedEvent? deactivatedEvent = null)
+    [Fact]
+    public async Task ActivateTenantsAsync_WithMultipleTenants_RaisesAllTenantsActivatedOnceAfterAllTenantsActivated()
+    {
+        var calls = new List<string>();
+        var activatedEvent = Substitute.For<ITenantActivatedEvent>();
+        activatedEvent.TenantActivatedAsync(Arg.Any<TenantActivatedEventArgs>()).Returns(call =>
+        {
+            calls.Add($"activated:{call.Arg<TenantActivatedEventArgs>().Tenant.Id}");
+            return Task.CompletedTask;
+        });
+        var allTenantsActivatedEvent = Substitute.For<IAllTenantsActivatedEvent>();
+        allTenantsActivatedEvent.AllTenantsActivatedAsync(Arg.Any<CancellationToken>()).Returns(_ =>
+        {
+            calls.Add("all-activated");
+            return Task.CompletedTask;
+        });
+        var tenantA = new Tenant { Id = "a", Name = "A" };
+        var tenantB = new Tenant { Id = "b", Name = "B" };
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync([tenantA, tenantB], activatedEvent: activatedEvent, allTenantsActivatedEvent: allTenantsActivatedEvent);
+
+        try
+        {
+            await tenantService.ActivateTenantsAsync();
+
+            await allTenantsActivatedEvent.Received(1).AllTenantsActivatedAsync(Arg.Any<CancellationToken>());
+            Assert.Equal(3, calls.Count);
+            Assert.Equal("all-activated", calls[^1]);
+            Assert.Contains("activated:a", calls);
+            Assert.Contains("activated:b", calls);
+        }
+        finally
+        {
+            if (tenantService is IAsyncDisposable disposable)
+                await disposable.DisposeAsync();
+            await serviceProvider.DisposeAsync();
+        }
+    }
+
+    [Fact]
+    public async Task RefreshAsync_WhenTenantIsAdded_DoesNotRaiseAllTenantsActivated()
+    {
+        var tenantA = new Tenant { Id = "a", Name = "A" };
+        var tenantB = new Tenant { Id = "b", Name = "B" };
+        var providerReturns = new List<Tenant> { tenantA };
+        var allTenantsActivatedEvent = Substitute.For<IAllTenantsActivatedEvent>();
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync(providerReturns, () => providerReturns, allTenantsActivatedEvent: allTenantsActivatedEvent);
+
+        try
+        {
+            await tenantService.ActivateTenantsAsync();
+            allTenantsActivatedEvent.ClearReceivedCalls();
+            providerReturns.Add(tenantB);
+
+            await tenantService.RefreshAsync();
+
+            Assert.Equal(2, (await tenantService.ListAsync()).Count());
+            await allTenantsActivatedEvent.DidNotReceive().AllTenantsActivatedAsync(Arg.Any<CancellationToken>());
+        }
+        finally
+        {
+            if (tenantService is IAsyncDisposable disposable)
+                await disposable.DisposeAsync();
+            await serviceProvider.DisposeAsync();
+        }
+    }
+
+    private static Task<(ITenantService TenantService, ServiceProvider ServiceProvider)> CreateTenantServiceAsync(IEnumerable<Tenant> tenants, Func<List<Tenant>>? tenantsFactory = null, ITenantActivatedEvent? activatedEvent = null, ITenantDeactivatedEvent? deactivatedEvent = null, IAllTenantsActivatedEvent? allTenantsActivatedEvent = null)
     {
         var tenantList = tenants.ToList();
         var getTenants = tenantsFactory ?? (() => tenantList);
@@ -186,6 +254,7 @@ public class DefaultTenantServiceTests
         services.AddSingleton(activatedEvent ?? Substitute.For<ITenantActivatedEvent>());
         services.AddSingleton(deactivatedEvent ?? Substitute.For<ITenantDeactivatedEvent>());
         services.AddSingleton<ITenantDeletedEvent>(Substitute.For<ITenantDeletedEvent>());
+        services.AddSingleton(allTenantsActivatedEvent ?? Substitute.For<IAllTenantsActivatedEvent>());
         services.AddSingleton<TenantEventsManager>();
         services.AddSingleton<RecurringTaskScheduleManager>();
         services.AddSingleton<ITenantService, DefaultTenantService>();

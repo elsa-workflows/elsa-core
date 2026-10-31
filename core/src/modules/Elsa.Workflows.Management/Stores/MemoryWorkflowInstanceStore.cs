@@ -168,7 +168,7 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
     /// <inheritdoc />
     public ValueTask<long> DeleteAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        var query = Filter(_store.List().AsQueryable(), filter);
+        var query = filter.Apply(_store.List().AsQueryable().WhereVisibleToTenant(CurrentTenantId));
         var count = _store.DeleteMany(query, x => x.Id);
         return ValueTask.FromResult(count);
     }
@@ -269,7 +269,7 @@ public class MemoryWorkflowInstanceStore : IWorkflowInstanceStore
 
     [RequiresUnreferencedCode("Calls Elsa.Workflows.Management.Filters.WorkflowInstanceFilter.Apply(IQueryable<WorkflowInstance>)")]
     private IQueryable<WorkflowInstance> Filter(IQueryable<WorkflowInstance> query, WorkflowInstanceFilter filter) =>
-        filter.Apply(query.WhereVisibleToTenant(CurrentTenantId));
+        filter.Apply(query.WhereVisibleToTenant(CurrentTenantId, filter.TenantAgnostic));
 
     private void ApplyCurrentTenant(WorkflowInstance instance)
     {

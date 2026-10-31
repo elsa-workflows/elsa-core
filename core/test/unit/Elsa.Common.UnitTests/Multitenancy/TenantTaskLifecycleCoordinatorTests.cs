@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Elsa.Common.Multitenancy;
 using Elsa.Common.RecurringTasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -104,6 +105,74 @@ public class TenantTaskLifecycleCoordinatorTests : IAsyncDisposable
         Assert.True(_recurringTask.WasStopCalled);
     }
 
+    [Fact]
+    public async Task Tick_WithTwoTenantsOnOneTaskType_KeepsRunningTheRemainingTenantAfterOneIsDeactivated()
+    {
+        var schedule = new ControllableSchedule();
+        var log = new RunLog();
+        await using var coordinator = CreateCoordinator(typeof(LoggingRecurringTask), schedule);
+        var tenantA = new Tenant { Id = "tenant-a" };
+        var tenantB = new Tenant { Id = "tenant-b" };
+        var providerA = BuildTenantServiceProvider(recurringTasks: [new LoggingRecurringTask(log)]);
+        var providerB = BuildTenantServiceProvider(recurringTasks: [new LoggingRecurringTask(log)]);
+        await coordinator.ActivateTenantAsync(new TenantActivatedEventArgs(tenantA, CreateTenantScope(tenantA, providerA), CancellationToken.None));
+        await coordinator.ActivateTenantAsync(new TenantActivatedEventArgs(tenantB, CreateTenantScope(tenantB, providerB), CancellationToken.None));
+
+        await coordinator.DeactivateTenantAsync(new TenantDeactivatedEventArgs(tenantA, CreateTenantScope(tenantA, providerA), CancellationToken.None));
+        await schedule.TickAsync();
+        await log.WaitForExecutionsAsync(1);
+        await coordinator.DeactivateTenantAsync(new TenantDeactivatedEventArgs(tenantB, CreateTenantScope(tenantB, providerB), CancellationToken.None));
+
+        Assert.Equal(["start", "start", "stop", "execute:tenant-b", "stop"], log.Events);
+    }
+
+    [Fact]
+    public async Task Activate_WhileRecurringTaskIsStarting_DoesNotRunTheTaskBeforeStartCompletes()
+    {
+        var schedule = new ControllableSchedule();
+        var log = new RunLog();
+        var startGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var task = new LoggingRecurringTask(log, startGate.Task);
+        await using var coordinator = CreateCoordinator(typeof(LoggingRecurringTask), schedule);
+        var serviceProvider = BuildTenantServiceProvider(recurringTasks: [task]);
+
+        var activation = coordinator.ActivateTenantAsync(new TenantActivatedEventArgs(_tenant, CreateTenantScope(_tenant, serviceProvider), CancellationToken.None));
+        await task.StartEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var timersWhileStarting = schedule.CreatedTimerCount;
+        startGate.SetResult();
+        await activation;
+        await schedule.TickAsync();
+        await log.WaitForExecutionsAsync(1);
+        await coordinator.DeactivateTenantAsync(DeactivationArgs(serviceProvider));
+
+        Assert.Equal(0, timersWhileStarting);
+        Assert.Equal(["start", "execute:test-tenant", "stop"], log.Events);
+    }
+
+    [Fact]
+    public async Task Tick_WithMaxDegreeOfParallelismOfOne_DoesNotOverlapTenantRuns()
+    {
+        var schedule = new ControllableSchedule();
+        var probe = new ConcurrencyProbe();
+        await using var coordinator = CreateCoordinator(typeof(ProbedRecurringTask), schedule, maxDegreeOfParallelism: 1);
+        var tenantA = new Tenant { Id = "tenant-a" };
+        var tenantB = new Tenant { Id = "tenant-b" };
+        var providerA = BuildTenantServiceProvider(recurringTasks: [new ProbedRecurringTask(probe)]);
+        var providerB = BuildTenantServiceProvider(recurringTasks: [new ProbedRecurringTask(probe)]);
+        await coordinator.ActivateTenantAsync(new TenantActivatedEventArgs(tenantA, CreateTenantScope(tenantA, providerA), CancellationToken.None));
+        await coordinator.ActivateTenantAsync(new TenantActivatedEventArgs(tenantB, CreateTenantScope(tenantB, providerB), CancellationToken.None));
+
+        await schedule.TickAsync();
+        await probe.WaitForStartedAsync(1);
+        probe.Release(1);
+        await probe.WaitForStartedAsync(1);
+        probe.Release(1);
+        await coordinator.DeactivateTenantAsync(new TenantDeactivatedEventArgs(tenantA, CreateTenantScope(tenantA, providerA), CancellationToken.None));
+        await coordinator.DeactivateTenantAsync(new TenantDeactivatedEventArgs(tenantB, CreateTenantScope(tenantB, providerB), CancellationToken.None));
+
+        Assert.Equal(1, probe.PeakConcurrency);
+    }
+
     // === Instance helpers ===
 
     private Task ActivateAsync(Tenant? tenant = null)
@@ -123,11 +192,20 @@ public class TenantTaskLifecycleCoordinatorTests : IAsyncDisposable
 
     // === Static helpers ===
 
-    private static TenantTaskLifecycleCoordinator CreateCoordinator()
+    private static TenantTaskLifecycleCoordinator CreateCoordinator(int maxDegreeOfParallelism = 4) =>
+        CreateCoordinator(new RecurringTaskScheduleManager(Microsoft.Extensions.Options.Options.Create(new RecurringTaskOptions()), Substitute.For<ISystemClock>()), maxDegreeOfParallelism);
+
+    private static TenantTaskLifecycleCoordinator CreateCoordinator(Type taskType, ISchedule schedule, int maxDegreeOfParallelism = 4)
     {
-        var scheduleManager = new RecurringTaskScheduleManager(Microsoft.Extensions.Options.Options.Create(new RecurringTaskOptions()), Substitute.For<ISystemClock>());
-        return new TenantTaskLifecycleCoordinator(scheduleManager, NullLogger<TenantTaskLifecycleCoordinator>.Instance);
+        var scheduleManager = new RecurringTaskScheduleManager(Microsoft.Extensions.Options.Options.Create(new RecurringTaskOptions()), Substitute.For<ISystemClock>())
+        {
+            ScheduledTasks = { [taskType] = schedule }
+        };
+        return CreateCoordinator(scheduleManager, maxDegreeOfParallelism);
     }
+
+    private static TenantTaskLifecycleCoordinator CreateCoordinator(RecurringTaskScheduleManager scheduleManager, int maxDegreeOfParallelism) =>
+        new(scheduleManager, new DefaultTenantAccessor(), Microsoft.Extensions.Options.Options.Create(new RecurringTaskOptions { MaxDegreeOfParallelism = maxDegreeOfParallelism }), NullLogger<TenantTaskLifecycleCoordinator>.Instance);
 
     private static IServiceProvider BuildTenantServiceProvider(
         IEnumerable<IRecurringTask>? recurringTasks = null,
@@ -171,6 +249,93 @@ public class TenantTaskLifecycleCoordinatorTests : IAsyncDisposable
             WasStopCalled = true;
             return Task.CompletedTask;
         }
+    }
+
+    private class RunLog
+    {
+        private readonly ConcurrentQueue<string> _events = new();
+        private readonly SemaphoreSlim _executions = new(0);
+
+        public IReadOnlyCollection<string> Events => _events.ToArray();
+
+        public void Add(string entry) => _events.Enqueue(entry);
+
+        public void AddExecution(string entry)
+        {
+            _events.Enqueue(entry);
+            _executions.Release();
+        }
+
+        public async Task WaitForExecutionsAsync(int count)
+        {
+            for (var i = 0; i < count; i++)
+                Assert.True(await _executions.WaitAsync(TimeSpan.FromSeconds(5)));
+        }
+    }
+
+    private class LoggingRecurringTask(RunLog log, Task? startGate = null) : RecurringTask
+    {
+        private readonly DefaultTenantAccessor _tenantAccessor = new();
+
+        public TaskCompletionSource StartEntered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public override Task ExecuteAsync(CancellationToken cancellationToken)
+        {
+            log.AddExecution($"execute:{_tenantAccessor.TenantId}");
+            return Task.CompletedTask;
+        }
+
+        public override async Task StartAsync(CancellationToken cancellationToken)
+        {
+            StartEntered.TrySetResult();
+
+            if (startGate != null)
+                await startGate;
+
+            log.Add("start");
+        }
+
+        public override Task StopAsync(CancellationToken cancellationToken)
+        {
+            log.Add("stop");
+            return Task.CompletedTask;
+        }
+    }
+
+    private class ConcurrencyProbe
+    {
+        private readonly SemaphoreSlim _release = new(0);
+        private readonly SemaphoreSlim _started = new(0);
+        private int _current;
+        private int _peak;
+
+        public int PeakConcurrency => Volatile.Read(ref _peak);
+
+        public async Task WaitForStartedAsync(int count)
+        {
+            for (var i = 0; i < count; i++)
+                Assert.True(await _started.WaitAsync(TimeSpan.FromSeconds(5)));
+        }
+
+        public void Release(int count) => _release.Release(count);
+
+        public async Task RunAsync(CancellationToken cancellationToken)
+        {
+            var current = Interlocked.Increment(ref _current);
+            int peak;
+
+            while (current > (peak = Volatile.Read(ref _peak)))
+                Interlocked.CompareExchange(ref _peak, current, peak);
+
+            _started.Release();
+            await _release.WaitAsync(TimeSpan.FromSeconds(10), cancellationToken);
+            Interlocked.Decrement(ref _current);
+        }
+    }
+
+    private class ProbedRecurringTask(ConcurrencyProbe probe) : RecurringTask
+    {
+        public override Task ExecuteAsync(CancellationToken cancellationToken) => probe.RunAsync(cancellationToken);
     }
 
     private class QueueBlockingWorkStartupTask(ITenantBackgroundWorkQueue workQueue) : IStartupTask

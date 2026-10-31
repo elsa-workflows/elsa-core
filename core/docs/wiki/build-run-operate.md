@@ -151,7 +151,12 @@ Common runtime-related options in the reference host:
 - `BookmarkQueuePurgeOptions.Ttl`
 - `CachingOptions.CacheDuration`
 - `IncidentOptions.DefaultIncidentStrategy`
+- `RecurringTaskOptions.MaxDegreeOfParallelism`
 - recurring task schedules for trigger queue, bookmark queue purge, and interrupted workflow restart
+
+Recurring tasks use one timer per task type and run once per tenant, with `MaxDegreeOfParallelism` bounding the concurrent tenant runs of each task type (not globally); tasks marked `[RunOnceForAllTenants]` run once per cycle.
+
+The interval is measured between run starts, not from the end of the previous run: a 5 second task that takes 4 seconds runs every 5 seconds (previously the next run was scheduled after the previous one finished, so every 9 seconds). A tick starts a run for every tenant without waiting; a run that takes longer than the interval skips the following ticks for that tenant and never overlaps with itself. If `MaxDegreeOfParallelism` runs of one task type hang, the other tenants of that task type wait for a free slot.
 
 Structured logs options include recent log capacity, query size, source heartbeat timeout, redaction settings, and storage provider options.
 

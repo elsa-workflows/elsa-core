@@ -1,10 +1,13 @@
+using System.Reflection;
 using Elsa.Common;
 using Elsa.Common.Models;
 using Elsa.Common.Multitenancy;
+using Elsa.Common.RecurringTasks;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.StartupTasks;
 using Elsa.Workflows.Runtime.Tasks;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -57,15 +60,19 @@ public class RestartInterruptedWorkflowsTaskTests
 
         Assert.Equal(new[] { "tenant-a", "tenant-b" }, observedTenantIds);
         Assert.Null(tenantAccessor.Tenant);
+        await workflowInstanceStore.Received().SummarizeManyAsync(
+            Arg.Is<WorkflowInstanceFilter>(f => f.TenantAgnostic && f.IsExecuting == true && f.WorkflowStatus == WorkflowStatus.Running && f.BeforeLastUpdated == now - TimeSpan.FromMinutes(5)),
+            Arg.Any<PageArgs>(),
+            Arg.Any<CancellationToken>());
         await workflowRestarter.Received(1).RestartWorkflowAsync("workflow-1", Arg.Any<CancellationToken>());
         await workflowRestarter.Received(1).RestartWorkflowAsync("workflow-2", Arg.Any<CancellationToken>());
     }
 
-    [Theory(DisplayName = "ExecuteAsync does not push tenant context for default or agnostic tenant instances")]
+    [Theory(DisplayName = "ExecuteAsync restarts default or agnostic tenant instances under the default tenant context")]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("*")]
-    public async Task ExecuteAsync_DefaultOrAgnosticTenant_DoesNotPushContext(string? tenantId)
+    public async Task ExecuteAsync_DefaultOrAgnosticTenant_PushesDefaultTenantContext(string? tenantId)
     {
         var workflowInstanceStore = Substitute.For<IWorkflowInstanceStore>();
         var tenantAccessor = new DefaultTenantAccessor();
@@ -103,9 +110,8 @@ public class RestartInterruptedWorkflowsTaskTests
 
         await task.ExecuteAsync(CancellationToken.None);
 
-        Assert.Equal(new string?[] { null }, observedTenantIds);
+        Assert.Equal(new string?[] { Tenant.DefaultTenantId }, observedTenantIds);
         Assert.Null(tenantAccessor.Tenant);
-        await tenantService.DidNotReceive().FindAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
         await workflowRestarter.Received(1).RestartWorkflowAsync("workflow-1", Arg.Any<CancellationToken>());
     }
 
@@ -185,6 +191,21 @@ public class RestartInterruptedWorkflowsTaskTests
         await task.ExecuteAsync(CancellationToken.None);
 
         await workflowRestarter.Received(1).RestartWorkflowAsync("workflow-1", Arg.Any<CancellationToken>());
+    }
+
+    [Theory(DisplayName = "Recovery tasks take a host-wide single-node lock; the outbox task takes none")]
+    [InlineData(typeof(RestartInterruptedWorkflowsTask), SingleNodeTaskScope.Host)]
+    [InlineData(typeof(RecoverInterruptedWorkflowsStartupTask), SingleNodeTaskScope.Host)]
+    [InlineData(typeof(ProcessWorkflowDispatchOutboxRecurringTask), null)]
+    public void SingleNodeTaskScope_PerTask(Type taskType, SingleNodeTaskScope? expectedScope)
+    {
+        Assert.Equal(expectedScope, taskType.GetCustomAttribute<SingleNodeTaskAttribute>()?.Scope);
+    }
+
+    [Fact(DisplayName = "The restart task runs once per cycle for all tenants")]
+    public void RestartTask_IsRunOnceForAllTenants()
+    {
+        Assert.NotNull(typeof(RestartInterruptedWorkflowsTask).GetCustomAttribute<RunOnceForAllTenantsAttribute>());
     }
 
     private static WorkflowInstanceSummary CreateWorkflowInstance(string id, string? tenantId, DateTimeOffset updatedAt)

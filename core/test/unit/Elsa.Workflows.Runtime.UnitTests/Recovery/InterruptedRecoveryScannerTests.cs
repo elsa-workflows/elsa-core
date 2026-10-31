@@ -28,7 +28,8 @@ public class InterruptedRecoveryScannerTests
         await _instanceStore.Received().SummarizeManyAsync(
             Arg.Is<WorkflowInstanceFilter>(f =>
                 f.WorkflowSubStatus == WorkflowSubStatus.Interrupted
-                && f.WorkflowStatus == WorkflowStatus.Running),
+                && f.WorkflowStatus == WorkflowStatus.Running
+                && f.TenantAgnostic),
             Arg.Any<PageArgs>(),
             Arg.Any<CancellationToken>());
     }
@@ -93,7 +94,7 @@ public class InterruptedRecoveryScannerTests
         Assert.Null(tenantAccessor.Tenant); // popped after the call
     }
 
-    [Theory(DisplayName = "Default or agnostic tenant ids do NOT push tenant context")]
+    [Theory(DisplayName = "Default or agnostic tenant ids restart under the default tenant context")]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("*")]
@@ -110,8 +111,7 @@ public class InterruptedRecoveryScannerTests
         var sut = BuildSut(tenantService, tenantAccessor);
         await sut.ScanAndRequeueAsync(CancellationToken.None);
 
-        Assert.Null(observedTenant);
-        await tenantService.DidNotReceive().FindAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        Assert.Equal(Tenant.DefaultTenantId, observedTenant?.Id);
     }
 
     private InterruptedRecoveryScanner BuildSut(ITenantService? tenantService = null, ITenantAccessor? tenantAccessor = null) =>

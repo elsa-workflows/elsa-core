@@ -4,6 +4,7 @@ using Elsa.Common.Helpers;
 using Elsa.Common.RecurringTasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Elsa.Common.Multitenancy;
 
@@ -11,11 +12,22 @@ namespace Elsa.Common.Multitenancy;
 /// Coordinates the lifecycle of startup, background, and recurring tasks for tenants.
 /// Executes tasks in the proper sequence: startup tasks first, then background tasks, then recurring tasks.
 /// </summary>
-public class TenantTaskLifecycleCoordinator(RecurringTaskScheduleManager scheduleManager, ILogger<TenantTaskLifecycleCoordinator> logger) : IAsyncDisposable
+public class TenantTaskLifecycleCoordinator(
+    RecurringTaskScheduleManager scheduleManager,
+    ITenantAccessor tenantAccessor,
+    IOptions<RecurringTaskOptions> options,
+    ILogger<TenantTaskLifecycleCoordinator> logger) : IAsyncDisposable
 {
+    private readonly TenantRecurringTaskScheduler _recurringTaskScheduler = new(scheduleManager, tenantAccessor, options, logger);
     private readonly ConcurrentDictionary<string, TenantRuntimeState> _tenantStates = new();
     private readonly CancellationTokenSource _shutdownCancellationTokenSource = new();
     private int _disposeRequested;
+
+    [Obsolete("Use the constructor that accepts an ITenantAccessor and IOptions<RecurringTaskOptions> instead. Removed in the next major version.")]
+    public TenantTaskLifecycleCoordinator(RecurringTaskScheduleManager scheduleManager, ILogger<TenantTaskLifecycleCoordinator> logger)
+        : this(scheduleManager, new DefaultTenantAccessor(), Options.Create(new RecurringTaskOptions()), logger)
+    {
+    }
 
     public async Task ActivateTenantAsync(TenantActivatedEventArgs args)
     {
@@ -46,7 +58,7 @@ public class TenantTaskLifecycleCoordinator(RecurringTaskScheduleManager schedul
             await RunBackgroundTasksAsync(tenantScope, taskExecutor, state, cancellationToken);
 
             // Step 3: Start recurring tasks
-            await StartRecurringTasksAsync(tenantScope, taskExecutor, state, cancellationToken);
+            await StartRecurringTasksAsync(args.Tenant, tenantScope, taskExecutor, state, cancellationToken);
         }
         catch
         {
@@ -126,37 +138,16 @@ public class TenantTaskLifecycleCoordinator(RecurringTaskScheduleManager schedul
         }
     }
 
-    private async Task StartRecurringTasksAsync(ITenantScope tenantScope, ITaskExecutor taskExecutor, TenantRuntimeState state, CancellationToken cancellationToken)
+    private async Task StartRecurringTasksAsync(Tenant tenant, ITenantScope tenantScope, ITaskExecutor taskExecutor, TenantRuntimeState state, CancellationToken cancellationToken)
     {
         var recurringTasks = tenantScope.ServiceProvider.GetServices<IRecurringTask>().ToList();
         var tenantCancellationToken = state.CancellationTokenSource?.Token ?? cancellationToken;
 
         foreach (var task in recurringTasks)
         {
-            var schedule = scheduleManager.GetScheduleFor(task.GetType());
-            var timer = schedule.CreateTimer(async () =>
-            {
-                if (tenantCancellationToken.IsCancellationRequested)
-                    return;
-
-                try
-                {
-                    await taskExecutor.ExecuteTaskAsync(task, tenantCancellationToken);
-                }
-                catch (OperationCanceledException e)
-                {
-                    logger.LogInformation(e, "Recurring task {TaskType} was cancelled", task.GetType().Name);
-                }
-                catch (Exception e) when (!e.IsFatal())
-                {
-                    // Log but don't rethrow - recurring tasks should not crash the host
-                    logger.LogError(e, "Recurring task {TaskType} failed with an error", task.GetType().Name);
-                }
-            }, logger);
-
-            state.ScheduledTimers.Add(timer);
             state.RecurringTasks.Add(task);
             await task.StartAsync(cancellationToken);
+            state.RecurringTaskRegistrations.Add(await _recurringTaskScheduler.RegisterAsync(tenant, task, taskExecutor, tenantCancellationToken));
         }
     }
 
@@ -196,6 +187,8 @@ public class TenantTaskLifecycleCoordinator(RecurringTaskScheduleManager schedul
         {
             // Already disposed by a concurrent path.
         }
+
+        await _recurringTaskScheduler.DisposeAsync();
     }
 
     private async Task StopTenantCoreAsync(TenantRuntimeState state, CancellationToken cancellationToken)
@@ -219,22 +212,18 @@ public class TenantTaskLifecycleCoordinator(RecurringTaskScheduleManager schedul
             }
         }
 
-        foreach (var timer in state.ScheduledTimers)
+        foreach (var registration in state.RecurringTaskRegistrations)
         {
             try
             {
-                await timer.DisposeAsync();
-            }
-            catch (ObjectDisposedException)
-            {
-                // Timer is already disposed; this can happen during concurrent shutdown paths.
+                await _recurringTaskScheduler.UnregisterAsync(registration);
             }
             catch (Exception e) when (!e.IsFatal())
             {
-                logger.LogWarning(e, "Failed to dispose a recurring timer while stopping tenant tasks");
+                logger.LogWarning(e, "Failed to unregister recurring task {TaskType} while stopping tenant tasks", registration.TaskType.Name);
             }
         }
-        state.ScheduledTimers.Clear();
+        state.RecurringTaskRegistrations.Clear();
 
         foreach (var backgroundTask in state.BackgroundTasks)
         {
@@ -319,8 +308,8 @@ public class TenantTaskLifecycleCoordinator(RecurringTaskScheduleManager schedul
         public SemaphoreSlim Gate { get; } = new(1, 1);
         public List<Task> RunningBackgroundTasks { get; } = [];
         public List<BackgroundTaskRegistration> BackgroundTasks { get; } = [];
-        public List<ScheduledTimer> ScheduledTimers { get; } = [];
         public List<IRecurringTask> RecurringTasks { get; } = [];
+        public List<TenantRecurringTaskScheduler.Registration> RecurringTaskRegistrations { get; } = [];
         public CancellationTokenSource? CancellationTokenSource { get; set; }
     }
 

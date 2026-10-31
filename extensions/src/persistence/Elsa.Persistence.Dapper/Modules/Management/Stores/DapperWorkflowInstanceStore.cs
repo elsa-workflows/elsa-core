@@ -26,7 +26,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     [RequiresUnreferencedCode("Calls Elsa.Persistence.Dapper.Modules.Management.Stores.DapperWorkflowInstanceStore.MapAsync(WorkflowInstanceRecord)")]
     public async ValueTask<WorkflowInstance?> FindAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        var record = await store.FindAsync(q => ApplyFilter(q, filter), cancellationToken);
+        var record = await store.FindAsync(q => ApplyFilter(q, filter), filter.TenantAgnostic, cancellationToken);
         return record == null ? null : Map(record);
     }
 
@@ -45,7 +45,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     [RequiresUnreferencedCode("Calls Elsa.Persistence.Dapper.Modules.Management.Stores.DapperWorkflowInstanceStore.MapAsync(Page<WorkflowInstanceRecord>)")]
     public async ValueTask<Page<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        var page = await store.FindManyAsync(q => ApplyFilter(q, filter), pageArgs, order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
+        var page = await store.FindManyAsync(q => ApplyFilter(q, filter), pageArgs, order.KeySelector.GetPropertyName(), order.Direction, filter.TenantAgnostic, cancellationToken);
         return Map(page);
     }
 
@@ -53,7 +53,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     [RequiresUnreferencedCode("Calls Elsa.Persistence.Dapper.Modules.Management.Stores.DapperWorkflowInstanceStore.MapAsync(IEnumerable<WorkflowInstanceRecord>)")]
     public async ValueTask<IEnumerable<WorkflowInstance>> FindManyAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        var records = await store.FindManyAsync(q => ApplyFilter(q, filter), cancellationToken);
+        var records = await store.FindManyAsync(q => ApplyFilter(q, filter), filter.TenantAgnostic, cancellationToken);
         return Map(records).ToList();
     }
 
@@ -61,14 +61,14 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     [RequiresUnreferencedCode("Calls Elsa.Persistence.Dapper.Modules.Management.Stores.DapperWorkflowInstanceStore.MapAsync(IEnumerable<WorkflowInstanceRecord>)")]
     public async ValueTask<IEnumerable<WorkflowInstance>> FindManyAsync<TOrderBy>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        var records = await store.FindManyAsync(q => ApplyFilter(q, filter), order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
+        var records = await store.FindManyAsync(q => ApplyFilter(q, filter), order.KeySelector.GetPropertyName(), order.Direction, filter.TenantAgnostic, cancellationToken);
         return Map(records).ToList();
     }
 
     /// <inheritdoc />
     public async ValueTask<long> CountAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        return await store.CountAsync(query => ApplyFilter(query, filter), cancellationToken);
+        return await store.CountAsync(query => ApplyFilter(query, filter), filter.TenantAgnostic, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -84,7 +84,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     /// <inheritdoc />
     public async ValueTask<Page<WorkflowInstanceSummary>> SummarizeManyAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        return await store.FindManyAsync<WorkflowInstanceSummary>(q => ApplyFilter(q, filter), pageArgs, order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
+        return await store.FindManyAsync<WorkflowInstanceSummary>(q => ApplyFilter(q, filter), pageArgs, order.KeySelector.GetPropertyName(), order.Direction, filter.TenantAgnostic, cancellationToken);
     }
 
     /// <inheritdoc />
@@ -96,13 +96,13 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<WorkflowInstanceSummary>> SummarizeManyAsync<TOrder>(WorkflowInstanceFilter filter, WorkflowInstanceOrder<TOrder> order, CancellationToken cancellationToken = default)
     {
-        return await store.FindManyAsync<WorkflowInstanceSummary>(q => ApplyFilter(q, filter), order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
+        return await store.FindManyAsync<WorkflowInstanceSummary>(q => ApplyFilter(q, filter), order.KeySelector.GetPropertyName(), order.Direction, filter.TenantAgnostic, cancellationToken);
     }
 
     /// <inheritdoc />
     public async ValueTask<IEnumerable<string>> FindManyIdsAsync(WorkflowInstanceFilter filter, CancellationToken cancellationToken = default)
     {
-        var items = await store.FindManyAsync<WorkflowInstanceId>(q => ApplyFilter(q, filter), cancellationToken);
+        var items = await store.FindManyAsync<WorkflowInstanceId>(q => ApplyFilter(q, filter), filter.TenantAgnostic, cancellationToken);
         return items.Select(x => x.Id).ToList();
     }
 
@@ -119,7 +119,7 @@ internal class DapperWorkflowInstanceStore(Store<WorkflowInstanceRecord> store, 
     /// <inheritdoc />
     public async ValueTask<Page<string>> FindManyIdsAsync<TOrderBy>(WorkflowInstanceFilter filter, PageArgs pageArgs, WorkflowInstanceOrder<TOrderBy> order, CancellationToken cancellationToken = default)
     {
-        var page = await store.FindManyAsync<WorkflowInstanceId>(q => ApplyFilter(q, filter), pageArgs, order.KeySelector.GetPropertyName(), order.Direction, cancellationToken);
+        var page = await store.FindManyAsync<WorkflowInstanceId>(q => ApplyFilter(q, filter), pageArgs, order.KeySelector.GetPropertyName(), order.Direction, filter.TenantAgnostic, cancellationToken);
         var ids = page.Items.Select(x => x.Id).ToList();
         return Page.Of(ids, page.TotalCount);
     }

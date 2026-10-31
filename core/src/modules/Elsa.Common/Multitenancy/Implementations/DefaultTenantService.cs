@@ -56,6 +56,7 @@ public class DefaultTenantService(IServiceScopeFactory scopeFactory, ITenantScop
     public async Task ActivateTenantsAsync(CancellationToken cancellationToken = default)
     {
         await RefreshAsync(cancellationToken);
+        await tenantEvents.AllTenantsActivatedAsync(cancellationToken);
     }
 
     public async Task DeactivateTenantsAsync(CancellationToken cancellationToken = default)
