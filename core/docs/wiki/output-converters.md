@@ -94,7 +94,7 @@ At definition validation and again at runtime, Elsa checks:
 - the converter ID is registered;
 - the declared output type is compatible with the converter source type;
 - the converter result type is assignable to the destination;
-- converter-owned settings validation (`ValidateSettings`) passes. `SettingsSchema` on the descriptor is metadata for Studio and other clients; it is not evaluated server-side. See the [3.11 upgrade note](../migrations/output-converter-settings-schema.md).
+- converter-owned settings validation (`ValidateSettings`) passes. `SettingsSchema` on the descriptor is metadata for Studio and other clients; it is not evaluated server-side. See the [3.10.1 upgrade note](../migrations/output-converter-settings-schema.md).
 
 Null native values bypass converter invocation and are delivered only to destinations that permit null. Conversion and result validation finish before Elsa writes the destination, so a failure leaves it unchanged.
 
