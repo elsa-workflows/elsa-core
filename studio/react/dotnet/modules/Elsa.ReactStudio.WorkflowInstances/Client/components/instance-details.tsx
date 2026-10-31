@@ -74,6 +74,10 @@ export function InstanceDetails({ instance, definitionName, customProperties }: 
 
 function localizedLogPersistence(display: LogPersistenceDisplay, translate: (key: string) => string) {
   if (display.kind === "expression") return display.text;
-  if (display.text === "Inherit" || display.text === "Include" || display.text === "Exclude") return translate(display.text);
-  return display.text;
+  switch (display.text) {
+    case "Include": return translate("Include");
+    case "Exclude": return translate("Exclude");
+    case "Inherit": return translate("Inherit");
+    default: return display.text;
+  }
 }

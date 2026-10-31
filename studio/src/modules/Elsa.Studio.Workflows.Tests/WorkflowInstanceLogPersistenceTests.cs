@@ -36,6 +36,7 @@ public sealed class WorkflowInstanceLogPersistenceTests
     [InlineData("""{"logPersistenceConfig":{"default":{"evaluationMode":"Expression","expression":{"type":"JavaScript","value":"LogPersistenceMode.Exclude"}}}}""", "LogPersistenceMode.Exclude", true)]
     [InlineData("""{"logPersistenceConfig":{"default":{"evaluationMode":"Expression","expression":{"type":"JavaScript","value":"Include"}}}}""", "Include", true)]
     [InlineData("""{"logPersistenceConfig":{"default":{"evaluationMode":"Expression","strategyType":"Elsa.Workflows.LogPersistence.Strategies.Include, Elsa.Workflows.Core","expression":{"type":"JavaScript","value":"  "}}}}""", "Inherit", false)]
+    [InlineData("""{"logPersistenceConfig":{"default":{"evaluationMode":"Strategy","strategyType":","}}}""", "Inherit", false)]
     [InlineData("""{"logPersistenceConfig":{"default":"not-an-object"},"logPersistenceMode":{"default":"Exclude"}}""", "Inherit", false)]
     [InlineData("{}", "Inherit", false)]
     public void Format_ReadsTheWorkflowModeWithoutThrowing(string json, string expected, bool isExpression)

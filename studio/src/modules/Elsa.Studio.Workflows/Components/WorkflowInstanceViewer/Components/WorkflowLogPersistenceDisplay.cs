@@ -106,7 +106,10 @@ internal static class WorkflowLogPersistenceDisplay
         if (string.IsNullOrWhiteSpace(typeName))
             return null;
 
-        var type = typeName.Split(',', 2, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)[0];
+        var type = typeName.Split(',', 2, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+        if (string.IsNullOrEmpty(type))
+            return null;
+
         var name = type.Split('.', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         return name.Length == 0 ? null : name[^1];
     }
