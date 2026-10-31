@@ -14,6 +14,8 @@ Add an explicit, synchronous conversion boundary between an activity's native ou
 
 **Primary Dependencies**: System.Text.Json, Microsoft.Extensions.DependencyInjection keyed services, JsonSchema.Net, FastEndpoints, Refit, MudBlazor
 
+**Note (3.10.1):** Server-side JsonSchema.Net schema evaluation was removed and is superseded by #9141.
+
 **Storage**: Existing workflow-definition JSON and persisted workflow exception state; no new database entity or migration
 
 **Testing**: xUnit, Elsa shared workflow fixtures, component/integration tests, bUnit for Studio
