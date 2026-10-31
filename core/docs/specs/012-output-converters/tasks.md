@@ -12,7 +12,7 @@
 
 **Purpose**: Add the one standards dependency and establish feature test locations.
 
-- [x] T001 Add a centrally versioned JsonSchema.Net dependency in `Directory.Packages.props` and reference it from `src/modules/Elsa.Workflows.Core/Elsa.Workflows.Core.csproj`
+- [x] T001 Add a centrally versioned JsonSchema.Net dependency in `Directory.Packages.props` and reference it from `src/modules/Elsa.Workflows.Core/Elsa.Workflows.Core.csproj`. Server-side schema evaluation was later removed and is superseded by #9141.
 - [x] T002 [P] Add output-converter test folders and shared test fixtures under `test/unit/Elsa.Workflows.Core.UnitTests/OutputConverters/`
 - [x] T003 [P] Add Studio output-converter test folder under `/Users/sipke/Projects/Elsa/elsa-studio/src/modules/Elsa.Studio.Workflows.Tests/OutputConverters/`
 
