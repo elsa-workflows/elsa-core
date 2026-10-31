@@ -3,6 +3,7 @@ using Elsa.Common.Multitenancy;
 using Elsa.Common.RecurringTasks;
 using Elsa.Workflows.Runtime.Services;
 using JetBrains.Annotations;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -14,7 +15,7 @@ namespace Elsa.Workflows.Runtime.Tasks;
 /// <remarks>
 /// Runs once per cycle for all tenants and signals only the tenants that have queue items; items with an empty, null or "*" tenant id signal the default tenant.
 /// Every tenant's worker is still started.
-/// Tenants with their own databases are not covered.
+/// A tenant whose items live in its own database (a connection string in its configuration) is asked separately in its own scope.
 /// </remarks>
 [RunOnceForAllTenants]
 [UsedImplicitly]
@@ -24,7 +25,8 @@ public class TriggerBookmarkQueueRecurringTask(
     ITenantAccessor? tenantAccessor,
     IBookmarkQueueStore? bookmarkQueueStore,
     ITenantService? tenantService,
-    ILogger<TriggerBookmarkQueueRecurringTask>? logger = null) : IRecurringTask
+    ILogger<TriggerBookmarkQueueRecurringTask>? logger = null,
+    ITenantScopeFactory? tenantScopeFactory = null) : IRecurringTask
 {
     private readonly ILogger _logger = logger ?? NullLogger<TriggerBookmarkQueueRecurringTask>.Instance;
     private Tenant? _tenant;
@@ -32,7 +34,7 @@ public class TriggerBookmarkQueueRecurringTask(
     /// <summary>
     /// Initializes a new instance that signals the executing tenant only.
     /// </summary>
-    [Obsolete("This constructor only signals the executing tenant. Use the constructor that accepts an IBookmarkQueueStore and an ITenantService to signal all tenants. Removed in the next major version.")]
+    [Obsolete("This constructor only signals the executing tenant. Use the constructor that accepts an IBookmarkQueueStore, an ITenantService and an ITenantScopeFactory to signal all tenants. Removed in the next major version.")]
     public TriggerBookmarkQueueRecurringTask(IBookmarkQueueWorker bookmarkQueueWorker, IBookmarkQueueSignaler signaler, ITenantAccessor? tenantAccessor = null)
         : this(bookmarkQueueWorker, signaler, tenantAccessor, null, null)
     {
@@ -63,16 +65,54 @@ public class TriggerBookmarkQueueRecurringTask(
             return;
         }
 
-        foreach (var tenant in await GetTenantsAsync(tenantService, stoppingToken))
+        var ownDatabaseTenants = await OwnDatabaseTenants.TryListAsync(tenantService, tenantScopeFactory, _logger, stoppingToken);
+        var signaled = new HashSet<string>();
+
+        try
         {
-            using (tenantAccessor.PushContext(tenant))
-                await signaler.TriggerAsync(stoppingToken);
+            foreach (var tenant in await GetTenantsAsync(tenantService, ownDatabaseTenants, stoppingToken))
+            {
+                signaled.Add(tenant.Id);
+
+                using (tenantAccessor.PushContext(tenant))
+                    await signaler.TriggerAsync(stoppingToken);
+            }
+        }
+        catch (Exception ex) when (ownDatabaseTenants.Count > 0 && OwnDatabaseTenants.IsRecoverable(ex, stoppingToken))
+        {
+            _logger.LogError(ex, "Failed to signal the tenants of the shared bookmark queue; tenants with their own database are still checked.");
+        }
+
+        foreach (var tenant in ownDatabaseTenants.Where(x => !signaled.Contains(x.Id)))
+        {
+            try
+            {
+                if (!await HasQueueItemsAsync(tenant, stoppingToken))
+                    continue;
+
+                using (tenantAccessor.PushContext(tenant))
+                    await signaler.TriggerAsync(stoppingToken);
+            }
+            catch (Exception ex) when (OwnDatabaseTenants.IsRecoverable(ex, stoppingToken))
+            {
+                _logger.LogError(ex, "Failed to signal tenant {TenantId} from its own database; it will be retried by the next run.", tenant.Id);
+            }
         }
     }
 
-    private async Task<IReadOnlyCollection<Tenant>> GetTenantsAsync(ITenantService service, CancellationToken cancellationToken)
+    private async Task<bool> HasQueueItemsAsync(Tenant tenant, CancellationToken cancellationToken)
     {
-        var tenantIds = bookmarkQueueStore is null ? null : await bookmarkQueueStore.ListTenantIdsAsync(cancellationToken);
+        await using var scope = tenantScopeFactory!.CreateScope(tenant);
+        var tenantIds = await scope.ServiceProvider.GetRequiredService<IBookmarkQueueStore>().ListTenantIdsAsync(cancellationToken);
+
+        return tenantIds is null || tenantIds.Count > 0;
+    }
+
+    private async Task<IReadOnlyCollection<Tenant>> GetTenantsAsync(ITenantService service, IReadOnlyCollection<Tenant> ownDatabaseTenants, CancellationToken cancellationToken)
+    {
+        await using var sharedScope = OwnDatabaseTenants.NeedsSharedScope(ownDatabaseTenants, tenantAccessor) ? tenantScopeFactory!.CreateScope(Tenant.Default) : null;
+        var store = sharedScope?.ServiceProvider.GetRequiredService<IBookmarkQueueStore>() ?? bookmarkQueueStore;
+        var tenantIds = store is null ? null : await store.ListTenantIdsAsync(cancellationToken);
 
         if (tenantIds is null)
             return (await service.ListAsync(cancellationToken)).DistinctBy(x => x.Id).ToList();

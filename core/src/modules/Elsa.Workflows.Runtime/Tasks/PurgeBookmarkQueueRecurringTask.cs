@@ -9,7 +9,7 @@ namespace Elsa.Workflows.Runtime.Tasks;
 /// </summary>
 /// <remarks>
 /// Runs once per cycle for all tenants; items with an empty, null or "*" tenant id are purged under the default tenant.
-/// Tenants with their own databases are not covered.
+/// A tenant whose items live in its own database (a connection string in its configuration) is purged separately in its own scope.
 /// </remarks>
 [RunOnceForAllTenants]
 [UsedImplicitly]

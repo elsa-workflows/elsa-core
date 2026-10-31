@@ -8,6 +8,7 @@ using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 using Elsa.Workflows.Runtime.Services;
 using JetBrains.Annotations;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -20,6 +21,7 @@ namespace Elsa.Workflows.Runtime;
 /// When <see cref="ITenantService"/> and <see cref="ITenantAccessor"/> are available, one pass covers all tenants: each batch is read tenant-agnostic and written under the tenant of the item.
 /// Items of tenants that <see cref="ITenantService"/> cannot find are purged under a synthetic tenant with the same id, because their TTL has already elapsed.
 /// Items that could not be deleted are left in the store and skipped by the rest of the pass.
+/// A tenant whose items live in its own database (a connection string in its configuration) is purged separately in its own scope.
 /// </remarks>
 [UsedImplicitly]
 public class DefaultBookmarkQueuePurger(
@@ -30,12 +32,13 @@ public class DefaultBookmarkQueuePurger(
     IOptions<BookmarkQueuePurgeOptions> options,
     ILogger<DefaultBookmarkQueuePurger> logger,
     ITenantService? tenantService,
-    ITenantAccessor? tenantAccessor) : IBookmarkQueuePurger
+    ITenantAccessor? tenantAccessor,
+    ITenantScopeFactory? tenantScopeFactory = null) : IBookmarkQueuePurger
 {
     /// <summary>
     /// Initializes a new instance that purges the executing tenant only.
     /// </summary>
-    [Obsolete("This constructor only purges the executing tenant. Use the constructor that accepts an ITenantService and an ITenantAccessor to purge all tenants. Removed in the next major version.")]
+    [Obsolete("This constructor only purges the executing tenant. Use the constructor that accepts an ITenantService, an ITenantAccessor and an ITenantScopeFactory to purge all tenants. Removed in the next major version.")]
     public DefaultBookmarkQueuePurger(
         IBookmarkQueueStore store,
         IBookmarkQueueDeadLetterStore deadLetterStore,
@@ -51,6 +54,63 @@ public class DefaultBookmarkQueuePurger(
 
     /// <inheritdoc />
     public async Task PurgeAsync(CancellationToken cancellationToken = default)
+    {
+        var ownDatabaseTenants = IsMultitenant
+            ? await OwnDatabaseTenants.TryListAsync(tenantService, tenantScopeFactory, logger, cancellationToken)
+            : [];
+
+        try
+        {
+            await PurgeSharedAsync(ownDatabaseTenants, cancellationToken);
+        }
+        catch (Exception ex) when (ownDatabaseTenants.Count > 0 && OwnDatabaseTenants.IsRecoverable(ex, cancellationToken))
+        {
+            logger.LogError(ex, "Failed to purge the shared bookmark queue; tenants with their own database are still purged.");
+        }
+
+        if (ownDatabaseTenants.Count == 0)
+            return;
+
+        logger.LogInformation("Purging the bookmark queue separately for {Count} tenant(s) with their own database.", ownDatabaseTenants.Count);
+        logger.LogDebug("Tenants with their own database: {TenantIds}", string.Join(", ", ownDatabaseTenants.Select(x => x.Id)));
+
+        foreach (var tenant in ownDatabaseTenants)
+        {
+            try
+            {
+                await using var scope = tenantScopeFactory!.CreateScope(tenant);
+                await CreateScopedPurger(scope.ServiceProvider, multitenant: false).PurgeCoreAsync(cancellationToken);
+            }
+            catch (Exception ex) when (OwnDatabaseTenants.IsRecoverable(ex, cancellationToken))
+            {
+                logger.LogError(ex, "Failed to purge the bookmark queue of tenant {TenantId} from its own database; it will be retried by the next pass.", tenant.Id);
+            }
+        }
+    }
+
+    private async Task PurgeSharedAsync(IReadOnlyCollection<Tenant> ownDatabaseTenants, CancellationToken cancellationToken)
+    {
+        if (!OwnDatabaseTenants.NeedsSharedScope(ownDatabaseTenants, tenantAccessor))
+        {
+            await PurgeCoreAsync(cancellationToken);
+            return;
+        }
+
+        await using var sharedScope = tenantScopeFactory!.CreateScope(Tenant.Default);
+        await CreateScopedPurger(sharedScope.ServiceProvider, multitenant: true).PurgeCoreAsync(cancellationToken);
+    }
+
+    private DefaultBookmarkQueuePurger CreateScopedPurger(IServiceProvider services, bool multitenant) => new(
+        services.GetRequiredService<IBookmarkQueueStore>(),
+        services.GetRequiredService<IBookmarkQueueDeadLetterStore>(),
+        services.GetRequiredService<IBookmarkQueueDeadLetterManager>(),
+        systemClock,
+        options,
+        logger,
+        multitenant ? tenantService : null,
+        multitenant ? tenantAccessor : null);
+
+    private async Task PurgeCoreAsync(CancellationToken cancellationToken)
     {
         var now = systemClock.UtcNow;
         var tenants = new Dictionary<string, Tenant?>();
