@@ -3,7 +3,7 @@ using Elsa.Workflows.Notifications;
 
 namespace Elsa.Workflows.IntegrationTests.Scenarios.ActivityNotificationsMiddleware;
 
-public class TestHandler : INotificationHandler<ActivityExecuting>, INotificationHandler<ActivityExecuted>
+public class TestHandler : INotificationHandler<ActivityExecuting>, INotificationHandler<ActivityExecuted>, INotificationHandler<ActivityFaulted>
 {
     private readonly Spy _spy;
 
@@ -21,6 +21,14 @@ public class TestHandler : INotificationHandler<ActivityExecuting>, INotificatio
     public Task HandleAsync(ActivityExecuted notification, CancellationToken cancellationToken)
     {
         _spy.ActivityExecutedWasCalled = true;
+        return Task.CompletedTask;
+    }
+
+    public Task HandleAsync(ActivityFaulted notification, CancellationToken cancellationToken)
+    {
+        _spy.ActivityFaultedWasCalled = true;
+        _spy.FaultException = notification.Exception;
+        _spy.StatusWhenFaulted = notification.ActivityExecutionContext.Status;
         return Task.CompletedTask;
     }
 }
