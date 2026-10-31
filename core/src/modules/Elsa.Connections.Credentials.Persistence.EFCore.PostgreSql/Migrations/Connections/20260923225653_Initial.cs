@@ -1,5 +1,5 @@
+using System;
 using Elsa.Persistence.EFCore;
-﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
