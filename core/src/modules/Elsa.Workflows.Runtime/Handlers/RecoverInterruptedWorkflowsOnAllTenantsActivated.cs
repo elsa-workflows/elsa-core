@@ -14,6 +14,7 @@ internal sealed class RecoverInterruptedWorkflowsOnAllTenantsActivated(IServiceS
     public async Task AllTenantsActivatedAsync(CancellationToken cancellationToken)
     {
         await using var scope = scopeFactory.CreateAsyncScope();
+
         var task = ActivatorUtilities.CreateInstance<RecoverInterruptedWorkflowsStartupTask>(scope.ServiceProvider);
         var taskExecutor = scope.ServiceProvider.GetRequiredService<ITaskExecutor>();
         await taskExecutor.ExecuteTaskAsync(task, cancellationToken);

@@ -11,7 +11,7 @@ namespace Elsa.Workflows.Runtime.Services;
 internal static class InterruptedWorkflowRequeuer
 {
     /// <summary>
-    /// Collects first (restarting shrinks the filtered set, so paging would skip rows), then restarts each distinct instance once under its tenant; returns the count restarted.
+    /// Collects first (restarting shrinks the filtered set, so paging would skip rows), then restarts each instance not yet in <paramref name="seen"/> once under its tenant; returns the count restarted. Share <paramref name="seen"/> across the scans of one run to dedupe them.
     /// </summary>
     public static async Task<int> RequeueAsync(
         IAsyncEnumerable<WorkflowInstanceSummary> instances,
@@ -19,10 +19,11 @@ internal static class InterruptedWorkflowRequeuer
         ITenantService? tenantService,
         ITenantAccessor? tenantAccessor,
         ILogger logger,
+        ISet<string>? seen,
         CancellationToken cancellationToken)
     {
         var collected = new List<(string Id, string? TenantId)>();
-        var seen = new HashSet<string>();
+        seen ??= new HashSet<string>();
         var tenants = new Dictionary<string, Tenant?>();
         var requeued = 0;
 

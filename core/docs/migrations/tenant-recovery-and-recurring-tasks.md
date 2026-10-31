@@ -4,7 +4,8 @@
 
 ## Interrupted-workflow recovery
 
-- Recovery runs once after all tenants are activated. `ITenantService.ActivateTenantsAsync` raises the new `IAllTenantsActivatedEvent` and the scan uses one tenant-agnostic query. This assumes all tenants share one database.
+- Recovery runs once after all tenants are activated. `ITenantService.ActivateTenantsAsync` raises the new `IAllTenantsActivatedEvent` and the scan uses one tenant-agnostic query.
+- A tenant with any non-blank value under `ConnectionStrings` in `Tenant.Configuration`, including the default tenant, is assumed to have its own database. It is scanned separately in its own tenant scope, at startup and in each recurring cycle. Any connection string triggers this, also non-database ones such as RabbitMq or Redis, at the cost of one extra harmless query. An override equal to the default database causes no double restart. Hosts that switch databases per tenant some other way (Dapper, MongoDB) are not detected.
 - Tenants activated later by `RefreshAsync` (added or re-enabled) are not scanned until the next host or shell activation.
 - `RestartInterruptedWorkflowsTask` is now `[RunOnceForAllTenants]`: it runs once per cycle under the default tenant, or the lowest tenant id if there is no default tenant.
 
@@ -13,7 +14,7 @@
 - One timer per task type runs every active tenant. Runs per task type are bounded by `RecurringTaskOptions.MaxDegreeOfParallelism` (default 4).
 - The interval is now measured between run starts, not from the end of the previous run. A run longer than the interval skips ticks and never overlaps itself for the same tenant.
 - The new `[RunOnceForAllTenants]` attribute makes a task run once per cycle instead of once per tenant.
-- `ProcessWorkflowDispatchOutboxRecurringTask` no longer takes a task-level single-node lock.
+- `ProcessWorkflowDispatchOutboxRecurringTask` no longer takes a task-level single-node lock. It calls `IWorkflowDispatchOutboxProcessor.TryProcessAsync`, so a tick skips a tenant whose processor lock is held instead of waiting for it.
 
 ## What to do
 

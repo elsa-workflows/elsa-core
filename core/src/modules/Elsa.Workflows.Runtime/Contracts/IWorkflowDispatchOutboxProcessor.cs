@@ -8,7 +8,7 @@ public interface IWorkflowDispatchOutboxProcessor
     /// <summary>
     /// Processes pending outbox items.
     /// </summary>
-    /// <remarks>Implementations must lock per tenant themselves; the recurring task takes no lock.</remarks>
+    /// <remarks>Implementations must lock per tenant themselves; the recurring task takes no lock and calls <see cref="TryProcessAsync"/>.</remarks>
     Task ProcessAsync(CancellationToken cancellationToken = default);
 
     /// <summary>

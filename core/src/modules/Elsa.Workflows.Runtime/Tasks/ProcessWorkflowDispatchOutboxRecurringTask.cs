@@ -20,6 +20,6 @@ public class ProcessWorkflowDispatchOutboxRecurringTask(IServiceProvider service
             return;
 
         var processor = serviceProvider.GetRequiredService<IWorkflowDispatchOutboxProcessor>();
-        await processor.ProcessAsync(cancellationToken);
+        await processor.TryProcessAsync(cancellationToken);
     }
 }

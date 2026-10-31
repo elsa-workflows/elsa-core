@@ -16,7 +16,7 @@ namespace Elsa.Workflows.Runtime.Tasks;
 /// </summary>
 /// <remarks>
 /// Runs once per cycle for all tenants; instances with an empty, null or "*" tenant id restart under the default tenant.
-/// Tenants with their own databases are not covered.
+/// A tenant whose instances live in its own database (a connection string in its configuration) is scanned separately in its own scope.
 /// </remarks>
 [RunOnceForAllTenants]
 [SingleNodeTask(SingleNodeTaskScope.Host)]
@@ -27,32 +27,46 @@ public class RestartInterruptedWorkflowsTask(
     ILogger<RestartInterruptedWorkflowsTask> logger,
     IOptions<RuntimeOptions> options, 
     ISystemClock systemClock,
-    ITenantService? tenantService = null,
-    ITenantAccessor? tenantAccessor = null) : RecurringTask
+    ITenantService? tenantService,
+    ITenantAccessor? tenantAccessor,
+    ITenantScopeFactory? tenantScopeFactory = null) : RecurringTask
 {
+    [Obsolete("Use the constructor that accepts an ITenantScopeFactory instead. Without it, tenants with their own database are not recovered. Removed in the next major version.")]
+    public RestartInterruptedWorkflowsTask(
+        IWorkflowRestarter workflowRestarter,
+        IWorkflowInstanceStore workflowInstanceStore,
+        ILogger<RestartInterruptedWorkflowsTask> logger,
+        IOptions<RuntimeOptions> options,
+        ISystemClock systemClock,
+        ITenantService? tenantService = null,
+        ITenantAccessor? tenantAccessor = null) : this(workflowRestarter, workflowInstanceStore, logger, options, systemClock, tenantService, tenantAccessor, null)
+    {
+    }
+
     /// <inheritdoc />
     public override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        var workflowInstanceFilter = CreateWorkflowInstanceFilter();
+        var cutoffTimestamp = systemClock.UtcNow - options.Value.InactivityThreshold;
         var batchSize = options.Value.RestartInterruptedWorkflowsBatchSize;
-        var workflowInstances = workflowInstanceStore.EnumerateSummariesAsync(workflowInstanceFilter, batchSize, cancellationToken);
 
         logger.LogInformation("Restarting interrupted workflows.");
-        var restarted = await InterruptedWorkflowRequeuer.RequeueAsync(workflowInstances, workflowRestarter, tenantService, tenantAccessor, logger, cancellationToken);
+        var restarted = await OwnDatabaseTenantRecovery.RequeueAsync(
+            (store, tenantAgnostic) => store.EnumerateSummariesAsync(CreateWorkflowInstanceFilter(cutoffTimestamp, tenantAgnostic), batchSize, cancellationToken),
+            workflowInstanceStore,
+            workflowRestarter,
+            tenantService,
+            tenantAccessor,
+            tenantScopeFactory,
+            logger,
+            cancellationToken);
         logger.LogInformation("Finished restarting interrupted workflows; restarted {Count} instance(s).", restarted);
     }
 
-    private WorkflowInstanceFilter CreateWorkflowInstanceFilter()
+    private static WorkflowInstanceFilter CreateWorkflowInstanceFilter(DateTimeOffset cutoffTimestamp, bool tenantAgnostic) => new()
     {
-        var livenessThreshold = options.Value.InactivityThreshold;
-        var now = systemClock.UtcNow;
-        var cutoffTimestamp = now - livenessThreshold;
-        return new()
-        {
-            IsExecuting = true,
-            BeforeLastUpdated = cutoffTimestamp,
-            WorkflowStatus = WorkflowStatus.Running,
-            TenantAgnostic = true,
-        };
-    }
+        IsExecuting = true,
+        BeforeLastUpdated = cutoffTimestamp,
+        WorkflowStatus = WorkflowStatus.Running,
+        TenantAgnostic = tenantAgnostic,
+    };
 }

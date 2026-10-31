@@ -239,7 +239,7 @@ Recent graceful shutdown work added node-local quiescence and drain concepts. So
 
 The interrupted-workflow scan runs once per host or shell activation, after all tenants are activated, and requeues each instance under its own tenant (instances with a null, empty or `*` tenant id run under the default tenant). Tenants activated later through `RefreshAsync` (tenant added or re-enabled) get no recovery scan; their `Interrupted` instances are recovered on the next host or shell activation.
 
-The recurring `RestartInterruptedWorkflowsTask` restarts running instances still marked as executing and not updated within the inactivity threshold, once per cycle across all tenants. Both run one node at a time. Instances whose tenant is not active on this host are skipped with a warning, and tenants with their own databases are not covered.
+The recurring `RestartInterruptedWorkflowsTask` restarts running instances still marked as executing and not updated within the inactivity threshold, once per cycle across all tenants. Both run one node at a time. Instances whose tenant is not active on this host are skipped with a warning. A tenant with any connection string in its configuration is also scanned separately in its own scope, at startup and each cycle.
 
 The design intent is captured in [specs/002-graceful-shutdown/plan.md](../specs/002-graceful-shutdown/plan.md).
 

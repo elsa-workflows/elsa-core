@@ -2,6 +2,7 @@ using Elsa.Common;
 using Elsa.Common.Features;
 using Elsa.Common.Multitenancy;
 using Elsa.Common.RecurringTasks;
+using Elsa.Common.Services;
 using Elsa.Extensions;
 using Elsa.Features.Abstractions;
 using Elsa.Features.Attributes;
@@ -9,10 +10,12 @@ using Elsa.Features.Services;
 using Elsa.Testing.Shared;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Stores;
 using Elsa.Workflows.Runtime;
 using Elsa.Workflows.Runtime.Features;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.Tasks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -30,6 +33,8 @@ namespace Elsa.Workflows.IntegrationTests.GracefulShutdown;
 public class RestartInterruptedWorkflowsMultitenantTests : IAsyncDisposable
 {
 
+    private const string OwnTenantId = "tenant-own";
+
     private static readonly string[] Expected =
     [
         "instance-a@tenant-a",
@@ -40,6 +45,7 @@ public class RestartInterruptedWorkflowsMultitenantTests : IAsyncDisposable
 
     private readonly IServiceProvider _services;
     private readonly RecordingRestarter _restarter = new();
+    private readonly MemoryWorkflowInstanceStore _ownStore = new(new MemoryStore<WorkflowInstance>(), new FixedTenantAccessor(OwnTenantId));
     private readonly ManualSchedule _schedule = new();
 
     public RestartInterruptedWorkflowsMultitenantTests(ITestOutputHelper testOutputHelper)
@@ -48,8 +54,8 @@ public class RestartInterruptedWorkflowsMultitenantTests : IAsyncDisposable
             .ConfigureElsa(elsa =>
             {
                 elsa.UseWorkflowRuntime();
-                elsa.Configure<MultitenancyFeature>(feature => feature.UseTenantsProvider(_ => new FixedTenantsProvider("tenant-a", "tenant-b")));
-                elsa.Use<RecordingRestarterFeature>(feature => feature.Restarter = _restarter);
+                elsa.Configure<MultitenancyFeature>(feature => feature.UseTenantsProvider(_ => new FixedTenantsProvider("tenant-a", "tenant-b", OwnTenantId)));
+                elsa.Use<RecordingRestarterFeature>(feature => { feature.Restarter = _restarter; feature.OwnDatabaseStore = _ownStore; });
             })
             .Build();
     }
@@ -84,6 +90,36 @@ public class RestartInterruptedWorkflowsMultitenantTests : IAsyncDisposable
         Assert.Equal(Expected, _restarter.Snapshot().Select(x => $"{x.InstanceId}@{x.TenantId}").Order());
     }
 
+    [Fact(DisplayName = "ActivateTenantsAsync requeues an Interrupted instance of a tenant with its own database once, under that tenant")]
+    public async Task RecoveryScanRequeuesOwnDatabaseTenantInstanceOnce()
+    {
+        await SeedOwnDatabaseAsync(WorkflowSubStatus.Interrupted, false, DateTimeOffset.UtcNow);
+
+        await _services.GetRequiredService<ITenantService>().ActivateTenantsAsync();
+
+        Assert.Equal(["instance-own@" + OwnTenantId], _restarter.Snapshot().Select(x => $"{x.InstanceId}@{x.TenantId}"));
+    }
+
+    [Fact(DisplayName = "One cycle restarts a stale instance of a tenant with its own database once, under that tenant")]
+    public async Task RestartsOwnDatabaseTenantInstanceOncePerCycle()
+    {
+        using (var scope = _services.CreateScope())
+        {
+            var clock = scope.ServiceProvider.GetRequiredService<ISystemClock>();
+            var threshold = scope.ServiceProvider.GetRequiredService<IOptions<RuntimeOptions>>().Value.InactivityThreshold;
+            await SeedOwnDatabaseAsync(WorkflowSubStatus.Executing, true, clock.UtcNow - threshold - TimeSpan.FromMinutes(1));
+        }
+
+        _services.GetRequiredService<RecurringTaskScheduleManager>().ScheduledTasks[typeof(RestartInterruptedWorkflowsTask)] = _schedule;
+        await _services.GetRequiredService<ITenantService>().ActivateTenantsAsync();
+
+        await _schedule.TickAsync();
+        await _restarter.WaitForRestartsAsync(1);
+        await DisposeAsync();
+
+        Assert.Equal(["instance-own@" + OwnTenantId], _restarter.Snapshot().Select(x => $"{x.InstanceId}@{x.TenantId}"));
+    }
+
     public async ValueTask DisposeAsync()
     {
         if (_services is IAsyncDisposable disposable)
@@ -99,6 +135,9 @@ public class RestartInterruptedWorkflowsMultitenantTests : IAsyncDisposable
         await SeedInstanceAsync(store, "instance-agnostic", Tenant.AgnosticTenantId, WorkflowStatus.Running, subStatus, isExecuting, timestamp);
         await SeedInstanceAsync(store, "instance-default", Tenant.DefaultTenantId, WorkflowStatus.Running, subStatus, isExecuting, timestamp);
     }
+
+    private Task SeedOwnDatabaseAsync(WorkflowSubStatus subStatus, bool isExecuting, DateTimeOffset timestamp) =>
+        SeedInstanceAsync(_ownStore, "instance-own", OwnTenantId, WorkflowStatus.Running, subStatus, isExecuting, timestamp);
 
     private static async Task SeedInstanceAsync(IWorkflowInstanceStore store, string id, string tenantId, WorkflowStatus status, WorkflowSubStatus subStatus, bool isExecuting, DateTimeOffset timestamp)
     {
@@ -129,10 +168,12 @@ public class RestartInterruptedWorkflowsMultitenantTests : IAsyncDisposable
     private sealed class RecordingRestarterFeature(IModule module) : FeatureBase(module)
     {
         public RecordingRestarter Restarter { get; set; } = null!;
+        public IWorkflowInstanceStore OwnDatabaseStore { get; set; } = null!;
 
         public override void Apply()
         {
             Services.Replace(ServiceDescriptor.Scoped<IWorkflowRestarter>(sp => Restarter.Bind(sp.GetRequiredService<ITenantAccessor>())));
+            Services.Replace(ServiceDescriptor.Scoped<IWorkflowInstanceStore>(sp => sp.GetRequiredService<ITenantAccessor>().Tenant?.Configuration["ConnectionStrings:Sqlite"] is null ? sp.GetRequiredService<MemoryWorkflowInstanceStore>() : OwnDatabaseStore));
         }
     }
 
@@ -149,12 +190,24 @@ public class RestartInterruptedWorkflowsMultitenantTests : IAsyncDisposable
         }
     }
 
+    private sealed class FixedTenantAccessor(string tenantId) : ITenantAccessor
+    {
+        public string TenantId => tenantId;
+
+        public Tenant? Tenant => null;
+
+        public IDisposable PushContext(Tenant? tenant) => throw new NotSupportedException();
+    }
+
     private sealed class FixedTenantsProvider(params string[] tenantIds) : ITenantsProvider
     {
         public Task<IEnumerable<Tenant>> ListAsync(CancellationToken cancellationToken = default)
         {
-            return Task.FromResult(tenantIds.Select(id => new Tenant { Id = id, Name = id }));
+            return Task.FromResult(tenantIds.Select(id => new Tenant { Id = id, Name = id, Configuration = ConfigurationFor(id) }));
         }
+
+        private static IConfiguration ConfigurationFor(string id) =>
+            new ConfigurationBuilder().AddInMemoryCollection(id == OwnTenantId ? new Dictionary<string, string?> { ["ConnectionStrings:Sqlite"] = "Data Source=own.db" } : new Dictionary<string, string?>()).Build();
 
         public async Task<Tenant?> FindAsync(TenantFilter filter, CancellationToken cancellationToken = default)
         {

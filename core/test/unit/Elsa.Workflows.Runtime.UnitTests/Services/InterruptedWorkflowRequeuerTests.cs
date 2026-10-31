@@ -120,7 +120,7 @@ public class InterruptedWorkflowRequeuerTests
     private Task<int> RequeueAsync(params WorkflowInstanceSummary[] instances) => RequeueAsync(PageThrough(instances.ToList(), int.MaxValue));
 
     private Task<int> RequeueAsync(IAsyncEnumerable<WorkflowInstanceSummary> instances, CancellationToken cancellationToken = default) =>
-        InterruptedWorkflowRequeuer.RequeueAsync(instances, _restarter, _tenantService, _tenantAccessor, _logger, cancellationToken);
+        InterruptedWorkflowRequeuer.RequeueAsync(instances, _restarter, _tenantService, _tenantAccessor, _logger, null, cancellationToken);
 
     private List<int> WarningCounts() => _logger.ReceivedCalls()
         .Where(x => x.GetMethodInfo().Name == nameof(ILogger.Log) && (LogLevel)x.GetArguments()[0]! == LogLevel.Warning)

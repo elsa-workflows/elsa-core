@@ -7,6 +7,7 @@ namespace Elsa.Common.RecurringTasks;
 /// <remarks>
 /// The task runs under the default tenant when it is active, otherwise under the active tenant with the lowest ID
 /// (ordinal comparison). Tenants that are stopping are skipped. The attribute is inherited by subclasses.
+/// A task with <c>[SingleNodeTask(SingleNodeTaskScope.Host)]</c> usually wants this attribute too, otherwise every tenant's run waits on the same host-wide lock.
 /// </remarks>
 [AttributeUsage(AttributeTargets.Class)]
 public sealed class RunOnceForAllTenantsAttribute : Attribute;
