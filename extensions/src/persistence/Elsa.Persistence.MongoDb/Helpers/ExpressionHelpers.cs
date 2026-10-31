@@ -39,6 +39,7 @@ internal static class ExpressionHelpers
             UpdatedAt = workflowInstance.UpdatedAt,
             FinishedAt = workflowInstance.FinishedAt,
             IncidentCount = workflowInstance.IncidentCount,
+            TenantId = workflowInstance.TenantId,
         };
 
     public static readonly Expression<Func<WorkflowInstance, WorkflowInstanceId>> WorkflowInstanceId = workflowInstance => new()

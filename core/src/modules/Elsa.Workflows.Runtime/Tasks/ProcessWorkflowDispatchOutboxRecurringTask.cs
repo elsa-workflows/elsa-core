@@ -10,7 +10,6 @@ namespace Elsa.Workflows.Runtime.Tasks;
 /// <summary>
 /// Periodically processes pending workflow dispatch outbox items.
 /// </summary>
-[SingleNodeTask]
 [UsedImplicitly]
 public class ProcessWorkflowDispatchOutboxRecurringTask(IServiceProvider serviceProvider, IOptions<WorkflowDispatcherOptions> options) : RecurringTask
 {
@@ -21,6 +20,6 @@ public class ProcessWorkflowDispatchOutboxRecurringTask(IServiceProvider service
             return;
 
         var processor = serviceProvider.GetRequiredService<IWorkflowDispatchOutboxProcessor>();
-        await processor.ProcessAsync(cancellationToken);
+        await processor.TryProcessAsync(cancellationToken);
     }
 }

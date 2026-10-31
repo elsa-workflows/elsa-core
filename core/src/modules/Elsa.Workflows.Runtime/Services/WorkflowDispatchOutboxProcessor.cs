@@ -127,7 +127,7 @@ public class WorkflowDispatchOutboxProcessor(
         }
         catch (TimeoutException e) when (!cancellationToken.IsCancellationRequested)
         {
-            logger.LogDebug(e, "Skipping eager workflow dispatch outbox processing because the processor lock could not be acquired.");
+            logger.LogDebug(e, "Skipping workflow dispatch outbox processing because the processor lock could not be acquired.");
             return false;
         }
 
@@ -135,7 +135,7 @@ public class WorkflowDispatchOutboxProcessor(
         {
             if (handle == null)
             {
-                logger.LogDebug("Skipping eager workflow dispatch outbox processing because another processor owns the lock.");
+                logger.LogDebug("Skipping workflow dispatch outbox processing because another processor owns the lock.");
                 return false;
             }
 

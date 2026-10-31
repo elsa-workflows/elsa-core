@@ -7,6 +7,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
+using Elsa.Workflows.Runtime;
 using Elsa.Workflows.State;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
@@ -119,6 +120,80 @@ public sealed class MongoWorkflowInstanceStoreTenantIsolationTests : IAsyncLifet
         Assert.Equal(WorkflowStatus.Running, stored.Status);
         Assert.Equal(WorkflowSubStatus.Interrupted, stored.SubStatus);
         Assert.False(stored.IsExecuting);
+    }
+
+    [Theory]
+    [InlineData(true, new[] { "i-default", "i-star", "i-t1", "i-t2" })]
+    [InlineData(false, new[] { "i-star", "i-t1" })]
+    public async Task ReadsFollowTenantAgnostic(bool tenantAgnostic, string[] expectedIds)
+    {
+        // Arrange
+        var tenantById = await SeedTenantInstancesAsync();
+
+        // Act
+        using var tenant1 = _tenantAccessor.PushContext(new Tenant { Id = "t1" });
+        var filter = new WorkflowInstanceFilter { TenantAgnostic = tenantAgnostic };
+        var summaries = await _store.EnumerateSummariesAsync(filter, 1).ToListAsync();
+        var count = await _store.CountAsync(filter);
+
+        // Assert
+        Assert.Equal(expectedIds, summaries.Select(x => x.Id).Order());
+        Assert.All(summaries, x => Assert.Equal(tenantById[x.Id], x.TenantId));
+        Assert.Equal(expectedIds.Length, count);
+    }
+
+    [Theory]
+    [InlineData(true, new[] { "i-default", "i-star", "i-t1", "i-t2" })]
+    [InlineData(false, new[] { "i-star", "i-t1" })]
+    public async Task FindMethodsFollowTenantAgnostic(bool tenantAgnostic, string[] expectedIds)
+    {
+        // Arrange
+        await SeedTenantInstancesAsync();
+
+        // Act
+        using var tenant1 = _tenantAccessor.PushContext(new Tenant { Id = "t1" });
+        var filter = new WorkflowInstanceFilter { TenantAgnostic = tenantAgnostic };
+        var instances = await _store.FindManyAsync(filter);
+        var ids = await _store.FindManyIdsAsync(filter);
+        var foundDefault = await _store.FindAsync(new WorkflowInstanceFilter { Id = "i-default", TenantAgnostic = tenantAgnostic });
+        var foundOther = await _store.FindAsync(new WorkflowInstanceFilter { Id = "i-t2", TenantAgnostic = tenantAgnostic });
+
+        // Assert
+        Assert.Equal(expectedIds, instances.Select(x => x.Id).Order());
+        Assert.Equal(expectedIds, ids.Order());
+        Assert.Equal(tenantAgnostic, foundDefault != null);
+        Assert.Equal(tenantAgnostic, foundOther != null);
+    }
+
+    [Fact]
+    public async Task DeleteWithTenantAgnostic_StaysTenantScoped()
+    {
+        // Arrange
+        await SeedTenantInstancesAsync();
+
+        // Act
+        long deleted;
+        using (var tenant1 = _tenantAccessor.PushContext(new Tenant { Id = "t1" }))
+            deleted = await _store.DeleteAsync(new WorkflowInstanceFilter { TenantAgnostic = true });
+
+        // Assert
+        Assert.Equal(1, deleted);
+        using var verify = _tenantAccessor.PushContext(new Tenant { Id = "t1" });
+        var remaining = await _store.FindManyIdsAsync(new WorkflowInstanceFilter { TenantAgnostic = true });
+        Assert.Equal(["i-default", "i-star", "i-t2"], remaining.Order());
+    }
+
+    private async Task<Dictionary<string, string?>> SeedTenantInstancesAsync()
+    {
+        var tenantById = new Dictionary<string, string?> { ["i-t1"] = "t1", ["i-t2"] = "t2", ["i-default"] = null, ["i-star"] = Tenant.AgnosticTenantId };
+
+        foreach (var (id, tenantId) in tenantById)
+        {
+            using var scope = _tenantAccessor.PushContext(tenantId == null ? null : new Tenant { Id = tenantId });
+            await _store.AddAsync(Instance(id, WorkflowStatus.Running, WorkflowSubStatus.Interrupted, isExecuting: false));
+        }
+
+        return tenantById;
     }
 
     private static WorkflowInstance Instance(string id, WorkflowStatus status, WorkflowSubStatus subStatus, bool isExecuting)

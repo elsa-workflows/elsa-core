@@ -1,11 +1,16 @@
+using System.Reflection;
 using Elsa.Common;
 using Elsa.Common.Models;
 using Elsa.Common.Multitenancy;
+using Elsa.Common.RecurringTasks;
 using Elsa.Workflows.Management;
 using Elsa.Workflows.Management.Filters;
 using Elsa.Workflows.Management.Models;
 using Elsa.Workflows.Runtime.Options;
+using Elsa.Workflows.Runtime.StartupTasks;
 using Elsa.Workflows.Runtime.Tasks;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 
@@ -57,15 +62,19 @@ public class RestartInterruptedWorkflowsTaskTests
 
         Assert.Equal(new[] { "tenant-a", "tenant-b" }, observedTenantIds);
         Assert.Null(tenantAccessor.Tenant);
+        await workflowInstanceStore.Received().SummarizeManyAsync(
+            Arg.Is<WorkflowInstanceFilter>(f => f.TenantAgnostic && f.IsExecuting == true && f.WorkflowStatus == WorkflowStatus.Running && f.BeforeLastUpdated == now - TimeSpan.FromMinutes(5)),
+            Arg.Any<PageArgs>(),
+            Arg.Any<CancellationToken>());
         await workflowRestarter.Received(1).RestartWorkflowAsync("workflow-1", Arg.Any<CancellationToken>());
         await workflowRestarter.Received(1).RestartWorkflowAsync("workflow-2", Arg.Any<CancellationToken>());
     }
 
-    [Theory(DisplayName = "ExecuteAsync does not push tenant context for default or agnostic tenant instances")]
+    [Theory(DisplayName = "ExecuteAsync restarts default or agnostic tenant instances under the default tenant context")]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("*")]
-    public async Task ExecuteAsync_DefaultOrAgnosticTenant_DoesNotPushContext(string? tenantId)
+    public async Task ExecuteAsync_DefaultOrAgnosticTenant_PushesDefaultTenantContext(string? tenantId)
     {
         var workflowInstanceStore = Substitute.For<IWorkflowInstanceStore>();
         var tenantAccessor = new DefaultTenantAccessor();
@@ -103,9 +112,8 @@ public class RestartInterruptedWorkflowsTaskTests
 
         await task.ExecuteAsync(CancellationToken.None);
 
-        Assert.Equal(new string?[] { null }, observedTenantIds);
+        Assert.Equal(new string?[] { Tenant.DefaultTenantId }, observedTenantIds);
         Assert.Null(tenantAccessor.Tenant);
-        await tenantService.DidNotReceive().FindAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
         await workflowRestarter.Received(1).RestartWorkflowAsync("workflow-1", Arg.Any<CancellationToken>());
     }
 
@@ -185,6 +193,82 @@ public class RestartInterruptedWorkflowsTaskTests
         await task.ExecuteAsync(CancellationToken.None);
 
         await workflowRestarter.Received(1).RestartWorkflowAsync("workflow-1", Arg.Any<CancellationToken>());
+    }
+
+    [Theory(DisplayName = "Recovery tasks take a host-wide single-node lock; the outbox task takes none")]
+    [InlineData(typeof(RestartInterruptedWorkflowsTask), SingleNodeTaskScope.Host)]
+    [InlineData(typeof(RecoverInterruptedWorkflowsStartupTask), SingleNodeTaskScope.Host)]
+    [InlineData(typeof(ProcessWorkflowDispatchOutboxRecurringTask), null)]
+    public void SingleNodeTaskScope_PerTask(Type taskType, SingleNodeTaskScope? expectedScope)
+    {
+        Assert.Equal(expectedScope, taskType.GetCustomAttribute<SingleNodeTaskAttribute>()?.Scope);
+    }
+
+    [Fact(DisplayName = "The restart task runs once per cycle for all tenants")]
+    public void RestartTask_IsRunOnceForAllTenants()
+    {
+        Assert.NotNull(typeof(RestartInterruptedWorkflowsTask).GetCustomAttribute<RunOnceForAllTenantsAttribute>());
+    }
+
+    [Fact(DisplayName = "ExecuteAsync also restarts a tenant with its own database from its own scope")]
+    public async Task ExecuteAsync_OwnDatabaseTenant_ScannedSeparately()
+    {
+        var now = DateTimeOffset.Parse("2026-04-14T12:00:00Z");
+        var sharedStore = Substitute.For<IWorkflowInstanceStore>();
+        var ownStore = Substitute.For<IWorkflowInstanceStore>();
+        var sharedRestarter = Substitute.For<IWorkflowRestarter>();
+        var ownRestarter = Substitute.For<IWorkflowRestarter>();
+        var tenantAccessor = new DefaultTenantAccessor();
+        var clock = Substitute.For<ISystemClock>();
+        clock.UtcNow.Returns(now);
+        var ownTenant = new Tenant
+        {
+            Id = "tenant-own",
+            Name = "Own",
+            Configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["ConnectionStrings:Sqlite"] = "Data Source=own.db" }).Build()
+        };
+        var tenantService = Substitute.For<ITenantService>();
+        tenantService.ListAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult<IEnumerable<Tenant>>([ownTenant]));
+        StubInstances(sharedStore, CreateWorkflowInstance("shared", Tenant.DefaultTenantId, now));
+        StubInstances(ownStore, CreateWorkflowInstance("own", "tenant-own", now));
+        var ownServices = new ServiceCollection().AddSingleton(ownStore).AddSingleton(ownRestarter).BuildServiceProvider();
+        var scopeFactory = Substitute.For<ITenantScopeFactory>();
+        scopeFactory.CreateScope(ownTenant).Returns(_ => new TenantScope(ownServices.CreateScope(), tenantAccessor, ownTenant));
+        var options = Microsoft.Extensions.Options.Options.Create(new RuntimeOptions { RestartInterruptedWorkflowsBatchSize = 10, InactivityThreshold = TimeSpan.FromMinutes(5) });
+        var task = new RestartInterruptedWorkflowsTask(sharedRestarter, sharedStore, Substitute.For<ILogger<RestartInterruptedWorkflowsTask>>(), options, clock, tenantService, tenantAccessor, scopeFactory);
+
+        await task.ExecuteAsync(CancellationToken.None);
+
+        await sharedRestarter.Received(1).RestartWorkflowAsync("shared", Arg.Any<CancellationToken>());
+        await ownRestarter.Received(1).RestartWorkflowAsync("own", Arg.Any<CancellationToken>());
+        await ownStore.Received().SummarizeManyAsync(
+            Arg.Is<WorkflowInstanceFilter>(f => !f.TenantAgnostic && f.IsExecuting == true && f.BeforeLastUpdated == now - TimeSpan.FromMinutes(5)),
+            Arg.Any<PageArgs>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact(DisplayName = "The obsolete constructor still restarts instances found in the shared store")]
+    public async Task ObsoleteConstructor_RestartsFromSharedStore()
+    {
+        var now = DateTimeOffset.Parse("2026-04-14T12:00:00Z");
+        var store = Substitute.For<IWorkflowInstanceStore>();
+        var restarter = Substitute.For<IWorkflowRestarter>();
+        var clock = Substitute.For<ISystemClock>();
+        clock.UtcNow.Returns(now);
+        StubInstances(store, CreateWorkflowInstance("workflow-1", null, now));
+        var options = Microsoft.Extensions.Options.Options.Create(new RuntimeOptions { RestartInterruptedWorkflowsBatchSize = 10, InactivityThreshold = TimeSpan.FromMinutes(5) });
+        var task = new RestartInterruptedWorkflowsTask(restarter, store, Substitute.For<ILogger<RestartInterruptedWorkflowsTask>>(), options, clock);
+
+        await task.ExecuteAsync(CancellationToken.None);
+
+        await restarter.Received(1).RestartWorkflowAsync("workflow-1", Arg.Any<CancellationToken>());
+    }
+
+    private static void StubInstances(IWorkflowInstanceStore store, params WorkflowInstanceSummary[] instances)
+    {
+        store
+            .SummarizeManyAsync(Arg.Any<WorkflowInstanceFilter>(), Arg.Any<PageArgs>(), Arg.Any<CancellationToken>())
+            .Returns(ci => new ValueTask<Page<WorkflowInstanceSummary>>(Page.Of<WorkflowInstanceSummary>(ci.ArgAt<PageArgs>(1).Offset == 0 ? instances : [], instances.Length)));
     }
 
     private static WorkflowInstanceSummary CreateWorkflowInstance(string id, string? tenantId, DateTimeOffset updatedAt)

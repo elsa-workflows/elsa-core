@@ -51,7 +51,7 @@ public interface ITenantService
     Task<IEnumerable<Tenant>> ListAsync(TenantFilter filter, CancellationToken cancellationToken = default);
     
     /// <summary>
-    /// Activates all tenants.
+    /// Activates all tenants, then raises <see cref="IAllTenantsActivatedEvent"/> once.
     /// </summary>
     Task ActivateTenantsAsync(CancellationToken cancellationToken = default);
     

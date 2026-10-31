@@ -9,6 +9,10 @@ namespace Elsa.Workflows.Management;
 /// <summary>
 /// Represents a store of workflow instances.
 /// </summary>
+/// <remarks>
+/// Implementations must honor <see cref="WorkflowInstanceFilter.TenantAgnostic"/> on reads by ignoring the tenant filter.
+/// Deletes stay scoped to the current tenant.
+/// </remarks>
 [PublicAPI]
 public interface IWorkflowInstanceStore
 {

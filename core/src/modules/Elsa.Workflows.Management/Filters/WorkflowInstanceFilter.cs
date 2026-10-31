@@ -134,6 +134,22 @@ public class WorkflowInstanceFilter
     public List<string>? Names { get; set; }
 
     /// <summary>
+    /// Gets or sets a value indicating whether to return the instances of all tenants instead of only those visible to the current tenant.
+    /// </summary>
+    /// <remarks>
+    /// Applies to reads only; <see cref="IWorkflowInstanceStore.DeleteAsync"/> stays scoped to the current tenant.
+    /// Stores must honor it on reads.
+    /// </remarks>
+    public bool TenantAgnostic { get; set; }
+
+    internal WorkflowInstanceFilter AsTenantScoped()
+    {
+        var copy = (WorkflowInstanceFilter)MemberwiseClone();
+        copy.TenantAgnostic = false;
+        return copy;
+    }
+
+    /// <summary>
     /// Applies the filter to the specified query.
     /// </summary>
     [RequiresUnreferencedCode("The method uses reflection to create an expression tree.")]
