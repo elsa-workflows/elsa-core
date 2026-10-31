@@ -82,5 +82,13 @@
     "jsdom": "^29.1.1"
   },
   "packageManager": "pnpm@10.33.0",
-  "type": "module"
+  "type": "module",
+  "pnpm": {
+    "overrides": {
+      "minimatch@<11.0.1": "11.0.3"
+    },
+    "patchedDependencies": {
+      "typedoc@0.28.20": "patches/typedoc@0.28.20.patch"
+    }
+  }
 }

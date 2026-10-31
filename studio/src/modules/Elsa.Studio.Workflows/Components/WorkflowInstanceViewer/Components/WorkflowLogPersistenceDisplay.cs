@@ -106,8 +106,9 @@ internal static class WorkflowLogPersistenceDisplay
         if (string.IsNullOrWhiteSpace(typeName))
             return null;
 
-        var type = typeName.Split(',', 2, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
-        if (string.IsNullOrEmpty(type))
+        // Keep the empty segment in ", Elsa.Workflows.Core" so it is not treated as a type name.
+        var type = typeName.Split(',', 2, StringSplitOptions.TrimEntries).FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(type))
             return null;
 
         var name = type.Split('.', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
