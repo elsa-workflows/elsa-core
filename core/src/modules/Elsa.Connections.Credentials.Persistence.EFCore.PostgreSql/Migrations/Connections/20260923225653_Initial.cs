@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using Elsa.Persistence.EFCore;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -8,15 +9,23 @@ namespace Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql.Migrations.
     /// <inheritdoc />
     public partial class Initial : Migration
     {
+        private readonly IElsaDbContextSchema _schema;
+
+        /// <inheritdoc />
+        public Initial(IElsaDbContextSchema schema)
+        {
+            _schema = schema ?? throw new ArgumentNullException(nameof(schema));
+        }
+
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.EnsureSchema(
-                name: "Elsa");
+                name: _schema.Schema);
 
             migrationBuilder.CreateTable(
                 name: "ConnectionCredentialBindings",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 columns: table => new
                 {
                     TenantId = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
@@ -32,7 +41,7 @@ namespace Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql.Migrations.
 
             migrationBuilder.CreateTable(
                 name: "ConnectionGenerationCleanups",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 columns: table => new
                 {
                     ConnectionId = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
@@ -50,7 +59,7 @@ namespace Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql.Migrations.
 
             migrationBuilder.CreateTable(
                 name: "ConnectionOffboardingOperations",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
@@ -77,7 +86,7 @@ namespace Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql.Migrations.
 
             migrationBuilder.CreateTable(
                 name: "Connections",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
@@ -108,25 +117,25 @@ namespace Elsa.Connections.Credentials.Persistence.EFCore.PostgreSql.Migrations.
 
             migrationBuilder.CreateIndex(
                 name: "IX_ConnectionGenerationCleanups_TenantId_EnvironmentId_Connect~",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "ConnectionGenerationCleanups",
                 columns: new[] { "TenantId", "EnvironmentId", "ConnectionId" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_ConnectionOffboardingOperations_TenantId_EnvironmentId_Con~1",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "ConnectionOffboardingOperations",
                 columns: new[] { "TenantId", "EnvironmentId", "ConnectionId", "Status", "CreatedAt" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_ConnectionOffboardingOperations_TenantId_EnvironmentId_Conn~",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "ConnectionOffboardingOperations",
                 columns: new[] { "TenantId", "EnvironmentId", "ConnectionId", "GenerationId", "Status" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Connections_TenantId_EnvironmentId_Id",
-                schema: "Elsa",
+                schema: _schema.Schema,
                 table: "Connections",
                 columns: new[] { "TenantId", "EnvironmentId", "Id" },
                 unique: true);
