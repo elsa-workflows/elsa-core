@@ -58,6 +58,13 @@ public class MemoryBookmarkQueueStore(MemoryStore<BookmarkQueueItem> store, ITen
         return store.DeleteMany(ids);
     }
 
+    /// <inheritdoc />
+    public Task<IReadOnlyCollection<string>?> ListTenantIdsAsync(CancellationToken cancellationToken = default)
+    {
+        var tenantIds = store.Query(query => query).Select(x => x.TenantId.NormalizeTenantId()).Distinct().ToList();
+        return Task.FromResult<IReadOnlyCollection<string>?>(tenantIds);
+    }
+
     /// <remarks>
     /// Ambient tenant is applied here rather than in <see cref="BookmarkQueueFilter.Apply"/>.
     /// EF owns that via <c>SetTenantIdFilter</c> / <c>IgnoreQueryFilters</c>; Memory must compensate.

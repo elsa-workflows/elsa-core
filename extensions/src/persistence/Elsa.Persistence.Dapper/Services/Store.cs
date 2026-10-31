@@ -578,6 +578,19 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
         return await countQuery.SingleAsync<long>(connection);
     }
 
+    /// <summary>
+    /// Returns the distinct tenant ids stored in the table, across all tenants.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The distinct raw tenant id values. May contain <c>null</c> and empty strings.</returns>
+    public async Task<IReadOnlyCollection<string?>> ListTenantIdsAsync(CancellationToken cancellationToken = default)
+    {
+        var dialect = dbConnectionProvider.Dialect;
+        var sql = $"select distinct {dialect.QuoteIdentifier(nameof(Record.TenantId))} from {dialect.QuoteIdentifier(TableName)}";
+        using var connection = dbConnectionProvider.GetConnection();
+        return (await connection.QueryAsync<string?>(new CommandDefinition(sql, cancellationToken: cancellationToken))).ToList();
+    }
+
     private void ApplyTenantFilter(ParameterizedQuery query, bool tenantAgnostic = false)
     {
         if (tenantAgnostic)

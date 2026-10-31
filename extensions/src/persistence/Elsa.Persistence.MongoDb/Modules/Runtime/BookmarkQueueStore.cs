@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Persistence.MongoDb.Common;
 using Elsa.Workflows.Runtime;
@@ -6,6 +7,7 @@ using Elsa.Workflows.Runtime.Entities;
 using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 using JetBrains.Annotations;
+using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 
 namespace Elsa.Persistence.MongoDb.Modules.Runtime;
@@ -51,6 +53,14 @@ public class MongoBookmarkQueueStore(MongoDbStore<BookmarkQueueItem> mongoDbStor
         var results = await mongoDbStore.FindManyAsync(query => Paginate(Order(Filter(query, filter), orderBy), pageArgs), filter.TenantAgnostic, cancellationToken);
         var count = await mongoDbStore.CountAsync(queryable => Filter(queryable, filter), filter.TenantAgnostic, cancellationToken);
         return Page.Of(results.ToList(), count);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyCollection<string>?> ListTenantIdsAsync(CancellationToken cancellationToken = default)
+    {
+        var cursor = await mongoDbStore.GetCollection().DistinctAsync(x => x.TenantId, FilterDefinition<BookmarkQueueItem>.Empty, cancellationToken: cancellationToken);
+        var tenantIds = await cursor.ToListAsync(cancellationToken);
+        return tenantIds.Select(x => x.NormalizeTenantId()).Distinct().ToList();
     }
 
     /// <inheritdoc />

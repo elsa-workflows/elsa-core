@@ -30,7 +30,7 @@ internal static class InterruptedWorkflowRequeuer
 
         await foreach (var summary in instances.WithCancellation(cancellationToken))
         {
-            if (seen.Add((GetTenantKey(summary.TenantId), summary.Id)))
+            if (seen.Add((TenantKey.From(summary.TenantId), summary.Id)))
                 collected.Add((summary.Id, summary.TenantId));
         }
 
@@ -42,7 +42,7 @@ internal static class InterruptedWorkflowRequeuer
             {
                 if (tenantService is not null && tenantAccessor is not null)
                 {
-                    var tenantKey = GetTenantKey(instanceTenantId);
+                    var tenantKey = TenantKey.From(instanceTenantId);
 
                     if (!tenants.TryGetValue(tenantKey, out var tenant))
                     {
@@ -54,7 +54,7 @@ internal static class InterruptedWorkflowRequeuer
                         tenants[tenantKey] = tenant;
 
                         if (tenant is null)
-                            logger.LogWarning("Skipping {Count} interrupted workflow(s): their tenant {TenantId} was not found.", collected.Count(x => GetTenantKey(x.TenantId) == tenantKey), tenantKey);
+                            logger.LogWarning("Skipping {Count} interrupted workflow(s): their tenant {TenantId} was not found.", collected.Count(x => TenantKey.From(x.TenantId) == tenantKey), tenantKey);
                     }
 
                     if (tenant is null)
@@ -78,7 +78,4 @@ internal static class InterruptedWorkflowRequeuer
 
         return requeued;
     }
-
-    private static string GetTenantKey(string? instanceTenantId) =>
-        string.IsNullOrWhiteSpace(instanceTenantId) || instanceTenantId == Tenant.AgnosticTenantId ? Tenant.DefaultTenantId : instanceTenantId;
 }

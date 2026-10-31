@@ -48,4 +48,10 @@ public interface IBookmarkQueueStore
     /// </summary>
     /// <returns>The number of deleted records.</returns>
     Task<long> DeleteAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns the distinct normalized tenant IDs that have queue items, across all tenants.
+    /// </summary>
+    /// <returns>The tenant IDs, or <c>null</c> when the store cannot tell. In that case callers treat every active tenant as a candidate.</returns>
+    Task<IReadOnlyCollection<string>?> ListTenantIdsAsync(CancellationToken cancellationToken = default) => Task.FromResult<IReadOnlyCollection<string>?>(null);
 }

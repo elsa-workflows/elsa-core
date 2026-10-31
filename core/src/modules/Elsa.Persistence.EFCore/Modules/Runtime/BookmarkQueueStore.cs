@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Extensions;
 using Elsa.Workflows;
 using Elsa.Workflows.Runtime;
@@ -7,6 +8,7 @@ using Elsa.Workflows.Runtime.Filters;
 using Elsa.Workflows.Runtime.Options;
 using Elsa.Workflows.Runtime.OrderDefinitions;
 using JetBrains.Annotations;
+using Microsoft.EntityFrameworkCore;
 using Open.Linq.AsyncExtensions;
 
 namespace Elsa.Persistence.EFCore.Modules.Runtime;
@@ -43,16 +45,24 @@ public class EFBookmarkQueueStore(Store<RuntimeElsaDbContext, BookmarkQueueItem>
 
     public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
-        var count = await store.QueryAsync(queryable => queryable, cancellationToken).LongCount();
+        var count = await store.CountAsync(queryable => queryable, cancellationToken);
         var results = await store.QueryAsync(queryable => queryable.OrderBy(orderBy).Paginate(pageArgs), OnLoadAsync, cancellationToken).ToList();
         return new(results, count);
     }
 
     public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
-        var count = await store.QueryAsync(filter.Apply, cancellationToken).LongCount();
-        var results = await store.QueryAsync(queryable => filter.Apply(queryable).OrderBy(orderBy).Paginate(pageArgs), OnLoadAsync, cancellationToken).ToList();
+        var count = await store.CountAsync(filter.Apply, filter.TenantAgnostic, cancellationToken);
+        var results = await store.QueryAsync(queryable => filter.Apply(queryable).OrderBy(orderBy).Paginate(pageArgs), OnLoadAsync, filter.TenantAgnostic, cancellationToken).ToList();
         return new(results, count);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyCollection<string>?> ListTenantIdsAsync(CancellationToken cancellationToken = default)
+    {
+        await using var dbContext = await store.CreateDbContextAsync(cancellationToken);
+        var tenantIds = await dbContext.Set<BookmarkQueueItem>().IgnoreQueryFilters().Select(x => x.TenantId).Distinct().ToListAsync(cancellationToken);
+        return tenantIds.Select(x => x.NormalizeTenantId()).Distinct().ToList();
     }
 
     /// <inheritdoc />

@@ -1,4 +1,5 @@
 using Elsa.Common;
+using Elsa.Common.RecurringTasks;
 using JetBrains.Annotations;
 
 namespace Elsa.Workflows.Runtime.Tasks;
@@ -6,6 +7,11 @@ namespace Elsa.Workflows.Runtime.Tasks;
 /// <summary>
 /// Periodically purges the bookmark queue of old items.
 /// </summary>
+/// <remarks>
+/// Runs once per cycle for all tenants; items with an empty, null or "*" tenant id are purged under the default tenant.
+/// Tenants with their own databases are not covered.
+/// </remarks>
+[RunOnceForAllTenants]
 [UsedImplicitly]
 public class PurgeBookmarkQueueRecurringTask(IBookmarkQueuePurger bookmarkQueueWorker) : RecurringTask
 {
