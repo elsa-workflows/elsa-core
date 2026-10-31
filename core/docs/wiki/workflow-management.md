@@ -80,6 +80,14 @@ Materializers convert persisted or typed representations into executable workflo
 
 The materializer registry is [MaterializerRegistry](../../src/modules/Elsa.Workflows.Management/Services/MaterializerRegistry.cs), with the contract [IMaterializerRegistry](../../src/modules/Elsa.Workflows.Management/Contracts/IMaterializerRegistry.cs).
 
+## CLR Workflow Population
+
+CLR workflows registered with `AddWorkflow<T>()` are loaded by [ClrWorkflowsProvider](../../src/modules/Elsa.Workflows.Runtime/Providers/ClrWorkflowsProvider.cs) and stored into the definition store by [DefaultWorkflowDefinitionStorePopulator](../../src/modules/Elsa.Workflows.Runtime/Services/DefaultWorkflowDefinitionStorePopulator.cs). Both services live in `Elsa.Workflows.Runtime`, not `Elsa.Workflows.Management`.
+
+`ClrWorkflowsProvider` implements [ITenantAgnosticWorkflowsProvider](../../src/modules/Elsa.Workflows.Runtime/Contracts/ITenantAgnosticWorkflowsProvider.cs). Providers that implement that interface are built **once per service container**, not once per tenant: `IWorkflow.Build` runs in the scope of the first activated tenant and every tenant reuses that result. Do not read tenant-scoped services or the current tenant inside `Build`; if a workflow must differ per tenant, register it through a provider that does not implement `ITenantAgnosticWorkflowsProvider`. When the stored definition already matches the build the populator skips re-saving it, so `CreatedAt` is not refreshed on every startup.
+
+See [core/docs/migrations/clr-workflows-built-once.md](../../docs/migrations/clr-workflows-built-once.md) for migration details.
+
 ## Import, Export, And Serialization
 
 Management uses:
