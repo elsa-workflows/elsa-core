@@ -6,8 +6,6 @@ using Elsa.Api.Client.Resources.ActivityExecutions.Models;
 using Elsa.Api.Client.Resources.StorageDrivers.Models;
 using Elsa.Api.Client.Resources.WorkflowDefinitions.Models;
 using Elsa.Api.Client.Resources.WorkflowInstances.Models;
-using Elsa.Api.Client.Serialization;
-using Elsa.Api.Client.Shared.Models;
 using Elsa.Studio.Localization.Time;
 using Elsa.Studio.Models;
 using Elsa.Studio.Workflows.Domain.Contracts;
@@ -21,8 +19,6 @@ namespace Elsa.Studio.Workflows.Components.WorkflowInstanceViewer.Components;
 /// </summary>
 public partial class WorkflowInstanceDetails
 {
-    private readonly JsonSerializerOptions _serializerOptions = SerializerOptions.LogPersistenceConfigSerializerOptions;
-
     private WorkflowInstance? _workflowInstance;
 
     private ActivityExecutionRecord? _workflowActivityExecutionRecord;
@@ -68,6 +64,8 @@ public partial class WorkflowInstanceDetails
             if (_workflowInstance == null)
                 return new();
 
+            var logPersistence = WorkflowLogPersistenceDisplay.Format(WorkflowDefinition?.CustomProperties);
+
             return new()
             {
                 new DataPanelItem("ID", _workflowInstance.Id),
@@ -78,28 +76,22 @@ public partial class WorkflowInstanceDetails
                 new DataPanelItem(Localizer["Correlation ID"], _workflowInstance.CorrelationId),
                 new DataPanelItem(Localizer["Structured Logs"], Localizer["Open filtered logs"], $"/diagnostics/structured-logs?workflowInstanceId={Uri.EscapeDataString(_workflowInstance.Id)}"),
                 new DataPanelItem(Localizer["Incident Strategy"], GetIncidentStrategyDisplayName(WorkflowDefinition?.Options.IncidentStrategyType)),
+                new DataPanelItem(Localizer["Log Persistence Strategy"], LocalizeLogPersistenceMode(logPersistence), Format: logPersistence.IsExpression ? DataPanelItemFormat.Code : DataPanelItemFormat.Auto),
                 new DataPanelItem(Localizer["Status"], _workflowInstance.Status.ToString()),
                 new DataPanelItem(Localizer["Sub status"], _workflowInstance.SubStatus.ToString()),
                 new DataPanelItem(Localizer["Incidents"], _workflowInstance.IncidentCount.ToString()),
                 new DataPanelItem(Label: Localizer["Created"], Value: _workflowInstance.CreatedAt, Format: DataPanelItemFormat.Timestamp),
                 new DataPanelItem(Label: Localizer["Updated"], Value: _workflowInstance.UpdatedAt, Format: DataPanelItemFormat.Timestamp),
                 new DataPanelItem(Label: Localizer["Finished"], Value: _workflowInstance.FinishedAt, Format: DataPanelItemFormat.Timestamp),
-                new DataPanelItem(Localizer["Log Persistence Strategy"], GetLogPersistenceConfigurationDisplayName(GetLogPersistenceConfiguration()?.StrategyType)),
                 new DataPanelItem(Localizer["Workflow State"], Value: JsonSerializer.Serialize(_workflowInstance.WorkflowState), Format: DataPanelItemFormat.Code)
             };
         }
     }
 
-    private LogPersistenceConfiguration? GetLogPersistenceConfiguration()
-    {
-        if (!WorkflowDefinition!.CustomProperties.TryGetValue("logPersistenceConfig", out var value) || value == null!)
-            return null;
-
-
-        var configJson = ((JsonElement)value).GetProperty("default");
-        var config = JsonSerializer.Deserialize<LogPersistenceConfiguration>(configJson, _serializerOptions);
-        return config;
-    }
+    private string LocalizeLogPersistenceMode(LogPersistenceDisplay display) =>
+        display.IsExpression || display.Text is not ("Inherit" or "Include" or "Exclude")
+            ? display.Text
+            : Localizer[display.Text].Value;
 
     private DataPanelModel WorkflowVariableData
     {
@@ -343,11 +335,5 @@ public partial class WorkflowInstanceDetails
             .Split(".", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Last()
             .Replace("Strategy", "")
             .Humanize() ?? "Default";
-    }
-
-    private static string? GetLogPersistenceConfigurationDisplayName(string? logPersistenceConfigurationTypeName)
-    {
-        //"Elsa.Workflows.LogPersistence.Strategies.Include, Elsa.Workflows.Core"
-        return logPersistenceConfigurationTypeName?.Split(",")[0].Split(".")[^1] ;
     }
 }
