@@ -96,13 +96,62 @@ public class NotificationPublishingMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_DoesNotPublishFaulted_WhenNextCancels()
+    public async Task InvokeAsync_DoesNotThrow_WhenFaultedHandlerThrowsAfterFault()
     {
+        var fault = new InvalidOperationException("direct fault");
+        var handlerFailure = new InvalidOperationException("handler failed");
+        var handler = new RecordingHandler
+        {
+            ThrowOn = typeof(ActivityFaulted),
+            ExceptionToThrow = handlerFailure
+        };
+        var logger = new RecordingLogger();
+
+        await InvokeAsync(context =>
+        {
+            context.Fault(fault);
+            return ValueTask.CompletedTask;
+        }, handler, logger);
+
+        Assert.Contains(logger.Entries, entry => entry.Level == LogLevel.Error && entry.Exception == handlerFailure);
+        Assert.Single(handler.Notifications.OfType<ActivityFaulted>());
+    }
+
+    [Fact]
+    public async Task InvokeAsync_StillPublishesFaulted_WhenExecutedHandlerThrows()
+    {
+        var thrown = new InvalidOperationException("thrown fault");
+        var handlerFailure = new InvalidOperationException("executed handler failed");
+        var handler = new RecordingHandler
+        {
+            ThrowOn = typeof(ActivityExecuted),
+            ExceptionToThrow = handlerFailure
+        };
+        var logger = new RecordingLogger();
+
+        var actual = await Assert.ThrowsAsync<InvalidOperationException>(() => InvokeAsync(_ => throw thrown, handler, logger));
+
+        Assert.Same(thrown, actual);
+        var faulted = Assert.Single(handler.Notifications.OfType<ActivityFaulted>());
+        Assert.Same(thrown, faulted.Exception);
+        Assert.Contains(logger.Entries, entry => entry.Level == LogLevel.Error && entry.Exception == handlerFailure);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_PublishesExecutedAndFaulted_WhenNextThrowsTaskCanceledException()
+    {
+        var thrown = new TaskCanceledException("http timeout");
         var handler = new RecordingHandler();
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() => InvokeAsync(_ => throw new OperationCanceledException(), handler));
+        var actual = await Assert.ThrowsAsync<TaskCanceledException>(() => InvokeAsync(_ => throw thrown, handler));
 
-        Assert.Equal([typeof(ActivityExecuting)], handler.NotificationTypes);
+        Assert.Same(thrown, actual);
+        Assert.False(actual.CancellationToken.IsCancellationRequested);
+
+        var faulted = Assert.Single(handler.Notifications.OfType<ActivityFaulted>());
+        Assert.Same(thrown, faulted.Exception);
+        Assert.False(faulted.ActivityExecutionContext.CancellationToken.IsCancellationRequested);
+        Assert.Equal([typeof(ActivityExecuting), typeof(ActivityExecuted), typeof(ActivityFaulted)], handler.NotificationTypes);
     }
 
     private static async Task InvokeAsync(ActivityMiddlewareDelegate next, RecordingHandler handler, ILogger<NotificationPublishingMiddleware>? logger = null)

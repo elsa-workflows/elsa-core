@@ -24,7 +24,15 @@ public class NotificationPublishingMiddleware : IActivityExecutionMiddleware
     /// <summary>
     /// Constructor.
     /// </summary>
-    public NotificationPublishingMiddleware(ActivityMiddlewareDelegate next, INotificationSender notificationSender, ILogger<NotificationPublishingMiddleware>? logger = null)
+    public NotificationPublishingMiddleware(ActivityMiddlewareDelegate next, INotificationSender notificationSender)
+        : this(next, notificationSender, null)
+    {
+    }
+
+    /// <summary>
+    /// Constructor.
+    /// </summary>
+    public NotificationPublishingMiddleware(ActivityMiddlewareDelegate next, INotificationSender notificationSender, ILogger<NotificationPublishingMiddleware>? logger)
     {
         _next = next;
         _notificationSender = notificationSender;
@@ -44,7 +52,7 @@ public class NotificationPublishingMiddleware : IActivityExecutionMiddleware
         {
             await _next(context);
         }
-        catch (Exception exception) when (exception is not OperationCanceledException)
+        catch (Exception exception)
         {
             // ExceptionHandlingMiddleware has not called Fault() yet, so the context is still Running.
             // ActivityFaulted carries the exception so handlers can see that the activity faulted and why.
@@ -58,7 +66,7 @@ public class NotificationPublishingMiddleware : IActivityExecutionMiddleware
         // Fault() returns normally with Status = Faulted. Publish ActivityFaulted so the Fault() path
         // raises the same dedicated notification as the throw path.
         if (context.Status == ActivityStatus.Faulted && context.Exception is { } fault)
-            await _notificationSender.SendAsync(new ActivityFaulted(context, fault));
+            await TrySendAsync(context, new ActivityFaulted(context, fault));
 
         // Send notification that activity has completed if status transitioned from Running to Completed
         if (statusBeforeExecution == ActivityStatus.Running && context.Status == ActivityStatus.Completed)
@@ -69,23 +77,29 @@ public class NotificationPublishingMiddleware : IActivityExecutionMiddleware
     /// Publishes the after-execution notifications for a thrown exception, then lets the original exception continue.
     /// </summary>
     /// <remarks>
-    /// <see cref="OperationCanceledException"/> is filtered out of the caller so this method is never used for
-    /// cancellation. Cancellation is not a fault: ExceptionHandlingMiddleware and the workflow-level middleware
-    /// keep cancellation and faults apart on purpose, so this path stays the same as before — no
-    /// <see cref="ActivityExecuted"/> and no <see cref="ActivityFaulted"/> while the run is being torn down.
+    /// The activity-level ExceptionHandlingMiddleware faults on every exception, including
+    /// <see cref="OperationCanceledException"/> and <see cref="TaskCanceledException"/> (for example an HttpClient timeout).
+    /// This method therefore publishes for every thrown exception so handlers see the same fault the outer middleware records.
+    /// Each send is isolated so one throwing handler does not skip the other notification.
     /// </remarks>
     private async Task PublishThrowPathNotificationsAsync(ActivityExecutionContext context, Exception exception)
     {
+        await TrySendAsync(context, new ActivityExecuted(context));
+        await TrySendAsync(context, new ActivityFaulted(context, exception));
+    }
+
+    private async Task TrySendAsync(ActivityExecutionContext context, INotification notification)
+    {
         try
         {
-            await _notificationSender.SendAsync(new ActivityExecuted(context));
-            await _notificationSender.SendAsync(new ActivityFaulted(context, exception));
+            await _notificationSender.SendAsync(notification);
         }
         catch (Exception handlerException)
         {
             _logger.LogError(
                 handlerException,
-                "An activity notification handler threw while publishing fault notifications for activity {ActivityId} of type {ActivityType}. The original activity exception is preserved",
+                "An activity notification handler threw while publishing {NotificationType} for activity {ActivityId} of type {ActivityType}. The original activity exception is preserved",
+                notification.GetType().Name,
                 context.Activity.Id,
                 context.Activity.Type);
         }
