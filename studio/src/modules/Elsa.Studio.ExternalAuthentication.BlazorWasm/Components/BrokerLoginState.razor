@@ -1,0 +1,9 @@
+@using Elsa.Studio.Components.AppBar
+@using Elsa.Studio.ExternalAuthentication.BlazorWasm.Services
+@using MudBlazor
+@inject ExternalAuthenticationWasmLogoutService LogoutService
+
+<UserMenu>
+    <MudMenuItem OnClick="@(() => LogoutService.LogoutAsync("local"))">Sign out</MudMenuItem>
+    <MudMenuItem OnClick="@(() => LogoutService.LogoutAsync("upstream"))">Sign out upstream</MudMenuItem>
+</UserMenu>

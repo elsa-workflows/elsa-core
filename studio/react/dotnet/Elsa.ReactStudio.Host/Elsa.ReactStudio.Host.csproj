@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <PropertyGroup>
+    <PackageId>Elsa.ReactStudio.Host</PackageId>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="CShells.AspNetCore" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <InternalsVisibleTo Include="Elsa.ReactStudio.Host.Tests" />
+    <EmbeddedResource Include="../../dist/**/*" LogicalName="ReactStudio/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+  <Target Name="RequireReactAssets" BeforeTargets="GenerateNuspec">
+    <Error Condition="!Exists('../../dist/index.html')" Text="Build React Studio assets first: cd studio/react and run pnpm build." />
+  </Target>
+</Project>

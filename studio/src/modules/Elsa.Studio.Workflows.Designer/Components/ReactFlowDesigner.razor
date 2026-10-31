@@ -1,0 +1,12 @@
+@inherits StudioComponentBase
+@*
+    The elsa-flowchart-diagram-designer-v2 class is intentional: the existing
+    activity-body styling (.elsa-activity height:100%, .activity-grid layout,
+    icon/label sizing) is scoped under it, so we reuse those rules instead of
+    duplicating them. elsa-react-flowchart-designer is our React-Flow-only hook.
+*@
+<CascadingValue Value="@this">
+    <div class="elsa-react-flowchart-designer elsa-flowchart-diagram-designer-v2" style="width:100%; height:100%">
+        <div id="@_containerId" class="graph-container" style="width:100%; height:100%"></div>
+    </div>
+</CascadingValue>

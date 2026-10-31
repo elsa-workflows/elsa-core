@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Experimental provider-neutral persistence descriptors and relational planning for Elsa modules.
+        </Description>
+        <PackageTags>elsa module persistence vnext experimental</PackageTags>
+    </PropertyGroup>
+
+</Project>

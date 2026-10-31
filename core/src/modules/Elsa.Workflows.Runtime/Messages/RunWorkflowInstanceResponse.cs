@@ -1,0 +1,42 @@
+using Elsa.Workflows.Models;
+
+namespace Elsa.Workflows.Runtime.Messages;
+
+/// <summary>
+/// Represents a response from running a workflow instance.
+/// </summary>
+public record RunWorkflowInstanceResponse
+{
+    /// <summary>
+    /// The ID of the workflow instance, or <see langword="null"/> when <see cref="CannotStart"/> is <see langword="true"/>.
+    /// </summary>
+    public string WorkflowInstanceId { get; set; } = null!;
+    
+    /// <summary>
+    /// The status of the workflow instance.
+    /// </summary>
+    public WorkflowStatus Status { get; set; }
+
+    /// <summary>
+    /// The sub-status of the workflow instance.
+    /// </summary>
+    public WorkflowSubStatus SubStatus { get; set; }
+
+    public ICollection<Bookmark> Bookmarks { get; set; } = new List<Bookmark>();
+
+    /// <summary>
+    /// Any incidents that occurred during the execution of the workflow instance.
+    /// </summary>
+    public ICollection<ActivityIncident> Incidents { get; set; } = new List<ActivityIncident>();
+
+    /// <summary>
+    /// The output produced by the workflow instance.
+    /// </summary>
+    public IDictionary<string, object>? Output { get; set; }
+
+    /// <summary>
+    /// When <c>true</c>, the workflow's activation strategy refused to create a new instance.
+    /// No instance was persisted. Other fields are unset.
+    /// </summary>
+    public bool CannotStart { get; set; }
+}

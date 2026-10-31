@@ -1,0 +1,10 @@
+{
+  "solution": {
+    "path": "Elsa.sln",
+    "projects": [
+      "core/src/modules/Elsa/Elsa.csproj",
+      "extensions/src/workflows/Elsa.WorkflowContexts/Elsa.WorkflowContexts.csproj",
+      "extensions/src/workflows/Elsa.Studio.WorkflowContexts/Elsa.Studio.WorkflowContexts.csproj"
+    ]
+  }
+}

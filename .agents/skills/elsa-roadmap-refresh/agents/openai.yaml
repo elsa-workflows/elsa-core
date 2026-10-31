@@ -1,0 +1,4 @@
+interface:
+  display_name: "Elsa Roadmap Refresh"
+  short_description: "Refresh the Elsa roadmap from source and GitHub evidence"
+  default_prompt: "Use $elsa-roadmap-refresh to update ROADMAP.md and mirror it to the public roadmap issue."

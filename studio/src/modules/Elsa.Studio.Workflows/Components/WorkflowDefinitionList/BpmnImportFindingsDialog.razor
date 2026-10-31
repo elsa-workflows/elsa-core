@@ -1,0 +1,54 @@
+@using Variant = MudBlazor.Variant
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="4">
+            <MudText Typo="Typo.body2">@Localizer["Review these findings before importing. Anything Dropped could not be represented and will not run; Degraded findings ran, but not exactly as authored."]</MudText>
+
+            @if (RequiresProcessSelection)
+            {
+                <MudSelect T="string" Label="@Localizer["Process"]" @bind-Value="_selectedProcessId" Variant="Variant.Outlined" Required="true">
+                    @foreach (var processId in Analysis.ProcessIds)
+                    {
+                        <MudSelectItem Value="@processId">@processId</MudSelectItem>
+                    }
+                </MudSelect>
+            }
+
+            @if (Groups.Count == 0)
+            {
+                <MudAlert Severity="Severity.Success">@Localizer["No findings. This document reads without loss."]</MudAlert>
+            }
+            else
+            {
+                @foreach (var group in Groups)
+                {
+                    <div>
+                        <MudText Typo="Typo.subtitle2" Color="@group.Color">@group.Title (@group.Issues.Count)</MudText>
+                        <MudList T="string" Dense="true">
+                            @foreach (var issue in group.Issues)
+                            {
+                                <MudListItem>
+                                    <MudText Typo="Typo.body2">
+                                        @if (!string.IsNullOrEmpty(issue.ElementId))
+                                        {
+                                            <b>[@issue.ElementId]</b>
+                                            @:
+                                        }
+                                        @issue.Message
+                                    </MudText>
+                                </MudListItem>
+                            }
+                        </MudList>
+                    </div>
+                }
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelClicked">@Localizer["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled="@(!CanConfirm)" OnClick="OnConfirmClicked">@Localizer["Import"]</MudButton>
+    </DialogActions>
+</MudDialog>

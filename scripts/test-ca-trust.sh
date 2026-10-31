@@ -54,40 +54,48 @@ CERTEXT
     fi
     sleep 0.2
   done
+}
 
-  echo "$CERT_WORKDIR"
+cleanup_local_ca_server() {
+  if [ -n "${SERVER_PID:-}" ]; then
+    kill "$SERVER_PID" >/dev/null 2>&1 || true
+    wait "$SERVER_PID" 2>/dev/null || true
+    SERVER_PID=
+  fi
+
+  if [ -n "${CERT_WORKDIR:-}" ]; then
+    rm -rf "$CERT_WORKDIR"
+    CERT_WORKDIR=
+  fi
 }
 
 run_extra_ca_test() {
-  local cert_dir
-  cert_dir=$(start_local_ca_server)
-  trap "kill ${SERVER_PID:-0} >/dev/null 2>&1 || true; rm -rf '$cert_dir'" EXIT
+  start_local_ca_server
+  trap cleanup_local_ca_server EXIT
 
   echo "[CA] Validating EXTRA_CA_CERT flow against local CA" >&2
   run_smoke "https://host.docker.internal:${LOCAL_PORT}" \
     --add-host host.docker.internal:host-gateway \
-    -v "${cert_dir}:/certs:ro" \
+    -v "${CERT_WORKDIR}:/certs:ro" \
     -e EXTRA_CA_CERT=/certs/ca.crt
 
   echo "[CA] Validating SSL_CERT_FILE fallback" >&2
   run_smoke "https://host.docker.internal:${LOCAL_PORT}" \
     --add-host host.docker.internal:host-gateway \
-    -v "${cert_dir}:/certs:ro" \
+    -v "${CERT_WORKDIR}:/certs:ro" \
     -e SSL_CERT_FILE=/certs/ca.crt
 
-  mkdir -p "$cert_dir/dir"
-  cp "$cert_dir/ca.crt" "$cert_dir/dir/custom-ca.crt"
-  openssl rehash "$cert_dir/dir" >/dev/null 2>&1
+  mkdir -p "$CERT_WORKDIR/dir"
+  cp "$CERT_WORKDIR/ca.crt" "$CERT_WORKDIR/dir/custom-ca.crt"
+  openssl rehash "$CERT_WORKDIR/dir" >/dev/null 2>&1
 
   echo "[CA] Validating SSL_CERT_DIR fallback" >&2
   run_smoke "https://host.docker.internal:${LOCAL_PORT}" \
     --add-host host.docker.internal:host-gateway \
-    -v "${cert_dir}:/certs:ro" \
+    -v "${CERT_WORKDIR}:/certs:ro" \
     -e SSL_CERT_DIR=/certs/dir
 
-  kill "${SERVER_PID:-0}" >/dev/null 2>&1 || true
-  wait "${SERVER_PID:-0}" 2>/dev/null || true
-  rm -rf "$cert_dir"
+  cleanup_local_ca_server
   trap - EXIT
 }
 

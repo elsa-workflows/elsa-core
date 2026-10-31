@@ -1,0 +1,22 @@
+{
+  "title": "Elsa Studio",
+  "servers": [
+    { "name": "Local (elsa-server, all modules)", "url": "http://localhost:5080/elsa/api" },
+    { "name": "Local (source)", "url": "http://localhost:5072/elsa/api" },
+    { "name": "Local (docker)", "url": "http://localhost:13000/elsa/api" }
+  ],
+  "auth": { "provider": "elsa-identity" },
+  "features": {
+    "environments": { "enabled": true },
+    "labels": { "enabled": true },
+    "secrets": { "enabled": true },
+    "security": { "enabled": true },
+    "alterations": { "enabled": true },
+    "user-tasks": { "enabled": true },
+    "settings": { "enabled": true },
+    "appearance": { "enabled": true },
+    "diagnostics-console-logs": { "enabled": true },
+    "diagnostics-structured-logs": { "enabled": true }
+  },
+  "ui": { "defaultTheme": "system", "pollIntervalMs": 5000, "defaultPageSize": 25 }
+}

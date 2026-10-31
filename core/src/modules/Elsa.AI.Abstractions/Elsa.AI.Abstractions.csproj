@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Provides provider-neutral abstractions for Elsa AI capabilities.
+        </Description>
+        <PackageTags>elsa module ai abstractions</PackageTags>
+    </PropertyGroup>
+
+</Project>

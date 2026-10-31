@@ -1,0 +1,4 @@
+interface:
+  display_name: "Elsa Release"
+  short_description: "Release Elsa from elsa-core and verify publication"
+  default_prompt: "Use $elsa-release to release Elsa 3.10.0 from elsa-core, then Templates, and announce it."

@@ -1,0 +1,20 @@
+@using Elsa.Studio.Bpmn.Designers
+@using Variant = MudBlazor.Variant
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+<MudDialog>
+    <DialogContent>
+        <MudText Class="mb-2">@Localizer["The BPMN designer cannot keep this content of the document, so saving removes it. Other tools that rely on it lose it too."]</MudText>
+        <MudList T="string" Dense="true" data-testid="bpmn-dropped-content">
+            @foreach (var warning in Warnings)
+            {
+                <MudListItem T="string" Icon="@Icons.Material.Outlined.WarningAmber" Text="@Describe(warning)" />
+            }
+        </MudList>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="OnCancelClicked">@Localizer["Cancel"]</MudButton>
+        <MudButton Color="Color.Warning" Variant="Variant.Filled" OnClick="OnSaveClicked" data-testid="bpmn-dropped-content-save">@Localizer["Save without it"]</MudButton>
+    </DialogActions>
+</MudDialog>

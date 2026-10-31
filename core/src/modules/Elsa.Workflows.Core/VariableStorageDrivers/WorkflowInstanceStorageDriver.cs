@@ -1,0 +1,106 @@
+using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Elsa.Expressions.Helpers;
+using Elsa.Extensions;
+using JetBrains.Annotations;
+using Microsoft.Extensions.Logging;
+
+namespace Elsa.Workflows;
+
+/// <summary>
+/// A storage driver that stores objects in the workflow state itself.
+/// </summary>
+[Display(Name = "Workflow Instance")]
+[UsedImplicitly]
+public class WorkflowInstanceStorageDriver(IPayloadSerializer payloadSerializer, ILogger<WorkflowInstanceStorageDriver> logger) : IStorageDriver
+{
+    /// <summary>
+    /// The key used to store the variables in the workflow state.
+    /// </summary>
+    public const string VariablesDictionaryStateKey = "Variables";
+    
+    /// <inheritdoc />
+    public double Priority => 5;
+    /// <inheritdoc />
+    public IEnumerable<string> Tags => [];
+
+    /// <inheritdoc />
+    public ValueTask WriteAsync(string id, object value, StorageDriverContext context)
+    {
+        UpdateVariablesDictionary(context, dictionary =>
+        {
+            try
+            {
+                var node = JsonSerializer.SerializeToNode(value, GetSerializationType(value, context), GetSerializerOptions());
+                dictionary[id] = node!;
+            }
+            catch (Exception ex) when (ex is JsonException or NotSupportedException or ObjectDisposedException)
+            {
+                logger.LogWarning(ex, "Failed to serialize variable '{VariableId}' of type '{VariableType}' for workflow instance storage. The stored value was left unchanged.",
+                    id, value?.GetType().FullName ?? "null");
+            }
+        });
+        return ValueTask.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public ValueTask<object?> ReadAsync(string id, StorageDriverContext context)
+    {
+        var dictionary = GetVariablesDictionary(context);
+        var node = dictionary.GetValueOrDefault(id);
+        var variable = context.Variable;
+        var variableType = variable.GetVariableType();
+        var serializerOptions = GetSerializerOptions();
+
+        if (variableType == typeof(object))
+            return new(node?.Deserialize(typeof(object), serializerOptions));
+
+        var options = new ObjectConverterOptions
+        {
+            DeserializeJsonObjectToObject = true,
+            SerializerOptions = serializerOptions
+        };
+        var result = node.TryConvertTo(variableType, options);
+        if (result.IsSuccess)
+            return new(result.Value);
+
+        logger.LogWarning(result.Exception, "Failed to convert stored variable '{VariableId}' to type '{VariableType}'. The stored value was left unread rather than returned as an untyped node.",
+            id, variableType.FullName);
+
+        if (ObjectConverter.StrictMode)
+            result.ThrowIfFailure();
+
+        return new((object?)null);
+    }
+
+    /// <inheritdoc />
+    public ValueTask DeleteAsync(string id, StorageDriverContext context)
+    {
+        UpdateVariablesDictionary(context, dictionary => dictionary.Remove(id));
+        return ValueTask.CompletedTask;
+    }
+
+    private JsonSerializerOptions GetSerializerOptions() => payloadSerializer.GetOptions().Clone();
+
+    private static Type GetSerializationType(object? value, StorageDriverContext context)
+    {
+        var declaredType = context.Variable.GetVariableType();
+        if (declaredType == typeof(object))
+            return typeof(object);
+
+        return value?.GetType() ?? declaredType;
+    }
+
+    private VariablesDictionary GetVariablesDictionary(StorageDriverContext context) => context.ExecutionContext.Properties.GetOrAdd(VariablesDictionaryStateKey, () => new VariablesDictionary());
+    private void SetVariablesDictionary(StorageDriverContext context, VariablesDictionary dictionary) => context.ExecutionContext.Properties[VariablesDictionaryStateKey] = dictionary;
+
+    private void UpdateVariablesDictionary(StorageDriverContext context, Action<VariablesDictionary> update)
+    {
+        var dictionary = GetVariablesDictionary(context);
+        update(dictionary);
+        SetVariablesDictionary(context, dictionary);
+    }
+}
+
+public class VariablesDictionary : Dictionary<string, JsonNode>;

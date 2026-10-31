@@ -1,0 +1,66 @@
+# Manual or narrowly scoped PR layout verification: product filters at default TFMs.
+# This does not verify IDE breakpoints, accept Apps releases or publish packages.
+name: Product development entrypoints
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/product-entrypoints.yml'
+      - 'Elsa.Core.slnf'
+      - 'Elsa.Extensions.slnf'
+      - 'Elsa.Studio.slnf'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-product-filters:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      EXPECTED_HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify exact candidate checkout
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          git diff --exit-code HEAD --
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+      - name: Build reviewed Studio ClientLibs
+        run: scripts/integration-program/build_studio_clientlibs.sh .
+      - name: Build Core development entrypoint
+        run: dotnet build Elsa.Core.slnf
+      - name: Build Extensions development entrypoint
+        run: dotnet build Elsa.Extensions.slnf
+      - name: Build Studio development entrypoint
+        run: dotnet build Elsa.Studio.slnf
+      - name: Verify source remained unchanged
+        if: always()
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_HEAD"
+          git diff --exit-code HEAD --
+      - name: Record completed nonpublishing build scope
+        run: |
+          printf '{"sourceRevision":"%s","sourceTree":"%s","filters":["Elsa.Core.slnf","Elsa.Extensions.slnf","Elsa.Studio.slnf"],"frameworkPolicy":"project-defaults","published":false,"ideBreakpointsVerified":false,"appsReleaseAccepted":false}\n' \
+            "$EXPECTED_HEAD" "$(git rev-parse 'HEAD^{tree}')" > "$RUNNER_TEMP/product-entrypoints.json"
+      - name: Retain build scope receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: product-entrypoints-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/product-entrypoints.json
+          if-no-files-found: error
+          retention-days: 14

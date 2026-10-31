@@ -1,0 +1,42 @@
+@inherits StudioComponentBase
+@inject ILocalizer Localizer
+
+<ScrollableWell MaxHeight="VisiblePaneHeight">
+    <MudText Typo="Typo.overline" GutterBottom="true" Align="Align.Left">@Localizer["Executions"]</MudText>
+    <MudTable
+        T="ActivityExecutionRecordTableRow"
+        Items="Items"
+        Dense="true"
+        Bordered="false"
+        Striped="false"
+        Elevation="0"
+        Outlined="true"
+        Hover="true"
+        RowStyle="cursor: pointer;"
+        OnRowClick="@OnActivityExecutionClicked">
+        <HeaderContent>
+            <MudTh>#</MudTh>
+            <MudTh>@Localizer["Started"]</MudTh>
+            <MudTh>@Localizer["Completed"]</MudTh>
+            <MudTh>@Localizer["Duration"]</MudTh>
+            <MudTh>@Localizer["Status"]</MudTh>
+            <MudTh>@Localizer["Has Retries"]</MudTh>
+            <MudTh>@Localizer["Activity Instance ID"]</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            @{
+                var record = context.ActivityExecutionSummary;
+            }
+            <MudTh>@context.Number</MudTh>
+            <MudTd><Timestamp Value="record.StartedAt"/> </MudTd>
+            <MudTd><Timestamp Value="record.CompletedAt"/> </MudTd>
+            <MudTd>@(record.CompletedAt != null ? (record.CompletedAt - record.StartedAt).Value.ToString("g") : "")</MudTd>
+            <MudTd>@record.Status</MudTd>
+            <MudTd>@(context.HasRetries ? Localizer["Yes"] : string.Empty)</MudTd>
+            <MudTd>@record.Id</MudTd>
+        </RowTemplate>
+        <PagerContent>
+            <MudTablePager RowsPerPageString="@Localizer["Rows Per Page"]" />
+        </PagerContent>
+    </MudTable>
+</ScrollableWell>

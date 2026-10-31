@@ -1,0 +1,16 @@
+@using Elsa.Studio.Contracts
+@inherits StudioComponentBase
+<MudText Typo="Typo.body2">Server version: @PackageVersion</MudText>
+
+@code {
+    [Inject] private IServerInformationProvider ServerInformationProvider { get; set; } = default!;
+    private string PackageVersion { get; set; } = "Loading...";
+
+    /// <inheritdoc />
+    protected override async Task OnInitializedAsync()
+    {
+        var info = await ServerInformationProvider.GetInfoAsync();
+        PackageVersion = info.PackageVersion;
+    }
+
+}

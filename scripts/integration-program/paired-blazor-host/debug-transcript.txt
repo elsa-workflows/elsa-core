@@ -1,0 +1,15 @@
+Captured debugger transcript excerpt; only the disposable absolute path prefix is normalized.
+
+stopped, reason: breakpoint 1 hit, thread id: 112144820, stopped threads: all, times= 0, frame={Elsa.WorkflowContexts.Endpoints.ProviderTypes.List.List.ExecuteAsync() at <proof-output>/elsa-extensions/src/modules/workflows/Elsa.WorkflowContexts/Endpoints/ProviderTypes/List/Endpoint.cs:28}
+backtrace
+#0: 0x0000000113cd7524 Elsa.WorkflowContexts.dll` Elsa.WorkflowContexts.Endpoints.ProviderTypes.List.List.ExecuteAsync() at <proof-output>/elsa-extensions/src/modules/workflows/Elsa.WorkflowContexts/Endpoints/ProviderTypes/List/Endpoint.cs:28
+delete 1
+continue
+stopped, reason: breakpoint 2 hit, thread id: 112144823, stopped threads: all, times= 1, frame={Elsa.Studio.WorkflowContexts.Components.WorkflowContextsEditor.<OnCheckChanged>d__22.MoveNext() at <proof-output>/elsa-extensions/src/modules/workflows/Elsa.Studio.WorkflowContexts/Components/WorkflowContextsEditor.razor.cs:50}
+backtrace
+#0: 0x0000000114b9f8ec Elsa.Studio.WorkflowContexts.dll` Elsa.Studio.WorkflowContexts.Components.WorkflowContextsEditor.<OnCheckChanged>d__22.MoveNext() at <proof-output>/elsa-extensions/src/modules/workflows/Elsa.Studio.WorkflowContexts/Components/WorkflowContextsEditor.razor.cs:50
+delete 2
+continue
+stopped, reason: exited, exit-code: 0
+quit
+^exit

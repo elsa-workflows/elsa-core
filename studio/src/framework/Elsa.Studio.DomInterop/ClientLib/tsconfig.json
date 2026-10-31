@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "outDir": "../wwwroot",
+    "sourceMap": true,
+    "noImplicitAny": false,
+    "module": "ES2022",
+    "target": "ES2022",
+    "jsx": "react",
+    "allowJs": true,
+    "moduleResolution": "node"
+  },
+  "include": [
+    "./src/**/*"
+  ]
+}

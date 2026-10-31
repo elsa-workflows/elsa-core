@@ -1,0 +1,51 @@
+{
+  "sourceHead": "5828b2e09d19abfe198098fbbac481cb734f7a13",
+  "workflowLogging": {
+    "submittedOption": "logPersistenceStrategyType",
+    "optionSurvivesReload": false,
+    "runtimeLogConfigPresent": false
+  },
+  "httpPorts": [
+    {
+      "type": "Elsa.FlowSendHttpRequest",
+      "descriptorPresent": true,
+      "configuredStatusCodes": [
+        200,
+        201
+      ],
+      "actualPorts": [
+        "Done"
+      ]
+    },
+    {
+      "type": "Elsa.DownloadHttpFile",
+      "descriptorPresent": true,
+      "configuredStatusCodes": [
+        200,
+        201
+      ],
+      "actualPorts": [
+        "Done"
+      ]
+    }
+  ],
+  "httpEmbedded": {
+    "descriptorPresent": true,
+    "expectedSlot": "expectedStatusCodes.0.activity",
+    "actualSlots": [
+      "unmatchedStatusCode",
+      "failedToConnect",
+      "timeout"
+    ]
+  },
+  "clipboard": {
+    "originalNames": [
+      "Task1",
+      "Task2"
+    ],
+    "pastedNames": [
+      "Task3",
+      "Task3"
+    ]
+  }
+}

@@ -1,0 +1,894 @@
+{
+  "checkedDateUtc": "2026-09-23",
+  "sourceProfile": {
+    "core": "076f022cc174d497af26fc8e26414970e61a79b1",
+    "extensions": "33fa0bfd28c7585240e3d4f665058c067b17e287",
+    "studio": "9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822"
+  },
+  "rehearsalCommit": "75156652c6b84abbab400b1bd7b2f17305891333",
+  "buildInputsEvidence": "current-core-build-evidence.json (PR #8312)",
+  "patchSha256": "ea0b94db04f126356194620cacb39a6bbeda0965caa54159089641aeb88b81a7",
+  "files": [
+    {
+      "path": "src/studio/framework/Elsa.Studio.Core.Tests/CssContractTestContext.cs",
+      "beforeSha256": "1cd78a97e8c729b34b4d676183d4b3f77a5a4c33c827f59fb064b2e43a9bd025",
+      "afterSha256": "84ce72c3735b2625a410e70c517ebfbb4505cb4015fd65e0d820ba7c3cfbbc17"
+    },
+    {
+      "path": "src/studio/framework/Elsa.Studio.Core.Tests/Elsa.Studio.Core.Tests.csproj",
+      "beforeSha256": "002bc2f71e712b7e0398386328d9bbcf4c0a647d27baba1d020170df1730acfb",
+      "afterSha256": "8d3b743857a27d2524ceb3669d6d091a8a1ab3d673732b05bd49e5215f67c415"
+    },
+    {
+      "path": "src/studio/modules/Elsa.Studio.Authentication.UI.Tests/Elsa.Studio.Authentication.UI.Tests.csproj",
+      "beforeSha256": "2eb55918776ba4c5b8dda4eb2dd5287975fa764a9f7946c4d6de78a0456b3d24",
+      "afterSha256": "e4f7ddf12fe4a2e6a9404c471f501a47b377654afdd5bb138d055fdd47e6c19c"
+    },
+    {
+      "path": "src/studio/modules/Elsa.Studio.Authentication.UI.Tests/LoginThemeCssContractTests.cs",
+      "beforeSha256": "172b71a93870e3626a671580b3ececec15b0d886f425d404ad70a6c224ff92e7",
+      "afterSha256": "70c741230e54ff9d43e173252c22c938e5ac05a8752f74321a5997183112eca3"
+    },
+    {
+      "path": "src/studio/modules/Elsa.Studio.Dashboard.Tests/DashboardWidgetRegistrationTests.cs",
+      "beforeSha256": "0b14ec225f5df9f0da725760a8d0bcf2613d92bbdb5ed518cf8922ede65ac0e3",
+      "afterSha256": "a1972f62f2413c868f7603f3a42a5cb8cf53a0723e4f7642bfe913937834b08d"
+    },
+    {
+      "path": "src/studio/modules/Elsa.Studio.Dashboard.Tests/Elsa.Studio.Dashboard.Tests.csproj",
+      "beforeSha256": "d0020392aa692835717620e2b4ddd665df4020435e5ad6b3da68a421a3b3bd01",
+      "afterSha256": "587cdb70a6040073c036a0d6b70312abd256a7e208abf32469a88d81aa9c68a4"
+    },
+    {
+      "path": "test/studio/Shared/StudioSourceFiles.cs",
+      "beforeSha256": null,
+      "afterSha256": "4585edbdcb3e3a8e0c71e31d367742888c24305bbf0a4631294bea83c98f8814"
+    }
+  ],
+  "initialCombinedTestRun": {
+    "exitCode": 1,
+    "projectSummaries": [
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 323,
+        "skipped": 0,
+        "total": 323,
+        "assembly": "Elsa.Workflows.IntegrationTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 304,
+        "skipped": 0,
+        "total": 304,
+        "assembly": "Elsa.Workflows.Core.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 374,
+        "skipped": 0,
+        "total": 374,
+        "assembly": "Elsa.Workflows.Runtime.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 203,
+        "skipped": 2,
+        "total": 205,
+        "assembly": "Elsa.Workflows.ComponentTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 125,
+        "skipped": 0,
+        "total": 125,
+        "assembly": "Elsa.Activities.IntegrationTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 158,
+        "skipped": 0,
+        "total": 158,
+        "assembly": "Elsa.JavaScript.IntegrationTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 12,
+        "skipped": 0,
+        "total": 12,
+        "assembly": "Elsa.Resilience.IntegrationTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 37,
+        "skipped": 0,
+        "total": 37,
+        "assembly": "Elsa.Http.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 6,
+        "skipped": 0,
+        "total": 6,
+        "assembly": "Elsa.SasTokens.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 16,
+        "skipped": 0,
+        "total": 16,
+        "assembly": "Elsa.Alterations.IntegrationTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 426,
+        "skipped": 0,
+        "total": 426,
+        "assembly": "Elsa.Activities.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 118,
+        "skipped": 0,
+        "total": 118,
+        "assembly": "Elsa.Workflows.Management.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 23,
+        "skipped": 0,
+        "total": 23,
+        "assembly": "Elsa.Expressions.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 62,
+        "skipped": 0,
+        "total": 62,
+        "assembly": "Elsa.Scheduling.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 30,
+        "skipped": 0,
+        "total": 30,
+        "assembly": "Elsa.Bpmn.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 21,
+        "skipped": 0,
+        "total": 21,
+        "assembly": "Elsa.Bpmn.Interchange.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 9,
+        "skipped": 0,
+        "total": 9,
+        "assembly": "Elsa.Common.IntegrationTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 63,
+        "skipped": 0,
+        "total": 63,
+        "assembly": "Elsa.Bpmn.IntegrationTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 127,
+        "skipped": 0,
+        "total": 127,
+        "assembly": "Elsa.Bpmn.Interchange.IntegrationTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 23,
+        "skipped": 0,
+        "total": 23,
+        "assembly": "Elsa.Dsl.ElsaScript.IntegrationTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 96,
+        "skipped": 0,
+        "total": 96,
+        "assembly": "Elsa.Resilience.Core.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 97,
+        "skipped": 0,
+        "total": 97,
+        "assembly": "Elsa.Common.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 2,
+        "skipped": 0,
+        "total": 2,
+        "assembly": "Elsa.Http.IntegrationTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 8,
+        "skipped": 0,
+        "total": 8,
+        "assembly": "Elsa.Tenants.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 10,
+        "skipped": 0,
+        "total": 10,
+        "assembly": "Elsa.Features.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 6,
+        "skipped": 0,
+        "total": 6,
+        "assembly": "Elsa.Shells.Api.Tests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 178,
+        "skipped": 0,
+        "total": 178,
+        "assembly": "Elsa.Identity.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 39,
+        "skipped": 0,
+        "total": 39,
+        "assembly": "Elsa.Diagnostics.StructuredLogs.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 6,
+        "skipped": 0,
+        "total": 6,
+        "assembly": "Elsa.Diagnostics.StructuredLogs.IntegrationTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 25,
+        "skipped": 0,
+        "total": 25,
+        "assembly": "Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 26,
+        "skipped": 0,
+        "total": 26,
+        "assembly": "Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 23,
+        "skipped": 0,
+        "total": 23,
+        "assembly": "Elsa.Diagnostics.ConsoleLogs.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 26,
+        "skipped": 0,
+        "total": 26,
+        "assembly": "Elsa.Diagnostics.ConsoleLogs.IntegrationTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 125,
+        "skipped": 0,
+        "total": 125,
+        "assembly": "Elsa.Secrets.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 34,
+        "skipped": 0,
+        "total": 34,
+        "assembly": "Elsa.Workflows.Api.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 23,
+        "skipped": 0,
+        "total": 23,
+        "assembly": "Elsa.Diagnostics.OpenTelemetry.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 23,
+        "skipped": 0,
+        "total": 23,
+        "assembly": "Elsa.Diagnostics.OpenTelemetry.IntegrationTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 19,
+        "skipped": 0,
+        "total": 19,
+        "assembly": "Elsa.Dashboard.Api.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 50,
+        "skipped": 0,
+        "total": 50,
+        "assembly": "Elsa.Persistence.VNext.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 61,
+        "skipped": 0,
+        "total": 61,
+        "assembly": "Elsa.Persistence.EFCore.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 3,
+        "skipped": 0,
+        "total": 3,
+        "assembly": "Elsa.AI.Abstractions.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 3,
+        "skipped": 0,
+        "total": 3,
+        "assembly": "Elsa.AI.Copilot.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 50,
+        "skipped": 0,
+        "total": 50,
+        "assembly": "Elsa.AI.Host.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 36,
+        "skipped": 0,
+        "total": 36,
+        "assembly": "Elsa.AI.Persistence.EFCore.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 69,
+        "skipped": 0,
+        "total": 69,
+        "assembly": "Elsa.AI.IntegrationTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 4,
+        "skipped": 0,
+        "total": 4,
+        "assembly": "Elsa.Platform.Integration.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 16,
+        "skipped": 0,
+        "total": 16,
+        "assembly": "Elsa.Hosting.Management.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 205,
+        "skipped": 0,
+        "total": 205,
+        "assembly": "Elsa.ExternalAuthentication.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 168,
+        "skipped": 0,
+        "total": 168,
+        "assembly": "Elsa.ExternalAuthentication.IntegrationTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 83,
+        "skipped": 0,
+        "total": 83,
+        "assembly": "Elsa.Api.Common.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 109,
+        "skipped": 0,
+        "total": 109,
+        "assembly": "Elsa.UserTasks.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 4,
+        "skipped": 0,
+        "total": 4,
+        "assembly": "Elsa.UserTasks.Persistence.EFCore.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 147,
+        "skipped": 144,
+        "total": 291,
+        "assembly": "Elsa.UserTasks.Persistence.ConformanceTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 8,
+        "skipped": 0,
+        "total": 8,
+        "assembly": "Elsa.Hosts.SmokeTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 31,
+        "skipped": 0,
+        "total": 31,
+        "assembly": "Elsa.Labels.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 38,
+        "skipped": 0,
+        "total": 38,
+        "assembly": "Elsa.Alterations.Core.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 26,
+        "skipped": 0,
+        "total": 26,
+        "assembly": "Elsa.Workflows.Persistence.ConformanceTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 12,
+        "skipped": 0,
+        "total": 12,
+        "assembly": "Elsa.Labels.Persistence.ConformanceTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 39,
+        "skipped": 0,
+        "total": 39,
+        "assembly": "Elsa.Alterations.Persistence.ConformanceTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 22,
+        "skipped": 0,
+        "total": 22,
+        "assembly": "Elsa.Diagnostics.StructuredLogs.Persistence.ConformanceTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 30,
+        "skipped": 0,
+        "total": 30,
+        "assembly": "Elsa.Connections.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Failed!",
+        "failed": 13,
+        "passed": 15,
+        "skipped": 0,
+        "total": 28,
+        "assembly": "Elsa.Studio.Core.Tests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 12,
+        "skipped": 0,
+        "total": 12,
+        "assembly": "Elsa.Studio.AI.Tests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 44,
+        "skipped": 0,
+        "total": 44,
+        "assembly": "Elsa.Studio.Administration.Tests.dll (net10.0)"
+      },
+      {
+        "result": "Failed!",
+        "failed": 6,
+        "passed": 19,
+        "skipped": 0,
+        "total": 25,
+        "assembly": "Elsa.Studio.Authentication.UI.Tests.dll (net10.0)"
+      },
+      {
+        "result": "Failed!",
+        "failed": 2,
+        "passed": 48,
+        "skipped": 0,
+        "total": 50,
+        "assembly": "Elsa.Studio.Dashboard.Tests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 48,
+        "skipped": 0,
+        "total": 48,
+        "assembly": "Elsa.Studio.Diagnostics.ConsoleLogs.Tests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 35,
+        "skipped": 0,
+        "total": 35,
+        "assembly": "Elsa.Studio.Diagnostics.OpenTelemetry.Tests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 23,
+        "skipped": 0,
+        "total": 23,
+        "assembly": "Elsa.Studio.Diagnostics.StructuredLogs.Tests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 6,
+        "skipped": 0,
+        "total": 6,
+        "assembly": "Elsa.Studio.Environments.Tests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 232,
+        "skipped": 0,
+        "total": 232,
+        "assembly": "Elsa.Studio.ExternalAuthentication.Tests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 14,
+        "skipped": 0,
+        "total": 14,
+        "assembly": "Elsa.Studio.PlatformIntegration.Tests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 107,
+        "skipped": 0,
+        "total": 107,
+        "assembly": "Elsa.Studio.Security.Tests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 29,
+        "skipped": 0,
+        "total": 29,
+        "assembly": "Elsa.Studio.UserTasks.Tests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 83,
+        "skipped": 0,
+        "total": 83,
+        "assembly": "Elsa.Studio.Workflows.Designer.Tests.dll (net8.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 83,
+        "skipped": 0,
+        "total": 83,
+        "assembly": "Elsa.Studio.Workflows.Designer.Tests.dll (net9.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 83,
+        "skipped": 0,
+        "total": 83,
+        "assembly": "Elsa.Studio.Workflows.Designer.Tests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 447,
+        "skipped": 0,
+        "total": 447,
+        "assembly": "Elsa.Studio.Workflows.Tests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 23,
+        "skipped": 0,
+        "total": 23,
+        "assembly": "Elsa.Actors.ProtoActor.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 6,
+        "skipped": 0,
+        "total": 6,
+        "assembly": "Elsa.Studio.Agents.Tests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 8,
+        "skipped": 0,
+        "total": 8,
+        "assembly": "Elsa.Caching.Distributed.ProtoActor.IntegrationTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 2,
+        "skipped": 0,
+        "total": 2,
+        "assembly": "Elsa.Logging.Core.IntegrationTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 18,
+        "skipped": 0,
+        "total": 18,
+        "assembly": "Elsa.Logging.Core.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 41,
+        "skipped": 0,
+        "total": 41,
+        "assembly": "Elsa.Ldap.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 57,
+        "skipped": 0,
+        "total": 57,
+        "assembly": "Elsa.Mqtt.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 20,
+        "skipped": 0,
+        "total": 20,
+        "assembly": "Elsa.MongoDb.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 29,
+        "skipped": 0,
+        "total": 29,
+        "assembly": "Elsa.Persistence.Dapper.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 4,
+        "skipped": 0,
+        "total": 4,
+        "assembly": "Elsa.Workflows.Runtime.ProtoActor.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 25,
+        "skipped": 0,
+        "total": 25,
+        "assembly": "Elsa.Scheduling.Hangfire.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 7,
+        "skipped": 0,
+        "total": 7,
+        "assembly": "Elsa.Scheduling.Quartz.ComponentTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 159,
+        "skipped": 0,
+        "total": 159,
+        "assembly": "Elsa.Scheduling.Quartz.UnitTests.dll (net10.0)"
+      },
+      {
+        "result": "Passed!",
+        "failed": 0,
+        "passed": 2,
+        "skipped": 0,
+        "total": 2,
+        "assembly": "Elsa.ServiceBus.MassTransit.UnitTests.dll (net10.0)"
+      }
+    ],
+    "trxOutcomes": {
+      "Passed": 6169,
+      "NotExecuted": 148,
+      "Failed": 21
+    },
+    "trxReports": 94,
+    "trxTotal": 6338,
+    "trxPassed": 6169,
+    "trxFailed": 21,
+    "trxNotExecuted": 148
+  },
+  "focusedAfterFix": [
+    {
+      "file": "studio-auth-fixed.trx",
+      "counters": {
+        "total": "25",
+        "executed": "25",
+        "passed": "25",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "file": "studio-core-fixed.trx",
+      "counters": {
+        "total": "28",
+        "executed": "28",
+        "passed": "28",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    },
+    {
+      "file": "studio-dashboard-fixed.trx",
+      "counters": {
+        "total": "50",
+        "executed": "50",
+        "passed": "50",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      }
+    }
+  ],
+  "logs": [
+    {
+      "path": "studio-test-layout-logs/current-core-full-tests.log.gz",
+      "sha256": "178621c70e391cc700adbbdbd2ff6deddf2fccb74cc24cd5808b13aabacddd3c",
+      "uncompressedSha256": "aad0475f3330f5bc239511061df075eccb9dd7fb013ccff9a0134a8093b874fe"
+    },
+    {
+      "path": "studio-test-layout-logs/studio-layout-core-tests.log.gz",
+      "sha256": "2ebafe14004251983e0253595c9fae33d853992fd836aea3a4937fd4cca05ebc",
+      "uncompressedSha256": "22635a1ad095be5d1382bcac45e360158977b2e309c43c94cf077304543013f0"
+    },
+    {
+      "path": "studio-test-layout-logs/studio-layout-auth-tests.log.gz",
+      "sha256": "d7b56fd5b222abc321e6a098b0b80fe12e1551cb186e78971a0faa8512a32581",
+      "uncompressedSha256": "f012a3eb9943fd6004352a30c080b53bd557feea707e5193301381c851426404"
+    },
+    {
+      "path": "studio-test-layout-logs/studio-layout-dashboard-tests.log.gz",
+      "sha256": "4dd7b90059c152f95be15845b8841d4ac414338286d759a5ce4af61aaa5a92f7",
+      "uncompressedSha256": "f710284f83e621f7af7d3ec9c7ae248d51e5ea3f1850ae481f0da7a87efea514"
+    }
+  ],
+  "cleanPatchReplay": "passed: six original files plus one new shared helper; all resulting SHA-256 values match",
+  "limitations": [
+    "Initial combined run failed; it is not relabeled as successful.",
+    "After the source-location fix, only the three affected projects were rebuilt and rerun (103 passing tests).",
+    "No test assertion or skip was removed; the 148 original skips remain unverified behavior.",
+    "This is a disposable source rehearsal, not the actual imported branch or a fresh hosted source-closure run."
+  ],
+  "publicationAuthorized": false
+}

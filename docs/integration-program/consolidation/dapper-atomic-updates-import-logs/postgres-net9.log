@@ -1,0 +1,29 @@
+Test run for /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/bin/Debug/net9.0/Elsa.Persistence.Dapper.UnitTests.dll (.NETCoreApp,Version=v9.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v3.1.5+1b188a7b0a (64-bit .NET 9.0.9)
+[xUnit.net 00:00:00.15]   Discovering: Elsa.Persistence.Dapper.UnitTests
+[xUnit.net 00:00:00.22]   Discovered:  Elsa.Persistence.Dapper.UnitTests
+[xUnit.net 00:00:00.27]   Starting:    Elsa.Persistence.Dapper.UnitTests
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.MissingReturnsNotFound [495 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.CallbackDatabaseFailureIsNotReportedAsContention [444 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.ConcurrentExpectedSnapshotHasOneWinner [120 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.FailedInsertRollsBackUnmark [51 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.TenantScopeIsRequiredAndAgnosticUpdatePreservesTenant [77 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.UpdateUsesCurrentMetadataAndPreservesUnmappedColumns [43 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.SupersededVersionIsConflictOnlyInsideTenantScope [66 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.OptionalTenantAccessorUsesDefaultTenantAndExcludesOtherTenants [40 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.NewDraftUnmarksPreviousInSameTransaction [55 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.VersionFiltersUseProviderCompatibleBooleanParameters(selection: "latest-and-published", expected: 0) [69 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.VersionFiltersUseProviderCompatibleBooleanParameters(selection: "latest", expected: 1) [50 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.VersionFiltersUseProviderCompatibleBooleanParameters(selection: "draft", expected: 1) [35 ms]
+[xUnit.net 00:00:02.08]   Finished:    Elsa.Persistence.Dapper.UnitTests
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.VersionFiltersUseProviderCompatibleBooleanParameters(selection: "published", expected: 1) [31 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.VersionFiltersUseProviderCompatibleBooleanParameters(selection: "latest-or-published", expected: 2) [25 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.WrongExpectedSnapshotDoesNotInvokeUpdate [29 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.SerializableReadExcludesLegacyWriterUntilCommit [60 ms]
+  Passed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.CannotMoveTenantOrDefinition [36 ms]
+
+Test Run Successful.
+Total tests: 17
+     Passed: 17
+ Total time: 2,8851 Seconds

@@ -1,0 +1,315 @@
+// @vitest-environment jsdom
+import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { describe, expect, it } from 'vitest';
+import { BPMN_ATTRIBUTE_DEFAULTS, BPMNDI_ATTRIBUTE_DEFAULTS, computeLoadWarnings, lacksDiagramLayout } from '../load-warnings.js';
+import { createModdle } from './moddle.js';
+
+const NAMESPACES = 'xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" ' +
+    'xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" ' +
+    'xmlns:elsa="https://elsaworkflows.io/schemas/bpmn/v1" xmlns:vendor="https://example.com/schemas/vendor"';
+
+function definitions(content: string, diagrams = ''): string {
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions ${NAMESPACES} id="Definitions_1" targetNamespace="https://example.com/process">
+  <bpmn:process id="Process_1">${content}</bpmn:process>${diagrams}
+</bpmn:definitions>`;
+}
+
+/** What bpmn-js writes on save: the document read into bpmn-moddle and written back. */
+async function roundTrip(xml: string): Promise<string> {
+    const moddle = createModdle();
+    const { rootElement } = await moddle.fromXML(xml);
+    return (await moddle.toXML(rootElement, { format: true })).xml;
+}
+
+const shape = (id: string, x: number) => `<bpmndi:BPMNShape id="${id}_di" bpmnElement="${id}"><dc:Bounds x="${x}" y="80" width="100" height="80" /></bpmndi:BPMNShape>`;
+const diagram = (id: string, plane: string, content: string) => `<bpmndi:BPMNDiagram id="${id}"><bpmndi:BPMNPlane id="${id}_plane" bpmnElement="${plane}">${content}</bpmndi:BPMNPlane></bpmndi:BPMNDiagram>`;
+
+describe('computeLoadWarnings', () => {
+    it('reports nothing for a document a save writes back unchanged', async () => {
+        const original = definitions(`
+            <bpmn:startEvent id="Start"><bpmn:outgoing>Flow</bpmn:outgoing></bpmn:startEvent>
+            <bpmn:sequenceFlow id="Flow" sourceRef="Start" targetRef="Task" />
+            <bpmn:task id="Task" name="Charge">
+              <bpmn:extensionElements>
+                <elsa:activityBinding activityType="Elsa.WriteLine"><elsa:input name="Text">"hello"</elsa:input></elsa:activityBinding>
+                <vendor:setting key="retries">3</vendor:setting>
+              </bpmn:extensionElements>
+              <bpmn:incoming>Flow</bpmn:incoming>
+            </bpmn:task>`,
+            diagram('Diagram_1', 'Process_1', `${shape('Start', 100)}${shape('Task', 200)}
+              <bpmndi:BPMNEdge id="Flow_di" bpmnElement="Flow"><di:waypoint x="136" y="120" /><di:waypoint x="200" y="120" /></bpmndi:BPMNEdge>`));
+
+        expect(computeLoadWarnings(original, await roundTrip(original))).toEqual([]);
+    });
+
+    it('ignores prefixes, attribute order and whitespace', () => {
+        const original = definitions('<bpmn:task id="Task" name="A" startQuantity="2" />');
+        const saved = `<model:definitions xmlns:model="http://www.omg.org/spec/BPMN/20100524/MODEL" targetNamespace="https://example.com/process" id="Definitions_1">
+  <model:process id="Process_1">
+
+    <model:task startQuantity="2" name="A" id="Task"/>
+  </model:process>
+</model:definitions>`;
+
+        expect(computeLoadWarnings(original, saved)).toEqual([]);
+    });
+
+    it('compares xsi:type by the type it names, not by its prefix', () => {
+        const original = definitions('<bpmn:sequenceFlow id="Flow" sourceRef="A" targetRef="B"><bpmn:conditionExpression xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="bpmn:tFormalExpression">x</bpmn:conditionExpression></bpmn:sequenceFlow>');
+        const saved = definitions('<bpmn:sequenceFlow id="Flow" sourceRef="A" targetRef="B"><bpmn:conditionExpression xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns:m="http://www.omg.org/spec/BPMN/20100524/MODEL" i:type="m:tFormalExpression">x</bpmn:conditionExpression></bpmn:sequenceFlow>');
+
+        expect(computeLoadWarnings(original, saved)).toEqual([]);
+    });
+
+    it('reports a foreign element outside extensionElements as dropped', async () => {
+        const original = definitions('<bpmn:task id="Task" /><vendor:annotation id="Note">kept by nobody</vendor:annotation>');
+
+        const warnings = computeLoadWarnings(original, await roundTrip(original));
+
+        expect(warnings).toEqual([{ kind: 'dropped', message: "'Note' (vendor:annotation) is lost.", elementId: 'Note' }]);
+    });
+
+    it('reports the second of two elements with the same id as dropped', () => {
+        const original = definitions('<bpmn:task id="Task" name="first" /><bpmn:task id="Task" name="second" />');
+        const saved = definitions('<bpmn:task id="Task" name="first" />');
+
+        expect(computeLoadWarnings(original, saved)).toEqual([{ kind: 'dropped', message: "'Task' (bpmn:task) is lost.", elementId: 'Task' }]);
+    });
+
+    it('does not report an omitted attribute that held its BPMN default', () => {
+        const original = definitions('<bpmn:task id="Task" startQuantity="1" isForCompensation="false" />');
+        const saved = definitions('<bpmn:task id="Task" />');
+
+        expect(computeLoadWarnings(original, saved)).toEqual([]);
+    });
+
+    it('reports an omitted attribute that held another value as dropped', () => {
+        const original = definitions('<bpmn:task id="Task" startQuantity="2" vendor:priority="high" />');
+        const saved = definitions('<bpmn:task id="Task" />');
+
+        expect(computeLoadWarnings(original, saved)).toEqual([
+            { kind: 'dropped', message: "The attribute 'startQuantity' of 'Task' is lost.", elementId: 'Task' },
+            { kind: 'dropped', message: "The attribute 'vendor:priority' of 'Task' is lost.", elementId: 'Task' }
+        ]);
+    });
+
+    it('applies BPMN defaults to BPMN elements only', () => {
+        const original = definitions('<bpmn:task id="Task"><bpmn:extensionElements><vendor:limit minimum="0" /></bpmn:extensionElements></bpmn:task>');
+        const saved = definitions('<bpmn:task id="Task"><bpmn:extensionElements><vendor:limit /></bpmn:extensionElements></bpmn:task>');
+
+        expect(computeLoadWarnings(original, saved)).toEqual([
+            { kind: 'dropped', message: "The attribute 'minimum' of a vendor:limit element inside 'Task' is lost.", elementId: 'Task' }
+        ]);
+    });
+
+    it('reports a changed attribute or text as rewritten, and lost text as dropped', () => {
+        const original = definitions('<bpmn:task id="A" name="Before"><bpmn:documentation>Docs</bpmn:documentation></bpmn:task><bpmn:task id="B"><bpmn:documentation>Docs</bpmn:documentation></bpmn:task>');
+        const saved = definitions('<bpmn:task id="A" name="After"><bpmn:documentation>Other</bpmn:documentation></bpmn:task><bpmn:task id="B"><bpmn:documentation /></bpmn:task>');
+
+        expect(computeLoadWarnings(original, saved)).toEqual([
+            { kind: 'rewritten', message: "The attribute 'name' of 'A' changes from 'Before' to 'After'.", elementId: 'A' },
+            { kind: 'rewritten', message: "The text of a bpmn:documentation element inside 'A' changes.", elementId: 'A' },
+            { kind: 'dropped', message: "The text of a bpmn:documentation element inside 'B' is lost.", elementId: 'B' }
+        ]);
+    });
+
+    it('compares text exactly, but ignores whitespace between elements', () => {
+        const original = definitions('<bpmn:task id="A"><bpmn:documentation> Pay now </bpmn:documentation></bpmn:task>');
+        const saved = definitions(`<bpmn:task id="A">
+            <bpmn:documentation>Pay now</bpmn:documentation>
+        </bpmn:task>`);
+
+        expect(computeLoadWarnings(original, saved)).toEqual([
+            { kind: 'rewritten', message: "The text of a bpmn:documentation element inside 'A' changes.", elementId: 'A' }
+        ]);
+    });
+
+    it('reports lost comments as dropped', async () => {
+        const original = definitions('<!-- one --><bpmn:task id="Task" /><!-- two -->');
+
+        expect(computeLoadWarnings(original, await roundTrip(original))).toEqual([{ kind: 'dropped', message: '2 comments are lost.' }]);
+    });
+
+    it('reports a comment the save replaces with another as lost', () => {
+        const original = definitions('<!-- old --><bpmn:task id="Task" />');
+        const saved = definitions('<!-- new --><bpmn:task id="Task" /><!-- another -->');
+
+        expect(computeLoadWarnings(original, saved)).toEqual([{ kind: 'dropped', message: 'A comment is lost.' }]);
+    });
+
+    it('does not report content the save adds', () => {
+        const original = definitions('<bpmn:task id="Task" />');
+        const saved = definitions('<bpmn:task id="Task" name="Added"><bpmn:incoming>Flow</bpmn:incoming></bpmn:task><bpmn:task id="Other" />');
+
+        expect(computeLoadWarnings(original, saved)).toEqual([]);
+    });
+
+    describe('diagram layout', () => {
+        const content = '<bpmn:subProcess id="Sub"><bpmn:task id="Inner" /></bpmn:subProcess>';
+
+        it('reports layout that moves to another plane unchanged as rewritten, once', () => {
+            const original = definitions(content, diagram('D1', 'Process_1', `${shape('Sub', 100)}${shape('Inner', 300)}`));
+            const saved = definitions(content, diagram('D1', 'Process_1', shape('Sub', 100)) + diagram('D2', 'Sub', shape('Inner', 300)));
+
+            expect(computeLoadWarnings(original, saved)).toEqual([
+                { kind: 'rewritten', message: "The diagram layout of 'Inner' moves to the diagram of 'Sub', unchanged.", elementId: 'Inner' }
+            ]);
+        });
+
+        it('reports layout that moves to another plane and changes as one rewritten warning', () => {
+            const original = definitions(content, diagram('D1', 'Process_1', `${shape('Sub', 100)}${shape('Inner', 300)}`));
+            const saved = definitions(content, diagram('D1', 'Process_1', shape('Sub', 100)) + diagram('D2', 'Sub', shape('Inner', 180)));
+
+            expect(computeLoadWarnings(original, saved)).toEqual([
+                { kind: 'rewritten', message: "The diagram layout of 'Inner' moves to the diagram of 'Sub', and its position or size changes.", elementId: 'Inner' }
+            ]);
+        });
+
+        it('ignores the ids of diagram elements', () => {
+            const original = definitions(content, diagram('D1', 'Process_1', `${shape('Sub', 100)}${shape('Inner', 300)}`));
+            const saved = original.replaceAll('_di"', '_shape"').replace('D1', 'Diagram').replace('D1_plane', 'Plane');
+
+            expect(computeLoadWarnings(original, saved)).toEqual([]);
+        });
+
+        it('reports changed geometry as rewritten, and lost layout as dropped', () => {
+            const original = definitions(content, diagram('D1', 'Process_1', `${shape('Sub', 100)}${shape('Inner', 300)}`));
+            const saved = definitions(content, diagram('D1', 'Process_1', shape('Sub', 150)));
+
+            expect(computeLoadWarnings(original, saved)).toEqual([
+                { kind: 'rewritten', message: "The diagram layout of 'Sub' changes.", elementId: 'Sub' },
+                { kind: 'dropped', message: "The diagram layout of 'Inner' is lost.", elementId: 'Inner' }
+            ]);
+        });
+
+        it('reports a lost or changed diagram attribute', () => {
+            const original = definitions(content, diagram('D1', 'Process_1',
+                '<bpmndi:BPMNShape id="Sub_di" bpmnElement="Sub" isExpanded="true" vendor:color="red"><dc:Bounds x="1" y="2" width="3" height="4" /></bpmndi:BPMNShape>'));
+            const saved = definitions(content, diagram('D1', 'Process_1',
+                '<bpmndi:BPMNShape id="Sub_di" bpmnElement="Sub" isExpanded="false"><dc:Bounds x="1" y="2" width="3" height="4" /></bpmndi:BPMNShape>'));
+
+            expect(computeLoadWarnings(original, saved)).toEqual([
+                { kind: 'rewritten', message: "The attribute 'isExpanded' of the diagram layout of 'Sub' changes from 'true' to 'false'.", elementId: 'Sub' },
+                { kind: 'dropped', message: "The attribute 'vendor:color' of the diagram layout of 'Sub' is lost.", elementId: 'Sub' }
+            ]);
+        });
+
+        it('reports foreign content inside a shape that a save loses', async () => {
+            const original = definitions(content, diagram('D1', 'Process_1',
+                '<bpmndi:BPMNShape id="Sub_di" bpmnElement="Sub"><dc:Bounds x="1" y="2" width="3" height="4" /><vendor:hint level="2" /></bpmndi:BPMNShape>'));
+
+            expect(computeLoadWarnings(original, await roundTrip(original))).toEqual([
+                { kind: 'dropped', message: "A vendor:hint element inside 'Sub' is lost.", elementId: 'Sub' }
+            ]);
+        });
+
+        it('compares the ids of foreign content inside a shape', () => {
+            const hinted = (id: string) => definitions(content, diagram('D1', 'Process_1',
+                `<bpmndi:BPMNShape id="Sub_di" bpmnElement="Sub"><dc:Bounds x="1" y="2" width="3" height="4" /><vendor:hint id="${id}" /></bpmndi:BPMNShape>`));
+
+            expect(computeLoadWarnings(hinted('Old'), hinted('New'))).toEqual([
+                { kind: 'dropped', message: "'Old' (vendor:hint) is lost.", elementId: 'Old' }
+            ]);
+        });
+
+        it('reports a lost label, and the lost content of a diagram', () => {
+            const labelled = '<bpmndi:BPMNShape id="Sub_di" bpmnElement="Sub"><dc:Bounds x="1" y="2" width="3" height="4" /><bpmndi:BPMNLabel labelStyle="Style" /></bpmndi:BPMNShape>';
+            const original = definitions(content, '<bpmndi:BPMNDiagram id="D1" name="Main"><bpmndi:BPMNPlane id="P1" bpmnElement="Process_1">' + labelled +
+                '</bpmndi:BPMNPlane><bpmndi:BPMNLabelStyle id="Style"><dc:Font name="Arial" size="11" /></bpmndi:BPMNLabelStyle></bpmndi:BPMNDiagram>');
+            const saved = definitions(content, diagram('D1', 'Process_1', shape('Sub', 1).replace('x="1" y="80" width="100" height="80"', 'x="1" y="2" width="3" height="4"')));
+
+            expect(computeLoadWarnings(original, saved)).toEqual([
+                { kind: 'dropped', message: "A bpmndi:BPMNLabel element inside 'Sub' is lost.", elementId: 'Sub' },
+                { kind: 'dropped', message: "The attribute 'name' of the diagram of 'Process_1' is lost.", elementId: 'Process_1' },
+                { kind: 'dropped', message: "A bpmndi:BPMNLabelStyle element inside 'Process_1' is lost.", elementId: 'Process_1' }
+            ]);
+        });
+
+        it('reports a second drawing of an element that a save loses', () => {
+            const original = definitions(content, diagram('D1', 'Process_1', shape('Sub', 100)) + diagram('D2', 'Process_1', shape('Sub', 400)));
+            const saved = definitions(content, diagram('D1', 'Process_1', shape('Sub', 100)));
+
+            expect(computeLoadWarnings(original, saved)).toEqual([
+                { kind: 'dropped', message: "A diagram layout of 'Sub' is lost.", elementId: 'Sub' }
+            ]);
+        });
+
+        it('matches a drawing to one the save keeps on its own plane before one on another plane', () => {
+            const original = definitions(content, diagram('D1', 'Process_1', shape('Inner', 300)) + diagram('D2', 'Sub', shape('Inner', 50)));
+            const saved = definitions(content, diagram('D2', 'Sub', shape('Inner', 50)));
+
+            expect(computeLoadWarnings(original, saved)).toEqual([
+                { kind: 'dropped', message: "A diagram layout of 'Inner' is lost.", elementId: 'Inner' }
+            ]);
+        });
+
+        it('reports the lost content of a second diagram of the same element', () => {
+            const named = (name: string) => `<bpmndi:BPMNDiagram id="${name}" name="${name}"><bpmndi:BPMNPlane id="${name}_plane" bpmnElement="Process_1" /></bpmndi:BPMNDiagram>`;
+
+            expect(computeLoadWarnings(definitions(content, named('First') + named('Second')), definitions(content, named('First')))).toEqual([
+                { kind: 'dropped', message: "A diagram of 'Process_1' is lost.", elementId: 'Process_1' }
+            ]);
+        });
+
+        it('matches a diagram to the one the save keeps of the same element, wherever it is', () => {
+            const named = (name: string) => `<bpmndi:BPMNDiagram id="${name}" name="${name}"><bpmndi:BPMNPlane id="${name}_plane" bpmnElement="Process_1" /></bpmndi:BPMNDiagram>`;
+            const bare = diagram('Bare', 'Process_1', '');
+
+            expect(computeLoadWarnings(definitions(content, bare + named('Main')), definitions(content, named('Main')))).toEqual([]);
+            expect(computeLoadWarnings(definitions(content, named('First') + named('Second')), definitions(content, named('Second')))).toEqual([
+                { kind: 'dropped', message: "A diagram of 'Process_1' is lost.", elementId: 'Process_1' }
+            ]);
+            expect(computeLoadWarnings(definitions(content, named('Old') + bare), definitions(content, bare + named('New')))).toEqual([
+                { kind: 'rewritten', message: "The attribute 'name' of the diagram of 'Process_1' changes from 'Old' to 'New'.", elementId: 'Process_1' }
+            ]);
+        });
+
+        it('reports a lost diagram only when it held more than its shapes', () => {
+            const withName = definitions(content, '<bpmndi:BPMNDiagram id="D2" name="Sub diagram"><bpmndi:BPMNPlane id="P2" bpmnElement="Sub" /></bpmndi:BPMNDiagram>');
+            const bare = definitions(content, '<bpmndi:BPMNDiagram id="D2"><bpmndi:BPMNPlane id="P2" bpmnElement="Sub" /></bpmndi:BPMNDiagram>');
+            const saved = definitions(content);
+
+            expect(computeLoadWarnings(withName, saved)).toEqual([{ kind: 'dropped', message: "The diagram of 'Sub' is lost.", elementId: 'Sub' }]);
+            expect(computeLoadWarnings(bare, saved)).toEqual([]);
+        });
+    });
+
+    it('refuses a document that is not well-formed', () => {
+        expect(() => computeLoadWarnings('<bpmn:definitions', definitions(''))).toThrow(/not well-formed/);
+    });
+});
+
+describe('lacksDiagramLayout', () => {
+    it('is true only for a document that draws nothing', () => {
+        expect(lacksDiagramLayout(definitions('<bpmn:task id="Task" />'))).toBe(true);
+        expect(lacksDiagramLayout(definitions('<bpmn:task id="Task" />', diagram('D1', 'Process_1', '')))).toBe(true);
+        expect(lacksDiagramLayout(definitions('<bpmn:task id="Task" />', diagram('D1', 'Process_1', shape('Task', 1))))).toBe(false);
+    });
+});
+
+/** Every attribute default a bpmn-moddle schema file declares, by property name. */
+function schemaDefaults(file: string): Record<string, string> {
+    const require = createRequire(import.meta.url);
+    const schema = JSON.parse(readFileSync(require.resolve(`bpmn-moddle/resources/bpmn/json/${file}`), 'utf8')) as {
+        types: { properties?: { name: string; default?: unknown }[] }[];
+    };
+    const defaults: Record<string, string> = {};
+    for (const type of schema.types) {
+        for (const property of type.properties ?? []) {
+            if (property.default !== undefined) defaults[property.name] = String(property.default);
+        }
+    }
+    return defaults;
+}
+
+describe('attribute defaults', () => {
+    it("BPMN_ATTRIBUTE_DEFAULTS matches every attribute default in bpmn-moddle's BPMN schema", () => {
+        expect(BPMN_ATTRIBUTE_DEFAULTS).toEqual(schemaDefaults('bpmn.json'));
+    });
+
+    it("BPMNDI_ATTRIBUTE_DEFAULTS matches every attribute default in bpmn-moddle's BPMN DI schema", () => {
+        expect(BPMNDI_ATTRIBUTE_DEFAULTS).toEqual(schemaDefaults('bpmndi.json'));
+    });
+});

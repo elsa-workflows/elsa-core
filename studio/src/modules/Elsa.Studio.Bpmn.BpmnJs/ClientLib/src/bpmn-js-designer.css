@@ -1,0 +1,67 @@
+/* Everything the bpmn-js designer draws with, in one stylesheet. */
+@import 'bpmn-js/dist/assets/diagram-js.css';
+@import 'bpmn-js/dist/assets/bpmn-js.css';
+@import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
+@import '@bpmn-io/properties-panel/dist/assets/properties-panel.css';
+
+/*
+ * The canvas stays light in every theme. bpmn-js draws the bpmn.io watermark in a fixed dark grey that must stay
+ * visible, and a dark canvas would hide it. The palette, context pad and properties panel follow bpmn.io's `--bio-*`
+ * tokens, which a host may map onto its own theme.
+ *
+ * Instance state uses `--elsa-bpmn-state-*` and problem markers `--elsa-bpmn-problem-*`, so a host can match its
+ * palette. Shapes are drawn with inline styles, so the markers need !important. A problem marker comes after the state
+ * markers, so it wins on an element that has both.
+ */
+.elsa-bpmn-js-designer {
+    --elsa-bpmn-state-faulted: #d32f2f;
+    --elsa-bpmn-state-blocked: #ed6c02;
+    --elsa-bpmn-state-active: #0288d1;
+    --elsa-bpmn-state-completed: #2e7d32;
+    --elsa-bpmn-state-canceled: #9e9e9e;
+    --elsa-bpmn-state-idle: #616161;
+    --elsa-bpmn-problem-error: #d32f2f;
+    --elsa-bpmn-problem-warning: #ed6c02;
+    background: #ffffff;
+    color-scheme: light;
+}
+
+.elsa-bpmn-js-designer .djs-element.elsa-faulted .djs-visual > :first-child { stroke: var(--elsa-bpmn-state-faulted) !important; }
+.elsa-bpmn-js-designer .djs-element.elsa-blocked .djs-visual > :first-child { stroke: var(--elsa-bpmn-state-blocked) !important; }
+.elsa-bpmn-js-designer .djs-element.elsa-active .djs-visual > :first-child { stroke: var(--elsa-bpmn-state-active) !important; }
+.elsa-bpmn-js-designer .djs-element.elsa-completed .djs-visual > :first-child { stroke: var(--elsa-bpmn-state-completed) !important; }
+.elsa-bpmn-js-designer .djs-element.elsa-canceled .djs-visual > :first-child { stroke: var(--elsa-bpmn-state-canceled) !important; }
+.elsa-bpmn-js-designer .djs-element.elsa-problem-warning .djs-visual > :first-child { stroke: var(--elsa-bpmn-problem-warning) !important; }
+.elsa-bpmn-js-designer .djs-element.elsa-problem-error .djs-visual > :first-child { stroke: var(--elsa-bpmn-problem-error) !important; }
+/* A sequence flow draws its arrowhead's <defs> first, then its line, so the line and the arrowhead are coloured themselves. */
+.elsa-bpmn-js-designer .djs-connection.elsa-problem-warning .djs-visual > path { stroke: var(--elsa-bpmn-problem-warning) !important; }
+.elsa-bpmn-js-designer .djs-connection.elsa-problem-warning .djs-visual marker path { stroke: var(--elsa-bpmn-problem-warning) !important; fill: var(--elsa-bpmn-problem-warning) !important; }
+.elsa-bpmn-js-designer .djs-connection.elsa-problem-error .djs-visual > path { stroke: var(--elsa-bpmn-problem-error) !important; }
+.elsa-bpmn-js-designer .djs-connection.elsa-problem-error .djs-visual marker path { stroke: var(--elsa-bpmn-problem-error) !important; fill: var(--elsa-bpmn-problem-error) !important; }
+
+.elsa-bpmn-badge {
+    min-width: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    font: 600 11px/18px sans-serif;
+    text-align: center;
+    color: #ffffff;
+    background: var(--elsa-bpmn-state-idle);
+}
+.elsa-bpmn-badge-faulted { background: var(--elsa-bpmn-state-faulted); }
+.elsa-bpmn-badge-blocked { background: var(--elsa-bpmn-state-blocked); }
+.elsa-bpmn-badge-active { background: var(--elsa-bpmn-state-active); }
+.elsa-bpmn-badge-completed { background: var(--elsa-bpmn-state-completed); }
+.elsa-bpmn-badge-canceled { background: var(--elsa-bpmn-state-canceled); }
+
+.elsa-bpmn-problem {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    font: 700 12px/18px sans-serif;
+    text-align: center;
+    color: #ffffff;
+    cursor: help;
+}
+.elsa-bpmn-problem-error { background: var(--elsa-bpmn-problem-error); }
+.elsa-bpmn-problem-warning { background: var(--elsa-bpmn-problem-warning); }

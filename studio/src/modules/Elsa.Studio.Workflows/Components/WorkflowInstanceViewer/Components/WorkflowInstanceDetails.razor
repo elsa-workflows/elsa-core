@@ -1,0 +1,98 @@
+@inherits StudioComponentBase
+@using Elsa.Studio.Workflows.Services
+@using Microsoft.Extensions.Localization
+@inject ILocalizer Localizer
+
+<style>
+    .incidents-custom-spacing .mud-expand-panel-content,
+    .incidents-custom-spacing .mud-expand-panel-content .pa-4
+    {
+        padding: 0 !important;
+    }
+
+    .incidents-custom-spacing .mud-expand-panel-header {
+        padding: 6px 16px !important;
+    }
+
+    .incidents-custom-spacing .truncate-text {
+        display: -webkit-box;
+        -webkit-line-clamp: 1;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .incidents-custom-spacing .mud-expand-panel-text {
+        width: 90%;
+    }
+</style>
+
+@if (WorkflowDefinition != null && WorkflowInstance != null)
+{
+<MudTabs Elevation="0" ApplyEffectsToContainer="true">
+    <MudTabPanel Text="@Localizer["Details"]">
+        <VerticalWell>
+            <DataPanel Title="@Localizer["Workflow"]" Data="WorkflowInstanceData" HideEmptyValues="true"/>
+        </VerticalWell>
+
+        @if (WorkflowInstanceSubWorkflowData.Any())
+        {
+        <VerticalWell>
+            <DataPanel Title="@Localizer["Sub-Workflow"]" Data="WorkflowInstanceSubWorkflowData" HideEmptyValues="true"/>
+        </VerticalWell>
+        }
+    </MudTabPanel>
+    <MudTabPanel Text="@Localizer["Incidents"]" BadgeData="@(Incidents.Count > 0 ? Incidents.Count : null)" BadgeColor="Color.Error">
+        <VerticalWell ExtraPadding="50">
+            <MudText Typo="Typo.overline" GutterBottom="true" Align="Align.Left">@Localizer["Incidents"]</MudText>
+            @if (IncidentsData.Any())
+            {
+                <MudExpansionPanels>
+                    @foreach (var incident in IncidentsData)
+                    {
+                        <MudExpansionPanel Dense="false" Gutters="false" Class="incidents-custom-spacing">
+                            <TitleContent>
+                                <div class="truncate-text">
+                                    @incident.SingleOrDefault(i=>i.Label == "Message")?.Text
+                                </div>
+                            </TitleContent>
+                            <ChildContent>
+                                <Well>
+                                    <DataPanel Data="incident" HideEmptyValues="true"/>
+                                </Well>
+                            </ChildContent>
+                        </MudExpansionPanel>
+                    }
+                </MudExpansionPanels>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Success" Dense="true" Variant="MudBlazor.Variant.Text" Icon="@Icons.Material.Outlined.Check">@Localizer["No incidents"]</MudAlert>
+            }
+        </VerticalWell>
+    </MudTabPanel>
+    <MudTabPanel Text="@Localizer["Variables"]">
+        <VerticalWell ExtraPadding="50">
+            <DataPanel Title="@Localizer["Variables"]" Data="WorkflowVariableData" NoDataMessage="@Localizer["No variables"]" HideEmptyValues="false"/>
+        </VerticalWell>
+    </MudTabPanel>
+    <MudTabPanel Text="@Localizer["Input/output"]">
+            <VerticalWell>
+            <MudStack>
+                <DataPanel Title="@Localizer["Inputs"]" Data="WorkflowInputData" NoDataMessage="@Localizer["No inputs"]" HideEmptyValues="false"/>
+                <DataPanel Title="@Localizer["Outputs"]" Data="WorkflowOutputData" NoDataMessage="@Localizer["No outputs"]" HideEmptyValues="false"/>
+            </MudStack>
+        </VerticalWell>
+            <VerticalWell>
+            @if (SubWorkflowInputData.Any())
+            {
+                <DataPanel Title="@Localizer["Sub-Workflow Inputs"]" Data="SubWorkflowInputData" HideEmptyValues="false"/>
+            }
+            @if (SubWorkflowOutputData.Any())
+            {
+                <DataPanel Title="@Localizer["Sub-Workflow Outputs"]" Data="SubWorkflowOutputData" HideEmptyValues="false"/>
+            }
+        </VerticalWell>
+    </MudTabPanel>
+</MudTabs>
+}

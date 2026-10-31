@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+    <ItemGroup>
+      <Compile Remove="Bootstrap\HealthChecks.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Elsa.Api.Client" />
+        <PackageReference Include="Elsa.Studio" />
+		<PackageReference Include="Elsa.Studio.Agents" />
+        <PackageReference Include="Elsa.Studio.Localization" />
+        <PackageReference Include="Elsa.Studio.Localization.BlazorWasm" />
+        <PackageReference Include="Elsa.Studio.Core.BlazorWasm" />
+        <PackageReference Include="Elsa.Studio.Login.BlazorWasm" />
+        <PackageReference Include="Elsa.Studio.Http.Webhooks" />
+        <PackageReference Include="Elsa.Studio.WorkflowContexts" />
+        <PackageReference Include="Elsa.Studio.Workflows.Dashboard" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" PrivateAssets="all" />
+		<PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" />
+		
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Shared\Shared.csproj" />
+    </ItemGroup>
+
+</Project>

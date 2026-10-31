@@ -1,0 +1,27 @@
+{
+  "solution": {
+    "path": "Elsa.sln",
+    "projects": [
+      "studio/react/dotnet/Elsa.ReactStudio.Host.Tests/Elsa.ReactStudio.Host.Tests.csproj",
+      "studio/react/dotnet/Elsa.ReactStudio.Host/Elsa.ReactStudio.Host.csproj",
+      "studio/react/dotnet/Elsa.ReactStudio.Server/Elsa.ReactStudio.Server.csproj",
+      "studio/react/dotnet/Elsa.ReactStudio/Elsa.ReactStudio.csproj",
+      "studio/react/dotnet/modules/Elsa.ReactStudio.ActivityEditors/Elsa.ReactStudio.ActivityEditors.csproj",
+      "studio/react/dotnet/modules/Elsa.ReactStudio.Alterations/Elsa.ReactStudio.Alterations.csproj",
+      "studio/react/dotnet/modules/Elsa.ReactStudio.Appearance/Elsa.ReactStudio.Appearance.csproj",
+      "studio/react/dotnet/modules/Elsa.ReactStudio.Dashboard/Elsa.ReactStudio.Dashboard.csproj",
+      "studio/react/dotnet/modules/Elsa.ReactStudio.Designer/Elsa.ReactStudio.Designer.csproj",
+      "studio/react/dotnet/modules/Elsa.ReactStudio.Diagnostics.ConsoleLogs/Elsa.ReactStudio.Diagnostics.ConsoleLogs.csproj",
+      "studio/react/dotnet/modules/Elsa.ReactStudio.Diagnostics.StructuredLogs/Elsa.ReactStudio.Diagnostics.StructuredLogs.csproj",
+      "studio/react/dotnet/modules/Elsa.ReactStudio.Environments/Elsa.ReactStudio.Environments.csproj",
+      "studio/react/dotnet/modules/Elsa.ReactStudio.Labels/Elsa.ReactStudio.Labels.csproj",
+      "studio/react/dotnet/modules/Elsa.ReactStudio.Secrets/Elsa.ReactStudio.Secrets.csproj",
+      "studio/react/dotnet/modules/Elsa.ReactStudio.Security/Elsa.ReactStudio.Security.csproj",
+      "studio/react/dotnet/modules/Elsa.ReactStudio.Settings/Elsa.ReactStudio.Settings.csproj",
+      "studio/react/dotnet/modules/Elsa.ReactStudio.Shell/Elsa.ReactStudio.Shell.csproj",
+      "studio/react/dotnet/modules/Elsa.ReactStudio.UserTasks/Elsa.ReactStudio.UserTasks.csproj",
+      "studio/react/dotnet/modules/Elsa.ReactStudio.WorkflowDefinitions/Elsa.ReactStudio.WorkflowDefinitions.csproj",
+      "studio/react/dotnet/modules/Elsa.ReactStudio.WorkflowInstances/Elsa.ReactStudio.WorkflowInstances.csproj"
+    ]
+  }
+}

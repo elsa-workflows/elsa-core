@@ -1,0 +1,61 @@
+{
+  "scope": "Comparison-only replay of the reviewed-released-addition guard over retained rehearsal evidence; no .NET rerun, original receipts unchanged",
+  "runnerSha256": "4c4f36b122089e50d55503b2ca4c0a4f0adc81121fe5b011cdc1d534f64bcccd",
+  "matrixSha256": "a3878ffe23c26abb2f8a11e6a06a78aad5aa322e1a17a8f2ebeb17012c2fdb47",
+  "results": [
+    {
+      "evidence": "activity-compatibility-evidence",
+      "framework": "net10",
+      "releasedGzipSha256": "ad6608a5e4e226232683576a7bdd8d61388e2b50abac289b96cc5d0e1dd5554b",
+      "consolidatedGzipSha256": "73cb110864067c81c76353e7d465c379ee608833eca12aa9969734dfc7d78202",
+      "allowedSourceOnlyAddedDescriptors": 9,
+      "reviewedReleasedAssemblyAddedDescriptors": [],
+      "unexpectedAddedDescriptors": []
+    },
+    {
+      "evidence": "activity-compatibility-evidence",
+      "framework": "net9",
+      "releasedGzipSha256": "fd8c28fce0ac001ee8474653be23b0ae2299f13df9f5c3489ba8f8d80335f7ab",
+      "consolidatedGzipSha256": "baeb53d39cc4faef77330695dd4900c1d5e96e6d4a9c331d7d17ddac94d2dfca",
+      "allowedSourceOnlyAddedDescriptors": 9,
+      "reviewedReleasedAssemblyAddedDescriptors": [],
+      "unexpectedAddedDescriptors": []
+    },
+    {
+      "evidence": "activity-compatibility-evidence",
+      "framework": "net8",
+      "releasedGzipSha256": "b757bcfb242b8f4a238612031d4cace19dd6798cbb713060e770214abdb15bbf",
+      "consolidatedGzipSha256": "2c49f84e4a73d3888272ffc16a9b13a400cb4b1cb22f73ad46514f5e812e2eb4",
+      "allowedSourceOnlyAddedDescriptors": 9,
+      "reviewedReleasedAssemblyAddedDescriptors": [],
+      "unexpectedAddedDescriptors": []
+    },
+    {
+      "evidence": "generated-activity-compatibility-evidence",
+      "framework": "net10",
+      "releasedGzipSha256": "ec436d1aa14a8293d73fedded1f23adaa07ddbc207b9910a34af2eaef48b28a1",
+      "consolidatedGzipSha256": "acb0f74070589e1f652e24e08ae7a2e3b0a037a433672d56e4760d75cf42ebfa",
+      "allowedSourceOnlyAddedDescriptors": 9,
+      "reviewedReleasedAssemblyAddedDescriptors": [],
+      "unexpectedAddedDescriptors": []
+    },
+    {
+      "evidence": "generated-activity-compatibility-evidence",
+      "framework": "net9",
+      "releasedGzipSha256": "6cc6b1a3cff278dc8ed9651c5cf4d0a9d8f2011a83152ef0e190e804407be1c0",
+      "consolidatedGzipSha256": "813423961752e0d2895531b39a9ed4a61711fa9d116cb47cc2605d31c9e8ee72",
+      "allowedSourceOnlyAddedDescriptors": 9,
+      "reviewedReleasedAssemblyAddedDescriptors": [],
+      "unexpectedAddedDescriptors": []
+    },
+    {
+      "evidence": "generated-activity-compatibility-evidence",
+      "framework": "net8",
+      "releasedGzipSha256": "65ae10457dace2c25d253b08d13a3a86a7fb5fda74543165609fe9c9c2b83285",
+      "consolidatedGzipSha256": "09a22c66784aea6d8fe57ee86638c8db9ec52898972ff40ebcb6f0ef3ba28ea9",
+      "allowedSourceOnlyAddedDescriptors": 9,
+      "reviewedReleasedAssemblyAddedDescriptors": [],
+      "unexpectedAddedDescriptors": []
+    }
+  ]
+}

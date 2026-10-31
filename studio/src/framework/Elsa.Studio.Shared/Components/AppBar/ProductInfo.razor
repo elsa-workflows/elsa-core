@@ -1,0 +1,18 @@
+<MudIconButton Icon="@Icons.Material.Outlined.Info" Color="Color.Inherit" aria-label="About Elsa Studio" @onclick="@ShowProductInfo"/>
+
+@code{
+
+    [Inject] private IDialogService DialogService { get; set; } = null!;
+
+    private async Task ShowProductInfo()
+    {
+        await DialogService.ShowAsync<ProductInfoDialog>($"Elsa Studio {ToolVersion.GetDisplayVersion()}", new DialogOptions
+        {
+            FullWidth = true,
+            MaxWidth = MaxWidth.ExtraSmall,
+            CloseButton = true,
+            CloseOnEscapeKey = true
+        });
+    }
+
+}

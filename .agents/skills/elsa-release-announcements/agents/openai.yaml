@@ -1,0 +1,4 @@
+interface:
+  display_name: "Elsa Release Announcements"
+  short_description: "Draft and publish Elsa release announcements"
+  default_prompt: "Use $elsa-release-announcements to prepare Discord, LinkedIn, and X posts for the latest Elsa release."

@@ -1,0 +1,4 @@
+@import "@elsa-workflows/react-studio-ui/styles.css";
+/* A single ordered utility sheet prevents independently loaded feature styles
+   from overriding responsive variants in the shared UI (e.g. hidden md:block). */
+@source "../dotnet/modules/**/Client/**/*.{ts,tsx}";

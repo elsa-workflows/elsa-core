@@ -1,0 +1,10 @@
+@page "/security/users"
+@inherits StudioComponentBase
+
+<PageTitle>Users</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.False" Class="py-4">
+    <UserAdministrationAccessBoundary Context="access">
+        <UserListSurface Access="@access" />
+    </UserAdministrationAccessBoundary>
+</MudContainer>

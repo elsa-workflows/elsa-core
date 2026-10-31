@@ -1,0 +1,222 @@
+using System.ComponentModel;
+using System.Reflection;
+using Elsa.Extensions;
+using Elsa.Features.Attributes;
+using Elsa.Features.Contracts;
+using Elsa.Features.Models;
+using Elsa.Features.Services;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
+
+namespace Elsa.Features.Implementations;
+
+/// <inheritdoc />
+public class Module : IModule
+{
+    private sealed record HostedServiceDescriptor(int Order, Type Type);
+
+    private Dictionary<Type, IFeature> _features = new();
+    private readonly HashSet<IFeature> _configuredFeatures = new();
+    private readonly List<HostedServiceDescriptor> _hostedServiceDescriptors = new();
+
+    /// <summary>
+    /// Constructor.
+    /// </summary>
+    public Module(IServiceCollection services)
+    {
+        Services = services;
+    }
+
+    /// <inheritdoc />
+    public IServiceCollection Services { get; }
+
+    /// <inheritdoc />
+    public IDictionary<object, object> Properties { get; } = new Dictionary<object, object>();
+
+    /// <inheritdoc />
+    public bool HasFeature<T>() where T : class, IFeature
+    {
+        return HasFeature(typeof(T));
+    }
+
+    /// <inheritdoc />
+    public bool HasFeature(Type featureType)
+    {
+        return _features.ContainsKey(featureType);
+    }
+
+    /// <inheritdoc />
+    public T Configure<T>(Action<T>? configure = null) where T : class, IFeature
+    {
+        return Configure(module => (T)Activator.CreateInstance(typeof(T), module)!, configure);
+    }
+
+    /// <inheritdoc />
+    public T Configure<T>(Func<IModule, T> factory, Action<T>? configure = null) where T : class, IFeature
+    {
+        if (!_features.TryGetValue(typeof(T), out var feature))
+        {
+            feature = factory(this);
+            _features[typeof(T)] = feature;
+        }
+
+        configure?.Invoke((T)feature);
+
+        if (!_isApplying)
+            return (T)feature;
+
+        var dependencies = GetDependencyTypes(feature.GetType()).ToHashSet();
+        foreach (var dependency in dependencies.Select(GetOrCreateFeature))
+            ConfigureFeature(dependency);
+
+        ConfigureFeature(feature);
+        return (T)feature;
+    }
+
+    /// <inheritdoc />
+    public IModule ConfigureHostedService<T>(int priority = 0) where T : class, IHostedService
+    {
+        return ConfigureHostedService(typeof(T), priority);
+    }
+
+    /// <inheritdoc />
+    public IModule ConfigureHostedService(Type hostedServiceType, int priority = 0)
+    {
+        _hostedServiceDescriptors.Add(new(priority, hostedServiceType));
+        return this;
+    }
+
+    private bool _isApplying;
+
+    /// <inheritdoc />
+    public void Apply()
+    {
+        _isApplying = true;
+        var featureTypes = GetFeatureTypes();
+        _features = featureTypes.ToDictionary(featureType => featureType, featureType => _features.TryGetValue(featureType, out var existingFeature) ? existingFeature : (IFeature)Activator.CreateInstance(featureType, this)!);
+
+        // Iterate over a copy of the features to avoid concurrent modification exceptions.
+        foreach (var feature in _features.Values.ToList())
+        {
+            // This will cause additional features to be added to _features.
+            ConfigureFeature(feature);
+        }
+
+        // Filter out features that depend on other features that are not installed.
+        _features = ExcludeFeaturesWithMissingDependencies(_features.Values).ToDictionary(x => x.GetType(), x => x);
+
+        // Hosted services are registered after the features have been applied, because applying a feature can contribute more of them. They still belong
+        // at this position in the service collection though, ahead of whatever the features register from their Apply method, so remember where that is.
+        var hostedServiceIndex = Services.Count;
+
+        // Make sure to use the complete list of features when applying them. Applying a feature can introduce additional features (a feature calling
+        // Module.Configure<T>() from its Apply method, directly or through a helper such as AddActivity<T>()), so keep going until nothing new shows up.
+        var appliedFeatures = new HashSet<IFeature>();
+        while (GetFeaturesPendingApply(appliedFeatures) is { Count: > 0 } pendingFeatures)
+        {
+            appliedFeatures.UnionWith(pendingFeatures);
+
+            foreach (var feature in pendingFeatures)
+                feature.Apply();
+        }
+
+        // Add hosted services in order of priority.
+        RegisterHostedServices(hostedServiceIndex);
+
+        // Add a registry of enabled features to the service collection for client applications to reflect on what features are installed.
+        var registry = new InstalledFeatureRegistry();
+        foreach (var feature in _features.Values)
+        {
+            var type = feature.GetType();
+            var name = type.Name.Replace("Feature", string.Empty);
+            var ns = "Elsa";
+            var displayName = type.GetCustomAttribute<DisplayNameAttribute>()?.DisplayName ?? name;
+            var description = type.GetCustomAttribute<DescriptionAttribute>()?.Description;
+            registry.Add(new(name, ns, displayName, description));
+        }
+
+        Services.AddSingleton<IInstalledFeatureRegistry>(registry);
+        Services.AddSingleton<IInstalledFeatureProvider>(sp => new InstalledFeatureProvider(sp.GetRequiredService<IInstalledFeatureRegistry>()));
+    }
+
+    private IEnumerable<IFeature> ExcludeFeaturesWithMissingDependencies(IEnumerable<IFeature> features)
+    {
+        return
+            from feature in features
+            let featureType = feature.GetType()
+            let dependencyOfAttributes = featureType.GetCustomAttributes<DependencyOfAttribute>(true).ToList()
+            let missingDependencies = dependencyOfAttributes.Where(x => !_features.ContainsKey(x.Type)).ToList()
+            where missingDependencies.Count == 0
+            select feature;
+    }
+
+    // Registers the configured hosted services in order of priority, starting at the specified index.
+    private void RegisterHostedServices(int index)
+    {
+        var appendIndex = Services.Count;
+
+        foreach (var hostedServiceDescriptor in _hostedServiceDescriptors.OrderBy(x => x.Order))
+            Services.TryAddEnumerable(ServiceDescriptor.Singleton(typeof(IHostedService), hostedServiceDescriptor.Type));
+
+        // TryAddEnumerable appends, so move what it added back to where hosted services configured through this module belong. Doing it this way rather
+        // than inserting directly keeps the de-duplication behaviour of TryAddEnumerable, which also considers what the features registered themselves.
+        var appendedDescriptors = Services.Skip(appendIndex).ToList();
+
+        for (var i = 0; i < appendedDescriptors.Count; i++)
+            Services.RemoveAt(appendIndex);
+
+        for (var i = 0; i < appendedDescriptors.Count; i++)
+            Services.Insert(index + i, appendedDescriptors[i]);
+    }
+
+    // Returns the features that have not been applied yet, sorted so that dependencies are applied before the features that depend on them.
+    private List<IFeature> GetFeaturesPendingApply(IReadOnlySet<IFeature> appliedFeatures)
+    {
+        var pendingFeatureTypes = _features.Where(x => !appliedFeatures.Contains(x.Value)).Select(x => x.Key).ToList();
+        var pendingFeatureTypeLookup = pendingFeatureTypes.ToHashSet();
+
+        // Sorting pulls in dependencies that are not pending themselves, so filter those out again.
+        return pendingFeatureTypes
+            .TSort(GetDeclaredDependencyTypes)
+            .Where(pendingFeatureTypeLookup.Contains)
+            .Select(x => _features[x])
+            .Distinct()
+            .ToList();
+    }
+
+    private void ConfigureFeature(IFeature feature)
+    {
+        if (_configuredFeatures.Contains(feature))
+            return;
+
+        feature.Configure();
+        feature.ConfigureHostedServices();
+        _features[feature.GetType()] = feature;
+        _configuredFeatures.Add(feature);
+    }
+
+    private IFeature GetOrCreateFeature(Type featureType)
+    {
+        return _features.TryGetValue(featureType, out var existingFeature) ? existingFeature : (IFeature)Activator.CreateInstance(featureType, this)!;
+    }
+
+    private HashSet<Type> GetFeatureTypes()
+    {
+        var featureTypes = _features.Keys.ToHashSet();
+        var featureTypesWithDependencies = featureTypes.Concat(featureTypes.SelectMany(GetDependencyTypes)).ToHashSet();
+        return featureTypesWithDependencies.TSort(GetDeclaredDependencyTypes).ToHashSet();
+    }
+
+    private static IEnumerable<Type> GetDeclaredDependencyTypes(Type type)
+    {
+        return type.GetCustomAttributes<DependsOnAttribute>(true).Select(dependsOn => dependsOn.Type);
+    }
+
+    // Recursively get dependency types.
+    private IEnumerable<Type> GetDependencyTypes(Type type)
+    {
+        var dependencies = GetDeclaredDependencyTypes(type).ToList();
+        return dependencies.Concat(dependencies.SelectMany(GetDependencyTypes));
+    }
+}

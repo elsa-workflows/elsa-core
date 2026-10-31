@@ -1,0 +1,25 @@
+"use client";
+import { useTranslation } from "@elsa-workflows/react-studio-sdk/localization";
+
+
+import { useMemo } from "react";
+import { useDesignerState } from "@elsa-workflows/react-studio-sdk/designer/context";
+import { containerKind } from "@elsa-workflows/react-studio-sdk/designer/model/containers";
+import { resolveContainer } from "@elsa-workflows/react-studio-sdk/designer/model/flowchart-ops";
+import { DesignerCanvas, type DesignerCanvasProps } from "./designer-canvas";
+import { SequenceDesigner } from "./sequence-designer";
+import { StateMachineCanvas } from "./state-machine-canvas";
+
+/**
+ * Picks the designer for the container currently opened (root or a nested one reached through the
+ * breadcrumb): React Flow canvas for flowcharts and state machines, an ordered list for sequences.
+ */
+export function DesignerSurface(props: DesignerCanvasProps) {
+  useTranslation();
+  const root = useDesignerState((s) => s.root);
+  const path = useDesignerState((s) => s.path);
+  const kind = useMemo(() => containerKind(resolveContainer(root, path) ?? root), [root, path]);
+  if (kind === "sequence") return <SequenceDesigner />;
+  if (kind === "stateMachine") return <StateMachineCanvas minimap={props.minimap} onToggleMinimap={props.onToggleMinimap} onOpenToolbox={props.onOpenToolbox} />;
+  return <DesignerCanvas {...props} />;
+}

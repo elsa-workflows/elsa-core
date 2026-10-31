@@ -1,0 +1,17 @@
+<Project>
+  <!-- This opt-in produces local proof artifacts, never a stable/preview release. -->
+  <Target Name="ValidateConsolidatedPackageProofVersion" BeforeTargets="Pack;GenerateNuspec"
+          Condition="'$(ConsolidatedPackageProof)' == 'true'">
+    <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(PackageVersion)', '^3\.10\.0-proof\.[1-9][0-9]*\.[1-9][0-9]*$'))"
+           Code="ELSA0003"
+           Text="ConsolidatedPackageProof requires PackageVersion 3.10.0-proof.&lt;positive run&gt;.&lt;positive attempt&gt;. Publication and publisher cutover remain separate approvals." />
+  </Target>
+  <!-- ConsolidatedReleaseCandidate is a verification pack for the candidate workflow only, not the published bytes. Stable 3.10.0 nuget.org and candidate Feedz publication use the pinned candidate. -->
+  <Target Name="ValidateConsolidatedReleaseCandidate" BeforeTargets="Restore;PrepareForBuild;Pack;GenerateNuspec"
+          Condition="'$(ConsolidatedReleaseCandidate)' == 'true'">
+    <Error Condition="'$(ConsolidatedPackageProof)' == 'true'" Code="ELSA0004"
+           Text="ConsolidatedReleaseCandidate and ConsolidatedPackageProof are mutually exclusive." />
+    <Error Condition="'$(Version)' != '$(PackageVersion)' or '$(Configuration)' != 'Release' or !$([System.Text.RegularExpressions.Regex]::IsMatch('$(Version)', '^3\.10\.(0|[1-9][0-9]*)$'))"
+           Code="ELSA0004" Text="ConsolidatedReleaseCandidate requires Release and Version=PackageVersion as a stable 3.10.x version." />
+  </Target>
+</Project>

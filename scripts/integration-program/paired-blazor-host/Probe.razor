@@ -1,0 +1,17 @@
+@page "/"
+@rendermode InteractiveServer
+@using Elsa.Studio.WorkflowContexts.Components
+@using Elsa.Api.Client.Resources.WorkflowDefinitions.Models
+<MudThemeProvider /><MudPopoverProvider /><MudDialogProvider /><MudSnackbarProvider />
+<main style="max-width:700px;margin:40px auto">
+<h1>Paired WorkflowContexts proof</h1>
+<p>Synthetic local data. Backend and Studio modules built from source.</p>
+<WorkflowContextsEditor WorkflowDefinition="definition" WorkflowDefinitionUpdated="Updated" />
+<p id="updates">Updates: @updates</p>
+<pre id="properties">@System.Text.Json.JsonSerializer.Serialize(definition.CustomProperties)</pre>
+</main>
+@code {
+ private readonly WorkflowDefinition definition = new();
+ private int updates;
+ private void Updated() => updates++;
+}

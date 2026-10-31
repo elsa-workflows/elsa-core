@@ -1,0 +1,370 @@
+using Dapper;
+using Elsa.Common.Multitenancy;
+using Elsa.Persistence.Dapper.Modules.Management.Records;
+using Elsa.Persistence.Dapper.Modules.Management.Stores;
+using Elsa.Persistence.Dapper.Services;
+using Elsa.Workflows;
+using Elsa.Workflows.Management.Filters;
+using Microsoft.Data.Sqlite;
+using NSubstitute;
+
+namespace Elsa.Dapper.UnitTests;
+
+public sealed class DapperWorkflowInstanceStoreTests : IDisposable
+{
+    private static readonly DateTimeOffset Cutoff = new(2026, 1, 1, 12, 5, 0, TimeSpan.Zero);
+
+    private readonly string _databasePath = Path.Combine(Path.GetTempPath(), $"elsa-dapper-instances-{Guid.NewGuid():N}.db");
+    private readonly string _connectionString;
+    private readonly DapperWorkflowInstanceStore _store;
+    private readonly TestTenantAccessor _tenantAccessor = new();
+
+    public DapperWorkflowInstanceStoreTests()
+    {
+        _connectionString = new SqliteConnectionStringBuilder { DataSource = _databasePath, Pooling = false }.ToString();
+        var connectionProvider = new SqliteDbConnectionProvider(_connectionString);
+
+        using var connection = new SqliteConnection(_connectionString);
+        connection.Open();
+        connection.Execute("""
+                           create table WorkflowInstances (
+                               Id text not null primary key,
+                               TenantId text null,
+                               DefinitionId text not null,
+                               DefinitionVersionId text not null,
+                               Version integer not null,
+                               WorkflowState text not null,
+                               Status text not null,
+                               SubStatus text not null,
+                               IsExecuting integer not null,
+                               CorrelationId text null,
+                               Name text null,
+                               IncidentCount integer not null,
+                               IsSystem integer not null,
+                               CreatedAt text not null,
+                               UpdatedAt text null,
+                               FinishedAt text null
+                           );
+                           """);
+
+        // Seeded through parameters rather than literals so the driver writes the timestamps in
+        // exactly the format it later binds them in for comparison.
+        Insert(connection, "stale-executing", Cutoff.AddMinutes(-5), isExecuting: true);
+        Insert(connection, "stale-idle", Cutoff.AddMinutes(-1), isExecuting: false);
+        Insert(connection, "at-cutoff", Cutoff, isExecuting: true);
+        Insert(connection, "fresh-executing", Cutoff.AddMinutes(4), isExecuting: true);
+
+        var store = new Store<WorkflowInstanceRecord>(connectionProvider, _tenantAccessor, "WorkflowInstances");
+        _store = new DapperWorkflowInstanceStore(store, Substitute.For<IWorkflowStateSerializer>());
+    }
+
+    [Fact]
+    public async Task FindManyIdsAsync_WithBeforeLastUpdated_ExcludesInstancesUpdatedAtOrAfterTheCutoff()
+    {
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+
+        var ids = await _store.FindManyIdsAsync(new WorkflowInstanceFilter { BeforeLastUpdated = Cutoff });
+
+        Assert.Equal(["stale-executing", "stale-idle"], ids.Order());
+    }
+
+    /// <summary>
+    /// Mirrors the filter used by RestartInterruptedWorkflowsTask. An instance that is executing right
+    /// now must not be reported as interrupted, or it gets restarted from the beginning mid-flight.
+    /// </summary>
+    [Fact]
+    public async Task FindManyIdsAsync_WithBeforeLastUpdatedAndIsExecuting_ExcludesInstancesThatAreStillActive()
+    {
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+
+        var ids = await _store.FindManyIdsAsync(new WorkflowInstanceFilter
+        {
+            IsExecuting = true,
+            BeforeLastUpdated = Cutoff
+        });
+
+        Assert.Equal(["stale-executing"], ids);
+    }
+
+    [Fact]
+    public async Task FindManyIdsAsync_WithoutBeforeLastUpdated_ReturnsAllInstances()
+    {
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+
+        var ids = await _store.FindManyIdsAsync(new WorkflowInstanceFilter());
+
+        Assert.Equal(["at-cutoff", "fresh-executing", "stale-executing", "stale-idle"], ids.Order());
+    }
+
+    [Fact]
+    public async Task CountAsync_WithBeforeLastUpdated_CountsOnlyInstancesUpdatedBeforeTheCutoff()
+    {
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+
+        var count = await _store.CountAsync(new WorkflowInstanceFilter { BeforeLastUpdated = Cutoff });
+
+        Assert.Equal(2, count);
+    }
+
+    [Fact(DisplayName = "TryMarkInterruptedAsync marks a Running instance as Running+Interrupted")]
+    public async Task TryMarkInterruptedAsync_MarksRunningInstance()
+    {
+        InsertInterruptible("running-1", WorkflowStatus.Running, WorkflowSubStatus.Executing, isExecuting: true);
+
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var marked = await _store.TryMarkInterruptedAsync("running-1");
+
+        Assert.True(marked);
+        Assert.Equal(("Running", "Interrupted", 0), ReadMarkers("running-1"));
+    }
+
+    [Fact(DisplayName = "TryMarkInterruptedAsync refuses Finished/Cancelled")]
+    public async Task TryMarkInterruptedAsync_DoesNotOverwriteCancelledInstanceByDefault()
+    {
+        InsertInterruptible("cancelled-1", WorkflowStatus.Finished, WorkflowSubStatus.Cancelled, isExecuting: false);
+
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var marked = await _store.TryMarkInterruptedAsync("cancelled-1");
+
+        Assert.False(marked);
+        Assert.Equal(("Finished", "Cancelled", 0), ReadMarkers("cancelled-1"));
+    }
+
+    [Fact(DisplayName = "TryMarkInterruptedAsync refuses Finished/Cancelled even when allowFinishedCancelled is true")]
+    public async Task TryMarkInterruptedAsync_RefusesCancelledWhenAllowed()
+    {
+        InsertInterruptible("cancelled-1", WorkflowStatus.Finished, WorkflowSubStatus.Cancelled, isExecuting: false);
+
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var marked = await _store.TryMarkInterruptedAsync("cancelled-1", allowFinishedCancelled: true);
+
+        Assert.False(marked);
+        Assert.Equal(("Finished", "Cancelled", 0), ReadMarkers("cancelled-1"));
+    }
+
+    [Fact(DisplayName = "TryMarkInterruptedAsync refuses Finished/Finished")]
+    public async Task TryMarkInterruptedAsync_RefusesFinishedInstance()
+    {
+        InsertInterruptible("finished-1", WorkflowStatus.Finished, WorkflowSubStatus.Finished, isExecuting: false);
+
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var marked = await _store.TryMarkInterruptedAsync("finished-1");
+
+        Assert.False(marked);
+        Assert.Equal(("Finished", "Finished", 0), ReadMarkers("finished-1"));
+    }
+
+    [Fact(DisplayName = "TryMarkInterruptedAsync still refuses Finished/Finished when allowFinishedCancelled is true")]
+    public async Task TryMarkInterruptedAsync_RefusesFinishedEvenWhenCancelledAllowed()
+    {
+        InsertInterruptible("finished-1", WorkflowStatus.Finished, WorkflowSubStatus.Finished, isExecuting: false);
+
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var marked = await _store.TryMarkInterruptedAsync("finished-1", allowFinishedCancelled: true);
+
+        Assert.False(marked);
+        Assert.Equal(("Finished", "Finished", 0), ReadMarkers("finished-1"));
+    }
+
+    [Fact(DisplayName = "TryMarkInterruptedAsync refuses Finished/Faulted")]
+    public async Task TryMarkInterruptedAsync_RefusesFaultedInstance()
+    {
+        InsertInterruptible("faulted-1", WorkflowStatus.Finished, WorkflowSubStatus.Faulted, isExecuting: false);
+
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var marked = await _store.TryMarkInterruptedAsync("faulted-1");
+
+        Assert.False(marked);
+        Assert.Equal(("Finished", "Faulted", 0), ReadMarkers("faulted-1"));
+    }
+
+    [Fact(DisplayName = "TryMarkInterruptedAsync still refuses Finished/Faulted when allowFinishedCancelled is true")]
+    public async Task TryMarkInterruptedAsync_RefusesFaultedEvenWhenCancelledAllowed()
+    {
+        InsertInterruptible("faulted-1", WorkflowStatus.Finished, WorkflowSubStatus.Faulted, isExecuting: false);
+
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var marked = await _store.TryMarkInterruptedAsync("faulted-1", allowFinishedCancelled: true);
+
+        Assert.False(marked);
+        Assert.Equal(("Finished", "Faulted", 0), ReadMarkers("faulted-1"));
+    }
+
+    [Fact(DisplayName = "TryMarkInterruptedAsync returns false when the instance is missing")]
+    public async Task TryMarkInterruptedAsync_ReturnsFalseWhenMissing()
+    {
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var marked = await _store.TryMarkInterruptedAsync("missing-1");
+
+        Assert.False(marked);
+    }
+
+    [Fact(DisplayName = "TryMarkInterruptedAsync does not mark a Running row that belongs to a different tenant")]
+    public async Task TryMarkInterruptedAsync_DoesNotMarkRunningInstanceOfAnotherTenant()
+    {
+        InsertInterruptible("running-other", WorkflowStatus.Running, WorkflowSubStatus.Executing, isExecuting: true, tenantId: "tenant-b");
+
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var marked = await _store.TryMarkInterruptedAsync("running-other");
+
+        Assert.False(marked);
+        Assert.Equal(("Running", "Executing", 1), ReadMarkers("running-other"));
+    }
+
+    [Fact(DisplayName = "TryTransitionSubStatusAsync updates only SubStatus and UpdatedAt")]
+    public async Task TryTransitionSubStatusAsync_UpdatesSubStatusAndTimestamp()
+    {
+        var cancellingAt = new DateTimeOffset(2026, 10, 26, 12, 0, 0, TimeSpan.Zero);
+        InsertCancellable("wf-1", WorkflowSubStatus.Suspended, updatedAt: cancellingAt.AddDays(-1));
+
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var marked = await _store.TryTransitionSubStatusAsync("wf-1", WorkflowSubStatus.Suspended, null, WorkflowSubStatus.Cancelling, cancellingAt);
+
+        Assert.True(marked);
+        Assert.Equal(("Running", "Cancelling", 0, "{}"), ReadCancellationRow("wf-1"));
+        Assert.Equal(cancellingAt, ReadUpdatedAt("wf-1"));
+    }
+
+    [Fact(DisplayName = "TryTransitionSubStatusAsync refuses an executing row")]
+    public async Task TryTransitionSubStatusAsync_RefusesExecuting()
+    {
+        InsertCancellable("wf-1", WorkflowSubStatus.Executing, isExecuting: true);
+
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var marked = await _store.TryTransitionSubStatusAsync("wf-1", WorkflowSubStatus.Executing, null, WorkflowSubStatus.Cancelling, DateTimeOffset.UtcNow);
+
+        Assert.False(marked);
+        Assert.Equal("Executing", ReadMarkers("wf-1").SubStatus);
+    }
+
+    [Fact(DisplayName = "TryTransitionSubStatusAsync restores the previous sub-status for the marked generation")]
+    public async Task TryTransitionSubStatusAsync_RestoresPreviousSubStatus()
+    {
+        var cancellingAt = new DateTimeOffset(2026, 10, 26, 12, 0, 0, TimeSpan.Zero);
+        var restoredAt = cancellingAt.AddMinutes(2);
+        InsertCancellable("wf-1", WorkflowSubStatus.Suspended, updatedAt: cancellingAt.AddDays(-1));
+
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        Assert.True(await _store.TryTransitionSubStatusAsync("wf-1", WorkflowSubStatus.Suspended, null, WorkflowSubStatus.Cancelling, cancellingAt));
+
+        var restored = await _store.TryTransitionSubStatusAsync("wf-1", WorkflowSubStatus.Cancelling, cancellingAt, WorkflowSubStatus.Suspended, restoredAt);
+
+        Assert.True(restored);
+        Assert.Equal(("Running", "Suspended", 0, "{}"), ReadCancellationRow("wf-1"));
+        Assert.Equal(restoredAt, ReadUpdatedAt("wf-1"));
+    }
+
+    [Fact(DisplayName = "TryTransitionSubStatusAsync does not mark Pending")]
+    public async Task TryTransitionSubStatusAsync_DoesNotMarkPending()
+    {
+        var updatedAt = new DateTimeOffset(2026, 10, 1, 0, 0, 0, TimeSpan.Zero);
+        InsertCancellable("wf-1", WorkflowSubStatus.Pending, updatedAt: updatedAt);
+
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var marked = await _store.TryTransitionSubStatusAsync("wf-1", WorkflowSubStatus.Pending, null, WorkflowSubStatus.Cancelling, updatedAt.AddMinutes(1));
+
+        Assert.False(marked);
+        Assert.Equal(("Running", "Pending", 0, "{}"), ReadCancellationRow("wf-1"));
+        Assert.Equal(updatedAt, ReadUpdatedAt("wf-1"));
+    }
+
+    [Fact(DisplayName = "TryTransitionSubStatusAsync does not overwrite Cancelled")]
+    public async Task TryTransitionSubStatusAsync_DoesNotOverwriteCancelled()
+    {
+        var cancellingAt = new DateTimeOffset(2026, 10, 26, 12, 0, 0, TimeSpan.Zero);
+        InsertCancellable("wf-1", WorkflowSubStatus.Cancelled, status: WorkflowStatus.Finished, updatedAt: cancellingAt);
+
+        using var tenantScope = _tenantAccessor.PushContext(new Tenant { Id = "tenant-a" });
+        var restored = await _store.TryTransitionSubStatusAsync("wf-1", WorkflowSubStatus.Cancelling, cancellingAt, WorkflowSubStatus.Suspended, cancellingAt.AddMinutes(1));
+
+        Assert.False(restored);
+        Assert.Equal(("Finished", "Cancelled", 0, "{}"), ReadCancellationRow("wf-1"));
+    }
+
+    public void Dispose()
+    {
+        File.Delete(_databasePath);
+    }
+
+    private void InsertCancellable(
+        string id,
+        WorkflowSubStatus subStatus,
+        bool isExecuting = false,
+        WorkflowStatus status = WorkflowStatus.Running,
+        DateTimeOffset? updatedAt = null)
+    {
+        using var connection = new SqliteConnection(_connectionString);
+        connection.Open();
+        Insert(connection, id, updatedAt ?? DateTimeOffset.UtcNow, isExecuting, status.ToString(), subStatus.ToString());
+    }
+
+    private (string Status, string SubStatus, long IsExecuting, string WorkflowState) ReadCancellationRow(string id)
+    {
+        using var connection = new SqliteConnection(_connectionString);
+        return connection.QuerySingle<(string, string, long, string)>(
+            "select Status, SubStatus, IsExecuting, WorkflowState from WorkflowInstances where Id = @Id",
+            new { Id = id });
+    }
+
+    private DateTimeOffset ReadUpdatedAt(string id)
+    {
+        using var connection = new SqliteConnection(_connectionString);
+        return connection.QuerySingle<DateTimeOffset>(
+            "select UpdatedAt from WorkflowInstances where Id = @Id",
+            new { Id = id });
+    }
+
+    private void InsertInterruptible(string id, WorkflowStatus status, WorkflowSubStatus subStatus, bool isExecuting, string tenantId = "tenant-a")
+    {
+        using var connection = new SqliteConnection(_connectionString);
+        connection.Open();
+        Insert(connection, id, DateTimeOffset.UtcNow, isExecuting, status.ToString(), subStatus.ToString(), tenantId);
+    }
+
+    private (string Status, string SubStatus, long IsExecuting) ReadMarkers(string id)
+    {
+        using var connection = new SqliteConnection(_connectionString);
+        return connection.QuerySingle<(string, string, long)>(
+            "select Status, SubStatus, IsExecuting from WorkflowInstances where Id = @Id",
+            new { Id = id });
+    }
+
+    private static void Insert(SqliteConnection connection, string id, DateTimeOffset updatedAt, bool isExecuting, string status = "Running", string subStatus = "Executing", string tenantId = "tenant-a")
+    {
+        connection.Execute(
+            """
+            insert into WorkflowInstances
+                (Id, TenantId, DefinitionId, DefinitionVersionId, Version, WorkflowState, Status, SubStatus, IsExecuting, IncidentCount, IsSystem, CreatedAt, UpdatedAt)
+            values
+                (@Id, @TenantId, 'definition-1', 'definition-1:1', 1, '{}', @Status, @SubStatus, @IsExecuting, 0, 0, @CreatedAt, @UpdatedAt);
+            """,
+            new
+            {
+                Id = id,
+                TenantId = tenantId,
+                Status = status,
+                SubStatus = subStatus,
+                IsExecuting = isExecuting,
+                CreatedAt = updatedAt,
+                UpdatedAt = updatedAt
+            });
+    }
+
+    private sealed class TestTenantAccessor : ITenantAccessor
+    {
+        public string TenantId => Tenant?.Id ?? Elsa.Common.Multitenancy.Tenant.DefaultTenantId;
+        public Tenant? Tenant { get; private set; }
+
+        public IDisposable PushContext(Tenant? tenant)
+        {
+            var previousTenant = Tenant;
+            Tenant = tenant;
+            return new Restore(() => Tenant = previousTenant);
+        }
+
+        private sealed class Restore(Action restore) : IDisposable
+        {
+            public void Dispose() => restore();
+        }
+    }
+}

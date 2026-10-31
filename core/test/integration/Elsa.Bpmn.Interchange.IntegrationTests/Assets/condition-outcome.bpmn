@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Flows conditional on an outcome name through the library's own vw:conditionOutcome attribute, which Bpmn.Semantics
+  evaluates. One carries the readable <conditionExpression> Bpmn.Interchange's own writer emits beside it, one does
+  not; import accepts both (elsa-core#8903 refuses only expression conditions nothing evaluates).
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:elsa="https://elsaworkflows.io/schemas/bpmn/v1"
+                  xmlns:vw="https://bpmn.valenceworks.io/schema/bpmn"
+                  id="Definitions_condition-outcome"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="condition-outcome" name="Condition Outcome" isExecutable="true">
+    <bpmn:startEvent id="Start_1">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:serviceTask id="Review" name="Review">
+      <bpmn:extensionElements>
+        <elsa:activityBinding activityType="Elsa.WriteLine">
+          <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"Reviewing"}}</elsa:input>
+        </elsa:activityBinding>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_Approved</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Rejected</bpmn:outgoing>
+    </bpmn:serviceTask>
+
+    <bpmn:endEvent id="End_Approved">
+      <bpmn:incoming>Flow_Approved</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="End_Rejected">
+      <bpmn:incoming>Flow_Rejected</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Review" />
+    <bpmn:sequenceFlow id="Flow_Approved" sourceRef="Review" targetRef="End_Approved" vw:conditionOutcome="Approved">
+      <bpmn:conditionExpression>outcome == 'Approved'</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Rejected" sourceRef="Review" targetRef="End_Rejected" vw:conditionOutcome="Rejected" />
+  </bpmn:process>
+</bpmn:definitions>

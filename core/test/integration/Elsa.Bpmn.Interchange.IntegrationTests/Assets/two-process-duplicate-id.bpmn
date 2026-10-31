@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                   id="Definitions_two-process-duplicate-id"
+                   targetNamespace="http://bpmn.io/schema/bpmn">
+  <!-- Two top-level processes declaring the same id ("shared"), which is invalid BPMN (ids must be unique within a
+       document): a top-level process's own id was never added to the pool checked for uniqueness (only its
+       elements were), so two processes sharing an id went undetected as long as their own elements did not repeat
+       any id. -->
+  <bpmn:process id="shared" name="First Process" isExecutable="true">
+    <bpmn:startEvent id="Start_1">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:endEvent id="End_1">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="End_1" />
+  </bpmn:process>
+  <bpmn:process id="shared" name="Second Process" isExecutable="true">
+    <bpmn:startEvent id="Start_2">
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:endEvent id="End_2">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Start_2" targetRef="End_2" />
+  </bpmn:process>
+</bpmn:definitions>

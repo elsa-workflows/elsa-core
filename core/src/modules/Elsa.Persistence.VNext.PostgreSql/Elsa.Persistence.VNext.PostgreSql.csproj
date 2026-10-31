@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>
+            Experimental PostgreSQL provider for Elsa Persistence vNext.
+        </Description>
+        <PackageTags>elsa module persistence vnext postgresql experimental</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Npgsql" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.Persistence.VNext\Elsa.Persistence.VNext.csproj" />
+        <ProjectReference Include="..\Elsa.Persistence.VNext.Relational\Elsa.Persistence.VNext.Relational.csproj" />
+    </ItemGroup>
+
+</Project>

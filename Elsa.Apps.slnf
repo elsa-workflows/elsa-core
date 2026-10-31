@@ -1,0 +1,16 @@
+{
+  "solution": {
+    "path": "Elsa.sln",
+    "projects": [
+      "apps/src/Elsa.Server.Shared/Elsa.Server.Shared.csproj",
+      "apps/src/Elsa.Server.Studio.BlazorServer/Elsa.Server.Studio.BlazorServer.csproj",
+      "apps/src/Elsa.Server.Studio.BlazorWasm.Client/Elsa.Server.Studio.BlazorWasm.Client.csproj",
+      "apps/src/Elsa.Server.Studio.BlazorWasm/Elsa.Server.Studio.BlazorWasm.csproj",
+      "apps/src/Elsa.Server/Elsa.Server.csproj",
+      "apps/src/Elsa.Studio.BlazorServer/Elsa.Studio.BlazorServer.csproj",
+      "apps/src/Elsa.Studio.BlazorWasm.Client/Elsa.Studio.BlazorWasm.Client.csproj",
+      "apps/src/Elsa.Studio.BlazorWasm/Elsa.Studio.BlazorWasm.csproj",
+      "apps/src/Shared/Shared.csproj"
+    ]
+  }
+}

@@ -1,0 +1,86 @@
+@inject NavigationManager NavigationManager
+
+<MudPaper Outlined="true" Elevation="0" Class="dashboard-panel dashboard-section" Style="@DashboardStyles.Panel">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Class="dashboard-section-header" Style="@DashboardStyles.SectionHeader">
+        <MudText Typo="Typo.subtitle1">Recent workflow activity</MudText>
+        <MudText Typo="Typo.caption" Class="dashboard-muted">@Items.Count item(s)</MudText>
+    </MudStack>
+
+    <MudTable T="DashboardRecentActivityItem" Items="@Items" Dense="true" Hover="true" Elevation="0" Breakpoint="Breakpoint.Sm" RowClassFunc="GetRowClass" OnRowClick="OnRowClick">
+        <HeaderContent>
+            <MudTh>Workflow / instance</MudTh>
+            <MudTh>Status</MudTh>
+            <MudTh>Sub-status</MudTh>
+            <MudTh>Incidents</MudTh>
+            <MudTh>Duration</MudTh>
+            <MudTh>Updated</MudTh>
+            <MudTh></MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="Workflow / instance">
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.body2">@DisplayName(context)</MudText>
+                    <MudText Typo="Typo.caption" Class="dashboard-muted">@context.InstanceId</MudText>
+                </MudStack>
+            </MudTd>
+            <MudTd DataLabel="Status">
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="@StatusColor(context.Status)">@context.Status</MudChip>
+            </MudTd>
+            <MudTd DataLabel="Sub-status">
+                <MudChip T="string" Size="Size.Small" Variant="Variant.Text" Color="@SubStatusColor(context.SubStatus)">@context.SubStatus</MudChip>
+            </MudTd>
+            <MudTd DataLabel="Incidents">@DashboardMetricFormatter.Count(context.IncidentCount)</MudTd>
+            <MudTd DataLabel="Duration">@DashboardMetricFormatter.Duration(context.Duration)</MudTd>
+            <MudTd DataLabel="Updated">@DashboardMetricFormatter.RelativeTimestamp(context.UpdatedAt ?? context.FinishedAt ?? context.CreatedAt)</MudTd>
+            <MudTd>
+                <MudTooltip Text="Open workflow instance">
+                    <MudIconButton Icon="@Icons.Material.Outlined.OpenInNew" Size="Size.Small" Href="@DashboardNavigationTargetMapper.ForWorkflowInstance(context.InstanceId)" aria-label="@($"Open workflow instance {context.InstanceId}")" />
+                </MudTooltip>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudAlert Severity="Severity.Info" Dense="true" Variant="Variant.Text">No workflow instances changed in this range.</MudAlert>
+        </NoRecordsContent>
+    </MudTable>
+</MudPaper>
+
+@code {
+    [Parameter] public IReadOnlyCollection<DashboardRecentActivityItem> Items { get; set; } = [];
+
+    private void OnRowClick(TableRowClickEventArgs<DashboardRecentActivityItem> args)
+    {
+        if (args.Item == null)
+            return;
+
+        NavigationManager.NavigateTo(DashboardNavigationTargetMapper.ForWorkflowInstance(args.Item.InstanceId));
+    }
+
+    private static string DisplayName(DashboardRecentActivityItem item) => string.IsNullOrWhiteSpace(item.WorkflowName) ? item.DefinitionId : item.WorkflowName!;
+
+    private static string GetRowClass(DashboardRecentActivityItem item, int rowNumber)
+    {
+        return item.SubStatus is "Faulted" or "Interrupted" || item.IncidentCount > 0 ? "dashboard-row-warning" : string.Empty;
+    }
+
+    private static Color StatusColor(string status)
+    {
+        return status switch
+        {
+            "Running" => Color.Info,
+            "Finished" or "Completed" => Color.Success,
+            "Faulted" => Color.Error,
+            _ => Color.Default
+        };
+    }
+
+    private static Color SubStatusColor(string subStatus)
+    {
+        return subStatus switch
+        {
+            "Faulted" => Color.Error,
+            "Interrupted" or "Suspended" => Color.Warning,
+            "Finished" or "Completed" => Color.Success,
+            _ => Color.Default
+        };
+    }
+}
