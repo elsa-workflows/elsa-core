@@ -1,0 +1,39 @@
+# Local development pair for #8857. Build from this checkout before publication.
+name: elsa-react-studio-preview
+services:
+  server:
+    image: ${ELSA_SERVER_IMAGE:-elsa-server:react-preview}
+    build:
+      context: ../..
+      dockerfile: docker/ElsaServer.Dockerfile
+    ports:
+      - "127.0.0.1:${ELSA_SERVER_PORT:-5001}:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: "8080"
+      Http__BaseUrl: http://localhost:${ELSA_SERVER_PORT:-5001}
+      # Existing reference-host development accounts; bind to loopback only.
+      # ReactStudio remains disabled on the backend; Studio is a separate service.
+      ReactStudio__Enabled: "false"
+    volumes:
+      - server-data:/app/App_Data
+  studio:
+    image: ${ELSA_REACT_STUDIO_IMAGE:-elsa-react-studio:preview}
+    build:
+      context: ../..
+      dockerfile: studio/react/Dockerfile
+      args:
+        ELSA_VERSION: ${ELSA_REACT_STUDIO_VERSION:-3.11.0}
+    ports:
+      - "127.0.0.1:${ELSA_STUDIO_PORT:-5201}:8080"
+    environment:
+      # API requests originate in the browser, not in the Compose network.
+      STUDIO_SERVER_URL: http://localhost:${ELSA_SERVER_PORT:-5001}/elsa/api
+      STUDIO_SERVER_NAME: Local Compose
+      STUDIO_TITLE: Elsa Studio Preview
+      STUDIO_AUTH_PROVIDER: elsa-identity
+    depends_on:
+      server:
+        condition: service_started
+volumes:
+  server-data:

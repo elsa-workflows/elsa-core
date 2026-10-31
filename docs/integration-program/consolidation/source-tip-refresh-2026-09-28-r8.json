@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 8,
+  "issue": 8286,
+  "baseImportHead": "9ed2e1fa4f72d4238241aea6c44412458d68ef49",
+  "mappedDeltaCommit": "c405a11bf3a39700b8afaaf534f4421ac83346c2",
+  "historyJoinCommit": "f8ad6661f2f38506dd28c9c22f86414cedb65a51",
+  "acceptedMergeCommit": "3ae6568e7a1afdb259518cb3b4736930512373bc",
+  "oldExtensionsCommit": "807cd89328c01e76bf1cababf525aff3c29bec93",
+  "newExtensionsCommit": "c2618de7b92b22ae7b23d872b58a20866219f69b",
+  "sourcePullRequest": "https://github.com/elsa-workflows/elsa-core/pull/8526",
+  "upstreamPullRequests": [
+    "https://github.com/elsa-workflows/elsa-extensions/pull/247",
+    "https://github.com/elsa-workflows/elsa-extensions/pull/249"
+  ],
+  "mappedChanges": [
+    {
+      "status": "M",
+      "source": "src/modules/persistence/Elsa.Persistence.MongoDb/Common/MongoDbStore.cs",
+      "mappedPath": "src/extensions/persistence/Elsa.Persistence.MongoDb/Common/MongoDbStore.cs",
+      "oldSource": {
+        "blob": "6372a7474443c50eca13a5491d1f874a15647f83",
+        "mode": "100644"
+      },
+      "oldMapped": {
+        "blob": "6372a7474443c50eca13a5491d1f874a15647f83",
+        "mode": "100644"
+      },
+      "newSource": {
+        "blob": "19df4c487828a001ab78b926917144b208ac26ca",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "19df4c487828a001ab78b926917144b208ac26ca",
+        "mode": "100644"
+      }
+    },
+    {
+      "status": "M",
+      "source": "src/modules/persistence/Elsa.Persistence.MongoDb/Modules/Labels/LabelStore.cs",
+      "mappedPath": "src/extensions/persistence/Elsa.Persistence.MongoDb/Modules/Labels/LabelStore.cs",
+      "oldSource": {
+        "blob": "e7dd0604894387b47baade5217c470a0ebda2cd0",
+        "mode": "100644"
+      },
+      "oldMapped": {
+        "blob": "e7dd0604894387b47baade5217c470a0ebda2cd0",
+        "mode": "100644"
+      },
+      "newSource": {
+        "blob": "f0de8f4258489038052d25a7b7014335811d22e3",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "f0de8f4258489038052d25a7b7014335811d22e3",
+        "mode": "100644"
+      }
+    },
+    {
+      "status": "M",
+      "source": "src/modules/persistence/Elsa.Persistence.MongoDb/Modules/Management/WorkflowDefinitionStore.cs",
+      "mappedPath": "src/extensions/persistence/Elsa.Persistence.MongoDb/Modules/Management/WorkflowDefinitionStore.cs",
+      "oldSource": {
+        "blob": "269fa0b6430748ff967f4590874de244c45e2ed2",
+        "mode": "100644"
+      },
+      "oldMapped": {
+        "blob": "269fa0b6430748ff967f4590874de244c45e2ed2",
+        "mode": "100644"
+      },
+      "newSource": {
+        "blob": "415619d51979e4b25dcd3a9f1fa4fcfed432b503",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "415619d51979e4b25dcd3a9f1fa4fcfed432b503",
+        "mode": "100644"
+      }
+    },
+    {
+      "status": "M",
+      "source": "src/modules/persistence/Elsa.Persistence.MongoDb/Modules/Runtime/BookmarkQueueStore.cs",
+      "mappedPath": "src/extensions/persistence/Elsa.Persistence.MongoDb/Modules/Runtime/BookmarkQueueStore.cs",
+      "oldSource": {
+        "blob": "45a19bc15c2cec3036abf5ac98beae919a3493c2",
+        "mode": "100644"
+      },
+      "oldMapped": {
+        "blob": "45a19bc15c2cec3036abf5ac98beae919a3493c2",
+        "mode": "100644"
+      },
+      "newSource": {
+        "blob": "1f75cc57e28ac7dca711b13ba842206d4f5d5564",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "1f75cc57e28ac7dca711b13ba842206d4f5d5564",
+        "mode": "100644"
+      }
+    },
+    {
+      "status": "M",
+      "source": "src/modules/persistence/Elsa.Persistence.MongoDb/Modules/Runtime/TriggerStore.cs",
+      "mappedPath": "src/extensions/persistence/Elsa.Persistence.MongoDb/Modules/Runtime/TriggerStore.cs",
+      "oldSource": {
+        "blob": "f9df557cbdd258a0d568f3256b8ae1fbbd5c921e",
+        "mode": "100644"
+      },
+      "oldMapped": {
+        "blob": "f9df557cbdd258a0d568f3256b8ae1fbbd5c921e",
+        "mode": "100644"
+      },
+      "newSource": {
+        "blob": "24dda7dc575c2355c8bf15a4c6165a82bbae450c",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "24dda7dc575c2355c8bf15a4c6165a82bbae450c",
+        "mode": "100644"
+      }
+    },
+    {
+      "status": "A",
+      "source": "test/modules/persistence/Elsa.MongoDb.UnitTests/MongoLabelStoreTenantIsolationTests.cs",
+      "mappedPath": "test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/MongoLabelStoreTenantIsolationTests.cs",
+      "oldSource": null,
+      "oldMapped": null,
+      "newSource": {
+        "blob": "8bb102874f8fb56bc73e73643f438ba2b77fb60c",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "8bb102874f8fb56bc73e73643f438ba2b77fb60c",
+        "mode": "100644"
+      }
+    },
+    {
+      "status": "A",
+      "source": "test/modules/persistence/Elsa.MongoDb.UnitTests/MongoTenantOwnedUpsertTests.cs",
+      "mappedPath": "test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/MongoTenantOwnedUpsertTests.cs",
+      "oldSource": null,
+      "oldMapped": null,
+      "newSource": {
+        "blob": "1402664624daa623bce9dfb595e26094ae05274c",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "1402664624daa623bce9dfb595e26094ae05274c",
+        "mode": "100644"
+      }
+    },
+    {
+      "status": "A",
+      "source": "test/modules/persistence/Elsa.MongoDb.UnitTests/MongoTriggerBookmarkQueueTenantAgnosticTests.cs",
+      "mappedPath": "test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/MongoTriggerBookmarkQueueTenantAgnosticTests.cs",
+      "oldSource": null,
+      "oldMapped": null,
+      "newSource": {
+        "blob": "619f00467ae47fb5b636ff799d92ab77edbabe1f",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "619f00467ae47fb5b636ff799d92ab77edbabe1f",
+        "mode": "100644"
+      }
+    },
+    {
+      "status": "A",
+      "source": "test/modules/persistence/Elsa.MongoDb.UnitTests/MongoWorkflowDefinitionStoreTenantIsolationTests.cs",
+      "mappedPath": "test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/MongoWorkflowDefinitionStoreTenantIsolationTests.cs",
+      "oldSource": null,
+      "oldMapped": null,
+      "newSource": {
+        "blob": "6afb5a76de4280e54b706b7086498bbe20d68f94",
+        "mode": "100644"
+      },
+      "finalMapped": {
+        "blob": "6afb5a76de4280e54b706b7086498bbe20d68f94",
+        "mode": "100644"
+      }
+    }
+  ],
+  "publicationPerformed": false
+}

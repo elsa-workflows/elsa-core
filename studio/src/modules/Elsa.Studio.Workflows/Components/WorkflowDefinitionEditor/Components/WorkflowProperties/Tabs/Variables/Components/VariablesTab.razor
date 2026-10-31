@@ -1,0 +1,66 @@
+@using Variant = MudBlazor.Variant
+@using Elsa.Studio.Workflows.Services
+@inject ILocalizer Localizer
+@inherits StudioComponentBase
+
+<VerticalWell ExtraPadding="40">
+
+    <MudText Typo="Typo.overline">@Localizer["Variables"]</MudText>
+    <MudStack>
+
+        <MudButton StartIcon="@Icons.Material.Outlined.Add"
+                   Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Class="align-self-end"
+                   OnClick="OnAddVariableClicked"
+                   Disabled="IsReadOnly">
+            @Localizer["Add variable"]
+        </MudButton>
+
+        @if (!Variables.Any())
+        {
+            <MudAlert Severity="Severity.Normal" Variant="Variant.Text" Icon="@Icons.Material.Outlined.Info"> @Localizer["There are currently no variables defined."]</MudAlert>
+        }
+        else
+        {
+            <VerticalWell ExtraPadding="160">
+                <MudSimpleTable Dense="true" Bordered="false" Striped="false" Elevation="0" Outlined="true" FixedHeader="true">
+                    <thead>
+                        <tr>
+                            <th>@Localizer["Name"]</th>
+                            <th>@Localizer["Type"]</th>
+                            <th>@Localizer["Storage"]</th>
+                            <th style="text-align: center">
+                                <MudIcon Icon="@ElsaStudioIcons.Tabler.Flask" Size="Size.Small" Class="ma-3" />
+                            </th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                        @foreach (var variable in Variables)
+                        {
+                            var storageDescriptor = variable.StorageDriverTypeName != null ? GetStorageDriverDescriptor(variable.StorageDriverTypeName) : null;
+                            var storageDriverName = storageDescriptor != null ? storageDescriptor.DisplayName : Localizer["None"];
+                            var hasTestValue = VariableTestValues.ContainsKey(variable.Id);
+                            <tr>
+                                <td>@variable.Name</td>
+                                <td>@variable.GetTypeDisplayName()</td>
+                                <td>@storageDriverName</td>
+                                <td style="text-align: center">
+                                    <MudIconButton Icon="@ElsaStudioIcons.Tabler.Flask" Size="Size.Small" Color="hasTestValue? Color.Success: Color.Default" OnClick="() => OnTestValueButtonClick(variable)" />
+                                </td>
+                                <td style="text-align: right;">
+                                    <MudMenu Icon="@Icons.Material.Filled.MoreVert" Size="Size.Small" Dense="true" Disabled="IsReadOnly">
+                                        <MudMenuItem Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => OnEditClicked(variable))">@Localizer["Edit"]</MudMenuItem>
+                                        <MudMenuItem Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => OnDeleteClicked(variable))">@Localizer["Delete"]</MudMenuItem>
+                                    </MudMenu>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            </VerticalWell>
+        }
+    </MudStack>
+</VerticalWell>

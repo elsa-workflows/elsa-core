@@ -1,0 +1,42 @@
+{
+  "checkedDate": "2026-09-26",
+  "baseDraftImportHead": "6b6c6fe27a76ead762fc5dc3ec4e9abc5672f8c9",
+  "probeSourceHead": "f944f9c23c4eee8788f2635c4adc555b7c2032f5",
+  "sourceDirty": false,
+  "dotnetSdk": "10.0.300",
+  "focusedFilter": "Elsa.WorkflowContexts.Debug.slnf",
+  "focusedProjects": 3,
+  "focusedDebugBuild": {
+    "frameworks": ["net8.0", "net9.0", "net10.0"],
+    "errors": 0
+  },
+  "disposableHostDebugBuild": {
+    "framework": "net10.0",
+    "warnings": 21,
+    "errors": 0
+  },
+  "browser": {
+    "backendEndpoint": "GET /elsa/api/workflow-contexts/provider-descriptors",
+    "backendStatus": 200,
+    "provider": "Synthetic",
+    "initialUpdates": 0,
+    "selectedUpdates": 1,
+    "selectedProviderTypes": ["SyntheticWorkflowContextProvider, UiProbe"],
+    "deselectedUpdates": 2,
+    "deselectedProviderTypes": []
+  },
+  "debugger": {
+    "name": "netcoredbg",
+    "release": "3.2.0-1092",
+    "binarySha256": "ffc51b6f716e6bb8cb93c416e352651b945269c9501f820d32f3023d4ce24ece",
+    "backendFrame": "Elsa.WorkflowContexts.Endpoints.ProviderTypes.List.List.ExecuteAsync at Endpoint.cs:28",
+    "studioFrame": "Elsa.Studio.WorkflowContexts.Components.WorkflowContextsEditor.OnCheckChanged at WorkflowContextsEditor.razor.cs:50",
+    "browserUpdateAfterContinue": true,
+    "exitCode": 0,
+    "cleanup": "The disposable debuggee was force-stopped after both frames and the resumed browser update were observed; no listener remained."
+  },
+  "published": false,
+  "finalMergedImportHeadVerified": false,
+  "fullSolutionVerifiedByThisProbe": false,
+  "productionAuthorizationVerified": false
+}

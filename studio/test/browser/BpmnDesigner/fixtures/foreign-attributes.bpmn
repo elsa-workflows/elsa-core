@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:elsa="https://elsaworkflows.io/schemas/bpmn/v1" xmlns:vendor="https://example.com/schemas/vendor" id="Definitions_Foreign" targetNamespace="https://example.com/foreign">
+  <bpmn:process id="Process_Foreign">
+    <bpmn:task id="Archive" name="Archive">
+      <bpmn:extensionElements vendor:origin="import">
+        <elsa:activityBinding activityType="Elsa.WriteLine">
+          <elsa:input name="Text">"Archiving"</elsa:input>
+        </elsa:activityBinding>
+      </bpmn:extensionElements>
+    </bpmn:task>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_Foreign">
+    <bpmndi:BPMNPlane id="Plane_Foreign" bpmnElement="Process_Foreign">
+      <bpmndi:BPMNShape id="Archive_di" bpmnElement="Archive">
+        <dc:Bounds x="100" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

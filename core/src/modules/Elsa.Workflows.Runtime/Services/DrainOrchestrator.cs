@@ -1,0 +1,642 @@
+using System.Collections.Concurrent;
+using System.Diagnostics;
+using Elsa.Common;
+using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Entities;
+using Elsa.Workflows.Management.Filters;
+using Elsa.Workflows.Runtime.Options;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+
+namespace Elsa.Workflows.Runtime.Services;
+
+/// <summary>
+/// Default implementation of <see cref="IDrainOrchestrator"/>.
+/// </summary>
+/// <remarks>
+/// <para>
+/// Protocol per <c>contracts/drain-orchestrator.md</c>:
+/// 1. Enter drain via <see cref="IQuiescenceSignal.BeginDrainAsync"/>.
+/// 2. Pause every registered ingress source in parallel, each bounded by its own per-source timeout. Sources that
+///    fail to pause are recorded as <see cref="IngressSourceState.PauseFailed"/> and, if they implement
+///    <see cref="IForceStoppable"/>, are escalated.
+/// 3. Wait for <see cref="IExecutionCycleRegistry.ActiveCount"/> to reach zero, polling on a short interval.
+/// 4. On deadline breach (or on operator force, where deadline is zero), iterate live cycles, cancel each,
+///    persist still-Running instances as <see cref="WorkflowSubStatus.Interrupted"/>, leave
+///    Finished/Cancelled rows as they are, and write a <c>WorkflowInterrupted</c> entry in the
+///    per-instance execution log.
+/// 5. Return a <see cref="DrainOutcome"/>.
+/// </para>
+/// <para>
+/// All exceptions inside the protocol are captured into the outcome — only an <see cref="InvalidOperationException"/>
+/// thrown by a second non-force invocation propagates.
+/// </para>
+/// </remarks>
+public sealed class DrainOrchestrator : IDrainOrchestrator
+{
+    private static readonly TimeSpan SafetyEpsilon = TimeSpan.FromMilliseconds(500);
+    private static readonly TimeSpan PollInterval = TimeSpan.FromMilliseconds(10);
+
+    private readonly IQuiescenceSignal _signal;
+    private readonly IIngressSourceRegistry _registry;
+    private readonly IExecutionCycleRegistry _cycles;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly IOptions<GracefulShutdownOptions> _options;
+    private readonly IOptions<HostOptions> _hostOptions;
+    private readonly ISystemClock _clock;
+    private readonly IIdentityGenerator _identityGenerator;
+    private readonly ILogger<DrainOrchestrator> _logger;
+
+    private readonly object _sync = new();
+    private DrainOutcome? _previousOutcome;
+    private bool _drainInProgress;
+
+    public DrainOrchestrator(
+        IQuiescenceSignal signal,
+        IIngressSourceRegistry registry,
+        IExecutionCycleRegistry cycles,
+        IServiceScopeFactory scopeFactory,
+        IOptions<GracefulShutdownOptions> options,
+        IOptions<HostOptions> hostOptions,
+        ISystemClock clock,
+        IIdentityGenerator identityGenerator,
+        ILogger<DrainOrchestrator> logger)
+    {
+        _signal = signal;
+        _registry = registry;
+        _cycles = cycles;
+        _scopeFactory = scopeFactory;
+        _options = options;
+        _hostOptions = hostOptions;
+        _clock = clock;
+        _identityGenerator = identityGenerator;
+        _logger = logger;
+    }
+
+    /// <inheritdoc />
+    public async ValueTask<DrainOutcome> DrainAsync(DrainTrigger trigger, CancellationToken cancellationToken = default)
+    {
+        lock (_sync)
+        {
+            if (_drainInProgress)
+            {
+                if (trigger == DrainTrigger.OperatorForce && _previousOutcome is not null)
+                    return _previousOutcome with { WasCached = true };
+                throw new InvalidOperationException($"Drain already in progress; second invocation rejected (trigger={trigger}).");
+            }
+            if (_previousOutcome is not null)
+            {
+                if (trigger == DrainTrigger.OperatorForce) return _previousOutcome with { WasCached = true };
+                throw new InvalidOperationException("Drain already completed in this generation; subsequent non-force invocations are rejected.");
+            }
+            _drainInProgress = true;
+        }
+
+        var startedAt = _clock.UtcNow;
+        var deadline = ComputeEffectiveDeadline(trigger);
+        var sw = Stopwatch.StartNew();
+        TimeSpan pausePhase = TimeSpan.Zero;
+        TimeSpan waitPhase = TimeSpan.Zero;
+
+        try
+        {
+            await _signal.BeginDrainAsync(cancellationToken);
+            _logger.LogInformation("Drain initiated (trigger={Trigger}, deadline={Deadline}).", trigger, deadline);
+
+            var deadlineAt = startedAt + deadline;
+
+            // Phase 1: parallel pause. Each source has its own timeout independent of the overall deadline,
+            // but force-stop fallbacks are clamped to the *remaining* overall budget (deadlineAt - now), not
+            // the full TimeSpan, so a slow per-source pause can't extend the total shutdown window.
+            await PauseAllSourcesAsync(deadlineAt, cancellationToken);
+            pausePhase = sw.Elapsed;
+            _logger.LogInformation("Ingress pause phase complete in {Elapsed}.", pausePhase);
+
+            // Phase 2: wait for active execution cycles to drain.
+            var waitStart = sw.Elapsed;
+            var deadlineBreach = !await WaitForCyclesAsync(deadlineAt, cancellationToken);
+            waitPhase = sw.Elapsed - waitStart;
+
+            // Phase 3: outcome assembly.
+            int forceCancelled = 0;
+            IReadOnlyList<string> forceCancelledIds = Array.Empty<string>();
+
+            if (deadlineBreach || trigger == DrainTrigger.OperatorForce)
+            {
+                _logger.LogWarning("Drain {What}; force-cancelling {Count} active execution cycle(s).",
+                    deadlineBreach ? "deadline exceeded" : "operator-forced", _cycles.ActiveCount);
+                (forceCancelled, forceCancelledIds) = await ForceCancelActiveCyclesAsync(trigger, _signal.CurrentState.GenerationId, cancellationToken);
+            }
+
+            // OperatorForce always reports Forced regardless of zero-deadline breach mechanics.
+            var result = trigger switch
+            {
+                DrainTrigger.OperatorForce => DrainResult.Forced,
+                _ when deadlineBreach => DrainResult.DeadlineExceeded,
+                _ => DrainResult.CompletedWithinDeadline,
+            };
+
+            var outcome = new DrainOutcome(
+                OverallResult: result,
+                StartedAt: startedAt,
+                CompletedAt: _clock.UtcNow,
+                PausePhaseDuration: pausePhase,
+                WaitPhaseDuration: waitPhase,
+                Sources: BuildSourceFinalStates(),
+                ExecutionCyclesForceCancelledCount: forceCancelled,
+                ForceCancelledInstanceIds: forceCancelledIds);
+
+            lock (_sync) _previousOutcome = outcome;
+            _logger.LogInformation("Drain completed: {Result} (paused={Paused}, waited={Waited}, forceCancelled={ForceCancelled}).",
+                outcome.OverallResult, outcome.PausePhaseDuration, outcome.WaitPhaseDuration, outcome.ExecutionCyclesForceCancelledCount);
+            return outcome;
+        }
+        catch (Exception ex) when (!ex.IsFatal())
+        {
+            // The "drain already in progress / completed" InvalidOperationExceptions are thrown OUTSIDE this
+            // try block (during the lock-protected setup), so they bubble out without triggering this handler.
+            // Any IOE that lands here is incidental — from a store/dispatcher inside the protocol — and should
+            // be captured into the outcome rather than escaping the whole drain.
+            _logger.LogError(ex, "Drain aborted by unhandled exception.");
+            var outcome = new DrainOutcome(
+                OverallResult: DrainResult.AbortedByUnhandledException,
+                StartedAt: startedAt,
+                CompletedAt: _clock.UtcNow,
+                PausePhaseDuration: pausePhase,
+                WaitPhaseDuration: waitPhase,
+                Sources: BuildSourceFinalStates(),
+                ExecutionCyclesForceCancelledCount: 0,
+                ForceCancelledInstanceIds: Array.Empty<string>());
+            lock (_sync) _previousOutcome = outcome;
+            return outcome;
+        }
+        finally
+        {
+            lock (_sync) _drainInProgress = false;
+        }
+    }
+
+    private TimeSpan ComputeEffectiveDeadline(DrainTrigger trigger)
+    {
+        if (trigger == DrainTrigger.OperatorForce) return TimeSpan.Zero;
+
+        var configured = _options.Value.DrainDeadline;
+        var hostShutdown = _hostOptions.Value.ShutdownTimeout;
+
+        // Clamp to host's own shutdown budget minus a safety epsilon, so persistence can finish before the process is killed.
+        if (hostShutdown > SafetyEpsilon)
+        {
+            var hostBudget = hostShutdown - SafetyEpsilon;
+            if (hostBudget < configured) return hostBudget;
+        }
+
+        return configured;
+    }
+
+    private async Task PauseAllSourcesAsync(DateTimeOffset deadlineAt, CancellationToken cancellationToken)
+    {
+        var sources = _registry.Sources;
+        if (sources.Count == 0) return;
+
+        var pauseTasks = sources.Select(source => PauseOneSourceAsync(source, deadlineAt, cancellationToken)).ToArray();
+        await Task.WhenAll(pauseTasks);
+    }
+
+    private async Task PauseOneSourceAsync(IIngressSource source, DateTimeOffset deadlineAt, CancellationToken cancellationToken)
+    {
+        // Precedence: a positive per-source PauseTimeout wins; Zero (or negative) defers to the
+        // configured GracefulShutdownOptions.IngressPauseTimeout. The resolved value is then
+        // clamped to the overall remaining budget, with a 1 ms floor so a misconfigured zero
+        // configured-default still produces a non-zero CancelAfter.
+        var configured = _options.Value.IngressPauseTimeout;
+        var sourceDeadline = source.PauseTimeout > TimeSpan.Zero ? source.PauseTimeout : configured;
+        var overallRemaining = deadlineAt - _clock.UtcNow;
+        if (sourceDeadline > overallRemaining) sourceDeadline = overallRemaining;
+        if (sourceDeadline <= TimeSpan.Zero) sourceDeadline = TimeSpan.FromMilliseconds(1);
+
+        _registry.RecordTransition(source.Name, IngressSourceState.Pausing);
+        using var perSourceCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        perSourceCts.CancelAfter(sourceDeadline);
+
+        try
+        {
+            await source.PauseAsync(perSourceCts.Token).AsTask().WaitAsync(perSourceCts.Token);
+            _registry.RecordTransition(source.Name, IngressSourceState.Paused);
+        }
+        catch (OperationCanceledException) when (perSourceCts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+        {
+            await _registry.MarkPauseFailedAsync(source.Name, "timeout", new TimeoutException($"Source '{source.Name}' did not pause within {sourceDeadline}."));
+            await TryForceStopAsync(source, deadlineAt, cancellationToken);
+        }
+        catch (Exception ex) when (!ex.IsFatal())
+        {
+            await _registry.MarkPauseFailedAsync(source.Name, "exception", ex);
+            await TryForceStopAsync(source, deadlineAt, cancellationToken);
+        }
+    }
+
+    private async Task TryForceStopAsync(IIngressSource source, DateTimeOffset deadlineAt, CancellationToken cancellationToken)
+    {
+        if (source is not IForceStoppable forceStoppable) return;
+
+        // Use the *remaining* budget — not the full overall deadline — so a per-source pause that already
+        // burned most of the window can't get another full deadline's worth of force-stop runway.
+        var remaining = deadlineAt - _clock.UtcNow;
+        if (remaining <= TimeSpan.Zero)
+        {
+            _logger.LogWarning("Skipping force-stop of ingress source '{Name}': overall drain deadline already exceeded.", source.Name);
+            return;
+        }
+
+        try
+        {
+            using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            cts.CancelAfter(remaining);
+            await forceStoppable.ForceStopAsync(cts.Token);
+            _logger.LogInformation("Force-stopped ingress source '{Name}'.", source.Name);
+        }
+        catch (Exception ex) when (!ex.IsFatal())
+        {
+            _logger.LogWarning(ex, "Force-stop of ingress source '{Name}' failed; drain continues.", source.Name);
+        }
+    }
+
+    private async Task<bool> WaitForCyclesAsync(DateTimeOffset deadlineAt, CancellationToken cancellationToken)
+    {
+        while (_cycles.ActiveCount > 0)
+        {
+            if (_clock.UtcNow >= deadlineAt) return false;
+            try { await Task.Delay(PollInterval, cancellationToken); }
+            catch (OperationCanceledException) { return _cycles.ActiveCount == 0; }
+        }
+        return true;
+    }
+
+    /// <summary>Bound on how long the orchestrator waits for a runner to settle after invoking execution cycle cancellation.</summary>
+    private static readonly TimeSpan ForceCancelSettleTimeout = TimeSpan.FromSeconds(2);
+
+    /// <summary>
+    /// Per-handle bound on the forensic Interrupted persist write in Phase C. Decoupled from the drain
+    /// cancellation token: when the host's drain CT has already fired, the persist still has up to this long
+    /// to land the row + log entry. Keeps "proceed to persist anyway" honest while preventing a stuck DB
+    /// from hanging shutdown indefinitely.
+    /// </summary>
+    private static readonly TimeSpan PersistInterruptedTimeout = TimeSpan.FromSeconds(5);
+
+    /// <summary>
+    /// Short shutdown budget for the pre-cancel instance snapshot. Force-cancel runs after the drain
+    /// deadline, so remaining deadline is already zero. WaitAsync unblocks even if the store ignores
+    /// its cancellation token. The budget starts when a snapshot slot is acquired — not while
+    /// waiting for <see cref="MaxConcurrentPreCancelSnapshotFinds"/>.
+    /// </summary>
+    private static readonly TimeSpan PreCancelSnapshotTimeout = TimeSpan.FromMilliseconds(250);
+
+    /// <summary>
+    /// Cap on concurrent pre-cancel snapshot Finds. Unbounded <c>Task.WhenAll</c> self-contends
+    /// under large live-cycle N: more 250ms timeouts, more <c>drainInduced</c> excludes, more
+    /// Interrupted misses. Queue wait uses the drain token only; each Find still gets its own
+    /// 250ms after it acquires a slot.
+    /// </summary>
+    internal const int MaxConcurrentPreCancelSnapshotFinds = 16;
+
+    private async Task<(int Count, IReadOnlyList<string> Ids)> ForceCancelActiveCyclesAsync(DrainTrigger trigger, string generationId, CancellationToken cancellationToken)
+    {
+        var cap = _options.Value.MaxForceCancelledInstanceIdsReported;
+        var reportedIds = new List<string>(capacity: Math.Min(cap, 16));
+        var totalCancelled = 0;
+
+        var live = _cycles.ListActiveCycles();
+        if (live.Count == 0) return (0, Array.Empty<string>());
+
+        using var scope = _scopeFactory.CreateScope();
+        var instanceStore = scope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
+        var logStore = scope.ServiceProvider.GetRequiredService<IWorkflowExecutionLogStore>();
+
+        var reason = trigger == DrainTrigger.OperatorForce
+            ? WorkflowInterruptedPayload.ReasonOperatorForce
+            : WorkflowInterruptedPayload.ReasonDeadlineBreach;
+
+        // Snapshot before Phase A. Each Find has its own 250ms budget and its own
+        // DI scope so concurrent reads do not share an EF DbContext (Phase C stays
+        // sequential on the outer scope for the same reason). Finds run concurrently
+        // under a semaphore so a large live-cycle set cannot self-contend into
+        // 250ms timeouts. Timeout/error: exclude that id (prefer preserving
+        // user-cancel / #8052). A successful null Find is not drain-induced yet —
+        // no persisted user-cancel exists, but we only write the forensic log if
+        // Phase A actually cancels that live handle. Drain never promotes a
+        // Finished/Cancelled row to Running/Interrupted (#8419).
+        var drainInducedInstanceIds = new HashSet<string>(StringComparer.Ordinal);
+        var drainInducedCandidateIds = new ConcurrentDictionary<Guid, string>();
+        var activeSnapshotHandleIds = new ConcurrentDictionary<Guid, byte>();
+        var missingPersistedRowIds = new ConcurrentBag<string>();
+        using var snapshotGate = new SemaphoreSlim(MaxConcurrentPreCancelSnapshotFinds);
+        var snapshotTasks = live.Select(async handle =>
+        {
+            try
+            {
+                await snapshotGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+                try
+                {
+                    using var findScope = _scopeFactory.CreateScope();
+                    var findStore = findScope.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>();
+                    using var perFindCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                    perFindCts.CancelAfter(PreCancelSnapshotTimeout);
+                    var snapshot = await findStore
+                        .FindAsync(new WorkflowInstanceFilter { Id = handle.WorkflowInstanceId }, perFindCts.Token)
+                        .AsTask()
+                        .WaitAsync(perFindCts.Token)
+                        .ConfigureAwait(false);
+                    if (snapshot is null)
+                    {
+                        missingPersistedRowIds.Add(handle.WorkflowInstanceId);
+                        return null;
+                    }
+
+                    if (snapshot.SubStatus != WorkflowSubStatus.Cancelled)
+                    {
+                        drainInducedCandidateIds.TryAdd(handle.Id, handle.WorkflowInstanceId);
+                        if (snapshot.IsExecuting)
+                            activeSnapshotHandleIds.TryAdd(handle.Id, 0);
+                        return handle.WorkflowInstanceId;
+                    }
+                }
+                finally
+                {
+                    // Release after the await budget, not after the store call returns.
+                    // A cancel-ignoring Find can outlive this slot (documented secondary;
+                    // holding the slot until it completes would stall WhenAll / Phase A).
+                    snapshotGate.Release();
+                }
+            }
+            catch (Exception ex) when (!ex.IsFatal())
+            {
+                _logger.LogWarning(ex, "Pre-cancel snapshot for instance {InstanceId} timed out or failed; excluding from drain-induced forensic persist.", handle.WorkflowInstanceId);
+            }
+
+            return null;
+        });
+
+        await Task.WhenAll(snapshotTasks).ConfigureAwait(false);
+
+        // Force-cancel proceeds in three phases. The split exists because cancelling and
+        // awaiting in the same loop made every execution cycle after the first run at full speed
+        // through the prior execution cycle's settle window — total wall time was O(N × settle
+        // timeout), defeating the intent of force-cancel under concurrency.
+        //
+        // Phase A — cancel every handle synchronously. CancellationTokenSource.Cancel is
+        // cheap and we want every runner to observe cancellation simultaneously rather
+        // than serialized behind preceding settle waits.
+        var cancelledInstanceIds = new HashSet<string>(StringComparer.Ordinal);
+        var cancelledHandles = new List<ExecutionCycleHandle>(live.Count);
+        var handlesToPersist = new List<ExecutionCycleHandle>(live.Count);
+        var activeSnapshotHandlesToRecover = new List<ExecutionCycleHandle>(live.Count);
+        var disposedActiveSnapshotHandleIds = new HashSet<Guid>();
+        foreach (var handle in live)
+        {
+            try
+            {
+                // Only a real transition counts. Cancel() is a no-op on an already-disposed handle
+                // (cycle finished during snapshot); treating that as drain-induced would rewrite a
+                // later Finished/Cancelled row the runner already committed.
+                if (!handle.TryCancel())
+                {
+                    if (activeSnapshotHandleIds.ContainsKey(handle.Id))
+                        activeSnapshotHandlesToRecover.Add(handle);
+                    continue;
+                }
+
+                totalCancelled++;
+                cancelledHandles.Add(handle);
+                handlesToPersist.Add(handle);
+                cancelledInstanceIds.Add(handle.WorkflowInstanceId);
+                if (reportedIds.Count < cap) reportedIds.Add(handle.WorkflowInstanceId);
+            }
+            catch (Exception ex) when (!ex.IsFatal())
+            {
+                _logger.LogError(ex, "Failed to cancel execution cycle {ExecutionCycleId} (instance={InstanceId}).", handle.Id, handle.WorkflowInstanceId);
+            }
+        }
+
+        var recoveryHandleIds = activeSnapshotHandlesToRecover.Select(handle => handle.Id).ToHashSet();
+
+        // A live handle we ourselves cancelled whose snapshot found no row is drain-induced:
+        // there was no persisted user-cancel to preserve. Timeout/error and disposed no-ops stay excluded.
+        // Do not use reportedIds here — that list is capped by MaxForceCancelledInstanceIdsReported.
+        foreach (var handle in cancelledHandles)
+        {
+            if (drainInducedCandidateIds.TryGetValue(handle.Id, out var instanceId))
+                drainInducedInstanceIds.Add(instanceId);
+        }
+
+        foreach (var instanceId in missingPersistedRowIds)
+        {
+            if (cancelledInstanceIds.Contains(instanceId))
+                drainInducedInstanceIds.Add(instanceId);
+        }
+
+        // Phase B — wait for every runner to settle in parallel under a shared deadline.
+        // The handle disposes when ExecutionCycleTrackingMiddleware exits its `using` block, which
+        // is after the workflow runner has finished its commit. We want runners' terminal
+        // commits to land before we overwrite the sub-status with Interrupted — but we
+        // bound the wait so a non-cancellable activity cannot block drain, accepting the
+        // runner-clobber race for that one instance (the recovery scan picks it up).
+        // Total wall time for this phase is at most ForceCancelSettleTimeout regardless
+        // of N. Retained active-snapshot recovery candidates use an independent token so
+        // a canceled drain still observes their deferred disposal within that same bound.
+        var settleTasks = live.Select(async handle =>
+        {
+            try
+            {
+                var settleCancellationToken = recoveryHandleIds.Contains(handle.Id) ? CancellationToken.None : cancellationToken;
+                await handle.Disposed.WaitAsync(ForceCancelSettleTimeout, settleCancellationToken).ConfigureAwait(false);
+            }
+            catch (TimeoutException)
+            {
+                if (recoveryHandleIds.Contains(handle.Id))
+                {
+                    _logger.LogWarning("Retained active-snapshot recovery candidate {ExecutionCycleId} (instance={InstanceId}) did not dispose within {Timeout}; Interrupted recovery persistence is skipped unless it settles before the recovery check.", handle.Id, handle.WorkflowInstanceId, ForceCancelSettleTimeout);
+                }
+                else
+                {
+                    _logger.LogWarning("Execution cycle {ExecutionCycleId} (instance={InstanceId}) did not settle within {Timeout}; persisting Interrupted now (the runner may overwrite — recovery scan picks it up).", handle.Id, handle.WorkflowInstanceId, ForceCancelSettleTimeout);
+                }
+            }
+            catch (OperationCanceledException) { /* drain CT fired — proceed to persist anyway */ }
+        });
+        await Task.WhenAll(settleTasks).ConfigureAwait(false);
+
+        foreach (var handle in activeSnapshotHandlesToRecover)
+        {
+            if (!handle.Disposed.IsCompleted)
+                continue;
+
+            disposedActiveSnapshotHandleIds.Add(handle.Id);
+            handlesToPersist.Add(handle);
+        }
+
+        // Phase C — persist Interrupted for every cancelled handle and disposed active checkpoint.
+        // Sequential to keep DbContext usage single-threaded; per-handle persistence is small.
+        //
+        // Each persist runs under its own bounded token that is NOT linked to the drain CT.
+        // Phase B's catch on OperationCanceledException explicitly comments "drain CT fired —
+        // proceed to persist anyway"; reusing the cancelled token here would have made that
+        // a lie — the very first await inside PersistInterruptedAsync would observe the
+        // cancelled token and throw. Result: every execution cycle would be left in an unrecovered
+        // executing state on host shutdown. The bounded non-drain token preserves the
+        // forensic write while preventing a stuck DB from hanging shutdown indefinitely.
+        foreach (var handle in handlesToPersist)
+        {
+            try
+            {
+                using var persistCts = new CancellationTokenSource(PersistInterruptedTimeout);
+                await PersistInterruptedAsync(instanceStore, logStore, handle, generationId, reason, drainInducedInstanceIds, disposedActiveSnapshotHandleIds.Contains(handle.Id), persistCts.Token);
+            }
+            catch (Exception ex) when (!ex.IsFatal())
+            {
+                _logger.LogError(ex, "Failed to persist Interrupted for execution cycle {ExecutionCycleId} (instance={InstanceId}).", handle.Id, handle.WorkflowInstanceId);
+            }
+        }
+
+        return (totalCancelled, reportedIds);
+    }
+
+    private async Task PersistInterruptedAsync(
+        IWorkflowInstanceStore instanceStore,
+        IWorkflowExecutionLogStore logStore,
+        ExecutionCycleHandle handle,
+        string generationId,
+        string reason,
+        HashSet<string> drainInducedInstanceIds,
+        bool requireExecuting,
+        CancellationToken cancellationToken)
+    {
+        var instance = await instanceStore.FindAsync(new WorkflowInstanceFilter { Id = handle.WorkflowInstanceId }, cancellationToken);
+
+        // A disposed checkpoint is only recoverable while its row still shows execution; a later
+        // natural suspension or completion must remain untouched.
+        if (requireExecuting && (instance is null || instance.Status == WorkflowStatus.Finished || !instance.IsExecuting))
+            return;
+
+        if (instance is null)
+        {
+            // The instance row was never persisted (e.g., a execution cycle whose runner never reached commitStateHandler).
+            // We cannot update a row that doesn't exist, but we MUST still write the forensic trail so postmortem
+            // recovery can audit what happened. Write a synthetic WorkflowInterrupted log entry with the
+            // PersistenceFailure discriminator — the workflow-definition fields are unknown so they remain empty.
+            var orphanPayload = new WorkflowInterruptedPayload(
+                InterruptedAt: _clock.UtcNow,
+                Reason: WorkflowInterruptedPayload.ReasonPersistenceFailure,
+                GenerationId: generationId,
+                LastActivityId: null,
+                LastActivityNodeId: null,
+                IngressSourceName: handle.IngressSourceName,
+                ExecutionCycleDuration: _clock.UtcNow - handle.StartedAt);
+            try
+            {
+                await logStore.AddAsync(new Entities.WorkflowExecutionLogRecord
+                {
+                    Id = _identityGenerator.GenerateId(),
+                    WorkflowInstanceId = handle.WorkflowInstanceId,
+                    WorkflowDefinitionId = string.Empty,
+                    WorkflowDefinitionVersionId = string.Empty,
+                    WorkflowVersion = 0,
+                    ActivityInstanceId = string.Empty,
+                    ActivityId = string.Empty,
+                    ActivityType = string.Empty,
+                    ActivityNodeId = string.Empty,
+                    Timestamp = orphanPayload.InterruptedAt,
+                    EventName = WorkflowInterruptedPayload.WorkflowInterruptedEventName,
+                    Source = "Elsa.Workflows.Runtime.GracefulShutdown",
+                    Message = $"Workflow execution cycle force-cancelled by the runtime ({orphanPayload.Reason}); no instance row was persisted at the time of cancellation.",
+                    Payload = orphanPayload,
+                }, cancellationToken);
+            }
+            catch (Exception ex) when (!ex.IsFatal())
+            {
+                _logger.LogWarning(ex, "Failed to write WorkflowInterrupted log entry for orphan execution cycle {ExecutionCycleId} (instance={InstanceId}).", handle.Id, handle.WorkflowInstanceId);
+            }
+            return;
+        }
+
+        if (ShouldSkipInterruptedPersist(instance, drainInducedInstanceIds))
+        {
+            _logger.LogInformation(
+                "Skipping Interrupted persist for instance {InstanceId}: already in terminal status {Status}/{SubStatus}.",
+                instance.Id, instance.Status, instance.SubStatus);
+            return;
+        }
+
+        var actualReason = reason;
+
+        try
+        {
+            // Conditional write: do not SaveAsync the Find snapshot. Never promote a
+            // Finished/Cancelled row (#8419) — that left a Running/Interrupted row whose
+            // serialized WorkflowState still said Finished with no scheduled work, and the
+            // recovery scanner then requeued a workflow that can never resume.
+            // allowFinishedCancelled remains on the store signature for 3.8.4 compatibility;
+            // drain no longer passes true. Drain-induced Finished/Cancelled rows skip the
+            // mark and still receive the WorkflowInterrupted forensic log below.
+            if (instance.Status != WorkflowStatus.Finished)
+            {
+                var marked = await instanceStore.TryMarkInterruptedAsync(instance.Id, cancellationToken);
+                if (!marked)
+                {
+                    _logger.LogInformation(
+                        "Skipping Interrupted persist for instance {InstanceId}: a concurrent persist already left it in a terminal status.",
+                        instance.Id);
+                    return;
+                }
+            }
+        }
+        catch (Exception ex) when (!ex.IsFatal())
+        {
+            _logger.LogWarning(ex, "Failed to persist Interrupted sub-status for instance {InstanceId}; falling back to PersistenceFailure reason.", instance.Id);
+            actualReason = WorkflowInterruptedPayload.ReasonPersistenceFailure;
+        }
+
+        var payload = new WorkflowInterruptedPayload(
+            InterruptedAt: _clock.UtcNow,
+            Reason: actualReason,
+            GenerationId: generationId,
+            LastActivityId: null,
+            LastActivityNodeId: null,
+            IngressSourceName: handle.IngressSourceName,
+            ExecutionCycleDuration: _clock.UtcNow - handle.StartedAt);
+
+        try
+        {
+            await logStore.LogWorkflowInterruptedAsync(_identityGenerator, instance, payload, cancellationToken);
+        }
+        catch (Exception ex) when (!ex.IsFatal())
+        {
+            _logger.LogWarning(ex, "Failed to write WorkflowInterrupted log entry for instance {InstanceId}.", instance.Id);
+        }
+    }
+
+    private IReadOnlyList<IngressSourceFinalState> BuildSourceFinalStates()
+    {
+        return _registry.Snapshot()
+            .Select(s => new IngressSourceFinalState(s.Name, s.State, s.LastError, WasForceStopped: s.State == IngressSourceState.PauseFailed && s.LastError is not null))
+            .ToArray();
+    }
+
+    /// <summary>
+    /// Skip persist and forensic log when the row is already a real terminal outcome:
+    /// natural completion, fault, user-Cancelled, or unknown pre-state (snapshot
+    /// timeout/error). Drain-induced Finished/Cancelled rows still get the
+    /// <c>WorkflowInterrupted</c> log but are not promoted to Running/Interrupted (#8419).
+    /// </summary>
+    private static bool ShouldSkipInterruptedPersist(WorkflowInstance instance, HashSet<string> drainInducedInstanceIds)
+    {
+        if (instance.Status != WorkflowStatus.Finished)
+            return false;
+
+        if (instance.SubStatus == WorkflowSubStatus.Cancelled)
+            return !drainInducedInstanceIds.Contains(instance.Id);
+
+        return true;
+    }
+}

@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Elsa" Version="3.9.0" />
+        <PackageReference Include="Elsa.Workflows.Core" Version="3.9.0" />
+        <PackageReference Include="Elsa.Workflows.Management" Version="3.9.0" />
+        <PackageReference Include="Elsa.Workflows.Runtime" Version="3.9.0" />
+        <PackageReference Include="Elsa.Workflows.Runtime.Distributed" Version="3.9.0" />
+        <PackageReference Include="Elsa.Workflows.Api" Version="3.9.0" />
+        <PackageReference Include="Elsa.Dashboard.Api" Version="3.9.0" />
+        <PackageReference Include="Elsa.Workflows.Runtime.Dashboard" Version="3.9.0" />
+        <!--#if (useSqlitePersistence)-->
+        <PackageReference Include="Elsa.Persistence.EFCore.Sqlite" Version="3.9.0" />
+        <!--#endif-->
+        <!--#if (useSqlServerPersistence)-->
+        <PackageReference Include="Elsa.Persistence.EFCore.SqlServer" Version="3.9.0" />
+        <!--#endif-->
+        <!--#if (usePostgreSqlPersistence)-->
+        <PackageReference Include="Elsa.Persistence.EFCore.PostgreSql" Version="3.9.0" />
+        <!--#endif-->
+        <!--#if (useOraclePersistence)-->
+        <PackageReference Include="Elsa.Persistence.EFCore.Oracle" Version="3.9.0" />
+        <!--#endif-->
+        <PackageReference Include="Elsa.Http" Version="3.9.0" />
+        <PackageReference Include="Elsa.Identity" Version="3.9.0" />
+        <PackageReference Include="Elsa.Scheduling" Version="3.9.0" />
+        <PackageReference Include="Elsa.Expressions.CSharp" Version="3.9.0" />
+        <PackageReference Include="Elsa.Expressions.JavaScript" Version="3.9.0" />
+        <PackageReference Include="Elsa.Expressions.Liquid" Version="3.9.0" />
+        <PackageReference Include="Elsa.Dsl.ElsaScript" Version="3.9.0" />
+        <PackageReference Include="Elsa.WorkflowProviders.BlobStorage" Version="3.9.0" />
+        <PackageReference Include="Elsa.WorkflowProviders.BlobStorage.ElsaScript" Version="3.9.0" />
+        <PackageReference Include="Elsa.Shells.Api" Version="3.9.0" />
+        <PackageReference Include="CShells.AspNetCore" Version="0.0.28" />
+        <PackageReference Include="CShells.FastEndpoints" Version="0.0.28" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Folder Include="App_Data\" />
+    </ItemGroup>
+</Project>

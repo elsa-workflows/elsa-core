@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Exported by a tool that leaves comments. -->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:vendor="https://example.com/schemas/vendor" id="Definitions_Lossy" targetNamespace="https://example.com/lossy">
+  <bpmn:process id="Process_Lossy">
+    <bpmn:task id="Work" name="Work" />
+    <vendor:note id="Note">Not inside extensionElements, so no BPMN tool keeps it.</vendor:note>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_Lossy">
+    <bpmndi:BPMNPlane id="Plane_Lossy" bpmnElement="Process_Lossy">
+      <bpmndi:BPMNShape id="Work_di" bpmnElement="Work">
+        <dc:Bounds x="100" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

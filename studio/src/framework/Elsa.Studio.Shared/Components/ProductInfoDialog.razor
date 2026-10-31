@@ -1,0 +1,17 @@
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="0" AlignItems="AlignItems.Start" Row="false">
+            <ClientPackageVersion/>
+            <ServerPackageVersion/>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Primary" OnClick="@Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = null!;
+
+    void Close() => MudDialog.Close(DialogResult.Ok(true));
+}

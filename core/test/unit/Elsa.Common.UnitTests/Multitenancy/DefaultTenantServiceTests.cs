@@ -1,0 +1,197 @@
+using Elsa.Common.Multitenancy;
+using Elsa.Common.Multitenancy.EventHandlers;
+using Elsa.Common.RecurringTasks;
+using Microsoft.Extensions.DependencyInjection;
+using NSubstitute;
+
+namespace Elsa.Common.UnitTests.Multitenancy;
+
+/// <summary>
+/// Tests for <see cref="DefaultTenantService"/>, including the fallback to activate
+/// <see cref="Tenant.Default"/> when the tenant provider returns an empty list.
+/// </summary>
+public class DefaultTenantServiceTests
+{
+    [Fact]
+    public async Task ActivateTenantsAsync_WhenProviderReturnsEmpty_ActivatesDefaultTenant()
+    {
+        // Arrange - provider returns no tenants
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync(Array.Empty<Tenant>());
+
+        try
+        {
+            // Act
+            await tenantService.ActivateTenantsAsync();
+
+            // Assert
+            var tenants = (await tenantService.ListAsync()).ToList();
+            Assert.Single(tenants);
+            Assert.Same(Tenant.Default, tenants[0]);
+            Assert.Equal(Tenant.DefaultTenantId, tenants[0].Id);
+        }
+        finally
+        {
+            if (tenantService is IAsyncDisposable disposable)
+                await disposable.DisposeAsync();
+            await serviceProvider.DisposeAsync();
+        }
+    }
+
+    [Fact]
+    public async Task ListAsync_WhenProviderReturnsEmpty_ReturnsDefaultTenant()
+    {
+        // Arrange - ListAsync triggers initialization when provider returns empty
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync(Array.Empty<Tenant>());
+
+        try
+        {
+            // Act
+            var tenants = (await tenantService.ListAsync()).ToList();
+
+            // Assert
+            Assert.Single(tenants);
+            Assert.Same(Tenant.Default, tenants[0]);
+        }
+        finally
+        {
+            if (tenantService is IAsyncDisposable disposable)
+                await disposable.DisposeAsync();
+            await serviceProvider.DisposeAsync();
+        }
+    }
+
+    [Fact]
+    public async Task ActivateTenantsAsync_WhenProviderReturnsTenants_ReturnsThoseTenants()
+    {
+        // Arrange - provider returns specific tenants
+        var tenant1 = new Tenant { Id = "tenant-1", Name = "Tenant 1" };
+        var tenant2 = new Tenant { Id = "tenant-2", Name = "Tenant 2" };
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync([tenant1, tenant2]);
+
+        try
+        {
+            // Act
+            await tenantService.ActivateTenantsAsync();
+
+            // Assert - should not use Tenant.Default fallback
+            var tenants = (await tenantService.ListAsync()).ToList();
+            Assert.Equal(2, tenants.Count);
+            Assert.Contains(tenants, t => t.Id == "tenant-1");
+            Assert.Contains(tenants, t => t.Id == "tenant-2");
+        }
+        finally
+        {
+            if (tenantService is IAsyncDisposable disposable)
+                await disposable.DisposeAsync();
+            await serviceProvider.DisposeAsync();
+        }
+    }
+
+    [Fact]
+    public async Task RefreshAsync_WhenProviderChangesFromTenantsToEmpty_KeepsDefaultTenant()
+    {
+        // Arrange - start with tenants, then provider returns empty (simulating config change)
+        var tenant1 = new Tenant { Id = "tenant-1", Name = "Tenant 1" };
+        var providerReturns = new List<Tenant> { tenant1 };
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync(providerReturns, () => providerReturns);
+
+        try
+        {
+            await tenantService.ActivateTenantsAsync();
+            Assert.Single(await tenantService.ListAsync());
+
+            // Simulate provider now returning empty (e.g., config removed all tenants)
+            providerReturns.Clear();
+
+            // Act
+            await tenantService.RefreshAsync();
+
+            // Assert - should fall back to Tenant.Default instead of having zero tenants
+            var tenants = (await tenantService.ListAsync()).ToList();
+            Assert.Single(tenants);
+            Assert.Same(Tenant.Default, tenants[0]);
+        }
+        finally
+        {
+            if (tenantService is IAsyncDisposable disposable)
+                await disposable.DisposeAsync();
+            await serviceProvider.DisposeAsync();
+        }
+    }
+
+    [Fact]
+    public async Task ActivateTenantsAsync_WhenActivationFails_RetriesOnNextActivation()
+    {
+        var activatedEvent = Substitute.For<ITenantActivatedEvent>();
+        activatedEvent.TenantActivatedAsync(Arg.Any<TenantActivatedEventArgs>())
+            .Returns(Task.FromException(new InvalidOperationException("Migration failed")), Task.CompletedTask);
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync(Array.Empty<Tenant>(), activatedEvent: activatedEvent);
+
+        try
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() => tenantService.ActivateTenantsAsync());
+
+            await tenantService.ActivateTenantsAsync();
+
+            var tenants = (await tenantService.ListAsync()).ToList();
+            Assert.Same(Tenant.Default, Assert.Single(tenants));
+            await activatedEvent.Received(2).TenantActivatedAsync(Arg.Any<TenantActivatedEventArgs>());
+        }
+        finally
+        {
+            if (tenantService is IAsyncDisposable disposable)
+                await disposable.DisposeAsync();
+            await serviceProvider.DisposeAsync();
+        }
+    }
+
+    [Fact]
+    public async Task ActivateTenantsAsync_WhenLaterTenantFails_DeactivatesTenantsThatActivated()
+    {
+        var tenantA = new Tenant { Id = "a", Name = "A" };
+        var tenantB = new Tenant { Id = "b", Name = "B" };
+        var activatedEvent = Substitute.For<ITenantActivatedEvent>();
+        activatedEvent.TenantActivatedAsync(Arg.Is<TenantActivatedEventArgs>(x => x.Tenant.Id == "b"))
+            .Returns(Task.FromException(new InvalidOperationException("Migration failed")));
+        var deactivatedEvent = Substitute.For<ITenantDeactivatedEvent>();
+        var (tenantService, serviceProvider) = await CreateTenantServiceAsync([tenantA, tenantB], activatedEvent: activatedEvent, deactivatedEvent: deactivatedEvent);
+
+        try
+        {
+            await Assert.ThrowsAsync<InvalidOperationException>(() => tenantService.ActivateTenantsAsync());
+
+            await deactivatedEvent.Received(1).TenantDeactivatedAsync(Arg.Is<TenantDeactivatedEventArgs>(x => x.Tenant.Id == "a"));
+            await deactivatedEvent.DidNotReceive().TenantDeactivatedAsync(Arg.Is<TenantDeactivatedEventArgs>(x => x.Tenant.Id == "b"));
+        }
+        finally
+        {
+            if (tenantService is IAsyncDisposable disposable)
+                await disposable.DisposeAsync();
+            await serviceProvider.DisposeAsync();
+        }
+    }
+
+    private static Task<(ITenantService TenantService, ServiceProvider ServiceProvider)> CreateTenantServiceAsync(IEnumerable<Tenant> tenants, Func<List<Tenant>>? tenantsFactory = null, ITenantActivatedEvent? activatedEvent = null, ITenantDeactivatedEvent? deactivatedEvent = null)
+    {
+        var tenantList = tenants.ToList();
+        var getTenants = tenantsFactory ?? (() => tenantList);
+
+        var tenantsProvider = Substitute.For<ITenantsProvider>();
+        tenantsProvider.ListAsync(Arg.Any<CancellationToken>()).Returns(_ => getTenants());
+
+        var services = new ServiceCollection();
+        services.AddSingleton(_ => tenantsProvider);
+        services.AddSingleton<ITenantScopeFactory, DefaultTenantScopeFactory>();
+        services.AddSingleton<ITenantAccessor, DefaultTenantAccessor>();
+        services.AddSingleton(activatedEvent ?? Substitute.For<ITenantActivatedEvent>());
+        services.AddSingleton(deactivatedEvent ?? Substitute.For<ITenantDeactivatedEvent>());
+        services.AddSingleton<ITenantDeletedEvent>(Substitute.For<ITenantDeletedEvent>());
+        services.AddSingleton<TenantEventsManager>();
+        services.AddSingleton<RecurringTaskScheduleManager>();
+        services.AddSingleton<ITenantService, DefaultTenantService>();
+        services.AddLogging();
+
+        var serviceProvider = services.BuildServiceProvider();
+        return Task.FromResult((serviceProvider.GetRequiredService<ITenantService>(), serviceProvider));
+    }
+}

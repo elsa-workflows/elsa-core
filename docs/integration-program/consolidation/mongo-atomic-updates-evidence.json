@@ -1,0 +1,141 @@
+{
+  "checkedDate": "2026-09-23",
+  "scope": "Disposable consolidated source patch; no source import, package creation, or publication",
+  "program": 8194,
+  "story": 8286,
+  "task": 8294,
+  "rehearsalBaseline": "926c91327efaecce286d50b31f19db376239f05e",
+  "sourceCommits": {
+    "core": "8e893e02c4ac089d526b0a0d294a8546f021d072",
+    "extensions": "33fa0bfd28c7585240e3d4f665058c067b17e287",
+    "studio": "9afd3e36fd1bc90dfdf8ea00b40d89e4a50c8822"
+  },
+  "patch": {
+    "path": "scripts/integration-program/consolidated-build/mongo-atomic-updates.patch",
+    "sha256": "b06b99672ad3304413a8ea1093da3c6483db6b93a9a429a4c6312e62e29d841f",
+    "appliedWithCheckAgainstRehearsalBaseline": true
+  },
+  "packagePin": {
+    "id": "Testcontainers.MongoDb",
+    "version": "4.9.0",
+    "centralPropsPath": "src/extensions/Directory.Packages.props",
+    "centralPropsLine": 242,
+    "centralPropsSha256": "750eceddbf4d573378a0eb52116b2c2a96c076e7048d812f5feb17c027dda6a6",
+    "importedBy": "test/extensions/Directory.Packages.props",
+    "temporaryPackageVersionOverride": false,
+    "resolvedVersionLog": "doc/integration-program/consolidation/mongo-atomic-updates-logs/resolved-packages.log",
+    "resolvedVersionLogSha256": "81941ec1a1304e1a96f1d963f833137c6b90abcef4e3fb0fb13d5dc4d299c02b"
+  },
+  "replayedFiles": [
+    {
+      "path": "src/extensions/persistence/Elsa.Persistence.MongoDb/Common/MongoDbStore.cs",
+      "sha256": "8786cb5249a66c4740e50eb5f79a7c0c3f7ec9a086b66a34e3d42d7f1e92b1ba"
+    },
+    {
+      "path": "src/extensions/persistence/Elsa.Persistence.MongoDb/Modules/Management/WorkflowDefinitionStore.cs",
+      "sha256": "887db58106d29696d18c9f33c8917b4ce2505f6c9d9e3ab7c82c40554d407993"
+    },
+    {
+      "path": "test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/MongoWorkflowDefinitionStoreCompareAndSwapTests.cs",
+      "sha256": "b4313c678ee906cf6f1b9f97a046620ad3eba2e66c78d29918dfc732fa5e66e0"
+    }
+  ],
+  "testContainer": {
+    "imageTag": "mongo:7.0.24",
+    "resolvedDigest": "mongo@sha256:4c65244b50910461b9641a76131f84a2dcfd4da487f928298cea626b3842842c",
+    "platform": "linux/arm64",
+    "replicaSet": "rs1",
+    "dockerRuntime": "OrbStack 29.4.0"
+  },
+  "runs": [
+    {
+      "name": "fresh-restore",
+      "command": "NUGET_PACKAGES=/tmp/elsa-8294-nuget-clean dotnet restore test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj --force --no-cache --verbosity minimal",
+      "exitCode": 0,
+      "log": "doc/integration-program/consolidation/mongo-atomic-updates-logs/fresh-restore.log",
+      "logSha256": "ceda4daea5f24528b5cf91a9519298334cfc482f8b9c24c33273271940b129ed"
+    },
+    {
+      "name": "resolved-package-versions",
+      "command": "dotnet list test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj package --no-restore",
+      "exitCode": 0,
+      "log": "doc/integration-program/consolidation/mongo-atomic-updates-logs/resolved-packages.log",
+      "logSha256": "81941ec1a1304e1a96f1d963f833137c6b90abcef4e3fb0fb13d5dc4d299c02b"
+    },
+    {
+      "name": "replica-set-contract-tests-initial",
+      "framework": "net10.0",
+      "testCases": 9,
+      "passed": 9,
+      "failed": 0,
+      "skipped": 0,
+      "command": "dotnet test test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj --no-restore -f net10.0 --filter FullyQualifiedName~MongoWorkflowDefinitionStoreCompareAndSwapTests --logger 'console;verbosity=normal'",
+      "exitCode": 0,
+      "log": "doc/integration-program/consolidation/mongo-atomic-updates-logs/mongo-replica-set-net10.log",
+      "logSha256": "0c4aee7a5820b4e9e2d8da02ea4ee8e14b14b2c3601ba38b9f598c3156b5f3d8",
+      "supersededBy": "replica-set-contract-tests-after-fail-closed-error-classification",
+      "patchSha256": "2a3d6a1d3a062b2f94f3c42088a38a38f9d93e3d715d59efd288cff188d96fb4"
+    },
+    {
+      "name": "mongo-persistence-build",
+      "frameworks": [
+        "net8.0",
+        "net9.0",
+        "net10.0"
+      ],
+      "errors": 0,
+      "warnings": 50,
+      "command": "dotnet build src/extensions/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj --no-restore --verbosity minimal -m:1",
+      "exitCode": 0,
+      "log": "doc/integration-program/consolidation/mongo-atomic-updates-logs/mongo-project-build-net8-net9-net10.log",
+      "logSha256": "6a9ede3ad07e08128edded9b5dc50e3205ee8ae37e9289bbd37d25817944a836"
+    },
+    {
+      "name": "final-clean-patch-replay-restore",
+      "command": "NUGET_PACKAGES=/tmp/elsa-8294-nuget-final-clean dotnet restore test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj --force --no-cache --verbosity minimal",
+      "exitCode": 0,
+      "log": "doc/integration-program/consolidation/mongo-atomic-updates-logs/published-row-preservation-fresh-restore.log",
+      "logSha256": "8b7fc6177118206134ce6179b28024cd1892a5653a528fa304ed8d03bdd6cb4e",
+      "patchSha256": "b06b99672ad3304413a8ea1093da3c6483db6b93a9a429a4c6312e62e29d841f"
+    },
+    {
+      "name": "replica-set-contract-tests-after-fail-closed-error-classification",
+      "replayBaseline": "926c91327efaecce286d50b31f19db376239f05e",
+      "testCases": 12,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0,
+      "command": "NUGET_PACKAGES=/tmp/elsa-8294-nuget-final-clean dotnet test test/extensions/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj --no-restore -f net10.0 --filter FullyQualifiedName~MongoWorkflowDefinitionStoreCompareAndSwapTests --logger 'console;verbosity=normal'",
+      "exitCode": 0,
+      "patchSha256": "b06b99672ad3304413a8ea1093da3c6483db6b93a9a429a4c6312e62e29d841f",
+      "log": "doc/integration-program/consolidation/mongo-atomic-updates-logs/published-row-preservation-fresh-replay-net10.log",
+      "logSha256": "3e544108f9a03d2f55567fc1945eea018a219fc207de5b50677723a5a3fc34d3"
+    },
+    {
+      "name": "mongo-persistence-build-after-fail-closed-error-classification",
+      "frameworks": [
+        "net8.0",
+        "net9.0",
+        "net10.0"
+      ],
+      "errors": 0,
+      "warnings": 50,
+      "command": "NUGET_PACKAGES=/tmp/elsa-8294-nuget-final-clean dotnet build src/extensions/persistence/Elsa.Persistence.MongoDb/Elsa.Persistence.MongoDb.csproj --no-restore --verbosity minimal -m:1",
+      "exitCode": 0,
+      "patchSha256": "b06b99672ad3304413a8ea1093da3c6483db6b93a9a429a4c6312e62e29d841f",
+      "log": "doc/integration-program/consolidation/mongo-atomic-updates-logs/published-row-preservation-build-all-tfms.log",
+      "logSha256": "452161c7bdbca274376c0b11efa14ac8fd714eaa514d60d5436d9bc411f5993b"
+    }
+  ],
+  "limitations": [
+    "The patch has not yet been imported into the history-preserving source repositories.",
+    "The complete consolidated solution build and final imported-layout test run remain an integration gate.",
+    "Only MongoDB 7.0.24 on a local replica set was exercised; standalone MongoDB and other MongoDB versions were not tested.",
+    "This is not the released Elsa 3.8.4 package-compatibility proof.",
+    "No package was packed, pushed to a feed, deployed, or published.",
+    "The default WorkflowDefinition BSON class map rejects an unmapped raw field before the compare-and-swap mutation; no alternate IgnoreExtraElements configuration is claimed. A regression verifies that rejection leaves the raw published row unchanged."
+  ],
+  "publisherWorkflowModified": false,
+  "publishersInvoked": false,
+  "publicationAuthorized": false
+}

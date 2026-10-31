@@ -1,0 +1,57 @@
+{
+  "checkedAt": "2026-10-06T04:02:49.311577+00:00",
+  "sourceHead": "6dbfc58624c28e147a90e2d2b0d1a610817012e2",
+  "sourceDirty": false,
+  "focusedFilter": "Elsa.WorkflowContexts.Debug.slnf",
+  "focusedFrameworks": [
+    "net8.0",
+    "net9.0",
+    "net10.0"
+  ],
+  "preparerTests": {
+    "passed": 7
+  },
+  "hostBuildExitCode": 0,
+  "browser": {
+    "endpoint": "GET /elsa/api/workflow-contexts/provider-descriptors",
+    "status": 200,
+    "provider": "Synthetic",
+    "initialUpdates": 0,
+    "selectedUpdates": 1,
+    "selectedProviderTypes": [
+      "SyntheticWorkflowContextProvider, UiProbe"
+    ],
+    "deselectedUpdates": 2,
+    "deselectedProviderTypes": []
+  },
+  "debugger": {
+    "release": "3.2.0-1092",
+    "binarySha256": "ffc51b6f716e6bb8cb93c416e352651b945269c9501f820d32f3023d4ce24ece",
+    "backendFrame": "Elsa.WorkflowContexts.Endpoints.ProviderTypes.List.List.ExecuteAsync at Endpoint.cs:28",
+    "studioFrame": "Elsa.Studio.WorkflowContexts.Components.WorkflowContextsEditor.OnCheckChanged at WorkflowContextsEditor.razor.cs:50",
+    "browserUpdateAfterContinue": true,
+    "exitCode": 0,
+    "cleanup": "After browser observations the lead interrupted the running debuggee; the existing command file quit cleanly and the listener was absent."
+  },
+  "screenshots": {
+    "selected.png": "39f3f95c38ba52501634dfd8e9917ca4f75e2be7f1e0fe627afed10e2f3571b2",
+    "deselected.png": "d282795119115572e0bd3500e70d213dec7be5419786808b507cd2c943cb9112"
+  },
+  "published": false,
+  "finalMergedImportHeadVerified": true,
+  "productionAuthorizationVerified": false,
+  "fullSolutionBuild": {
+    "sourceHead": "6dbfc58624c28e147a90e2d2b0d1a610817012e2",
+    "command": "dotnet build Elsa.sln --configuration Debug -p:UseProjectReferences=true -p:GeneratePackageOnBuild=false --verbosity minimal",
+    "result": "Build succeeded",
+    "warnings": 470,
+    "errors": 0,
+    "elapsed": "00:08:55.14",
+    "logSha256": "188699d4b551207fccbfedd42da45a02b706b3cfc7018327af501ca193a6fe33",
+    "cleanWorktreeAfterBuild": true,
+    "testsExecuted": false
+  },
+  "updatedAt": "2026-10-06T04:15:10.468560+00:00",
+  "fullSolutionBuildVerified": true,
+  "focusedFrameworksScope": "Target frameworks exercised during focused preparation; this list is scope metadata, not a retained per-framework result receipt."
+}

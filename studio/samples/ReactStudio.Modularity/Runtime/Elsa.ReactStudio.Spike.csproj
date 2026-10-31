@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="CShells.AspNetCore" />
+    <EmbeddedResource Include="../client/dist/shell/*" LogicalName="shell/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../client/dist/shared/*" LogicalName="shared/%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

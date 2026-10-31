@@ -1,0 +1,269 @@
+.state-machine-inspector {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+  color: var(--mud-palette-text-primary);
+}
+.state-machine-inspector__header,
+.state-machine-inspector__stage-heading,
+.state-machine-inspector__transition-summary,
+.state-machine-inspector__details summary {
+  display: flex;
+  align-items: center;
+}
+.state-machine-inspector__header {
+  justify-content: space-between;
+  gap: 1rem;
+}
+.state-machine-inspector__header h3,
+.state-machine-inspector__eyebrow,
+.state-machine-inspector__stage-kicker,
+.state-machine-inspector__stage-heading h4,
+.state-machine-inspector__stage-note,
+.state-machine-inspector__issues p,
+.state-machine-inspector__details summary,
+.state-machine-inspector__details-summary {
+  margin: 0;
+}
+.state-machine-inspector__header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+.state-machine-inspector__eyebrow,
+.state-machine-inspector__stage-kicker,
+.state-machine-inspector__stage-note,
+.state-machine-inspector__details-summary {
+  color: var(--mud-palette-text-secondary);
+  font-size: 0.75rem;
+}
+.state-machine-inspector__eyebrow,
+.state-machine-inspector__stage-kicker {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.state-machine-inspector__eyebrow {
+  margin-bottom: 0.125rem;
+}
+.state-machine-inspector__identity {
+  display: grid;
+  gap: 0.5rem;
+}
+.state-machine-inspector__identity label {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.state-machine-inspector__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+.state-machine-inspector__badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.25rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--mud-palette-lines-default);
+  border-radius: 999px;
+  color: var(--mud-palette-text-secondary);
+  font-size: 0.6875rem;
+  font-weight: 600;
+}
+.state-machine-inspector__badge--primary {
+  border-color: var(--mud-palette-primary);
+  color: var(--mud-palette-primary);
+}
+.state-machine-inspector__badge--success {
+  border-color: var(--mud-palette-success);
+  color: var(--mud-palette-success);
+}
+.state-machine-inspector__control {
+  width: 100%;
+  min-height: 2.5rem;
+  box-sizing: border-box;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--mud-palette-lines-inputs);
+  border-radius: var(--mud-default-borderradius);
+  background: var(--mud-palette-surface);
+  color: var(--mud-palette-text-primary);
+  font: inherit;
+}
+.state-machine-inspector__control--name {
+  font-weight: 600;
+}
+.state-machine-inspector__control:hover:not(:disabled) {
+  border-color: var(--mud-palette-text-secondary);
+}
+.state-machine-inspector__control:focus-visible,
+.state-machine-inspector__button:focus-visible,
+.state-machine-inspector__details summary:focus-visible {
+  outline: 2px solid var(--mud-palette-primary);
+  outline-offset: 2px;
+}
+.state-machine-inspector__control:disabled {
+  background: var(--mud-palette-action-disabled-background);
+  color: var(--mud-palette-action-disabled);
+}
+.state-machine-inspector__lifecycle {
+  display: grid;
+  gap: 0.5rem;
+}
+.state-machine-inspector__stage {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr);
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.875rem;
+  border: 1px solid var(--mud-palette-lines-default);
+  border-radius: var(--mud-default-borderradius);
+  background: var(--mud-palette-surface);
+}
+.state-machine-inspector__stage--active {
+  border-color: var(--mud-palette-primary);
+}
+.state-machine-inspector__stage-marker {
+  align-self: start;
+  padding-top: 0.125rem;
+  color: var(--mud-palette-primary);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.055em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+.state-machine-inspector__stage-content {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+.state-machine-inspector__stage-heading,
+.state-machine-inspector__transition-summary {
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 0;
+}
+.state-machine-inspector__stage-heading h4 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+.state-machine-inspector__stage-note {
+  max-width: 55%;
+  text-align: right;
+}
+.state-machine-inspector__connector {
+  height: 1rem;
+  color: var(--mud-palette-text-secondary);
+  font-size: 1rem;
+  line-height: 1rem;
+  text-align: center;
+}
+.state-machine-inspector__transition-summary {
+  min-height: 3rem;
+  padding: 0.75rem;
+  border: 1px solid var(--mud-palette-lines-default);
+  border-radius: var(--mud-default-borderradius);
+  background: var(--mud-palette-background-grey);
+}
+.state-machine-inspector__transition-summary strong {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.state-machine-inspector__button {
+  min-height: 2.25rem;
+  padding: 0.375rem 0.625rem;
+  border: 1px solid transparent;
+  border-radius: var(--mud-default-borderradius);
+  background: transparent;
+  color: var(--mud-palette-primary);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.state-machine-inspector__button:hover {
+  border-color: var(--mud-palette-lines-default);
+  background: var(--mud-palette-action-default-hover);
+}
+.state-machine-inspector__button--danger {
+  color: var(--mud-palette-error);
+}
+.state-machine-inspector__details,
+.state-machine-inspector__danger-zone {
+  border-top: 1px solid var(--mud-palette-lines-default);
+  padding-top: 0.75rem;
+}
+.state-machine-inspector__details summary {
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 2.25rem;
+  color: var(--mud-palette-primary);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.state-machine-inspector__details dl {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+}
+.state-machine-inspector__details dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--mud-palette-text-secondary);
+  font-size: 0.75rem;
+}
+.state-machine-inspector__details dt,
+.state-machine-inspector__details dd {
+  margin: 0;
+}
+.state-machine-inspector__details dd {
+  color: var(--mud-palette-text-primary);
+}
+.state-machine-inspector__danger-zone {
+  display: flex;
+  justify-content: flex-end;
+}
+.state-machine-inspector__empty,
+.state-machine-inspector__issues {
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px dashed var(--mud-palette-lines-default);
+  border-radius: var(--mud-default-borderradius);
+  color: var(--mud-palette-text-secondary);
+  font-size: 0.8125rem;
+}
+.state-machine-inspector__issues {
+  display: grid;
+  gap: 0.375rem;
+  border-style: solid;
+  border-color: var(--mud-palette-error);
+  color: var(--mud-palette-error);
+}
+
+@media (max-width: 700px) {
+  .state-machine-inspector__stage {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+  .state-machine-inspector__stage-marker {
+    padding-top: 0;
+  }
+  .state-machine-inspector__stage-heading,
+  .state-machine-inspector__transition-summary,
+  .state-machine-inspector__details summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .state-machine-inspector__stage-note {
+    max-width: none;
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .state-machine-inspector * {
+    scroll-behavior: auto;
+    transition: none;
+  }
+}

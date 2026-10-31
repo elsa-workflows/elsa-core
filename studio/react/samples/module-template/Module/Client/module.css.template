@@ -1,0 +1,4 @@
+/* Scope custom styles. The host supplies shared UI/theme styles; do not repeat Tailwind preflight. */
+.__MODULE_ID__ { --forecast-accent: var(--primary); }
+.__MODULE_ID__ p { margin-block: .5rem; }
+.__MODULE_ID__ label { display: block; margin-bottom: .5rem; font-weight: 500; }

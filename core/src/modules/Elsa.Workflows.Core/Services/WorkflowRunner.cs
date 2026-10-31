@@ -1,0 +1,316 @@
+using Elsa.Extensions;
+using Elsa.Mediator.Contracts;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.CommitStates;
+using Elsa.Workflows.Memory;
+using Elsa.Workflows.Models;
+using Elsa.Workflows.Notifications;
+using Elsa.Workflows.Options;
+using Elsa.Workflows.Pipelines.WorkflowExecution;
+using Elsa.Workflows.State;
+using Elsa.Workflows.Telemetry;
+using Microsoft.Extensions.Logging;
+
+namespace Elsa.Workflows;
+
+/// <inheritdoc />
+public class WorkflowRunner(
+    IServiceProvider serviceProvider,
+    IWorkflowExecutionPipeline pipeline,
+    IWorkflowStateExtractor workflowStateExtractor,
+    IWorkflowBuilderFactory workflowBuilderFactory,
+    IWorkflowGraphBuilder workflowGraphBuilder,
+    IIdentityGenerator identityGenerator,
+    INotificationSender notificationSender,
+    ILoggerStateGenerator<WorkflowExecutionContext> loggerStateGenerator,
+    ICommitStateHandler commitStateHandler,
+    ILogger<WorkflowRunner> logger)
+    : IWorkflowRunner
+{
+    /// <inheritdoc />
+    public async Task<RunWorkflowResult> RunAsync(IActivity activity, RunWorkflowOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        await PreflightAsync(options?.WorkflowInstanceId, cancellationToken);
+        var workflow = Workflow.FromActivity(activity);
+        var workflowGraph = await workflowGraphBuilder.BuildAsync(workflow, cancellationToken);
+        return await RunAsync(workflowGraph, options, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<RunWorkflowResult> RunAsync(IWorkflow workflow, RunWorkflowOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        await PreflightAsync(options?.WorkflowInstanceId, cancellationToken);
+        var builder = workflowBuilderFactory.CreateBuilder();
+        var workflowDefinition = await builder.BuildWorkflowAsync(workflow, cancellationToken);
+        return await RunAsync(workflowDefinition, options, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<RunWorkflowResult<TResult>> RunAsync<TResult>(WorkflowBase<TResult> workflow, RunWorkflowOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        var result = await RunAsync((IWorkflow)workflow, options, cancellationToken);
+        return new(result.WorkflowExecutionContext, result.WorkflowState, result.Workflow, (TResult)result.Result!, result.Journal);
+    }
+
+    /// <inheritdoc />
+    public async Task<RunWorkflowResult> RunAsync<T>(RunWorkflowOptions? options = null, CancellationToken cancellationToken = default) where T : IWorkflow, new()
+    {
+        await PreflightAsync(options?.WorkflowInstanceId, cancellationToken);
+        var builder = workflowBuilderFactory.CreateBuilder();
+        var workflowDefinition = await builder.BuildWorkflowAsync<T>(cancellationToken);
+        return await RunAsync(workflowDefinition, options, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<TResult> RunAsync<T, TResult>(RunWorkflowOptions? options = null, CancellationToken cancellationToken = default) where T : WorkflowBase<TResult>, new()
+    {
+        await PreflightAsync(options?.WorkflowInstanceId, cancellationToken);
+        var builder = workflowBuilderFactory.CreateBuilder();
+        var workflow = await builder.BuildWorkflowAsync<T>(cancellationToken);
+        var result = await RunAsync(workflow, options, cancellationToken);
+        return (TResult)result.Result!;
+    }
+
+    /// <inheritdoc />
+    public async Task<RunWorkflowResult> RunAsync(WorkflowGraph workflowGraph, RunWorkflowOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        // Set up a workflow execution context.
+        var instanceId = options?.WorkflowInstanceId ?? identityGenerator.GenerateId();
+        await PreflightAsync(instanceId, cancellationToken);
+        var input = options?.Input;
+        var properties = options?.Properties;
+        var correlationId = options?.CorrelationId;
+        var triggerActivityId = options?.TriggerActivityId;
+        var parentWorkflowInstanceId = options?.ParentWorkflowInstanceId;
+        var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(
+            serviceProvider,
+            workflowGraph,
+            instanceId,
+            correlationId,
+            parentWorkflowInstanceId,
+            input,
+            properties,
+            null,
+            triggerActivityId,
+            cancellationToken);
+
+        // Schedule the first activity.
+        workflowExecutionContext.ScheduleWorkflow(
+            schedulingActivityExecutionId: options?.SchedulingActivityExecutionId,
+            schedulingWorkflowInstanceId: options?.SchedulingWorkflowInstanceId,
+            schedulingCallStackDepth: options?.SchedulingCallStackDepth);
+
+        return await RunAsync(workflowExecutionContext);
+    }
+
+    /// <inheritdoc />
+    public async Task<RunWorkflowResult> RunAsync(Workflow workflow, RunWorkflowOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        await PreflightAsync(options?.WorkflowInstanceId, cancellationToken);
+        var workflowGraph = await workflowGraphBuilder.BuildAsync(workflow, cancellationToken);
+        return await RunAsync(workflowGraph, options, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<RunWorkflowResult> RunAsync(Workflow workflow, WorkflowState workflowState, RunWorkflowOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        await PreflightAsync(workflowState.Id, cancellationToken);
+        var workflowGraph = await workflowGraphBuilder.BuildAsync(workflow, cancellationToken);
+        return await RunAsync(workflowGraph, workflowState, options, cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<RunWorkflowResult> RunAsync(WorkflowGraph workflowGraph, WorkflowState workflowState, RunWorkflowOptions? options = null, CancellationToken cancellationToken = default)
+    {
+        await PreflightAsync(workflowState.Id, cancellationToken);
+        // Create a workflow execution context.
+        var input = options?.Input;
+        var variables = options?.Variables;
+        var properties = options?.Properties;
+        var correlationId = options?.CorrelationId ?? workflowState.CorrelationId;
+        var triggerActivityId = options?.TriggerActivityId;
+        var parentWorkflowInstanceId = options?.ParentWorkflowInstanceId;
+        var workflowExecutionContext = await WorkflowExecutionContext.CreateAsync(
+            serviceProvider,
+            workflowGraph,
+            workflowState,
+            correlationId,
+            parentWorkflowInstanceId,
+            input,
+            properties,
+            null,
+            triggerActivityId,
+            cancellationToken);
+
+        var bookmarkId = options?.BookmarkId;
+        var activityHandle = options?.ActivityHandle;
+
+        if (!string.IsNullOrEmpty(bookmarkId))
+        {
+            var bookmark = workflowState.Bookmarks.FirstOrDefault(x => x.Id == bookmarkId);
+
+            if (bookmark != null)
+                workflowExecutionContext.ScheduleBookmark(bookmark);
+        }
+        else if (activityHandle != null)
+        {
+            if (!string.IsNullOrEmpty(activityHandle.ActivityInstanceId))
+            {
+                var activityExecutionContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.Id == activityHandle.ActivityInstanceId)
+                                               ?? throw new("No activity execution context found with the specified ID.");
+                workflowExecutionContext.ScheduleActivityExecutionContext(activityExecutionContext);
+            }
+            else
+            {
+                var activity = workflowExecutionContext.FindActivity(activityHandle);
+                if (activity != null) workflowExecutionContext.ScheduleActivity(activity);
+            }
+        }
+        else if (workflowExecutionContext.Scheduler.HasAny)
+        {
+            // Do nothing. The scheduler already has activities to schedule.
+        }
+        else
+        {
+            // Check if there are any interrupted activities.
+            var interruptedActivityExecutionContexts = workflowExecutionContext.ActivityExecutionContexts.Where(x => x.IsExecuting).ToList();
+
+            if (interruptedActivityExecutionContexts.Count > 0)
+            {
+                // Schedule the interrupted activities.
+                foreach (var pendingActivityExecutionContext in interruptedActivityExecutionContexts)
+                    workflowExecutionContext.ScheduleActivityExecutionContext(pendingActivityExecutionContext);
+            }
+            else
+            {
+                // Nothing was scheduled. Schedule the workflow itself.
+                var vars = variables?.Select(x => new Variable(x.Key, x.Value)).ToList();
+                var schedulingActivityExecutionId = options?.SchedulingActivityExecutionId;
+                var schedulingWorkflowInstanceId = options?.SchedulingWorkflowInstanceId;
+                var schedulingCallStackDepth = options?.SchedulingCallStackDepth;
+
+                workflowExecutionContext.ScheduleWorkflow(
+                    variables: vars,
+                    schedulingActivityExecutionId: schedulingActivityExecutionId,
+                    schedulingWorkflowInstanceId: schedulingWorkflowInstanceId,
+                    schedulingCallStackDepth: schedulingCallStackDepth);
+            }
+        }
+
+        // Set variables, if any.
+        if (variables != null)
+        {
+            var rootContext = workflowExecutionContext.ActivityExecutionContexts.FirstOrDefault(x => x.ParentActivityExecutionContext == null);
+
+            if (rootContext != null)
+            {
+                foreach (var variable in variables)
+                    rootContext.SetDynamicVariable(variable.Key, variable.Value);
+            }
+        }
+
+        return await RunAsync(workflowExecutionContext);
+    }
+
+    /// <inheritdoc />
+    public async Task<RunWorkflowResult> RunAsync(WorkflowExecutionContext workflowExecutionContext)
+    {
+        var guard = serviceProvider.GetService(typeof(IWorkflowExecutionGuard)) as IWorkflowExecutionGuard ?? workflowExecutionContext.GetService<IWorkflowExecutionGuard>();
+        IWorkflowExecutionAuthorization? authorization = null;
+        if (guard != null)
+        {
+            if (pipeline.GetType() != typeof(WorkflowExecutionPipeline))
+            {
+                await guard.DemandUnownedAsync(workflowExecutionContext.Id, workflowExecutionContext.CancellationToken);
+            }
+            else
+            {
+                authorization = await guard.AuthorizeAsync(workflowExecutionContext, WorkflowExecutionEntryPoint.Runner);
+            }
+        }
+
+        (Action Validate, WorkflowMiddlewareDelegate Execute)? authorizedInvocation = authorization != null
+            ? ((WorkflowExecutionPipeline)pipeline).CaptureAuthorizedInvocation()
+            : null;
+        using var executionScope = WorkflowExecutionScope.Begin(workflowExecutionContext);
+        var loggerState = loggerStateGenerator.GenerateLoggerState(workflowExecutionContext);
+        using var loggingScope = logger.BeginScope(loggerState);
+        var workflow = workflowExecutionContext.Workflow;
+        var cancellationToken = workflowExecutionContext.CancellationToken;
+
+        await notificationSender.SendAsync(new WorkflowExecuting(workflow, workflowExecutionContext), cancellationToken);
+
+        // If the status is Pending, it means the workflow is started for the first time.
+        var isStarting = workflowExecutionContext.SubStatus == WorkflowSubStatus.Pending;
+        if (isStarting)
+        {
+            workflowExecutionContext.TransitionTo(WorkflowSubStatus.Executing);
+            await notificationSender.SendAsync(new WorkflowStarted(workflow, workflowExecutionContext), cancellationToken);
+        }
+
+        // Authority denial is not a business workflow fault. Keep these checks outside the
+        // execution catch/telemetry, after callbacks and before any middleware entry.
+        if (authorization != null)
+        {
+            authorizedInvocation!.Value.Validate();
+            await authorization.RevalidateAsync(cancellationToken);
+            authorizedInvocation!.Value.Validate();
+        }
+
+        var telemetryScope = WorkflowInstrumentation.StartWorkflow(workflowExecutionContext, isStarting);
+        Exception? workflowExecutionException = null;
+
+        try
+        {
+            if (authorization != null)
+            {
+                using var authorizedPhase = WorkflowExecutionPhase.Enter(workflowExecutionContext);
+                await authorizedInvocation!.Value.Execute(workflowExecutionContext);
+            }
+            else
+            {
+                await pipeline.ExecuteAsync(workflowExecutionContext);
+            }
+        }
+        catch (WorkflowPipelineChangedException)
+        {
+            // A concurrent reconfiguration at the final dispatch boundary is still an
+            // admission denial, not an activity exception or persisted workflow fault.
+            throw;
+        }
+        catch (Exception e)
+        {
+            if (e is not OperationCanceledException)
+                workflowExecutionContext.Exception ??= e;
+
+            workflowExecutionException = e;
+            throw;
+        }
+        finally
+        {
+            WorkflowInstrumentation.StopWorkflow(telemetryScope, workflowExecutionContext, workflowExecutionException);
+        }
+
+        var workflowState = workflowStateExtractor.Extract(workflowExecutionContext);
+
+        if (workflowState.Status == WorkflowStatus.Finished)
+        {
+            await notificationSender.SendAsync(new WorkflowFinished(workflow, workflowState, workflowExecutionContext), cancellationToken);
+        }
+
+        var result = workflow.ResultVariable?.Get(workflowExecutionContext.MemoryRegister);
+        var workflowExecutionLogEntries = workflowExecutionContext.ExecutionLog.ToList();
+        var activityExecutionContexts = workflowExecutionContext.ActivityExecutionContexts.ToList();
+        var journal = new Journal(workflowExecutionLogEntries, activityExecutionContexts);
+        await notificationSender.SendAsync(new WorkflowExecuted(workflow, workflowState, workflowExecutionContext), cancellationToken);
+        await commitStateHandler.CommitAsync(workflowExecutionContext, workflowState, cancellationToken);
+        return new(workflowExecutionContext, workflowState, workflowExecutionContext.Workflow, result, journal);
+    }
+    private async ValueTask PreflightAsync(string? instanceId, CancellationToken cancellationToken)
+    {
+        if (instanceId != null && serviceProvider.GetService(typeof(IWorkflowExecutionGuard)) is IWorkflowExecutionGuard guard)
+        {
+            await guard.DemandUnownedAsync(instanceId, cancellationToken);
+        }
+    }
+}

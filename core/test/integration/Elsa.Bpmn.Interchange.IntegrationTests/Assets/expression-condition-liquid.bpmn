@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  A gateway whose condition is written in Liquid, which renders the text true or false rather than a boolean.
+-->
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:elsa="https://elsaworkflows.io/schemas/bpmn/v1"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  id="Definitions_condition-liquid"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="condition-liquid" isExecutable="true">
+    <bpmn:startEvent id="Start">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:exclusiveGateway id="Decide" default="Flow_No">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_Yes</bpmn:outgoing>
+      <bpmn:outgoing>Flow_No</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="Yes">
+      <bpmn:extensionElements>
+        <elsa:activityBinding activityType="Elsa.WriteLine">
+          <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"Yes"}}</elsa:input>
+        </elsa:activityBinding>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_Yes</bpmn:incoming>
+      <bpmn:outgoing>Flow_Yes_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="No">
+      <bpmn:extensionElements>
+        <elsa:activityBinding activityType="Elsa.WriteLine">
+          <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"No"}}</elsa:input>
+        </elsa:activityBinding>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_No</bpmn:incoming>
+      <bpmn:outgoing>Flow_No_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="End">
+      <bpmn:incoming>Flow_Yes_End</bpmn:incoming>
+      <bpmn:incoming>Flow_No_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start" targetRef="Decide" />
+    <bpmn:sequenceFlow id="Flow_Yes" sourceRef="Decide" targetRef="Yes">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression" language="liquid">{% if 2 &gt; 1 %}true{% else %}false{% endif %}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_No" sourceRef="Decide" targetRef="No" />
+    <bpmn:sequenceFlow id="Flow_Yes_End" sourceRef="Yes" targetRef="End" />
+    <bpmn:sequenceFlow id="Flow_No_End" sourceRef="No" targetRef="End" />
+  </bpmn:process>
+</bpmn:definitions>

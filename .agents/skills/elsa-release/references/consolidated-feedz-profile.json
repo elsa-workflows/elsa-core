@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "mode": "nonpublishing_candidate",
+  "candidate_only": true,
+  "version": "3.10.0",
+  "configuration": "Release",
+  "repositories": [
+    {
+      "name": "core",
+      "directory": "elsa-core-main",
+      "github": "elsa-workflows/elsa-core",
+      "solution": "Elsa.sln",
+      "workflow": "prepare-consolidated-release-candidate.yml",
+      "dependencies": [],
+      "alignment": [],
+      "required_jobs": ["prepare", "retrieve", "consumers"],
+      "fixed_packages": {},
+      "npm": []
+    }
+  ],
+  "feeds": [
+    {"name": "feedz", "base_url": "https://f.feedz.io/elsa-workflows/elsa-3/nuget/v3/packages"}
+  ],
+  "release_kinds": {"stable": {"feeds": ["feedz"]}},
+  "artifact_retention_days": 30,
+  "npm_ownership": "undecided",
+  "templates_scope": "Separate repository and release policy; not part of Elsa.sln candidate inventory.",
+  "maintenance_profile": "elsa-profile.json",
+  "publication": "No publication. A separately reviewed and approved future publish-only workflow must bind to the exact original candidate artifact without restore, build or pack."
+}

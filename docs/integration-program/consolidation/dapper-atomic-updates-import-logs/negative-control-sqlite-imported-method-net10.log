@@ -1,0 +1,75 @@
+[dotnet-build-slots] waiting for a build slot (2 in use, waited 0s). Held by: pid 47195 since 00:27:17 in /private/tmp/elsa-8490-savemany-collation-batch: dotnet test test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj -c Release -f net10.0 -nologo --filter FullyQualifiedName~SaveManyTenantOwnership; pid 48096 since 00:27:49 in /Users/sipke/Projects/Elsa/elsa-foundation-main/.claude/worktrees/charming-curie-849596: dotnet restore Elsa.Server.slnx -p:Configuration=Release
+[dotnet-build-slots] got slot 1 after 40s
+  Determining projects to restore...
+/private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj : warning NU1903: Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q
+/private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Elsa.Persistence.Dapper.csproj : warning NU1902: Package 'Microsoft.Build.Tasks.Git' 8.0.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-23fw-v26w-5fgq [/private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj]
+/private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper.Migrations/Elsa.Persistence.Dapper.Migrations.csproj : warning NU1902: Package 'Microsoft.Build.Tasks.Git' 8.0.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-23fw-v26w-5fgq [/private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj]
+  All projects are up-to-date for restore.
+/private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj : warning NU1903: Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.11 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q
+/private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Elsa.Persistence.Dapper.csproj : warning NU1902: Package 'Microsoft.Build.Tasks.Git' 8.0.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-23fw-v26w-5fgq [TargetFramework=net10.0]
+/private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper.Migrations/Elsa.Persistence.Dapper.Migrations.csproj : warning NU1902: Package 'Microsoft.Build.Tasks.Git' 8.0.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-23fw-v26w-5fgq [TargetFramework=net10.0]
+  Elsa.Persistence.Dapper.Migrations -> /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper.Migrations/bin/Debug/net10.0/Elsa.Persistence.Dapper.Migrations.dll
+  Elsa.Features -> /private/tmp/elsa-8293-imported-dapper/src/common/Elsa.Features/bin/Debug/net10.0/Elsa.Features.dll
+  Elsa.Mediator -> /private/tmp/elsa-8293-imported-dapper/src/common/Elsa.Mediator/bin/Debug/net10.0/Elsa.Mediator.dll
+  Elsa.Caching -> /private/tmp/elsa-8293-imported-dapper/src/modules/Elsa.Caching/bin/Debug/net10.0/Elsa.Caching.dll
+  Elsa.Common -> /private/tmp/elsa-8293-imported-dapper/src/modules/Elsa.Common/bin/Debug/net10.0/Elsa.Common.dll
+  Elsa.KeyValues -> /private/tmp/elsa-8293-imported-dapper/src/modules/Elsa.KeyValues/bin/Debug/net10.0/Elsa.KeyValues.dll
+  Elsa.Expressions -> /private/tmp/elsa-8293-imported-dapper/src/modules/Elsa.Expressions/bin/Debug/net10.0/Elsa.Expressions.dll
+  Elsa.Workflows.Core -> /private/tmp/elsa-8293-imported-dapper/src/modules/Elsa.Workflows.Core/bin/Debug/net10.0/Elsa.Workflows.Core.dll
+  Elsa.Api.Common -> /private/tmp/elsa-8293-imported-dapper/src/common/Elsa.Api.Common/bin/Debug/net10.0/Elsa.Api.Common.dll
+  Elsa.Identity -> /private/tmp/elsa-8293-imported-dapper/src/modules/Elsa.Identity/bin/Debug/net10.0/Elsa.Identity.dll
+  Elsa.Tenants -> /private/tmp/elsa-8293-imported-dapper/src/modules/Elsa.Tenants/bin/Debug/net10.0/Elsa.Tenants.dll
+  Elsa.Workflows.Management -> /private/tmp/elsa-8293-imported-dapper/src/modules/Elsa.Workflows.Management/bin/Debug/net10.0/Elsa.Workflows.Management.dll
+  Elsa.Workflows.Runtime -> /private/tmp/elsa-8293-imported-dapper/src/modules/Elsa.Workflows.Runtime/bin/Debug/net10.0/Elsa.Workflows.Runtime.dll
+/private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Runtime/Records/WorkflowExecutionLogRecordRecord.cs(7,19): warning CS0108: 'WorkflowExecutionLogRecordRecord.Id' hides inherited member 'Record.Id'. Use the new keyword if hiding was intended. [/private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Elsa.Persistence.Dapper.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/TypeHandlers/Sqlite/SqliteTypeHandler.cs(13,26): warning CS8765: Nullability of type of parameter 'value' doesn't match overridden member (possibly because of nullability attributes). [/private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Elsa.Persistence.Dapper.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Identity/Stores/UserStore.cs(58,30): warning CS8601: Possible null reference assignment. [/private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Elsa.Persistence.Dapper.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Identity/Stores/UserStore.cs(59,34): warning CS8601: Possible null reference assignment. [/private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Elsa.Persistence.Dapper.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs(33,145): warning CS9113: Parameter 'connectionProvider' is unread. [/private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Elsa.Persistence.Dapper.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs(33,182): warning CS9113: Parameter 'tenantAccessor' is unread. [/private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Elsa.Persistence.Dapper.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Runtime/Stores/DapperTriggerStore.cs(123,20): warning CS8601: Possible null reference assignment. [/private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Elsa.Persistence.Dapper.csproj::TargetFramework=net10.0]
+/private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Runtime/Stores/DapperBookmarkStore.cs(90,32): warning CS8601: Possible null reference assignment. [/private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Elsa.Persistence.Dapper.csproj::TargetFramework=net10.0]
+  Elsa.Persistence.Dapper -> /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/bin/Debug/net10.0/Elsa.Persistence.Dapper.dll
+  Elsa.Persistence.Dapper.UnitTests -> /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/bin/Debug/net10.0/Elsa.Persistence.Dapper.UnitTests.dll
+Test run for /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/bin/Debug/net10.0/Elsa.Persistence.Dapper.UnitTests.dll (.NETCoreApp,Version=v10.0)
+A total of 1 test files matched the specified pattern.
+[xUnit.net 00:00:00.72]     Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.ConcurrentExpectedSnapshotHasOneWinner [FAIL]
+[xUnit.net 00:00:00.74]     Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.FailedInsertRollsBackUnmark [FAIL]
+  Failed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.ConcurrentExpectedSnapshotHasOneWinner [68 ms]
+  Error Message:
+   Assert.Single() Failure: The collection contained 2 matching items
+Expected:      (predicate expression)
+Collection:    [WorkflowDefinitionUpdateResult { Outcome = Updated, Definition = Elsa.Workflows.Management.Entities.WorkflowDefinition }, WorkflowDefinitionUpdateResult { Outcome = Updated, Definition = Elsa.Workflows.Management.Entities.WorkflowDefinition }]
+Match indices: 0, 1
+  Stack Trace:
+     at Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.ConcurrentExpectedSnapshotHasOneWinner() in /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs:line 205
+--- End of stack trace from previous location ---
+  Failed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.FailedInsertRollsBackUnmark [23 ms]
+  Error Message:
+   Assert.ThrowsAny() Failure: No exception was thrown
+Expected: typeof(System.Data.Common.DbException)
+  Stack Trace:
+     at Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.FailedInsertRollsBackUnmark() in /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs:line 147
+--- End of stack trace from previous location ---
+[xUnit.net 00:00:00.75]     Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.TenantScopeIsRequiredAndAgnosticUpdatePreservesTenant [FAIL]
+  Failed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.TenantScopeIsRequiredAndAgnosticUpdatePreservesTenant [10 ms]
+  Error Message:
+   Assert.Equal() Failure: Values differ
+Expected: Updated
+Actual:   NotFound
+  Stack Trace:
+     at Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.TenantScopeIsRequiredAndAgnosticUpdatePreservesTenant() in /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs:line 220
+--- End of stack trace from previous location ---
+[xUnit.net 00:00:00.98]     Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.SerializableReadExcludesLegacyWriterUntilCommit [FAIL]
+  Failed Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.SerializableReadExcludesLegacyWriterUntilCommit [68 ms]
+  Error Message:
+   Assert.IsType() Failure: Value is null
+Expected: typeof(Microsoft.Data.Sqlite.SqliteException)
+Actual:   null
+  Stack Trace:
+     at Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.<SerializableReadExcludesLegacyWriterUntilCommit>b__15_1(WorkflowDefinition current) in /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs:line 168
+   at Elsa.Persistence.Dapper.Modules.Management.Stores.DapperWorkflowDefinitionStore.TryUpdateLatestAsync(WorkflowDefinitionFilter filter, Func`2 matchesExpected, Func`2 update, CancellationToken cancellationToken) in /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Modules/Management/Stores/DapperWorkflowDefinitionStore.cs:line 141
+   at Elsa.Persistence.Dapper.UnitTests.DapperWorkflowDefinitionStoreTests.SerializableReadExcludesLegacyWriterUntilCommit() in /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/DapperWorkflowDefinitionStoreTests.cs:line 161
+--- End of stack trace from previous location ---
+
+Failed!  - Failed:     4, Passed:    31, Skipped:     0, Total:    35, Duration: 639 ms - Elsa.Persistence.Dapper.UnitTests.dll (net10.0)

@@ -2,15 +2,26 @@
 
 Read this once at the start of a release. Codex operates the procedure; the user supplies a version and optional exceptions. Scripts handle repeatable checks and state, while Codex performs source review, follows repository build instructions, and uses connected social tools. No script assumes it can author release notes or call a connector available only to the agent.
 
-## 1. Resolve the plan and preflight all repositories
+## Scope: core-only releases
+
+Studio, Extensions and Apps are folded into `elsa-core`; a release is one `elsa-core` tag, one GitHub release and one set of notes. `Elsa.Templates` (its own repository) is the only separate package stage. `elsa-studio`, `elsa-extensions` and `elsa-apps` are off limits: never push, dispatch, comment, clone or read secrets from them, and skip every step below that names them. This runbook is being converted in stages. Sections that still describe the retired four-repository train say so, and no command in them should be run against a folded repository.
+
+What `elsa-core` actually does today (check `origin/main` before relying on it):
+
+- `.github/workflows/packages.yml` builds and uploads packages on `release: published` and on pushes to `main` and `release/*`. Those events never publish. Publication is an approved `workflow_dispatch`: `publish_preview_feedz` (Feedz, from a branch or a `3.10.x` prerelease tag) or `publish_nuget` (nuget.org, from a release-version tag). Stable `3.10.x` Feedz is owned only by `publish-consolidated-original-candidate.yml`.
+- Its `./build.sh Compile+Pack` packs Core only on branch pushes and non-`3.10.0` tags. A `3.10.0` tag `release` event (and a non-promote dispatch from that tag) packs the 231-ID set through `prepare_consolidated_release_candidate.py`. A `publish_nuget` dispatch on a stable `3.10.x` tag does not pack: it downloads the current pin (run `40347931480`, artifact `12664519771`, source `5cff67228e550b353b3483eb3b37dfdb73a41c74`), verifies each `.nupkg` sha256 against that candidate's seal, and runs `scripts/validate_packages_id_set.py` (231 IDs plus the three Studio ClientLib assets per package) before any push. That pin's archive size and expiry (`2026-11-25T16:05:50Z`) come from `stable-original-envelope.json`. `Elsa.SamplePackage` is not packable. The five `Elsa.Secrets.*` IDs and the four `Elsa.Studio.Host.*` IDs stay unpackable and `Elsa.Templates` is not in core. The whole-product 3.10.0 candidate is [prepared without publishing](#consolidated-3100-candidate-preparation-nonpublishing); `publish-consolidated-original-candidate.yml` is the only Feedz publisher for those stable 3.10.x bytes and runs the same 231-ID guard before its Feedz push.
+- `studio-npm-pair.yml` is a local proof of the two Studio npm archives. `packages.yml` `publish_npm` publishes `@elsa-workflows/elsa-studio-wasm` and `@elsa-workflows/elsa-studio-wasm-react` to Feedz from a 3.10.x prerelease tag. The npmjs.com upload is not in this job until trusted publishing is confirmed for `elsa-workflows/elsa-core`. Stable `3.10.x` stays fail-closed until the 231-ID nuget.org promote guard can pass. The pair builder accepts 3.8–3.10 versions only.
+- Core has no container-image publishing workflow. The Apps workflow it used lived in `elsa-apps`.
+
+## 1. Resolve the plan and preflight the Core and Templates repositories
 
 Helpers require Python 3.10+ on macOS/Linux, Git, GitHub CLI, and the SDKs required by the source repositories. They use the Python standard library.
 
-Use [elsa-profile.json](elsa-profile.json). This is the maintained default for repository names, dependency declarations, expected jobs, feeds, fixed-version exceptions, post-release website/documentation targets, and announcement destinations. It includes the fourth package stage, `Elsa.Templates`, whose source and embedded-reference policy is intentionally separate from the Core/Studio/Extensions release branches. Read [post-release site guidance](post-release-sites.md) for the content audit and receipt workflow. A custom `--profile` can change these for another environment; do not put credentials in it. Discover repository paths from the workspace/saved projects and verify each GitHub remote. Do not assume the user's saved checkouts are up to date.
+Use [elsa-profile.json](elsa-profile.json) only for the Core and Templates stages, feeds, post-release website/documentation targets and announcement destinations. It is the retired four-repository 3.8/3.9 maintenance profile: its `studio` and `extensions` repositories and its `container_release` section (`elsa-apps`) are retired and must not be run. It includes the package stage `Elsa.Templates`, whose source and embedded-reference policy is intentionally separate from the Core release branch. Read [post-release site guidance](post-release-sites.md) for the content audit and receipt workflow. A custom `--profile` can change these for another environment; do not put credentials in it. Discover repository paths from the workspace/saved projects and verify each GitHub remote. Do not assume the user's saved checkouts are up to date.
 
-Default release branches are `release/<base-version>` for Core, Studio, and Extensions. Templates stable releases use freshly fetched `origin/main` because its documented `main` policy targets the latest stable Elsa release; Templates RC/preview releases use `origin/release/<base-version>` unless an explicit source is supplied. Fetch and inspect all required repositories before publishing Core. An explicit source such as `core=3.9.0-rc1` or `templates=origin/3.9.0-preview.2` overrides only that source. An absent branch or conflicting version needs a concrete source decision; the helper must not fall back to `HEAD`, silently publish a preview from Templates `main`, or manufacture a branch from an unrelated release line.
+Default Core release branch is `release/<base-version>`, or freshly fetched `origin/main` for a line that has not branched. Templates stable releases use freshly fetched `origin/main` because its documented `main` policy targets the latest stable Elsa release; Templates RC/preview releases use `origin/release/<base-version>` unless an explicit source is supplied. Fetch and inspect Core and Templates before publishing Core. An explicit source such as `core=3.10.0-rc1` or `templates=origin/3.10.0-preview.2` overrides only that source. An absent branch or conflicting version needs a concrete source decision; the helper must not fall back to `HEAD`, silently publish a preview from Templates `main`, or manufacture a branch from an unrelated release line.
 
-If the Templates prerelease branch does not exist, record a freshly fetched `main` SHA as the baseline, create `release/<base-version>` from that reviewed SHA, align the published Core/Studio versions there, and run its branch checks before tagging. This branch preparation is a conscious source decision for Templates only; never manufacture missing Core, Studio, or Extensions release branches.
+If the Templates prerelease branch does not exist, record a freshly fetched `main` SHA as the baseline, create `release/<base-version>` from that reviewed SHA, align the published Core versions there, and run its branch checks before tagging. This branch preparation is a conscious source decision for Templates only; never manufacture a missing Core release branch.
 
 Check:
 
@@ -19,25 +30,58 @@ Check:
 - All configured package workflow `base_version` values match the new release line before branch CI. Templates stable workflow policy is checked separately: its `BASE_VERSION` and embedded Core/Studio PackageReferences must match the requested stable version, while a prerelease source must be selected explicitly or from its release branch. Version tags drive named release artifacts, but the branch preview version must also be correct. Make routine preparation changes on the intended release branch when needed.
 - Before a Templates RC/preview run, inspect its release workflow's tag ancestry guard. It must accept the selected `origin/release/<base-version>` or explicit prerelease source; if it only accepts `origin/main`, resolve that workflow/source mismatch in the Templates repository before publishing. Never claim a release-line source is runnable while the workflow silently rejects its tag.
 - The workflow subscribes once to `release: types: [published]`. GitHub `published` covers both stable and prereleases. Use `release.prerelease` or parsed package versions for distinctions, never `event.action == published` as a stable-only test. [GitHub reference](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#release).
-- The profile intentionally publishes named stable, RC, and preview GitHub releases to NuGet and Feedz. Automated branch previews are separate, Feedz-only builds. Studio named prereleases use npm `next`; stable uses `latest`. If the source workflow disagrees with this policy, resolve the mismatch before release; do not weaken verification to match missing output.
+- Named stable, RC and preview releases use the approved publication workflows, never the release event itself: nuget.org for release-version tags (stable `3.10.x` uses the pinned 231-ID candidate), Feedz for branches and `3.10.x` prerelease tags through `packages.yml`, and stable `3.10.x` Feedz publication through `publish-consolidated-original-candidate.yml`. Automated branch previews are separate, Feedz-only builds. Studio npm `next`/`latest` publication does not exist in core yet (pending #8725); do not expect it. If the source workflow disagrees with this policy, resolve the mismatch before release; do not weaken verification to match missing output.
 - Identify advisories and build/test prerequisites early. Assess actual usage and document disposition; a known warning from a prior release is evidence, not permanent acceptance. Keep unrelated upgrades out of the release. New material unresolved risks or failures require an explicit resolution before irreversible publication.
 
-Before creating a named release, perform a trusted NuGet credential preflight for
-each repository whose workflow publishes to NuGet. Check only secret metadata;
-never print or copy a secret value:
+Before creating a named release, perform a publishing credential preflight for
+each repository whose workflow publishes packages (`elsa-core` and `elsa-templates`; the folded repositories are not checked). Publishing to nuget.org uses
+Trusted Publishing: the `NuGet/login` (OIDC) step exchanges a GitHub OIDC token
+for a short-lived key under the Trusted Publishing policy owned by the nuget.org
+user it is given, so no long-lived `NUGET_API_KEY` secret is used. Check only
+secret metadata (repository or organization level), and only the secrets each
+repository's `.github/workflows/packages.yml` actually reads:
+
+| Repository | Secrets read by `packages.yml` | Also confirm |
+| --- | --- | --- |
+| `elsa-core` | `NUGET_USER` (nuget.org policy owner), `FEEDZ_API_KEY`, `FEEDZ_API_KEY_BASE64` (Feedz npm) | nuget.org Trusted Publishing policy for `packages.yml` |
+| `elsa-templates` | `NUGET_USER`, `FEEDZ_API_KEY` | nuget.org policy |
+
+Never print or copy a secret value. The check stops on any API error rather
+than treating it as a missing secret or passing on partial data. Paste it into
+any shell (zsh or bash, including macOS `/bin/bash` 3.2); it runs in its own
+`bash` process, so it leaves your shell's options alone:
 
 ```bash
-for repository in elsa-workflows/elsa-core elsa-workflows/elsa-studio elsa-workflows/elsa-extensions elsa-workflows/elsa-templates; do
-  gh secret list --repo "$repository" --json name --jq '.[].name' \
-    | grep -Fx NUGET_API_KEY >/dev/null \
-    || { echo "Missing NUGET_API_KEY metadata in $repository" >&2; exit 1; }
-done
+bash <<'EOF'
+set -euo pipefail
+check() {
+  repository=$1; shift
+  repo_names=$(gh api "repos/$repository/actions/secrets" --paginate --jq '.secrets[].name') \
+    || { echo "Cannot read secret metadata for $repository" >&2; exit 1; }
+  org_names=$(gh api "repos/$repository/actions/organization-secrets" --paginate --jq '.secrets[].name') \
+    || { echo "Cannot read organization secret metadata for $repository" >&2; exit 1; }
+  for secret in "$@"; do
+    printf '%s\n%s\n' "$repo_names" "$org_names" | grep -Fx "$secret" >/dev/null \
+      || { echo "Missing $secret metadata for $repository" >&2; exit 1; }
+  done
+}
+check elsa-workflows/elsa-core NUGET_USER FEEDZ_API_KEY
+check elsa-workflows/elsa-templates NUGET_USER FEEDZ_API_KEY
+echo "Publishing credential preflight passed."
+EOF
 ```
 
-Run the equivalent check for separately configured publishers. Secret presence
-does not prove that its value is valid, but this catches an avoidable missing
-credential before an immutable release is created. Never substitute a local key
-or put a secret in workflow-dispatch input.
+The "Also confirm" column is a manual check in the nuget.org and npmjs.com
+settings; the GitHub API cannot read those policies.
+
+When a `packages.yml` changes which secrets it reads, update the table and the
+`check` lines with it. Run the equivalent check for separately configured publishers.
+Secret presence does not prove a value is valid. In `elsa-core`, a key that resolves empty at publish time (a missing Feedz
+secret, or an OIDC login that returned no key) fails the job before any push
+with an `::error::` line naming the empty key's feed, and nothing is published
+to that feed; fix the credential and rerun the job. `elsa-templates` has no such
+guard yet (follow-up under #8600). Never substitute a local key or put a secret
+in workflow-dispatch input.
 
 Use a persistent directory outside the repositories, for example `~/.codex/releases/elsa/3.9.0`. It holds source bindings, notes, artifact manifests/downloads, reports, and post receipts. Keep one release owner; the checkpoint uses an OS lock for concurrent updates. Do not run multiple publishing agents for the same version.
 
@@ -45,10 +89,13 @@ Initialize the plan (local state only):
 
 ```bash
 python3 <skill>/scripts/release_train.py --state <run>/state.json init \
-  --version 3.9.0 --repos-root <parent-of-the-four-repositories>
+  --version 3.10.0 --repos-root <parent-of-the-core-checkout> \
+  --repositories core --no-containers
 ```
 
-Optional arguments: `--kind stable|rc|preview`, `--repositories core studio extensions templates`, `--source core=3.9.0-rc1`, repeated `--pr <URL>`, `--no-announcements`, `--no-post-refresh`, and `--profile <JSON>`. The two flags are independent. For “draft announcements”, use `--no-announcements` for publication tracking and retain the explicit draft requirement in the task notes. A named subset includes its upstream repositories as verification-only dependencies; do not publish those implicitly. Selecting `templates` includes Core and Studio as verification-only upstreams and does not add Extensions. The post-release receipt scope contains only the selected repositories.
+Optional arguments: `--kind stable|rc|preview`, `--repositories core` (the profile still lists `studio`, `extensions` and `templates`; never select `studio` or `extensions`), `--source core=3.10.0-rc1` (use `--source core=origin/main` when the line has no `release/<base-version>` branch yet, because the helper otherwise resolves `origin/release/<base-version>`), repeated `--pr <URL>`, `--no-announcements`, `--no-post-refresh`, `--no-containers`, and `--profile <JSON>`. The flags are independent. `--no-containers` is mandatory until core has its own image workflow (see Scope); it records that no images were released and does not change the requested package scope. A named subset includes its upstream repositories as verification-only dependencies; do not publish those implicitly. Do not select `templates` in the helper yet: the profile declares `studio` as a Templates upstream, so the helper would read the `elsa-studio` repository's GitHub releases, which is off limits. Run the Templates stage by hand (sections 3 to 5 describe the checks, `release.py` works on the Templates repository) and record what you verified, until the profile has a core-only upstream for Templates. The post-release receipt scope contains only the selected repositories.
+
+Container images are out of scope until core has its own image workflow (see Scope). The profile's `container_release` section still points at `elsa-apps`: always initialize with `--no-containers`, and do not run `prepare-containers`, `bind-containers`, `dispatch-containers` or `record-containers`. Report that no images were released.
 
 Repeating `init` with identical inputs preserves progress. Conflicting inputs fail rather than overwrite an in-flight plan.
 
@@ -60,27 +107,27 @@ python3 <skill>/scripts/release_train.py --state <run>/state.json status
 
 The helper inspects current GitHub releases, resolved tag SHAs, exact release-event workflow runs, and successful required jobs. Verified package receipts are bound to manifest/report hashes and the immutable source. Stored `running` text is never evidence of a live job. Recheck actual package feeds on a long-delayed resume or any provenance concern.
 
-`adopt-existing` → reconstruct the binding at the returned immutable tag SHA, recover its published notes, generate the source inventory, download that release run’s artifacts and verify them; do not create another release. `prepare` → create an isolated worktree from the selected source, prepare and validate it. `publish` → run the reviewed release helper. `wait-for-run` → observe the returned run ID. `repair-pipeline` → diagnose that run. `verify-packages` → verify the downloaded artifacts. `wait-for-upstream` → complete the indicated dependency. `sites` → follow [post-release site guidance](post-release-sites.md), update the enabled website/documentation targets, and record live production receipts. `announcements` → follow the announcement skill. `adopt-post-refresh` → explicitly upgrade a legacy checkpoint; use `--targets website` for a website-only follow-up on an already completed release and preserve its existing announcement receipts. `missing-upstream-release` for a verification-only dependency requires the missing upstream release to exist, or new authorization to expand scope.
+`adopt-existing` → reconstruct the binding at the returned immutable tag SHA, recover its published notes, generate the source inventory, download that release run’s artifacts and verify them; do not create another release. `prepare` → create an isolated worktree from the selected source, prepare and validate it. `publish` → run the reviewed release helper. `wait-for-run` → observe the returned run ID. `repair-pipeline` → diagnose that run. `verify-packages` → verify the downloaded artifacts. `wait-for-upstream` → complete the indicated dependency. `containers` → bind Apps source and package versions, dispatch or reconcile the Apps workflow, download its exact receipt artifact, and live-verify image tags/digests/platforms/smoke checks. `sites` → follow [post-release site guidance](post-release-sites.md), update the enabled website/documentation targets, and record live production receipts. `announcements` → follow the announcement skill. `adopt-containers` and `adopt-post-refresh` → explicitly upgrade a legacy checkpoint; use `--targets website` for a website-only follow-up on an already completed release and preserve its existing announcement receipts. `missing-upstream-release` for a verification-only dependency requires the missing upstream release to exist, or new authorization to expand scope.
+
+`adopt-containers` preserves any saved container inventory. For a legacy checkpoint without one, it uses the default profile or an explicit `adopt-containers --profile <JSON>`; that profile must match all saved release policy, including repository configuration. An explicit conflicting profile is rejected even when the container gate already exists. Adoption does not replace an existing gate or its receipts.
 
 Poll live jobs/feeds at a bounded interval (typically 30–60 seconds, then back off). A timeout is not failure and must not start a replacement run. Announce meaningful changes rather than narrating identical polls. Use the environment's persistent goal or a single supported heartbeat if waiting beyond the active turn; preserve state and stop the monitor at completion.
 
-## 3. Prepare and validate one repository
+## 3. Prepare and validate Core, then Templates
 
-Preserve the saved checkout. Create an isolated `codex/release-<version>` worktree from the intended source. Validate Core first. Only after verified upstream publication may a downstream worktree's package references change:
+Preserve the saved checkout. Create an isolated `codex/release-<version>` worktree from the intended source. Validate Core first. Only after verified Core publication may the Templates worktree's package references change:
 
 ```bash
 python3 <skill>/scripts/release_train.py --state <run>/state.json align \
-  --repo studio --repo-path <studio-worktree>
+  --repo templates --repo-path <templates-worktree>
 # Review the declared files, then repeat with --execute.
 ```
 
-The helper updates only the configured declarations and checks upstream evidence live. Studio uses `Directory.Packages.props` → `Elsa.Api.Client`. Extensions uses `Directory.Build.props` → `ElsaVersion` and `ElsaStudioVersion`. Templates updates its package project, workflow `BASE_VERSION`, all embedded Elsa PackageReferences, Studio branding literals, and the test fixture's expected Elsa version. It rejects missing/duplicate declarations and dirty tracked worktrees. Repeated alignment of already-correct values is harmless. Do not update dependency caches or source npm placeholder versions as substitutes for the configured package references.
+The helper updates only the configured declarations and checks upstream evidence live. Core has no upstream. Templates updates its package project, workflow `BASE_VERSION`, all embedded Elsa PackageReferences, Studio branding literals, and the test fixture's expected Elsa version. It rejects missing/duplicate declarations and dirty tracked worktrees. Repeated alignment of already-correct values is harmless. Do not update dependency caches or source npm placeholder versions as substitutes for the configured package references.
 
 Use the source repository's current AGENTS/build/workflow instructions. As of this profile:
 
-- Core: relevant regression coverage plus the branch workflow's unit/integration/component and package build checks; real host/API smoke tests when the prerequisite touches endpoint discovery or hosting.
-- Studio: build the JavaScript assets as its workflow does; fresh solution restore, Release solution build and tests for the release version.
-- Extensions: fresh solution restore, Release solution build and tests for the release version.
+- Core: relevant regression coverage plus the branch workflow's unit/integration/component and package build checks (the Studio and Extensions projects are built and tested in the same `Elsa.sln` run, and the Studio ClientLib browser bundles are built by `studio-clientlib-build.yml`); real host/API smoke tests when the prerequisite touches endpoint discovery or hosting.
 - Templates: fresh `Elsa.Templates.slnx` restore/build/test, followed by the generated template matrix below. The Templates workflow must produce exactly the `Elsa.Templates` package in its `elsa-template-packages` artifact and must pass `Build packages`, `Publish to feedz.io`, and `Publish to nuget.org` for a named release. Its embedded Elsa references are checked from the source files against the known published package IDs from its configured upstreams (Core and Studio).
 
 Use `--force --no-cache` restores for changed upstream packages and inspect `project.assets.json` for exact resolved versions and package provenance. Verify all supported target frameworks via the repository's build. Record commands, exit results and intentional service-dependent test skips against the exact commit. Resolve failures; do not replace broad required checks with a convenient small passing subset.
@@ -115,7 +162,7 @@ python3 <skill>/scripts/release_train.py --state <run>/state.json bind \
   --manifest <run>/core-manifest.json --notes-file <run>/core-notes.md
 ```
 
-Repeat for Studio, Extensions, and Templates at their proper turns. The manifest records expected NuGet IDs/versions, source SHA, feeds, upstream dependency versions, and npm IDs/dist-tags. The Templates manifest must contain exactly `Elsa.Templates`, plus source-derived expectations for every embedded project and `.template.config/template.json` in the package's content. Its embedded Elsa PackageReferences are checked against the exact requested version and known published Core/Studio package IDs, preserving each conditional project-reference variant. Binding regenerates these expectations from the checked-out source and already-bound upstream manifests before freezing the source; a hand-edited or incomplete expectation fails. The Core sample has its own fixed source version; its explicitly documented artifact-only exception must remain anchored to that source declaration. Do not silently discard unexpected artifacts or change the expected package count to match an incomplete download.
+Repeat for Templates at its turn. The manifest records expected NuGet IDs/versions, source SHA, feeds, upstream dependency versions, and npm IDs/dist-tags (empty until #8725 adds npm publication). The Templates manifest must contain exactly `Elsa.Templates`, plus source-derived expectations for every embedded project and `.template.config/template.json` in the package's content. Its embedded Elsa PackageReferences are checked against the exact requested version and known published Core package IDs, preserving each conditional project-reference variant. Binding regenerates these expectations from the checked-out source and already-bound upstream manifests before freezing the source; a hand-edited or incomplete expectation fails. The Core sample has its own fixed source version; its explicitly documented artifact-only exception must remain anchored to that source declaration. Do not silently discard unexpected artifacts or change the expected package count to match an incomplete download.
 
 Binding checks the worktree, source, notes and policy. A prepublication correction can use `bind --replace` after review, fresh validation and integration; it refuses replacement once the remote tag or release exists. After tagging, repair only publication/infrastructure without changing source. A source fix needs a new release version and a concrete user decision.
 
@@ -242,7 +289,7 @@ The checkpoint retains both run IDs and the original failure history, then
 requires normal package verification against the recovery run. A failed or
 ambiguous recovery remains `repair-pipeline`.
 
-Download every artifact configured by that source workflow into a dedicated `<run>/<repo>-artifacts/` directory using `gh run download <run-id> --repo <owner/repo> --name <artifact-name> --dir <directory>`. Download NuGet and Studio's two npm archives in separate subdirectories of that artifact root, and download Templates' `elsa-template-packages` artifact separately. For a NuGet recovery, download the recovery artifact bytes directly and preserve the ZIP because its hash is the provenance check:
+Download every artifact configured by that source workflow into a dedicated `<run>/<repo>-artifacts/` directory using `gh run download <run-id> --repo <owner/repo> --name <artifact-name> --dir <directory>`. Download Core's NuGet archives from the run's `elsa-nuget-packages` artifact (there is no npm archive until #8725), and download Templates' `elsa-template-packages` artifact separately. For a NuGet recovery, download the recovery artifact bytes directly and preserve the ZIP because its hash is the provenance check:
 
 ```bash
 gh api "repos/elsa-workflows/elsa-templates/actions/artifacts/<evidence-artifact-id>/zip" \
@@ -258,11 +305,21 @@ python3 <skill>/scripts/release_train.py --state <run>/state.json verify \
   --repo core --artifacts <run>/core-artifacts
 ```
 
-`verify_packages.py` compares the explicit manifest with local artifacts and actual published feed content, handles NuGet repository signing, and checks npm integrity/dist-tags. For Templates it also compares every embedded project file and Elsa PackageReference in the nupkg against the bound source and known published upstream IDs. Each attempt writes a report even when indexing is incomplete. Retry missing/not-yet-indexed packages with backoff; diagnose provenance mismatches rather than calling them propagation delays. Never accept a queued/uploaded state as package availability. Once Core verifies, prepare Studio; once Studio verifies, prepare Extensions; once Extensions verifies, prepare Templates.
+`verify_packages.py` compares the explicit manifest with local artifacts and actual published feed content, handles NuGet repository signing, and checks npm integrity/dist-tags. For Templates it also compares every embedded project file and Elsa PackageReference in the nupkg against the bound source and known published upstream IDs. Each attempt writes a report even when indexing is incomplete. Retry missing/not-yet-indexed packages with backoff; diagnose provenance mismatches rather than calling them propagation delays. Never accept a queued/uploaded state as package availability. Once Core verifies, prepare Templates.
 
-NuGet verification is not a release-wide artifact verdict. Verify Docker images, the `Elsa.Templates` package and generated projects, samples, and other configured release artifacts independently, including the exact source/version or image tag and the public pull/template URL. Record those checks in the site audit or release completion record before using the artifact in current guidance.
+NuGet verification is not a release-wide artifact verdict. The retired four-repository checkpoint also requires a container gate before sites or announcements. With no core image workflow, run with `--no-containers` and record that no images were released; do not treat that as a note in the site audit.
 
-## 6. Refresh sites, announce, recover, and finish
+## 6. Container images (blocked: no core workflow yet)
+
+The Apps container workflow (`container-images.yml`) lived in `elsa-workflows/elsa-apps`, which is folded into `elsa-core` and off limits. Core has no workflow that builds or pushes release images; `docker-ca.yml` only smoke-tests Dockerfiles. Until core has one:
+
+- Initialize the plan with `--no-containers` and skip `prepare-containers`, `bind-containers`, `dispatch-containers`, `record-containers`, `adopt-containers` and `verify-containers`. They bind to `elsa-apps` through the profile's `container_release` section, and no command here may contact that repository.
+- Do not build or push images by hand, and never retag an image as `latest` or `4`.
+- Say in the release record and the announcement that no container images were released with this version.
+
+A replacement core workflow must be reviewed and merged in `elsa-core` first. Then update the profile's `container_release` section and the helper, and restore the evidence bar that the retired stage had: an exact workflow run and artifact bound to the release commit, live registry digests for every platform, per-platform authenticated smoke checks, and the exact Elsa package versions inside each image.
+
+## 7. Refresh sites, announce, recover, and finish
 
 After package verification, follow [post-release site guidance](post-release-sites.md). Update and live-verify the configured Elsa Hub website and Elsa GitBook documentation targets in the selected scope. Review pre-existing Lovable unpublished changes before publishing, include only release-related changes, and preserve unrelated work. A merged docs PR, a Lovable queue acknowledgement, or a preview URL without production verification is not completion. Record each verified target:
 
@@ -286,3 +343,106 @@ python3 <skill>/scripts/release_train.py --state <run>/state.json record-announc
 The checkpoint validates receipt content and hashes, but does not replace the connector's live `get_post` verification. On an interrupted social publish, reconcile the recorded intent and current channel posts before sending anything again. Verify Discord with the bot API and LinkedIn/X with their connector. Queue status is only completion when the user requested scheduling. A legacy checkpoint reports `adopt-post-refresh`; adopt it explicitly, and use `--targets website` when only the website needs to be refreshed on an already completed release. Do not create a new publication or repost existing announcements for that follow-up.
 
 Finally rerun `status`, audit the exact release/version/source/workflow and feed evidence, verify all requested social results, save a concise completion record, stop any heartbeat, and report release/post URLs plus any material limitation. Complete a persistent goal only after this audit.
+
+## Consolidated 3.10.0 candidate preparation (nonpublishing)
+
+Use [consolidated-feedz-profile.json](consolidated-feedz-profile.json) for the
+single Core-owned lockstep candidate, including the Extensions and Studio
+projects that now live in elsa-core and Elsa.SamplePackage at **3.10.0**. Its fixed-package exceptions are empty.
+Feedz is the eventual 3.10 target. This profile prepares a candidate; it is not
+an ordinary release-train profile or publication approval. The existing
+[elsa-profile.json](elsa-profile.json) remains the four-repository 3.8/3.9
+maintenance procedure, including its legacy SamplePackage 1.0.1 exception;
+its Studio, Extensions and Apps parts are retired (see Scope above).
+Templates remains a separate source/release stage outside Elsa.sln. npm
+ownership is **undecided** and no npm publication is part of this procedure;
+packing the imported projects through `packages.yml` and the npm pair are
+tracked in [#8725](https://github.com/elsa-workflows/elsa-core/issues/8725).
+
+First review a coherent implementation head and evaluated inventory comparison.
+The dedicated `prepare-consolidated-release-candidate.yml` workflow runs only
+on its repository-write branch push or a manual dispatch of the exact reviewed
+ref. Review that workflow as trusted code before running it. PR-editable YAML
+and an `if` condition do not provide an immutable authorization boundary.
+The prepare and consumer jobs have contents-read and no actions-read permission;
+the separate actions-read retrieval job executes fixed requests without checkout.
+It supplies only original archive bytes, public artifact metadata and the
+independent envelope. The pinned download action selects the same-run transport
+artifact ID with `merge-multiple: true`, so inputs appear at the specified root.
+
+For inexpensive evaluation in a clean isolated committed checkout:
+
+```bash
+python3 scripts/integration-program/prepare_consolidated_release_candidate.py \
+  --version 3.10.0 --inventory-only --output /absolute/new/candidate-inventory
+```
+
+The canonical proof evaluator derives every package/exclusion from current
+Elsa.sln properties. It compares IDs, project paths and exclusion reasons with
+`consolidated-candidate-inventory-baseline.json`, derived from the accepted proof
+inventory. The 231 package/symbol pairs and 135 excluded projects (134 IDs) are
+baseline sanity evidence, never an allowlist. A difference emits
+`inventory-diff.json` and stops before building. Review and commit any justified
+baseline update; do not silently shrink it. The five retired Extensions Secrets
+IDs stay excluded. Default imported packability remains false, and
+ConsolidatedPackageProof retains its proof-only version rule. Candidate is an
+explicit mutually exclusive opt-in for Release and Version=PackageVersion=3.10.0
+at restore, compile and pack. A local candidate output is preparation evidence;
+only the exact-head hosted run supplies an immutable artifact identity.
+
+The producer verifies every nupkg/snupkg, dependency group, framework asset,
+assembly/source identity and built Studio asset using the shared proof pipeline.
+It seals every retained file in `preupload-manifest.json`, excluding that
+manifest from its own file list. The immutable artifact name binds source SHA,
+run ID and attempt. Retention is explicitly 30 days. After upload the no-checkout
+retrieval job writes a **separate post-upload envelope** in the run summary,
+recording artifact ID/name, source SHA/run/attempt, original archive digest/size,
+actual expiry, the UTC retrieval time and the producer's manifest hash. This envelope stays outside the
+original archive. Do not append it to the artifact, repack, relabel, or rebuild
+those bytes to hand them off.
+
+The downstream job binds the transferred envelope to the retrieval job output,
+checks the retrieval-time availability snapshot and expiry before execution, verifies the original archive digest/size and
+all manifest hashes/member safety **before extraction**, then restores/builds
+fresh PackageReference-only consumers on net8.0, net9.0 and net10.0. Parent
+props/targets/central configuration and SDK discovery are isolated. The standalone
+consumer disables the SDK's implicit library-packs source and legacy NuGet fallback
+folder; its strict effective-source/cache checks do not allow these caches.
+Receipts
+record resolved package assets, effective sources/cache, all loaded Elsa assembly
+identities/informational versions and DLL hashes against exact package assets.
+The Core/Slack/Studio feature handshake and actual WorkflowContexts HTTP loopback
+are representative checks, not a full behavior test of every package.
+
+Keep the original envelope, artifact link/ID, producer receipt and downstream
+receipt together in the review evidence. The retrieval job checks availability at
+its recorded retrieval time. Token-minimal consumers prove the exact transferred
+bytes with expiry checked before execution; they cannot observe deletion of the original artifact
+after retrieval. Before candidate approval or publication, independently re-read
+live original artifact metadata and recheck the exact artifact ID/name, archive
+digest/size, source SHA/run/attempt and expiry. A consumer receipt alone cannot
+satisfy that current availability check. If the artifact expires or disappears,
+it is no longer an approvable candidate. A replacement run creates a new
+identity and needs the full proof again. Candidate preparation is distinct from
+the unchanged earlier `3.10.0-proof.37410240989.1` archive and from future approved
+publication. The #8629 proof-version persisted matrix cannot certify different
+stable candidate bytes: applicable persisted compatibility checks must bind to
+the admitted candidate production bytes before that candidate is published.
+`publish-consolidated-original-candidate.yml` is the only Feedz publisher for
+those stable 3.10.x bytes. A `packages.yml` nuget.org dispatch on a stable
+3.10.x tag downloads the current pin (run `40347931480`, artifact
+`12664519771`), verifies each `.nupkg` sha256 against the candidate seal, and
+runs the same 231-ID and Studio content guards that the candidate Feedz
+publisher runs before its push. The promote path does not restore, build, or
+pack. `3.10.1` and later stay blocked until a new pin exists.
+
+This task implements no publisher handoff. Ordinary approved Core publication
+selection remains a `packages.yml` dispatch: branch previews and 3.10.x
+prerelease tags may publish to Feedz, and release-version tags may publish to
+NuGet.org with `publish_nuget`. Stable 3.10.x Feedz is not a `packages.yml`
+option. That
+workflow has no operator-supplied candidate artifact/run selector; the 3.10.0
+nuget.org path is pinned to the reviewed candidate identity and promotes those
+bytes. Candidate
+success does not imply release readiness, publication, source publisher cutover
+or completion of #8219/#8220.

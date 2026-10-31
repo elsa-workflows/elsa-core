@@ -1,0 +1,19 @@
+<Project>
+  <Import Project="../../build/ConsolidatedPackageProof.targets" />
+  <PropertyGroup>
+    <UseProjectReferences>true</UseProjectReferences>
+    <IsPackable Condition="'$(ConsolidatedPackageProof)' != 'true' and '$(ConsolidatedReleaseCandidate)' != 'true'">false</IsPackable>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(IsTestProject)' == 'true'">
+    <PackageReference Include="GitHubActionsTestLogger" />
+  </ItemGroup>
+
+  <!-- SDK-generated top-level sources do not exist when SourceLink discovers untracked files. -->
+  <Target Name="EmbedStudioGeneratedSources" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <EmbeddedFiles Include="$(IntermediateOutputPath)*.cs" />
+    </ItemGroup>
+  </Target>
+</Project>

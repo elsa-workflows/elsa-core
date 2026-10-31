@@ -34,6 +34,15 @@ runs:
       run: |
         set -euo pipefail
 
+        # Fail fast on an empty key. An unset secret or a missing login step
+        # output expands to an empty string, and nuget.org then answers every
+        # push with a 401 (core 3.9.0 hit this when secrets.NUGET_API_KEY was
+        # gone after the switch to Trusted Publishing).
+        if [ -z "${API_KEY}" ]; then
+          echo "::error::api-key is empty for ${FEED_SOURCE}. Check the secret or the NuGet/login (OIDC) step output that feeds it; nothing was pushed."
+          exit 1
+        fi
+
         mapfile -t packages < <(find . -maxdepth 1 -name '*.nupkg' | sort)
 
         # A single `dotnet nuget push *.nupkg` failed loudly when the glob

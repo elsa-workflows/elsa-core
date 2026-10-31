@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json.schemastore.org/template",
+  "author": "Elsa Workflows",
+  "classifications": [
+    "Web",
+    "Elsa",
+    "Workflow"
+  ],
+  "identity": "Elsa.Templates.Server",
+  "name": "Elsa Server",
+  "shortName": "elsa-server",
+  "sourceName": "Company.ElsaServer",
+  "preferNameDirectory": true,
+  "tags": {
+    "language": "C#",
+    "type": "solution"
+  },
+  "symbols": {
+    "feature-model": {
+      "type": "parameter",
+      "datatype": "choice",
+      "defaultValue": "static",
+      "description": "The Elsa feature registration model to use.",
+      "choices": [
+        {
+          "choice": "static",
+          "description": "Use static feature registration with AddElsa."
+        },
+        {
+          "choice": "shell",
+          "description": "Use CShells-based shell feature registration."
+        }
+      ]
+    },
+    "persistence": {
+      "type": "parameter",
+      "datatype": "choice",
+      "defaultValue": "sqlite",
+      "description": "The EF Core persistence provider to use for workflow storage.",
+      "choices": [
+        {
+          "choice": "sqlite",
+          "description": "Use SQLite persistence."
+        },
+        {
+          "choice": "sqlserver",
+          "description": "Use SQL Server persistence."
+        },
+        {
+          "choice": "postgresql",
+          "description": "Use PostgreSQL persistence."
+        },
+        {
+          "choice": "oracle",
+          "description": "Use Oracle persistence."
+        }
+      ]
+    },
+    "useStaticFeatures": {
+      "type": "computed",
+      "value": "(feature-model == \"static\")"
+    },
+    "useShellFeatures": {
+      "type": "computed",
+      "value": "(feature-model == \"shell\")"
+    },
+    "useSqlitePersistence": {
+      "type": "computed",
+      "value": "(persistence == \"sqlite\")"
+    },
+    "useSqlServerPersistence": {
+      "type": "computed",
+      "value": "(persistence == \"sqlserver\")"
+    },
+    "usePostgreSqlPersistence": {
+      "type": "computed",
+      "value": "(persistence == \"postgresql\")"
+    },
+    "useOraclePersistence": {
+      "type": "computed",
+      "value": "(persistence == \"oracle\")"
+    }
+  }
+}

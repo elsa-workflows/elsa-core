@@ -1,0 +1,216 @@
+{
+  "checkedAt": "2026-10-06",
+  "candidateCommit": "c304c05f45f263587cefd9e7dca6fb7a6a06ba58",
+  "refs": [
+    {
+      "repository": "elsa-core",
+      "ref": "refs/heads/release/3.8.1",
+      "commit": "249d0f077f8a0b5e6cb1a42b02b49f2f636b5ab5",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-core",
+      "ref": "refs/heads/release/3.8.2",
+      "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-core",
+      "ref": "refs/heads/release/3.8.4",
+      "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-core",
+      "ref": "refs/heads/release/3.9.0",
+      "commit": "5d3582b6309a2fd8ea33ebdb8c39fb040bfdc514",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-core",
+      "ref": "refs/tags/3.8.0",
+      "commit": "8191ae30554ea001b38bb44902dd90dc98c7a106",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-core",
+      "ref": "refs/tags/3.8.0-preview1",
+      "commit": "87ee19f5b3f116b419468855819065e2b6d87135",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-core",
+      "ref": "refs/tags/3.8.0-rc1",
+      "commit": "f6c35cf1eb5558348a61352fc4eba5925731118d",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-core",
+      "ref": "refs/tags/3.8.0-rc2",
+      "commit": "dff7d9f987394c3c2ba8003e6f9c803e97194fbc",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-core",
+      "ref": "refs/tags/3.8.1",
+      "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-core",
+      "ref": "refs/tags/3.8.2",
+      "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-core",
+      "ref": "refs/tags/3.8.4",
+      "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-core",
+      "ref": "refs/tags/3.9.0",
+      "commit": "6436609a1a3874d3fea7ccf690897792f5a1f702",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-studio",
+      "ref": "refs/heads/release/3.8.1",
+      "commit": "99de962e49f7793011196667659ac0cdb8df3fb7",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-studio",
+      "ref": "refs/heads/release/3.8.2",
+      "commit": "1c72dc02c837919059b60efe5df2ed57ff2db2d9",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-studio",
+      "ref": "refs/heads/release/3.8.4",
+      "commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-studio",
+      "ref": "refs/heads/release/3.9.0",
+      "commit": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-studio",
+      "ref": "refs/tags/3.8.0",
+      "commit": "85395246140c6b192a2457992da8704b0cdec3d0",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-studio",
+      "ref": "refs/tags/3.8.0-preview1",
+      "commit": "8145e7e3de208abbf33eaa80de7f106cf0ed137a",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-studio",
+      "ref": "refs/tags/3.8.0-rc1",
+      "commit": "daaa232a758814d070774139c90dd48298baf670",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-studio",
+      "ref": "refs/tags/3.8.0-rc2",
+      "commit": "61ebe170f478a356a92dc66ef5258616f542acef",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-studio",
+      "ref": "refs/tags/3.8.1",
+      "commit": "99de962e49f7793011196667659ac0cdb8df3fb7",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-studio",
+      "ref": "refs/tags/3.8.2",
+      "commit": "1c72dc02c837919059b60efe5df2ed57ff2db2d9",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-studio",
+      "ref": "refs/tags/3.8.3",
+      "commit": "f6ad44a50a303695d65fcc6a1fccac5ba6d0f48d",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-studio",
+      "ref": "refs/tags/3.8.4",
+      "commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-studio",
+      "ref": "refs/tags/3.9.0",
+      "commit": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-extensions",
+      "ref": "refs/heads/release/3.8.1",
+      "commit": "0619be93b67dbfd933e148663eeffb657e52f69c",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-extensions",
+      "ref": "refs/heads/release/3.8.2",
+      "commit": "e7d05ef930dfde2aa85bf9dcaf841e5a6ede0a1e",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-extensions",
+      "ref": "refs/heads/release/3.8.4",
+      "commit": "154ba15fb4da85b4bebecfbe43639579cbda1d0d",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-extensions",
+      "ref": "refs/heads/release/3.9.0",
+      "commit": "89d4eb9b739ae135604aac2a1de18653a289bdb0",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-extensions",
+      "ref": "refs/tags/3.8.0",
+      "commit": "66861ae0828e2c15459e8d9981f5ce1080bd3269",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-extensions",
+      "ref": "refs/tags/3.8.0-rc2",
+      "commit": "a44e2b09af1202ff4936f493756e114c357eff81",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-extensions",
+      "ref": "refs/tags/3.8.1",
+      "commit": "0619be93b67dbfd933e148663eeffb657e52f69c",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-extensions",
+      "ref": "refs/tags/3.8.2",
+      "commit": "e7d05ef930dfde2aa85bf9dcaf841e5a6ede0a1e",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-extensions",
+      "ref": "refs/tags/3.8.4",
+      "commit": "154ba15fb4da85b4bebecfbe43639579cbda1d0d",
+      "ancestorOfCoreCandidate": true
+    },
+    {
+      "repository": "elsa-extensions",
+      "ref": "refs/tags/3.9.0",
+      "commit": "89d4eb9b739ae135604aac2a1de18653a289bdb0",
+      "ancestorOfCoreCandidate": true
+    }
+  ]
+}

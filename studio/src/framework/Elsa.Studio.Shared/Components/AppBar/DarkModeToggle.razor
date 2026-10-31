@@ -1,0 +1,20 @@
+@using Elsa.Studio.Contracts
+<MudToggleIconButton Toggled="@IsDarkMode"
+                     Icon="@Icons.Material.Outlined.DarkMode"
+                     ToggledIcon="@Icons.Material.Outlined.LightMode"
+                     Color="Color.Inherit"
+                     ToggledColor="Color.Inherit"
+                     aria-label="@ToggleLabel"
+                     ToggledChanged="@ToggleDarkMode"/>
+
+@code{
+
+    [Inject] private IThemeService ThemeService { get; set; } = null!;
+    private bool IsDarkMode => ThemeService.IsDarkMode;
+    private string ToggleLabel => IsDarkMode ? "Use light theme" : "Use dark theme";
+
+    private void ToggleDarkMode(bool isDarkMode)
+    {
+        ThemeService.IsDarkMode = isDarkMode;
+    }
+}

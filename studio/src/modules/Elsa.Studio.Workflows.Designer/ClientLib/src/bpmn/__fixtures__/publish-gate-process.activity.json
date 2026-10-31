@@ -1,0 +1,167 @@
+{
+  "process": {
+    "processId": "publish-gate-process",
+    "name": "Publish Gate Process",
+    "isExecutable": true,
+    "isTransaction": false,
+    "elements": [
+      {
+        "elementId": "Start_1",
+        "elementType": "startEvent",
+        "eventDefinitions": [
+          {
+            "type": "timer",
+            "properties": {
+              "interval": "PT1H"
+            }
+          }
+        ],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "NotifyWarehouse",
+        "elementType": "serviceTask",
+        "name": "Notify Warehouse",
+        "bindingRef": "node-NotifyWarehouse",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [
+            {
+              "name": {
+                "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                "localName": "activityBinding"
+              },
+              "attributes": [
+                {
+                  "name": {
+                    "localName": "activityType"
+                  },
+                  "value": "Elsa.WriteLine"
+                }
+              ],
+              "children": [
+                {
+                  "name": {
+                    "ns": "https://elsaworkflows.io/schemas/bpmn/v1",
+                    "localName": "input"
+                  },
+                  "value": "{\u0022typeName\u0022:\u0022String\u0022,\u0022expression\u0022:{\u0022type\u0022:\u0022Literal\u0022,\u0022value\u0022:\u0022Notifying the warehouse\u0022}}",
+                  "attributes": [
+                    {
+                      "name": {
+                        "localName": "name"
+                      },
+                      "value": "text"
+                    }
+                  ],
+                  "children": []
+                }
+              ]
+            }
+          ],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "elementId": "End_1",
+        "elementType": "endEvent",
+        "eventDefinitions": [],
+        "properties": {},
+        "cancelActivity": true,
+        "isForCompensation": false,
+        "isTransaction": false,
+        "triggeredByEvent": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      }
+    ],
+    "sequenceFlows": [
+      {
+        "flowId": "Flow_1",
+        "sourceRef": "Start_1",
+        "targetRef": "NotifyWarehouse",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      },
+      {
+        "flowId": "Flow_2",
+        "sourceRef": "NotifyWarehouse",
+        "targetRef": "End_1",
+        "isDefault": false,
+        "extensions": {
+          "documentation": [],
+          "extensionElements": [],
+          "foreignAttributes": [],
+          "foreignChildren": []
+        }
+      }
+    ],
+    "lanes": [],
+    "variables": [],
+    "extensions": {
+      "documentation": [],
+      "extensionElements": [],
+      "foreignAttributes": [],
+      "foreignChildren": []
+    }
+  },
+  "workBindings": {
+    "node-NotifyWarehouse": "publish-gate-process:node-NotifyWarehouse"
+  },
+  "activities": [
+    {
+      "text": {
+        "typeName": "String",
+        "expression": {
+          "type": "Literal",
+          "value": "Notifying the warehouse"
+        }
+      },
+      "id": "publish-gate-process:node-NotifyWarehouse",
+      "nodeId": null,
+      "name": null,
+      "type": "Elsa.WriteLine",
+      "version": 1,
+      "customProperties": {
+        "canStartWorkflow": false,
+        "runAsynchronously": false
+      },
+      "metadata": {}
+    }
+  ],
+  "variables": [],
+  "id": "publish-gate-process",
+  "type": "Elsa.BpmnProcess",
+  "version": 1,
+  "customProperties": {
+    "source": "BpmnWorkBinder.cs:80",
+    "canStartWorkflow": true
+  },
+  "metadata": {}
+}

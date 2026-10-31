@@ -1,0 +1,111 @@
+@using Elsa.Studio.Models
+@using Elsa.Api.Client.Shared.UIHints.SingleLine
+@using Elsa.Studio.DomInterop.Contracts
+@using Elsa.Studio.UIHints.Extensions
+@using System.Globalization
+
+@{
+    var inputDescriptor = EditorContext.InputDescriptor;
+    var displayName = $"{inputDescriptor.DisplayName} (Date)";
+    var displayTimeName = $"{inputDescriptor.DisplayName} (Time)";
+}
+
+<ExpressionInput EditorContext="@EditorContext">
+    <ChildContent>
+        <MudStack Row="true" AlignItems="AlignItems.Start">
+            <MudDatePicker Label="@displayName"
+            HelperText="@EditorContext.InputDescriptor.Description"
+            Variant="Variant.Outlined"
+            Margin="Margin.Dense"
+            ReadOnly="EditorContext.IsReadOnly"
+            Disabled="EditorContext.IsReadOnly"
+            DateFormat="@CultureInfo.CurrentCulture.DateTimeFormat.ShortDatePattern"
+            Clearable="true"
+            Editable="true"
+            ShowWeekNumbers="true"
+            @bind-Date="InputDateValue" />
+
+            @if (showTimePicker)
+            {
+                <MudTimePicker Label="@displayTimeName"
+                Variant="Variant.Outlined"
+                Margin="Margin.Dense"
+                ReadOnly="EditorContext.IsReadOnly"
+                Disabled="EditorContext.IsReadOnly"
+                TimeFormat="@CultureInfo.CurrentCulture.DateTimeFormat.LongTimePattern"
+                Clearable="false"
+                Editable="true"
+                @bind-Time="InputTimeValue" />
+            }
+
+            @if (InputDateValue is not null)
+            {
+                <MudToggleIconButton @bind-Toggled="ShowTimePicker"
+                Icon="@Icons.Material.Filled.AccessTime"
+                Color="@Color.Primary"
+                ToggledIcon="@Icons.Material.Filled.Close"
+                ToggledColor="@Color.Error"
+                Style="margin-top: 4px;"
+                Disabled="EditorContext.IsReadOnly"
+                title="@(ShowTimePicker ? "Clear TimePicker" : "Show TimePicker")" />
+            }
+        </MudStack>
+    </ChildContent>
+</ExpressionInput>
+
+@code {
+    private bool showTimePicker;
+    private DateTime? inputDateValue;
+    private TimeSpan? inputTimeValue;
+
+    public bool ShowTimePicker
+    {
+        get => showTimePicker;
+        set
+        {
+            showTimePicker = value;
+            if (showTimePicker == false) InputTimeValue = null;
+        }
+    }
+    public DateTime? InputDateValue
+    {
+        get => inputDateValue;
+        set
+        {
+            inputDateValue = value;
+            if (inputDateValue is null)
+            {
+                inputTimeValue = null;
+                showTimePicker = false;
+            }
+            _ = OnValueChanged();
+        }
+    }
+    public TimeSpan? InputTimeValue
+    {
+        get => inputTimeValue;
+        set
+        {
+            inputTimeValue = value;
+            _ = OnValueChanged();
+        }
+    }
+
+    [Parameter] public DisplayInputEditorContext EditorContext { get; set; } = null!;
+
+    protected override void OnInitialized()
+    {
+        if (DateTime.TryParse(EditorContext.GetExpressionValueOrDefault(), out var parsedDate))
+        {
+            inputDateValue = parsedDate;
+            inputTimeValue = parsedDate.TimeOfDay;
+            showTimePicker = parsedDate.TimeOfDay.Ticks != 0;
+        }
+    }
+
+    private async Task OnValueChanged()
+    {
+        var combinedDateTime = InputDateValue?.Date.Add(InputTimeValue ?? TimeSpan.Zero);
+        await EditorContext.UpdateValueOrLiteralExpressionAsync(combinedDateTime?.ToString() ?? string.Empty);
+    }
+}

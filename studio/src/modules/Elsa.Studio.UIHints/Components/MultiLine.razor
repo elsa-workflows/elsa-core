@@ -1,0 +1,40 @@
+@using Elsa.Studio.Models
+@using Elsa.Studio.UIHints.Extensions
+@inject ILocalizer Localizer
+
+@{
+    var inputDescriptor = EditorContext.InputDescriptor;
+    var displayName = inputDescriptor.DisplayName ?? inputDescriptor.Name;
+    var description = inputDescriptor.Description ?? string.Empty;
+    var inputValue = EditorContext.GetLiteralValueOrDefault();
+}
+
+<ExpressionInput EditorContext="@EditorContext">
+    <ChildContent>
+        <MudTextField
+            T="string"
+            Lines="5"
+            Label="@Localizer[displayName]"
+            Variant="Variant.Outlined"
+            HelperText="@Localizer[description]"
+            Margin="Margin.Dense"
+            Value="@inputValue"
+            ValueChanged="OnValueChanged"
+            ReadOnly="EditorContext.IsReadOnly"
+            Disabled="EditorContext.IsReadOnly"/>
+    </ChildContent>
+</ExpressionInput>
+
+@code {
+
+    /// <summary>
+    /// The EditorContext provided by the input UI framework.
+    /// </summary>
+    [Parameter] public DisplayInputEditorContext EditorContext { get; set; } = null!;
+
+    private async Task OnValueChanged(string newValue)
+    {
+        await EditorContext.UpdateValueOrLiteralExpressionAsync(newValue.TrimNull());
+    }
+
+}

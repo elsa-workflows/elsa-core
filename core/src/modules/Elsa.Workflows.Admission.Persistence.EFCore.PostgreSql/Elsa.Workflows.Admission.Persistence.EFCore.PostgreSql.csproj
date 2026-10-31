@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <Description>Selected PostgreSQL admission ledger and isolated definition bootstrap persistence.</Description>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+        <ProjectReference Include="..\Elsa.Persistence.EFCore.PostgreSql\Elsa.Persistence.EFCore.PostgreSql.csproj" />
+        <ProjectReference Include="..\Elsa.Workflows.Admission.Persistence.EFCore\Elsa.Workflows.Admission.Persistence.EFCore.csproj" />
+    </ItemGroup>
+</Project>

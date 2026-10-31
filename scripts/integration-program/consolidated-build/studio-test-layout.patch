@@ -1,0 +1,189 @@
+diff --git a/src/studio/framework/Elsa.Studio.Core.Tests/CssContractTestContext.cs b/src/studio/framework/Elsa.Studio.Core.Tests/CssContractTestContext.cs
+--- a/src/studio/framework/Elsa.Studio.Core.Tests/CssContractTestContext.cs
++++ b/src/studio/framework/Elsa.Studio.Core.Tests/CssContractTestContext.cs
+@@ -1,3 +1,4 @@
++using Elsa.Studio.Testing;
+ using Xunit;
+ 
+ namespace Elsa.Studio.Core.Tests;
+@@ -5,7 +6,7 @@
+ internal static class CssContractTestContext
+ {
+     public static string ReadRepositoryFile(params string[] pathSegments) =>
+-        File.ReadAllText(Path.Combine([FindRepositoryRoot(), .. pathSegments]));
++        StudioSourceFiles.Read(pathSegments);
+ 
+     public static string GetRuleBody(string css, string selector)
+     {
+@@ -18,14 +19,4 @@
+         return css[bodyStart..bodyEnd];
+     }
+ 
+-    private static string FindRepositoryRoot()
+-    {
+-        for (var current = new DirectoryInfo(AppContext.BaseDirectory); current is not null; current = current.Parent)
+-        {
+-            if (Directory.Exists(Path.Combine(current.FullName, "src", "framework", "Elsa.Studio.Shell")))
+-                return current.FullName;
+-        }
+-
+-        throw new DirectoryNotFoundException("Could not locate the Elsa Studio repository root.");
+-    }
+ }
+diff --git a/src/studio/framework/Elsa.Studio.Core.Tests/Elsa.Studio.Core.Tests.csproj b/src/studio/framework/Elsa.Studio.Core.Tests/Elsa.Studio.Core.Tests.csproj
+--- a/src/studio/framework/Elsa.Studio.Core.Tests/Elsa.Studio.Core.Tests.csproj
++++ b/src/studio/framework/Elsa.Studio.Core.Tests/Elsa.Studio.Core.Tests.csproj
+@@ -21,4 +21,8 @@
+         <ProjectReference Include="../Elsa.Studio.Core/Elsa.Studio.Core.csproj" />
+     </ItemGroup>
+ 
++    <ItemGroup>
++        <Compile Include="../../../../test/studio/Shared/StudioSourceFiles.cs" Link="Shared/StudioSourceFiles.cs" />
++    </ItemGroup>
++
+ </Project>
+diff --git a/src/studio/modules/Elsa.Studio.Authentication.UI.Tests/Elsa.Studio.Authentication.UI.Tests.csproj b/src/studio/modules/Elsa.Studio.Authentication.UI.Tests/Elsa.Studio.Authentication.UI.Tests.csproj
+--- a/src/studio/modules/Elsa.Studio.Authentication.UI.Tests/Elsa.Studio.Authentication.UI.Tests.csproj
++++ b/src/studio/modules/Elsa.Studio.Authentication.UI.Tests/Elsa.Studio.Authentication.UI.Tests.csproj
+@@ -23,4 +23,8 @@
+         <ProjectReference Include="../../framework/Elsa.Studio.Core.BlazorServer/Elsa.Studio.Core.BlazorServer.csproj" />
+     </ItemGroup>
+ 
++    <ItemGroup>
++        <Compile Include="../../../../test/studio/Shared/StudioSourceFiles.cs" Link="Shared/StudioSourceFiles.cs" />
++    </ItemGroup>
++
+ </Project>
+diff --git a/src/studio/modules/Elsa.Studio.Authentication.UI.Tests/LoginThemeCssContractTests.cs b/src/studio/modules/Elsa.Studio.Authentication.UI.Tests/LoginThemeCssContractTests.cs
+--- a/src/studio/modules/Elsa.Studio.Authentication.UI.Tests/LoginThemeCssContractTests.cs
++++ b/src/studio/modules/Elsa.Studio.Authentication.UI.Tests/LoginThemeCssContractTests.cs
+@@ -1,3 +1,4 @@
++using Elsa.Studio.Testing;
+ namespace Elsa.Studio.Authentication.UI.Tests;
+ 
+ public sealed class LoginThemeCssContractTests
+@@ -152,7 +153,7 @@
+             "src", "modules", "Elsa.Studio.Authentication.Themes", "wwwroot", "css", "login-themes.css");
+ 
+     private static string ReadRepositoryFile(params string[] pathSegments) =>
+-        File.ReadAllText(Path.Combine([FindRepositoryRoot(), .. pathSegments]));
++        StudioSourceFiles.Read(pathSegments);
+ 
+     private static string GetRuleText(string css, string selector)
+     {
+@@ -163,14 +164,4 @@
+         return css[start..end];
+     }
+ 
+-    private static string FindRepositoryRoot()
+-    {
+-        for (var current = new DirectoryInfo(AppContext.BaseDirectory); current is not null; current = current.Parent)
+-        {
+-            if (Directory.Exists(Path.Combine(current.FullName, "src", "modules", "Elsa.Studio.Authentication.UI")))
+-                return current.FullName;
+-        }
+-
+-        throw new DirectoryNotFoundException("Could not locate the Elsa Studio repository root.");
+-    }
+ }
+diff --git a/src/studio/modules/Elsa.Studio.Dashboard.Tests/DashboardWidgetRegistrationTests.cs b/src/studio/modules/Elsa.Studio.Dashboard.Tests/DashboardWidgetRegistrationTests.cs
+--- a/src/studio/modules/Elsa.Studio.Dashboard.Tests/DashboardWidgetRegistrationTests.cs
++++ b/src/studio/modules/Elsa.Studio.Dashboard.Tests/DashboardWidgetRegistrationTests.cs
+@@ -1,3 +1,4 @@
++using Elsa.Studio.Testing;
+ using Elsa.Studio.Attributes;
+ using Elsa.Studio.Contracts;
+ using Elsa.Studio.Dashboard.Extensions;
+@@ -52,8 +53,7 @@
+     [Fact]
+     public void DashboardProject_DoesNotReferenceDiagnosticsModules()
+     {
+-        var projectFile = FindRepositoryRoot().Combine("src/modules/Elsa.Studio.Dashboard/Elsa.Studio.Dashboard.csproj");
+-        var project = File.ReadAllText(projectFile);
++        var project = StudioSourceFiles.Read("src", "modules", "Elsa.Studio.Dashboard", "Elsa.Studio.Dashboard.csproj");
+ 
+         Assert.DoesNotContain("Elsa.Studio.Diagnostics", project);
+         Assert.DoesNotContain("Elsa.Studio.Workflows", project);
+@@ -62,7 +62,6 @@
+     [Fact]
+     public void OwnerProjects_DoNotReferenceDashboardModule()
+     {
+-        var root = FindRepositoryRoot();
+         var ownerProjects = new[]
+         {
+             "src/modules/Elsa.Studio.Diagnostics.ConsoleLogs/Elsa.Studio.Diagnostics.ConsoleLogs.csproj",
+@@ -72,7 +71,7 @@
+ 
+         foreach (var ownerProject in ownerProjects)
+         {
+-            var project = File.ReadAllText(root.Combine(ownerProject));
++            var project = StudioSourceFiles.Read(ownerProject.Split('/'));
+             Assert.DoesNotContain("Elsa.Studio.Dashboard", project);
+         }
+     }
+@@ -154,22 +153,4 @@
+         Assert.Equal(expectedName, attribute.Name);
+     }
+ 
+-    private static DirectoryInfo FindRepositoryRoot()
+-    {
+-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+-        while (directory != null)
+-        {
+-            if (File.Exists(Path.Combine(directory.FullName, "Elsa.Studio.sln")))
+-                return directory;
+-
+-            directory = directory.Parent;
+-        }
+-
+-        throw new InvalidOperationException("Could not locate repository root.");
+-    }
+ }
+-
+-internal static class DirectoryInfoExtensions
+-{
+-    public static string Combine(this DirectoryInfo directory, string path) => Path.Combine(directory.FullName, path);
+-}
+diff --git a/src/studio/modules/Elsa.Studio.Dashboard.Tests/Elsa.Studio.Dashboard.Tests.csproj b/src/studio/modules/Elsa.Studio.Dashboard.Tests/Elsa.Studio.Dashboard.Tests.csproj
+--- a/src/studio/modules/Elsa.Studio.Dashboard.Tests/Elsa.Studio.Dashboard.Tests.csproj
++++ b/src/studio/modules/Elsa.Studio.Dashboard.Tests/Elsa.Studio.Dashboard.Tests.csproj
+@@ -21,4 +21,8 @@
+         <ProjectReference Include="../Elsa.Studio.Workflows.Dashboard/Elsa.Studio.Workflows.Dashboard.csproj" />
+     </ItemGroup>
+ 
++    <ItemGroup>
++        <Compile Include="../../../../test/studio/Shared/StudioSourceFiles.cs" Link="Shared/StudioSourceFiles.cs" />
++    </ItemGroup>
++
+ </Project>
+diff --git a/test/studio/Shared/StudioSourceFiles.cs b/test/studio/Shared/StudioSourceFiles.cs
+new file mode 100644
+--- /dev/null
++++ b/test/studio/Shared/StudioSourceFiles.cs
+@@ -0,0 +1,26 @@
++namespace Elsa.Studio.Testing;
++
++/// <summary>Resolves the same Studio source contracts in standalone and consolidated checkouts.</summary>
++internal static class StudioSourceFiles
++{
++    public static string Read(params string[] pathSegments)
++    {
++        if (pathSegments.Length < 2 || pathSegments[0] != "src")
++        {
++            throw new ArgumentException("Expected a Studio source path beginning with src.", nameof(pathSegments));
++        }
++
++        for (var current = new DirectoryInfo(AppContext.BaseDirectory); current is not null; current = current.Parent)
++        {
++            foreach (var sourceRoot in new[] { Path.Combine(current.FullName, "src", "studio"), Path.Combine(current.FullName, "src") })
++            {
++                if (File.Exists(Path.Combine(sourceRoot, "framework", "Elsa.Studio.Core", "Elsa.Studio.Core.csproj")))
++                {
++                    return File.ReadAllText(Path.Combine([sourceRoot, .. pathSegments[1..]]));
++                }
++            }
++        }
++
++        throw new DirectoryNotFoundException("Could not locate the standalone or consolidated Elsa Studio source tree.");
++    }
++}

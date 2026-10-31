@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:vw="https://bpmn.valenceworks.io/schema/bpmn"
+                  id="Definitions_nested-subprocesses"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="nested-subprocesses" name="Nested Subprocesses" isExecutable="true">
+    <bpmn:startEvent id="Start_1">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+
+    <bpmn:subProcess id="Outer" name="Outer">
+      <bpmn:extensionElements>
+        <vw:variable name="audits" typeHint="Object" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+      <bpmn:startEvent id="Outer_Start">
+        <bpmn:outgoing>Outer_Flow_1</bpmn:outgoing>
+      </bpmn:startEvent>
+
+      <bpmn:subProcess id="Inner" name="Inner">
+        <bpmn:incoming>Outer_Flow_1</bpmn:incoming>
+        <bpmn:outgoing>Outer_Flow_2</bpmn:outgoing>
+        <bpmn:multiInstanceLoopCharacteristics isSequential="true" vw:collection="audits" vw:itemVariable="audit" />
+        <bpmn:startEvent id="Inner_Start">
+          <bpmn:outgoing>Inner_Flow_1</bpmn:outgoing>
+        </bpmn:startEvent>
+        <bpmn:callActivity id="StartAudit" name="Start Audit" calledElement="audit-workflow" vw:waitForCompletion="false">
+          <bpmn:incoming>Inner_Flow_1</bpmn:incoming>
+          <bpmn:outgoing>Inner_Flow_2</bpmn:outgoing>
+        </bpmn:callActivity>
+        <bpmn:endEvent id="Inner_End">
+          <bpmn:incoming>Inner_Flow_2</bpmn:incoming>
+        </bpmn:endEvent>
+        <bpmn:sequenceFlow id="Inner_Flow_1" sourceRef="Inner_Start" targetRef="StartAudit" />
+        <bpmn:sequenceFlow id="Inner_Flow_2" sourceRef="StartAudit" targetRef="Inner_End" />
+      </bpmn:subProcess>
+
+      <bpmn:endEvent id="Outer_End">
+        <bpmn:incoming>Outer_Flow_2</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="Outer_Flow_1" sourceRef="Outer_Start" targetRef="Inner" />
+      <bpmn:sequenceFlow id="Outer_Flow_2" sourceRef="Inner" targetRef="Outer_End" />
+    </bpmn:subProcess>
+
+    <bpmn:endEvent id="End_1">
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+    </bpmn:endEvent>
+
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start_1" targetRef="Outer" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Outer" targetRef="End_1" />
+  </bpmn:process>
+</bpmn:definitions>

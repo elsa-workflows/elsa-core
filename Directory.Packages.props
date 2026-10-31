@@ -12,9 +12,12 @@
         <PackageVersion Include="Microsoft.AspNetCore.Components" Version="9.0.17"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="9.0.17"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.17"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.17"/>
+        <!-- WebAssembly.Server is pinned to the first patched version of this line. -->
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="9.0.21"/>
         <PackageVersion Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="9.0.17"/>
         <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.17"/>
+        <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="9.0.17" Condition="'$(TargetFramework)' == 'net9.0'"/>
+        <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="8.0.17" Condition="'$(TargetFramework)' == 'net8.0'"/>
         <PackageVersion Include="Microsoft.Data.Sqlite" Version="9.0.17"/>
         <PackageVersion Include="Microsoft.Data.Sqlite.Core" Version="9.0.17"/>
         <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="9.0.17"/>
@@ -44,6 +47,8 @@
 		<PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4"/>
         <PackageVersion Include="Oracle.EntityFrameworkCore" Version="9.23.26200"/>
         <PackageVersion Include="Scrutor" Version="6.1.0"/>
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="8.0.2" Condition="'$(TargetFramework)' == 'net8.0'"/>
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="9.0.21" Condition="'$(TargetFramework)' == 'net9.0'"/>
     </ItemGroup>
     <!-- .NET 10 specific package versions -->
     <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
@@ -54,9 +59,11 @@
         <PackageVersion Include="Microsoft.AspNetCore.Components" Version="10.0.9"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.9"/>
         <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.9"/>
-        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.9"/>
+        <!-- WebAssembly.Server is pinned to the first patched version of this line. -->
+        <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.13"/>
         <PackageVersion Include="Microsoft.AspNetCore.DataProtection.Abstractions" Version="10.0.9"/>
         <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.9"/>
+        <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="10.0.9"/>
         <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.9"/>
         <PackageVersion Include="Microsoft.Data.Sqlite.Core" Version="10.0.9"/>
         <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.9"/>
@@ -86,10 +93,10 @@
         <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.2"/>
         <PackageVersion Include="Oracle.EntityFrameworkCore" Version="10.23.26200"/>
         <PackageVersion Include="Scrutor" Version="7.0.0"/>
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13"/>
     </ItemGroup>
     <ItemGroup>
         <PackageVersion Include="AspNetCore.Authentication.ApiKey" Version="9.0.0"/>
-        <PackageVersion Include="AutoMapper" Version="16.0.0" PrivateAssets="All"/>
         <PackageVersion Include="Azure.Identity" Version="1.17.1"/>
         <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.20.1"/>
         <PackageVersion Include="Azure.ResourceManager" Version="1.13.2"/>
@@ -98,9 +105,9 @@
         <PackageVersion Include="Azure.ResourceManager.ServiceBus" Version="1.1.0"/>
         <PackageVersion Include="BenchmarkDotNet" Version="0.15.8"/>
         <PackageVersion Include="Bogus" Version="35.6.5"/>
-        <PackageVersion Include="Bpmn.Interchange" Version="0.2.0"/>
-        <PackageVersion Include="Bpmn.Model" Version="0.2.0"/>
-        <PackageVersion Include="Bpmn.Semantics" Version="0.2.0"/>
+        <PackageVersion Include="Bpmn.Interchange" Version="0.4.0"/>
+        <PackageVersion Include="Bpmn.Model" Version="0.4.0"/>
+        <PackageVersion Include="Bpmn.Semantics" Version="0.4.0"/>
         <PackageVersion Include="ConfigureAwait.Fody" Version="3.3.2" PrivateAssets="All"/>
         <PackageVersion Include="ConsoleLogStreaming.Contracts" Version="1.1.0"/>
         <PackageVersion Include="ConsoleLogStreaming.Core" Version="1.1.0"/>
@@ -132,13 +139,11 @@
         <PackageVersion Include="Humanizer.Core" Version="3.0.10"/>
         <PackageVersion Include="IronCompress" Version="1.7.0"/>
         <PackageVersion Include="JetBrains.Annotations" Version="2025.2.4"/>
-        <PackageVersion Include="Jint" Version="4.15.3"/>
-        <PackageVersion Include="JsonSchema.Net" Version="9.4.0"/>
+        <PackageVersion Include="Jint" Version="4.17.0"/>
         <PackageVersion Include="LinqKit.Core" Version="1.2.11"/>
         <PackageVersion Include="Loom" Version="0.0.1-preview.10"/>
         <PackageVersion Include="Loom.Abstractions" Version="0.0.1-preview.10"/>
         <PackageVersion Include="Loom.Serialization.Json" Version="0.0.1-preview.10"/>
-        <PackageVersion Include="MailKit" Version="4.14.1"/>
         <PackageVersion Include="MassTransit" Version="8.5.7"/>
         <PackageVersion Include="MassTransit.Azure.ServiceBus.Core" Version="8.5.7"/>
         <PackageVersion Include="MassTransit.Extensions.DependencyInjection" Version="7.3.1"/>
@@ -153,11 +158,11 @@
         <PackageVersion Include="Moq" Version="4.20.72"/>
         <PackageVersion Include="MongoDB.Driver" Version="3.9.0"/>
         <PackageVersion Include="MySql.Data" Version="9.5.0"/>
+        <PackageVersion Include="MySqlConnector" Version="2.6.2"/>
         <PackageVersion Include="Newtonsoft.Json" Version="13.0.4"/>
 		<PackageVersion Include="Npgsql" Version="10.0.3"/>
         <PackageVersion Include="NSubstitute" Version="5.3.0"/>
         <PackageVersion Include="NuGet.Packaging" Version="7.6.0"/>
-        <PackageVersion Include="NuGet.Protocol" Version="7.0.1"/>
         <PackageVersion Include="Nuplane" Version="0.0.8"/>
         <PackageVersion Include="Nuplane.Abstractions" Version="0.0.8"/>
         <PackageVersion Include="Nuplane.Admin" Version="0.0.8"/>
@@ -190,11 +195,13 @@
         <PackageVersion Include="Serilog.Formatting.Compact" Version="3.0.0"/>
         <PackageVersion Include="ShortGuid" Version="2.0.1"/>
         <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3"/>
+        <PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.14"/>
         <PackageVersion Include="Snappier" Version="1.3.1"/>
         <PackageVersion Include="StackExchange.Redis" Version="2.10.1"/>
         <PackageVersion Include="System.CommandLine" Version="2.0.9"/>
         <PackageVersion Include="System.Data.SqlClient" Version="4.9.0"/>
 		<PackageVersion Include="System.Formats.Asn1" Version="10.0.8"/>
+        <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="8.0.2" Condition="$(TargetFramework.StartsWith('netstandard'))"/>
         <PackageVersion Include="System.Linq.Async" Version="7.0.1"/>
         <PackageVersion Include="System.Linq.Dynamic.Core" Version="1.7.2"/>
         <PackageVersion Include="System.Net.Http" Version="4.3.4"/>

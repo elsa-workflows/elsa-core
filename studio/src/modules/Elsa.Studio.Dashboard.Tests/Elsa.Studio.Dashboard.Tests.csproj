@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>net10.0</TargetFrameworks>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+        <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AngleSharp" />
+        <PackageReference Include="bunit" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="xunit" />
+        <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="..\..\testing\BunitTestDefaults.cs" Link="BunitTestDefaults.cs" />
+        <Compile Include="..\..\testing\StubPermissionService.cs" Link="StubPermissionService.cs" />
+        <Compile Include="..\..\testing\TestLocalizer.cs" Link="TestLocalizer.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="../Elsa.Studio.Dashboard/Elsa.Studio.Dashboard.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Diagnostics.ConsoleLogs.Dashboard/Elsa.Studio.Diagnostics.ConsoleLogs.Dashboard.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard/Elsa.Studio.Diagnostics.OpenTelemetry.Dashboard.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Diagnostics.StructuredLogs.Dashboard/Elsa.Studio.Diagnostics.StructuredLogs.Dashboard.csproj" />
+        <ProjectReference Include="../Elsa.Studio.Workflows.Dashboard/Elsa.Studio.Workflows.Dashboard.csproj" />
+    </ItemGroup>
+
+</Project>

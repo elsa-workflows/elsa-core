@@ -1,0 +1,104 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.2.11415.280
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{6A2E843D-3C2D-4938-9BE3-EFF81343B5BA}"
+	ProjectSection(SolutionItems) = preProject
+		src\Directory.Build.props = src\Directory.Build.props
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Server.Studio.BlazorWasm", "src\Elsa.Server.Studio.BlazorWasm\Elsa.Server.Studio.BlazorWasm.csproj", "{071565DD-660C-406E-ADAE-ADE99A6BD24C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Studio.BlazorWasm.Client", "src\Elsa.Studio.BlazorWasm.Client\Elsa.Studio.BlazorWasm.Client.csproj", "{62D03C9F-A9C3-45AB-A6FD-BFA0C4F4840A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Server", "src\Elsa.Server\Elsa.Server.csproj", "{CC560B84-0BB9-48E8-B55D-C44B128CE7E7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Studio.BlazorServer", "src\Elsa.Studio.BlazorServer\Elsa.Studio.BlazorServer.csproj", "{E891813B-CC89-4242-AD95-7EF0FBD93AD0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Server.Studio.BlazorServer", "src\Elsa.Server.Studio.BlazorServer\Elsa.Server.Studio.BlazorServer.csproj", "{24AB5A53-306E-4086-9C01-4E0222DEA639}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "solution", "solution", "{19197A98-B95A-4D3B-A7CF-D5984618D8FF}"
+	ProjectSection(SolutionItems) = preProject
+		.dockerignore = .dockerignore
+		.gitignore = .gitignore
+		Directory.Build.props = Directory.Build.props
+		Directory.Packages.props = Directory.Packages.props
+		NuGet.Config = NuGet.Config
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Server.Studio.BlazorWasm.Client", "src\Elsa.Server.Studio.BlazorWasm.Client\Elsa.Server.Studio.BlazorWasm.Client.csproj", "{D66E4114-E6A8-4672-8737-C7A472DDF3A1}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{DF578BFC-CBBA-4D80-A10B-A4C2E2CF937D}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\container-images.yml = .github\workflows\container-images.yml
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Server.Shared", "src\Elsa.Server.Shared\Elsa.Server.Shared.csproj", "{24FCA92A-1D69-42FB-84B1-BD2AF1150213}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Elsa.Studio.BlazorWasm", "src\Elsa.Studio.BlazorWasm\Elsa.Studio.BlazorWasm.csproj", "{618EDD3C-C57E-4BD7-9E0F-76BC53F09685}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shared", "src\Shared\Shared.csproj", "{C164DE46-8179-4DBE-8AB7-5EE356D9BF13}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{071565DD-660C-406E-ADAE-ADE99A6BD24C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{071565DD-660C-406E-ADAE-ADE99A6BD24C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{071565DD-660C-406E-ADAE-ADE99A6BD24C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{071565DD-660C-406E-ADAE-ADE99A6BD24C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62D03C9F-A9C3-45AB-A6FD-BFA0C4F4840A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62D03C9F-A9C3-45AB-A6FD-BFA0C4F4840A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62D03C9F-A9C3-45AB-A6FD-BFA0C4F4840A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62D03C9F-A9C3-45AB-A6FD-BFA0C4F4840A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CC560B84-0BB9-48E8-B55D-C44B128CE7E7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CC560B84-0BB9-48E8-B55D-C44B128CE7E7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CC560B84-0BB9-48E8-B55D-C44B128CE7E7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CC560B84-0BB9-48E8-B55D-C44B128CE7E7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E891813B-CC89-4242-AD95-7EF0FBD93AD0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E891813B-CC89-4242-AD95-7EF0FBD93AD0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E891813B-CC89-4242-AD95-7EF0FBD93AD0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E891813B-CC89-4242-AD95-7EF0FBD93AD0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{24AB5A53-306E-4086-9C01-4E0222DEA639}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{24AB5A53-306E-4086-9C01-4E0222DEA639}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{24AB5A53-306E-4086-9C01-4E0222DEA639}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{24AB5A53-306E-4086-9C01-4E0222DEA639}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D66E4114-E6A8-4672-8737-C7A472DDF3A1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D66E4114-E6A8-4672-8737-C7A472DDF3A1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D66E4114-E6A8-4672-8737-C7A472DDF3A1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D66E4114-E6A8-4672-8737-C7A472DDF3A1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{24FCA92A-1D69-42FB-84B1-BD2AF1150213}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{24FCA92A-1D69-42FB-84B1-BD2AF1150213}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{24FCA92A-1D69-42FB-84B1-BD2AF1150213}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{24FCA92A-1D69-42FB-84B1-BD2AF1150213}.Release|Any CPU.Build.0 = Release|Any CPU
+		{618EDD3C-C57E-4BD7-9E0F-76BC53F09685}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{618EDD3C-C57E-4BD7-9E0F-76BC53F09685}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{618EDD3C-C57E-4BD7-9E0F-76BC53F09685}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{618EDD3C-C57E-4BD7-9E0F-76BC53F09685}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C164DE46-8179-4DBE-8AB7-5EE356D9BF13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C164DE46-8179-4DBE-8AB7-5EE356D9BF13}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C164DE46-8179-4DBE-8AB7-5EE356D9BF13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C164DE46-8179-4DBE-8AB7-5EE356D9BF13}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{071565DD-660C-406E-ADAE-ADE99A6BD24C} = {6A2E843D-3C2D-4938-9BE3-EFF81343B5BA}
+		{62D03C9F-A9C3-45AB-A6FD-BFA0C4F4840A} = {6A2E843D-3C2D-4938-9BE3-EFF81343B5BA}
+		{CC560B84-0BB9-48E8-B55D-C44B128CE7E7} = {6A2E843D-3C2D-4938-9BE3-EFF81343B5BA}
+		{E891813B-CC89-4242-AD95-7EF0FBD93AD0} = {6A2E843D-3C2D-4938-9BE3-EFF81343B5BA}
+		{24AB5A53-306E-4086-9C01-4E0222DEA639} = {6A2E843D-3C2D-4938-9BE3-EFF81343B5BA}
+		{D66E4114-E6A8-4672-8737-C7A472DDF3A1} = {6A2E843D-3C2D-4938-9BE3-EFF81343B5BA}
+		{24FCA92A-1D69-42FB-84B1-BD2AF1150213} = {6A2E843D-3C2D-4938-9BE3-EFF81343B5BA}
+		{618EDD3C-C57E-4BD7-9E0F-76BC53F09685} = {6A2E843D-3C2D-4938-9BE3-EFF81343B5BA}
+		{C164DE46-8179-4DBE-8AB7-5EE356D9BF13} = {6A2E843D-3C2D-4938-9BE3-EFF81343B5BA}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9DCFFC5F-1978-498E-BEFA-6E17F62AAC81}
+	EndGlobalSection
+EndGlobal
