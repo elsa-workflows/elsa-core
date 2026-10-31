@@ -17,11 +17,17 @@ on:
       - 'scripts/integration-program/prepare_consolidated_build.py'
       - 'scripts/integration-program/VerifyEmbeddedSources/**'
       - 'scripts/integration-program/test_*.py'
+      - 'scripts/integration-program/selected_maintenance_test_support.py'
+      - 'scripts/integration-program/selected_product_diagnostics.py'
+      - 'scripts/integration-program/retain_selected_failure_diagnostics.py'
+      - 'scripts/integration-program/prove_product_release_artifacts.py'
+      - 'scripts/integration-program/prove_product_release_consumers.py'
       - 'scripts/integration-program/consolidated-build/source-integration.patch'
       - 'docs/integration-program/inventory/inventory.json'
       - 'docs/integration-program/release-units.json'
       - 'docs/integration-program/publisher-handoff.md'
       - 'docs/integration-program/package-closure.md'
+      - 'docs/integration-program/selected-control-seal.md'
       - 'docs/integration-program/consolidation/canonical-95a-impact-closure.json'
       - 'docs/integration-program/slack-package-proof.md'
       - 'docs/integration-program/consolidation/build-preparation.md'
@@ -45,6 +51,8 @@ concurrency:
 jobs:
   selector-and-plan:
     runs-on: ubuntu-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -72,6 +80,13 @@ jobs:
         run: |
           echo 'PyYAML==6.0.3 --hash=sha256:ba1cc08a7ccde2d2ec775841541641e4548226580ab850948cbfda66a1befcdc' > "$RUNNER_TEMP/gate-requirements.txt"
           python3 -m pip install --only-binary :all: --require-hashes -r "$RUNNER_TEMP/gate-requirements.txt"
+      # The full suite evaluates historical test projects with the pinned metadata SDK.
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: '10.0.300'
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
       - name: Test selector and closure classification
         run: |
           python -m unittest discover -s scripts/integration-program -p 'test_*.py'

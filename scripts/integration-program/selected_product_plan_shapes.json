@@ -1,0 +1,1096 @@
+{
+  "scope": "historical-public-plan-shape-fixtures-not-fresh-eligibility-authority",
+  "cells": {
+    "core-3.8": {
+      "plan_sha256": "c1962b5245655d90412725ca2f8781d12b707aca08d3230cc4f8cdcd1e06a902",
+      "source": {
+        "product": "core",
+        "line": "3.8",
+        "kind": "observed-core-release-branch",
+        "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+        "tree": "7ab70135ea43fc6e93c6cb26b9d0df2d91b20b85",
+        "observation": {
+          "ref": "refs/heads/release/3.8.4",
+          "commit": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+          "tree": "7ab70135ea43fc6e93c6cb26b9d0df2d91b20b85",
+          "observed_at": "2026-10-10T00:32:30.665679+00:00",
+          "branch_observation": {
+            "url": "https://api.github.com/repos/elsa-workflows/elsa-core/git/ref/heads/release/3.8.4",
+            "observed_at": "2026-10-10T00:32:30.665679+00:00",
+            "status": "observed",
+            "sha256": "eaf198bc414eab9366e6175056cb30b26100a3c78ad7c5875fb7538703f7a369",
+            "bytes": 385
+          },
+          "tag_history": [
+            {
+              "ref": "refs/tags/3.8.0",
+              "node_id": "MDM6UmVmMTUxMTQ4NDgyOnJlZnMvdGFncy8zLjguMA==",
+              "url": "https://api.github.com/repos/elsa-workflows/elsa-core/git/refs/tags/3.8.0",
+              "object": {
+                "sha": "8120eb3ac112e2625067773ae01167d8d2c0cdc8",
+                "type": "tag",
+                "url": "https://api.github.com/repos/elsa-workflows/elsa-core/git/tags/8120eb3ac112e2625067773ae01167d8d2c0cdc8"
+              }
+            },
+            {
+              "ref": "refs/tags/3.8.0-preview1",
+              "node_id": "MDM6UmVmMTUxMTQ4NDgyOnJlZnMvdGFncy8zLjguMC1wcmV2aWV3MQ==",
+              "url": "https://api.github.com/repos/elsa-workflows/elsa-core/git/refs/tags/3.8.0-preview1",
+              "object": {
+                "sha": "87ee19f5b3f116b419468855819065e2b6d87135",
+                "type": "commit",
+                "url": "https://api.github.com/repos/elsa-workflows/elsa-core/git/commits/87ee19f5b3f116b419468855819065e2b6d87135"
+              }
+            },
+            {
+              "ref": "refs/tags/3.8.0-rc1",
+              "node_id": "MDM6UmVmMTUxMTQ4NDgyOnJlZnMvdGFncy8zLjguMC1yYzE=",
+              "url": "https://api.github.com/repos/elsa-workflows/elsa-core/git/refs/tags/3.8.0-rc1",
+              "object": {
+                "sha": "f6c35cf1eb5558348a61352fc4eba5925731118d",
+                "type": "commit",
+                "url": "https://api.github.com/repos/elsa-workflows/elsa-core/git/commits/f6c35cf1eb5558348a61352fc4eba5925731118d"
+              }
+            },
+            {
+              "ref": "refs/tags/3.8.0-rc2",
+              "node_id": "MDM6UmVmMTUxMTQ4NDgyOnJlZnMvdGFncy8zLjguMC1yYzI=",
+              "url": "https://api.github.com/repos/elsa-workflows/elsa-core/git/refs/tags/3.8.0-rc2",
+              "object": {
+                "sha": "dff7d9f987394c3c2ba8003e6f9c803e97194fbc",
+                "type": "commit",
+                "url": "https://api.github.com/repos/elsa-workflows/elsa-core/git/commits/dff7d9f987394c3c2ba8003e6f9c803e97194fbc"
+              }
+            },
+            {
+              "ref": "refs/tags/3.8.1",
+              "node_id": "MDM6UmVmMTUxMTQ4NDgyOnJlZnMvdGFncy8zLjguMQ==",
+              "url": "https://api.github.com/repos/elsa-workflows/elsa-core/git/refs/tags/3.8.1",
+              "object": {
+                "sha": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+                "type": "commit",
+                "url": "https://api.github.com/repos/elsa-workflows/elsa-core/git/commits/33181ae3048f628f591a0155b5665a8e4d1bcea2"
+              }
+            },
+            {
+              "ref": "refs/tags/3.8.2",
+              "node_id": "MDM6UmVmMTUxMTQ4NDgyOnJlZnMvdGFncy8zLjguMg==",
+              "url": "https://api.github.com/repos/elsa-workflows/elsa-core/git/refs/tags/3.8.2",
+              "object": {
+                "sha": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+                "type": "commit",
+                "url": "https://api.github.com/repos/elsa-workflows/elsa-core/git/commits/33181ae3048f628f591a0155b5665a8e4d1bcea2"
+              }
+            },
+            {
+              "ref": "refs/tags/3.8.4",
+              "node_id": "MDM6UmVmMTUxMTQ4NDgyOnJlZnMvdGFncy8zLjguNA==",
+              "url": "https://api.github.com/repos/elsa-workflows/elsa-core/git/refs/tags/3.8.4",
+              "object": {
+                "sha": "33181ae3048f628f591a0155b5665a8e4d1bcea2",
+                "type": "commit",
+                "url": "https://api.github.com/repos/elsa-workflows/elsa-core/git/commits/33181ae3048f628f591a0155b5665a8e4d1bcea2"
+              }
+            }
+          ],
+          "tag_observation": {
+            "url": "https://api.github.com/repos/elsa-workflows/elsa-core/git/matching-refs/tags/3.8.",
+            "observed_at": "2026-10-10T00:32:30.907164+00:00",
+            "status": "observed",
+            "sha256": "ed5e207dc3b32188f84e49c3d6e82df49e239fe0dd57d81e8db83594da2ea595",
+            "bytes": 2541
+          },
+          "tag_scope": "bounded-matching-ref-snapshot-not-complete-version-authority"
+        }
+      },
+      "test_projects": {
+        "test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.AI.IntegrationTests/Elsa.AI.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Activities.IntegrationTests/Elsa.Activities.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Alterations.IntegrationTests/Elsa.Alterations.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Common.IntegrationTests/Elsa.Common.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Diagnostics.ConsoleLogs.IntegrationTests/Elsa.Diagnostics.ConsoleLogs.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Diagnostics.OpenTelemetry.IntegrationTests/Elsa.Diagnostics.OpenTelemetry.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Diagnostics.StructuredLogs.IntegrationTests/Elsa.Diagnostics.StructuredLogs.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Dsl.ElsaScript.IntegrationTests/Elsa.Dsl.ElsaScript.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.ExternalAuthentication.IntegrationTests/Elsa.ExternalAuthentication.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Http.IntegrationTests/Elsa.Http.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.JavaScript.IntegrationTests/Elsa.JavaScript.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Resilience.IntegrationTests/Elsa.Resilience.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Workflows.IntegrationTests/Elsa.Workflows.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.AI.Abstractions.UnitTests/Elsa.AI.Abstractions.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.AI.Copilot.UnitTests/Elsa.AI.Copilot.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.AI.Host.UnitTests/Elsa.AI.Host.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.AI.Persistence.EFCore.UnitTests/Elsa.AI.Persistence.EFCore.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Activities.UnitTests/Elsa.Activities.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Common.UnitTests/Elsa.Common.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Dashboard.Api.UnitTests/Elsa.Dashboard.Api.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Diagnostics.ConsoleLogs.UnitTests/Elsa.Diagnostics.ConsoleLogs.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Diagnostics.OpenTelemetry.UnitTests/Elsa.Diagnostics.OpenTelemetry.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/Elsa.Diagnostics.StructuredLogs.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Expressions.UnitTests/Elsa.Expressions.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.ExternalAuthentication.UnitTests/Elsa.ExternalAuthentication.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Hosting.Management.UnitTests/Elsa.Hosting.Management.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Http.UnitTests/Elsa.Http.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Identity.UnitTests/Elsa.Identity.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Mediator.UnitTests/Elsa.Mediator.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Persistence.VNext.UnitTests/Elsa.Persistence.VNext.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Platform.Integration.UnitTests/Elsa.Platform.Integration.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Resilience.Core.UnitTests/Elsa.Resilience.Core.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.SasTokens.UnitTests/Elsa.SasTokens.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Scheduling.UnitTests/Elsa.Scheduling.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Secrets.UnitTests/Elsa.Secrets.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Shells.Api.Tests/Elsa.Shells.Api.Tests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Tenants.UnitTests/Elsa.Tenants.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Workflows.Api.UnitTests/Elsa.Workflows.Api.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Workflows.Management.UnitTests/Elsa.Workflows.Management.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Workflows.Runtime.UnitTests/Elsa.Workflows.Runtime.UnitTests.csproj": [
+          "net10.0"
+        ]
+      },
+      "recipe": {
+        "solution": "Elsa.sln",
+        "sha256": "1c0b9730af186e02d2fceae2c971e3d037c4ef5e29eb7fac5be6fb80fc520362",
+        "workflow": ".github/workflows/packages.yml",
+        "workflow_sha256": "5811624bc7ca80f944337302efad564d43a9afa300432fde6d19cd909e6771d8"
+      },
+      "counts": {
+        "selected": 93,
+        "excluded": 51,
+        "tests": 44,
+        "expected_archives": 185
+      },
+      "object_shapes": {
+        "source": [
+          "commit kind line observation product tree"
+        ],
+        "source.observation": [
+          "branch_observation commit observed_at ref tag_history tag_observation tag_scope tree"
+        ],
+        "source.observation.branch_observation": [
+          "bytes observed_at sha256 status url"
+        ],
+        "source.observation.tag_history[]": [
+          "node_id object ref url"
+        ],
+        "source.observation.tag_history[].object": [
+          "sha type url"
+        ],
+        "source.observation.tag_observation": [
+          "bytes observed_at sha256 status url"
+        ],
+        "inventory.selected[].metadata.manifest_content_targets[]": [
+          "entry id restore_sha512 sha256 version"
+        ],
+        "excluded_artifacts[]": [
+          "id reason"
+        ],
+        "prerequisites[].feeds[]": [
+          "applicable_dependency_group compatibility_scope consumer eligible feed framework id metadata observation project range reason version",
+          "consumer eligible feed framework id observation project range reason version"
+        ],
+        "prerequisites[].feeds[].observation": [
+          "bytes observed_at sha256 status url",
+          "observed_at status url"
+        ],
+        "histories[]": [
+          "eligible feeds id reason"
+        ]
+      }
+    },
+    "core-3.9": {
+      "plan_sha256": "985919bd65737a1dc25cbc1af39965bf81e40621c862a6737c40a411a3e8870d",
+      "source": {
+        "product": "core",
+        "line": "3.9",
+        "kind": "observed-core-release-branch",
+        "commit": "5d3582b6309a2fd8ea33ebdb8c39fb040bfdc514",
+        "tree": "59d5cf6d6f2ce378c4b3fd888238abe2a9541561",
+        "observation": {
+          "ref": "refs/heads/release/3.9.0",
+          "commit": "5d3582b6309a2fd8ea33ebdb8c39fb040bfdc514",
+          "tree": "59d5cf6d6f2ce378c4b3fd888238abe2a9541561",
+          "observed_at": "2026-10-10T00:32:29.770361+00:00",
+          "branch_observation": {
+            "url": "https://api.github.com/repos/elsa-workflows/elsa-core/git/ref/heads/release/3.9.0",
+            "observed_at": "2026-10-10T00:32:29.770361+00:00",
+            "status": "observed",
+            "sha256": "9878c29de748c58b518874cfdb119d6e9da14f77c8f308d5f5671df3a30d86a8",
+            "bytes": 385
+          },
+          "tag_history": [
+            {
+              "ref": "refs/tags/3.9.0",
+              "node_id": "MDM6UmVmMTUxMTQ4NDgyOnJlZnMvdGFncy8zLjkuMA==",
+              "url": "https://api.github.com/repos/elsa-workflows/elsa-core/git/refs/tags/3.9.0",
+              "object": {
+                "sha": "6436609a1a3874d3fea7ccf690897792f5a1f702",
+                "type": "commit",
+                "url": "https://api.github.com/repos/elsa-workflows/elsa-core/git/commits/6436609a1a3874d3fea7ccf690897792f5a1f702"
+              }
+            }
+          ],
+          "tag_observation": {
+            "url": "https://api.github.com/repos/elsa-workflows/elsa-core/git/matching-refs/tags/3.9.",
+            "observed_at": "2026-10-10T00:32:29.973174+00:00",
+            "status": "observed",
+            "sha256": "9742d713f7646b520ed45615c89ed8a02921ff617facfd611765d06134e5079d",
+            "bytes": 357
+          },
+          "tag_scope": "bounded-matching-ref-snapshot-not-complete-version-authority"
+        }
+      },
+      "test_projects": {
+        "test/component/Elsa.Workflows.ComponentTests/Elsa.Workflows.ComponentTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.AI.IntegrationTests/Elsa.AI.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Activities.IntegrationTests/Elsa.Activities.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Alterations.IntegrationTests/Elsa.Alterations.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Alterations.Persistence.ConformanceTests/Elsa.Alterations.Persistence.ConformanceTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Bpmn.IntegrationTests/Elsa.Bpmn.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Bpmn.Interchange.IntegrationTests/Elsa.Bpmn.Interchange.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Common.IntegrationTests/Elsa.Common.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Diagnostics.ConsoleLogs.IntegrationTests/Elsa.Diagnostics.ConsoleLogs.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Diagnostics.OpenTelemetry.IntegrationTests/Elsa.Diagnostics.OpenTelemetry.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Diagnostics.StructuredLogs.IntegrationTests/Elsa.Diagnostics.StructuredLogs.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.ConformanceTests/Elsa.Diagnostics.StructuredLogs.Persistence.ConformanceTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests/Elsa.Diagnostics.StructuredLogs.Persistence.Sqlite.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Dsl.ElsaScript.IntegrationTests/Elsa.Dsl.ElsaScript.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.ExternalAuthentication.IntegrationTests/Elsa.ExternalAuthentication.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Hosts.SmokeTests/Elsa.Hosts.SmokeTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Http.IntegrationTests/Elsa.Http.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.JavaScript.IntegrationTests/Elsa.JavaScript.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Labels.Persistence.ConformanceTests/Elsa.Labels.Persistence.ConformanceTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Resilience.IntegrationTests/Elsa.Resilience.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Workflows.IntegrationTests/Elsa.Workflows.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/integration/Elsa.Workflows.Persistence.ConformanceTests/Elsa.Workflows.Persistence.ConformanceTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.AI.Abstractions.UnitTests/Elsa.AI.Abstractions.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.AI.Copilot.UnitTests/Elsa.AI.Copilot.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.AI.Host.UnitTests/Elsa.AI.Host.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.AI.Persistence.EFCore.UnitTests/Elsa.AI.Persistence.EFCore.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Activities.UnitTests/Elsa.Activities.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Alterations.Core.UnitTests/Elsa.Alterations.Core.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Api.Common.UnitTests/Elsa.Api.Common.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Bpmn.Interchange.UnitTests/Elsa.Bpmn.Interchange.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Bpmn.UnitTests/Elsa.Bpmn.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Common.UnitTests/Elsa.Common.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Dashboard.Api.UnitTests/Elsa.Dashboard.Api.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Diagnostics.ConsoleLogs.UnitTests/Elsa.Diagnostics.ConsoleLogs.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Diagnostics.OpenTelemetry.UnitTests/Elsa.Diagnostics.OpenTelemetry.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests/Elsa.Diagnostics.StructuredLogs.Persistence.Relational.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Diagnostics.StructuredLogs.UnitTests/Elsa.Diagnostics.StructuredLogs.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Expressions.UnitTests/Elsa.Expressions.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.ExternalAuthentication.UnitTests/Elsa.ExternalAuthentication.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Features.UnitTests/Elsa.Features.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Hosting.Management.UnitTests/Elsa.Hosting.Management.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Http.UnitTests/Elsa.Http.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Identity.UnitTests/Elsa.Identity.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Labels.UnitTests/Elsa.Labels.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Mediator.UnitTests/Elsa.Mediator.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Persistence.EFCore.UnitTests/Elsa.Persistence.EFCore.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Persistence.VNext.UnitTests/Elsa.Persistence.VNext.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Platform.Integration.UnitTests/Elsa.Platform.Integration.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Resilience.Core.UnitTests/Elsa.Resilience.Core.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.SasTokens.UnitTests/Elsa.SasTokens.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Scheduling.UnitTests/Elsa.Scheduling.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Secrets.UnitTests/Elsa.Secrets.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Shells.Api.Tests/Elsa.Shells.Api.Tests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Tenants.UnitTests/Elsa.Tenants.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.UserTasks.Persistence.ConformanceTests/Elsa.UserTasks.Persistence.ConformanceTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.UserTasks.Persistence.EFCore.UnitTests/Elsa.UserTasks.Persistence.EFCore.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.UserTasks.UnitTests/Elsa.UserTasks.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Workflows.Api.UnitTests/Elsa.Workflows.Api.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Workflows.Core.UnitTests/Elsa.Workflows.Core.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Workflows.Management.UnitTests/Elsa.Workflows.Management.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/unit/Elsa.Workflows.Runtime.UnitTests/Elsa.Workflows.Runtime.UnitTests.csproj": [
+          "net10.0"
+        ]
+      },
+      "recipe": {
+        "solution": "Elsa.sln",
+        "sha256": "3f6052ab3f7ff5e5cce351e0d72f8656838d28900422ce2a435ee7507a62a167",
+        "workflow": ".github/workflows/packages.yml",
+        "workflow_sha256": "00310fd556059e20e48a0a93f071e488829172da4b19174710a4701d07219b91"
+      },
+      "counts": {
+        "selected": 103,
+        "excluded": 68,
+        "tests": 61,
+        "expected_archives": 205
+      },
+      "object_shapes": {
+        "source": [
+          "commit kind line observation product tree"
+        ],
+        "source.observation": [
+          "branch_observation commit observed_at ref tag_history tag_observation tag_scope tree"
+        ],
+        "source.observation.branch_observation": [
+          "bytes observed_at sha256 status url"
+        ],
+        "source.observation.tag_history[]": [
+          "node_id object ref url"
+        ],
+        "source.observation.tag_history[].object": [
+          "sha type url"
+        ],
+        "source.observation.tag_observation": [
+          "bytes observed_at sha256 status url"
+        ],
+        "inventory.selected[].metadata.manifest_content_targets[]": [
+          "entry id restore_sha512 sha256 version"
+        ],
+        "excluded_artifacts[]": [
+          "id reason"
+        ],
+        "prerequisites[].feeds[]": [
+          "applicable_dependency_group compatibility_scope consumer eligible feed framework id metadata observation project range reason version"
+        ],
+        "prerequisites[].feeds[].observation": [
+          "bytes observed_at sha256 status url"
+        ],
+        "histories[]": [
+          "eligible feeds id reason"
+        ]
+      }
+    },
+    "extensions-3.8": {
+      "plan_sha256": "f1550a6afa122c00293b0d5d5e04ece0f74b4984e69c7b5415a9651f32c6a1b9",
+      "source": {
+        "product": "extensions",
+        "line": "3.8",
+        "kind": "admitted-maintenance-descendant",
+        "commit": "92c27a3dd2c7f1dc107cba34749dd293a5d77743",
+        "tree": "6b7627924e64d4a6548ff5689000eff2f08561eb",
+        "parents": [
+          "d294722a044226ef93bf70ebb1db25218aa90ccc"
+        ],
+        "original_commit": "154ba15fb4da85b4bebecfbe43639579cbda1d0d",
+        "original_parents": [
+          "e7d05ef930dfde2aa85bf9dcaf841e5a6ede0a1e"
+        ],
+        "contained_commit": "b2ccd4f8a4b024732f263bc76d9be0a2418cd03e",
+        "contained_tree": "76b2cc6e8d0ac598f110def75e2a4b174bae70ac",
+        "candidate_register_sha256": "29f46069bdd9263692faffd9b7291b5e919fc39d22ebe25ee13b7c1c8488c740",
+        "original_register_sha256": "3f17c02f90c7b989c7067215d51f3ee1981c8420cb6147dfc689807e4ef11061"
+      },
+      "test_projects": {
+        "test/modules/diagnostics/Elsa.Logging.Core.IntegrationTests/Elsa.Logging.Core.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/diagnostics/Elsa.Logging.Core.UnitTests/Elsa.Logging.Core.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/persistence/Elsa.Dapper.UnitTests/Elsa.Dapper.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/scheduling/Elsa.Scheduling.Quartz.ComponentTests/Elsa.Scheduling.Quartz.ComponentTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/scheduling/Elsa.Scheduling.Quartz.UnitTests/Elsa.Scheduling.Quartz.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/servicebus/Elsa.ServiceBus.AzureServiceBus.ComponentTests/Elsa.ServiceBus.AzureServiceBus.ComponentTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj": [
+          "net10.0"
+        ]
+      },
+      "recipe": {
+        "solution": "Elsa.Extensions.sln",
+        "sha256": "db9b0a7b56edf0968fbb7dd78bd9cccea97a39921afea7dc7fc0bd143435999f",
+        "workflow": ".github/maintenance-inert-workflows/packages.yml.source",
+        "workflow_sha256": "7f84410b6eed756c4c12be5d13b3854c5a0a1918d3ad0dc07419771988960a7c"
+      },
+      "counts": {
+        "selected": 73,
+        "excluded": 18,
+        "tests": 8,
+        "expected_archives": 146
+      },
+      "object_shapes": {
+        "source": [
+          "candidate_register_sha256 commit contained_commit contained_tree kind line original_commit original_parents original_register_sha256 parents product tree"
+        ],
+        "inventory.selected[].metadata.manifest_content_targets[]": [
+          "entry id restore_sha512 sha256 version"
+        ],
+        "excluded_artifacts[]": [
+          "id reason"
+        ],
+        "prerequisites[].feeds[]": [
+          "applicable_dependency_group compatibility_scope consumer eligible feed framework id metadata observation project range reason version"
+        ],
+        "prerequisites[].feeds[].observation": [
+          "bytes observed_at sha256 status url"
+        ],
+        "histories[]": [
+          "eligible feeds id reason"
+        ]
+      }
+    },
+    "studio-3.9": {
+      "plan_sha256": "b203dc0e45c714d2925074af642f57495e0d7fb55f7292c660fe9db945808d32",
+      "source": {
+        "product": "studio",
+        "line": "3.9",
+        "kind": "admitted-maintenance-descendant",
+        "commit": "98a3f23d9c3c67080f3926eeb584036c49855b72",
+        "tree": "de330a0c1284c41a85c5fb0dd7c4af2ab0b1168e",
+        "parents": [
+          "e7cf096bc117d970dc0bbc11e26dabd2ea2e1b00"
+        ],
+        "original_commit": "a30ed7c997dfb3cff1d5d095a4ee19ff03c7fe42",
+        "original_parents": [
+          "0ad1874859fdd5beabfdac980ab13ee7f9b372af",
+          "199b9a346dc5cb75031f2135374373ee413c2cd7"
+        ],
+        "contained_commit": "27fbf412cae3a8f0f4ebf8513bc98aa3cc179638",
+        "contained_tree": "1986aac411a9263192540fb8495272c811780e74",
+        "candidate_register_sha256": "29f46069bdd9263692faffd9b7291b5e919fc39d22ebe25ee13b7c1c8488c740",
+        "original_register_sha256": "3f17c02f90c7b989c7067215d51f3ee1981c8420cb6147dfc689807e4ef11061"
+      },
+      "test_projects": {
+        "src/framework/Elsa.Studio.Core.Tests/Elsa.Studio.Core.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.AI.Tests/Elsa.Studio.AI.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Administration.Tests/Elsa.Studio.Administration.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Authentication.UI.Tests/Elsa.Studio.Authentication.UI.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Dashboard.Tests/Elsa.Studio.Dashboard.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Diagnostics.ConsoleLogs.Tests/Elsa.Studio.Diagnostics.ConsoleLogs.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Diagnostics.OpenTelemetry.Tests/Elsa.Studio.Diagnostics.OpenTelemetry.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Diagnostics.StructuredLogs.Tests/Elsa.Studio.Diagnostics.StructuredLogs.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Environments.Tests/Elsa.Studio.Environments.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.ExternalAuthentication.Tests/Elsa.Studio.ExternalAuthentication.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Localization.Tests/Elsa.Studio.Localization.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.PlatformIntegration.Tests/Elsa.Studio.PlatformIntegration.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Security.Tests/Elsa.Studio.Security.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.UserTasks.Tests/Elsa.Studio.UserTasks.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Workflows.Designer.Tests/Elsa.Studio.Workflows.Designer.Tests.csproj": [
+          "net8.0",
+          "net9.0",
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Workflows.Tests/Elsa.Studio.Workflows.Tests.csproj": [
+          "net10.0"
+        ]
+      },
+      "recipe": {
+        "solution": "Elsa.Studio.sln",
+        "sha256": "55c44491237c0e5151d07334be4d8dcafd8a65bc628ee6bb89a99cea5e48d2c9",
+        "workflow": ".github/maintenance-inert-workflows/packages.yml.source",
+        "workflow_sha256": "cd6f1d8bb7809784420385b7683a8d811ad07972eb5836d4bb9d3aa7aeec2a48"
+      },
+      "counts": {
+        "selected": 51,
+        "excluded": 21,
+        "tests": 16,
+        "expected_archives": 104
+      },
+      "object_shapes": {
+        "source": [
+          "candidate_register_sha256 commit contained_commit contained_tree kind line original_commit original_parents original_register_sha256 parents product tree"
+        ],
+        "prerequisites[].feeds[]": [
+          "applicable_dependency_group compatibility_scope consumer eligible feed framework id metadata observation project range reason version"
+        ],
+        "prerequisites[].feeds[].observation": [
+          "bytes observed_at sha256 status url"
+        ],
+        "histories[]": [
+          "decision eligible id observation reason versions",
+          "eligible feeds id reason"
+        ],
+        "histories[].observation": [
+          "bytes observed_at sha256 status url"
+        ],
+        "histories[].decision": [
+          "duplicate latest_in_line monotonic normalized reused"
+        ],
+        "npm": [
+          "artifact_proof atomic historical_workflow_executed line manifests packages source_commit source_tree workflow wrapper_dependency_intent"
+        ],
+        "npm.workflow": [
+          "path sha256"
+        ],
+        "npm.manifests[]": [
+          "checked_in_dependencies checked_in_version path peer_dependencies sha256"
+        ],
+        "npm.packages[]": [
+          "expected_tarball id version"
+        ]
+      }
+    },
+    "studio-3.8": {
+      "plan_sha256": "2f4c8181e50c095b42c22634c8d62607b2a542845bdb53398e8515e02fbc9103",
+      "source": {
+        "product": "studio",
+        "line": "3.8",
+        "kind": "admitted-maintenance-descendant",
+        "commit": "da2dec10ba36c65e376138ee45e1c34525e45e49",
+        "tree": "f77c11fb4aeb1d2734ae3e326643ab23707e6fea",
+        "parents": [
+          "41ed15db7bfce7af5be2d362001518e8e692c22e"
+        ],
+        "original_commit": "9bff3f785fd13bd80a3a7ecf88fec4aec8eef7ae",
+        "original_parents": [
+          "1c72dc02c837919059b60efe5df2ed57ff2db2d9"
+        ],
+        "contained_commit": "971a8ac372866b0a8deccd42d9cae33a972a7bf9",
+        "contained_tree": "8fcf35d27f7281c3db412b0dfdc1dfe7f71de55a",
+        "candidate_register_sha256": "29f46069bdd9263692faffd9b7291b5e919fc39d22ebe25ee13b7c1c8488c740",
+        "original_register_sha256": "3f17c02f90c7b989c7067215d51f3ee1981c8420cb6147dfc689807e4ef11061"
+      },
+      "test_projects": {
+        "src/framework/Elsa.Studio.Core.Tests/Elsa.Studio.Core.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.AI.Tests/Elsa.Studio.AI.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Administration.Tests/Elsa.Studio.Administration.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Authentication.UI.Tests/Elsa.Studio.Authentication.UI.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Dashboard.Tests/Elsa.Studio.Dashboard.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Diagnostics.ConsoleLogs.Tests/Elsa.Studio.Diagnostics.ConsoleLogs.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Diagnostics.OpenTelemetry.Tests/Elsa.Studio.Diagnostics.OpenTelemetry.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Diagnostics.StructuredLogs.Tests/Elsa.Studio.Diagnostics.StructuredLogs.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.ExternalAuthentication.Tests/Elsa.Studio.ExternalAuthentication.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.PlatformIntegration.Tests/Elsa.Studio.PlatformIntegration.Tests.csproj": [
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Workflows.Designer.Tests/Elsa.Studio.Workflows.Designer.Tests.csproj": [
+          "net8.0",
+          "net9.0",
+          "net10.0"
+        ],
+        "src/modules/Elsa.Studio.Workflows.Tests/Elsa.Studio.Workflows.Tests.csproj": [
+          "net10.0"
+        ]
+      },
+      "recipe": {
+        "solution": "Elsa.Studio.sln",
+        "sha256": "8bde986b694edd9b3cb302a14646c051607ec096fa6fc9636e152d3609d9a721",
+        "workflow": ".github/maintenance-inert-workflows/packages.yml.source",
+        "workflow_sha256": "31eccc049c03c6c90fc5e9bf354e5a49ecd1d17b7474457a0c7a6f004bee6fa1"
+      },
+      "counts": {
+        "selected": 50,
+        "excluded": 17,
+        "tests": 12,
+        "expected_archives": 102
+      },
+      "object_shapes": {
+        "source": [
+          "candidate_register_sha256 commit contained_commit contained_tree kind line original_commit original_parents original_register_sha256 parents product tree"
+        ],
+        "prerequisites[].feeds[]": [
+          "applicable_dependency_group compatibility_scope consumer eligible feed framework id metadata observation project range reason version"
+        ],
+        "prerequisites[].feeds[].observation": [
+          "bytes observed_at sha256 status url"
+        ],
+        "histories[]": [
+          "decision eligible id observation reason versions",
+          "eligible feeds id reason"
+        ],
+        "histories[].observation": [
+          "bytes observed_at sha256 status url"
+        ],
+        "histories[].decision": [
+          "duplicate latest_in_line monotonic normalized reused"
+        ],
+        "npm": [
+          "artifact_proof atomic historical_workflow_executed line manifests packages source_commit source_tree workflow wrapper_dependency_intent"
+        ],
+        "npm.workflow": [
+          "path sha256"
+        ],
+        "npm.manifests[]": [
+          "checked_in_dependencies checked_in_version path peer_dependencies sha256"
+        ],
+        "npm.packages[]": [
+          "expected_tarball id version"
+        ]
+      }
+    },
+    "extensions-3.9": {
+      "plan_sha256": "28da60371f3b586441cd8c231f7cc3998022d9a8fedeee0766029ab37b1676dd",
+      "source": {
+        "product": "extensions",
+        "line": "3.9",
+        "kind": "admitted-maintenance-descendant",
+        "commit": "bd7b846efae7e93676c6c3a594e682a5a958b766",
+        "tree": "f86b6eef467b947864f43c2a56f4a65e65e1d22e",
+        "parents": [
+          "ad27d260fd62904870303a728527477d208404b6"
+        ],
+        "original_commit": "89d4eb9b739ae135604aac2a1de18653a289bdb0",
+        "original_parents": [
+          "b59773982b0a6a2dfecab3312f53dbcc3533c079",
+          "75308d9548cb8e0920b17985d69f8e35c82003fc"
+        ],
+        "contained_commit": "09ab8cefe2a3b24bfe66a6b3e53db95ae91c172d",
+        "contained_tree": "a1341034483e455124ce7c646d35cc8e3452bc95",
+        "candidate_register_sha256": "29f46069bdd9263692faffd9b7291b5e919fc39d22ebe25ee13b7c1c8488c740",
+        "original_register_sha256": "3f17c02f90c7b989c7067215d51f3ee1981c8420cb6147dfc689807e4ef11061"
+      },
+      "test_projects": {
+        "test/modules/actors/Elsa.Actors.ProtoActor.UnitTests/Elsa.Actors.ProtoActor.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/caching/Elsa.Caching.Distributed.ProtoActor.IntegrationTests/Elsa.Caching.Distributed.ProtoActor.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/diagnostics/Elsa.Logging.Core.IntegrationTests/Elsa.Logging.Core.IntegrationTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/diagnostics/Elsa.Logging.Core.UnitTests/Elsa.Logging.Core.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/ldap/Elsa.Ldap.UnitTests/Elsa.Ldap.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/mqtt/Elsa.Mqtt.UnitTests/Elsa.Mqtt.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/persistence/Elsa.Dapper.UnitTests/Elsa.Dapper.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/persistence/Elsa.MongoDb.UnitTests/Elsa.MongoDb.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/runtimes/Elsa.Workflows.Runtime.ProtoActor.UnitTests/Elsa.Workflows.Runtime.ProtoActor.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/scheduling/Elsa.Scheduling.Hangfire.UnitTests/Elsa.Scheduling.Hangfire.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/scheduling/Elsa.Scheduling.Quartz.ComponentTests/Elsa.Scheduling.Quartz.ComponentTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/scheduling/Elsa.Scheduling.Quartz.UnitTests/Elsa.Scheduling.Quartz.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/secrets/Elsa.Secrets.Management.UnitTests/Elsa.Secrets.Management.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/servicebus/Elsa.ServiceBus.AzureServiceBus.ComponentTests/Elsa.ServiceBus.AzureServiceBus.ComponentTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/servicebus/Elsa.ServiceBus.MassTransit.UnitTests/Elsa.ServiceBus.MassTransit.UnitTests.csproj": [
+          "net10.0"
+        ],
+        "test/modules/slack/Elsa.Slack.Tests/Elsa.Slack.Tests.csproj": [
+          "net10.0"
+        ]
+      },
+      "recipe": {
+        "solution": "Elsa.Extensions.sln",
+        "sha256": "b7d172749b6d6bbcbbcf0c683a8eb2755345e1b983ec82958ca8ef4ebddbdb81",
+        "workflow": ".github/maintenance-inert-workflows/packages.yml.source",
+        "workflow_sha256": "63f6754782f8abdaf3ae1eff3875848349abc841fc143421a96c2bcff75b7e01"
+      },
+      "counts": {
+        "selected": 76,
+        "excluded": 27,
+        "tests": 17,
+        "expected_archives": 152
+      },
+      "object_shapes": {
+        "source": [
+          "candidate_register_sha256 commit contained_commit contained_tree kind line original_commit original_parents original_register_sha256 parents product tree"
+        ],
+        "inventory.selected[].metadata.manifest_content_targets[]": [
+          "entry id restore_sha512 sha256 version"
+        ],
+        "excluded_artifacts[]": [
+          "id reason"
+        ],
+        "prerequisites[].feeds[]": [
+          "applicable_dependency_group compatibility_scope consumer eligible feed framework id metadata observation project range reason version"
+        ],
+        "prerequisites[].feeds[].observation": [
+          "bytes observed_at sha256 status url"
+        ],
+        "histories[]": [
+          "eligible feeds id reason"
+        ]
+      }
+    }
+  },
+  "common_object_shapes": {
+    "": [
+      "consumer_feed_policy controller eligible excluded_artifacts expected_artifacts feed_service_observations histories inventory limits line mode npm observed_at prerequisites prerequisites_excluded_from_publication product published reasons requested_version requested_version_input schema selected_dependency_intent semantics source tag_created version_allocated"
+    ],
+    "controller": [
+      "commit execution input_sha256 tree"
+    ],
+    "controller.execution": [
+      "event_name ref repository run_attempt run_id"
+    ],
+    "inventory": [
+      "applicable_tests excluded ownership_policy projects release_recipe requested_version selected sha256 source_commit source_tree"
+    ],
+    "inventory.excluded[]": [
+      "id project reason"
+    ],
+    "inventory.release_recipe": [
+      "projects sha256 solution workflow workflow_sha256"
+    ],
+    "inventory.ownership_policy": [
+      "canonical_owners lines path sha256"
+    ],
+    "inventory.selected[]": [
+      "frameworks id include_build_output metadata project project_url repository_url symbol_format symbols"
+    ],
+    "inventory.selected[].metadata": [
+      "dependency_groups framework_reference_groups manifest_content_targets nuspec_sha256 original_content_project_sha256 original_output_policy projection restore_assets_sha256 restore_scope sdk_pack_targets_sha256 status"
+    ],
+    "inventory.selected[].metadata.dependency_groups[]": [
+      "dependencies framework"
+    ],
+    "inventory.selected[].metadata.dependency_groups[].dependencies[]": [
+      "exclude id include version"
+    ],
+    "inventory.selected[].metadata.restore_scope": [
+      "config_files local_sources public_sources"
+    ],
+    "inventory.selected[].metadata.restore_scope.config_files[]": [
+      "path sha256"
+    ],
+    "inventory.selected[].metadata.original_output_policy.*": [
+      "ElsaPackageManifestIncludeInPackage ElsaPackageManifestPackagePath GenerateElsaPackageManifest IncludeBuildOutput IncludeContentInPack IncludeSymbols SymbolPackageFormat"
+    ],
+    "inventory.selected[].metadata.projection": [
+      "ContinuePackingAfterGeneratingNuspec ElsaPackageManifestIncludeInPackage IncludeBuildOutput IncludeContentInPack NoBuild"
+    ],
+    "inventory.selected[].metadata.framework_reference_groups[]": [
+      "framework references"
+    ],
+    "inventory.projects[]": [
+      "is_packable is_test_project package_id package_references path project_references references_by_framework target_frameworks"
+    ],
+    "inventory.projects[].references_by_framework.*": [
+      "package_references project_references"
+    ],
+    "inventory.projects[].references_by_framework.*.package_references[]": [
+      "ExcludeAssets IncludeAssets PrivateAssets Version VersionOverride id"
+    ],
+    "inventory.projects[].package_references[]": [
+      "id"
+    ],
+    "inventory.projects[].references_by_framework.*.project_references[]": [
+      "target_project"
+    ],
+    "inventory.projects[].project_references[]": [
+      "target_project"
+    ],
+    "prerequisites[]": [
+      "compatibility_scope consumer eligible feeds framework id project range reason version"
+    ],
+    "prerequisites[].feeds[].metadata": [
+      "groups id version"
+    ],
+    "prerequisites[].feeds[].metadata.groups[]": [
+      "dependencies framework"
+    ],
+    "prerequisites[].feeds[].metadata.groups[].dependencies[]": [
+      "id range"
+    ],
+    "prerequisites[].feeds[].applicable_dependency_group": [
+      "dependencies framework"
+    ],
+    "prerequisites[].feeds[].applicable_dependency_group.dependencies[]": [
+      "id range"
+    ],
+    "selected_dependency_intent[]": [
+      "consumer eligible framework id project range version"
+    ],
+    "histories[].feeds[]": [
+      "decision eligible feed id observation reason versions"
+    ],
+    "histories[].feeds[].observation": [
+      "bytes observed_at sha256 status url"
+    ],
+    "histories[].feeds[].decision": [
+      "duplicate latest_in_line monotonic normalized reused"
+    ],
+    "semantics": [
+      "assemblies sdk_version"
+    ],
+    "semantics.assemblies[]": [
+      "file_version name sha256 version"
+    ],
+    "consumer_feed_policy": [
+      "config_path config_sha256 history_authority mapping_enabled packages sources"
+    ],
+    "consumer_feed_policy.sources[]": [
+      "name url"
+    ],
+    "consumer_feed_policy.packages[]": [
+      "id sources"
+    ],
+    "feed_service_observations.*": [
+      "base eligible observation"
+    ],
+    "feed_service_observations.*.observation": [
+      "bytes observed_at sha256 status url"
+    ]
+  }
+}

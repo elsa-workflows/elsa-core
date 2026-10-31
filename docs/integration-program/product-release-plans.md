@@ -2,13 +2,22 @@
 
 This nonpublishing planner is the first bounded deliverable under #8217. It describes one product, historical source line and explicitly requested version. It does not allocate that version, create a tag/ref, build or publish product artifacts, or complete the individual-release/publisher and operational-cutover gates.
 
-Run from a clean controller checkout with .NET SDK **10.0.300** installed. Private tooling/source parents pin that SDK with roll-forward disabled, without changing historical tracked files:
+Run from a clean controller checkout with .NET SDK **10.0.300** installed. Private tooling/source parents pin that SDK with roll-forward disabled, without changing historical tracked files. Create a fresh absolute private directory for the plan and its NuGet cache:
 
 ```sh
-PYTHONDONTWRITEBYTECODE=1 python3 scripts/integration-program/plan_product_release.py \
+PRIVATE="$(mktemp -d /tmp/elsa-product-release.XXXXXX)"
+PRIVATE="$(cd "$PRIVATE" && pwd -P)"
+mkdir "$PRIVATE/planning-packages"
+PLAN="$PRIVATE/plan"
+NUGET_PACKAGES="$PRIVATE/planning-packages" PYTHONDONTWRITEBYTECODE=1 python3 -B scripts/integration-program/plan_product_release.py \
   --product extensions --line 3.8 --version 3.8.5 \
-  --output /absolute/new/private-plan-directory
+  --metadata-workers 1 \
+  --output "$PLAN"
 ```
+
+Keep this directory and the same planning cache private and available through the original [planning-assets snapshot](product-release-artifacts.md#hosted-identity-and-private-snapshot-stage) and [consumer verification](product-release-consumers.md). The snapshot binds the original absolute source and cache paths; consumer verification uses that snapshot while freezing and checking the original external archive catalog. Do not replace or delete the planning cache between these stages.
+
+The planner defaults to four concurrent metadata evaluations. Set `--metadata-workers` to a value from 1 through 4 on a constrained local host; this only bounds project-property evaluation and does not change the selected source, inventory, validation, or hosted default.
 
 Products are `core`, `studio`, and `extensions`; supported historical lines are `3.8` and `3.9`. A `3.10` request produces an explicit `aligned_baseline_pending` ineligibility receipt. Product-qualified tags remain a proposal. The finer Slack release-unit manifest and sealed 225-package executor remain separate contracts.
 
@@ -24,7 +33,11 @@ Selected/excluded project membership is a complete disjoint partition. Package I
 
 ## Pre-build metadata and prerequisites
 
-Read-only project evaluation is bounded and parallel; recursive restore/nuspec staging runs one project at a time to avoid overlapping writes to referenced projects’ obj files. This corrects a shared-write hazard without claiming it caused a retained hosted failure. The SDK generates real nuspecs after restoring the exact historical source inputs, with `NoBuild=true` and `ContinuePackingAfterGeneratingNuspec=false`. Three explicit metadata-only projections suppress compiled/generated **file collection**: `IncludeBuildOutput=false`, `ElsaPackageManifestIncludeInPackage=false` and `IncludeContentInPack=false`. They preserve actual dependency/framework groups. The receipt retains original per-TFM output/content/symbol/manifest requirements, the original project hash binding authored content/targets, the restored generator target identity, SDK pack-target hash and restore-assets hash. For example, Studio 3.8 Alterations normally copies tracked Assets into generated wwwroot before AssignTargetPaths; this planner collects dependency metadata without creating those copies. It creates neither DLL placeholders nor synthetic manifests/assets. Future real artifacts must contain and verify their genuine compiled outputs, manifests and original content. Missing or failed metadata stays `source_metadata_unavailable`; closed failure stage/category fields distinguish command, metadata-contract, I/O and timeout failures without raw exceptions or private paths. Members are retained, and the plan is ineligible; no retry or infrastructure-cause claim is inferred.
+Read-only project evaluation is bounded and parallel by default (four workers); `--metadata-workers` can lower the concurrency to one through four for local runs. Recursive restore/nuspec staging runs one project at a time to avoid overlapping writes to referenced projects’ obj files. This corrects a shared-write hazard without claiming it caused a retained hosted failure. The SDK generates real nuspecs after restoring the exact historical source inputs, with `NoBuild=true` and `ContinuePackingAfterGeneratingNuspec=false`. Three explicit metadata-only projections suppress compiled/generated **file collection**: `IncludeBuildOutput=false`, `ElsaPackageManifestIncludeInPackage=false` and `IncludeContentInPack=false`. They preserve actual dependency/framework groups. The receipt retains original per-TFM output/content/symbol/manifest requirements, the original project hash binding authored content/targets, the restored generator target identity, SDK pack-target hash and restore-assets hash. For example, Studio 3.8 Alterations normally copies tracked Assets into generated wwwroot before AssignTargetPaths; this planner collects dependency metadata without creating those copies. It creates neither DLL placeholders nor synthetic manifests/assets. Future real artifacts must contain and verify their genuine compiled outputs, manifests and original content. Missing or failed metadata stays `source_metadata_unavailable`; closed failure stage/category fields distinguish command, metadata-contract, I/O and timeout failures without raw exceptions or private paths. Members are retained, and the plan is ineligible; no retry or infrastructure-cause claim is inferred.
+
+Original Core metadata evaluation uses the original recipe’s exported `VERSION` environment and exact source `RestoreConfigFile`, without forcing global `Version` or `PackageVersion`. Outer evaluation, per-TFM references, nuspec staging and restored output-policy evaluation use those same inputs. A selected project whose effective package version differs from the request fails planning before nuspec staging; project-level overrides are not masked. Studio and Extensions retain their existing explicit metadata version properties.
+
+The original Core `Elsa.SamplePackage` project does not inherit the root repository URL or symbol-package settings. Its plan and native SDK evaluation must both explicitly report an empty `RepositoryUrl`. Only that exact admitted Core project and package, with its no-symbol policy, may retain a nuspec repository containing precisely `type="git"` and the selected source `commit`, without a `url` attribute. Producer verification, consumer archive admission, the canonical seal and independent readback apply the same policy. A missing policy value, any URL attribute or other repository attribute, a different package/project, or a wrong commit fails verification. Other packages retain their existing repository requirements; source links, assembly identity and private sample PDB verification still apply.
 
 For each actual outgoing nuspec dependency/TFM, the plan retains its range and the exact version resolved by that source's NuGet restore. The SDK's NuGet.Versioning parses/compares versions and ranges; NuGet.Frameworks chooses the nearest compatible dependency group. Bare `1.0` is an inclusive minimum, `[1.0]` is exact. The planner is not a new restore solver. Selected-package dependency intent uses the cohort's requested version, checked against its actual source range. Private/build-only package references remain inventory/restore provenance and are not mislabeled as outgoing publication dependencies.
 
@@ -42,6 +55,38 @@ Studio additionally plans `@elsa-workflows/elsa-studio-wasm` and `@elsa-workflow
 
 Only `plan.json` is intended for upload. The surrounding source checkout, restored assets, generated nuspec file lists and raw command logs contain private paths and remain private. Public receipts retain exact controller/source/tree/inventory identity, complete membership/reasons, expected nupkg/snupkg/npm filenames, each history check, prerequisite observations, applicable tests, SDK/NuGet identities, paired intent, eligibility and `published:false`. Expected filenames are not produced bytes. A genuinely blocked history/prerequisite is a successful planning observation with `eligible:false`; incomplete input/source evaluation is a failed command and must not be counted as a complete plan.
 
+An incomplete command retains `plan_input_or_metadata_unavailable` and adds a closed `diagnostic` to its console JSON and failure receipt. It distinguishes helper bootstrap from selected-source planning, with specific SDK-selection, helper-build and native-semantics phases. Exception classes come from a fixed list; native failures additionally retain bounded exit status and up to 32 distinct compiler/SDK error or warning codes. The projection inspects bounded captured output, excludes private argv, and emits no raw exception, output, argument, environment value or private path. Helper build output stays in an ephemeral private log deleted with the helper directory. These diagnostics identify the observed failure boundary; they do not prove an infrastructure cause, retry the recipe, change eligibility or turn a failed command into a complete plan.
+
 The read-only workflow runs six explicit hypothetical requests for Core/Studio/Extensions × 3.8/3.9 on matching pull-request changes. It never infers registry tips or expands a release set. Manual dispatch requires main and selects one product/line/version; a wrong-branch request fails selection. Manual runs have unique concurrency groups, while newer PR runs cancel superseded runs for the same ref. Receipts include actual run/attempt identity; every execution refreshes observations. Contracts run normally and optimized alongside existing source-admission, Slack release-unit/test-closure and npm-pair guards.
 
 After independent exact-head receipt review, the remaining #8217 deliverables are real selected artifact builds, applicable tests, clean consumers, atomic historical Studio npm artifact/consumer proof, and controlled artifact-only publisher/recovery. #8220 retains credential/authority activation, competing-publisher retirement, source archival and operational cutover approvals. The first aligned 3.10 release remains a separate required deliverable. This planner supplies no approval or evidence for those actions.
+
+### Fixed Core source continuations
+
+The selected Core policy also supports the closed `reviewed-core-maintenance-continuation`
+kind. The tracked `core_source_continuation_contract.json` contains exactly two candidate
+identities: Core 3.8 `7e5e6bcf97791e4f7f7165e15579abae18ec7203` and Core 3.9
+`86fffea6da3cfe67c0279f552c2a32940ef75ae2`. These are candidate commits, not observed
+release-branch heads. Fresh branch and tag observations still describe the immutable
+original release baseline. The source binding retains both original commit/tree and
+candidate commit/tree/parents, together with the trusted continuation contract digest.
+
+The helper checks the complete original-to-candidate parent chain and the entire
+before/after tree delta, including file modes, Git blobs, byte lengths and SHA256.
+The candidate producer policy derives from the unchanged original recipe/test catalog
+plus only that delta. Original exported `VERSION`, configuration, Compile+Pack recipe,
+44/61 test inventories, provider skips, SDK, native archive/assembly/SourceLink checks,
+and all net8/net9/net10 consumer checks remain required. The changed SamplePackage
+project hash must describe candidate bytes; baseline planning assets cannot substitute.
+
+The shared planner input closure includes the continuation helper/catalog and the
+original producer contract. Complete source equality remains required through planning,
+raw asset snapshots, producer and consumer receipts, execution, sealing and independent
+readback. Pure seal validation receives fixed trusted contracts separately and does not
+run Git/network or read artifact-directed paths. Original source catalogs, historical
+plan fixtures and maintenance registers remain unchanged.
+
+This local controller implementation and its mocked tests do not admit source review
+gates, prove a fresh eligible plan, or establish native success. Independent exact-source
+and controller review/root admission remain prerequisites to real execution. No source
+merge, publication, tag, or version allocation is authorized by this route.
