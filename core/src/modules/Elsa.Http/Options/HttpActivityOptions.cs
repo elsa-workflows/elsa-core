@@ -31,6 +31,7 @@ public class HttpActivityOptions
         "application/json", 
         "application/xml", 
         "application/x-www-form-urlencoded", 
+        "multipart/form-data",
         "application/octet-stream",
         "text/plain", 
         "text/html",

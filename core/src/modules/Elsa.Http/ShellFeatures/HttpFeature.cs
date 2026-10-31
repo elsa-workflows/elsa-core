@@ -168,6 +168,7 @@ public class HttpFeature : IMiddlewareShellFeature
             .AddScoped<IHttpContentFactory, JsonContentFactory>()
             .AddScoped<IHttpContentFactory, XmlContentFactory>()
             .AddScoped<IHttpContentFactory, FormUrlEncodedHttpContentFactory>()
+            .AddScoped<IHttpContentFactory, MultipartFormDataHttpContentFactory>()
 
             // Activity property options providers.
             .AddScoped<IPropertyUIHandler, HttpContentTypeOptionsProvider>()

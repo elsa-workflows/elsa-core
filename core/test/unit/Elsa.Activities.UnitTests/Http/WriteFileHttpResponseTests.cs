@@ -438,6 +438,7 @@ public class WriteFileHttpResponseTests
         services.AddSingleton<IHttpContentFactory, TextContentFactory>();
         services.AddSingleton<IHttpContentFactory, XmlContentFactory>();
         services.AddSingleton<IHttpContentFactory, FormUrlEncodedHttpContentFactory>();
+        services.AddSingleton<IHttpContentFactory, MultipartFormDataHttpContentFactory>();
     }
 
     private static void AddHttpContentParsers(IServiceCollection services)
