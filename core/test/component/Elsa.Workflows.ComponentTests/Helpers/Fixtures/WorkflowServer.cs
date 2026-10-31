@@ -1,0 +1,189 @@
+using System.Reflection;
+using Elsa.Alterations.Extensions;
+using Elsa.Caching;
+using Elsa.Extensions;
+using Elsa.Identity.Providers;
+using Elsa.Persistence.EFCore.Extensions;
+using Elsa.Persistence.EFCore.Modules.Alterations;
+using Elsa.Persistence.EFCore.Modules.Identity;
+using Elsa.Persistence.EFCore.Modules.Management;
+using Elsa.Persistence.EFCore.Modules.Runtime;
+using Elsa.Testing.Shared.Handlers;
+using Elsa.Testing.Shared.Services;
+using Elsa.Workflows.ComponentTests.Decorators;
+using Elsa.Workflows.ComponentTests.Materializers;
+using Elsa.Workflows.ComponentTests.Scenarios.DistributedLockResilience.Mocks;
+using Elsa.Workflows.ComponentTests.Scenarios.HostMethodActivities;
+using Elsa.Workflows.ComponentTests.Scenarios.OutputConverters;
+using Elsa.Workflows.ComponentTests.WorkflowProviders;
+using Elsa.Workflows.Management;
+using Elsa.Workflows.Runtime.Distributed.Extensions;
+using Elsa.Tenants;
+using Elsa.Tenants.Extensions;
+using Elsa.Common.Features;
+using Elsa.Common.RecurringTasks;
+using Elsa.Workflows.ComponentTests.Services;
+using FluentStorage;
+using JetBrains.Annotations;
+using Medallion.Threading;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
+using Refit;
+using static Elsa.Api.Client.RefitSettingsHelper;
+
+namespace Elsa.Workflows.ComponentTests.Fixtures;
+
+[UsedImplicitly]
+public class WorkflowServer(Infrastructure infrastructure, string url) : WebApplicationFactory<Program>
+{
+    public TClient CreateApiClient<TClient>()
+    {
+        var client = CreateClient();
+        client.BaseAddress = new(client.BaseAddress!, "/elsa/api");
+        client.Timeout = TimeSpan.FromMinutes(1);
+        return RestService.For<TClient>(client, CreateRefitSettings(Services));
+    }
+
+    public HttpClient CreateHttpClient()
+    {
+        var client = CreateClient();
+        client.BaseAddress = new(client.BaseAddress!, "/elsa/api/");
+        client.Timeout = TimeSpan.FromMinutes(1);
+        return client;
+    }
+
+    public HttpClient CreateHttpWorkflowClient()
+    {
+        var client = CreateClient();
+        client.BaseAddress = new(client.BaseAddress!, "/workflows/");
+        client.Timeout = TimeSpan.FromMinutes(1);
+        return client;
+    }
+
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        var dbConnectionString = infrastructure.DbContainer.GetConnectionString();
+        var rabbitMqConnectionString = infrastructure.RabbitMqContainer.GetConnectionString();
+
+        builder.UseUrls(url);
+
+        if (Program.ConfigureForTest == null)
+        {
+            Program.ConfigureForTest = elsa =>
+            {
+                elsa.AddWorkflowsFrom<WorkflowServer>();
+                elsa.AddActivitiesFrom<WorkflowServer>();
+                elsa.AddActivityHost<TestHostMethod>();
+                elsa.UseDefaultAuthentication(defaultAuthentication => defaultAuthentication.UseDevelopmentAdminApiKey());
+                elsa.UseFluentStorageProvider(sp =>
+                {
+                    var assemblyLocation = Assembly.GetExecutingAssembly().Location;
+                    var assemblyDirectory = Path.GetDirectoryName(assemblyLocation)!;
+                    var workflowsDirectorySegments = new[]
+                    {
+                        assemblyDirectory, "Scenarios"
+                    };
+                    var workflowsDirectory = Path.Join(workflowsDirectorySegments);
+                    return StorageFactory.Blobs.DirectoryFiles(workflowsDirectory);
+                });
+                elsa.UseIdentity(identity => identity.UseEntityFrameworkCore(ef =>
+                {
+                    //ef.UsePostgreSql(dbConnectionString);
+                    ef.UseSqlServer(dbConnectionString);
+                }));
+                elsa.UseWorkflowManagement(management =>
+                {
+                    management.UseEntityFrameworkCore(ef =>
+                    {
+                        //ef.UsePostgreSql(dbConnectionString);
+                        ef.UseSqlServer(dbConnectionString);
+                    });
+                    management.UseCache();
+                });
+                elsa.UseWorkflowRuntime(runtime =>
+                {
+                    runtime.UseEntityFrameworkCore(ef =>
+                    {
+                        //ef.UsePostgreSql(dbConnectionString);
+                        ef.UseSqlServer(dbConnectionString);
+                    });
+                    runtime.UseCache();
+                    runtime.UseDistributedRuntime();
+                    runtime.DistributedLockingOptions = options => options.AllowLocalLockProviderInDistributedRuntime = true;
+                    // Use test-specific bookmark queue worker without throttling to prevent timeouts
+                    runtime.BookmarkQueueWorker = sp => sp.GetRequiredService<TestBookmarkQueueWorker>();
+                });
+                elsa.UseJavaScript(options =>
+                {
+                    options.AllowClrAccess = true;
+                    options.ConfigureEngine(engine =>
+                    {
+                        engine.SetValue("getStaticValue", () => StaticValueHolder.Value);
+                    });
+                });
+                elsa.UseAlterations(alterations =>
+                {
+                    alterations.UseEntityFrameworkCore(ef =>
+                    {
+                        //ef.UsePostgreSql(dbConnectionString);
+                        ef.UseSqlServer(dbConnectionString);
+                    });
+                });
+                elsa.UseHttp(http =>
+                {
+                    http.UseCache();
+                });
+
+                // Ensure a consistent tenant context for tests.
+                elsa.Configure<MultitenancyFeature>(feature => feature.UseTenantsProvider(_ => new TestTenantsProvider(string.Empty, "Tenant1", "Tenant2", "Tenant3")));
+                elsa.UseTenants(tenants =>
+                {
+                    tenants.ConfigureMultitenancy(options =>
+                        options.TenantResolverPipelineBuilder = new TenantResolverPipelineBuilder()
+                            .Append<ComponentTestTenantResolver>());
+                });
+            };
+        }
+
+        builder.ConfigureTestServices(services =>
+        {
+            services.Configure<RecurringTaskOptions>(options =>
+                options.Schedule.ConfigureTask<Elsa.Workflows.Runtime.Tasks.RefreshWorkflowDefinitionActivityRegistryTask>(TimeSpan.FromSeconds(2)));
+
+            // Decorate IDistributedLockProvider with SelectiveMockLockProvider
+            // This allows tests to selectively mock specific locks without affecting background operations
+            services.Decorate<IDistributedLockProvider, SelectiveMockLockProvider>();
+
+            // Register SelectiveMockLockProvider as itself so tests can access it for configuration
+            services.AddSingleton(sp =>
+            {
+                var provider = sp.GetRequiredService<IDistributedLockProvider>();
+                if (provider is not SelectiveMockLockProvider selectiveProvider)
+                    throw new InvalidOperationException($"Expected IDistributedLockProvider to be decorated with SelectiveMockLockProvider, but got {provider.GetType().Name}");
+                return selectiveProvider;
+            });
+
+            services
+                .AddOutputConverter<TestOutputConverter>(TestOutputConverter.Descriptor)
+                .AddSingleton<SignalManager>()
+                .AddScoped<AsyncWorkflowRunner>()
+                .AddSingleton<WorkflowEvents>()
+                .AddScoped<WorkflowDefinitionEvents>()
+                .AddSingleton<TriggerChangeTokenSignalEvents>()
+                .AddScoped<IWorkflowMaterializer, TestWorkflowMaterializer>()
+                .AddNotificationHandlersFrom<WorkflowServer>()
+                .AddWorkflowsProvider<TestWorkflowProvider>()
+                .AddNotificationHandlersFrom<WorkflowEventHandlers>()
+                .Decorate<IChangeTokenSignaler, EventPublishingChangeTokenSignaler>()
+                .AddScoped<TestBookmarkQueueWorker>()
+                ;
+        });
+    }
+
+    protected override void ConfigureClient(HttpClient client)
+    {
+        client.DefaultRequestHeaders.Authorization = new("ApiKey", AdminApiKeyProvider.DevelopmentApiKey);
+    }
+}

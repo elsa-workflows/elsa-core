@@ -1,0 +1,50 @@
+using Elsa.Authorization;
+using Elsa.Diagnostics.OpenTelemetry.Contracts;
+using Elsa.Diagnostics.OpenTelemetry.Models;
+using Elsa.Diagnostics.OpenTelemetry.Permissions;
+using FastEndpoints.Security;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
+
+namespace Elsa.Diagnostics.OpenTelemetry.RealTime;
+
+[Authorize]
+public class OpenTelemetryHub(OpenTelemetrySubscriptionManager subscriptionManager) : Hub<IOpenTelemetryClient>
+{
+    private static readonly Permission ReadOpenTelemetry = new(OpenTelemetryResourcePermissions.OpenTelemetry, CoreVerbs.View);
+
+    public Task SubscribeAsync(OpenTelemetryTraceFilter? filter)
+    {
+        EnsureCanReadOpenTelemetry();
+        return subscriptionManager.SubscribeAsync(Context.ConnectionId, ValidateFilter(filter), Context.ConnectionAborted);
+    }
+
+    public Task UnsubscribeAsync()
+    {
+        return subscriptionManager.UnsubscribeAsync(Context.ConnectionId);
+    }
+
+    public override async Task OnDisconnectedAsync(Exception? exception)
+    {
+        await UnsubscribeAsync().ConfigureAwait(false);
+        await base.OnDisconnectedAsync(exception).ConfigureAwait(false);
+    }
+
+    private static OpenTelemetryTraceFilter ValidateFilter(OpenTelemetryTraceFilter? filter)
+    {
+        filter ??= new();
+
+        if (filter.From is { } from && filter.To is { } to && from > to)
+            throw new HubException("The OpenTelemetry filter 'from' timestamp must be earlier than or equal to 'to'.");
+
+        return filter;
+    }
+
+    private void EnsureCanReadOpenTelemetry()
+    {
+        var user = Context.User;
+
+        if (user?.Identity?.IsAuthenticated != true || !PermissionEvaluator.Shared.HasPermission(user, ReadOpenTelemetry))
+            throw new HubException("Access denied.");
+    }
+}

@@ -1,0 +1,290 @@
+"""Regression tests for the pinned Secrets API and Studio source contract."""
+import importlib.util
+import json
+from pathlib import Path
+import re
+import shutil
+import subprocess
+import tempfile
+import unittest
+
+
+SCRIPT = Path(__file__).with_name('verify_secrets_api_studio_contract.py')
+FIXTURE = SCRIPT.with_name('secrets-api-studio-contract.json')
+SPEC = importlib.util.spec_from_file_location('secrets_api_studio_contract', SCRIPT)
+CONTRACT = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(CONTRACT)
+
+
+class SecretsApiStudioContractTests(unittest.TestCase):
+    def setUp(self):
+        self.fixture = json.loads(FIXTURE.read_text())
+
+    def test_pins_are_full_commits_and_source_paths_are_pinned(self):
+        self.assertEqual(
+            {'core', 'extensions', 'extensionsSchema', 'studio'},
+            set(self.fixture['sourcePins']))
+        for commit in self.fixture['sourcePins'].values():
+            self.assertRegex(commit, r'^[0-9a-f]{40}$')
+        self.assertIn('coreApi', self.fixture['sourcePaths'])
+        self.assertIn('legacyApi', self.fixture['sourcePaths'])
+        self.assertIn('studioApi', self.fixture['sourcePaths'])
+        self.assertEqual({'studioApi', 'studioModels'}, set(self.fixture['studioTestSourceSnapshots']))
+
+    def test_workflow_checkouts_match_contract_source_pins(self):
+        workflow = (SCRIPT.parents[2] / '.github/workflows/secrets-api-studio-contract.yml').read_text()
+        for repository, pin in (
+            ('elsa-core', self.fixture['sourcePins']['core']),
+            ('elsa-extensions', self.fixture['sourcePins']['extensions']),
+            ('elsa-studio', self.fixture['sourcePins']['studio']),
+        ):
+            with self.subTest(repository=repository):
+                match = re.search(
+                    rf'repository: elsa-workflows/{repository}\s+ref: ([0-9a-f]{{40}})', workflow)
+                self.assertIsNotNone(match)
+                self.assertEqual(pin, match.group(1))
+
+    def test_studio_route_set_is_exactly_core_route_set(self):
+        core_keys = sorted((row['verb'], CONTRACT.normalize_route(row['path'])) for row in self.fixture['coreRoutes'])
+        studio_keys = sorted((row['verb'], CONTRACT.normalize_route(row['path'])) for row in self.fixture['studioRoutes'])
+
+        self.assertEqual(core_keys, studio_keys)
+        self.assertEqual(10, len(studio_keys))
+
+    def test_route_template_normalization_detects_id_and_name_collision(self):
+        core = [
+            {'verb': 'GET', 'path': '/secrets/{name}'},
+            {'verb': 'POST', 'path': '/secrets/{name}'}
+        ]
+        legacy = [
+            {'verb': 'GET', 'path': '/secrets/{id}'},
+            {'verb': 'POST', 'path': '/secrets/{id}'}
+        ]
+
+        self.assertEqual(
+            [['GET', '/secrets/{}'], ['POST', '/secrets/{}']],
+            CONTRACT.route_conflicts(core, legacy))
+
+    def test_named_route_argument_is_included_in_route_collision_validation(self):
+        routes = self.parse_fixture_endpoint('Get(route: "/secrets/shadow");')
+
+        self.assertEqual(1, len(routes))
+        self.assertEqual("/secrets/shadow", routes[0]['path'])
+
+    def test_unrecognized_endpoint_route_form_fails_closed(self):
+        with self.assertRaisesRegex(ValueError, 'no recognized route declaration'):
+            self.parse_fixture_endpoint('Get(BuildRoute());')
+
+    @staticmethod
+    def parse_fixture_endpoint(route_declaration):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory)
+            endpoint = repo / 'src' / 'Secrets' / 'Endpoint.cs'
+            endpoint.parent.mkdir(parents=True)
+            endpoint.write_text(
+                'public class Endpoint : ElsaEndpointWithoutRequest<Response> { '
+                f'public void Configure() {{ {route_declaration} '
+                'ConfigurePermissions("secrets:read"); } }'
+            )
+            subprocess.run(['git', '-C', directory, 'init', '--quiet'], check=True)
+            subprocess.run(['git', '-C', directory, 'add', '.'], check=True)
+            subprocess.run([
+                'git', '-C', directory,
+                '-c', 'user.name=Contract Test',
+                '-c', 'user.email=contract-test@example.invalid',
+                '-c', 'commit.gpgsign=false',
+                'commit', '--quiet', '-m', 'fixture'
+            ], check=True)
+            return CONTRACT.parse_api_routes(repo, 'HEAD', 'src', 'legacy')
+
+    def test_import_candidate_tree_carries_the_pinned_route_permission_and_client_contract(self):
+        conflicts = CONTRACT.verify_import_candidate(SCRIPT.parents[2], self.fixture)
+
+        self.assertEqual(self.fixture['routeConflicts'], conflicts)
+
+    def test_workflow_runs_when_an_import_candidate_source_changes(self):
+        workflow = (SCRIPT.parents[2] / '.github/workflows/secrets-api-studio-contract.yml').read_text()
+        for path in self.fixture['importCandidateSourcePaths'].values():
+            trigger = path if path.endswith('.cs') else f'{path}/**'
+            with self.subTest(path=path):
+                self.assertIn(f"- '{trigger}'", workflow)
+
+    def test_legacy_only_packages_are_exactly_the_imported_legacy_package_graph(self):
+        # The default-host test asserts that none of these is loaded or deployed with the Workbench, so the list must
+        # not lag behind the imported legacy packages.
+        legacy_root = SCRIPT.parents[2] / Path(self.fixture['importCandidateSourcePaths']['legacyApi']).parents[2]
+
+        self.assertEqual(
+            sorted(project.stem for project in legacy_root.glob('*/*.csproj')),
+            self.fixture['legacyOnlyPackages'])
+
+    def test_legacy_only_packages_are_not_packed_by_the_consolidated_publisher(self):
+        # The legacy graph is deprecated at 3.10.0 and keeps its 3.8/3.9 releases; the root pack must not give it a
+        # consolidated version.
+        legacy_root = SCRIPT.parents[2] / Path(self.fixture['importCandidateSourcePaths']['legacyApi']).parents[2]
+
+        for project in sorted(legacy_root.glob('*/*.csproj')):
+            with self.subTest(project=project.stem):
+                self.assertRegex(project.read_text(encoding='utf-8-sig'), r'<IsPackable>\s*false\s*</IsPackable>')
+
+    def test_import_candidate_check_fails_closed_on_route_permission_dto_or_snapshot_drift(self):
+        paths = self.fixture['importCandidateSourcePaths']
+        core_api = paths['coreApi']
+        mutations = (
+            ('changed permission', 'Core endpoint routes',
+             lambda root: self.rewrite(root / core_api / 'Get/Endpoint.cs', 'CoreVerbs.View', 'CoreVerbs.Write')),
+            ('duplicate route', 'Core endpoint routes',
+             lambda root: shutil.copytree(root / core_api / 'Get', root / core_api / 'GetShadow')),
+            ('missing route', 'Core endpoint routes', lambda root: (root / core_api / 'Get/Endpoint.cs').unlink()),
+            ('missing legacy package', 'Legacy endpoint routes', lambda root: shutil.rmtree(root / paths['legacyApi'])),
+            ('Studio DTO field', 'SecretModel Studio-only fields',
+             lambda root: self.rewrite(root / paths['studioModels'], 'public string Id { get; set; }',
+                                       'public string Id { get; set; }\n    public string? Owner { get; set; }')),
+            ('snapshot bytes', 'differs from imported',
+             lambda root: self.rewrite(root / paths['studioApi'], 'namespace', '\nnamespace')),
+            ('Core list request field Studio cannot send', 'Studio optional list query omissions',
+             lambda root: self.rewrite(root / paths['coreModels'], 'public string? Search { get; set; }',
+                                       'public string? Search { get; set; }\n    public string? OwnerId { get; set; }')),
+        )
+        for drift, expected_error, mutate in mutations:
+            with self.subTest(drift=drift), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                self.copy_import_candidate(root)
+                CONTRACT.verify_import_candidate(root, self.fixture)
+                mutate(root)
+                with self.assertRaisesRegex(ValueError, expected_error):
+                    CONTRACT.verify_import_candidate(root, self.fixture)
+
+    def copy_import_candidate(self, root):
+        source_root = SCRIPT.parents[2]
+        for path in [*self.fixture['importCandidateSourcePaths'].values(), *self.fixture['studioTestSourceSnapshots'].values()]:
+            source, target = source_root / path, root / path
+            target.parent.mkdir(parents=True, exist_ok=True)
+            if source.is_dir():
+                shutil.copytree(source, target)
+            else:
+                shutil.copy2(source, target)
+
+    @staticmethod
+    def rewrite(path, old, new):
+        source = path.read_text(encoding='utf-8')
+        if old not in source:
+            raise AssertionError(f'{old!r} not found in {path}')
+        path.write_text(source.replace(old, new, 1), encoding='utf-8')
+
+    def test_fixture_records_only_the_five_shared_templates(self):
+        self.assertEqual([
+            ['DELETE', '/secrets/{}'],
+            ['GET', '/secrets'],
+            ['GET', '/secrets/{}'],
+            ['POST', '/secrets'],
+            ['POST', '/secrets/{}']
+        ], self.fixture['routeConflicts'])
+
+    def test_nested_response_generic_is_parsed_without_losing_type_name(self):
+        source = '''
+        public class Endpoint(ISecretManager manager) :
+            ElsaEndpoint<ListRequest, PagedListResponse<SecretModel>>
+        {
+        }
+        '''
+
+        self.assertEqual(
+            ('ListRequest', 'PagedListResponse<SecretModel>'),
+            CONTRACT.endpoint_dto(source))
+
+    def test_legacy_plaintext_route_is_not_in_core_route_set(self):
+        plaintext_route = tuple(self.fixture['legacyPlaintextRoute'])
+        legacy = {(row['verb'], row['path']) for row in self.fixture['legacyRoutes']}
+        core = {(row['verb'], row['path']) for row in self.fixture['coreRoutes']}
+
+        self.assertIn(plaintext_route, legacy)
+        self.assertNotIn(plaintext_route, core)
+
+    def test_legacy_id_policy_fails_closed_if_adapter_or_plaintext_route_is_enabled(self):
+        sources = (
+            'public class Secret {\npublic string? ManagedOwnerId { get; set; }\n'
+            'public string? ManagedGenerationId { get; set; }\n}',
+            'public class SecretVersion {\npublic int Version { get; set; }\n}',
+            'public class Secret { public string SecretId { get; set; }\n Id = Id;\n}',
+            'var id = Route<string>("id")!; await manager.GetAsync(id, ct);',
+            'await manager.GetAsync(req.Id, ct);',
+        )
+        disposition = CONTRACT.verify_legacy_identity_disposition(self.fixture, *sources)
+        self.assertEqual('unsupported', disposition['decision'])
+
+        for field, unsafe_value in (
+            ('decision', 'supported'),
+            ('legacyIdAdapterEnabled', True),
+            ('legacyOwnerMappedToManagedOwner', True),
+            ('legacyPlaintextInputEnabled', True),
+            ('legacyConsumerUsage', 'none'),
+        ):
+            with self.subTest(field=field):
+                unsafe_fixture = json.loads(json.dumps(self.fixture))
+                unsafe_fixture['legacyIdentityDisposition'][field] = unsafe_value
+                with self.assertRaisesRegex(ValueError, 'Legacy identity disposition'):
+                    CONTRACT.verify_legacy_identity_disposition(unsafe_fixture, *sources)
+
+        with self.assertRaisesRegex(ValueError, 'Core SecretVersion gained an ID'):
+            CONTRACT.verify_legacy_identity_disposition(
+                self.fixture, sources[0],
+                'public class SecretVersion {\npublic string Id { get; set; }\n}', *sources[2:])
+        with self.assertRaisesRegex(ValueError, 'Core SecretVersion gained an ID'):
+            CONTRACT.verify_legacy_identity_disposition(
+                self.fixture, sources[0],
+                'public class SecretVersion : Entity {\npublic int Version { get; set; }\n}', *sources[2:])
+
+    def test_safe_studio_dto_omissions_are_explicit(self):
+        differences = self.fixture['dtoProjectionDifferences']
+
+        self.assertEqual(['Tags'], differences['SecretModel'])
+        self.assertEqual(['Tags'], differences['CreateSecretRequest'])
+        self.assertEqual(['StoreNames', 'TypeNames'], differences['ListSecretsRequest'])
+        for name, fields in differences.items():
+            if name not in {'SecretModel', 'CreateSecretRequest', 'ListSecretsRequest'}:
+                self.assertEqual([], fields)
+
+    def test_sample_compiler_collision_is_kept_separate_from_runtime_host_proof(self):
+        observation = self.fixture['consolidatedSampleBuildObservation']
+
+        self.assertEqual(8287, observation['followUpIssue'])
+        self.assertEqual(['CS0121', 'CS1929', 'CS1929', 'CS1929'],
+                         [item['code'] for item in observation['diagnostics']])
+        self.assertEqual([622, 627, 633, 639],
+                         [item['line'] for item in observation['diagnostics']])
+        self.assertFalse(observation['runtimeSecretsSettingAtBuild'])
+        self.assertTrue(observation['legacyExpiryTask']['outsideUseSecretsGuard'])
+        self.assertFalse(observation['postCorrectionBuildClaimedHere'])
+        self.assertFalse(observation['defaultHostRouteCompositionVerified'])
+
+    def test_http_fixture_uses_the_reviewed_workbench_secrets_feature_shape(self):
+        patch_path = SCRIPT.parent / 'consolidated-build' / 'workbench-canonical-secrets.patch'
+        patch = patch_path.read_text()
+        added_source = '\n'.join(
+            line[1:] for line in patch.splitlines()
+            if line.startswith('+') and not line.startswith('+++'))
+        for marker in (
+            'var useSecrets = configuration.GetValue("Features:Secrets:Enabled", false);',
+            '.UseSecrets(secrets =>',
+            'secrets.ConfigureOptions = options => configuration.GetSection("Secrets").Bind(options);',
+            'secrets.UseEntityFrameworkCore(ef =>',
+            '.UseSecretsJavaScript();'
+        ):
+            self.assertIn(marker, added_source)
+        self.assertIn('-const bool useSecrets = false;', patch)
+        self.assertIn('ef.UseSqlite(sp => sp.GetSqliteConnectionString());', patch)
+        self.assertIn('-    options.Schedule.ConfigureTask<UpdateExpiredSecretsRecurringTask>', patch)
+
+        fixture_source = (SCRIPT.parents[2] / 'core/test/integration/Elsa.Secrets.Api.IntegrationTests/SecretsApiStudioHttpTests.cs').read_text()
+        for marker in (
+            '.UseSecrets(secrets =>',
+            'secrets.UseEntityFrameworkCore(ef =>',
+            'ef.UseSqlite($"Data Source={_databasePath};Default Timeout=30");',
+            '.UseSecretsJavaScript()'
+        ):
+            self.assertIn(marker, fixture_source)
+
+
+if __name__ == '__main__':
+    unittest.main()

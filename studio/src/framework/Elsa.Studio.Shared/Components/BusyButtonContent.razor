@@ -1,0 +1,21 @@
+@* Button content that swaps to a progress indicator and a busy label while an operation is in flight. *@
+@if (Busy)
+{
+    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" aria-hidden="true" />
+    <span class="ms-2">@BusyText</span>
+}
+else
+{
+    @ChildContent
+}
+
+@code {
+    /// <summary>Whether the operation the button starts is in flight.</summary>
+    [Parameter] public bool Busy { get; set; }
+
+    /// <summary>The label shown next to the progress indicator while <see cref="Busy"/> is set.</summary>
+    [Parameter] public string? BusyText { get; set; }
+
+    /// <summary>The regular button content.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

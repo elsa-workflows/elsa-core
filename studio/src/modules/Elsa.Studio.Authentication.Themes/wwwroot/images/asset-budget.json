@@ -1,0 +1,28 @@
+{
+  "format": "avif",
+  "encoder": "libsvtav1",
+  "constantRateFactor": 24,
+  "headroomPercent": 20,
+  "assets": {
+    "execution-timeline.avif": {
+      "measuredBytes": 17946,
+      "maximumBytes": 21536
+    },
+    "human-automation.avif": {
+      "measuredBytes": 90847,
+      "maximumBytes": 109017
+    },
+    "workflow-aurora.avif": {
+      "measuredBytes": 59048,
+      "maximumBytes": 70858
+    },
+    "workflow-constellation.avif": {
+      "measuredBytes": 20734,
+      "maximumBytes": 24881
+    }
+  },
+  "total": {
+    "measuredBytes": 188575,
+    "maximumBytes": 226292
+  }
+}

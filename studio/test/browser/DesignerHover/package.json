@@ -1,0 +1,13 @@
+{
+  "name": "elsa-designer-hover-browser",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test source-binding.test.mjs",
+    "proof": "node run.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.61.1",
+    "esbuild": "0.28.2"
+  }
+}

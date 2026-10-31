@@ -1,0 +1,46 @@
+@inject ILoginThemeRegistry ThemeRegistry
+@inject LoginThemeContextFactory ContextFactory
+
+<link href="_content/Elsa.Studio.Authentication.UI/css/login.css" rel="stylesheet" />
+
+@if (_context is not null && _provider is not null)
+{
+    <LoginThemeErrorBoundary ThemeId="@ThemeRegistry.Selected.Id">
+        <ChildContent>
+            @_provider.Render(_context)
+        </ChildContent>
+        <ErrorContent>
+            <LoginThemeRecovery Context="_context" />
+        </ErrorContent>
+    </LoginThemeErrorBoundary>
+}
+
+@code {
+    [Parameter]
+    public string? ReturnPath { get; set; }
+
+    private LoginThemeContext? _context;
+    private ILoginThemeProvider? _provider;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _provider = ThemeRegistry.ResolveSelectedProvider();
+
+        RenderFragment panel = builder =>
+        {
+            builder.OpenComponent<LoginPanel>(0);
+            builder.AddComponentParameter(1, nameof(LoginPanel.ReturnPath), ReturnPath);
+            builder.AddComponentParameter(2, nameof(LoginPanel.ApplicationName), ContextFactory.ApplicationName);
+            builder.CloseComponent();
+        };
+
+        RenderFragment utilities = builder =>
+        {
+            builder.OpenComponent<LoginUtilityLinks>(0);
+            builder.AddComponentParameter(1, nameof(LoginUtilityLinks.Branding), ContextFactory.Branding);
+            builder.CloseComponent();
+        };
+
+        _context = await ContextFactory.CreateAsync(panel, utilities);
+    }
+}

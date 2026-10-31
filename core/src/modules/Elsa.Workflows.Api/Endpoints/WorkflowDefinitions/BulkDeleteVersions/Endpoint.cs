@@ -1,0 +1,34 @@
+using Elsa.Authorization;
+using Elsa.Abstractions;
+using Elsa.Workflows.Api.Constants;
+using Elsa.Workflows.Api.Requirements;
+using Elsa.Workflows.Management;
+using JetBrains.Annotations;
+using Microsoft.AspNetCore.Authorization;
+
+namespace Elsa.Workflows.Api.Endpoints.WorkflowDefinitions.BulkDeleteVersions;
+
+[PublicAPI]
+internal class BulkDeleteVersions(IWorkflowDefinitionManager workflowDefinitionManager, IAuthorizationService authorizationService)
+    : ElsaEndpoint<Request, Response>
+{
+    public override void Configure()
+    {
+        Post("/bulk-actions/delete/workflow-definitions/by-id");
+        RequirePermission(Elsa.Workflows.Api.Permissions.WorkflowPermissions.Definitions, CoreVerbs.Delete);
+    }
+
+    public override async Task<Response> ExecuteAsync(Request request, CancellationToken cancellationToken)
+    {
+        var authorizationResult = await authorizationService.AuthorizeAsync(User, new NotReadOnlyResource(), AuthorizationPolicies.NotReadOnlyPolicy);
+
+        if (!authorizationResult.Succeeded)
+        {
+            await Send.ForbiddenAsync(cancellationToken);
+            return null!;
+        }
+
+        var count = await workflowDefinitionManager.BulkDeleteByIdsAsync(request.Ids, cancellationToken);
+        return new Response(count);
+    }
+}

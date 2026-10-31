@@ -1,0 +1,8 @@
+@using Elsa.Studio.Components.AppBar
+@using Elsa.Studio.Login.Contracts
+@inherits StudioComponentBase
+@inject IEndSessionService EndSessionService
+
+<UserMenu>
+    <MudMenuItem OnClick="@EndSessionService.LogoutAsync">Logout</MudMenuItem>
+</UserMenu>

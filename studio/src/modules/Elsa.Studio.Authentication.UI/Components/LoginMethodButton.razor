@@ -1,0 +1,38 @@
+<MudButton ButtonType="ButtonType.Button"
+           Class="elsa-login-method-button"
+           Color="Color.Inherit"
+           Disabled="_busy.IsBusy"
+           EndIcon="@(_busy.IsBusy ? null : Icons.Material.Outlined.ArrowForward)"
+           FullWidth="true"
+           Size="Size.Large"
+           StartIcon="@Icon"
+           Variant="Variant.Text"
+           aria-label="@Localizer["Sign in with {0}", Method.DisplayName]"
+           aria-busy="@(_busy.IsBusy ? "true" : "false")"
+           OnClick="HandleClickAsync">
+    <span class="elsa-login-method-button__label">@(_busy.IsBusy ? Localizer["Signing in with {0}…", Method.DisplayName].Value : Method.DisplayName)</span>
+    @if (_busy.IsBusy)
+    {
+        <MudProgressCircular Size="Size.Small" Indeterminate="true" aria-hidden="true" />
+    }
+</MudButton>
+
+@code {
+    [Parameter, EditorRequired]
+    public LoginMethodDescriptor Method { get; set; } = default!;
+
+    [Parameter]
+    public string Icon { get; set; } = Icons.Material.Outlined.AccountCircle;
+
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+
+    private readonly BusyState _busy = new();
+
+    // The parent owns the sign-in and reports its failures, so the button cannot tell a redirect from a failure.
+    private Task HandleClickAsync() => _busy.RunAsync(async () =>
+    {
+        await OnClick.InvokeAsync();
+        return false;
+    });
+}

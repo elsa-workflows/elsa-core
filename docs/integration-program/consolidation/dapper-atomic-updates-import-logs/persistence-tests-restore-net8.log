@@ -1,0 +1,20 @@
+  Determining projects to restore...
+/private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj : warning NU1903: Package 'SQLitePCLRaw.lib.e_sqlite3' 2.1.10 has a known high severity vulnerability, https://github.com/advisories/GHSA-2m69-gcr7-jv3q
+/private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Elsa.Persistence.Dapper.csproj : warning NU1902: Package 'Microsoft.Build.Tasks.Git' 8.0.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-23fw-v26w-5fgq [/private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj]
+/private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj : error NU1202: Package Microsoft.AspNetCore.Mvc.Testing 9.0.17 is not compatible with net8.0 (.NETCoreApp,Version=v8.0). Package Microsoft.AspNetCore.Mvc.Testing 9.0.17 supports: net9.0 (.NETCoreApp,Version=v9.0)
+  Restored /private/tmp/elsa-8293-imported-dapper/src/modules/Elsa.Workflows.Core/Elsa.Workflows.Core.csproj (in 447 ms).
+  Restored /private/tmp/elsa-8293-imported-dapper/src/modules/Elsa.Expressions/Elsa.Expressions.csproj (in 447 ms).
+  Restored /private/tmp/elsa-8293-imported-dapper/src/common/Elsa.Features/Elsa.Features.csproj (in 442 ms).
+  Restored /private/tmp/elsa-8293-imported-dapper/src/modules/Elsa.Caching/Elsa.Caching.csproj (in 447 ms).
+  Restored /private/tmp/elsa-8293-imported-dapper/src/modules/Elsa.Workflows.Management/Elsa.Workflows.Management.csproj (in 474 ms).
+/private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper.Migrations/Elsa.Persistence.Dapper.Migrations.csproj : warning NU1902: Package 'Microsoft.Build.Tasks.Git' 8.0.0 has a known moderate severity vulnerability, https://github.com/advisories/GHSA-23fw-v26w-5fgq [/private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj]
+  Restored /private/tmp/elsa-8293-imported-dapper/src/modules/Elsa.Workflows.Runtime/Elsa.Workflows.Runtime.csproj (in 471 ms).
+  Restored /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper/Elsa.Persistence.Dapper.csproj (in 489 ms).
+  Failed to restore /private/tmp/elsa-8293-imported-dapper/test/extensions/modules/persistence/Elsa.Persistence.Dapper.UnitTests/Elsa.Persistence.Dapper.UnitTests.csproj (in 496 ms).
+  Restored /private/tmp/elsa-8293-imported-dapper/src/common/Elsa.Mediator/Elsa.Mediator.csproj (in 38 ms).
+  Restored /private/tmp/elsa-8293-imported-dapper/src/extensions/persistence/Elsa.Persistence.Dapper.Migrations/Elsa.Persistence.Dapper.Migrations.csproj (in 35 ms).
+  Restored /private/tmp/elsa-8293-imported-dapper/src/modules/Elsa.Identity/Elsa.Identity.csproj (in 52 ms).
+  Restored /private/tmp/elsa-8293-imported-dapper/src/modules/Elsa.Common/Elsa.Common.csproj (in 23 ms).
+  Restored /private/tmp/elsa-8293-imported-dapper/src/modules/Elsa.KeyValues/Elsa.KeyValues.csproj (in 11 ms).
+  Restored /private/tmp/elsa-8293-imported-dapper/src/modules/Elsa.Tenants/Elsa.Tenants.csproj (in 54 ms).
+  Restored /private/tmp/elsa-8293-imported-dapper/src/common/Elsa.Api.Common/Elsa.Api.Common.csproj (in 34 ms).

@@ -1,0 +1,147 @@
+.state-machine-condition-editor {
+    width: min(100%, 860px);
+    min-width: min(100%, 680px);
+}
+
+.state-machine-condition-editor__story {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    padding: .75rem 1rem;
+    margin-bottom: 1rem;
+    border-radius: .35rem;
+    background: var(--mud-palette-background-grey);
+    color: var(--mud-palette-text-secondary);
+}
+
+.state-machine-condition-editor__story strong {
+    color: var(--mud-palette-primary);
+}
+
+.state-machine-condition-editor__story-arrow {
+    color: var(--mud-palette-text-disabled);
+}
+
+.state-machine-condition-editor__modes {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: .6rem;
+    margin-bottom: 1rem;
+}
+
+.state-machine-condition-editor__mode {
+    display: flex;
+    min-height: 4.4rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .25rem;
+    padding: .75rem;
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: .35rem;
+    background: var(--mud-palette-surface);
+    color: var(--mud-palette-text-primary);
+    cursor: pointer;
+    text-align: left;
+}
+
+.state-machine-condition-editor__mode span {
+    color: var(--mud-palette-text-secondary);
+    font-size: .8rem;
+}
+
+.state-machine-condition-editor__mode:hover:not(:disabled),
+.state-machine-condition-editor__mode:focus-visible {
+    border-color: var(--mud-palette-primary);
+    outline: 2px solid var(--mud-palette-primary);
+    outline-offset: 1px;
+}
+
+.state-machine-condition-editor__mode--selected {
+    border-color: var(--mud-palette-primary);
+    box-shadow: inset 3px 0 0 var(--mud-palette-primary);
+}
+
+.state-machine-condition-editor__mode:disabled {
+    cursor: not-allowed;
+    opacity: .58;
+}
+
+.state-machine-condition-editor__provider,
+.state-machine-condition-editor__custom {
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+}
+
+.state-machine-condition-editor__provider select,
+.state-machine-condition-editor__provider textarea,
+.state-machine-condition-editor__custom textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: .25rem;
+    padding: .6rem .7rem;
+    background: var(--mud-palette-surface);
+    color: var(--mud-palette-text-primary);
+    font: inherit;
+}
+
+.state-machine-condition-editor__provider textarea,
+.state-machine-condition-editor__custom textarea {
+    min-height: 14rem;
+    font-family: "Roboto Mono", monospace;
+    resize: vertical;
+}
+
+.state-machine-condition-editor__preserve-option {
+    display: flex;
+    align-items: flex-start;
+    gap: .65rem;
+    margin-top: .75rem;
+    padding: .75rem;
+    border: 1px solid var(--mud-palette-lines-default);
+    border-radius: .35rem;
+    cursor: pointer;
+}
+
+.state-machine-condition-editor__preserve-option > span {
+    display: grid;
+    gap: .2rem;
+}
+
+.state-machine-condition-editor__preserve-option small {
+    color: var(--mud-palette-text-secondary);
+}
+
+.state-machine-condition-editor__error {
+    margin: 0;
+    color: var(--mud-palette-error);
+}
+
+.state-machine-condition-editor__hint {
+    margin: 0;
+    color: var(--mud-palette-text-secondary);
+    font-size: .8rem;
+}
+
+@media (max-width: 700px) {
+    .state-machine-condition-editor {
+        min-width: 0;
+    }
+
+    .state-machine-condition-editor__modes {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 420px) {
+    .state-machine-condition-editor__story {
+        gap: .3rem;
+        padding-inline: .6rem;
+        font-size: .8rem;
+    }
+
+    .state-machine-condition-editor__modes {
+        grid-template-columns: 1fr;
+    }
+}

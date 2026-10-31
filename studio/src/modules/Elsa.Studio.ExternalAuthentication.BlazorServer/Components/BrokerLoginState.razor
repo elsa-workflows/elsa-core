@@ -1,0 +1,29 @@
+@using Elsa.Studio.Components.AppBar
+@using Elsa.Studio.ExternalAuthentication.Services
+@using MudBlazor
+@inject IServiceProvider Services
+
+@if (_antiforgeryToken is not null)
+{
+    <UserMenu>
+        <form method="post" action="/authentication/external/logout">
+            <input type="hidden" name="@_antiforgeryToken.FormFieldName" value="@_antiforgeryToken.RequestToken" />
+            <input type="hidden" name="mode" value="local" />
+            <input type="hidden" name="returnPath" value="/" />
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Text" FullWidth="true">Sign out</MudButton>
+        </form>
+        <form method="post" action="/authentication/external/logout">
+            <input type="hidden" name="@_antiforgeryToken.FormFieldName" value="@_antiforgeryToken.RequestToken" />
+            <input type="hidden" name="mode" value="upstream" />
+            <input type="hidden" name="returnPath" value="/" />
+            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Text" FullWidth="true">Sign out upstream</MudButton>
+        </form>
+    </UserMenu>
+}
+
+@code {
+    private ExternalAuthenticationAntiforgeryToken? _antiforgeryToken;
+
+    protected override void OnInitialized() =>
+        _antiforgeryToken = (Services.GetService(typeof(IExternalAuthenticationAntiforgeryTokenProvider)) as IExternalAuthenticationAntiforgeryTokenProvider)?.GetToken();
+}

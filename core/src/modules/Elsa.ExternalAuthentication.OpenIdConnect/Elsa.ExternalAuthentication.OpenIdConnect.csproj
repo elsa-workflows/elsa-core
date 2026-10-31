@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Description>Provides OpenID Connect protocol support for Elsa External Authentication.</Description>
+        <PackageTags>elsa module authentication identity openid-connect security</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" />
+        <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Elsa.ExternalAuthentication\Elsa.ExternalAuthentication.csproj" />
+    </ItemGroup>
+
+</Project>

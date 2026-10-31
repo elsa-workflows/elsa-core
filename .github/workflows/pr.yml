@@ -22,8 +22,15 @@ on:
       - main
       - 'patch/*'
       - 'develop/*'
+      - 'release/*'
+      - codex/elsa-integration-program
     paths:
       - '**/*'
+      - '!docs/**'
+      - '!**/*.md'
+      - '!.agents/**'
+      - '!.claude/**'
+      - '!.specify/**'
 
 concurrency:
   group: ${{ github.workflow }} @ ${{ github.event.pull_request.head.label || github.head_ref || github.run_id }}
@@ -41,3 +48,13 @@ jobs:
       - uses: actions/checkout@v6
       - name: 'Run: Compile, Test'
         run: ./build.cmd Compile Test
+      - name: Upload test results and hang dumps
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-and-hang-dumps
+          if-no-files-found: ignore
+          path: |
+            testresults/
+            **/*.dmp
+            **/*Sequence*.xml

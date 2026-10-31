@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <RequiresAspNetWebAssets>true</RequiresAspNetWebAssets>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Company.ElsaStudio.Wasm\Company.ElsaStudio.Wasm.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.13" />
+        <PackageReference Include="Elsa.Studio" Version="3.9.0" />
+        <PackageReference Include="Elsa.Studio.Authentication.Abstractions" Version="3.9.0" />
+        <PackageReference Include="Elsa.Studio.Authentication.UI" Version="3.9.0" />
+        <PackageReference Include="Elsa.Studio.Authentication.Themes" Version="3.9.0" />
+        <PackageReference Include="Elsa.Studio.Core.BlazorServer" Version="3.9.0" />
+        <PackageReference Include="Elsa.Studio.Translations" Version="3.9.0" />
+        <PackageReference Include="Elsa.Studio.Shell" Version="3.9.0" />
+        <PackageReference Include="Elsa.Studio.Authentication.ElsaIdentity.BlazorServer" Version="3.9.0" />
+        <PackageReference Include="Elsa.Studio.Authentication.ElsaIdentity.UI" Version="3.9.0" />
+        <PackageReference Include="Elsa.Studio.Authentication.OpenIdConnect.BlazorServer" Version="3.9.0" />
+        <PackageReference Include="Elsa.Studio.Login" Version="3.9.0" />
+        <PackageReference Include="Elsa.Studio.Login.BlazorServer" Version="3.9.0" />
+        <PackageReference Include="Elsa.Studio.Dashboard" Version="3.9.0" />
+        <!--#if (withLabels)-->
+        <PackageReference Include="Elsa.Studio.Labels" Version="3.9.0" />
+        <!--#endif-->
+        <PackageReference Include="Elsa.Studio.Localization.BlazorServer" Version="3.9.0" />
+        <PackageReference Include="Elsa.Studio.Workflows" Version="3.9.0" />
+        <PackageReference Include="Elsa.Studio.Workflows.Designer" Version="3.9.0" />
+    </ItemGroup>
+</Project>

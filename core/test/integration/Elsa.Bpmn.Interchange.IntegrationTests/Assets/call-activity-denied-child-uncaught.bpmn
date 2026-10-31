@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:elsa="https://elsaworkflows.io/schemas/bpmn/v1"
+                  xmlns:vw="https://bpmn.valenceworks.io/schema/bpmn"
+                  id="Definitions_place-denied-unguarded-order"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+  <bpmn:process id="place-denied-unguarded-order" isExecutable="true">
+    <bpmn:startEvent id="Start">
+      <bpmn:outgoing>Flow_1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:callActivity id="Ship" name="Ship order" calledElement="ship-order-singleton">
+      <bpmn:incoming>Flow_1</bpmn:incoming>
+      <bpmn:outgoing>Flow_2</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:serviceTask id="Confirm" name="Confirm order">
+      <bpmn:extensionElements>
+        <elsa:activityBinding activityType="Elsa.WriteLine">
+          <elsa:input name="text">{"typeName":"String","expression":{"type":"Literal","value":"Confirmed"}}</elsa:input>
+        </elsa:activityBinding>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_2</bpmn:incoming>
+      <bpmn:outgoing>Flow_3</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="End">
+      <bpmn:incoming>Flow_3</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="Start" targetRef="Ship" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Ship" targetRef="Confirm" />
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Confirm" targetRef="End" />
+  </bpmn:process>
+</bpmn:definitions>

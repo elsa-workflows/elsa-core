@@ -1,0 +1,16 @@
+<Project>
+
+    <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))"/>
+
+    <PropertyGroup>
+        <Threshold>40</Threshold>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="SSH.NET" PrivateAssets="All"/>
+        <PackageReference Include="Testcontainers.PostgreSql"/>
+        <PackageReference Include="Testcontainers.RabbitMq"/>
+        <PackageReference Include="Testcontainers.MsSql"/>
+    </ItemGroup>
+
+</Project>

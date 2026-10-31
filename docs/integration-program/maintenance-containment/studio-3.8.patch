@@ -1,0 +1,8 @@
+diff --git a/.github/workflows/copilot-setup-steps.yml.yml b/.github/maintenance-inert-workflows/copilot-setup-steps.yml.yml.source
+similarity index 100%
+rename from .github/workflows/copilot-setup-steps.yml.yml
+rename to .github/maintenance-inert-workflows/copilot-setup-steps.yml.yml.source
+diff --git a/.github/workflows/packages.yml b/.github/maintenance-inert-workflows/packages.yml.source
+similarity index 100%
+rename from .github/workflows/packages.yml
+rename to .github/maintenance-inert-workflows/packages.yml.source

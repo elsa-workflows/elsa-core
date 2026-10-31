@@ -1,0 +1,15 @@
+{
+  "checkedDate": "2026-09-23",
+  "debuggerRelease": "3.2.0-1092",
+  "debuggerReportedVersion": "3.2.0-1 (9744e1f, Release)",
+  "platform": "macOS arm64",
+  "archiveSha256": "f4fa33b3ff874910cc184b4bb3b9c56d0abdf5c6521cee0b144d7c6e4a6e59ea",
+  "breakpoints": [
+    { "module": "Elsa.Studio.WorkflowContexts.dll", "source": "RemoteWorkflowContextsProvider.cs", "line": 27, "hit": true },
+    { "module": "Elsa.WorkflowContexts.dll", "source": "Endpoints/ProviderTypes/List/Endpoint.cs", "line": 28, "hit": true }
+  ],
+  "descriptorName": "Synthetic",
+  "exitCode": 0,
+  "interactiveBlazorVerified": false,
+  "consolidatedSolutionVerified": false
+}

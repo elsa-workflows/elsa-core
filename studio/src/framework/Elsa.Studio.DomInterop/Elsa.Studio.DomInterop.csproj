@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+    <PropertyGroup>
+        <Description>Elsa Studio DOM interop services.</Description>
+        <PackageTags>elsa studio framework</PackageTags>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Folder Include="wwwroot\"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Components"/>
+        <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions"/>
+        <PackageReference Include="Microsoft.JSInterop"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- Prevents build error on GH Actions -->
+        <Content Remove="ClientLib\package-lock.json;ClientLib\package.json;ClientLib\tsconfig.json"/>
+        <!--        <None Include="ClientLib\package-lock.json;ClientLib\package.json;ClientLib\tsconfig.json">-->
+        <!--            <CopyToOutputDirectory>Never</CopyToOutputDirectory>-->
+        <!--            <CopyToPublishDirectory>Never</CopyToPublishDirectory>-->
+        <!--        </None>-->
+
+    </ItemGroup>
+
+</Project>
