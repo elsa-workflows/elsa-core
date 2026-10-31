@@ -95,6 +95,20 @@ public class ScheduledCronTaskTests : IDisposable
     }
 
     [Fact]
+    public void Schedule_WithNextOccurrenceExceedingTimerLimit_ShouldStillSetupTimer()
+    {
+        // Arrange - System.Timers.Timer rejects intervals greater than int.MaxValue milliseconds.
+        SetupSystemClock(DefaultNow);
+        SetupCronParser(DefaultNow.AddDays(26));
+
+        // Act
+        CreateScheduledTask();
+
+        // Assert - Verify that no error was logged (timer should be set up successfully)
+        AssertNoErrorLogged();
+    }
+
+    [Fact]
     public void Schedule_WithZeroDelay_ShouldRetryAndSetupTimer()
     {
         // Arrange - simulate a case where the first call returns exactly now

@@ -12,6 +12,7 @@ namespace Elsa.Scheduling.ScheduledTasks;
 /// </summary>
 public class ScheduledRecurringTask : IScheduledTask, IDisposable
 {
+    private static readonly TimeSpan MaxTimerInterval = TimeSpan.FromMilliseconds(int.MaxValue);
     private readonly ITask _task;
     private readonly ISystemClock _systemClock;
     private readonly IServiceScopeFactory _scopeFactory;
@@ -86,7 +87,9 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
             delay = TimeSpan.FromMilliseconds(1);
         }
 
-        _timer = new(delay.TotalMilliseconds)
+        var timerDelay = delay > MaxTimerInterval ? MaxTimerInterval : delay;
+
+        _timer = new(timerDelay.TotalMilliseconds)
         {
             Enabled = true
         };
@@ -98,6 +101,14 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
 
             // Check if disposed before proceeding
             if (_disposed) return;
+
+            // System.Timers.Timer cannot handle intervals greater than int.MaxValue milliseconds.
+            // For longer intervals, keep scheduling capped intervals until the next start arrives.
+            if (_startAt > _systemClock.UtcNow)
+            {
+                Schedule();
+                return;
+            }
 
             _startAt = _systemClock.UtcNow + _interval;
 

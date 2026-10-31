@@ -88,6 +88,20 @@ public class ScheduledRecurringTaskTests : IDisposable
     }
 
     [Fact]
+    public void Schedule_WithIntervalExceedingTimerLimit_ShouldStillSetupTimer()
+    {
+        // Arrange - System.Timers.Timer rejects intervals greater than int.MaxValue milliseconds.
+        SetupSystemClock(DefaultNow);
+        var interval = TimeSpan.FromDays(30);
+
+        // Act
+        CreateScheduledTask(startAt: DefaultNow + interval, interval: interval);
+
+        // Assert - Verify that no error was logged (timer should be set up successfully)
+        AssertNoErrorLogged();
+    }
+
+    [Fact]
     public void Schedule_WithZeroDelay_ShouldRetryAndSetupTimer()
     {
         // Arrange - simulate a case where the first call returns exactly now

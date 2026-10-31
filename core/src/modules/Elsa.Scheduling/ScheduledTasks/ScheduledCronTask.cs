@@ -12,6 +12,7 @@ namespace Elsa.Scheduling.ScheduledTasks;
 /// </summary>
 public class ScheduledCronTask : IScheduledTask, IDisposable
 {
+    private static readonly TimeSpan MaxTimerInterval = TimeSpan.FromMilliseconds(int.MaxValue);
     private readonly ISystemClock _systemClock;
     private readonly ILogger _logger;
     private Timer? _timer;
@@ -21,6 +22,7 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly CancellationTokenSource _cancellationTokenSource;
     private readonly SemaphoreSlim _executionSemaphore = new(1, 1);
+    private DateTimeOffset _nextOccurrence;
     private bool _executing;
     private bool _cancellationRequested;
     private bool _disposed;
@@ -71,6 +73,7 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
                 continue;
             }
 
+            _nextOccurrence = nextOccurence;
             TrySetupTimer(delay);
             break;
         }
@@ -98,7 +101,9 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
 
     private void SetupTimer(TimeSpan delay)
     {
-        _timer = new(delay.TotalMilliseconds)
+        var timerDelay = delay > MaxTimerInterval ? MaxTimerInterval : delay;
+
+        _timer = new(timerDelay.TotalMilliseconds)
         {
             Enabled = true
         };
@@ -111,6 +116,14 @@ public class ScheduledCronTask : IScheduledTask, IDisposable
             // Early exit if disposed to prevent accessing disposed resources
             if (_disposed)
                 return;
+
+            // System.Timers.Timer cannot handle intervals greater than int.MaxValue milliseconds.
+            // For later cron occurrences, keep scheduling capped intervals until the next occurrence arrives.
+            if (_nextOccurrence > _systemClock.UtcNow)
+            {
+                Schedule();
+                return;
+            }
 
             IServiceScope? scope = null;
             try
