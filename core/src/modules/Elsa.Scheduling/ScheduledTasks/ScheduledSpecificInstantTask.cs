@@ -90,7 +90,7 @@ public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
             _logger.LogDebug("Calculated delay is {Delay} which is not positive. Using catch-up delay of {CatchUpDelay}", delay, adjustedDelay);
         }
 
-        _timer = new(adjustedDelay.TotalMilliseconds)
+        _timer = new(TimerInterval.Clamp(adjustedDelay).TotalMilliseconds)
         {
             Enabled = true
         };
@@ -102,6 +102,17 @@ public class ScheduledSpecificInstantTask : IScheduledTask, IDisposable
 
             // Check if disposed before proceeding
             if (_disposed) return;
+
+            // System.Timers.Timer cannot handle intervals greater than int.MaxValue milliseconds.
+            // For longer delays, keep scheduling capped intervals until the target instant arrives.
+            if (_startAt > _systemClock.UtcNow)
+            {
+                if (_disposed || _cancellationTokenSource.IsCancellationRequested)
+                    return;
+
+                Schedule();
+                return;
+            }
 
             using var scope = _scopeFactory.CreateScope();
             var commandSender = scope.ServiceProvider.GetRequiredService<ICommandSender>();
