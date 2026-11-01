@@ -233,6 +233,27 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
     }
 
     /// <summary>
+    /// Returns the records of one page without counting the total.
+    /// </summary>
+    /// <param name="filter">The conditions to apply to the query.</param>
+    /// <param name="pageArgs">The page arguments.</param>
+    /// <param name="orderKey">The order key selector.</param>
+    /// <param name="orderDirection">The order direction.</param>
+    /// <param name="tenantAgnostic">Whether to ignore the tenant filter.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The records of the page.</returns>
+    public async Task<IEnumerable<T>> FindPageItemsAsync(Action<ParameterizedQuery>? filter, PageArgs pageArgs, string orderKey, OrderDirection orderDirection, bool tenantAgnostic, CancellationToken cancellationToken = default)
+    {
+        var query = dbConnectionProvider.CreateQuery().From(TableName);
+        ApplyTenantFilter(query, tenantAgnostic);
+        filter?.Invoke(query);
+        query = query.OrderBy(new OrderField(orderKey, orderDirection)).Page(pageArgs);
+
+        using var connection = dbConnectionProvider.GetConnection();
+        return await query.QueryAsync<T>(connection);
+    }
+
+    /// <summary>
     /// Returns a set of records.
     /// </summary>
     /// <param name="filter">The conditions to apply to the query.</param>
@@ -576,6 +597,19 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
         filter(countQuery);
         using var connection = dbConnectionProvider.GetConnection();
         return await countQuery.SingleAsync<long>(connection);
+    }
+
+    /// <summary>
+    /// Returns the distinct tenant ids stored in the table, across all tenants.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The distinct raw tenant id values. May contain <c>null</c> and empty strings.</returns>
+    public async Task<IReadOnlyCollection<string?>> ListTenantIdsAsync(CancellationToken cancellationToken = default)
+    {
+        var dialect = dbConnectionProvider.Dialect;
+        var sql = $"select distinct {dialect.QuoteIdentifier(nameof(Record.TenantId))} from {dialect.QuoteIdentifier(TableName)}";
+        using var connection = dbConnectionProvider.GetConnection();
+        return (await connection.QueryAsync<string?>(new CommandDefinition(sql, cancellationToken: cancellationToken))).ToList();
     }
 
     private void ApplyTenantFilter(ParameterizedQuery query, bool tenantAgnostic = false)

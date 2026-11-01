@@ -1,4 +1,5 @@
 using Elsa.Common.Models;
+using Elsa.Common.Multitenancy;
 using Elsa.Persistence.Dapper.Extensions;
 using Elsa.Persistence.Dapper.Models;
 using Elsa.Persistence.Dapper.Modules.Runtime.Records;
@@ -43,8 +44,15 @@ internal class DapperBookmarkQueueStore(Store<BookmarkQueueItemRecord> store, IP
 
     public async Task<IEnumerable<BookmarkQueueItem>> FindManyAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default)
     {
-        var records = await store.FindManyAsync(q => ApplyFilter(q, filter), cancellationToken);
+        var records = await store.FindManyAsync(q => ApplyFilter(q, filter), filter.TenantAgnostic, cancellationToken);
         return Map(records);
+    }
+
+    /// <inheritdoc />
+    public async Task<IEnumerable<BookmarkQueueItem>> FindManyAsync<TOrderBy>(BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        var records = await store.FindPageItemsAsync(q => ApplyFilter(q, filter), pageArgs, orderBy.KeySelector.GetPropertyName(), orderBy.Direction, filter.TenantAgnostic, cancellationToken);
+        return Map(records).ToList();
     }
 
     public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
@@ -55,8 +63,15 @@ internal class DapperBookmarkQueueStore(Store<BookmarkQueueItemRecord> store, IP
 
     public async Task<Page<BookmarkQueueItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default)
     {
-        var records = await store.FindManyAsync(q => ApplyFilter(q, filter), pageArgs, orderBy.KeySelector.GetPropertyName(), orderBy.Direction, cancellationToken);
+        var records = await store.FindManyAsync(q => ApplyFilter(q, filter), pageArgs, orderBy.KeySelector.GetPropertyName(), orderBy.Direction, filter.TenantAgnostic, cancellationToken);
         return Map(records);
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyCollection<string>?> ListTenantIdsAsync(CancellationToken cancellationToken = default)
+    {
+        var tenantIds = await store.ListTenantIdsAsync(cancellationToken);
+        return tenantIds.Select(x => x.NormalizeTenantId()).Distinct().ToList();
     }
 
     /// <inheritdoc />
@@ -75,6 +90,7 @@ internal class DapperBookmarkQueueStore(Store<BookmarkQueueItemRecord> store, IP
             .Is(nameof(BookmarkQueueItemRecord.StimulusHash), filter.BookmarkHash)
             .Is(nameof(BookmarkQueueItemRecord.ActivityInstanceId), filter.ActivityInstanceId)
             .Is(nameof(BookmarkQueueItemRecord.ActivityTypeName), filter.ActivityTypeName)
+            .LessThan(nameof(BookmarkQueueItemRecord.CreatedAt), filter.CreatedAtLessThan)
             ;
     }
 

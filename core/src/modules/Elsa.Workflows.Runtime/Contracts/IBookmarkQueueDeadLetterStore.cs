@@ -68,6 +68,19 @@ public interface IBookmarkQueueDeadLetterStore
     Task<Page<BookmarkQueueDeadLetterItem>> PageAsync<TOrderBy>(PageArgs pageArgs, BookmarkQueueDeadLetterFilter filter, BookmarkQueueDeadLetterItemOrder<TOrderBy> orderBy, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Returns one page of bookmark queue dead-letter items, filtered and ordered by the specified order definition, without counting the total.
+    /// </summary>
+    /// <remarks>
+    /// Must honor <see cref="BookmarkQueueDeadLetterFilter.TenantAgnostic"/> like <see cref="PageAsync{TOrderBy}(PageArgs, BookmarkQueueDeadLetterFilter, BookmarkQueueDeadLetterItemOrder{TOrderBy}, CancellationToken)"/>.
+    /// The default implementation calls <see cref="PageAsync{TOrderBy}(PageArgs, BookmarkQueueDeadLetterFilter, BookmarkQueueDeadLetterItemOrder{TOrderBy}, CancellationToken)"/>; override it to skip the count query.
+    /// </remarks>
+    async Task<IEnumerable<BookmarkQueueDeadLetterItem>> FindManyAsync<TOrderBy>(BookmarkQueueDeadLetterFilter filter, BookmarkQueueDeadLetterItemOrder<TOrderBy> orderBy, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        var page = await PageAsync(pageArgs, filter, orderBy, cancellationToken);
+        return page.Items;
+    }
+
+    /// <summary>
     /// Deletes a set of bookmark queue dead-letter items matching the specified filter.
     /// </summary>
     Task<long> DeleteAsync(BookmarkQueueDeadLetterFilter filter, CancellationToken cancellationToken = default);

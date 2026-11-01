@@ -50,6 +50,10 @@ public class BookmarkQueueFilter
     /// <summary>
     /// Gets or sets a value indicating whether the filter is tenant agnostic.
     /// </summary>
+    /// <remarks>
+    /// Stores honor it on reads (<see cref="IBookmarkQueueStore.FindManyAsync"/> and <see cref="IBookmarkQueueStore.PageAsync{TOrderBy}(Elsa.Common.Models.PageArgs, BookmarkQueueFilter, OrderDefinitions.BookmarkQueueItemOrder{TOrderBy}, CancellationToken)"/>).
+    /// Do not set it on deletes; the purger deletes under each item's tenant.
+    /// </remarks>
     public bool TenantAgnostic { get; set; }
 
     /// <summary>

@@ -130,6 +130,18 @@ public class MemoryBookmarkQueueDeadLetterStore(MemoryStore<BookmarkQueueDeadLet
     }
 
     /// <inheritdoc />
+    public Task<IEnumerable<BookmarkQueueDeadLetterItem>> FindManyAsync<TOrderBy>(BookmarkQueueDeadLetterFilter filter, BookmarkQueueDeadLetterItemOrder<TOrderBy> orderBy, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        IEnumerable<BookmarkQueueDeadLetterItem> entities;
+        lock (_lock)
+        {
+            entities = store.Query(query => Filter(query, filter).OrderBy(orderBy).Paginate(pageArgs)).Select(Clone).ToList();
+        }
+
+        return Task.FromResult(entities);
+    }
+
+    /// <inheritdoc />
     public Task<IEnumerable<BookmarkQueueDeadLetterItem>> FindManyAsync(BookmarkQueueDeadLetterFilter filter, CancellationToken cancellationToken = default)
     {
         IEnumerable<BookmarkQueueDeadLetterItem> entities;
