@@ -25,6 +25,6 @@ public class BackgroundWorkflowCancellationDispatcher(ICommandSender commandSend
 
     private IDictionary<object, object> CreateHeaders()
     {
-        return TenantHeaders.CreateHeaders(tenantAccessor.Tenant?.Id);
+        return TenantHeaders.CreateHeaders(tenantAccessor.TenantId);
     }
 }
