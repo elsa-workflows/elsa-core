@@ -249,6 +249,19 @@ public sealed class DapperWorkflowDefinitionStoreTests : IDisposable
         Assert.Equal("tenant-a", verify.QuerySingle<string>($"select {Q("TenantId")} from {Q(_table)}"));
     }
 
+    [Fact]
+    public async Task AnyAsyncHonorsTenantAgnosticFilter()
+    {
+        await _store.SaveAsync(Definition());
+        using (var connection = _provider.GetConnection())
+        {
+            connection.Execute($"update {Q(_table)} set {Q("TenantId")} = 'tenant-a'");
+        }
+
+        Assert.False(await _store.AnyAsync(new WorkflowDefinitionFilter { Id = "v1" }));
+        Assert.True(await _store.AnyAsync(new WorkflowDefinitionFilter { Id = "v1", TenantAgnostic = true }));
+    }
+
     [Theory]
     [InlineData("latest", 1)]
     [InlineData("published", 1)]

@@ -284,7 +284,7 @@ internal class DapperWorkflowDefinitionStore(Store<WorkflowDefinitionRecord> sto
     /// <inheritdoc />
     public async Task<bool> AnyAsync(WorkflowDefinitionFilter filter, CancellationToken cancellationToken = default)
     {
-        return await store.AnyAsync(q => ApplyFilter(q, filter), cancellationToken);
+        return await store.AnyAsync(q => ApplyFilter(q, filter), filter.TenantAgnostic, cancellationToken);
     }
 
     /// <inheritdoc />
