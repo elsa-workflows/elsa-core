@@ -56,5 +56,9 @@ public class MultitenancyFeature(IModule module) : FeatureBase(module)
             .AddScoped<IBackgroundTaskStarter, TaskExecutor>()
             .AddBackgroundTask<TenantBackgroundWorkQueueWorker>()
             .AddScoped(_tenantsProviderFactory);
+
+        Services
+            .AddOptions<TenantActivationOptions>()
+            .Validate(x => x.MaxDegreeOfParallelism == -1 || x.MaxDegreeOfParallelism >= 1, "TenantActivationOptions.MaxDegreeOfParallelism must be -1 (no limit) or at least 1.");
     }
 }

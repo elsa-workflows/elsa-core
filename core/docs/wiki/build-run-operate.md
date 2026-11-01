@@ -152,7 +152,10 @@ Common runtime-related options in the reference host:
 - `CachingOptions.CacheDuration`
 - `IncidentOptions.DefaultIncidentStrategy`
 - `RecurringTaskOptions.MaxDegreeOfParallelism`
+- `TenantActivationOptions.MaxDegreeOfParallelism`
 - recurring task schedules for trigger queue, bookmark queue purge, and interrupted workflow restart
+
+Tenant activation (host start and tenants added by a refresh) activates the first tenant alone, because its activation applies the migrations of the database the tenants share. The remaining tenants activate in parallel, bounded by `TenantActivationOptions.MaxDegreeOfParallelism` (default 4; `-1` is unbounded, `1` activates one after another). Each activation runs the tenant's startup tasks, which usually hold a database connection, so the value also bounds the connections activation holds. See the [parallel tenant activation migration note](../migrations/parallel-tenant-activation.md).
 
 Recurring tasks use one timer per task type and run once per tenant, with `MaxDegreeOfParallelism` bounding the concurrent tenant runs of each task type (not globally); tasks marked `[RunOnceForAllTenants]` run once per cycle.
 

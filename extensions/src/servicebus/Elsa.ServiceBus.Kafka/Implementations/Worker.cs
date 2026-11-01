@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Confluent.Kafka;
 using Elsa.Extensions;
 using Elsa.Mediator.Contracts;
@@ -11,10 +12,11 @@ public class Worker<TKey, TValue>(WorkerContext workerContext, IConsumer<TKey, T
 {
     private bool _running;
     private CancellationTokenSource _cancellationTokenSource = new();
+    private readonly object _bindingsLock = new();
     private HashSet<string> _subscribedTopics = new();
 
-    public IDictionary<string, BookmarkBinding> BookmarkBindings { get; } = new Dictionary<string, BookmarkBinding>();
-    public IDictionary<string, TriggerBinding> TriggerBindings { get; } = new Dictionary<string, TriggerBinding>();
+    public IDictionary<string, BookmarkBinding> BookmarkBindings { get; } = new ConcurrentDictionary<string, BookmarkBinding>();
+    public IDictionary<string, TriggerBinding> TriggerBindings { get; } = new ConcurrentDictionary<string, TriggerBinding>();
     public ConsumerDefinition ConsumerDefinition { get; } = workerContext.ConsumerDefinition;
 
     public void Start(CancellationToken cancellationToken)
@@ -42,28 +44,42 @@ public class Worker<TKey, TValue>(WorkerContext workerContext, IConsumer<TKey, T
 
     public void BindTrigger(TriggerBinding binding)
     {
-        TriggerBindings[binding.TriggerId] = binding;
-        ReduceTopicSubscriptions();
+        lock (_bindingsLock)
+        {
+            TriggerBindings[binding.TriggerId] = binding;
+            ReduceTopicSubscriptions();
+        }
     }
 
     public void BindBookmark(BookmarkBinding binding)
     {
-        BookmarkBindings[binding.BookmarkId] = binding;
-        ReduceTopicSubscriptions();
+        lock (_bindingsLock)
+        {
+            BookmarkBindings[binding.BookmarkId] = binding;
+            ReduceTopicSubscriptions();
+        }
     }
 
     public void RemoveTriggers(IEnumerable<string> triggerIds)
     {
         var triggerIdList = triggerIds.ToList();
-        TriggerBindings.RemoveWhere(x => triggerIdList.Contains(x.Key));
-        ReduceTopicSubscriptions();
+
+        lock (_bindingsLock)
+        {
+            TriggerBindings.RemoveWhere(x => triggerIdList.Contains(x.Key));
+            ReduceTopicSubscriptions();
+        }
     }
 
     public void RemoveBookmarks(IEnumerable<string> bookmarkIds)
     {
         var bookmarkIdList = bookmarkIds.ToList();
-        BookmarkBindings.RemoveWhere(x => bookmarkIdList.Contains(x.Key));
-        ReduceTopicSubscriptions();
+
+        lock (_bindingsLock)
+        {
+            BookmarkBindings.RemoveWhere(x => bookmarkIdList.Contains(x.Key));
+            ReduceTopicSubscriptions();
+        }
     }
 
     private void ReduceTopicSubscriptions()

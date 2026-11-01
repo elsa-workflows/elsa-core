@@ -48,5 +48,9 @@ public class MultitenancyFeature : IShellFeature
             .AddTransient<IShellInitializer, ActivateShellTenants>()
             .AddTransient<IDrainHandler, ActivateShellTenants>()
             ;
+
+        services
+            .AddOptions<TenantActivationOptions>()
+            .Validate(x => x.MaxDegreeOfParallelism == -1 || x.MaxDegreeOfParallelism >= 1, "TenantActivationOptions.MaxDegreeOfParallelism must be -1 (no limit) or at least 1.");
     }
 }
