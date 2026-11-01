@@ -1,10 +1,14 @@
 using System.Collections;
+using System.Reflection;
 using Elsa.Common.Models;
+using Elsa.Http;
 using Elsa.Http.Bookmarks;
 using Elsa.Http.Middleware;
 using Elsa.Http.Options;
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
+using Elsa.Workflows.Management;
+using Elsa.Workflows.Management.Entities;
 using Elsa.Workflows.Models;
 using Elsa.Workflows.Options;
 using Elsa.Workflows.Runtime;
@@ -284,6 +288,51 @@ public class HttpWorkflowsMiddlewareTests
         Assert.Equal(triggerHash, runOptions.Properties[TriggerWorkflowProperties.StimulusHash]);
     }
 
+    [Fact]
+    public async Task ExecuteWithinTimeoutAsync_WhenActionThrows_RestoresRequestAborted()
+    {
+        var httpContext = new DefaultHttpContext();
+        using var originalCancellationTokenSource = new CancellationTokenSource();
+        httpContext.RequestAborted = originalCancellationTokenSource.Token;
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => InvokeExecuteWithinTimeoutAsync<object>(
+            _ => throw new InvalidOperationException("Boom"),
+            TimeSpan.FromSeconds(1),
+            httpContext));
+
+        Assert.Equal(originalCancellationTokenSource.Token, httpContext.RequestAborted);
+    }
+
+    [Fact]
+    public async Task HandleWorkflowFaultAsync_WhenReloadReturnsNull_FallsBackToInMemoryWorkflowState()
+    {
+        var workflowState = new WorkflowState
+        {
+            Id = "workflow-instance-1",
+            DefinitionId = "definition-1",
+            DefinitionVersionId = "definition-version-1",
+            Incidents = [new ActivityIncident()]
+        };
+        var workflowInstanceManager = Substitute.For<IWorkflowInstanceManager>();
+        var faultHandler = Substitute.For<IHttpEndpointFaultHandler>();
+        var serviceProvider = new ServiceCollection()
+            .AddSingleton(workflowInstanceManager)
+            .AddSingleton(faultHandler)
+            .BuildServiceProvider();
+        var httpContext = new DefaultHttpContext
+        {
+            RequestServices = serviceProvider
+        };
+        var result = new RunWorkflowResult(null!, workflowState, new Workflow(), null, Journal.Empty);
+
+        workflowInstanceManager.FindByIdAsync(workflowState.Id, Arg.Any<CancellationToken>()).Returns((WorkflowInstance?)null);
+
+        var handled = await InvokeHandleWorkflowFaultAsync(serviceProvider, httpContext, result, CancellationToken.None);
+
+        Assert.True(handled);
+        await faultHandler.Received(1).HandleAsync(Arg.Is<HttpEndpointFaultContext>(x => ReferenceEquals(x.WorkflowState, workflowState)));
+    }
+
     private static IEnumerable<StoredBookmark> CreateCollidingHttpEndpointBookmarks()
     {
         yield return CreateBookmark("current-tenant-bookmark", CurrentTenantId);
@@ -422,5 +471,18 @@ public class HttpWorkflowsMiddlewareTests
             foreach (var route in routes)
                 Remove(route);
         }
+    }
+
+    private Task<T> InvokeExecuteWithinTimeoutAsync<T>(Func<CancellationToken, Task<T>> action, TimeSpan? requestTimeout, HttpContext httpContext)
+    {
+        var method = typeof(HttpWorkflowsMiddleware).GetMethod("ExecuteWithinTimeoutAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var genericMethod = method.MakeGenericMethod(typeof(T));
+        return (Task<T>)genericMethod.Invoke(_middleware, [action, requestTimeout, httpContext])!;
+    }
+
+    private Task<bool> InvokeHandleWorkflowFaultAsync(IServiceProvider serviceProvider, HttpContext httpContext, RunWorkflowResult result, CancellationToken cancellationToken)
+    {
+        var method = typeof(HttpWorkflowsMiddleware).GetMethod("HandleWorkflowFaultAsync", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        return (Task<bool>)method.Invoke(_middleware, [serviceProvider, httpContext, result, cancellationToken])!;
     }
 }

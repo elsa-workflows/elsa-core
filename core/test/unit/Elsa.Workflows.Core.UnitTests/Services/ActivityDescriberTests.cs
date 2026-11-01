@@ -36,21 +36,31 @@ public class ActivityDescriberTests
     }
 
     [Fact]
+    public async Task DescribeActivityAsync_FormatsGenericTypeFriendlyName()
+    {
+        var descriptor = await _describer.DescribeActivityAsync(typeof(GenericTestActivity<string>));
+
+        Assert.Equal("GenericTestActivity<String>", descriptor.Name);
+    }
+
+    [Fact]
     public async Task DescribeActivityAsync_NestedActivityInsideGenericType_CreatesDescriptor()
     {
         var descriptor = await _describer.DescribeActivityAsync(typeof(Container<string>.NestedActivity));
 
         Assert.Equal("NestedActivity<String>", descriptor.Name);
-        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.ActivityDescriberTests.Container<T>.NestedActivity", descriptor.TypeName);
+        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.NestedActivity<String>", descriptor.TypeName);
     }
 
     [Fact]
-    public async Task DescribeActivityAsync_OpenNestedActivityInsideGenericType_CreatesDescriptor()
+    public async Task DescribeActivityAsync_NestedGenericActivityClosings_HaveDistinctTypeNames()
     {
-        var descriptor = await _describer.DescribeActivityAsync(typeof(Container<>.NestedActivity));
+        var stringDescriptor = await _describer.DescribeActivityAsync(typeof(Container<string>.NestedActivity));
+        var intDescriptor = await _describer.DescribeActivityAsync(typeof(Container<int>.NestedActivity));
 
-        Assert.Equal("NestedActivity<T>", descriptor.Name);
-        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.ActivityDescriberTests.Container<T>.NestedActivity", descriptor.TypeName);
+        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.NestedActivity<String>", stringDescriptor.TypeName);
+        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.NestedActivity<Int32>", intDescriptor.TypeName);
+        Assert.NotEqual(stringDescriptor.TypeName, intDescriptor.TypeName);
     }
 
     [Fact]
@@ -59,7 +69,16 @@ public class ActivityDescriberTests
         var descriptor = await _describer.DescribeActivityAsync(typeof(GenericActivity<string>));
 
         Assert.Equal("GenericActivity<String>", descriptor.Name);
-        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.ActivityDescriberTests.GenericActivity<String>", descriptor.TypeName);
+        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.GenericActivity<String>", descriptor.TypeName);
+    }
+
+    [Fact]
+    public async Task DescribeActivityAsync_ActivityAttributeType_OverridesGeneratedName()
+    {
+        var descriptor = await _describer.DescribeActivityAsync(typeof(AttributedGenericActivity<string>));
+
+        Assert.Equal("ExplicitName", descriptor.Name);
+        Assert.Equal("Elsa.Workflows.Core.UnitTests.Services.ExplicitName<String>", descriptor.TypeName);
     }
 
     private sealed class ActivityWithSensitiveInputs : CodeActivity
@@ -81,4 +100,9 @@ public class ActivityDescriberTests
     private sealed class GenericActivity<T> : CodeActivity
     {
     }
+
+    private sealed class GenericTestActivity<T> : CodeActivity;
+
+    [Activity(Type = "ExplicitName")]
+    private sealed class AttributedGenericActivity<T> : CodeActivity;
 }

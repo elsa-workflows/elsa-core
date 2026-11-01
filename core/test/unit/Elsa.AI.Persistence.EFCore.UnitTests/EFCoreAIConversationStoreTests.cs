@@ -379,25 +379,29 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
         Assert.True(message.Metadata["truncated"]!.GetValue<bool>());
     }
 
-    [Fact(DisplayName = "Conversation store hides completed ephemeral conversations on read")]
-    public async Task ConversationStoreHidesCompletedEphemeralConversationsOnRead()
+    [Theory(DisplayName = "Conversation store hides terminal ephemeral conversations on read")]
+    [InlineData(AIConversationStatus.Completed)]
+    [InlineData(AIConversationStatus.Failed)]
+    [InlineData(AIConversationStatus.Expired)]
+    public async Task ConversationStoreHidesTerminalEphemeralConversationsOnRead(AIConversationStatus status)
     {
         var store = new EFCoreAIConversationStore(_dbContext);
+        var conversationId = $"conversation-ephemeral-{status}";
 
         await store.SaveAsync(new AIConversation
         {
-            Id = "conversation-ephemeral",
+            Id = conversationId,
             UserId = "user-1",
-            Status = AIConversationStatus.Completed,
+            Status = status,
             CreatedAt = DateTimeOffset.UtcNow,
             UpdatedAt = DateTimeOffset.UtcNow,
             RetentionMode = AIRetentionMode.Ephemeral
         });
 
-        var reloaded = await store.FindAsync("conversation-ephemeral");
+        var reloaded = await store.FindAsync(conversationId);
 
         Assert.Null(reloaded);
-        Assert.True(await _dbContext.Conversations.AnyAsync(x => x.Id == "conversation-ephemeral"));
+        Assert.True(await _dbContext.Conversations.AnyAsync(x => x.Id == conversationId));
     }
 
     [Fact(DisplayName = "Conversation store hides expired configured conversations on read")]
@@ -457,6 +461,15 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
         });
         await store.SaveAsync(new AIConversation
         {
+            Id = "conversation-expired-ephemeral",
+            UserId = "user-1",
+            Status = AIConversationStatus.Expired,
+            CreatedAt = now,
+            UpdatedAt = now,
+            RetentionMode = AIRetentionMode.Ephemeral
+        });
+        await store.SaveAsync(new AIConversation
+        {
             Id = "conversation-expired-configured",
             UserId = "user-1",
             CreatedAt = now.AddDays(-2),
@@ -476,8 +489,9 @@ public class EFCoreAIConversationStoreTests : IAsyncLifetime
 
         var deletedCount = await EFCoreAIConversationCleanup.DeleteExpiredAsync(_dbContext, now);
 
-        Assert.Equal(2, deletedCount);
+        Assert.Equal(3, deletedCount);
         Assert.False(await _dbContext.Conversations.AnyAsync(x => x.Id == "conversation-completed-ephemeral"));
+        Assert.False(await _dbContext.Conversations.AnyAsync(x => x.Id == "conversation-expired-ephemeral"));
         Assert.False(await _dbContext.Conversations.AnyAsync(x => x.Id == "conversation-expired-configured"));
         Assert.True(await _dbContext.Conversations.AnyAsync(x => x.Id == "conversation-active"));
     }

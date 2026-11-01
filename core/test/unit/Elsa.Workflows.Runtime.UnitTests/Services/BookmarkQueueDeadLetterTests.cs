@@ -1,3 +1,4 @@
+#pragma warning disable CS0618 // The 6-argument purger constructor is obsolete but remains the baseline these tests cover.
 using Elsa.Common;
 using Elsa.Common.Models;
 using Elsa.Common.Services;

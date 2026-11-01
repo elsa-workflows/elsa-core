@@ -86,7 +86,7 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
             delay = TimeSpan.FromMilliseconds(1);
         }
 
-        _timer = new(delay.TotalMilliseconds)
+        _timer = new(TimerInterval.Clamp(delay).TotalMilliseconds)
         {
             Enabled = true
         };
@@ -98,6 +98,17 @@ public class ScheduledRecurringTask : IScheduledTask, IDisposable
 
             // Check if disposed before proceeding
             if (_disposed) return;
+
+            // System.Timers.Timer cannot handle intervals greater than int.MaxValue milliseconds.
+            // For longer intervals, keep scheduling capped intervals until the next start arrives.
+            if (_startAt > _systemClock.UtcNow)
+            {
+                if (_disposed || _cancellationTokenSource.IsCancellationRequested)
+                    return;
+
+                Schedule();
+                return;
+            }
 
             _startAt = _systemClock.UtcNow + _interval;
 

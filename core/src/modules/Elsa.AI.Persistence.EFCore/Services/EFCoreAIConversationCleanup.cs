@@ -12,9 +12,10 @@ public static class EFCoreAIConversationCleanup
         var configuredRetentionMode = AIRetentionMode.Configured.ToString();
         var completedStatus = AIConversationStatus.Completed.ToString();
         var failedStatus = AIConversationStatus.Failed.ToString();
+        var expiredStatus = AIConversationStatus.Expired.ToString();
 
         var deletedEphemeral = await dbContext.Conversations
-            .Where(x => x.RetentionMode == ephemeralRetentionMode && (x.Status == completedStatus || x.Status == failedStatus))
+            .Where(x => x.RetentionMode == ephemeralRetentionMode && (x.Status == completedStatus || x.Status == failedStatus || x.Status == expiredStatus))
             .ExecuteDeleteAsync(cancellationToken);
 
         var deletedConfigured = await DeleteExpiredConfiguredAsync(dbContext, configuredRetentionMode, now, cancellationToken);

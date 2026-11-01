@@ -45,6 +45,13 @@ public class MemoryBookmarkQueueStore(MemoryStore<BookmarkQueueItem> store, ITen
         return Task.FromResult(entities);
     }
 
+    /// <inheritdoc />
+    public Task<IEnumerable<BookmarkQueueItem>> FindManyAsync<TOrderBy>(BookmarkQueueFilter filter, BookmarkQueueItemOrder<TOrderBy> orderBy, PageArgs pageArgs, CancellationToken cancellationToken = default)
+    {
+        IEnumerable<BookmarkQueueItem> entities = store.Query(query => Filter(query, filter).OrderBy(orderBy).Paginate(pageArgs)).ToList();
+        return Task.FromResult(entities);
+    }
+
     public Task<IEnumerable<BookmarkQueueItem>> FindManyAsync(BookmarkQueueFilter filter, CancellationToken cancellationToken = default)
     {
         var entities = store.Query(query => Filter(query, filter)).AsEnumerable();
@@ -56,6 +63,13 @@ public class MemoryBookmarkQueueStore(MemoryStore<BookmarkQueueItem> store, ITen
     {
         var ids = (await FindManyAsync(filter, cancellationToken)).Select(x => x.Id);
         return store.DeleteMany(ids);
+    }
+
+    /// <inheritdoc />
+    public Task<IReadOnlyCollection<string>?> ListTenantIdsAsync(CancellationToken cancellationToken = default)
+    {
+        var tenantIds = store.Query(query => query).Select(x => x.TenantId.NormalizeTenantId()).Distinct().ToList();
+        return Task.FromResult<IReadOnlyCollection<string>?>(tenantIds);
     }
 
     /// <remarks>

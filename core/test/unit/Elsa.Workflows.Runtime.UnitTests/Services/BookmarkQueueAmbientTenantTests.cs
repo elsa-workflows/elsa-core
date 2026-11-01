@@ -65,7 +65,9 @@ public class BookmarkQueueAmbientTenantTests
         var accessor = new DefaultTenantAccessor();
         var signaler = new BookmarkQueueSignaler(accessor);
         var worker = Substitute.For<IBookmarkQueueWorker>();
+#pragma warning disable CS0618 // The 3-argument constructor is obsolete but remains the baseline this test covers.
         var task = new TriggerBookmarkQueueRecurringTask(worker, signaler, accessor);
+#pragma warning restore CS0618
         var tenant = Tenant("tenant-a");
         var awaiter = AwaitTenantAsync(signaler, accessor, "tenant-a");
 

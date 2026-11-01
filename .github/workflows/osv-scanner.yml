@@ -1,4 +1,4 @@
-# Scans npm lockfiles on release branches. Studio ClientLib reviewed
+# Scans npm lockfiles on main, release branches and weekly. Studio ClientLib reviewed
 # lockfiles use non-standard names, so they are passed explicitly;
 # recursive source scanning covers the rest. Directory.Packages.props
 # coverage is out of scope here.
@@ -7,7 +7,11 @@ name: OSV-Scanner
 on:
   push:
     branches:
+      - main
       - 'release/*'
+  schedule:
+    # Weekly, Monday 05:00 UTC.
+    - cron: '0 5 * * 1'
   workflow_dispatch:
 
 permissions: {}

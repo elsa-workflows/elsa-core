@@ -80,4 +80,20 @@ public class MemoryBookmarkQueueStoreTenantIsolationTests
         Assert.Equal("queue-a", remaining[0].Id);
         Assert.Equal("tenant-a", remaining[0].TenantId);
     }
+
+    [Fact(DisplayName = "ListTenantIdsAsync returns each tenant with items once, null normalized to the default tenant")]
+    public async Task ListTenantIdsAsync_ReturnsDistinctNormalizedTenantIds()
+    {
+        var store = new MemoryBookmarkQueueStore(new MemoryStore<BookmarkQueueItem>(), new TestTenantAccessor("tenant-a"));
+        await store.AddAsync(new BookmarkQueueItem { Id = "1", TenantId = "t1" });
+        await store.AddAsync(new BookmarkQueueItem { Id = "2", TenantId = "t1" });
+        await store.AddAsync(new BookmarkQueueItem { Id = "3", TenantId = "t2" });
+        await store.AddAsync(new BookmarkQueueItem { Id = "4", TenantId = "" });
+        await store.AddAsync(new BookmarkQueueItem { Id = "5", TenantId = null });
+
+        var tenantIds = await store.ListTenantIdsAsync();
+
+        Assert.NotNull(tenantIds);
+        Assert.Equal(["", "t1", "t2"], tenantIds.Order(StringComparer.Ordinal));
+    }
 }

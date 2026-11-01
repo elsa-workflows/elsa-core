@@ -216,10 +216,9 @@ public class ActivityDescriber(IPropertyDefaultValueResolver defaultValueResolve
     {
         if (!t.IsGenericType)
             return t.Name;
-        // Nested types of generic types are generic types themselves but do not have their own backtick suffix in their name.
-        // Only strip the generic arity suffix when it is present.
-        var backtickIndex = t.Name.IndexOf('`');
-        var baseName = backtickIndex >= 0 ? t.Name.Substring(0, backtickIndex) : t.Name;
+
+        var genericIndex = t.Name.IndexOf('`');
+        var baseName = genericIndex > 0 ? t.Name.Substring(0, genericIndex) : t.Name;
         var argNames = string.Join(", ", t.GetGenericArguments().Select(a => a.Name));
         return $"{baseName}<{argNames}>";
     }

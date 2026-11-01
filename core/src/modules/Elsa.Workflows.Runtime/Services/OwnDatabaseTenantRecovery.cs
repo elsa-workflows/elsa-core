@@ -12,12 +12,6 @@ namespace Elsa.Workflows.Runtime.Services;
 /// </summary>
 internal static class OwnDatabaseTenantRecovery
 {
-    // Runtime does not reference Elsa.Persistence.EFCore.Common, which owns this section name.
-    private const string ConnectionStringsSectionName = "ConnectionStrings";
-
-    public static bool HasOwnDatabase(this Tenant tenant) =>
-        tenant.Configuration.GetSection(ConnectionStringsSectionName).GetChildren().Any(x => !string.IsNullOrWhiteSpace(x.Value));
-
     // enumerate queries the given store; its flag is the filter's TenantAgnostic value.
     public static async Task<int> RequeueAsync(
         Func<IWorkflowInstanceStore, bool, IAsyncEnumerable<WorkflowInstanceSummary>> enumerate,
@@ -29,7 +23,7 @@ internal static class OwnDatabaseTenantRecovery
         ILogger logger,
         CancellationToken cancellationToken)
     {
-        var ownDatabaseTenants = await TryListOwnDatabaseTenantsAsync(tenantService, tenantScopeFactory, logger, cancellationToken);
+        var ownDatabaseTenants = await OwnDatabaseTenants.TryListAsync(tenantService, tenantScopeFactory, logger, cancellationToken);
         var seen = new HashSet<(string TenantKey, string Id)>();
         var requeued = 0;
 
@@ -37,7 +31,7 @@ internal static class OwnDatabaseTenantRecovery
         {
             requeued = await RequeueSharedAsync(enumerate, store, restarter, tenantService, tenantAccessor, tenantScopeFactory, ownDatabaseTenants, seen, logger, cancellationToken);
         }
-        catch (Exception ex) when (IsRecoverable(ex, cancellationToken))
+        catch (Exception ex) when (OwnDatabaseTenants.IsRecoverable(ex, cancellationToken))
         {
             logger.LogWarning(ex, "Failed to recover interrupted workflows from the shared database; tenants with their own database are still scanned.");
         }
@@ -61,7 +55,7 @@ internal static class OwnDatabaseTenantRecovery
                 logger.LogDebug("Requeued {Count} interrupted workflow(s) for tenant {TenantId} from its own database.", count, tenant.Id);
                 requeued += count;
             }
-            catch (Exception ex) when (IsRecoverable(ex, cancellationToken))
+            catch (Exception ex) when (OwnDatabaseTenants.IsRecoverable(ex, cancellationToken))
             {
                 logger.LogWarning(ex, "Failed to recover interrupted workflows for tenant {TenantId}; it will be retried by the next scan.", tenant.Id);
             }
@@ -82,33 +76,10 @@ internal static class OwnDatabaseTenantRecovery
         ILogger logger,
         CancellationToken cancellationToken)
     {
-        // RunOnceForAllTenants may run under an own-database tenant, whose scoped store would not see the shared database.
-        // Tenant.Default carries no configuration, so its scope resolves the shared database.
-        var ambientHasOwnDatabase = ownDatabaseTenants.Count > 0 && tenantAccessor?.Tenant?.HasOwnDatabase() == true;
-        await using var sharedScope = ambientHasOwnDatabase ? tenantScopeFactory!.CreateScope(Tenant.Default) : null;
+        await using var sharedScope = OwnDatabaseTenants.NeedsSharedScope(ownDatabaseTenants, tenantAccessor) ? tenantScopeFactory!.CreateScope(Tenant.Default) : null;
         var sharedStore = sharedScope?.ServiceProvider.GetRequiredService<IWorkflowInstanceStore>() ?? store;
         var sharedRestarter = sharedScope?.ServiceProvider.GetRequiredService<IWorkflowRestarter>() ?? restarter;
 
         return await InterruptedWorkflowRequeuer.RequeueAsync(enumerate(sharedStore, true), sharedRestarter, tenantService, tenantAccessor, logger, seen, cancellationToken);
     }
-
-    private static async Task<List<Tenant>> TryListOwnDatabaseTenantsAsync(ITenantService? tenantService, ITenantScopeFactory? tenantScopeFactory, ILogger logger, CancellationToken cancellationToken)
-    {
-        if (tenantService is null || tenantScopeFactory is null)
-            return [];
-
-        try
-        {
-            var tenants = await tenantService.ListAsync(cancellationToken);
-            return tenants.Where(x => x.HasOwnDatabase()).ToList();
-        }
-        catch (Exception ex) when (IsRecoverable(ex, cancellationToken))
-        {
-            logger.LogWarning(ex, "Failed to list tenants; tenants with their own database are not scanned separately in this run.");
-            return [];
-        }
-    }
-
-    private static bool IsRecoverable(Exception ex, CancellationToken cancellationToken) =>
-        !ex.IsFatal() && !(ex is OperationCanceledException && cancellationToken.IsCancellationRequested);
 }

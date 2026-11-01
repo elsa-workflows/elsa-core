@@ -117,6 +117,27 @@ public sealed class MongoTriggerBookmarkQueueTenantAgnosticTests : IAsyncLifetim
         Assert.Equal(2, agnosticPage.TotalCount);
     }
 
+    [Fact]
+    public async Task BookmarkQueueStore_ListTenantIdsAsync_ReturnsDistinctNormalizedTenantIds()
+    {
+        // Arrange
+        using (var tenantA = _tenantAccessor.PushContext(new Tenant { Id = "t1" }))
+            await _bookmarkQueueStore.SaveAsync(QueueItem("queue-t1"));
+
+        using (var tenantB = _tenantAccessor.PushContext(new Tenant { Id = "t2" }))
+            await _bookmarkQueueStore.SaveAsync(QueueItem("queue-t2"));
+
+        await _bookmarkQueueStore.SaveAsync(QueueItem("queue-empty", ""));
+        await _bookmarkQueueStore.SaveAsync(QueueItem("queue-null", null));
+
+        // Act
+        var tenantIds = await _bookmarkQueueStore.ListTenantIdsAsync();
+
+        // Assert
+        Assert.NotNull(tenantIds);
+        Assert.Equal(["", "t1", "t2"], tenantIds.Order());
+    }
+
     private static StoredTrigger Trigger(string id) =>
         new()
         {
@@ -127,10 +148,11 @@ public sealed class MongoTriggerBookmarkQueueTenantAgnosticTests : IAsyncLifetim
             Name = id
         };
 
-    private static BookmarkQueueItem QueueItem(string id) =>
+    private static BookmarkQueueItem QueueItem(string id, string? tenantId = null) =>
         new()
         {
             Id = id,
+            TenantId = tenantId,
             WorkflowInstanceId = "instance-1",
             CreatedAt = DateTimeOffset.UtcNow
         };
