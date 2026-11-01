@@ -2,7 +2,7 @@ using Elsa.Dsl.ElsaScript.Contracts;
 using Elsa.Dsl.ElsaScript.Materializers;
 using Elsa.WorkflowProviders.BlobStorage.Contracts;
 using Elsa.Workflows.Runtime;
-using FluentStorage.Blobs;
+using FluentStorage.Model;
 using Microsoft.Extensions.Logging;
 
 namespace Elsa.WorkflowProviders.BlobStorage.ElsaScript.Handlers;
@@ -19,7 +19,7 @@ public class ElsaScriptBlobWorkflowFormatHandler(IElsaScriptCompiler compiler, I
     public IEnumerable<string> SupportedExtensions => ["elsa"];
 
     /// <inheritdoc />
-    public bool CanHandle(Blob blob, string? contentType)
+    public bool CanHandle(StoreObject blob, string? contentType)
     {
         // Extension filtering is already handled by the provider via SupportedExtensions.
         // Here we can optionally check content type for additional validation.
@@ -31,7 +31,7 @@ public class ElsaScriptBlobWorkflowFormatHandler(IElsaScriptCompiler compiler, I
     }
 
     /// <inheritdoc />
-    public async ValueTask<MaterializedWorkflow?> TryParseAsync(Blob blob, string content, CancellationToken cancellationToken = default)
+    public async ValueTask<MaterializedWorkflow?> TryParseAsync(StoreObject blob, string content, CancellationToken cancellationToken = default)
     {
         try
         {
