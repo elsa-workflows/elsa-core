@@ -18,53 +18,29 @@ public static class ActivityTypeNameHelper
         
         if (type.IsGenericType)
         {
-            var declaringType = type.DeclaringType;
-            var inheritedGenericArgumentCount = declaringType?.IsGenericType == true
-                ? declaringType.GetGenericArguments().Length
-                : 0;
-            var genericArguments = type.GetGenericArguments().ToArray();
-            var inheritedGenericArguments = genericArguments.Take(inheritedGenericArgumentCount).ToArray();
-            var ownGenericArguments = genericArguments.Skip(inheritedGenericArgumentCount).ToArray();
-
-            // Only activities nested inside a GENERIC declaring type carry the declaring type name, which keeps them
-            // distinct from a same-named top-level activity in the registry. Activities nested inside non-generic
-            // types keep their historical type name.
-            // The declaring type of a nested type can be reported as its open generic definition, whose arguments are
-            // parameter names. When the nested activity is closed over the declaring type's arguments and declares its
-            // own, the declaring type is closed with the constructed arguments inherited by the nested type, so
-            // different closings of the same nested type keep distinct type names.
-            var declaringTypeForPrefix = declaringType is { IsGenericTypeDefinition: true }
-                && ownGenericArguments.Length > 0
-                && inheritedGenericArguments.All(arg => !arg.IsGenericParameter)
-                    ? declaringType.MakeGenericType(inheritedGenericArguments)
-                    : declaringType;
-            var declaringTypeName = declaringType?.IsGenericType == true
-                ? $"{GenerateTypeName(declaringTypeForPrefix, null)}."
-                : string.Empty;
-
-            // Nested types of generic types are generic types themselves but do not have their own backtick suffix in their name.
-            // Only strip the generic arity suffix when it is present.
             var backtickIndex = type.Name.IndexOf('`');
-            var baseTypeName = backtickIndex >= 0
-                ? type.Name[..backtickIndex]
-                : type.Name;
 
-            var sanitizedTypeName = activityAttr?.Type ?? baseTypeName;
+            if (backtickIndex < 0 && activityAttr?.Type == null)
+            {
+                // Nested types of generic types are generic types themselves without a backtick suffix in their own
+                // name (#9154), which used to throw an ArgumentOutOfRangeException and therefore has no stored type
+                // name depending on it. The nested type name is qualified with its closed declaring type, so the
+                // container's general arguments are kept in the name.
+                var declaringType = type.DeclaringType!;
 
-            // GetGenericArguments() works for closed and open generic types, unlike the GenericTypeArguments property,
-            // which returns an empty array for open generic definitions. Closed types render their constructed generic
-            // arguments and open generic definitions render their generic parameter names; the arguments inherited from
-            // the generic declaring type are skipped to avoid duplication while the nested activity's own arguments
-            // are preserved.
-            var genericArgs = ownGenericArguments.Length > 0
-                ? ownGenericArguments
-                : genericArguments.Where(arg => !arg.IsGenericParameter).ToArray();
+                if (type.IsConstructedGenericType)
+                    declaringType = declaringType.MakeGenericType(type.GenericTypeArguments);
 
-            var genericSuffix = genericArgs.Length > 0
-                ? $"<{string.Join(',', genericArgs.Select(arg => GenerateTypeName(arg, null)))}>"
-                : string.Empty;
+                typeName = $"{GenerateTypeName(declaringType, null)}.{type.Name}";
+            }
+            else
+            {
+                // Preserve the existing naming behavior from main.
+                var sanitizedTypeName = activityAttr?.Type ?? type.Name[..backtickIndex];
+                var genericArgs = type.GenericTypeArguments.Select(t => GenerateTypeName(t, null));
 
-            typeName = $"{declaringTypeName}{sanitizedTypeName}{genericSuffix}";
+                typeName = $"{sanitizedTypeName}<{string.Join(',', genericArgs)}>";
+            }
         }
         else
             typeName = activityAttr?.Type ?? type.Name;
