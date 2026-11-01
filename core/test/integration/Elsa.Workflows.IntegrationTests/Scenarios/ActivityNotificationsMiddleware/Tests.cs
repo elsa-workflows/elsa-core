@@ -20,6 +20,7 @@ public class Tests
                 s.AddSingleton<Spy>();
                 s.AddNotificationHandler<TestHandler, ActivityExecuting>();
                 s.AddNotificationHandler<TestHandler, ActivityExecuted>();
+                s.AddNotificationHandler<TestHandler, ActivityFaulted>();
             })
             
             .Build();
@@ -34,5 +35,21 @@ public class Tests
         await _workflowRunner.RunAsync<HelloWorldWorkflow>();
         Assert.True(_spy.ActivityExecutingWasCalled);
         Assert.True(_spy.ActivityExecutedWasCalled);
+        Assert.False(_spy.ActivityFaultedWasCalled);
+    }
+
+    [Fact(DisplayName = "A throwing activity publishes ActivityFaulted with the exception before ExceptionHandlingMiddleware faults the context")]
+    public async Task ThrowingActivity_PublishesFaultedWithTheException()
+    {
+        var result = await _workflowRunner.RunAsync<ThrowingWorkflow>();
+
+        Assert.True(_spy.ActivityExecutingWasCalled);
+        Assert.True(_spy.ActivityExecutedWasCalled);
+        Assert.True(_spy.ActivityFaultedWasCalled);
+        Assert.IsType<InvalidOperationException>(_spy.FaultException);
+        Assert.Equal(ThrowingActivity.ErrorMessage, _spy.FaultException.Message);
+        Assert.Equal(ActivityStatus.Running, _spy.StatusWhenFaulted);
+        Assert.Equal(WorkflowSubStatus.Faulted, result.WorkflowState.SubStatus);
+        Assert.Contains(result.WorkflowState.Incidents, incident => incident.Message == ThrowingActivity.ErrorMessage);
     }
 }

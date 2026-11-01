@@ -35,6 +35,14 @@ public class ActivityDescriberTests
         Assert.False(publicInput.IsSensitive);
     }
 
+    [Fact]
+    public async Task DescribeActivityAsync_FormatsGenericTypeFriendlyName()
+    {
+        var descriptor = await _describer.DescribeActivityAsync(typeof(GenericTestActivity<string>));
+
+        Assert.Equal("GenericTestActivity<String>", descriptor.Name);
+    }
+
     private sealed class ActivityWithSensitiveInputs : CodeActivity
     {
         [Input(CanContainSecrets = true)]
@@ -43,4 +51,6 @@ public class ActivityDescriberTests
         [Input]
         public Input<string?> PublicText { get; set; } = new("public");
     }
+
+    private sealed class GenericTestActivity<T> : CodeActivity;
 }
