@@ -18,9 +18,29 @@ public static class ActivityTypeNameHelper
         
         if (type.IsGenericType)
         {
-            var sanitizedTypeName = activityAttr?.Type ?? type.Name.Substring(0, type.Name.IndexOf("`", StringComparison.InvariantCulture));
-            var genericArgs = type.GenericTypeArguments.Select(type1 => GenerateTypeName(type1, null));
-            typeName = $"{sanitizedTypeName}<{string.Join(',', genericArgs)}>";
+            var backtickIndex = type.Name.IndexOf('`');
+
+            if (backtickIndex < 0 && activityAttr?.Type == null)
+            {
+                // Nested types of generic types are generic types themselves without a backtick suffix in their own
+                // name (#9154), which used to throw an ArgumentOutOfRangeException and therefore has no stored type
+                // name depending on it. The nested type name is qualified with its closed declaring type, so the
+                // container's general arguments are kept in the name.
+                var declaringType = type.DeclaringType!;
+
+                if (type.IsConstructedGenericType)
+                    declaringType = declaringType.MakeGenericType(type.GenericTypeArguments);
+
+                typeName = $"{GenerateTypeName(declaringType, null)}.{type.Name}";
+            }
+            else
+            {
+                // Preserve the existing naming behavior from main.
+                var sanitizedTypeName = activityAttr?.Type ?? type.Name[..backtickIndex];
+                var genericArgs = type.GenericTypeArguments.Select(t => GenerateTypeName(t, null));
+
+                typeName = $"{sanitizedTypeName}<{string.Join(',', genericArgs)}>";
+            }
         }
         else
             typeName = activityAttr?.Type ?? type.Name;
