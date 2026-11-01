@@ -565,8 +565,20 @@ public class Store<T>(IDbConnectionProvider dbConnectionProvider, ITenantAccesso
     /// <returns><c>true</c> if any records match the specified query.</returns>
     public async Task<bool> AnyAsync(Action<ParameterizedQuery> filter, CancellationToken cancellationToken = default)
     {
+        return await AnyAsync(filter, false, cancellationToken);
+    }
+
+    /// <summary>
+    /// Returns <c>true</c> if any records match the specified query.
+    /// </summary>
+    /// <param name="filter">The conditions to apply to the query.</param>
+    /// <param name="tenantAgnostic">Whether to ignore the tenant filter.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns><c>true</c> if any records match the specified query.</returns>
+    public async Task<bool> AnyAsync(Action<ParameterizedQuery> filter, bool tenantAgnostic, CancellationToken cancellationToken = default)
+    {
         var query = dbConnectionProvider.CreateQuery().From(TableName, PrimaryKey);
-        ApplyTenantFilter(query, false);
+        ApplyTenantFilter(query, tenantAgnostic);
         filter(query);
         using var connection = dbConnectionProvider.GetConnection();
         return await connection.QueryFirstOrDefaultAsync<object>(query.Sql.ToString(), query.Parameters) != null;
